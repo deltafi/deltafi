@@ -54,7 +54,7 @@
               <h4>{{ selectedPlugin.displayName }}</h4>
             </div>
             <PluginActionsPanel :actions="selectedPlugin.actions" class="mb-3" />
-            <PluginVariablesPanel :variables="selectedPlugin.variables" class="mb-3" @updated="loadPlugins" />
+            <PluginVariablesPanel :key="selectedPlugin.displayName" :plugin-coordinates-prop="selectedPlugin.pluginCoordinates" :variables-prop="selectedPlugin.variables" class="mb-3" @updated="loadPlugins()" />
           </div>
         </SplitterPanel>
       </Splitter>
@@ -80,7 +80,7 @@ import PluginVariablesPanel from "@/components/plugin/VariablesPanel.vue";
 import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
 import useNotifications from "@/composables/useNotifications";
 import usePlugins from "@/composables/usePlugins";
-import { computed, nextTick, onMounted, provide, ref, watch } from "vue";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import _ from "lodash";
 
@@ -94,8 +94,6 @@ import Splitter from "primevue/splitter";
 import SplitterPanel from "primevue/splitterpanel";
 
 const selectedPlugin = ref(null);
-provide("selectedPlugin", selectedPlugin);
-
 const dataTableIdRef = ref();
 const rowIndex = ref(0);
 const startingPanelOneSize = ref(99);

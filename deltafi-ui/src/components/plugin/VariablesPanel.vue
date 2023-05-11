@@ -17,18 +17,18 @@
 -->
 
 <template>
-  <CollapsiblePanel header="Variables" class="table-panel">
-    <DataTable :value="props.variables" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines plugin-variables-table" striped-rows :row-hover="true">
+  <CollapsiblePanel :header="header" class="table-panel">
+    <DataTable :value="variables" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines plugin-variables-table" striped-rows :row-hover="true">
       <template #empty> No Variables Included </template>
-      <Column field="name" header="Name">
+      <Column field="name" header="Name" :style="{ width: '50%' }">
         <template #body="{ data }">
           {{ data.name }}
           <i v-if="data.description" v-tooltip.right="data.description" class="ml-1 text-muted fas fa-info-circle fa-fw" />
         </template>
       </Column>
-      <Column field="value" header="Value" class="value-column">
+      <Column field="value" header="Value" class="value-column" :style="{ width: '50%' }">
         <template #body="{ data }">
-          <PluginVariableEditDialog :variable="data" @saved="$emit('updated')">
+          <PluginVariableEditDialog :plugin-coordinates-prop="pluginCoordinates" :variable-prop="data" @saved="$emit('updated')">
             <div class="value-clickable">
               <span v-if="data.value !== null && data.value !== data.defaultValue" class="override-icon">
                 <i v-tooltip.left="'Default value has been overridden'" class="fas fa fa-gavel mr-2 text-muted"></i>
@@ -58,20 +58,31 @@ import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import CollapsiblePanel from "@/components/CollapsiblePanel";
 import PluginVariableEditDialog from "@/components/plugin/VariableEditDialog";
-import { defineProps, defineEmits } from "vue";
+import { defineEmits, defineProps, toRefs } from "vue";
 
 defineEmits(["updated"]);
 
 const props = defineProps({
-  variables: {
+  headerProp: {
+    type: String,
+    required: false,
+    default: "Variables",
+  },
+  pluginCoordinatesProp: {
     type: Object,
     required: true,
-  }
+  },
+  variablesProp: {
+    type: Object,
+    required: true,
+  },
 });
 
+const { headerProp: header, pluginCoordinatesProp: pluginCoordinates, variablesProp: variables } = toRefs(props);
+
 const viewList = (value) => {
-  return value.split(',').map((i) => i.trim());
-}
+  return value.split(",").map((i) => i.trim());
+};
 </script>
 
 <style lang="scss">
@@ -87,7 +98,7 @@ const viewList = (value) => {
     display: flex;
   }
 
-  .value-clickable>* {
+  .value-clickable > * {
     flex: 0 0 auto;
   }
 
@@ -98,7 +109,7 @@ const viewList = (value) => {
   }
 
   .list-item::before {
-    content: '•';
+    content: "•";
     margin-right: 0.25rem;
     font-weight: bold;
   }

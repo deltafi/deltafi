@@ -28,28 +28,44 @@
       </span>
     </span>
     <ProgressBar v-else mode="indeterminate" style="height: 0.5em" />
+    <div v-for="plugin in pluginsList" :key="plugin.displayName">
+      <PluginVariablesPanel :header-prop="'Plugin Properties - ' + plugin.displayName" :plugin-coordinates-prop="plugin.pluginCoordinates" :variables-prop="plugin.variables" class="mb-3" @updated="loadPlugins" />
+    </div>
     <ScrollTop target="window" :threshold="10" icon="pi pi-arrow-up" />
   </div>
 </template>
 
 <script setup>
 import PageHeader from "@/components/PageHeader.vue";
+import PluginVariablesPanel from "@/components/plugin/VariablesPanel.vue";
 import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
 import PropertySet from "@/components/PropertySet.vue";
+import usePlugins from "@/composables/usePlugins";
 import usePropertySets from "@/composables/usePropertySets";
-import { computed, onBeforeMount } from "vue";
+import { computed, nextTick, onBeforeMount } from "vue";
 
 import Message from "primevue/message";
 import ScrollTop from "primevue/scrolltop";
 
 const { data: propertySets, fetch: fetchPropertySets, errors } = usePropertySets();
+const { data: plugins, fetch: fetchPlugins } = usePlugins();
 
 const hasErrors = computed(() => {
   return errors.value.length > 0;
 });
 
-onBeforeMount(() => {
-  fetchPropertySets();
+onBeforeMount(async () => {
+  await fetchPropertySets();
+  await fetchPlugins();
+});
+
+const loadPlugins = async () => {
+  await fetchPlugins();
+  await nextTick();
+};
+
+const pluginsList = computed(() => {
+  return plugins.value?.plugins ?? [];
 });
 </script>
 

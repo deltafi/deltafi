@@ -51,14 +51,14 @@
 </template>
 
 <script setup>
-import { computed, defineProps, defineEmits, inject, ref } from "vue";
+import { computed, defineEmits, defineProps, inject, toRefs, ref } from "vue";
 
 import Button from "primevue/button";
 import Dialog from "primevue/dialog";
 import InputText from "primevue/inputtext";
 import InputNumber from "primevue/inputnumber";
-import Checkbox from 'primevue/checkbox';
-import Message from 'primevue/message';
+import Checkbox from "primevue/checkbox";
+import Message from "primevue/message";
 
 import ListEdit from "@/components/plugin/ListEdit";
 import MapEdit from "@/components/plugin/MapEdit";
@@ -66,41 +66,46 @@ import MapEdit from "@/components/plugin/MapEdit";
 import usePlugins from "@/composables/usePlugins";
 import useNotifications from "@/composables/useNotifications";
 
-const hasPermission = inject("hasPermission")
+const hasPermission = inject("hasPermission");
 
 const props = defineProps({
-  variable: {
+  pluginCoordinatesProp: {
+    type: Object,
+    required: true,
+  },
+  variableProp: {
     type: Object,
     required: true,
   },
 });
-const errors = ref([])
+
+const { pluginCoordinatesProp: pluginCoordinates, variableProp: variable } = toRefs(props);
+const errors = ref([]);
 const notify = useNotifications();
-const selectedPlugin = inject('selectedPlugin')
 const { setPluginVariableValues } = usePlugins();
-const emit = defineEmits(['saved'])
+const emit = defineEmits(["saved"]);
 const localVariable = ref({});
 const dialogVisible = ref(false);
 const saving = ref(false);
 
 const saveBtnLabel = computed(() => {
-  return saving.value ? 'Saving' : 'Save';
-})
+  return saving.value ? "Saving" : "Save";
+});
 
 const saveBtnIcon = computed(() => {
-  return saving.value ? 'pi pi-spin pi-spinner' : 'pi pi-check';
-})
+  return saving.value ? "pi pi-spin pi-spinner" : "pi pi-check";
+});
 
 const stringValue = computed(() => {
-  return (localVariable.value.value === null) ? null : localVariable.value.value.toString();
-})
+  return localVariable.value.value === null ? null : localVariable.value.value.toString();
+});
 
 const overridden = computed(() => {
-  return props.variable.value !== null && props.variable.value !== props.variable.defaultValue;
+  return variable.value.value !== null && variable.value.value !== variable.value.defaultValue;
 });
 
 const revertTooltip = computed(() => {
-  return `Revert to default value: ${props.variable.defaultValue}`;
+  return `Revert to default value: ${variable.value.defaultValue}`;
 });
 
 const show = () => {
@@ -119,43 +124,40 @@ const hide = () => {
 
 const onSaveClick = () => {
   if (!saving.value) save();
-}
+};
 
 const save = async (setNull = false) => {
   saving.value = true;
   await setPluginVariableValues({
-    pluginCoordinates: selectedPlugin.value.pluginCoordinates,
+    pluginCoordinates: pluginCoordinates.value,
     variables: {
       key: localVariable.value.name,
-      value: setNull ? null : stringValue.value
-    }
-  })
-  emit('saved');
+      value: setNull ? null : stringValue.value,
+    },
+  });
+  emit("saved");
   notify.success("Plugin variable updated successfully", localVariable.value.name);
   saving.value = false;
   hide();
-}
+};
 
 const cancel = () => {
   hide();
-}
+};
 
 const revert = () => {
   save(true);
-}
+};
 
 const onShow = () => {
-  localVariable.value = JSON.parse(JSON.stringify(props.variable));
+  localVariable.value = JSON.parse(JSON.stringify(variable.value));
 
-  if (localVariable.value.value === null && localVariable.value.defaultValue !== null)
-    localVariable.value.value = localVariable.value.defaultValue;
+  if (localVariable.value.value === null && localVariable.value.defaultValue !== null) localVariable.value.value = localVariable.value.defaultValue;
 
-  if (localVariable.value.dataType === 'BOOLEAN' && localVariable.value.value !== null)
-    localVariable.value.value = Boolean(localVariable.value.value);
+  if (localVariable.value.dataType === "BOOLEAN" && localVariable.value.value !== null) localVariable.value.value = Boolean(localVariable.value.value);
 
-  if (localVariable.value.dataType === 'NUMBER' && localVariable.value.value !== null)
-    localVariable.value.value = Number(localVariable.value.value);
-}
+  if (localVariable.value.dataType === "NUMBER" && localVariable.value.value !== null) localVariable.value.value = Number(localVariable.value.value);
+};
 </script>
 
 <style lang="scss">
