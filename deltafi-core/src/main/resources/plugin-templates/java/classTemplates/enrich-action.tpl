@@ -2,6 +2,7 @@ package {{package}};
 
 import org.deltafi.actionkit.action.enrich.EnrichAction;
 import org.deltafi.actionkit.action.enrich.EnrichInput;
+import org.deltafi.actionkit.action.enrich.EnrichResult;
 import org.deltafi.actionkit.action.enrich.EnrichResultType;
 import {{paramPackage}}.{{paramClassName}};
 import org.deltafi.common.types.ActionContext;
@@ -19,11 +20,15 @@ public class {{className}} extends EnrichAction<{{paramClassName}}> {
 
     @Override
     public EnrichResultType enrich(@NotNull ActionContext context, @NotNull {{paramClassName}} params, @NotNull EnrichInput enrichInput) {
-        return null;
+        EnrichResult result = new EnrichResult(context);
+
+        // TODO - add logic to fill in the enrich result
+
+        return result;
     }
 
     @Override
     public List<String> getRequiresDomains() {
-        return null;
+        return Constants.DOMAINS;
     }
 }

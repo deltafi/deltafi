@@ -28,6 +28,33 @@ public class ActionGeneratorInput {
     private ActionType actionType;
     private String parameterClassName;
 
+    private String packageName;
+    private String actionsPackageName;
+    private String paramsPackageName;
+    private String fullClassName;
+
+    public ActionGeneratorInput() {
+
+    }
+
+    public ActionGeneratorInput(String className, String fullClassName) {
+        this.className = className;
+        this.fullClassName = fullClassName;
+    }
+
+    public ActionGeneratorInput(String className, ActionType actionType, String description) {
+        this.className = className;
+        this.actionType = actionType;
+        this.description = description;
+    }
+
+    public void setPackageName(String packageName) {
+        this.packageName = packageName;
+        this.actionsPackageName = packageName + ".actions";
+        this.paramsPackageName = packageName + ".parameters";
+        this.fullClassName = actionsPackageName + "." + className;
+    }
+
     public void validate() {
         requireNonBlank(className, "The action className must be set");
         requireNonBlank(description, "The action description must be set");

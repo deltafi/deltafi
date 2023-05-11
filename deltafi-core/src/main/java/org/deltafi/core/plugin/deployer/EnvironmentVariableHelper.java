@@ -43,6 +43,7 @@ public class EnvironmentVariableHelper {
                 "MINIO_ACCESSKEY=" + minioProperties.getAccessKey(),
                 "MINIO_SECRETKEY=" + minioProperties.getSecretKey(),
                 "MINIO_URL=" + minioProperties.getUrl(),
+                "MINIO_PARTSIZE=" + minioProperties.getPartSize(),
                 "REDIS_URL=" + redisProperties.getUrl(),
                 "REDIS_PASSWORD=" + (redisProperties.getPassword() == null ? "" : redisProperties.getPassword()),
                 "SSL_KEYSTORE=" + sslProperties.getKeyStore(),

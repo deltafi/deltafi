@@ -17,6 +17,9 @@
  */
 package org.deltafi.core.plugin.generator;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.archivers.zip.UnixStat;
@@ -24,6 +27,9 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.commons.text.CaseUtils;
 import org.deltafi.common.types.ActionType;
+import org.deltafi.common.types.FlowPlan;
+import org.deltafi.common.types.ProcessingType;
+import org.deltafi.core.plugin.generator.flows.FlowPlanGeneratorService;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.ClassPathResource;
@@ -37,6 +43,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -44,29 +51,36 @@ import java.util.Properties;
 @Service
 public class JavaPluginGenerator {
 
-    private static final String ACTION_PARAM_PACKAGE = "org.deltafi.actionkit.action.parameters";
-    private static final String ACTION_PARAM_CLASS = "ActionParameters";
+    private static final String ACTION_KIT_PARAM_PACKAGE = "org.deltafi.actionkit.action.parameters";
+    private static final String DEFAULT_ACTION_PARAM_CLASS = "ActionParameters";
     private static final String SRC_MAIN_JAVA = "/src/main/java/";
     private static final String SRC_TEST_JAVA = "/src/test/java/";
     private static final String JAVA_EXT = ".java";
     private static final PropertyPlaceholderHelper PLACEHOLDER_HELPER = new PropertyPlaceholderHelper("{{", "}}", null, false);
+    private static final ObjectMapper objectMapper = new ObjectMapper()
+            .enable(SerializationFeature.INDENT_OUTPUT)
+            .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+
     private final EnumMap<ActionType, String> actionTemplateMap;
     private final Map<String, String> topLevelTemplateMap;
     private final String applicationYamlTemplate;
     private final String testTemplate;
     private final String mainClassTemplate;
     private final String paramClassTemplate;
+    private final String constantsClassTemplate;
 
     private final ApplicationContext applicationContext;
-
+    private final FlowPlanGeneratorService flowPlanGeneratorService;
     private final BuildProperties buildProperties;
 
-    public JavaPluginGenerator(ApplicationContext applicationContext, BuildProperties buildProperties) {
+    public JavaPluginGenerator(ApplicationContext applicationContext, FlowPlanGeneratorService flowPlanGeneratorService, BuildProperties buildProperties) {
         this.applicationContext = applicationContext;
+        this.flowPlanGeneratorService = flowPlanGeneratorService;
         this.buildProperties = buildProperties;
         actionTemplateMap = new EnumMap<>(ActionType.class);
         topLevelTemplateMap = new HashMap<>();
         mainClassTemplate = readClassPathResource("plugin-templates/java/classTemplates/main-class.tpl");
+        constantsClassTemplate = readClassPathResource("plugin-templates/java/classTemplates/constant-domains.tpl");
         paramClassTemplate = readClassPathResource("plugin-templates/java/classTemplates/action-parameters.tpl");
         applicationYamlTemplate = readClassPathResource("plugin-templates/java/resourceTemplates/application.yaml.tpl");
         testTemplate = readClassPathResource("plugin-templates/java/classTemplates/action-test.tpl");
@@ -89,29 +103,35 @@ public class JavaPluginGenerator {
 
         topLevelTemplateMap.forEach((filename, content) -> addTopLevelFile(pluginGeneratorInput, filename, content, appName, packageName, outputStream));
         addGradleWrapper(appName, outputStream);
-        addSampleFlows(appName, outputStream);
 
         addMainClass(appName, packageName, packageDir, outputStream);
         addApplicationYaml(appName, outputStream);
-        pluginGeneratorInput.getActions().forEach(actionGeneratorInput -> addActionClasses(appName, packageDir, packageName, actionGeneratorInput, outputStream));
+
+        pluginGeneratorInput.getActions().forEach(actionGeneratorInput -> actionGeneratorInput.setPackageName(packageName));
+
+        pluginGeneratorInput.getActions().forEach(actionGeneratorInput -> addActionClasses(appName, packageDir, actionGeneratorInput, outputStream));
+
+        if (ProcessingType.NORMALIZATION.equals(pluginGeneratorInput.getOrInferProcessingType())) {
+            addConstantsClass(appName, packageDir, packageName, outputStream);
+        }
+
+        addFlowPlans(pluginGeneratorInput, appName, outputStream);
 
         outputStream.finish();
         return byteArrayOutputStream;
     }
 
-    private void addActionClasses(String rootDirectory,  String packageDir, String packageName, ActionGeneratorInput actionGeneratorInput, ArchiveOutputStream outputStream) {
+    private void addActionClasses(String rootDirectory, String packageDir, ActionGeneratorInput actionGeneratorInput, ArchiveOutputStream outputStream) {
         try {
             Properties props = new Properties();
-            props.put("package", packageName + ".actions");
+            props.put("package", actionGeneratorInput.getActionsPackageName());
             props.put("className", actionGeneratorInput.getClassName());
-            props.put("paramPackage", ACTION_PARAM_PACKAGE);
-            props.put("paramClassName", ACTION_PARAM_CLASS);
+            props.put("paramPackage", ACTION_KIT_PARAM_PACKAGE);
+            props.put("paramClassName", DEFAULT_ACTION_PARAM_CLASS);
             props.put("description", actionGeneratorInput.getDescription());
 
             if (actionGeneratorInput.getParameterClassName() != null) {
-                String paramPackage = packageName + ".parameters";
-
-                props.put("paramPackage", paramPackage);
+                props.put("paramPackage", actionGeneratorInput.getParamsPackageName());
                 props.put("paramClassName", actionGeneratorInput.getParameterClassName());
                 String filePath = rootDirectory + SRC_MAIN_JAVA + packageDir + "parameters/" + actionGeneratorInput.getParameterClassName() + JAVA_EXT;
                 addToArchiveFromTemplate(props, paramClassTemplate, filePath, outputStream);
@@ -161,6 +181,13 @@ public class JavaPluginGenerator {
         addToArchiveFromTemplate(props, mainClassTemplate, fullPath, archiveOutputStream);
     }
 
+    void addConstantsClass(String rootDirectory, String packageDir, String packageName, ArchiveOutputStream archiveOutputStream) throws IOException {
+        Properties props = new Properties();
+        props.put("package", packageName+".actions");
+        String fullPath = rootDirectory + SRC_MAIN_JAVA + packageDir + "actions/Constants.java";
+        addToArchiveFromTemplate(props, constantsClassTemplate, fullPath, archiveOutputStream);
+    }
+
     void addApplicationYaml(String appName, ArchiveOutputStream archiveOutputStream) throws IOException {
         Properties props = new Properties();
         props.put("applicationName", appName);
@@ -172,12 +199,18 @@ public class JavaPluginGenerator {
         addFileToArchive(rootDir + "/gradle/wrapper/gradle-wrapper.properties", readClassPathResourceBytes("plugin-templates/java/gradleWrapper/gradle-wrapper.properties"), archiveOutputStream);
     }
 
-    void addSampleFlows(String rootDir, ArchiveOutputStream archiveOutputStream) throws IOException {
-        String basePath = rootDir + "/src/main/resources/flows/";
-        Resource[] topLevelFiles = applicationContext.getResources("classpath:plugin-templates/flows/*");
-        for (Resource resource : topLevelFiles) {
-            addFileToArchive(basePath + resource.getFilename(), resource.getInputStream().readAllBytes(), archiveOutputStream);
+    void addFlowPlans(PluginGeneratorInput pluginGeneratorInput, String appName, ArchiveOutputStream archiveOutputStream) throws IOException {
+        String basePath = appName + "/src/main/resources/flows/";
+
+        List<FlowPlan> flowPlans = flowPlanGeneratorService.generateFlowPlans(appName, pluginGeneratorInput);
+
+        for (FlowPlan flowPlan : flowPlans) {
+            byte[] flowPlanBytes = objectMapper.writeValueAsBytes(flowPlan);
+            addFileToArchive(basePath + flowPlan.getName() + ".json", flowPlanBytes, archiveOutputStream);
         }
+
+        byte[] variables = objectMapper.writeValueAsBytes(flowPlanGeneratorService.generateVariables(pluginGeneratorInput));
+        addFileToArchive(basePath + "variables.json", variables, archiveOutputStream);
     }
 
     void addToArchiveFromTemplate(Properties properties, String template, String path, ArchiveOutputStream archiveOutputStream) throws IOException {
