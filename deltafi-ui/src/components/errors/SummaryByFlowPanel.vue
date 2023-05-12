@@ -125,7 +125,7 @@ const menuItems = ref([
   },
   {
     label: "Annotate Selected",
-    icon: "fa-solid fa-asterisk fa-fw",
+    icon: "fa-solid fa-tags fa-fw",
     visible: computed(() => hasPermission("DeltaFileAnnotate")),
     command: () => {
       annotateDialog.value.showDialog();
