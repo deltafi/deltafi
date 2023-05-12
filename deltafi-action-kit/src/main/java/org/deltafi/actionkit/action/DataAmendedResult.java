@@ -69,6 +69,17 @@ public abstract class DataAmendedResult extends MetadataAmendedResult {
 
     /**
      * Save content to content storage and attach to the result
+     * @param content String content to store.  The entire string will be stored in content storage
+     * @param name the content name
+     * @param mediaType Media type for the content being stored
+     */
+    @SuppressWarnings("unused")
+    public void saveContent(String content, String name, String mediaType) {
+	saveContent(content.getBytes(), name, mediaType);
+    }
+
+    /**
+     * Save content to content storage and attach to the result
      * @param content Byte array of content to store.  The entire byte array will be stored in content storage
      * @param name the content name
      * @param mediaType Media type for the content being stored

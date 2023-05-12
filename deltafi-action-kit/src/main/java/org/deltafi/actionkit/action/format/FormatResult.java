@@ -50,6 +50,17 @@ public class FormatResult extends MetadataAmendedResult implements FormatResultT
 
     /**
      * @param context Context of the executed action
+     * @param content String content to store.  The entire String will be stored in content storage
+     * @param name the content name
+     * @param mediaType Media type for the content being stored
+     */
+    public FormatResult(@NotNull ActionContext context, @NotNull String content, @NotNull String name, @NotNull String mediaType) {
+        super(context);
+        this.content = saveContent(content.getBytes(), name, mediaType);
+    }
+
+    /**
+     * @param context Context of the executed action
      * @param content Byte array of content to store.  The entire byte array will be stored in content storage
      * @param name the content name
      * @param mediaType Media type for the content being stored
