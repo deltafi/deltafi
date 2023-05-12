@@ -298,7 +298,7 @@ class DeltaFilesServiceTest {
         deltaFile.setStage(DeltaFileStage.EGRESS);
         deltaFile.getActions().add(Action.newBuilder().name("action").state(ActionState.QUEUED).modified(modified).build());
 
-        ActionConfiguration actionConfiguration = new EgressActionConfiguration(null, null, null);
+        ActionConfiguration actionConfiguration = new EgressActionConfiguration(null, null);
         Mockito.when(transformFlowService.findActionConfig("myFlow", "action")).thenReturn(actionConfiguration);
 
         List<ActionInput> toQueue = deltaFilesService.requeuedActionInput(deltaFile, modified);

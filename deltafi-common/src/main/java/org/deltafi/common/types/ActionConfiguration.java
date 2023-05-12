@@ -17,11 +17,13 @@
  */
 package org.deltafi.common.types;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Getter;
 import lombok.Setter;
 import org.deltafi.common.constant.DeltaFiConstants;
+import org.springframework.data.annotation.Transient;
 
 import java.util.*;
 
@@ -38,12 +40,14 @@ import java.util.*;
         @JsonSubTypes.Type(value = EgressActionConfiguration.class, name = "EgressActionConfiguration")
 })
 public abstract class ActionConfiguration extends DeltaFiConfiguration {
+    @JsonIgnore
+    @Transient
     protected final ActionType actionType;
     protected final String type;
 
     protected Map<String, Object> parameters;
 
-    public ActionConfiguration(String name, ActionType actionType, String type) {
+    protected ActionConfiguration(String name, ActionType actionType, String type) {
         super(name);
         this.actionType = actionType;
         this.type = type;

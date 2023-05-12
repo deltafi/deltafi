@@ -32,18 +32,12 @@ public class EnrichActionConfiguration extends RequiresDomainsAndEnrichmentsActi
     @Setter
     private List<KeyValue> requiresMetadataKeyValues;
 
-    public EnrichActionConfiguration(String name, String type, List<String> requiresDomains) {
-        super(name, ActionType.ENRICH, type, requiresDomains);
-    }
-
     @PersistenceCreator
     @JsonCreator
-    @SuppressWarnings("unused")
     public EnrichActionConfiguration(@JsonProperty(value = "name", required = true) String name,
-            @JsonProperty(value = "actionType") ActionType actionType,
-            @JsonProperty(value = "type", required = true) String type,
-            @JsonProperty(value = "requiresDomains", required = true) List<String> requiresDomains) {
-        this(name, type, requiresDomains);
+                                     @JsonProperty(value = "type", required = true) String type,
+                                     @JsonProperty(value = "requiresDomains", required = true) List<String> requiresDomains) {
+        super(name, ActionType.ENRICH, type, requiresDomains);
     }
 
     @Override

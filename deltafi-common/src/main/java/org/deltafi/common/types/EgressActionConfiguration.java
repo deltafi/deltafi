@@ -24,16 +24,11 @@ import org.springframework.data.annotation.PersistenceCreator;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 public class EgressActionConfiguration extends ActionConfiguration {
-    public EgressActionConfiguration(String name, String type) {
+    @PersistenceCreator
+    @JsonCreator
+    public EgressActionConfiguration(@JsonProperty(value = "name", required = true) String name,
+                                     @JsonProperty(value = "type", required = true) String type) {
         super(name, ActionType.EGRESS, type);
     }
 
-    @PersistenceCreator
-    @JsonCreator
-    @SuppressWarnings("unused")
-    public EgressActionConfiguration(@JsonProperty(value = "name", required = true) String name,
-            @JsonProperty(value = "actionType") ActionType actionType,
-            @JsonProperty(value = "type", required = true) String type) {
-        this(name, type);
-    }
 }

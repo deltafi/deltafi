@@ -24,16 +24,10 @@ import org.springframework.data.annotation.PersistenceCreator;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 public class LoadActionConfiguration extends ActionConfiguration {
-    public LoadActionConfiguration(String name, String type) {
-        super(name, ActionType.LOAD, type);
-    }
-
     @PersistenceCreator
     @JsonCreator
-    @SuppressWarnings("unused")
     public LoadActionConfiguration(@JsonProperty(value = "name", required = true) String name,
-            @JsonProperty(value = "actionType") ActionType actionType,
-            @JsonProperty(value = "type", required = true) String type) {
-        this(name, type);
+                                   @JsonProperty(value = "type", required = true) String type) {
+        super(name, ActionType.LOAD, type);
     }
 }
