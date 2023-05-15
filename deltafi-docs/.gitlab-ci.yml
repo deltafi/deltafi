@@ -25,6 +25,8 @@ docs:docker:
   extends:
     - .docs
     - .docker
+  before_script:
+    - cp CHANGELOG.md "${CI_PROJECT_DIR}/${PROJECT_NAME}/public/docs"
 
 docs:docker-multiarch:
   extends:

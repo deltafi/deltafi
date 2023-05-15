@@ -204,6 +204,10 @@ new Docute({
           link: '/advanced/multithreading_java_action_kit'
         }
       ]
-    }
+    },
+    {
+      title: 'DeltaFi Changelog',
+      link: '/CHANGELOG'
+    },
   ]
 })

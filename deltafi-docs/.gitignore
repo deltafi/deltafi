@@ -2,6 +2,7 @@
 node_modules
 /graphiql/build
 /dist
+public/docs/CHANGELOG.md
 
 
 # local env files

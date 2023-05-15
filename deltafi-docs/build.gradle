@@ -35,6 +35,15 @@ docker {
     tag "local", "${localDockerRegistry}/${project.name}:latest"
 }
 
+task copyChangelog(type: Copy) {
+    from('../CHANGELOG.md')
+    into('public/docs')
+}
+
+docker.dependsOn assemble
+
+assemble.dependsOn copyChangelog
+
 task licenseLocal(type: LicenseCheck) {
     source = fileTree(dir: ".")
 }
