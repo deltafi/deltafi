@@ -20,6 +20,7 @@ package org.deltafi.actionkit.action.service;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Action;
+import org.deltafi.actionkit.action.ActionKitException;
 import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.exception.ExpectedContentException;
@@ -127,7 +128,10 @@ public class ActionRunner {
             result = new ErrorResult(context, "Action received no content", e).logErrorTo(log);
         } catch (MissingMetadataException e) {
             result = new ErrorResult(context, "Missing metadata with key " + e.getKey(), e).logErrorTo(log);
-        } catch (Throwable e) {
+        } catch (ActionKitException e) {
+            result = new ErrorResult(context, e.getMessage(), e).logErrorTo(log);
+        }
+        catch (Throwable e) {
             result = new ErrorResult(context, "Action execution exception", e).logErrorTo(log);
         }
 
