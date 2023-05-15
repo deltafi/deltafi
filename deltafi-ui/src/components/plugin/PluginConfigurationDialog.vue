@@ -84,7 +84,7 @@ const pluginCoordinates = {
 
 const notify = useNotifications();
 const submitLoad = ref(false);
-const { installPlugin, uninstallPlugin } = usePlugins();
+const { errors, installPlugin, uninstallPlugin } = usePlugins();
 const { closeDialogCommand } = reactive(props);
 const rowData = ref(Object.assign({}, props.rowDataProp || pluginCoordinates));
 const emit = defineEmits(["reloadPlugins"]);
@@ -125,8 +125,8 @@ const submit = async () => {
 
   if (errorsList.value.length === 0) {
     closeDialogCommand.command();
+    emit("reloadPlugins");
   }
-  emit("reloadPlugins");
 };
 
 const pluginUpdateFlow = async () => {
@@ -138,28 +138,42 @@ const pluginUpdateFlow = async () => {
     return;
   }
 
-  // Check to see if this is a new plugin, if so install it and return out
-  if (!Object.values(originalModel).every((x) => x)) {
-    await installPlugin(model.value.groupId, model.value.artifactId, model.value.version);
-    return;
-  }
-
-  // Check to see if this is updating an existing plugins groupId or artifactId, if so uninstall the plugin and continue
-  if (!_.isEqual(originalModel.groupId, model.value.groupId) || !_.isEqual(originalModel.artifactId, model.value.artifactId)) {
+  // Check to see if this is a new plugin or if updating an existing plugins groupId or artifactId. If its a new plugin continue, if it's an existing plugin uninstall the plugin and continue
+  if (Object.values(originalModel).every((x) => x) && (!_.isEqual(originalModel.groupId, model.value.groupId) || !_.isEqual(originalModel.artifactId, model.value.artifactId))) {
+    notify.info(`Existing Plugin update ${originalModel.artifactId}`, `Attempting to uninstall ${originalModel.artifactId}.`, 4000);
     let response = await uninstallPlugin(originalModel.groupId, originalModel.artifactId, originalModel.version);
-    let responseErrors = _.get(response.uninstallPlugin, "errors", null);
+    let responseErrors = _.get(response?.uninstallPlugin, "errors", null) ?? errors.value;
     if (!_.isEmpty(responseErrors)) {
-      for (let errorMessages of responseErrors) {
-        errorsList.value.push(errorMessages);
+      for (let errorMessage of responseErrors) {
+        if (Object.hasOwn(errorMessage, "message")) {
+          errorsList.value.push(errorMessage.message);
+        } else {
+          errorsList.value.push(errorMessage);
+        }
       }
       notify.error(`Removing plugin ${originalModel.artifactId} failed`, `Plugin ${originalModel.artifactId} was not removed.`, 4000);
       return;
     } else {
-      notify.success(`Removed ${originalModel.artifactId}}`, `Successfully Removed ${originalModel.artifactId}}.`, 4000);
+      notify.success(`Removed ${originalModel.artifactId}`, `Successfully removed ${originalModel.artifactId}.`, 4000);
     }
   }
+  notify.info(`Installing plugin ${model.value.artifactId}`, `Attempting to install ${model.value.artifactId}.`, 4000);
 
-  await installPlugin(model.value.groupId, model.value.artifactId, model.value.version);
+  let response = await installPlugin(model.value.groupId, model.value.artifactId, model.value.version);
+  let responseErrors = _.get(response?.installPlugin, "errors", null) ?? errors.value;
+  if (!_.isEmpty(responseErrors)) {
+    for (let errorMessage of responseErrors) {
+      if (Object.hasOwn(errorMessage, "message")) {
+        errorsList.value.push(errorMessage.message);
+      } else {
+        errorsList.value.push(errorMessage);
+      }
+    }
+    notify.error(`Installing ${model.value.artifactId} failed`, `Plugin ${model.value.artifactId} was not installed.`, 4000);
+    return;
+  } else {
+    notify.success(`Installed ${model.value.artifactId}`, `Successfully installed ${model.value.artifactId}.`, 4000);
+  }
 };
 
 const disableSubmit = computed(() => {

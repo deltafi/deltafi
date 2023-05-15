@@ -19,7 +19,7 @@
 import { ref } from "vue";
 import useGraphQL from "./useGraphQL";
 export default function usePlugins() {
-  const { response, queryGraphQL, loading, loaded } = useGraphQL();
+  const { errors, loading, loaded, queryGraphQL, response } = useGraphQL();
   const data = ref(null);
 
   const fetch = async () => {
@@ -198,6 +198,7 @@ export default function usePlugins() {
   };
 
   return {
+    errors,
     data,
     loading,
     loaded,
