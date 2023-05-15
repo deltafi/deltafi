@@ -17,6 +17,14 @@
 */
 
 .deltafile-search-page {
+  .align-advanced-options-header-title {
+    align-content: flex-start;
+  }
+
+  .align-advanced-options-header {
+    align-self: center;
+  }
+
   label {
     font-weight: 500;
   }
@@ -28,6 +36,7 @@
   .p-panel-content {
     padding: 1.25rem 0.75rem 1.5rem;
   }
+
   .search-options-wrapper {
     display: flex;
   }
@@ -56,6 +65,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+
     button {
       width: 10rem;
     }
@@ -84,7 +94,7 @@
   }
 
   .size-container {
-    > * {
+    >* {
       vertical-align: middle !important;
     }
   }
@@ -106,19 +116,24 @@
       margin-right: 0.75rem;
       font-weight: 500;
     }
+
     .p-panel-header {
       padding: 0 1.25rem;
+
       .p-panel-title {
         padding: 1rem 0;
       }
+
       .p-panel-header-icon {
         margin-top: 0.25rem;
         margin-right: 0;
       }
     }
+
     .p-panel-content {
       padding: 0;
       border: none;
+
       td.filename-column {
         overflow-wrap: anywhere;
       }
@@ -127,10 +142,11 @@
 
   .p-paginator {
     background: inherit !important;
-    color: inherit  !important;
+    color: inherit !important;
     border: none !important;
     padding: 0 !important;
     font-size: inherit !important;
+
     .p-paginator-current {
       background: unset;
       color: unset;

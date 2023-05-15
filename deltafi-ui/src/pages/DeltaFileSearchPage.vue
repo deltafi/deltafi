@@ -32,7 +32,19 @@
     </div>
     <div class="row mb-3">
       <div class="col-12">
-        <CollapsiblePanel header="Advanced Search Options" :collapsed="collapsedSearchOption">
+        <CollapsiblePanel :collapsed="collapsedSearchOption">
+          <template #header>
+            <span class="align-advanced-options-header-title">
+              <span class="d-flex">
+                <span class="p-panel-title align-advanced-options-header">Advanced Search Options</span>
+                <span>
+                  <Button v-tooltip.right="{ value: `Clear active search options`, disabled: !activeAdvancedOptions() }" rounded :class="`ml-2 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${activeAdvancedOptions() ? 'p-column-filter-menu-button-active' : null}`" :disabled="!activeAdvancedOptions()" @click="clearOptions()">
+                    <i class="pi pi-filter" style="font-size: 1rem"></i>
+                  </Button>
+                </span>
+              </span>
+            </span>
+          </template>
           <template #icons>
             <Button class="p-panel-header-icon p-link p-mr-2" @click="optionMenuToggle">
               <span class="fas fa-cog" />
@@ -350,27 +362,31 @@ const items = ref([
         label: "Clear Options",
         icon: "fas fa-times",
         command: () => {
-          fileName.value = null;
-          filteredCause.value = null;
-          requeueMin.value = null;
-          flowOptionSelected.value = [];
-          egressFlowOptionSelected.value = [];
-          stageOptionSelected.value = null;
-          processingTypeSelected.value = null;
-          egressedOptionSelected.value = null;
-          filteredOptionSelected.value = null;
-          testModeOptionSelected.value = null;
-          isReplayableSelected.value = null;
-          sizeMax.value = null;
-          sizeMin.value = null;
-          domainOptionSelected.value = null;
-          metadataArray.value = [];
+          clearOptions();
           fetchDeltaFilesData();
         },
       },
     ],
   },
 ]);
+
+const clearOptions = () => {
+  fileName.value = null;
+  filteredCause.value = null;
+  requeueMin.value = null;
+  flowOptionSelected.value = [];
+  egressFlowOptionSelected.value = [];
+  stageOptionSelected.value = null;
+  processingTypeSelected.value = null;
+  egressedOptionSelected.value = null;
+  filteredOptionSelected.value = null;
+  testModeOptionSelected.value = null;
+  isReplayableSelected.value = null;
+  sizeMax.value = null;
+  sizeMin.value = null;
+  domainOptionSelected.value = null;
+  metadataArray.value = [];
+};
 
 watch(startTimeDate, () => {
   if (watchEnabled.value) fetchDeltaFilesData();
@@ -744,6 +760,10 @@ const filterSelectedDids = computed(() => {
   });
   return dids;
 });
+
+const activeAdvancedOptions = () => {
+  return _.some(Object.values(panelState.value), (i) => !(i == null || i.length == 0));
+};
 </script>
 
 <style lang="scss">
