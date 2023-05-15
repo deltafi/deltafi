@@ -25,6 +25,7 @@ task poetryVersion(type: Exec) {
 
 task cleanDist(type: Delete) {
     delete 'src/dist'
+    delete 'src/poetry.lock'
 }
 
 task poetryInstall(type: Exec) {
