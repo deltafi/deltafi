@@ -1,3 +1,11 @@
+logging:
+  level:
+    org:
+      springframework: OFF
+    root: OFF
+spring:
+  main:
+    banner-mode: off
 ssl:
   key-store: src/test/resources/mockKeystore.p12
   key-store-type: PKCS12

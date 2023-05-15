@@ -1,8 +1,15 @@
+logging:
+  level:
+    org:
+      springframework: OFF
+    root: OFF
+
 spring:
   aop:
     auto: false
   main:
     allow-bean-definition-overriding: true
+    banner-mode: off
   cloud:
     config:
       enabled: false

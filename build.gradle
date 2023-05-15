@@ -20,7 +20,7 @@ subprojects {
 
     ext {
         excludeFromLicense = ["**/*.xml", "**/generated/**/*.java", "**/*.MockMaker", "**/*.jks", "**/*.p12",
-                              "**/*.yaml", "**/*.tar", "**/*.gz", "**/*.Z", "**/*.zip", "**/*.xz", "**/*.ar",
+                              "**/*.yaml", "**/*.yml", "**/*.properties", "**/*.tar", "**/*.gz", "**/*.Z", "**/*.zip", "**/*.xz", "**/*.ar",
                               "**/*.txt", "**/*.xml", "**/*.html", "**/*.json", "**/test/resources/**",
                               "**/plugin-templates/**", "**/node_modules/**", "**/minio-mc-init.sh"]
     }
