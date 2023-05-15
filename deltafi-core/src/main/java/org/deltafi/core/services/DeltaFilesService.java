@@ -311,11 +311,17 @@ public class DeltaFilesService {
     }
 
     public void transform(DeltaFile deltaFile, ActionEventInput event) {
-        if (event.getTransform().getProtocolLayer() != null) {
-            ProtocolLayer protocolLayer = event.getTransform().getProtocolLayer();
-            protocolLayer.setAction(event.getAction());
-            deltaFile.getProtocolStack().add(protocolLayer);
+        ProtocolLayer protocolLayer = new ProtocolLayer(event.getAction());
+
+        if (event.getTransform().getContent() != null) {
+            protocolLayer.setContent(event.getTransform().getContent());
         }
+
+        if (event.getTransform().getMetadata() != null) {
+            protocolLayer.setMetadata(event.getTransform().getMetadata());
+        }
+        deltaFile.getProtocolStack().add(protocolLayer);
+
         deltaFile.completeAction(event);
 
         if (deltaFile.getSourceInfo().getProcessingType() == ProcessingType.TRANSFORMATION) {
@@ -329,11 +335,17 @@ public class DeltaFilesService {
         deltaFile.completeAction(event);
 
         if (event.getLoad() != null) {
-            ProtocolLayer protocolLayer = event.getLoad().getProtocolLayer();
-            if (protocolLayer != null) {
-                protocolLayer.setAction(event.getAction());
-                deltaFile.getProtocolStack().add(protocolLayer);
+            ProtocolLayer protocolLayer = new ProtocolLayer(event.getAction());
+
+            if (event.getLoad().getContent() != null) {
+                protocolLayer.setContent(event.getLoad().getContent());
             }
+
+            if (event.getLoad().getMetadata() != null) {
+                protocolLayer.setMetadata(event.getLoad().getMetadata());
+            }
+            deltaFile.getProtocolStack().add(protocolLayer);
+
             if (event.getLoad().getDomains() != null) {
                 for (Domain domain : event.getLoad().getDomains()) {
                     deltaFile.addDomain(domain.getName(), domain.getValue(), domain.getMediaType());
@@ -539,11 +551,16 @@ public class DeltaFilesService {
 
         parentDeltaFile.getChildDids().add(child.getDid());
 
-        ProtocolLayer protocolLayer = loadEvent.getProtocolLayer();
-        if (protocolLayer != null) {
-            protocolLayer.setAction(actionEventInput.getAction());
-            child.getProtocolStack().add(protocolLayer);
+        ProtocolLayer protocolLayer = new ProtocolLayer(actionEventInput.getAction());
+
+        if (loadEvent.getContent() != null) {
+            protocolLayer.setContent(loadEvent.getContent());
         }
+
+        if (loadEvent.getMetadata() != null) {
+            protocolLayer.setMetadata(loadEvent.getMetadata());
+        }
+        child.getProtocolStack().add(protocolLayer);
 
         if (loadEvent.getDomains() != null) {
             for (Domain domain : loadEvent.getDomains()) {
@@ -1004,9 +1021,8 @@ public class DeltaFilesService {
         // MissingEgressFlowException is not expected when a DeltaFile is entering the INGRESS stage
         // such as from replay or reinject, since an ingress flow requires at least the Load action to
         // be queued, nor when handling an event for any egress flow action, e.g. format.
-        List<ActionInput> enqueueActions = stateMachine.advance(deltaFile, newDeltaFile);
 
-        return enqueueActions;
+        return stateMachine.advance(deltaFile, newDeltaFile);
     }
 
     /** A version of advanceAndSave specialized for Transformation Processing
@@ -1186,6 +1202,7 @@ public class DeltaFilesService {
         return queued;
     }
 
+    @SuppressWarnings("SameParameterValue")
     private void generateMetrics(String name, Map<String, Integer> countByFlow) {
         Set<String> flows = countByFlow.keySet();
         for (String flow : flows) {

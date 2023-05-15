@@ -182,11 +182,9 @@ def test_load_result():
     verify_no_metrics(result)
 
     response = result.response()
-    assert len(response) == 2
-    protocol_layer = response.get("protocolLayer")
-    assert len(protocol_layer) == 2
-    verify_all_metadata(protocol_layer)
-    content = protocol_layer.get("content")
+    assert len(response) == 3
+    verify_all_metadata(response)
+    content = response.get("content")
     assert len(content) == 2
     assert content[0]['name'] == "content1"
     assert content[1]['name'] == "content2"
@@ -235,11 +233,9 @@ def test_transform_result():
     verify_no_metrics(result)
 
     response = result.response()
-    assert len(response) == 1
-    protocol_layer = response.get("protocolLayer")
-    assert len(protocol_layer) == 2
-    verify_all_metadata(protocol_layer)
-    content = protocol_layer.get("content")
+    assert len(response) == 2
+    verify_all_metadata(response)
+    content = response.get("content")
     assert len(content) == 2
     assert content[0]['name'] == "content1"
     assert content[1]['name'] == "content2"

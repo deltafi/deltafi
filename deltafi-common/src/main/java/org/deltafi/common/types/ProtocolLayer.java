@@ -40,6 +40,10 @@ public class ProtocolLayer {
     @Builder.Default
     private Map<String, String> metadata = new HashMap<>();
 
+    public ProtocolLayer(String action) {
+        this.action = action;
+    }
+
     @JsonIgnore
     public ContentReference getContentReference() {
         return content.isEmpty() ? null : content.get(0).getContentReference();

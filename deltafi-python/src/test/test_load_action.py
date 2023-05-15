@@ -82,11 +82,9 @@ def test_load_action():
                 'value': 'the domain value!'
             }
         ],
-        'protocolLayer': {
-            'content': [],
-            'metadata': {
-                'loadKey': 'loadValue'
-            }
+        'content': [],
+        'metadata': {
+            'loadKey': 'loadValue'
         }
     }
     assert result.response() == expected_response

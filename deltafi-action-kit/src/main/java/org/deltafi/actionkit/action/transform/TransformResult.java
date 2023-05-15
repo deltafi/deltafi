@@ -21,7 +21,6 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.deltafi.actionkit.action.DataAmendedResult;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.ProtocolLayer;
 import org.deltafi.common.types.ActionEventInput;
 import org.deltafi.common.types.ActionEventType;
 import org.deltafi.common.types.TransformEvent;
@@ -49,7 +48,8 @@ public class TransformResult extends DataAmendedResult implements TransformResul
     public final ActionEventInput toEvent() {
         ActionEventInput event = super.toEvent();
         event.setTransform(TransformEvent.newBuilder()
-                .protocolLayer(new ProtocolLayer(context.getName(), contentList(), metadata))
+                .content(contentList())
+                .metadata(metadata)
                 .build());
         return event;
     }

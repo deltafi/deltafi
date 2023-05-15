@@ -5,21 +5,18 @@
     "stop": "2021-07-11T13:44:22.184Z",
     "type": "TRANSFORM",
     "transform": {
-        "protocolLayer": {
-            "action": "sampleIngress.Utf8TransformAction",
-            "content": [
-                {
-                    "name": "file.json",
-                    "contentReference": {
-                        "segments": [{
-                            "uuid": "utf8ObjectName",
-                            "offset": 0,
-                            "size": 500,
-                            "did": "%1$s" }],
-                        "mediaType": "application/octet-stream"
-                    }
+        "content": [
+            {
+                "name": "file.json",
+                "contentReference": {
+                    "segments": [{
+                        "uuid": "utf8ObjectName",
+                        "offset": 0,
+                        "size": 500,
+                        "did": "%1$s" }],
+                    "mediaType": "application/octet-stream"
                 }
-            ]
-        }
+            }
+        ]
     }
 }

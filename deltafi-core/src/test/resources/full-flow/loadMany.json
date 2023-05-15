@@ -14,27 +14,24 @@
           "mediaType": "application/octet-stream"
         }
       ],
-      "protocolLayer": {
-        "action": "sampleIngress.SampleLoadAction",
-        "content": [
-          {
-            "contentReference": {
-              "segments": [
-                {
-                  "uuid": "objectName",
-                  "offset": 0,
-                  "size": 250,
-                  "did": "%1$s"
-                }
-              ],
-              "mediaType": "application/octet-stream"
-            }
+      "content": [
+        {
+          "contentReference": {
+            "segments": [
+              {
+                "uuid": "objectName",
+                "offset": 0,
+                "size": 250,
+                "did": "%1$s"
+              }
+            ],
+            "mediaType": "application/octet-stream"
           }
-        ],
-        "metadata": {
-          "loadSampleType": "load-sample-type",
-          "loadSampleVersion": "2.2"
         }
+      ],
+      "metadata": {
+        "loadSampleType": "load-sample-type",
+        "loadSampleVersion": "2.2"
       }
     },
     {
@@ -46,27 +43,24 @@
           "mediaType": "application/octet-stream"
         }
       ],
-      "protocolLayer": {
-        "action": "sampleIngress.SampleLoadAction",
-        "content": [
-          {
-            "contentReference": {
-              "segments": [
-                {
-                  "uuid": "objectName",
-                  "offset": 250,
-                  "size": 250,
-                  "did": "%1$s"
-                }
-              ],
-              "mediaType": "application/octet-stream"
-            }
+      "content": [
+        {
+          "contentReference": {
+            "segments": [
+              {
+                "uuid": "objectName",
+                "offset": 250,
+                "size": 250,
+                "did": "%1$s"
+              }
+            ],
+            "mediaType": "application/octet-stream"
           }
-        ],
-        "metadata": {
-          "loadSampleType": "load-sample-type",
-          "loadSampleVersion": "2.2"
         }
+      ],
+      "metadata": {
+        "loadSampleType": "load-sample-type",
+        "loadSampleVersion": "2.2"
       }
     }
   ]

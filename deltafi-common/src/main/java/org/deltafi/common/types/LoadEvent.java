@@ -22,14 +22,21 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(builderMethodName = "newBuilder")
 public class LoadEvent {
-  private List<Domain> domains;
-  private ProtocolLayer protocolLayer;
+  @Builder.Default
+  private List<Domain> domains = new ArrayList<>();
+  @Builder.Default
+  private List<Content> content = new ArrayList<>();
+  @Builder.Default
+  private Map<String, String> metadata = new HashMap<>();
   private String did;
 }

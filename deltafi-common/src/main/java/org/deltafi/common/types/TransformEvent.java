@@ -22,10 +22,18 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(builderMethodName = "newBuilder")
 public class TransformEvent {
-  private ProtocolLayer protocolLayer;
+  @Builder.Default
+  private List<Content> content = new ArrayList<>();
+  @Builder.Default
+  private Map<String, String> metadata = new HashMap<>();
 }

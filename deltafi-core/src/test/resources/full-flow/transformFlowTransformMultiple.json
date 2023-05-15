@@ -5,34 +5,31 @@
     "stop": "2021-07-11T13:44:22.184Z",
     "type": "TRANSFORM",
     "transform": {
-        "protocolLayer": {
-            "action": "sampleTransform.SampleTransformAction",
-            "content": [
-                {
-                    "contentReference": {
-                        "segments": [{
-                            "uuid": "objectName1",
-                            "offset": 0,
-                            "size": 250,
-                            "did": "%1$s" }],
-                        "mediaType": "application/octet-stream"
-                    }
-                },
-                {
-                    "contentReference": {
-                        "segments": [{
-                            "uuid": "objectName2",
-                            "offset": 250,
-                            "size": 250,
-                            "did": "%1$s" }],
-                        "mediaType": "application/octet-stream"
-                    }
+        "content": [
+            {
+                "contentReference": {
+                    "segments": [{
+                        "uuid": "objectName1",
+                        "offset": 0,
+                        "size": 250,
+                        "did": "%1$s" }],
+                    "mediaType": "application/octet-stream"
                 }
-            ],
-            "metadata": {
-                "sampleType": "sample-type",
-                "sampleVersion": "2.1"
+            },
+            {
+                "contentReference": {
+                    "segments": [{
+                        "uuid": "objectName2",
+                        "offset": 250,
+                        "size": 250,
+                        "did": "%1$s" }],
+                    "mediaType": "application/octet-stream"
+                }
             }
+        ],
+        "metadata": {
+            "sampleType": "sample-type",
+            "sampleVersion": "2.1"
         }
     }
 }

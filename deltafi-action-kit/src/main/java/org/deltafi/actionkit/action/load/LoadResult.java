@@ -65,7 +65,8 @@ public class LoadResult extends DataAmendedResult implements LoadResultType {
         ActionEventInput event = super.toEvent();
         event.setLoad(LoadEvent.newBuilder()
                 .domains(domains)
-                .protocolLayer(new ProtocolLayer(context.getName(), contentList(), metadata))
+                .content(contentList())
+                .metadata(metadata)
                 .build());
 
         return event;

@@ -205,10 +205,8 @@ class LoadResult(Result):
     def response(self):
         return {
             'domains': self.domains,
-            'protocolLayer': {
-                'content': [content.json() for content in self.content],
-                'metadata': self.metadata
-            }
+            'content': [content.json() for content in self.content],
+            'metadata': self.metadata
         }
 
 
@@ -299,10 +297,8 @@ class TransformResult(Result):
 
     def response(self):
         return {
-            'protocolLayer': {
-                'content': [content.json() for content in self.content],
-                'metadata': self.metadata
-            }
+            'content': [content.json() for content in self.content],
+            'metadata': self.metadata
         }
 
 
