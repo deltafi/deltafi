@@ -1,4 +1,6 @@
-# Getting started with a simple DeltaFi plugin
+# Getting started with a simple DeltaFi transformation plugin
+
+Source code for the final result of this example can be found here:  https://gitlab.com/deltafi/plugins/example-plugin
 
 ## Prerequisites
 
@@ -11,7 +13,6 @@ The target system should also have the following installed:
 - A web browser (Google Chrome is preferred)
 
 For development, it is recommended that an IDE like IntelliJ or Visual Studio Code is installed for writing plugin code.  The IDE will be presumed and not covered in this tutorial.
-
 
 ## Installing the development environment
 
@@ -58,18 +59,13 @@ Create `plugin-config.json`:
 {
   "artifactId": "example-plugin",
   "groupId": "org.deltafi.example",
-  "description": "A plugin that takes in json, normalizes the keys and outputs yaml",
+  "description": "A plugin that takes in json and outputs yaml",
   "pluginLanguage": "JAVA",
   "actions": [
     {
-      "className": "JsonLoadAction",
-      "description": "Maps incoming json keys to all lowercase and loads the result in a domain under example-json",
-      "actionType": "LOAD"
-    },
-    {
-      "className": "YamlFormatAction",
-      "description": "Acts on any DeltaFile with a domain of example-json, converts the json to yaml",
-      "actionType": "FORMAT"
+      "className": "JsonToYamlAction",
+      "description": "Converts arbitrary json to yaml",
+      "actionType": "TRANSFORM"
     }
   ]
 }
@@ -79,226 +75,11 @@ Generate the skeleton plugin with the following command:
 ```bash
 deltafi plugin-init -f plugin-config.json
 ```
-
-## Building a simple flow in your plugin
-Flows are versioned and packaged as part of your plugin source code. In a Java project they are located in `src/main/resources/flows`, in a Python project they are located in `src/flows/`.
-Flows can reference both actions local to your plugin and any other actions that are running on your DeltaFi instance.
-The next sections walk through building the flows for the example project.
-
-### Update the Ingress Flow
-For this example, we do not require any transform actions, we will process the incoming data as-is in the load action.
-
-We will remove the sample flows and create a new set of flows for our example plugin:
-
-```bash
-# Clean out the sample flow
-rm -f example-plugin/src/main/resources/flows/sample*.json
-```
-
-Create `example-plugin/src/main/resources/flows/example-ingress.json`
-
-```json
-{
-  "name": "example-ingress",
-  "type": "INGRESS",
-  "description": "Ingress flows require a load action and can optional contain one or more transform actions",
-  "loadAction": {
-    "name": "ExampleLoadAction",
-    "type": "org.deltafi.example.actions.JsonLoadAction"
-  }
-}
-```
-
-Create `example-plugin/src/main/resources/flows/example-egress.json`
-
-```json
-{
-  "name": "example-egress",
-  "type": "EGRESS",
-  "description": "Egress flows require a format action and an egress action and optionally can provide one or more validate actions",
-  "includeIngressFlows": [
-    "example-ingress"
-  ],
-  "formatAction": {
-    "name": "ExampleFormatAction",
-    "type": "org.deltafi.example.actions.YamlFormatAction",
-    "requiresDomains": [
-      "example-json"
-    ]
-  },
-  "egressAction": {
-    "name": "ExampleEgressAction",
-    "type": "org.deltafi.core.action.RestPostEgressAction",
-    "parameters": {
-      "metadataKey": "deltafiMetadata",
-      "url": "\${egressUrl}"
-    }
-  }
-}
-```
-
-Create `example-plugin/src/main/resources/flows/variables.json`
-```json
-[
-  {
-    "name": "egressUrl",
-    "description": "The URL to post the DeltaFile to",
-    "dataType": "STRING",
-    "required": true,
-    "defaultValue": "http://deltafi-egress-sink-service"
-  }
-]
-```
-
-## Adding some logic to load and format actions
-
-Add a Constants class (`example-plugin/src/main/java/org/deltafi/example/actions/Constants.java`):
-
-```java
-package org.deltafi.example.actions;
-
-public class Constants {
-
-    public static final String DOMAIN = "example-json";
-
-}
-```
-
-Implement the JsonLoadAction class (`example-plugin/src/main/java/org/deltafi/example/actions/JsonLoadAction.java`):
-
-```java
-package org.deltafi.example.actions;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.deltafi.actionkit.action.load.LoadAction;
-import org.deltafi.actionkit.action.load.LoadInput;
-import org.deltafi.actionkit.action.load.LoadResult;
-import org.deltafi.actionkit.action.load.LoadResultType;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.common.types.ActionContext;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.stereotype.Component;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-@Component
-public class JsonLoadAction extends LoadAction<ActionParameters> {
-
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
-
-    public JsonLoadAction() {
-        super("Maps incoming json keys to all lowercase and loads the result in a domain under example-json");
-    }
-
-    @Override
-    public LoadResultType load(@NotNull ActionContext context, @NotNull ActionParameters params, @NotNull LoadInput loadInput) {
-        try (InputStream is = loadInput.getContentList().get(0).loadInputStream()) {
-            Map<String, String> incomingData = OBJECT_MAPPER.readValue(is, Map.class);
-
-            Map<String, String> lowerCaseKeys = new HashMap<>();
-
-            for (Map.Entry<String, String> entry: incomingData.entrySet()) {
-                lowerCaseKeys.put(entry.getKey().toLowerCase(), entry.getValue());
-            }
-
-            LoadResult loadResult = new LoadResult(context, List.of());
-            loadResult.addDomain(Constants.DOMAIN, OBJECT_MAPPER.writeValueAsString(lowerCaseKeys), "application/json");
-            return loadResult;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-}
-```
-
-Implement the YamlFormatAction class (`example-plugin/src/main/java/org/deltafi/example/actions/YamlFormatAction.java`):
-
-```java
-package org.deltafi.example.actions;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.actionkit.action.format.FormatAction;
-import org.deltafi.actionkit.action.format.FormatInput;
-import org.deltafi.actionkit.action.format.FormatResult;
-import org.deltafi.actionkit.action.format.FormatResultType;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.common.types.ActionContext;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.stereotype.Component;
-
-import java.util.List;
-import java.util.Map;
-
-@Component
-public class YamlFormatAction extends FormatAction<ActionParameters> {
-
-    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
-    private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory());
-
-    public YamlFormatAction() {
-        super("Acts on any DeltaFile with a domain of sample-json, converts the json to yaml");
-    }
-
-    @Override
-    public FormatResultType format(@NotNull ActionContext context, @NotNull ActionParameters params, @NotNull FormatInput formatInput) {
-        String data = formatInput.getDomains().get(Constants.DOMAIN).getValue();
-        FormatResult formatResult = new FormatResult(context, getName(formatInput));
-
-        try {
-            Map<String, String> domainData = JSON_MAPPER.readValue(data, Map.class);
-            formatResult.saveContent(YAML_MAPPER.writeValueAsString(domainData).getBytes(), "application/yaml");
-        } catch (JsonProcessingException e) {
-            return new ErrorResult(context, "Failed to convert or store data", e);
-        }
-        return formatResult;
-    }
-
-    String getName(FormatInput formatInput) {
-        return formatInput.getSourceFilename() + ".yaml";
-    }
-
-    @Override
-    public List<String> getRequiresDomains() {
-        return List.of(Constants.DOMAIN);
-    }
-}
-```
-
-Add the needed dependency to `example-plugin/build.gradle:
-
-```gradle
-plugins {
-    id 'org.deltafi.version-reckoning' version "1.0"
-    id 'org.deltafi.plugin-convention' version "\${deltafiVersion}"
-    id 'org.deltafi.test-summary' version "1.0"
-}
-
-group 'org.deltafi.example'
-
-ext.pluginDescription = 'A plugin that takes in json, normalizes the keys and outputs yaml'
-
-dependencies {
-    // Dependency needed by YamlFormatAction
-    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.14.2'
-}
-```
-
-## Building and Installing your plugin
+## Building and installing your plugin
 
 DeltaFi has a development CLI command called `cluster` which we will use for this example.
 
 ```bash
-# Install the DeltaFi passthrough plugin
-deltafi plugin-install org.deltafi.passthrough:deltafi-passthrough:$(deltafi version)
-
 # Register the example plugin with cluster tool
 cluster plugin add-local example-plugin org.deltafi.example
 
@@ -313,7 +94,146 @@ If you want to compile and execute tests for your plugin, you can do so from the
 ./gradlew build test
 ```
 
+## Trying out the new plugin
+
+Flows are versioned and packaged as part of your plugin source code. In a Java project they are located in `src/main/resources/flows`, in a Python project they are located in `src/flows/`.
+Flows can reference both actions local to your plugin and any other actions that are running on your DeltaFi instance.
+The skeleton plugin that was just generated contains a minimal complete flow with a minimal transform action that simply
+passes data through unchanged.  At this point, the plugin is complete and can be built and installed.
+
+- If you navigate to the [DeltaFi user interface plugins page](http://local.deltafi.org/config/plugins), you can see that 
+the plugin was installed.
+- The plugin instantiates a flow that can be enabled on the [flows page](http://local.deltafi.org/config/flows).  Look for
+  the flow named `example-plugin-transform` and enable it.
+- Now you can navigate to the [upload page](http://local.deltafi.org/deltafile/upload/) and upload a sample file.  Make 
+  sure to select the example flow when you upload data.
+
+The default implementation of the transform simply passes data through, which is not very interesting.  Now is the time to remedy that.
+
+## Adding some logic to implement the JsonToYamlAction transformation
+
+By default, the generated `example-plugin/src/main/java/org/deltafi/example/actions/JsonToYamlAction.java` reads 
+the content that was ingressed and rewrites the content without modification. In this section 
+we will be adding logic to convert Json data to Yaml and store the new content.
+
+The first step is to add a Json ObjectMapper and Yaml ObjectMapper to the class:
+
+```java
+private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
+private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory());
+```
+
+Next we will replace the TODO with our logic to convert the data.  This implementation will
+lower-case all of the top level keys and reformat the results as YAML.
+We will also modify the `transformResult.saveContent` line to write the new content, 
+instead rewriting the original content. This all needs to be wrapped in a try/catch to 
+handle any IOExceptions thrown while mapping the data. When an exception occurs, 
+we will return an `ErrorResult` that can be used to easily debug the exception from 
+the [Errors page](http://local.deltafi.org/errors).
+
+```java
+try {
+    Map<String, String> data = JSON_MAPPER.readValue(content, Map.class);
+    Map<String, String> lowerCaseKeys = new HashMap<>();
+    for (Map.Entry<String, String> entry: data.entrySet()) {
+        lowerCaseKeys.put(entry.getKey().toLowerCase(), entry.getValue());
+    }
+
+    byte[] yaml = YAML_MAPPER.writeValueAsString(lowerCaseKeys).getBytes();
+
+    transformResult.saveContent(yaml, actionContent.getName() + ".yml", "application/yaml");
+} catch (IOException e) {
+    return new ErrorResult(context, "Failed to convert or store data", e);
+}
+``` 
+
+After the modifications your class should look like:
+```java
+package org.deltafi.example.actions;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.exc.StreamReadException;
+import com.fasterxml.jackson.databind.DatabindException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import org.deltafi.actionkit.action.content.ActionContent;
+import org.deltafi.actionkit.action.error.ErrorResult;
+import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.actionkit.action.transform.TransformAction;
+import org.deltafi.actionkit.action.transform.TransformInput;
+import org.deltafi.actionkit.action.transform.TransformResult;
+import org.deltafi.actionkit.action.transform.TransformResultType;
+import org.deltafi.common.types.ActionContext;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+@Component
+public class JsonToYamlAction extends TransformAction<ActionParameters> {
+
+    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
+    private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory());
+
+    JsonToYamlAction() {
+        super("Converts arbitrary json to yaml");
+    }
+
+    @Override
+    public TransformResultType transform(@NotNull ActionContext context, @NotNull ActionParameters params, @NotNull TransformInput transformInput) {
+        TransformResult transformResult = new TransformResult(context);
+        ActionContent actionContent = transformInput.getContentList().get(0);
+        byte[] content = actionContent.loadBytes();
+
+        try {
+            Map<String, String> data = JSON_MAPPER.readValue(content, Map.class);
+            Map<String, String> lowerCaseKeys = new HashMap<>();
+            for (Map.Entry<String, String> entry: data.entrySet()) {
+                lowerCaseKeys.put(entry.getKey().toLowerCase(), entry.getValue());
+            }
+
+            byte[] yaml = YAML_MAPPER.writeValueAsString(lowerCaseKeys).getBytes();
+
+            transformResult.saveContent(yaml, actionContent.getName() + ".yml", "application/yaml");
+        } catch (IOException e) {
+            return new ErrorResult(context, "Failed to convert or store data", e);
+        }
+
+        return transformResult;
+    }
+
+}
+```
+
+Our implementation introduced a dependency on `jackson-dataformat-yaml`.  Add the needed 
+dependency to `example-plugin/build.gradle:
+
+```gradle
+plugins {
+    id 'org.deltafi.version-reckoning' version "1.0"
+    id 'org.deltafi.plugin-convention' version "${deltafiVersion}"
+    id 'org.deltafi.test-summary' version "1.0"
+}
+
+group 'org.deltafi.example'
+
+ext.pluginDescription = 'A plugin that takes in json, normalizes the keys and outputs yaml'
+
+dependencies {
+    // Dependency needed by YamlFormatAction
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.14.2'
+}
+```
+
 ## Testing your plugin
+
+Now that your plugin has some new logic, you can rebuild and deploy your new plugin version.
+
+```
+cluster plugin build install
+```
 
 Generate some test data for your plugin:
 
@@ -359,58 +279,67 @@ There will be link to the DeltaFile after the file is uploaded.
 
 You can see the results of all uploaded DeltaFiles in the [search page](Http://local.deltafi.org/deltafile/search?ingressFlow=example-ingress).
 
-When test1.json is uploaded, the file should complete and be egressed.  However test2.json and test3.json result in errors based on our initial implementation.
+When `test1.json` is uploaded, the file should complete and be egressed.  However `test2.json` and `test3.json` result in errors based on our initial implementation.
 
 The following changes to the load action should fix the problem:
 
-`example-plugin/src/main/java/org/deltafi/example/actions/JsonLoadAction.java`:
+`example-plugin/src/main/java/org/deltafi/example/actions/JsonToYamlAction.java`:
 ```java
 package org.deltafi.example.actions;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.exc.StreamReadException;
+import com.fasterxml.jackson.databind.DatabindException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.deltafi.actionkit.action.load.LoadAction;
-import org.deltafi.actionkit.action.load.LoadInput;
-import org.deltafi.actionkit.action.load.LoadResult;
-import org.deltafi.actionkit.action.load.LoadResultType;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import org.deltafi.actionkit.action.content.ActionContent;
+import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.actionkit.action.transform.TransformAction;
+import org.deltafi.actionkit.action.transform.TransformInput;
+import org.deltafi.actionkit.action.transform.TransformResult;
+import org.deltafi.actionkit.action.transform.TransformResultType;
 import org.deltafi.common.types.ActionContext;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Component
-public class JsonLoadAction extends LoadAction<ActionParameters> {
+public class JsonToYamlAction extends TransformAction<ActionParameters> {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
+    private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory());
 
-
-    public JsonLoadAction() {
-        super("Maps incoming json keys to all lowercase and loads the result in a domain under example-json");
+    JsonToYamlAction() {
+        super("Converts arbitrary json to yaml");
     }
 
     @Override
-    public LoadResultType load(@NotNull ActionContext context, @NotNull ActionParameters params, @NotNull LoadInput loadInput) {
-        try (InputStream is = loadInput.getContentList().get(0).loadInputStream()) {
-            Map<String, Object> incomingData = OBJECT_MAPPER.readValue(is, Map.class);
+    public TransformResultType transform(@NotNull ActionContext context, @NotNull ActionParameters params, @NotNull TransformInput transformInput) {
+        TransformResult transformResult = new TransformResult(context);
+        ActionContent actionContent = transformInput.getContentList().get(0);
+        byte[] content = actionContent.loadBytes();
 
+        try {
+            Map<String, Object> data = JSON_MAPPER.readValue(content, Map.class);
             Map<String, Object> lowerCaseKeys = new HashMap<>();
-
-            for (Map.Entry<String, Object> entry: incomingData.entrySet()) {
+            for (Map.Entry<String, Object> entry: data.entrySet()) {
                 lowerCaseKeys.put(entry.getKey().toLowerCase(), entry.getValue());
             }
 
-            LoadResult loadResult = new LoadResult(context, List.of());
-            loadResult.addDomain(Constants.DOMAIN, OBJECT_MAPPER.writeValueAsString(lowerCaseKeys), "application/json");
-            return loadResult;
+            byte[] yaml = YAML_MAPPER.writeValueAsString(lowerCaseKeys).getBytes();
+
+            transformResult.saveContent(yaml, actionContent.getName() + ".yml", "application/yaml");
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            return new ErrorResult(context, "Failed to convert or store data", e);
         }
+
+        return transformResult;
     }
+
 }
 ```
 
