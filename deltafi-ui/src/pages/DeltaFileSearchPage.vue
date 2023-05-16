@@ -297,8 +297,6 @@ const sizeTypes = [
 const sizeTypeSelected = ref(sizeTypes[0]);
 const sizeUnitSelected = ref(sizeUnits[0]);
 
-const watchEnabled = ref(false);
-
 const ingressBytesMin = computed(() => (sizeMin.value && sizeTypeSelected.value.ingress ? sizeMin.value * sizeUnitSelected.value.multiplier : null));
 const ingressBytesMax = computed(() => (sizeMax.value && sizeTypeSelected.value.ingress ? sizeMax.value * sizeUnitSelected.value.multiplier : null));
 const totalBytesMin = computed(() => (sizeMin.value && sizeTypeSelected.value.total ? sizeMin.value * sizeUnitSelected.value.multiplier : null));
@@ -388,66 +386,68 @@ const clearOptions = () => {
   metadataArray.value = [];
 };
 
-watch(startTimeDate, () => {
-  if (watchEnabled.value) fetchDeltaFilesData();
-});
-
-watch(endTimeDate, () => {
-  if (watchEnabled.value) fetchDeltaFilesData();
-});
-
-watch(selectedDomain, async (value) => {
-  fetchDeltaFilesData();
-  await fetchIndexedMetadataKeys(value);
-  validateMetadataArray();
-});
-
-watch(
-  metadataArray,
-  () => {
-    if (watchEnabled.value) fetchDeltaFilesData();
-  },
-  { deep: true }
-);
-
-watch([sizeMin, sizeMax, flowOptionSelected, egressFlowOptionSelected, stageOptionSelected, egressedOptionSelected, filteredOptionSelected, testModeOptionSelected, requeueMin, isReplayableSelected, processingTypeSelected], () => {
-  if (watchEnabled.value) fetchDeltaFilesData();
-});
-
-watch(
-  fileName,
-  _.debounce(
-    () => {
-      if (watchEnabled.value) fetchDeltaFilesData();
-    },
-    500,
-    { leading: false, trailing: true }
-  )
-);
-
-watch(
-  filteredCause,
-  _.debounce(
-    () => {
-      if (watchEnabled.value) {
-        if (filteredCause.value == "") {
-          filteredCause.value = null;
-        } else {
-          fetchDeltaFilesData();
-        }
-      }
-    },
-    500,
-    { leading: false, trailing: true }
-  )
-);
-
-watch([sizeTypeSelected, sizeUnitSelected], () => {
-  if (sizeMin.value || sizeMax.value) {
+const setupWatchers = () => {
+  watch(startTimeDate, () => {
     fetchDeltaFilesData();
-  }
-  setPersistedParams();
-});
+  });
+
+  watch(endTimeDate, () => {
+    fetchDeltaFilesData();
+  });
+
+  watch(selectedDomain, async (value) => {
+    fetchDeltaFilesData();
+    await fetchIndexedMetadataKeys(value);
+    validateMetadataArray();
+  });
+
+  watch(
+    metadataArray,
+    () => {
+      fetchDeltaFilesData();
+    },
+    { deep: true }
+  );
+
+  watch([sizeMin, sizeMax, flowOptionSelected, egressFlowOptionSelected, stageOptionSelected, egressedOptionSelected, filteredOptionSelected, testModeOptionSelected, requeueMin, isReplayableSelected, processingTypeSelected], () => {
+    fetchDeltaFilesData();
+  });
+
+  watch(
+    fileName,
+    _.debounce(
+      () => {
+        fetchDeltaFilesData();
+      },
+      500,
+      { leading: false, trailing: true }
+    )
+  );
+
+  watch(
+    filteredCause,
+    _.debounce(
+      () => {
+        {
+          if (filteredCause.value == "") {
+            filteredCause.value = null;
+          } else {
+            fetchDeltaFilesData();
+          }
+        }
+      },
+      500,
+      { leading: false, trailing: true }
+    )
+  );
+
+  watch([sizeTypeSelected, sizeUnitSelected], () => {
+    if (sizeMin.value || sizeMax.value) {
+      fetchDeltaFilesData();
+    }
+    setPersistedParams();
+  });
+};
 
 const validateMetadataArray = () => {
   const validKeys = metadataKeysOptions.value.map((i) => i.key);
@@ -489,10 +489,11 @@ onMounted(async () => {
   await fetchEgressFlowNames();
   fetchStages();
   fetchDomains();
-  await getPersistedParams();
+  getPersistedParams();
   await nextTick();
   if (domainOptionSelected.value == null) fetchIndexedMetadataKeys();
-  watchEnabled.value = true;
+  await fetchDeltaFilesDataNoDebounce();
+  setupWatchers();
 });
 
 const optionMenuToggle = (event) => {
@@ -568,15 +569,15 @@ const ISOStringToDate = (dateISOString) => {
   return uiConfig.useUTC ? dayjs(dateISOString).add(new Date().getTimezoneOffset(), "minute").toDate() : dayjs(dateISOString).toDate();
 };
 
-const getPersistedParams = async () => {
+const getPersistedParams = () => {
   perPage.value = nonPanelState.value.perPage || 20;
   if (useURLSearch.value) {
     if (params.start) startTimeDate.value = ISOStringToDate(params.start);
     if (params.end) endTimeDate.value = ISOStringToDate(params.end);
     sizeUnitSelected.value = params.sizeUnit ? sizeUnits.find((i) => i.name == params.sizeUnit) : sizeUnits[0];
     sizeTypeSelected.value = params.sizeType ? sizeTypes.find((i) => i.name == params.sizeType) : sizeTypes[0];
-    fileName.value = params.fileName != "" ? params.fileName : null;
-    filteredCause.value = params.filteredCause != "" ? params.filteredCause : null;
+    fileName.value = params.fileName ? params.fileName : null;
+    filteredCause.value = params.filteredCause ? params.filteredCause : null;
     requeueMin.value = params.requeueMin != null ? Number(params.requeueMin) : null;
     stageOptionSelected.value = params.stage != null ? { name: params.stage } : null;
     processingTypeSelected.value = params.processingType != null ? params.processingType : null;
@@ -606,9 +607,9 @@ const getPersistedParams = async () => {
     sizeTypeSelected.value = nonPanelState.value.sizeTypeState ? sizeTypes.find((i) => i.name == nonPanelState.value.sizeTypeState) : sizeTypes[0];
 
     // Values that, if set, should expand Advanced Search Options.
-    fileName.value = panelState.value.fileName;
-    filteredCause.value = panelState.value.filteredCause;
-    requeueMin.value = panelState.value.requeueMin;
+    fileName.value = panelState.value.fileName || null;
+    filteredCause.value = panelState.value.filteredCause || null;
+    requeueMin.value = panelState.value.requeueMin || null;
     stageOptionSelected.value = panelState.value.stageOptionState ? { name: panelState.value.stageOptionState } : null;
     processingTypeSelected.value = panelState.value.processingTypeState ? panelState.value.processingTypeState : null;
     flowOptionSelected.value = panelState.value.flowOptionState ? panelState.value.flowOptionState : [];
@@ -618,8 +619,8 @@ const getPersistedParams = async () => {
     testModeOptionSelected.value = panelState.value.testModeOptionState ? testModeOptions.value.find((i) => i.name == panelState.value.testModeOptionState) : null;
     isReplayableSelected.value = panelState.value.replayableOptionState ? isReplayableOptions.value.find((i) => i.name == panelState.value.replayableOptionState) : null;
     domainOptionSelected.value = panelState.value.domainOptionState ? { name: panelState.value.domainOptionState } : null;
-    sizeMin.value = panelState.value.sizeMinState;
-    sizeMax.value = panelState.value.sizeMaxState;
+    sizeMin.value = panelState.value.sizeMinState || null;
+    sizeMax.value = panelState.value.sizeMaxState || null;
     metadataArray.value = panelState.value.metadataArrayState || [];
 
     // If any of the fields are true it means we have persisted values. Don't collapse the search options panel so the user can see
@@ -634,9 +635,9 @@ const nonPanelState = useStorage("non-panel-search-options", {}, sessionStorage,
 const setPersistedParams = () => {
   panelState.value = {
     // Values that, if set, should expand Advanced Search Options.
-    fileName: fileName.value,
-    filteredCause: filteredCause.value,
-    requeueMin: requeueMin.value,
+    fileName: fileName.value || null,
+    filteredCause: filteredCause.value || null,
+    requeueMin: requeueMin.value || null,
     stageOptionState: stageOptionSelected.value ? stageOptionSelected.value.name : null,
     processingTypeState: processingTypeSelected.value ? processingTypeSelected.value : null,
     flowOptionState: flowOptionSelected.value ? flowOptionSelected.value : null,
