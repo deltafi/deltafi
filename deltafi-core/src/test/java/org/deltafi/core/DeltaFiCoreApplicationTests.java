@@ -3935,4 +3935,11 @@ class DeltaFiCoreApplicationTests {
 
 	}
 
+	@Test
+	public void testDeletesV0() {
+		mongoTemplate.insert(SchemaVersion.DELTAFILE_DOC_V1, "deltaFile");
+		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(1, null, "policyName", 1);
+		assertEquals(1, deltaFiles.size());
+		assertEquals(3, deltaFiles.get(0).referencedSegments().size());
+	}
 }
