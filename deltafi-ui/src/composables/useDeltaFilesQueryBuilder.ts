@@ -16,14 +16,14 @@
    limitations under the License.
 */
 
-import { EnumType } from 'json-to-graphql-query';
-import useGraphQL from './useGraphQL'
+import { EnumType } from "json-to-graphql-query";
+import useGraphQL from "./useGraphQL";
 import _ from "lodash";
 
 export default function useDeltaFilesQueryBuilder() {
   const { response, queryGraphQL } = useGraphQL();
 
-  const getDeltaFileSearchData = (startDateISOString: String, endDateISOString: String, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, fileName?: string, stageName?: string, actionName?: string, flowName?: Array<string>, egressFlowName?: Array<string>, egressed?: Boolean, filtered?: Boolean, domain?: string, metadata?: Array<Record<string, string>>, ingressBytesMin?: Number, ingressBytesMax?: Number, totalBytesMin?: Number, totalBytesMax?: Number, testMode?: Boolean, requeueMin?: Number, filteredCause?: String, replayable?: Boolean, processingType?: string) => {
+  const getDeltaFileSearchData = (startDateISOString: String, endDateISOString: String, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, fileName?: string, stageName?: string, actionName?: string, flowName?: Array<string>, egressFlowName?: Array<string>, egressed?: Boolean, filtered?: Boolean, domain?: string, metadata?: Array<Record<string, string>>, ingressBytesMin?: Number, ingressBytesMax?: Number, totalBytesMin?: Number, totalBytesMax?: Number, testMode?: Boolean, requeueMin?: Number, filteredCause?: String, replayable?: Boolean, processingType?: string, terminalStage?: Boolean) => {
     const query = {
       deltaFiles: {
         __args: {
@@ -51,12 +51,13 @@ export default function useDeltaFilesQueryBuilder() {
             totalBytesMax: totalBytesMax,
             requeueCountMin: requeueMin,
             filteredCause: filteredCause,
-            replayable: replayable
+            replayable: replayable,
+            terminalStage: terminalStage,
           },
           orderBy: {
             direction: new EnumType(sortDirection),
-            field: sortBy
-          }
+            field: sortBy,
+          },
         },
         offset: true,
         count: true,
@@ -70,21 +71,23 @@ export default function useDeltaFilesQueryBuilder() {
             filename: true,
             flow: true,
           },
-          totalBytes: true
-        }
-      }
+          totalBytes: true,
+        },
+      },
     };
     return sendGraphQLQuery(query, "getDeltaFileSearchData");
   };
 
   const getDeltaFilesByDIDs = async (didsArray: string[], batchSize: number = 1000) => {
     const chunkedDIDsArray = _.chunk(didsArray, batchSize);
-    const results = await Promise.all(chunkedDIDsArray.map(async (chunk) => {
-      return _getDeltaFilesByDIDs(chunk).then((r) => {
-        return r.data.deltaFiles.deltaFiles;
+    const results = await Promise.all(
+      chunkedDIDsArray.map(async (chunk) => {
+        return _getDeltaFilesByDIDs(chunk).then((r) => {
+          return r.data.deltaFiles.deltaFiles;
+        });
       })
-    }));
-    return _.flatten(results)
+    );
+    return _.flatten(results);
   };
 
   const _getDeltaFilesByDIDs = (didsArray?: string[]) => {
@@ -94,12 +97,12 @@ export default function useDeltaFilesQueryBuilder() {
           offset: 0,
           limit: 10000,
           filter: {
-            dids: didsArray
+            dids: didsArray,
           },
           orderBy: {
-            direction: new EnumType('DESC'),
-            field: 'modified'
-          }
+            direction: new EnumType("DESC"),
+            field: "modified",
+          },
         },
         deltaFiles: {
           did: true,
@@ -110,8 +113,8 @@ export default function useDeltaFilesQueryBuilder() {
             filename: true,
             flow: true,
           },
-        }
-      }
+        },
+      },
     };
 
     return sendGraphQLQuery(query, "getDeltaFilesByDIDs");
@@ -121,12 +124,12 @@ export default function useDeltaFilesQueryBuilder() {
     const query = {
       __type: {
         __args: {
-          name: enumType
+          name: enumType,
         },
         enumValues: {
-          name: true
-        }
-      }
+          name: true,
+        },
+      },
     };
     return sendGraphQLQuery(query, "getEnumValuesByEnumType");
   };
@@ -136,11 +139,11 @@ export default function useDeltaFilesQueryBuilder() {
       deltaFiConfigs: {
         __args: {
           configQuery: {
-            configType: new EnumType(typeParam)
-          }
+            configType: new EnumType(typeParam),
+          },
         },
-        name: true
-      }
+        name: true,
+      },
     };
     return sendGraphQLQuery(query, "getConfigByType");
   };
@@ -158,6 +161,6 @@ export default function useDeltaFilesQueryBuilder() {
     getDeltaFileSearchData,
     getDeltaFilesByDIDs,
     getEnumValuesByEnumType,
-    getConfigByType
+    getConfigByType,
   };
 }
