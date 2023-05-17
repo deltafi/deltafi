@@ -25,7 +25,8 @@ module Deltafi
     module Status
       module Checks
         class StorageCheck < Status::Check
-          USAGE_THRESHOLD = 90
+          DEFAULT_THRESHOLD = 90
+          THRESHOLD_PROPERTY = %w[checks contentStoragePercentThreshold].freeze
 
           def initialize
             super('Kubernetes Storage Check')
@@ -66,7 +67,7 @@ module Deltafi
             nodes_over_threshold = []
             DF::API::V1::Metrics::System.metrics_by_node.each do |node, metrics|
               percent = (metrics&.dig(:disk, :usage).to_f / metrics&.dig(:disk, :limit) * 100).floor
-              nodes_over_threshold << "__#{node}:/data__ is at __#{percent}%__" if percent >= USAGE_THRESHOLD
+              nodes_over_threshold << "__#{node}:/data__ is at __#{percent}%__" if percent >= threshold
             rescue StandardError => e
               self.code = 1
               message_lines << "##### Unable to calculate storage usage percentage for node __#{node}__.\n"
@@ -76,7 +77,7 @@ module Deltafi
             return if nodes_over_threshold.empty?
 
             self.code = 1
-            message_lines << "##### Nodes with disk usage over threshold (#{USAGE_THRESHOLD}%)"
+            message_lines << "##### Nodes with disk usage over threshold (#{threshold}%)"
             message_lines << nodes_over_threshold.map { |n| "- #{n}" }
           end
 
@@ -84,6 +85,10 @@ module Deltafi
 
           def expected_volume_claims
             YAML.safe_load(config)['expected_volume_claims']
+          end
+
+          def threshold
+            DF::SystemProperties.dig(THRESHOLD_PROPERTY, DEFAULT_THRESHOLD).to_i
           end
         end
       end
