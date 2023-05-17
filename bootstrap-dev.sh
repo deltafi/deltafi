@@ -298,7 +298,7 @@ install_linux_packages() {
   bullet "Installing required packages"
   if tool_exists yum; then
     info "Checking for necessary packages via yum"
-    ${SUDO} yum install -y git curl wget java-17-openjdk java-17-openjdk-devel python3 python3-pip
+    ${SUDO} yum install -y git curl wget vim tig tmux skopeo java-17-openjdk java-17-openjdk-devel python3 python3-pip
     if ! tool_exists kubectl; then
       cat <<EOF | ${SUDO} tee /etc/yum.repos.d/kubernetes.repo
 [kubernetes]
@@ -315,7 +315,7 @@ EOF
     info "Checking for necessary packages via apt/snap"
     ${SUDO} apt-get install -y ca-certificates curl
     ${SUDO} apt-get update
-    ${SUDO} apt-get install -y uidmap dbus-user-session fuse-overlayfs slirp4netns git wget snapd vim tig tmux openjdk-17-jdk python3 python3-pip
+    ${SUDO} apt-get install -y uidmap dbus-user-session fuse-overlayfs slirp4netns git wget snapd vim tig tmux skopeo openjdk-17-jdk python3 python3-pip
     if ! tool_exists kubectl; then
       ${SUDO} snap install --classic kubectl
       mkdir -p ~/.kube/kubens
@@ -333,7 +333,7 @@ EOF
     ${SUDO} ln -s /snap/bin/* /usr/local/bin || warn "All tools may not be configured correctly"
   elif tool_exists apk; then
     info "Checking for necessary packages via apk"
-    ${SUDO} apk add ncurses curl git wget vim tig tmux python3 py3-pip openjdk17-jdk kubectx helm yq
+    ${SUDO} apk add ncurses curl git wget vim tig tmux skopeo python3 py3-pip openjdk17-jdk kubectx helm yq
     ${SUDO} apk add kubectl --repository=http://dl-cdn.alpinelinux.org/alpine/edge/testing/
     ${SUDO} pip3 install --upgrade -q poetry
   fi
@@ -363,7 +363,7 @@ EOF
       ${SUDO} wget -q https://kind.sigs.k8s.io/dl/v0.15.0/kind-linux-amd64 -O /usr/local/bin/kind && ${SUDO} chmod +x /usr/local/bin/kind
     fi
   fi
-  require_tools git docker kubectl kubens helm curl wget kind yq
+  require_tools git docker kubectl kubens helm curl wget kind yq skopeo
 }
 
 install_cluster() {

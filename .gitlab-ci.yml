@@ -9,10 +9,10 @@ stages:
 default:
   timeout: 45m
 
-image: deltafi/deltafi-build:jdk17
+image: deltafi/deltafi-build:jdk17-2
 
 .gradle:
-  image: deltafi/deltafi-build:jdk17
+  image: deltafi/deltafi-build:jdk17-2
   variables:
     GRADLE_USER_HOME: /cache/.gradle
     GRADLE_OPTS: "-Dorg.gradle.daemon=false"
@@ -143,7 +143,7 @@ publish-gitlab:
       - tags
       - dev
       - main
-  image: deltafi/deltafi-build:jdk17
+  image: deltafi/deltafi-build:jdk17-2
   before_script:
     - apt update
     - apt-get install -y python3-pip
@@ -160,7 +160,7 @@ publish-gitlab:
   rules:
     # - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE == 'deltafi'
     - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE != 'deltafi'
-  image: deltafi/deltafi-build:jdk17
+  image: deltafi/deltafi-build:jdk17-2
   before_script:
     - apt update
     - apt-get install -y python3-pip
@@ -188,6 +188,7 @@ trigger:plugins:
   stage: trigger
   variables:
     TRIGGER_BRANCH: $CI_COMMIT_REF_NAME
+    TRIGGER_TAG: $CI_COMMIT_TAG
   only:
     refs:
       - dev

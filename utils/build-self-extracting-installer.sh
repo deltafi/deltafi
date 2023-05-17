@@ -129,7 +129,7 @@ tar -pczf archive.tar.gz deltafi
 ls -la archive.tar.gz
 tar -tvf archive.tar.gz
 
-cat <<EOF > "$BASE_PATH/kind-install.sh"
+cat <<EOF > "$DELTAFI_PATH/kind-install.sh"
 #!/bin/sh
 if [ -e deltafi ]; then
   echo "'deltafi' directory already exists here!"
@@ -153,4 +153,4 @@ fi
 EOF
 
 rm -rf "$BASE_PATH/archive.tar.gz" "$TEMP_TREE"
-chmod +x "$BASE_PATH/kind-install.sh"
+chmod +x "$DELTAFI_PATH/kind-install.sh"
