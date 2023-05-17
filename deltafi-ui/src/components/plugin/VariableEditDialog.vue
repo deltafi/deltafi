@@ -21,7 +21,7 @@
     <span @click="show()">
       <slot />
     </span>
-    <Dialog v-model:visible="dialogVisible" :maximizable="false" :modal="true" :dismissable-mask="true" :draggable="false" :style="{ width: '30vw' }" @show="onShow">
+    <Dialog v-model:visible="dialogVisible" :maximizable="false" :modal="true" :dismissable-mask="false" :draggable="false" :style="{ width: '30vw' }" @show="onShow">
       <template #header>
         <div class="p-dialog-title">
           Editing {{ localVariable.name }}

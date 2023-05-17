@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <Dialog header="Import Metadata from DeltaFile" :maximizable="false" :modal="true" :dismissable-mask="true" :draggable="false" class="did-import-dialog">
+  <Dialog header="Import Metadata from DeltaFile" :maximizable="false" :modal="true" :dismissable-mask="false" :draggable="false" class="did-import-dialog">
     <div class="meata-data-import" />
 
     <div class="d-flex justify-content-between">

@@ -46,7 +46,7 @@
         </Column>
       </DataTable>
     </Panel>
-    <Dialog v-model:visible="roleDialog" :style="{ width: '60vw' }" header="Role Details" :modal="true" class="p-fluid role-dialog" :dismissable-mask="true">
+    <Dialog v-model:visible="roleDialog" :style="{ width: '60vw' }" header="Role Details" :modal="true" class="p-fluid role-dialog" :dismissable-mask="false">
       <Message v-if="errors.length" severity="error">
         <div v-for="error in errors" :key="error">{{ error }}</div>
       </Message>
