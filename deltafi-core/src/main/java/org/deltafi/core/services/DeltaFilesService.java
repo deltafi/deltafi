@@ -42,9 +42,7 @@ import org.deltafi.core.exceptions.UnknownTypeException;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.retry.MongoRetryable;
-import org.deltafi.core.types.DeltaFiles;
-import org.deltafi.core.types.EgressFlow;
-import org.deltafi.core.types.UniqueKeyValues;
+import org.deltafi.core.types.*;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
@@ -605,13 +603,15 @@ public class DeltaFilesService {
                     return null;
                 }
 
-                // Before we build a DeltaFile, make sure the reinject makes sense to do--i.e. the flow is
-                // enabled and valid
-                try {
-                    ingressFlowService.getRunningFlowByName(reinject.getSourceInfo().getFlow());
-                } catch (DgsEntityNotFoundException notFound) {
+                // Before we build a DeltaFile, make sure the reinject makes sense to do--i.e. the flow is enabled and valid
+                ProcessingType processingType;
+                if (ingressFlowService.hasRunningFlow(reinject.getFlow())) {
+                    processingType = ProcessingType.NORMALIZATION;
+                } else if (transformFlowService.hasRunningFlow(reinject.getFlow())) {
+                    processingType = ProcessingType.TRANSFORMATION;
+                } else {
                     deltaFile.errorAction(buildNoChildFlowErrorEvent(deltaFile, event.getAction(),
-                            reinject.getSourceInfo().getFlow(), OffsetDateTime.now(clock)));
+                            reinject.getFlow(), OffsetDateTime.now(clock)));
                     encounteredError.add(deltaFile.getDid());
                     return null;
                 }
@@ -624,7 +624,12 @@ public class DeltaFilesService {
                         .ingressBytes(ContentUtil.computeContentSize(reinject.getContent()))
                         .stage(DeltaFileStage.INGRESS)
                         .actions(new ArrayList<>(List.of(action)))
-                        .sourceInfo(reinject.getSourceInfo())
+                        .sourceInfo(SourceInfo.builder()
+                                .flow(reinject.getFlow())
+                                .filename(reinject.getFilename())
+                                .metadata(reinject.getMetadata())
+                                .processingType(processingType)
+                                .build())
                         .protocolStack(List.of(new ProtocolLayer(INGRESS_ACTION, reinject.getContent(), Collections.emptyMap())))
                         .domains(Collections.emptyList())
                         .enrichment(Collections.emptyList())

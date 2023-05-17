@@ -20,7 +20,7 @@ import abc
 from typing import Dict, List
 import uuid
 
-from deltafi.domain import Content, Context, SourceInfo
+from deltafi.domain import Content, Context
 from deltafi.metric import Metric
 
 ENDPOINT_TAG = "endpoint"
@@ -243,13 +243,17 @@ class LoadManyResult(Result):
 
 class ReinjectResult(Result):
     class ReinjectChild:
-        def __init__(self, source_info: SourceInfo, content: List[Content]):
-            self.source_info = source_info
+        def __init__(self, filename: str, flow: str, content: List[Content], metadata: Dict[str, str]):
+            self.filename = filename
+            self.flow = flow
             self.content = content
+            self.metadata = metadata
 
         def json(self):
             return {
-                'sourceInfo': self.source_info.json(),
+                'filename': self.filename,
+                'flow': self.flow,
+                'metadata': self.metadata,
                 'content': [content.json() for content in self.content]
             }
 
@@ -257,8 +261,8 @@ class ReinjectResult(Result):
         super().__init__('reinject', 'REINJECT', context)
         self.children = []
 
-    def add_child(self, filename: str, flow: str, metadata: Dict[str, str], content: List[Content]):
-        child = ReinjectResult.ReinjectChild(SourceInfo(filename, flow, metadata), content)
+    def add_child(self, filename: str, flow: str, content: List[Content], metadata: Dict[str, str]):
+        child = ReinjectResult.ReinjectChild(filename, flow, content, metadata)
         self.children.append(child)
 
     def response(self):

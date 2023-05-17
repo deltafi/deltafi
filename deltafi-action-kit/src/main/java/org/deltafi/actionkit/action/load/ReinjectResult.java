@@ -48,13 +48,15 @@ public class ReinjectResult extends Result<ReinjectResult> implements LoadResult
      * Add a new child to the result that will be ingressed as a new DeltaFile
      * @param filename Ingress file name for the new DeltaFile
      * @param flow Flow for the new DeltaFile to be ingressed on
-     * @param metadata Source metadata for the new DeltaFile
      * @param content Content of the new DeltaFile
+     * @param metadata Source metadata for the new DeltaFile
      */
-    public void addChild(String filename, String flow, Map<String, String> metadata, List<ActionContent> content) {
+    public void addChild(String filename, String flow, List<ActionContent> content, Map<String, String> metadata) {
         reinjectEvents.add(ReinjectEvent.newBuilder()
-                .sourceInfo(new SourceInfo(filename, flow, metadata))
+                .filename(filename)
+                .flow(flow)
                 .content(content.stream().map(ContentConverter::convert).toList())
+                .metadata(metadata)
                 .build());
     }
 

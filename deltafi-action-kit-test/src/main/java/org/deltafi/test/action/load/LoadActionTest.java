@@ -88,13 +88,13 @@ public abstract class LoadActionTest extends ActionTest {
             Assertions.assertTrue(c instanceof Child);
             Child child = (Child) c;
             String name = child.getName().startsWith("split.") ? child.getName().substring(6) : child.getName();
-            expectedResult.addChild(name, child.getFlow(), child.getMetadata(),
+            expectedResult.addChild(name, child.getFlow(),
                     getContents(Collections.singletonList(
                             IOContent.builder().name(child.getName()).contentType(child.getContentType()).metadata(child.getMetadata()).build()
-                    ), testCase, "split."));
+                    ), testCase, "split."), child.getMetadata());
         });
 
-        List<ReinjectEvent> ordered = orderListByAnother(reinjectResult.getReinjectEvents(), expectedResult.getReinjectEvents(), (item) -> item.getSourceInfo().getFilename());
+        List<ReinjectEvent> ordered = orderListByAnother(reinjectResult.getReinjectEvents(), expectedResult.getReinjectEvents(), ReinjectEvent::getFilename);
         expectedResult.getReinjectEvents().clear();
         expectedResult.getReinjectEvents().addAll(ordered);
 

@@ -221,19 +221,6 @@ class Domain(NamedTuple):
                       media_type=media_type)
 
 
-class SourceInfo(NamedTuple):
-    filename: str
-    flow: str
-    metadata: Dict[str, str]
-
-    def json(self):
-        return {
-            'filename': self.filename,
-            'flow': self.flow,
-            'metadata': self.metadata
-        }
-
-
 class DeltaFileMessage(NamedTuple):
     metadata: Dict[str, str]
     content_list: List[Content]

@@ -46,8 +46,8 @@ public class SplitterLoadAction extends LoadAction<ReinjectParameters> {
         for (ActionContent content : input.getContentList()) {
             result.addChild(content.getName(),
                     params.getReinjectFlow(),
-                    input.getMetadata(),
-                    Collections.singletonList(content));
+                    Collections.singletonList(content),
+                    input.getMetadata());
         }
 
         return result;

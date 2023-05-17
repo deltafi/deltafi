@@ -16,7 +16,7 @@
 #    limitations under the License.
 #
 
-from deltafi.domain import Content, Context, SourceInfo
+from deltafi.domain import Content, Context
 from deltafi.metric import Metric
 from deltafi.result import DomainResult, EgressResult, EnrichResult, ErrorResult, FilterResult, FormatResult, \
     FormatManyResult, LoadResult, ReinjectResult, TransformResult, ValidateResult
@@ -203,8 +203,8 @@ def test_load_result():
 
 def test_reinject_result():
     result = ReinjectResult(make_context())
-    result.add_child("fn1", "flow", {}, [make_content(None, "content1", "id1")])
-    result.add_child("fn2", "flow", {}, [make_content(None, "content2", "id2")])
+    result.add_child("fn1", "flow", [make_content(None, "content1", "id1")], {})
+    result.add_child("fn2", "flow", [make_content(None, "content2", "id2")], {})
     assert result.result_key == "reinject"
     assert result.result_type == "REINJECT"
     verify_no_metrics(result)
@@ -213,13 +213,13 @@ def test_reinject_result():
     assert len(response) == 2
     assert len(response[0]['content']) == 1
     assert response[0]['content'][0]['contentReference']['segments'][0]['uuid'] == "id1"
-    assert response[0]['sourceInfo']['filename'] == "fn1"
-    assert response[0]['sourceInfo']['flow'] == "flow"
+    assert response[0]['filename'] == "fn1"
+    assert response[0]['flow'] == "flow"
 
     assert len(response[1]['content']) == 1
     assert response[1]['content'][0]['contentReference']['segments'][0]['uuid'] == "id2"
-    assert response[1]['sourceInfo']['filename'] == "fn2"
-    assert response[1]['sourceInfo']['flow'] == "flow"
+    assert response[1]['filename'] == "fn2"
+    assert response[1]['flow'] == "flow"
 
 
 def test_transform_result():

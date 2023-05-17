@@ -30,7 +30,8 @@ import java.util.Map;
 @AllArgsConstructor
 @Builder(builderMethodName = "newBuilder")
 public class ReinjectEvent {
-  private SourceInfo sourceInfo;
+  private String filename;
+  private String flow;
   private List<Content> content;
   private Map<String, String> metadata;
 }

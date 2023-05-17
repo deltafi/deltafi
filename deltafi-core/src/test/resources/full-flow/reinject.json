@@ -6,11 +6,8 @@
     "type": "REINJECT",
     "reinject": [
         {
-            "sourceInfo": {
-                "filename": "file1",
-                "flow": "childFlow",
-                "metadata": {}
-            },
+            "filename": "file1",
+            "flow": "childFlow",
             "content": [
                 {
                     "contentReference": {
@@ -32,14 +29,12 @@
                         "mediaType": "application/xml"
                     }
                 }
-            ]
+            ],
+            "metadata": {}
         },
         {
-            "sourceInfo": {
-                "filename": "file2",
-                "flow": "childFlow",
-                "metadata": {}
-            },
+            "filename": "file2",
+            "flow": "childFlow",
             "content": [
                 {
                     "contentReference": {
@@ -51,7 +46,8 @@
                         "mediaType": "application/octet-stream"
                     }
                 }
-            ]
+            ],
+            "metadata": {}
         }
     ]
 }
