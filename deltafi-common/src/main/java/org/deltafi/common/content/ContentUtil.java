@@ -28,6 +28,6 @@ public class ContentUtil {
         }
 
         return content.stream()
-                .mapToLong(c -> c.getContentReference().getSize()).sum();
+                .mapToLong(Content::getSize).sum();
     }
 }

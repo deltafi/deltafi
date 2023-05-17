@@ -7,14 +7,13 @@
     "transform": {
         "content": [
             {
-                "contentReference": {
-                    "segments": [{
-                        "uuid": "objectName",
-                        "offset": 0,
-                        "size": 500,
-                        "did": "%1$s" }],
-                    "mediaType": "application/octet-stream"
-                }
+                "name": "transformed",
+                "segments": [{
+                    "uuid": "objectName",
+                    "offset": 0,
+                    "size": 500,
+                    "did": "%1$s" }],
+                "mediaType": "application/octet-stream"
             }
         ],
         "metadata": {

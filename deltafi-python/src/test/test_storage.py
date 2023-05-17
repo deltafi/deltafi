@@ -20,7 +20,7 @@ import io
 
 import minio
 import pytest
-from deltafi.storage import ContentReference, Segment, ContentService
+from deltafi.storage import Segment, ContentService
 from mockito import when, mock, unstub, verifyStubbedInvocationsAreUsed, ANY
 
 BUCKET = 'storage'
@@ -34,57 +34,10 @@ def make_segment(segment_id, data):
     return segment
 
 
-def make_content_reference():
+def make_segments():
     s1 = make_segment("seg1", SEG_1_DATA)
     s2 = make_segment("seg2", SEG_2_DATA)
-    content_reference = ContentReference(segments=[s1, s2], media_type="xml")
-    return content_reference
-
-
-def test_subreference_segments():
-    segment1 = Segment(uuid="id1", offset=0, size=100, did="did1")
-    segment2 = Segment(uuid="id2", offset=0, size=200, did="did2")
-    content_reference = ContentReference(segments=[segment1, segment2], media_type="text/plain")
-    sub_segments = content_reference.subreference_segments(50, 150)
-    assert len(sub_segments) == 2
-    assert sub_segments[0].uuid == "id1"
-    assert sub_segments[0].offset == 50
-    assert sub_segments[0].size == 50
-    assert sub_segments[1].uuid == "id2"
-    assert sub_segments[1].offset == 0
-    assert sub_segments[1].size == 100
-
-    with pytest.raises(ValueError):
-        content_reference.subreference_segments(-1, 100)
-
-    with pytest.raises(ValueError):
-        content_reference.subreference_segments(100, -1)
-
-    with pytest.raises(ValueError):
-        content_reference.subreference_segments(200, 200)
-
-
-def test_subreference():
-    segment1 = Segment(uuid="id1", offset=0, size=100, did="did1")
-    segment2 = Segment(uuid="id2", offset=0, size=200, did="did2")
-    content_reference = ContentReference(segments=[segment1, segment2], media_type="text/plain")
-    sub_content_reference = content_reference.subreference(50, 150)
-    assert isinstance(sub_content_reference, ContentReference)
-    assert sub_content_reference.media_type == "text/plain"
-    assert len(sub_content_reference.segments) == 2
-    assert sub_content_reference.segments[0].uuid == "id1"
-    assert sub_content_reference.segments[0].offset == 50
-    assert sub_content_reference.segments[0].size == 50
-    assert sub_content_reference.segments[1].uuid == "id2"
-    assert sub_content_reference.segments[1].offset == 0
-    assert sub_content_reference.segments[1].size == 100
-
-
-def test_get_size():
-    segment1 = Segment(uuid="id1", offset=0, size=100, did="did1")
-    segment2 = Segment(uuid="id2", offset=30, size=200, did="did2")
-    content_reference = ContentReference(segments=[segment1, segment2], media_type="text/plain")
-    assert content_reference.get_size() == 300
+    return [s1, s2]
 
 
 def faux_content_service():
@@ -118,12 +71,9 @@ def test_put_str():
     when(minio).Minio(...).thenReturn(minio_mock)
     service = faux_content_service()
 
-    content_reference = service.put_str("123did", "the-data", "text")
+    segment = service.put_str("123did", "the-data")
     verifyStubbedInvocationsAreUsed(minio_mock)
 
-    assert len(content_reference.segments) == 1
-    assert content_reference.media_type == "text"
-    segment = content_reference.segments[0]
     assert segment.offset == 0
     assert segment.size == 8
     assert segment.did == "123did"
@@ -143,7 +93,7 @@ def test_gett_str():
     when(minio).Minio(...).thenReturn(minio_mock)
     service = faux_content_service()
 
-    content = service.get_str(make_content_reference())
+    content = service.get_str(make_segments())
     verifyStubbedInvocationsAreUsed(minio_mock)
 
     assert content == SEG_1_DATA + SEG_2_DATA

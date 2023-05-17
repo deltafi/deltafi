@@ -19,8 +19,8 @@ package org.deltafi.core.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.Segment;
+import org.deltafi.common.types.Content;
 import org.deltafi.common.types.ProcessingType;
 import org.deltafi.core.types.IngressResult;
 
@@ -39,15 +39,15 @@ public class Constants {
     public static final String EGRESS_FLOW_NAME = "sampleEgress";
     public static final String TRANSFORM_FLOW_NAME = "sampleTransform";
 
-    public static final String CONTENT = "STARLORD was here";
+    public static final String CONTENT_DATA = "STARLORD was here";
     public static final String METADATA = "{\"key\": \"value\"}";
     public static final String FILENAME = "incoming.txt";
     public static final String FLOW = "theFlow";
     public static final String MEDIA_TYPE = MediaType.APPLICATION_OCTET_STREAM;
     public static final String USERNAME = "myname";
     public static final String DID = "did";
-    public static final ContentReference CONTENT_REFERENCE = new ContentReference(MEDIA_TYPE, new Segment(FILENAME, 0, CONTENT.length(), DID));
-    public static final IngressResult INGRESS_RESULT = new IngressResult(FLOW, FILENAME, DID, CONTENT_REFERENCE, ProcessingType.NORMALIZATION);
+    public static final Content CONTENT = new Content(FILENAME, MEDIA_TYPE, new Segment(FILENAME, 0, CONTENT_DATA.length(), DID));
+    public static final IngressResult INGRESS_RESULT = new IngressResult(FLOW, DID, CONTENT, ProcessingType.NORMALIZATION);
 
     public final static Map<String, String> TRANSFORM_METADATA = Map.of("sampleType", "sample-type", "sampleVersion", "2.1");
     public final static Map<String, String> LOAD_METADATA = Map.of("loadSampleType", "load-sample-type", "loadSampleVersion", "2.2");

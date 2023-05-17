@@ -17,7 +17,6 @@
  */
 package org.deltafi.common.types;
 
-import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.Segment;
 import org.junit.jupiter.api.Test;
 
@@ -81,23 +80,20 @@ class DeltaFileTest {
 
     @Test
     void testRecalculateBytes() {
-        ContentReference contentReference1 = new ContentReference("*/*", new Segment("uuid1", 0, 500, "did1"));
-        ContentReference contentReference2 = new ContentReference("*/*", new Segment("uuid1", 400, 200, "did1"));
-        ContentReference contentReference3 = new ContentReference("*/*", new Segment("uuid1", 200, 200, "did1"));
-        ContentReference contentReference4 = new ContentReference("*/*", new Segment("uuid2", 5, 200, "did1"));
-        ContentReference contentReference5 = new ContentReference("*/*", new Segment("uuid3", 5, 200, "did2"));
+        Content content1 = new Content("content1", "*/*", List.of(new Segment("uuid1", 0, 500, "did1")));
+        Content content2 = new Content("content1", "*/*", List.of(new Segment("uuid1", 400, 200, "did1")));
+        Content content3 = new Content("content1", "*/*", List.of(new Segment("uuid1", 200, 200, "did1")));
+        Content content4 = new Content("content1", "*/*", List.of(new Segment("uuid2", 5, 200, "did1")));
+        Content content5 = new Content("content1", "*/*", List.of(new Segment("uuid3", 5, 200, "did2")));
 
         DeltaFile deltaFile = DeltaFile.newBuilder()
                 .protocolStack(List.of(
-                        new ProtocolLayer("action", List.of(
-                                new Content("name", contentReference1),
-                                new Content("name2", contentReference2)), Collections.emptyMap()),
-                        new ProtocolLayer("action2", List.of(
-                                new Content("name3", contentReference3)), Collections.emptyMap())
+                        new ProtocolLayer("action", List.of(content1, content2), Collections.emptyMap()),
+                        new ProtocolLayer("action2", List.of(content3), Collections.emptyMap())
                 ))
                 .formattedData(List.of(
-                        FormattedData.newBuilder().contentReference(contentReference4).build(),
-                        FormattedData.newBuilder().contentReference(contentReference5).build()
+                        FormattedData.newBuilder().content(content4).build(),
+                        FormattedData.newBuilder().content(content5).build()
                 ))
                 .did("did1")
                 .build();

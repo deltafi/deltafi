@@ -17,12 +17,10 @@
  */
 package org.deltafi.common.types;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.deltafi.common.content.ContentReference;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -42,10 +40,5 @@ public class ProtocolLayer {
 
     public ProtocolLayer(String action) {
         this.action = action;
-    }
-
-    @JsonIgnore
-    public ContentReference getContentReference() {
-        return content.isEmpty() ? null : content.get(0).getContentReference();
     }
 }

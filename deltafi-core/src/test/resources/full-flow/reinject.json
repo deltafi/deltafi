@@ -10,24 +10,22 @@
             "flow": "childFlow",
             "content": [
                 {
-                    "contentReference": {
-                        "segments": [{
-                            "uuid": "objectName",
-                            "offset": 0,
-                            "size": 250,
-                            "did": "%1$s" }],
-                        "mediaType": "application/octet-stream"
-                    }
+                    "name": "split-1a",
+                    "segments": [{
+                        "uuid": "objectName",
+                        "offset": 0,
+                        "size": 250,
+                        "did": "%1$s" }],
+                    "mediaType": "application/octet-stream"
                 },
                 {
-                    "contentReference": {
-                        "segments": [{
-                            "uuid": "objectName2",
-                            "offset": 0,
-                            "size": 400,
-                            "did": "%1$s" }],
-                        "mediaType": "application/xml"
-                    }
+                    "name": "split-1b",
+                    "segments": [{
+                        "uuid": "objectName2",
+                        "offset": 0,
+                        "size": 400,
+                        "did": "%1$s" }],
+                    "mediaType": "application/xml"
                 }
             ],
             "metadata": {}
@@ -37,14 +35,13 @@
             "flow": "childFlow",
             "content": [
                 {
-                    "contentReference": {
-                        "segments": [{
-                            "uuid": "objectName",
-                            "offset": 250,
-                            "size": 250,
-                            "did": "%1$s" }],
-                        "mediaType": "application/octet-stream"
-                    }
+                    "name": "split2",
+                    "segments": [{
+                        "uuid": "objectName",
+                        "offset": 250,
+                        "size": 250,
+                        "did": "%1$s" }],
+                    "mediaType": "application/octet-stream"
                 }
             ],
             "metadata": {}

@@ -27,7 +27,6 @@ import org.deltafi.actionkit.action.converters.ContentConverter;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.filter.FilterResult;
 import org.deltafi.actionkit.properties.ActionsProperties;
-import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.test.storage.s3.InMemoryObjectStorageService;
 import org.deltafi.common.types.*;
@@ -75,13 +74,12 @@ public abstract class ActionTest {
     protected List<ActionContent> getContents(List<? extends IOContent> contents, TestCaseBase<?> testCase, String stripIfStartsWith) {
         return contents.stream().map(ioContent -> {
             try {
-                byte[] content = getTestResourceOrDefault(testCase.getTestName(), ioContent.getName(),
+                byte[] bytes = getTestResourceOrDefault(testCase.getTestName(), ioContent.getName(),
                         () -> new ByteArrayInputStream(ioContent.getName().getBytes(StandardCharsets.UTF_8)))
                         .readAllBytes();
-                ContentReference reference = contentStorageService.save(DID, content, ioContent.getContentType());
-                return (ActionContent) new ActionContent(ioContent.getName().startsWith(stripIfStartsWith) ? ioContent.getName().substring(stripIfStartsWith.length()) : ioContent.getName(),
-                        reference,
-                        contentStorageService);
+                String name = ioContent.getName().startsWith(stripIfStartsWith) ? ioContent.getName().substring(stripIfStartsWith.length()) : ioContent.getName();
+                Content content = contentStorageService.save(DID, bytes, name, ioContent.getContentType());
+                return new ActionContent(content, contentStorageService);
             }
             catch(Throwable t) {
                 t.printStackTrace();
@@ -98,12 +96,10 @@ public abstract class ActionTest {
     protected Function<IOContent, ActionContent> convertOutputToContent(TestCaseBase<?> testCase) {
         return (output) -> {
             try {
-                byte[] content = getTestResourceOrEmpty(testCase.getTestName(), output.getName()).readAllBytes();
-
-                ContentReference reference = contentStorageService.save(DID, content, output.getContentType());
-                return (ActionContent) new ActionContent(output.getName().startsWith("output.") ? output.getName().substring(7) : output.getName(),
-                        reference,
-                        contentStorageService);
+                byte[] bytes = getTestResourceOrEmpty(testCase.getTestName(), output.getName()).readAllBytes();
+                String name = output.getName().startsWith("output.") ? output.getName().substring(7) : output.getName();
+                Content content = contentStorageService.save(DID, bytes, name, output.getContentType());
+                return new ActionContent(content, contentStorageService);
             }
             catch(Throwable t) {
                 t.printStackTrace();

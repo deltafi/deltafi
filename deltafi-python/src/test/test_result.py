@@ -21,7 +21,7 @@ from deltafi.metric import Metric
 from deltafi.result import DomainResult, EgressResult, EnrichResult, ErrorResult, FilterResult, FormatResult, \
     FormatManyResult, LoadResult, ReinjectResult, TransformResult, ValidateResult
 
-from .helperutils import make_content_reference, make_context
+from .helperutils import make_context, make_segment
 
 
 def verify_metric(metric, name, value, tags):
@@ -137,9 +137,9 @@ def make_format_result(context, file_name, seg_id):
 
 
 def verify_format_result(response, file_name, seg_id):
-    assert len(response.items()) == 3
-    assert response.get('filename') == file_name
-    assert response.get('contentReference')['segments'][0]['uuid'] == seg_id
+    assert len(response.items()) == 2
+    assert response.get('content')['name'] == file_name
+    assert response.get('content')['segments'][0]['uuid'] == seg_id
     verify_all_metadata(response)
 
 
@@ -166,7 +166,7 @@ def test_format_many_result():
 
 
 def make_content(content_service, name, seg_id):
-    content = Content(name=name, content_reference=make_content_reference(seg_id), content_service=content_service)
+    content = Content(name=name, segments=[make_segment(seg_id)], media_type="xml", content_service=content_service)
     return content
 
 
@@ -212,12 +212,12 @@ def test_reinject_result():
     response = result.response()
     assert len(response) == 2
     assert len(response[0]['content']) == 1
-    assert response[0]['content'][0]['contentReference']['segments'][0]['uuid'] == "id1"
+    assert response[0]['content'][0]['segments'][0]['uuid'] == "id1"
     assert response[0]['filename'] == "fn1"
     assert response[0]['flow'] == "flow"
 
     assert len(response[1]['content']) == 1
-    assert response[1]['content'][0]['contentReference']['segments'][0]['uuid'] == "id2"
+    assert response[1]['content'][0]['segments'][0]['uuid'] == "id2"
     assert response[1]['filename'] == "fn2"
     assert response[1]['flow'] == "flow"
 

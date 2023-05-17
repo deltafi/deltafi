@@ -16,17 +16,16 @@
       ],
       "content": [
         {
-          "contentReference": {
-            "segments": [
-              {
-                "uuid": "objectName",
-                "offset": 0,
-                "size": 250,
-                "did": "%1$s"
-              }
-            ],
-            "mediaType": "application/octet-stream"
-          }
+          "name": "child1-content",
+          "segments": [
+            {
+              "uuid": "objectName",
+              "offset": 0,
+              "size": 250,
+              "did": "%1$s"
+            }
+          ],
+          "mediaType": "application/octet-stream"
         }
       ],
       "metadata": {
@@ -45,17 +44,16 @@
       ],
       "content": [
         {
-          "contentReference": {
-            "segments": [
-              {
-                "uuid": "objectName",
-                "offset": 250,
-                "size": 250,
-                "did": "%1$s"
-              }
-            ],
-            "mediaType": "application/octet-stream"
-          }
+          "name": "child2-content",
+          "segments": [
+            {
+              "uuid": "objectName",
+              "offset": 250,
+              "size": 250,
+              "did": "%1$s"
+            }
+          ],
+          "mediaType": "application/octet-stream"
         }
       ],
       "metadata": {

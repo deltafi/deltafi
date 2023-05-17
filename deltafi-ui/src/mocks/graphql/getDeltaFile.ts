@@ -149,7 +149,6 @@ const generateData = () => {
     ],
     formattedData: [
       {
-        filename: "textdata1.txt",
         metadata: [
           {
             key: "sourceInfo.123",
@@ -166,7 +165,8 @@ const generateData = () => {
         ],
         formatAction: "MockFormatAction",
         egressActions: ["MockEgressAction"],
-        contentReference: {
+        content: {
+          "name": "textdata1.txt",
           "mediaType": "application/octet-stream",
           "segments": [
             {
@@ -187,18 +187,16 @@ const generateData = () => {
         content: [
           {
             name: "testfile.zip",
-            contentReference: {
-              "mediaType": "application/octet-stream",
-              "segments": [
-                {
-                  "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
-                  "offset": 0,
-                  "size": 36,
-                  "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
-                }
-              ],
-              "size": 36
-            },
+            mediaType: "application/octet-stream",
+            segments: [
+              {
+                "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
+                "offset": 0,
+                "size": 36,
+                "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
+              }
+            ],
+            size: 36
           },
         ],
       },
@@ -208,63 +206,55 @@ const generateData = () => {
         content: [
           {
             name: "TestFile.json",
-            contentReference: {
-              "segments": [
-                {
-                  "uuid": "19a12f6f-3b63-4c20-8f69-8fcd464d390d",
-                  "offset": 0,
-                  "size": 36,
-                  "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
-                }
-              ],
-              size: 488,
-              mediaType: "application/json",
-            },
+            segments: [
+              {
+                "uuid": "19a12f6f-3b63-4c20-8f69-8fcd464d390d",
+                "offset": 0,
+                "size": 36,
+                "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
+              }
+            ],
+            size: 488,
+            mediaType: "application/json",
           },
           {
             name: "TestFile.xml",
-            contentReference: {
-              "segments": [
-                {
-                  "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
-                  "offset": 0,
-                  "size": 36,
-                  "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
-                }
-              ],
-              size: 718,
-              mediaType: "application/xml",
-            },
+            segments: [
+              {
+                "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
+                "offset": 0,
+                "size": 36,
+                "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
+              }
+            ],
+            size: 718,
+            mediaType: "application/xml",
           },
           {
             name: "TestFile.bin",
-            contentReference: {
-              "segments": [
-                {
-                  "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
-                  "offset": 0,
-                  "size": 128,
-                  "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
-                }
-              ],
-              size: 128,
-              mediaType: "application/octet-stream",
-            },
+            segments: [
+              {
+                "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
+                "offset": 0,
+                "size": 128,
+                "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
+              }
+            ],
+            size: 128,
+            mediaType: "application/octet-stream",
           },
           {
             name: "TestFile.txt",
-            contentReference: {
-              "segments": [
-                {
-                  "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
-                  "offset": 0,
-                  "size": 32,
-                  "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
-                }
-              ],
-              size: 32,
-              mediaType: "text/plain",
-            },
+            segments: [
+              {
+                "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
+                "offset": 0,
+                "size": 32,
+                "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
+              }
+            ],
+            size: 32,
+            mediaType: "text/plain",
           }
         ],
       },
@@ -274,39 +264,29 @@ const generateData = () => {
         content: [
           {
             name: "testfile1.txt",
-            contentReference: {
-              "segments": [
-                {
-                  "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
-                  "offset": 0,
-                  "size": 36,
-                  "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
-                }
-              ],
-              size: 23423,
-              mediaType: "application/octet-stream",
-            },
+            segments: [
+              {
+                "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
+                "offset": 0,
+                "size": 36,
+                "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
+              }
+            ],
+            size: 23423,
+            mediaType: "application/octet-stream",
           },
           {
             name: "foobar.txt",
-            metadata: [
+            segments: [
               {
-                key: "sourceInfo.123",
-                value: "456",
-              },
+                "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
+                "offset": 0,
+                "size": 36,
+                "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
+              }
             ],
-            contentReference: {
-              "segments": [
-                {
-                  "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
-                  "offset": 0,
-                  "size": 36,
-                  "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
-                }
-              ],
-              size: 24,
-              mediaType: "application/octet-stream",
-            },
+            size: 24,
+            mediaType: "application/octet-stream",
           },
         ],
       },

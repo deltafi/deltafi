@@ -119,22 +119,22 @@ class ApiServer < Sinatra::Base
     get '/content' do
       authorize! :DeltaFileContentView
 
-      raise 'Missing required parameter: reference' unless params[:reference]
+      raise 'Missing required parameter: content' unless params[:content]
 
-      content_reference_json = Base64.strict_decode64(params[:reference]).encode('UTF-8', invalid: :replace)
-      content_reference = JSON.parse(content_reference_json, symbolize_names: true)
-      stream_content(content_reference)
+      content_json = Base64.strict_decode64(params[:content]).encode('UTF-8', invalid: :replace)
+      content = JSON.parse(content_json, symbolize_names: true)
+      stream_content(content)
     rescue ArgumentError, Encoding::UndefinedConversionError, JSON::ParserError => e
-      raise "Failed to parse content reference: #{e.message}"
+      raise "Failed to parse content: #{e.message}"
     end
 
     post '/content' do
       authorize! :DeltaFileContentView
 
-      content_reference = JSON.parse(request.body.read, symbolize_names: true)
-      stream_content(content_reference)
+      content = JSON.parse(request.body.read, symbolize_names: true)
+      stream_content(content)
     rescue JSON::ParserError => e
-      raise JSON::ParserError, "Failed to parse content reference: #{e.message}"
+      raise JSON::ParserError, "Failed to parse content: #{e.message}"
     end
 
     get '/sse' do
@@ -165,25 +165,25 @@ class ApiServer < Sinatra::Base
     build_error_response(env['sinatra.error'].message)
   end
 
-  def stream_content(content_reference)
-    DF::API::V1::Content.verify_content_reference(content_reference)
+  def stream_content(content)
+    DF::API::V1::Content.verify_content(content)
 
     size = [
-      DF::API::V1::Content.content_reference_size(content_reference),
-      content_reference[:size]
+      DF::API::V1::Content.content_size(content),
+      content[:size]
     ].min
 
-    filename = content_reference[:filename] || content_reference[:uuid]
+    filename = content[:name] || content[:uuid]
     headers['Content-Disposition'] = "attachment; filename=#{filename};"
     headers['Content-Transfer-Encoding'] = 'binary'
     headers['Cache-Control'] = 'no-cache'
-    headers['Content-Type'] = content_reference[:mediaType]
+    headers['Content-Type'] = content[:mediaType]
     headers['Content-Length'] = size.to_s
 
-    bytes_left = content_reference[:size]
+    bytes_left = content[:size]
 
     stream do |out|
-      content_reference[:segments].each do |segment|
+      content[:segments].each do |segment|
         break unless bytes_left.positive?
 
         audit("viewed content for DID #{segment[:did]}")

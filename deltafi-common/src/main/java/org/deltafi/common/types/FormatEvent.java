@@ -21,7 +21,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.deltafi.common.content.ContentReference;
 
 import java.util.Map;
 
@@ -30,7 +29,6 @@ import java.util.Map;
 @AllArgsConstructor
 @Builder(builderMethodName = "newBuilder")
 public class FormatEvent {
-  private String filename;
-  private ContentReference contentReference;
+  private Content content;
   private Map<String, String> metadata;
 }

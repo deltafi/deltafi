@@ -17,7 +17,6 @@
  */
 package org.deltafi.core.datafetchers;
 
-import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.Content;
 import org.deltafi.common.types.IngressEvent;
@@ -41,10 +40,8 @@ public class DeltaFilesDatafetcherTestHelper {
     static final String DID_2 = UUID.randomUUID().toString();
     static final Map<String, String> METADATA = Map.of("k1", "v1", "k2", "v2");
     static final String MEDIA_TYPE = "plain/text";
-    static final ContentReference CONTENT_REFERENCE = new ContentReference(MEDIA_TYPE, new Segment(OBJECT_UUID, 0, SIZE, DID));
-    static final List<Content> CONTENT = Collections.singletonList(Content.newBuilder().contentReference(CONTENT_REFERENCE).build());
-    static final ContentReference CONTENT_REFERENCE_2 = new ContentReference(MEDIA_TYPE, new Segment(OBJECT_UUID_2, 0, SIZE, DID));
-    static final List<Content> CONTENT_2 = Collections.singletonList(Content.newBuilder().contentReference(CONTENT_REFERENCE_2).build());
+    static final List<Content> CONTENT = Collections.singletonList(new Content(FILENAME, MEDIA_TYPE, new Segment(OBJECT_UUID, 0, SIZE, DID)));
+    static final List<Content> CONTENT_2 = Collections.singletonList(new Content(FILENAME, MEDIA_TYPE, new Segment(OBJECT_UUID_2, 0, SIZE, DID)));
     static final SourceInfo SOURCE_INFO = new SourceInfo(FILENAME, FLOW, METADATA);
     public static final IngressEvent INGRESS_INPUT = new IngressEvent(DID, SOURCE_INFO, CONTENT, OffsetDateTime.now());
     public static final IngressEvent INGRESS_INPUT_2 = new IngressEvent(DID_2, SOURCE_INFO, CONTENT_2, OffsetDateTime.now());
@@ -70,7 +67,6 @@ public class DeltaFilesDatafetcherTestHelper {
                 .action()
                 .content()
                 .name()
-                .contentReference()
                 .mediaType()
                 .size()
                 .segments()
@@ -78,7 +74,6 @@ public class DeltaFilesDatafetcherTestHelper {
                 .offset()
                 .size()
                 .did()
-                .parent()
                 .parent()
                 .parent()
                 .parent()
@@ -100,9 +95,9 @@ public class DeltaFilesDatafetcherTestHelper {
                 .mediaType()
                 .parent()
                 .formattedData()
-                .filename()
                 .formatAction()
-                .contentReference()
+                .content()
+                .name()
                 .mediaType()
                 .size()
                 .segments()
@@ -151,15 +146,13 @@ public class DeltaFilesDatafetcherTestHelper {
               .action()
               .content()
                 .name()
-                .contentReference()
-                  .mediaType()
+                .mediaType()
+                .size()
+                .segments()
+                  .uuid()
+                  .offset()
                   .size()
-                  .segments()
-                    .uuid()
-                    .offset()
-                    .size()
-                    .did()
-                    .parent()
+                  .did()
                   .parent()
                 .parent()
               .metadata()
@@ -182,9 +175,9 @@ public class DeltaFilesDatafetcherTestHelper {
                 .mediaType()
                 .parent()
             .formattedData()
-                .filename()
                 .formatAction()
-                .contentReference()
+                .content()
+                    .name()
                     .mediaType()
                     .size()
                     .segments()

@@ -85,7 +85,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String SOURCE_INFO_FLOW = "sourceInfo.flow";
     public static final String SOURCE_INFO_METADATA = "sourceInfo.metadata";
     public static final String SOURCE_INFO_PROCESSING_TYPE = "sourceInfo.processingType";
-    public static final String FORMATTED_DATA_FILENAME = "formattedData.filename";
+    public static final String FORMATTED_DATA_FILENAME = "formattedData.content.name";
     public static final String FORMATTED_DATA_FORMAT_ACTION = "formattedData.formatAction";
     public static final String FORMATTED_DATA_METADATA = "formattedData.metadata";
     public static final String FORMATTED_DATA_EGRESS_ACTIONS = "formattedData.egressActions";
@@ -118,8 +118,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String INDEXED_METADATA = "indexedMetadata";
     public static final String INDEXED_METADATA_KEYS = "indexedMetadataKeys";
 
-    private static final String PROTOCOL_STACK_SEGMENTS = "protocolStack.content.contentReference.segments";
-    private static final String FORMATTED_DATA_SEGMENTS = "formattedData.contentReference.segments";
+    private static final String PROTOCOL_STACK_SEGMENTS = "protocolStack.content.segments";
+    private static final String FORMATTED_DATA_SEGMENTS = "formattedData.segments";
 
     private static final String CUMULATIVE_BYTES = "cumulativeBytes";
     private static final String OVER = "over";

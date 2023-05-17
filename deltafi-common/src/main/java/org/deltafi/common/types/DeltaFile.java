@@ -33,8 +33,8 @@ import java.util.stream.Collectors;
 import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE;
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 @Builder(builderMethodName = "newBuilder")
 @Document
 public class DeltaFile {
@@ -85,6 +85,9 @@ public class DeltaFile {
   @Setter
   @JsonIgnore
   private long version;
+
+  public final static int CURRENT_SCHEMA_VERSION = 1;
+  private int schemaVersion;
 
   public Map<String, String> getMetadata() {
     Map<String, String> metadata = new HashMap<>(sourceInfo.getMetadata());
@@ -407,8 +410,7 @@ public class DeltaFile {
               .domains(getDomains())
               .enrichment(getEnrichment());
     } else {
-      Content content = new Content(formattedData.getFilename(), formattedData.getContentReference());
-      builder.contentList(List.of(content))
+      builder.contentList(List.of(formattedData.getContent()))
               .metadata(formattedData.getMetadata());
     }
 
@@ -417,11 +419,11 @@ public class DeltaFile {
 
   public List<Segment> referencedSegments() {
     List<Segment> segments = getProtocolStack().stream()
-            .flatMap(p -> p.getContent().stream()).map(Content::getContentReference)
+            .flatMap(p -> p.getContent().stream())
             .flatMap(c -> c.getSegments().stream())
             .collect(Collectors.toList());
     segments.addAll(getFormattedData().stream()
-            .map(FormattedData::getContentReference)
+            .map(FormattedData::getContent)
             .flatMap(f -> f.getSegments().stream())
             .toList());
     return segments;
@@ -429,12 +431,12 @@ public class DeltaFile {
 
   public List<Segment> storedSegments() {
     List<Segment> segments = getProtocolStack().stream()
-            .flatMap(p -> p.getContent().stream()).map(Content::getContentReference)
+            .flatMap(p -> p.getContent().stream())
             .flatMap(c -> c.getSegments().stream())
             .filter(s -> s.getDid().equals(getDid()))
             .collect(Collectors.toList());
     segments.addAll(getFormattedData().stream()
-            .map(FormattedData::getContentReference)
+            .map(FormattedData::getContent)
             .flatMap(f -> f.getSegments().stream())
             .filter(s -> s.getDid().equals(getDid()))
             .toList());
@@ -465,6 +467,7 @@ public class DeltaFile {
     return getStage() == DeltaFileStage.COMPLETE || getStage() == DeltaFileStage.ERROR || getStage() == DeltaFileStage.CANCELLED;
   }
 
+  @SuppressWarnings("unused")
   public static class DeltaFileBuilder {
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private Map<String, String> indexedMetadata = new HashMap<>();

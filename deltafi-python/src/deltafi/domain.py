@@ -20,7 +20,7 @@ import copy
 from logging import Logger
 from typing import Dict, List, NamedTuple
 
-from deltafi.storage import ContentService, ContentReference
+from deltafi.storage import ContentService, Segment
 
 
 class Context(NamedTuple):
@@ -61,16 +61,18 @@ class Context(NamedTuple):
 
 class Content:
     """
-    A Content class that holds information about a piece of content, including its name, reference, and service.
+    A Content class that holds information about a piece of content, including its name, segments, mediaType, and service.
     Attributes:
         name (str): The name of the content.
-        content_reference (ContentReference): A ContentReference object that holds information about the content's data.
+        segments (List<Segment): The list of segments in storage that make up the Content
+        media_type (str): The media type of the content
         content_service (ContentService): A ContentService object used to retrieve the content data.
     """
 
-    def __init__(self, name: str, content_reference: ContentReference, content_service: ContentService):
+    def __init__(self, name: str, segments: List[Segment], media_type: str, content_service: ContentService):
         self.name = name
-        self.content_reference = content_reference
+        self.segments = segments
+        self.media_type = media_type
         self.content_service = content_service
 
     def json(self):
@@ -78,11 +80,12 @@ class Content:
         Returns a dictionary representation of the Content object.
 
         Returns:
-            dict: A dictionary containing 'name' and 'contentReference' keys.
+            dict: A dictionary containing 'name', 'segments', and 'mediaType' keys.
         """
         return {
             'name': self.name,
-            'contentReference': self.content_reference.json(),
+            'segments': [segment.json() for segment in self.segments],
+            'mediaType': self.media_type
         }
 
     def copy(self):
@@ -93,7 +96,8 @@ class Content:
             Content: A deep copy of the Content object.
         """
         return Content(name=self.name,
-                       content_reference=copy.deepcopy(self.content_reference),
+                       segments=copy.deepcopy(self.segments),
+                       media_type=self.media_type,
                        content_service=self.content_service)
 
     def subcontent(self, offset: int, size: int):
@@ -108,8 +112,54 @@ class Content:
             Content: A new Content object with the specified subcontent.
         """
         return Content(name=self.name,
-                       content_reference=self.content_reference.subreference(offset, size),
+                       segments=self.subsegments(offset, size),
+                       media_type=self.media_type,
                        content_service=self.content_service)
+
+    def subsegments(self, offset: int, size: int):
+        if offset < 0:
+            raise ValueError(f"subsegments offset must be positive, got {offset}")
+
+        if size < 0:
+            raise ValueError(f"subsegments size must be positive, got {size}")
+
+        if size + offset > self.get_size():
+            raise ValueError(f"Size + offset ({size} + {offset}) exceeds total Content size of {self.get_size()}")
+
+        if size == 0:
+            return []
+
+        new_segments = []
+        offset_remaining = offset
+        size_remaining = size
+
+        for segment in self.segments:
+            if offset_remaining > 0:
+                if segment.size < offset_remaining:
+                    # the first offset is past this segment, skip it
+                    offset_remaining -= segment.size
+                    continue
+                else:
+                    # chop off the front of this segment
+                    segment = Segment(uuid=segment.uuid,
+                                      offset=segment.offset + offset_remaining,
+                                      size=segment.size - offset_remaining,
+                                      did=segment.did)
+                    offset_remaining = 0
+
+            if size_remaining < segment.size:
+                # chop off the back of this segment
+                segment = Segment(uuid=segment.uuid,
+                                  offset=segment.offset,
+                                  size=size_remaining,
+                                  did=segment.did)
+            size_remaining -= segment.size
+            new_segments.append(segment)
+            if size_remaining == 0:
+                break
+
+        return new_segments
+
 
     def get_size(self):
         """
@@ -118,7 +168,10 @@ class Content:
         Returns:
             int: The size of the content in bytes.
         """
-        return self.content_reference.get_size()
+        sum = 0
+        for segment in self.segments:
+            sum = sum + segment.size
+        return sum
 
     def get_media_type(self):
         """
@@ -127,7 +180,7 @@ class Content:
         Returns:
         str: The media type of the content.
         """
-        return self.content_reference.media_type
+        return self.media_type
 
     def set_media_type(self, media_type: str):
         """
@@ -136,7 +189,7 @@ class Content:
         Args:
             media_type (str): The media type to set.
         """
-        self.content_reference = self.content_reference._replace(media_type=media_type)
+        self.media_type = media_type
 
     def load_bytes(self):
         """
@@ -145,7 +198,7 @@ class Content:
         Returns:
             bytes: The content as bytes.
         """
-        return self.content_service.get_bytes(self.content_reference)
+        return self.content_service.get_bytes(self.segments)
 
     def load_str(self):
         """
@@ -154,7 +207,7 @@ class Content:
         Returns:
             str: The content as a string.
         """
-        return self.content_service.get_str(self.content_reference)
+        return self.content_service.get_str(self.segments)
 
     def prepend(self, other_content):
         """
@@ -163,7 +216,7 @@ class Content:
         Args:
             other_content (Content): The Content object to prepend.
         """
-        self.content_reference.segments[0:0] = other_content.content_reference.segments
+        self.segments[0:0] = other_content.segments
 
     def append(self, other_content):
         """
@@ -172,24 +225,25 @@ class Content:
         Args:
             other_content (Content): The Content object to append.
         """
-        self.content_reference.segments.extend(other_content.content_reference.segments)
+        self.segments.extend(other_content.segments)
 
     def __eq__(self, other):
         if isinstance(other, Content):
             return (self.name == other.name and
-                    self.content_reference == other.content_reference and
+                    self.segments == other.segments and
+                    self.media_type == other.media_type and
                     self.content_service == other.content_service)
         return False
 
     @classmethod
     def from_str(cls, context: Context, str_data: str, name: str, media_type: str):
-        content_reference = context.content_service.put_str(context.did, str_data, media_type)
-        return Content(name=name, content_reference=content_reference, content_service=context.content_service)
+        segment = context.content_service.put_str(context.did, str_data)
+        return Content(name=name, segments=[segment], media_type=media_type, content_service=context.content_service)
 
     @classmethod
     def from_bytes(cls, context: Context, byte_data: bytes, name: str, media_type: str):
-        content_reference = context.content_service.put_bytes(context.did, byte_data, media_type)
-        return Content(name=name, content_reference=content_reference, content_service=context.content_service)
+        segment = context.content_service.put_bytes(context.did, byte_data)
+        return Content(name=name, segments=[segment], media_type=media_type, content_service=context.content_service)
 
     @classmethod
     def from_dict(cls, content: dict, content_service: ContentService):
@@ -197,9 +251,11 @@ class Content:
             name = content['name']
         else:
             name = None
-        content_reference = ContentReference.from_dict(content['contentReference'])
+        segments = [Segment.from_dict(segment) for segment in content['segments']]
+        media_type = content['mediaType']
         return Content(name=name,
-                       content_reference=content_reference,
+                       segments=segments,
+                       media_type=media_type,
                        content_service=content_service)
 
 

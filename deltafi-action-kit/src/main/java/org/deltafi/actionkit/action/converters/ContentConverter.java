@@ -25,11 +25,7 @@ import java.util.List;
 
 public class ContentConverter {
     public static List<ActionContent> convert(List<Content> contentList, ContentStorageService contentStorageService) {
-        return contentList.stream().map(content -> convert(content, contentStorageService)).toList();
-    }
-
-    public static ActionContent convert(Content content, ContentStorageService contentStorageService) {
-        return new ActionContent(content.getName(), content.getContentReference(), contentStorageService);
+        return contentList.stream().map(content -> new ActionContent(content, contentStorageService)).toList();
     }
 
     public static List<Content> convert(List<ActionContent> actionContentList) {
@@ -37,9 +33,7 @@ public class ContentConverter {
     }
 
     public static Content convert(ActionContent actionContent) {
-        return org.deltafi.common.types.Content.newBuilder()
-                .name(actionContent.getName())
-                .contentReference(actionContent.getContentReference())
-                .build();
+        return new org.deltafi.common.types.Content(actionContent.getContent().getName(),
+                actionContent.getMediaType(), actionContent.getContent().getSegments());
     }
 }

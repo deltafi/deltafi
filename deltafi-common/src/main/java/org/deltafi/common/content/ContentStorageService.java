@@ -33,13 +33,13 @@ public class ContentStorageService {
 
     private final ObjectStorageService objectStorageService;
 
-    public InputStream load(ContentReference contentReference) throws ObjectStorageException {
-        if (contentReference.getSize() > 0) {
-            if (contentReference.getSegments().size() == 1) {
-                return objectStorageService.getObject(buildObjectReference(contentReference.getSegments().get(0)));
+    public InputStream load(Content content) throws ObjectStorageException {
+        if (content.getSize() > 0) {
+            if (content.getSegments().size() == 1) {
+                return objectStorageService.getObject(buildObjectReference(content.getSegments().get(0)));
             } else {
                 try {
-                    return new SequenceInputStream(Collections.enumeration(contentReference.getSegments().stream()
+                    return new SequenceInputStream(Collections.enumeration(content.getSegments().stream()
                             .map(s -> {
                                 try {
                                     return objectStorageService.getObject(buildObjectReference(s));
@@ -58,12 +58,12 @@ public class ContentStorageService {
 
     }
 
-    public ContentReference save(String did, byte[] content, String mediaType) throws ObjectStorageException {
+    public Content save(String did, byte[] content, String name, String mediaType) throws ObjectStorageException {
         if (content.length == 0) {
-            return new ContentReference(mediaType);
+            return new Content(name, mediaType, Collections.emptyList());
         }
 
-        return save(did, new ByteArrayInputStream(content), mediaType);
+        return save(did, new ByteArrayInputStream(content), name, mediaType);
     }
 
     public List<Content> saveMany(String did, List<SaveManyContent> saveManyContentList) throws ObjectStorageException {
@@ -71,19 +71,17 @@ public class ContentStorageService {
 
         Map<ObjectReference, InputStream> objectsToSave = new LinkedHashMap<>();
         for (SaveManyContent entry : saveManyContentList) {
-            Content content = new Content(entry.name(), null);
+            List<Segment> segments = new ArrayList<>();
 
-            if (entry.content().length == 0) {
-                content.setContentReference(new ContentReference(entry.mediaType()));
-                updatedContent.add(content);
-                continue;
+            if (entry.content().length > 0) {
+                Segment segment = new Segment(did);
+                segment.setSize(entry.content().length);
+                segments.add(segment);
+                objectsToSave.put(buildObjectReference(segment), new ByteArrayInputStream(entry.content()));
             }
 
-            Segment segment = new Segment(did);
-            segment.setSize(entry.content().length);
-            content.setContentReference(new ContentReference(entry.mediaType(), segment));
+            Content content = new Content(entry.name(), entry.mediaType(), segments);
 
-            objectsToSave.put(buildObjectReference(segment), new ByteArrayInputStream(entry.content()));
             updatedContent.add(content);
         }
 
@@ -91,29 +89,29 @@ public class ContentStorageService {
         return updatedContent;
     }
 
-    public ContentReference save(String did, InputStream inputStream, String mediaType) throws ObjectStorageException {
+    public Content save(String did, InputStream inputStream, String name, String mediaType) throws ObjectStorageException {
         Segment segment = new Segment(did);
 
         try(PushbackInputStream pushbackInputStream = new PushbackInputStream(inputStream)) {
             int byTe = pushbackInputStream.read();
             if (byTe == -1) {
-                return new ContentReference(mediaType);
+                return new Content(name, mediaType);
             }
             pushbackInputStream.unread(byTe);
 
             ObjectReference objectReference = objectStorageService.putObject(buildObjectReference(segment), pushbackInputStream);
             segment.setSize(objectReference.getSize());
-            return new ContentReference(mediaType, segment);
+            return new Content(name, mediaType, List.of(segment));
         } catch (IOException e) {
             throw new ObjectStorageException("Error saving content " + segment.objectName(), e);
         }
     }
 
-    public void delete(ContentReference contentReference) {
-        if (contentReference.getSegments().size() == 1) {
-            objectStorageService.removeObject(buildObjectReference(contentReference.getSegments().get(0)));
+    public void delete(Content content) {
+        if (content.getSegments().size() == 1) {
+            objectStorageService.removeObject(buildObjectReference(content.getSegments().get(0)));
         } else {
-            deleteAll(contentReference.getSegments());
+            deleteAll(content.getSegments());
         }
     }
 

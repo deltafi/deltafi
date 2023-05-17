@@ -30,6 +30,9 @@ import java.util.Arrays;
 public class MongoConfiguration {
     @Bean
     public MongoCustomConversions mongoCustomConversions() {
-        return new MongoCustomConversions(Arrays.asList(new OffsetDateTimeReadConverter(), new OffsetDateTimeWriteConverter(), new DurationReadConverter()));
+        return new MongoCustomConversions(Arrays.asList(
+                new OffsetDateTimeReadConverter(),
+                new OffsetDateTimeWriteConverter(),
+                new DurationReadConverter()));
     }
 }

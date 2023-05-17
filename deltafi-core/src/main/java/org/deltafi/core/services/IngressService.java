@@ -24,7 +24,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.constant.DeltaFiConstants;
-import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.nifi.FlowFile;
 import org.deltafi.common.nifi.FlowFileUtil;
@@ -106,11 +105,11 @@ public class IngressService {
             throw e;
         }
 
-        coreAuditLogger.logIngress(username, ingressResult.filename());
+        coreAuditLogger.logIngress(username, ingressResult.content().getName());
 
         Map<String, String> tags = tagsFor(ingressResult.flow());
         metricService.increment(DeltaFiConstants.FILES_IN, tags, 1);
-        metricService.increment(DeltaFiConstants.BYTES_IN, tags, ingressResult.contentReference().getSize());
+        metricService.increment(DeltaFiConstants.BYTES_IN, tags, ingressResult.content().getSize());
 
         return ingressResult;
     }
@@ -195,24 +194,24 @@ public class IngressService {
 
         String did = uuidGenerator.generate();
 
-        ContentReference contentReference = contentStorageService.save(did, contentInputStream, mediaType);
+        Content content = contentStorageService.save(did, contentInputStream, filename, mediaType);
 
         IngressEvent ingressEvent = IngressEvent.newBuilder()
                 .did(did)
                 .sourceInfo(sourceInfo)
-                .content(List.of(Content.newBuilder().contentReference(contentReference).name(filename).build()))
+                .content(List.of(content))
                 .created(created)
                 .build();
 
         try {
             deltaFilesService.ingress(ingressEvent);
-            return new IngressResult(sourceInfo.getFlow(), filename, did, contentReference, sourceInfo.getProcessingType());
+            return new IngressResult(sourceInfo.getFlow(), did, content, sourceInfo.getProcessingType());
         } catch (EnqueueActionException e) {
             log.warn("DeltaFile {} was ingressed but the next action could not be queued at this time", did);
-            return new IngressResult(sourceInfo.getFlow(), filename, did, contentReference, sourceInfo.getProcessingType());
+            return new IngressResult(sourceInfo.getFlow(), did, content, sourceInfo.getProcessingType());
         } catch (Exception e) {
             log.warn("Ingress failed, removing content and metadata for {}", did);
-            deltaFilesService.deleteContentAndMetadata(did, contentReference);
+            deltaFilesService.deleteContentAndMetadata(did, content);
             throw new IngressException("Ingress failed", e);
         }
     }

@@ -28,7 +28,6 @@ import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.SelectedField;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.*;
@@ -175,7 +174,6 @@ public class DeltaFilesDatafetcher {
   public int stressTest(@InputArgument String flow, @InputArgument Integer contentSize, @InputArgument Integer numFiles, @InputArgument Map<String, String> metadata, @InputArgument Integer batchSize) throws ObjectStorageException {
     Random random = new Random();
     SourceInfo sourceInfo = new SourceInfo("stressTestData", flow, metadata == null ? new HashMap<>() : metadata);
-    Content c = new Content("stressTestContent", null);
 
     // batches let us test quick bursts of ingress traffic, deferring ingress until after content is stored for the batch
     if (batchSize == null || batchSize < 1) {
@@ -184,23 +182,22 @@ public class DeltaFilesDatafetcher {
     int remainingFiles = numFiles;
 
     while (remainingFiles > 0) {
-      List<ContentReference> crs = new ArrayList<>();
+      List<Content> contentList = new ArrayList<>();
       for (int i = 0; i < Math.min(remainingFiles, batchSize); i++) {
         if (contentSize > 0) {
           String did = UUID.randomUUID().toString();
           log.debug("Saving content for {} ({}/{})", did, i + (numFiles - remainingFiles) + 1, numFiles);
           byte[] contentBytes = new byte[contentSize];
           random.nextBytes(contentBytes);
-          crs.add(contentStorageService.save(did, contentBytes, "application/octet-stream"));
+          contentList.add(contentStorageService.save(did, contentBytes, "stressTestData", "application/octet-stream"));
         } else {
-          crs.add(new ContentReference("application/octet-stream", Collections.emptyList()));
+          contentList.add(new Content("stressTestData", "application/octet-stream", Collections.emptyList()));
         }
       }
 
       for (int i = 0; i < Math.min(remainingFiles, batchSize); i++) {
-        ContentReference cr = crs.get(i);
-        c.setContentReference(cr);
-        String did = cr.getSegments().isEmpty() ? UUID.randomUUID().toString() : cr.getSegments().get(0).getDid();
+        Content c = contentList.get(i);
+        String did = c.getSegments().isEmpty() ? UUID.randomUUID().toString() : c.getSegments().get(0).getDid();
         IngressEvent ingressEvent = new IngressEvent(did, sourceInfo, List.of(c), OffsetDateTime.now());
         log.debug("Ingressing metadata for {} ({}/{})", did, i + (numFiles - remainingFiles) + 1, numFiles);
         deltaFilesService.ingress(ingressEvent);

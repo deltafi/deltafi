@@ -63,7 +63,6 @@ generateJava {
 			"ActionDescriptorInput": "org.deltafi.common.types.ActionDescriptor",
 			"ActionState": "org.deltafi.common.types.ActionState",
 			"Content": "org.deltafi.common.types.Content",
-			"ContentReference": "org.deltafi.common.content.ContentReference",
 			"DataType": "org.deltafi.common.types.VariableDataType",
 			"DeleteProperties": "org.deltafi.core.configuration.DeleteProperties",
 			"DeletePropertiesInput": "org.deltafi.core.configuration.DeleteProperties",

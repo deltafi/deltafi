@@ -72,11 +72,11 @@ export default function useDeltaFiles() {
         },
         filtered: true,
         formattedData: {
-          filename: true,
           metadata: true,
           formatAction: true,
           egressActions: true,
-          contentReference: {
+          content: {
+            name: true,
             segments: {
               did: true,
               uuid: true,
@@ -92,16 +92,14 @@ export default function useDeltaFiles() {
           metadata: true,
           content: {
             name: true,
-            contentReference: {
-              segments: {
-                did: true,
-                uuid: true,
-                offset: true,
-                size: true,
-              },
+            segments: {
+              did: true,
+              uuid: true,
+              offset: true,
               size: true,
-              mediaType: true,
-            }
+            },
+            size: true,
+            mediaType: true,
           },
         },
         contentDeleted: true,

@@ -49,12 +49,12 @@ export default [
 
   rest.get("/api/v1/content", (req, res, ctx) => {
     try {
-      const referenceBase64: string = req.url.searchParams.get("reference") || "";
-      const referenceJson = window.atob(referenceBase64);
-      const reference = JSON.parse(referenceJson);
+      const contentBase64: string = req.url.searchParams.get("content") || "";
+      const contentJson = window.atob(contentBase64);
+      const content = JSON.parse(contentJson);
 
       const mockContentModule = require(`.${req.url.pathname}`);
-      const responseData = mockContentModule.default(reference);
+      const responseData = mockContentModule.default(content);
       return res(ctx.delay(requestDelay), ctx.status(200, "Mocked status"), ctx.body(responseData));
     } catch (e) {
       console.error(e);

@@ -25,7 +25,6 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.exception.MissingMetadataException;
-import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.types.Content;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
@@ -46,29 +45,29 @@ public abstract class FormattedDataInput {
     private Map<String, String> metadata;
 
     /**
-     * Load a content reference from the content storage service as a byte array
-     * @param contentReference Reference to content to be loaded
+     * Load content from the content storage service as a byte array
+     * @param content content to be loaded
      * @return a byte array for the loaded content
      */
     @SuppressWarnings("unused")
-    private byte[] loadContent(ContentReference contentReference) {
-        byte[] content = null;
-        try (InputStream contentInputStream = loadContentAsInputStream(contentReference)) {
-            content = contentInputStream.readAllBytes();
+    private byte[] loadContent(Content content) {
+        byte[] bytes = null;
+        try (InputStream contentInputStream = loadContentAsInputStream(content)) {
+            bytes = contentInputStream.readAllBytes();
         } catch (IOException e) {
             log.warn("Unable to close content input stream", e);
         }
-        return content;
+        return bytes;
     }
 
     /**
-     * Load a content reference from the content storage service as an InputStream
-     * @param contentReference Reference to content to be loaded
+     * Load content from the content storage service as an InputStream
+     * @param content content to be loaded
      * @return an InputStream for the loaded content
      */
-    private InputStream loadContentAsInputStream(ContentReference contentReference) {
+    private InputStream loadContentAsInputStream(Content content) {
         try {
-            return actionContext.getContentStorageService().load(contentReference);
+            return actionContext.getContentStorageService().load(content);
         } catch (ObjectStorageException e) {
             throw new ActionKitException("Failed to load content from storage", e);
         }
@@ -80,7 +79,7 @@ public abstract class FormattedDataInput {
      * @return an InputStream for the loaded content
      */
     public InputStream loadFormattedDataStream() {
-        return loadContentAsInputStream(content.getContentReference());
+        return loadContentAsInputStream(content);
     }
 
     /**
@@ -90,7 +89,7 @@ public abstract class FormattedDataInput {
      */
     @SuppressWarnings("unused")
     public byte[] loadFormattedDataBytes() {
-        return loadContent(content.getContentReference());
+        return loadContent(content);
     }
 
     /**
@@ -100,7 +99,7 @@ public abstract class FormattedDataInput {
      */
     @JsonIgnore
     public String getMediaType() {
-        return content.getContentReference().getMediaType();
+        return content.getMediaType();
     }
 
     /**
@@ -110,7 +109,7 @@ public abstract class FormattedDataInput {
      */
     @JsonIgnore
     public long getFormattedDataSize() {
-        return content.getContentReference().getSize();
+        return content.getSize();
     }
 
     /**

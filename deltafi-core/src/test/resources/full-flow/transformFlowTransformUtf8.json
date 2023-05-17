@@ -8,14 +8,12 @@
         "content": [
             {
                 "name": "file.json",
-                "contentReference": {
-                    "segments": [{
-                        "uuid": "utf8ObjectName",
-                        "offset": 0,
-                        "size": 500,
-                        "did": "%1$s" }],
-                    "mediaType": "application/octet-stream"
-                }
+                "segments": [{
+                    "uuid": "utf8ObjectName",
+                    "offset": 0,
+                    "size": 500,
+                    "did": "%1$s" }],
+                "mediaType": "application/octet-stream"
             }
         ]
     }

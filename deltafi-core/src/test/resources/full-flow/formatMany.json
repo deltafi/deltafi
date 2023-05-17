@@ -6,9 +6,9 @@
     "type": "FORMAT_MANY",
     "formatMany": [
         {
-            "filename": "file1",
             "metadata": {},
-            "contentReference": {
+            "content": {
+                "name": "file1",
                 "segments": [{
                     "uuid": "objectName",
                     "offset": 0,
@@ -18,9 +18,9 @@
             }
         },
         {
-            "filename": "file2",
             "metadata": {},
-            "contentReference": {
+            "content": {
+                "name": "file2",
                 "segments": [{
                     "uuid": "objectName",
                     "offset": 250,

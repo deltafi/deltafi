@@ -27,7 +27,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.constant.DeltaFiConstants;
-import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.content.ContentUtil;
 import org.deltafi.common.types.*;
@@ -196,6 +195,7 @@ public class DeltaFilesService {
         long contentSize = ContentUtil.computeContentSize(ingressEvent.getContent());
 
         DeltaFile deltaFile = DeltaFile.newBuilder()
+                .schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
                 .did(ingressEvent.getDid())
                 .parentDids(parentDids)
                 .childDids(Collections.emptyList())
@@ -384,9 +384,8 @@ public class DeltaFilesService {
         EgressFlow egressFlow = egressFlowService.withFormatActionNamed(event.getAction());
         FormattedData formattedData = FormattedData.newBuilder()
                 .formatAction(event.getAction())
-                .filename(event.getFormat().getFilename())
+                .content(event.getFormat().getContent())
                 .metadata(event.getFormat().getMetadata())
-                .contentReference(event.getFormat().getContentReference())
                 .egressActions(List.of(egressFlow.getEgressAction().getName()))
                 .validateActions(egressFlow.validateActionNames())
                 .build();
@@ -617,6 +616,7 @@ public class DeltaFilesService {
                 }
 
                 DeltaFile child = DeltaFile.newBuilder()
+                        .schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
                         .did(UUID.randomUUID().toString())
                         .parentDids(List.of(deltaFile.getDid()))
                         .childDids(Collections.emptyList())
@@ -690,9 +690,8 @@ public class DeltaFilesService {
 
                 FormattedData formattedData = FormattedData.newBuilder()
                         .formatAction(event.getAction())
-                        .filename(formatInput.getFilename())
+                        .content(formatInput.getContent())
                         .metadata(formatInput.getMetadata())
-                        .contentReference(formatInput.getContentReference())
                         .egressActions(List.of(egressFlow.getEgressAction().getName()))
                         .validateActions(egressFlow.getValidateActions().stream().map(ValidateActionConfiguration::getName).toList())
                         .build();
@@ -879,6 +878,7 @@ public class DeltaFilesService {
                                     .build();
 
                             DeltaFile child = DeltaFile.newBuilder()
+                                    .schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
                                     .did(UUID.randomUUID().toString())
                                     .parentDids(List.of(deltaFile.getDid()))
                                     .childDids(Collections.emptyList())
@@ -1094,7 +1094,7 @@ public class DeltaFilesService {
         deltaFile.setStage(DeltaFileStage.ERROR);
     }
 
-    public void deleteContentAndMetadata(String did, ContentReference contentReference) {
+    public void deleteContentAndMetadata(String did, Content content) {
         try {
             deltaFileRepo.deleteById(did);
         } catch (Exception e) {
@@ -1102,7 +1102,7 @@ public class DeltaFilesService {
         }
 
         try {
-            contentStorageService.delete(contentReference);
+            contentStorageService.delete(content);
         } catch (Exception e) {
             log.error("Failed to remove the content for did {}", did, e);
         }

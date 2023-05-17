@@ -107,6 +107,7 @@ public class Util {
                 .build();
 
         return DeltaFile.newBuilder()
+                .schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
                 .did(did)
                 .parentDids(new ArrayList<>())
                 .childDids(new ArrayList<>())

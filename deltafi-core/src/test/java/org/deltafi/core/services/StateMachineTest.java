@@ -19,7 +19,6 @@ package org.deltafi.core.services;
 
 import lombok.Builder;
 import lombok.Singular;
-import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.*;
 import org.deltafi.core.MockDeltaFiPropertiesService;
@@ -663,7 +662,7 @@ class StateMachineTest {
         }
 
         if (withProtocolStack) {
-            Content content = Content.newBuilder().contentReference(new ContentReference("application/octet-stream", new Segment("objectName", 0, 500, "did"))).build();
+            Content content = new Content("name", "application/octet-stream", List.of(new Segment("objectName", 0, 500, "did")));
             deltaFile.getProtocolStack().add(new ProtocolLayer(INGRESS_ACTION,
                     List.of(content),
                     Map.of(PROTOCOL_LAYER_KEY, "value")));

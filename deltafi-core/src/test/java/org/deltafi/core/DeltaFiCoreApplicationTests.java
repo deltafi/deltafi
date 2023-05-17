@@ -25,7 +25,6 @@ import io.minio.MinioClient;
 import lombok.SneakyThrows;
 import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.constant.DeltaFiConstants;
-import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.resource.Resource;
 import org.deltafi.common.types.*;
@@ -58,6 +57,7 @@ import org.deltafi.core.types.FlowAssignmentRule;
 import org.deltafi.core.types.PluginVariables;
 import org.deltafi.core.types.ResumePolicy;
 import org.deltafi.core.types.*;
+import org.deltafi.core.util.SchemaVersion;
 import org.deltafi.core.util.Util;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -73,6 +73,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Bean;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.IndexInfo;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -233,6 +234,9 @@ class DeltaFiCoreApplicationTests {
 
 	@Autowired
 	SystemSnapshotRepo systemSnapshotRepo;
+
+	@Autowired
+	MongoTemplate mongoTemplate;
 
 	@MockBean
 	StorageConfigurationService storageConfigurationService;
@@ -754,14 +758,14 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(DeltaFileStage.INGRESS, child1.getStage());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child1.getParentDids());
 		assertEquals("file1", child1.getSourceInfo().getFilename());
-		assertEquals(0, child1.getLastProtocolLayerContent().get(0).getContentReference().getSegments().get(0).getOffset());
+		assertEquals(0, child1.getLastProtocolLayerContent().get(0).getSegments().get(0).getOffset());
 		assertEquals(2, child1.getLastProtocolLayerContent().size());
 
 		DeltaFile child2 = children.get(1);
 		assertEquals(DeltaFileStage.INGRESS, child2.getStage());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child2.getParentDids());
 		assertEquals("file2", child2.getSourceInfo().getFilename());
-		assertEquals(250, child2.getLastProtocolLayerContent().get(0).getContentReference().getSegments().get(0).getOffset());
+		assertEquals(250, child2.getLastProtocolLayerContent().get(0).getSegments().get(0).getOffset());
 		assertEquals(1, child2.getLastProtocolLayerContent().size());
 
 		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture());
@@ -803,11 +807,7 @@ class DeltaFiCoreApplicationTests {
 		org.assertj.core.api.Assertions.assertThat(child1ProtocolLayer.getAction()).isEqualTo("sampleIngress.SampleLoadAction");
 		org.assertj.core.api.Assertions.assertThat(child1ProtocolLayer.getMetadata()).containsEntry("loadSampleType", "load-sample-type").containsEntry("loadSampleVersion", "2.2");
 
-		Content childContent = new Content();
-		ContentReference contentReference = new ContentReference();
-		contentReference.setMediaType("application/octet-stream");
-		contentReference.setSegments(List.of(new Segment("objectName", 0, 250, did)));
-		childContent.setContentReference(contentReference);
+		Content childContent = new Content("child1-content", "application/octet-stream", List.of(new Segment("objectName", 0, 250, did)));
 
 		org.assertj.core.api.Assertions.assertThat(child1ProtocolLayer.getContent()).hasSize(1).contains(childContent);
 
@@ -821,15 +821,11 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(Collections.singletonList(did), child2.getParentDids());
 		assertEquals("input.txt", child2.getSourceInfo().getFilename());
 
-		ProtocolLayer child2ProtocolLayer = child1.getLastProtocolLayer();
+		ProtocolLayer child2ProtocolLayer = child2.getLastProtocolLayer();
 		org.assertj.core.api.Assertions.assertThat(child2ProtocolLayer.getAction()).isEqualTo("sampleIngress.SampleLoadAction");
 		org.assertj.core.api.Assertions.assertThat(child2ProtocolLayer.getMetadata()).containsEntry("loadSampleType", "load-sample-type").containsEntry("loadSampleVersion", "2.2");
 
-		Content child2Content = new Content();
-		ContentReference child2ContentReference = new ContentReference();
-		child2ContentReference.setMediaType("application/octet-stream");
-		child2ContentReference.setSegments(List.of(new Segment("objectName", 250, 250, did)));
-		child2Content.setContentReference(contentReference);
+		Content child2Content = new Content("child2-content", "application/octet-stream", new Segment("objectName", 250, 250, did));
 
 		org.assertj.core.api.Assertions.assertThat(child2ProtocolLayer.getContent()).hasSize(1).contains(child2Content);
 
@@ -911,14 +907,14 @@ class DeltaFiCoreApplicationTests {
 		assertFalse(child1.getTestMode());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child1.getParentDids());
 		assertEquals("input.txt", child1.getSourceInfo().getFilename());
-		assertEquals(0, child1.getFormattedData().get(0).getContentReference().getSegments().get(0).getOffset());
+		assertEquals(0, child1.getFormattedData().get(0).getContent().getSegments().get(0).getOffset());
 
 		DeltaFile child2 = children.get(1);
 		assertEquals(DeltaFileStage.EGRESS, child2.getStage());
 		assertFalse(child2.getTestMode());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child2.getParentDids());
 		assertEquals("input.txt", child2.getSourceInfo().getFilename());
-		assertEquals(250, child2.getFormattedData().get(0).getContentReference().getSegments().get(0).getOffset());
+		assertEquals(250, child2.getFormattedData().get(0).getContent().getSegments().get(0).getOffset());
 
 		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture());
 		assertEquals(4, actionInputListCaptor.getValue().size());
@@ -2560,7 +2556,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile1.setContentDeleted(MONGO_NOW);
 		deltaFile1.setSourceInfo(new SourceInfo("filename1", "flow1", Map.of("key1", "value1", "key2", "value2")));
 		deltaFile1.setActions(List.of(Action.newBuilder().name("action1").build()));
-		deltaFile1.setFormattedData(List.of(FormattedData.newBuilder().filename("formattedFilename1").formatAction("formatAction1").metadata(Map.of("formattedKey1", "formattedValue1", "formattedKey2", "formattedValue2")).egressActions(List.of("EgressAction1", "EgressAction2")).build()));
+		deltaFile1.setFormattedData(List.of(FormattedData.newBuilder().content(new Content("formattedFilename1", "mediaType")).formatAction("formatAction1").metadata(Map.of("formattedKey1", "formattedValue1", "formattedKey2", "formattedValue2")).egressActions(List.of("EgressAction1", "EgressAction2")).build()));
 		deltaFile1.setErrorAcknowledged(MONGO_NOW);
 		deltaFile1.incrementRequeueCount();
 		deltaFile1.addEgressFlow("MyEgressFlow");
@@ -2575,7 +2571,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile2.setEnrichment(List.of(new Enrichment("enrichment1", null, null), new Enrichment("enrichment2", null, null)));
 		deltaFile2.setSourceInfo(new SourceInfo("filename2", "flow2", Map.of()));
 		deltaFile2.setActions(List.of(Action.newBuilder().name("action1").state(ActionState.ERROR).errorCause("Cause").build(), Action.newBuilder().name("action2").build()));
-		deltaFile2.setFormattedData(List.of(FormattedData.newBuilder().filename("formattedFilename2").formatAction("formatAction2").egressActions(List.of("EgressAction1")).build()));
+		deltaFile2.setFormattedData(List.of(FormattedData.newBuilder().content(new Content("formattedFilename2", "mediaType")).formatAction("formatAction2").egressActions(List.of("EgressAction1")).build()));
 		deltaFile2.setEgressed(true);
 		deltaFile2.setFiltered(true);
 		deltaFile2.addEgressFlow("MyEgressFlow");
@@ -2590,7 +2586,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile3.setEnrichment(List.of(new Enrichment("enrichment3", null, null), new Enrichment("enrichment4", null, null)));
 		deltaFile3.setSourceInfo(new SourceInfo("filename3", "flow3", Map.of(), ProcessingType.TRANSFORMATION));
 		deltaFile3.setActions(List.of(Action.newBuilder().name("action2").state(ActionState.FILTERED).filteredCause("Coffee").build(), Action.newBuilder().name("action2").build()));
-		deltaFile3.setFormattedData(List.of(FormattedData.newBuilder().filename("formattedFilename3").formatAction("formatAction3").egressActions(List.of("EgressAction2")).build()));
+		deltaFile3.setFormattedData(List.of(FormattedData.newBuilder().content(new Content("formattedFilename3", "mediaType")).formatAction("formatAction3").egressActions(List.of("EgressAction2")).build()));
 		deltaFile3.setEgressed(true);
 		deltaFile3.setFiltered(true);
 		deltaFile3.addEgressFlow("MyEgressFlow3");
@@ -3646,7 +3642,7 @@ class DeltaFiCoreApplicationTests {
 		Mockito.when(ingressService.ingress(eq(FLOW), eq(FILENAME), eq(MEDIA_TYPE), eq(USERNAME), eq(METADATA), any(), any()))
 				.thenReturn(INGRESS_RESULT);
 
-		ResponseEntity<String> response = ingress(FILENAME, CONTENT.getBytes());
+		ResponseEntity<String> response = ingress(FILENAME, CONTENT_DATA.getBytes());
 		assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
 		assertEquals(INGRESS_RESULT.did(), response.getBody());
 	}
@@ -3657,7 +3653,7 @@ class DeltaFiCoreApplicationTests {
 		Mockito.when(ingressService.ingress(eq(FLOW), isNull(), eq(MEDIA_TYPE), eq(USERNAME), eq(METADATA), any(), any()))
 				.thenThrow(new IngressMetadataException(""));
 
-		ResponseEntity<String> response = ingress(null, CONTENT.getBytes());
+		ResponseEntity<String> response = ingress(null, CONTENT_DATA.getBytes());
 		assertEquals(HttpStatus.BAD_REQUEST.value(), response.getStatusCode().value());
 	}
 
@@ -3667,7 +3663,7 @@ class DeltaFiCoreApplicationTests {
 		Mockito.when(ingressService.ingress(eq(FLOW), eq(FILENAME), eq(MEDIA_TYPE), eq(USERNAME), eq(METADATA), any(), any()))
 				.thenThrow(new IngressUnavailableException(""));
 
-		ResponseEntity<String> response = ingress(FILENAME, CONTENT.getBytes());
+		ResponseEntity<String> response = ingress(FILENAME, CONTENT_DATA.getBytes());
 		assertEquals(HttpStatus.SERVICE_UNAVAILABLE.value(), response.getStatusCode().value());
 	}
 
@@ -3677,7 +3673,7 @@ class DeltaFiCoreApplicationTests {
 		Mockito.when(ingressService.ingress(eq(FLOW), eq(FILENAME), eq(MEDIA_TYPE), eq(USERNAME), eq(METADATA), any(), any()))
 				.thenThrow(new IngressStorageException(""));
 
-		ResponseEntity<String> response = ingress(FILENAME, CONTENT.getBytes());
+		ResponseEntity<String> response = ingress(FILENAME, CONTENT_DATA.getBytes());
 		assertEquals(HttpStatus.INSUFFICIENT_STORAGE.value(), response.getStatusCode().value());
 	}
 
@@ -3687,7 +3683,7 @@ class DeltaFiCoreApplicationTests {
 		Mockito.when(ingressService.ingress(eq(FLOW), eq(FILENAME), eq(MEDIA_TYPE), eq(USERNAME), eq(METADATA), any(), any()))
 				.thenThrow(new RuntimeException());
 
-		ResponseEntity<String> response = ingress(FILENAME, CONTENT.getBytes());
+		ResponseEntity<String> response = ingress(FILENAME, CONTENT_DATA.getBytes());
 		assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), response.getStatusCode().value());
 	}
 
@@ -3896,14 +3892,14 @@ class DeltaFiCoreApplicationTests {
 		assertFalse(child1.getTestMode());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child1.getParentDids());
 		assertEquals("input.txt", child1.getSourceInfo().getFilename());
-		assertEquals(0, child1.getLastProtocolLayer().getContentReference().getSegments().get(0).getOffset());
+		assertEquals(0, child1.getLastProtocolLayer().getContent().get(0).getSegments().get(0).getOffset());
 
 		DeltaFile child2 = children.get(1);
 		assertEquals(DeltaFileStage.EGRESS, child2.getStage());
 		assertFalse(child2.getTestMode());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child2.getParentDids());
 		assertEquals("input.txt", child2.getSourceInfo().getFilename());
-		assertEquals(250, child2.getLastProtocolLayer().getContentReference().getSegments().get(0).getOffset());
+		assertEquals(250, child2.getLastProtocolLayer().getContent().get(0).getSegments().get(0).getOffset());
 
 		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture());
 		assertEquals(2, actionInputListCaptor.getValue().size());
@@ -3914,4 +3910,29 @@ class DeltaFiCoreApplicationTests {
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Mockito.verifyNoMoreInteractions(metricService);
 	}
+
+	@Test
+	public void testConvertDeltaFileV0() {
+		mongoTemplate.insert(SchemaVersion.DELTAFILE_DOC_V0, "deltaFile");
+		DeltaFile deltaFile = deltaFileRepo.findById("v0").orElseThrow();
+
+		assertEquals(0, deltaFile.getSchemaVersion());
+
+		Content content = new Content("smoke-f7bc6fc1-0d56-4c5b-9e58-7b758f522ea2",
+				"application/octet-stream",
+				List.of(new Segment("cf06a93c-d8c4-4784-8269-279b642f6903", 0L, 36L, "f8cea8af-185e-4d96-80c7-68c47a8f5609")));
+
+		assertEquals(List.of(content), deltaFile.getLastProtocolLayerContent());
+		assertEquals(content, deltaFile.getFormattedData().get(0).getContent());
+	}
+
+	@Test
+	public void testConvertDeltaFileV1() {
+		mongoTemplate.insert(SchemaVersion.DELTAFILE_DOC_V1, "deltaFile");
+		DeltaFile deltaFile = deltaFileRepo.findById("v1").orElseThrow();
+
+		assertEquals(1, deltaFile.getSchemaVersion());
+
+	}
+
 }

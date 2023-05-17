@@ -17,6 +17,7 @@
  */
 package org.deltafi.common.content;
 
+import org.deltafi.common.types.Content;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
@@ -25,35 +26,36 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class ContentReferenceTest {
+public class ContentTest {
+    final static String NAME = "name";
     final static String MEDIA_TYPE = "text/plain";
     final static Segment SEGMENT_A = new Segment("a", 0, 500, "a");
     final static Segment SEGMENT_B = new Segment("b", 1000, 1000, "b");
     final static Segment SEGMENT_C = new Segment("c", 0, 500, "c");
     final static List<Segment> SEGMENT_LIST = List.of(SEGMENT_A, SEGMENT_B, SEGMENT_C);
-    final static ContentReference CONTENT_REFERENCE = new ContentReference(MEDIA_TYPE, SEGMENT_LIST);
+    final static Content CONTENT = new Content(NAME, MEDIA_TYPE, SEGMENT_LIST);
 
     @Test
-    void testSubreferenceOutOfBounds() {
-        assertThrows(IllegalArgumentException.class, () -> CONTENT_REFERENCE.subreference(-1, 1));
-        assertThrows(IllegalArgumentException.class, () -> CONTENT_REFERENCE.subreference(1, -1));
-        assertThrows(IllegalArgumentException.class, () -> CONTENT_REFERENCE.subreference(5, 1996));
+    void testsubcontentOutOfBounds() {
+        assertThrows(IllegalArgumentException.class, () -> CONTENT.subcontent(-1, 1));
+        assertThrows(IllegalArgumentException.class, () -> CONTENT.subcontent(1, -1));
+        assertThrows(IllegalArgumentException.class, () -> CONTENT.subcontent(5, 1996));
     }
 
     @Test
-    void testSubreferenceZeroSize() {
-        assertEquals(new ContentReference(MEDIA_TYPE, Collections.emptyList()),
-                CONTENT_REFERENCE.subreference(50, 0));
+    void testsubcontentZeroSize() {
+        assertEquals(new Content(NAME, MEDIA_TYPE, Collections.emptyList()),
+                CONTENT.subcontent(50, 0));
     }
 
-    @Test void testSubreferenceAll() {
-        assertEquals(CONTENT_REFERENCE, CONTENT_REFERENCE.subreference(0, 2000));
+    @Test void testsubcontentAll() {
+        assertEquals(CONTENT, CONTENT.subcontent(0, 2000));
     }
 
-    @Test void testSubreferencePartial() {
+    @Test void testsubcontentPartial() {
         Segment subSegmentA = new Segment("a", 250, 250, "a");
         Segment subSegmentC = new Segment("c", 0, 100, "c");
-        assertEquals(new ContentReference(MEDIA_TYPE, List.of(subSegmentA, SEGMENT_B, subSegmentC)),
-                CONTENT_REFERENCE.subreference(250, 1350));
+        assertEquals(new Content(NAME, MEDIA_TYPE, List.of(subSegmentA, SEGMENT_B, subSegmentC)),
+                CONTENT.subcontent(250, 1350));
     }
 }

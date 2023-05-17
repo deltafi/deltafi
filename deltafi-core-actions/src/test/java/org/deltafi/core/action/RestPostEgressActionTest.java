@@ -27,7 +27,6 @@ import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.http.HttpPostException;
 import org.deltafi.common.http.HttpService;
-import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
@@ -73,8 +72,7 @@ class RestPostEgressActionTest {
     private static final String CONTENT_TYPE = "application/json";
 
     private static final Segment SEGMENT = new Segment(UUID.randomUUID().toString(), 0, DATA.length, DID);
-    private static final ContentReference CONTENT_REFERENCE = new ContentReference(CONTENT_TYPE, SEGMENT);
-    private static final Content CONTENT = new Content(POST_FILENAME, CONTENT_REFERENCE);
+    private static final Content CONTENT = new Content(POST_FILENAME, CONTENT_TYPE, List.of(SEGMENT));
     private static final ActionContext CONTEXT = ActionContext.builder().did(DID).name(ACTION).sourceFilename(ORIG_FILENAME).ingressFlow(FLOW).egressFlow(EGRESS_FLOW).build();
     private static final EgressInput EGRESS_INPUT = EgressInput.builder().actionContext(CONTEXT).content(CONTENT).metadata(Map.of()).build();
     static final Integer NUM_TRIES = 3;
@@ -97,7 +95,7 @@ class RestPostEgressActionTest {
 
     @Test
     public void execute() throws IOException, ObjectStorageException {
-        when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenReturn(new ByteArrayInputStream(DATA));
+        when(contentStorageService.load(eq(CONTENT))).thenReturn(new ByteArrayInputStream(DATA));
         EgressResultType result = runTest(200, "good job", 1);
 
         assertTrue(result instanceof EgressResult);
@@ -177,14 +175,14 @@ class RestPostEgressActionTest {
 
     @Test
     public void closingInputStreamThrowsIoException() throws IOException, ObjectStorageException {
-        when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenReturn(new TestInputStream(DATA));
+        when(contentStorageService.load(eq(CONTENT))).thenReturn(new TestInputStream(DATA));
         EgressResultType result = runTest(200, "good job", 1);
         assertTrue(result instanceof EgressResult);
     }
 
     @Test
     public void badResponse() throws IOException, ObjectStorageException {
-        when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenReturn(new ByteArrayInputStream(DATA));
+        when(contentStorageService.load(eq(CONTENT))).thenReturn(new ByteArrayInputStream(DATA));
         EgressResultType result = runTest(500, "uh oh", 4);
 
         assertTrue(result instanceof ErrorResult);
@@ -194,7 +192,7 @@ class RestPostEgressActionTest {
 
     @Test
     public void badPost() throws IOException, ObjectStorageException {
-        when(contentStorageService.load(eq(CONTENT_REFERENCE))).thenReturn(new ByteArrayInputStream(DATA));
+        when(contentStorageService.load(eq(CONTENT))).thenReturn(new ByteArrayInputStream(DATA));
         EgressResultType result = runTest(-1, "uh oh", 4);
 
         assertTrue(result instanceof ErrorResult);

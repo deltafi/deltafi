@@ -51,68 +51,66 @@ public class ContentStorageServiceTest {
 
     @Test
     public void loadsContent() throws ObjectStorageException, IOException {
-        byte[] content = "test".getBytes();
+        byte[] bytes = "test".getBytes();
 
-        Segment segment = new Segment("uuid", 0, content.length, "did12345");
-        ContentReference contentReference = new ContentReference("mediaType", segment);
+        Segment segment = new Segment("uuid", 0, bytes.length, "did12345");
+        Content content = new Content("name","mediaType", segment);
 
-        ObjectReference objectReference = new ObjectReference("storage", "did/did12345/uuid", 0, content.length);
+        ObjectReference objectReference = new ObjectReference("storage", "did/did12345/uuid", 0, bytes.length);
         Mockito.when(objectStorageService.getObject(Mockito.eq(objectReference)))
-                .thenReturn(new ByteArrayInputStream(content));
+                .thenReturn(new ByteArrayInputStream(bytes));
 
-        byte[] loadedContent = contentStorageService.load(contentReference).readAllBytes();
-        assertArrayEquals(content, loadedContent);
+        byte[] loadedContent = contentStorageService.load(content).readAllBytes();
+        assertArrayEquals(bytes, loadedContent);
     }
 
     @Test
     public void loadsZeroLengthContent() throws ObjectStorageException, IOException {
-        InputStream inputStream = contentStorageService.load(new ContentReference("mediaType"));
+        InputStream inputStream = contentStorageService.load(new Content("name", "mediaType"));
         assertEquals(0, inputStream.readAllBytes().length);
     }
 
     @Test
     public void savesContent() throws ObjectStorageException {
-        byte[] content = "test".getBytes();
+        byte[] bytes = "test".getBytes();
 
         Mockito.when(objectStorageService.putObject(Mockito.any(), Mockito.any()))
-                .thenReturn(new ObjectReference("storage", "did/uuid", 0, content.length));
+                .thenReturn(new ObjectReference("storage", "did/uuid", 0, bytes.length));
 
-        ContentReference contentReference =
-                contentStorageService.save("did", new ByteArrayInputStream(content), "mediaType");
+        Content content = contentStorageService.save("did", new ByteArrayInputStream(bytes), "name", "mediaType");
 
-        assertEquals(1, contentReference.getSegments().size());
-        assertEquals(0, contentReference.getSegments().get(0).getOffset());
-        assertEquals("did", contentReference.getSegments().get(0).getDid());
-        assertEquals(content.length, contentReference.getSize());
-        assertEquals("mediaType", contentReference.getMediaType());
+        assertEquals(1, content.getSegments().size());
+        assertEquals(0, content.getSegments().get(0).getOffset());
+        assertEquals("did", content.getSegments().get(0).getDid());
+        assertEquals(bytes.length, content.getSize());
+        assertEquals("mediaType", content.getMediaType());
     }
 
     @Test
     public void savesEmptyContent() throws ObjectStorageException {
-        byte[] content = {};
+        byte[] bytes = {};
 
-        ContentReference contentReference =
-                contentStorageService.save("did", new ByteArrayInputStream(content), "mediaType");
+        Content content = contentStorageService.save("did", new ByteArrayInputStream(bytes), "name", "mediaType");
 
-        assertEquals(0, contentReference.getSegments().size());
-        assertEquals(0, contentReference.getSize());
-        assertEquals("mediaType", contentReference.getMediaType());
+        assertEquals(0, content.getSegments().size());
+        assertEquals(0, content.getSize());
+        assertEquals("mediaType", content.getMediaType());
     }
 
     @Test
     public void savesByteArrayContent() throws ObjectStorageException {
-        byte[] content = "test".getBytes();
+        byte[] bytes = "test".getBytes();
 
         Mockito.when(objectStorageService.putObject(Mockito.any(), Mockito.any()))
-                .thenReturn(new ObjectReference("storage", "did/uuid", 0, content.length));
+                .thenReturn(new ObjectReference("storage", "did/uuid", 0, bytes.length));
 
-        ContentReference contentReference = contentStorageService.save("did", content, "mediaType");
+        Content content = contentStorageService.save("did", bytes, "name", "mediaType");
 
-        assertEquals(1, contentReference.getSegments().size());
-        assertEquals(0, contentReference.getSegments().get(0).getOffset());
-        assertEquals("did", contentReference.getSegments().get(0).getDid());
-        assertEquals(content.length, contentReference.getSize());
-        assertEquals("mediaType", contentReference.getMediaType());
+        assertEquals(1, content.getSegments().size());
+        assertEquals(0, content.getSegments().get(0).getOffset());
+        assertEquals("did", content.getSegments().get(0).getDid());
+        assertEquals(bytes.length, content.getSize());
+        assertEquals("mediaType", content.getMediaType());
     }
 
     @Test
@@ -133,13 +131,9 @@ public class ContentStorageServiceTest {
         Content second = content.get(1);
         Content empty = content.get(2);
 
-        Assertions.assertThat(first.getContentReference()).isNotNull();
-        Assertions.assertThat(first.getContentReference().getSegments()).hasSize(1);
-
-        Assertions.assertThat(second.getContentReference()).isNotNull();
-        Assertions.assertThat(first.getContentReference().getSegments()).hasSize(1);
-        Assertions.assertThat(empty.getContentReference()).isNotNull();
-        Assertions.assertThat(empty.getContentReference().getSegments()).isEmpty();
+        Assertions.assertThat(first.getSegments()).hasSize(1);
+        Assertions.assertThat(second.getSegments()).hasSize(1);
+        Assertions.assertThat(empty.getSegments()).isEmpty();
 
         Mockito.verify(objectStorageService).putObjects(Mockito.eq("storage"), contentMapCaptor.capture());
         Map<ObjectReference, InputStream> contentMap = contentMapCaptor.getValue();

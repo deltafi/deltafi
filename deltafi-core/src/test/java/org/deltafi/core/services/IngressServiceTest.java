@@ -150,12 +150,12 @@ class IngressServiceTest {
         Mockito.verify(metricService).increment(DeltaFiConstants.BYTES_IN, metricTags, "content".length());
 
         String content;
-        try (InputStream contentInputStream = CONTENT_STORAGE_SERVICE.load(ingressResult.contentReference())) {
+        try (InputStream contentInputStream = CONTENT_STORAGE_SERVICE.load(ingressResult.content())) {
             content = new String(contentInputStream.readAllBytes());
         }
         assertEquals("content", content);
         assertEquals("flow", ingressResult.flow());
-        assertEquals("filename", ingressResult.filename());
+        assertEquals("filename", ingressResult.content().getName());
         assertEquals("TEST-UUID", ingressResult.did());
     }
 

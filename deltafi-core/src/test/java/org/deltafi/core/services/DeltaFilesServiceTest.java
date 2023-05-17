@@ -21,7 +21,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import org.assertj.core.api.Assertions;
 import org.deltafi.common.action.ActionEventQueue;
-import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.test.time.TestClock;
@@ -106,7 +105,7 @@ class DeltaFilesServiceTest {
 
         String did = UUID.randomUUID().toString();
         SourceInfo sourceInfo = new SourceInfo(null, ingressFlow.getName(), Map.of());
-        List<Content> content = Collections.singletonList(Content.newBuilder().contentReference(new ContentReference("mediaType")).build());
+        List<Content> content = Collections.singletonList(new Content("name", "mediaType"));
         IngressEvent ingressInput = new IngressEvent(did, sourceInfo, content, OffsetDateTime.now());
 
         DeltaFile deltaFile = deltaFilesService.ingress(ingressInput);
@@ -218,17 +217,17 @@ class DeltaFilesServiceTest {
     @Test
     void testDelete() {
         DeltaFile deltaFile1 = Util.buildDeltaFile("1");
-        ContentReference cr1 = new ContentReference("mediaType", new Segment("a", "1"));
-        deltaFile1.getProtocolStack().add(ProtocolLayer.builder().content(List.of(Content.newBuilder().contentReference(cr1).build())).build());
-        ContentReference cr2 = new ContentReference("mediaType", new Segment("b", "2"));
+        Content content1 = new Content("name", "mediaType", new Segment("a", "1"));
+        deltaFile1.getProtocolStack().add(ProtocolLayer.builder().content(List.of(content1)).build());
+        Content content2 = new Content("name", "mediaType", new Segment("b", "2"));
         DeltaFile deltaFile2 = Util.buildDeltaFile("2");
-        deltaFile2.getFormattedData().add(FormattedData.newBuilder().contentReference(cr2).build());
+        deltaFile2.getFormattedData().add(FormattedData.newBuilder().content(content2).build());
         when(deltaFileRepo.findForDelete(any(), any(), anyLong(), any(), any(), anyBoolean(), anyInt())).thenReturn(List.of(deltaFile1, deltaFile2));
 
         deltaFilesService.delete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", false);
 
         verify(contentStorageService).deleteAll(segmentCaptor.capture());
-        assertEquals(List.of(cr1.getSegments().get(0), cr2.getSegments().get(0)), segmentCaptor.getValue());
+        assertEquals(List.of(content1.getSegments().get(0), content2.getSegments().get(0)), segmentCaptor.getValue());
         verify(deltaFileRepo).setContentDeletedByDidIn(stringListCaptor.capture(), any(), eq("policy"));
         assertEquals(List.of("1", "2"), stringListCaptor.getValue());
     }
@@ -236,17 +235,17 @@ class DeltaFilesServiceTest {
     @Test
     void testDeleteMetadata() {
         DeltaFile deltaFile1 = Util.buildDeltaFile("1");
-        ContentReference cr1 = new ContentReference("mediaType", new Segment("a", "1"));
-        deltaFile1.getProtocolStack().add(ProtocolLayer.builder().content(List.of(Content.newBuilder().contentReference(cr1).build())).build());
-        ContentReference cr2 = new ContentReference("mediaType", new Segment("b", "2"));
+        Content content1 = new Content("name", "mediaType", new Segment("a", "1"));
+        deltaFile1.getProtocolStack().add(ProtocolLayer.builder().content(List.of(content1)).build());
+        Content content2 = new Content("name", "mediaType", new Segment("b", "2"));
         DeltaFile deltaFile2 = Util.buildDeltaFile("2");
-        deltaFile2.getFormattedData().add(FormattedData.newBuilder().contentReference(cr2).build());
+        deltaFile2.getFormattedData().add(FormattedData.newBuilder().content(content2).build());
         when(deltaFileRepo.findForDelete(any(), any(), anyLong(), any(), any(), anyBoolean(), anyInt())).thenReturn(List.of(deltaFile1, deltaFile2));
 
         deltaFilesService.delete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", true);
 
         verify(contentStorageService).deleteAll(segmentCaptor.capture());
-        assertEquals(List.of(cr1.getSegments().get(0), cr2.getSegments().get(0)), segmentCaptor.getValue());
+        assertEquals(List.of(content1.getSegments().get(0), content2.getSegments().get(0)), segmentCaptor.getValue());
         verify(deltaFileRepo, never()).saveAll(any());
         verify(deltaFileRepo).deleteByDidIn(stringListCaptor.capture());
         assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), stringListCaptor.getValue());
@@ -325,22 +324,23 @@ class DeltaFilesServiceTest {
                 .did("00000000-0000-0000-00000-000000000000")
                 .build();
 
-        deltaFilesService.reinject(deltaFile, ActionEventInput.newBuilder()
-                .action("loadAction")
-                .reinject(List.of(
-                        ReinjectEvent.newBuilder()
-                                .flow("good")
-                                .content(List.of(Content.newBuilder().contentReference(createContentReference("first"))
-                                        .build())).build(),
-                        ReinjectEvent.newBuilder()
-                                .flow("bad")
-                                .content(List.of(Content.newBuilder().contentReference(createContentReference("second"))
-                                        .build())).build())).build());
+        deltaFilesService.reinject(deltaFile,
+                ActionEventInput.newBuilder()
+                        .action("loadAction")
+                        .reinject(List.of(
+                                ReinjectEvent.newBuilder()
+                                        .flow("good")
+                                        .content(List.of(createContent("first")))
+                                        .build(),
+                                ReinjectEvent.newBuilder()
+                                        .flow("bad")
+                                        .content(List.of(createContent("second"))).build()))
+                        .build());
 
         assertTrue(deltaFile.hasErroredAction());
-        assertTrue(deltaFile.getActions().stream().filter(a -> a.getState()==ActionState.ERROR).map(Action::getErrorCause)
+        assertTrue(deltaFile.getActions().stream().filter(a -> a.getState() == ActionState.ERROR).map(Action::getErrorCause)
                 .allMatch(DeltaFilesService.NO_CHILD_INGRESS_CONFIGURED_CAUSE::equals));
-        assertTrue(deltaFile.getActions().stream().filter(a -> a.getState()==ActionState.ERROR).map(Action::getErrorContext)
+        assertTrue(deltaFile.getActions().stream().filter(a -> a.getState() == ActionState.ERROR).map(Action::getErrorContext)
                 .allMatch(ec -> ec.startsWith(DeltaFilesService.NO_CHILD_INGRESS_CONFIGURED_CONTEXT)));
     }
 
@@ -363,21 +363,21 @@ class DeltaFilesServiceTest {
                 .did("00000000-0000-0000-00000-000000000000")
                 .build();
 
-        deltaFilesService.reinject(deltaFile, ActionEventInput.newBuilder()
-                .action("loadAction")
-                .reinject(List.of(
-                        ReinjectEvent.newBuilder()
-                                .flow("good")
-                                .content(List.of(Content.newBuilder().contentReference(createContentReference("first"))
-                                        .build())).build(),
-                        ReinjectEvent.newBuilder()
-                                .flow("good")
-                                .content(List.of(Content.newBuilder().contentReference(createContentReference("second"))
-                                        .build())).build()))
-                .build());
+        deltaFilesService.reinject(deltaFile,
+                ActionEventInput.newBuilder()
+                        .action("loadAction")
+                        .reinject(List.of(
+                                ReinjectEvent.newBuilder()
+                                        .flow("good")
+                                        .content(List.of(createContent("first"))).build(),
+                                ReinjectEvent.newBuilder()
+                                        .flow("good")
+                                        .content(List.of(createContent("second"))).build()))
+
+                        .build());
 
         assertFalse(deltaFile.hasErroredAction());
-        assertTrue(deltaFile.getActions().stream().noneMatch(a -> a.getState()==ActionState.ERROR));
+        assertTrue(deltaFile.getActions().stream().noneMatch(a -> a.getState() == ActionState.ERROR));
     }
 
     @Test
@@ -425,24 +425,24 @@ class DeltaFilesServiceTest {
 
     @Test
     void testDeleteContentAndMetadata() {
-        ContentReference cr = new ContentReference();
-        deltaFilesService.deleteContentAndMetadata("a", cr);
+        Content content = new Content();
+        deltaFilesService.deleteContentAndMetadata("a", content);
 
         Mockito.verify(deltaFileRepo).deleteById("a");
-        Mockito.verify(contentStorageService).delete(cr);
+        Mockito.verify(contentStorageService).delete(content);
     }
 
     @Test
     void testDeleteContentAndMetadata_mongoFail() {
-        ContentReference cr = new ContentReference();
+        Content content = new Content();
         Mockito.doThrow(new RuntimeException("mongo fail")).when(deltaFileRepo).deleteById("a");
-        deltaFilesService.deleteContentAndMetadata("a", cr);
+        deltaFilesService.deleteContentAndMetadata("a", content);
 
         // make sure content cleanup happens after a mongo failure
-        Mockito.verify(contentStorageService).delete(cr);
+        Mockito.verify(contentStorageService).delete(content);
     }
 
-    private ContentReference createContentReference(String did) {
-        return new ContentReference(APPLICATION_XML, new Segment(UUID.randomUUID().toString(), 0L, 32L, did));
+    private Content createContent(String did) {
+        return new Content("name", APPLICATION_XML, new Segment(UUID.randomUUID().toString(), 0L, 32L, did));
     }
 }

@@ -21,7 +21,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.deltafi.common.content.ContentReference;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,9 +32,8 @@ import java.util.Map;
 @AllArgsConstructor
 @Builder(builderMethodName = "newBuilder")
 public class FormattedData {
-  private String filename;
   private String formatAction;
-  private ContentReference contentReference;
+  private Content content;
   @Builder.Default
   private Map<String, String> metadata = new HashMap<>();
   @Builder.Default

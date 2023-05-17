@@ -54,7 +54,7 @@ class SampleLoadAction(LoadAction):
     def load(self, context: Context, params: SampleLoadParameters, load_input: LoadInput):
         return LoadResult().add_metadata('loadKey', 'loadValue') \
             .add_domain(params.domain, 'Python domain!', 'text/plain') \
-            .add_content('loaded content', new_content_reference)
+            .add_content(Content(name='loaded content', segments=[], media_type='text/plain', content_service=mock(ContentService)))
 
 
 def test_plugin(monkeypatch):

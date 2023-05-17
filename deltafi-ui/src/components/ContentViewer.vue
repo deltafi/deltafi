@@ -25,21 +25,15 @@
             <Dropdown v-model="selectedRenderFormat" :options="renderFormats" option-label="name" class="mr-3" style="min-width: 12rem" />
           </template>
           <template #end>
-            <Button :label="contentReference.mediaType" class="p-button-text p-button-secondary" disabled />
+            <Button :label="content.mediaType" class="p-button-text p-button-secondary" disabled />
             <Divider layout="vertical" />
             <Button class="p-button-text p-button-secondary" disabled>
-              <FormattedBytes :bytes="contentReference.size" />
+              <FormattedBytes :bytes="content.size" />
             </Button>
             <Divider layout="vertical" />
             <ContentViewerMenu :model="items" />
           </template>
         </Toolbar>
-        <span v-if="!_.isEmpty(metadata) && _.isEqual(viewMetadata, true)">
-          <DataTable responsive-layout="scroll" :value="metadata" striped-rows sort-field="key" :sort-order="1" class="p-datatable-sm p-datatable-gridlines">
-            <Column field="key" header="Key" :style="{ width: '25%' }" :sortable="true" />
-            <Column field="value" header="Value" :style="{ width: '75%' }" :sortable="true" />
-          </DataTable>
-        </span>
         <Message v-for="error in errors" :key="error" severity="error" :closable="true" class="mb-0 mt-0">{{ error }}</Message>
         <Message v-for="warning in warnings" :key="warning" severity="warn" :closable="true" class="mb-0 mt-0">{{ warning }}</Message>
         <div class="scrollable-content content-viewer-content">
@@ -73,8 +67,6 @@ import Dropdown from "primevue/dropdown";
 import Message from "primevue/message";
 import Toolbar from "primevue/toolbar";
 import ScrollTop from "primevue/scrolltop";
-import DataTable from "primevue/datatable";
-import Column from "primevue/column";
 
 import hexy from "hexy";
 import _ from "lodash";
@@ -82,19 +74,9 @@ import { Buffer } from 'buffer';
 
 
 const props = defineProps({
-  contentReference: {
+  content: {
     type: Object,
     required: true,
-  },
-  metadata: {
-    type: Object,
-    required: false,
-    default: null,
-  },
-  filename: {
-    type: String,
-    required: false,
-    default: null,
   },
   maxHeight: {
     type: String,
@@ -103,7 +85,7 @@ const props = defineProps({
   },
 });
 
-const { contentReference, maxHeight, filename, metadata } = toRefs(props);
+const { content, maxHeight } = toRefs(props);
 const { downloadURL, loading: loadingContent, fetch: fetchContent, errors, data } = useContent();
 const { formattedBytes } = useUtilFunctions();
 const { copy: copyToClipboard } = useClipboard();
@@ -112,25 +94,24 @@ const notify = useNotifications();
 const maxPreviewSize = 100000; // 100kB
 const contentLoaded = ref(false);
 const highlightCode = ref(true);
-const viewMetadata = ref(false);
-const content = ref(new ArrayBuffer());
+const contentBuffer = ref(new ArrayBuffer());
 const contentAs = reactive({});
 const decoder = new TextDecoder("utf-8");
 const encoder = new TextEncoder("utf-8");
 const prettyPrintFormats = ["json", "xml"];
 
-watch(content, () => processContent());
+watch(contentBuffer, () => processContent());
 
 const processContent = async () => {
   // Hex
-  const buffer = Buffer.from(content.value);
+  const buffer = Buffer.from(contentBuffer.value);
   contentAs.hex = hexy.hexy(buffer, {
     format: "twos",
     width: 16,
   });
 
   // UTF-8
-  contentAs.utf8 = decoder.decode(content.value);
+  contentAs.utf8 = decoder.decode(contentBuffer.value);
 
   // Formatted JSON/XML
   if (prettyPrintFormats.includes(language.value)) {
@@ -145,11 +126,10 @@ const displayedContent = computed(() => {
 
 // Menu Buttons
 const highlightBtnEnbl = computed(() => {
-  return content.value.byteLength > 0 && selectedRenderFormat.value.highlight;
+  return contentBuffer.value.byteLength > 0 && selectedRenderFormat.value.highlight;
 });
-const metadataBtnEnbl = computed(() => !_.isEmpty(metadata.value));
-const copyBtnEnbl = computed(() => content.value.byteLength > 0);
-const downloadBtnEnbl = computed(() => content.value.byteLength > 0);
+const copyBtnEnbl = computed(() => contentBuffer.value.byteLength > 0);
+const downloadBtnEnbl = computed(() => contentBuffer.value.byteLength > 0);
 const items = ref([
   {
     label: "Enable Highlighting",
@@ -161,18 +141,6 @@ const items = ref([
     toggled: false,
     command: () => {
       onToggleHiglightCodeClick();
-    },
-  },
-  {
-    label: "View Metadata",
-    icon: "fas fa-table",
-    alternateLabel: "Hide Metadata",
-    alternateIcon: "transparent-icon",
-    isEnabled: metadataBtnEnbl,
-    toggled: true,
-    disabledLabel: "No Metadata",
-    command: () => {
-      onToggleMetadataClick();
     },
   },
   {
@@ -198,7 +166,7 @@ const items = ref([
 
 const language = computed(() => {
   try {
-    return contentReference.value.mediaType.split("/")[1];
+    return content.value.mediaType.split("/")[1];
   } catch {
     return null;
   }
@@ -228,7 +196,7 @@ onMounted(() => {
 });
 
 watch(
-  () => contentReference.value,
+  () => content.value,
   () => {
     loadContent();
     if (renderFormats.value.find((f) => f.id == selectedRenderFormat.value.id)) {
@@ -239,15 +207,15 @@ watch(
   }
 );
 
-const partialContent = computed(() => contentReference.value.size > maxPreviewSize);
+const partialContent = computed(() => content.value.size > maxPreviewSize);
 
-const embededContent = computed(() => "content" in contentReference.value);
+const embededContent = computed(() => "content" in content.value);
 
 const formattedMaxPreviewSize = computed(() => formattedBytes(maxPreviewSize));
 
 const warnings = computed(() => {
   let warnings = [];
-  if (contentLoaded.value && content.value.byteLength == 0) warnings.push("No content to display.");
+  if (contentLoaded.value && contentBuffer.value.byteLength == 0) warnings.push("No content to display.");
   if (partialContent.value) warnings.push(`Content size is over the preview limit. Only showing the first ${formattedMaxPreviewSize.value}.`);
   return warnings;
 });
@@ -256,17 +224,14 @@ const onToggleHiglightCodeClick = () => {
   highlightCode.value = !highlightCode.value;
 };
 
-const onToggleMetadataClick = () => {
-  viewMetadata.value = !viewMetadata.value;
-};
 
 const download = () => {
   if (embededContent.value) {
     downloadEmbededContent();
   } else {
     let url = downloadURL({
-      ...contentReference.value,
-      filename: filename.value,
+      ...content.value,
+      ...content.value.name.value
     });
     window.open(url);
   }
@@ -279,30 +244,30 @@ const loadContent = async () => {
     return;
   }
   let request = {
-    ...contentReference.value,
-    size: partialContent.value ? maxPreviewSize : contentReference.value.size,
+    ...content.value,
+    size: partialContent.value ? maxPreviewSize : content.value.size,
   };
   try {
     await fetchContent(request);
   } catch {
     return;
   }
-  content.value = await data.value.arrayBuffer();
+  contentBuffer.value = await data.value.arrayBuffer();
   contentLoaded.value = true;
 };
 
 const loadEmbededContent = () => {
-  content.value = encoder.encode(contentReference.value.content);
-  contentReference.value.size = contentReference.value.content.length;
+  contentBuffer.value = encoder.encode(content.value.content);
+  content.value.size = content.value.content.length;
   contentLoaded.value = true;
 };
 
 const downloadEmbededContent = () => {
   let link = document.createElement("a");
-  let downloadFileName = filename.value;
+  let downloadFileName = content.value.name.value;
   link.download = downloadFileName.toLowerCase();
-  let blob = new Blob([contentReference.value.content], {
-    type: contentReference.value.mediaType,
+  let blob = new Blob([content.value.content], {
+    type: content.value.mediaType,
   });
   link.href = URL.createObjectURL(blob);
   link.click();

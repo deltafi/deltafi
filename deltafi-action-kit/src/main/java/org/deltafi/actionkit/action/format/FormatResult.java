@@ -23,7 +23,6 @@ import lombok.Setter;
 import org.deltafi.actionkit.action.ActionKitException;
 import org.deltafi.actionkit.action.MetadataAmendedResult;
 import org.deltafi.actionkit.action.content.ActionContent;
-import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
@@ -65,6 +64,7 @@ public class FormatResult extends MetadataAmendedResult implements FormatResultT
      * @param name the content name
      * @param mediaType Media type for the content being stored
      */
+    @SuppressWarnings("unused")
     public FormatResult(@NotNull ActionContext context, @NotNull byte[] content, @NotNull String name, @NotNull String mediaType) {
         super(context);
         this.content = saveContent(content, name, mediaType);
@@ -77,24 +77,25 @@ public class FormatResult extends MetadataAmendedResult implements FormatResultT
      * @param name the content name
      * @param mediaType Media type for the content being stored
      */
+    @SuppressWarnings("unused")
     public FormatResult(@NotNull ActionContext context, @NotNull InputStream content, @NotNull String name, @NotNull String mediaType) {
         super(context);
         this.content = saveContent(content, name, mediaType);
     }
 
-    private ActionContent saveContent(byte[] content, String name, String mediaType) {
+    private ActionContent saveContent(byte[] bytes, String name, String mediaType) {
         try {
-            ContentReference contentReference = context.getContentStorageService().save(context.getDid(), content, mediaType);
-            return new ActionContent(name, contentReference, context.getContentStorageService());
+            Content content = context.getContentStorageService().save(context.getDid(), bytes, name, mediaType);
+            return new ActionContent(content, context.getContentStorageService());
         } catch(ObjectStorageException e) {
             throw new ActionKitException("Failed to store content " + name, e);
         }
     }
 
-    private ActionContent saveContent(InputStream content, String name, String mediaType) {
+    private ActionContent saveContent(InputStream stream, String name, String mediaType) {
         try {
-            ContentReference contentReference = context.getContentStorageService().save(context.getDid(), content, mediaType);
-            return new ActionContent(name, contentReference, context.getContentStorageService());
+            Content content = context.getContentStorageService().save(context.getDid(), stream, name, mediaType);
+            return new ActionContent(content, context.getContentStorageService());
         } catch(ObjectStorageException e) {
             throw new ActionKitException("Failed to store content " + name, e);
         }
@@ -109,8 +110,7 @@ public class FormatResult extends MetadataAmendedResult implements FormatResultT
     public final ActionEventInput toEvent() {
         ActionEventInput event = super.toEvent();
         event.setFormat(FormatEvent.newBuilder()
-                .filename(content.getName())
-                .contentReference(content.getContentReference())
+                .content(content.getContent())
                 .metadata(metadata)
                 .build());
         return event;

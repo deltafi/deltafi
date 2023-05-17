@@ -99,13 +99,6 @@ input FlowAssignmentRuleInput {
 
 type Content {
   name: String
-  contentReference: ContentReference!
-}
-
-"""
-A ContentReference is a reference to stored content for a delta file.
-"""
-type ContentReference {
   segments: [Segment!]!
   mediaType: String!
   size: Long!
@@ -119,7 +112,7 @@ type Segment {
 }
 
 """
-Ingress and transform actions create contentReferences and express additional metadata through ProtocolLayers
+Ingress and transform actions create content and express additional metadata through ProtocolLayers
 Followon actions get the latest "state" of the transformed object from the top of the ProtocolLayer stack
 """
 type ProtocolLayer {
@@ -132,9 +125,8 @@ type ProtocolLayer {
 }
 
 type FormattedData {
-  filename: String!
+  content: Content
   formatAction: String!
-  contentReference: ContentReference!
   metadata: Metadata
   egressActions: [String!]!
   validateActions: [String!]!

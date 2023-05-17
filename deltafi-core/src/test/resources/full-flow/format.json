@@ -5,12 +5,12 @@
     "stop": "2021-07-11T13:44:22.184Z",
     "type": "FORMAT",
     "format": {
-        "filename": "output.txt",
         "metadata": {
             "key1": "value1",
             "key2": "value2"
         },
-        "contentReference": {
+        "content": {
+            "name": "output.txt",
             "segments": [{
                 "uuid": "formattedObjectName",
                 "offset": 0,

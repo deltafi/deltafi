@@ -134,19 +134,18 @@ class FormatResult(Result):
         return self
 
     def save_string_content(self, string_data: str, name: str, media_type: str):
-        content_reference = self.context.content_service.put_str(self.context.did, string_data, media_type)
-        self.content = Content(name=name, content_reference=content_reference, content_service=self.context.content_service)
+        segment = self.context.content_service.put_str(self.context.did, string_data)
+        self.content = Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service)
         return self
 
     def save_byte_content(self, byte_data: bytes, name: str, media_type: str):
-        content_reference = self.context.content_service.put_bytes(self.context.did, byte_data, media_type)
-        self.content = Content(name=name, content_reference=content_reference, content_service=self.context.content_service)
+        segment = self.context.content_service.put_bytes(self.context.did, byte_data)
+        self.content = Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service)
         return self
 
     def response(self):
         return {
-            'filename': self.content.name,
-            'contentReference': self.content.content_reference.json(),
+            'content': self.content.json(),
             'metadata': self.metadata
         }
 
@@ -182,13 +181,13 @@ class LoadResult(Result):
         return self
 
     def save_string_content(self, string_data: str, name: str, media_type: str):
-        content_reference = self.context.content_service.put_str(self.context.did, string_data, media_type)
-        self.content.append(Content(name=name, content_reference=content_reference, content_service=self.context.content_service))
+        segment = self.context.content_service.put_str(self.context.did, string_data)
+        self.content.append(Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service))
         return self
 
     def save_byte_content(self, byte_data: bytes, name: str, media_type: str):
-        content_reference = self.context.content_service.put_bytes(self.context.did, byte_data, media_type)
-        self.content.append(Content(name=name, content_reference=content_reference, content_service=self.context.content_service))
+        segment = self.context.content_service.put_bytes(self.context.did, byte_data)
+        self.content.append(Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service))
         return self
 
     def add_metadata(self, key: str, value: str):
@@ -286,13 +285,13 @@ class TransformResult(Result):
         return self
 
     def save_string_content(self, string_data: str, name: str, media_type: str):
-        content_reference = self.context.content_service.put_str(self.context.did, string_data, media_type)
-        self.content.append(Content(name=name, content_reference=content_reference, content_service=self.context.content_service))
+        segment = self.context.content_service.put_str(self.context.did, string_data)
+        self.content.append(Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service))
         return self
 
     def save_byte_content(self, byte_data: bytes, name: str, media_type: str):
-        content_reference = self.context.content_service.put_bytes(self.context.did, byte_data, media_type)
-        self.content.append(Content(name=name, content_reference=content_reference, content_service=self.context.content_service))
+        segment = self.context.content_service.put_bytes(self.context.did, byte_data)
+        self.content.append(Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service))
         return self
 
     def add_metadata(self, key: str, value: str):

@@ -18,12 +18,11 @@
 package org.deltafi.actionkit.action.content;
 
 import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.ActionKitException;
-import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
+import org.deltafi.common.types.Content;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,22 +31,17 @@ import java.nio.charset.Charset;
 @Slf4j
 public class ActionContent {
     @Getter
-    protected final ContentReference contentReference;
-    @Getter
-    @Setter
-    protected String name;
+    protected final Content content;
     protected final ContentStorageService contentStorageService;
 
     /**
      * Constructs a new {@code ActionContent} instance with the specified name, content reference,
      * and content storage service.
-     * @param name the filename of the content
-     * @param contentReference the content reference containing the actual content data
+     * @param content the content to embed
      * @param contentStorageService the content storage service used for loading the content
      */
-    public ActionContent(String name, ContentReference contentReference, ContentStorageService contentStorageService) {
-        this.contentReference = contentReference;
-        this.name = name;
+    public ActionContent(Content content, ContentStorageService contentStorageService) {
+        this.content = content;
         this.contentStorageService = contentStorageService;
     }
 
@@ -58,7 +52,7 @@ public class ActionContent {
      * @return a new {@code ActionContent} instance that is a copy of this instance
      */
     public ActionContent copy() {
-        return new ActionContent(name, contentReference.copy(), contentStorageService);
+        return new ActionContent(content.copy(), contentStorageService);
     }
 
     /**
@@ -70,7 +64,7 @@ public class ActionContent {
      * @return a new {@code ActionContent} instance representing the specified subcontent
      */
     public ActionContent subcontent(long offset, long size) {
-        return subcontent(offset, size, name);
+        return subcontent(offset, size, content.getName());
     }
 
     /**
@@ -83,7 +77,7 @@ public class ActionContent {
      * @return a new {@code ActionContent} instance representing the specified subcontent
      */
     public ActionContent subcontent(long offset, long size, String name) {
-        return subcontent(offset, size, name, contentReference.getMediaType());
+        return subcontent(offset, size, name, content.getMediaType());
     }
 
     /**
@@ -97,7 +91,7 @@ public class ActionContent {
      * @return a new {@code ActionContent} instance representing the specified subcontent
      */
     public ActionContent subcontent(long offset, long size, String name, String mediaType) {
-        return new ActionContent(name, contentReference.subreference(offset, size, mediaType), contentStorageService);
+        return new ActionContent(content.subcontent(offset, size, name, mediaType), contentStorageService);
     }
 
     /**
@@ -106,7 +100,7 @@ public class ActionContent {
      *  @return the size of the content
      */
     public long getSize() {
-        return contentReference.getSize();
+        return content.getSize();
     }
 
     /**
@@ -163,10 +157,28 @@ public class ActionContent {
      */
     public InputStream loadInputStream() {
         try {
-            return contentStorageService.load(contentReference);
+            return contentStorageService.load(content);
         } catch (ObjectStorageException e) {
             throw new ActionKitException("Failed to load content from storage", e);
         }
+    }
+
+    /**
+     * Retrieves the name of this {@code ActionContent} instance.
+     *
+     * @return the name of the content
+     */
+    public String getName() {
+        return content.getName();
+    }
+
+    /**
+     * Sets the name of this {@code ActionContent} instance.
+     *
+     * @param name the name to set for the content
+     */
+    public void setName(String name) {
+        content.setName(name);
     }
 
     /**
@@ -175,7 +187,7 @@ public class ActionContent {
      * @return the media type of the content
      */
     public String getMediaType() {
-        return contentReference.getMediaType();
+        return content.getMediaType();
     }
 
     /**
@@ -184,7 +196,7 @@ public class ActionContent {
      * @param mediaType the media type to set for the content
      */
     public void setMediaType(String mediaType) {
-        contentReference.setMediaType(mediaType);
+        content.setMediaType(mediaType);
     }
 
     /**
@@ -195,7 +207,7 @@ public class ActionContent {
      */
     @SuppressWarnings("unused")
     public void prepend(ActionContent other) {
-        contentReference.getSegments().addAll(0, other.contentReference.getSegments());
+        content.getSegments().addAll(0, other.content.getSegments());
     }
 
     /**
@@ -205,6 +217,6 @@ public class ActionContent {
      * @param other the {@code ActionContent} instance whose content segments should be appended to this instance
      */
     public void append(ActionContent other) {
-        contentReference.getSegments().addAll(other.contentReference.getSegments());
+        content.getSegments().addAll(other.content.getSegments());
     }
 }

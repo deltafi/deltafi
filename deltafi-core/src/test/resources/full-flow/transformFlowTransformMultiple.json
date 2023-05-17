@@ -7,24 +7,22 @@
     "transform": {
         "content": [
             {
-                "contentReference": {
-                    "segments": [{
-                        "uuid": "objectName1",
-                        "offset": 0,
-                        "size": 250,
-                        "did": "%1$s" }],
-                    "mediaType": "application/octet-stream"
-                }
+                "name": "transformed1",
+                "segments": [{
+                    "uuid": "objectName1",
+                    "offset": 0,
+                    "size": 250,
+                    "did": "%1$s" }],
+                "mediaType": "application/octet-stream"
             },
             {
-                "contentReference": {
-                    "segments": [{
-                        "uuid": "objectName2",
-                        "offset": 250,
-                        "size": 250,
-                        "did": "%1$s" }],
-                    "mediaType": "application/octet-stream"
-                }
+                "name": "transformed2",
+                "segments": [{
+                    "uuid": "objectName2",
+                    "offset": 250,
+                    "size": 250,
+                    "did": "%1$s" }],
+                "mediaType": "application/octet-stream"
             }
         ],
         "metadata": {

@@ -43,7 +43,7 @@
               </ContentDialog>
             </span>
             <span v-else-if="formattedDataByAction.hasOwnProperty(action.name)">
-              <ContentDialog :content="[formattedDataByAction[action.name]]">
+              <ContentDialog :content="[formattedDataByAction[action.name].content]">
                 <Button icon="far fa-window-maximize" label="View" class="content-button p-button-link" />
               </ContentDialog>
             </span>

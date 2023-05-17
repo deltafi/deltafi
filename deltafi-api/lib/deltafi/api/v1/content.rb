@@ -91,18 +91,18 @@ module Deltafi
             @minio_client = Aws::S3::Client.new
           end
 
-          def content_reference_size(content_reference)
-            content_reference[:segments].map { |segment| head_segment(segment).content_length }.sum
+          def content_size(content)
+            content[:segments].map { |segment| head_segment(segment).content_length }.sum
           end
 
-          def verify_content_reference(content_reference)
+          def verify_content(content)
             %i[mediaType size segments].each do |key|
-              raise "Invalid content reference: #{key} required" unless content_reference[key]
+              raise "Invalid content: #{key} required" unless content[key]
             end
 
-            content_reference[:segments].each do |segment|
+            content[:segments].each do |segment|
               %i[did uuid size offset].each do |key|
-                raise "Invalid content reference: #{key} required for each segment" unless segment[key]
+                raise "Invalid content: #{key} required for each segment" unless segment[key]
               end
             end
           end

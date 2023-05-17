@@ -23,11 +23,11 @@ const mockedData: Record<string, string> = {
   'text/plain': 'This is some plain text content.'
 }
 
-const generateData = (reference: any) => {
-  if (reference.mediaType in mockedData) {
-    return mockedData[reference.mediaType];
+const generateData = (content: any) => {
+  if (content.mediaType in mockedData) {
+    return mockedData[content.mediaType];
   } else {
-    return `No mocked content with this media type: ${reference.mediaType}`;
+    return `No mocked content with this media type: ${content.mediaType}`;
   }
 };
 

@@ -26,10 +26,10 @@ interface ContentSegment {
   offset: number;
 }
 
-interface ContentReference {
+interface Content {
   size: number;
   mediaType: string;
-  filename: string;
+  name: string;
   segments: Array<ContentSegment>
 }
 
@@ -38,21 +38,21 @@ export default function useContent() {
   const endpoint: string = 'content';
   const data: Ref<Blob | undefined> = ref();
 
-  const fetch = async (contentReference: ContentReference) => {
-    const params = buildParamString(contentReference)
+  const fetch = async (content: Content) => {
+    const params = buildParamString(content)
     await get(endpoint, params, false);
     data.value = response.value;
     return data.value;
   }
 
-  const downloadURL = (contentReference: ContentReference) => {
-    const params = buildParamString(contentReference)
+  const downloadURL = (content: Content) => {
+    const params = buildParamString(content)
     return buildURL(endpoint, params);
   }
 
-  const buildParamString = (contentReference: ContentReference) => {
-    const base64 = window.btoa(JSON.stringify(contentReference))
-    return new URLSearchParams({ reference: base64 });
+  const buildParamString = (content: Content) => {
+    const base64 = window.btoa(JSON.stringify(content))
+    return new URLSearchParams({ content: base64 });
   }
 
   return { data, loaded, loading, fetch, downloadURL, errors };

@@ -17,21 +17,14 @@
 #
 
 from deltafi.domain import Context
-from deltafi.storage import ContentReference, Segment
+from deltafi.storage import Segment
 
 SEG_ID = "1"
 TEST_DID = "123"
 
 
 def make_segment(seg_id):
-    segment = Segment(uuid=seg_id, offset=0, size=100, did=TEST_DID)
-    return segment
-
-
-def make_content_reference(seg_id):
-    segment = make_segment(seg_id)
-    content_reference = ContentReference(segments=[segment], media_type="xml")
-    return content_reference
+    return Segment(uuid=seg_id, offset=0, size=100, did=TEST_DID)
 
 
 def make_context_dict():
@@ -48,7 +41,9 @@ def make_context_dict():
 def make_content_dict(name):
     return {
         'name': name,
-        'contentReference': make_content_reference(SEG_ID).json()}
+        'segments': [make_segment(SEG_ID).json()],
+        'mediaType': 'xml'
+    }
 
 
 def make_delta_file_message_dict():

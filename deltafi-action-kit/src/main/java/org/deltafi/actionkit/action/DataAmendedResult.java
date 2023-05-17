@@ -22,9 +22,9 @@ import lombok.Getter;
 import lombok.Setter;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.converters.ContentConverter;
-import org.deltafi.common.content.ContentReference;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.Content;
 import org.deltafi.common.types.SaveManyContent;
 import org.jetbrains.annotations.NotNull;
 
@@ -80,15 +80,15 @@ public abstract class DataAmendedResult extends MetadataAmendedResult {
 
     /**
      * Save content to content storage and attach to the result
-     * @param content Byte array of content to store.  The entire byte array will be stored in content storage
+     * @param bytes Byte array of content to store.  The entire byte array will be stored in content storage
      * @param name the content name
      * @param mediaType Media type for the content being stored
      */
     @SuppressWarnings("unused")
-    public void saveContent(byte[] content, String name, String mediaType) {
+    public void saveContent(byte[] bytes, String name, String mediaType) {
         try {
-            ContentReference contentReference = context.getContentStorageService().save(context.getDid(), content, mediaType);
-            addContent(new ActionContent(name, contentReference, context.getContentStorageService()));
+            Content content = context.getContentStorageService().save(context.getDid(), bytes, name, mediaType);
+            addContent(new ActionContent(content, context.getContentStorageService()));
         } catch(ObjectStorageException e) {
             throw new ActionKitException("Failed to store content " + name, e);
         }
@@ -96,15 +96,15 @@ public abstract class DataAmendedResult extends MetadataAmendedResult {
 
     /**
      * Save content to content storage and attach to the result
-     * @param content InputStream of content to store.  The entire stream will be read into content storage, and the
+     * @param stream InputStream of content to store.  The entire stream will be read into content storage, and the
      *                stream may be closed by underlying processors after execution
      * @param name the content name
      * @param mediaType Media type for the content being stored
      */
-    public void saveContent(InputStream content, String name, @SuppressWarnings("SameParameterValue") String mediaType) {
+    public void saveContent(InputStream stream, String name, @SuppressWarnings("SameParameterValue") String mediaType) {
         try {
-            ContentReference contentReference = context.getContentStorageService().save(context.getDid(), content, mediaType);
-            addContent(new ActionContent(name, contentReference, context.getContentStorageService()));
+            Content content = context.getContentStorageService().save(context.getDid(), stream, name, mediaType);
+            addContent(new ActionContent(content, context.getContentStorageService()));
         } catch(ObjectStorageException e) {
             throw new ActionKitException("Failed to store content " + name, e);
         }

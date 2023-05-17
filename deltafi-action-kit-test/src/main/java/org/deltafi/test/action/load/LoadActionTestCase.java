@@ -23,7 +23,7 @@ import org.deltafi.actionkit.action.load.LoadAction;
 import org.deltafi.actionkit.action.load.LoadResult;
 import org.deltafi.actionkit.action.load.ReinjectResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.common.content.ContentReference;
+import org.deltafi.common.types.Content;
 import org.deltafi.test.action.Child;
 import org.deltafi.test.action.IOContent;
 import org.deltafi.test.action.TestCaseBase;
@@ -37,7 +37,7 @@ import java.util.Map;
 @SuperBuilder
 public class LoadActionTestCase extends TestCaseBase<LoadAction<? extends ActionParameters>> {
 
-    private ContentReference expectedContentReference;
+    private Content expectedContent;
 
     private String sessionId;
 
