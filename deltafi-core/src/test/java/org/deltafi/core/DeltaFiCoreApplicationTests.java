@@ -2728,6 +2728,21 @@ class DeltaFiCoreApplicationTests {
 		testFilter(DeltaFilesFilter.newBuilder().replayed(false).build(), noReplayDate);
 	}
 
+	@Test
+	void testFilterByTerminalStage() {
+		DeltaFile ingress = buildDeltaFile("1", null, DeltaFileStage.INGRESS, MONGO_NOW.plusSeconds(2), MONGO_NOW.minusSeconds(2));
+		DeltaFile enrich = buildDeltaFile("2", null, DeltaFileStage.ENRICH, MONGO_NOW.plusSeconds(2), MONGO_NOW.minusSeconds(2));
+		DeltaFile egress = buildDeltaFile("3", null, DeltaFileStage.EGRESS, MONGO_NOW.plusSeconds(2), MONGO_NOW.minusSeconds(2));
+		DeltaFile complete = buildDeltaFile("4", null, DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(2), MONGO_NOW.minusSeconds(2));
+		DeltaFile error = buildDeltaFile("5", null, DeltaFileStage.ERROR, MONGO_NOW.plusSeconds(2), MONGO_NOW.minusSeconds(2));
+		DeltaFile cancelled = buildDeltaFile("6", null, DeltaFileStage.CANCELLED, MONGO_NOW.plusSeconds(2), MONGO_NOW.minusSeconds(2));
+		deltaFileRepo.saveAll(List.of(ingress, enrich, egress, complete, error, cancelled));
+		testFilter(DeltaFilesFilter.newBuilder().terminalStage(true).build(), cancelled, error, complete);
+		testFilter(DeltaFilesFilter.newBuilder().terminalStage(false).build(), egress, enrich, ingress);
+		testFilter(DeltaFilesFilter.newBuilder().stage(DeltaFileStage.CANCELLED).terminalStage(false).build(), cancelled, egress, enrich, ingress);
+		testFilter(DeltaFilesFilter.newBuilder().stage(DeltaFileStage.INGRESS).terminalStage(true).build(), cancelled, error, complete, ingress);
+	}
+
 	private void testFilter(DeltaFilesFilter filter, DeltaFile... expected) {
 		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 50, filter, null);
 		assertEquals(new ArrayList<>(Arrays.asList(expected)), deltaFiles.getDeltaFiles());

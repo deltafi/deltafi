@@ -125,6 +125,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     private static final String OVER = "over";
     private static final String CUMULATIVE_OVER = "cumulativeOver";
 
+    private static final Set<DeltaFileStage> TERMINAL_STAGES = Set.of(DeltaFileStage.COMPLETE, DeltaFileStage.ERROR, DeltaFileStage.CANCELLED);
+    private static final Set<DeltaFileStage> ACTIVE_STAGES = Set.of(DeltaFileStage.INGRESS, DeltaFileStage.ENRICH, DeltaFileStage.EGRESS);
+
     public static final int MAX_COUNT = 50_000;
 
     static class FlowCountAndDids {
@@ -458,7 +461,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             andCriteria.add(Criteria.where(MODIFIED).lt(filter.getModifiedBefore()));
         }
 
-        if (nonNull(filter.getStage())) {
+        if (nonNull(filter.getStage()) && nonNull(filter.getTerminalStage())) {
+            Set<DeltaFileStage> stages = new HashSet<>(filter.getTerminalStage() ? TERMINAL_STAGES : ACTIVE_STAGES);
+            stages.add(filter.getStage());
+            andCriteria.add(Criteria.where(STAGE).in(stages));
+        } else if (nonNull(filter.getTerminalStage())) {
+            andCriteria.add(Criteria.where(STAGE).in(filter.getTerminalStage() ? TERMINAL_STAGES : ACTIVE_STAGES));
+        } else if (nonNull(filter.getStage())) {
             andCriteria.add(Criteria.where(STAGE).is(filter.getStage().name()));
         }
 
