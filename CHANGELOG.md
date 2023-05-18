@@ -5,6 +5,47 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.0.0-RC1] - 2023-05-17
+
+### Added
+- Added a `terminalStage` filter to the `DeltaFilesFilter`. When `terminalStage` is true it will find DeltaFiles that are in a terminal stage, when false it will find DeltaFiles that are in an in-flight stage.
+- Added the ability to search for DeltaFiles in a terminal stage from Search Page. 
+- Add Toast message when plugin upgrade/install request is made 
+- Added visual indicator to Search Page when filter are applied 
+- System Properties Page now shows editable Plugin variables by Plugin. 
+- CHANGELOG added to DeltaFi documentation
+- Java Action Kit: add save interfaces for String, in addition to existing byte[] and InputStream interfaces 
+
+### Changed
+- `StorageCheck` now respects `check.contentStoragePercentThreshold` system property.
+- Database migrations in auth are now completed before workers are spawned.
+- Auth `WORKERS` are now set to `8` by default.
+- Plugin init uses the action input to build the flow plans with classes that are generated
+- The plugin action templates now includes boilerplate code to read and write content
+- Annotate Icon was changed to tag.  
+- Java Action Kit exceptions publish with the correct cause, instead of burying the message in the context 
+- Do not include the actionType field when generating plugin flows
+- Test execution extraneous logging is silenced
+
+### Fixed
+-  Fixed bug on Search page when applying and clearing filters.
+- Dialogs that contain forms no longer have a dismissible mask.
+- Fixed bug causing `ContentStorageCheck` to never report.
+- Fixed issue preventing auth `WORKERS` being set to greater than one.
+- Add the MINIO_PARTSIZE environment variable to plugins deployed in standalone mode 
+- Correctly assign processingType on reinject
+- Alerts that are silenced will no longer generate a notification
+
+### Tech-Debt/Refactor
+- Flatten content object by removing content references and adding segments and mediaType directly to content
+- Introduce DeltaFile schema versioning for backward compatibility
+- Remove unneccessary ProtocolLayer from load and transform response wire protocols 
+- Remove sourceInfo from the wire protocol
+- Update versions of Python package dependencies
+
+### Documentation
+- Update 'Getting Started' tutoral to reflect recent changes
+
 ## [0.109.0] - 2023-05-11
 
 ### Added
@@ -1699,7 +1740,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/0.109.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC1...main
+[1.0.0-RC1]: https://gitlab.com/deltafi/deltafi/-/compare/0.109.0...1.0.0-RC1
 [0.109.0]: https://gitlab.com/deltafi/deltafi/-/compare/0.108.0...0.109.0
 [0.108.0]: https://gitlab.com/deltafi/deltafi/-/compare/0.107.0...0.108.0
 [0.107.0]: https://gitlab.com/deltafi/deltafi/-/compare/0.106.0...0.107.0
