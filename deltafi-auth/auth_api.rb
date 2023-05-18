@@ -56,9 +56,13 @@ class AuthApi < Sinatra::Application
   get('/probe') {}
 
   db_location = File.join(ENV['DATA_DIR'] || 'db', 'auth.sqlite3')
-  db = ENV['RACK_ENV'] == 'test' ? Sequel.sqlite : Sequel.connect("sqlite://#{db_location}")
-  Sequel.extension :migration
-  Sequel::Migrator.run(db, 'db/migrations')
+  if ENV['RACK_ENV'] == 'test'
+    db = Sequel.sqlite
+    Sequel.extension :migration
+    Sequel::Migrator.run(db, 'db/migrations')
+  else
+    Sequel.connect("sqlite://#{db_location}")
+  end
 
   %w[lib helpers models routes].each { |dir| Dir.glob("./#{dir}/*.rb").sort.each(&method(:require)) }
 
