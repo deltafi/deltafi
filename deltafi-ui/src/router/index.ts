@@ -17,13 +17,35 @@
 */
 
 import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
-import Dashboard from "@/pages/DashboardPage.vue";
+import ActionMetricsPage from "@/pages/ActionMetricsPage.vue";
+import AutoResumePage from "@/pages/AutoResumePage.vue";
+import DashboardPage from "@/pages/DashboardPage.vue";
+import DeletePoliciesPage from "@/pages/DeletePoliciesPage.vue";
+import DeltaFileSearchPage from "@/pages/DeltaFileSearchPage.vue";
+import DeltaFileUploadPage from "@/pages/DeltaFileUploadPage.vue";
+import DeltaFileViewerPage from "@/pages/DeltaFileViewerPage.vue";
+import ErrorsPage from "@/pages/ErrorsPage.vue";
+import EventsPage from "@/pages/EventsPage.vue";
+import ExternalLinksPage from "@/pages/ExternalLinksPage.vue";
+import FlowPlanBuilderPage from "@/pages/FlowPlanBuilderPage.vue";
+import FlowPlansPage from "@/pages/FlowPlansPage.vue";
+import IngressRoutingPage from "@/pages/IngressRoutingPage.vue";
+import PageNotFound from "@/pages/PageNotFound.vue";
+import PluginRepositoryPage from "@/pages/PluginRepositoryPage.vue";
+import PluginsPage from "@/pages/PluginsPage.vue";
+import RolesPage from "@/pages/RolesPage.vue";
+import SystemMetricsPage from "@/pages/SystemMetricsPage.vue";
+import SystemPropertiesPage from "@/pages/SystemPropertiesPage.vue";
+import SystemSnapshotsPage from "@/pages/SystemSnapshotsPage.vue";
+import UnauthorizedPage from "@/pages/UnauthorizedPage.vue";
+import UsersPage from "@/pages/UsersPage.vue";
+import VersionsPage from "@/pages/VersionsPage.vue";
 
 const routes: Array<RouteRecordRaw> = [
   {
     path: "/",
     name: "",
-    component: Dashboard,
+    component: DashboardPage,
     meta: {
       permission: "DashboardView",
     },
@@ -31,7 +53,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/metrics/system",
     name: "System Metrics",
-    component: () => import("@/pages/SystemMetricsPage.vue"),
+    component: SystemMetricsPage,
     meta: {
       permission: "MetricsView",
     },
@@ -39,7 +61,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/deltafile/search",
     name: "DeltaFile Search",
-    component: () => import("@/pages/DeltaFileSearchPage.vue"),
+    component: DeltaFileSearchPage,
     meta: {
       permission: "DeltaFileMetadataView",
     },
@@ -47,7 +69,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/deltafile/upload",
     name: "DeltaFile Upload",
-    component: () => import("@/pages/DeltaFileUploadPage.vue"),
+    component: DeltaFileUploadPage,
     meta: {
       permission: "DeltaFileIngress",
     },
@@ -55,7 +77,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/metrics/action",
     name: "Action Metrics",
-    component: () => import("@/pages/ActionMetricsPage.vue"),
+    component: ActionMetricsPage,
     meta: {
       permission: "MetricsView",
     },
@@ -63,7 +85,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/errors",
     name: "Errors",
-    component: () => import("@/pages/ErrorsPage.vue"),
+    component: ErrorsPage,
     meta: {
       permission: "DeltaFileMetadataView",
     },
@@ -71,7 +93,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/deltafile/viewer/:did?",
     name: "DeltaFile Viewer",
-    component: () => import("@/pages/DeltaFileViewerPage.vue"),
+    component: DeltaFileViewerPage,
     meta: {
       permission: "DeltaFileMetadataView",
     },
@@ -79,7 +101,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/config/plugins/:pluginCordinates?",
     name: "Plugins",
-    component: () => import("@/pages/PluginsPage.vue"),
+    component: PluginsPage,
     meta: {
       permission: "PluginsView",
     },
@@ -87,7 +109,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/config/plugin-repositories",
     name: "Repositories",
-    component: () => import("@/pages/PluginRepositoryPage.vue"),
+    component: PluginRepositoryPage,
     meta: {
       permission: "PluginImageRepoView",
     },
@@ -95,7 +117,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/config/system",
     name: "System Properties",
-    component: () => import("@/pages/SystemPropertiesPage.vue"),
+    component: SystemPropertiesPage,
     meta: {
       permission: "SystemPropertiesRead",
     },
@@ -103,7 +125,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/config/delete-policies",
     name: "Delete Policies",
-    component: () => import("@/pages/DeletePoliciesPage.vue"),
+    component: DeletePoliciesPage,
     meta: {
       permission: "DeletePolicyRead",
     },
@@ -111,7 +133,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/config/ingress-routing",
     name: "Ingress Routing",
-    component: () => import("@/pages/IngressRoutingPage.vue"),
+    component: IngressRoutingPage,
     meta: {
       permission: "IngressRoutingRuleRead",
     },
@@ -119,7 +141,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/config/auto-resume",
     name: "Auto Resume",
-    component: () => import("@/pages/AutoResumePage.vue"),
+    component: AutoResumePage,
     meta: {
       permission: "ResumePolicyRead",
     },
@@ -127,7 +149,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/config/flows",
     name: "Flows",
-    component: () => import("@/pages/FlowPlansPage.vue"),
+    component: FlowPlansPage,
     meta: {
       permission: "FlowView",
     },
@@ -135,7 +157,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/config/flow-plan-builder",
     name: "Flow Plan Builder",
-    component: () => import("@/pages/FlowPlanBuilderPage.vue"),
+    component: FlowPlanBuilderPage,
     meta: {
       permission: "FlowView",
     },
@@ -143,7 +165,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/config/snapshots",
     name: "System Snapshots",
-    component: () => import("@/pages/SystemSnapshotsPage.vue"),
+    component: SystemSnapshotsPage,
     meta: {
       permission: "SnapshotRead",
     },
@@ -151,7 +173,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/versions",
     name: "Versions",
-    component: () => import("@/pages/VersionsPage.vue"),
+    component: VersionsPage,
     meta: {
       permission: "VersionsView",
     },
@@ -159,7 +181,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/events",
     name: "Events",
-    component: () => import("@/pages/EventsPage.vue"),
+    component: EventsPage,
     meta: {
       permission: "EventRead",
     },
@@ -167,7 +189,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/admin/users",
     name: "Users",
-    component: () => import("@/pages/UsersPage.vue"),
+    component: UsersPage,
     meta: {
       permission: "UserRead",
     },
@@ -175,7 +197,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/admin/roles",
     name: "Roles",
-    component: () => import("@/pages/RolesPage.vue"),
+    component: RolesPage,
     meta: {
       permission: "RoleRead",
     },
@@ -183,15 +205,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/admin/external-links",
     name: "External Links",
-    component: () => import("@/pages/ExternalLinksPage.vue"),
-    meta: {
-      permission: "Admin",
-    },
-  },
-  {
-    path: "/admin/audit",
-    name: "Audit Log",
-    component: () => import("@/pages/AuditLogPage.vue"),
+    component: ExternalLinksPage,
     meta: {
       permission: "Admin",
     },
@@ -199,12 +213,12 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/unauthorized",
     name: "Unauthorized",
-    component: () => import("@/pages/UnauthorizedPage.vue"),
+    component: UnauthorizedPage,
   },
   {
     path: "/:catchAll(.*)",
     name: "404 Not Found",
-    component: () => import("@/pages/PageNotFound.vue"),
+    component: PageNotFound,
   },
 ];
 
