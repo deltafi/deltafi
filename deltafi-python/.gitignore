@@ -3,6 +3,7 @@ build/
 .coverage
 src/dist/
 pyproject.toml
+src/poetry.lock
 *.py[cod]
 __pycache__/
 *.so
