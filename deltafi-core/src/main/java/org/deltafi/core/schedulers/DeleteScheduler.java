@@ -28,6 +28,9 @@ import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
 @ConditionalOnProperty(value = "schedule.maintenance", havingValue = "true", matchIfMissing = true)
 @Service
 @EnableScheduling
@@ -48,7 +51,9 @@ public class DeleteScheduler {
         try {
             deleteRunner.runDeletes();
         } catch (Throwable t) {
-            log.error("Unexpected exception while executing scheduled deletes", t);
+            StringWriter stackWriter = new StringWriter();
+            t.printStackTrace(new PrintWriter(stackWriter));
+            log.error("Unexpected exception while executing scheduled deletes:\n" + t.getMessage() + "\n" + stackWriter, t);
         }
     }
 }
