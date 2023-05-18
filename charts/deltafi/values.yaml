@@ -10,36 +10,36 @@ deltafi:
     trustStoreName: trustStore.jks
     trustStoreType: JKS
   core_actions:
-    image: deltafi/deltafi-core-actions:1.0.0-RC1
+    image: deltafi/deltafi-core-actions:1.0.0-RC2
   passthrough:
-    image: deltafi/deltafi-passthrough:1.0.0-RC1
+    image: deltafi/deltafi-passthrough:1.0.0-RC2
     enabled: true
   core:
-    image: deltafi/deltafi-core:1.0.0-RC1
+    image: deltafi/deltafi-core:1.0.0-RC2
     mongo_host: deltafi-mongodb
   docs:
-    image: deltafi/deltafi-docs:1.0.0-RC1
+    image: deltafi/deltafi-docs:1.0.0-RC2
     enabled: true
   ingress:
     envVar:
       HTTP_MAX_BODY_SIZE: 5G
   auth:
-    image: deltafi/deltafi-auth:1.0.0-RC1
+    image: deltafi/deltafi-auth:1.0.0-RC2
     mode: basic # basic, cert, or disabled
     secret: auth-secret
     entityResolver:
       enabled: false
-      image: deltafi/deltafi-entity-resolver:1.0.0-RC1
+      image: deltafi/deltafi-entity-resolver:1.0.0-RC2
       url: http://127.0.0.1:8080/
   api:
-    image: deltafi/deltafi-api:1.0.0-RC1
+    image: deltafi/deltafi-api:1.0.0-RC2
   ui:
-    image: deltafi/deltafi-ui:1.0.0-RC1
+    image: deltafi/deltafi-ui:1.0.0-RC2
   egress_sink:
     enabled: true
-    image: deltafi/deltafi-egress-sink:1.0.0-RC1
+    image: deltafi/deltafi-egress-sink:1.0.0-RC2
   nodemonitor:
-    image: deltafi/deltafi-nodemonitor:1.0.0-RC1
+    image: deltafi/deltafi-nodemonitor:1.0.0-RC2
     envVars:
       - name: GRAPHITE_HOST
         value: deltafi-graphite
