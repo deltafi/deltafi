@@ -28,14 +28,14 @@ module Deltafi
 
     GRAFANA_URL = ENV['DELTAFI_GRAFANA_URL'] || 'http://deltafi-grafana'
 
-    ALERT_API = "#{GRAFANA_URL}/api/alertmanager/grafana/api/v2/alerts"
+    ALERT_API = "#{GRAFANA_URL}/api/alertmanager/grafana/api/v2/alerts?active=true&silenced=false&inhibited=false"
 
     OPTIONS = {
       headers: {
         'X-Metrics-Role' => 'Admin',
         'X-User-Name' => 'admin'
       }
-    }
+    }.freeze
 
     def self.alerts(raw: false)
       if raw
