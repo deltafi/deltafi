@@ -883,7 +883,17 @@ class DeltaFiCoreApplicationTests {
 		Map<String, String> tags = tagsFor(ActionEventType.FORMAT, "sampleEgress.SampleFormatAction", INGRESS_FLOW_NAME, EGRESS_FLOW_NAME);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Mockito.verifyNoMoreInteractions(metricService);
+	}
 
+	@Test
+	void testFormatMissingContent() throws IOException {
+		String did = UUID.randomUUID().toString();
+		deltaFileRepo.save(postEnrichDeltaFile(did));
+
+		deltaFilesService.handleActionEvent(actionEvent("formatMissingContent", did));
+
+		DeltaFile afterMutation = deltaFilesService.getDeltaFile(did);
+		assertEquals(DeltaFileStage.ERROR, afterMutation.getStage());
 	}
 
 	@Test

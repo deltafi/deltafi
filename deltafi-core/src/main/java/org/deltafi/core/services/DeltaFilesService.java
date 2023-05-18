@@ -382,6 +382,13 @@ public class DeltaFilesService {
 
     public void format(DeltaFile deltaFile, ActionEventInput event) {
         EgressFlow egressFlow = egressFlowService.withFormatActionNamed(event.getAction());
+
+        if (event.getFormat().getContent() == null) {
+            event.setError(ErrorEvent.newBuilder().cause("Received format event with no content from " + event.getAction()).build());
+            error(deltaFile, event);
+            return;
+        }
+
         FormattedData formattedData = FormattedData.newBuilder()
                 .formatAction(event.getAction())
                 .content(event.getFormat().getContent())
