@@ -36,7 +36,6 @@ const hasPermission = inject("hasPermission");
 
 //View dynamic props being sent down
 const attrs = useAttrs();
-//console.log(attrs);
 
 const closeDialogCommand = ref({
   command: () => {

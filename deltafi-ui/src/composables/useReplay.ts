@@ -36,7 +36,7 @@ export default function useReplay() {
   };
 
   const replay = async (dids: Array<string>, removeSourceMetadata: Array<string>, replaceSourceMetadata: Array<Object>) => {
-    await queryGraphQL(buildReplayQuery(dids,removeSourceMetadata,replaceSourceMetadata), "useReplay", "mutation");
+    await queryGraphQL(buildReplayQuery(dids, removeSourceMetadata, replaceSourceMetadata), "useReplay", "mutation");
     return Promise.resolve(response);
   };
 

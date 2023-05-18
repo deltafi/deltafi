@@ -248,8 +248,8 @@ const resumeReplayClean = () => {
 const requestResumeReplay = async () => {
   let response;
   let batchedDids = getBatchDids(props.did);
-  let successBatch = false;
-  let completedBatches = 0; 
+  let success = false;
+  let completedBatches = 0;
   try {
     if (resumeReplay.value === "Resume") {
       displayBatchingDialog.value = true;
@@ -266,7 +266,7 @@ const requestResumeReplay = async () => {
             }
           }
           if (successResume.length > 0) {
-            successBatch = true;
+            success = true;
           }
         }
         completedBatches += dids.length;
@@ -274,30 +274,31 @@ const requestResumeReplay = async () => {
       }
       displayBatchingDialog.value = false;
       batchCompleteValue.value = 0;
-      if (successBatch) {
+      if (success) {
         const links = props.did.slice(0, maxSuccessDisplay).map((did) => `<a href="/deltafile/viewer/${did}" class="monospace">${did}</a>`);
         if (props.did.length > maxSuccessDisplay) links.push("...");
         let pluralized = pluralize(props.did.length, "DeltaFile");
         notify.success(`Resume request sent successfully for ${pluralized}`, links.join(", "));
         emit("update");
       }
-    } else {
+    } else { // Replay
       displayBatchingDialogReplay.value = true;
       batchCompleteValue.value = 0;
+      const newDids = new Array();
       for (const dids of batchedDids) {
         response = await replay(dids, removedMetadata.value, getModifiedMetadata());
         if (response.value.data !== undefined && response.value.data !== null) {
-          let successReplay = new Array();
+          let successReplayBatch = new Array();
           for (const replayStatus of response.value.data.replay) {
             if (replayStatus.success) {
-              successReplay.push(replayStatus);
+              successReplayBatch.push(replayStatus);
+              newDids.push(replayStatus.did)
             } else {
               notify.error(`Replay request failed for ${replayStatus.did}`, replayStatus.error);
             }
           }
-          if (successReplay.length > 0) {
-            successBatch = true;
-            console.log('goofy')
+          if (successReplayBatch.length > 0) {
+            success = true;
           }
         }
         completedBatches += dids.length;
@@ -305,9 +306,9 @@ const requestResumeReplay = async () => {
       }
       displayBatchingDialogReplay.value = false;
       batchCompleteValue.value = 0;
-      if (successBatch) {
-        let pluralized = pluralize(props.did.length, "DeltaFile");
-        const links = props.did.slice(0, maxSuccessDisplay).map((did) => `<a href="/deltafile/viewer/${did}" class="monospace">${did}</a>`);
+      if (success) {
+        let pluralized = pluralize(newDids.length, "DeltaFile");
+        const links = newDids.slice(0, maxSuccessDisplay).map((did) => `<a href="/deltafile/viewer/${did}" class="monospace">${did}</a>`);
         notify.success(`Replay request sent successfully for ${pluralized}`, links.join(", "));
         emit("update");
       }

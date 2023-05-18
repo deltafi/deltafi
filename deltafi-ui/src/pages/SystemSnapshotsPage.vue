@@ -122,7 +122,6 @@ const filters = ref({
 
 onMounted(async () => {
   await getSystemSnapshots();
-  console.log("snaps", snapshots.value.length);
 });
 
 const totalSnaps = computed(() => (snapshots.value || []).length);

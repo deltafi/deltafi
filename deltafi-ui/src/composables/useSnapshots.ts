@@ -166,7 +166,7 @@ export default function useSystemSnapshots() {
     };
     await queryGraphQL(query, "getSystemSnapshots");
     data.value = response.value.data.getSystemSnapshots
-      .sort((a:any, b:any) => (a.created < b.created ? 1 : -1));
+      .sort((a: any, b: any) => (a.created < b.created ? 1 : -1));
   };
 
   const create = async (reason: string) => {
@@ -196,7 +196,6 @@ export default function useSystemSnapshots() {
   };
 
   const importSnapshot = async (snapshot: JSON) => {
-    console.log(snapshot)
     const query = {
       importSnapshot: {
         __args: {
@@ -224,5 +223,5 @@ export default function useSystemSnapshots() {
     return response.value.data.deleteSnapshot;
   };
 
-  return { data, loading, loaded, fetch, create, revert, importSnapshot, deleteSnapshot,mutationData, errors };
+  return { data, loading, loaded, fetch, create, revert, importSnapshot, deleteSnapshot, mutationData, errors };
 }

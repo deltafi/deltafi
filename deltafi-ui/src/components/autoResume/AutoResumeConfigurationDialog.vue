@@ -281,7 +281,6 @@ const submit = async () => {
 
     if (!_.isEmpty(_.get(uploadErrorsList[0], "errors", null))) {
       for (let errorMessages of uploadErrorsList[0].errors) {
-        console.log(errorMessages);
         errorsList.value.push(errorMessages);
       }
       notify.error(`Auto Resume Upload failed`, "Unable to update Auto Resume Rules", 4000);
