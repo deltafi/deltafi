@@ -26,7 +26,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 8,
+  "id": 4367,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -90,7 +90,7 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "9.3.2",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -248,7 +248,7 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "9.3.2",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -311,7 +311,7 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "9.3.2",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -321,9 +321,10 @@
           "hide": false,
           "refCount": 0,
           "refId": "A",
-          "target": "sortByTotal(aliasByTags(groupByTags(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=ingress', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false), 'sum', 'ingressFlow'), 'ingressFlow'))"
+          "target": "maximumAbove(limit(sortByTotal(aliasByTags(groupByTags(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=ingress', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false), 'sum', 'ingressFlow'), 'ingressFlow')), 10), 0)"
         }
       ],
+      "transformations": [],
       "transparent": true,
       "type": "stat"
     },
@@ -374,7 +375,7 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "9.3.2",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -384,7 +385,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "A",
-          "target": "sortByTotal(aliasByTags(groupByTags(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false), 'sum', 'ingressFlow'), 'ingressFlow'))"
+          "target": "maximumAbove(limit(sortByTotal(aliasByTags(groupByTags(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false), 'sum', 'ingressFlow'), 'ingressFlow')), 10), 0)"
         }
       ],
       "transparent": true,
@@ -613,7 +614,7 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "9.3.2",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -1394,7 +1395,7 @@
         },
         "textMode": "value_and_name"
       },
-      "pluginVersion": "9.3.2",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -1463,7 +1464,7 @@
         "text": {},
         "textMode": "value_and_name"
       },
-      "pluginVersion": "9.3.2",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -1718,7 +1719,7 @@
         },
         "textMode": "value_and_name"
       },
-      "pluginVersion": "9.3.2",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -1786,7 +1787,7 @@
         },
         "textMode": "value_and_name"
       },
-      "pluginVersion": "9.3.2",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -2300,7 +2301,7 @@
         },
         "showUnfilled": true
       },
-      "pluginVersion": "9.3.2",
+      "pluginVersion": "9.4.7",
       "targets": [
         {
           "datasource": {
@@ -2522,7 +2523,8 @@
     }
   ],
   "refresh": "5m",
-  "schemaVersion": 37,
+  "revision": 1,
+  "schemaVersion": 38,
   "style": "dark",
   "tags": [
     "DeltaFi"
@@ -2598,6 +2600,6 @@
   "timezone": "",
   "title": "System Overview",
   "uid": "system-overview",
-  "version": 2,
+  "version": 3,
   "weekStart": ""
 }
