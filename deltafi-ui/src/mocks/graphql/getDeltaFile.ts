@@ -131,7 +131,7 @@ const generateData = () => {
         mediaType: "application/xml",
       },
     ],
-    indexedMetadata: {
+    annotations: {
       a: "b",
       c: "d",
     },

@@ -39,6 +39,7 @@ public class LoadEvent {
   @Builder.Default
   private Map<String, String> metadata = new HashMap<>();
   private String did;
+  private Map<String, String> annotations;
   @Builder.Default
   private List<String> deleteMetadataKeys = new ArrayList<>();
 }

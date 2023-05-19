@@ -21,12 +21,15 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.deltafi.actionkit.action.DataAmendedResult;
+import org.deltafi.actionkit.action.HasAnnotations;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEventInput;
 import org.deltafi.common.types.ActionEventType;
 import org.deltafi.common.types.TransformEvent;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,7 +39,8 @@ import java.util.List;
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true)
-public class TransformResult extends DataAmendedResult implements TransformResultType {
+public class TransformResult extends DataAmendedResult implements HasAnnotations, TransformResultType{
+    private final Map<String, String> annotations = new HashMap<>();
     protected List<String> deleteMetadataKeys = new ArrayList<>();
 
     /**
@@ -57,11 +61,13 @@ public class TransformResult extends DataAmendedResult implements TransformResul
         event.setTransform(TransformEvent.newBuilder()
                 .content(contentList())
                 .metadata(metadata)
+                .annotations(annotations)
                 .deleteMetadataKeys(deleteMetadataKeys)
                 .build());
         return event;
     }
 
+    @SuppressWarnings("unused")
     public void deleteMetadataKey(String key) {
         deleteMetadataKeys.add(key);
     }

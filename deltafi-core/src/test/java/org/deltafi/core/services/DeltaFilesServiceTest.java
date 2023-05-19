@@ -384,44 +384,44 @@ class DeltaFilesServiceTest {
     @Test
     void testAnnotationDeltaFile() {
         DeltaFile deltaFile = Util.buildDeltaFile("1");
-        deltaFile.addIndexedMetadata(Map.of("key", "one"));
+        deltaFile.addAnnotations(Map.of("key", "one"));
 
         Mockito.when(deltaFileCacheService.get("1")).thenReturn(deltaFile);
         Mockito.when(deltaFileRepo.save(any())).thenAnswer(AdditionalAnswers.returnsFirstArg());
 
-        deltaFilesService.addIndexedMetadata("1", Map.of("sys-ack", "true"), false);
+        deltaFilesService.addAnnotations("1", Map.of("sys-ack", "true"), false);
         Mockito.verify(deltaFileCacheService).save(deltaFileCaptor.capture());
 
         DeltaFile after = deltaFileCaptor.getValue();
-        Assertions.assertThat(after.getIndexedMetadata()).hasSize(2).containsEntry("key", "one").containsEntry("sys-ack", "true");
-        Assertions.assertThat(after.getIndexedMetadataKeys()).hasSize(2).contains("key", "sys-ack");
+        Assertions.assertThat(after.getAnnotations()).hasSize(2).containsEntry("key", "one").containsEntry("sys-ack", "true");
+        Assertions.assertThat(after.getAnnotationKeys()).hasSize(2).contains("key", "sys-ack");
     }
 
     @Test
     void testAnnotationDeltaFile_badDid() {
         Map<String, String> metadata = Map.of("sys-ack", "true");
-        Assertions.assertThatThrownBy(() -> deltaFilesService.addIndexedMetadata("did", metadata, true))
+        Assertions.assertThatThrownBy(() -> deltaFilesService.addAnnotations("did", metadata, true))
                         .isInstanceOf(DgsEntityNotFoundException.class)
                         .hasMessage("DeltaFile did not found.");
     }
 
     @Test
-    void testAddIndexedMetadataOverwrites() {
+    void testAddAnnotationOverwrites() {
         DeltaFile deltaFile = Util.buildDeltaFile("1");
-        deltaFile.setIndexedMetadata(new HashMap<>(Map.of("key", "one")));
-        deltaFile.setIndexedMetadataKeys(new HashSet<>(Set.of("key")));
+        deltaFile.setAnnotations(new HashMap<>(Map.of("key", "one")));
+        deltaFile.setAnnotationKeys(new HashSet<>(Set.of("key")));
 
         Mockito.when(deltaFileCacheService.get("1")).thenReturn(deltaFile);
 
-        deltaFilesService.addIndexedMetadata("1", Map.of("key", "changed"), false);
-        Assertions.assertThat(deltaFile.getIndexedMetadata()).hasSize(1).containsEntry("key", "one");
+        deltaFilesService.addAnnotations("1", Map.of("key", "changed"), false);
+        Assertions.assertThat(deltaFile.getAnnotations()).hasSize(1).containsEntry("key", "one");
 
-        deltaFilesService.addIndexedMetadata("1", Map.of("key", "changed", "newKey", "value"), false);
-        Assertions.assertThat(deltaFile.getIndexedMetadata()).hasSize(2).containsEntry("key", "one").containsEntry("newKey", "value");
-        Assertions.assertThat(deltaFile.getIndexedMetadataKeys()).hasSize(2).contains("key", "newKey");
+        deltaFilesService.addAnnotations("1", Map.of("key", "changed", "newKey", "value"), false);
+        Assertions.assertThat(deltaFile.getAnnotations()).hasSize(2).containsEntry("key", "one").containsEntry("newKey", "value");
+        Assertions.assertThat(deltaFile.getAnnotationKeys()).hasSize(2).contains("key", "newKey");
 
-        deltaFilesService.addIndexedMetadata("1", Map.of("key", "changed", "newKey", "value"), true);
-        Assertions.assertThat(deltaFile.getIndexedMetadata()).hasSize(2).containsEntry("key", "changed").containsEntry("newKey", "value");
+        deltaFilesService.addAnnotations("1", Map.of("key", "changed", "newKey", "value"), true);
+        Assertions.assertThat(deltaFile.getAnnotations()).hasSize(2).containsEntry("key", "changed").containsEntry("newKey", "value");
     }
 
     @Test

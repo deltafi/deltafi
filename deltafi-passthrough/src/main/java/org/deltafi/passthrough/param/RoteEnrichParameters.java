@@ -29,6 +29,6 @@ public class RoteEnrichParameters extends RoteParameters {
     @JsonPropertyDescription("Map of enrichment keys to enrichment values that will be added to the DeltaFile")
     private Map<String, String> enrichments;
 
-    @JsonPropertyDescription("Map of metadata that will be indexed")
-    private Map<String, String> indexedMetadata;
+    @JsonPropertyDescription("Map of searchable annotations")
+    private Map<String, String> annotations;
 }

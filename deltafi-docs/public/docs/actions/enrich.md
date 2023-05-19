@@ -34,7 +34,7 @@ public class EnrichInput {
 
 The `enrich` method must return an `EnrichResultType`, which is currently implemented by `EnrichResult`,  and `ErrorResult`.
 
-An `EnrichResult` contains the named enrichment entries and indexed metadata created by the `EnrichAction`.
+An `EnrichResult` contains the named enrichment entries and annotations created by the `EnrichAction`.
 
 ### Example
 
@@ -73,8 +73,8 @@ public class RoteEnrichAction extends EnrichAction<RoteEnrichParameters> {
             params.getEnrichments().forEach((k, v) -> result.addEnrichment(k, v, MediaType.TEXT_PLAIN));
         }
 
-        if (null != params.getIndexedMetadata()) {
-            result.addIndexedMetadata(params.getIndexedMetadata());
+        if (null != params.getAnnotations()) {
+            result.addAnnotations(params.getAnnotations());
         }
 
         return result;
@@ -134,7 +134,7 @@ class HelloWorldEnrichAction(EnrichAction):
     def enrich(self, context: Context, params: BaseModel, enrich_input: EnrichInput):
         if randrange(1000) != 0:
             return EnrichResult(context).enrich('helloWorld', 'python was here', 'text/plain')\
-                .index_metadata('enrichKey', 'enrichValue')
+                .annotate('enrichKey', 'enrichValue')
         else:
             context.logger.error('haha gremlins')
             return ErrorResult(context, 'Something bad happened I guess', 'try again?')

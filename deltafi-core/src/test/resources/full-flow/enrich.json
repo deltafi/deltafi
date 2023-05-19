@@ -6,7 +6,7 @@
     "type": "ENRICH",
     "enrich": {
         "enrichments": [ { "name": "sampleEnrichment", "value": "enrichmentData", "mediaType": "application/octet-stream" } ],
-        "indexedMetadata": {
+        "annotations": {
             "first": "one",
             "second": "two"
         }

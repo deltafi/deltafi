@@ -186,7 +186,7 @@ type DeltaFile {
   protocolStack: [ProtocolLayer!]!
   domains: [Domain!]!
   metadata: Metadata!
-  indexedMetadata: Metadata
+  annotations: Metadata
   enrichment: [Enrichment!]!
   formattedData: [FormattedData!]!
   egress: [Egress!]!
@@ -272,7 +272,7 @@ input DeltaFilesFilter {
   createdAfter: DateTime
   createdBefore: DateTime
   domains: [String!]
-  indexedMetadata: [KeyValueInput!]
+  annotations: [KeyValueInput!]
   enrichment: [String!]
   egressFlows: [String!]
   contentDeleted: Boolean
@@ -368,7 +368,7 @@ type Query {
   verifyActionsAreRegistered(pluginCoordinates: PluginCoordinatesInput!) : Boolean
 
   domains: [String!]!
-  indexedMetadataKeys(domain: String): [String!]!
+  annotationKeys(domain: String): [String!]!
 
   version: String!
   totalCount: Long

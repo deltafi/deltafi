@@ -37,7 +37,7 @@ class SampleDomainAction(DomainAction):
         super().__init__('Domain action description', ['domain1', 'domain2'])
 
     def domain(self, context: Context, params: BaseModel, domain_input: DomainInput):
-        return DomainResult().index_metadata('theIndexMetaKey', 'theIndexMetaValue')
+        return DomainResult().annotate('theIndexMetaKey', 'theIndexMetaValue')
 
 
 class SampleLoadParameters(BaseModel):

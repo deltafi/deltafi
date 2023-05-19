@@ -5,7 +5,7 @@
     "stop": "2021-07-11T13:44:22.184Z",
     "type": "DOMAIN",
     "domain": {
-        "indexedMetadata": {
+        "annotations": {
             "domainKey": "domain metadata"
         }
     }

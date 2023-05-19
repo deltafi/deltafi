@@ -45,8 +45,8 @@ public class RoteEnrichAction extends EnrichAction<RoteEnrichParameters> {
             params.getEnrichments().forEach((k, v) -> result.addEnrichment(k, v, MediaType.TEXT_PLAIN));
         }
 
-        if (null != params.getIndexedMetadata()) {
-            result.addIndexedMetadata(params.getIndexedMetadata());
+        if (null != params.getAnnotations()) {
+            result.addAnnotation(params.getAnnotations());
         }
 
         return result;

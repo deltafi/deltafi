@@ -29,5 +29,5 @@ import java.util.Map;
 @AllArgsConstructor
 @Builder(builderMethodName = "newBuilder")
 public class DomainEvent {
-  private Map<String, String> indexedMetadata;
+  private Map<String, String> annotations;
 }

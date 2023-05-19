@@ -57,6 +57,7 @@ public class FullFlowExemplars {
         deltaFile.queueAction("sampleIngress.SampleLoadAction");
         Content content = new Content("transformed", "application/octet-stream", new Segment("objectName", 0, 500, did));
         deltaFile.getProtocolStack().add(new ProtocolLayer("sampleIngress.SampleTransformAction", List.of(content), TRANSFORM_METADATA, List.of("deleteMe")));
+        deltaFile.addAnnotations(Map.of("transformKey", "transformValue"));
         return deltaFile;
     }
 
@@ -91,6 +92,7 @@ public class FullFlowExemplars {
         deltaFile.queueAction("sampleEnrich.SampleDomainAction");
         deltaFile.completeAction("sampleIngress.SampleLoadAction", START_TIME, STOP_TIME);
         deltaFile.addDomain("sampleDomain", "sampleDomainValue", "application/octet-stream");
+        deltaFile.addAnnotations(Map.of("loadKey", "loadValue"));
         Content content = new Content("load-content", "application/octet-stream", new Segment("objectName", 0, 500, did));
         deltaFile.getProtocolStack().add(new ProtocolLayer("sampleIngress.SampleLoadAction", List.of(content), LOAD_METADATA));
         return deltaFile;
@@ -99,7 +101,7 @@ public class FullFlowExemplars {
     public static DeltaFile postMissingEnrichDeltaFile(String did) {
         DeltaFile deltaFile = postLoadDeltaFile(did);
         deltaFile.completeAction("sampleEnrich.SampleDomainAction", START_TIME, STOP_TIME);
-        deltaFile.addIndexedMetadata(Map.of("domainKey", "domain metadata"));
+        deltaFile.addAnnotations(Map.of("domainKey", "domain metadata"));
         deltaFile.setStage(DeltaFileStage.ERROR);
         deltaFile.queueNewAction(DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION);
         deltaFile.errorAction(DeltaFilesService.buildNoEgressConfiguredErrorEvent(deltaFile, OffsetDateTime.now()));
@@ -113,7 +115,7 @@ public class FullFlowExemplars {
         deltaFile.setStage(DeltaFileStage.ENRICH);
         deltaFile.queueAction("sampleEnrich.SampleEnrichAction");
         deltaFile.completeAction("sampleEnrich.SampleDomainAction", START_TIME, STOP_TIME);
-        deltaFile.addIndexedMetadata(Map.of("domainKey", "domain metadata"));
+        deltaFile.addAnnotations(Map.of("domainKey", "domain metadata"));
         return deltaFile;
     }
 
@@ -123,7 +125,7 @@ public class FullFlowExemplars {
         deltaFile.queueAction("sampleEgress.SampleFormatAction");
         deltaFile.completeAction("sampleEnrich.SampleEnrichAction", START_TIME, STOP_TIME);
         deltaFile.addEnrichment("sampleEnrichment", "enrichmentData");
-        deltaFile.addIndexedMetadata(Map.of("first", "one", "second", "two"));
+        deltaFile.addAnnotations(Map.of("first", "one", "second", "two"));
         deltaFile.addEgressFlow(EGRESS_FLOW_NAME);
         return deltaFile;
     }

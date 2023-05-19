@@ -57,7 +57,6 @@ import org.deltafi.core.types.FlowAssignmentRule;
 import org.deltafi.core.types.PluginVariables;
 import org.deltafi.core.types.ResumePolicy;
 import org.deltafi.core.types.*;
-import org.deltafi.core.util.SchemaVersion;
 import org.deltafi.core.util.Util;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -115,6 +114,8 @@ import static org.deltafi.common.types.ActionState.QUEUED;
 import static org.deltafi.core.util.Constants.*;
 import static org.deltafi.core.util.FlowBuilders.*;
 import static org.deltafi.core.util.FullFlowExemplars.*;
+import static org.deltafi.core.util.SchemaVersion.assertConverted;
+import static org.deltafi.core.util.SchemaVersion.assertDeleted;
 import static org.deltafi.core.util.Util.*;
 import static org.deltafi.core.datafetchers.DeletePolicyDatafetcherTestHelper.*;
 import static org.deltafi.core.datafetchers.DeltaFilesDatafetcherTestHelper.*;
@@ -2574,7 +2575,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile1.setIngressBytes(100L);
 		deltaFile1.setTotalBytes(1000L);
 		deltaFile1.setDomains(List.of(new Domain("domain1", null, null)));
-		deltaFile1.addIndexedMetadata(Map.of("a.1", "first", "common", "value"));
+		deltaFile1.addAnnotations(Map.of("a.1", "first", "common", "value"));
 		deltaFile1.setEnrichment(List.of(new Enrichment("enrichment1", null, null)));
 		deltaFile1.setContentDeleted(MONGO_NOW);
 		deltaFile1.setSourceInfo(new SourceInfo("filename1", "flow1", Map.of("key1", "value1", "key2", "value2")));
@@ -2590,7 +2591,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile2.setIngressBytes(200L);
 		deltaFile2.setTotalBytes(2000L);
 		deltaFile2.setDomains(List.of(new Domain("domain1", null, null), new Domain("domain2", null, null)));
-		deltaFile2.addIndexedMetadata(Map.of("a.2", "first", "common", "value"));
+		deltaFile2.addAnnotations(Map.of("a.2", "first", "common", "value"));
 		deltaFile2.setEnrichment(List.of(new Enrichment("enrichment1", null, null), new Enrichment("enrichment2", null, null)));
 		deltaFile2.setSourceInfo(new SourceInfo("filename2", "flow2", Map.of()));
 		deltaFile2.setActions(List.of(Action.newBuilder().name("action1").state(ActionState.ERROR).errorCause("Cause").build(), Action.newBuilder().name("action2").build()));
@@ -2605,7 +2606,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile3.setIngressBytes(300L);
 		deltaFile3.setTotalBytes(3000L);
 		deltaFile3.setDomains(List.of(new Domain("domain3", null, null)));
-		deltaFile3.addIndexedMetadata(Map.of("b.2", "first", "common", "value"));
+		deltaFile3.addAnnotations(Map.of("b.2", "first", "common", "value"));
 		deltaFile3.setEnrichment(List.of(new Enrichment("enrichment3", null, null), new Enrichment("enrichment4", null, null)));
 		deltaFile3.setSourceInfo(new SourceInfo("filename3", "flow3", Map.of(), ProcessingType.TRANSFORMATION));
 		deltaFile3.setActions(List.of(Action.newBuilder().name("action2").state(ActionState.FILTERED).filteredCause("Coffee").build(), Action.newBuilder().name("action2").build()));
@@ -2674,11 +2675,11 @@ class DeltaFiCoreApplicationTests {
 		testFilter(DeltaFilesFilter.newBuilder().egressed(true).build(), deltaFile3, deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().filtered(false).build(), deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().filtered(true).build(), deltaFile3, deltaFile2);
-		testFilter(DeltaFilesFilter.newBuilder().indexedMetadata(List.of(new KeyValue("common", "value"))).build(), deltaFile3, deltaFile2, deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().indexedMetadata(List.of(new KeyValue("a.1", "first"))).build(), deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().indexedMetadata(List.of(new KeyValue("a.1", "first"), new KeyValue("common", "value"))).build(), deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().indexedMetadata(List.of(new KeyValue("a.1", "first"), new KeyValue("common", "value"), new KeyValue("extra", "missing"))).build());
-		testFilter(DeltaFilesFilter.newBuilder().indexedMetadata(List.of(new KeyValue("a.1", "first"), new KeyValue("common", "miss"))).build());
+		testFilter(DeltaFilesFilter.newBuilder().annotations(List.of(new KeyValue("common", "value"))).build(), deltaFile3, deltaFile2, deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().annotations(List.of(new KeyValue("a.1", "first"))).build(), deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().annotations(List.of(new KeyValue("a.1", "first"), new KeyValue("common", "value"))).build(), deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().annotations(List.of(new KeyValue("a.1", "first"), new KeyValue("common", "value"), new KeyValue("extra", "missing"))).build());
+		testFilter(DeltaFilesFilter.newBuilder().annotations(List.of(new KeyValue("a.1", "first"), new KeyValue("common", "miss"))).build());
 		testFilter(DeltaFilesFilter.newBuilder().egressFlows(List.of("MyEgressFlowz")).build());
 		testFilter(DeltaFilesFilter.newBuilder().egressFlows(List.of("MyEgressFlow")).build(), deltaFile2, deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().egressFlows(List.of("MyEgressFlow2")).build(), deltaFile2);
@@ -3526,7 +3527,7 @@ class DeltaFiCoreApplicationTests {
 		transformFlowRepo.save(transformFlow);
 
 		assertThat(transformFlowRepo.updateExpectedAnnotations("transform-flow", Set.of("b", "a", "c"))).isTrue();
-		assertThat(transformFlowRepo.findById("transform-flow").get().getExpectedAnnotations()).hasSize(3).containsAll(Set.of("a", "b", "c"));
+		assertThat(transformFlowRepo.findById("transform-flow").orElseThrow().getExpectedAnnotations()).hasSize(3).containsAll(Set.of("a", "b", "c"));
 	}
 
 	@Test
@@ -3538,7 +3539,7 @@ class DeltaFiCoreApplicationTests {
 		egressFlowRepo.save(egressFlow);
 
 		assertThat(egressFlowRepo.updateExpectedAnnotations("egress-flow", Set.of("b", "a", "c"))).isTrue();
-		assertThat(egressFlowRepo.findById("egress-flow").get().getExpectedAnnotations()).hasSize(3).containsAll(Set.of("a", "b", "c"));
+		assertThat(egressFlowRepo.findById("egress-flow").orElseThrow().getExpectedAnnotations()).hasSize(3).containsAll(Set.of("a", "b", "c"));
 	}
 
 	@Test
@@ -3556,10 +3557,10 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.saveAll(List.of(keepOne, removeOneKeepOne, removeBecomesNull, four));
 		deltaFileRepo.removePendingAnnotationsForFlow(removeFlow);
 
-		assertThat(deltaFileRepo.findById("keepOne").get().getPendingAnnotationsForFlows()).hasSize(1).contains(keepFlow);
-		assertThat(deltaFileRepo.findById("removeOneKeepOne").get().getPendingAnnotationsForFlows()).hasSize(1).contains(keepFlow);
-		assertThat(deltaFileRepo.findById("removeBecomesNull").get().getPendingAnnotationsForFlows()).isNull();
-		assertThat(deltaFileRepo.findById("noChange").get().getPendingAnnotationsForFlows()).isNull();
+		assertThat(deltaFileRepo.findById("keepOne").orElseThrow().getPendingAnnotationsForFlows()).hasSize(1).contains(keepFlow);
+		assertThat(deltaFileRepo.findById("removeOneKeepOne").orElseThrow().getPendingAnnotationsForFlows()).hasSize(1).contains(keepFlow);
+		assertThat(deltaFileRepo.findById("removeBecomesNull").orElseThrow().getPendingAnnotationsForFlows()).isNull();
+		assertThat(deltaFileRepo.findById("noChange").orElseThrow().getPendingAnnotationsForFlows()).isNull();
 	}
 
 	@Test
@@ -3567,7 +3568,7 @@ class DeltaFiCoreApplicationTests {
 		Set<String> pendingForFlows = Set.of("f");
 		DeltaFile completeAfterChange = buildDeltaFile("a");
 		completeAfterChange.setPendingAnnotationsForFlows(pendingForFlows);
-		completeAfterChange.addIndexedMetadata(Map.of("a", "value"));
+		completeAfterChange.addAnnotations(Map.of("a", "value"));
 
 		DeltaFile waitingForA = buildDeltaFile("b");
 		waitingForA.setPendingAnnotationsForFlows(pendingForFlows);
@@ -3577,7 +3578,7 @@ class DeltaFiCoreApplicationTests {
 
 		DeltaFile d = buildDeltaFile("d");
 		d.setPendingAnnotationsForFlows(pendingForFlows);
-		completeAfterChange.addIndexedMetadata(Map.of("d", "value"));
+		completeAfterChange.addAnnotations(Map.of("d", "value"));
 
 		deltaFileRepo.saveAll(List.of(completeAfterChange, waitingForA, differentFlow, d));
 		deltaFilesService.updatePendingAnnotationsForFlows("f", Set.of("a"));
@@ -3658,21 +3659,21 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void indexedMetadata() {
+	void annotations() {
 		deltaFileRepo.insert(DeltaFile.newBuilder()
 				.domains(List.of(Domain.newBuilder().name("a").build(), Domain.newBuilder().name("b").build()))
-				.indexedMetadata(Map.of("x", "1", "y", "2"))
+				.annotations(Map.of("x", "1", "y", "2"))
 				.build());
 		deltaFileRepo.insert(DeltaFile.newBuilder()
 				.domains(List.of(Domain.newBuilder().name("b").build(), Domain.newBuilder().name("c").build()))
-				.indexedMetadata(Map.of("y", "3", "z", "4"))
+				.annotations(Map.of("y", "3", "z", "4"))
 				.build());
 
-		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(new IndexedMetadataKeysGraphQLQuery());
+		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(new AnnotationKeysGraphQLQuery());
 
 		List<String> actual = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				graphQLQueryRequest.serialize(),
-				"data." + DgsConstants.QUERY.IndexedMetadataKeys,
+				"data." + DgsConstants.QUERY.AnnotationKeys,
 				new TypeRef<>() {}
 		);
 
@@ -3680,24 +3681,24 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void indexedMetadataPerDomain() {
+	void annotationPerDomain() {
 		deltaFileRepo.insert(DeltaFile.newBuilder()
 				.domains(List.of(Domain.newBuilder().name("a").build(), Domain.newBuilder().name("b").build()))
-				.indexedMetadata(Map.of("x", "1", "y", "2"))
+				.annotations(Map.of("x", "1", "y", "2"))
 				.build());
 		deltaFileRepo.insert(DeltaFile.newBuilder()
 				.domains(List.of(Domain.newBuilder().name("b").build(), Domain.newBuilder().name("c").build()))
-				.indexedMetadata(Map.of("y", "3", "z", "4"))
+				.annotations(Map.of("y", "3", "z", "4"))
 				.build());
 
-		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(IndexedMetadataKeysGraphQLQuery
+		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(AnnotationKeysGraphQLQuery
 				.newRequest()
 				.domain("a")
 				.build());
 
 		List<String> actual = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				graphQLQueryRequest.serialize(),
-				"data." + DgsConstants.QUERY.IndexedMetadataKeys,
+				"data." + DgsConstants.QUERY.AnnotationKeys,
 				new TypeRef<>() {}
 		);
 
@@ -3705,12 +3706,12 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void indexedMetadataEmpty() {
-		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(new IndexedMetadataKeysGraphQLQuery());
+	void annotationsEmpty() {
+		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(new AnnotationKeysGraphQLQuery());
 
 		List<String> actual = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				graphQLQueryRequest.serialize(),
-				"data." + DgsConstants.QUERY.IndexedMetadataKeys,
+				"data." + DgsConstants.QUERY.AnnotationKeys,
 				new TypeRef<>() {}
 		);
 
@@ -4009,33 +4010,21 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	public void testConvertDeltaFileV0() {
-		mongoTemplate.insert(SchemaVersion.DELTAFILE_DOC_V0, "deltaFile");
-		DeltaFile deltaFile = deltaFileRepo.findById("v0").orElseThrow();
-
-		assertEquals(0, deltaFile.getSchemaVersion());
-
-		Content content = new Content("smoke-f7bc6fc1-0d56-4c5b-9e58-7b758f522ea2",
-				"application/octet-stream",
-				List.of(new Segment("cf06a93c-d8c4-4784-8269-279b642f6903", 0L, 36L, "f8cea8af-185e-4d96-80c7-68c47a8f5609")));
-
-		assertEquals(List.of(content), deltaFile.getLastProtocolLayerContent());
-		assertEquals(content, deltaFile.getFormattedData().get(0).getContent());
+		assertConverted(deltaFileRepo, mongoTemplate, 0);
 	}
 
 	@Test
 	public void testConvertDeltaFileV1() {
-		mongoTemplate.insert(SchemaVersion.DELTAFILE_DOC_V1, "deltaFile");
-		DeltaFile deltaFile = deltaFileRepo.findById("v1").orElseThrow();
-
-		assertEquals(1, deltaFile.getSchemaVersion());
-
+		assertConverted(deltaFileRepo, mongoTemplate, 1);
 	}
 
 	@Test
 	public void testDeletesV0() {
-		mongoTemplate.insert(SchemaVersion.DELTAFILE_DOC_V1, "deltaFile");
-		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(1, null, "policyName", 1);
-		assertEquals(1, deltaFiles.size());
-		assertEquals(3, deltaFiles.get(0).referencedSegments().size());
+		assertDeleted(deltaFileRepo, mongoTemplate, 0);
+	}
+
+	@Test
+	public void testDeletesV1() {
+		assertDeleted(deltaFileRepo, mongoTemplate, 1);
 	}
 }

@@ -14,8 +14,8 @@
     "defaultValue": "http://deltafi-egress-sink-service"
   },
   {
-    "name": "indexedMetadata",
-    "description": "Metadata that will be indexed in the DeltaFile",
+    "name": "annotations",
+    "description": "Metadata that will be searchable in the DeltaFile",
     "dataType": "MAP",
     "required": false
   },

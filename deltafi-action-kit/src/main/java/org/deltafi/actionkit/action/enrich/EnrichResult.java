@@ -19,7 +19,7 @@ package org.deltafi.actionkit.action.enrich;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import org.deltafi.actionkit.action.HasIndexedMetadata;
+import org.deltafi.actionkit.action.HasAnnotations;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
@@ -34,9 +34,9 @@ import java.util.Map;
  */
 @Getter
 @EqualsAndHashCode(callSuper = true)
-public class EnrichResult extends Result<EnrichResult> implements HasIndexedMetadata, EnrichResultType {
+public class EnrichResult extends Result<EnrichResult> implements HasAnnotations, EnrichResultType {
     private final List<Enrichment> enrichments = new ArrayList<>();
-    private final Map<String, String> indexedMetadata = new HashMap<>();
+    private final Map<String, String> annotations = new HashMap<>();
 
     /**
      * @param context Context of the executed action
@@ -66,7 +66,7 @@ public class EnrichResult extends Result<EnrichResult> implements HasIndexedMeta
     @Override
     public final ActionEventInput toEvent() {
         ActionEventInput event = super.toEvent();
-        event.setEnrich(EnrichEvent.newBuilder().enrichments(enrichments).indexedMetadata(indexedMetadata).build());
+        event.setEnrich(EnrichEvent.newBuilder().enrichments(enrichments).annotations(annotations).build());
         return event;
     }
 }

@@ -110,7 +110,7 @@ const generateData = () => {
           dataType: "STRING",
         },
         {
-          name: "indexedMetadata",
+          name: "annotations",
           value: "LOCID: US8772",
           description: "Metadata that will be indexed in the DeltaFile",
           defaultValue: null,
@@ -185,7 +185,7 @@ const generateData = () => {
           dataType: "STRING",
         },
         {
-          name: "indexedMetadata",
+          name: "annotations",
           value: "LOCID: US8772",
           description: "Metadata that will be indexed in the DeltaFile",
           defaultValue: null,
@@ -255,7 +255,7 @@ const generateData = () => {
           dataType: "STRING",
         },
         {
-          name: "indexedMetadata",
+          name: "annotations",
           value: "LOCID: US8772",
           description: "Metadata that will be indexed in the DeltaFile",
           defaultValue: null,

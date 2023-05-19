@@ -48,7 +48,7 @@ public class EnrichActionTest extends ActionTest {
 
         Assertions.assertArrayEquals(expectedEnrichments.toArray(), result.getEnrichments().toArray());
 
-        Assertions.assertEquals(testCase.getIndexedMetadata(), result.getIndexedMetadata());
+        Assertions.assertEquals(testCase.getAnnotations(), result.getAnnotations());
     }
 
     // Override and add domains to the DeltaFile

@@ -33,7 +33,7 @@ class SampleDomainAction(DomainAction):
         super().__init__('Description', ['TheDomain'])
 
     def domain(self, context: Context, params: BaseModel, domain_input: DomainInput):
-        return DomainResult(context).index_metadata('theIndexMetaKey', 'theIndexMetaValue')
+        return DomainResult(context).annotate('theIndexMetaKey', 'theIndexMetaValue')
 
 
 class InvalidResult(DomainAction):

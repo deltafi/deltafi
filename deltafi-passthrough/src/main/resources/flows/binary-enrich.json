@@ -13,7 +13,7 @@
         "enrichments": {
           "binaryEnrichment": "binary enrichment value"
         },
-        "indexedMetadata": "${indexedMetadata}",
+        "annotations": "${annotations}",
         "minRoteDelayMS": "${minRoteDelayMS}",
         "maxRoteDelayMS": "${maxRoteDelayMS}"
       }

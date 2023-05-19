@@ -49,7 +49,7 @@ public class DeltaFileAnnotationRest {
 
     private ResponseEntity<String> annotateDeltaFile(String did, Map<String, String> requestParams, boolean allowOverwrites) {
         try {
-            deltaFilesService.addIndexedMetadata(did, requestParams, allowOverwrites);
+            deltaFilesService.addAnnotations(did, requestParams, allowOverwrites);
             return ResponseEntity.ok("Success");
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(e.getMessage());

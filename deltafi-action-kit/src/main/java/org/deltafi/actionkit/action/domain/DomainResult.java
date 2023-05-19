@@ -19,7 +19,7 @@ package org.deltafi.actionkit.action.domain;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import org.deltafi.actionkit.action.HasIndexedMetadata;
+import org.deltafi.actionkit.action.HasAnnotations;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEventInput;
@@ -35,8 +35,8 @@ import java.util.Map;
  */
 @Getter
 @EqualsAndHashCode(callSuper = true)
-public class DomainResult extends Result<DomainResult> implements HasIndexedMetadata, DomainResultType {
-    private final Map<String, String> indexedMetadata = new HashMap<>();
+public class DomainResult extends Result<DomainResult> implements HasAnnotations, DomainResultType {
+    private final Map<String, String> annotations = new HashMap<>();
 
     /**
      * @param context Context of the executed action
@@ -53,7 +53,7 @@ public class DomainResult extends Result<DomainResult> implements HasIndexedMeta
     @Override
     public final ActionEventInput toEvent() {
         ActionEventInput event = super.toEvent();
-        event.setDomain(DomainEvent.newBuilder().indexedMetadata(indexedMetadata).build());
+        event.setDomain(DomainEvent.newBuilder().annotations(annotations).build());
         return event;
     }
 

@@ -116,8 +116,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     private static final String ID_ERROR_MESSAGE = ID + "." + ERROR_MESSAGE;
     private static final String ID_FLOW = ID + "." + FLOW_LOWER_CASE;
     private static final String UNWIND_STATE = "unwindState";
-    public static final String INDEXED_METADATA = "indexedMetadata";
-    public static final String INDEXED_METADATA_KEYS = "indexedMetadataKeys";
+    public static final String ANNOTATIONS = "annotations";
+    public static final String ANNOTATION_KEYS = "annotationKeys";
 
     // these will automatically be up-converted when included as query fields, if present
     private static final String OLD_PROTOCOL_STACK_SEGMENTS = "protocolStack.content.contentReference.segments";
@@ -165,9 +165,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         INDICES.put("modified_before_index", new Index().named("modified_before_index").on(MODIFIED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC));
         INDICES.put("auto_resume_index", new Index().named("auto_resume_index").on(NEXT_AUTO_RESUME, Sort.Direction.ASC).on(STAGE, Sort.Direction.ASC));
         INDICES.put("flow_first_index", new Index().named("flow_first_index").on(SOURCE_INFO_FLOW, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
-        INDICES.put("metadata_index", new Index().named("metadata_index").on(INDEXED_METADATA + ".$**", Sort.Direction.ASC));
+        INDICES.put("metadata_index", new Index().named("metadata_index").on(ANNOTATIONS + ".$**", Sort.Direction.ASC));
         INDICES.put("domain_name_index", new Index().named("domain_name_index").on(DOMAINS_NAME, Sort.Direction.ASC));
-        INDICES.put("metadata_keys_index", new Index().named("metadata_keys_index").on(INDEXED_METADATA_KEYS, Sort.Direction.ASC));
+        INDICES.put("metadata_keys_index", new Index().named("metadata_keys_index").on(ANNOTATION_KEYS, Sort.Direction.ASC));
         INDICES.put("disk_space_delete_index", new Index().named("disk_space_delete_index").on(CONTENT_DELETED, Sort.Direction.ASC).on(STAGE, Sort.Direction.ASC).on(CREATED, Sort.Direction.ASC).on(TOTAL_BYTES, Sort.Direction.ASC));
     }
 
@@ -446,9 +446,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             andCriteria.add(Criteria.where(ENRICHMENT_NAME).all(filter.getEnrichment()));
         }
 
-        if (nonNull(filter.getIndexedMetadata())) {
-            List<Criteria> metadataCriteria = filter.getIndexedMetadata().stream()
-                    .map(e -> fromIndexedMetadata(e.getKey(), e.getValue())).filter(Objects::nonNull).toList();
+        if (nonNull(filter.getAnnotations())) {
+            List<Criteria> metadataCriteria = filter.getAnnotations().stream()
+                    .map(e -> fromAnnotations(e.getKey(), e.getValue())).filter(Objects::nonNull).toList();
             andCriteria.addAll(metadataCriteria);
         }
 
@@ -626,7 +626,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         return criteria;
     }
 
-    private Criteria fromIndexedMetadata(String key, String value) {
+    private Criteria fromAnnotations(String key, String value) {
         if (null == key || null == value) {
             return null;
         }
@@ -635,7 +635,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             key = StringUtils.replace(key, ".", DeltaFiConstants.MONGO_MAP_KEY_DOT_REPLACEMENT);
         }
 
-        return Criteria.where(INDEXED_METADATA + "." + key).is(value);
+        return Criteria.where(ANNOTATIONS + "." + key).is(value);
     }
 
     private void addDeltaFilesOrderBy(Query query, DeltaFileOrder orderBy) {
@@ -922,13 +922,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
-    public List<String> indexedMetadataKeys(String domain) {
+    public List<String> annotationKeys(String domain) {
         Query query = new Query();
         if (domain != null && !domain.isEmpty()) {
             query.addCriteria(Criteria.where(DOMAINS_NAME).is(domain));
         }
 
-        return mongoTemplate.findDistinct(query, INDEXED_METADATA_KEYS, DeltaFile.class, Object.class).stream()
+        return mongoTemplate.findDistinct(query, ANNOTATION_KEYS, DeltaFile.class, Object.class).stream()
                 .filter(Objects::nonNull)
                 .filter(o -> o instanceof String)
                 .map(o -> (String) o)

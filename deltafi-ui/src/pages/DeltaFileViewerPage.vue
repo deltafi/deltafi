@@ -58,7 +58,7 @@
           <DeltaFileDomainsPanel :delta-file-data="deltaFile" />
         </div>
         <div class="col-4">
-          <DeltaFileIndexedMetadataPanel :delta-file-data="deltaFile" />
+          <DeltaFileAnnotationsPanel :delta-file-data="deltaFile" />
         </div>
         <div class="col-4">
           <DeltaFileEnrichmentPanel :delta-file-data="deltaFile" />
@@ -96,7 +96,7 @@ import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
 import DeltaFileActionsPanel from "@/components/DeltaFileActionsPanel.vue";
 import DeltaFileDomainsPanel from "@/components/DeltaFileDomainsPanel.vue";
 import DeltaFileEnrichmentPanel from "@/components/DeltaFileEnrichmentPanel.vue";
-import DeltaFileIndexedMetadataPanel from "@/components/DeltaFileIndexedMetadataPanel.vue";
+import DeltaFileAnnotationsPanel from "@/components/DeltaFileAnnotationsPanel.vue";
 import DeltaFileInfoPanel from "@/components/DeltaFileInfoPanel.vue";
 import DeltaFileParentChildPanel from "@/components/DeltaFileParentChildPanel.vue";
 import DeltaFileTracePanel from "@/components/DeltaFileTracePanel.vue";
@@ -288,7 +288,7 @@ const allMetadata = computed(() => {
     let actions = [layer.action, layer.formatAction].flat().filter((n) => n);
     for (const action of actions) {
       let metadata = action === "IngressAction" ? deltaFile.sourceInfo.metadata : layer.metadata || `${deltaFile.did}-${layer.action}`;
-      if (metadata.length > 0) {
+      if (Object.keys(metadata).length > 0) {
         content[action] = Object.entries(metadata).map(([key, value]) => ({ key, value }));
       }
     }
@@ -403,7 +403,7 @@ const onCancelClick = () => {
     accept: () => {
       onCancel();
     },
-    reject: () => {},
+    reject: () => { },
   });
 };
 

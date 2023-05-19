@@ -165,12 +165,12 @@ public interface DeltaFileRepoCustom {
     List<String> domains();
 
     /**
-     * Get a list of all indexed metadata keys currently assigned by deltaFiles
+     * Get a list of all annotation keys currently assigned by deltaFiles
      *
      * @param domain An optional domain to filter by
-     * @return the indexed metadata
+     * @return the annotation keys
      */
-    List<String> indexedMetadataKeys(String domain);
+    List<String> annotationKeys(String domain);
 
     /**
      * For each did in the list, update the corresponding DeltaFile contentDeleted to value

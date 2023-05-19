@@ -91,18 +91,18 @@
                 <Dropdown id="stageId" v-model="stageOptionSelected" placeholder="Select a Stage" :options="stageOptions" option-label="name" show-clear :editable="false" class="deltafi-input-field min-width" />
                 <label for="filteredState" class="mt-2">Domain:</label>
                 <Dropdown id="domain" v-model="domainOptionSelected" placeholder="Select a Domain" :options="domainOptions" option-label="name" show-clear :editable="false" class="deltafi-input-field min-width" />
-                <label for="metadataState" class="mt-2">Indexed Metadata:</label>
-                <div class="metadata-chips">
-                  <Chip v-for="item in metadataArray" :key="item" v-tooltip.top="{ value: invalidMetadataTooltip(item.key), disabled: item.valid }" removable class="mr-2 mb-1" :class="{ 'invalid-chip': !item.valid, 'valid-chip': item.valid }" @remove="removeMetadataItem(item)"> {{ item.key }}: {{ item.value }} </Chip>
-                  <Chip class="add-metadata-btn" @click="showIndexedMetadataOverlay">
+                <label for="annotationsState" class="mt-2">Annotations:</label>
+                <div class="annotations-chips">
+                  <Chip v-for="item in annotationsArray" :key="item" v-tooltip.top="{ value: invalidAnnotationTooltip(item.key), disabled: item.valid }" removable class="mr-2 mb-1" :class="{ 'invalid-chip': !item.valid, 'valid-chip': item.valid }" @remove="removeAnnotationItem(item)"> {{ item.key }}: {{ item.value }} </Chip>
+                  <Chip class="add-annotations-btn" @click="showAnnotationsOverlay">
                     &nbsp;
                     <i class="pi pi-plus"></i>
                     &nbsp;
                   </Chip>
                 </div>
-                <OverlayPanel ref="indexedMetadataOverlay">
-                  <Dropdown v-model="newMetadataKey" placeholder="Key" :options="metadataKeysOptions" option-label="key" style="width: 15rem" @keyup.enter="addMetadataItemEvent" /> :
-                  <InputText v-model="newMetadataValue" placeholder="Value" style="width: 15rem" @keyup.enter="addMetadataItemEvent" />
+                <OverlayPanel ref="annotationsOverlay">
+                  <Dropdown v-model="newAnnotationKey" placeholder="Key" :options="annotationsKeysOptions" option-label="key" style="width: 15rem" @keyup.enter="addAnnotationItemEvent" /> :
+                  <InputText v-model="newAnnotationValue" placeholder="Value" style="width: 15rem" @keyup.enter="addAnnotationItemEvent" />
                 </OverlayPanel>
               </div>
             </div>
@@ -151,7 +151,7 @@
       </DataTable>
     </Panel>
   </div>
-  <MetadataDialog ref="metadataDialog" :did="filterSelectedDids" @update="fetchDeltaFilesData" />
+  <RetryResumeDialog ref="retryResumeDialog" :did="filterSelectedDids" @update="fetchDeltaFilesData" />
   <AnnotateDialog ref="annotateDialog" :dids="filterSelectedDids" @refresh-page="fetchDeltaFilesData()" />
 </template>
 
@@ -186,7 +186,7 @@ import InputText from "primevue/inputtext";
 import Chip from "primevue/chip";
 import OverlayPanel from "primevue/overlaypanel";
 import ContextMenu from "primevue/contextmenu";
-import MetadataDialog from "@/components/MetadataDialog.vue";
+import RetryResumeDialog from "@/components/MetadataDialog.vue";
 import AnnotateDialog from "@/components/AnnotateDialog.vue";
 
 dayjs.extend(utc);
@@ -194,7 +194,7 @@ const hasPermission = inject("hasPermission");
 const params = useUrlSearchParams("history");
 const { getDeltaFileSearchData, getEnumValuesByEnumType } = useDeltaFilesQueryBuilder();
 const { duration, formatTimestamp, shortTimezone } = useUtilFunctions();
-const { getDomains, getIndexedMetadataKeys } = useDomains();
+const { getDomains, getAnnotationKeys } = useDomains();
 const { ingressFlows: flowOptions, fetchIngressFlowNames, egressFlows: egressFlowOptions, fetchEgressFlowNames } = useFlows();
 const route = useRoute();
 const useURLSearch = ref(false);
@@ -202,7 +202,7 @@ const uiConfig = inject("uiConfig");
 const optionMenu = ref();
 const selectedDids = ref([]);
 const menu = ref();
-const metadataDialog = ref();
+const retryResumeDialog = ref();
 const annotateDialog = ref();
 
 const maxTotalRecords = 50000;
@@ -242,9 +242,9 @@ const endDateISOString = computed(() => {
 const domainOptions = ref([]);
 const domainOptionSelected = ref(null);
 const processingTypeSelected = ref(null);
-const metadataKeysOptions = ref([]);
-const newMetadataKey = ref(null);
-const newMetadataValue = ref(null);
+const annotationsKeysOptions = ref([]);
+const newAnnotationKey = ref(null);
+const newAnnotationValue = ref(null);
 const fileName = ref(null);
 const filteredCause = ref(null);
 const requeueMin = ref(null);
@@ -288,7 +288,7 @@ const perPage = ref();
 const sortField = ref("modified");
 const sortDirection = ref("DESC");
 const timestampFormat = "YYYY-MM-DD HH:mm:ss";
-const metadataArray = ref([]);
+const annotationsArray = ref([]);
 const sizeMin = ref();
 const sizeMax = ref();
 const sizeUnits = [
@@ -318,8 +318,8 @@ const egressFlowName = computed(() => (egressFlowOptionSelected.value ? egressFl
 const replayable = computed(() => (isReplayableSelected.value ? isReplayableSelected.value.value : null));
 const terminalStage = computed(() => (terminalStageOptionSelected.value ? terminalStageOptionSelected.value.value : null));
 
-const metadata = computed(() => {
-  return metadataArray.value.map((i) => {
+const annotations = computed(() => {
+  return annotationsArray.value.map((i) => {
     return {
       key: i.key,
       value: i.value,
@@ -331,26 +331,26 @@ const selectedDomain = computed(() => {
   return domainOptionSelected.value ? domainOptionSelected.value.name : null;
 });
 
-const indexedMetadataOverlay = ref(null);
-const showIndexedMetadataOverlay = (event) => {
-  indexedMetadataOverlay.value.toggle(event);
+const annotationsOverlay = ref(null);
+const showAnnotationsOverlay = (event) => {
+  annotationsOverlay.value.toggle(event);
 };
 
-const removeMetadataItem = (item) => {
-  let index = metadataArray.value.indexOf(item);
-  metadataArray.value.splice(index, 1);
+const removeAnnotationItem = (item) => {
+  let index = annotationsArray.value.indexOf(item);
+  annotationsArray.value.splice(index, 1);
 };
 
-const addMetadataItem = (key, value) => {
-  metadataArray.value.push({ key: key, value: value, valid: true });
+const addAnnotationItem = (key, value) => {
+  annotationsArray.value.push({ key: key, value: value, valid: true });
 };
 
-const addMetadataItemEvent = () => {
-  if (newMetadataKey.value && newMetadataValue.value) {
-    addMetadataItem(newMetadataKey.value.key, newMetadataValue.value);
-    newMetadataKey.value = null;
-    newMetadataValue.value = null;
-    indexedMetadataOverlay.value.toggle();
+const addAnnotationItemEvent = () => {
+  if (newAnnotationKey.value && newAnnotationValue.value) {
+    addAnnotationItem(newAnnotationKey.value.key, newAnnotationValue.value);
+    newAnnotationKey.value = null;
+    newAnnotationValue.value = null;
+    annotationsOverlay.value.toggle();
   }
 };
 
@@ -392,7 +392,7 @@ const clearOptions = () => {
   sizeMax.value = null;
   sizeMin.value = null;
   domainOptionSelected.value = null;
-  metadataArray.value = [];
+  annotationsArray.value = [];
 };
 
 const setupWatchers = () => {
@@ -406,12 +406,12 @@ const setupWatchers = () => {
 
   watch(selectedDomain, async (value) => {
     fetchDeltaFilesData();
-    await fetchIndexedMetadataKeys(value);
-    validateMetadataArray();
+    await fetchAnnotationKeys(value);
+    validateAnnotationsArray();
   });
 
   watch(
-    metadataArray,
+    annotationsArray,
     () => {
       fetchDeltaFilesData();
     },
@@ -458,17 +458,17 @@ const setupWatchers = () => {
   });
 };
 
-const validateMetadataArray = () => {
-  const validKeys = metadataKeysOptions.value.map((i) => i.key);
-  for (const index of metadataArray.value.keys()) {
-    const key = metadataArray.value[index].key;
-    metadataArray.value[index].valid = validKeys.includes(key);
+const validateAnnotationsArray = () => {
+  const validKeys = annotationsKeysOptions.value.map((i) => i.key);
+  for (const index of annotationsArray.value.keys()) {
+    const key = annotationsArray.value[index].key;
+    annotationsArray.value[index].valid = validKeys.includes(key);
   }
 };
 
-const invalidMetadataTooltip = (key) => {
+const invalidAnnotationTooltip = (key) => {
   if (domainOptionSelected.value) {
-    return `${key} is not a valid indexed metadata key for the ${domainOptionSelected.value.name} domain.`;
+    return `${key} is not a valid annotation key for the ${domainOptionSelected.value.name} domain.`;
   }
 };
 
@@ -500,7 +500,7 @@ onMounted(async () => {
   fetchDomains();
   getPersistedParams();
   await nextTick();
-  if (domainOptionSelected.value == null) fetchIndexedMetadataKeys();
+  if (domainOptionSelected.value == null) fetchAnnotationKeys();
   await fetchDeltaFilesDataNoDebounce();
   setupWatchers();
 });
@@ -516,9 +516,9 @@ const fetchDomains = async () => {
   });
 };
 
-const fetchIndexedMetadataKeys = async (domain) => {
-  const keys = await getIndexedMetadataKeys(domain);
-  metadataKeysOptions.value = keys.map((key) => {
+const fetchAnnotationKeys = async (domain) => {
+  const keys = await getAnnotationKeys(domain);
+  annotationsKeysOptions.value = keys.map((key) => {
     return { key: key };
   });
 };
@@ -532,7 +532,7 @@ const fetchDeltaFilesDataNoDebounce = async () => {
   setPersistedParams();
 
   loading.value = true;
-  let data = await getDeltaFileSearchData(startDateISOString.value, endDateISOString.value, offset.value, perPage.value, sortField.value, sortDirection.value, fileName.value, stageName.value, null, flowName.value, egressFlowName.value, egressed.value, filtered.value, selectedDomain.value, metadata.value, ingressBytesMin.value, ingressBytesMax.value, totalBytesMin.value, totalBytesMax.value, testMode.value, requeueMin.value, filteredCause.value, replayable.value, processingType.value, terminalStage.value);
+  let data = await getDeltaFileSearchData(startDateISOString.value, endDateISOString.value, offset.value, perPage.value, sortField.value, sortDirection.value, fileName.value, stageName.value, null, flowName.value, egressFlowName.value, egressed.value, filtered.value, selectedDomain.value, annotations.value, ingressBytesMin.value, ingressBytesMax.value, totalBytesMin.value, totalBytesMax.value, testMode.value, requeueMin.value, filteredCause.value, replayable.value, processingType.value, terminalStage.value);
   tableData.value = data.data.deltaFiles.deltaFiles;
   loading.value = false;
   totalRecords.value = data.data.deltaFiles.totalCount;
@@ -600,11 +600,11 @@ const getPersistedParams = () => {
     domainOptionSelected.value = params.domain ? { name: params.domain } : null;
     sizeMin.value = params.sizeMin != null ? Number(params.sizeMin) : null;
     sizeMax.value = params.sizeMax != null ? Number(params.sizeMax) : null;
-    if (params.metadata != null) {
-      const metadataArrayVal = ref(getMetadataArray(params.metadata));
-      metadataArray.value = metadataArrayVal.value || [];
+    if (params.annotations != null) {
+      const annotationsArrayVal = ref(getAnnotationsArray(params.annotations));
+      annotationsArray.value = annotationsArrayVal.value || [];
     } else {
-      metadataArray.value = [];
+      annotationsArray.value = [];
     }
 
     const panelSearchKeys = Object.keys(params).filter((key) => !["start", "end"].includes(key));
@@ -632,7 +632,7 @@ const getPersistedParams = () => {
     domainOptionSelected.value = panelState.value.domainOptionState ? { name: panelState.value.domainOptionState } : null;
     sizeMin.value = panelState.value.sizeMinState || null;
     sizeMax.value = panelState.value.sizeMaxState || null;
-    metadataArray.value = panelState.value.metadataArrayState || [];
+    annotationsArray.value = panelState.value.annotationsArrayState || [];
 
     // If any of the fields are true it means we have persisted values. Don't collapse the search options panel so the user can see
     // what search options are being used.
@@ -661,7 +661,7 @@ const setPersistedParams = () => {
     domainOptionState: domainOptionSelected.value ? domainOptionSelected.value.name : null,
     sizeMinState: sizeMin.value,
     sizeMaxState: sizeMax.value,
-    metadataArrayState: metadataArray.value,
+    annotationsArrayState: annotationsArray.value,
   };
 
   nonPanelState.value = {
@@ -692,21 +692,21 @@ const setPersistedParams = () => {
   params.domain = domainOptionSelected.value ? domainOptionSelected.value.name : null;
   params.sizeMin = sizeMin.value != null ? sizeMin.value : null;
   params.sizeMax = sizeMax.value != null ? sizeMax.value : null;
-  params.metadata = metadataArray.value.length > 0 ? getMetadataString(metadataArray.value) : null;
+  params.annotations = annotationsArray.value.length > 0 ? getAnnotationsString(annotationsArray.value) : null;
 };
 
-const getMetadataString = (arrayData) => {
-  const metadataString = arrayData
+const getAnnotationsString = (arrayData) => {
+  const annotationsString = arrayData
     .map((pair) => {
       return pair.key.concat(":", pair.value);
     })
     .join(",");
-  return metadataString;
+  return annotationsString;
 };
 
-const getMetadataArray = (stringData) => {
-  const metadataArray = stringData.split(",");
-  return metadataArray.map((pair) => {
+const getAnnotationsArray = (stringData) => {
+  const annotationsArray = stringData.split(",");
+  return annotationsArray.map((pair) => {
     const keyValuePair = pair.split(":");
     return {
       key: keyValuePair[0],
@@ -753,7 +753,7 @@ const menuItems = ref([
     label: "Replay Selected",
     icon: "fas fa-sync fa-fw",
     command: () => {
-      metadataDialog.value.showConfirmDialog("Replay");
+      retryResumeDialog.value.showConfirmDialog("Replay");
     },
     visible: computed(() => hasPermission("DeltaFileReplay")),
     disabled: computed(() => selectedDids.value.length == 0),

@@ -34,14 +34,14 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 public class EnrichActionTestCase extends TestCaseBase<EnrichAction<? extends ActionParameters>> {
 
-    Map<String, String> indexedMetadata;
+    Map<String, String> annotations;
     private Map<String, String> inputDomains;
 
     public static abstract class EnrichActionTestCaseBuilder<C extends EnrichActionTestCase, B extends EnrichActionTestCase.EnrichActionTestCaseBuilder<C, B>> extends TestCaseBase.TestCaseBaseBuilder<EnrichAction<? extends ActionParameters>, C, B> {
-        public B expectEnrichResult(List<Enrichment> enrichments, Map<String, String> indexedMetadata) {
+        public B expectEnrichResult(List<Enrichment> enrichments, Map<String, String> annotations) {
             expectedResultType(EnrichResult.class);
             outputs(enrichments);
-            indexedMetadata(indexedMetadata);
+            annotations(annotations);
 
             return self();
         }

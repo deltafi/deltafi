@@ -21,6 +21,9 @@
         "metadata": {
             "loadSampleType": "load-sample-type",
             "loadSampleVersion": "2.2"
+        },
+        "annotations": {
+            "loadKey": "loadValue"
         }
     }
 }

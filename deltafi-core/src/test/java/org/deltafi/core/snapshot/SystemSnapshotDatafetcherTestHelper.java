@@ -153,9 +153,9 @@ public class SystemSnapshotDatafetcherTestHelper {
     private static void setPluginVariables(SystemSnapshot systemSnapshot) {
         PluginVariables pluginVariables = new PluginVariables();
         pluginVariables.setSourcePlugin(PluginCoordinates.builder().groupId("org.deltafi.passthrough").artifactId("deltafi-passthrough").version("0.102.1-SNAPSHOT").build());
-        Variable indexedMetadata = Variable.newBuilder()
-                .name("indexedMetadata")
-                .description("Metadata that will be indexed in the DeltaFile")
+        Variable annotations = Variable.newBuilder()
+                .name("annotations")
+                .description("Searchable annotations in the DeltaFile")
                 .dataType(VariableDataType.MAP)
                 .required(false)
                 .value("test_key: value, X: O").build();
@@ -166,7 +166,7 @@ public class SystemSnapshotDatafetcherTestHelper {
                 .dataType(VariableDataType.LIST)
                 .required(false)
                 .value("test, test").build();
-        pluginVariables.setVariables(List.of(indexedMetadata, sampleList));
+        pluginVariables.setVariables(List.of(annotations, sampleList));
         systemSnapshot.setPluginVariables(List.of(pluginVariables));
     }
 
@@ -399,8 +399,8 @@ public class SystemSnapshotDatafetcherTestHelper {
                                 }
                                 variables: [
                                     {
-                                        name: "indexedMetadata"
-                                        description: "Metadata that will be indexed in the DeltaFile"
+                                        name: "annotations"
+                                        description: "Searchable annotations in the DeltaFile"
                                         dataType: MAP
                                         required: false
                                         defaultValue: null

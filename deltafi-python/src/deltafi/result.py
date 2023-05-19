@@ -48,15 +48,15 @@ class Result:
 class DomainResult(Result):
     def __init__(self, context: Context):
         super().__init__('domain', 'DOMAIN', context)
-        self.indexed_metadata = {}
+        self.annotations = {}
 
-    def index_metadata(self, key: str, value: str):
-        self.indexed_metadata[key] = value
+    def annotate(self, key: str, value: str):
+        self.annotations[key] = value
         return self
 
     def response(self):
         return {
-            'indexedMetadata': self.indexed_metadata
+            'annotations': self.annotations
         }
 
 
@@ -74,7 +74,7 @@ class EnrichResult(Result):
     def __init__(self, context: Context):
         super().__init__('enrich', 'ENRICH', context)
         self.enrichments = []
-        self.indexed_metadata = {}
+        self.annotations = {}
 
     def enrich(self, name: str, value: str, media_type: str):
         self.enrichments.append({
@@ -84,14 +84,14 @@ class EnrichResult(Result):
         })
         return self
 
-    def index_metadata(self, key: str, value: str):
-        self.indexed_metadata[key] = value
+    def annotate(self, key: str, value: str):
+        self.annotations[key] = value
         return self
 
     def response(self):
         return {
             'enrichments': self.enrichments,
-            'indexedMetadata': self.indexed_metadata
+            'annotations': self.annotations
         }
 
 
@@ -169,6 +169,7 @@ class LoadResult(Result):
         self.content = []
         self.metadata = {}
         self.domains = []
+        self.annotations = {}
         self.delete_metadata_keys = []
 
     # content can be a single Content or a List[Content]
@@ -202,6 +203,10 @@ class LoadResult(Result):
             'mediaType': media_type})
         return self
 
+    def annotate(self, key: str, value: str):
+        self.annotations[key] = value
+        return self
+
     def delete_metadata_key(self, key: str):
         self.delete_metadata_keys.append(key)
         return self
@@ -211,6 +216,7 @@ class LoadResult(Result):
             'domains': self.domains,
             'content': [content.json() for content in self.content],
             'metadata': self.metadata,
+            'annotations': self.annotations,
             'deleteMetadataKeys': self.delete_metadata_keys
         }
 
@@ -279,6 +285,7 @@ class TransformResult(Result):
         super().__init__('transform', 'TRANSFORM', context)
         self.content = []
         self.metadata = {}
+        self.annotations = {}
         self.delete_metadata_keys = []
 
     # content can be a single Content or a List[Content]
@@ -305,6 +312,10 @@ class TransformResult(Result):
         self.metadata[key] = value
         return self
 
+    def annotate(self, key: str, value: str):
+        self.annotations[key] = value
+        return self
+
     def delete_metadata_key(self, key: str):
         self.delete_metadata_keys.append(key)
         return self
@@ -313,6 +324,7 @@ class TransformResult(Result):
         return {
             'content': [content.json() for content in self.content],
             'metadata': self.metadata,
+            'annotations': self.annotations,
             'deleteMetadataKeys': self.delete_metadata_keys
         }
 

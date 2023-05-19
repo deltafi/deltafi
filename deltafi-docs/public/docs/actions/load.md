@@ -26,7 +26,7 @@ public class LoadInput {
 
 The `load` method must return a `LoadResultType`, which is currently implemented by `LoadResult`, `ReinjectResult`, `LoadManyResult`, `ErrorResult`, and `FilterResult`.
 
-The `LoadResult` includes the domains, content, and metadata created by the `LoadAction`.  
+The `LoadResult` includes the domains, content, metadata, and annotations created by the `LoadAction`.  
 The `LoadManyResult` contains a list of `ChildLoadResults`. Each `ChildLoadResult` will be split into a child `DeltaFile` that will continue to be processed independently.  
 The `ReinjectResult` includes separate child DeltaFiles which will be ingressed back into DeltaFi.
 
@@ -65,6 +65,8 @@ public class RoteLoadAction extends LoadAction<RoteLoadParameters> {
         if (null != params.getDomains()) {
             params.getDomains().forEach(d -> result.addDomain(d, null, MediaType.TEXT_PLAIN));
         }
+        result.addMetadata("key", "value");
+        result.addAnnotation("annotationKey", "annotationValue");
         return result;
     }
 }
@@ -94,7 +96,7 @@ class LoadInput(NamedTuple):
 
 The `load()` method must return one of: `LoadResult`, `LoadManyResult`, `ReinjectResult`, `ErrorResult`, or `FilterResult`.
 
-The `LoadResult` includes the domains, content, and metadata created by the `LoadAction`.
+The `LoadResult` includes the domains, content, metadata, and annotations created by the `LoadAction`.
 A `ReinjectResult` includes seperate child DeltaFiles which will be ingressed back into DeltaFi.
 The `LoadManyResult` contains a list of `ChildLoadResults`. Each `ChildLoadResult` will be split into a child `DeltaFile` that will continue to be processed independently.
 
@@ -127,6 +129,7 @@ class HelloWorldLoadAction(LoadAction):
             data = f"{data}\nHelloWorldLoadAction loaded me"
             return LoadResult(context).add_metadata('loadKey', 'loadValue')
                 .add_domain(params.domain, 'Python domain!', 'text/plain')
+                .annotate('loadAnnotation', 'value')
                 .save_string_content(data, 'loaded content', 'text/plain')
         else:
             data = f"{data}\nHelloWorldLoadAction reinjected me"

@@ -29,7 +29,9 @@ import org.springframework.data.mongodb.core.mapping.event.AfterConvertCallback;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Component
@@ -44,8 +46,8 @@ public class DeltaFileConverter implements AfterConvertCallback<DeltaFile> {
     @NotNull
     @Override
     public DeltaFile onAfterConvert(DeltaFile deltaFile, @NotNull Document document, @NotNull String collection) {
+        // Version 1 - Flatten content
         if (deltaFile.getSchemaVersion() < 1) {
-            // Perform conversion for older API version
             List<org.bson.Document> protocolStackDocuments = uncheckedGetList(document, "protocolStack");
             for (int i = 0; i < protocolStackDocuments.size(); i++) {
                 org.bson.Document protocolLayerDocument = protocolStackDocuments.get(i);
@@ -82,6 +84,14 @@ public class DeltaFileConverter implements AfterConvertCallback<DeltaFile> {
             }
         }
 
+        // Version 2 - Rename indexedMetadata to annotations
+        if (deltaFile.getSchemaVersion() < 2) {
+            if (document.containsKey("indexedMetadata")) {
+                deltaFile.setAnnotations(uncheckedGetMap(document,"indexedMetadata"));
+                deltaFile.setAnnotationKeys(new HashSet<>(uncheckedGetList(document, "indexedMetadataKeys")));
+            }
+        }
+
         return deltaFile;
     }
 
@@ -97,6 +107,15 @@ public class DeltaFileConverter implements AfterConvertCallback<DeltaFile> {
             return (List<T>) document.get(field);
         } else {
             return Collections.emptyList();
+        }
+    }
+
+    @SuppressWarnings({"unchecked", "SameParameterValue"})
+    private <X, Y> Map<X, Y> uncheckedGetMap(Document document, String field) {
+        if (document.containsKey(field)) {
+            return (Map<X, Y>) document.get(field);
+        } else {
+            return Collections.emptyMap();
         }
     }
 }

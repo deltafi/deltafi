@@ -41,7 +41,8 @@ class SampleLoadAction(LoadAction):
 
     def load(self, context: Context, params: SampleLoadParameters, load_input: LoadInput):
         return LoadResult(context).add_metadata('loadKey', 'loadValue') \
-            .add_domain(params.domain, 'the domain value!', 'text/plain')
+            .add_domain(params.domain, 'the domain value!', 'text/plain') \
+            .annotate('loadAnnotate', 'loadAnnotateValue')
 
 
 class InvalidResult(LoadAction):
@@ -86,6 +87,9 @@ def test_load_action():
         'metadata': {
             'loadKey': 'loadValue'
         },
+        'annotations': {
+            'loadAnnotate': 'loadAnnotateValue'
+        },
         'deleteMetadataKeys': []
     }
     assert result.response() == expected_response
@@ -97,4 +101,4 @@ def test_invalid_result():
 
     action = InvalidResult()
     with pytest.raises(ValueError):
-        result = action.execute(make_event(mock_content_service))
+        action.execute(make_event(mock_content_service))

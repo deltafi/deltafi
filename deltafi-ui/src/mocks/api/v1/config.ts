@@ -42,7 +42,7 @@ const generateData = () => {
         },
         {
           name: "View test_key in Mock HTTPBin",
-          url: "https://mock.httpbin.org/anything/example?filename=${indexedMetadata.test_key}",
+          url: "https://mock.httpbin.org/anything/example?filename=${annotations.test_key}",
           description: null,
         },
       ],

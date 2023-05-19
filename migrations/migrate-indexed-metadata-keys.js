@@ -1,1 +1,0 @@
-db.deltaFile.updateMany({indexedMetadataKeys: { $exists: false }}, {$set: { indexedMetadataKeys: [] }})

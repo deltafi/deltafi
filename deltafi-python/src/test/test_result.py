@@ -40,15 +40,15 @@ def test_domain_result():
     assert result.result_key == "domain"
     assert result.result_type == "DOMAIN"
     response = result.response()
-    indexed_metadata = response.get('indexedMetadata')
-    assert len(indexed_metadata) == 0
+    annotations = response.get('annotations')
+    assert len(annotations) == 0
 
-    result.index_metadata("key1", "value1")
+    result.annotate("key1", "value1")
     response = result.response()
     assert len(response.items()) == 1
-    indexed_metadata = response.get('indexedMetadata')
-    assert len(indexed_metadata) == 1
-    assert indexed_metadata.get("key1") == "value1"
+    annotations = response.get('annotations')
+    assert len(annotations) == 1
+    assert annotations.get("key1") == "value1"
 
     verify_no_metrics(result)
     result.add_metric(Metric("test_metric", 100, {"tag": "val"}))
@@ -76,14 +76,14 @@ def test_enrich_result():
 
     response = result.response()
     assert len(response.items()) == 2
-    indexed_metadata = response.get('indexedMetadata')
-    assert len(indexed_metadata) == 0
+    annotations = response.get('annotations')
+    assert len(annotations) == 0
 
-    result.index_metadata("key1", "value1")
+    result.annotate("key1", "value1")
     response = result.response()
-    indexed_metadata = response.get('indexedMetadata')
-    assert len(indexed_metadata) == 1
-    assert indexed_metadata.get("key1") == "value1"
+    annotations = response.get('annotations')
+    assert len(annotations) == 1
+    assert annotations.get("key1") == "value1"
 
     enrichments = response.get('enrichments')
     assert len(enrichments) == 1
@@ -177,18 +177,20 @@ def test_load_result():
     add_canned_metadata(result)
     result.add_domain("domain1", "data1", "xml", )
     result.add_domain("domain2", "data2", "json", )
+    result.annotate('a', 'b')
     result.delete_metadata_key('delete1')
     assert result.result_key == "load"
     assert result.result_type == "LOAD"
     verify_no_metrics(result)
 
     response = result.response()
-    assert len(response) == 4
+    assert len(response) == 5
     verify_all_metadata(response)
     content = response.get("content")
     assert len(content) == 2
     assert content[0]['name'] == "content1"
     assert content[1]['name'] == "content2"
+    assert response['annotations'] == {'a': 'b'}
 
     domains = response.get("domains")
     assert len(domains) == 2
@@ -201,6 +203,7 @@ def test_load_result():
         'value': "data2",
         'mediaType': "json"}
 
+    assert response.get('annotations') == {'a': 'b'}
     assert response.get('deleteMetadataKeys') == ['delete1']
 
 
@@ -230,6 +233,7 @@ def test_transform_result():
     add_canned_metadata(result)
     result.add_content(make_content(None, "content1", "id1"))
     result.add_content(make_content(None, "content2", "id2"))
+    result.annotate('a', 'b')
     result.delete_metadata_key('delete1')
     result.delete_metadata_key('delete2')
 
@@ -238,12 +242,13 @@ def test_transform_result():
     verify_no_metrics(result)
 
     response = result.response()
-    assert len(response) == 3
+    assert len(response) == 4
     verify_all_metadata(response)
     content = response.get("content")
     assert len(content) == 2
     assert content[0]['name'] == "content1"
     assert content[1]['name'] == "content2"
+    assert response.get("annotations") == {'a': 'b'}
     assert response.get('deleteMetadataKeys') == ['delete1', 'delete2']
 
 

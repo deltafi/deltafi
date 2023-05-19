@@ -29,18 +29,18 @@ export default function useDomains() {
     return response.value.data.domains;
   }
 
-  const getIndexedMetadataKeys = async (domain: String) => {
+  const getAnnotationKeys = async (domain: String) => {
     const query = {
-      indexedMetadataKeys: {
+      annotationKeys: {
         __args: {
           domain: domain === undefined ? null : domain
         }
       }
     };
-    await queryGraphQL(query, "getIndexedMetadataKeys", "query", true);
+    await queryGraphQL(query, "getAnnotationKeys", "query", true);
     loaded.value = true;
-    return response.value.data.indexedMetadataKeys;
+    return response.value.data.annotationKeys;
   }
 
-  return { loading, loaded, getDomains, getIndexedMetadataKeys, errors };
+  return { loading, loaded, getDomains, getAnnotationKeys: getAnnotationKeys, errors };
 }

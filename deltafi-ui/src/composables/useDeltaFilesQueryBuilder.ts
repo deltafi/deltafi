@@ -44,7 +44,7 @@ export default function useDeltaFilesQueryBuilder() {
             modifiedAfter: startDateISOString,
             modifiedBefore: endDateISOString,
             domains: domain ? [domain] : [],
-            indexedMetadata: metadata,
+            annotations: metadata,
             ingressBytesMin: ingressBytesMin,
             ingressBytesMax: ingressBytesMax,
             totalBytesMin: totalBytesMin,

@@ -217,8 +217,8 @@ public class DeltaFilesDatafetcher {
 
   @DgsQuery
   @NeedsPermission.DeltaFileMetadataView
-  public List<String> indexedMetadataKeys(@InputArgument String domain) {
-    return deltaFilesService.indexedMetadataKeys(domain);
+  public List<String> annotationKeys(@InputArgument String domain) {
+    return deltaFilesService.annotationKeys(domain);
   }
 
   @DgsQuery

@@ -59,7 +59,7 @@ class DeltaFileAnnotationRestTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(is("Success")));
 
-        Mockito.verify(deltaFilesService).addIndexedMetadata("did", METADATA, false);
+        Mockito.verify(deltaFilesService).addAnnotations("did", METADATA, false);
     }
 
     @Test
@@ -68,13 +68,13 @@ class DeltaFileAnnotationRestTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(is("Success")));
 
-        Mockito.verify(deltaFilesService).addIndexedMetadata("did", METADATA, true);
+        Mockito.verify(deltaFilesService).addAnnotations("did", METADATA, true);
     }
 
     @Test
     void annotateDeltaFile_missingDid() throws Exception {
         Mockito.doThrow(new DgsEntityNotFoundException("Missing did"))
-                .when(deltaFilesService).addIndexedMetadata("did", METADATA, false);
+                .when(deltaFilesService).addAnnotations("did", METADATA, false);
 
         this.mockMvc.perform(post("/deltafile/annotate/did?k1=v1&k2=v2"))
                 .andExpect(status().isInternalServerError())

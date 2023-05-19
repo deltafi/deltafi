@@ -31,7 +31,7 @@ public class {{className}} extends DomainAction<{{paramClassName}}> {
                 .map(this::processDomain)
                 .forEach(extractedMetadata::putAll);
 
-        domainResult.addIndexedMetadata(extractedMetadata);
+        domainResult.addAnnotation(extractedMetadata);
         return domainResult;
     }
 

@@ -28,7 +28,7 @@ public class DomainInput {
 
 The `extractAndValidate` method must return a `DomainResultType`, which is currently implemented by `DomainResult`, and `ErrorResult`.
 
-A `DomainResult` contains a map of key value pairs that will be indexed in the system.
+A `DomainResult` contains a map of annotations that will be searchable in the system.
 
 ### Example
 
@@ -68,7 +68,7 @@ public class RoteDomainAction extends DomainAction<RoteDomainParameters> {
 
         DomainResult result = new DomainResult(context);
         if (null != params.getFieldsToIndex()) {
-            params.getFieldsToIndex().forEach(field -> result.addIndexedMetadata(field, input.metadata.getOrDefault(field, "missing")));
+            params.getFieldsToIndex().forEach(field -> result.addAnnotation(field, input.metadata.getOrDefault(field, "missing")));
         }
 
         return result;
@@ -105,7 +105,7 @@ class DomainInput(NamedTuple):
 
 The `domain()` method must return one of: `DomainResult`, or `ErrorResult`.
 
-A `DomainResult` contains a map of key value pairs that will be indexed in the system.
+A `DomainResult` contains a map of key value pairs that will be searchable in the system.
 
 ### Example
 
@@ -122,5 +122,5 @@ class HelloWorldDomainAction(DomainAction):
         super().__init__('Hello domain', ['pyHelloWorld'])
 
     def domain(self, context: Context, params: BaseModel, domain_input: DomainInput):
-        return DomainResult(context).index_metadata('domainKey', 'domainValue')
+        return DomainResult(context).annotate('domainKey', 'domainValue')
 ```

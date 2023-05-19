@@ -31,5 +31,5 @@ import java.util.Map;
 @Builder(builderMethodName = "newBuilder")
 public class EnrichEvent {
   private List<Enrichment> enrichments;
-  private Map<String, String> indexedMetadata;
+  private Map<String, String> annotations;
 }

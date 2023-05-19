@@ -310,6 +310,8 @@ public class DeltaFilesService {
     }
 
     public void transform(DeltaFile deltaFile, ActionEventInput event) {
+        deltaFile.completeAction(event);
+
         ProtocolLayer protocolLayer = new ProtocolLayer(event.getAction());
 
         if (event.getTransform().getContent() != null) {
@@ -325,8 +327,7 @@ public class DeltaFilesService {
         }
 
         deltaFile.getProtocolStack().add(protocolLayer);
-
-        deltaFile.completeAction(event);
+        deltaFile.addAnnotations(event.getTransform().getAnnotations());
 
         if (deltaFile.getSourceInfo().getProcessingType() == ProcessingType.TRANSFORMATION) {
             advanceAndSaveTransformationProcessing(deltaFile);
@@ -360,6 +361,7 @@ public class DeltaFilesService {
                     deltaFile.addDomain(domain.getName(), domain.getValue(), domain.getMediaType());
                 }
             }
+            deltaFile.addAnnotations(event.getLoad().getAnnotations());
         }
 
         advanceAndSave(deltaFile);
@@ -369,7 +371,7 @@ public class DeltaFilesService {
         deltaFile.completeAction(event);
 
         if (event.getDomain() != null) {
-            deltaFile.addIndexedMetadata(event.getDomain().getIndexedMetadata());
+            deltaFile.addAnnotations(event.getDomain().getAnnotations());
         }
 
         advanceAndSave(deltaFile);
@@ -385,7 +387,7 @@ public class DeltaFilesService {
                 }
             }
 
-            deltaFile.addIndexedMetadata(event.getEnrich().getIndexedMetadata());
+            deltaFile.addAnnotations(event.getEnrich().getAnnotations());
         }
 
         advanceAndSave(deltaFile);
@@ -489,7 +491,7 @@ public class DeltaFilesService {
     }
 
     @MongoRetryable
-    public void addIndexedMetadata(String did, Map<String, String> metadata, boolean allowOverwrites) {
+    public void addAnnotations(String did, Map<String, String> annotations, boolean allowOverwrites) {
         synchronized(didMutexService.getMutex(did)) {
             DeltaFile deltaFile = getCachedDeltaFile(did);
 
@@ -498,9 +500,9 @@ public class DeltaFilesService {
             }
 
             if (allowOverwrites) {
-                deltaFile.addIndexedMetadata(metadata);
+                deltaFile.addAnnotations(annotations);
             } else {
-                deltaFile.addIndexedMetadataIfAbsent(metadata);
+                deltaFile.addAnnotationsIfAbsent(annotations);
             }
 
             deltaFile.getEgress().forEach(egress -> updatePendingAnnotations(deltaFile, egress));
@@ -656,6 +658,8 @@ public class DeltaFilesService {
                 child.addDomain(domain.getName(), domain.getValue(), domain.getMediaType());
             }
         }
+
+        child.addAnnotations(loadEvent.getAnnotations());
 
         enqueueActions.addAll(advanceOnly(child, true));
 
@@ -1449,8 +1453,8 @@ public class DeltaFilesService {
         return deltaFileRepo.domains();
     }
 
-    public List<String> indexedMetadataKeys(String domain) {
-        return deltaFileRepo.indexedMetadataKeys(domain);
+    public List<String> annotationKeys(String domain) {
+        return deltaFileRepo.annotationKeys(domain);
     }
 
     private DeltaFiProperties getProperties() {

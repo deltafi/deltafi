@@ -20,6 +20,9 @@
             "sampleType": "sample-type",
             "sampleVersion": "2.1"
         },
+        "annotations": {
+            "transformKey": "transformValue"
+        },
         "deleteMetadataKeys": ["deleteMe"]
     }
 }

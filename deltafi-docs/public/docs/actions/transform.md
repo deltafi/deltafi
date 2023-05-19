@@ -26,7 +26,7 @@ public class TransformInput {
 
 The `transform` method must return a `TransformResultType`, which is currently implemented by `TransformResult`, `ErrorResult`, and `FilterResult`.
 
-The `TransformResult` includes the content and metadata created by the `TransformAction`.
+The `TransformResult` includes the content, metadata, and annotations created by the `TransformAction`.
 
 ### Example
 
@@ -57,7 +57,8 @@ public class RoteTransformAction extends TransformAction<ActionParameters> {
 
         TransformResult result = new TransformResult(context);
         result.setContent(input.getContentList());
-        result.addMetadata(input.getMetadata());
+        result.addMetadata("key", "value");
+        result.addAnnotation("annotationKey", "annotationValue");
         return result;
     }
 }
@@ -85,9 +86,9 @@ class TransformInput(NamedTuple):
 
 ### Return Types
 
-The `transofrm()` method must return one of: `TransformResult`, `ErrorResult`, or `FilterResult`.
+The `transform()` method must return one of: `TransformResult`, `ErrorResult`, or `FilterResult`.
 
-The `TransformResult` includes the content and metadata created by the `TransformAction`.
+The `TransformResult` includes the content, metadata, and annotations created by the `TransformAction`.
 
 ### Example
 
@@ -110,6 +111,8 @@ class HelloWorldTransformAction(TransformAction):
 
         data = f"{transform_input.content[0].load_str()}\nHelloWorldTransformAction did a great job"
 
-        return TransformResult(context).add_metadata('transformKey', 'transformValue')
+        return TransformResult(context)
+            .add_metadata('transformKey', 'transformValue')
+            .annotate('transformAnnotation', 'value')
             .save_string_content(data, 'transform-named-me', 'test/plain')
 ```

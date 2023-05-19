@@ -56,9 +56,9 @@ public class DeltaFile {
   @Builder.Default
   private Map<String, String> metadata = new HashMap<>();
   // Do not set @Builder.Default, see special handling in the builder
-  private Map<String, String> indexedMetadata = new HashMap<>();
+  private Map<String, String> annotations = new HashMap<>();
   // Do not set @Builder.Default, see special handling in the builder
-  private Set<String> indexedMetadataKeys = new HashSet<>();
+  private Set<String> annotationKeys = new HashSet<>();
   private List<Enrichment> enrichment;
   @Builder.Default
   private List<Egress> egress = new ArrayList<>();
@@ -87,7 +87,7 @@ public class DeltaFile {
   @JsonIgnore
   private long version;
 
-  public final static int CURRENT_SCHEMA_VERSION = 1;
+  public final static int CURRENT_SCHEMA_VERSION = 2;
   private int schemaVersion;
 
   public Map<String, String> getMetadata() {
@@ -262,26 +262,26 @@ public class DeltaFile {
     return domains.stream().allMatch(domain -> getDomains().stream().anyMatch(d -> d.getName().equals(domain)));
   }
 
-  public void addIndexedMetadata(Map<String, String> metadata) {
+  public void addAnnotations(Map<String, String> metadata) {
     if (null == metadata) {
       return;
     }
 
-    this.indexedMetadata.putAll(metadata);
-    this.indexedMetadataKeys.addAll(metadata.keySet());
+    this.annotations.putAll(metadata);
+    this.annotationKeys.addAll(metadata.keySet());
   }
 
-  public void addIndexedMetadataIfAbsent(Map<String, String> metadata) {
-    metadata.forEach(this::addIndexedMetadataIfAbsent);
+  public void addAnnotationsIfAbsent(Map<String, String> metadata) {
+    metadata.forEach(this::addAnnotationIfAbsent);
   }
 
-  public void addIndexedMetadataIfAbsent(String key, String value) {
-    if (null == key || indexedMetadata.containsKey(key)) {
+  public void addAnnotationIfAbsent(String key, String value) {
+    if (null == key || annotations.containsKey(key)) {
       return;
     }
 
-    this.indexedMetadata.put(key, value);
-    this.indexedMetadataKeys.add(key);
+    this.annotations.put(key, value);
+    this.annotationKeys.add(key);
   }
 
   public void addEgressFlow(@NotNull String flow) {
@@ -394,7 +394,7 @@ public class DeltaFile {
     // make sure the expectedAnnotations set is modifiable
     expectedAnnotations = expectedAnnotations != null ? new HashSet<>(expectedAnnotations) : new HashSet<>();
 
-    Set<String> indexedKeys = this.getIndexedMetadata().keySet();
+    Set<String> indexedKeys = getAnnotations().keySet();
     indexedKeys.forEach(expectedAnnotations::remove);
 
     // if there are no expected annotations for this flow, remove it from the pending list
@@ -510,14 +510,14 @@ public class DeltaFile {
   @SuppressWarnings("unused")
   public static class DeltaFileBuilder {
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
-    private Map<String, String> indexedMetadata = new HashMap<>();
+    private Map<String, String> annotations = new HashMap<>();
 
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
-    private Set<String> indexedMetadataKeys = new HashSet<>();
+    private Set<String> annotationKeys = new HashSet<>();
 
-    public DeltaFileBuilder indexedMetadata(Map<String, String> indexedMetadata) {
-      this.indexedMetadata = indexedMetadata;
-      this.indexedMetadataKeys = indexedMetadata.keySet();
+    public DeltaFileBuilder annotations(Map<String, String> annotations) {
+      this.annotations = annotations;
+      this.annotationKeys = annotations.keySet();
 
       return this;
     }

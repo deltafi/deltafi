@@ -131,7 +131,7 @@ class DeltaFileTest {
     @Test
     void updatePendingAnnotations() {
         DeltaFile deltaFile = new DeltaFile();
-        deltaFile.setIndexedMetadata(new HashMap<>(Map.of("a", "1", "b", "2", "d", "4")));
+        deltaFile.setAnnotations(new HashMap<>(Map.of("a", "1", "b", "2", "d", "4")));
 
         deltaFile.updatePendingAnnotationsForFlows("flow", Set.of("c"));
         // no flows in pendingAnnotationsForFlow yet, it should remain null regardless of the set of keys passed in
@@ -142,7 +142,7 @@ class DeltaFileTest {
         // no key of c exists yet, pendingAnnotationsForFlow should keep flow in the set
         Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).hasSize(1).contains("flow");
 
-        deltaFile.addIndexedMetadata(Map.of("c", "3"));
+        deltaFile.addAnnotations(Map.of("c", "3"));
         deltaFile.updatePendingAnnotationsForFlows("flow", Set.of("c"));
         // key of c is added, the flow should be removed from pendingAnnotationForFlows, empty set is nulled out
         Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).isNull();
