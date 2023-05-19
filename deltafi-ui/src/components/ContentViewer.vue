@@ -264,7 +264,7 @@ const loadEmbededContent = () => {
 
 const downloadEmbededContent = () => {
   let link = document.createElement("a");
-  let downloadFileName = content.value.name.value;
+  let downloadFileName = content.value.filename || content.value.name;
   link.download = downloadFileName.toLowerCase();
   let blob = new Blob([content.value.content], {
     type: content.value.mediaType,

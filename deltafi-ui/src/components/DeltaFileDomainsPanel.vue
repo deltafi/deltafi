@@ -31,8 +31,8 @@
                 <i class="far fa-window-maximize" />
               </div>
               <small class="mb-1 text-muted d-flex w-100 justify-content-between">
-                <span>{{ item.contentReference.mediaType }}</span>
-                <span>{{ formattedBytes(item.contentReference.size) }}</span>
+                <span>{{ item.mediaType }}</span>
+                <span>{{ formattedBytes(item.size) }}</span>
               </small>
             </div>
           </ContentDialog>
@@ -63,13 +63,11 @@ const domainContentReferences = computed(() => {
     const content = domain.value || "";
     return {
       name: domain.name,
-      contentReference: {
-        did: deltaFile.did,
-        content: content,
-        filename: `${deltaFile.did}-domain-${domain.name}`,
-        size: content.length,
-        mediaType: domain.mediaType
-      }
+      did: deltaFile.did,
+      content: content,
+      filename: `${deltaFile.did}-domain-${domain.name}`,
+      size: content.length,
+      mediaType: domain.mediaType
     };
   });
 });
