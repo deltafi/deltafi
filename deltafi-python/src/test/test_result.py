@@ -177,12 +177,13 @@ def test_load_result():
     add_canned_metadata(result)
     result.add_domain("domain1", "data1", "xml", )
     result.add_domain("domain2", "data2", "json", )
+    result.delete_metadata_key('delete1')
     assert result.result_key == "load"
     assert result.result_type == "LOAD"
     verify_no_metrics(result)
 
     response = result.response()
-    assert len(response) == 3
+    assert len(response) == 4
     verify_all_metadata(response)
     content = response.get("content")
     assert len(content) == 2
@@ -199,6 +200,8 @@ def test_load_result():
         'name': "domain2",
         'value': "data2",
         'mediaType': "json"}
+
+    assert response.get('deleteMetadataKeys') == ['delete1']
 
 
 def test_reinject_result():
@@ -227,18 +230,21 @@ def test_transform_result():
     add_canned_metadata(result)
     result.add_content(make_content(None, "content1", "id1"))
     result.add_content(make_content(None, "content2", "id2"))
+    result.delete_metadata_key('delete1')
+    result.delete_metadata_key('delete2')
 
     assert result.result_key == "transform"
     assert result.result_type == "TRANSFORM"
     verify_no_metrics(result)
 
     response = result.response()
-    assert len(response) == 2
+    assert len(response) == 3
     verify_all_metadata(response)
     content = response.get("content")
     assert len(content) == 2
     assert content[0]['name'] == "content1"
     assert content[1]['name'] == "content2"
+    assert response.get('deleteMetadataKeys') == ['delete1', 'delete2']
 
 
 def test_validate_result():

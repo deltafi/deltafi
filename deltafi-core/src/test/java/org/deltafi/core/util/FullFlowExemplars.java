@@ -34,7 +34,7 @@ public class FullFlowExemplars {
         DeltaFile deltaFile = Util.emptyDeltaFile(did, "flow");
         deltaFile.setIngressBytes(500L);
         deltaFile.queueAction("sampleIngress.Utf8TransformAction");
-        deltaFile.setSourceInfo(new SourceInfo("input.txt", INGRESS_FLOW_NAME, new HashMap<>(Map.of("AuthorizedBy", "XYZ", "removeMe", "whatever"))));
+        deltaFile.setSourceInfo(new SourceInfo("input.txt", INGRESS_FLOW_NAME, SOURCE_METADATA));
         Content content = new Content("name", "application/octet-stream", List.of(new Segment("objectName", 0, 500, did)));
         deltaFile.getProtocolStack().add(new ProtocolLayer(INGRESS_ACTION, List.of(content), Map.of()));
         return deltaFile;
@@ -46,7 +46,7 @@ public class FullFlowExemplars {
         deltaFile.completeAction("sampleIngress.Utf8TransformAction", START_TIME, STOP_TIME);
         deltaFile.queueAction("sampleIngress.SampleTransformAction");
         Content content = new Content("file.json", "application/octet-stream", new Segment("utf8ObjectName", 0, 500, did));
-        deltaFile.getProtocolStack().add(new ProtocolLayer("sampleIngress.Utf8TransformAction", List.of(content), Map.of()));
+        deltaFile.getProtocolStack().add(new ProtocolLayer("sampleIngress.Utf8TransformAction", List.of(content), Map.of("deleteMe", "soon")));
         return deltaFile;
     }
 
@@ -56,7 +56,7 @@ public class FullFlowExemplars {
         deltaFile.completeAction("sampleIngress.SampleTransformAction", START_TIME, STOP_TIME);
         deltaFile.queueAction("sampleIngress.SampleLoadAction");
         Content content = new Content("transformed", "application/octet-stream", new Segment("objectName", 0, 500, did));
-        deltaFile.getProtocolStack().add(new ProtocolLayer("sampleIngress.SampleTransformAction", List.of(content), TRANSFORM_METADATA));
+        deltaFile.getProtocolStack().add(new ProtocolLayer("sampleIngress.SampleTransformAction", List.of(content), TRANSFORM_METADATA, List.of("deleteMe")));
         return deltaFile;
     }
 
@@ -218,7 +218,7 @@ public class FullFlowExemplars {
         DeltaFile deltaFile = Util.emptyDeltaFile(did, "flow");
         deltaFile.setIngressBytes(500L);
         deltaFile.queueAction("sampleTransform.Utf8TransformAction");
-        deltaFile.setSourceInfo(new SourceInfo("input.txt", TRANSFORM_FLOW_NAME, new HashMap<>(Map.of("AuthorizedBy", "XYZ", "removeMe", "whatever")), ProcessingType.TRANSFORMATION));
+        deltaFile.setSourceInfo(new SourceInfo("input.txt", TRANSFORM_FLOW_NAME, SOURCE_METADATA, ProcessingType.TRANSFORMATION));
         Content content = new Content("name", "application/octet-stream", new Segment("objectName", 0, 500, did));
         deltaFile.getProtocolStack().add(new ProtocolLayer(INGRESS_ACTION, List.of(content), Map.of()));
         return deltaFile;

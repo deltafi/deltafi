@@ -93,6 +93,9 @@ public class DeltaFile {
     Map<String, String> metadata = new HashMap<>(sourceInfo.getMetadata());
     for (ProtocolLayer protocolLayer : protocolStack) {
       metadata.putAll(protocolLayer.getMetadata());
+      for (String key : protocolLayer.getDeleteMetadataKeys()) {
+        metadata.remove(key);
+      }
     }
 
     return metadata;
@@ -312,6 +315,7 @@ public class DeltaFile {
     return getActions().stream().anyMatch(action -> action.getState().equals(ActionState.ERROR));
   }
 
+  @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   public boolean hasPendingActions() {
     return getActions().stream().anyMatch(action -> action.getState().equals(ActionState.QUEUED));
   }
@@ -336,6 +340,7 @@ public class DeltaFile {
     return action.getState().equals(ActionState.RETRIED);
   }
 
+  @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   public boolean hasTerminalAction(String name) {
     return getActions().stream().anyMatch(action -> action.getName().equals(name) && !retried(action) && terminalState(action.getState()));
   }
@@ -368,16 +373,6 @@ public class DeltaFile {
     }
 
     return getLastProtocolLayer().getContent();
-  }
-
-  @JsonIgnore
-  @SuppressWarnings("unused")
-  public @NotNull Map<String, String> getLastProtocolLayerMetadata() {
-    if (Objects.isNull(getLastProtocolLayer()) || Objects.isNull(getLastProtocolLayer().getMetadata())) {
-      return Collections.emptyMap();
-    }
-
-    return getLastProtocolLayer().getMetadata();
   }
 
   public @NotNull List<Domain> getDomains() {

@@ -169,6 +169,7 @@ class LoadResult(Result):
         self.content = []
         self.metadata = {}
         self.domains = []
+        self.delete_metadata_keys = []
 
     # content can be a single Content or a List[Content]
     def add_content(self, content):
@@ -201,11 +202,16 @@ class LoadResult(Result):
             'mediaType': media_type})
         return self
 
+    def delete_metadata_key(self, key: str):
+        self.delete_metadata_keys.append(key)
+        return self
+
     def response(self):
         return {
             'domains': self.domains,
             'content': [content.json() for content in self.content],
-            'metadata': self.metadata
+            'metadata': self.metadata,
+            'deleteMetadataKeys': self.delete_metadata_keys
         }
 
 
@@ -273,6 +279,7 @@ class TransformResult(Result):
         super().__init__('transform', 'TRANSFORM', context)
         self.content = []
         self.metadata = {}
+        self.delete_metadata_keys = []
 
     # content can be a single Content or a List[Content]
     def add_content(self, content):
@@ -298,10 +305,15 @@ class TransformResult(Result):
         self.metadata[key] = value
         return self
 
+    def delete_metadata_key(self, key: str):
+        self.delete_metadata_keys.append(key)
+        return self
+
     def response(self):
         return {
             'content': [content.json() for content in self.content],
-            'metadata': self.metadata
+            'metadata': self.metadata,
+            'deleteMetadataKeys': self.delete_metadata_keys
         }
 
 

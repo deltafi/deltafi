@@ -85,7 +85,8 @@ def test_load_action():
         'content': [],
         'metadata': {
             'loadKey': 'loadValue'
-        }
+        },
+        'deleteMetadataKeys': []
     }
     assert result.response() == expected_response
 

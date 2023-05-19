@@ -19,6 +19,7 @@ package org.deltafi.actionkit.action.transform;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.Setter;
 import org.deltafi.actionkit.action.DataAmendedResult;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEventInput;
@@ -26,12 +27,18 @@ import org.deltafi.common.types.ActionEventType;
 import org.deltafi.common.types.TransformEvent;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Specialized result class for TRANSFORM actions
  */
 @Getter
+@Setter
 @EqualsAndHashCode(callSuper = true)
-public class TransformResult extends DataAmendedResult implements TransformResultType{
+public class TransformResult extends DataAmendedResult implements TransformResultType {
+    protected List<String> deleteMetadataKeys = new ArrayList<>();
+
     /**
      * @param context Context of executing action
      */
@@ -50,7 +57,12 @@ public class TransformResult extends DataAmendedResult implements TransformResul
         event.setTransform(TransformEvent.newBuilder()
                 .content(contentList())
                 .metadata(metadata)
+                .deleteMetadataKeys(deleteMetadataKeys)
                 .build());
         return event;
+    }
+
+    public void deleteMetadataKey(String key) {
+        deleteMetadataKeys.add(key);
     }
 }

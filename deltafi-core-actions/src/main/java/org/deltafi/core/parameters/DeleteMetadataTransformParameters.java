@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -15,30 +15,23 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.types;
+package org.deltafi.core.parameters;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import lombok.*;
+import org.deltafi.actionkit.action.parameters.ActionParameters;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+
 
 @Data
-@NoArgsConstructor
+@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
-@Builder(builderMethodName = "newBuilder")
-public class LoadEvent {
-  @Builder.Default
-  private List<Domain> domains = new ArrayList<>();
-  @Builder.Default
-  private List<Content> content = new ArrayList<>();
-  @Builder.Default
-  private Map<String, String> metadata = new HashMap<>();
-  private String did;
-  @Builder.Default
-  private List<String> deleteMetadataKeys = new ArrayList<>();
+@NoArgsConstructor
+public class DeleteMetadataTransformParameters extends ActionParameters {
+    @JsonProperty(required = true)
+    @JsonPropertyDescription("List of metadata keys to delete")
+    public List<String> deleteMetadataKeys;
 }

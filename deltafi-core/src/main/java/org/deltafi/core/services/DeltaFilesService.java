@@ -205,7 +205,7 @@ public class DeltaFilesService {
                 .stage(DeltaFileStage.INGRESS)
                 .actions(new ArrayList<>(List.of(ingressAction)))
                 .sourceInfo(sourceInfo)
-                .protocolStack(List.of(new ProtocolLayer(INGRESS_ACTION, ingressEvent.getContent(), Map.of())))
+                .protocolStack(List.of(new ProtocolLayer(INGRESS_ACTION, ingressEvent.getContent(), Map.of(), List.of())))
                 .domains(Collections.emptyList())
                 .enrichment(Collections.emptyList())
                 .formattedData(Collections.emptyList())
@@ -318,6 +318,11 @@ public class DeltaFilesService {
         if (event.getTransform().getMetadata() != null) {
             protocolLayer.setMetadata(event.getTransform().getMetadata());
         }
+
+        if (event.getTransform().getDeleteMetadataKeys() != null) {
+            protocolLayer.setDeleteMetadataKeys(event.getTransform().getDeleteMetadataKeys());
+        }
+
         deltaFile.getProtocolStack().add(protocolLayer);
 
         deltaFile.completeAction(event);
@@ -342,6 +347,11 @@ public class DeltaFilesService {
             if (event.getLoad().getMetadata() != null) {
                 protocolLayer.setMetadata(event.getLoad().getMetadata());
             }
+
+            if (event.getLoad().getDeleteMetadataKeys() != null) {
+                protocolLayer.setDeleteMetadataKeys(event.getLoad().getDeleteMetadataKeys());
+            }
+
             deltaFile.getProtocolStack().add(protocolLayer);
 
             if (event.getLoad().getDomains() != null) {
@@ -564,6 +574,11 @@ public class DeltaFilesService {
         if (loadEvent.getMetadata() != null) {
             protocolLayer.setMetadata(loadEvent.getMetadata());
         }
+
+        if (loadEvent.getDeleteMetadataKeys() != null) {
+            protocolLayer.setDeleteMetadataKeys(loadEvent.getDeleteMetadataKeys());
+        }
+
         child.getProtocolStack().add(protocolLayer);
 
         if (loadEvent.getDomains() != null) {
@@ -637,7 +652,7 @@ public class DeltaFilesService {
                                 .metadata(reinject.getMetadata())
                                 .processingType(processingType)
                                 .build())
-                        .protocolStack(List.of(new ProtocolLayer(INGRESS_ACTION, reinject.getContent(), Collections.emptyMap())))
+                        .protocolStack(List.of(new ProtocolLayer(INGRESS_ACTION, reinject.getContent(), Collections.emptyMap(), List.of())))
                         .domains(Collections.emptyList())
                         .enrichment(Collections.emptyList())
                         .formattedData(Collections.emptyList())
@@ -894,7 +909,7 @@ public class DeltaFilesService {
                                     .stage(DeltaFileStage.INGRESS)
                                     .actions(new ArrayList<>(List.of(action)))
                                     .sourceInfo(deltaFile.getSourceInfo())
-                                    .protocolStack(List.of(new ProtocolLayer(INGRESS_ACTION, deltaFile.getProtocolStack().get(0).getContent(), Map.of())))
+                                    .protocolStack(List.of(new ProtocolLayer(INGRESS_ACTION, deltaFile.getProtocolStack().get(0).getContent(), Map.of(), List.of())))
                                     .domains(Collections.emptyList())
                                     .enrichment(Collections.emptyList())
                                     .formattedData(Collections.emptyList())

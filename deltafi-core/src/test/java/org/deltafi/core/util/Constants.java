@@ -27,6 +27,7 @@ import org.deltafi.core.types.IngressResult;
 import javax.ws.rs.core.MediaType;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.HashMap;
 import java.util.Map;
 
 public class Constants {
@@ -49,6 +50,7 @@ public class Constants {
     public static final Content CONTENT = new Content(FILENAME, MEDIA_TYPE, new Segment(FILENAME, 0, CONTENT_DATA.length(), DID));
     public static final IngressResult INGRESS_RESULT = new IngressResult(FLOW, DID, CONTENT, ProcessingType.NORMALIZATION);
 
+    public final static Map<String, String> SOURCE_METADATA = new HashMap<>(Map.of("AuthorizedBy", "XYZ", "removeMe", "whatever"));
     public final static Map<String, String> TRANSFORM_METADATA = Map.of("sampleType", "sample-type", "sampleVersion", "2.1");
     public final static Map<String, String> LOAD_METADATA = Map.of("loadSampleType", "load-sample-type", "loadSampleVersion", "2.2");
     public final static Map<String, String> LOAD_WRONG_METADATA = Map.of("loadSampleType", "wrong-sample-type", "loadSampleVersion", "2.2");

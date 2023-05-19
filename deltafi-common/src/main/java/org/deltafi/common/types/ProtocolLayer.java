@@ -37,8 +37,17 @@ public class ProtocolLayer {
     private List<Content> content = new ArrayList<>();
     @Builder.Default
     private Map<String, String> metadata = new HashMap<>();
+    @Builder.Default
+    private List<String> deleteMetadataKeys = new ArrayList<>();
 
     public ProtocolLayer(String action) {
         this.action = action;
+    }
+
+    public ProtocolLayer(String action, List<Content> content, Map<String, String> metadata) {
+        this.action = action;
+        this.content = content;
+        this.metadata = metadata;
+        this.deleteMetadataKeys = new ArrayList<>();
     }
 }

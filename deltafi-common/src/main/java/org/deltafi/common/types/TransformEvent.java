@@ -36,4 +36,6 @@ public class TransformEvent {
   private List<Content> content = new ArrayList<>();
   @Builder.Default
   private Map<String, String> metadata = new HashMap<>();
+  @Builder.Default
+  private List<String> deleteMetadataKeys = new ArrayList<>();
 }

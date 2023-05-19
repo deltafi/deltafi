@@ -653,6 +653,12 @@ class DeltaFiCoreApplicationTests {
 
 		verifyActionEventResults(postTransformDeltaFile(did), "sampleIngress.SampleLoadAction");
 
+		DeltaFile deltaFile = deltaFileRepo.findById(did).orElseThrow();
+		// check that the deleted metadata key worked
+		Map<String, String> expectedMetadata = new HashMap<>(SOURCE_METADATA);
+		expectedMetadata.putAll(TRANSFORM_METADATA);
+		assertEquals(expectedMetadata, deltaFile.getMetadata());
+
 		Map<String, String> tags = tagsFor(ActionEventType.TRANSFORM, "sampleIngress.SampleTransformAction", INGRESS_FLOW_NAME, null);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Mockito.verifyNoMoreInteractions(metricService);

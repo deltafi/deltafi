@@ -19,6 +19,7 @@ package org.deltafi.actionkit.action.load;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.Setter;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.DataAmendedResult;
 import org.deltafi.common.types.*;
@@ -31,9 +32,11 @@ import java.util.List;
  * Specialized result class for LOAD actions
  */
 @Getter
+@Setter
 @EqualsAndHashCode(callSuper = true)
 public class LoadResult extends DataAmendedResult implements LoadResultType {
     private final List<Domain> domains = new ArrayList<>();
+    protected List<String> deleteMetadataKeys = new ArrayList<>();
 
     /**
      * @param context Context of executing action
@@ -67,8 +70,13 @@ public class LoadResult extends DataAmendedResult implements LoadResultType {
                 .domains(domains)
                 .content(contentList())
                 .metadata(metadata)
+                .deleteMetadataKeys(deleteMetadataKeys)
                 .build());
 
         return event;
+    }
+
+    public void deleteMetadataKey(String key) {
+        deleteMetadataKeys.add(key);
     }
 }

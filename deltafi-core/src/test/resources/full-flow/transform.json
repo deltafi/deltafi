@@ -19,6 +19,7 @@
         "metadata": {
             "sampleType": "sample-type",
             "sampleVersion": "2.1"
-        }
+        },
+        "deleteMetadataKeys": ["deleteMe"]
     }
 }
