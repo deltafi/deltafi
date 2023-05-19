@@ -442,7 +442,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
 
     }
 
-    String getFlowName(String actionName) {
+    static String getFlowName(String actionName) {
         int delimiterIdx = actionName.indexOf(FLOW_DELIMITER);
         if (delimiterIdx == -1 || delimiterIdx == actionName.length() - 1) {
             throw new IllegalArgumentException("Unable to get the flow name from the actionName: " + actionName);

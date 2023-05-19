@@ -89,6 +89,7 @@ case "$SUBCOMMAND" in
                }
                includeIngressFlows
                excludeIngressFlows
+               expectedAnnotations
                formatAction {
                  name
                  type

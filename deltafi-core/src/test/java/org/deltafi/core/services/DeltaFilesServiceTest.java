@@ -26,6 +26,7 @@ import org.deltafi.common.content.Segment;
 import org.deltafi.common.test.time.TestClock;
 import org.deltafi.common.types.*;
 import org.deltafi.core.MockDeltaFiPropertiesService;
+import org.deltafi.core.types.TransformFlow;
 import org.deltafi.core.util.Util;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.exceptions.MissingEgressFlowException;
@@ -440,6 +441,36 @@ class DeltaFilesServiceTest {
 
         // make sure content cleanup happens after a mongo failure
         Mockito.verify(contentStorageService).delete(content);
+    }
+
+    @Test
+    void testEgress_addPendingAnnotations() {
+        Set<String> expectedAnnotations = Set.of("a", "b");
+        TransformFlow transformFlow = new TransformFlow();
+        transformFlow.setExpectedAnnotations(expectedAnnotations);
+        Mockito.when(transformFlowService.hasFlow("flow")).thenReturn(true);
+        Mockito.when(transformFlowService.getRunningFlowByName("flow")).thenReturn(transformFlow);
+
+        ActionEventInput actionEventInput = new ActionEventInput();
+        actionEventInput.setAction("flow.transform");
+        DeltaFile deltaFile = Util.buildDeltaFile("1");
+        deltaFile.setSourceInfo(SourceInfo.builder().processingType(ProcessingType.TRANSFORMATION).build());
+        deltaFilesService.egress(deltaFile, actionEventInput);
+
+        Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).hasSize(1).contains("flow");
+    }
+
+    @Test
+    void testEgress_addPendingAnnotationsIgnoreNotRunningException() {
+        Mockito.when(egressFlowService.hasFlow("flow")).thenReturn(true);
+        Mockito.when(egressFlowService.getRunningFlowByName("flow")).thenThrow(new DgsEntityNotFoundException("not running"));
+
+        ActionEventInput actionEventInput = new ActionEventInput();
+        actionEventInput.setAction("flow.egress");
+        DeltaFile deltaFile = Util.buildDeltaFile("1");
+        deltaFilesService.egress(deltaFile, actionEventInput);
+
+        Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).isNull();
     }
 
     private Content createContent(String did) {

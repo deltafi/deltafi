@@ -17,14 +17,18 @@
  */
 package org.deltafi.common.types;
 
+import org.assertj.core.api.Assertions;
 import org.deltafi.common.content.Segment;
 import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -101,5 +105,51 @@ class DeltaFileTest {
         deltaFile.recalculateBytes();
         assertEquals(1000, deltaFile.getReferencedBytes());
         assertEquals(800, deltaFile.getTotalBytes());
+    }
+
+    @Test
+    void addPendingAnnotations() {
+        DeltaFile deltaFile = new DeltaFile();
+        Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).isNull();
+
+        // nothing should happen when an empty string is passed in
+        deltaFile.addPendingAnnotationsForFlow("  ");
+        Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).isNull();
+
+        deltaFile.addPendingAnnotationsForFlow("flow");
+        Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).hasSize(1).contains("flow");
+
+        // nothing should happen when a null set is passed in
+        deltaFile.addPendingAnnotationsForFlow(null);
+        Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).hasSize(1).contains("flow");
+
+        // values should be appended into the set
+        deltaFile.addPendingAnnotationsForFlow("flow2");
+        Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).hasSize(2).containsAll(List.of("flow", "flow2"));
+    }
+
+    @Test
+    void updatePendingAnnotations() {
+        DeltaFile deltaFile = new DeltaFile();
+        deltaFile.setIndexedMetadata(new HashMap<>(Map.of("a", "1", "b", "2", "d", "4")));
+
+        deltaFile.updatePendingAnnotationsForFlows("flow", Set.of("c"));
+        // no flows in pendingAnnotationsForFlow yet, it should remain null regardless of the set of keys passed in
+        Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).isNull();
+
+        deltaFile.setPendingAnnotationsForFlows(new HashSet<>(Set.of("flow")));
+        deltaFile.updatePendingAnnotationsForFlows("flow", Set.of("c"));
+        // no key of c exists yet, pendingAnnotationsForFlow should keep flow in the set
+        Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).hasSize(1).contains("flow");
+
+        deltaFile.addIndexedMetadata(Map.of("c", "3"));
+        deltaFile.updatePendingAnnotationsForFlows("flow", Set.of("c"));
+        // key of c is added, the flow should be removed from pendingAnnotationForFlows, empty set is nulled out
+        Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).isNull();
+
+        deltaFile.setPendingAnnotationsForFlows(new HashSet<>(Set.of("flow", "flow2")));
+        deltaFile.updatePendingAnnotationsForFlows("flow", Set.of("c"));
+        // key of c is added, the flow should be removed from pendingAnnotationForFlows
+        Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).hasSize(1).contains("flow2");
     }
 }

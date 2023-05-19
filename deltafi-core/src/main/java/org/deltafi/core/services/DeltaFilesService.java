@@ -59,6 +59,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static org.deltafi.common.constant.DeltaFiConstants.*;
@@ -422,6 +423,13 @@ public class DeltaFilesService {
         deltaFile.completeAction(event);
         deltaFile.setEgressed(true);
 
+        String flowName = FlowService.getFlowName(event.getAction());
+        Set<String> expectedAnnotations = getPendingAnnotations(deltaFile.getSourceInfo().getProcessingType(), flowName);
+
+        if (expectedAnnotations != null && !expectedAnnotations.isEmpty()) {
+            deltaFile.addPendingAnnotationsForFlow(flowName);
+        }
+
         advanceAndSave(deltaFile);
     }
 
@@ -495,9 +503,71 @@ public class DeltaFilesService {
                 deltaFile.addIndexedMetadataIfAbsent(metadata);
             }
 
+            deltaFile.getEgress().forEach(egress -> updatePendingAnnotations(deltaFile, egress));
+
             deltaFile.setModified(OffsetDateTime.now());
             deltaFileCacheService.save(deltaFile);
         }
+    }
+
+    void updatePendingAnnotations(DeltaFile deltaFile, Egress egress) {
+        updatePendingAnnotations(deltaFile, egress.getFlow());
+    }
+
+    void updatePendingAnnotations(DeltaFile deltaFile, String flowName) {
+        Set<String> expectedAnnotations = getPendingAnnotations(deltaFile.getSourceInfo().getProcessingType(), flowName);
+        if (expectedAnnotations != null) {
+            deltaFile.updatePendingAnnotationsForFlows(flowName, expectedAnnotations);
+        }
+    }
+
+    /**
+     * Find the DeltaFiles that are pending annotations for the given flow and check if they satisfy
+     * the new set of expectedAnnotations
+     * @param flowName name of the flow
+     * @param expectedAnnotations new set of expected annotations for the given flow
+     */
+    public void updatePendingAnnotationsForFlows(String flowName, Set<String> expectedAnnotations) {
+        if (expectedAnnotations == null) {
+            deltaFileRepo.removePendingAnnotationsForFlow(flowName);
+        } else {
+            int batchSize = deltaFiPropertiesService.getDeltaFiProperties().getDelete().getPolicyBatchSize();
+            List<DeltaFile> updatedDeltaFiles = new ArrayList<>();
+            try (Stream<DeltaFile> deltaFiles = deltaFileRepo.findByPendingAnnotationsForFlows(flowName)) {
+                deltaFiles.forEach(deltaFile -> updatePendingAnnotationsForFlowsAndCollect(deltaFile, flowName, expectedAnnotations, updatedDeltaFiles, batchSize));
+            }
+            if (!updatedDeltaFiles.isEmpty()) {
+                deltaFileRepo.saveAll(updatedDeltaFiles);
+            }
+        }
+    }
+
+    void updatePendingAnnotationsForFlowsAndCollect(DeltaFile deltaFile, String flowName, Set<String> expectedAnnotations, List<DeltaFile> collector, int batchSize) {
+        deltaFile.updatePendingAnnotationsForFlows(flowName, expectedAnnotations);
+        collector.add(deltaFile);
+
+        if (collector.size() == batchSize) {
+            deltaFileRepo.saveAll(collector);
+            collector.clear();
+        }
+    }
+
+    /*
+    * Find the flow with the given egress action and return expected annotations associated with the flow
+    */
+    private Set<String> getPendingAnnotations(ProcessingType processingType, String flowName) {
+        Set<String> expectedAnnotations = new HashSet<>();
+        try {
+            if (ProcessingType.TRANSFORMATION.equals(processingType)) {
+                expectedAnnotations = transformFlowService.getRunningFlowByName(flowName).getExpectedAnnotations();
+            } else {
+                expectedAnnotations = egressFlowService.getRunningFlowByName(flowName).getExpectedAnnotations();
+            }
+        } catch (DgsEntityNotFoundException e) {
+            log.warn("Flow {} is no longer running or no longer installed", flowName);
+        }
+
+        return expectedAnnotations;
     }
 
     public static ActionEventInput buildNoEgressConfiguredErrorEvent(DeltaFile deltaFile, OffsetDateTime time) {

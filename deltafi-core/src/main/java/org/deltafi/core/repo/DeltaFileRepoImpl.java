@@ -74,6 +74,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String EGRESSED = "egressed";
     public static final String EGRESS_FLOW = "egress.flow";
     public static final String FILTERED = "filtered";
+    public static final String PENDING_ANNOTATIONS_FOR_FLOWS = "pendingAnnotationsForFlows";
     public static final String TEST_MODE = "testMode";
     public static final String REFERENCED_BYTES = "referencedBytes";
     public static final String TOTAL_BYTES = "totalBytes";
@@ -396,6 +397,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         if (completeOnly) {
             andCriteria.add(Criteria.where(STAGE).in(DeltaFileStage.COMPLETE, DeltaFileStage.CANCELLED));
         }
+
+        andCriteria.add(Criteria.where(PENDING_ANNOTATIONS_FOR_FLOWS).is(null));
 
         if (andCriteria.size() == 1) {
             criteria = andCriteria.get(0);
@@ -980,5 +983,23 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         return aggResults.getMappedResults().get(0);
+    }
+
+    @Override
+    public void removePendingAnnotationsForFlow(String flow) {
+        pullFlowFromPendingAnnotationsForFlow(flow);
+        unsetEmptyPendingAnnotationsForFlow();
+    }
+
+    private void pullFlowFromPendingAnnotationsForFlow(String flow) {
+        Query query = Query.query(Criteria.where(PENDING_ANNOTATIONS_FOR_FLOWS).is(flow));
+        Update pullOutFlow = new Update().pull(PENDING_ANNOTATIONS_FOR_FLOWS, flow);
+        mongoTemplate.updateMulti(query, pullOutFlow, DeltaFile.class);
+    }
+
+    private void unsetEmptyPendingAnnotationsForFlow() {
+        Query query = Query.query(Criteria.where(PENDING_ANNOTATIONS_FOR_FLOWS).is(List.of()));
+        Update unsetEmptyList = new Update().unset(PENDING_ANNOTATIONS_FOR_FLOWS);
+        mongoTemplate.updateMulti(query, unsetEmptyList, DeltaFile.class);
     }
 }

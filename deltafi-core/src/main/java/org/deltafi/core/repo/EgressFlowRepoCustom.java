@@ -18,9 +18,9 @@
 package org.deltafi.core.repo;
 
 import org.deltafi.core.types.EgressFlow;
-import org.springframework.stereotype.Repository;
 
-@Repository
-public interface EgressFlowRepo extends FlowRepo<EgressFlow>, EgressFlowRepoCustom {
+import java.util.Set;
 
+public interface EgressFlowRepoCustom extends FlowRepoCustom<EgressFlow> {
+    boolean updateExpectedAnnotations(String flowName, Set<String> expectedAnnotations);
 }

@@ -62,6 +62,7 @@ public class FlowPlanDatafetcher {
     private final EnrichFlowPlanService enrichFlowPlanService;
     private final TransformFlowPlanService transformFlowPlanService;
     private final TransformFlowService transformFlowService;
+    private final AnnotationService annotationService;
     private final PluginVariableService pluginVariableService;
     private final PluginRegistryService pluginRegistryService;
 
@@ -99,6 +100,18 @@ public class FlowPlanDatafetcher {
         } else {
             throw new DgsEntityNotFoundException("No ingress or transform flow exists with the name: " + flowName);
         }
+    }
+
+    @DgsMutation
+    @NeedsPermission.FlowUpdate
+    public boolean setTransformFlowExpectedAnnotations(@InputArgument String flowName, @InputArgument Set<String> expectedAnnotations) {
+        return annotationService.setExpectedAnnotations(FlowType.TRANSFORM, flowName, expectedAnnotations);
+    }
+
+    @DgsMutation
+    @NeedsPermission.FlowUpdate
+    public boolean setEgressFlowExpectedAnnotations(@InputArgument String flowName, @InputArgument Set<String> expectedAnnotations) {
+        return annotationService.setExpectedAnnotations(FlowType.EGRESS, flowName, expectedAnnotations);
     }
 
     @DgsMutation

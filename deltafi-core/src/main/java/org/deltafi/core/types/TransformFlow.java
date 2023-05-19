@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Set;
 
 @Document
 @Data
@@ -35,6 +36,7 @@ public class TransformFlow extends Flow {
     private List<TransformActionConfiguration> transformActions = new ArrayList<>();
     private EgressActionConfiguration egressAction;
     private int maxErrors = -1;
+    private Set<String> expectedAnnotations;
 
     @Override
     public ActionConfiguration findActionConfigByName(String actionNamed) {

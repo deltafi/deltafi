@@ -36,6 +36,7 @@ public class EgressFlow extends Flow {
     private FormatActionConfiguration formatAction;
     private List<ValidateActionConfiguration> validateActions = new ArrayList<>();
     private EgressActionConfiguration egressAction;
+    private Set<String> expectedAnnotations;
 
     @Override
     public ActionConfiguration findActionConfigByName(String actionName) {

@@ -79,6 +79,7 @@ public class DeltaFile {
   private String replayDid;
   private OffsetDateTime nextAutoResume;
   private String nextAutoResumeReason;
+  private Set<String> pendingAnnotationsForFlows;
 
   @Version
   @Getter
@@ -359,6 +360,50 @@ public class DeltaFile {
 
   public String sourceMetadata(String key, String defaultValue) {
     return getSourceInfo().getMetadata().getOrDefault(key, defaultValue);
+  }
+
+  /**
+   * Add the given flow to the set of pendingAnnotationsForFlows for this DeltaFile
+   * Do nothing if the given set is null or empty
+   * @param flowName name of the flow that requires annotations for this DeltaFile
+   */
+  public void addPendingAnnotationsForFlow(String flowName) {
+    if (flowName == null || flowName.isBlank()) {
+      return;
+    }
+
+    if (this.pendingAnnotationsForFlows == null) {
+      this.pendingAnnotationsForFlows = new HashSet<>();
+    }
+
+    this.pendingAnnotationsForFlows.add(flowName);
+  }
+
+  /**
+   * Check if the set of expected annotations are satisfied for the given flow.
+   * If the all the annotations are present, remove the flow from the pendingAnnotationsForFlows
+   * set. If pendingAnnotationsForFlows is empty after removing the flow, set it to null.
+   * @param flow name of the flow that could be removed from pendingAnnotationsForFlows
+   * @param expectedAnnotations set of annotations expected for the given flow
+   */
+  public void updatePendingAnnotationsForFlows(String flow, Set<String> expectedAnnotations) {
+    if (this.pendingAnnotationsForFlows == null || !this.pendingAnnotationsForFlows.contains(flow)) {
+      return;
+    }
+
+    // make sure the expectedAnnotations set is modifiable
+    expectedAnnotations = expectedAnnotations != null ? new HashSet<>(expectedAnnotations) : new HashSet<>();
+
+    Set<String> indexedKeys = this.getIndexedMetadata().keySet();
+    indexedKeys.forEach(expectedAnnotations::remove);
+
+    // if there are no expected annotations for this flow, remove it from the pending list
+    if (expectedAnnotations.isEmpty()) {
+      pendingAnnotationsForFlows.remove(flow);
+      if (pendingAnnotationsForFlows.isEmpty()) {
+        pendingAnnotationsForFlows = null;
+      }
+    }
   }
 
   @JsonIgnore

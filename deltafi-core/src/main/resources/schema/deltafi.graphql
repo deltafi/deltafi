@@ -407,6 +407,8 @@ type Mutation {
   setTransformMaxErrors(flowName: String!, maxErrors: Int!) : Boolean!
   enableTransformTestMode(flowName: String!) : Boolean!
   disableTransformTestMode(flowName: String!) : Boolean!
+  setTransformFlowExpectedAnnotations(flowName: String!, expectedAnnotations: [String]) : Boolean!
+  setEgressFlowExpectedAnnotations(flowName: String!, expectedAnnotations: [String]) : Boolean!
 
   resume(dids: [String!]!, removeSourceMetadata: [String!], replaceSourceMetadata: [KeyValueInput!]) : [RetryResult!]!
   replay(dids: [String!]!, replaceFilename: String, replaceFlow: String, removeSourceMetadata: [String!], replaceSourceMetadata: [KeyValueInput!]) : [RetryResult!]!

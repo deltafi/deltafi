@@ -208,6 +208,7 @@ type EgressFlow {
   flowStatus: FlowStatus!
   includeIngressFlows: [String]
   excludeIngressFlows: [String]
+  expectedAnnotations: [String]
   formatAction: FormatActionConfiguration!
   validateActions: [ValidateActionConfiguration]
   egressAction: EgressActionConfiguration!
@@ -220,6 +221,7 @@ type TransformFlow {
   sourcePlugin: PluginCoordinates!
   flowStatus: FlowStatus!
   maxErrors: Int!
+  expectedAnnotations: [String]
   transformActions: [TransformActionConfiguration!]
   egressAction: EgressActionConfiguration!
   variables: [Variable]!

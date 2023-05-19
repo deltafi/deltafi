@@ -2372,6 +2372,9 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile4 = buildDeltaFile("4", null, DeltaFileStage.ERROR, OffsetDateTime.now(), OffsetDateTime.now());
 		deltaFile4.setErrorAcknowledged(OffsetDateTime.now());
 		deltaFileRepo.save(deltaFile4);
+		DeltaFile deltaFile5 = buildDeltaFile("5", null, DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now());
+		deltaFile5.setPendingAnnotationsForFlows(Set.of("a"));
+		deltaFileRepo.save(deltaFile5);
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(null, OffsetDateTime.now().plusSeconds(1), 0, null, "policy", false, 10);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile4.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
@@ -2441,6 +2444,10 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile6 = buildDeltaFile("6", null, DeltaFileStage.EGRESS, OffsetDateTime.now(), OffsetDateTime.now());
 		deltaFile6.setTotalBytes(50L);
 		deltaFileRepo.save(deltaFile6);
+		DeltaFile deltaFile7 = buildDeltaFile("7", null, DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now());
+		deltaFile7.setTotalBytes(1000L);
+		deltaFile7.setPendingAnnotationsForFlows(Set.of("a"));
+		deltaFileRepo.save(deltaFile7);
 
 		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(2500L, null, "policy", 100);
 		assertEquals(Stream.of(deltaFile1.getDid(), deltaFile2.getDid(), deltaFile3.getDid()).sorted().toList(), deltaFiles.stream().map(DeltaFile::getDid).sorted().toList());
@@ -3508,6 +3515,79 @@ class DeltaFiCoreApplicationTests {
 
 		// this is not successful b/c it is trying to start flows and put flows in test mode that no longer exist
 		assertThat(result.isSuccess()).isFalse();
+	}
+
+	@Test
+	void setTransformFlowExpectedAnnotations() {
+		clearForFlowTests();
+		TransformFlow transformFlow = new TransformFlow();
+		transformFlow.setName("transform-flow");
+		transformFlow.setExpectedAnnotations(Set.of("a", "b"));
+		transformFlowRepo.save(transformFlow);
+
+		assertThat(transformFlowRepo.updateExpectedAnnotations("transform-flow", Set.of("b", "a", "c"))).isTrue();
+		assertThat(transformFlowRepo.findById("transform-flow").get().getExpectedAnnotations()).hasSize(3).containsAll(Set.of("a", "b", "c"));
+	}
+
+	@Test
+	void setEgressFlowExpectedAnnotations() {
+		clearForFlowTests();
+		EgressFlow egressFlow = new EgressFlow();
+		egressFlow.setName("egress-flow");
+		egressFlow.setExpectedAnnotations(Set.of("a", "b"));
+		egressFlowRepo.save(egressFlow);
+
+		assertThat(egressFlowRepo.updateExpectedAnnotations("egress-flow", Set.of("b", "a", "c"))).isTrue();
+		assertThat(egressFlowRepo.findById("egress-flow").get().getExpectedAnnotations()).hasSize(3).containsAll(Set.of("a", "b", "c"));
+	}
+
+	@Test
+	void testRemoveFlowFromPendingAnnotationsForFlowsList() {
+		String keepFlow = "keep";
+		String removeFlow = "remove";
+		DeltaFile keepOne = buildDeltaFile("keepOne");
+		keepOne.setPendingAnnotationsForFlows(Set.of(keepFlow));
+		DeltaFile removeOneKeepOne = buildDeltaFile("removeOneKeepOne");
+		removeOneKeepOne.setPendingAnnotationsForFlows(Set.of(keepFlow, removeFlow));
+		DeltaFile removeBecomesNull = buildDeltaFile("removeBecomesNull");
+		removeBecomesNull.setPendingAnnotationsForFlows(Set.of(removeFlow));
+		DeltaFile four = buildDeltaFile("noChange");
+
+		deltaFileRepo.saveAll(List.of(keepOne, removeOneKeepOne, removeBecomesNull, four));
+		deltaFileRepo.removePendingAnnotationsForFlow(removeFlow);
+
+		assertThat(deltaFileRepo.findById("keepOne").get().getPendingAnnotationsForFlows()).hasSize(1).contains(keepFlow);
+		assertThat(deltaFileRepo.findById("removeOneKeepOne").get().getPendingAnnotationsForFlows()).hasSize(1).contains(keepFlow);
+		assertThat(deltaFileRepo.findById("removeBecomesNull").get().getPendingAnnotationsForFlows()).isNull();
+		assertThat(deltaFileRepo.findById("noChange").get().getPendingAnnotationsForFlows()).isNull();
+	}
+
+	@Test
+	void testUpdatePendingAnnotationsForFlows() {
+		Set<String> pendingForFlows = Set.of("f");
+		DeltaFile completeAfterChange = buildDeltaFile("a");
+		completeAfterChange.setPendingAnnotationsForFlows(pendingForFlows);
+		completeAfterChange.addIndexedMetadata(Map.of("a", "value"));
+
+		DeltaFile waitingForA = buildDeltaFile("b");
+		waitingForA.setPendingAnnotationsForFlows(pendingForFlows);
+
+		DeltaFile differentFlow = buildDeltaFile("c");
+		differentFlow.setPendingAnnotationsForFlows(Set.of("f2"));
+
+		DeltaFile d = buildDeltaFile("d");
+		d.setPendingAnnotationsForFlows(pendingForFlows);
+		completeAfterChange.addIndexedMetadata(Map.of("d", "value"));
+
+		deltaFileRepo.saveAll(List.of(completeAfterChange, waitingForA, differentFlow, d));
+		deltaFilesService.updatePendingAnnotationsForFlows("f", Set.of("a"));
+
+		Util.assertEqualsIgnoringDates(waitingForA, deltaFilesService.getDeltaFile("b"));
+		Util.assertEqualsIgnoringDates(differentFlow, deltaFilesService.getDeltaFile("c"));
+		Util.assertEqualsIgnoringDates(d, deltaFilesService.getDeltaFile("d"));
+
+		DeltaFile updated = deltaFilesService.getDeltaFile("a");
+		assertThat(updated.getPendingAnnotationsForFlows()).isNull();
 	}
 
 	private DeltaFile loadDeltaFile(String did) {

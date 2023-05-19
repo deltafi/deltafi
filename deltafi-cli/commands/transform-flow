@@ -86,6 +86,8 @@ case "$SUBCOMMAND" in
                    message
                  }
                }
+               maxErrors
+               expectedAnnotations
                transformActions {
                  name
                  type

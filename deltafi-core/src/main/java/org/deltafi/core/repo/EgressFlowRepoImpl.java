@@ -19,12 +19,28 @@ package org.deltafi.core.repo;
 
 import org.deltafi.core.types.EgressFlow;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
+
+import java.util.Set;
+import java.util.TreeSet;
 
 @SuppressWarnings("unused")
-public class EgressFlowRepoImpl extends BaseFlowRepoImpl<EgressFlow> {
+public class EgressFlowRepoImpl extends BaseFlowRepoImpl<EgressFlow> implements EgressFlowRepoCustom {
+
+    private static final String EXPECTED_ANNOTATIONS = "expectedAnnotations";
 
     public EgressFlowRepoImpl(MongoTemplate mongoTemplate) {
         super(mongoTemplate, EgressFlow.class);
     }
 
+    @Override
+    public boolean updateExpectedAnnotations(String flowName, Set<String> expectedAnnotations) {
+        // sort before storing so the `ne` can be used in the query
+        TreeSet<String> sortedAnnotations = expectedAnnotations != null ? new TreeSet<>(expectedAnnotations) : null;
+        Query idMatches = Query.query(Criteria.where(ID).is(flowName).and(EXPECTED_ANNOTATIONS).ne(sortedAnnotations));
+        Update expectedAnnotationsUpdate = Update.update(EXPECTED_ANNOTATIONS, sortedAnnotations);
+        return 1 == mongoTemplate.updateFirst(idMatches, expectedAnnotationsUpdate, EgressFlow.class).getModifiedCount();
+    }
 }

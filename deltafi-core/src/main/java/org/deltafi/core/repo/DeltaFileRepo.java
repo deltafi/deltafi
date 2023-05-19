@@ -25,6 +25,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 @Repository
 public interface DeltaFileRepo extends MongoRepository<DeltaFile, String>, DeltaFileRepoCustom {
@@ -35,4 +36,11 @@ public interface DeltaFileRepo extends MongoRepository<DeltaFile, String>, Delta
     Page<DeltaFile> findAllByOrderByModifiedDesc(Pageable pageable);
     Page<DeltaFile> findByStageOrderByModifiedDesc(DeltaFileStage stage, Pageable pageable);
     Page<DeltaFile> findBySourceInfoFilenameOrderByCreatedDesc(String filename, Pageable pageable);
+
+    /**
+     * Find the DeltaFiles that include the given flowName in their pendingAnnotationsForFlows set
+     * @param flowName name of flow to search for
+     * @return stream of matching DeltaFiles
+     */
+    Stream<DeltaFile> findByPendingAnnotationsForFlows(String flowName);
 }

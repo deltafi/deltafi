@@ -194,4 +194,12 @@ public interface DeltaFileRepoCustom {
      * @return stats
      */
     DeltaFileStats deltaFileStats(boolean inFlightOnly, boolean includeDeletedContent);
+
+    /**
+     * Remove the given flow from pendingAnnotationsForFlows for any DeltaFile
+     * that currently has the flow in the set.
+     * Unset any pendingAnnotationsForFlows that are empty after removing the flow
+     * @param flow that should be removed from pendingAnnotationsForFlows
+     */
+    void removePendingAnnotationsForFlow(String flow);
 }
