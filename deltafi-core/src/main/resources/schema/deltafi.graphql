@@ -122,6 +122,8 @@ type ProtocolLayer {
   content: [Content!]!
   "Additional metadata"
   metadata: Metadata
+  "Metadata deleted by an action"
+  deleteMetadataKeys: [String!]!
 }
 
 type FormattedData {
