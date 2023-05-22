@@ -40,9 +40,19 @@ _k8s_mongo_migrate() {
   fi
 
   for i in ${DELTAFI_DIR}/migrations/*.js; do
-    cli_log "Running database migration $(basename ${i})"
-    ${KUBECTL_BIN} cp --container mongodb ${i} ${POD}:${MIGRATION_DIR}
-    ${KUBECTL_BIN} exec -i ${POD} --container mongodb -- sh -c "mongo -u ${MONGODB_USERNAME_ENV} --password ${MONGODB_PASSWORD_ENV} --quiet deltafi ${MIGRATION_DIR}/$(basename ${i})"
+    migration_name=$(basename ${i})
+    migration_exists=$(${KUBECTL_BIN} exec -i ${POD} --container mongodb -- sh -c "echo 'db.migrations.find({name: \"${migration_name}\"}).count()' | mongo -u ${MONGODB_USERNAME_ENV} --password ${MONGODB_PASSWORD_ENV} --quiet deltafi")
+
+    if [[ "$migration_exists" == "0" ]]; then
+      cli_log "Running database migration $(basename ${i})"
+      ${KUBECTL_BIN} cp --container mongodb ${i} ${POD}:${MIGRATION_DIR}
+      ${KUBECTL_BIN} exec -i ${POD} --container mongodb -- sh -c "mongo -u ${MONGODB_USERNAME_ENV} --password ${MONGODB_PASSWORD_ENV} --quiet deltafi ${MIGRATION_DIR}/$(basename ${i})"
+
+      # add record to migrations collection
+      ${KUBECTL_BIN} exec -i ${POD} --container mongodb -- sh -c "echo 'db.migrations.insert({name: \"${migration_name}\", runAt: new Date()})' | mongo -u ${MONGODB_USERNAME_ENV} --password ${MONGODB_PASSWORD_ENV} --quiet deltafi" >/dev/null
+    else
+      cli_log "Skipping migration ${migration_name} as it has already been run"
+    fi
   done
 }
 
@@ -50,9 +60,19 @@ _compose_mongo_migrate() {
   docker exec -i deltafi-mongodb sh -c "rm -rf ${MIGRATION_DIR} && mkdir ${MIGRATION_DIR}"
 
   for i in ${DELTAFI_DIR}/migrations/*.js; do
-    cli_log "Running database migration $(basename ${i})"
-    docker cp -q ${i} deltafi-mongodb:${MIGRATION_DIR}
-    docker exec -it deltafi-mongodb sh -c "mongo -u ${MONGODB_USERNAME_ENV} --password ${MONGODB_PASSWORD_ENV} --quiet deltafi ${MIGRATION_DIR}/$(basename ${i})"
+    migration_name=$(basename ${i})
+    migration_exists=$(docker exec -i deltafi-mongodb sh -c "echo 'db.migrations.find({name: \"${migration_name}\"}).count()' | mongo -u ${MONGODB_USERNAME_ENV} --password ${MONGODB_PASSWORD_ENV} --quiet deltafi")
+
+    if [[ "$migration_exists" == "0" ]]; then
+      cli_log "Running database migration $(basename ${i})"
+      docker cp -q ${i} deltafi-mongodb:${MIGRATION_DIR}
+      docker exec -i deltafi-mongodb sh -c "mongo -u ${MONGODB_USERNAME_ENV} --password ${MONGODB_PASSWORD_ENV} --quiet deltafi ${MIGRATION_DIR}/$(basename ${i})"
+
+      # add record to migrations collection
+      docker exec -i deltafi-mongodb sh -c "echo 'db.migrations.insert({name: \"${migration_name}\", runAt: new Date()})' | mongo -u ${MONGODB_USERNAME_ENV} --password ${MONGODB_PASSWORD_ENV} --quiet deltafi" >/dev/null
+    else
+      cli_log "Skipping migration ${migration_name} as it has already been run"
+    fi
   done
 }
 
