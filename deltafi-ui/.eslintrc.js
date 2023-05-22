@@ -8,6 +8,7 @@ module.exports = {
   rules: {
     "vue/max-attributes-per-line": "off",
     "vue/no-v-html": "off",
+    "vue/no-dupe-keys": "off",
     "vue/multi-word-component-names": ["error", {
       "ignores": ["Timestamp", "Clock", "Version"]
     }]

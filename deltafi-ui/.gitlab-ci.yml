@@ -1,7 +1,7 @@
 ui:eslint:
   tags:
     - light
-  image: node
+  image: node:alpine
   stage: build
   needs: []
   script:
