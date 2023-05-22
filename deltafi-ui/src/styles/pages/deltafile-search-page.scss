@@ -153,6 +153,13 @@
       border: unset;
     }
   }
+  .p-datatable.p-datatable-striped .p-datatable-tbody > tr.p-highlight {
+    color: #ffffff;
+    a,
+    button {
+      color: #eeeeee;
+    }
+  }
 
   // This order matters
   @media (min-width: 1024px) {
