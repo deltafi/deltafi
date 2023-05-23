@@ -234,9 +234,9 @@ public class DeltaFilesService {
             }
 
             if (!event.valid()) {
-                event.setError(ErrorEvent.newBuilder().cause("Invalid event received from Action " + event.getAction() +
-                        " for did " + deltaFile.getDid() + ". Action event type does not match the populated object: " +
-                        OBJECT_MAPPER.writeValueAsString(event)).build());
+                event.setError(ErrorEvent.newBuilder().cause(INVALID_ACTION_EVENT_RECEIVED)
+                        .context("Action event type does not match the populated object: " +
+                                OBJECT_MAPPER.writeValueAsString(event)).build());
                 error(deltaFile, event);
                 return;
             }

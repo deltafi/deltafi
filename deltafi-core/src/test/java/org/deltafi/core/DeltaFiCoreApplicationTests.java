@@ -880,6 +880,17 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void testEnrichInvalid() throws IOException {
+		String did = UUID.randomUUID().toString();
+		deltaFileRepo.save(postDomainDeltaFile(did));
+
+		deltaFilesService.handleActionEvent(actionEvent("enrichInvalid", did));
+
+		DeltaFile afterMutation = deltaFilesService.getDeltaFile(did);
+		assertEqualsIgnoringDates(postEnrichInvalidDeltaFile(did), afterMutation);
+	}
+
+	@Test
 	void testFormat() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postEnrichDeltaFile(did));

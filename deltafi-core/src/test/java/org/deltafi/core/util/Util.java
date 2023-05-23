@@ -171,8 +171,14 @@ public class Util {
         } else {
             Assertions.assertThat(actual.getName()).isEqualTo(expected.getName());
             Assertions.assertThat(actual.getState()).isEqualTo(expected.getState());
-            Assertions.assertThat(actual.getErrorContext()).isEqualTo(expected.getErrorContext());
             Assertions.assertThat(actual.getErrorCause()).isEqualTo(expected.getErrorCause());
+            if (expected.getErrorContext() != null
+                    && expected.getErrorContext().startsWith("STARTS:")) {
+                Assertions.assertThat(actual.getErrorContext()).startsWith(
+                        expected.getErrorContext().substring(7));
+            } else {
+                Assertions.assertThat(actual.getErrorContext()).isEqualTo(expected.getErrorContext());
+            }
             Assertions.assertThat(actual.getAttempt()).isEqualTo(expected.getAttempt());
         }
     }

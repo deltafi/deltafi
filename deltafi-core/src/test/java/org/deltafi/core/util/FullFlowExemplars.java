@@ -26,6 +26,7 @@ import java.time.OffsetDateTime;
 import java.util.*;
 
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
+import static org.deltafi.common.constant.DeltaFiConstants.INVALID_ACTION_EVENT_RECEIVED;
 import static org.deltafi.common.types.ActionState.QUEUED;
 import static org.deltafi.core.util.Constants.*;
 
@@ -129,6 +130,15 @@ public class FullFlowExemplars {
         deltaFile.addEgressFlow(EGRESS_FLOW_NAME);
         return deltaFile;
     }
+
+    public static DeltaFile postEnrichInvalidDeltaFile(String did) {
+        DeltaFile deltaFile = postDomainDeltaFile(did);
+        deltaFile.setStage(DeltaFileStage.ERROR);
+        deltaFile.errorAction("sampleEnrich.SampleEnrichAction", START_TIME, STOP_TIME,
+                INVALID_ACTION_EVENT_RECEIVED, "STARTS:Action event type does not match the populated object");
+        return deltaFile;
+    }
+
     public static DeltaFile postFormatDeltaFile(String did) {
         DeltaFile deltaFile = postEnrichDeltaFile(did);
         deltaFile.setStage(DeltaFileStage.EGRESS);
