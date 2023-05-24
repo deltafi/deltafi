@@ -16,7 +16,7 @@ For development, it is recommended that an IDE like IntelliJ or Visual Studio Co
 
 ## Installing the development environment
 
-To execute a singlestep install of the latest released version of DeltaFi in a self contained KinD (Kubernetes in Docker) cluster:
+To execute a singlestep install of the latest released version of DeltaFi in a self-contained KinD (Kubernetes in Docker) cluster:
 
 ```bash
 curl -fsSL https://gitlab.com/deltafi/installer/-/raw/main/kind-install.sh > kind-install.sh
@@ -124,7 +124,7 @@ private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory
 ```
 
 Next we will replace the TODO with our logic to convert the data.  This implementation will
-lower-case all of the top level keys and reformat the results as YAML.
+lower-case all the top level keys and reformat the results as YAML.
 We will also modify the `transformResult.saveContent` line to write the new content, 
 instead rewriting the original content. This all needs to be wrapped in a try/catch to 
 handle any IOExceptions thrown while mapping the data. When an exception occurs, 
@@ -349,7 +349,7 @@ After making this code change, rebuild and reinstall the plugin:
 cluster plugin build install
 ```
 
-Now you can go to the [errors page](http://local.deltafi.org/errors) in the DeltaFi UI and resume the errored flows.  They should continue without error and egress well formed YAML versions of the normalized input.
+Now you can go to the [errors page](http://local.deltafi.org/errors) in the DeltaFi UI and resume the errored flows.  They should continue without error and egress well-formed YAML versions of the normalized input.
 
-## Adding an additional flow to your plugin
+## Adding another flow to your plugin
 New flows can be created under the `flows` directory. Any code changes or flow changes will require the docker image to be rebuilt via the `cluster plugin build install` command.

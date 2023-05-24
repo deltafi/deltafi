@@ -7,7 +7,7 @@ Document any changes on this branch here.
 - 
 
 ### Fixed
-- Replay toast message now displays the new DID of the replayed DeltaFile.
+- Replay toast message now displays the new DID of the replayed DeltaFile
 
 ### Removed
 - 

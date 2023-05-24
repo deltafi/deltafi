@@ -4,7 +4,7 @@ Document any changes on this branch here.
 - 
 
 ### Changed
-- UI now prefetches pages. This reduces load times when switches pages.
+- UI now prefetches pages. This reduces load times when switches pages
 
 ### Fixed
 - 

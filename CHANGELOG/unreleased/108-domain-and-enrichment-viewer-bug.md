@@ -7,7 +7,7 @@ Document any changes on this branch here.
 - 
 
 ### Fixed
-- Fixed bug in Domain and Enrichment viewers.
+- Fixed bug in Domain and Enrichment viewers
 
 ### Removed
 - 

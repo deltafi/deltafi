@@ -1,7 +1,7 @@
 # Changes on branch `delete-metadata`
 Document any changes on this branch here.
 ### Added
-- Transform and Load actions can delete metadata.
+- Transform and Load actions can delete metadata
 
 ### Changed
 - 

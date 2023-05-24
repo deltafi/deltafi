@@ -14,38 +14,38 @@ All [Unreleased] changes can be viewed in GitLab.
 ## [1.0.0-RC1] - 2023-05-17
 
 ### Added
-- Added a `terminalStage` filter to the `DeltaFilesFilter`. When `terminalStage` is true it will find DeltaFiles that are in a terminal stage, when false it will find DeltaFiles that are in an in-flight stage.
-- Added the ability to search for DeltaFiles in a terminal stage from Search Page. 
-- Add Toast message when plugin upgrade/install request is made 
-- Added visual indicator to Search Page when filter are applied 
-- System Properties Page now shows editable Plugin variables by Plugin. 
+- Added a `terminalStage` filter to the `DeltaFilesFilter`. When `terminalStage` is true it will find DeltaFiles that are in a terminal stage, when false it will find DeltaFiles that are in an in-flight stage
+- Added the ability to search for DeltaFiles in a terminal stage from Search Page
+- Add Toast message when plugin upgrade/install request is made
+- Added visual indicator to Search Page when filter are applied
+- System Properties Page now shows editable Plugin variables by Plugin
 - CHANGELOG added to DeltaFi documentation
-- Java Action Kit: add save interfaces for String, in addition to existing byte[] and InputStream interfaces 
+- Java Action Kit: add save interfaces for String, in addition to existing byte[] and InputStream interfaces
 
 ### Changed
-- `StorageCheck` now respects `check.contentStoragePercentThreshold` system property.
-- Database migrations in auth are now completed before workers are spawned.
-- Auth `WORKERS` are now set to `8` by default.
+- `StorageCheck` now respects `check.contentStoragePercentThreshold` system property
+- Database migrations in auth are now completed before workers are spawned
+- Auth `WORKERS` are now set to `8` by default
 - Plugin init uses the action input to build the flow plans with classes that are generated
 - The plugin action templates now includes boilerplate code to read and write content
-- Annotate Icon was changed to tag.  
-- Java Action Kit exceptions publish with the correct cause, instead of burying the message in the context 
+- Annotate Icon was changed to tag
+- Java Action Kit exceptions publish with the correct cause, instead of burying the message in the context
 - Do not include the actionType field when generating plugin flows
 - Test execution extraneous logging is silenced
 
 ### Fixed
--  Fixed bug on Search page when applying and clearing filters.
-- Dialogs that contain forms no longer have a dismissible mask.
-- Fixed bug causing `ContentStorageCheck` to never report.
-- Fixed issue preventing auth `WORKERS` being set to greater than one.
-- Add the MINIO_PARTSIZE environment variable to plugins deployed in standalone mode 
+- Fixed bug on Search page when applying and clearing filters
+- Dialogs that contain forms no longer have a dismissible mask
+- Fixed bug causing `ContentStorageCheck` to never report
+- Fixed issue preventing auth `WORKERS` being set to greater than one
+- Add the MINIO_PARTSIZE environment variable to plugins deployed in standalone mode
 - Correctly assign processingType on reinject
 - Alerts that are silenced will no longer generate a notification
 
 ### Tech-Debt/Refactor
 - Flatten content object by removing content references and adding segments and mediaType directly to content
 - Introduce DeltaFile schema versioning for backward compatibility
-- Remove unneccessary ProtocolLayer from load and transform response wire protocols 
+- Remove unneccessary ProtocolLayer from load and transform response wire protocols
 - Remove sourceInfo from the wire protocol
 - Update versions of Python package dependencies
 
@@ -55,9 +55,9 @@ All [Unreleased] changes can be viewed in GitLab.
 ## [0.109.0] - 2023-05-11
 
 ### Added
-- Added External Links page to UI which allows a user to CRUD External Links and DeltaFile Links 
-- Added Next Auto Resume to DeltaFile Viewer and Errors pages. 
-- Added the ability to Annotate DeltaFiles 
+- Added External Links page to UI which allows a user to CRUD External Links and DeltaFile Links
+- Added Next Auto Resume to DeltaFile Viewer and Errors pages
+- Added the ability to Annotate DeltaFiles
 - Added ProcessingType to DeltaFile View and search
 - A new mutation `replaceDeltaFileLink` that is used to replace an existing DeltaFile link
     ```graphql
@@ -82,14 +82,14 @@ All [Unreleased] changes can be viewed in GitLab.
 - Passthrough plugin merged into the core and no longer an independent plugin
 
 ### Changed
-- Parent/Child DeltaFile queries are now batched on the DeltaFile viewer.
-- DIDs are now normalized (to lowercase) on DeltaFile Viewer page.
+- Parent/Child DeltaFile queries are now batched on the DeltaFile viewer
+- DIDs are now normalized (to lowercase) on DeltaFile Viewer page
 - Modified the Layout of the Errors Page
   - Removed the `Next Auto Resume` column
   - Added an indicator icon for `Next Auto Resume` to the `Last Error` column
   - Truncated the Filename column
   - Enhanced the column widths
-- The interfaces for loading and saving Content in the Java Action Kit have been reworked.
+- The interfaces for loading and saving Content in the Java Action Kit have been reworked
 To retrieve content as a byte array, string, or from a stream:
 ```java
 byte[] byteArray = content.loadBytes();
@@ -143,37 +143,37 @@ result.add_content(sub_content)
 
 ### Fixed
 - Update requeue and resume logic to look for actions defined in transform flows
-- Fixed bug related to DeltaFiles with many children on the DeltaFile viewer.
-- Fixed issues with unexpected or missing metrics.
-- Fixed a bug that caused the system to report incorrect RAM usage on systems with large amounts of RAM (>100G). 
+- Fixed bug related to DeltaFiles with many children on the DeltaFile viewer
+- Fixed issues with unexpected or missing metrics
+- Fixed a bug that caused the system to report incorrect RAM usage on systems with large amounts of RAM (>100G)
 - Fixed the logic for determining which flows and flow plans need to be removed on a plugin upgrade
 - New plugin information is not written unless all parts of the plugin registration are valid
-- Preserve the maxError settings when ingress flows and transform flows are rebuilt 
-- Add all content to result when saving many.
-- Fixed wrapping issue in UI menus.
-- Fixed overscroll behavior in UI.
-- Fix regression where IngressAction always showed 0 ms duration 
-- Fixed bug with mediaType not being populated when viewing certain content on the DeltaFile Viewer page. 
+- Preserve the maxError settings when ingress flows and transform flows are rebuilt
+- Add all content to result when saving many
+- Fixed wrapping issue in UI menus
+- Fixed overscroll behavior in UI
+- Fix regression where IngressAction always showed 0 ms duration
+- Fixed bug with mediaType not being populated when viewing certain content on the DeltaFile Viewer page
 - Fix a null pointer exception that could occur when formatting K8S events generated for a plugin pod
 - Fix a null pointer exception that could occur when the MinioClient returns a null ObjectWriteResponse
 - The compose command no longer depends on relative paths
-- Provide default values for runningTransformFlows and testTransformFlows in snapshots for backward compatibility 
+- Provide default values for runningTransformFlows and testTransformFlows in snapshots for backward compatibility
 
 ### Removed
-- JoinAction was completely removed.  Will be reintroduced with a revamped design in future release.
+- JoinAction was completely removed.  Will be reintroduced with a revamped design in future release
 - Remove ingressFlow from ActionInput interfaces, since it is available in the ActionContext
 
 ### Tech-Debt/Refactor
-- Make DeltaFile metadata accumulate as it travels through Transform and Load Actions.  Transform and Load Actions receive the original metadata plus any metadata that has been added by other actions that proceed it.  Metadata produced by a Format Action is still received by Validate and Egress Actions as it was sent, not including the metadata of any other actions that proceeded it.
-- Remove sourceMetadata from ActionInput interfaces.
-- Updated python action kit with new wire protocol interfaces 
-- Rename SplitResult to ReinjectResult to better capture semantics.  SPLIT action state is now REINJECTED.
-- Move sourceFilename from the action inputs to the action context, since it is common to all actions.
+- Make DeltaFile metadata accumulate as it travels through Transform and Load Actions.  Transform and Load Actions receive the original metadata plus any metadata that has been added by other actions that proceed it.  Metadata produced by a Format Action is still received by Validate and Egress Actions as it was sent, not including the metadata of any other actions that proceeded it
+- Remove sourceMetadata from ActionInput interfaces
+- Updated python action kit with new wire protocol interfaces
+- Rename SplitResult to ReinjectResult to better capture semantics.  SPLIT action state is now REINJECTED
+- Move sourceFilename from the action inputs to the action context, since it is common to all actions
 
 ### Upgrade and Migration
 - Upgraded DGS Codgen to 5.7.1
 - Upgraded DGS to 6.0.5
-- Upgraded Spring Boot to 3.0.6 
+- Upgraded Spring Boot to 3.0.6
 - Upgraded Jackson to 2.15.0
 - Upgraded Jackson Schema Generator to 4.31.1
 - Upgraded JUnit Jupiter 5.9.3
@@ -183,8 +183,8 @@ result.add_content(sub_content)
 ## [0.108.0] - 2023-04-21
 
 ### Added
-- Added Auto Resume to UI 
-- Added priorty to auto resume queries. Added editable priority to auto resume table and added priorty to auto resume configuration dialog.  
+- Added Auto Resume to UI
+- Added priority to auto resume queries. Added editable priority to auto resume table and added priority to auto resume configuration dialog
 - Support the following commands when running with docker-compose
    - install
    - uninstall
@@ -194,7 +194,7 @@ result.add_content(sub_content)
 - Added a stop-service function to the compose script that can be used to stop individual containers
 - Support for ingress of V3 and V2 NiFi FlowFiles
 - DeltaFi now supports two processing modes:
-  - NORMALIZATION - the classic processing mode, consisting of Ingress, Enrich, and Egress flows 
+  - NORMALIZATION - the classic processing mode, consisting of Ingress, Enrich, and Egress flows
   - TRANSFORMATION - a new mode consisting of linear Transform flows. A transform flow has a series of TransformActions followed by an EgressAction.  If the final TransformAction in the chain produces multiple pieces of content, they will all be egressed using child DeltaFiles.  For example:
 ```json
 {
@@ -230,18 +230,18 @@ result.add_content(sub_content)
 
 ### Fixed
 - Added a static namespace label to fix the `Log Overview` dashboard when running in compose
-- Added the labels required for log scraping to the plugin containers 
+- Added the labels required for log scraping to the plugin containers
 - Secret env variables are no longer quoted when they are generated to support the `minio-cli` command
 - Fixed the check used to determine if there are mongo collections to drop on uninstall
 - The `deltafi-api` now always attempts to retrieve properties from `deltafi-core`
-- Java action kit: allow flow-only plugins with no actions 
+- Java action kit: allow flow-only plugins with no actions
 
 ### Removed
-- Remove Content metadata field 
+- Remove Content metadata field
 
 ### Tech-Debt/Refactor
 - ObjectStorageExceptions no longer need to be caught in Java actions when loading or storing data
-- Extract CoreApplicationTest helper methods and constants into separate units 
+- Extract CoreApplicationTest helper methods and constants into separate units
 - Added a UUIDGenerator that can be replaced with TestUUIDGenerator for tests
 - Moved remaining business logic from IngressRest to IngressService
 - Hide FormattedData from ValidateInput and EgressInput.  Add input methods:
@@ -258,7 +258,7 @@ result.add_content(sub_content)
   - loadContentStream
   - loadContentStream(index)
 - Renamed MetricRepository to MetricService
-- Move content storage methods from the Action classes to the Result classes, combining store and append result into one step.
+- Move content storage methods from the Action classes to the Result classes, combining store and append result into one step
 For example, instead of:
 ```java
 ContentReference reference = saveContent(did, decompressed, MediaType.APPLICATION_OCTET_STREAM);
@@ -269,7 +269,7 @@ Now:
 ```java
 result.saveContent(decompressed, contentName, MediaType.APPLICATION_OCTET_STREAM)
 ```
-- Add join tests to main core application test suite to speed up tests and remove dependency on java-action-kit 
+- Add join tests to main core application test suite to speed up tests and remove dependency on java-action-kit
 - Resolve numerous compiler warnings
 - Modify saveMany data storage interface to take an ordered map of names to byte arrays
 
@@ -280,7 +280,7 @@ result.saveContent(decompressed, contentName, MediaType.APPLICATION_OCTET_STREAM
 - Generate an event and snapshot prior to running an upgrade
 - Docker compose mode introduced as a beta proof of concept
   - From the `compose` directory execute `./compose start`
-  - To use the CLI you must unlink the cluster command (execute `deltafi-cli/install.sh`) and add 
+  - To use the CLI you must unlink the cluster command (execute `deltafi-cli/install.sh`) and add
     `export DELTAFI_MODE=STANDALONE` to `deltafi-cli/config`
 - `appsByNode` endpoint added to core to get docker-based apps-by-node manifest
 - `app/version` endpoint added to core to get docker-base version list
@@ -306,38 +306,38 @@ result.saveContent(decompressed, contentName, MediaType.APPLICATION_OCTET_STREAM
 ## [0.106.0] - 2023-04-17
 
 ### Added
-- Added the ability to bulk replay DeltaFiles 
+- Added the ability to bulk replay DeltaFiles
 - Added DeltaFiles Search filter for Replayable
-- Added a `replayble` filter that returns a list of `DeltaFiles` that can be replayed when set to true.
+- Added a `replayble` filter that returns a list of `DeltaFiles` that can be replayed when set to true
 - New metric `files_auto_resumed` per ingress flow for DeltaFiles auto-resumed
-- Add monitoring for flow deactivation and reactivation due to the maxErrors threshold 
+- Add monitoring for flow deactivation and reactivation due to the maxErrors threshold
 - New required field `name` to auto-resume policies
 - New field `nextAutoResumeReason` set to auto-resume policy name when policy is applied
 - Added additional logging for Python plugin startup
-- Added a `replayed` filter that returns a list of `DeltaFiles` that have been replayed when set to true.
+- Added a `replayed` filter that returns a list of `DeltaFiles` that have been replayed when set to true
 
 ### Changed
-- The nodemonitor to reports CPU and memory metrics to Graphite.
+- The nodemonitor to reports CPU and memory metrics to Graphite
 - Changes to the API endpoint for nodes metrics (`/api/v1/metrics/system/nodes`):
-  - Node metrics are now pulled from Graphite instead of Kubernetes.
-  - Pods are now referred to as Apps.
-  - App metrics are no longer reported.
-- The UI now shows App information on the System Metrics page instead Pod information. No per-app metrics are displayed.
+  - Node metrics are now pulled from Graphite instead of Kubernetes
+  - Pods are now referred to as Apps
+  - App metrics are no longer reported
+- The UI now shows App information on the System Metrics page instead Pod information. No per-app metrics are displayed
 - Helm charts are now local charts rather than helm dependencies
 - The minimum value for the Auto Resume Policy `maxAttempts` is now 2
-- UI changes to support flow cache changes.
+- UI changes to support flow cache changes
 - changelog tool will add a "latest.md" during release
 
 ### Fixed
 - Python action kit allows `Domain.value` and `Content.name` to be optional for event execution
-- Fixed bug where storage check was always getting 0% disk usage.
-- Fixed bug preventing system snapshot imports. 
+- Fixed bug where storage check was always getting 0% disk usage
+- Fixed bug preventing system snapshot imports.
 - Resume of a DeltaFile when the last error was `No Egress Flow Configured` resumes at the `ENRICH` stage
 - Projection fields in the `deltaFiles` query no longer treats fields which start with the same name as another field as duplicates
-- Rolled back SQLite gem to fix startup error in Auth.  
+- Rolled back SQLite gem to fix startup error in Auth
 - Fixed the `export-ingress-plan`, `export-enrich-plan`, `export-egress-plan`, and `export-rules` commands
 - Fixed truncate error in commands when running on macOS
-- Fixed bug on DeltaFile Viewer page when there are actions in the protocolStack without any content.
+- Fixed bug on DeltaFile Viewer page when there are actions in the protocolStack without any content
 - The `deltaFileStats` query no longer throws a reflection error
 - Plugin Docker images being tagged with an unspecified version
 - Do not remove content when the next action fails to queue after ingress, allow requeue to process it
@@ -378,24 +378,24 @@ result.saveContent(decompressed, contentName, MediaType.APPLICATION_OCTET_STREAM
 
 ### Fixed
 - Issue where replicated plugins could lead to lost variable values on registration
-- Uploading metadata without an ingress flow on the Upload Page no longer clears the dropdown.
-- Uploading metadata with an invalid ingress flow will result in a warning and the flow being ignored.
-- Bug requiring an image pull secret on the plugin repository form.
+- Uploading metadata without an ingress flow on the Upload Page no longer clears the dropdown
+- Uploading metadata with an invalid ingress flow will result in a warning and the flow being ignored
+- Bug requiring an image pull secret on the plugin repository form
 
 ## [0.104.3] - 2023-03-30
 
 ### Added
-- Added an editable Max Errors column to Flows page 
+- Added an editable Max Errors column to Flows page
 - Added task timing to Gradle scripts
 
 ### Changed
-- Flow descriptions are now trunctated on flows page to make cell sizes all the same. A tooltip popup shows the full description on flows with truncated descriptions when hovered over. Added the full description to flow viewer. 
+- Flow descriptions are now truncated on flows page to make cell sizes all the same. A tooltip popup shows the full description on flows with truncated descriptions when hovered over. Added the full description to flow viewer
 - Refactored CI pipelines to remove Docker in Docker
 - In deltafi-monitor read the api URL from an environment variable
 - In deltafi-egress-sink read the ingress and core URLs from an environment variable
 
 ### Fixed
-- Bug requiring all users to have at least one metrics related permission.
+- Bug requiring all users to have at least one metrics related permission
 - Tooltip on multiple pages causing mouse flicker
 - Do not move to the `Egress` stage until all pending `Enrich` stage actions are complete
 - `changelog` does not generate a bad error message when there are no unreleased changelog files
@@ -405,31 +405,31 @@ result.saveContent(decompressed, contentName, MediaType.APPLICATION_OCTET_STREAM
 - Using Kaniko for UI docker build
 
 ### Documentation
-- Added code of conduct at `CODE_OF_CONDUCT.md` 
+- Added code of conduct at `CODE_OF_CONDUCT.md`
 
 ## [0.104.0] - 2023-03-23
 
 ### Added
 - Added the `LoadManyResult` to the python action-kit
 - `changelog` script added to manage and deconflict changelog entries
-- Experimental DeltaFile cache feature. By default, this is turned off with the deltaFileCache.enabled feature flag.
-Flip to true to test it. To see if it is working, try processing some files while watching `deltafi redis-watch | grep BZPOPMIN`.
-When enabled you should see delivery to many different topics, one for each core and worker that is running.
+- Experimental DeltaFile cache feature. By default, this is turned off with the deltaFileCache.enabled feature flag
+Flip to true to test it. To see if it is working, try processing some files while watching `deltafi redis-watch | grep BZPOPMIN`
+When enabled you should see delivery to many different topics, one for each core and worker that is running
 With it off, all messages will be delivered to the dgs topic. When on, DeltaFiles will be cached locally and made eventually
-consistent in the database. This decreases processing latency but does not give a realtime view of the state in the UI.
+consistent in the database. This decreases processing latency but does not give a realtime view of the state in the UI
 - DeltaFile metrics for total/in flight files and bytes
 - DeltaFile metrics graphs added to system summary dashboard
 - Added `/blackhole` endpoint to `deltafi-egress-sink`.  The endpoint will always return a 200 and never write content to disk, acting as a noop egress destination.  The endpoint will take a latency parameter to add latency to the post response (i.e. `/blackhole?latency=0.1` to add 100ms latency)
-- MergeContentJoinAction that merges content by binary concatenation, TAR, ZIP, AR, TAR.GZ, or TAR.XZ.
+- MergeContentJoinAction that merges content by binary concatenation, TAR, ZIP, AR, TAR.GZ, or TAR.XZ
 - Added ingress, survey, and error documentation
 - Resume policies are examined when an action ERROR occurs to see if the action can be automatically scheduled for resume
 - New Resume Policy permissions
-  - `ResumePolicyCreate` - allows user to create a auto-resume policy
+  - `ResumePolicyCreate` - allows user to create an auto-resume policy
   - `ResumePolicyRead` - allows user to view auto-resume policies
-  - `ResumePolicyUpdate` - allows user to edit a auto-resume policy
-  - `ResumePolicyDelete` - allows user to remove a auto-resume policy
-- New `autoResumeCheckFrequency` system property to control how often the auto-resume task runs.
-- Added `nextAutoResume` timestmap to DeltaFile
+  - `ResumePolicyUpdate` - allows user to edit an auto-resume policy
+  - `ResumePolicyDelete` - allows user to remove an auto-resume policy
+- New `autoResumeCheckFrequency` system property to control how often the auto-resume task runs
+- Added `nextAutoResume` timestamp to DeltaFile
 - Added auto-resume documentation
 - New properties for plugin deployments
   - `plugins.deployTimeout` - controls how long to wait for a plugin to successfully deploy
@@ -437,7 +437,7 @@ consistent in the database. This decreases processing latency but does not give 
 - Added `maxErrors` property to ingress flows. By default this is set to 0. If set to a number greater than 0,
 ingress for a flow with at least that many unacknowledged errors will be blocked. This is based on a cached value,
 so ingress cutoffs will not be exact, meaning more errors than what has been configured can accumulate before ingress
-is stopped.
+is stopped
 - Added support for configuring the number of threads per Java action type via properties. To specify the thread count
 for an action type, include a section like the following in your application.yaml file:
 ```yaml
@@ -449,11 +449,11 @@ actions:
 
 ### Changed
 - Survey metrics filter out zero series from tables and charts
-- Updated the load-plans command to take plugin coordinates as an argument.
+- Updated the load-plans command to take plugin coordinates as an argument
 - Updated system snapshots to include new `autoResumeCheckFrequency` property and auto-resume policies
 - Plugin installations will wait until the deployment has rolled out successfully
 - Failed plugin installations will now return related events and logs in the list of errors
-- Create the child dids in the action-kit for LoadManyResults so they can be used in the load action
+- Create the child dids in the action-kit for LoadManyResults, so they can be used in the load action
 - Changed location for plugin running file to /tmp directory to allow running outside of docker for testing purposes
 - Join actions can now return ErrorResult and FilterResult
 
@@ -461,7 +461,7 @@ actions:
 - CLI: Line wrapping fixed in `list-plans` command
 - Improved bounce and plugin restart performance in `cluster`
 - A metric bug with illegal characters in tags
-- DeltaFiles in the JOINING stage are now considered "in-flight" when getting DeltaFile stats.
+- DeltaFiles in the JOINING stage are now considered "in-flight" when getting DeltaFile stats
 - Replaced deprecated GitLab CI variables
 - Fixed unknown enum startup errors when rolling back DeltaFi
 - Fix memory leak in ingress when using deltaFileCache
@@ -469,11 +469,11 @@ actions:
 
 ### Removed
 - Removed `nextExecution` timestamp from Action; no migration required since it had not been used previously
-- Removed blackhole pod, which was superceded by the egress-sink blackhole endpoint
+- Removed blackhole pod, which was superseded by the egress-sink blackhole endpoint
 
 ### Tech-Debt/Refactor
-- More precise calculation of referencedBytes and totalBytes - remove assumption that segments are contiguous.
-- Perform batched delete updates in a bulk operation.
+- More precise calculation of referencedBytes and totalBytes - remove assumption that segments are contiguous
+- Perform batched delete updates in a bulk operation
 - Ingress routing rules cache did not clear when restoring a snapshot with no rules
 - Fix the check to determine if a plugin-uninstall was successful
 - Services that were created for a plugin are removed when the plugin is uninstalled
@@ -494,7 +494,7 @@ the application and plugins can run successfully
 
 ### Added
 - Python Duplicate Log Entry cleared up
-- New fields for DeltaFile, Action, and new RetryPolicy data structures to support forthcoming automatic retry configuration.
+- New fields for DeltaFile, Action, and new RetryPolicy data structures to support forthcoming automatic retry configuration
 - New permission `DeltaFileMetadataWrite` that allows a user to update indexed metadata on a `DeltaFile`
 - Annotation endpoints that add indexedMetadata to a `DeltaFile`:
   - `/deltafile/annotate/{did}?k=v&kn=vn` - if a key already exists the value will not be replaced
@@ -562,7 +562,7 @@ where the PATH_TO_MINIO_STORAGE is the location of your storage bucket, e.g. /da
 - ContentSplitter that splits content into multiple sub-references pointing to segments of the original content
 - Ingress flows now accept either a load or a join action. A join action will execute when a configurable number of
 files are received or a configurable max age is reached. The join action receives the combined DeltaFile and a list of its
-joined DeltaFiles.
+joined DeltaFiles
 
 ### Changed
 - Survey endpoint added support for survey subflows and direction
@@ -707,7 +707,7 @@ joined DeltaFiles.
 - Grafana alerts create events when they are initiated and cleared
 
 ### Changed
-- Upgrade all Java containers to build with JDK17 and excute with JVM17
+- Upgrade all Java containers to build with JDK17 and execute with JVM17
 
 ### Removed
 - Alerts from Grafana no longer trigger a failed status check.  Events will be used to track alerts
@@ -774,8 +774,8 @@ joined DeltaFiles.
 - Added unit testing for python modules
 
 ### Upgrade and Migration
-- Update Spring Boot base image to deltai/spring-boot-base:0.99.8
-- Update Ruby base image to deltai/deltafi-ruby-base:0.99.8
+- Update Spring Boot base image to deltafi/spring-boot-base:0.99.8
+- Update Ruby base image to deltafi/deltafi-ruby-base:0.99.8
 
 ## [0.99.6] - 2022-12-18
 
@@ -917,7 +917,7 @@ https://deltafi.org/api/v1/metrics/flow?range=this-month&aggregate[My Composite]
 - Increase default requeueSeconds from 30 to 300
 - Create a snapshot prior to running a plugin deployment
 - Core API version is now discoverable via query
-- Consolidate Action input parameters: each action now takes a context, parameters, and a single action input (e.g. LoadInput, ValidateInput, etc) that contains the other members specific to that action
+- Consolidate Action input parameters: each action now takes a context, parameters, and a single action input (e.g. LoadInput, ValidateInput, etc.) that contains the other members specific to that action
 - Flowfile-v1 metadata extraction now no longer uses the SAX parser--which doesn't like 4-byte encoded UTF-8--allowing more multi-lingual support
 
 ### Removed
@@ -1239,7 +1239,7 @@ annotations:
 ### Fixed
 - Resolution loss and dropped initial metrics issues are resolved in dashboards
 - Bitrate gauges on dashboards no longer flatline periodically
-- Metric summaries are now accruate at large time scales
+- Metric summaries are now accurate at large time scales
 - Metrics reported from multiple replicas will now be aggregated correctly
 - Audit log dashboard will show all known users, instead of limiting to users active in the time window
 - Application log dashboard will show all known apps, instead of limiting to apps active in the time window
@@ -1493,7 +1493,7 @@ annotations:
 
 ### Deprecated
 - DGS gateway deprecated in favor of using GraphiQL UI
-- Common metrics API is deprectated.  A new micrometer API is forthcoming backed by Graphite and Grafana
+- Common metrics API is deprecated.  A new micrometer API is forthcoming backed by Graphite and Grafana
 
 ### Removed
 - DGS gateway ingress and status checking
