@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -30,8 +30,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Specialized result class for TRANSFORM actions
@@ -39,20 +37,14 @@ import java.util.List;
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true)
-public class TransformResult extends DataAmendedResult implements HasAnnotations, TransformResultType{
+public class TransformResult extends DataAmendedResult implements HasAnnotations, TransformResultType {
     private final Map<String, String> annotations = new HashMap<>();
-    protected List<String> deleteMetadataKeys = new ArrayList<>();
 
     /**
      * @param context Context of executing action
      */
     public TransformResult(@NotNull ActionContext context) {
-        super(context);
-    }
-
-    @Override
-    protected final ActionEventType actionEventType() {
-        return ActionEventType.TRANSFORM;
+        super(context, ActionEventType.TRANSFORM);
     }
 
     @Override
@@ -61,14 +53,9 @@ public class TransformResult extends DataAmendedResult implements HasAnnotations
         event.setTransform(TransformEvent.newBuilder()
                 .content(contentList())
                 .metadata(metadata)
-                .annotations(annotations)
                 .deleteMetadataKeys(deleteMetadataKeys)
+                .annotations(annotations)
                 .build());
         return event;
-    }
-
-    @SuppressWarnings("unused")
-    public void deleteMetadataKey(String key) {
-        deleteMetadataKeys.add(key);
     }
 }

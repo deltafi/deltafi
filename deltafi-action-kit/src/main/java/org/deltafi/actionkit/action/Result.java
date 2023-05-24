@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -19,11 +19,11 @@ package org.deltafi.actionkit.action;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import org.deltafi.common.types.Metric;
+import lombok.RequiredArgsConstructor;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionEventType;
-import org.jetbrains.annotations.NotNull;
+import org.deltafi.common.types.Metric;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -32,43 +32,27 @@ import java.util.List;
 /**
  * Base class for all action results.  Specializations of the Result class are provided for each action type.
  */
-@Getter
+@RequiredArgsConstructor
 @EqualsAndHashCode
+@Getter
 public abstract class Result<T extends Result<T>> implements ResultType {
-
     protected final ActionContext context;
+    protected final ActionEventType actionEventType;
 
     protected final ArrayList<Metric> metrics = new ArrayList<>();
-
-
-    public Result(@NotNull ActionContext context) {
-        this.context = context;
-    }
-
-    /**
-     * @return the action event type for the specific type of action being executed
-     */
-    protected abstract ActionEventType actionEventType();
 
     /**
      * @return action event summary object based on the action context
      */
     public ActionEvent toEvent() {
         return ActionEvent.newBuilder()
-                .did(context.getDid())
+                .type(actionEventType)
                 .action(context.getName())
-                .type(actionEventType())
+                .did(context.getDid())
                 .start(context.getStartTime())
                 .stop(OffsetDateTime.now())
-                .metrics(this.getCustomMetrics())
+                .metrics(getCustomMetrics())
                 .build();
-    }
-
-    /**
-     * @return action execution context
-     */
-    public ActionContext getContext() {
-        return context;
     }
 
     /**

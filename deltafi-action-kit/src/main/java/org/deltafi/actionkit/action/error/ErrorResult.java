@@ -55,7 +55,7 @@ public class ErrorResult extends Result<ErrorResult> implements DomainResultType
      * @param throwable An exception that indicates the reason for the error
      */
     public ErrorResult(@NotNull ActionContext context, @NotNull String errorMessage, @NotNull Throwable throwable) {
-        super(context);
+        super(context, ActionEventType.ERROR);
 
         this.errorCause = errorMessage;
 
@@ -71,7 +71,7 @@ public class ErrorResult extends Result<ErrorResult> implements DomainResultType
      */
     @SuppressWarnings("unused")
     public ErrorResult(@NotNull ActionContext context, @NotNull String errorMessage) {
-        super(context);
+        super(context, ActionEventType.ERROR);
 
         this.errorCause = errorMessage;
         this.errorContext = "";
@@ -86,11 +86,6 @@ public class ErrorResult extends Result<ErrorResult> implements DomainResultType
     public ErrorResult logErrorTo(Logger logger) {
         logger.error(errorSummary);
         return this;
-    }
-
-    @Override
-    protected final ActionEventType actionEventType() {
-        return ActionEventType.ERROR;
     }
 
     @Override

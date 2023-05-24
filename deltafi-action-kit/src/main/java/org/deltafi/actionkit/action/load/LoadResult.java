@@ -40,10 +40,9 @@ import java.util.Map;
 public class LoadResult extends DataAmendedResult implements HasAnnotations, LoadResultType {
     private final List<Domain> domains = new ArrayList<>();
     private final Map<String, String> annotations = new HashMap<>();
-    protected List<String> deleteMetadataKeys = new ArrayList<>();
 
     public LoadResult(@NotNull ActionContext context) {
-        super(context);
+        super(context, ActionEventType.LOAD);
     }
 
     /**
@@ -51,7 +50,7 @@ public class LoadResult extends DataAmendedResult implements HasAnnotations, Loa
      * @param contentList List of content objects to be processed with the execution result
      */
     public LoadResult(@NotNull ActionContext context, @NotNull List<ActionContent> contentList) {
-        super(context);
+        super(context, ActionEventType.LOAD);
         setContent(contentList);
     }
 
@@ -67,26 +66,16 @@ public class LoadResult extends DataAmendedResult implements HasAnnotations, Loa
     }
 
     @Override
-    protected final ActionEventType actionEventType() {
-        return ActionEventType.LOAD;
-    }
-
-    @Override
     public final ActionEvent toEvent() {
         ActionEvent event = super.toEvent();
         event.setLoad(LoadEvent.newBuilder()
                 .domains(domains)
                 .content(contentList())
                 .metadata(metadata)
-                .annotations(annotations)
                 .deleteMetadataKeys(deleteMetadataKeys)
+                .annotations(annotations)
                 .build());
 
         return event;
-    }
-
-    @SuppressWarnings("unused")
-    public void deleteMetadataKey(String key) {
-        deleteMetadataKeys.add(key);
     }
 }

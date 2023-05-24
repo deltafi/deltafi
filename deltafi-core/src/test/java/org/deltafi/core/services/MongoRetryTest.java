@@ -21,12 +21,12 @@ import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.types.*;
 import org.deltafi.core.MockDeltaFiPropertiesService;
-import org.deltafi.core.util.Util;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.configuration.ClockConfiguration;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.repo.DeltaFiPropertiesRepo;
 import org.deltafi.core.repo.DeltaFileRepo;
+import org.deltafi.core.util.Util;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -70,7 +70,9 @@ class MongoRetryTest {
         }
 
         @Bean
-        public DidMutexService didMutexService() { return new DidMutexService(); }
+        public DidMutexService didMutexService() {
+            return new DidMutexService();
+        }
     }
 
     @Test

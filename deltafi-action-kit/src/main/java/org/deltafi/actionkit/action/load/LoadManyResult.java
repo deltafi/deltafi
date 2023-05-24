@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -29,14 +29,10 @@ import java.util.List;
 
 @EqualsAndHashCode(callSuper = true)
 public class LoadManyResult extends Result<LoadManyResult> implements LoadResultType {
+    private final List<ChildLoadResult> childLoadResults = new ArrayList<>();
 
-    private final List<ChildLoadResult> loadResults = new ArrayList<>();
-
-    /**
-     * @param context Execution context of the action
-     */
     public LoadManyResult(@NotNull ActionContext context) {
-        super(context);
+        super(context, ActionEventType.LOAD_MANY);
     }
 
     /**
@@ -44,42 +40,21 @@ public class LoadManyResult extends Result<LoadManyResult> implements LoadResult
      * @param loadResult A load result to be added to the result object
      */
     public void add(LoadResult loadResult) {
-        loadResults.add(new ChildLoadResult(loadResult));
+        childLoadResults.add(new ChildLoadResult(loadResult));
     }
 
     /**
-     * Add a load result to the list of results
-     * @param loadResult A load result to be added to the result object
+     * Add a child load result to the list of results
+     * @param childLoadResult A child load result to be added to the result object
      */
-    public void add(ChildLoadResult loadResult) {
-        loadResults.add(loadResult);
-    }
-
-    /**
-     * Get the list of LoadResults held in the child results
-     * @return list of LoadResults
-     */
-    public List<LoadResult> getLoadResults() {
-        return loadResults.stream().map(ChildLoadResult::getLoadResult).toList();
-    }
-
-    /**
-     * Get the list of child results
-     * @return list of ChildLoadResults
-     */
-    public List<ChildLoadResult> getChildLoadResults() {
-        return loadResults;
-    }
-
-    @Override
-    public ActionEventType actionEventType() {
-        return ActionEventType.LOAD_MANY;
+    public void add(ChildLoadResult childLoadResult) {
+        childLoadResults.add(childLoadResult);
     }
 
     @Override
     public final ActionEvent toEvent() {
         ActionEvent event = super.toEvent();
-        event.setLoadMany(loadResults.stream().map(ChildLoadResult::toEvent).toList());
+        event.setLoadMany(childLoadResults.stream().map(ChildLoadResult::toEvent).toList());
         return event;
     }
 }

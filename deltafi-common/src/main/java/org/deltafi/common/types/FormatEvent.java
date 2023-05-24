@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -18,17 +18,16 @@
 package org.deltafi.common.types;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-
-import java.util.Map;
+import lombok.experimental.SuperBuilder;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder(builderMethodName = "newBuilder")
-public class FormatEvent {
+@EqualsAndHashCode(callSuper = true)
+@SuperBuilder(builderMethodName = "newBuilder")
+public class FormatEvent extends MetadataEvent {
   private Content content;
-  private Map<String, String> metadata;
 }

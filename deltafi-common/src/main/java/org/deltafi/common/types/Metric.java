@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -24,21 +24,21 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Metric {
     private String name;
     private long value;
     @Builder.Default
     private Map<String, String> tags = new HashMap<>();
 
-    public
-    Metric(String name, long value) {
+    public Metric(String name, long value) {
         this.name = name;
         this.value = value;
         this.tags = new HashMap<>();
@@ -81,7 +81,7 @@ public class Metric {
 
         if (taglist.isBlank()) return name;
 
-        return String.join( ";", name, taglist);
+        return String.join(";", name, taglist);
     }
 
 }

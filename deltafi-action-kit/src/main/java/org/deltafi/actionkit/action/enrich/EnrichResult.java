@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -38,17 +38,13 @@ public class EnrichResult extends Result<EnrichResult> implements HasAnnotations
     private final List<Enrichment> enrichments = new ArrayList<>();
     private final Map<String, String> annotations = new HashMap<>();
 
-    /**
-     * @param context Context of the executed action
-     */
     public EnrichResult(@NotNull ActionContext context) {
-        super(context);
+        super(context, ActionEventType.ENRICH);
     }
 
     /**
-     * Apply an enrichment to the DeltaFile when processing the result of
-     * this action.  Multiple enrichments can be applied by invoking this method
-     * multiple times.
+     * Apply an enrichment to the DeltaFile when processing the result of this action. Multiple enrichments can be
+     * applied by invoking this method multiple times.
      * @param enrichmentName Name of enrichment being applied to the DeltaFile
      * @param value String value of the applied enrichment
      * @param mediaType Media type of the applied enrichment
@@ -56,11 +52,6 @@ public class EnrichResult extends Result<EnrichResult> implements HasAnnotations
     @SuppressWarnings("unused")
     public void addEnrichment(@NotNull String enrichmentName, String value, @NotNull String mediaType) {
         enrichments.add(new Enrichment(enrichmentName, value, mediaType));
-    }
-
-    @Override
-    public final ActionEventType actionEventType() {
-        return ActionEventType.ENRICH;
     }
 
     @Override

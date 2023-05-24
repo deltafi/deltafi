@@ -232,13 +232,11 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
 
     void unarchiveTarOffsets(TarArchiveInputStream archive, @NotNull TransformResult result, @NotNull ActionContent content) throws IOException {
         TarArchiveEntry entry;
-        List<ActionContent> contents = new ArrayList<>();
         while ((entry = archive.getNextTarEntry()) != null) {
             if (entry.isDirectory()) continue;
-            ActionContent subcontent = content.subcontent(archive.getBytesRead(), entry.getSize(), entry.getName(), MediaType.APPLICATION_OCTET_STREAM);
-            contents.add(subcontent);
+            result.addContent(content.subcontent(archive.getBytesRead(), entry.getSize(), entry.getName(),
+                    MediaType.APPLICATION_OCTET_STREAM));
         }
-        result.getContent().addAll(contents);
     }
 
     void inPlaceUnarchiveTar(@NotNull InputStream stream, @NotNull TransformResult result, @NotNull ActionContent content) throws DecompressionTransformException {

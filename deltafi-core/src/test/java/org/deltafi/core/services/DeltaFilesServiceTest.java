@@ -26,8 +26,6 @@ import org.deltafi.common.content.Segment;
 import org.deltafi.common.test.time.TestClock;
 import org.deltafi.common.types.*;
 import org.deltafi.core.MockDeltaFiPropertiesService;
-import org.deltafi.core.types.TransformFlow;
-import org.deltafi.core.util.Util;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.exceptions.MissingEgressFlowException;
 import org.deltafi.core.generated.types.DeltaFilesFilter;
@@ -36,7 +34,9 @@ import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.types.DeltaFiles;
 import org.deltafi.core.types.IngressFlow;
+import org.deltafi.core.types.TransformFlow;
 import org.deltafi.core.types.UniqueKeyValues;
+import org.deltafi.core.util.Util;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -55,7 +55,6 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class DeltaFilesServiceTest {
-
     private final IngressFlowService ingressFlowService;
     private final EgressFlowService egressFlowService;
     private final TransformFlowService transformFlowService;
@@ -91,10 +90,10 @@ class DeltaFilesServiceTest {
         this.deltaFileCacheService = deltaFileCacheService;
 
         Clock clock = new TestClock();
-        deltaFilesService = new DeltaFilesService(clock, ingressFlowService, enrichFlowService, egressFlowService, transformFlowService,
-                new MockDeltaFiPropertiesService(), stateMachine, deltaFileRepo,
-                actionEventQueue, contentStorageService, resumePolicyService, metricService, coreAuditLogger,
-                identityService, new DidMutexService(), deltaFileCacheService);
+        deltaFilesService = new DeltaFilesService(clock, ingressFlowService, enrichFlowService,
+                egressFlowService, transformFlowService, new MockDeltaFiPropertiesService(), stateMachine,
+                deltaFileRepo, actionEventQueue, contentStorageService, resumePolicyService, metricService,
+                coreAuditLogger, identityService, new DidMutexService(), deltaFileCacheService);
     }
 
     @Captor

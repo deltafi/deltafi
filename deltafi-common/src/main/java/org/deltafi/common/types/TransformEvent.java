@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -17,26 +17,16 @@
  */
 package org.deltafi.common.types;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder(builderMethodName = "newBuilder")
-public class TransformEvent {
-  @Builder.Default
-  private List<Content> content = new ArrayList<>();
-  @Builder.Default
-  private Map<String, String> metadata = new HashMap<>();
-  private Map<String, String> annotations;
-  @Builder.Default
-  private List<String> deleteMetadataKeys = new ArrayList<>();
+@EqualsAndHashCode(callSuper = true)
+@SuperBuilder(builderMethodName = "newBuilder")
+public class TransformEvent extends AnnotatedEvent {
+  private List<Content> content;
 }

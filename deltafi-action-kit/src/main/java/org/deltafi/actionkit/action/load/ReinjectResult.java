@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -19,10 +19,13 @@ package org.deltafi.actionkit.action.load;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.converters.ContentConverter;
-import org.deltafi.common.types.*;
+import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionEvent;
+import org.deltafi.common.types.ActionEventType;
+import org.deltafi.common.types.ReinjectEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,11 +44,12 @@ public class ReinjectResult extends Result<ReinjectResult> implements LoadResult
      * @param context Execution context for the current action
      */
     public ReinjectResult(ActionContext context) {
-        super(context);
+        super(context, ActionEventType.REINJECT);
     }
 
     /**
      * Add a new child to the result that will be ingressed as a new DeltaFile
+     *
      * @param filename Ingress file name for the new DeltaFile
      * @param flow Flow for the new DeltaFile to be ingressed on
      * @param content Content of the new DeltaFile
@@ -58,11 +62,6 @@ public class ReinjectResult extends Result<ReinjectResult> implements LoadResult
                 .content(content.stream().map(ContentConverter::convert).toList())
                 .metadata(metadata)
                 .build());
-    }
-
-    @Override
-    protected final ActionEventType actionEventType() {
-        return ActionEventType.REINJECT;
     }
 
     @Override

@@ -20,13 +20,15 @@ package org.deltafi.common.types;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@SuperBuilder(builderMethodName = "newBuilder")
-public class EnrichEvent extends AnnotatedEvent {
-  private List<Enrichment> enrichments;
+@SuperBuilder
+public class AnnotatedEvent extends MetadataEvent {
+    @Builder.Default
+    private Map<String, String> annotations = new HashMap<>();
 }

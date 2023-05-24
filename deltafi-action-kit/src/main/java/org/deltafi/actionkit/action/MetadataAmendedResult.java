@@ -21,8 +21,11 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionEventType;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -35,12 +38,10 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 public abstract class MetadataAmendedResult extends Result<MetadataAmendedResult> {
     protected Map<String, String> metadata = new HashMap<>();
+    protected List<String> deleteMetadataKeys = new ArrayList<>();
 
-    /**
-     * @param context Action context
-     */
-    public MetadataAmendedResult(ActionContext context) {
-        super(context);
+    public MetadataAmendedResult(ActionContext context, ActionEventType actionEventType) {
+        super(context, actionEventType);
     }
 
     /**
@@ -68,10 +69,16 @@ public abstract class MetadataAmendedResult extends Result<MetadataAmendedResult
      * @param map String pairs to add to metadata
      * @param prefix String to prepend to each key before adding to metadata
      */
+    @SuppressWarnings("unused")
     public void addMetadata(Map<String, String> map, String prefix) {
         if (map != null) {
             final String usePrefix = prefix != null ? prefix : "";
             map.forEach((key, value) -> metadata.put(usePrefix + key, value));
         }
+    }
+
+    @SuppressWarnings("unused")
+    public void deleteMetadataKey(String key) {
+        deleteMetadataKeys.add(key);
     }
 }

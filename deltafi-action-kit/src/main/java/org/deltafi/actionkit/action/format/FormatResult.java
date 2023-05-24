@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -43,7 +43,7 @@ public class FormatResult extends MetadataAmendedResult implements FormatResultT
      * @param content formatted result content
      */
     public FormatResult(@NotNull ActionContext context, @NotNull ActionContent content) {
-        super(context);
+        super(context, ActionEventType.FORMAT);
         this.content = content;
     }
 
@@ -53,8 +53,9 @@ public class FormatResult extends MetadataAmendedResult implements FormatResultT
      * @param name the content name
      * @param mediaType Media type for the content being stored
      */
+    @SuppressWarnings("unused")
     public FormatResult(@NotNull ActionContext context, @NotNull String content, @NotNull String name, @NotNull String mediaType) {
-        super(context);
+        super(context, ActionEventType.FORMAT);
         this.content = saveContent(content.getBytes(), name, mediaType);
     }
 
@@ -66,7 +67,7 @@ public class FormatResult extends MetadataAmendedResult implements FormatResultT
      */
     @SuppressWarnings("unused")
     public FormatResult(@NotNull ActionContext context, @NotNull byte[] content, @NotNull String name, @NotNull String mediaType) {
-        super(context);
+        super(context, ActionEventType.FORMAT);
         this.content = saveContent(content, name, mediaType);
     }
 
@@ -79,7 +80,7 @@ public class FormatResult extends MetadataAmendedResult implements FormatResultT
      */
     @SuppressWarnings("unused")
     public FormatResult(@NotNull ActionContext context, @NotNull InputStream content, @NotNull String name, @NotNull String mediaType) {
-        super(context);
+        super(context, ActionEventType.FORMAT);
         this.content = saveContent(content, name, mediaType);
     }
 
@@ -99,11 +100,6 @@ public class FormatResult extends MetadataAmendedResult implements FormatResultT
         } catch(ObjectStorageException e) {
             throw new ActionKitException("Failed to store content " + name, e);
         }
-    }
-
-    @Override
-    protected final ActionEventType actionEventType() {
-        return ActionEventType.FORMAT;
     }
 
     @Override

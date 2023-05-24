@@ -17,16 +17,24 @@
  */
 package org.deltafi.common.types;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper = true)
-@SuperBuilder(builderMethodName = "newBuilder")
-public class EnrichEvent extends AnnotatedEvent {
-  private List<Enrichment> enrichments;
+@SuperBuilder
+public class MetadataEvent {
+    @Builder.Default
+    private Map<String, String> metadata = new HashMap<>();
+    @Builder.Default
+    private List<String> deleteMetadataKeys = new ArrayList<>();
 }

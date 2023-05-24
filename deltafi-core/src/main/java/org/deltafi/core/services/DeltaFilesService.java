@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -31,21 +32,25 @@ import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.content.ContentUtil;
 import org.deltafi.common.types.*;
-import org.deltafi.core.exceptions.*;
-import org.deltafi.core.metrics.MetricService;
-import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.configuration.DeltaFiProperties;
+import org.deltafi.core.exceptions.EnqueueActionException;
+import org.deltafi.core.exceptions.InvalidActionEventException;
+import org.deltafi.core.exceptions.MissingEgressFlowException;
+import org.deltafi.core.exceptions.UnknownTypeException;
 import org.deltafi.core.generated.types.*;
+import org.deltafi.core.metrics.MetricService;
+import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.retry.MongoRetryable;
-import org.deltafi.core.types.*;
+import org.deltafi.core.types.DeltaFiles;
+import org.deltafi.core.types.EgressFlow;
+import org.deltafi.core.types.UniqueKeyValues;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -55,7 +60,8 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -240,9 +246,10 @@ public class DeltaFilesService {
 
             String validationError = event.validate();
             if (validationError != null) {
-                event.setError(ErrorEvent.newBuilder().cause(INVALID_ACTION_EVENT_RECEIVED)
-                        .context(validationError + ": " +
-                                OBJECT_MAPPER.writeValueAsString(event)).build());
+                event.setError(ErrorEvent.newBuilder()
+                        .cause(INVALID_ACTION_EVENT_RECEIVED)
+                        .context(validationError + ": " + OBJECT_MAPPER.writeValueAsString(event))
+                        .build());
                 error(deltaFile, event);
                 return;
             }
@@ -323,7 +330,8 @@ public class DeltaFilesService {
 
     public void transform(DeltaFile deltaFile, ActionEvent event) {
         TransformEvent transformEvent = event.getTransform();
-        deltaFile.completeAction(event, transformEvent.getContent(), transformEvent.getMetadata(), transformEvent.getDeleteMetadataKeys());
+        deltaFile.completeAction(event, transformEvent.getContent(), transformEvent.getMetadata(),
+                transformEvent.getDeleteMetadataKeys());
 
         deltaFile.addAnnotations(transformEvent.getAnnotations());
 
@@ -336,13 +344,15 @@ public class DeltaFilesService {
 
     public void load(DeltaFile deltaFile, ActionEvent event) {
         LoadEvent loadEvent = event.getLoad();
-        deltaFile.completeAction(event, loadEvent.getContent(), loadEvent.getMetadata(), loadEvent.getDeleteMetadataKeys());
+        deltaFile.completeAction(event, loadEvent.getContent(), loadEvent.getMetadata(),
+                loadEvent.getDeleteMetadataKeys());
 
         if (loadEvent.getDomains() != null) {
             for (Domain domain : loadEvent.getDomains()) {
                 deltaFile.addDomain(domain.getName(), domain.getValue(), domain.getMediaType());
             }
         }
+
         deltaFile.addAnnotations(loadEvent.getAnnotations());
 
         advanceAndSave(deltaFile);
@@ -359,7 +369,7 @@ public class DeltaFilesService {
     public void enrich(DeltaFile deltaFile, ActionEvent event) {
         deltaFile.completeAction(event);
 
-        if (null != event.getEnrich().getEnrichments()) {
+        if (event.getEnrich().getEnrichments() != null) {
             for (Enrichment enrichment : event.getEnrich().getEnrichments()) {
                 deltaFile.addEnrichment(enrichment.getName(), enrichment.getValue(), enrichment.getMediaType());
             }
@@ -372,7 +382,9 @@ public class DeltaFilesService {
 
     public void format(DeltaFile deltaFile, ActionEvent event) {
         if (event.getFormat().getContent() == null) {
-            event.setError(ErrorEvent.newBuilder().cause("Received format event with no content from " + event.getAction()).build());
+            event.setError(ErrorEvent.newBuilder()
+                    .cause("Received format event with no content from " + event.getAction())
+                    .build());
             error(deltaFile, event);
             return;
         }
@@ -416,13 +428,15 @@ public class DeltaFilesService {
 
         // Treat filter events from Domain and Enrich actions as errors
         if (actionType.equals(ActionType.DOMAIN) || actionType.equals(ActionType.ENRICH)) {
-            event.setError(ErrorEvent.newBuilder().cause("Illegal operation FILTER received from " + actionType + "Action " + event.getAction()).build());
+            event.setError(ErrorEvent.newBuilder()
+                    .cause("Illegal operation FILTER received from " + actionType + "Action " + event.getAction())
+                    .build());
             error(deltaFile, event);
             return;
-        } else {
-            deltaFile.filterAction(event, event.getFilter().getMessage());
-            deltaFile.setFiltered(true);
         }
+
+        deltaFile.filterAction(event, event.getFilter().getMessage());
+        deltaFile.setFiltered(true);
 
         advanceAndSave(deltaFile);
     }
@@ -599,7 +613,8 @@ public class DeltaFilesService {
         enqueueActions(enqueueActions);
     }
 
-    private DeltaFile buildLoadManyChildAndEnqueue(DeltaFile parentDeltaFile, ActionEvent actionEvent, LoadEvent loadEvent, List<ActionInput> enqueueActions, OffsetDateTime now) {
+    private DeltaFile buildLoadManyChildAndEnqueue(DeltaFile parentDeltaFile, ActionEvent actionEvent,
+            LoadEvent loadEvent, List<ActionInput> enqueueActions, OffsetDateTime now) {
         DeltaFile child = createChildDeltaFile(parentDeltaFile, loadEvent.getDid());
         child.setModified(now);
 
@@ -1319,7 +1334,12 @@ public class DeltaFilesService {
             String errorMessage = "Action named " + action.getName() + " is no longer running";
             log.error(errorMessage);
             ErrorEvent error = ErrorEvent.newBuilder().cause(errorMessage).build();
-            ActionEvent event = ActionEvent.newBuilder().did(deltaFile.getDid()).action(action.getName()).type(ActionEventType.UNKNOWN).error(error).build();
+            ActionEvent event = ActionEvent.newBuilder()
+                    .did(deltaFile.getDid())
+                    .action(action.getName())
+                    .type(ActionEventType.UNKNOWN)
+                    .error(error)
+                    .build();
             error(deltaFile, event);
 
             return null;
