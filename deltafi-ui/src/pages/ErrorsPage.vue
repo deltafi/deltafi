@@ -27,7 +27,7 @@
     </PageHeader>
     <TabView v-model:activeIndex="activeTab">
       <TabPanel header="All">
-        <AllErrorsPanel ref="errorsSummaryPanel" :awknowledged="showAcknowledged" :ingress-flow-name="ingressFlowNameSelected" :errors-message-selected="errorMessageSelected" @refresh-errors="onRefresh()" />
+        <AllErrorsPanel ref="errorsSummaryPanel" :awknowledged="showAcknowledged" :ingress-flow-name="ingressFlowNameSelected" :errors-message-selected="errorMessageSelected" @refresh-errors="onRefresh()" @error-message-changed:error-message="messageSelected" />
       </TabPanel>
       <TabPanel header="By Flow">
         <ErrorsSummaryByFlowPanel ref="errorSummaryFlowPanel" :awknowledged="showAcknowledged" :ingress-flow-name="ingressFlowNameSelected" @refresh-errors="onRefresh()" />
@@ -47,12 +47,13 @@ import PageHeader from "@/components/PageHeader.vue";
 import useErrorCount from "@/composables/useErrorCount";
 import useFlows from "@/composables/useFlows";
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import { ref, computed, onUnmounted, onMounted, inject } from "vue";
-
+import { ref, computed, onUnmounted, onMounted, inject, watch, onBeforeMount, nextTick } from "vue";
+import { useStorage, StorageSerializers, useUrlSearchParams } from "@vueuse/core";
 import Dropdown from "primevue/dropdown";
 import Button from "primevue/button";
 import TabPanel from "primevue/tabpanel";
 import TabView from "primevue/tabview";
+import { useRoute } from "vue-router";
 
 const refreshInterval = 5000; // 5 seconds
 const isIdle = inject("isIdle");
@@ -70,6 +71,50 @@ const ingressFlowNameSelected = ref(null);
 const errorMessageSelected = ref(null);
 const selectedErrors = ref([]);
 const activeTab = ref(0);
+const params = useUrlSearchParams("history");
+const useURLSearch = ref(false);
+const route = useRoute();
+const errorPanelState = useStorage("error-store", {}, sessionStorage, { serializer: StorageSerializers.object });
+
+const setPersistedParams = () => {
+  // Session Storage
+  errorPanelState.value = {
+    tabs: activeTab.value,
+    showAcknowledged: showAcknowledged.value,
+    ingressFlowNameSelected: ingressFlowNameSelected.value,
+    errorMessageSelected: errorMessageSelected.value
+  };
+  // URL
+  params.tab = activeTab.value;
+  params.showAck = showAcknowledged.value ? "true" : null;
+  params.ingressFlow = ingressFlowNameSelected.value;
+  if (activeTab.value === 0) {
+    params.errorMsg = errorMessageSelected.value ? encodeURIComponent(errorMessageSelected.value) : null;
+  } else {
+    params.errorMsg = null;
+  }
+};
+
+const getPersistedParams = async () => {
+  if (useURLSearch.value) {
+    activeTab.value = params.tab ? parseInt(params.tab) : 0;
+    showAcknowledged.value = params.showAck === "true" ? true : false;
+    ingressFlowNameSelected.value = params.ingressFlow ? params.ingressFlow : null;
+    errorMessageSelected.value = params.errorMsg ? decodeURIComponent(params.errorMsg) : errorPanelState.value.errorMessageSelected;
+  } else {
+    activeTab.value = errorPanelState.value.tabs ? parseInt(errorPanelState.value.tabs) : 0;
+    showAcknowledged.value = errorPanelState.value.showAcknowledged;
+    ingressFlowNameSelected.value = errorPanelState.value.ingressFlowNameSelected;
+    errorMessageSelected.value = errorPanelState.value.errorMessageSelected;
+  }
+  setPersistedParams();
+};
+
+const setupWatchers = () => {
+  watch([activeTab, showAcknowledged, ingressFlowNameSelected, errorMessageSelected], () => {
+    setPersistedParams();
+  });
+};
 
 const refreshButtonIcon = computed(() => {
   let classes = ["fa", "fa-sync-alt"];
@@ -78,8 +123,12 @@ const refreshButtonIcon = computed(() => {
 });
 
 const tabChange = (errorMessage) => {
-  errorMessageSelected.value = { message: errorMessage };
+  errorMessageSelected.value = errorMessage;
   activeTab.value = 0;
+};
+
+const messageSelected = (errorMsg) => {
+  if (errorMessageSelected.value !== errorMsg) errorMessageSelected.value = errorMsg;
 };
 
 const refreshButtonClass = computed(() => {
@@ -133,13 +182,20 @@ onUnmounted(() => {
   clearInterval(autoRefresh);
 });
 
+onBeforeMount(() => {
+  useURLSearch.value = route.fullPath.includes("errors?");
+});
+
 onMounted(async () => {
+  await getPersistedParams();
+  await nextTick();
   pollNewErrors();
   autoRefresh = setInterval(() => {
     if (!isIdle.value && !loading.value) {
       pollNewErrors();
     }
   }, refreshInterval);
+  setupWatchers();
 });
 </script>
 

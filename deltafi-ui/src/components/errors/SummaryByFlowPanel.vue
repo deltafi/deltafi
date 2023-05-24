@@ -85,7 +85,7 @@ const ackErrorsDialog = ref({
 });
 const props = defineProps({
   ingressFlowName: {
-    type: Object,
+    type: String,
     required: false,
     default: undefined,
   },
@@ -151,9 +151,10 @@ const menuItems = ref([
   },
 ]);
 
-onMounted(() => {
-  getPersistedParams();
+onMounted(async () => {
+  await getPersistedParams();
   fetchErrorsFlow();
+  setupWatchers();
 });
 
 const onRefresh = () => {
@@ -243,22 +244,22 @@ const onPage = async (event) => {
   fetchErrorsFlow();
   emit("refreshErrors");
 };
+const setupWatchers = () => {
+  watch(
+    () => props.ingressFlowName,
+    () => {
+      fetchErrorsFlow();
+    }
+  );
 
-watch(
-  () => props.ingressFlowName,
-  () => {
-    fetchErrorsFlow();
-  }
-);
-
-watch(
-  () => props.awknowledged,
-  () => {
-    selectedErrors.value = [];
-    fetchErrorsFlow();
-  }
-);
-
+  watch(
+    () => props.awknowledged,
+    () => {
+      selectedErrors.value = [];
+      fetchErrorsFlow();
+    }
+  );
+};
 const getPersistedParams = async () => {
   let state = useStorage("errors-page-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
   perPage.value = state.value.perPage || 20;

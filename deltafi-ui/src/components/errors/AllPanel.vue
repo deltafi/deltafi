@@ -129,12 +129,11 @@ import _ from "lodash";
 
 const hasPermission = inject("hasPermission");
 const hasSomePermissions = inject("hasSomePermissions");
-
 const metadataDialog = ref();
 const { data: errorsMessages, fetchAllMessage: getAllErrorsMessage } = useErrorsSummary();
 const { pluralize } = useUtilFunctions();
 const { fetchErrorCount } = useErrorCount();
-const emit = defineEmits(["refreshErrors"]);
+const emit = defineEmits(["refreshErrors", "errorMessageChanged:errorMessage"]);
 const notify = useNotifications();
 const loading = ref(true);
 const menu = ref();
@@ -153,7 +152,7 @@ const ackErrorsDialog = ref({
 });
 const props = defineProps({
   ingressFlowName: {
-    type: Object,
+    type: String,
     required: false,
     default: undefined,
   },
@@ -162,7 +161,7 @@ const props = defineProps({
     required: true,
   },
   errorsMessageSelected: {
-    type: Object,
+    type: String,
     required: false,
     default: undefined,
   },
@@ -238,7 +237,7 @@ const filters = ref({
 });
 
 const fetchErrors = async () => {
-  getPersistedParams();
+  await getPersistedParams();
   let ingressFlowName = props.ingressFlowName != null ? props.ingressFlowName : null;
   let errorMessage = filters.value.last_error_cause.value != null ? filters.value.last_error_cause.value.message : null;
   let showAcknowled = props.awknowledged ? null : false;
@@ -344,40 +343,44 @@ const onSort = (event) => {
 defineExpose({
   fetchErrors,
 });
-watch(
-  () => props.ingressFlowName,
-  () => {
-    fetchErrors();
-  }
-);
+const setupWatchers = () => {
+  watch(
+    () => props.ingressFlowName,
+    () => {
+      fetchErrors();
+    }
+  );
 
-watch(
-  () => props.errorsMessageSelected,
-  () => {
-    filters.value.last_error_cause.value = props.errorsMessageSelected;
-    fetchErrors();
-  }
-);
+  watch(
+    () => props.errorsMessageSelected,
+    () => {
+      filters.value.last_error_cause.value = props.errorsMessageSelected ? { message: props.errorsMessageSelected } : null;
+    }
+  );
 
-watch(
-  () => props.awknowledged,
-  () => {
-    selectedErrors.value = [];
-    fetchErrors();
-  }
-);
+  watch(
+    () => props.awknowledged,
+    () => {
+      selectedErrors.value = [];
+      fetchErrors();
+    }
+  );
 
-watch(
-  () => filters.value.last_error_cause.value,
-  () => {
-    fetchErrors();
-  }
-);
-
-onMounted(() => {
-  getPersistedParams();
-  fetchErrors();
-  getAllErrorsMessage();
+  watch(
+    () => filters.value.last_error_cause.value,
+    () => {
+      let errorMessage = filters.value.last_error_cause.value != null ? filters.value.last_error_cause.value.message : null;
+      fetchErrors();
+      emit("errorMessageChanged:errorMessage", errorMessage);
+    }
+  );
+};
+onMounted(async () => {
+  await getPersistedParams();
+  filters.value.last_error_cause.value = props.errorsMessageSelected ? { message: props.errorsMessageSelected } : null;
+  await fetchErrors();
+  setupWatchers();
+  getAllErrorsMessage(); // needed to get All the messages for
 });
 
 const getPersistedParams = async () => {

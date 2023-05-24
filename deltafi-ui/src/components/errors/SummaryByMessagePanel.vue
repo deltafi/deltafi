@@ -90,7 +90,7 @@ const ackErrorsDialog = ref({
 });
 const props = defineProps({
   ingressFlowName: {
-    type: Object,
+    type: String,
     required: false,
     default: undefined,
   },
@@ -156,9 +156,10 @@ const menuItems = ref([
   },
 ]);
 
-onMounted(() => {
-  getPersistedParams();
+onMounted(async () => {
+  await getPersistedParams();
   fetchErrorsMessages();
+  setupWatchers();
 });
 
 const { data: response, fetchByMessage: getErrorsByMessage } = useErrorsSummary();
@@ -244,22 +245,22 @@ const autoResumeSelected = computed(() => {
     return selectedErrors.value;
   }
 });
+const setupWatchers = () => {
+  watch(
+    () => props.ingressFlowName,
+    () => {
+      fetchErrorsMessages();
+    }
+  );
 
-watch(
-  () => props.ingressFlowName,
-  () => {
-    fetchErrorsMessages();
-  }
-);
-
-watch(
-  () => props.awknowledged,
-  () => {
-    selectedErrors.value = [];
-    fetchErrorsMessages();
-  }
-);
-
+  watch(
+    () => props.awknowledged,
+    () => {
+      selectedErrors.value = [];
+      fetchErrorsMessages();
+    }
+  );
+};
 const onPage = async (event) => {
   offset.value = event.first;
   perPage.value = event.rows;
