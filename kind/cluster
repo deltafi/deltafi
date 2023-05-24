@@ -276,7 +276,7 @@ _check_java() {
   local javaversion
   javaversion=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}')
   # shellcheck disable=SC2072
-  if [[ "$javaversion" > "17.999" || "$javaversion" < "17.0" ]]; then
+  if [[ "$javaversion" > "17.999" || "$javaversion" < "17" ]]; then
     _exit_1 echo "JDK 17 required, you have $javaversion"
   fi
   _ok "Java JDK: $javaversion"
