@@ -47,4 +47,21 @@ public class ActionEventInput {
   private FilterEvent filter;
   private List<ReinjectEvent> reinject;
   private List<Metric> metrics;
+
+  public boolean valid() {
+    return switch (type) {
+      case TRANSFORM -> transform != null;
+      case LOAD -> load != null;
+      case LOAD_MANY -> loadMany != null;
+      case DOMAIN -> domain != null;
+      case ENRICH -> enrich != null;
+      case FORMAT -> format != null;
+      case FORMAT_MANY -> formatMany != null;
+      case ERROR -> error != null;
+      case FILTER -> filter != null;
+      case REINJECT -> reinject != null && !reinject.isEmpty();
+      case VALIDATE, EGRESS -> true;
+      default -> false;
+    };
+  }
 }

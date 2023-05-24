@@ -233,6 +233,14 @@ public class DeltaFilesService {
                 return;
             }
 
+            if (!event.valid()) {
+                event.setError(ErrorEvent.newBuilder().cause("Invalid event received from Action " + event.getAction() +
+                        " for did " + deltaFile.getDid() + ". Action event type does not match the populated object: " +
+                        OBJECT_MAPPER.writeValueAsString(event)).build());
+                error(deltaFile, event);
+                return;
+            }
+
             if (deltaFile.noPendingAction(event.getAction())) {
                 throw new UnexpectedActionException(event.getAction(), event.getDid(), deltaFile.queuedActions());
             }
@@ -339,30 +347,28 @@ public class DeltaFilesService {
     public void load(DeltaFile deltaFile, ActionEventInput event) {
         deltaFile.completeAction(event);
 
-        if (event.getLoad() != null) {
-            ProtocolLayer protocolLayer = new ProtocolLayer(event.getAction());
+        ProtocolLayer protocolLayer = new ProtocolLayer(event.getAction());
 
-            if (event.getLoad().getContent() != null) {
-                protocolLayer.setContent(event.getLoad().getContent());
-            }
-
-            if (event.getLoad().getMetadata() != null) {
-                protocolLayer.setMetadata(event.getLoad().getMetadata());
-            }
-
-            if (event.getLoad().getDeleteMetadataKeys() != null) {
-                protocolLayer.setDeleteMetadataKeys(event.getLoad().getDeleteMetadataKeys());
-            }
-
-            deltaFile.getProtocolStack().add(protocolLayer);
-
-            if (event.getLoad().getDomains() != null) {
-                for (Domain domain : event.getLoad().getDomains()) {
-                    deltaFile.addDomain(domain.getName(), domain.getValue(), domain.getMediaType());
-                }
-            }
-            deltaFile.addAnnotations(event.getLoad().getAnnotations());
+        if (event.getLoad().getContent() != null) {
+            protocolLayer.setContent(event.getLoad().getContent());
         }
+
+        if (event.getLoad().getMetadata() != null) {
+            protocolLayer.setMetadata(event.getLoad().getMetadata());
+        }
+
+        if (event.getLoad().getDeleteMetadataKeys() != null) {
+            protocolLayer.setDeleteMetadataKeys(event.getLoad().getDeleteMetadataKeys());
+        }
+
+        deltaFile.getProtocolStack().add(protocolLayer);
+
+        if (event.getLoad().getDomains() != null) {
+            for (Domain domain : event.getLoad().getDomains()) {
+                deltaFile.addDomain(domain.getName(), domain.getValue(), domain.getMediaType());
+            }
+        }
+        deltaFile.addAnnotations(event.getLoad().getAnnotations());
 
         advanceAndSave(deltaFile);
     }
@@ -370,9 +376,7 @@ public class DeltaFilesService {
     public void domain(DeltaFile deltaFile, ActionEventInput event) {
         deltaFile.completeAction(event);
 
-        if (event.getDomain() != null) {
-            deltaFile.addAnnotations(event.getDomain().getAnnotations());
-        }
+        deltaFile.addAnnotations(event.getDomain().getAnnotations());
 
         advanceAndSave(deltaFile);
     }
@@ -380,15 +384,13 @@ public class DeltaFilesService {
     public void enrich(DeltaFile deltaFile, ActionEventInput event) {
         deltaFile.completeAction(event);
 
-        if (event.getEnrich() != null) {
-            if (null != event.getEnrich().getEnrichments()) {
-                for (Enrichment enrichment : event.getEnrich().getEnrichments()) {
-                    deltaFile.addEnrichment(enrichment.getName(), enrichment.getValue(), enrichment.getMediaType());
-                }
+        if (null != event.getEnrich().getEnrichments()) {
+            for (Enrichment enrichment : event.getEnrich().getEnrichments()) {
+                deltaFile.addEnrichment(enrichment.getName(), enrichment.getValue(), enrichment.getMediaType());
             }
-
-            deltaFile.addAnnotations(event.getEnrich().getAnnotations());
         }
+
+        deltaFile.addAnnotations(event.getEnrich().getAnnotations());
 
         advanceAndSave(deltaFile);
     }
@@ -1340,7 +1342,7 @@ public class DeltaFilesService {
         if (DeltaFileStage.EGRESS.equals(deltaFile.getStage()) ||
                 (DeltaFileStage.COMPLETE.equals(deltaFile.getStage()) && deltaFile.getEgressed())) {
             try {
-                return egressFlowService.getFlowName(action.getName());
+                return FlowService.getFlowName(action.getName());
             } catch (IllegalArgumentException ignored) {}
         }
 
