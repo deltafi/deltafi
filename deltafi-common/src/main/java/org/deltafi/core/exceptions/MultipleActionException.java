@@ -15,12 +15,12 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.actionkit.action;
+package org.deltafi.core.exceptions;
 
-import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.ActionEvent;
+import java.util.List;
 
-public interface ResultType {
-    ActionEvent toEvent();
-    ActionContext getContext();
+public class MultipleActionException extends RuntimeException {
+    public MultipleActionException(String actionName, String did) {
+        super("Multiple copies of action " + actionName + " fount on DeltaFile " + did + ". This should never happen.");
+    }
 }

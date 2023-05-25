@@ -20,6 +20,8 @@ package org.deltafi.common.types;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.deltafi.common.content.Segment;
+import org.deltafi.core.exceptions.MultipleActionException;
+import org.deltafi.core.exceptions.UnexpectedActionException;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
@@ -47,10 +49,9 @@ public class DeltaFile {
   private long referencedBytes;
   private long totalBytes;
   private DeltaFileStage stage;
-  private List<Action> actions;
-  private SourceInfo sourceInfo;
   @Builder.Default
-  private List<ProtocolLayer> protocolStack = new ArrayList<>();
+  private List<Action> actions = new ArrayList<>();
+  private SourceInfo sourceInfo;
   private List<Domain> domains;
   @Transient
   @Builder.Default
@@ -87,14 +88,15 @@ public class DeltaFile {
   @JsonIgnore
   private long version;
 
-  public final static int CURRENT_SCHEMA_VERSION = 2;
+  public final static int CURRENT_SCHEMA_VERSION = 3;
   private int schemaVersion;
 
   public Map<String, String> getMetadata() {
     Map<String, String> metadata = new HashMap<>(sourceInfo.getMetadata());
-    for (ProtocolLayer protocolLayer : protocolStack) {
-      metadata.putAll(protocolLayer.getMetadata());
-      for (String key : protocolLayer.getDeleteMetadataKeys()) {
+    List<Action> amendedDataActions = actions.stream().filter(Action::amendedData).toList();
+    for (Action action : amendedDataActions) {
+      metadata.putAll(action.getMetadata());
+      for (String key : action.getDeleteMetadataKeys()) {
         metadata.remove(key);
       }
     }
@@ -102,19 +104,20 @@ public class DeltaFile {
     return metadata;
   }
 
-  public void queueAction(String name) {
+  public void queueAction(String name, ActionType type) {
     Optional<Action> maybeAction = actionNamed(name);
     if (maybeAction.isPresent()) {
       setActionState(maybeAction.get(), ActionState.QUEUED, null, null);
     } else {
-      queueNewAction(name);
+      queueNewAction(name, type);
     }
   }
 
-  public void queueNewAction(String name) {
+  public void queueNewAction(String name, ActionType type) {
     OffsetDateTime now = OffsetDateTime.now();
     getActions().add(Action.newBuilder()
             .name(name)
+            .type(type)
             .state(ActionState.QUEUED)
             .created(now)
             .queued(now)
@@ -141,29 +144,61 @@ public class DeltaFile {
     return actionNamed(name).isEmpty();
   }
 
-  public void queueActionsIfNew(List<String> actions) {
-    actions.stream().filter(this::isNewAction).forEach(this::queueNewAction);
+  public void completeAction(ActionEvent event) {
+    completeAction(event.getAction(), event.getStart(), event.getStop(), null, null, null);
   }
 
-  public void completeAction(ActionEventInput event) {
-    completeAction(event.getAction(), event.getStart(), event.getStop());
+  public void completeAction(ActionEvent event, List<Content> content, Map<String, String> metadata,
+                             List<String> deleteMetadataKeys) {
+    completeAction(event.getAction(), event.getStart(), event.getStop(), content, metadata, deleteMetadataKeys);
   }
 
   public void completeAction(String name, OffsetDateTime start, OffsetDateTime stop) {
-    getActions().stream()
-            .filter(action -> action.getName().equals(name) && !terminalState(action.getState()))
-            .forEach(action -> setActionState(action, ActionState.COMPLETE, start, stop));
+    completeAction(name, start, stop, List.of());
   }
 
-  public void filterAction(ActionEventInput event, String filterMessage) {
+  public void completeAction(String name, OffsetDateTime start, OffsetDateTime stop, List<Content> content) {
+    completeAction(name, start, stop, content, Map.of());
+  }
+
+  public void completeAction(String name, OffsetDateTime start, OffsetDateTime stop, List<Content> content, Map<String, String> metadata) {
+    completeAction(name, start, stop, content, metadata, List.of());
+  }
+
+  public void completeAction(String name, OffsetDateTime start, OffsetDateTime stop,
+                               List<Content> content, Map<String, String> metadata, List<String> deleteMetadataKeys) {
+    Optional<Action> optionalAction = getActions().stream()
+            .filter(a -> a.getName().equals(name) && !a.terminal())
+            .findFirst();
+    if (optionalAction.isPresent()) {
+      Action action = optionalAction.get();
+      setActionState(action, ActionState.COMPLETE, start, stop);
+
+      if (content != null) {
+        action.setContent(content);
+      }
+
+      if (metadata != null) {
+        action.setMetadata(metadata);
+      }
+
+      if (deleteMetadataKeys != null) {
+        action.setDeleteMetadataKeys(deleteMetadataKeys);
+      }
+    } else {
+      throw new UnexpectedActionException(name, did, queuedActions());
+    }
+  }
+
+  public void filterAction(ActionEvent event, String filterMessage) {
     getActions().stream()
-            .filter(action -> action.getName().equals(event.getAction()) && !terminalState(action.getState()))
+            .filter(action -> action.getName().equals(event.getAction()) && !action.terminal())
             .forEach(action -> setFilteredActionState(action, event.getStart(), event.getStop(), filterMessage));
   }
 
-  public void reinjectAction(ActionEventInput event) {
+  public void reinjectAction(ActionEvent event) {
     getActions().stream()
-            .filter(action -> action.getName().equals(event.getAction()) && !terminalState(action.getState()))
+            .filter(action -> action.getName().equals(event.getAction()) && !action.terminal())
             .forEach(action -> setActionState(action, ActionState.REINJECTED, event.getStart(), event.getStop()));
   }
 
@@ -179,18 +214,18 @@ public class DeltaFile {
     getActions().remove(lastAction());
   }
 
-  public void errorAction(ActionEventInput event) {
+  public void errorAction(ActionEvent event) {
     errorAction(event.getAction(), event.getStart(), event.getStop(), event.getError().getCause(),
             event.getError().getContext());
   }
 
-  public void errorAction(ActionEventInput event, String policyName, Integer delay) {
+  public void errorAction(ActionEvent event, String policyName, Integer delay) {
     setNextAutoResumeReason(policyName);
     errorAction(event.getAction(), event.getStart(), event.getStop(), event.getError().getCause(),
             event.getError().getContext(), event.getStop().plusSeconds(delay));
   }
 
-  public void errorAction(ActionEventInput event, String errorCause, String errorContext) {
+  public void errorAction(ActionEvent event, String errorCause, String errorContext) {
     errorAction(event.getAction(), event.getStart(), event.getStop(), errorCause, errorContext, null);
   }
 
@@ -200,7 +235,7 @@ public class DeltaFile {
 
   public void errorAction(String name, OffsetDateTime start, OffsetDateTime stop, String errorCause, String errorContext, OffsetDateTime nextAutoResume) {
     getActions().stream()
-            .filter(action -> action.getName().equals(name) && !terminalState(action.getState()))
+            .filter(action -> action.getName().equals(name) && !action.terminal())
             .forEach(action -> setActionState(action, ActionState.ERROR, start, stop, errorCause, errorContext, nextAutoResume));
   }
 
@@ -329,12 +364,21 @@ public class DeltaFile {
     return getActions().stream().anyMatch(action -> action.getState().equals(ActionState.REINJECTED));
   }
 
-  public boolean noPendingAction(String name) {
-    return getActions().stream().noneMatch(action -> action.getName().equals(name) && !terminalState(action.getState()));
+  public void ensurePendingAction(String name) {
+    long actionCount = countPendingActions(name);
+    if (actionCount == 0) {
+      throw new UnexpectedActionException(name, did, queuedActions());
+    } else if (actionCount > 1) {
+      throw new MultipleActionException(name, did);
+    }
   }
 
-  private boolean terminalState(ActionState actionState) {
-    return !actionState.equals(ActionState.QUEUED);
+  public Action getPendingAction(String name) {
+    return getActions().stream().filter(action -> action.getName().equals(name) && !action.terminal()).findFirst().orElseThrow(() -> new UnexpectedActionException(name, did, queuedActions()));
+  }
+
+  private long countPendingActions(String name) {
+    return getActions().stream().filter(action -> action.getName().equals(name) && !action.terminal()).count();
   }
 
   private boolean retried(Action action) {
@@ -343,7 +387,7 @@ public class DeltaFile {
 
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   public boolean hasTerminalAction(String name) {
-    return getActions().stream().anyMatch(action -> action.getName().equals(name) && !retried(action) && terminalState(action.getState()));
+    return getActions().stream().anyMatch(action -> action.getName().equals(name) && !retried(action) && action.terminal());
   }
 
   public boolean hasCompletedAction(String name) {
@@ -407,17 +451,21 @@ public class DeltaFile {
   }
 
   @JsonIgnore
-  public ProtocolLayer getLastProtocolLayer() {
-    return (Objects.isNull(getProtocolStack()) || getProtocolStack().isEmpty()) ? null : getProtocolStack().get(getProtocolStack().size() - 1);
+  public Action getLastDataAmendedAction() {
+    return actions.stream()
+            .filter(Action::amendedData)
+            .reduce((first, second) -> second)
+            .orElse(null);
   }
 
   @JsonIgnore
-  public @NotNull List<Content> getLastProtocolLayerContent() {
-    if (Objects.isNull(getLastProtocolLayer()) || Objects.isNull(getLastProtocolLayer().getContent())) {
+  public @NotNull List<Content> getLastDataAmendedContent() {
+    Action lastDataAmendedAction = getLastDataAmendedAction();
+    if (lastDataAmendedAction == null || lastDataAmendedAction.getContent() == null) {
       return Collections.emptyList();
     }
 
-    return getLastProtocolLayer().getContent();
+    return lastDataAmendedAction.getContent();
   }
 
   public @NotNull List<Domain> getDomains() {
@@ -445,7 +493,7 @@ public class DeltaFile {
     FormattedData formattedData = formattedDataFor(actionName);
 
     if (formattedData == null) {
-      builder.contentList(getLastProtocolLayerContent())
+      builder.contentList(getLastDataAmendedContent())
               .metadata(getMetadata())
               .domains(getDomains())
               .enrichment(getEnrichment());
@@ -457,29 +505,29 @@ public class DeltaFile {
     return builder.build();
   }
 
-  public List<Segment> referencedSegments() {
-    List<Segment> segments = getProtocolStack().stream()
+  public Set<Segment> referencedSegments() {
+    Set<Segment> segments = actions.stream()
             .flatMap(p -> p.getContent().stream())
             .flatMap(c -> c.getSegments().stream())
-            .collect(Collectors.toList());
+            .collect(Collectors.toSet());
     segments.addAll(getFormattedData().stream()
             .map(FormattedData::getContent)
             .flatMap(f -> f.getSegments().stream())
-            .toList());
+            .collect(Collectors.toSet()));
     return segments;
   }
 
-  public List<Segment> storedSegments() {
-    List<Segment> segments = getProtocolStack().stream()
+  public Set<Segment> storedSegments() {
+    Set<Segment> segments = actions.stream()
             .flatMap(p -> p.getContent().stream())
             .flatMap(c -> c.getSegments().stream())
             .filter(s -> s.getDid().equals(getDid()))
-            .collect(Collectors.toList());
+            .collect(Collectors.toSet());
     segments.addAll(getFormattedData().stream()
             .map(FormattedData::getContent)
             .flatMap(f -> f.getSegments().stream())
             .filter(s -> s.getDid().equals(getDid()))
-            .toList());
+            .collect(Collectors.toSet()));
     return segments;
   }
 

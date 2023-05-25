@@ -30,14 +30,11 @@ import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.content.ContentUtil;
 import org.deltafi.common.types.*;
-import org.deltafi.core.exceptions.EnqueueActionException;
+import org.deltafi.core.exceptions.*;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.configuration.DeltaFiProperties;
-import org.deltafi.core.exceptions.MissingEgressFlowException;
-import org.deltafi.core.exceptions.UnexpectedActionException;
-import org.deltafi.core.exceptions.UnknownTypeException;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.retry.MongoRetryable;
@@ -188,9 +185,12 @@ public class DeltaFilesService {
 
         Action ingressAction = Action.newBuilder()
                 .name(INGRESS_ACTION)
+                .type(ActionType.INGRESS)
                 .state(ActionState.COMPLETE)
                 .created(ingressEvent.getCreated())
                 .modified(now)
+                .content(ingressEvent.getContent())
+                .metadata(ingressEvent.getSourceInfo().getMetadata())
                 .build();
 
         long contentSize = ContentUtil.computeContentSize(ingressEvent.getContent());
@@ -206,7 +206,6 @@ public class DeltaFilesService {
                 .stage(DeltaFileStage.INGRESS)
                 .actions(new ArrayList<>(List.of(ingressAction)))
                 .sourceInfo(sourceInfo)
-                .protocolStack(List.of(new ProtocolLayer(INGRESS_ACTION, ingressEvent.getContent(), Map.of(), List.of())))
                 .domains(Collections.emptyList())
                 .enrichment(Collections.emptyList())
                 .formattedData(Collections.emptyList())
@@ -220,7 +219,7 @@ public class DeltaFilesService {
         return deltaFile;
     }
 
-    public void handleActionEvent(ActionEventInput event) throws JsonProcessingException {
+    public void handleActionEvent(ActionEvent event) throws JsonProcessingException {
         synchronized(didMutexService.getMutex(event.getDid())) {
             DeltaFile deltaFile = getCachedDeltaFile(event.getDid());
 
@@ -241,9 +240,7 @@ public class DeltaFilesService {
                 return;
             }
 
-            if (deltaFile.noPendingAction(event.getAction())) {
-                throw new UnexpectedActionException(event.getAction(), event.getDid(), deltaFile.queuedActions());
-            }
+            deltaFile.ensurePendingAction(event.getAction());
 
             List<Metric> metrics = (event.getMetrics() != null) ? event.getMetrics() : new ArrayList<>();
             metrics.add(new Metric(DeltaFiConstants.FILES_IN, 1));
@@ -308,7 +305,7 @@ public class DeltaFilesService {
         }
     }
 
-    private void generateMetrics(List<Metric> metrics, ActionEventInput event, DeltaFile deltaFile) {
+    private void generateMetrics(List<Metric> metrics, ActionEvent event, DeltaFile deltaFile) {
         String egressFlow = egressFlow(event.getAction(), deltaFile);
         Map<String, String> defaultTags = MetricsUtil.tagsFor(event.getType(), event.getAction(), deltaFile.getSourceInfo().getFlow(), egressFlow);
         for(Metric metric : metrics) {
@@ -317,25 +314,11 @@ public class DeltaFilesService {
         }
     }
 
-    public void transform(DeltaFile deltaFile, ActionEventInput event) {
-        deltaFile.completeAction(event);
+    public void transform(DeltaFile deltaFile, ActionEvent event) {
+        TransformEvent transformEvent = event.getTransform();
+        deltaFile.completeAction(event, transformEvent.getContent(), transformEvent.getMetadata(), transformEvent.getDeleteMetadataKeys());
 
-        ProtocolLayer protocolLayer = new ProtocolLayer(event.getAction());
-
-        if (event.getTransform().getContent() != null) {
-            protocolLayer.setContent(event.getTransform().getContent());
-        }
-
-        if (event.getTransform().getMetadata() != null) {
-            protocolLayer.setMetadata(event.getTransform().getMetadata());
-        }
-
-        if (event.getTransform().getDeleteMetadataKeys() != null) {
-            protocolLayer.setDeleteMetadataKeys(event.getTransform().getDeleteMetadataKeys());
-        }
-
-        deltaFile.getProtocolStack().add(protocolLayer);
-        deltaFile.addAnnotations(event.getTransform().getAnnotations());
+        deltaFile.addAnnotations(transformEvent.getAnnotations());
 
         if (deltaFile.getSourceInfo().getProcessingType() == ProcessingType.TRANSFORMATION) {
             advanceAndSaveTransformationProcessing(deltaFile);
@@ -344,36 +327,21 @@ public class DeltaFilesService {
         }
     }
 
-    public void load(DeltaFile deltaFile, ActionEventInput event) {
-        deltaFile.completeAction(event);
+    public void load(DeltaFile deltaFile, ActionEvent event) {
+        LoadEvent loadEvent = event.getLoad();
+        deltaFile.completeAction(event, loadEvent.getContent(), loadEvent.getMetadata(), loadEvent.getDeleteMetadataKeys());
 
-        ProtocolLayer protocolLayer = new ProtocolLayer(event.getAction());
-
-        if (event.getLoad().getContent() != null) {
-            protocolLayer.setContent(event.getLoad().getContent());
-        }
-
-        if (event.getLoad().getMetadata() != null) {
-            protocolLayer.setMetadata(event.getLoad().getMetadata());
-        }
-
-        if (event.getLoad().getDeleteMetadataKeys() != null) {
-            protocolLayer.setDeleteMetadataKeys(event.getLoad().getDeleteMetadataKeys());
-        }
-
-        deltaFile.getProtocolStack().add(protocolLayer);
-
-        if (event.getLoad().getDomains() != null) {
-            for (Domain domain : event.getLoad().getDomains()) {
+        if (loadEvent.getDomains() != null) {
+            for (Domain domain : loadEvent.getDomains()) {
                 deltaFile.addDomain(domain.getName(), domain.getValue(), domain.getMediaType());
             }
         }
-        deltaFile.addAnnotations(event.getLoad().getAnnotations());
+        deltaFile.addAnnotations(loadEvent.getAnnotations());
 
         advanceAndSave(deltaFile);
     }
 
-    public void domain(DeltaFile deltaFile, ActionEventInput event) {
+    public void domain(DeltaFile deltaFile, ActionEvent event) {
         deltaFile.completeAction(event);
 
         deltaFile.addAnnotations(event.getDomain().getAnnotations());
@@ -381,7 +349,7 @@ public class DeltaFilesService {
         advanceAndSave(deltaFile);
     }
 
-    public void enrich(DeltaFile deltaFile, ActionEventInput event) {
+    public void enrich(DeltaFile deltaFile, ActionEvent event) {
         deltaFile.completeAction(event);
 
         if (null != event.getEnrich().getEnrichments()) {
@@ -395,7 +363,7 @@ public class DeltaFilesService {
         advanceAndSave(deltaFile);
     }
 
-    public void format(DeltaFile deltaFile, ActionEventInput event) {
+    public void format(DeltaFile deltaFile, ActionEvent event) {
         EgressFlow egressFlow = egressFlowService.withFormatActionNamed(event.getAction());
 
         if (event.getFormat().getContent() == null) {
@@ -417,13 +385,13 @@ public class DeltaFilesService {
         advanceAndSave(deltaFile);
     }
 
-    public void validate(DeltaFile deltaFile, ActionEventInput event) {
+    public void validate(DeltaFile deltaFile, ActionEvent event) {
         deltaFile.completeAction(event);
 
         advanceAndSave(deltaFile);
     }
 
-    public void egress(DeltaFile deltaFile, ActionEventInput event) {
+    public void egress(DeltaFile deltaFile, ActionEvent event) {
         deltaFile.completeAction(event);
         deltaFile.setEgressed(true);
 
@@ -437,11 +405,7 @@ public class DeltaFilesService {
         advanceAndSave(deltaFile);
     }
 
-    public void filter(DeltaFile deltaFile, ActionEventInput event) throws JsonProcessingException {
-        if (deltaFile.noPendingAction(event.getAction())) {
-            throw new UnexpectedActionException(event.getAction(), event.getDid(), deltaFile.queuedActions());
-        }
-
+    public void filter(DeltaFile deltaFile, ActionEvent event) throws JsonProcessingException {
         ActionConfiguration actionConfiguration = actionConfiguration(event.getAction(), deltaFile);
         ActionType actionType = ActionType.UNKNOWN;
         if (actionConfiguration != null) {
@@ -462,7 +426,7 @@ public class DeltaFilesService {
     }
 
     @MongoRetryable
-    public void error(DeltaFile deltaFile, ActionEventInput event) {
+    public void error(DeltaFile deltaFile, ActionEvent event) {
         // If the content was deleted by a delete policy mark as CANCELLED instead of ERROR
         if (deltaFile.getContentDeleted() != null) {
             deltaFile.cancelQueuedActions();
@@ -474,10 +438,8 @@ public class DeltaFilesService {
     }
 
     @MongoRetryable
-    public DeltaFile processErrorEvent(DeltaFile deltaFile, ActionEventInput event) {
-        if (deltaFile.noPendingAction(event.getAction())) {
-            throw new UnexpectedActionException(event.getAction(), deltaFile.getDid(), deltaFile.queuedActions());
-        }
+    public DeltaFile processErrorEvent(DeltaFile deltaFile, ActionEvent event) {
+        deltaFile.ensurePendingAction(event.getAction());
 
         Optional<ResumePolicyService.ResumeDetails> resumeDetails = Optional.empty();
         ActionConfiguration actionConfiguration = actionConfiguration(event.getAction(), deltaFile);
@@ -574,8 +536,8 @@ public class DeltaFilesService {
         return expectedAnnotations;
     }
 
-    public static ActionEventInput buildNoEgressConfiguredErrorEvent(DeltaFile deltaFile, OffsetDateTime time) {
-        return ActionEventInput.newBuilder()
+    public static ActionEvent buildNoEgressConfiguredErrorEvent(DeltaFile deltaFile, OffsetDateTime time) {
+        return ActionEvent.newBuilder()
                 .did(deltaFile.getDid())
                 .action(DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION)
                 .start(time)
@@ -588,9 +550,9 @@ public class DeltaFilesService {
                 .build();
     }
 
-    public static ActionEventInput buildNoChildFlowErrorEvent(DeltaFile deltaFile, String action, String flow,
-            OffsetDateTime time) {
-        return ActionEventInput.newBuilder()
+    public static ActionEvent buildNoChildFlowErrorEvent(DeltaFile deltaFile, String action, String flow,
+                                                         OffsetDateTime time) {
+        return ActionEvent.newBuilder()
                 .did(deltaFile.getDid())
                 .action(action)
                 .start(time)
@@ -602,7 +564,7 @@ public class DeltaFilesService {
                 .build();
     }
 
-    public void loadMany(DeltaFile deltaFile, ActionEventInput event) throws MissingEgressFlowException {
+    public void loadMany(DeltaFile deltaFile, ActionEvent event) throws MissingEgressFlowException {
         List<LoadEvent> loadEvents = event.getLoadMany();
         List<DeltaFile> childDeltaFiles = Collections.emptyList();
         List<ActionInput> enqueueActions = new ArrayList<>();
@@ -610,10 +572,10 @@ public class DeltaFilesService {
         String loadActionName = ingressFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow()).getLoadAction().getName();
         if (!event.getAction().equals(loadActionName)) {
             deltaFile.errorAction(event, "Attempted to split using a LoadMany result in an Action that is not a LoadAction: " + event.getAction(), "");
-        } else if (Objects.isNull(loadEvents) || loadEvents.isEmpty()) {
+        } else if (loadEvents.isEmpty()) {
             deltaFile.errorAction(event, "Attempted to split a DeltaFile into 0 children using a LoadMany result", "");
         } else {
-            if (Objects.isNull(deltaFile.getChildDids())) {
+            if (deltaFile.getChildDids() == null) {
                 deltaFile.setChildDids(new ArrayList<>());
             }
 
@@ -633,27 +595,25 @@ public class DeltaFilesService {
         enqueueActions(enqueueActions);
     }
 
-    private DeltaFile buildLoadManyChildAndEnqueue(DeltaFile parentDeltaFile, ActionEventInput actionEventInput, LoadEvent loadEvent, List<ActionInput> enqueueActions, OffsetDateTime now) {
-        DeltaFile child = createChildDeltaFile(parentDeltaFile, actionEventInput, loadEvent.getDid());
+    private DeltaFile buildLoadManyChildAndEnqueue(DeltaFile parentDeltaFile, ActionEvent actionEvent, LoadEvent loadEvent, List<ActionInput> enqueueActions, OffsetDateTime now) {
+        DeltaFile child = createChildDeltaFile(parentDeltaFile, loadEvent.getDid());
         child.setModified(now);
 
         parentDeltaFile.getChildDids().add(child.getDid());
 
-        ProtocolLayer protocolLayer = new ProtocolLayer(actionEventInput.getAction());
+        Action action = child.getPendingAction(actionEvent.getAction());
 
         if (loadEvent.getContent() != null) {
-            protocolLayer.setContent(loadEvent.getContent());
+            action.setContent(loadEvent.getContent());
         }
 
         if (loadEvent.getMetadata() != null) {
-            protocolLayer.setMetadata(loadEvent.getMetadata());
+            action.setMetadata(loadEvent.getMetadata());
         }
 
         if (loadEvent.getDeleteMetadataKeys() != null) {
-            protocolLayer.setDeleteMetadataKeys(loadEvent.getDeleteMetadataKeys());
+            action.setDeleteMetadataKeys(loadEvent.getDeleteMetadataKeys());
         }
-
-        child.getProtocolStack().add(protocolLayer);
 
         if (loadEvent.getDomains() != null) {
             for (Domain domain : loadEvent.getDomains()) {
@@ -661,6 +621,7 @@ public class DeltaFilesService {
             }
         }
 
+        child.completeAction(actionEvent);
         child.addAnnotations(loadEvent.getAnnotations());
 
         enqueueActions.addAll(advanceOnly(child, true));
@@ -670,7 +631,7 @@ public class DeltaFilesService {
         return child;
     }
 
-    public void reinject(DeltaFile deltaFile, ActionEventInput event) throws MissingEgressFlowException {
+    public void reinject(DeltaFile deltaFile, ActionEvent event) throws MissingEgressFlowException {
         List<ReinjectEvent> reinjects = event.getReinject();
         List<DeltaFile> childDeltaFiles = Collections.emptyList();
         List<String> encounteredError = new ArrayList<>();
@@ -679,20 +640,14 @@ public class DeltaFilesService {
         String loadActionName = ingressFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow()).getLoadAction().getName();
         if (!event.getAction().equals(loadActionName)) {
             deltaFile.errorAction(event, "Attempted to reinject from an Action that is not a LoadAction: " + event.getAction(), "");
-        } else if (Objects.isNull(reinjects) || reinjects.isEmpty()) {
+        } else if (reinjects.isEmpty()) {
             deltaFile.errorAction(event, "Attempted to reinject DeltaFile into 0 children", "");
         } else {
-            if (Objects.isNull(deltaFile.getChildDids())) {
+            if (deltaFile.getChildDids() == null) {
                 deltaFile.setChildDids(new ArrayList<>());
             }
 
             OffsetDateTime now = OffsetDateTime.now(clock);
-            Action action = Action.newBuilder()
-                    .name(INGRESS_ACTION)
-                    .state(ActionState.COMPLETE)
-                    .created(now)
-                    .modified(now)
-                    .build();
 
             childDeltaFiles = reinjects.stream().map(reinject -> {
                 if (!encounteredError.isEmpty()) {
@@ -713,6 +668,16 @@ public class DeltaFilesService {
                     return null;
                 }
 
+                Action action = Action.newBuilder()
+                        .name(INGRESS_ACTION)
+                        .type(ActionType.INGRESS)
+                        .state(ActionState.COMPLETE)
+                        .created(now)
+                        .modified(now)
+                        .content(reinject.getContent())
+                        .metadata(reinject.getMetadata())
+                        .build();
+
                 DeltaFile child = DeltaFile.newBuilder()
                         .schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
                         .did(UUID.randomUUID().toString())
@@ -728,7 +693,6 @@ public class DeltaFilesService {
                                 .metadata(reinject.getMetadata())
                                 .processingType(processingType)
                                 .build())
-                        .protocolStack(List.of(new ProtocolLayer(INGRESS_ACTION, reinject.getContent(), Collections.emptyMap(), List.of())))
                         .domains(Collections.emptyList())
                         .enrichment(Collections.emptyList())
                         .formattedData(Collections.emptyList())
@@ -763,7 +727,7 @@ public class DeltaFilesService {
         }
     }
 
-    public void formatMany(DeltaFile deltaFile, ActionEventInput event) throws MissingEgressFlowException {
+    public void formatMany(DeltaFile deltaFile, ActionEvent event) throws MissingEgressFlowException {
         List<FormatEvent> formatInputs = event.getFormatMany();
         List<DeltaFile> childDeltaFiles = Collections.emptyList();
 
@@ -773,10 +737,10 @@ public class DeltaFilesService {
 
         if (!formatActions.contains(event.getAction())) {
             deltaFile.errorAction(event, "Attempted to split from an Action that is not a current FormatAction: " + event.getAction(), "");
-        } else if (Objects.isNull(formatInputs) || formatInputs.isEmpty()) {
+        } else if (formatInputs.isEmpty()) {
             deltaFile.errorAction(event, "Attempted to split DeltaFile into 0 children with formatMany", "");
         } else {
-            if (Objects.isNull(deltaFile.getChildDids())) {
+            if (deltaFile.getChildDids() == null) {
                 deltaFile.setChildDids(new ArrayList<>());
             }
 
@@ -825,11 +789,11 @@ public class DeltaFilesService {
         // remove the egress action, since we want the last transform to show SPLIT
         deltaFile.removeLastAction();
 
-        List<Content> contentList = deltaFile.getLastProtocolLayer().getContent();
+        List<Content> contentList = deltaFile.getLastDataAmendedAction().getContent();
 
         List<DeltaFile> childDeltaFiles = contentList.stream().map(content -> {
             DeltaFile child = createChildDeltaFile(deltaFile, UUID.randomUUID().toString());
-            child.getLastProtocolLayer().setContent(Collections.singletonList(content));
+            child.getLastDataAmendedAction().setContent(Collections.singletonList(content));
             deltaFile.getChildDids().add(child.getDid());
 
             enqueueActions.addAll(advanceOnly(child, true));
@@ -850,7 +814,7 @@ public class DeltaFilesService {
         enqueueActions(enqueueActions);
     }
 
-    private static DeltaFile createChildDeltaFile(DeltaFile deltaFile, ActionEventInput event, String childDid) {
+    private static DeltaFile createChildDeltaFile(DeltaFile deltaFile, ActionEvent event, String childDid) {
         DeltaFile child = createChildDeltaFile(deltaFile, childDid);
         child.completeAction(event);
         return child;
@@ -970,9 +934,12 @@ public class DeltaFilesService {
                             OffsetDateTime now = OffsetDateTime.now(clock);
                             Action action = Action.newBuilder()
                                     .name(INGRESS_ACTION)
+                                    .type(ActionType.INGRESS)
                                     .state(ActionState.COMPLETE)
                                     .created(now)
                                     .modified(now)
+                                    .content(deltaFile.getActions().get(0).getContent())
+                                    .metadata(deltaFile.getSourceInfo().getMetadata())
                                     .build();
 
                             DeltaFile child = DeltaFile.newBuilder()
@@ -985,7 +952,6 @@ public class DeltaFilesService {
                                     .stage(DeltaFileStage.INGRESS)
                                     .actions(new ArrayList<>(List.of(action)))
                                     .sourceInfo(deltaFile.getSourceInfo())
-                                    .protocolStack(List.of(new ProtocolLayer(INGRESS_ACTION, deltaFile.getProtocolStack().get(0).getContent(), Map.of(), List.of())))
                                     .domains(Collections.emptyList())
                                     .enrichment(Collections.emptyList())
                                     .formattedData(Collections.emptyList())
@@ -1139,7 +1105,7 @@ public class DeltaFilesService {
         if (deltaFile.getStage() == DeltaFileStage.EGRESS && deltaFile.getFormattedData().isEmpty()) {
             // this is our first time having egress assigned
             // determine if the deltaFile needs to be split
-            if (deltaFile.getLastProtocolLayer().getContent().size() > 1) {
+            if (deltaFile.getLastDataAmendedAction().getContent().size() > 1) {
                 splitForTransformationProcessingEgress(deltaFile);
                 return;
             }
@@ -1187,7 +1153,7 @@ public class DeltaFilesService {
     }
 
     private void handleMissingEgressFlow(DeltaFile deltaFile) {
-        deltaFile.queueNewAction(DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION);
+        deltaFile.queueNewAction(DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION, ActionType.UNKNOWN);
         processErrorEvent(deltaFile, buildNoEgressConfiguredErrorEvent(deltaFile, OffsetDateTime.now(clock)));
         deltaFile.setStage(DeltaFileStage.ERROR);
     }
@@ -1357,7 +1323,7 @@ public class DeltaFilesService {
             String errorMessage = "Action named " + action.getName() + " is no longer running";
             log.error(errorMessage);
             ErrorEvent error = ErrorEvent.newBuilder().cause(errorMessage).build();
-            ActionEventInput event = ActionEventInput.newBuilder().did(deltaFile.getDid()).action(action.getName()).type(ActionEventType.UNKNOWN).error(error).build();
+            ActionEvent event = ActionEvent.newBuilder().did(deltaFile.getDid()).action(action.getName()).type(ActionEventType.UNKNOWN).error(error).build();
             error(deltaFile, event);
 
             return null;
@@ -1380,7 +1346,7 @@ public class DeltaFilesService {
         }
     }
 
-    public void processResult(ActionEventInput event) {
+    public void processResult(ActionEvent event) {
         if (event == null) throw new RuntimeException("ActionEventQueue returned null event.  This should NEVER happen");
         executor.submit(() -> {
             int count = 0;

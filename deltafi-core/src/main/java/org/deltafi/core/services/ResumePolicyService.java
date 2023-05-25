@@ -22,7 +22,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.Action;
-import org.deltafi.common.types.ActionEventInput;
+import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.DeltaFile;
 import org.deltafi.core.generated.types.BackOff;
 import org.deltafi.core.repo.ResumePolicyRepo;
@@ -81,7 +81,7 @@ public class ResumePolicyService implements Snapshotter {
      * @param actionType - The action's type
      * @return An Optional of the delay details for the next execution
      */
-    public Optional<ResumeDetails> getAutoResumeDelay(DeltaFile deltaFile, ActionEventInput event, String actionType) {
+    public Optional<ResumeDetails> getAutoResumeDelay(DeltaFile deltaFile, ActionEvent event, String actionType) {
         Optional<Action> action = deltaFile.actionNamed(event.getAction());
         if (action.isPresent()) {
             Optional<ResumePolicy> policy = find(

@@ -47,6 +47,7 @@ const generateData = () => {
     actions: [
       {
         name: "IngressAction",
+        type: "INGRESS",
         state: "COMPLETE",
         created: "2022-09-24T22:17:58.491Z",
         modified: "2022-09-24T22:17:58.499Z",
@@ -55,9 +56,27 @@ const generateData = () => {
         stop: null,
         errorCause: null,
         errorContext: null,
+        content: [
+          {
+            name: "testfile.zip",
+            mediaType: "application/octet-stream",
+            segments: [
+              {
+                "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
+                "offset": 0,
+                "size": 36,
+                "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
+              }
+            ],
+            size: 36
+          },
+        ],
+        metadata: {},
+        deleteMetadataKeys: [],
       },
       {
         name: "MockTransformAction",
+        type: "TRANSFORM",
         state: "COMPLETE",
         created: "2022-09-24T22:17:58.499Z",
         modified: "2022-09-24T22:17:58.517Z",
@@ -66,9 +85,66 @@ const generateData = () => {
         stop: "2022-09-24T22:17:58.514Z",
         errorCause: null,
         errorContext: null,
+        content: [
+          {
+            name: "TestFile.json",
+            segments: [
+              {
+                "uuid": "19a12f6f-3b63-4c20-8f69-8fcd464d390d",
+                "offset": 0,
+                "size": 36,
+                "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
+              }
+            ],
+            size: 488,
+            mediaType: "application/json",
+          },
+          {
+            name: "TestFile.xml",
+            segments: [
+              {
+                "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
+                "offset": 0,
+                "size": 36,
+                "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
+              }
+            ],
+            size: 718,
+            mediaType: "application/xml",
+          },
+          {
+            name: "TestFile.bin",
+            segments: [
+              {
+                "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
+                "offset": 0,
+                "size": 128,
+                "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
+              }
+            ],
+            size: 128,
+            mediaType: "application/octet-stream",
+          },
+          {
+            name: "TestFile.txt",
+            segments: [
+              {
+                "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
+                "offset": 0,
+                "size": 32,
+                "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
+              }
+            ],
+            size: 32,
+            mediaType: "text/plain",
+          }
+        ],
+        metadata: {},
+        deleteMetadataKeys: [],
       },
       {
         name: "MockLoadAction",
+        type: "LOAD",
         state: "COMPLETE",
         created: "2022-09-24T22:17:58.517Z",
         modified: "2022-09-24T22:17:58.526Z",
@@ -77,9 +153,40 @@ const generateData = () => {
         stop: "2022-09-24T22:17:58.519Z",
         errorCause: null,
         errorContext: null,
+        content: [
+          {
+            name: "testfile1.txt",
+            segments: [
+              {
+                "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
+                "offset": 0,
+                "size": 36,
+                "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
+              }
+            ],
+            size: 23423,
+            mediaType: "application/octet-stream",
+          },
+          {
+            name: "foobar.txt",
+            segments: [
+              {
+                "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
+                "offset": 0,
+                "size": 36,
+                "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
+              }
+            ],
+            size: 24,
+            mediaType: "application/octet-stream",
+          },
+        ],
+        metadata: {},
+        deleteMetadataKeys: [],
       },
       {
         name: "MockEnrichAction",
+        type: "ENRICH",
         state: "COMPLETE",
         created: "2022-09-24T22:17:58.526Z",
         modified: "2022-09-24T22:17:58.532Z",
@@ -88,9 +195,13 @@ const generateData = () => {
         stop: "2022-09-24T22:17:58.530Z",
         errorCause: null,
         errorContext: null,
+        content: [],
+        metadata: {},
+        deleteMetadataKeys: [],
       },
       {
         name: "MockFormatAction",
+        type: "FORMAT",
         state: "COMPLETE",
         created: "2022-09-24T22:17:58.532Z",
         modified: "2022-09-24T22:17:58.535Z",
@@ -99,9 +210,13 @@ const generateData = () => {
         stop: "2022-09-24T22:17:58.534Z",
         errorCause: null,
         errorContext: null,
+        content: [],
+        metadata: {},
+        deleteMetadataKeys: [],
       },
       {
         name: "MockValidateAction",
+        type: "VALIDATE",
         state: "ERROR",
         created: "2022-09-24T22:17:58.535Z",
         modified: "2022-09-24T22:17:58.541Z",
@@ -110,9 +225,13 @@ const generateData = () => {
         stop: "2022-09-24T22:17:58.539Z",
         errorCause: null,
         errorContext: null,
+        content: [],
+        metadata: {},
+        deleteMetadataKeys: [],
       },
       {
         name: "MockEgressAction",
+        type: "EGRESS",
         state: "FILTERED",
         created: "2022-09-24T22:17:58.541Z",
         modified: "2022-09-24T22:17:58.563Z",
@@ -122,6 +241,9 @@ const generateData = () => {
         filteredCause: "Because I'm Batman! 🦇",
         errorCause: null,
         errorContext: null,
+        content: [],
+        metadata: {},
+        deleteMetadataKeys: [],
       },
     ],
     domains: [
@@ -178,117 +300,6 @@ const generateData = () => {
           ],
           "size": 36
         },
-      },
-    ],
-    protocolStack: [
-      {
-        action: "IngressAction",
-        metadata: null,
-        content: [
-          {
-            name: "testfile.zip",
-            mediaType: "application/octet-stream",
-            segments: [
-              {
-                "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
-                "offset": 0,
-                "size": 36,
-                "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
-              }
-            ],
-            size: 36
-          },
-        ],
-      },
-      {
-        action: "MockTransformAction",
-        metadata: [],
-        content: [
-          {
-            name: "TestFile.json",
-            segments: [
-              {
-                "uuid": "19a12f6f-3b63-4c20-8f69-8fcd464d390d",
-                "offset": 0,
-                "size": 36,
-                "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
-              }
-            ],
-            size: 488,
-            mediaType: "application/json",
-          },
-          {
-            name: "TestFile.xml",
-            segments: [
-              {
-                "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
-                "offset": 0,
-                "size": 36,
-                "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
-              }
-            ],
-            size: 718,
-            mediaType: "application/xml",
-          },
-          {
-            name: "TestFile.bin",
-            segments: [
-              {
-                "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
-                "offset": 0,
-                "size": 128,
-                "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
-              }
-            ],
-            size: 128,
-            mediaType: "application/octet-stream",
-          },
-          {
-            name: "TestFile.txt",
-            segments: [
-              {
-                "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
-                "offset": 0,
-                "size": 32,
-                "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
-              }
-            ],
-            size: 32,
-            mediaType: "text/plain",
-          }
-        ],
-      },
-      {
-        action: "MockLoadAction",
-        metadata: [],
-        content: [
-          {
-            name: "testfile1.txt",
-            segments: [
-              {
-                "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
-                "offset": 0,
-                "size": 36,
-                "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
-              }
-            ],
-            size: 23423,
-            mediaType: "application/octet-stream",
-          },
-          {
-            name: "foobar.txt",
-            segments: [
-              {
-                "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
-                "offset": 0,
-                "size": 36,
-                "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
-              }
-            ],
-            size: 24,
-            mediaType: "application/octet-stream",
-          },
-        ],
       },
     ],
     contentDeleted: null,

@@ -29,7 +29,7 @@ import org.deltafi.actionkit.action.load.LoadResultType;
 import org.deltafi.actionkit.action.transform.TransformResultType;
 import org.deltafi.actionkit.action.validate.ValidateResultType;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.ActionEventInput;
+import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionEventType;
 import org.deltafi.common.types.ErrorEvent;
 import org.jetbrains.annotations.NotNull;
@@ -94,8 +94,8 @@ public class ErrorResult extends Result<ErrorResult> implements DomainResultType
     }
 
     @Override
-    public final ActionEventInput toEvent() {
-        ActionEventInput event = super.toEvent();
+    public final ActionEvent toEvent() {
+        ActionEvent event = super.toEvent();
         event.setError(ErrorEvent.newBuilder()
                 .cause(errorCause)
                 .context(errorContext)

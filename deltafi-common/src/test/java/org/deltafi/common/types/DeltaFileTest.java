@@ -91,9 +91,9 @@ class DeltaFileTest {
         Content content5 = new Content("content1", "*/*", List.of(new Segment("uuid3", 5, 200, "did2")));
 
         DeltaFile deltaFile = DeltaFile.newBuilder()
-                .protocolStack(List.of(
-                        new ProtocolLayer("action", List.of(content1, content2), Collections.emptyMap()),
-                        new ProtocolLayer("action2", List.of(content3), Collections.emptyMap())
+                .actions(List.of(
+                        Action.newBuilder().content(List.of(content1, content2)).build(),
+                        Action.newBuilder().content(List.of(content3)).build()
                 ))
                 .formattedData(List.of(
                         FormattedData.newBuilder().content(content4).build(),

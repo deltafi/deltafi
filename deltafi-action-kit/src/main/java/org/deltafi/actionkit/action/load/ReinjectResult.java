@@ -66,8 +66,8 @@ public class ReinjectResult extends Result<ReinjectResult> implements LoadResult
     }
 
     @Override
-    public final ActionEventInput toEvent() {
-        ActionEventInput event = super.toEvent();
+    public final ActionEvent toEvent() {
+        ActionEvent event = super.toEvent();
         event.setReinject(reinjectEvents);
         return event;
     }

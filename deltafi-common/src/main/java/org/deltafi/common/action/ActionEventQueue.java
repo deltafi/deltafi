@@ -21,7 +21,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.deltafi.common.queue.jedis.JedisKeyedBlockingQueue;
-import org.deltafi.common.types.ActionEventInput;
+import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionInput;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 
@@ -85,12 +85,12 @@ public class ActionEventQueue {
      * @param result ActionEventInput object for the result to be posted to the action queue
      * @throws JsonProcessingException if the outgoing event cannot be deserialized
      */
-    public void putResult(ActionEventInput result, String returnAddress) throws JsonProcessingException, JedisConnectionException {
+    public void putResult(ActionEvent result, String returnAddress) throws JsonProcessingException, JedisConnectionException {
         jedisKeyedBlockingQueue.put(queueName(returnAddress), result);
     }
 
-    public ActionEventInput takeResult(String returnAddress) throws JsonProcessingException {
-        return jedisKeyedBlockingQueue.take(queueName(returnAddress), ActionEventInput.class);
+    public ActionEvent takeResult(String returnAddress) throws JsonProcessingException {
+        return jedisKeyedBlockingQueue.take(queueName(returnAddress), ActionEvent.class);
     }
 
     public void setHeartbeat(String key) {

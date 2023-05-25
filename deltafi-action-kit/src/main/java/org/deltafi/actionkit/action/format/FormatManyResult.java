@@ -22,7 +22,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.ActionEventInput;
+import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionEventType;
 import org.jetbrains.annotations.NotNull;
 
@@ -64,8 +64,8 @@ public class FormatManyResult extends Result<FormatManyResult> implements Format
     }
 
     @Override
-    public final ActionEventInput toEvent() {
-        ActionEventInput event = super.toEvent();
+    public final ActionEvent toEvent() {
+        ActionEvent event = super.toEvent();
         event.setFormatMany(formatResults.stream().map(f -> f.toEvent().getFormat()).toList());
         return event;
     }

@@ -48,6 +48,7 @@ export default function useDeltaFiles() {
         modified: true,
         actions: {
           name: true,
+          type: true,
           state: true,
           created: true,
           modified: true,
@@ -57,6 +58,19 @@ export default function useDeltaFiles() {
           filteredCause: true,
           errorCause: true,
           errorContext: true,
+          metadata: true,
+          content: {
+            name: true,
+            segments: {
+              did: true,
+              uuid: true,
+              offset: true,
+              size: true,
+            },
+            size: true,
+            mediaType: true,
+          },
+          deleteMetadataKeys: true,
         },
         domains: {
           name: true,
@@ -75,21 +89,6 @@ export default function useDeltaFiles() {
           metadata: true,
           formatAction: true,
           egressActions: true,
-          content: {
-            name: true,
-            segments: {
-              did: true,
-              uuid: true,
-              offset: true,
-              size: true,
-            },
-            size: true,
-            mediaType: true,
-          },
-        },
-        protocolStack: {
-          action: true,
-          metadata: true,
           content: {
             name: true,
             segments: {

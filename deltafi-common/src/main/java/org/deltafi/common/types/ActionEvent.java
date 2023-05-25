@@ -29,17 +29,17 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(builderMethodName = "newBuilder")
-public class ActionEventInput {
+public class ActionEvent {
   private String did;
   private String action;
   private OffsetDateTime start;
   private OffsetDateTime stop;
   private OffsetDateTime time;
   private ActionEventType type;
-  private DomainEvent domain;
   private TransformEvent transform;
   private LoadEvent load;
   private List<LoadEvent> loadMany;
+  private DomainEvent domain;
   private EnrichEvent enrich;
   private FormatEvent format;
   private List<FormatEvent> formatMany;

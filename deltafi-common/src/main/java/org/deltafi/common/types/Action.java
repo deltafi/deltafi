@@ -23,6 +23,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Data
 @NoArgsConstructor
@@ -30,6 +34,8 @@ import java.time.OffsetDateTime;
 @Builder(builderMethodName = "newBuilder")
 public class Action {
   private String name;
+  @Builder.Default
+  private ActionType type = ActionType.UNKNOWN;
   private ActionState state;
   private OffsetDateTime created;
   private OffsetDateTime queued;
@@ -41,4 +47,23 @@ public class Action {
   private String filteredCause;
   @Builder.Default
   private int attempt = 1;
+  @Builder.Default
+  private List<Content> content = new ArrayList<>();
+  @Builder.Default
+  private Map<String, String> metadata = new HashMap<>();
+  @Builder.Default
+  private List<String> deleteMetadataKeys = new ArrayList<>();
+
+  private static List<ActionType> DATA_AMENDED_TYPES = List.of(
+          ActionType.INGRESS,
+          ActionType.TRANSFORM,
+          ActionType.LOAD);
+
+  boolean terminal() {
+    return !state.equals(ActionState.QUEUED);
+  }
+
+  boolean amendedData() {
+    return terminal() && DATA_AMENDED_TYPES.contains(type);
+  }
 }

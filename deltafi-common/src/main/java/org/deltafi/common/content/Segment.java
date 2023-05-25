@@ -47,7 +47,7 @@ public class Segment {
         return did.substring(0, 3) + "/" + did + "/" + uuid;
     }
 
-    public static long calculateTotalSize(List<Segment> segments) {
+    public static long calculateTotalSize(Set<Segment> segments) {
         Map<String, List<Segment>> segmentsByUuid = new HashMap<>();
 
         // Group segments by objectName

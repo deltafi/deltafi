@@ -22,7 +22,7 @@ import lombok.Getter;
 import org.deltafi.actionkit.action.HasAnnotations;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.ActionEventInput;
+import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionEventType;
 import org.deltafi.common.types.DomainEvent;
 import org.jetbrains.annotations.NotNull;
@@ -51,8 +51,8 @@ public class DomainResult extends Result<DomainResult> implements HasAnnotations
     }
 
     @Override
-    public final ActionEventInput toEvent() {
-        ActionEventInput event = super.toEvent();
+    public final ActionEvent toEvent() {
+        ActionEvent event = super.toEvent();
         event.setDomain(DomainEvent.newBuilder().annotations(annotations).build());
         return event;
     }

@@ -111,21 +111,6 @@ type Segment {
   did: String!
 }
 
-"""
-Ingress and transform actions create content and express additional metadata through ProtocolLayers
-Followon actions get the latest "state" of the transformed object from the top of the ProtocolLayer stack
-"""
-type ProtocolLayer {
-  "The action that produced this ProtocolLayer"
-  action: String!
-  "Content produced by the action"
-  content: [Content!]!
-  "Additional metadata"
-  metadata: Metadata
-  "Metadata deleted by an action"
-  deleteMetadataKeys: [String!]!
-}
-
 type FormattedData {
   content: Content
   formatAction: String!
@@ -160,8 +145,21 @@ enum ActionState {
   CANCELLED
 }
 
+enum ActionType {
+  INGRESS
+  TRANSFORM
+  LOAD
+  DOMAIN
+  ENRICH
+  FORMAT
+  VALIDATE
+  EGRESS
+  UNKNOWN
+}
+
 type Action {
   name: String!
+  type: ActionType!
   state: ActionState!
   created: DateTime!
   queued: DateTime
@@ -172,6 +170,9 @@ type Action {
   errorContext: String
   filteredCause: String
   attempt: Int!
+  content: [Content!]!
+  metadata: Metadata
+  deleteMetadataKeys: [String!]!
 }
 
 type DeltaFile {
@@ -185,7 +186,6 @@ type DeltaFile {
   stage: DeltaFileStage!
   actions: [Action!]!
   sourceInfo: SourceInfo!
-  protocolStack: [ProtocolLayer!]!
   domains: [Domain!]!
   metadata: Metadata!
   annotations: Metadata

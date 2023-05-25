@@ -113,7 +113,7 @@ class ResumePolicyServiceTest {
 
         Optional<ResumePolicyService.ResumeDetails> resumeDetails = resumePolicyService.getAutoResumeDelay(
                 getDeltaFile(MAX_ATTEMPTS - 1),
-                ActionEventInput.newBuilder()
+                ActionEvent.newBuilder()
                         .action("1" + ACTION)
                         .error(ErrorEvent.newBuilder()
                                 .cause(ERROR).build())
@@ -125,7 +125,7 @@ class ResumePolicyServiceTest {
 
         Optional<ResumePolicyService.ResumeDetails> rollToNextPolicy = resumePolicyService.getAutoResumeDelay(
                 getDeltaFile(MAX_ATTEMPTS + 1),
-                ActionEventInput.newBuilder()
+                ActionEvent.newBuilder()
                         .action("1" + ACTION)
                         .error(ErrorEvent.newBuilder()
                                 .cause(ERROR).build())
@@ -137,7 +137,7 @@ class ResumePolicyServiceTest {
 
         Optional<ResumePolicyService.ResumeDetails> tooManyAttempts = resumePolicyService.getAutoResumeDelay(
                 getDeltaFile(MAX_ATTEMPTS * 2),
-                ActionEventInput.newBuilder()
+                ActionEvent.newBuilder()
                         .action("1" + ACTION)
                         .error(ErrorEvent.newBuilder()
                                 .cause(ERROR).build())
@@ -147,7 +147,7 @@ class ResumePolicyServiceTest {
 
         Optional<ResumePolicyService.ResumeDetails> wrongError = resumePolicyService.getAutoResumeDelay(
                 getDeltaFile(1),
-                ActionEventInput.newBuilder()
+                ActionEvent.newBuilder()
                         .action("1" + ACTION)
                         .error(ErrorEvent.newBuilder()
                                 .cause("not-a-match").build())
@@ -228,6 +228,7 @@ class ResumePolicyServiceTest {
         return policy;
     }
 
+    @SuppressWarnings("SameParameterValue")
     private ResumePolicy buildPolicy(String name, String error, String flow, String action, String actionType, int maxAttempts) {
         ResumePolicy policy = new ResumePolicy();
         policy.setId(DEFAULT_ID);
@@ -261,7 +262,6 @@ class ResumePolicyServiceTest {
                 .sourceInfo(SourceInfo.builder()
                         .flow("1" + FLOW)
                         .filename("filename").build())
-                .protocolStack(Collections.emptyList())
                 .domains(Collections.emptyList())
                 .enrichment(Collections.emptyList())
                 .formattedData(Collections.emptyList())

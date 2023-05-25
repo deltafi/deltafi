@@ -37,13 +37,13 @@
         </Column>
         <Column v-if="!contentDeleted && hasPermission('DeltaFileContentView')" header="Content" class="content-column">
           <template #body="{ data: action }">
-            <span v-if="protocolLayersByAction.hasOwnProperty(action.name)">
-              <ContentDialog :content="protocolLayersByAction[action.name].content" :action="action.name">
+            <span v-if="formattedDataByAction.hasOwnProperty(action.name)">
+              <ContentDialog :content="[formattedDataByAction[action.name].content]" :action="action.name">
                 <Button icon="far fa-window-maximize" label="View" class="content-button p-button-link" />
               </ContentDialog>
             </span>
-            <span v-else-if="formattedDataByAction.hasOwnProperty(action.name)">
-              <ContentDialog :content="[formattedDataByAction[action.name].content]">
+            <span v-else-if="action.hasOwnProperty('content') && action.content.length > 0">
+              <ContentDialog :content="action.content" :action="action.name">
                 <Button icon="far fa-window-maximize" label="View" class="content-button p-button-link" />
               </ContentDialog>
             </span>
@@ -111,16 +111,9 @@ const actions = computed(() => {
   });
 });
 
-const protocolLayersByAction = computed(() => {
-  return deltaFile.protocolStack.reduce((content, layer) => {
-    if (layer.content.length > 0) content[layer.action] = layer;
-    return content;
-  }, {});
-});
-
 const formattedDataByAction = computed(() => {
   return deltaFile.formattedData.reduce((content, layer) => {
-    let actions = [layer.action, layer.formatAction, layer.egressActions].flat().filter((n) => n);
+    let actions = [layer.formatAction, layer.egressActions].flat().filter((n) => n);
     for (const action of actions) {
       content[action] = layer;
     }
@@ -130,9 +123,9 @@ const formattedDataByAction = computed(() => {
 
 const metadataReferences = computed(() => {
   if (Object.keys(deltaFile).length === 0) return {};
-  let layers = deltaFile.protocolStack.concat(deltaFile.formattedData);
+  let layers = deltaFile.actions.concat(deltaFile.formattedData);
   return layers.reduce((content, layer) => {
-    let actions = [layer.action, layer.formatAction].flat().filter((n) => n);
+    let actions = [layer.name, layer.formatAction].flat().filter((n) => n);
     for (const action of actions) {
       let metadata = action === "IngressAction" ? deltaFile.sourceInfo.metadata : layer.metadata || `${deltaFile.did}-${layer.action}`;
       if (Object.keys(metadata).length > 0) {

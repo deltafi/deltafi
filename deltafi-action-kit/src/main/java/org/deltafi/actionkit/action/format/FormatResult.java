@@ -107,8 +107,8 @@ public class FormatResult extends MetadataAmendedResult implements FormatResultT
     }
 
     @Override
-    public final ActionEventInput toEvent() {
-        ActionEventInput event = super.toEvent();
+    public final ActionEvent toEvent() {
+        ActionEvent event = super.toEvent();
         event.setFormat(FormatEvent.newBuilder()
                 .content(content.getContent())
                 .metadata(metadata)

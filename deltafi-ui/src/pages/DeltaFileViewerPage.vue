@@ -93,6 +93,7 @@
 
 <script setup>
 import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
+import AnnotateDialog from "@/components/AnnotateDialog.vue";
 import DeltaFileActionsPanel from "@/components/DeltaFileActionsPanel.vue";
 import DeltaFileDomainsPanel from "@/components/DeltaFileDomainsPanel.vue";
 import DeltaFileEnrichmentPanel from "@/components/DeltaFileEnrichmentPanel.vue";
@@ -121,7 +122,6 @@ import Menu from "primevue/menu";
 import Message from "primevue/message";
 import ScrollTop from "primevue/scrolltop";
 import { useConfirm } from "primevue/useconfirm";
-import AnnotateDialog from "@/components/AnnotateDialog.vue";
 
 const confirm = useConfirm();
 const annotateDialog = ref();
@@ -232,15 +232,15 @@ const testMode = computed(() => {
   return loaded.value && deltaFile.testMode;
 });
 const deltaFileLinks = computed(() => {
-  if (Object.keys(deltaFile).length == 0) return [];
+  if (Object.keys(deltaFile).length === 0) return [];
 
   return uiConfig.deltaFileLinks.map((link) => {
     const output = { ...link };
-    const variables = output.url.match(/\$\{[a-zA-Z0-9._-]+\}/g);
+    const variables = output.url.match(/\$\{[a-zA-Z0-9._-]+}/g);
     const undefinedFields = [];
 
     for (const v of variables) {
-      const deltaFilePath = v.match(/\$\{(.*)\}/)[1];
+      const deltaFilePath = v.match(/\$\{(.*)}/)[1];
       let value;
       try {
         value = deltaFilePath.split(".").reduce((o, i) => o[i], deltaFile);
@@ -283,9 +283,9 @@ const menuItems = computed(() => {
 
 const allMetadata = computed(() => {
   if (!loaded.value) return {};
-  let layers = deltaFile.protocolStack.concat(deltaFile.formattedData);
+  let layers = deltaFile.actions.concat(deltaFile.formattedData);
   return layers.reduce((content, layer) => {
-    let actions = [layer.action, layer.formatAction].flat().filter((n) => n);
+    let actions = [layer.name, layer.formatAction].flat().filter((n) => n);
     for (const action of actions) {
       let metadata = action === "IngressAction" ? deltaFile.sourceInfo.metadata : layer.metadata || `${deltaFile.did}-${layer.action}`;
       if (Object.keys(metadata).length > 0) {
@@ -305,7 +305,7 @@ const isError = computed(() => {
 });
 
 const beenReplayed = computed(() => {
-  return deltaFile.replayed === null ? false : true;
+  return deltaFile.replayed !== null;
 });
 
 const hasMetadata = computed(() => {

@@ -729,7 +729,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile loaded = postLoadDeltaFile(did);
 
 		// mock loading the incorrect metadata so the enrichAction is not fired
-		loaded.getLastProtocolLayer().setMetadata(LOAD_WRONG_METADATA);
+		loaded.getLastDataAmendedAction().setMetadata(LOAD_WRONG_METADATA);
 		deltaFileRepo.save(loaded);
 
 		deltaFilesService.handleActionEvent(actionEvent("domain", did));
@@ -765,15 +765,15 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(DeltaFileStage.INGRESS, child1.getStage());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child1.getParentDids());
 		assertEquals("file1", child1.getSourceInfo().getFilename());
-		assertEquals(0, child1.getLastProtocolLayerContent().get(0).getSegments().get(0).getOffset());
-		assertEquals(2, child1.getLastProtocolLayerContent().size());
+		assertEquals(0, child1.getLastDataAmendedContent().get(0).getSegments().get(0).getOffset());
+		assertEquals(2, child1.getLastDataAmendedContent().size());
 
 		DeltaFile child2 = children.get(1);
 		assertEquals(DeltaFileStage.INGRESS, child2.getStage());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child2.getParentDids());
 		assertEquals("file2", child2.getSourceInfo().getFilename());
-		assertEquals(250, child2.getLastProtocolLayerContent().get(0).getSegments().get(0).getOffset());
-		assertEquals(1, child2.getLastProtocolLayerContent().size());
+		assertEquals(250, child2.getLastDataAmendedContent().get(0).getSegments().get(0).getOffset());
+		assertEquals(1, child2.getLastDataAmendedContent().size());
 
 		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture());
 		List<ActionInput> actionInputs = actionInputListCaptor.getValue();
@@ -810,13 +810,13 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child1.getParentDids());
 		assertEquals("input.txt", child1.getSourceInfo().getFilename());
 
-		ProtocolLayer child1ProtocolLayer = child1.getLastProtocolLayer();
-		org.assertj.core.api.Assertions.assertThat(child1ProtocolLayer.getAction()).isEqualTo("sampleIngress.SampleLoadAction");
-		org.assertj.core.api.Assertions.assertThat(child1ProtocolLayer.getMetadata()).containsEntry("loadSampleType", "load-sample-type").containsEntry("loadSampleVersion", "2.2");
+		Action child1Action = child1.getLastDataAmendedAction();
+		org.assertj.core.api.Assertions.assertThat(child1Action.getName()).isEqualTo("sampleIngress.SampleLoadAction");
+		org.assertj.core.api.Assertions.assertThat(child1Action.getMetadata()).containsEntry("loadSampleType", "load-sample-type").containsEntry("loadSampleVersion", "2.2");
 
 		Content childContent = new Content("child1-content", "application/octet-stream", List.of(new Segment("objectName", 0, 250, did)));
 
-		org.assertj.core.api.Assertions.assertThat(child1ProtocolLayer.getContent()).hasSize(1).contains(childContent);
+		org.assertj.core.api.Assertions.assertThat(child1Action.getContent()).hasSize(1).contains(childContent);
 
 		Domain child1Domain = new Domain("sampleDomain", "firstDomainValue", "application/octet-stream");
 		org.assertj.core.api.Assertions.assertThat(child1.getDomains()).hasSize(1).contains(child1Domain);
@@ -828,13 +828,13 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(Collections.singletonList(did), child2.getParentDids());
 		assertEquals("input.txt", child2.getSourceInfo().getFilename());
 
-		ProtocolLayer child2ProtocolLayer = child2.getLastProtocolLayer();
-		org.assertj.core.api.Assertions.assertThat(child2ProtocolLayer.getAction()).isEqualTo("sampleIngress.SampleLoadAction");
-		org.assertj.core.api.Assertions.assertThat(child2ProtocolLayer.getMetadata()).containsEntry("loadSampleType", "load-sample-type").containsEntry("loadSampleVersion", "2.2");
+		Action child2Action = child2.getLastDataAmendedAction();
+		org.assertj.core.api.Assertions.assertThat(child2Action.getName()).isEqualTo("sampleIngress.SampleLoadAction");
+		org.assertj.core.api.Assertions.assertThat(child2Action.getMetadata()).containsEntry("loadSampleType", "load-sample-type").containsEntry("loadSampleVersion", "2.2");
 
 		Content child2Content = new Content("child2-content", "application/octet-stream", new Segment("objectName", 250, 250, did));
 
-		org.assertj.core.api.Assertions.assertThat(child2ProtocolLayer.getContent()).hasSize(1).contains(child2Content);
+		org.assertj.core.api.Assertions.assertThat(child2Action.getContent()).hasSize(1).contains(child2Content);
 
 		Domain child2Domain = new Domain("sampleDomain", "secondDomainValue", "application/octet-stream");
 		org.assertj.core.api.Assertions.assertThat(child2.getDomains()).hasSize(1).contains(child2Domain);
@@ -1271,8 +1271,8 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void testSourceMetadataUnion() throws IOException {
-		DeltaFile deltaFile1 = buildDeltaFile("did1", Map.of("key", "val1"));
-		DeltaFile deltaFile2 = buildDeltaFile("did2", Map.of("key", "val2"));
+		DeltaFile deltaFile1 = buildDeltaFile("did1", List.of(), Map.of("key", "val1"));
+		DeltaFile deltaFile2 = buildDeltaFile("did2", List.of(), Map.of("key", "val2"));
 		List<DeltaFile> deltaFiles = List.of(deltaFile1, deltaFile2);
 		deltaFileRepo.saveAll(deltaFiles);
 
@@ -2590,7 +2590,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile1.setEnrichment(List.of(new Enrichment("enrichment1", null, null)));
 		deltaFile1.setContentDeleted(MONGO_NOW);
 		deltaFile1.setSourceInfo(new SourceInfo("filename1", "flow1", Map.of("key1", "value1", "key2", "value2")));
-		deltaFile1.setActions(List.of(Action.newBuilder().name("action1").build()));
+		deltaFile1.setActions(List.of(Action.newBuilder().name("action1").state(ActionState.COMPLETE).build()));
 		deltaFile1.setFormattedData(List.of(FormattedData.newBuilder().content(new Content("formattedFilename1", "mediaType")).formatAction("formatAction1").metadata(Map.of("formattedKey1", "formattedValue1", "formattedKey2", "formattedValue2")).egressActions(List.of("EgressAction1", "EgressAction2")).build()));
 		deltaFile1.setErrorAcknowledged(MONGO_NOW);
 		deltaFile1.incrementRequeueCount();
@@ -2605,7 +2605,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile2.addAnnotations(Map.of("a.2", "first", "common", "value"));
 		deltaFile2.setEnrichment(List.of(new Enrichment("enrichment1", null, null), new Enrichment("enrichment2", null, null)));
 		deltaFile2.setSourceInfo(new SourceInfo("filename2", "flow2", Map.of()));
-		deltaFile2.setActions(List.of(Action.newBuilder().name("action1").state(ActionState.ERROR).errorCause("Cause").build(), Action.newBuilder().name("action2").build()));
+		deltaFile2.setActions(List.of(Action.newBuilder().name("action1").state(ActionState.ERROR).errorCause("Cause").build(), Action.newBuilder().name("action2").state(ActionState.COMPLETE).build()));
 		deltaFile2.setFormattedData(List.of(FormattedData.newBuilder().content(new Content("formattedFilename2", "mediaType")).formatAction("formatAction2").egressActions(List.of("EgressAction1")).build()));
 		deltaFile2.setEgressed(true);
 		deltaFile2.setFiltered(true);
@@ -2620,7 +2620,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile3.addAnnotations(Map.of("b.2", "first", "common", "value"));
 		deltaFile3.setEnrichment(List.of(new Enrichment("enrichment3", null, null), new Enrichment("enrichment4", null, null)));
 		deltaFile3.setSourceInfo(new SourceInfo("filename3", "flow3", Map.of(), ProcessingType.TRANSFORMATION));
-		deltaFile3.setActions(List.of(Action.newBuilder().name("action2").state(ActionState.FILTERED).filteredCause("Coffee").build(), Action.newBuilder().name("action2").build()));
+		deltaFile3.setActions(List.of(Action.newBuilder().name("action2").state(ActionState.FILTERED).filteredCause("Coffee").build(), Action.newBuilder().name("action2").state(ActionState.COMPLETE).build()));
 		deltaFile3.setFormattedData(List.of(FormattedData.newBuilder().content(new Content("formattedFilename3", "mediaType")).formatAction("formatAction3").egressActions(List.of("EgressAction2")).build()));
 		deltaFile3.setEgressed(true);
 		deltaFile3.setFiltered(true);
@@ -3859,7 +3859,6 @@ class DeltaFiCoreApplicationTests {
 			deltaFileRepo.save(DeltaFile.newBuilder()
 					.did("abc" + i)
 					.created(OffsetDateTime.now().minusDays(1))
-					.protocolStack(Collections.emptyList())
 					.formattedData(Collections.emptyList())
 					.totalBytes(10)
 					.build());
@@ -3883,18 +3882,18 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(0L, none.getTotalBytes());
 		assertEquals(0L, none.getReferencedBytes());
 
-		DeltaFile deltaFile1 = Util.emptyDeltaFile("1", "flow");
+		DeltaFile deltaFile1 = Util.emptyDeltaFile("1", "flow", List.of());
 		deltaFile1.setTotalBytes(1L);
 		deltaFile1.setReferencedBytes(2L);
 		deltaFile1.setStage(DeltaFileStage.INGRESS);
 
-		DeltaFile deltaFile2 = Util.emptyDeltaFile("2", "flow");
+		DeltaFile deltaFile2 = Util.emptyDeltaFile("2", "flow", List.of());
 		deltaFile2.setTotalBytes(2L);
 		deltaFile2.setReferencedBytes(4L);
 		deltaFile2.setContentDeleted(OffsetDateTime.now());
 		deltaFile2.setStage(DeltaFileStage.EGRESS);
 
-		DeltaFile deltaFile3 = Util.emptyDeltaFile("3", "flow");
+		DeltaFile deltaFile3 = Util.emptyDeltaFile("3", "flow", List.of());
 		deltaFile3.setTotalBytes(4L);
 		deltaFile3.setReferencedBytes(8L);
 		deltaFile3.setStage(DeltaFileStage.COMPLETE);
@@ -4000,14 +3999,14 @@ class DeltaFiCoreApplicationTests {
 		assertFalse(child1.getTestMode());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child1.getParentDids());
 		assertEquals("input.txt", child1.getSourceInfo().getFilename());
-		assertEquals(0, child1.getLastProtocolLayer().getContent().get(0).getSegments().get(0).getOffset());
+		assertEquals(0, child1.getLastDataAmendedAction().getContent().get(0).getSegments().get(0).getOffset());
 
 		DeltaFile child2 = children.get(1);
 		assertEquals(DeltaFileStage.EGRESS, child2.getStage());
 		assertFalse(child2.getTestMode());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child2.getParentDids());
 		assertEquals("input.txt", child2.getSourceInfo().getFilename());
-		assertEquals(250, child2.getLastProtocolLayer().getContent().get(0).getSegments().get(0).getOffset());
+		assertEquals(250, child2.getLastDataAmendedAction().getContent().get(0).getSegments().get(0).getOffset());
 
 		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture());
 		assertEquals(2, actionInputListCaptor.getValue().size());
@@ -4030,6 +4029,11 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	public void testConvertDeltaFileV2() {
+		assertConverted(deltaFileRepo, mongoTemplate, 2);
+	}
+
+	@Test
 	public void testDeletesV0() {
 		assertDeleted(deltaFileRepo, mongoTemplate, 0);
 	}
@@ -4037,5 +4041,10 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	public void testDeletesV1() {
 		assertDeleted(deltaFileRepo, mongoTemplate, 1);
+	}
+
+	@Test
+	public void testDeletesV2() {
+		assertDeleted(deltaFileRepo, mongoTemplate, 2);
 	}
 }

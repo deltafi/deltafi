@@ -20,7 +20,7 @@ package org.deltafi.actionkit.action.load;
 import lombok.EqualsAndHashCode;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.ActionEventInput;
+import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionEventType;
 import org.jetbrains.annotations.NotNull;
 
@@ -77,8 +77,8 @@ public class LoadManyResult extends Result<LoadManyResult> implements LoadResult
     }
 
     @Override
-    public final ActionEventInput toEvent() {
-        ActionEventInput event = super.toEvent();
+    public final ActionEvent toEvent() {
+        ActionEvent event = super.toEvent();
         event.setLoadMany(loadResults.stream().map(ChildLoadResult::toEvent).toList());
         return event;
     }

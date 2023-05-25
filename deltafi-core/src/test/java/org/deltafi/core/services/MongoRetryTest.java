@@ -87,7 +87,7 @@ class MongoRetryTest {
 
         Mockito.doThrow(new OptimisticLockingFailureException("failed")).doNothing().when(deltaFileCacheService).save(Mockito.any());
 
-        Assertions.assertDoesNotThrow(() -> deltaFilesService.processResult(ActionEventInput.newBuilder().type(ActionEventType.EGRESS).did(did).action(fromAction).time(OffsetDateTime.now()).build()));
+        Assertions.assertDoesNotThrow(() -> deltaFilesService.processResult(ActionEvent.newBuilder().type(ActionEventType.EGRESS).did(did).action(fromAction).time(OffsetDateTime.now()).build()));
     }
 
 }

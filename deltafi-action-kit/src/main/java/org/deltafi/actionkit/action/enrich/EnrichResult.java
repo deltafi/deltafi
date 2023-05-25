@@ -64,8 +64,8 @@ public class EnrichResult extends Result<EnrichResult> implements HasAnnotations
     }
 
     @Override
-    public final ActionEventInput toEvent() {
-        ActionEventInput event = super.toEvent();
+    public final ActionEvent toEvent() {
+        ActionEvent event = super.toEvent();
         event.setEnrich(EnrichEvent.newBuilder().enrichments(enrichments).annotations(annotations).build());
         return event;
     }

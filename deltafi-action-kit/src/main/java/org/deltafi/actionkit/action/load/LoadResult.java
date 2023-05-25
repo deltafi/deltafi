@@ -68,8 +68,8 @@ public class LoadResult extends DataAmendedResult implements HasAnnotations, Loa
     }
 
     @Override
-    public final ActionEventInput toEvent() {
-        ActionEventInput event = super.toEvent();
+    public final ActionEvent toEvent() {
+        ActionEvent event = super.toEvent();
         event.setLoad(LoadEvent.newBuilder()
                 .domains(domains)
                 .content(contentList())

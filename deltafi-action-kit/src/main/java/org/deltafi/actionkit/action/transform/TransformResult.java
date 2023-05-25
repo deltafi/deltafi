@@ -23,7 +23,7 @@ import lombok.Setter;
 import org.deltafi.actionkit.action.DataAmendedResult;
 import org.deltafi.actionkit.action.HasAnnotations;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.ActionEventInput;
+import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionEventType;
 import org.deltafi.common.types.TransformEvent;
 import org.jetbrains.annotations.NotNull;
@@ -56,8 +56,8 @@ public class TransformResult extends DataAmendedResult implements HasAnnotations
     }
 
     @Override
-    public final ActionEventInput toEvent() {
-        ActionEventInput event = super.toEvent();
+    public final ActionEvent toEvent() {
+        ActionEvent event = super.toEvent();
         event.setTransform(TransformEvent.newBuilder()
                 .content(contentList())
                 .metadata(metadata)

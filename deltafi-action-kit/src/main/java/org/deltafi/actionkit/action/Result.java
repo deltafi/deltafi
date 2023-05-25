@@ -21,7 +21,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.deltafi.common.types.Metric;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.ActionEventInput;
+import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionEventType;
 import org.jetbrains.annotations.NotNull;
 
@@ -53,8 +53,8 @@ public abstract class Result<T extends Result<T>> implements ResultType {
     /**
      * @return action event summary object based on the action context
      */
-    public ActionEventInput toEvent() {
-        return ActionEventInput.newBuilder()
+    public ActionEvent toEvent() {
+        return ActionEvent.newBuilder()
                 .did(context.getDid())
                 .action(context.getName())
                 .type(actionEventType())

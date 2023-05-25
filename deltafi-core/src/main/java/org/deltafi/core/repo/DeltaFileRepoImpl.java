@@ -121,9 +121,11 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     // these will automatically be up-converted when included as query fields, if present
     private static final String OLD_PROTOCOL_STACK_SEGMENTS = "protocolStack.content.contentReference.segments";
+    private static final String OLD_PROTOCOL_STACK_SEGMENTS_2 = "protocolStack.content.segments";
+    private static final String OLD_PROTOCOL_STACK_ACTION_NAME = "protocolStack.action";
     private static final String OLD_FORMATTED_DATA_SEGMENTS = "formattedData.contentReference.segments";
 
-    private static final String PROTOCOL_STACK_SEGMENTS = "protocolStack.content.segments";
+    private static final String ACTION_SEGMENTS = "actions.content.segments";
     private static final String FORMATTED_DATA_SEGMENTS = "formattedData.content.segments";
 
     private static final String CUMULATIVE_BYTES = "cumulativeBytes";
@@ -266,7 +268,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         Query query = new Query(buildReadyForDeleteCriteria(createdBeforeDate, completedBeforeDate, minBytes, flowName, deleteMetadata, false));
         query.limit(batchSize);
         addDeltaFilesOrderBy(query, DeltaFileOrder.newBuilder().field(CREATED).direction(DeltaFileDirection.ASC).build());
-        query.fields().include(ID, TOTAL_BYTES, OLD_PROTOCOL_STACK_SEGMENTS, OLD_FORMATTED_DATA_SEGMENTS, PROTOCOL_STACK_SEGMENTS, FORMATTED_DATA_SEGMENTS);
+        query.fields().include(ID, TOTAL_BYTES, OLD_PROTOCOL_STACK_SEGMENTS, OLD_PROTOCOL_STACK_SEGMENTS_2, ACTION_SEGMENTS, OLD_FORMATTED_DATA_SEGMENTS, FORMATTED_DATA_SEGMENTS, OLD_PROTOCOL_STACK_ACTION_NAME, ACTIONS_NAME);
 
         return mongoTemplate.find(query, DeltaFile.class);
     }
@@ -280,7 +282,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         Query query = new Query(buildReadyForDeleteCriteria(null, null, 1, flow, false, true));
         query.limit(batchSize);
         addDeltaFilesOrderBy(query, DeltaFileOrder.newBuilder().field(CREATED).direction(DeltaFileDirection.ASC).build());
-        query.fields().include(ID, TOTAL_BYTES, OLD_PROTOCOL_STACK_SEGMENTS, OLD_FORMATTED_DATA_SEGMENTS, PROTOCOL_STACK_SEGMENTS, FORMATTED_DATA_SEGMENTS);
+        query.fields().include(ID, TOTAL_BYTES, OLD_PROTOCOL_STACK_SEGMENTS, OLD_PROTOCOL_STACK_SEGMENTS_2, ACTION_SEGMENTS, OLD_FORMATTED_DATA_SEGMENTS, FORMATTED_DATA_SEGMENTS, OLD_PROTOCOL_STACK_ACTION_NAME, ACTIONS_NAME);
 
         List<DeltaFile> deltaFiles = mongoTemplate.find(query, DeltaFile.class);
         AtomicLong sum = new AtomicLong();
