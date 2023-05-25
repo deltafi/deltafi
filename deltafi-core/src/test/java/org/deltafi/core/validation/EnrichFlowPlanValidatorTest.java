@@ -70,8 +70,7 @@ class EnrichFlowPlanValidatorTest {
 
         Assertions.assertThatThrownBy(() -> enrichFlowPlanValidator.validate(enrichFlowPlan))
                 .isInstanceOf(DeltafiConfigurationException.class)
-                .hasMessage("" +
-                        "Config named: enrichFlow had the following error: " +
+                .hasMessage("Config named: enrichFlow had the following error: " +
                         "Action of type: org.deltafi.domain.Action is already configured in the enrich flow plan named: other with overlapping domain: domain; " +
                         "Config named: enrichFlow had the following error: " +
                         "Action of type: org.deltafi.enrich.Action is already configured in the enrich flow plan named: other with overlapping domain: domain; " +

@@ -42,12 +42,9 @@ public class IngressFlowPlanValidator extends FlowPlanValidator<IngressFlowPlan>
     public List<FlowConfigError> flowPlanSpecificValidation(IngressFlowPlan flowPlan) {
         List<FlowConfigError> errors = new ArrayList<>();
 
-        TransformFlowPlan existingTransformFlow = transformFlowPlanRepo.findById(flowPlan.getName()).orElse(null);
-        if (existingTransformFlow != null) {
-            errors.add(FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG)
-                    .configName(flowPlan.getName())
-                    .message("Cannot add ingress flow plan, a transform flow plan with the name: " + flowPlan.getName() + " already exists in plugin: " + existingTransformFlow.getSourcePlugin()).build());
-        }
+        transformFlowPlanRepo.findById(flowPlan.getName()).ifPresent(existingTransformFlow -> errors.add(FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG)
+                .configName(flowPlan.getName())
+                .message("Cannot add ingress flow plan, a transform flow plan with the name: " + flowPlan.getName() + " already exists in plugin: " + existingTransformFlow.getSourcePlugin()).build()));
 
         return errors;
     }

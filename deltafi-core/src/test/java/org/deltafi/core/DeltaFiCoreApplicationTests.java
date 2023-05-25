@@ -28,7 +28,6 @@ import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.resource.Resource;
 import org.deltafi.common.types.*;
-import org.deltafi.common.types.ProcessingType;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.datafetchers.FlowPlanDatafetcherTestHelper;
 import org.deltafi.core.datafetchers.PropertiesDatafetcherTestHelper;

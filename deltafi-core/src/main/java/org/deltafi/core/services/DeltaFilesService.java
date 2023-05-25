@@ -405,7 +405,7 @@ public class DeltaFilesService {
         advanceAndSave(deltaFile);
     }
 
-    public void filter(DeltaFile deltaFile, ActionEvent event) throws JsonProcessingException {
+    public void filter(DeltaFile deltaFile, ActionEvent event) {
         ActionConfiguration actionConfiguration = actionConfiguration(event.getAction(), deltaFile);
         ActionType actionType = ActionType.UNKNOWN;
         if (actionConfiguration != null) {

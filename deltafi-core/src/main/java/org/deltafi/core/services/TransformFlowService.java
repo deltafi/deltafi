@@ -23,7 +23,6 @@ import org.deltafi.core.converters.TransformFlowPlanConverter;
 import org.deltafi.core.repo.TransformFlowRepo;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.types.Flow;
-import org.deltafi.core.types.IngressFlow;
 import org.deltafi.core.types.TransformFlow;
 import org.deltafi.core.validation.TransformFlowValidator;
 import org.springframework.stereotype.Service;

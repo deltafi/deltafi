@@ -20,11 +20,8 @@ package org.deltafi.core.services;
 
 import lombok.SneakyThrows;
 import org.deltafi.core.MockDeltaFiPropertiesService;
-import org.deltafi.core.configuration.DeltaFiProperties;
-import org.deltafi.core.exceptions.DeltafiApiException;
 import org.deltafi.core.services.api.DeltafiApiClient;
 import org.deltafi.core.services.api.model.DiskMetrics;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

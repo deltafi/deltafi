@@ -127,7 +127,7 @@ class DeltaFiPropertiesServiceTest {
         Link targetOnly = link("target", "target.com", "target only");
 
         Set<String> setTargetProps = Stream.of(PropertyType.SYSTEM_NAME, PropertyType.UI_SECURITY_BANNER_ENABLED, PropertyType.UI_SECURITY_BANNER_BACKGROUND_COLOR, PropertyType.UI_SECURITY_BANNER_TEXT, PropertyType.UI_SECURITY_BANNER_TEXT_COLOR)
-                .map(Enum::name).collect(Collectors.toSet());;
+                .map(Enum::name).collect(Collectors.toSet());
         DeltaFiProperties targetProperties = new DeltaFiProperties();
         targetProperties.setRequeueSeconds(1);
         targetProperties.getDelete().setAgeOffDays(1);
@@ -142,7 +142,7 @@ class DeltaFiPropertiesServiceTest {
         Link sourceCommon = link("both", "source.both.com", "source both");
         Link sourceOnly = link("source", "source.com", "source only");
         DeltaFiProperties snapshotSource = new DeltaFiProperties();
-        Set<String> setSourceProps = Stream.of(PropertyType.UI_USE_UTC, PropertyType.UI_TOP_BAR_TEXT_COLOR, PropertyType.UI_TOP_BAR_BACKGROUND_COLOR).map(Enum::name).collect(Collectors.toSet());;
+        Set<String> setSourceProps = Stream.of(PropertyType.UI_USE_UTC, PropertyType.UI_TOP_BAR_TEXT_COLOR, PropertyType.UI_TOP_BAR_BACKGROUND_COLOR).map(Enum::name).collect(Collectors.toSet());
         snapshotSource.setRequeueSeconds(2);
         snapshotSource.getDelete().setAgeOffDays(2);
         snapshotSource.getUi().setUseUTC(false);

@@ -18,7 +18,6 @@
 package org.deltafi.core.services;
 
 import org.deltafi.core.services.api.DeltafiApiClient;
-import org.deltafi.core.services.api.DeltafiApiRestClient;
 import org.deltafi.core.services.api.model.Event;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,13 +26,8 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import javax.ws.rs.core.MediaType;
-import java.io.InputStream;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 
 @ExtendWith(MockitoExtension.class)
 class EventServiceTest {
