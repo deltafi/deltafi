@@ -137,7 +137,8 @@ kubernetes-dashboard:
 
 grafana:
   image:
-    tag: 9.4.7
+    repository: deltafi/grafana
+    tag: 9.5.2-2
   persistence:
     enabled: true
     existingClaim: deltafi-grafana
