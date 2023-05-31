@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -82,7 +82,7 @@ public class DeltaFilesDatafetcherTestHelper {
                 .processingType()
                 .parent()
                 .parent()
-                .enrichment()
+                .enrichments()
                 .name()
                 .value()
                 .mediaType()
@@ -146,7 +146,7 @@ public class DeltaFilesDatafetcherTestHelper {
               .processingType()
               .parent()
               .parent()
-            .enrichment()
+            .enrichments()
                 .name()
                 .value()
                 .mediaType()

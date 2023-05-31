@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -26,13 +26,13 @@ import org.deltafi.common.types.*;
 
 import java.util.Map;
 
+@Data
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
-@Data
 public class EnrichInput extends ContentListInput {
     Map<String, String> metadata;
     Map<String, Domain> domains;
-    Map<String, Enrichment> enrichment;
+    Map<String, Enrichment> enrichments;
 
     /**
      * Returns the Domain object for the given domain name.
@@ -49,7 +49,7 @@ public class EnrichInput extends ContentListInput {
      * @return the Enrichment object for the given enrichment name.
      */
     public Enrichment enrichment(String enrichmentName) {
-        return enrichment.get(enrichmentName);
+        return enrichments.get(enrichmentName);
     }
 
     /**
@@ -59,11 +59,11 @@ public class EnrichInput extends ContentListInput {
      * @throws MissingMetadataException if the key is not found in the metadata map.
      */
     public String metadata(String key) {
-        if (metadata.containsKey(key)) {
-            return metadata.get(key);
-        } else {
+        if (!metadata.containsKey(key)) {
             throw new MissingMetadataException(key);
         }
+
+        return metadata.get(key);
     }
 
     /**

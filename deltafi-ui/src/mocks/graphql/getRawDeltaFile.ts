@@ -183,7 +183,7 @@ const generateData = () => {
             "annotations": {
                 "stixTypes": "vulnerability"
             },
-            "enrichment": [],
+            "enrichments": [],
             "created": "2022-09-29T17:52:03.046Z",
             "modified": "2022-09-29T17:52:03.630Z",
             "contentDeleted": null,

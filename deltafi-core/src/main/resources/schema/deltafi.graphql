@@ -175,7 +175,7 @@ type DeltaFile {
   domains: [Domain!]!
   metadata: Metadata!
   annotations: Metadata
-  enrichment: [Enrichment!]!
+  enrichments: [Enrichment!]!
   egress: [Egress!]!
   created: DateTime!
   modified: DateTime!
@@ -260,7 +260,7 @@ input DeltaFilesFilter {
   createdBefore: DateTime
   domains: [String!]
   annotations: [KeyValueInput!]
-  enrichment: [String!]
+  enrichments: [String!]
   egressFlows: [String!]
   contentDeleted: Boolean
   modifiedAfter: DateTime

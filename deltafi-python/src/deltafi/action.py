@@ -88,7 +88,7 @@ class EnrichAction(Action):
         enrich_input = EnrichInput(content=event.delta_file_messages[0].content_list,
                                    metadata=event.delta_file_messages[0].metadata,
                                    domains={domain.name: domain for domain in event.delta_file_messages[0].domains},
-                                   enrichment={domain.name: domain for domain in event.delta_file_messages[0].enrichment})
+                                   enrichments={domain.name: domain for domain in event.delta_file_messages[0].enrichments})
         result = self.enrich(event.context, self.param_class().parse_obj(event.params), enrich_input)
         self.validate_type(result, (EnrichResult, ErrorResult))
         return result
@@ -106,7 +106,7 @@ class FormatAction(Action):
         format_input = FormatInput(content=event.delta_file_messages[0].content_list,
                                    metadata=event.delta_file_messages[0].metadata,
                                    domains={domain.name: domain for domain in event.delta_file_messages[0].domains},
-                                   enrichment={domain.name: domain for domain in event.delta_file_messages[0].enrichment})
+                                   enrichments={domain.name: domain for domain in event.delta_file_messages[0].enrichments})
         result = self.format(event.context, self.param_class().parse_obj(event.params), format_input)
         self.validate_type(result, (FormatResult, FormatManyResult, ErrorResult, FilterResult))
         return result

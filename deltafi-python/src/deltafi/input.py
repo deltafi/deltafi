@@ -67,7 +67,7 @@ class EnrichInput(NamedTuple):
     content: List[Content]
     metadata: dict
     domains: Dict[str, Domain]
-    enrichment: Dict[str, Domain]
+    enrichments: Dict[str, Domain]
 
     def has_content(self) -> bool:
         return len(self.content) > 0
@@ -101,19 +101,19 @@ class EnrichInput(NamedTuple):
         return self.domains[name]
 
     def has_enrichment(self, name: str) -> bool:
-        return name in self.enrichment
+        return name in self.enrichments
 
     def enrichment(self, name: str) -> Domain:
         if not self.has_enrichment(name):
             raise MissingEnrichmentException(name)
-        return self.enrichment[name]
+        return self.enrichments[name]
 
 
 class FormatInput(NamedTuple):
     content: List[Content]
     metadata: dict
     domains: Dict[str, Domain]
-    enrichment: Dict[str, Domain]
+    enrichments: Dict[str, Domain]
 
     def has_content(self) -> bool:
         return len(self.content) > 0
@@ -147,12 +147,12 @@ class FormatInput(NamedTuple):
         return self.domains[name]
 
     def has_enrichment(self, name: str) -> bool:
-        return name in self.enrichment
+        return name in self.enrichments
 
     def enrichment(self, name: str) -> Domain:
         if not self.has_enrichment(name):
             raise MissingEnrichmentException(name)
-        return self.enrichment[name]
+        return self.enrichments[name]
 
 
 class LoadInput(NamedTuple):

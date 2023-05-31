@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -263,7 +263,7 @@ class ResumePolicyServiceTest {
                         .flow("1" + FLOW)
                         .filename("filename").build())
                 .domains(Collections.emptyList())
-                .enrichment(Collections.emptyList())
+                .enrichments(Collections.emptyList())
                 .created(now)
                 .modified(now)
                 .egressed(false)

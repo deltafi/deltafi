@@ -144,7 +144,7 @@ public class Util {
                 .modified(modified)
                 .actions(Stream.of(ingressAction).collect(Collectors.toCollection(ArrayList::new)))
                 .domains(new ArrayList<>())
-                .enrichment(new ArrayList<>())
+                .enrichments(new ArrayList<>())
                 .egress(new ArrayList<>())
                 .egressed(false)
                 .filtered(false)
@@ -162,7 +162,7 @@ public class Util {
         Assertions.assertThat(actual.getDomains()).isEqualTo(expected.getDomains());
         Assertions.assertThat(actual.getAnnotations()).isEqualTo(expected.getAnnotations());
         Assertions.assertThat(actual.getAnnotationKeys()).isEqualTo(expected.getAnnotationKeys());
-        Assertions.assertThat(actual.getEnrichment()).isEqualTo(expected.getEnrichment());
+        Assertions.assertThat(actual.getEnrichments()).isEqualTo(expected.getEnrichments());
         Assertions.assertThat(actual.getEgressed()).isEqualTo(expected.getEgressed());
         Assertions.assertThat(actual.getFiltered()).isEqualTo(expected.getFiltered());
         Assertions.assertThat(actual.getEgress()).isEqualTo(expected.getEgress());

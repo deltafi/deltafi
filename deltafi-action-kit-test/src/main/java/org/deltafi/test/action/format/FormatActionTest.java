@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -48,7 +48,7 @@ public class FormatActionTest extends ActionTest {
         // Add domains and enrichments to deltaFile
         FormatActionTestCase formatActionTestCase = (FormatActionTestCase) testCase;
 
-        deltaFileMessage.setEnrichment(
+        deltaFileMessage.setEnrichments(
             formatActionTestCase.getEnrichments().stream().map(this::readEnrichment).toList()
         );
 

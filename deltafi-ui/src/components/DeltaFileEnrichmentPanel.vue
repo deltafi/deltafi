@@ -17,8 +17,8 @@
 -->
 
 <template>
-  <div class="enrichment-panel">
-    <CollapsiblePanel header="Enrichment" class="links-panel pl-0">
+  <div class="enrichments-panel">
+    <CollapsiblePanel header="Enrichments" class="links-panel pl-0">
       <div v-if="!enrichmentContentReferences.length" class="d-flex w-100 justify-content-between no-data-panel-content">
         <span class="p-2">No Enrichment Data Available</span>
       </div>
@@ -59,7 +59,7 @@ const { formattedBytes } = useUtilFunctions();
 const deltaFile = reactive(props.deltaFileData);
 
 const enrichmentContentReferences = computed(() => {
-  return deltaFile.enrichment.map((enrichment) => {
+  return deltaFile.enrichments.map((enrichment) => {
     const content = enrichment.value || "";
     return {
       name: enrichment.name,
@@ -74,5 +74,5 @@ const enrichmentContentReferences = computed(() => {
 </script>
 
 <style lang="scss">
-@import "@/styles/components/deltafile-enrichment-panel.scss";
+@import "@/styles/components/deltafile-enrichments-panel.scss";
 </style>

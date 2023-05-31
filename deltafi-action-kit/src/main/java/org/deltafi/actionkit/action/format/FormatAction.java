@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -69,7 +69,7 @@ public abstract class FormatAction<P extends ActionParameters> extends Action<P>
                 .contentList(ContentConverter.convert(deltaFileMessage.getContentList(), context.getContentStorageService()))
                 .metadata(deltaFileMessage.getMetadata())
                 .domains(deltaFileMessage.domainMap())
-                .enrichment(deltaFileMessage.enrichmentMap())
+                .enrichments(deltaFileMessage.enrichmentMap())
                 .build();
     }
 

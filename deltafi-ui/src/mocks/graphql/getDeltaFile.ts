@@ -257,7 +257,7 @@ const generateData = () => {
       a: "b",
       c: "d",
     },
-    enrichment: [
+    enrichments: [
       {
         name: "mockEnrichment",
         value: '{"stage":"ERROR","actions":[{"name":"IngressAction","state":"ERROR","errorCause":"Failed Ingress","errorContext":"Details..."}],"sourceInfo":{"flow":"smoke"}}',

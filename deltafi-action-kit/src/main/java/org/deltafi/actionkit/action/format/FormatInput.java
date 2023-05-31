@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -33,7 +33,7 @@ import java.util.Map;
 public class FormatInput extends ContentListInput {
     Map<String, String> metadata;
     Map<String, Domain> domains;
-    Map<String, Enrichment> enrichment;
+    Map<String, Enrichment> enrichments;
 
     /**
      * Returns the Domain object for the given domain name.
@@ -45,7 +45,7 @@ public class FormatInput extends ContentListInput {
     }
 
     public Enrichment enrichment(String enrichmentName) {
-        return enrichment.get(enrichmentName);
+        return enrichments.get(enrichmentName);
     }
 
     /**

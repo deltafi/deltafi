@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -36,7 +36,7 @@ public class DeltaFileMessage {
     Map<String, String> metadata;
     List<Content> contentList;
     List<Domain> domains;
-    List<Enrichment> enrichment;
+    List<Enrichment> enrichments;
 
     public Map<String, Domain> domainMap() {
         if (domains == null) {
@@ -47,11 +47,11 @@ public class DeltaFileMessage {
     }
 
     public Map<String, Enrichment> enrichmentMap() {
-        if (enrichment == null) {
+        if (enrichments == null) {
             return Collections.emptyMap();
         }
 
-        return getEnrichment().stream().collect(Collectors.toMap(Enrichment::getName, Function.identity()));
+        return getEnrichments().stream().collect(Collectors.toMap(Enrichment::getName, Function.identity()));
     }
 
     public SourceInfo buildSourceInfo(ActionContext context) {

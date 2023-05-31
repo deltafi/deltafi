@@ -79,7 +79,7 @@ export default function useDeltaFiles() {
         },
         annotations: true,
         egressed: true,
-        enrichment: {
+        enrichments: {
           name: true,
           value: true,
           mediaType: true,

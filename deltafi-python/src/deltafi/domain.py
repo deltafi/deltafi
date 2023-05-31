@@ -281,19 +281,19 @@ class DeltaFileMessage(NamedTuple):
     metadata: Dict[str, str]
     content_list: List[Content]
     domains: List[Domain]
-    enrichment: List[Domain]
+    enrichments: List[Domain]
 
     @classmethod
     def from_dict(cls, delta_file_message: dict, content_service: ContentService):
         metadata = delta_file_message['metadata']
         content_list = [Content.from_dict(content, content_service) for content in delta_file_message['contentList']]
         domains = [Domain.from_dict(domain) for domain in delta_file_message['domains']] if 'domains' in delta_file_message else []
-        enrichment = [Domain.from_dict(domain) for domain in delta_file_message['enrichment']] if 'enrichment' in delta_file_message else []
+        enrichments = [Domain.from_dict(domain) for domain in delta_file_message['enrichments']] if 'enrichments' in delta_file_message else []
 
         return DeltaFileMessage(metadata=metadata,
                                 content_list=content_list,
                                 domains=domains,
-                                enrichment=enrichment)
+                                enrichments=enrichments)
 
 
 class Event(NamedTuple):

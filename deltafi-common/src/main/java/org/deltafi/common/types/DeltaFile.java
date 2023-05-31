@@ -60,7 +60,7 @@ public class DeltaFile {
   private Map<String, String> annotations = new HashMap<>();
   // Do not set @Builder.Default, see special handling in the builder
   private Set<String> annotationKeys = new HashSet<>();
-  private List<Enrichment> enrichment;
+  private List<Enrichment> enrichments;
   @Builder.Default
   private List<Egress> egress = new ArrayList<>();
   private OffsetDateTime created;
@@ -86,7 +86,7 @@ public class DeltaFile {
   @JsonIgnore
   private long version;
 
-  public final static int CURRENT_SCHEMA_VERSION = 4;
+  public final static int CURRENT_SCHEMA_VERSION = 5;
   private int schemaVersion;
 
   public Map<String, String> getMetadata() {
@@ -326,7 +326,7 @@ public class DeltaFile {
 
   @SuppressWarnings("unused")
   public Enrichment getEnrichment(String enrichment) {
-    return getEnrichment().stream().filter(e -> e.getName().equals(enrichment)).findFirst().orElse(null);
+    return getEnrichments().stream().filter(e -> e.getName().equals(enrichment)).findFirst().orElse(null);
   }
 
   public void addEnrichment(@NotNull String enrichmentKey, String enrichmentValue) {
@@ -334,16 +334,16 @@ public class DeltaFile {
   }
 
   public void addEnrichment(@NotNull String enrichmentKey, String enrichmentValue, @NotNull String mediaType) {
-    Optional<Enrichment> enrichment = getEnrichment().stream().filter(d -> d.getName().equals(enrichmentKey)).findFirst();
+    Optional<Enrichment> enrichment = getEnrichments().stream().filter(d -> d.getName().equals(enrichmentKey)).findFirst();
     if (enrichment.isPresent()) {
       enrichment.get().setValue(enrichmentValue);
     } else {
-      getEnrichment().add(new Enrichment(enrichmentKey, enrichmentValue, mediaType));
+      getEnrichments().add(new Enrichment(enrichmentKey, enrichmentValue, mediaType));
     }
   }
 
   public boolean hasEnrichments(List<String> enrichments) {
-    return enrichments.stream().allMatch(enrichment -> getEnrichment().stream().anyMatch(e -> e.getName().equals(enrichment)));
+    return enrichments.stream().allMatch(enrichment -> getEnrichments().stream().anyMatch(e -> e.getName().equals(enrichment)));
   }
 
   public boolean hasErroredAction() {
@@ -471,8 +471,8 @@ public class DeltaFile {
     return domains == null ? Collections.emptyList() : domains;
   }
 
-  public @NotNull List<Enrichment> getEnrichment() {
-    return enrichment == null ? Collections.emptyList() : enrichment;
+  public @NotNull List<Enrichment> getEnrichments() {
+    return enrichments == null ? Collections.emptyList() : enrichments;
   }
 
   public @NotNull List<Egress> getEgress() {
@@ -494,7 +494,7 @@ public class DeltaFile {
       builder.contentList(getLastDataAmendedContent())
               .metadata(getMetadata())
               .domains(getDomains())
-              .enrichment(getEnrichment());
+              .enrichments(getEnrichments());
     } else {
       builder.contentList(formatAction.getContent())
               .metadata(formatAction.getMetadata());

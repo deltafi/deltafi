@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -82,6 +82,11 @@ public class DeltaFileConverter implements AfterConvertCallback<DeltaFile> {
             updateToV4(deltaFile, document);
         }
 
+        // Version 5 - rename enrichment to enrichments
+        if (deltaFile.getSchemaVersion() < 5) {
+            updateToV5(deltaFile, document);
+        }
+
         return deltaFile;
     }
 
@@ -120,7 +125,7 @@ public class DeltaFileConverter implements AfterConvertCallback<DeltaFile> {
 
     private void updateToV2(DeltaFile deltaFile, Document document) {
         if (document.containsKey("indexedMetadata")) {
-            deltaFile.setAnnotations(uncheckedGetMap(document,"indexedMetadata"));
+            deltaFile.setAnnotations(uncheckedGetMap(document, "indexedMetadata"));
             deltaFile.setAnnotationKeys(new HashSet<>(uncheckedGetList(document, "indexedMetadataKeys")));
         }
     }
@@ -257,6 +262,10 @@ public class DeltaFileConverter implements AfterConvertCallback<DeltaFile> {
                 }
             }
         }
+    }
+
+    private void updateToV5(DeltaFile deltaFile, Document document) {
+        deltaFile.setEnrichments(uncheckedGetList(document, "enrichment"));
     }
 
     private List<Content> convertDocumentListToContentList(List<Document> documentList) {

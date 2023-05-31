@@ -2644,7 +2644,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile1.setTotalBytes(1000L);
 		deltaFile1.setDomains(List.of(new Domain("domain1", null, null)));
 		deltaFile1.addAnnotations(Map.of("a.1", "first", "common", "value"));
-		deltaFile1.setEnrichment(List.of(new Enrichment("enrichment1", null, null)));
+		deltaFile1.setEnrichments(List.of(new Enrichment("enrichment1", null, null)));
 		deltaFile1.setContentDeleted(MONGO_NOW);
 		deltaFile1.setSourceInfo(new SourceInfo("filename1", "flow1", Map.of("key1", "value1", "key2", "value2")));
 		deltaFile1.setActions(List.of(Action.newBuilder().name("action1").state(ActionState.COMPLETE).content(List.of(new Content("formattedFilename1", "mediaType"))).metadata(Map.of("formattedKey1", "formattedValue1", "formattedKey2", "formattedValue2")).build()));
@@ -2659,7 +2659,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile2.setTotalBytes(2000L);
 		deltaFile2.setDomains(List.of(new Domain("domain1", null, null), new Domain("domain2", null, null)));
 		deltaFile2.addAnnotations(Map.of("a.2", "first", "common", "value"));
-		deltaFile2.setEnrichment(List.of(new Enrichment("enrichment1", null, null), new Enrichment("enrichment2", null, null)));
+		deltaFile2.setEnrichments(List.of(new Enrichment("enrichment1", null, null), new Enrichment("enrichment2", null, null)));
 		deltaFile2.setSourceInfo(new SourceInfo("filename2", "flow2", Map.of()));
 		deltaFile2.setActions(List.of(Action.newBuilder().name("action1").state(ActionState.ERROR).errorCause("Cause").build(), Action.newBuilder().name("action2").state(ActionState.COMPLETE).content(List.of(new Content("formattedFilename2", "mediaType"))).build()));
 		deltaFile2.setEgressed(true);
@@ -2673,7 +2673,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile3.setTotalBytes(3000L);
 		deltaFile3.setDomains(List.of(new Domain("domain3", null, null)));
 		deltaFile3.addAnnotations(Map.of("b.2", "first", "common", "value"));
-		deltaFile3.setEnrichment(List.of(new Enrichment("enrichment3", null, null), new Enrichment("enrichment4", null, null)));
+		deltaFile3.setEnrichments(List.of(new Enrichment("enrichment3", null, null), new Enrichment("enrichment4", null, null)));
 		deltaFile3.setSourceInfo(new SourceInfo("filename3", "flow3", Map.of(), ProcessingType.TRANSFORMATION));
 		deltaFile3.setActions(List.of(Action.newBuilder().name("action2").state(ActionState.FILTERED).filteredCause("Coffee").build(), Action.newBuilder().name("action2").state(ActionState.COMPLETE).content(List.of(new Content("formattedFilename3", "mediaType"))).build()));
 		deltaFile3.setEgressed(true);
@@ -2688,9 +2688,9 @@ class DeltaFiCoreApplicationTests {
 		testFilter(DeltaFilesFilter.newBuilder().domains(Collections.emptyList()).build(), deltaFile3, deltaFile2, deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().domains(List.of("domain1")).build(), deltaFile2, deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().domains(List.of("domain1", "domain2")).build(), deltaFile2);
-		testFilter(DeltaFilesFilter.newBuilder().enrichment(Collections.emptyList()).build(), deltaFile3, deltaFile2, deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().enrichment(List.of("enrichment1")).build(), deltaFile2, deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().enrichment(List.of("enrichment1", "enrichment2")).build(), deltaFile2);
+		testFilter(DeltaFilesFilter.newBuilder().enrichments(Collections.emptyList()).build(), deltaFile3, deltaFile2, deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().enrichments(List.of("enrichment1")).build(), deltaFile2, deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().enrichments(List.of("enrichment1", "enrichment2")).build(), deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().contentDeleted(true).build(), deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().contentDeleted(false).build(), deltaFile3, deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().modifiedAfter(MONGO_NOW).build(), deltaFile1);

@@ -132,7 +132,7 @@ public abstract class ActionTest {
                 .metadata(metadata == null ? new HashMap<>() : metadata)
                 .contentList(content.stream().map(ContentConverter::convert).toList())
                 .domains(new ArrayList<>())
-                .enrichment(new ArrayList<>())
+                .enrichments(new ArrayList<>())
                 .build();
     }
 

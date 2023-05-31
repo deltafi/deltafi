@@ -26,7 +26,7 @@ public class EnrichInput {
     // named domains and their values
     Map<String, Domain> domains;
     // named enrichment and their values
-    Map<String, Enrichment> enrichment;
+    Map<String, Enrichment> enrichments;
 }
 ```
 
