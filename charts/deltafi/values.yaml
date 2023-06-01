@@ -221,6 +221,12 @@ promtail:
                 action:
             - static_labels:
                 type: 'ACTION'
+        # Remove noisy probe logs
+        - match:
+            selector: '{app="deltafi-ui"}'
+            stages:
+              - drop:
+                  expression: "probe"
         # Label audit logs
         - match:
               selector: '{ app=~".*" } |= "\"loggerName\":\"AUDIT\""'
@@ -232,6 +238,69 @@ promtail:
                   user:
               - static_labels:
                   type: "AUDIT"
+        # Categorize UI HTTP status codes
+        - match:
+              selector: '{ app="deltafi-ui" } |= " 200 "'
+              stages:
+              - static_labels:
+                  level: "DEBUG"
+        - match:
+              selector: '{ app="deltafi-ui" } |= " 304 "'
+              stages:
+              - static_labels:
+                  level: "DEBUG"
+        - match:
+              selector: '{ app="deltafi-ui" } |= " 404 "'
+              stages:
+              - static_labels:
+                  level: "ERROR"
+        - match:
+              selector: '{ app="deltafi-ui" } |= " 500 "'
+              stages:
+              - static_labels:
+                  level: "ERROR"
+        - match:
+              selector: '{ app="deltafi-ui" } |= " 503 "'
+              stages:
+              - static_labels:
+                  level: "ERROR"
+        # Categorize API HTTP status codes
+        - match:
+              selector: '{ app="deltafi-api" } |= " 200 "'
+              stages:
+              - static_labels:
+                  level: "DEBUG"
+        - match:
+              selector: '{ app="deltafi-api" } |= " 404 "'
+              stages:
+              - static_labels:
+                  level: "ERROR"
+        - match:
+              selector: '{ app="deltafi-api" } |= " 500 "'
+              stages:
+              - static_labels:
+                  level: "ERROR"
+        - match:
+              selector: '{ app="deltafi-api" } |= " 503 "'
+              stages:
+              - static_labels:
+                  level: "ERROR"
+        # Squelch/categorize mongodb noise
+        - match:
+              selector: '{ app="mongodb" }'
+              stages:
+                - drop:
+                    expression: "Connection accepted|Connection ended|client metadata"
+        - match:
+              selector: '{ app="mongodb" } |= "WiredTiger message"'
+              stages:
+              - static_labels:
+                  level: "DEBUG"
+        - match:
+              selector: '{ app="mongodb" } |= "Slow query"'
+              stages:
+              - static_labels:
+                  level: "DEBUG"
         # Squelch nasty graphite debug logs
         - match:
             selector: '{app="graphite"}'
@@ -239,7 +308,26 @@ promtail:
               # Filtering out graphite debug logs containing "(Tagging|Tagged)"
               - drop:
                   expression: "Tagg"
-
+        # Clear out excessive debug messages
+        - match:
+            selector: '{app="deltafi-monitor"}'
+            stages:
+              - drop:
+                  expression: "DEBUG"
+        # Clear out excessive post messages
+        - match:
+            selector: '{app="deltafi-egress-sink"}'
+            stages:
+              - drop:
+                  expression: "POST / HTTP"
+        # Clear out excessive probe messages
+        - match:
+            selector: '{app="kubernetes-dashboard"}'
+            stages:
+              - drop:
+                  expression: "kube-probe"
+              - drop:
+                  expression: "/healthz"
 loki:
   image:
     tag: 2.8.0
@@ -253,6 +341,30 @@ loki:
   config:
     compactor:
       retention_enabled: true
+      retention_delete_delay: 10m
+      compaction_interval: 10m
+      retention_delete_worker_count: 150
+    limits_config:
+      retention_period: 744h
+      retention_stream:
+      - selector: '{level="DEBUG"}'
+        priority: 1
+        period: 24h
+      - selector: '{container="deltafi-ingress",type="AUDIT"}'
+        priority: 3
+        period: 24h
+      - selector: '{container="deltafi-monitor"}'
+        priority: 4
+        period: 96h
+      - selector: '{container="mongodb"}'
+        priority: 5
+        period: 168h
+      - selector: '{app="kubernetes-dashboard"}'
+        priority: 6
+        period: 96h
+      - selector: '{app="grafana"}'
+        priority: 7
+        period: 168h
     query_scheduler:
       max_outstanding_requests_per_tenant: 500
   livenessProbe:
