@@ -383,3 +383,19 @@ graphite:
     node-role.deltafi.org/storage: "true"
   statsd:
     interface: TCP
+
+docker-registry:
+  image:
+    tag: 2.8.1
+  persistence:
+    enabled: true
+    existingClaim: deltafi-docker-registry
+  serviceAccount:
+    create: true
+  garbageCollect:
+    enabled: true
+    schedule: "0 * * * *"
+
+registry-ui:
+  enabled: false
+  registryHost: deltafi-docker-registry
