@@ -130,6 +130,7 @@ _is_arm() {
   fi
 }
 
+KUBECTL="kubectl"
 BASE_PATH="$( cd "$( dirname "$(_readlink -f "${BASH_SOURCE[0]}")")" &> /dev/null && pwd )"
 export BASE_PATH
 DELTAFI_PATH="$( cd "$BASE_PATH/.." &> /dev/null && pwd)"
@@ -373,7 +374,7 @@ _install_plugins() {
 
 _restart_plugins() {
   _attention "Restarting all plugins"
-  _conditional "Plugin restart" _annotated_subshell -h "Restarting deltafi-plugin group" kubectl delete pods --grace-period=0 -l group=deltafi-plugins
+  _conditional "Plugin restart" _annotated_subshell -h "Restarting deltafi-plugin group" ${KUBECTL} delete pods --grace-period=0 -l group=deltafi-plugins
 }
 
 describe prerequisites "Install or warn about prerequisites for the KinD cluster"
@@ -481,12 +482,16 @@ containerdConfigPatches:
     endpoint = ["http://quay-proxy:5000"]
   [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:5000"]
     endpoint = ["http://kind-registry:5000"]
+  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."local.plugin.registry"]
+    endpoint = ["http://local.plugin.registry"]
+  [plugins."io.containerd.grpc.v1.cri".registry.configs."local.plugin.registry".auth]
+    username = "deltafi"
+    password = "password"
 EOF
     _ok "${CLUSTER_NAME} cluster instantiated"
   fi
 
   _k8s_add_namespace deltafi
-
   local METRICS_SERVER_DEPLOYMENT="${BASE_PATH}/files/kind-metrics-server-deployment.yaml"
   _is_arm && METRICS_SERVER_DEPLOYMENT="${BASE_PATH}/files/kind-metrics-server-deployment-arm64.yaml"
 
@@ -496,13 +501,39 @@ EOF
   _enable_ui
   _update_k8s_config_permissions
   _k8s_init
+
   _ok "KinD cluster fully instantiated"
+}
+
+_k8s_add_secret() {
+  local name=$1
+  shift
+  if ! ${KUBECTL} get secret "$name" > /dev/null 2>&1; then
+    cat <<EOF | ${KUBECTL} apply -f -
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: $name
+  namespace: deltafi
+data:
+$(while (( "$#" )); do
+local pass
+pass=$(printf '%s' "$2" | base64)
+echo "  $1: $pass"
+shift 2
+done)
+EOF
+    _ok "Created secret $name"
+  else
+    _ok "Secret $name exists"
+  fi
 }
 
 _k8s_add_namespace() {
   local ns=$1
-  if ! kubectl get namespace "$ns" > /dev/null 2>&1 ; then
-    cat <<EOF | _conditional "Create namespace $ns" _annotated_subshell kubectl apply -f -
+  if ! ${KUBECTL} get namespace "$ns" > /dev/null 2>&1 ; then
+    cat <<EOF | _conditional "Create namespace $ns" _annotated_subshell ${KUBECTL} apply -f -
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -526,8 +557,8 @@ _k8s_add_pv() {
   else
     mkdir -p "${localpath}"
   fi
-  if ! kubectl get persistentvolumeclaim "$name" > /dev/null 2>&1 ; then
-    cat <<EOF | _conditional "Persistent volume: $name ($path)" _annotated_subshell kubectl apply -f -
+  if ! ${KUBECTL} get persistentvolumeclaim "$name" > /dev/null 2>&1 ; then
+    cat <<EOF | _conditional "Persistent volume: $name ($path)" _annotated_subshell ${KUBECTL} apply -f -
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -573,9 +604,9 @@ EOF
 
 _enable_ui() {
   _check_local_fqdns
-  _conditional "Ingress nginx install" _annotated_subshell -v "unchanged" -h "Installing ingress-nginx..." kubectl apply -f "$BASE_PATH/files/ingress-nginx.yaml"
+  _conditional "Ingress nginx install" _annotated_subshell -v "unchanged" -h "Installing ingress-nginx..." ${KUBECTL} apply -f "$BASE_PATH/files/ingress-nginx.yaml"
   _info -s "Waiting for ingress-nginx..."
-  _conditional "Ingress operational" _annotated_subshell kubectl wait --namespace ingress-nginx \
+  _conditional "Ingress operational" _annotated_subshell ${KUBECTL} wait --namespace ingress-nginx \
       --for=condition=ready pod \
       --selector=app.kubernetes.io/component=controller \
       --timeout=90s
@@ -621,6 +652,12 @@ _k8s_init() {
   _k8s_add_pv loki "${PV_STORAGE}" 10001
   _k8s_add_pv egress-sink "${PV_STORAGE}" 1000
   _k8s_add_pv auth "${PV_STORAGE}" 1000
+  _k8s_add_pv docker-registry "${PV_STORAGE}" 1000
+  _k8s_add_secret "deltafi-docker-registry-secret" \
+    "password" "password" \
+    "haSharedSecret" "password" \
+    "htpasswd" 'deltafi:$2y$05$1eNSa6WKdGY7ewxd9.tJPusPaZXJ0xMEO3T/gcqMkaBKzBuyaB0NC'
+
   _ok "Kubernetes prerequisites"
 }
 
@@ -833,8 +870,8 @@ loc() {
   if [[ -n "$BOUNCE" ]]; then
     _attention "Bouncing $BOUNCE"
     local pods
-    pods=$(kubectl get pods | cut -d' ' -f1 | grep "$BOUNCE")
-    _annotated_subshell -v "Warning" kubectl delete pod --grace-period=0 --force $pods
+    pods=$(${KUBECTL} get pods | cut -d' ' -f1 | grep "$BOUNCE")
+    _annotated_subshell -v "Warning" ${KUBECTL} delete pod --grace-period=0 --force $pods
     _down "Bounced pods matching $BOUNCE"
   fi
 }

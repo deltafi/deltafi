@@ -82,8 +82,8 @@
     </Dialog>
     <ConfirmDialog />
     <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="[did]" @acknowledged="onAcknowledged" />
-    <MetadataViewer ref="metadataViewer" :metadata-references="allMetadata" />
     <MetadataDialog ref="metadataDialog" :did="[did]" @update="loadDeltaFileData" />
+    <CumulativeMetadataDialog ref="cumulativeMetadataDialog" :metadata="allMetadata" />
     <AnnotateDialog ref="annotateDialog" :dids="[did]" @refresh-page="loadDeltaFileData" />
     <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="autoResumeSelected">
       <span id="autoResumeDialog" />
@@ -106,7 +106,7 @@ import PageHeader from "@/components/PageHeader.vue";
 import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
 import HighlightedCode from "@/components/HighlightedCode.vue";
 import MetadataDialog from "@/components/MetadataDialog.vue";
-import MetadataViewer from "@/components/MetadataViewer.vue";
+import CumulativeMetadataDialog from "@/components/CumulativeMetadataDialog.vue";
 import useDeltaFiles from "@/composables/useDeltaFiles";
 import useErrorCount from "@/composables/useErrorCount";
 import useNotifications from "@/composables/useNotifications";
@@ -145,7 +145,7 @@ const rawJSONDialog = reactive({
   header: null,
   body: null,
 });
-const metadataViewer = ref();
+const cumulativeMetadataDialog = ref();
 const metadataDialog = ref();
 const menu = ref();
 const staticMenuItems = reactive([
@@ -161,7 +161,7 @@ const staticMenuItems = reactive([
     icon: "fas fa-database fa-fw",
     visible: () => hasMetadata.value,
     command: () => {
-      metadataViewer.value.showDialog();
+      cumulativeMetadataDialog.value.showDialog();
     },
   },
   {
@@ -283,17 +283,7 @@ const menuItems = computed(() => {
 
 const allMetadata = computed(() => {
   if (!loaded.value) return {};
-  let layers = deltaFile.actions.concat(deltaFile.formattedData);
-  return layers.reduce((content, layer) => {
-    let actions = [layer.name, layer.formatAction].flat().filter((n) => n);
-    for (const action of actions) {
-      let metadata = action === "IngressAction" ? deltaFile.sourceInfo.metadata : layer.metadata || `${deltaFile.did}-${layer.action}`;
-      if (Object.keys(metadata).length > 0) {
-        content[action] = Object.entries(metadata).map(([key, value]) => ({ key, value }));
-      }
-    }
-    return content;
-  }, {});
+  return Object.entries(deltaFile.metadata).map(([key, value]) => ({ key, value }));
 });
 
 const validDID = computed(() => {

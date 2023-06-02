@@ -59,11 +59,11 @@ public class Action {
           ActionType.TRANSFORM,
           ActionType.LOAD);
 
-  boolean terminal() {
-    return !state.equals(ActionState.QUEUED);
+   boolean terminal() {
+    return state != ActionState.QUEUED;
   }
 
-  boolean amendedData() {
-    return terminal() && DATA_AMENDED_TYPES.contains(type);
+  public boolean amendedData() {
+    return state == ActionState.COMPLETE && DATA_AMENDED_TYPES.contains(type);
   }
 }

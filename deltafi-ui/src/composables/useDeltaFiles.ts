@@ -108,6 +108,7 @@ export default function useDeltaFiles() {
         replayed: true,
         nextAutoResume: true,
         nextAutoResumeReason: true,
+        metadata: true,
       }
     }
   };
