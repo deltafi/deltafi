@@ -5,6 +5,54 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.0.0-RC3] - 2023-06-02
+
+### Added
+- `deltafi-docker-registry` pod added to cluster
+- `local.plugin.registry` will resolve to the local plugin registry in repository configuration for plugins
+- Added a new field, `expectedAnnotations`, in the transform and egress flows containing a set of annotations that are expected when a `DeltaFile` goes through the flow
+- Added new mutations to set the expected annotations in transform and egress flows
+   ```graphql
+   # Example mutation setting the expected annotations on a transform flow named passthrough
+   mutation {
+     setTransformFlowExpectedAnnotations(flowName:"passthrough", expectedAnnotations:["readBy", "readAt"])
+   }
+   # Example mutation setting the expected annotations on an egress flow named passthrough
+   mutation {
+     setEgressFlowExpectedAnnotations(flowName:"passthrough", expectedAnnotations:["readBy", "readAt"])
+   }
+   ```
+- Serialized Errors Page State 
+- Transform and Load actions can delete metadata
+- Allow Tranform and Load Actions to create annotations (formerly known as indexed metadata)
+- Add stricter validation for events received by core from actions
+
+### Changed
+- View All Metadata dialog now uses new top-level metadata key to display cumulative metadata
+- System Overview dashboard limits list of ingress and egress flow totals to 10 items each
+- Delete policies will not remove a `DeltaFile` until all expected annotations have been set
+- Updated UI libraries.
+- Use `errorCause` and `errorContext` to detail an invalid action event, and verify in test
+- Loki retention rules limit retention of noisy cruft logs
+- Ensure mongo migrations are only run once
+- UI now prefetches pages. This reduces load times when switches pages
+- Rename indexedMetadata to annotations and indexedMetadataKeys to annotationKeys
+- Updated FeignClientFactory to support URIs passed to interface methods
+
+### Fixed
+- Replay toast message now displays the new DID of the replayed DeltaFile
+- Updated text color of the DID column of a selected row on the Search page
+- Allow unselecting of rows on the Search page
+- Fixed bug in Domain and Enrichment viewers
+- `cluster` did not recognize "17" as a valid Java 17.x version
+
+### Tech-Debt/Refactor
+- DeltaFile: Merge protocol stack content, metadata, and deletedMetadataKeys into actions
+- Fix tests that would occasionally fail because of non-deterministic sorting of equal OffsetDateTimes
+
+### Upgrade and Migration
+- Added new custom grafana image deltafi/grafana:9.5.2-2
+
 ## [1.0.0-RC2] - 2023-05-18
 
 ### Fixed
@@ -1746,7 +1794,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC2...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC3...main
+[1.0.0-RC3]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC2...1.0.0-RC3
 [1.0.0-RC2]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC1...1.0.0-RC2
 [1.0.0-RC1]: https://gitlab.com/deltafi/deltafi/-/compare/0.109.0...1.0.0-RC1
 [0.109.0]: https://gitlab.com/deltafi/deltafi/-/compare/0.108.0...0.109.0
