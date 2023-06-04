@@ -269,39 +269,6 @@ const generateData = () => {
         mediaType: "text/plain",
       },
     ],
-    formattedData: [
-      {
-        metadata: [
-          {
-            key: "sourceInfo.123",
-            value: "456",
-          },
-          {
-            key: "sourceInfo.foo",
-            value: "bar",
-          },
-          {
-            key: "sourceInfo.abc",
-            value: "xyz",
-          },
-        ],
-        formatAction: "MockFormatAction",
-        egressActions: ["MockEgressAction"],
-        content: {
-          "name": "textdata1.txt",
-          "mediaType": "application/octet-stream",
-          "segments": [
-            {
-              "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
-              "offset": 0,
-              "size": 36,
-              "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
-            }
-          ],
-          "size": 36
-        },
-      },
-    ],
     contentDeleted: null,
     contentDeletedReason: null,
     errorAcknowledged: null,

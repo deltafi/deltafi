@@ -220,8 +220,7 @@ class DeltaFilesServiceTest {
         Content content1 = new Content("name", "mediaType", new Segment("a", "1"));
         DeltaFile deltaFile1 = Util.buildDeltaFile("1", List.of(content1));
         Content content2 = new Content("name", "mediaType", new Segment("b", "2"));
-        DeltaFile deltaFile2 = Util.buildDeltaFile("2");
-        deltaFile2.getFormattedData().add(FormattedData.newBuilder().content(content2).build());
+        DeltaFile deltaFile2 = Util.buildDeltaFile("2", List.of(content2));
         when(deltaFileRepo.findForDelete(any(), any(), anyLong(), any(), any(), anyBoolean(), anyInt())).thenReturn(List.of(deltaFile1, deltaFile2));
 
         deltaFilesService.delete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", false);
@@ -237,8 +236,7 @@ class DeltaFilesServiceTest {
         Content content1 = new Content("name", "mediaType", new Segment("a", "1"));
         DeltaFile deltaFile1 = Util.buildDeltaFile("1", List.of(content1));
         Content content2 = new Content("name", "mediaType", new Segment("b", "2"));
-        DeltaFile deltaFile2 = Util.buildDeltaFile("2");
-        deltaFile2.getFormattedData().add(FormattedData.newBuilder().content(content2).build());
+        DeltaFile deltaFile2 = Util.buildDeltaFile("2", List.of(content2));
         when(deltaFileRepo.findForDelete(any(), any(), anyLong(), any(), any(), anyBoolean(), anyInt())).thenReturn(List.of(deltaFile1, deltaFile2));
 
         deltaFilesService.delete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", true);
@@ -454,7 +452,7 @@ class DeltaFilesServiceTest {
         actionEvent.setAction("flow.transform");
         DeltaFile deltaFile = Util.buildDeltaFile("1");
         deltaFile.setSourceInfo(SourceInfo.builder().processingType(ProcessingType.TRANSFORMATION).build());
-        deltaFile.queueAction("flow.transform", ActionType.TRANSFORM);
+        deltaFile.queueAction("flow.transform", ActionType.TRANSFORM, "flow");
         deltaFilesService.egress(deltaFile, actionEvent);
 
         Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).hasSize(1).contains("flow");
@@ -468,7 +466,7 @@ class DeltaFilesServiceTest {
         ActionEvent actionEvent = new ActionEvent();
         actionEvent.setAction("flow.egress");
         DeltaFile deltaFile = Util.buildDeltaFile("1");
-        deltaFile.queueAction("flow.egress", ActionType.EGRESS);
+        deltaFile.queueAction("flow.egress", ActionType.EGRESS, "flow");
         deltaFilesService.egress(deltaFile, actionEvent);
 
         Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).isNull();

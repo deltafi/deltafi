@@ -124,9 +124,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     private static final String OLD_PROTOCOL_STACK_SEGMENTS_2 = "protocolStack.content.segments";
     private static final String OLD_PROTOCOL_STACK_ACTION_NAME = "protocolStack.action";
     private static final String OLD_FORMATTED_DATA_SEGMENTS = "formattedData.contentReference.segments";
+    private static final String OLD_FORMATTED_DATA_SEGMENTS_2 = "formattedData.content.segments";
+    private static final String OLD_FORMATTED_DATA_ACTION_NAME = "formattedData.formatAction";
 
     private static final String ACTION_SEGMENTS = "actions.content.segments";
-    private static final String FORMATTED_DATA_SEGMENTS = "formattedData.content.segments";
 
     private static final String CUMULATIVE_BYTES = "cumulativeBytes";
     private static final String OVER = "over";
@@ -268,7 +269,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         Query query = new Query(buildReadyForDeleteCriteria(createdBeforeDate, completedBeforeDate, minBytes, flowName, deleteMetadata, false));
         query.limit(batchSize);
         addDeltaFilesOrderBy(query, DeltaFileOrder.newBuilder().field(CREATED).direction(DeltaFileDirection.ASC).build());
-        query.fields().include(ID, TOTAL_BYTES, OLD_PROTOCOL_STACK_SEGMENTS, OLD_PROTOCOL_STACK_SEGMENTS_2, ACTION_SEGMENTS, OLD_FORMATTED_DATA_SEGMENTS, FORMATTED_DATA_SEGMENTS, OLD_PROTOCOL_STACK_ACTION_NAME, ACTIONS_NAME);
+        query.fields().include(ID, TOTAL_BYTES, OLD_PROTOCOL_STACK_SEGMENTS, OLD_PROTOCOL_STACK_SEGMENTS_2, ACTION_SEGMENTS, OLD_FORMATTED_DATA_SEGMENTS, OLD_FORMATTED_DATA_SEGMENTS_2, OLD_PROTOCOL_STACK_ACTION_NAME, OLD_FORMATTED_DATA_ACTION_NAME, ACTIONS_NAME);
 
         return mongoTemplate.find(query, DeltaFile.class);
     }
@@ -282,7 +283,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         Query query = new Query(buildReadyForDeleteCriteria(null, null, 1, flow, false, true));
         query.limit(batchSize);
         addDeltaFilesOrderBy(query, DeltaFileOrder.newBuilder().field(CREATED).direction(DeltaFileDirection.ASC).build());
-        query.fields().include(ID, TOTAL_BYTES, OLD_PROTOCOL_STACK_SEGMENTS, OLD_PROTOCOL_STACK_SEGMENTS_2, ACTION_SEGMENTS, OLD_FORMATTED_DATA_SEGMENTS, FORMATTED_DATA_SEGMENTS, OLD_PROTOCOL_STACK_ACTION_NAME, ACTIONS_NAME);
+        query.fields().include(ID, TOTAL_BYTES, OLD_PROTOCOL_STACK_SEGMENTS, OLD_PROTOCOL_STACK_SEGMENTS_2, ACTION_SEGMENTS, OLD_FORMATTED_DATA_SEGMENTS, OLD_FORMATTED_DATA_SEGMENTS_2, OLD_PROTOCOL_STACK_ACTION_NAME, OLD_FORMATTED_DATA_ACTION_NAME, ACTIONS_NAME);
 
         List<DeltaFile> deltaFiles = mongoTemplate.find(query, DeltaFile.class);
         AtomicLong sum = new AtomicLong();
@@ -522,30 +523,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             Criteria actionElemMatch = new Criteria().andOperator(Criteria.where(STATE).is(ActionState.FILTERED),
                     Criteria.where(FILTERED_CAUSE).regex(filter.getFilteredCause()));
             andCriteria.add(Criteria.where(ACTIONS).elemMatch(actionElemMatch));
-        }
-
-        if (nonNull(filter.getFormattedData())) {
-            if (nonNull(filter.getFormattedData().getFilename())) {
-                andCriteria.add(Criteria.where(FORMATTED_DATA_FILENAME).is(filter.getFormattedData().getFilename()));
-            }
-
-            if (nonNull(filter.getFormattedData().getFormatAction())) {
-                andCriteria.add(Criteria.where(FORMATTED_DATA_FORMAT_ACTION).is(filter.getFormattedData().getFormatAction()));
-            }
-
-            if (nonNull(filter.getFormattedData().getMetadata())) {
-                filter.getFormattedData().getMetadata().forEach(keyValue -> {
-                    String searchKey = keyValue.getKey();
-                    if (searchKey.contains(".")) {
-                        searchKey = StringUtils.replace(keyValue.getKey(), ".", DeltaFiConstants.MONGO_MAP_KEY_DOT_REPLACEMENT);
-                    }
-                    andCriteria.add(Criteria.where(FORMATTED_DATA_METADATA + "." + searchKey).is(keyValue.getValue()));
-                });
-            }
-
-            if (nonNull(filter.getFormattedData().getEgressActions()) && !filter.getFormattedData().getEgressActions().isEmpty()) {
-                andCriteria.add(Criteria.where(FORMATTED_DATA_EGRESS_ACTIONS).all(filter.getFormattedData().getEgressActions()));
-            }
         }
 
         if (nonNull(filter.getRequeueCountMin())) {

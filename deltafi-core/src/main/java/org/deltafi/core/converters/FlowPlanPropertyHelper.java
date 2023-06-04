@@ -111,6 +111,7 @@ public class FlowPlanPropertyHelper {
         }
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     Object resolveObject(Object object, String actionNamed) {
         if (null == object) {
             return null;

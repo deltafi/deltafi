@@ -63,8 +63,6 @@ public class DeltaFile {
   private List<Enrichment> enrichment;
   @Builder.Default
   private List<Egress> egress = new ArrayList<>();
-  @Builder.Default
-  private List<FormattedData> formattedData = new ArrayList<>();
   private OffsetDateTime created;
   private OffsetDateTime modified;
   private OffsetDateTime contentDeleted;
@@ -88,7 +86,7 @@ public class DeltaFile {
   @JsonIgnore
   private long version;
 
-  public final static int CURRENT_SCHEMA_VERSION = 3;
+  public final static int CURRENT_SCHEMA_VERSION = 4;
   private int schemaVersion;
 
   public Map<String, String> getMetadata() {
@@ -104,20 +102,21 @@ public class DeltaFile {
     return metadata;
   }
 
-  public void queueAction(String name, ActionType type) {
+  public void queueAction(String name, ActionType type, String flow) {
     Optional<Action> maybeAction = actionNamed(name);
     if (maybeAction.isPresent()) {
       setActionState(maybeAction.get(), ActionState.QUEUED, null, null);
     } else {
-      queueNewAction(name, type);
+      queueNewAction(name, type, flow);
     }
   }
 
-  public void queueNewAction(String name, ActionType type) {
+  public void queueNewAction(String name, ActionType type, String flow) {
     OffsetDateTime now = OffsetDateTime.now();
     getActions().add(Action.newBuilder()
             .name(name)
             .type(type)
+            .flow(flow)
             .state(ActionState.QUEUED)
             .created(now)
             .queued(now)
@@ -481,54 +480,42 @@ public class DeltaFile {
     return egress;
   }
 
-  private FormattedData formattedDataFor(String actionName) {
-    return formattedData.stream().filter(f -> f.getEgressActions().contains(actionName) ||
-            (Objects.nonNull(f.getValidateActions()) && f.getValidateActions().contains(actionName))).findFirst().orElse(null);
+  public Action formatActionFor(String flow) {
+    return actions.stream().filter(f -> f.getType() == ActionType.FORMAT && f.getFlow().equals(flow)).findFirst().orElse(null);
   }
 
-  public DeltaFileMessage forQueue(String actionName) {
+  public DeltaFileMessage forQueue(String flow) {
     DeltaFileMessage.DeltaFileMessageBuilder builder =
         DeltaFileMessage.builder();
 
-    FormattedData formattedData = formattedDataFor(actionName);
+    Action formatAction = formatActionFor(flow);
 
-    if (formattedData == null) {
+    if (formatAction == null || !formatAction.terminal()) {
       builder.contentList(getLastDataAmendedContent())
               .metadata(getMetadata())
               .domains(getDomains())
               .enrichment(getEnrichment());
     } else {
-      builder.contentList(List.of(formattedData.getContent()))
-              .metadata(formattedData.getMetadata());
+      builder.contentList(formatAction.getContent())
+              .metadata(formatAction.getMetadata());
     }
 
     return builder.build();
   }
 
   public Set<Segment> referencedSegments() {
-    Set<Segment> segments = actions.stream()
+    return actions.stream()
             .flatMap(p -> p.getContent().stream())
             .flatMap(c -> c.getSegments().stream())
             .collect(Collectors.toSet());
-    segments.addAll(getFormattedData().stream()
-            .map(FormattedData::getContent)
-            .flatMap(f -> f.getSegments().stream())
-            .collect(Collectors.toSet()));
-    return segments;
   }
 
   public Set<Segment> storedSegments() {
-    Set<Segment> segments = actions.stream()
+    return actions.stream()
             .flatMap(p -> p.getContent().stream())
             .flatMap(c -> c.getSegments().stream())
             .filter(s -> s.getDid().equals(getDid()))
             .collect(Collectors.toSet());
-    segments.addAll(getFormattedData().stream()
-            .map(FormattedData::getContent)
-            .flatMap(f -> f.getSegments().stream())
-            .filter(s -> s.getDid().equals(getDid()))
-            .collect(Collectors.toSet()));
-    return segments;
   }
 
   public void recalculateBytes() {

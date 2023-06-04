@@ -92,7 +92,6 @@ generateJava {
 			"Enrichment": "org.deltafi.common.types.Enrichment",
 			"ErrorDomain": "org.deltafi.common.types.ErrorDomain",
 			"FormatActionConfiguration": "org.deltafi.common.types.FormatActionConfiguration",
-			"FormattedData": "org.deltafi.common.types.FormattedData",
 			"IngressFlow": "org.deltafi.core.types.IngressFlow",
 			"IngressFlowConfiguration": "org.deltafi.common.types.IngressFlowConfiguration",
 			"IngressFlowPlan": "org.deltafi.common.types.IngressFlowPlan",

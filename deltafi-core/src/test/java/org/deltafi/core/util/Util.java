@@ -94,10 +94,10 @@ public class Util {
         DeltaFile deltaFile = Util.buildDeltaFile(did, flow, DeltaFileStage.ERROR, created, modified, content);
         if (extraAction) {
             if (!errorIsLast) {
-                deltaFile.queueNewAction("ErrorAction", ActionType.UNKNOWN);
+                deltaFile.queueNewAction("ErrorAction", ActionType.UNKNOWN, flow);
                 deltaFile.errorAction("ErrorAction", modified, modified, cause, context);
             }
-            deltaFile.queueNewAction("OtherAction", ActionType.UNKNOWN);
+            deltaFile.queueNewAction("OtherAction", ActionType.UNKNOWN, flow);
             deltaFile.completeAction(ActionEvent.newBuilder()
                     .action("OtherAction")
                     .start(modified)
@@ -106,12 +106,12 @@ public class Util {
         }
 
         if (errorIsLast || !extraAction) {
-            deltaFile.queueNewAction("ErrorAction", ActionType.UNKNOWN);
+            deltaFile.queueNewAction("ErrorAction", ActionType.UNKNOWN, flow);
             deltaFile.errorAction("ErrorAction", modified, modified, cause, context);
         }
 
         if (extraError != null) {
-            deltaFile.queueNewAction("AnotherErrorAction", ActionType.UNKNOWN);
+            deltaFile.queueNewAction("AnotherErrorAction", ActionType.UNKNOWN, flow);
             deltaFile.errorAction("AnotherErrorAction", modified, modified, extraError, context);
         }
         deltaFile.setModified(modified);
@@ -145,7 +145,6 @@ public class Util {
                 .domains(new ArrayList<>())
                 .enrichment(new ArrayList<>())
                 .egress(new ArrayList<>())
-                .formattedData(new ArrayList<>())
                 .egressed(false)
                 .filtered(false)
                 .build();
@@ -163,7 +162,6 @@ public class Util {
         Assertions.assertThat(actual.getAnnotations()).isEqualTo(expected.getAnnotations());
         Assertions.assertThat(actual.getAnnotationKeys()).isEqualTo(expected.getAnnotationKeys());
         Assertions.assertThat(actual.getEnrichment()).isEqualTo(expected.getEnrichment());
-        Assertions.assertThat(actual.getFormattedData()).isEqualTo(expected.getFormattedData());
         Assertions.assertThat(actual.getEgressed()).isEqualTo(expected.getEgressed());
         Assertions.assertThat(actual.getFiltered()).isEqualTo(expected.getFiltered());
         Assertions.assertThat(actual.getEgress()).isEqualTo(expected.getEgress());
@@ -203,6 +201,9 @@ public class Util {
                 Assertions.assertThat(actual.getErrorContext()).isEqualTo(expected.getErrorContext());
             }
             Assertions.assertThat(actual.getAttempt()).isEqualTo(expected.getAttempt());
+            Assertions.assertThat(actual.getContent()).isEqualTo(expected.getContent());
+            Assertions.assertThat(actual.getMetadata()).isEqualTo(expected.getMetadata());
+            Assertions.assertThat(actual.getDeleteMetadataKeys()).isEqualTo(expected.getDeleteMetadataKeys());
         }
     }
 

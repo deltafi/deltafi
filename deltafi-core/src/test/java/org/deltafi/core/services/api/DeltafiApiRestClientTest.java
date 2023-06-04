@@ -80,6 +80,7 @@ class DeltafiApiRestClientTest {
     HttpClient httpClient;
 
     @Test
+    @SuppressWarnings("unchecked")
     @SneakyThrows
     void testContentMetrics() {
         ReflectionTestUtils.setField(deltafiApiRestClient, "httpClient", httpClient);
@@ -94,6 +95,7 @@ class DeltafiApiRestClientTest {
     }
 
     @SneakyThrows
+    @SuppressWarnings("unchecked")
     @Test
     void testCreateEvent() {
         final String REQUEST_BODY = """
@@ -130,6 +132,7 @@ class DeltafiApiRestClientTest {
     }
 
     @SneakyThrows
+    @SuppressWarnings("unchecked")
     @Test
     void testCreateEventUnreachable() {
         final String REQUEST_BODY = """

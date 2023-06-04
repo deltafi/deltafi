@@ -85,22 +85,6 @@ export default function useDeltaFiles() {
           mediaType: true,
         },
         filtered: true,
-        formattedData: {
-          metadata: true,
-          formatAction: true,
-          egressActions: true,
-          content: {
-            name: true,
-            segments: {
-              did: true,
-              uuid: true,
-              offset: true,
-              size: true,
-            },
-            size: true,
-            mediaType: true,
-          },
-        },
         contentDeleted: true,
         contentDeletedReason: true,
         errorAcknowledged: true,

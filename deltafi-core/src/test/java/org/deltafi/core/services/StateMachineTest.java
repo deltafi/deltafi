@@ -262,7 +262,7 @@ class StateMachineTest {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", INGRESS_FLOW);
         addCompletedActions(deltaFile, ENRICH_ACTION);
 
-        deltaFile.queueAction(FORMAT_ACTION, ActionType.FORMAT);
+        deltaFile.queueAction(FORMAT_ACTION, ActionType.FORMAT, EGRESS_FLOW);
         deltaFile.errorAction(FORMAT_ACTION, null, null, "failed", "failed");
 
         EgressFlow egressFlow = EgressFlowMaker.builder().build().makeEgressFlow();
@@ -493,7 +493,7 @@ class StateMachineTest {
         deltaFile.setStage(DeltaFileStage.EGRESS);
         deltaFile.setEgress(List.of(Egress.newBuilder().flow(EGRESS_FLOW).build(), Egress.newBuilder().flow(EGRESS_FLOW + "2").build()));
 
-        deltaFile.queueNewAction("EgressAction2", ActionType.EGRESS);
+        deltaFile.queueNewAction("EgressAction2", ActionType.EGRESS, EGRESS_FLOW);
         addCompletedActions(deltaFile, "EnrichAction1", "EnrichAction2", "FormatAction1", "FormatAction2", "ValidateAction1", "ValidateAction2", "EgressAction1");
 
         EgressFlow egress1 = EgressFlowMaker.builder()
@@ -565,7 +565,7 @@ class StateMachineTest {
     void testNoEgressFlowCheckSkippedForErrorActions() throws MissingEgressFlowException {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", INGRESS_FLOW);
         deltaFile.setStage(DeltaFileStage.ENRICH);
-        deltaFile.queueNewAction("ErrorEnrichAction", ActionType.ENRICH);
+        deltaFile.queueNewAction("ErrorEnrichAction", ActionType.ENRICH, ENRICH_FLOW);
         deltaFile.errorAction(ActionEvent.newBuilder()
                 .did(deltaFile.getDid())
                 .action("ErrorEnrichAction")
@@ -583,7 +583,7 @@ class StateMachineTest {
     void testNoEgressFlowRequiredForSplitLoadActions() throws MissingEgressFlowException {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", INGRESS_FLOW);
         deltaFile.setStage(DeltaFileStage.INGRESS);
-        deltaFile.queueNewAction("SplitLoadAction", ActionType.LOAD);
+        deltaFile.queueNewAction("SplitLoadAction", ActionType.LOAD, INGRESS_FLOW);
         deltaFile.reinjectAction(ActionEvent.newBuilder()
                 .did(deltaFile.getDid())
                 .action("SplitLoadAction")
@@ -597,7 +597,7 @@ class StateMachineTest {
     void testNoEgressFlowRequiredForFilteredLoadActions() throws MissingEgressFlowException {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", INGRESS_FLOW);
         deltaFile.setStage(DeltaFileStage.INGRESS);
-        deltaFile.queueNewAction("FilteredLoadAction", ActionType.LOAD);
+        deltaFile.queueNewAction("FilteredLoadAction", ActionType.LOAD, INGRESS_FLOW);
         deltaFile.filterAction(ActionEvent.newBuilder()
                 .did(deltaFile.getDid())
                 .action("FilteredLoadAction")
@@ -609,7 +609,7 @@ class StateMachineTest {
 
     private void addCompletedActions(DeltaFile deltaFile, String... actions) {
         for (String action : actions) {
-            deltaFile.queueAction(action, ActionType.UNKNOWN);
+            deltaFile.queueAction(action, ActionType.UNKNOWN, "flow");
             deltaFile.completeAction(action, null, null);
         }
     }
@@ -619,7 +619,7 @@ class StateMachineTest {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", INGRESS_FLOW);
         deltaFile.setStage(DeltaFileStage.ENRICH);
         deltaFile.addDomain(DOMAIN, "value", MediaType.ALL_VALUE);
-        deltaFile.queueNewAction("EnrichAction1", ActionType.ENRICH);
+        deltaFile.queueNewAction("EnrichAction1", ActionType.ENRICH, ENRICH_FLOW);
         addCompletedActions(deltaFile, "DomainAction1");
 
         EnrichFlow enrich1 = EnrichFlowMaker.builder()

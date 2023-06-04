@@ -138,8 +138,19 @@ const generateData = () => {
                     "modified": "2022-09-29T17:52:03.596Z",
                     "errorCause": null,
                     "errorContext": null,
-                    content: [],
-                    metadata: {},
+                    content: [
+                        {
+                            "name": "cve-in-exploit-target.min.xml",
+                                "uuid": "b0ceb440-8465-45e1-9b22-08a08b630833",
+                                "offset": 0,
+                                "size": 1327,
+                                "did": "6e45a930-5d54-427a-a78c-f237e1edfadc",
+                                "mediaType": "application/xml"
+                        }
+                    ],
+                    metadata: {
+                        "stixType": "bundle"
+                    },
                     deleteMetadataKeys: []
                 },
                 {
@@ -173,26 +184,6 @@ const generateData = () => {
                 "stixTypes": "vulnerability"
             },
             "enrichment": [],
-            "formattedData": [
-                {
-                    "filename": "cve-in-exploit-target.min.xml",
-                    "formatAction": "stix1_x.Stix1_xFormatAction",
-                    "contentReference": {
-                        "uuid": "b0ceb440-8465-45e1-9b22-08a08b630833",
-                        "offset": 0,
-                        "size": 1327,
-                        "did": "6e45a930-5d54-427a-a78c-f237e1edfadc",
-                        "mediaType": "application/xml"
-                    },
-                    "metadata": {
-                        "stixType": "bundle",
-                    },
-                    "egressActions": [
-                        "stix1_x.Stix1_xEgressAction"
-                    ],
-                    "validateActions": []
-                }
-            ],
             "created": "2022-09-29T17:52:03.046Z",
             "modified": "2022-09-29T17:52:03.630Z",
             "contentDeleted": null,

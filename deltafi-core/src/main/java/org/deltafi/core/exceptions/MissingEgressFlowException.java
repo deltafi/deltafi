@@ -17,6 +17,8 @@
  */
 package org.deltafi.core.exceptions;
 
+import lombok.Getter;
+
 public class MissingEgressFlowException extends RuntimeException {
     public MissingEgressFlowException(String did) {
         super("No egress flow configured for DeltaFile " + did);

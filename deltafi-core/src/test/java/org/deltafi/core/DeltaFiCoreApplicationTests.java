@@ -778,8 +778,8 @@ class DeltaFiCoreApplicationTests {
 		List<ActionInput> actionInputs = actionInputListCaptor.getValue();
 		assertThat(actionInputs).hasSize(2);
 
-		assertEquals(child1.forQueue("sampleIngress.SampleTransformAction"), actionInputs.get(0).getDeltaFileMessages().get(0));
-		assertEquals(child2.forQueue("sampleIngress.SampleTransformAction"), actionInputs.get(1).getDeltaFileMessages().get(0));
+		assertEquals(child1.forQueue("sampleIngress"), actionInputs.get(0).getDeltaFileMessages().get(0));
+		assertEquals(child2.forQueue("sampleIngress"), actionInputs.get(1).getDeltaFileMessages().get(0));
 
 		Map<String, String> tags = tagsFor(ActionEventType.REINJECT, "sampleIngress.SampleLoadAction", INGRESS_FLOW_NAME, null);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
@@ -842,8 +842,8 @@ class DeltaFiCoreApplicationTests {
 		List<ActionInput> actionInputs = actionInputListCaptor.getValue();
 		assertThat(actionInputs).hasSize(2);
 
-		assertEquals(child1.forQueue("sampleIngress.SampleDomainAction"), actionInputs.get(0).getDeltaFileMessages().get(0));
-		assertEquals(child2.forQueue("sampleIngress.SampleDomainAction"), actionInputs.get(1).getDeltaFileMessages().get(0));
+		assertEquals(child1.forQueue("sampleIngress"), actionInputs.get(0).getDeltaFileMessages().get(0));
+		assertEquals(child2.forQueue("sampleIngress"), actionInputs.get(1).getDeltaFileMessages().get(0));
 
 		Map<String, String> tags = tagsFor(ActionEventType.LOAD_MANY, "sampleIngress.SampleLoadAction", INGRESS_FLOW_NAME, null);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
@@ -934,14 +934,14 @@ class DeltaFiCoreApplicationTests {
 		assertFalse(child1.getTestMode());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child1.getParentDids());
 		assertEquals("input.txt", child1.getSourceInfo().getFilename());
-		assertEquals(0, child1.getFormattedData().get(0).getContent().getSegments().get(0).getOffset());
+		assertEquals(0, child1.formatActionFor("sampleEgress").getContent().get(0).getSegments().get(0).getOffset());
 
 		DeltaFile child2 = children.get(1);
 		assertEquals(DeltaFileStage.EGRESS, child2.getStage());
 		assertFalse(child2.getTestMode());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child2.getParentDids());
 		assertEquals("input.txt", child2.getSourceInfo().getFilename());
-		assertEquals(250, child2.getFormattedData().get(0).getContent().getSegments().get(0).getOffset());
+		assertEquals(250, child2.formatActionFor("sampleEgress").getContent().get(0).getSegments().get(0).getOffset());
 
 		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture());
 		assertEquals(4, actionInputListCaptor.getValue().size());
@@ -1132,7 +1132,6 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void testEgress() throws IOException {
-
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postValidateAuthorityDeltaFile(did));
 
@@ -1230,6 +1229,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile expected = postIngressDeltaFile(did);
 		expected.setDid(parent.getChildDids().get(0));
 		expected.setParentDids(List.of(did));
+		expected.getActions().get(0).setMetadata(Map.of("AuthorizedBy", "ABC", "sourceInfo.filename.original", "input.txt", "sourceInfo.flow.original", INGRESS_FLOW_NAME, "removeMe.original", "whatever", "AuthorizedBy.original", "XYZ", "anotherKey", "anotherValue"));
 		expected.getActions().get(1).setName("sampleIngress.SampleLoadAction");
 		expected.getSourceInfo().setFilename("newFilename");
 		expected.getSourceInfo().setFlow("theFlow");
@@ -2589,8 +2589,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile1.setEnrichment(List.of(new Enrichment("enrichment1", null, null)));
 		deltaFile1.setContentDeleted(MONGO_NOW);
 		deltaFile1.setSourceInfo(new SourceInfo("filename1", "flow1", Map.of("key1", "value1", "key2", "value2")));
-		deltaFile1.setActions(List.of(Action.newBuilder().name("action1").state(ActionState.COMPLETE).build()));
-		deltaFile1.setFormattedData(List.of(FormattedData.newBuilder().content(new Content("formattedFilename1", "mediaType")).formatAction("formatAction1").metadata(Map.of("formattedKey1", "formattedValue1", "formattedKey2", "formattedValue2")).egressActions(List.of("EgressAction1", "EgressAction2")).build()));
+		deltaFile1.setActions(List.of(Action.newBuilder().name("action1").state(ActionState.COMPLETE).content(List.of(new Content("formattedFilename1", "mediaType"))).metadata(Map.of("formattedKey1", "formattedValue1", "formattedKey2", "formattedValue2")).build()));
 		deltaFile1.setErrorAcknowledged(MONGO_NOW);
 		deltaFile1.incrementRequeueCount();
 		deltaFile1.addEgressFlow("MyEgressFlow");
@@ -2604,8 +2603,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile2.addAnnotations(Map.of("a.2", "first", "common", "value"));
 		deltaFile2.setEnrichment(List.of(new Enrichment("enrichment1", null, null), new Enrichment("enrichment2", null, null)));
 		deltaFile2.setSourceInfo(new SourceInfo("filename2", "flow2", Map.of()));
-		deltaFile2.setActions(List.of(Action.newBuilder().name("action1").state(ActionState.ERROR).errorCause("Cause").build(), Action.newBuilder().name("action2").state(ActionState.COMPLETE).build()));
-		deltaFile2.setFormattedData(List.of(FormattedData.newBuilder().content(new Content("formattedFilename2", "mediaType")).formatAction("formatAction2").egressActions(List.of("EgressAction1")).build()));
+		deltaFile2.setActions(List.of(Action.newBuilder().name("action1").state(ActionState.ERROR).errorCause("Cause").build(), Action.newBuilder().name("action2").state(ActionState.COMPLETE).content(List.of(new Content("formattedFilename2", "mediaType"))).build()));
 		deltaFile2.setEgressed(true);
 		deltaFile2.setFiltered(true);
 		deltaFile2.addEgressFlow("MyEgressFlow");
@@ -2619,8 +2617,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile3.addAnnotations(Map.of("b.2", "first", "common", "value"));
 		deltaFile3.setEnrichment(List.of(new Enrichment("enrichment3", null, null), new Enrichment("enrichment4", null, null)));
 		deltaFile3.setSourceInfo(new SourceInfo("filename3", "flow3", Map.of(), ProcessingType.TRANSFORMATION));
-		deltaFile3.setActions(List.of(Action.newBuilder().name("action2").state(ActionState.FILTERED).filteredCause("Coffee").build(), Action.newBuilder().name("action2").state(ActionState.COMPLETE).build()));
-		deltaFile3.setFormattedData(List.of(FormattedData.newBuilder().content(new Content("formattedFilename3", "mediaType")).formatAction("formatAction3").egressActions(List.of("EgressAction2")).build()));
+		deltaFile3.setActions(List.of(Action.newBuilder().name("action2").state(ActionState.FILTERED).filteredCause("Coffee").build(), Action.newBuilder().name("action2").state(ActionState.COMPLETE).content(List.of(new Content("formattedFilename3", "mediaType"))).build()));
 		deltaFile3.setEgressed(true);
 		deltaFile3.setFiltered(true);
 		deltaFile3.addEgressFlow("MyEgressFlow3");
@@ -2667,13 +2664,6 @@ class DeltaFiCoreApplicationTests {
 		testFilter(DeltaFilesFilter.newBuilder().filteredCause("^Coffee$").build(), deltaFile3);
 		testFilter(DeltaFilesFilter.newBuilder().filteredCause("off").build(), deltaFile3);
 		testFilter(DeltaFilesFilter.newBuilder().filteredCause("nope").build());
-		testFilter(DeltaFilesFilter.newBuilder().formattedData(FormattedDataFilter.newBuilder().filename("formattedFilename1").build()).build(), deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().formattedData(FormattedDataFilter.newBuilder().formatAction("formatAction2").build()).build(), deltaFile2);
-		testFilter(DeltaFilesFilter.newBuilder().formattedData(FormattedDataFilter.newBuilder().metadata(List.of(new KeyValue("formattedKey1", "formattedValue1"))).build()).build(), deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().formattedData(FormattedDataFilter.newBuilder().metadata(List.of(new KeyValue("formattedKey1", "formattedValue1"), new KeyValue("formattedKey2", "formattedValue2"))).build()).build(), deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().formattedData(FormattedDataFilter.newBuilder().metadata(List.of(new KeyValue("formattedKey1", "formattedValue1"), new KeyValue("formattedKey2", "formattedValue1"))).build()).build());
-		testFilter(DeltaFilesFilter.newBuilder().formattedData(FormattedDataFilter.newBuilder().egressActions(List.of("EgressAction1")).build()).build(), deltaFile2, deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().formattedData(FormattedDataFilter.newBuilder().egressActions(List.of("EgressAction1", "EgressAction2")).build()).build(), deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().dids(Collections.emptyList()).build(), deltaFile3, deltaFile2, deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().dids(Collections.singletonList("1")).build(), deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().dids(List.of("1", "3")).build(), deltaFile3, deltaFile1);
@@ -3615,7 +3605,7 @@ class DeltaFiCoreApplicationTests {
 		for (int i = 0; i < forActions.length; i++) {
 			ActionInput actionInput = actionInputs.get(i);
 			assertThat(actionInput.getActionContext().getName()).isEqualTo(forActions[i]);
-			assertEquals(expected.forQueue(forActions[i]), actionInput.getDeltaFileMessages().get(0));
+			assertEquals(expected.forQueue(forActions[i].split("\\.")[0]), actionInput.getDeltaFileMessages().get(0));
 		}
 	}
 
@@ -3858,7 +3848,6 @@ class DeltaFiCoreApplicationTests {
 			deltaFileRepo.save(DeltaFile.newBuilder()
 					.did("abc" + i)
 					.created(OffsetDateTime.now().minusDays(1))
-					.formattedData(Collections.emptyList())
 					.totalBytes(10)
 					.build());
 		}
@@ -4033,6 +4022,11 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	public void testConvertDeltaFileV3() {
+		assertConverted(deltaFileRepo, mongoTemplate, 3);
+	}
+
+	@Test
 	public void testDeletesV0() {
 		assertDeleted(deltaFileRepo, mongoTemplate, 0);
 	}
@@ -4045,5 +4039,10 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	public void testDeletesV2() {
 		assertDeleted(deltaFileRepo, mongoTemplate, 2);
+	}
+
+	@Test
+	public void testDeletesV3() {
+		assertDeleted(deltaFileRepo, mongoTemplate, 3);
 	}
 }

@@ -185,6 +185,7 @@ public class DeltaFilesService {
 
         Action ingressAction = Action.newBuilder()
                 .name(INGRESS_ACTION)
+                .flow(ingressEvent.getSourceInfo().getFlow())
                 .type(ActionType.INGRESS)
                 .state(ActionState.COMPLETE)
                 .created(ingressEvent.getCreated())
@@ -208,7 +209,6 @@ public class DeltaFilesService {
                 .sourceInfo(sourceInfo)
                 .domains(Collections.emptyList())
                 .enrichment(Collections.emptyList())
-                .formattedData(Collections.emptyList())
                 .created(ingressEvent.getCreated())
                 .modified(now)
                 .egressed(false)
@@ -364,23 +364,14 @@ public class DeltaFilesService {
     }
 
     public void format(DeltaFile deltaFile, ActionEvent event) {
-        EgressFlow egressFlow = egressFlowService.withFormatActionNamed(event.getAction());
-
         if (event.getFormat().getContent() == null) {
             event.setError(ErrorEvent.newBuilder().cause("Received format event with no content from " + event.getAction()).build());
             error(deltaFile, event);
             return;
         }
 
-        FormattedData formattedData = FormattedData.newBuilder()
-                .formatAction(event.getAction())
-                .content(event.getFormat().getContent())
-                .metadata(event.getFormat().getMetadata())
-                .egressActions(List.of(egressFlow.getEgressAction().getName()))
-                .validateActions(egressFlow.validateActionNames())
-                .build();
-        deltaFile.getFormattedData().add(formattedData);
-        deltaFile.completeAction(event);
+        FormatEvent formatEvent = event.getFormat();
+        deltaFile.completeAction(event, List.of(formatEvent.getContent()), formatEvent.getMetadata(), Collections.emptyList());
 
         advanceAndSave(deltaFile);
     }
@@ -392,10 +383,14 @@ public class DeltaFilesService {
     }
 
     public void egress(DeltaFile deltaFile, ActionEvent event) {
-        deltaFile.completeAction(event);
+        String flowName = FlowService.getFlowName(event.getAction());
+
+        // replicate the message that was sent to this action so we can republish the content and metadata that was processed
+        DeltaFileMessage sentMessage = deltaFile.forQueue(flowName);
+
+        deltaFile.completeAction(event, sentMessage.getContentList(), sentMessage.getMetadata(), Collections.emptyList());
         deltaFile.setEgressed(true);
 
-        String flowName = FlowService.getFlowName(event.getAction());
         Set<String> expectedAnnotations = getPendingAnnotations(deltaFile.getSourceInfo().getProcessingType(), flowName);
 
         if (expectedAnnotations != null && !expectedAnnotations.isEmpty()) {
@@ -671,6 +666,7 @@ public class DeltaFilesService {
                 Action action = Action.newBuilder()
                         .name(INGRESS_ACTION)
                         .type(ActionType.INGRESS)
+                        .flow(reinject.getFlow())
                         .state(ActionState.COMPLETE)
                         .created(now)
                         .modified(now)
@@ -695,7 +691,6 @@ public class DeltaFilesService {
                                 .build())
                         .domains(Collections.emptyList())
                         .enrichment(Collections.emptyList())
-                        .formattedData(Collections.emptyList())
                         .created(now)
                         .modified(now)
                         .egressed(false)
@@ -749,16 +744,9 @@ public class DeltaFilesService {
             childDeltaFiles = formatInputs.stream().map(formatInput -> {
                 DeltaFile child = createChildDeltaFile(deltaFile, event, UUID.randomUUID().toString());
                 deltaFile.getChildDids().add(child.getDid());
-
-                FormattedData formattedData = FormattedData.newBuilder()
-                        .formatAction(event.getAction())
-                        .content(formatInput.getContent())
-                        .metadata(formatInput.getMetadata())
-                        .egressActions(List.of(egressFlow.getEgressAction().getName()))
-                        .validateActions(egressFlow.getValidateActions().stream().map(ValidateActionConfiguration::getName).toList())
-                        .build();
-
-                child.setFormattedData(List.of(formattedData));
+                Action formatAction = child.formatActionFor(egressFlow.getName());
+                formatAction.setContent(List.of(formatInput.getContent()));
+                formatAction.setMetadata(formatInput.getMetadata());
 
                 enqueueActions.addAll(advanceOnly(child, true));
 
@@ -935,6 +923,7 @@ public class DeltaFilesService {
                             Action action = Action.newBuilder()
                                     .name(INGRESS_ACTION)
                                     .type(ActionType.INGRESS)
+                                    .flow(deltaFile.getSourceInfo().getFlow())
                                     .state(ActionState.COMPLETE)
                                     .created(now)
                                     .modified(now)
@@ -954,7 +943,6 @@ public class DeltaFilesService {
                                     .sourceInfo(deltaFile.getSourceInfo())
                                     .domains(Collections.emptyList())
                                     .enrichment(Collections.emptyList())
-                                    .formattedData(Collections.emptyList())
                                     .created(now)
                                     .modified(now)
                                     .egressed(false)
@@ -1095,14 +1083,13 @@ public class DeltaFilesService {
     }
 
     /** A version of advanceAndSave specialized for Transformation Processing
-     * converts the last protocol layer to formatted data for egress
      * splits similarly to a formatMany if there are multiple pieces of content
      * @param deltaFile the transformation deltaFile to advance
      */
     private void advanceAndSaveTransformationProcessing(DeltaFile deltaFile) {
         List<ActionInput> enqueueActions = stateMachine.advance(deltaFile);
 
-        if (deltaFile.getStage() == DeltaFileStage.EGRESS && deltaFile.getFormattedData().isEmpty()) {
+        if (deltaFile.getStage() == DeltaFileStage.EGRESS) {
             // this is our first time having egress assigned
             // determine if the deltaFile needs to be split
             if (deltaFile.getLastDataAmendedAction().getContent().size() > 1) {
@@ -1153,7 +1140,7 @@ public class DeltaFilesService {
     }
 
     private void handleMissingEgressFlow(DeltaFile deltaFile) {
-        deltaFile.queueNewAction(DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION, ActionType.UNKNOWN);
+        deltaFile.queueNewAction(DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION, ActionType.UNKNOWN, "MISSING");
         processErrorEvent(deltaFile, buildNoEgressConfiguredErrorEvent(deltaFile, OffsetDateTime.now(clock)));
         deltaFile.setStage(DeltaFileStage.ERROR);
     }

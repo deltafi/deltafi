@@ -17,10 +17,7 @@
  */
 package org.deltafi.common.types;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -36,6 +33,7 @@ public class Action {
   private String name;
   @Builder.Default
   private ActionType type = ActionType.UNKNOWN;
+  private String flow;
   private ActionState state;
   private OffsetDateTime created;
   private OffsetDateTime queued;
@@ -59,7 +57,7 @@ public class Action {
           ActionType.TRANSFORM,
           ActionType.LOAD);
 
-   boolean terminal() {
+  boolean terminal() {
     return state != ActionState.QUEUED;
   }
 

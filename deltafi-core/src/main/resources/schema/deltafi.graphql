@@ -111,21 +111,6 @@ type Segment {
   did: String!
 }
 
-type FormattedData {
-  content: Content
-  formatAction: String!
-  metadata: Metadata
-  egressActions: [String!]!
-  validateActions: [String!]!
-}
-
-input FormattedDataFilter {
-  filename: String
-  formatAction: String
-  metadata: [KeyValueInput!]
-  egressActions: [String!]
-}
-
 enum DeltaFileStage {
   INGRESS
   ENRICH
@@ -160,6 +145,7 @@ enum ActionType {
 type Action {
   name: String!
   type: ActionType!
+  flow: String!
   state: ActionState!
   created: DateTime!
   queued: DateTime
@@ -190,7 +176,6 @@ type DeltaFile {
   metadata: Metadata!
   annotations: Metadata
   enrichment: [Enrichment!]!
-  formattedData: [FormattedData!]!
   egress: [Egress!]!
   created: DateTime!
   modified: DateTime!
@@ -285,7 +270,6 @@ input DeltaFilesFilter {
   actions: [String!]
   errorCause: String
   filteredCause: String
-  formattedData: FormattedDataFilter
   errorAcknowledged: Boolean
   egressed: Boolean
   filtered: Boolean

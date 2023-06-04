@@ -37,12 +37,7 @@
         </Column>
         <Column v-if="!contentDeleted && hasPermission('DeltaFileContentView')" header="Content" class="content-column">
           <template #body="{ data: action }">
-            <span v-if="formattedDataByAction.hasOwnProperty(action.name)">
-              <ContentDialog :content="[formattedDataByAction[action.name].content]" :action="action.name">
-                <Button icon="far fa-window-maximize" label="View" class="content-button p-button-link" />
-              </ContentDialog>
-            </span>
-            <span v-else-if="action.hasOwnProperty('content') && action.content.length > 0">
+            <span v-if="action.hasOwnProperty('content') && action.content.length > 0">
               <ContentDialog :content="action.content" :action="action.name">
                 <Button icon="far fa-window-maximize" label="View" class="content-button p-button-link" />
               </ContentDialog>
@@ -50,9 +45,9 @@
           </template>
         </Column>
         <Column header="Metadata" class="metadata-column">
-          <template #body="action">
-            <span v-if="metadataReferences.hasOwnProperty(action.data.name)">
-              <MetadataViewer :metadata-references="actionMetadata(action.data.name)">
+          <template #body="{ data: action }">
+            <span v-if="action.hasOwnProperty('metadata') && Object.keys(action.metadata).length > 0">
+              <MetadataViewer :metadata-references="{ [action.name]: metadataAsArray(action.metadata) }">
                 <Button icon="fas fa-table" label="View" class="content-button p-button-link" />
               </MetadataViewer>
             </span>
@@ -111,30 +106,9 @@ const actions = computed(() => {
   });
 });
 
-const formattedDataByAction = computed(() => {
-  return deltaFile.formattedData.reduce((content, layer) => {
-    let actions = [layer.formatAction, layer.egressActions].flat().filter((n) => n);
-    for (const action of actions) {
-      content[action] = layer;
-    }
-    return content;
-  }, {});
-});
-
-const metadataReferences = computed(() => {
-  if (Object.keys(deltaFile).length === 0) return {};
-  let layers = deltaFile.actions.concat(deltaFile.formattedData);
-  return layers.reduce((content, layer) => {
-    let actions = [layer.name, layer.formatAction].flat().filter((n) => n);
-    for (const action of actions) {
-      let metadata = action === "IngressAction" ? deltaFile.sourceInfo.metadata : layer.metadata || `${deltaFile.did}-${layer.action}`;
-      if (Object.keys(metadata).length > 0) {
-        content[action] = Object.entries(metadata).map(([key, value]) => ({ key, value }));
-      }
-    }
-    return content;
-  }, {});
-});
+const metadataAsArray = (metadataObject) => {
+  return Object.entries(metadataObject).map(([key, value]) => ({ key, value }));
+};
 
 const rowClass = (action) => {
   if (action.state === "ERROR") return "table-danger action-error";
@@ -150,9 +124,6 @@ const rowClick = (event) => {
   errorViewer.action = action;
 };
 
-const actionMetadata = (actionName) => {
-  return Object.fromEntries(Object.entries(metadataReferences.value).filter(([key]) => key.includes(actionName)));
-};
 </script>
 
 <style lang="scss">

@@ -92,11 +92,9 @@ class DeltaFileTest {
         DeltaFile deltaFile = DeltaFile.newBuilder()
                 .actions(List.of(
                         Action.newBuilder().content(List.of(content1, content2)).build(),
-                        Action.newBuilder().content(List.of(content3)).build()
-                ))
-                .formattedData(List.of(
-                        FormattedData.newBuilder().content(content4).build(),
-                        FormattedData.newBuilder().content(content5).build()
+                        Action.newBuilder().content(List.of(content3)).build(),
+                        Action.newBuilder().content(List.of(content4)).build(),
+                        Action.newBuilder().content(List.of(content5)).build()
                 ))
                 .did("did1")
                 .build();

@@ -264,7 +264,6 @@ class ResumePolicyServiceTest {
                         .filename("filename").build())
                 .domains(Collections.emptyList())
                 .enrichment(Collections.emptyList())
-                .formattedData(Collections.emptyList())
                 .created(now)
                 .modified(now)
                 .egressed(false)
