@@ -2,5 +2,6 @@ data/
 mounts/
 config/
 .logs/
+env/.plugin.env
 Brewfile.lock.json
 cluster.yaml

@@ -16,73 +16,57 @@
 #    limitations under the License.
 #
 
-
-import deltafi.domain
-import pkg_resources
-import requests
-from deltafi.action import DomainAction, LoadAction
-from deltafi.actioneventqueue import ActionEventQueue
-from deltafi.domain import Context
-from deltafi.input import DomainInput, LoadInput
-from deltafi.plugin import Plugin
-from deltafi.result import DomainResult, LoadResult
-from deltafi.storage import ContentService
-from mockito import when, mock, unstub, verifyStubbedInvocationsAreUsed
-from pydantic import BaseModel, Field
-from requests.models import Response
+from importlib import metadata
+from deltafi.plugin import Plugin, PluginCoordinates
+from unittest import mock
+from .sample.actions import SampleDomainAction, SampleLoadAction
 
 
-class SampleDomainAction(DomainAction):
-    def __init__(self):
-        super().__init__('Domain action description', ['domain1', 'domain2'])
+def test_plugin_registration_json():
+    plugin_coordinates = PluginCoordinates("plugin-group", "project-name", "1.0.0")
+    plugin = Plugin("plugin-description", plugin_name="project-name",
+                    plugin_coordinates=plugin_coordinates,
+                    actions=[SampleDomainAction, SampleLoadAction])
 
-    def domain(self, context: Context, params: BaseModel, domain_input: DomainInput):
-        return DomainResult().annotate('theIndexMetaKey', 'theIndexMetaValue')
-
-
-class SampleLoadParameters(BaseModel):
-    domain: str = Field(description="The domain used by the load action")
+    assert get_expected_json() == plugin.registration_json()
 
 
-class SampleLoadAction(LoadAction):
-    def __init__(self):
-        super().__init__('Domain action description')
-
-    def param_class(self):
-        return SampleLoadParameters
-
-    def load(self, context: Context, params: SampleLoadParameters, load_input: LoadInput):
-        return LoadResult().add_metadata('loadKey', 'loadValue') \
-            .add_domain(params.domain, 'Python domain!', 'text/plain') \
-            .add_content(Content(name='loaded content', segments=[], media_type='text/plain', content_service=mock(ContentService)))
-
-
-def test_plugin(monkeypatch):
-    unstub()
-
+def test_plugin_registration_json_from_env(monkeypatch):
     monkeypatch.setenv("PROJECT_GROUP", "plugin-group")
     monkeypatch.setenv("PROJECT_NAME", "project-name")
     monkeypatch.setenv("PROJECT_VERSION", "1.0.0")
 
-    core_url = "http://thehostcore"
-    monkeypatch.setenv("CORE_URL", core_url)
-    monkeypatch.setenv("REDIS_PASSWORD", "redis-password")
-    monkeypatch.setenv("MINIO_ACCESSKEY", "minio-access")
-    monkeypatch.setenv("MINIO_SECRETKEY", "minio-secret")
+    plugin = Plugin("plugin-description", actions=[SampleDomainAction, SampleLoadAction])
 
-    monkeypatch.setenv("COMPUTERNAME", "my-conputer")
+    assert get_expected_json() == plugin.registration_json()
 
-    queue = mock(ActionEventQueue)
-    content_service = mock(ContentService)
 
-    when(deltafi.plugin).ActionEventQueue(...).thenReturn(queue)
-    when(deltafi.plugin).ContentService(...).thenReturn(content_service)
+def test_plugin_find_actions():
+    plugin_coordinates = PluginCoordinates("plugin-group", "project-name", "1.0.0")
+    plugin = Plugin("plugin-description", plugin_name="project-name",
+                    plugin_coordinates=plugin_coordinates,
+                    action_package="test.sample")
 
-    expected_kit_version = pkg_resources.get_distribution('deltafi').version
+    assert get_expected_json() == plugin.registration_json()
 
-    expected_url = core_url + "/plugins"
-    expected_headers = {'Content-type': 'application/json'}
-    expected_json = {
+
+def test_plugin_register(monkeypatch):
+    monkeypatch.setenv("CORE_URL", "http://core")
+    plugin_coordinates = PluginCoordinates("plugin-group", "project-name", "1.0.0")
+    plugin = Plugin("plugin-description", plugin_name="project-name",
+                    plugin_coordinates=plugin_coordinates,
+                    action_package="test.sample")
+    with mock.patch("requests.post") as mock_post:
+        plugin._register()
+
+    mock_post.assert_called_once_with("http://core/plugins",
+                                      headers={'Content-type': 'application/json'},
+                                      json=get_expected_json())
+
+
+def get_expected_json():
+    expected_kit_version = metadata.version('deltafi')
+    return {
         "pluginCoordinates": {
             "groupId": "plugin-group",
             "artifactId": "project-name",
@@ -147,17 +131,3 @@ def test_plugin(monkeypatch):
 
         ]
     }
-
-    mock_response = mock(Response)
-    mock_response.ok = True
-    mock_response.status_code = 200
-    mock_response.content = "content"
-
-    when(requests).post(expected_url,
-                        headers=expected_headers,
-                        json=expected_json).thenReturn(mock_response)
-
-    plugin = Plugin([SampleDomainAction, SampleLoadAction], "plugin-description")
-    plugin._register()
-    verifyStubbedInvocationsAreUsed(queue)
-    verifyStubbedInvocationsAreUsed(content_service)

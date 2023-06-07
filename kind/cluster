@@ -138,6 +138,7 @@ ROOT="$( cd "$BASE_PATH/../.." &> /dev/null && pwd)"
 CLUSTER_NAME=deltafi
 PV_DIR=$BASE_PATH/data
 SUDO=$(which sudo)
+KIND_DIR="${ROOT}/deltafi/kind"
 
 if [[ "$(basename "$0")" == "deltafi" ]]; then
   # Deltafi wrapper mode
@@ -375,6 +376,13 @@ _install_plugins() {
 _restart_plugins() {
   _attention "Restarting all plugins"
   _conditional "Plugin restart" _annotated_subshell -h "Restarting deltafi-plugin group" ${KUBECTL} delete pods --grace-period=0 -l group=deltafi-plugins
+}
+
+describe expose "Expose ports for deltafi-core, minio and redis on localhost"
+expose() {
+  kubectl port-forward svc/deltafi-core-service 8888:80  > /dev/null 2>&1 &
+  kubectl port-forward svc/deltafi-minio 9000:9000 > /dev/null 2>&1 &
+  kubectl port-forward svc/deltafi-redis-master 6379:6379 > /dev/null 2>&1 &
 }
 
 describe prerequisites "Install or warn about prerequisites for the KinD cluster"
@@ -767,6 +775,7 @@ Options:
   bounce      Restart an application (deltafi-api, etc.).  App name must follow command
   nocore      Skips building core DeltaFi and UI (build only)
   destroy     Destroys the cluster before proceeding
+  expose      Expose ports for deltafi-core, minio and redis on localhost
   -f | force  Skip "are you sure?"
 
 Examples:
@@ -789,6 +798,7 @@ loc() {
 
   local CLEAN=
   local BUILD=
+  local EXPOSE=
   local INSTALL=
   local REINSTALL=
   local UNINSTALL=
@@ -812,6 +822,9 @@ loc() {
         ;;
       build)
         BUILD=build
+        ;;
+      expose)
+        EXPOSE=expose
         ;;
       nocore)
         NOCORE=nocore
@@ -874,8 +887,50 @@ loc() {
     _annotated_subshell -v "Warning" ${KUBECTL} delete pod --grace-period=0 --force $pods
     _down "Bounced pods matching $BOUNCE"
   fi
+
+  if [[ -n "$EXPOSE" ]]; then
+    _attention "Expose ports for deltafi-core, minio and redis on localhost"
+    expose
+  fi
 }
 
+_has_gradle() {
+  if [[ -f "build.gradle" ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+_has_makefile() {
+  if [[ -f "Makefile" ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+_plugin_clean() {
+  _attention "Cleaning $plugin build environment"
+  if _has_gradle; then
+    ./gradlew clean
+  elif _has_makefile; then
+    make clean
+  else
+    _fail "Unable to determine the build system"
+  fi
+}
+
+_do_plugin_build() {
+  _attention "Building $plugin"
+  if _has_gradle; then
+    ./gradlew "${BUILD_TARGETS[@]}" -x test docker dockerPushLocal
+  elif _has_makefile; then
+    make dockerPushLocal
+  else
+    _fail "Unable to determine the build system"
+  fi
+}
 
 _local_build() {
 
@@ -911,13 +966,50 @@ _local_build() {
     cd "$ROOT/$plugin"
     _annotated_subshell git pull || _warn "Cannot pull latest"
     if [[ $# -gt 0 && $1 == "clean" ]]; then
-      _attention "Cleaning $plugin build environment"
-      ./gradlew clean
+      _plugin_clean
     fi
-    _attention "Building $plugin"
-    ./gradlew "${BUILD_TARGETS[@]}" -x test docker dockerPushLocal
+    _do_plugin_build
   done
 
+}
+
+_get_secret() {
+  deltafi secrets "${1}" | grep "${2}" | tail -1 | tr -s ' ' | cut -d ' ' -f 2 | tr -d '\r'
+}
+
+PLUGIN_ENV="${KIND_DIR}/env/.plugin.env"
+_setup_plugin_env() {
+  _attention "Setting up plugin env"
+  truncate -s 0 "${PLUGIN_ENV}"
+  MINIO_SECRETKEY=$(_get_secret "minio-keys" "rootPassword")
+  REDIS_PASSWORD=$(_get_secret "redis-password" "redis-password")
+  cat <<EOF > "${PLUGIN_ENV}"
+CORE_URL=http://localhost:8888
+MINIO_URL=http://localhost:9000
+REDIS_URL=http://localhost:6379
+MINIO_ACCESSKEY=deltafi
+MINIO_PARTSIZE="100000000"
+MINIO_SECRETKEY=${MINIO_SECRETKEY}
+REDIS_PASSWORD=${REDIS_PASSWORD}
+FROM_ENV_VALUE=set it up
+EOF
+
+  while read -r line; do
+    export "$line"
+  done <"${PLUGIN_ENV}"
+}
+
+_plugin_run() {
+  _attention "Starting plugin locally"
+  expose
+  _setup_plugin_env
+  if _has_gradle; then
+    ./gradlew bootRun
+  elif _has_makefile; then
+    make run
+  else
+    _fail "Unable to determine the build system"
+  fi
 }
 
 describe plugin "Control local plugin builds and installs"
@@ -933,6 +1025,7 @@ Options:
   build                          Build all plugin artifacts locally
   install                        Install plugins into an existing system
   restart                        Restart all plugins running on system
+  run                            Run the plugin locally
   add <name> <coordinates> <url> Add a plugin to the configuration
   add-local <name> <group>       Add a local plugin to the configuration
   -f | force                     Skip "are you sure?"
@@ -983,6 +1076,9 @@ plugin() {
       restart)
         RESTART=restart
         ;;
+      run)
+        RUN=run
+        ;;
       force|-f)
         FORCE=-f
         ;;
@@ -1002,6 +1098,10 @@ plugin() {
 
   if [[ -n "$INSTALL" || -n "$RESTART" ]]; then
     _restart_plugins
+  fi
+
+  if [[ -n "$RUN" ]]; then
+    _plugin_run
   fi
 }
 
@@ -1038,11 +1138,9 @@ _plugin_build() {
       cd "$ROOT/$plugin"
       [[ -d "$ROOT/$plugin/.git" ]] && _annotated_subshell git pull || _warn "Cannot pull latest"
       if [[ $# -gt 0 && $1 == "clean" ]]; then
-        _attention "Cleaning $plugin build environment"
-        ./gradlew clean
+        _plugin_clean
       fi
-      _attention "Building $plugin"
-      ./gradlew "${BUILD_TARGETS[@]}" -x test docker dockerPushLocal
+      _do_plugin_build
     else
       _attention "Unable to build $plugin: Source not in $ROOT/$plugin"
     fi

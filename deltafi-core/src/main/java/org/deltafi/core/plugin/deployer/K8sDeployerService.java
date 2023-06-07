@@ -203,9 +203,11 @@ public class K8sDeployerService extends BaseDeployerService {
         if (details.isEmpty()) {
             result.setSuccess(false);
             result.getErrors().add("No deployment exists for " + pluginCoordinates.groupAndArtifact());
+            return;
         } else if(details.size() > 1) {
             result.setSuccess(false);
             result.getErrors().add("Unexpected delete results for deployment " + pluginCoordinates.getArtifactId() + " " + details);
+            return;
         }
 
         checkStatusDetail(details.get(0), result);

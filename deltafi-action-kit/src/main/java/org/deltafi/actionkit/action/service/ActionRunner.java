@@ -38,6 +38,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.info.BuildProperties;
 
 import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.OffsetDateTime;
@@ -145,6 +146,8 @@ public class ActionRunner {
     private void markRunning() {
         try {
             Files.createFile(Path.of("/tmp/running"));
+        } catch (FileAlreadyExistsException e) {
+            log.warn("Using existing running file");
         } catch (IOException e) {
             throw new StartupException("Failed to write running file: " + e.getMessage());
         }
