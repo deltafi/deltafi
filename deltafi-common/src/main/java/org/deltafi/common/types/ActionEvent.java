@@ -21,6 +21,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -34,7 +35,6 @@ public class ActionEvent {
   private String action;
   private OffsetDateTime start;
   private OffsetDateTime stop;
-  private OffsetDateTime time;
   private ActionEventType type;
   private TransformEvent transform;
   private LoadEvent load;
@@ -48,7 +48,22 @@ public class ActionEvent {
   private List<ReinjectEvent> reinject;
   private List<Metric> metrics;
 
-  public boolean valid() {
+  public String validate() {
+    if (StringUtils.isEmpty(did)) {
+      return "Missing did";
+    } else if (StringUtils.isEmpty(action)) {
+      return "Missing action";
+    } else if (!typeValid()) {
+      return "Action event type does not match the populated object";
+    } else if (start == null) {
+      return "Missing start";
+    } else if (stop == null) {
+      return "Missing stop";
+    }
+    return null;
+  }
+
+  private boolean typeValid() {
     return switch (type) {
       case TRANSFORM -> transform != null;
       case LOAD -> load != null;

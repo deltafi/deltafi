@@ -17,18 +17,12 @@
  */
 package org.deltafi.common.queue.jedis;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.Protocol;
-import redis.clients.jedis.exceptions.JedisConnectionException;
 import redis.clients.jedis.params.ZAddParams;
 import redis.clients.jedis.resps.KeyedZSetElement;
 
@@ -43,11 +37,6 @@ import java.util.List;
  */
 public class JedisKeyedBlockingQueue {
     private static final String HEARTBEAT_HASH = "org.deltafi.action-queue.heartbeat";
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-            .setSerializationInclusion(JsonInclude.Include.NON_NULL)
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-            .configure(DeserializationFeature.USE_LONG_FOR_INTS, true)
-            .registerModule(new JavaTimeModule());
 
     private final JedisPool jedisPool;
 
@@ -75,13 +64,12 @@ public class JedisKeyedBlockingQueue {
     /**
      * Puts an object into the queue.
      *
-     * @param key    the key for the object
-     * @param object the object
-     * @throws JsonProcessingException if the object cannot be converted to a JSON string
+     * @param key   the key for the object
+     * @param value the object
      */
-    public void put(String key, Object object) throws JsonProcessingException {
+    public void put(String key, String value) {
         try (Jedis jedis = jedisPool.getResource()) {
-            put(jedis, key, object);
+            put(jedis, key, value);
         }
     }
 
@@ -100,24 +88,22 @@ public class JedisKeyedBlockingQueue {
         keys.forEach(jedis::del);
     }
 
-    private void put(Jedis jedis, String key, Object value) throws JsonProcessingException {
-        jedis.zadd(key, Instant.now().toEpochMilli(),
-                OBJECT_MAPPER.writeValueAsString(value), ZAddParams.zAddParams().nx());
+    private void put(Jedis jedis, String key, String value) {
+        jedis.zadd(key, Instant.now().toEpochMilli(), value,
+                ZAddParams.zAddParams().nx());
     }
 
     /**
      * Puts multiple objects into the queue.
      *
      * @param items a list of key/object pairss to put into the queue
-     * @throws JsonProcessingException if any object in the map cannot be converted to a JSON string. Objects retrieved
-     *                                 from objectMap before the exception occurred will be placed in the queue, all others will not
      */
-    public void put(List<Pair<String, Object>> items) throws JsonProcessingException, JedisConnectionException {
+    public void put(List<Pair<String, String>> items) {
         try (Jedis jedis = jedisPool.getResource()) {
             Pipeline p = jedis.pipelined();
-            for (Pair<String, Object> item : items) {
+            for (Pair<String, String> item : items) {
                 p.zadd(item.getKey(), Instant.now().toEpochMilli(),
-                        OBJECT_MAPPER.writeValueAsString(item.getValue()), ZAddParams.zAddParams().nx());
+                        item.getValue(), ZAddParams.zAddParams().nx());
             }
             p.sync();
         }
@@ -125,6 +111,7 @@ public class JedisKeyedBlockingQueue {
 
     /**
      * Publish a heartbeat in the form of a timestamp
+     *
      * @param key the name of the component publishing the heartbeat
      */
     public void setHeartbeat(String key) {
@@ -139,17 +126,14 @@ public class JedisKeyedBlockingQueue {
      * This method will block until an object for the provided key is available. When multiple objects are available for
      * the provided key, the earliest one put into the queue is retrieved.
      *
-     * @param key         the key for the object
-     * @param objectClass the class of the object
-     * @param <T>         the type of the class of the object
-     * @return the object
-     * @throws JsonProcessingException if the JSON string retrieved from the queue cannot be converted to the provided
-     *                                 type
+     * @param key the key for the object
+     * @return the object value
+     * type
      */
-    public <T> T take(String key, Class<T> objectClass) throws JsonProcessingException, JedisConnectionException {
+    public String take(String key) {
         try (Jedis jedis = jedisPool.getResource()) {
             KeyedZSetElement keyedZSetElement = jedis.bzpopmin(0, key);
-            return OBJECT_MAPPER.readValue(keyedZSetElement.getElement(), objectClass);
+            return keyedZSetElement.getElement();
         }
     }
 }

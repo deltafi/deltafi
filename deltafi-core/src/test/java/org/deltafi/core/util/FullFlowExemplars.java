@@ -118,6 +118,12 @@ public class FullFlowExemplars {
         return deltaFile;
     }
 
+    public static DeltaFile postEnrichDeltaFileWithUnicodeAnnotation(String did) {
+        DeltaFile deltaFile = postEnrichDeltaFile(did);
+        deltaFile.addAnnotationIfAbsent("\u0101\u0202", "\u0303\u0404");
+        return deltaFile;
+    }
+
     public static DeltaFile postEnrichInvalidDeltaFile(String did) {
         DeltaFile deltaFile = postDomainDeltaFile(did);
         deltaFile.setStage(DeltaFileStage.ERROR);

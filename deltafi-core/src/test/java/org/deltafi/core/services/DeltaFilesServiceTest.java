@@ -60,6 +60,7 @@ class DeltaFilesServiceTest {
     private final EgressFlowService egressFlowService;
     private final TransformFlowService transformFlowService;
     private final StateMachine stateMachine;
+    private final ActionEventQueue actionEventQueue;
     private final DeltaFileRepo deltaFileRepo;
     private final ContentStorageService contentStorageService;
     private final MetricService metricService;
@@ -84,6 +85,7 @@ class DeltaFilesServiceTest {
         this.transformFlowService = transformFlowService;
         this.stateMachine = stateMachine;
         this.deltaFileRepo = deltaFileRepo;
+        this.actionEventQueue = actionEventQueue;
         this.contentStorageService = contentStorageService;
         this.metricService = metricService;
         this.deltaFileCacheService = deltaFileCacheService;
@@ -470,6 +472,13 @@ class DeltaFilesServiceTest {
         deltaFilesService.egress(deltaFile, actionEvent);
 
         Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).isNull();
+    }
+
+    @Test
+    void testProcessActionEventsExceptionHandling() throws JsonProcessingException {
+        Mockito.when(actionEventQueue.takeResult(Mockito.anyString()))
+                .thenThrow(JsonProcessingException.class);
+        assertFalse(deltaFilesService.processActionEvents("test"));
     }
 
     private Content createContent(String did) {

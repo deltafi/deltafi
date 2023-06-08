@@ -20,6 +20,7 @@ package org.deltafi.core.util;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.assertj.core.api.Assertions;
+import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.ActionFamily;
 import org.deltafi.core.generated.types.ErrorsByMessage;
@@ -226,12 +227,17 @@ public class Util {
 
     public static ActionEvent actionEvent(String filename, String did) throws IOException {
         String json = String.format(new String(Objects.requireNonNull(Util.class.getClassLoader().getResourceAsStream("full-flow/" + filename + ".json")).readAllBytes()), did);
-        return OBJECT_MAPPER.readValue(json, ActionEvent.class);
+        return ActionEventQueue.convertEvent(json);
+    }
+
+    public static ActionEvent actionEvent(String filename) throws IOException {
+        String json = new String(Objects.requireNonNull(Util.class.getClassLoader().getResourceAsStream("full-flow/" + filename + ".json")).readAllBytes());
+        return ActionEventQueue.convertEvent(json);
     }
 
     public static ActionEvent filterActionEvent(String did, String filteredAction) throws IOException {
         String json = String.format(new String(Objects.requireNonNull(Util.class.getClassLoader().getResourceAsStream("full-flow/filter.json")).readAllBytes()), did, filteredAction);
-        return OBJECT_MAPPER.readValue(json, ActionEvent.class);
+        return ActionEventQueue.convertEvent(json);
     }
 
     public static String graphQL(String filename) throws IOException {

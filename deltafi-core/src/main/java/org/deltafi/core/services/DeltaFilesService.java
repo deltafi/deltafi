@@ -25,6 +25,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentStorageService;
@@ -220,11 +221,16 @@ public class DeltaFilesService {
     }
 
     public void handleActionEvent(ActionEvent event) throws JsonProcessingException {
-        synchronized(didMutexService.getMutex(event.getDid())) {
+        if (StringUtils.isEmpty(event.getDid())) {
+            throw new InvalidActionEventException("Missing did: " + OBJECT_MAPPER.writeValueAsString(event));
+        } else if (StringUtils.isEmpty(event.getAction())) {
+            throw new InvalidActionEventException("Missing action: " + OBJECT_MAPPER.writeValueAsString(event));
+        }
+        synchronized (didMutexService.getMutex(event.getDid())) {
             DeltaFile deltaFile = getCachedDeltaFile(event.getDid());
 
             if (deltaFile == null) {
-                throw new DgsEntityNotFoundException("Received event for unknown did: " + event);
+                throw new InvalidActionEventException("DeltaFile " + event.getDid() + " not found.");
             }
 
             if (deltaFile.getStage() == DeltaFileStage.CANCELLED) {
@@ -232,9 +238,10 @@ public class DeltaFilesService {
                 return;
             }
 
-            if (!event.valid()) {
+            String validationError = event.validate();
+            if (validationError != null) {
                 event.setError(ErrorEvent.newBuilder().cause(INVALID_ACTION_EVENT_RECEIVED)
-                        .context("Action event type does not match the populated object: " +
+                        .context(validationError + ": " +
                                 OBJECT_MAPPER.writeValueAsString(event)).build());
                 error(deltaFile, event);
                 return;
@@ -1323,14 +1330,16 @@ public class DeltaFilesService {
         processActionEvents(null);
     }
 
-    public void processActionEvents(String uniqueId) {
+    public boolean processActionEvents(String uniqueId) {
         try {
             while (!Thread.currentThread().isInterrupted()) {
                 processResult(actionEventQueue.takeResult(uniqueId));
             }
         } catch (Throwable e) {
             log.error("Error receiving event: " + e.getMessage());
+            return false;
         }
+        return true;
     }
 
     public void processResult(ActionEvent event) {

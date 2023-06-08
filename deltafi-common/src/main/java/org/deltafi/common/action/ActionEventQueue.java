@@ -17,13 +17,16 @@
  */
 package org.deltafi.common.action;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.deltafi.common.queue.jedis.JedisKeyedBlockingQueue;
 import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionInput;
-import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -34,6 +37,13 @@ import java.util.List;
  */
 @Slf4j
 public class ActionEventQueue {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+            .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .configure(DeserializationFeature.USE_LONG_FOR_INTS, true)
+            .registerModule(new JavaTimeModule());
+
     private static final String DGS_QUEUE = "dgs";
 
     private final JedisKeyedBlockingQueue jedisKeyedBlockingQueue;
@@ -46,17 +56,18 @@ public class ActionEventQueue {
         log.info("Jedis pool size: " + maxTotal);
     }
 
-    public void putActions(List<ActionInput> actionInputs) throws JedisConnectionException {
-        List<Pair<String, Object>> actions = new ArrayList<>();
+    public void putActions(List<ActionInput> actionInputs) {
+        List<Pair<String, String>> actions = new ArrayList<>();
         for (ActionInput actionInput : actionInputs) {
-            actions.add(Pair.of(actionInput.getQueueName(), actionInput));
+            try {
+                actions.add(Pair.of(actionInput.getQueueName(), OBJECT_MAPPER.writeValueAsString(actionInput)));
+            } catch (JsonProcessingException e) {
+                log.error("Unable to convert action to JSON", e);
+                return;
+            }
         }
 
-        try {
-            jedisKeyedBlockingQueue.put(actions);
-        } catch (JsonProcessingException e) {
-            log.error("Unable to convert action to JSON", e);
-        }
+        jedisKeyedBlockingQueue.put(actions);
     }
 
     /**
@@ -66,8 +77,8 @@ public class ActionEventQueue {
      * @return next Action on the queue for the given action name
      * @throws JsonProcessingException if the incoming event cannot be serialized
      */
-    public ActionInput takeAction(String actionClassName) throws JsonProcessingException, JedisConnectionException {
-        return jedisKeyedBlockingQueue.take(actionClassName, ActionInput.class);
+    public ActionInput takeAction(String actionClassName) throws JsonProcessingException {
+        return convertInput(jedisKeyedBlockingQueue.take(actionClassName));
     }
 
     private String queueName(String returnAddress) {
@@ -85,12 +96,22 @@ public class ActionEventQueue {
      * @param result ActionEventInput object for the result to be posted to the action queue
      * @throws JsonProcessingException if the outgoing event cannot be deserialized
      */
-    public void putResult(ActionEvent result, String returnAddress) throws JsonProcessingException, JedisConnectionException {
-        jedisKeyedBlockingQueue.put(queueName(returnAddress), result);
+    public void putResult(ActionEvent result, String returnAddress) throws JsonProcessingException {
+        jedisKeyedBlockingQueue.put(queueName(returnAddress),
+                OBJECT_MAPPER.writeValueAsString(result));
     }
 
     public ActionEvent takeResult(String returnAddress) throws JsonProcessingException {
-        return jedisKeyedBlockingQueue.take(queueName(returnAddress), ActionEvent.class);
+        return convertEvent(jedisKeyedBlockingQueue.take(queueName(returnAddress)));
+
+    }
+
+    public static ActionEvent convertEvent(String element) throws JsonProcessingException {
+        return OBJECT_MAPPER.readValue(element, ActionEvent.class);
+    }
+
+    public static ActionInput convertInput(String element) throws JsonProcessingException {
+        return OBJECT_MAPPER.readValue(element, ActionInput.class);
     }
 
     public void setHeartbeat(String key) {

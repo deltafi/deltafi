@@ -37,6 +37,7 @@ import org.deltafi.core.delete.DeleteRunner;
 import org.deltafi.core.exceptions.IngressMetadataException;
 import org.deltafi.core.exceptions.IngressStorageException;
 import org.deltafi.core.exceptions.IngressUnavailableException;
+import org.deltafi.core.exceptions.InvalidActionEventException;
 import org.deltafi.core.generated.DgsConstants;
 import org.deltafi.core.generated.client.*;
 import org.deltafi.core.generated.types.ConfigType;
@@ -879,11 +880,68 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void testEnrichInvalid() throws IOException {
+	void testEnrichWithUnicodeAnnotation() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postDomainDeltaFile(did));
 
-		deltaFilesService.handleActionEvent(actionEvent("enrichInvalid", did));
+		deltaFilesService.handleActionEvent(actionEvent("enrichUnicode", did));
+
+		verifyActionEventResults(postEnrichDeltaFileWithUnicodeAnnotation(did), "sampleEgress.SampleFormatAction");
+		Map<String, String> tags = tagsFor(ActionEventType.ENRICH, "sampleEnrich.SampleEnrichAction", INGRESS_FLOW_NAME, null);
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
+		Mockito.verifyNoMoreInteractions(metricService);
+	}
+
+	@Test
+	void testEnrichDidHasUnicode() {
+		String did = "\u0102\u0202\u0203\u0404";
+		deltaFileRepo.save(postDomainDeltaFile(did));
+
+		org.assertj.core.api.Assertions.assertThatThrownBy(
+						() -> deltaFilesService.handleActionEvent(actionEvent("enrichUnicodeDid")))
+				.isInstanceOf(InvalidActionEventException.class)
+				.hasMessageContaining("Invalid ActionEvent: DeltaFile ĂȂȃЄ not found");
+	}
+
+	@Test
+	void testEnrichDidNotFound() throws IOException {
+		String did = UUID.randomUUID().toString();
+		deltaFileRepo.save(postDomainDeltaFile(did));
+
+		org.assertj.core.api.Assertions.assertThatThrownBy(
+						() -> deltaFilesService.handleActionEvent(actionEvent("enrichDidNotFound", did)))
+				.isInstanceOf(InvalidActionEventException.class)
+				.hasMessageContaining("Invalid ActionEvent: DeltaFile xxx");
+	}
+
+	@Test
+	void testEnrichMissingAction() throws IOException {
+		String did = UUID.randomUUID().toString();
+		deltaFileRepo.save(postDomainDeltaFile(did));
+
+		org.assertj.core.api.Assertions.assertThatThrownBy(
+						() -> deltaFilesService.handleActionEvent(actionEvent("enrichMissingAction", did)))
+				.isInstanceOf(InvalidActionEventException.class)
+				.hasMessageContaining("Invalid ActionEvent: Missing action:");
+	}
+
+	@Test
+	void testEnrichMissingDid() throws IOException {
+		String did = UUID.randomUUID().toString();
+		deltaFileRepo.save(postDomainDeltaFile(did));
+
+		org.assertj.core.api.Assertions.assertThatThrownBy(
+						() -> deltaFilesService.handleActionEvent(actionEvent("enrichMissingDid", did)))
+				.isInstanceOf(InvalidActionEventException.class)
+				.hasMessageContaining("Invalid ActionEvent: Missing did:");
+	}
+
+	@Test
+	void testEnrichWrongElement() throws IOException {
+		String did = UUID.randomUUID().toString();
+		deltaFileRepo.save(postDomainDeltaFile(did));
+
+		deltaFilesService.handleActionEvent(actionEvent("enrichWrongElement", did));
 
 		DeltaFile afterMutation = deltaFilesService.getDeltaFile(did);
 		assertEqualsIgnoringDates(postEnrichInvalidDeltaFile(did), afterMutation);
