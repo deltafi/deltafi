@@ -38,6 +38,7 @@ import "primevue/resources/themes/bootstrap4-light-blue/theme.css";
 import "primevue/resources/primevue.min.css";
 import "primeicons/primeicons.css";
 import "@fortawesome/fontawesome-free/css/all.css";
+import "vue-time-date-range-picker/src/Styles/DatePicker.scss";
 import "@/styles/icomoon.scss";
 import "@/styles/global.scss";
 
@@ -47,20 +48,21 @@ if (process.env.NODE_ENV === "development") {
   const responseType = process.env.VUE_APP_MOCK_RESPONSES ? process.env.VUE_APP_MOCK_RESPONSES : "";
   if (["successResponse", "errorResponse", "customResponse"].includes(responseType)) {
     const { worker } = require("./mocks/browser.ts");
-    worker.start({    // turn off MSW warnings for specific routes
+    worker.start({
+      // turn off MSW warnings for specific routes
       onUnhandledRequest(req: any, print: any) {
         // specify routes to exclude
-        const excludedRoutes = ['/js/', '/fonts/'];
+        const excludedRoutes = ["/js/", "/fonts/"];
 
         // check if the req.url.pathname contains excludedRoutes
-        const isExcluded = excludedRoutes.some(route => req.url.pathname.includes(route));
+        const isExcluded = excludedRoutes.some((route) => req.url.pathname.includes(route));
 
         if (isExcluded) {
           return;
         }
 
-        print.warning()
-      }
+        print.warning();
+      },
     });
   }
 }

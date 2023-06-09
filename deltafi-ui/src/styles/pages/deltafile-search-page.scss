@@ -29,12 +29,31 @@
     font-weight: 500;
   }
 
+  .p-multiselect.p-multiselect-chip .p-multiselect-token {
+    padding-bottom: 1px;
+    padding-top: 1px;
+  }
+
   .input-area-height {
     height: 32px;
   }
 
+  .input-area-width {
+    width: 335px;
+  }
+
+  .vdpr-datepicker__calendar-dialog {
+    margin-left: -275px;
+  }
+
+  .vdpr-datepicker__button-reset {
+    color: white;
+    background-color: #dc3545;
+    border-color: #d00f27;
+  }
+
   .p-panel-content {
-    padding: 1.25rem 0.75rem 1.5rem;
+    padding: 1.25rem 0.75rem 1.5rem !important;
   }
 
   .search-options-wrapper {
@@ -88,11 +107,6 @@
     padding: 0 0.25rem;
   }
 
-  .time-range .form-control:disabled,
-  .time-range .form-control[readonly] {
-    background-color: #ffffff;
-  }
-
   .size-container {
     >* {
       vertical-align: middle !important;
@@ -131,7 +145,7 @@
     }
 
     .p-panel-content {
-      padding: 0;
+      padding: 0 !important;
       border: none;
 
       td.filename-column {
@@ -153,8 +167,10 @@
       border: unset;
     }
   }
-  .p-datatable.p-datatable-striped .p-datatable-tbody > tr.p-highlight {
+
+  .p-datatable.p-datatable-striped .p-datatable-tbody>tr.p-highlight {
     color: #ffffff;
+
     a,
     button {
       color: #eeeeee;

@@ -16,31 +16,33 @@
    limitations under the License.
 */
 
-import { ref } from 'vue'
-import useGraphQL from './useGraphQL'
+import { ref } from "vue";
+import useGraphQL from "./useGraphQL";
 
 export default function useDomains() {
   const { response, queryGraphQL, loading, errors } = useGraphQL();
   const loaded = ref(false);
+  const domains = ref([]);
 
   const getDomains = async () => {
     await queryGraphQL("domains", "getDomains");
     loaded.value = true;
+    domains.value = response.value.data.domains;
     return response.value.data.domains;
-  }
+  };
 
   const getAnnotationKeys = async (domain: String) => {
     const query = {
       annotationKeys: {
         __args: {
-          domain: domain === undefined ? null : domain
-        }
-      }
+          domain: domain === undefined ? null : domain,
+        },
+      },
     };
     await queryGraphQL(query, "getAnnotationKeys", "query", true);
     loaded.value = true;
     return response.value.data.annotationKeys;
-  }
+  };
 
-  return { loading, loaded, getDomains, getAnnotationKeys: getAnnotationKeys, errors };
+  return { loading, loaded, domains, getDomains, getAnnotationKeys: getAnnotationKeys, errors };
 }

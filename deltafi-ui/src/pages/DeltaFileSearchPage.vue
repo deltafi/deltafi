@@ -22,11 +22,8 @@
       <PageHeader heading="DeltaFile Search">
         <div class="time-range btn-toolbar mb-2 mb-md-0">
           <Button class="p-button-text p-button-sm p-button-secondary" disabled>{{ shortTimezone() }}</Button>
-          <Calendar v-model="startTimeDate" :show-time="true" :show-seconds="true" :manual-input="true" input-class="deltafi-input-field" @input="updateInputStartTime" />
-          <span class="mt-2 ml-2">&mdash;</span>
-          <Calendar v-model="endTimeDate" :show-time="true" :show-seconds="true" :manual-input="true" input-class="deltafi-input-field ml-2" @input="updateInputEndTime" />
-          <Button class="p-button p-button-secondary p-button-outlined deltafi-input-field ml-3" icon="far fa-regular fa-calendar" label="Today" @click="setDateTimeToday()" />
-          <Button class="p-button p-button-outlined deltafi-input-field ml-3" :icon="refreshButtonIcon" label="Refresh" @click="fetchDeltaFilesData()" />
+          <date-picker :key="Math.random()" ref="datePickerRef" :date-input="dateInput" :calendar-date-input="calendarDateInput" switch-button-label="All Day" :format="timestampFormat" :same-date-format="sameDateFormat" :initial-dates="[model.startTimeDate, model.endTimeDate]" :show-helper-buttons="true" @date-applied="updateInputDateTime" @on-reset="resetDateTime" />
+          <Button class="p-button p-button-outlined deltafi-input-field ml-3" icon="fa fa-sync-alt" :loading="loading" label="Refresh" @click="fetchDeltaFilesData()" />
         </div>
       </PageHeader>
     </div>
@@ -38,73 +35,56 @@
               <span class="d-flex">
                 <span class="p-panel-title align-advanced-options-header">Advanced Search Options</span>
                 <span>
-                  <Button v-tooltip.right="{ value: `Clear active search options`, disabled: !activeAdvancedOptions() }" rounded :class="`ml-2 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${activeAdvancedOptions() ? 'p-column-filter-menu-button-active' : null}`" :disabled="!activeAdvancedOptions()" @click="clearOptions()">
+                  <Button v-tooltip.right="{ value: `Clear Options`, disabled: !activeAdvancedOptions }" rounded :class="`ml-2 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${activeAdvancedOptions ? 'p-column-filter-menu-button-active' : null}`" :disabled="!activeAdvancedOptions" @click="clearOptions()">
                     <i class="pi pi-filter" style="font-size: 1rem"></i>
                   </Button>
                 </span>
               </span>
             </span>
           </template>
-          <template #icons>
-            <Button class="p-panel-header-icon p-link p-mr-2" @click="optionMenuToggle">
-              <span class="fas fa-cog" />
-            </Button>
-            <Menu id="config_menu" ref="optionMenu" :model="items" :popup="true" />
-          </template>
           <div class="search-options-wrapper">
             <div class="flex-row">
-              <div class="flex-column">
-                <label for="fileNameId">Filename:</label>
-                <InputText v-model.trim="fileName" class="p-inputtext input-area-height responsive-width" placeholder="Filename" />
-                <label for="flowId" class="mt-2">Ingress Flow:</label>
-                <MultiSelect id="flowId" v-model="flowOptionSelected" :options="flowOptions" placeholder="Select an Ingress Flow" class="deltafi-input-field responsive-width" />
-                <label for="egressFlowId" class="mt-2">Egress Flow:</label>
-                <MultiSelect id="egressFlowId" v-model="egressFlowOptionSelected" :options="egressFlowOptions" placeholder="Select an Egress Flow" class="deltafi-input-field responsive-width" />
-                <label for="stageId" class="mt-2">Size:</label>
-                <div class="size-container">
-                  <Dropdown v-model="sizeTypeSelected" :options="sizeTypes" option-label="name" style="width: 8rem" class="deltafi-input-field mr-2" />
-                  <InputNumber v-model="sizeMin" class="p-inputnumber input-area-height" :input-style="{ width: '6rem' }" placeholder="Min" /> -
-                  <InputNumber v-model="sizeMax" class="p-inputnumber input-area-height" :input-style="{ width: '6rem' }" placeholder="Max" />
-                  <Dropdown v-model="sizeUnitSelected" :options="sizeUnits" option-label="name" class="deltafi-input-field ml-2" />
-                </div>
+              <div v-for="columnNumber in 3" :key="columnNumber" :class="`flex-column ${_.isEqual(columnNumber, 2) ? 'flex-column-small' : ''}`">
+                <template v-for="[i, formInfo] of _.orderBy(_.filter(advanceOptionsPanelInfo, ['column', columnNumber]), ['order'], ['asc']).entries()" :key="formInfo">
+                  <label :for="`${formInfo.field}` + 'Id'" :class="!_.isEqual(i, 0) ? 'mt-2' : ''">{{ formInfo.label }}</label>
+                  <InputText v-if="_.isEqual(formInfo.componentType, 'InputText')" :id="`${formInfo.field}` + 'Id'" v-model.trim="model[formInfo.field]" :placeholder="formInfo.placeholder" :class="formInfo.class" />
+                  <MultiSelect v-if="_.isEqual(formInfo.componentType, 'MultiSelect')" :id="`${formInfo.field}` + 'Id'" v-model="model[formInfo.field]" :options="formInfo.options" :placeholder="formInfo.placeholder" :class="formInfo.class" display="chip" />
+                  <div v-if="_.isEqual(formInfo.componentType, 'SizeUnit')" class="size-container">
+                    <Dropdown v-model="model.sizeType" :options="sizeTypesOptions" style="width: 8rem" class="deltafi-input-field mr-2" />
+                    <InputNumber v-model="model.sizeMin" class="p-inputnumber input-area-height" :input-style="{ width: '6rem' }" placeholder="Min" /> -
+                    <InputNumber v-model="model.sizeMax" class="p-inputnumber input-area-height" :input-style="{ width: '6rem' }" placeholder="Max" />
+                    <Dropdown v-model="model.sizeUnit" :options="[...sizeUnitsOptionsMap.keys()]" class="deltafi-input-field ml-2" />
+                  </div>
+                  <Dropdown v-if="_.isEqual(formInfo.componentType, 'Dropdown')" :id="`${formInfo.field}` + 'Id'" v-model="model[formInfo.field]" :placeholder="formInfo.placeholder" :options="formInfo.options" :show-clear="true" :class="formInfo.class">
+                    <template #value="slotProps">
+                      <div v-if="slotProps.value != null" class="flex align-items-center">
+                        <div>{{ formatOption(formInfo.formatOptions, slotProps.value) }}</div>
+                      </div>
+                      <span v-else>
+                        {{ slotProps.placeholder }}
+                      </span>
+                    </template>
+                    <template #option="slotProps">
+                      <div class="flex align-items-center">
+                        <div>{{ formatOption(formInfo.formatOptions, slotProps.option) }}</div>
+                      </div>
+                    </template>
+                  </Dropdown>
+                  <InputNumber v-if="_.isEqual(formInfo.componentType, 'InputNumber')" :id="`${formInfo.field}` + 'Id'" v-model="model[formInfo.field]" :input-style="{ width: '6rem' }" :placeholder="formInfo.placeholder" :class="formInfo.class" />
+                  <div v-if="_.isEqual(formInfo.componentType, 'Annotations')" :id="`${formInfo.field}` + 'Id'" class="annotations-chips">
+                    <Chip v-for="item in model.validatedAnnotations" :key="item" v-tooltip.top="{ value: invalidAnnotationTooltip(item.key), disabled: item.valid }" removable class="mr-2 mb-1" :class="{ 'invalid-chip': !item.valid, 'valid-chip': item.valid }" @remove="removeAnnotationItem(item)"> {{ item.key }}: {{ item.value }} </Chip>
+                    <Chip class="add-annotations-btn" @click="showAnnotationsOverlay">
+                      &nbsp;
+                      <i class="pi pi-plus"></i>
+                      &nbsp;
+                    </Chip>
+                  </div>
+                </template>
               </div>
-              <div class="flex-column flex-column-small">
-                <label for="testModeState">Test Mode:</label>
-                <Dropdown id="testModeState" v-model="testModeOptionSelected" placeholder="Select if in Test Mode" :options="testModeOptions" option-label="name" :show-clear="true" class="deltafi-input-field min-width" />
-                <label for="isReplayable" class="mt-2">Replayable:</label>
-                <Dropdown id="isReplayable" v-model="isReplayableSelected" placeholder="Select if Replayable" :options="isReplayableOptions" option-label="name" :show-clear="true" class="deltafi-input-field min-width" />
-                <label for="terminalStageId" class="mt-2">Terminal Stage:</label>
-                <Dropdown id="terminalStageId" v-model="terminalStageOptionSelected" placeholder="Select if Terminal Stage" :options="terminalStageOptions" option-label="name" show-clear :editable="false" class="deltafi-input-field min-width" />
-                <label for="egressedState" class="mt-2">Egressed:</label>
-                <Dropdown id="egressState" v-model="egressedOptionSelected" placeholder="Select if Egressed" :options="egressedOptions" option-label="name" :show-clear="true" class="deltafi-input-field min-width" />
-                <label for="filteredState" class="mt-2">Filtered:</label>
-                <Dropdown id="filteredState" v-model="filteredOptionSelected" placeholder="Select if Filtered" :options="filteredOptions" option-label="name" :show-clear="true" class="deltafi-input-field min-width" />
-                <label for="filteredReasonId" class="mt-2">Filtered Cause:</label>
-                <InputText v-model="filteredCause" class="p-inputtext input-area-height" placeholder="Filtered Cause" />
-              </div>
-              <div class="flex-column">
-                <label for="requeueMinId">Requeue Count:</label>
-                <InputNumber v-model="requeueMin" class="p-inputnumber input-area-height" :input-style="{ width: '6rem' }" placeholder="Min" />
-                <label for="processingType" class="mt-2">Processing Type:</label>
-                <Dropdown id="processingType" v-model="processingTypeSelected" placeholder="Select a Processing Type" :options="processingTypeOptions" show-clear :editable="false" class="deltafi-input-field min-width" />
-                <label for="stageId" class="mt-2">Stage:</label>
-                <Dropdown id="stageId" v-model="stageOptionSelected" placeholder="Select a Stage" :options="stageOptions" option-label="name" show-clear :editable="false" class="deltafi-input-field min-width" />
-                <label for="filteredState" class="mt-2">Domain:</label>
-                <Dropdown id="domain" v-model="domainOptionSelected" placeholder="Select a Domain" :options="domainOptions" option-label="name" show-clear :editable="false" class="deltafi-input-field min-width" />
-                <label for="annotationsState" class="mt-2">Annotations:</label>
-                <div class="annotations-chips">
-                  <Chip v-for="item in annotationsArray" :key="item" v-tooltip.top="{ value: invalidAnnotationTooltip(item.key), disabled: item.valid }" removable class="mr-2 mb-1" :class="{ 'invalid-chip': !item.valid, 'valid-chip': item.valid }" @remove="removeAnnotationItem(item)"> {{ item.key }}: {{ item.value }} </Chip>
-                  <Chip class="add-annotations-btn" @click="showAnnotationsOverlay">
-                    &nbsp;
-                    <i class="pi pi-plus"></i>
-                    &nbsp;
-                  </Chip>
-                </div>
-                <OverlayPanel ref="annotationsOverlay">
-                  <Dropdown v-model="newAnnotationKey" placeholder="Key" :options="annotationsKeysOptions" option-label="key" style="width: 15rem" @keyup.enter="addAnnotationItemEvent" /> :
-                  <InputText v-model="newAnnotationValue" placeholder="Value" style="width: 15rem" @keyup.enter="addAnnotationItemEvent" />
-                </OverlayPanel>
-              </div>
+              <OverlayPanel ref="annotationsOverlay">
+                <Dropdown v-model="newAnnotationKey" placeholder="Key" :options="annotationsKeysOptions" option-label="key" style="width: 15rem" @keyup.enter="addAnnotationItemEvent" /> :
+                <InputText v-model="newAnnotationValue" placeholder="Value" style="width: 15rem" @keyup.enter="addAnnotationItemEvent" />
+              </OverlayPanel>
             </div>
           </div>
         </CollapsiblePanel>
@@ -117,9 +97,9 @@
           <span class="fas fa-bars" />
         </Button>
         <Menu ref="menu" :model="menuItems" :popup="true" />
-        <Paginator v-if="results.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :current-page-report-template="pageReportTemplate" :total-records="totalRecords" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)"></Paginator>
+        <Paginator v-if="results.length > 0" :rows="model.perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :current-page-report-template="pageReportTemplate" :total-records="totalRecords" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)"></Paginator>
       </template>
-      <DataTable id="searchResultsTable" v-model:selection="selectedDids" selection-mode="multiple" data-key="did" responsive-layout="scroll" class="p-datatable p-datatable-sm p-datatable-gridlines" striped-rows :meta-key-selection="false" :value="results" :loading="loading" loading-icon="pi pi-spinner" :rows="perPage" :lazy="true" :total-records="totalRecords" :row-class="actionRowClass" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
+      <DataTable v-model:selection="selectedDids" selection-mode="multiple" responsive-layout="scroll" class="p-datatable p-datatable-sm p-datatable-gridlines" striped-rows :value="results" :loading="loading" loading-icon="pi pi-spinner" :rows="model.perPage" :lazy="true" :total-records="totalRecords" :row-class="actionRowClass" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
         <template #empty>No DeltaFiles match the provided search criteria.</template>
         <template #loading>Loading results. Please wait.</template>
         <Column field="did" header="DID" class="did-column">
@@ -149,23 +129,27 @@
           <template #body="row">{{ row.data.elapsed }}</template>
         </Column>
       </DataTable>
+      <ScrollTop target="window" :threshold="150" icon="pi pi-arrow-up" />
     </Panel>
   </div>
-  <RetryResumeDialog ref="retryResumeDialog" :did="filterSelectedDids" @update="fetchDeltaFilesData" />
+  <RetryResumeDialog ref="retryResumeDialog" :did="filterSelectedDids" @update="fetchDeltaFilesData()" />
   <AnnotateDialog ref="annotateDialog" :dids="filterSelectedDids" @refresh-page="fetchDeltaFilesData()" />
 </template>
 
 <script setup>
+import DatePicker from "vue-time-date-range-picker/src/Components/DatePicker";
+import AnnotateDialog from "@/components/AnnotateDialog.vue";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import DidLink from "@/components/DidLink.vue";
 import FormattedBytes from "@/components/FormattedBytes.vue";
 import PageHeader from "@/components/PageHeader.vue";
+import RetryResumeDialog from "@/components/MetadataDialog.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useDeltaFilesQueryBuilder from "@/composables/useDeltaFilesQueryBuilder";
 import useDomains from "@/composables/useDomains";
 import useFlows from "@/composables/useFlows";
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import { ref, computed, watch, onMounted, nextTick, inject, onBeforeMount } from "vue";
+import { computed, inject, nextTick, onBeforeMount, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useStorage, StorageSerializers, useUrlSearchParams } from "@vueuse/core";
 import _ from "lodash";
@@ -173,45 +157,166 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 
 import Button from "primevue/button";
-import Calendar from "primevue/calendar";
+import Chip from "primevue/chip";
 import Column from "primevue/column";
+import ContextMenu from "primevue/contextmenu";
 import DataTable from "primevue/datatable";
 import Dropdown from "primevue/dropdown";
+import InputNumber from "primevue/inputnumber";
+import InputText from "primevue/inputtext";
 import MultiSelect from "primevue/multiselect";
 import Menu from "primevue/menu";
 import Paginator from "primevue/paginator";
 import Panel from "primevue/panel";
-import InputNumber from "primevue/inputnumber";
-import InputText from "primevue/inputtext";
-import Chip from "primevue/chip";
 import OverlayPanel from "primevue/overlaypanel";
-import ContextMenu from "primevue/contextmenu";
-import RetryResumeDialog from "@/components/MetadataDialog.vue";
-import AnnotateDialog from "@/components/AnnotateDialog.vue";
+import ScrollTop from "primevue/scrolltop";
 
 dayjs.extend(utc);
 const hasPermission = inject("hasPermission");
 const params = useUrlSearchParams("history");
 const { getDeltaFileSearchData, getEnumValuesByEnumType } = useDeltaFilesQueryBuilder();
-const { duration, formatTimestamp, shortTimezone } = useUtilFunctions();
-const { getDomains, getAnnotationKeys } = useDomains();
-const { ingressFlows: flowOptions, fetchIngressFlowNames, egressFlows: egressFlowOptions, fetchEgressFlowNames } = useFlows();
+const { duration, shortTimezone } = useUtilFunctions();
+const { domains: domainOptions, getDomains, getAnnotationKeys } = useDomains();
+const { ingressFlows: ingressFlowOptions, fetchIngressFlowNames, egressFlows: egressFlowOptions, fetchEgressFlowNames } = useFlows();
 const route = useRoute();
 const useURLSearch = ref(false);
 const uiConfig = inject("uiConfig");
-const optionMenu = ref();
 const selectedDids = ref([]);
 const menu = ref();
 const retryResumeDialog = ref();
 const annotateDialog = ref();
+const annotationsOverlay = ref(null);
+const newAnnotationKey = ref(null);
+const newAnnotationValue = ref(null);
+const loading = ref(true);
+const totalRecords = ref(0);
+const collapsedSearchOption = ref(true);
+const tableData = ref([]);
 
-const maxTotalRecords = 50000;
-const pageReportTemplate = computed(() => {
-  const total = totalRecords.value == maxTotalRecords ? "many" : "{totalRecords}";
-  return `{first} - {last} of ${total}`;
+// Advanced Options Dropdown Variables
+const annotationsKeysOptions = ref([]);
+const stageOptions = ref([]);
+const processingTypeOptions = ref(["NORMALIZATION", "TRANSFORMATION"]);
+const booleanOptions = ref([true, false]);
+const sizeUnitsOptionsMap = ref(
+  new Map([
+    ["B", { multiplier: 1 }],
+    ["kB", { multiplier: 1000 }],
+    ["MB", { multiplier: 1000000 }],
+    ["GB", { multiplier: 1000000000 }],
+  ])
+);
+const sizeTypesOptions = ref(["Ingress", "Total"]);
+
+const setupWatchers = () => {
+  watch(
+    () => [model.value.startTimeDate, model.value.endTimeDate],
+    () => {
+      fetchDeltaFilesData();
+    }
+  );
+
+  watch(
+    () => model.value.domains,
+    async (value) => {
+      fetchDeltaFilesData();
+      await fetchAnnotationKeys(value);
+      validatedAnnotationsArray();
+    }
+  );
+
+  watch(
+    () => model.value.validatedAnnotations,
+    () => {
+      fetchDeltaFilesData();
+    },
+    { deep: true }
+  );
+
+  watch(
+    () => [model.value.sizeMin, model.value.sizeMax, model.value.stage, model.value.egressed, model.value.filtered, model.value.testMode, model.value.requeueMin, model.value.replayable, model.value.processingType, model.value.terminalStage],
+    () => {
+      fetchDeltaFilesData();
+    }
+  );
+
+  watch(
+    () => [model.value.egressFlows, model.value.ingressFlows],
+    _.debounce(
+      () => {
+        fetchDeltaFilesData();
+      },
+      500,
+      { leading: false, trailing: true }
+    )
+  );
+
+  watch(
+    () => model.value.fileName,
+    _.debounce(
+      () => {
+        fetchDeltaFilesData();
+      },
+      500,
+      { leading: false, trailing: true }
+    )
+  );
+
+  watch(
+    () => model.value.filteredCause,
+    _.debounce(
+      () => {
+        {
+          if (model.value.filteredCause == "") {
+            model.value.filteredCause = null;
+          } else {
+            fetchDeltaFilesData();
+          }
+        }
+      },
+      500,
+      { leading: false, trailing: true }
+    ),
+    { deep: true }
+  );
+
+  watch(
+    () => [model.value.sizeType, model.value.sizeUnit],
+    () => {
+      if (model.value.sizeMin || model.value.sizeMax) {
+        fetchDeltaFilesData();
+      }
+      setPersistedParams();
+    }
+  );
+};
+
+onBeforeMount(async () => {
+  queryParamsModel.value = _.cloneDeep(defaultQueryParamsTemplate);
+  useURLSearch.value = route.fullPath.includes("search?");
+  getPersistedParams();
+  fetchDropdownOptions();
+  await nextTick();
+  if (model.value.domains == null) fetchAnnotationKeys();
+  await fetchDeltaFilesDataNoDebounce();
+  setupWatchers();
 });
 
-// Dates
+// Fetches all the options used in the dropdown
+const fetchDropdownOptions = async () => {
+  getDomains();
+  fetchIngressFlowNames();
+  fetchEgressFlowNames();
+  fetchStages();
+};
+
+const fetchStages = async () => {
+  let enumsStageTypes = await getEnumValuesByEnumType("DeltaFileStage");
+  stageOptions.value = _.uniq(_.map(enumsStageTypes.data.__type.enumValues, "name"));
+};
+
+// Dates/Time Variables
+const timestampFormat = "YYYY-MM-DD HH:mm:ss";
 const defaultStartTimeDate = computed(() => {
   const date = dayjs().utc();
   return (uiConfig.useUTC ? date : date.local()).startOf("day");
@@ -220,129 +325,155 @@ const defaultEndTimeDate = computed(() => {
   const date = dayjs().utc();
   return (uiConfig.useUTC ? date : date.local()).endOf("day");
 });
-const startTimeDate = ref();
-const startTimeDateIsDefault = computed(() => {
-  return startTimeDate.value.getTime() === new Date(defaultStartTimeDate.value.format(timestampFormat)).getTime();
-});
-const endTimeDate = ref();
-const endTimeDateIsDefault = computed(() => {
-  return endTimeDate.value.getTime() === new Date(defaultEndTimeDate.value.format(timestampFormat)).getTime();
-});
-const setDateTimeToday = () => {
-  startTimeDate.value = new Date(defaultStartTimeDate.value.format(timestampFormat));
-  endTimeDate.value = new Date(defaultEndTimeDate.value.format(timestampFormat));
+
+const datePickerRef = ref(null);
+const sameDateFormat = {
+  from: timestampFormat,
+  to: timestampFormat,
 };
-const startDateISOString = computed(() => {
-  return dayjs(startTimeDate.value).utc(uiConfig.useUTC).toISOString();
-});
-const endDateISOString = computed(() => {
-  return dayjs(endTimeDate.value).utc(uiConfig.useUTC).toISOString();
-});
+const calendarDateInput = {
+  labelStarts: "Start",
+  labelEnds: "End",
+  inputClass: null,
+  format: "YYYY-MM-DD",
+};
+const dateInput = {
+  placeholder: "Select Date",
+  inputClass: "p-inputtext p-component deltafi-input-field input-area-width",
+};
+const updateInputDateTime = async (startDate, endDate) => {
+  model.value.startTimeDate = startDate;
+  model.value.endTimeDate = endDate;
+};
+const resetDateTime = async () => {
+  datePickerRef.value.onApply(new Date(defaultStartTimeDate.value.format(timestampFormat)), new Date(defaultEndTimeDate.value.format(timestampFormat)));
+};
 
-const domainOptions = ref([]);
-const domainOptionSelected = ref(null);
-const processingTypeSelected = ref(null);
-const annotationsKeysOptions = ref([]);
-const newAnnotationKey = ref(null);
-const newAnnotationValue = ref(null);
-const fileName = ref(null);
-const filteredCause = ref(null);
-const requeueMin = ref(null);
-const flowOptionSelected = ref([]);
-const egressFlowOptionSelected = ref([]);
-const stageOptions = ref([]);
-const stageOptionSelected = ref(null);
-const processingTypeOptions = ref(["NORMALIZATION", "TRANSFORMATION"]);
-const egressedOptions = ref([
-  { name: "True", value: true },
-  { name: "False", value: false },
-]);
-const isReplayableOptions = ref([
-  { name: "True", value: true },
-  { name: "False", value: false },
-]);
-const terminalStageOptions = ref([
-  { name: "True", value: true },
-  { name: "False", value: false },
-]);
-const egressedOptionSelected = ref(null);
-const isReplayableSelected = ref(null);
-const terminalStageOptionSelected = ref(null);
-const testModeOptions = ref([
-  { name: "True", value: true },
-  { name: "False", value: false },
-]);
+const dateToISOString = (dateData) => {
+  return dayjs(dateData).utc(uiConfig.useUTC).toISOString();
+};
 
-const filteredOptions = ref([
-  { name: "True", value: true },
-  { name: "False", value: false },
-]);
-const filteredOptionSelected = ref(null);
-const testModeOptionSelected = ref(null);
-const loading = ref(true);
-const totalRecords = ref(0);
-const collapsedSearchOption = ref(true);
-const tableData = ref([]);
-const offset = ref(0);
-const perPage = ref();
-const sortField = ref("modified");
-const sortDirection = ref("DESC");
-const timestampFormat = "YYYY-MM-DD HH:mm:ss";
-const annotationsArray = ref([]);
-const sizeMin = ref();
-const sizeMax = ref();
-const sizeUnits = [
-  { name: "B", multiplier: 1 },
-  { name: "kB", multiplier: 1000 },
-  { name: "MB", multiplier: 1000000 },
-  { name: "GB", multiplier: 1000000000 },
-];
-const sizeTypes = [
-  { name: "Ingress", ingress: true },
-  { name: "Total", total: true },
-];
-const sizeTypeSelected = ref(sizeTypes[0]);
-const sizeUnitSelected = ref(sizeUnits[0]);
+const isoStringToDate = (isoStringData) => {
+  return uiConfig.useUTC ? dayjs(isoStringData).add(new Date().getTimezoneOffset(), "minute").toDate() : dayjs(isoStringData).toDate();
+};
 
-const ingressBytesMin = computed(() => (sizeMin.value && sizeTypeSelected.value.ingress ? sizeMin.value * sizeUnitSelected.value.multiplier : null));
-const ingressBytesMax = computed(() => (sizeMax.value && sizeTypeSelected.value.ingress ? sizeMax.value * sizeUnitSelected.value.multiplier : null));
-const totalBytesMin = computed(() => (sizeMin.value && sizeTypeSelected.value.total ? sizeMin.value * sizeUnitSelected.value.multiplier : null));
-const totalBytesMax = computed(() => (sizeMax.value && sizeTypeSelected.value.total ? sizeMax.value * sizeUnitSelected.value.multiplier : null));
-const egressed = computed(() => (egressedOptionSelected.value ? egressedOptionSelected.value.value : null));
-const filtered = computed(() => (filteredOptionSelected.value ? filteredOptionSelected.value.value : null));
-const testMode = computed(() => (testModeOptionSelected.value ? testModeOptionSelected.value.value : null));
-const stageName = computed(() => (stageOptionSelected.value ? stageOptionSelected.value.name : null));
-const processingType = computed(() => (processingTypeSelected.value ? processingTypeSelected.value : null));
-const flowName = computed(() => (flowOptionSelected.value ? flowOptionSelected.value : null));
-const egressFlowName = computed(() => (egressFlowOptionSelected.value ? egressFlowOptionSelected.value : null));
-const replayable = computed(() => (isReplayableSelected.value ? isReplayableSelected.value.value : null));
-const terminalStage = computed(() => (terminalStageOptionSelected.value ? terminalStageOptionSelected.value.value : null));
+// Variable containing default values of query options used for searching
+const defaultQueryParamsTemplate = {
+  // Paginator query options
+  offset: 0,
+  perPage: 20,
+  sortDirection: "DESC",
+  sortField: "modified",
+  // Advanced Options query options
+  startTimeDate: new Date(defaultStartTimeDate.value.format(timestampFormat)),
+  endTimeDate: new Date(defaultEndTimeDate.value.format(timestampFormat)),
+  fileName: null,
+  validatedAnnotations: [],
+  annotations: [],
+  ingressFlows: [],
+  egressFlows: [],
+  filteredCause: null,
+  requeueMin: null,
+  stage: null,
+  processingType: null,
+  egressed: null,
+  filtered: null,
+  testMode: null,
+  terminalStage: null,
+  replayable: null,
+  domains: null,
+  sizeMin: null,
+  sizeMax: null,
+  sizeType: sizeTypesOptions.value[0],
+  sizeUnit: [...sizeUnitsOptionsMap.value.keys()][0],
+  ingressBytesMin: null,
+  ingressBytesMax: null,
+  totalBytesMin: null,
+  totalBytesMax: null,
+};
 
-const annotations = computed(() => {
-  return annotationsArray.value.map((i) => {
-    return {
-      key: i.key,
-      value: i.value,
-    };
-  });
+const queryParamsModel = ref({});
+
+const model = computed({
+  get() {
+    return new Proxy(queryParamsModel.value, {
+      set(obj, key, value) {
+        model.value = { ...obj, [key]: value ?? defaultQueryParamsTemplate[key] };
+        return true;
+      },
+    });
+  },
+  set(newValue) {
+    Object.assign(
+      queryParamsModel.value,
+      _.mapValues(newValue, (v) => (v === "" ? null : v))
+    );
+  },
 });
 
-const selectedDomain = computed(() => {
-  return domainOptionSelected.value ? domainOptionSelected.value.name : null;
+const pageReportTemplate = computed(() => {
+  const total = totalRecords.value == 50000 ? "many" : "{totalRecords}";
+  return `{first} - {last} of ${total}`;
 });
 
-const annotationsOverlay = ref(null);
+// Variable containing all the info needed to dynamically build the Advanced Options Panel.
+const advanceOptionsPanelInfo = computed(() => {
+  return [
+    // The Advanced Options fields are broken up into three columns. The fields are sorted in ascending order in each column by the 'order' field.
+    // First Column fields
+    { field: "fileName", column: 1, order: 1, componentType: "InputText", label: "Filename:", placeholder: "Filename", class: "p-inputtext input-area-height responsive-width" },
+    { field: "ingressFlows", column: 1, order: 2, componentType: "MultiSelect", label: "Ingress Flow:", placeholder: "Select an Ingress Flow", options: ingressFlowOptions.value, class: "deltafi-input-field responsive-width" },
+    { field: "egressFlows", column: 1, order: 3, componentType: "MultiSelect", label: "Egress Flow:", placeholder: "Select an Egress Flow", options: egressFlowOptions.value, class: "deltafi-input-field responsive-width" },
+    { field: "size", column: 1, order: 4, componentType: "SizeUnit", label: "Size:" },
+    // 2nd Column fields
+    { field: "testMode", column: 2, order: 1, componentType: "Dropdown", label: "Test Mode:", placeholder: "Select if in Test Mode", options: booleanOptions.value, formatOptions: true, class: "deltafi-input-field min-width" },
+    { field: "replayable", column: 2, order: 2, componentType: "Dropdown", label: "Replayable:", placeholder: "Select if Replayable", options: booleanOptions.value, formatOptions: true, class: "deltafi-input-field min-width" },
+    { field: "terminalStage", column: 2, order: 3, componentType: "Dropdown", label: "Terminal Stage:", placeholder: "Select if Terminal Stage", options: booleanOptions.value, formatOptions: true, class: "deltafi-input-field min-width" },
+    { field: "egressed", column: 2, order: 4, componentType: "Dropdown", label: "Egressed:", placeholder: "Select if Egressed", options: booleanOptions.value, formatOptions: true, class: "deltafi-input-field min-width" },
+    { field: "filtered", column: 2, order: 5, componentType: "Dropdown", label: "Filtered:", placeholder: "Select if Filtered", options: booleanOptions.value, formatOptions: true, class: "deltafi-input-field min-width" },
+    { field: "filteredCause", column: 2, order: 6, componentType: "InputText", label: "Filtered Cause:", placeholder: "Filtered Cause", class: "deltafi-input-field min-width" },
+    // 3nd Column fields
+    { field: "requeueMin", column: 3, order: 1, componentType: "InputNumber", label: "Requeue Count:", placeholder: "Min", class: "p-inputnumber input-area-height" },
+    { field: "processingType", column: 3, order: 2, componentType: "Dropdown", label: "Processing Type:", placeholder: "Select a Processing Type", options: processingTypeOptions.value, formatOptions: false, class: "deltafi-input-field min-width" },
+    { field: "stage", column: 3, order: 3, componentType: "Dropdown", label: "Stage:", placeholder: "Select a Stage", options: stageOptions.value, formatOptions: false, class: "deltafi-input-field min-width" },
+    { field: "domains", column: 3, order: 4, componentType: "Dropdown", label: "Domain:", placeholder: "Select a Domain", options: domainOptions.value, formatOptions: false, class: "deltafi-input-field min-width" },
+    { field: "annotations", column: 3, order: 5, componentType: "Annotations", label: "Annotations:" },
+  ];
+});
+
+const calculatedAggregateParams = computed(() => {
+  let multiplier = sizeUnitsOptionsMap.value.get(model.value.sizeUnit).multiplier;
+  let reformatAnnotations = [...model.value.validatedAnnotations];
+  // Reformat the annotations by removing the 'valid' key before sending to the backend
+  if (reformatAnnotations.length > 0) {
+    reformatAnnotations.forEach((e, index) => (reformatAnnotations[index] = _.omit(e, ["valid"])));
+  }
+  return {
+    ingressBytesMin: model.value.sizeMin && _.isEqual(model.value.sizeType, "Ingress") ? model.value.sizeMin * multiplier : null,
+    ingressBytesMax: model.value.sizeMax && _.isEqual(model.value.sizeType, "Ingress") ? model.value.sizeMax * multiplier : null,
+    totalBytesMin: model.value.sizeMin && _.isEqual(model.value.sizeType, "Total") ? model.value.sizeMin * multiplier : null,
+    totalBytesMax: model.value.sizeMax && _.isEqual(model.value.sizeType, "Total") ? model.value.sizeMax * multiplier : null,
+    annotations: reformatAnnotations,
+  };
+});
+
+const clearOptions = () => {
+  model.value = JSON.parse(JSON.stringify(_.pick(defaultQueryParamsTemplate, openPanel)));
+  setPersistedParams();
+};
+
 const showAnnotationsOverlay = (event) => {
   annotationsOverlay.value.toggle(event);
 };
 
 const removeAnnotationItem = (item) => {
-  let index = annotationsArray.value.indexOf(item);
-  annotationsArray.value.splice(index, 1);
+  let index = model.value.validatedAnnotations.indexOf(item);
+  model.value.validatedAnnotations.splice(index, 1);
+  model.value.annotations.splice(index, 1);
 };
 
 const addAnnotationItem = (key, value) => {
-  annotationsArray.value.push({ key: key, value: value, valid: true });
+  model.value.validatedAnnotations.push({ key: key, value: value, valid: true });
 };
 
 const addAnnotationItemEvent = () => {
@@ -354,166 +485,18 @@ const addAnnotationItemEvent = () => {
   }
 };
 
-const refreshButtonIcon = computed(() => {
-  let classes = ["fa", "fa-sync-alt"];
-  if (loading.value) classes.push("fa-spin");
-  return classes.join(" ");
-});
-
-const items = ref([
-  {
-    label: "Options",
-    items: [
-      {
-        label: "Clear Options",
-        icon: "fas fa-times",
-        command: () => {
-          clearOptions();
-          fetchDeltaFilesData();
-        },
-      },
-    ],
-  },
-]);
-
-const clearOptions = () => {
-  fileName.value = null;
-  filteredCause.value = null;
-  requeueMin.value = null;
-  flowOptionSelected.value = [];
-  egressFlowOptionSelected.value = [];
-  stageOptionSelected.value = null;
-  processingTypeSelected.value = null;
-  egressedOptionSelected.value = null;
-  filteredOptionSelected.value = null;
-  testModeOptionSelected.value = null;
-  isReplayableSelected.value = null;
-  terminalStageOptionSelected.value = null;
-  sizeMax.value = null;
-  sizeMin.value = null;
-  domainOptionSelected.value = null;
-  annotationsArray.value = [];
-};
-
-const setupWatchers = () => {
-  watch(startTimeDate, () => {
-    fetchDeltaFilesData();
-  });
-
-  watch(endTimeDate, () => {
-    fetchDeltaFilesData();
-  });
-
-  watch(selectedDomain, async (value) => {
-    fetchDeltaFilesData();
-    await fetchAnnotationKeys(value);
-    validateAnnotationsArray();
-  });
-
-  watch(
-    annotationsArray,
-    () => {
-      fetchDeltaFilesData();
-    },
-    { deep: true }
-  );
-
-  watch([sizeMin, sizeMax, flowOptionSelected, egressFlowOptionSelected, stageOptionSelected, egressedOptionSelected, filteredOptionSelected, testModeOptionSelected, requeueMin, isReplayableSelected, processingTypeSelected, terminalStageOptionSelected], () => {
-    fetchDeltaFilesData();
-  });
-
-  watch(
-    fileName,
-    _.debounce(
-      () => {
-        fetchDeltaFilesData();
-      },
-      500,
-      { leading: false, trailing: true }
-    )
-  );
-
-  watch(
-    filteredCause,
-    _.debounce(
-      () => {
-        {
-          if (filteredCause.value == "") {
-            filteredCause.value = null;
-          } else {
-            fetchDeltaFilesData();
-          }
-        }
-      },
-      500,
-      { leading: false, trailing: true }
-    )
-  );
-
-  watch([sizeTypeSelected, sizeUnitSelected], () => {
-    if (sizeMin.value || sizeMax.value) {
-      fetchDeltaFilesData();
-    }
-    setPersistedParams();
-  });
-};
-
-const validateAnnotationsArray = () => {
+const validatedAnnotationsArray = () => {
   const validKeys = annotationsKeysOptions.value.map((i) => i.key);
-  for (const index of annotationsArray.value.keys()) {
-    const key = annotationsArray.value[index].key;
-    annotationsArray.value[index].valid = validKeys.includes(key);
+  for (const index of model.value.validatedAnnotations.keys()) {
+    const key = model.value.validatedAnnotations[index].key;
+    model.value.validatedAnnotations[index].valid = validKeys.includes(key);
   }
 };
 
 const invalidAnnotationTooltip = (key) => {
-  if (domainOptionSelected.value) {
-    return `${key} is not a valid annotation key for the ${domainOptionSelected.value.name} domain.`;
+  if (model.value.domains) {
+    return `${key} is not a valid annotation key for the ${model.value.domains} domain.`;
   }
-};
-
-const updateInputStartTime = async (e) => {
-  await nextTick();
-  if (dayjs(e.target.value.trim()).isValid()) {
-    startTimeDate.value = new Date(formatTimestamp(e.target.value.trim(), timestampFormat));
-  } else {
-    startTimeDate.value = new Date(defaultStartTimeDate.value.format(timestampFormat));
-  }
-};
-const updateInputEndTime = async (e) => {
-  await nextTick();
-  if (dayjs(e.target.value.trim()).isValid()) {
-    endTimeDate.value = new Date(formatTimestamp(e.target.value.trim(), timestampFormat));
-  } else {
-    endTimeDate.value = new Date(defaultEndTimeDate.value.format(timestampFormat));
-  }
-};
-onBeforeMount(() => {
-  useURLSearch.value = route.fullPath.includes("search?");
-});
-
-onMounted(async () => {
-  setDateTimeToday();
-  await fetchIngressFlowNames();
-  await fetchEgressFlowNames();
-  fetchStages();
-  fetchDomains();
-  getPersistedParams();
-  await nextTick();
-  if (domainOptionSelected.value == null) fetchAnnotationKeys();
-  await fetchDeltaFilesDataNoDebounce();
-  setupWatchers();
-});
-
-const optionMenuToggle = (event) => {
-  optionMenu.value.toggle(event);
-};
-
-const fetchDomains = async () => {
-  const domains = await getDomains();
-  domainOptions.value = domains.map((domain) => {
-    return { name: domain };
-  });
 };
 
 const fetchAnnotationKeys = async (domain) => {
@@ -523,22 +506,22 @@ const fetchAnnotationKeys = async (domain) => {
   });
 };
 
-const fetchStages = async () => {
-  let enumsStageTypes = await getEnumValuesByEnumType("DeltaFileStage");
-  stageOptions.value = enumsStageTypes.data.__type.enumValues;
-};
-
 const fetchDeltaFilesDataNoDebounce = async () => {
+  model.value = _.merge(model.value, calculatedAggregateParams.value);
   setPersistedParams();
-
   loading.value = true;
-  let data = await getDeltaFileSearchData(startDateISOString.value, endDateISOString.value, offset.value, perPage.value, sortField.value, sortDirection.value, fileName.value, stageName.value, null, flowName.value, egressFlowName.value, egressed.value, filtered.value, selectedDomain.value, annotations.value, ingressBytesMin.value, ingressBytesMax.value, totalBytesMin.value, totalBytesMax.value, testMode.value, requeueMin.value, filteredCause.value, replayable.value, processingType.value, terminalStage.value);
+  let data = await getDeltaFileSearchData(dateToISOString(model.value.startTimeDate), dateToISOString(model.value.endTimeDate), model.value);
   tableData.value = data.data.deltaFiles.deltaFiles;
   loading.value = false;
   totalRecords.value = data.data.deltaFiles.totalCount;
 };
 
-const fetchDeltaFilesData = _.debounce(
+const fetchDeltaFilesData = () => {
+  setPersistedParams();
+  fetchDeltaFilesDataDebounce();
+};
+
+const fetchDeltaFilesDataDebounce = _.debounce(
   async () => {
     fetchDeltaFilesDataNoDebounce();
   },
@@ -557,10 +540,10 @@ const results = computed(() => {
 });
 
 const onSort = (event) => {
-  offset.value = event.first;
-  perPage.value = event.rows;
-  sortField.value = event.sortField;
-  sortDirection.value = event.sortOrder > 0 ? "DESC" : "ASC";
+  model.value.offset = event.first;
+  model.value.perPage = event.rows;
+  model.value.sortField = event.sortField;
+  model.value.sortDirection = event.sortOrder > 0 ? "DESC" : "ASC";
   fetchDeltaFilesData();
 };
 
@@ -569,130 +552,79 @@ const actionRowClass = (data) => {
 };
 
 const onPage = (event) => {
-  offset.value = event.first;
-  perPage.value = event.rows;
+  model.value.offset = event.first;
+  model.value.perPage = event.rows;
   fetchDeltaFilesDataNoDebounce();
 };
 
-const ISOStringToDate = (dateISOString) => {
-  return uiConfig.useUTC ? dayjs(dateISOString).add(new Date().getTimezoneOffset(), "minute").toDate() : dayjs(dateISOString).toDate();
-};
+const openPanel = ["fileName", "filteredCause", "requeueMin", "stage", "processingType", "ingressFlows", "egressFlows", "egressed", "filtered", "testMode", "replayable", "terminalStage", "domains", "sizeMin", "sizeMax", "validatedAnnotations", "annotations", "sizeUnit", "sizeType"];
+
+const decodePersistedParams = (obj) =>
+  _.transform(obj, (r, v, k) => {
+    if (["startTimeDate", "endTimeDate"].includes(k)) {
+      r[k] = isoStringToDate(v);
+    } else if (["egressed", "filtered", "testMode", "replayable", "terminalStage"].includes(k)) {
+      r[k] = Boolean(v);
+    } else if (["requeueMin", "sizeMin", "sizeMax", "perPage"].includes(k)) {
+      r[k] = Number(v);
+    } else if (["ingressFlows", "egressFlows"].includes(k)) {
+      r[k] = v.split(",");
+    } else if (["annotations"].includes(k)) {
+      const annotationsArrayVal = getAnnotationsArray(v);
+      r["validatedAnnotations"] = annotationsArrayVal || [];
+    } else {
+      r[k] = v;
+    }
+  });
 
 const getPersistedParams = () => {
-  perPage.value = nonPanelState.value.perPage || 20;
+  let getPersistedState = {};
   if (useURLSearch.value) {
-    if (params.start) startTimeDate.value = ISOStringToDate(params.start);
-    if (params.end) endTimeDate.value = ISOStringToDate(params.end);
-    sizeUnitSelected.value = params.sizeUnit ? sizeUnits.find((i) => i.name == params.sizeUnit) : sizeUnits[0];
-    sizeTypeSelected.value = params.sizeType ? sizeTypes.find((i) => i.name == params.sizeType) : sizeTypes[0];
-    fileName.value = params.fileName ? params.fileName : null;
-    filteredCause.value = params.filteredCause ? params.filteredCause : null;
-    requeueMin.value = params.requeueMin != null ? Number(params.requeueMin) : null;
-    stageOptionSelected.value = params.stage != null ? { name: params.stage } : null;
-    processingTypeSelected.value = params.processingType != null ? params.processingType : null;
-    flowOptionSelected.value = params.ingressFlow ? params.ingressFlow.split(",") : [];
-    egressFlowOptionSelected.value = params.egressFlow ? params.egressFlow.split(",") : [];
-    egressedOptionSelected.value = params.egressed ? egressedOptions.value.find((i) => i.name == params.egressed) : null;
-    filteredOptionSelected.value = params.filtered ? filteredOptions.value.find((i) => i.name == params.filtered) : null;
-    testModeOptionSelected.value = params.testMode ? testModeOptions.value.find((i) => i.name == params.testMode) : null;
-    isReplayableSelected.value = params.replayable ? isReplayableOptions.value.find((i) => i.name == params.replayable) : null;
-    terminalStageOptionSelected.value = params.terminalStage ? terminalStageOptions.value.find((i) => i.name == params.terminalStage) : null;
-    domainOptionSelected.value = params.domain ? { name: params.domain } : null;
-    sizeMin.value = params.sizeMin != null ? Number(params.sizeMin) : null;
-    sizeMax.value = params.sizeMax != null ? Number(params.sizeMax) : null;
-    if (params.annotations != null) {
-      const annotationsArrayVal = ref(getAnnotationsArray(params.annotations));
-      annotationsArray.value = annotationsArrayVal.value || [];
-    } else {
-      annotationsArray.value = [];
-    }
-
-    const panelSearchKeys = Object.keys(params).filter((key) => !["start", "end"].includes(key));
-    collapsedSearchOption.value = panelSearchKeys.length == 0;
+    getPersistedState = _.cloneDeepWith(params, decodePersistedParams);
   } else {
-    // Values that, if set, should not expand Advanced Search Options.
-    if (nonPanelState.value.startTimeDateState) startTimeDate.value = ISOStringToDate(nonPanelState.value.startTimeDateState);
-    if (nonPanelState.value.endTimeDateState) endTimeDate.value = ISOStringToDate(nonPanelState.value.endTimeDateState);
-    sizeUnitSelected.value = nonPanelState.value.sizeUnitState ? sizeUnits.find((i) => i.name == nonPanelState.value.sizeUnitState) : sizeUnits[0];
-    sizeTypeSelected.value = nonPanelState.value.sizeTypeState ? sizeTypes.find((i) => i.name == nonPanelState.value.sizeTypeState) : sizeTypes[0];
-
-    // Values that, if set, should expand Advanced Search Options.
-    fileName.value = panelState.value.fileName || null;
-    filteredCause.value = panelState.value.filteredCause || null;
-    requeueMin.value = panelState.value.requeueMin || null;
-    stageOptionSelected.value = panelState.value.stageOptionState ? { name: panelState.value.stageOptionState } : null;
-    processingTypeSelected.value = panelState.value.processingTypeState ? panelState.value.processingTypeState : null;
-    flowOptionSelected.value = panelState.value.flowOptionState ? panelState.value.flowOptionState : [];
-    egressFlowOptionSelected.value = panelState.value.egressFlowOptionState ? panelState.value.egressFlowOptionState : [];
-    egressedOptionSelected.value = panelState.value.egressedOptionState ? egressedOptions.value.find((i) => i.name == panelState.value.egressedOptionState) : null;
-    filteredOptionSelected.value = panelState.value.filteredOptionState ? filteredOptions.value.find((i) => i.name == panelState.value.filteredOptionState) : null;
-    testModeOptionSelected.value = panelState.value.testModeOptionState ? testModeOptions.value.find((i) => i.name == panelState.value.testModeOptionState) : null;
-    isReplayableSelected.value = panelState.value.replayableOptionState ? isReplayableOptions.value.find((i) => i.name == panelState.value.replayableOptionState) : null;
-    terminalStageOptionSelected.value = panelState.value.terminalStageOptionState ? terminalStageOptions.value.find((i) => i.name == panelState.value.terminalStageOptionState) : null;
-    domainOptionSelected.value = panelState.value.domainOptionState ? { name: panelState.value.domainOptionState } : null;
-    sizeMin.value = panelState.value.sizeMinState || null;
-    sizeMax.value = panelState.value.sizeMaxState || null;
-    annotationsArray.value = panelState.value.annotationsArrayState || [];
-
-    // If any of the fields are true it means we have persisted values. Don't collapse the search options panel so the user can see
-    // what search options are being used.
-    collapsedSearchOption.value = !_.some(Object.values(panelState.value), (i) => !(i == null || i.length == 0));
+    getPersistedState = _.cloneDeepWith(queryState.value, decodePersistedParams);
   }
+  model.value = _.merge(model.value, getPersistedState);
+
+  collapsedSearchOption.value = !activeAdvancedOptions.value;
 };
 
-const panelState = useStorage("panel-search-options", {}, sessionStorage, { serializer: StorageSerializers.object });
-const nonPanelState = useStorage("non-panel-search-options", {}, sessionStorage, { serializer: StorageSerializers.object });
+const queryState = useStorage("search-page-persisted-params", {}, sessionStorage, { serializer: StorageSerializers.object });
+
+const encodePersistedParams = (obj) =>
+  _.transform(obj, (r, v, k) => {
+    if (["startTimeDate", "endTimeDate"].includes(k)) {
+      r[k] = dateToISOString(v);
+    } else if (["egressed", "filtered", "testMode", "replayable", "terminalStage"].includes(k)) {
+      r[k] = Boolean(v);
+    } else if (["requeueMin", "sizeMin", "sizeMax", "perPage"].includes(k)) {
+      r[k] = Number(v);
+    } else if (["ingressFlows", "egressFlows"].includes(k)) {
+      r[k] = String(v);
+    } else if (["annotations"].includes(k)) {
+      r[k] = getAnnotationsString(v);
+    } else {
+      r[k] = v;
+    }
+  });
 
 const setPersistedParams = () => {
-  panelState.value = {
-    // Values that, if set, should expand Advanced Search Options.
-    fileName: fileName.value || null,
-    filteredCause: filteredCause.value || null,
-    requeueMin: requeueMin.value || null,
-    stageOptionState: stageOptionSelected.value ? stageOptionSelected.value.name : null,
-    processingTypeState: processingTypeSelected.value ? processingTypeSelected.value : null,
-    flowOptionState: flowOptionSelected.value ? flowOptionSelected.value : null,
-    egressFlowOptionState: egressFlowOptionSelected.value ? egressFlowOptionSelected.value : null,
-    egressedOptionState: egressedOptionSelected.value ? egressedOptionSelected.value.name : null,
-    filteredOptionState: filteredOptionSelected.value ? filteredOptionSelected.value.name : null,
-    testModeOptionState: testModeOptionSelected.value ? testModeOptionSelected.value.name : null,
-    replayableOptionState: isReplayableSelected.value ? isReplayableSelected.value.name : null,
-    terminalStageOptionState: terminalStageOptionSelected.value ? terminalStageOptionSelected.value.name : null,
-    domainOptionState: domainOptionSelected.value ? domainOptionSelected.value.name : null,
-    sizeMinState: sizeMin.value,
-    sizeMaxState: sizeMax.value,
-    annotationsArrayState: annotationsArray.value,
-  };
+  let persistedQueryState = _.cloneDeep(model.value);
+  // Remove any value that have not changed from the original defaultQueryParamsTemplate value it was set at
+  persistedQueryState = _.omitBy(persistedQueryState, function (v, k) {
+    return JSON.stringify(defaultQueryParamsTemplate[k]) === JSON.stringify(v);
+  });
+  // Remove values that we dont want to persist(e.g. paginator values and computed)
+  persistedQueryState = _.omit(persistedQueryState, ["offset", "sortDirection", "sortField", "ingressBytesMin", "ingressBytesMax", "totalBytesMin", "totalBytesMax", "validatedAnnotations"]);
+  persistedQueryState = _.cloneDeepWith(persistedQueryState, encodePersistedParams);
+  queryState.value = persistedQueryState;
 
-  nonPanelState.value = {
-    // Values that, if set, should not expand Advanced Search Options.
-    startTimeDateState: startTimeDateIsDefault.value ? null : startDateISOString.value,
-    endTimeDateState: startTimeDateIsDefault.value ? null : endDateISOString.value,
-    sizeUnitState: sizeUnitSelected.value ? sizeUnitSelected.value.name : null,
-    sizeTypeState: sizeTypeSelected.value ? sizeTypeSelected.value.name : null,
-    perPage: perPage.value,
-  };
-
-  params.start = startTimeDateIsDefault.value ? null : startDateISOString.value;
-  params.end = endTimeDateIsDefault.value ? null : endDateISOString.value;
-  params.sizeUnit = sizeMin.value != null || sizeMax.value != null ? sizeUnitSelected.value.name : null;
-  params.sizeType = sizeMin.value != null || sizeMax.value != null ? sizeTypeSelected.value.name : null;
-  params.fileName = fileName.value != "" ? fileName.value : null;
-  params.filteredCause = filteredCause.value != "" ? filteredCause.value : null;
-  params.requeueMin = requeueMin.value != null ? requeueMin.value : null;
-  params.stage = stageOptionSelected.value ? stageOptionSelected.value.name : null;
-  params.processingType = processingTypeSelected.value ? processingTypeSelected.value : null;
-  params.ingressFlow = flowOptionSelected.value.length > 0 ? String(flowOptionSelected.value) : null;
-  params.egressFlow = egressFlowOptionSelected.value.length > 0 ? String(egressFlowOptionSelected.value) : null;
-  params.egressed = egressedOptionSelected.value ? egressedOptionSelected.value.name : null;
-  params.filtered = filteredOptionSelected.value ? filteredOptionSelected.value.name : null;
-  params.testMode = testModeOptionSelected.value ? testModeOptionSelected.value.name : null;
-  params.replayable = isReplayableSelected.value ? isReplayableSelected.value.name : null;
-  params.terminalStage = terminalStageOptionSelected.value ? terminalStageOptionSelected.value.name : null;
-  params.domain = domainOptionSelected.value ? domainOptionSelected.value.name : null;
-  params.sizeMin = sizeMin.value != null ? sizeMin.value : null;
-  params.sizeMax = sizeMax.value != null ? sizeMax.value : null;
-  params.annotations = annotationsArray.value.length > 0 ? getAnnotationsString(annotationsArray.value) : null;
+  //Set url search params
+  //null out param keys before setting new ones
+  Object.keys(params).forEach((i) => (params[i] = null));
+  for (var key in persistedQueryState) {
+    params[key] = persistedQueryState[key];
+  }
 };
 
 const getAnnotationsString = (arrayData) => {
@@ -727,6 +659,14 @@ const onPanelRightClick = (event) => {
 const onRowContextMenu = (event) => {
   if (selectedDids.value.length <= 0) {
     selectedDids.value = [event.data];
+  }
+};
+
+const formatOption = (formatOption, dropdownOption) => {
+  if (formatOption) {
+    return _.capitalize(dropdownOption);
+  } else {
+    return dropdownOption;
   }
 };
 
@@ -775,9 +715,13 @@ const filterSelectedDids = computed(() => {
   return dids;
 });
 
-const activeAdvancedOptions = () => {
-  return _.some(Object.values(panelState.value), (i) => !(i == null || i.length == 0));
-};
+const activeAdvancedOptions = computed(() => {
+  let advancedOptionsState = _.cloneDeep(_.pick(model.value, openPanel));
+  advancedOptionsState = _.omitBy(advancedOptionsState, function (v, k) {
+    return JSON.stringify(defaultQueryParamsTemplate[k]) === JSON.stringify(v);
+  });
+  return !_.isEmpty(advancedOptionsState);
+});
 </script>
 
 <style lang="scss">

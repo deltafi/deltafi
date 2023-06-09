@@ -39,6 +39,7 @@
 
 .wrapper .content-wrapper {
   overflow-x: hidden;
+  min-height: 100vh;
   width: 100%;
   padding: 0.25rem 1rem 2rem 1rem;
 }
@@ -48,6 +49,7 @@
     -ms-flex: 0 0 150px !important;
     flex: 0 0 150px !important;
   }
+
   .sidebar.hidden {
     margin-left: -150px !important;
   }

@@ -23,40 +23,72 @@ import _ from "lodash";
 export default function useDeltaFilesQueryBuilder() {
   const { response, queryGraphQL } = useGraphQL();
 
-  const getDeltaFileSearchData = (startDateISOString: String, endDateISOString: String, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, fileName?: string, stageName?: string, actionName?: string, flowName?: Array<string>, egressFlowName?: Array<string>, egressed?: Boolean, filtered?: Boolean, domain?: string, metadata?: Array<Record<string, string>>, ingressBytesMin?: Number, ingressBytesMax?: Number, totalBytesMin?: Number, totalBytesMax?: Number, testMode?: Boolean, requeueMin?: Number, filteredCause?: String, replayable?: Boolean, processingType?: string, terminalStage?: Boolean) => {
+  interface queryParams {
+    // Paginator query options
+    offset?: number;
+    perPage?: number;
+    sortDirection?: string;
+    sortField?: string;
+    // Advanced Options query options
+    fileName?: string | null;
+    validatedAnnotations?: Array<object>;
+    annotations?: Array<object>;
+    ingressFlows?: Array<string>;
+    egressFlows?: Array<string>;
+    filteredCause?: string | null;
+    requeueMin?: string | null;
+    stage?: string | null;
+    processingType?: string | null;
+    egressed?: string | null;
+    filtered?: string | null;
+    testMode?: string | null;
+    terminalStage?: string | null;
+    replayable?: string | null;
+    domains?: string | null;
+    sizeMin?: string | null;
+    sizeMax?: string | null;
+    sizeType?: object;
+    sizeUnit?: object;
+    ingressBytesMin?: string | null;
+    ingressBytesMax?: string | null;
+    totalBytesMin?: string | null;
+    totalBytesMax?: string | null;
+    queryAnnotations?: Array<object>;
+  }
+
+  const getDeltaFileSearchData = (startDateISOString: String, endDateISOString: String, queryParams: queryParams) => {
     const query = {
       deltaFiles: {
         __args: {
-          offset: offSet,
-          limit: perPage,
+          offset: queryParams.offset,
+          limit: queryParams.perPage,
           filter: {
-            egressed: egressed,
-            filtered: filtered,
-            testMode: testMode,
+            egressed: queryParams.egressed,
+            filtered: queryParams.filtered,
+            testMode: queryParams.testMode,
             sourceInfo: {
-              ingressFlows: flowName ? flowName : [],
-              filename: fileName,
-              processingType: processingType ? new EnumType(processingType) : null,
+              ingressFlows: queryParams.ingressFlows,
+              filename: queryParams.fileName,
+              processingType: queryParams.processingType ? new EnumType(queryParams.processingType) : null,
             },
-            egressFlows: egressFlowName ? egressFlowName : [],
-            stage: stageName ? new EnumType(stageName) : null,
-            actions: actionName,
+            egressFlows: queryParams.egressFlows,
+            stage: queryParams.stage ? new EnumType(queryParams.stage) : null,
             modifiedAfter: startDateISOString,
             modifiedBefore: endDateISOString,
-            domains: domain ? [domain] : [],
-            annotations: metadata,
-            ingressBytesMin: ingressBytesMin,
-            ingressBytesMax: ingressBytesMax,
-            totalBytesMin: totalBytesMin,
-            totalBytesMax: totalBytesMax,
-            requeueCountMin: requeueMin,
-            filteredCause: filteredCause,
-            replayable: replayable,
-            terminalStage: terminalStage,
+            domains: queryParams.domains ? [queryParams.domains] : [],
+            annotations: queryParams.annotations,
+            ingressBytesMin: queryParams.ingressBytesMin,
+            ingressBytesMax: queryParams.ingressBytesMax,
+            totalBytesMin: queryParams.totalBytesMin,
+            totalBytesMax: queryParams.totalBytesMax,
+            requeueCountMin: queryParams.requeueMin,
+            filteredCause: queryParams.filteredCause,
+            replayable: queryParams.replayable,
+            terminalStage: queryParams.terminalStage,
           },
           orderBy: {
-            direction: new EnumType(sortDirection),
-            field: sortBy,
+            direction: queryParams.sortDirection ? new EnumType(queryParams.sortDirection) : null,
+            field: queryParams.sortField,
           },
         },
         offset: true,

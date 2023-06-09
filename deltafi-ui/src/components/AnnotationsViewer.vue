@@ -54,7 +54,7 @@ const path = computed(() => {
   return "/deltafile/search";
 });
 
-const panelState = useStorage("panel-search-options", {}, sessionStorage, { serializer: StorageSerializers.object });
+const panelState = useStorage("search-page-persisted-params", {}, sessionStorage, { serializer: StorageSerializers.object });
 
 const setSearchableAnnotations = (rowData) => {
   let searchableAnnotationsArray = [];
@@ -62,11 +62,11 @@ const setSearchableAnnotations = (rowData) => {
   searchableAnnotationsObject["key"] = rowData.key;
   searchableAnnotationsObject["value"] = rowData.value;
   searchableAnnotationsObject["valid"] = true;
-  if (!_.isEmpty(_.get(panelState.value, "annotationsArrayState", null))) {
-    panelState.value["annotationsArrayState"].push(searchableAnnotationsObject);
+  if (!_.isEmpty(_.get(panelState.value, "validatedAnnotations", null))) {
+    panelState.value["validatedAnnotations"].push(searchableAnnotationsObject);
   } else {
     searchableAnnotationsArray.push(searchableAnnotationsObject);
-    panelState.value["annotationsArrayState"] = searchableAnnotationsArray;
+    panelState.value["validatedAnnotations"] = searchableAnnotationsArray;
   }
 };
 </script>
