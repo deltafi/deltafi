@@ -27,7 +27,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@SuperBuilder(builderMethodName = "newBuilder")
+@SuperBuilder
 public class ReinjectEvent extends TransformEvent {
   private String filename;
   private String flow;

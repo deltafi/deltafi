@@ -99,7 +99,7 @@ public class Util {
                 deltaFile.errorAction("ErrorAction", modified, modified, cause, context);
             }
             deltaFile.queueNewAction("OtherAction", ActionType.UNKNOWN, flow);
-            deltaFile.completeAction(ActionEvent.newBuilder()
+            deltaFile.completeAction(ActionEvent.builder()
                     .action("OtherAction")
                     .start(modified)
                     .stop(modified)
@@ -122,7 +122,7 @@ public class Util {
 
     public static DeltaFile buildDeltaFile(String did, String flow, DeltaFileStage stage, OffsetDateTime created,
                                            OffsetDateTime modified, List<Content> content, Map<String, String> metadata) {
-        Action ingressAction = Action.newBuilder()
+        Action ingressAction = Action.builder()
                 .name(INGRESS_ACTION)
                 .type(ActionType.INGRESS)
                 .state(ActionState.COMPLETE)
@@ -132,7 +132,7 @@ public class Util {
                 .metadata(metadata)
                 .build();
 
-        return DeltaFile.newBuilder()
+        return DeltaFile.builder()
                 .schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
                 .did(did)
                 .parentDids(new ArrayList<>())
@@ -261,7 +261,7 @@ public class Util {
     }
 
     public static Variable buildVariable(String name, String value, String defaultValue) {
-        return Variable.newBuilder()
+        return Variable.builder()
                 .name(name)
                 .dataType(VariableDataType.STRING)
                 .description("describe " + defaultValue)

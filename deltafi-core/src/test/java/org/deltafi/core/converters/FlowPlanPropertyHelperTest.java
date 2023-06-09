@@ -42,7 +42,7 @@ class FlowPlanPropertyHelperTest {
         String toResolve = "${value}";
 
         // spaces around each value should be removed
-        Variable variable = Variable.newBuilder().name("value").value("a,  b  c ,   d").dataType(VariableDataType.LIST).build();
+        Variable variable = Variable.builder().name("value").value("a,  b  c ,   d").dataType(VariableDataType.LIST).build();
 
         Object result = executeResolvePrimitive(toResolve, List.of(variable));
 
@@ -54,7 +54,7 @@ class FlowPlanPropertyHelperTest {
     @Test
     void resolve_nullRequiredList() {
         String toResolve = "${value}";
-        Variable variable = Variable.newBuilder().name("value").value(null).defaultValue(null).required(true).dataType(VariableDataType.LIST).build();
+        Variable variable = Variable.builder().name("value").value(null).defaultValue(null).required(true).dataType(VariableDataType.LIST).build();
 
         FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(List.of(variable), "action");
         Object result = flowPlanPropertyHelper.resolveObject(toResolve, "");
@@ -67,7 +67,7 @@ class FlowPlanPropertyHelperTest {
     @Test
     void resolve_nullOptionalList() {
         String toResolve = "${value}";
-        Variable variable = Variable.newBuilder().name("value").value(null).defaultValue(null).required(false).dataType(VariableDataType.LIST).build();
+        Variable variable = Variable.builder().name("value").value(null).defaultValue(null).required(false).dataType(VariableDataType.LIST).build();
 
         FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(List.of(variable), "action");
         Object result = flowPlanPropertyHelper.resolveObject(toResolve, "");
@@ -80,7 +80,7 @@ class FlowPlanPropertyHelperTest {
     @Test
     void resolve_emptyRequiredList() {
         String toResolve = "${value}";
-        Variable variable = Variable.newBuilder().name("value").value("").defaultValue(null).required(true).dataType(VariableDataType.LIST).build();
+        Variable variable = Variable.builder().name("value").value("").defaultValue(null).required(true).dataType(VariableDataType.LIST).build();
         Object result = executeResolvePrimitive(toResolve, List.of(variable));
 
         assertThat(result).isInstanceOf(List.class);
@@ -91,7 +91,7 @@ class FlowPlanPropertyHelperTest {
     @Test
     void resolve_emptyOptionalList() {
         String toResolve = "${value}";
-        Variable variable = Variable.newBuilder().name("value").value("").defaultValue(null).required(false).dataType(VariableDataType.LIST).build();
+        Variable variable = Variable.builder().name("value").value("").defaultValue(null).required(false).dataType(VariableDataType.LIST).build();
         Object result = executeResolvePrimitive(toResolve, List.of(variable));
 
         assertThat(result).isInstanceOf(List.class);
@@ -104,7 +104,7 @@ class FlowPlanPropertyHelperTest {
         String toResolve = "${value}";
 
         // spaces around the keys and values should be removed
-        Variable variable = Variable.newBuilder().name("value").value(" one  key    :  first  , two:  second value  ").dataType(VariableDataType.MAP).build();
+        Variable variable = Variable.builder().name("value").value(" one  key    :  first  , two:  second value  ").dataType(VariableDataType.MAP).build();
 
         Object result = executeResolvePrimitive(toResolve, List.of(variable));
 
@@ -116,7 +116,7 @@ class FlowPlanPropertyHelperTest {
     @Test
     void resolve_nullRequiredMap() {
         String toResolve = "${value}";
-        Variable variable = Variable.newBuilder().name("value").value(null).defaultValue(null).required(true).dataType(VariableDataType.MAP).build();
+        Variable variable = Variable.builder().name("value").value(null).defaultValue(null).required(true).dataType(VariableDataType.MAP).build();
 
         FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(List.of(variable), "action");
         Object result = flowPlanPropertyHelper.resolveObject(toResolve, "");
@@ -129,7 +129,7 @@ class FlowPlanPropertyHelperTest {
     @Test
     void resolve_nullOptionalMap() {
         String toResolve = "${value}";
-        Variable variable = Variable.newBuilder().name("value").value(null).defaultValue(null).required(false).dataType(VariableDataType.MAP).build();
+        Variable variable = Variable.builder().name("value").value(null).defaultValue(null).required(false).dataType(VariableDataType.MAP).build();
 
         FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(List.of(variable), "action");
         Object result = flowPlanPropertyHelper.resolveObject(toResolve, "");
@@ -142,7 +142,7 @@ class FlowPlanPropertyHelperTest {
     @Test
     void resolve_emptyRequiredMap() {
         String toResolve = "${value}";
-        Variable variable = Variable.newBuilder().name("value").value("").defaultValue(null).required(true).dataType(VariableDataType.MAP).build();
+        Variable variable = Variable.builder().name("value").value("").defaultValue(null).required(true).dataType(VariableDataType.MAP).build();
         Object result = executeResolvePrimitive(toResolve, List.of(variable));
 
         assertThat(result).isInstanceOf(Map.class);
@@ -153,7 +153,7 @@ class FlowPlanPropertyHelperTest {
     @Test
     void resolve_emptyOptionalMap() {
         String toResolve = "${value}";
-        Variable variable = Variable.newBuilder().name("value").value("").defaultValue(null).required(false).dataType(VariableDataType.MAP).build();
+        Variable variable = Variable.builder().name("value").value("").defaultValue(null).required(false).dataType(VariableDataType.MAP).build();
         Object result = executeResolvePrimitive(toResolve, List.of(variable));
 
         assertThat(result).isInstanceOf(Map.class);
@@ -163,9 +163,9 @@ class FlowPlanPropertyHelperTest {
 
     @Test
     void test_replaceListPlaceholders() {
-        Variable setValue = Variable.newBuilder().name("value").value("setIt").dataType(VariableDataType.STRING).build();
-        Variable optionalValue = Variable.newBuilder().name("unsetOptional").value(null).defaultValue(null).dataType(VariableDataType.STRING).build();
-        Variable expandMe = Variable.newBuilder().name("expandMe").value("x, y, z").dataType(VariableDataType.LIST).build();
+        Variable setValue = Variable.builder().name("value").value("setIt").dataType(VariableDataType.STRING).build();
+        Variable optionalValue = Variable.builder().name("unsetOptional").value(null).defaultValue(null).dataType(VariableDataType.STRING).build();
+        Variable expandMe = Variable.builder().name("expandMe").value("x, y, z").dataType(VariableDataType.LIST).build();
 
         List<Object> listToProcess = new ArrayList<>();
 
@@ -198,9 +198,9 @@ class FlowPlanPropertyHelperTest {
 
     @Test
     void test_replaceMapPlaceholders() {
-        Variable setValue = Variable.newBuilder().name("value").value("setIt").dataType(VariableDataType.STRING).build();
-        Variable optionalValue = Variable.newBuilder().name("unsetOptional").value(null).defaultValue(null).dataType(VariableDataType.STRING).build();
-        Variable expandMe = Variable.newBuilder().name("expandMe").value("x, y, z").dataType(VariableDataType.LIST).build();
+        Variable setValue = Variable.builder().name("value").value("setIt").dataType(VariableDataType.STRING).build();
+        Variable optionalValue = Variable.builder().name("unsetOptional").value(null).defaultValue(null).dataType(VariableDataType.STRING).build();
+        Variable expandMe = Variable.builder().name("expandMe").value("x, y, z").dataType(VariableDataType.LIST).build();
 
         Map<String, Object> mapToProcess = new HashMap<>();
 
@@ -259,14 +259,14 @@ class FlowPlanPropertyHelperTest {
 
     List<Variable> variables() {
         return List.of(
-                Variable.newBuilder().name("enrichments").defaultValue("{'test1':'test1','test2':'test2'}").dataType(VariableDataType.MAP).build(),
-                Variable.newBuilder().name("some.optional.list").value(null).required(false).dataType(VariableDataType.LIST).build(),
-                Variable.newBuilder().name("some.required.list").value("").required(true).dataType(VariableDataType.LIST).build(),
-                Variable.newBuilder().name("egressUrl").defaultValue("http://deltafi-egress-sink-service").dataType(VariableDataType.STRING).build(),
-                Variable.newBuilder().name("retryCount").defaultValue("150").dataType(VariableDataType.NUMBER).build(),
-                Variable.newBuilder().name("subKeyValue").required(false).dataType(VariableDataType.STRING).build(),
-                Variable.newBuilder().name("listValue").value("").required(false).dataType(VariableDataType.LIST).build(),
-                Variable.newBuilder().name("boolVal").value(" True ").dataType(VariableDataType.BOOLEAN).build());
+                Variable.builder().name("enrichments").defaultValue("{'test1':'test1','test2':'test2'}").dataType(VariableDataType.MAP).build(),
+                Variable.builder().name("some.optional.list").value(null).required(false).dataType(VariableDataType.LIST).build(),
+                Variable.builder().name("some.required.list").value("").required(true).dataType(VariableDataType.LIST).build(),
+                Variable.builder().name("egressUrl").defaultValue("http://deltafi-egress-sink-service").dataType(VariableDataType.STRING).build(),
+                Variable.builder().name("retryCount").defaultValue("150").dataType(VariableDataType.NUMBER).build(),
+                Variable.builder().name("subKeyValue").required(false).dataType(VariableDataType.STRING).build(),
+                Variable.builder().name("listValue").value("").required(false).dataType(VariableDataType.LIST).build(),
+                Variable.builder().name("boolVal").value(" True ").dataType(VariableDataType.BOOLEAN).build());
     }
 
 }

@@ -58,7 +58,7 @@ public class PluginRegistryService implements Snapshotter {
         // Validate everything before persisting changes, the plugin should not be considered installed if validation fails
         List<String> validationErrors = validate(plugin, groupedFlowPlans, pluginRegistration.getVariables());
         if (!validationErrors.isEmpty()) {
-            return Result.newBuilder().success(false).errors(validationErrors).build();
+            return Result.builder().success(false).errors(validationErrors).build();
         }
 
         pluginRepository.deleteOlderVersions(plugin.getPluginCoordinates().getGroupId(), plugin.getPluginCoordinates().getArtifactId());
@@ -67,7 +67,7 @@ public class PluginRegistryService implements Snapshotter {
         pluginVariableService.saveVariables(plugin.getPluginCoordinates(), pluginRegistration.getVariables());
         upgradeFlowPlans(plugin.getPluginCoordinates(), groupedFlowPlans);
 
-        return Result.newBuilder().success(true).build();
+        return Result.builder().success(true).build();
     }
 
     /**

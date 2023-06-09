@@ -61,7 +61,7 @@ public class FormatActionTest extends ActionTest {
     }
 
     private org.deltafi.common.types.Enrichment readEnrichment(org.deltafi.test.action.Enrichment enrichment) {
-        return org.deltafi.common.types.Enrichment.newBuilder()
+        return org.deltafi.common.types.Enrichment.builder()
                 .value(enrichment.getValue())
                 .name(enrichment.getName())
                 .mediaType(enrichment.getContentType())

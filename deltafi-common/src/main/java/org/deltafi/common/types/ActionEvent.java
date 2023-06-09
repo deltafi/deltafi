@@ -29,7 +29,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder(builderMethodName = "newBuilder")
+@Builder
 public class ActionEvent {
   private String did;
   private String action;

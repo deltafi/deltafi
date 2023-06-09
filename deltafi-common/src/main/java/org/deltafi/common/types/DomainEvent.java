@@ -23,6 +23,6 @@ import lombok.experimental.SuperBuilder;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@SuperBuilder(builderMethodName = "newBuilder")
+@SuperBuilder
 public class DomainEvent extends AnnotatedEvent {
 }

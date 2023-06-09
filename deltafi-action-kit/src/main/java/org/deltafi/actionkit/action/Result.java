@@ -45,7 +45,7 @@ public abstract class Result<T extends Result<T>> implements ResultType {
      * @return action event summary object based on the action context
      */
     public ActionEvent toEvent() {
-        return ActionEvent.newBuilder()
+        return ActionEvent.builder()
                 .type(actionEventType)
                 .action(context.getName())
                 .did(context.getDid())

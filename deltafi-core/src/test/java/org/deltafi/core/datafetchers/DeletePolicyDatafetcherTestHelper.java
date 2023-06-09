@@ -33,19 +33,19 @@ public class DeletePolicyDatafetcherTestHelper {
     public static final String OFFLINE_POLICY = "offlinePolicy";
 
     private static final List<DiskSpaceDeletePolicy> DISK_POLICY_LIST = List.of(
-            DiskSpaceDeletePolicy.newBuilder()
+            DiskSpaceDeletePolicy.builder()
                     .name(DISK_SPACE_PERCENT_POLICY)
                     .enabled(true)
                     .maxPercent(99)
                     .build());
 
     private static final List<TimedDeletePolicy> TIMED_POLICY_LIST = List.of(
-            TimedDeletePolicy.newBuilder()
+            TimedDeletePolicy.builder()
                     .name(AFTER_COMPLETE_POLICY)
                     .enabled(true)
                     .afterComplete("PT2S")
                     .build(),
-            TimedDeletePolicy.newBuilder()
+            TimedDeletePolicy.builder()
                     .name(OFFLINE_POLICY)
                     .flow("bogus")
                     .enabled(false)
@@ -100,7 +100,7 @@ public class DeletePolicyDatafetcherTestHelper {
                                       List<DiskSpaceDeletePolicy> diskPolicies,
                                       List<TimedDeletePolicy> timedPolicies) {
 
-        DeletePolicies input = DeletePolicies.newBuilder()
+        DeletePolicies input = DeletePolicies.builder()
                 .diskSpacePolicies(diskPolicies)
                 .timedPolicies(timedPolicies)
                 .build();

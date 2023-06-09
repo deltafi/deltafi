@@ -56,7 +56,7 @@ public class ReinjectResult extends Result<ReinjectResult> implements LoadResult
      * @param metadata Source metadata for the new DeltaFile
      */
     public void addChild(String filename, String flow, List<ActionContent> content, Map<String, String> metadata) {
-        reinjectEvents.add(ReinjectEvent.newBuilder()
+        reinjectEvents.add(ReinjectEvent.builder()
                 .filename(filename)
                 .flow(flow)
                 .content(content.stream().map(ContentConverter::convert).toList())

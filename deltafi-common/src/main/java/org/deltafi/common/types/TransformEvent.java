@@ -26,7 +26,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@SuperBuilder(builderMethodName = "newBuilder")
+@SuperBuilder
 public class TransformEvent extends AnnotatedEvent {
   private List<Content> content;
 }

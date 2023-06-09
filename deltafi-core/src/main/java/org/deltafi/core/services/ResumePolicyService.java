@@ -153,7 +153,7 @@ public class ResumePolicyService implements Snapshotter {
                 errors.add("duplicate name or criteria");
             }
         }
-        return Result.newBuilder().success(false).errors(errors).build();
+        return Result.builder().success(false).errors(errors).build();
     }
 
     /**
@@ -164,9 +164,9 @@ public class ResumePolicyService implements Snapshotter {
      */
     public Result update(ResumePolicy policy) {
         if (StringUtils.isBlank(policy.getId())) {
-            return Result.newBuilder().success(false).errors(List.of("id is missing")).build();
+            return Result.builder().success(false).errors(List.of("id is missing")).build();
         } else if (get(policy.getId()).isEmpty()) {
-            return Result.newBuilder().success(false).errors(List.of("policy not found")).build();
+            return Result.builder().success(false).errors(List.of("policy not found")).build();
         }
         return save(policy);
     }

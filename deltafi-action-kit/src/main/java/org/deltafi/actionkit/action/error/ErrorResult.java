@@ -91,7 +91,7 @@ public class ErrorResult extends Result<ErrorResult> implements DomainResultType
     @Override
     public final ActionEvent toEvent() {
         ActionEvent event = super.toEvent();
-        event.setError(ErrorEvent.newBuilder()
+        event.setError(ErrorEvent.builder()
                 .cause(errorCause)
                 .context(errorContext)
                 .build());

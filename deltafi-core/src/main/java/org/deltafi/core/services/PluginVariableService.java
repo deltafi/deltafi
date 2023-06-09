@@ -119,7 +119,7 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
     }
 
     private Variable preserveValue(Variable incoming, List<Variable> existingValues) {
-        Variable variable = Variable.newBuilder()
+        Variable variable = Variable.builder()
                 .name(incoming.getName())
                 .defaultValue(incoming.getDefaultValue())
                 .dataType(incoming.getDataType())

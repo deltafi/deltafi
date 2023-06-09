@@ -76,7 +76,7 @@ public class PluginCustomizationService implements Snapshotter {
             pluginCustomizationConfigRepo.deleteById(id);
             return new Result();
         } else {
-            return Result.newBuilder().success(false).errors(List.of("No plugin customization config exists with an id of " + id)).build();
+            return Result.builder().success(false).errors(List.of("No plugin customization config exists with an id of " + id)).build();
         }
     }
 

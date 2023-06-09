@@ -38,8 +38,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ExtendWith(MockitoExtension.class)
 class PluginVariableServiceTest {
 
-    private static final Variable KEEP_VARIABLE = Variable.newBuilder().name("keep").value("value").build();
-    private static final Variable SKIP_VARIABLE = Variable.newBuilder().name("skip").build();
+    private static final Variable KEEP_VARIABLE = Variable.builder().name("keep").value("value").build();
+    private static final Variable SKIP_VARIABLE = Variable.builder().name("skip").build();
 
     @InjectMocks
     PluginVariableService pluginVariableService;
@@ -78,7 +78,7 @@ class PluginVariableServiceTest {
 
         PluginVariables storedPluginA = pluginVariables("a");
         // keep value should be restored to 'value'
-        storedPluginA.setVariables(List.of(Variable.newBuilder().name("keep").value("updated").build(), SKIP_VARIABLE));
+        storedPluginA.setVariables(List.of(Variable.builder().name("keep").value("updated").build(), SKIP_VARIABLE));
 
         // nothing stored in snapshot shouldn't change
         PluginVariables storedPluginB = pluginVariables("b");

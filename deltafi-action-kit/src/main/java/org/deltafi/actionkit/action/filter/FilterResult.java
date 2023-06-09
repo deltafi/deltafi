@@ -55,7 +55,7 @@ public class FilterResult extends Result<FilterResult> implements EgressResultTy
     @Override
     public final ActionEvent toEvent() {
         ActionEvent event = super.toEvent();
-        event.setFilter(FilterEvent.newBuilder().message(filteredCause).build());
+        event.setFilter(FilterEvent.builder().message(filteredCause).build());
         return event;
     }
 }

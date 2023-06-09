@@ -30,42 +30,42 @@ import java.util.List;
 @Service
 public class FlowPlanGeneratorService {
 
-    private static final Variable SAMPLE_STRING_VAR = Variable.newBuilder()
+    private static final Variable SAMPLE_STRING_VAR = Variable.builder()
             .name(ActionUtil.SAMPLE_STRING)
             .required(true)
             .defaultValue("sample value")
             .description("Sample string variable")
             .dataType(VariableDataType.STRING).build();
 
-    private static final Variable SAMPLE_NUMBER_VAR = Variable.newBuilder()
+    private static final Variable SAMPLE_NUMBER_VAR = Variable.builder()
             .name(ActionUtil.SAMPLE_NUMBER)
             .required(false)
             .defaultValue("10")
             .description("Sample number variable")
             .dataType(VariableDataType.NUMBER).build();
 
-    private static final Variable SAMPLE_BOOLEAN_VAR = Variable.newBuilder()
+    private static final Variable SAMPLE_BOOLEAN_VAR = Variable.builder()
             .name(ActionUtil.SAMPLE_BOOLEAN)
             .required(false)
             .defaultValue("true")
             .description("Sample boolean variable")
             .dataType(VariableDataType.BOOLEAN).build();
 
-    private static final Variable SAMPLE_LIST_VAR = Variable.newBuilder()
+    private static final Variable SAMPLE_LIST_VAR = Variable.builder()
             .name(ActionUtil.SAMPLE_LIST)
             .required(false)
             .defaultValue("a, b, c")
             .description("Sample list variable")
             .dataType(VariableDataType.LIST).build();
 
-    private static final Variable SAMPLE_MAP_VAR = Variable.newBuilder()
+    private static final Variable SAMPLE_MAP_VAR = Variable.builder()
             .name(ActionUtil.SAMPLE_MAP)
             .required(false)
             .defaultValue("a: a, b: b, c: c")
             .description("Sample map variable")
             .dataType(VariableDataType.MAP).build();
 
-    private static final Variable EGRESS_VAR = Variable.newBuilder()
+    private static final Variable EGRESS_VAR = Variable.builder()
             .name(ActionUtil.EGRESS_VAR_NAME)
             .description("The URL to post the DeltaFile to")
             .dataType(VariableDataType.STRING)

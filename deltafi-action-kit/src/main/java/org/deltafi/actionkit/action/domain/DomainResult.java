@@ -48,7 +48,7 @@ public class DomainResult extends Result<DomainResult> implements HasAnnotations
     @Override
     public final ActionEvent toEvent() {
         ActionEvent event = super.toEvent();
-        event.setDomain(DomainEvent.newBuilder().annotations(annotations).build());
+        event.setDomain(DomainEvent.builder().annotations(annotations).build());
         return event;
     }
 

@@ -113,9 +113,9 @@ class ResumePolicyServiceTest {
 
         Optional<ResumePolicyService.ResumeDetails> resumeDetails = resumePolicyService.getAutoResumeDelay(
                 getDeltaFile(MAX_ATTEMPTS - 1),
-                ActionEvent.newBuilder()
+                ActionEvent.builder()
                         .action("1" + ACTION)
-                        .error(ErrorEvent.newBuilder()
+                        .error(ErrorEvent.builder()
                                 .cause(ERROR).build())
                         .build(),
                 ACTION_TYPE);
@@ -125,9 +125,9 @@ class ResumePolicyServiceTest {
 
         Optional<ResumePolicyService.ResumeDetails> rollToNextPolicy = resumePolicyService.getAutoResumeDelay(
                 getDeltaFile(MAX_ATTEMPTS + 1),
-                ActionEvent.newBuilder()
+                ActionEvent.builder()
                         .action("1" + ACTION)
-                        .error(ErrorEvent.newBuilder()
+                        .error(ErrorEvent.builder()
                                 .cause(ERROR).build())
                         .build(),
                 ACTION_TYPE);
@@ -137,9 +137,9 @@ class ResumePolicyServiceTest {
 
         Optional<ResumePolicyService.ResumeDetails> tooManyAttempts = resumePolicyService.getAutoResumeDelay(
                 getDeltaFile(MAX_ATTEMPTS * 2),
-                ActionEvent.newBuilder()
+                ActionEvent.builder()
                         .action("1" + ACTION)
-                        .error(ErrorEvent.newBuilder()
+                        .error(ErrorEvent.builder()
                                 .cause(ERROR).build())
                         .build(),
                 ACTION_TYPE);
@@ -147,9 +147,9 @@ class ResumePolicyServiceTest {
 
         Optional<ResumePolicyService.ResumeDetails> wrongError = resumePolicyService.getAutoResumeDelay(
                 getDeltaFile(1),
-                ActionEvent.newBuilder()
+                ActionEvent.builder()
                         .action("1" + ACTION)
-                        .error(ErrorEvent.newBuilder()
+                        .error(ErrorEvent.builder()
                                 .cause("not-a-match").build())
                         .build(),
                 ACTION_TYPE);
@@ -246,7 +246,7 @@ class ResumePolicyServiceTest {
 
     private DeltaFile getDeltaFile(int attempt) {
         OffsetDateTime now = OffsetDateTime.now();
-        Action action = Action.newBuilder()
+        Action action = Action.builder()
                 .name("1" + ACTION)
                 .state(ActionState.QUEUED)
                 .created(now)
@@ -254,7 +254,7 @@ class ResumePolicyServiceTest {
                 .attempt(attempt)
                 .build();
 
-        return DeltaFile.newBuilder()
+        return DeltaFile.builder()
                 .did(UUID.randomUUID().toString())
                 .requeueCount(0)
                 .stage(DeltaFileStage.INGRESS)

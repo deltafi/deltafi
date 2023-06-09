@@ -467,7 +467,7 @@ class DeltaFiCoreApplicationTests {
 		String idToUpdate = getIdByPolicyName(DISK_SPACE_PERCENT_POLICY);
 
 		Result validationError = updateDiskSpaceDeletePolicy(dgsQueryExecutor,
-				DiskSpaceDeletePolicy.newBuilder()
+				DiskSpaceDeletePolicy.builder()
 						.id(idToUpdate)
 						.name(DISK_SPACE_PERCENT_POLICY)
 						.maxPercent(-1)
@@ -476,7 +476,7 @@ class DeltaFiCoreApplicationTests {
 		checkUpdateResult(true, validationError, "maxPercent is invalid", idToUpdate, DISK_SPACE_PERCENT_POLICY, true);
 
 		Result updateNameIsGood = updateDiskSpaceDeletePolicy(dgsQueryExecutor,
-				DiskSpaceDeletePolicy.newBuilder()
+				DiskSpaceDeletePolicy.builder()
 						.id(idToUpdate)
 						.name("newName")
 						.maxPercent(50)
@@ -485,7 +485,7 @@ class DeltaFiCoreApplicationTests {
 		checkUpdateResult(true, updateNameIsGood, null, idToUpdate, "newName", false);
 
 		Result notFoundError = updateDiskSpaceDeletePolicy(dgsQueryExecutor,
-				DiskSpaceDeletePolicy.newBuilder()
+				DiskSpaceDeletePolicy.builder()
 						.id("wrongId")
 						.name("blah")
 						.maxPercent(50)
@@ -494,7 +494,7 @@ class DeltaFiCoreApplicationTests {
 		checkUpdateResult(true, notFoundError, "policy not found", idToUpdate, "newName", false);
 
 		Result missingId = updateDiskSpaceDeletePolicy(dgsQueryExecutor,
-				DiskSpaceDeletePolicy.newBuilder()
+				DiskSpaceDeletePolicy.builder()
 						.name("blah")
 						.maxPercent(50)
 						.enabled(true)
@@ -508,7 +508,7 @@ class DeltaFiCoreApplicationTests {
 		assertNotEquals(secondId, idToUpdate);
 
 		Result duplicateName = updateDiskSpaceDeletePolicy(dgsQueryExecutor,
-				DiskSpaceDeletePolicy.newBuilder()
+				DiskSpaceDeletePolicy.builder()
 						.id(idToUpdate)
 						.name(DISK_SPACE_PERCENT_POLICY)
 						.maxPercent(60)
@@ -525,7 +525,7 @@ class DeltaFiCoreApplicationTests {
 		String idToUpdate = getIdByPolicyName(DISK_SPACE_PERCENT_POLICY);
 
 		Result validationError = updateTimedDeletePolicy(dgsQueryExecutor,
-				TimedDeletePolicy.newBuilder()
+				TimedDeletePolicy.builder()
 						.id(idToUpdate)
 						.name("blah")
 						.afterComplete("ABC")
@@ -534,7 +534,7 @@ class DeltaFiCoreApplicationTests {
 		checkUpdateResult(true, validationError, "Unable to parse duration for afterComplete", idToUpdate, DISK_SPACE_PERCENT_POLICY, true);
 
 		Result notFoundError = updateTimedDeletePolicy(dgsQueryExecutor,
-				TimedDeletePolicy.newBuilder()
+				TimedDeletePolicy.builder()
 						.id("wrongId")
 						.name("blah")
 						.afterComplete("PT1H")
@@ -543,7 +543,7 @@ class DeltaFiCoreApplicationTests {
 		checkUpdateResult(true, notFoundError, "policy not found", idToUpdate, DISK_SPACE_PERCENT_POLICY, true);
 
 		Result goodUpdate = updateTimedDeletePolicy(dgsQueryExecutor,
-				TimedDeletePolicy.newBuilder()
+				TimedDeletePolicy.builder()
 						.id(idToUpdate)
 						.name("newTypesAndName")
 						.afterComplete("PT1H")
@@ -904,7 +904,7 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void testEnrichDidNotFound() throws IOException {
+	void testEnrichDidNotFound() {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postDomainDeltaFile(did));
 
@@ -1517,7 +1517,7 @@ class DeltaFiCoreApplicationTests {
 		pluginRepository.deleteAll();
 
 		PluginCoordinates pluginCoordinates = PluginCoordinates.builder().artifactId("test-actions").groupId("org.deltafi").version("1.0").build();
-		Variable var = Variable.newBuilder().name("var").description("description").defaultValue("value").required(false).build();
+		Variable var = Variable.builder().name("var").description("description").defaultValue("value").required(false).build();
 		PluginVariables variables = new PluginVariables();
 		variables.setSourcePlugin(pluginCoordinates);
 		variables.setVariables(List.of(var));
@@ -1842,7 +1842,7 @@ class DeltaFiCoreApplicationTests {
 	void testSetPluginVariableValues() {
 		PluginVariables variables = new PluginVariables();
 		variables.setSourcePlugin(FlowPlanDatafetcherTestHelper.PLUGIN_COORDINATES);
-		variables.setVariables(List.of(Variable.newBuilder().name("key").value("test").description("description").dataType(VariableDataType.STRING).build()));
+		variables.setVariables(List.of(Variable.builder().name("key").value("test").description("description").dataType(VariableDataType.STRING).build()));
 		pluginVariableRepo.save(variables);
 		assertTrue(FlowPlanDatafetcherTestHelper.setPluginVariableValues(dgsQueryExecutor));
 	}
@@ -2058,7 +2058,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile.setNextAutoResumeReason("nextAutoResumeReason");
 		deltaFileRepo.save(deltaFile);
 
-		DeltaFiles expected = DeltaFiles.newBuilder()
+		DeltaFiles expected = DeltaFiles.builder()
 				.offset(0)
 				.count(1)
 				.totalCount(1)
@@ -2295,11 +2295,11 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void testFindReadyForAutoResume() {
-		Action ingress = Action.newBuilder().name("ingress").modified(MONGO_NOW).state(ActionState.COMPLETE).build();
-		Action hit = Action.newBuilder().name("hit").modified(MONGO_NOW).state(ActionState.ERROR).build();
-		Action miss = Action.newBuilder().name("miss").modified(MONGO_NOW).state(ActionState.ERROR).build();
-		Action notSet = Action.newBuilder().name("notSet").modified(MONGO_NOW).state(ActionState.ERROR).build();
-		Action other = Action.newBuilder().name("other").modified(MONGO_NOW).state(ActionState.COMPLETE).build();
+		Action ingress = Action.builder().name("ingress").modified(MONGO_NOW).state(ActionState.COMPLETE).build();
+		Action hit = Action.builder().name("hit").modified(MONGO_NOW).state(ActionState.ERROR).build();
+		Action miss = Action.builder().name("miss").modified(MONGO_NOW).state(ActionState.ERROR).build();
+		Action notSet = Action.builder().name("notSet").modified(MONGO_NOW).state(ActionState.ERROR).build();
+		Action other = Action.builder().name("other").modified(MONGO_NOW).state(ActionState.COMPLETE).build();
 
 		DeltaFile shouldResume = buildDeltaFile("did", INGRESS_FLOW_NAME, DeltaFileStage.ERROR, MONGO_NOW, MONGO_NOW);
 		shouldResume.setNextAutoResume(MONGO_NOW.minusSeconds(1000));
@@ -2347,8 +2347,8 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void testUpdateForRequeue() {
-		Action shouldRequeue = Action.newBuilder().name("hit").modified(MONGO_NOW.minusSeconds(1000)).state(QUEUED).build();
-		Action shouldStay = Action.newBuilder().name("miss").modified(MONGO_NOW.plusSeconds(1000)).state(QUEUED).build();
+		Action shouldRequeue = Action.builder().name("hit").modified(MONGO_NOW.minusSeconds(1000)).state(QUEUED).build();
+		Action shouldStay = Action.builder().name("miss").modified(MONGO_NOW.plusSeconds(1000)).state(QUEUED).build();
 
 		DeltaFile hit = buildDeltaFile("did", null, DeltaFileStage.EGRESS, MONGO_NOW, MONGO_NOW.minusSeconds(1000));
 		hit.setActions(Arrays.asList(shouldRequeue, shouldStay));
@@ -2655,7 +2655,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile1.setEnrichments(List.of(new Enrichment("enrichment1", null, null)));
 		deltaFile1.setContentDeleted(MONGO_NOW);
 		deltaFile1.setSourceInfo(new SourceInfo("filename1", "flow1", Map.of("key1", "value1", "key2", "value2")));
-		deltaFile1.setActions(List.of(Action.newBuilder().name("action1").state(ActionState.COMPLETE).content(List.of(new Content("formattedFilename1", "mediaType"))).metadata(Map.of("formattedKey1", "formattedValue1", "formattedKey2", "formattedValue2")).build()));
+		deltaFile1.setActions(List.of(Action.builder().name("action1").state(ActionState.COMPLETE).content(List.of(new Content("formattedFilename1", "mediaType"))).metadata(Map.of("formattedKey1", "formattedValue1", "formattedKey2", "formattedValue2")).build()));
 		deltaFile1.setErrorAcknowledged(MONGO_NOW);
 		deltaFile1.incrementRequeueCount();
 		deltaFile1.addEgressFlow("MyEgressFlow");
@@ -2669,7 +2669,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile2.addAnnotations(Map.of("a.2", "first", "common", "value"));
 		deltaFile2.setEnrichments(List.of(new Enrichment("enrichment1", null, null), new Enrichment("enrichment2", null, null)));
 		deltaFile2.setSourceInfo(new SourceInfo("filename2", "flow2", Map.of()));
-		deltaFile2.setActions(List.of(Action.newBuilder().name("action1").state(ActionState.ERROR).errorCause("Cause").build(), Action.newBuilder().name("action2").state(ActionState.COMPLETE).content(List.of(new Content("formattedFilename2", "mediaType"))).build()));
+		deltaFile2.setActions(List.of(Action.builder().name("action1").state(ActionState.ERROR).errorCause("Cause").build(), Action.builder().name("action2").state(ActionState.COMPLETE).content(List.of(new Content("formattedFilename2", "mediaType"))).build()));
 		deltaFile2.setEgressed(true);
 		deltaFile2.setFiltered(true);
 		deltaFile2.addEgressFlow("MyEgressFlow");
@@ -2683,7 +2683,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile3.addAnnotations(Map.of("b.2", "first", "common", "value"));
 		deltaFile3.setEnrichments(List.of(new Enrichment("enrichment3", null, null), new Enrichment("enrichment4", null, null)));
 		deltaFile3.setSourceInfo(new SourceInfo("filename3", "flow3", Map.of(), ProcessingType.TRANSFORMATION));
-		deltaFile3.setActions(List.of(Action.newBuilder().name("action2").state(ActionState.FILTERED).filteredCause("Coffee").build(), Action.newBuilder().name("action2").state(ActionState.COMPLETE).content(List.of(new Content("formattedFilename3", "mediaType"))).build()));
+		deltaFile3.setActions(List.of(Action.builder().name("action2").state(ActionState.FILTERED).filteredCause("Coffee").build(), Action.builder().name("action2").state(ActionState.COMPLETE).content(List.of(new Content("formattedFilename3", "mediaType"))).build()));
 		deltaFile3.setEgressed(true);
 		deltaFile3.setFiltered(true);
 		deltaFile3.addEgressFlow("MyEgressFlow3");
@@ -2759,24 +2759,24 @@ class DeltaFiCoreApplicationTests {
 	void testQueryByFilterMessage() {
 		// Not filtered
 		DeltaFile deltaFile1 = buildDeltaFile("1", null, DeltaFileStage.COMPLETE, MONGO_NOW, MONGO_NOW);
-		deltaFile1.setActions(List.of(Action.newBuilder().name("action1").build()));
+		deltaFile1.setActions(List.of(Action.builder().name("action1").build()));
 		deltaFileRepo.save(deltaFile1);
 		// Not filtered, with errorCause
 		DeltaFile deltaFile2 = buildDeltaFile("2", null, DeltaFileStage.ERROR, MONGO_NOW.plusSeconds(1), MONGO_NOW.plusSeconds(1));
-		deltaFile2.setActions(List.of(Action.newBuilder().name("action1").state(ActionState.ERROR).errorCause("Error reason 1").build()));
+		deltaFile2.setActions(List.of(Action.builder().name("action1").state(ActionState.ERROR).errorCause("Error reason 1").build()));
 		deltaFileRepo.save(deltaFile2);
 		// Filtered, reason 1
 		DeltaFile deltaFile3 = buildDeltaFile("3", null, DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(2), MONGO_NOW.plusSeconds(2));
-		deltaFile3.setActions(List.of(Action.newBuilder().name("action1").state(ActionState.FILTERED).errorCause("Filtered reason 1").build()));
+		deltaFile3.setActions(List.of(Action.builder().name("action1").state(ActionState.FILTERED).errorCause("Filtered reason 1").build()));
 		deltaFile3.setFiltered(true);
 		deltaFileRepo.save(deltaFile3);
 		// Filtered, reason 2
 		DeltaFile deltaFile4 = buildDeltaFile("4", null, DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(3), MONGO_NOW.plusSeconds(3));
-		deltaFile4.setActions(List.of(Action.newBuilder().name("action1").state(ActionState.ERROR).filteredCause("Filtered reason 2").build()));
+		deltaFile4.setActions(List.of(Action.builder().name("action1").state(ActionState.ERROR).filteredCause("Filtered reason 2").build()));
 		deltaFile4.setFiltered(true);
 		deltaFileRepo.save(deltaFile4);
 		DeltaFile deltaFile5 = buildDeltaFile("5", null, DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(3), MONGO_NOW.plusSeconds(3));
-		deltaFile5.setActions(List.of(Action.newBuilder().name("action1").state(ActionState.FILTERED).filteredCause("Filtered reason 2").build()));
+		deltaFile5.setActions(List.of(Action.builder().name("action1").state(ActionState.FILTERED).filteredCause("Filtered reason 2").build()));
 		deltaFile5.setFiltered(true);
 		deltaFileRepo.save(deltaFile5);
 
@@ -3693,11 +3693,11 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void domains() {
-		deltaFileRepo.insert(DeltaFile.newBuilder()
-				.domains(List.of(Domain.newBuilder().name("a").build(), Domain.newBuilder().name("b").build()))
+		deltaFileRepo.insert(DeltaFile.builder()
+				.domains(List.of(Domain.builder().name("a").build(), Domain.builder().name("b").build()))
 				.build());
-		deltaFileRepo.insert(DeltaFile.newBuilder()
-				.domains(List.of(Domain.newBuilder().name("b").build(), Domain.newBuilder().name("c").build()))
+		deltaFileRepo.insert(DeltaFile.builder()
+				.domains(List.of(Domain.builder().name("b").build(), Domain.builder().name("c").build()))
 				.build());
 
 		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(new DomainsGraphQLQuery("query"));
@@ -3726,12 +3726,12 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void annotations() {
-		deltaFileRepo.insert(DeltaFile.newBuilder()
-				.domains(List.of(Domain.newBuilder().name("a").build(), Domain.newBuilder().name("b").build()))
+		deltaFileRepo.insert(DeltaFile.builder()
+				.domains(List.of(Domain.builder().name("a").build(), Domain.builder().name("b").build()))
 				.annotations(Map.of("x", "1", "y", "2"))
 				.build());
-		deltaFileRepo.insert(DeltaFile.newBuilder()
-				.domains(List.of(Domain.newBuilder().name("b").build(), Domain.newBuilder().name("c").build()))
+		deltaFileRepo.insert(DeltaFile.builder()
+				.domains(List.of(Domain.builder().name("b").build(), Domain.builder().name("c").build()))
 				.annotations(Map.of("y", "3", "z", "4"))
 				.build());
 
@@ -3748,12 +3748,12 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void annotationPerDomain() {
-		deltaFileRepo.insert(DeltaFile.newBuilder()
-				.domains(List.of(Domain.newBuilder().name("a").build(), Domain.newBuilder().name("b").build()))
+		deltaFileRepo.insert(DeltaFile.builder()
+				.domains(List.of(Domain.builder().name("a").build(), Domain.builder().name("b").build()))
 				.annotations(Map.of("x", "1", "y", "2"))
 				.build());
-		deltaFileRepo.insert(DeltaFile.newBuilder()
-				.domains(List.of(Domain.newBuilder().name("b").build(), Domain.newBuilder().name("c").build()))
+		deltaFileRepo.insert(DeltaFile.builder()
+				.domains(List.of(Domain.builder().name("b").build(), Domain.builder().name("c").build()))
 				.annotations(Map.of("y", "3", "z", "4"))
 				.build());
 
@@ -3911,7 +3911,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testDeleteMultipleBatches() {
 		for (int i = 0; i < 1500; i++) {
-			deltaFileRepo.save(DeltaFile.newBuilder()
+			deltaFileRepo.save(DeltaFile.builder()
 					.did("abc" + i)
 					.created(OffsetDateTime.now().minusDays(1))
 					.totalBytes(10)

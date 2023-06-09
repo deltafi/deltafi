@@ -93,10 +93,10 @@ class IngressFlowPlanConverterTest {
 
     List<Variable> variables() {
         return List.of(
-                Variable.newBuilder().name("incoming.type").defaultValue("binary").dataType(VariableDataType.STRING).build(),
-                Variable.newBuilder().name("transform.produces").defaultValue("passthrough-binary").dataType(VariableDataType.STRING).build(),
-                Variable.newBuilder().name("domain.type").defaultValue("binary").dataType(VariableDataType.STRING).build(),
-                Variable.newBuilder().name("enrichment.value").defaultValue("enrichment value").dataType(VariableDataType.STRING).value("customized enrichment value").build(),
-                Variable.newBuilder().name("egressUrl").defaultValue("http://deltafi-egress-sink-service").dataType(VariableDataType.STRING).build());
+                Variable.builder().name("incoming.type").defaultValue("binary").dataType(VariableDataType.STRING).build(),
+                Variable.builder().name("transform.produces").defaultValue("passthrough-binary").dataType(VariableDataType.STRING).build(),
+                Variable.builder().name("domain.type").defaultValue("binary").dataType(VariableDataType.STRING).build(),
+                Variable.builder().name("enrichment.value").defaultValue("enrichment value").dataType(VariableDataType.STRING).value("customized enrichment value").build(),
+                Variable.builder().name("egressUrl").defaultValue("http://deltafi-egress-sink-service").dataType(VariableDataType.STRING).build());
     }
 }

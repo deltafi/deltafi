@@ -150,19 +150,19 @@ class DeletePolicyServiceTest {
     }
 
     private DeletePolicies getValidSave() {
-        return DeletePolicies.newBuilder()
+        return DeletePolicies.builder()
                 .diskSpacePolicies(List.of(buildDiskSpaceDeletePolicy(90)))
                 .timedPolicies(List.of(buildTimeDeletePolicy())).build();
     }
 
     private DeletePolicies getInvalidSave() {
-        return DeletePolicies.newBuilder()
+        return DeletePolicies.builder()
                 .diskSpacePolicies(List.of(buildDiskSpaceDeletePolicy(-1)))
                 .timedPolicies(List.of(buildTimeDeletePolicy())).build();
     }
 
     DiskSpaceDeletePolicy buildDiskSpaceDeletePolicy(int maxPercent) {
-        return DiskSpaceDeletePolicy.newBuilder()
+        return DiskSpaceDeletePolicy.builder()
                 .id("disk1")
                 .name("disk1")
                 .maxPercent(maxPercent)
@@ -170,7 +170,7 @@ class DeletePolicyServiceTest {
     }
 
     TimedDeletePolicy buildTimeDeletePolicy() {
-        return TimedDeletePolicy.newBuilder()
+        return TimedDeletePolicy.builder()
                 .id("timed1")
                 .name("timed1")
                 .afterComplete("PT50M")

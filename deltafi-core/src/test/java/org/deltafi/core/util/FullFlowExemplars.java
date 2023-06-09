@@ -70,7 +70,7 @@ public class FullFlowExemplars {
         DeltaFile deltaFile = postTransformHadErrorDeltaFile(did);
         deltaFile.retryErrors();
         deltaFile.setStage(DeltaFileStage.INGRESS);
-        deltaFile.getActions().add(Action.newBuilder().name(retryAction).state(QUEUED).attempt(2).build());
+        deltaFile.getActions().add(Action.builder().name(retryAction).state(QUEUED).attempt(2).build());
         deltaFile.getSourceInfo().setMetadata(Map.of("AuthorizedBy", "ABC", "removeMe.original", "whatever", "AuthorizedBy.original", "XYZ", "anotherKey", "anotherValue"));
         return deltaFile;
     }
@@ -196,7 +196,7 @@ public class FullFlowExemplars {
         DeltaFile deltaFile = postErrorDeltaFile(did);
         deltaFile.retryErrors();
         deltaFile.setStage(DeltaFileStage.EGRESS);
-        deltaFile.getActions().add(Action.newBuilder().name(retryAction).state(QUEUED).attempt(2).build());
+        deltaFile.getActions().add(Action.builder().name(retryAction).state(QUEUED).attempt(2).build());
         deltaFile.getSourceInfo().addMetadata("a", "b");
         return deltaFile;
     }

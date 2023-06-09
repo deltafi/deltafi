@@ -111,7 +111,7 @@ public class DeletePolicyService implements Snapshotter {
                 errors.add("duplicate policy name");
             }
         }
-        return Result.newBuilder().success(false).errors(errors).build();
+        return Result.builder().success(false).errors(errors).build();
     }
 
     /**
@@ -122,9 +122,9 @@ public class DeletePolicyService implements Snapshotter {
      */
     public Result update(DeletePolicy policy) {
         if (StringUtils.isBlank(policy.getId())) {
-            return Result.newBuilder().success(false).errors(List.of("id is missing")).build();
+            return Result.builder().success(false).errors(List.of("id is missing")).build();
         } else if (get(policy.getId()).isEmpty()) {
-            return Result.newBuilder().success(false).errors(List.of("policy not found")).build();
+            return Result.builder().success(false).errors(List.of("policy not found")).build();
         }
 
         List<String> errors = validate(List.of(policy));
@@ -136,7 +136,7 @@ public class DeletePolicyService implements Snapshotter {
                 errors.add("duplicate policy name");
             }
         }
-        return Result.newBuilder().success(false).errors(errors).build();
+        return Result.builder().success(false).errors(errors).build();
     }
 
     /**
@@ -186,7 +186,7 @@ public class DeletePolicyService implements Snapshotter {
         }
 
         deletePolicyRepo.saveAll(systemSnapshot.getDeletePolicies().allPolicies());
-        return Result.newBuilder().success(true).build();
+        return Result.builder().success(true).build();
     }
 
     @Override

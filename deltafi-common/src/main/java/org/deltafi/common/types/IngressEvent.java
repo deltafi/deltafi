@@ -28,7 +28,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder(builderMethodName = "newBuilder")
+@Builder
 public class IngressEvent {
   private String did;
   private SourceInfo sourceInfo;

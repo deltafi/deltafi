@@ -27,7 +27,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@SuperBuilder(builderMethodName = "newBuilder")
+@SuperBuilder
 public class LoadEvent extends TransformEvent {
   @Builder.Default
   private List<Domain> domains = new ArrayList<>();

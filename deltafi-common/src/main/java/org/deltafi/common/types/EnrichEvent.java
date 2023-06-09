@@ -26,7 +26,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@SuperBuilder(builderMethodName = "newBuilder")
+@SuperBuilder
 public class EnrichEvent extends AnnotatedEvent {
   private List<Enrichment> enrichments;
 }

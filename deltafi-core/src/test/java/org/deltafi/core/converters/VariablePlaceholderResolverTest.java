@@ -45,13 +45,13 @@ class VariablePlaceholderResolverTest {
 
     private static List<Arguments> testArgs() {
         return List.of(
-        Arguments.of(PLACEHOLDER, List.of(Variable.newBuilder().name(PLACEHOLDER).value(SET_VALUE).defaultValue(DEFAULT_VALUE).dataType(VariableDataType.STRING).build()), SET_VALUE),
-        Arguments.of(PLACEHOLDER, List.of(Variable.newBuilder().name(PLACEHOLDER).value(null).defaultValue(DEFAULT_VALUE).dataType(VariableDataType.STRING).build()), DEFAULT_VALUE),
-        Arguments.of(PLACEHOLDER, List.of(Variable.newBuilder().name(PLACEHOLDER).value(null).defaultValue(null).dataType(VariableDataType.STRING).build()), ""),
-        Arguments.of(PLACEHOLDER, List.of(Variable.newBuilder().name(PLACEHOLDER).value(null).defaultValue(null).dataType(VariableDataType.LIST).build()), ""),
-        Arguments.of(PLACEHOLDER, List.of(Variable.newBuilder().name(PLACEHOLDER).value("").defaultValue(null).dataType(VariableDataType.LIST).build()), "[]"),
-        Arguments.of(PLACEHOLDER, List.of(Variable.newBuilder().name(PLACEHOLDER).value(null).defaultValue(null).required(true).dataType(VariableDataType.STRING).build()), null),
-        Arguments.of("${unresolved}", List.of(Variable.newBuilder().name(PLACEHOLDER).value(SET_VALUE).defaultValue(DEFAULT_VALUE).dataType(VariableDataType.STRING).build()), null),
+        Arguments.of(PLACEHOLDER, List.of(Variable.builder().name(PLACEHOLDER).value(SET_VALUE).defaultValue(DEFAULT_VALUE).dataType(VariableDataType.STRING).build()), SET_VALUE),
+        Arguments.of(PLACEHOLDER, List.of(Variable.builder().name(PLACEHOLDER).value(null).defaultValue(DEFAULT_VALUE).dataType(VariableDataType.STRING).build()), DEFAULT_VALUE),
+        Arguments.of(PLACEHOLDER, List.of(Variable.builder().name(PLACEHOLDER).value(null).defaultValue(null).dataType(VariableDataType.STRING).build()), ""),
+        Arguments.of(PLACEHOLDER, List.of(Variable.builder().name(PLACEHOLDER).value(null).defaultValue(null).dataType(VariableDataType.LIST).build()), ""),
+        Arguments.of(PLACEHOLDER, List.of(Variable.builder().name(PLACEHOLDER).value("").defaultValue(null).dataType(VariableDataType.LIST).build()), "[]"),
+        Arguments.of(PLACEHOLDER, List.of(Variable.builder().name(PLACEHOLDER).value(null).defaultValue(null).required(true).dataType(VariableDataType.STRING).build()), null),
+        Arguments.of("${unresolved}", List.of(Variable.builder().name(PLACEHOLDER).value(SET_VALUE).defaultValue(DEFAULT_VALUE).dataType(VariableDataType.STRING).build()), null),
         Arguments.of(PLACEHOLDER, Collections.emptyList(), null),
         Arguments.of(PLACEHOLDER, null, null));
     }

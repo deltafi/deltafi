@@ -28,7 +28,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder(builderMethodName = "newBuilder")
+@Builder
 public class DeletePolicies {
     @Builder.Default
     private List<TimedDeletePolicy> timedPolicies = new ArrayList<>();

@@ -121,7 +121,7 @@ public class FlowAssignmentService implements Snapshotter {
                 errors.add("duplicate rule name");
             }
         }
-        return Result.newBuilder().success(false).errors(errors).build();
+        return Result.builder().success(false).errors(errors).build();
     }
 
     /**
@@ -132,9 +132,9 @@ public class FlowAssignmentService implements Snapshotter {
      */
     public Result update(FlowAssignmentRule flowAssignmentRule) {
         if (StringUtils.isBlank(flowAssignmentRule.getId())) {
-            return Result.newBuilder().success(false).errors(List.of("id is missing")).build();
+            return Result.builder().success(false).errors(List.of("id is missing")).build();
         } else if (get(flowAssignmentRule.getId()).isEmpty()) {
-            return Result.newBuilder().success(false).errors(List.of("rule not found")).build();
+            return Result.builder().success(false).errors(List.of("rule not found")).build();
         }
         return save(flowAssignmentRule);
     }

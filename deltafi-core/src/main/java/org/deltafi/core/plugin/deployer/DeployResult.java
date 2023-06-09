@@ -17,9 +17,9 @@
  */
 package org.deltafi.core.plugin.deployer;
 
-import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.experimental.SuperBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.core.types.Result;
 
@@ -30,17 +30,13 @@ import java.util.stream.Collectors;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
+@SuperBuilder
 public class DeployResult extends Result {
     private List<List<String>> events;
     private String logs;
 
     public DeployResult() {
         super(true, new ArrayList<>(), new ArrayList<>());
-    }
-
-    @Builder
-    public DeployResult(boolean success, List<String> info, List<String> errors) {
-        super(success, info, errors);
     }
 
     boolean hasEvents() {

@@ -190,7 +190,7 @@ public class DeltaFilesService {
 
         OffsetDateTime now = OffsetDateTime.now(clock);
 
-        Action ingressAction = Action.newBuilder()
+        Action ingressAction = Action.builder()
                 .name(INGRESS_ACTION)
                 .flow(ingressEvent.getSourceInfo().getFlow())
                 .type(ActionType.INGRESS)
@@ -203,7 +203,7 @@ public class DeltaFilesService {
 
         long contentSize = ContentUtil.computeContentSize(ingressEvent.getContent());
 
-        DeltaFile deltaFile = DeltaFile.newBuilder()
+        DeltaFile deltaFile = DeltaFile.builder()
                 .schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
                 .did(ingressEvent.getDid())
                 .parentDids(parentDids)
@@ -246,7 +246,7 @@ public class DeltaFilesService {
 
             String validationError = event.validate();
             if (validationError != null) {
-                event.setError(ErrorEvent.newBuilder()
+                event.setError(ErrorEvent.builder()
                         .cause(INVALID_ACTION_EVENT_RECEIVED)
                         .context(validationError + ": " + OBJECT_MAPPER.writeValueAsString(event))
                         .build());
@@ -382,7 +382,7 @@ public class DeltaFilesService {
 
     public void format(DeltaFile deltaFile, ActionEvent event) {
         if (event.getFormat().getContent() == null) {
-            event.setError(ErrorEvent.newBuilder()
+            event.setError(ErrorEvent.builder()
                     .cause("Received format event with no content from " + event.getAction())
                     .build());
             error(deltaFile, event);
@@ -428,7 +428,7 @@ public class DeltaFilesService {
 
         // Treat filter events from Domain and Enrich actions as errors
         if (actionType.equals(ActionType.DOMAIN) || actionType.equals(ActionType.ENRICH)) {
-            event.setError(ErrorEvent.newBuilder()
+            event.setError(ErrorEvent.builder()
                     .cause("Illegal operation FILTER received from " + actionType + "Action " + event.getAction())
                     .build());
             error(deltaFile, event);
@@ -555,12 +555,12 @@ public class DeltaFilesService {
     }
 
     public static ActionEvent buildNoEgressConfiguredErrorEvent(DeltaFile deltaFile, OffsetDateTime time) {
-        return ActionEvent.newBuilder()
+        return ActionEvent.builder()
                 .did(deltaFile.getDid())
                 .action(DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION)
                 .start(time)
                 .stop(time)
-                .error(ErrorEvent.newBuilder()
+                .error(ErrorEvent.builder()
                         .cause(NO_EGRESS_CONFIGURED_CAUSE)
                         .context(NO_EGRESS_CONFIGURED_CONTEXT)
                         .build())
@@ -570,12 +570,12 @@ public class DeltaFilesService {
 
     public static ActionEvent buildNoChildFlowErrorEvent(DeltaFile deltaFile, String action, String flow,
                                                          OffsetDateTime time) {
-        return ActionEvent.newBuilder()
+        return ActionEvent.builder()
                 .did(deltaFile.getDid())
                 .action(action)
                 .start(time)
                 .stop(time)
-                .error(ErrorEvent.newBuilder()
+                .error(ErrorEvent.builder()
                         .cause(NO_CHILD_INGRESS_CONFIGURED_CAUSE)
                         .context(NO_CHILD_INGRESS_CONFIGURED_CONTEXT + flow)
                         .build())
@@ -687,7 +687,7 @@ public class DeltaFilesService {
                     return null;
                 }
 
-                Action action = Action.newBuilder()
+                Action action = Action.builder()
                         .name(INGRESS_ACTION)
                         .type(ActionType.INGRESS)
                         .flow(reinject.getFlow())
@@ -698,7 +698,7 @@ public class DeltaFilesService {
                         .metadata(reinject.getMetadata())
                         .build();
 
-                DeltaFile child = DeltaFile.newBuilder()
+                DeltaFile child = DeltaFile.builder()
                         .schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
                         .did(UUID.randomUUID().toString())
                         .parentDids(List.of(deltaFile.getDid()))
@@ -944,7 +944,7 @@ public class DeltaFilesService {
                             result.setError("Cannot replay DeltaFile " + did + " after content was deleted (" + deltaFile.getContentDeletedReason() + ")");
                         } else {
                             OffsetDateTime now = OffsetDateTime.now(clock);
-                            Action action = Action.newBuilder()
+                            Action action = Action.builder()
                                     .name(INGRESS_ACTION)
                                     .type(ActionType.INGRESS)
                                     .flow(deltaFile.getSourceInfo().getFlow())
@@ -955,7 +955,7 @@ public class DeltaFilesService {
                                     .metadata(deltaFile.getSourceInfo().getMetadata())
                                     .build();
 
-                            DeltaFile child = DeltaFile.newBuilder()
+                            DeltaFile child = DeltaFile.builder()
                                     .schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
                                     .did(UUID.randomUUID().toString())
                                     .parentDids(List.of(deltaFile.getDid()))
@@ -1333,8 +1333,8 @@ public class DeltaFilesService {
         if (Objects.isNull(actionConfiguration)) {
             String errorMessage = "Action named " + action.getName() + " is no longer running";
             log.error(errorMessage);
-            ErrorEvent error = ErrorEvent.newBuilder().cause(errorMessage).build();
-            ActionEvent event = ActionEvent.newBuilder()
+            ErrorEvent error = ErrorEvent.builder().cause(errorMessage).build();
+            ActionEvent event = ActionEvent.builder()
                     .did(deltaFile.getDid())
                     .action(action.getName())
                     .type(ActionEventType.UNKNOWN)

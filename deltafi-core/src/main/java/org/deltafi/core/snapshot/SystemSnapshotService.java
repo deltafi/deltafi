@@ -62,7 +62,7 @@ public class SystemSnapshotService {
             return new Result();
         }
 
-        return Result.newBuilder().success(false).errors(List.of("Could not find a snapshot with an ID of " + id)).build();
+        return Result.builder().success(false).errors(List.of("Could not find a snapshot with an ID of " + id)).build();
     }
 
     private Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
@@ -73,7 +73,7 @@ public class SystemSnapshotService {
     }
 
     public static Result combine(Result a, Result b) {
-        return Result.newBuilder()
+        return Result.builder()
                 .success(a.isSuccess() && b.isSuccess())
                 .info(combineLists(a.getInfo(), b.getInfo()))
                 .errors(combineLists(a.getErrors(), b.getErrors())).build();

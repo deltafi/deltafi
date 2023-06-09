@@ -50,7 +50,7 @@ public class TransformResult extends DataAmendedResult implements HasAnnotations
     @Override
     public final ActionEvent toEvent() {
         ActionEvent event = super.toEvent();
-        event.setTransform(TransformEvent.newBuilder()
+        event.setTransform(TransformEvent.builder()
                 .content(contentList())
                 .metadata(metadata)
                 .deleteMetadataKeys(deleteMetadataKeys)

@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 class DeltaFileTest {
     @Test
     void testSourceMetadata() {
-        DeltaFile deltaFile = DeltaFile.newBuilder()
+        DeltaFile deltaFile = DeltaFile.builder()
                 .sourceInfo(new SourceInfo(null, null,
                         Map.of("key1", "value1", "key2", "value2")))
                 .build();
@@ -51,20 +51,20 @@ class DeltaFileTest {
     @Test
     void testRetryErrors() {
         OffsetDateTime now = OffsetDateTime.now();
-        Action action1 = Action.newBuilder()
+        Action action1 = Action.builder()
                 .name("action1")
                 .state(ActionState.ERROR)
                 .build();
-        Action action2 = Action.newBuilder()
+        Action action2 = Action.builder()
                 .name("action2")
                 .state(ActionState.COMPLETE)
                 .build();
-        Action action3 = Action.newBuilder()
+        Action action3 = Action.builder()
                 .name("action3")
                 .state(ActionState.ERROR)
                 .build();
 
-        DeltaFile deltaFile = DeltaFile.newBuilder()
+        DeltaFile deltaFile = DeltaFile.builder()
                 .actions(new ArrayList<>(List.of(action1, action2, action3)))
                 .nextAutoResume(now)
                 .nextAutoResumeReason("policy-name")
@@ -89,12 +89,12 @@ class DeltaFileTest {
         Content content4 = new Content("content1", "*/*", List.of(new Segment("uuid2", 5, 200, "did1")));
         Content content5 = new Content("content1", "*/*", List.of(new Segment("uuid3", 5, 200, "did2")));
 
-        DeltaFile deltaFile = DeltaFile.newBuilder()
+        DeltaFile deltaFile = DeltaFile.builder()
                 .actions(List.of(
-                        Action.newBuilder().content(List.of(content1, content2)).build(),
-                        Action.newBuilder().content(List.of(content3)).build(),
-                        Action.newBuilder().content(List.of(content4)).build(),
-                        Action.newBuilder().content(List.of(content5)).build()
+                        Action.builder().content(List.of(content1, content2)).build(),
+                        Action.builder().content(List.of(content3)).build(),
+                        Action.builder().content(List.of(content4)).build(),
+                        Action.builder().content(List.of(content5)).build()
                 ))
                 .did("did1")
                 .build();

@@ -74,10 +74,10 @@ class EnrichFlowPlanConverterTest {
 
     List<Variable> variables() {
         return List.of(
-                Variable.newBuilder().name("incoming.type").defaultValue("binary").dataType(VariableDataType.STRING).build(),
-                Variable.newBuilder().name("transform.produces").defaultValue("passthrough-binary").dataType(VariableDataType.STRING).build(),
-                Variable.newBuilder().name("domain.type").defaultValue("binary").dataType(VariableDataType.STRING).build(),
-                Variable.newBuilder().name("enrichment.value").defaultValue("enrichment value").value("customized enrichment value").dataType(VariableDataType.STRING).build(),
-                Variable.newBuilder().name("enrichUrl").defaultValue("http://deltafi-enrich-sink-service").dataType(VariableDataType.STRING).build());
+                Variable.builder().name("incoming.type").defaultValue("binary").dataType(VariableDataType.STRING).build(),
+                Variable.builder().name("transform.produces").defaultValue("passthrough-binary").dataType(VariableDataType.STRING).build(),
+                Variable.builder().name("domain.type").defaultValue("binary").dataType(VariableDataType.STRING).build(),
+                Variable.builder().name("enrichment.value").defaultValue("enrichment value").value("customized enrichment value").dataType(VariableDataType.STRING).build(),
+                Variable.builder().name("enrichUrl").defaultValue("http://deltafi-enrich-sink-service").dataType(VariableDataType.STRING).build());
     }
 }
