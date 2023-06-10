@@ -56,7 +56,7 @@ public class ActionEventQueueTest {
     private final static String GOOD_UNICODE = """
             {
                 "did": "did",
-                "action": "\u0101\u0202.\u0303\u0404",
+                "action": "āȂ.̃Є",
                 "start": "2021-07-11T13:44:22.183Z",
                 "stop": "2021-07-11T13:44:22.184Z",
                 "type": "ENRICH",
@@ -89,7 +89,7 @@ public class ActionEventQueueTest {
     private final static String ILLEGAL_CONTROL_CHARS = """
             {
                 "did": "did",
-                "action": "\u0000\u0001\u9191\u0202",
+                "action": "\u0000\u0001醑Ȃ",
                 "start": "2021-07-11T13:44:22.183Z",
                 "stop": "2021-07-11T13:44:22.184Z",
                 "type": "ENRICH",
@@ -140,9 +140,6 @@ public class ActionEventQueueTest {
             }
             """;
 
-    private final static String RANDOM_STRING =
-            "jaklfjads;lfjlj13kl;4j3kl24j3l;2jdslj ;l 44298471298jdflkas";
-
     @Test
     public void testConvertBasic() throws JsonProcessingException, URISyntaxException {
         try (MockedConstruction<JedisKeyedBlockingQueue> mock =
@@ -188,7 +185,7 @@ public class ActionEventQueueTest {
             ActionEventQueue actionEventQueue = new ActionEventQueue(new ActionEventQueueProperties(), 2);
             assertEquals(1, mock.constructed().size());
             ActionEvent actionEvent = actionEventQueue.takeResult(QUEUE_NAME);
-            assertEquals("\u0101\u0202.\u0303\u0404", actionEvent.getAction());
+            assertEquals("āȂ.̃Є", actionEvent.getAction());
         }
     }
 
@@ -225,6 +222,7 @@ public class ActionEventQueueTest {
         }
     }
 
+    @Test
     public void testInvalidConversion() throws URISyntaxException {
         try (MockedConstruction<JedisKeyedBlockingQueue> mock =
                      Mockito.mockConstruction(JedisKeyedBlockingQueue.class)) {
@@ -277,15 +275,14 @@ public class ActionEventQueueTest {
     }
 
     private String getActionEventsArray() {
-        String longString = "[" + GOOD_BASIC + GOOD_BASIC + "]";
-        return longString;
+        return "[" + GOOD_BASIC + GOOD_BASIC + "]";
     }
 
+    @SuppressWarnings("SameParameterValue")
     private String loadFile(String filename) throws IOException {
-        String json = new String(Objects.requireNonNull(
+        return new String(Objects.requireNonNull(
                 ActionEventQueueTest.class.getClassLoader().getResourceAsStream(
                         "action-events/" + filename + ".json")).readAllBytes());
-        return json;
     }
 
 }
