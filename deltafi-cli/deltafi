@@ -125,6 +125,7 @@ Usage: $cli_name [command]
 
 Commands:
   did                    show did for filename
+  disable                stop all DeltaFi processes
   egress-flow            start, stop or validate an egress flow
   enrich-flow            start, stop or validate an enrich flow
   export-config          export all the loaded flow configurations as yaml
@@ -158,6 +159,8 @@ Commands:
   redis-latency          monitor redis latency
   redis-stats            monitor redis connection stats
   redis-watch            watch every command issued to redis
+  reenanble              reenable all DeltaFi processes
+  scale                  edit the replica counts for all deployments and statefulsets
   secrets                show k8s secrets
   serviceip              show service IP
   set-admin-password     set the admin password
@@ -194,9 +197,19 @@ if [ "$2" == "-v" ]; then
   env | grep "DELTAFICLI_*"
 fi
 
+if [ -f "$DELTAFICLI_DISABLED_STATE_PATH" ]; then
+  if [[ "$1" != "reenable" && "$1" != "version" ]]; then
+    echo "The system is currently disabled, 'deltafi reenable' must be run prior to executing other commands"
+    exit
+  fi
+fi
+
 case "$1" in
   did)
     "$DELTAFICLI_WORKDIR/commands/did" "$@"
+    ;;
+  disable)
+    "$DELTAFICLI_WORKDIR/commands/disable" "$@"
     ;;
   egress-flow)
     "$DELTAFICLI_WORKDIR/commands/egress-flow" "$@"
@@ -299,6 +312,12 @@ case "$1" in
     ;;
   redis-watch)
     "$DELTAFICLI_WORKDIR/commands/redis-watch" "$@"
+    ;;
+  reenable)
+    "$DELTAFICLI_WORKDIR/commands/reenable" "$@"
+    ;;
+  scale)
+    "$DELTAFICLI_WORKDIR/commands/scale" "$@"
     ;;
   status)
     "$DELTAFICLI_WORKDIR/commands/status" "$@"

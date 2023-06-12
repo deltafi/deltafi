@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: reenable
+
+Usage:
+  reenable"
+  exit 1
+}
+
+ARGS=($@)
+[[ " ${ARGS[@]} " =~ " --help " || " ${ARGS[@]} " =~ " -h " ]] && cli_help_command
+
+if _is_standalone; then
+  "${DELTAFICLI_COMPOSE_PATH}"/compose start
+  rm "$DELTAFICLI_DISABLED_STATE_PATH"
+else
+  _reset_replica_counts_from_file "$DELTAFICLI_DISABLED_STATE_PATH"
+fi

@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: disable
+
+Usage:
+  disable"
+  exit 1
+}
+
+ARGS=($@)
+[[ " ${ARGS[@]} " =~ " --help " || " ${ARGS[@]} " =~ " -h " ]] && cli_help_command
+
+if _is_standalone; then
+  touch "$DELTAFICLI_DISABLED_STATE_PATH"
+  "${DELTAFICLI_COMPOSE_PATH}"/compose stop-services
+else
+  truncate -s 0 "$DELTAFICLI_DISABLED_STATE_PATH"
+
+  _current_replica_counts > "$DELTAFICLI_DISABLED_STATE_PATH"
+
+  $KUBECTL_BIN scale deployments --replicas=0 --all
+  $KUBECTL_BIN scale sts --replicas=0 --all
+fi
+

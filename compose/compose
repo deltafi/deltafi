@@ -8,9 +8,9 @@ Command: system-snapshot
 
 Subcommands:
   start                       start all of the services
-  stop                        stop all of the services
-  restart <services>          restart the list of services (space delimited)
-  stop-service <services>     stop the list of services (space delimited)
+  uninstall                   stop and remove all of the services
+  restart <services>          restart the list of services (space delimited, restarts all services by default)
+  stop-services <services>    stop the list of services (space delimited, stops all services by default)
 
 Usage:
   compose [SUBCOMMAND] [ARGS]
@@ -443,11 +443,11 @@ start_compose() {
   docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" up -d
 }
 
-stop_compose() {
+uninstall() {
   docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" down
 }
 
-stop_service() {
+stop_services() {
   docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" stop ${1}
 }
 
@@ -491,15 +491,15 @@ case "$SUBCOMMAND" in
     _write_config "${config_files[@]}"
     start_compose
     ;;
-  stop)
-    stop_compose
+  uninstall)
+    uninstall
     ;;
-  stop-service)
+  stop-services)
     SERVICES=""
     for i
       do SERVICES="${SERVICES} ${i}"
     done
-    stop_service "${SERVICES}"
+    stop_services "${SERVICES}"
     ;;
   *)
     cli_help_command

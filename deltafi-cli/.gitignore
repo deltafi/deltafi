@@ -1,3 +1,4 @@
 *.log
 config
 .idea
+.disabled_state.json

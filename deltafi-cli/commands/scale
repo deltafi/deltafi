@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: scale
+
+Usage:
+  scale"
+  exit 1
+}
+
+ARGS=($@)
+[[ " ${ARGS[@]} " =~ " --help " || " ${ARGS[@]} " =~ " -h " ]] && cli_help_command
+
+TMPFILE="/tmp/.deltafi-scale.$$"
+
+cleanup() {
+  rm -f $TMPFILE
+  exit
+}
+
+trap cleanup INT
+
+if _is_standalone; then
+  echo "Scaling is not supported when running in standalone mode"
+else
+  _current_replica_counts > $TMPFILE
+
+  ${EDITOR:-vim} "$TMPFILE"
+
+  _reset_replica_counts_from_file "$TMPFILE"
+fi

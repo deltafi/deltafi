@@ -28,9 +28,9 @@ _k8s_uninstall() {
 }
 
 _compose_uninstall() {
-  "${DELTAFICLI_COMPOSE_PATH}"/compose stop-service deltafi-core deltafi-ingress
+  "${DELTAFICLI_COMPOSE_PATH}"/compose stop-services deltafi-core deltafi-ingress
   _drop_mongo_collections
-  "${DELTAFICLI_COMPOSE_PATH}"/compose stop
+  "${DELTAFICLI_COMPOSE_PATH}"/compose uninstall
 
   # make sure nothing was left behind (this will sweep up any plugins that weren't part of compose)
   docker ps -a --filter label=deltafi-group -q | xargs docker stop | xargs docker rm
