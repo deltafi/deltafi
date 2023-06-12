@@ -45,6 +45,5 @@ In addition to the REST APIs, DeltaFi provides an Upload page on the GUI for upl
 This feature is particularly useful for testing flows or manually inserting a file.
 
 ## Future Supported Ingress Methods
-DeltaFi plans to support additional methods for ingressing data in the future,
-including pull-based methods, timers, and hooks for you to write your own custom Ingress Actions.
-Stay tuned for updates!
+DeltaFi plans to support additional methods for ingressing data in the future, including pull-based methods, timers, and
+hooks for you to write your own custom Ingress Actions. Stay tuned for updates!

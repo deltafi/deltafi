@@ -1,56 +1,66 @@
 # Egress Action
 
+## Description
+
+An Egress Action sends formatted content to a destination.
+
 ## Java
 
 ### Interface
 
 An EgressAction must implement the `egress` method which receives:
 * `ActionContext` describing the action's environment and current execution
-* `ActionParameters` as specified in the template specialization
-* `EgressInput` provides source, metadata, and formatted data as input to the action
+* `ActionParameters` containing flow parameters specified for the action
+* `EgressInput` providing the formatted content and metadata to send
 
 ### Egress Input
 
 ```java
-public class EgressInput extends FormattedDataInput {
+public class EgressInput {
+    private ActionContext actionContext;
+    private Content content;
+    private Map<String, String> metadata;
 }
 ```
 
 ### Return Types
 
-The `egress` method must return an `EgressResultType`, which is currently implemented by `EgressResult`,  `ErrorResult`, and `FilterResult`.
+The `egress` method must return an `EgressResultType`, which is implemented by `EgressResult`,  `ErrorResult`, and
+`FilterResult`.
 
-The `EgressResult` requires a destination where the file was egressed and a number of bytes sent. These two fields are used to automatically generate egress metrics.
-The return of an `EgressResult` indicates success.
+Returning an `EgressResult` indicates a successful egress. It requires a destination where the file was sent and the
+number of bytes sent. These fields are used to automatically generate egress metrics.
 
 ### Example
 
 ```java
-package org.deltafi.core.action;
+package org.deltafi.example;
 
 import org.deltafi.actionkit.action.egress.EgressAction;
 import org.deltafi.actionkit.action.egress.EgressInput;
+import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.egress.EgressResultType;
-import org.deltafi.actionkit.action.filter.FilterResult;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.common.types.ActionContext;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
+
 @Component
-@SuppressWarnings("unused")
-public class FilterEgressAction extends EgressAction<ActionParameters> {
-    public FilterEgressAction() {
-        super("Filters on egress");
+public class HelloWorldEgressAction extends EgressAction<Parameters> {
+    public HelloWorldEgressAction() {
+        super("Hello pretends to egress");
     }
 
     @Override
-    public EgressResultType egress(
-        @NotNull ActionContext context,
-        @NotNull ActionParameters p,
-        @NotNull EgressInput input) {
+    public EgressResultType egress(@NotNull ActionContext context, @NotNull Parameters params, @NotNull EgressInput egressInput) {
+        String data = new String(egressInput.loadFormattedDataBytes(), StandardCharsets.UTF_8);
+        if (data.contains("error")) {
+            return new ErrorResult(context, "Failed to egress");
+        }
 
-        return new FilterResult(context, "filtered");
+        return new EgressResult(context, "pocUrl", 100);
     }
 }
 ```
@@ -60,16 +70,14 @@ public class FilterEgressAction extends EgressAction<ActionParameters> {
 
 An EgressAction must implement the `egress` method which receives:
 * `ActionContext` describing the action's environment and current execution
-* `BaseModel` contains flow parameters for use by the action, matching the type specified by `param_class()` method, which must inherit from `BaseMmodel`, or a default/empty `BaseModel` if unspecified.
-* `EgressInput` provides source, metadata, and formatted data as input to the action
+* `BaseModel` containing flow parameters for use by the action, matching the type specified by the `param_class()`
+method, which must inherit from `BaseMmodel`, or a default/empty `BaseModel` if unspecified.
+* `EgressInput` providing the formatted content and metadata to send
 
 ### Egress Input
 
-A description of each Input field can be found in the Java section above.
-
 ```python
 class EgressInput(NamedTuple):
-    source_filename: str
     content: Content
     metadata: dict
 ```
@@ -78,7 +86,8 @@ class EgressInput(NamedTuple):
 
 The `egress()` method must return one of: `EgressResult`, `ErrorResult`, or `FilterResult`.
 
-The `EgressResult` requires a destination where the file was egressed and a number of bytes sent. These two fields are used to automatically generate egress metrics.
+Returning an `EgressResult` indicates a successful egress. It requires a destination where the file was sent and the
+number of bytes sent. These fields are used to automatically generate egress metrics.
 
 ### Example
 

@@ -1,6 +1,8 @@
 # DeltaFile Annotations
 
-A DeltaFile includes a map of queryable metadata called annotations. The annotation endpoint allows additional annotations to be added to an existing DeltaFile. For example, an upstream system can add an annotation to a DeltaFile to acknowledge that it has successfully received the data.
+A DeltaFile includes a map of queryable metadata called annotations. The annotation endpoint allows additional
+annotations to be added to an existing DeltaFile. For example, an upstream system can add an annotation to a DeltaFile
+to acknowledge that it has successfully received the data.
 
 ## API
 

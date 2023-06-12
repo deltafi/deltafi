@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -41,6 +41,10 @@ public class LoadResult extends DataAmendedResult implements HasAnnotations, Loa
     private final List<Domain> domains = new ArrayList<>();
     private final Map<String, String> annotations = new HashMap<>();
     protected List<String> deleteMetadataKeys = new ArrayList<>();
+
+    public LoadResult(@NotNull ActionContext context) {
+        super(context);
+    }
 
     /**
      * @param context Context of executing action

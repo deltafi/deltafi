@@ -1,73 +1,88 @@
 # Load Action
 
+## Description
+
+A Load Action loads the data model for the provided content and metadata into Domains that will be acted on by actions
+in Enrich and Egress Flows. Like a Transform Action, it may also transform the content, update metadata, and add
+annotations.
+
 ## Java
 
 ### Interface
 
 A LoadAction must implement the `load` method which receives:
 * `ActionContext` describing the action's environment and current execution
-* `ActionParameters` as specified in the template specialization
-* `LoadInput` provides source, metadata, and content input to the action
+* `ActionParameters` containing flow parameters specified for the action
+* `LoadInput` providing the content and metadata used to create Domains
 
 ### Load Input
 
 ```java
 public class LoadInput {
-    // Content emitted by previous Transform Action, or as
-    // received at Ingress if there was no previous Transform Action
-    List<Content> contentList;
-    // Metadata produced by previous Transform Action, or
-    // an empty Map is there was no previous Transform Action
+    List<ActionContent> contentList;
     Map<String, String> metadata;
 }
 ```
 
 ### Return Types
 
-The `load` method must return a `LoadResultType`, which is currently implemented by `LoadResult`, `ReinjectResult`, `LoadManyResult`, `ErrorResult`, and `FilterResult`.
+The `load` method must return a `LoadResultType`, which is implemented by `LoadResult`, `ReinjectResult`,
+`LoadManyResult`, `ErrorResult`, and `FilterResult`.
 
-The `LoadResult` includes the domains, content, metadata, and annotations created by the `LoadAction`.  
-The `LoadManyResult` contains a list of `ChildLoadResults`. Each `ChildLoadResult` will be split into a child `DeltaFile` that will continue to be processed independently.  
-The `ReinjectResult` includes separate child DeltaFiles which will be ingressed back into DeltaFi.
+The `LoadResult` contains the domains, content, metadata, and annotations created by the `LoadAction`.  
+The `LoadManyResult` contains a list of `ChildLoadResult`. Each `ChildLoadResult` will create a new DeltaFile copied
+from the current DeltaFile that will continue to be processed independently.  
+The `ReinjectResult` contains a list of `ReinjectEvent`. Each `ReinjectEvent` will create a new DeltaFile that will be
+ingressed to a specified flow.
 
 ### Example
 
 ```java
-package org.deltafi.passthrough.action;
+package org.deltafi.example;
 
-import lombok.extern.slf4j.Slf4j;
-import org.deltafi.actionkit.action.load.LoadAction;
-import org.deltafi.actionkit.action.load.LoadInput;
-import org.deltafi.actionkit.action.load.LoadResult;
-import org.deltafi.actionkit.action.load.LoadResultType;
+import org.deltafi.actionkit.action.content.ActionContent;
+import org.deltafi.actionkit.action.error.ErrorResult;
+import org.deltafi.actionkit.action.load.*;
+import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.passthrough.param.RoteLoadParameters;
+import org.deltafi.common.types.Content;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
-import javax.ws.rs.core.MediaType;
+import java.util.List;
+import java.util.Map;
 
 @Component
-@SuppressWarnings("unused")
-@Slf4j
-public class RoteLoadAction extends LoadAction<RoteLoadParameters> {
-    public RoteLoadAction() {
-        super("Load a null value into the configured domains. Pass content through as received");
+public class HelloWorldLoadAction extends LoadAction<Parameters> {
+    public HelloWorldLoadAction() {
+        super("Reinject if we haven't already, else load");
     }
 
     @Override
-    public LoadResultType load(
-        @NotNull ActionContext context,
-        @NotNull RoteLoadParameters params,
-        @NotNull LoadInput input) {
+    public LoadResultType load(@NotNull ActionContext context, @NotNull Parameters params, @NotNull LoadInput input) {
+        String data = input.getContentList().get(0).loadString();
 
-        LoadResult result = new LoadResult(context, input.getContentList());
-        if (null != params.getDomains()) {
-            params.getDomains().forEach(d -> result.addDomain(d, null, MediaType.TEXT_PLAIN));
+        if (data.contains("reinjected")) {
+            data = data + "\nHelloWorldLoadAction loaded me";
+            LoadResult loadResult = new LoadResult(context);
+            loadResult.addDomain("example", "Java domain!", "text/plain");
+            loadResult.saveContent(data, "loaded content", "text/plain");
+            loadResult.addMetadata("loadKey", "loadValue");
+            loadResult.addAnnotation("loadAnnotation", "value");
+            return loadResult;
         }
-        result.addMetadata("key", "value");
-        result.addAnnotation("annotationKey", "annotationValue");
-        return result;
+        
+        data = data + "\nHelloWorldLoadAction reinjected me";
+        try {
+            Content content = context.getContentStorageService().save(context.getDid(), data.getBytes(), "child content", "text/plain");
+            ActionContent actionContent = new ActionContent(content, context.getContentStorageService());
+            ReinjectResult reinjectResult = new ReinjectResult(context);
+            reinjectResult.addChild("child 1", "hello-java", List.of(actionContent), Map.of("child", "first"));
+            reinjectResult.addChild("child 2", "hello-java", List.of(actionContent), Map.of("child", "second"));
+            return reinjectResult;
+        } catch (ObjectStorageException e) {
+            return new ErrorResult(context, "Unable to store child content", e);
+        }
     }
 }
 ```
@@ -78,27 +93,28 @@ public class RoteLoadAction extends LoadAction<RoteLoadParameters> {
 
 A LoadAction must implement the `load` method which receives:
 * `Context` describing the action's environment and current execution
-* `BaseModel` contains flow parameters for use by the action, matching the type specified by `param_class()` method, which must inherit from `BaseMmodel`, or a default/empty `BaseModel` if unspecified.
-* `LoadInput` provides source, metadata, and content input to the action
+* `BaseModel` containing flow parameters for use by the action, matching the type specified by the `param_class()`
+method, which must inherit from `BaseMmodel`, or a default/empty `BaseModel` if unspecified.
+* `LoadInput` providing the content and metadata used to create Domains
 
 ### Load Input
 
-A description of each Input field can be found in the Java section above.
-
 ```python
 class LoadInput(NamedTuple):
-    source_filename: str
     content: List[Content]
     metadata: dict
 ```
 
 ### Return Types
 
-The `load()` method must return one of: `LoadResult`, `LoadManyResult`, `ReinjectResult`, `ErrorResult`, or `FilterResult`.
+The `load()` method must return one of: `LoadResult`, `LoadManyResult`, `ReinjectResult`, `ErrorResult`, or
+`FilterResult`.
 
-The `LoadResult` includes the domains, content, metadata, and annotations created by the `LoadAction`.
-A `ReinjectResult` includes seperate child DeltaFiles which will be ingressed back into DeltaFi.
-The `LoadManyResult` contains a list of `ChildLoadResults`. Each `ChildLoadResult` will be split into a child `DeltaFile` that will continue to be processed independently.
+The `LoadResult` contains the domains, content, metadata, and annotations created by the `LoadAction`.  
+The `LoadManyResult` contains a list of `ChildLoadResult`. Each `ChildLoadResult` will create a new DeltaFile copied
+from the current DeltaFile that will continue to be processed independently.  
+The `ReinjectResult` contains a list of `ReinjectEvent`. Each `ReinjectEvent` will create a new DeltaFile that will be
+ingressed to a specified flow.
 
 ### Example
 
@@ -125,17 +141,18 @@ class HelloWorldLoadAction(LoadAction):
         context.logger.info(f"Loading {context.did}")
         data = load_input.content[0].load_str()
 
-        if 'reinject' in data:
+        if 'reinjected' in data:
             data = f"{data}\nHelloWorldLoadAction loaded me"
-            return LoadResult(context).add_metadata('loadKey', 'loadValue')
-                .add_domain(params.domain, 'Python domain!', 'text/plain')
+            return LoadResult(context)\
+                .add_domain(params.domain, 'Python domain!', 'text/plain')\
+                .save_string_content(data, 'loaded content', 'text/plain')\
+                .add_metadata('loadKey', 'loadValue')\
                 .annotate('loadAnnotation', 'value')
-                .save_string_content(data, 'loaded content', 'text/plain')
         else:
             data = f"{data}\nHelloWorldLoadAction reinjected me"
             content = Content.from_str(context, data, 'child content', 'text/plain')
             reinject_result = ReinjectResult(context)
-            reinject_result.add_child('child 1', 'hello-python', {'child': 'first'}, [content])
-            reinject_result.add_child('child 2', 'hello-python', {'child': 'second'}, [content])
+            reinject_result.add_child('child 1', 'hello-python', [content], {'child': 'first'})
+            reinject_result.add_child('child 2', 'hello-python', [content], {'child': 'second'})
             return reinject_result
 ```

@@ -91,8 +91,9 @@ projectMavenRepo=https://gitlab.com/api/v4/projects/34705336/packages/maven
 localDockerRegistry=localhost:5000
 ```
 
-Finally, you need some special setup in your `build.gradle` to create the plugin. By using the latest `org.deltafi.plugin-convention` your Gradle tasks can generate a Spring Boot Docker image which auomatically has the correct hooks to register your Plugin with DeltaFi.
-A local Dockerfile is not necessary.
+Finally, you need some special setup in your `build.gradle` to create the plugin. By using the latest
+`org.deltafi.plugin-convention` your Gradle tasks can generate a Spring Boot Docker image which automatically has the
+correct hooks to register your Plugin with DeltaFi. A local Dockerfile is not necessary.
 
 ```groovy
 plugins {
@@ -107,8 +108,8 @@ ext.pluginDescription = 'My plugin actions'
 
 ## Python
 
-The Python action kit for DeltaFi is published on
-[PyPi](https://pypi.org/project/deltafi/). A project structure for a DeltaFi Python Plugin is shown below:
+The Python action kit for DeltaFi is published on [PyPi](https://pypi.org/project/deltafi/). A project structure for a
+DeltaFi Python Plugin is shown below:
 
 ```
 build.gradle
@@ -121,11 +122,13 @@ src/actions/...
 src/pyproject.toml:
 ```
 
-A DeltaFi Plugin can easily be written and built using a Gradle and Poetry framework. A set of skeleton files are provided below.
+A DeltaFi Plugin can easily be written and built using a Gradle and Poetry framework. A set of skeleton files are
+provided below.
 
 ### Skeleton Files
 
-Start with a `build.gradle` that includes the sections below. It needs the docker plugin and associated assembly properties, the group variable, and poetry commands.
+Start with a `build.gradle` that includes the sections below. It needs the docker plugin and associated assembly
+properties, the group variable, and poetry commands.
 
 ```groovy
 plugins {
@@ -182,8 +185,9 @@ docker {
 }
 ```
 
-A `Dockerfile` must be created to create the Python Plugin image. To satisfy the DletaFi Python dependencies, the base image must use a minimum Python version of 3.7. The `PROJECT` variables are needed for proper registration with DeltaFi. Then entrypoint for the image is typically `plugin.py`, but may be changed.
-
+A `Dockerfile` must be created to create the Python Plugin image. To satisfy the DeltaFi Python dependencies, the base
+image must use a minimum Python version of 3.7. The `PROJECT` variables are needed for proper registration with DeltaFi.
+The entrypoint for the image is typically `plugin.py`, but may be changed.
 
 ```
 FROM python:3.7-slim
@@ -224,7 +228,9 @@ localDockerRegistry=localhost:5000
 
 ### Poetry
 
-Poetry is used to install the plugin when building the Docker image. Building and installing your Plugin with Poetry requires a `src/pyproject.toml` file. Use the example below. Make sure the version of `deltafi` dependency is compatible with your running DeltaFi Core.
+Poetry is used to install the plugin when building the Docker image. Building and installing your Plugin with Poetry
+requires a `src/pyproject.toml` file. Use the example below. Make sure the version of `deltafi` dependency is compatible
+with your running DeltaFi Core.
 
 ```
 [tool.poetry]
@@ -246,7 +252,8 @@ build-backend = "poetry.core.masonry.api"
 
 ### Python Entrypoint
 
-An entrypoint Python script is needed to start the Plugin when the Docker container is deployed. The entrypoint script must identify the Actions to the Plugin class, and call the `run()` method. See the following `src/plugin.py` example.
+An entrypoint Python script is needed to start the Plugin when the Docker container is deployed. The entrypoint script
+must identify the Actions to the Plugin class and call the `run()` method. See the following `src/plugin.py` example.
 Update the Action name and module to match your first Action.
 
 ```python

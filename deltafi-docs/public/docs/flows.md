@@ -95,8 +95,12 @@ optional.
 Egress Flows steer data through a required Format Action, an optional series of Validate Actions, and a required Egress
 Action.
 
-Format Actions are triggered when the DeltaFile contains all the Domains and Enrichments required by the action. The
+The Format Action is triggered when the DeltaFile contains all the Domains and Enrichments required by the action. The
 `requiresDomains` and `requiresEnrichments` lists are optional.
+
+Validate Actions are triggered after the Format Action completes.
+
+The Egress Action is triggered when all Validate Actions complete.
 
 ```json
 {
@@ -131,7 +135,8 @@ Format Actions are triggered when the DeltaFile contains all the Domains and Enr
 
 ## Transform Flows
 
-Transform Flows are a simpler way to process data. They consist of a series of Transform Actions and an Egress Action. The data takes a straight path through the system.
+Transform Flows are a simpler way to process data. They consist of a series of Transform Actions and an Egress Action.
+The data takes a straight path through the system.
 
 ```json
 {
@@ -159,7 +164,6 @@ Transform Flows are a simpler way to process data. They consist of a series of T
   }
 }
 ```
-
 
 ## Flow Configuration
 

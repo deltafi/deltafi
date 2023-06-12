@@ -1,39 +1,39 @@
 # Transform Action
 
+## Description
+
+A Transform Action transforms the content it receives. It may also update metadata and add annotations.
+
 ## Java
 
 ### Interface
 
 A TransformAction must implement the `transform` method which receives:
 * `ActionContext` describing the action's environment and current execution
-* `ActionParameters` as specified in the template specialization
-* `TransformInput` provides source, metadata, and content input to the action
+* `ActionParameters` containing flow parameters specified for the action
+* `TransformInput` providing the content and metadata to be transformed
 
 ### Transform Input
 
 ```java
 public class TransformInput {
-    // Content emitted by previous Transform Action, or as
-    // received at Ingress if there was no previous Transform Action
-    List<Content> contentList;
-    // Metadata produced by previous Transform Action, or
-    // an empty Map is there was no previous Transform Action
+    List<ActionContent> contentList;
     Map<String, String> metadata;
 }
 ```
 
 ### Return Types
 
-The `transform` method must return a `TransformResultType`, which is currently implemented by `TransformResult`, `ErrorResult`, and `FilterResult`.
+The `transform` method must return a `TransformResultType`, which is implemented by `TransformResult`, `ErrorResult`,
+and `FilterResult`.
 
-The `TransformResult` includes the content, metadata, and annotations created by the `TransformAction`.
+The `TransformResult` contains the content, metadata, and annotations created by the `TransformAction`.
 
 ### Example
 
 ```java
-package org.deltafi.passthrough.action;
+package org.deltafi.example;
 
-import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.action.transform.TransformAction;
 import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.actionkit.action.transform.TransformResult;
@@ -43,22 +43,23 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 @Component
-@SuppressWarnings("unused")
-public class RoteTransformAction extends TransformAction<ActionParameters> {
-    public RoteTransformAction() {
-        super("NOOP passthrough Action");
+public class HelloWorldTransformAction extends TransformAction<Parameters> {
+    public HelloWorldTransformAction() {
+        super("Add some content noting that we did a really good job");
     }
 
     @Override
-    public TransformResultType transform(
-        @NotNull ActionContext context,
-        @NotNull ActionParameters params,
-        @NotNull TransformInput input) {
+    public TransformResultType transform(@NotNull ActionContext context, @NotNull Parameters params, @NotNull TransformInput input) {
+        if (context.getDid().startsWith("2")) {
+            return new FilterResult(context, "We prefer dids that do not start with 2");
+        }
+        
+        String data = input.getContentList().get(0).loadString() + "\nHelloWorldTransformAction did a great job";
 
         TransformResult result = new TransformResult(context);
-        result.setContent(input.getContentList());
-        result.addMetadata("key", "value");
-        result.addAnnotation("annotationKey", "annotationValue");
+        result.addMetadata("transformKey", "transformValue");
+        result.addAnnotation("transformAnnotation", "value");
+        result.saveContent(data, "transform-named-me", "test/plain");
         return result;
     }
 }
@@ -70,16 +71,14 @@ public class RoteTransformAction extends TransformAction<ActionParameters> {
 
 A TransformAction must implement the `transform` method which receives:
 * `Context` describing the action's environment and current execution
-* `BaseModel` contains flow parameters for use by the action, matching the type specified by `param_class()` method, which must inherit from `BaseMmodel`, or a default/empty `BaseModel` if unspecified.
-* `TransformInput` provides source, metadata, and content input to the action
+* `BaseModel` containing flow parameters for use by the action, matching the type specified by the `param_class()`
+method, which must inherit from `BaseMmodel`, or a default/empty `BaseModel` if unspecified.
+* `TransformInput` providing the content and metadata to be transformed
 
 ### Transform Input
 
-A description of each Input field can be found in the Java section above.
-
 ```python
 class TransformInput(NamedTuple):
-    source_filename: str
     content: List[Content]
     metadata: dict
 ```
@@ -88,7 +87,7 @@ class TransformInput(NamedTuple):
 
 The `transform()` method must return one of: `TransformResult`, `ErrorResult`, or `FilterResult`.
 
-The `TransformResult` includes the content, metadata, and annotations created by the `TransformAction`.
+The `TransformResult` contains the content, metadata, and annotations created by the `TransformAction`.
 
 ### Example
 
@@ -112,7 +111,7 @@ class HelloWorldTransformAction(TransformAction):
         data = f"{transform_input.content[0].load_str()}\nHelloWorldTransformAction did a great job"
 
         return TransformResult(context)
+            .save_string_content(data, 'transform-named-me', 'test/plain')
             .add_metadata('transformKey', 'transformValue')
             .annotate('transformAnnotation', 'value')
-            .save_string_content(data, 'transform-named-me', 'test/plain')
 ```

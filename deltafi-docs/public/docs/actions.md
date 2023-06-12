@@ -1,8 +1,8 @@
 # Actions
 
 Actions are isolated units of business logic that perform a function within Ingress, Enrichment, and Egress Flows.
-Actions receive a DeltaFile on a queue, perform whatever logic is needed, and issue a response that augments the
-DeltaFile so that it can be handed off to the next Action in the flow.
+Actions receive required data from the DeltaFile on a queue, perform whatever logic is needed, and issue a response that
+augments the DeltaFile so that it can be handed off to the next Action in the flow.
 
 Actions are currently implemented on two platforms. Core actions and several plugins are implemented in Spring Boot and
 utilize a Java DeltaFi development kit. A Python DeltaFi development kit has also been implemented. However, Actions can
@@ -142,29 +142,23 @@ class MyLoadActionParameters(BaseModel):
     domain: str = Field(description="The domain used by the load action")
 ```
 
-### Action Specializations
-
-Each `Action` type is provided a `Content` list through the associated `Input` class. Actions may receive a single content or multiple depending on the behaviour of the previous `Action`. A single interface for each `Action` is used in both cases.
-
 ### Input
 
-As mentioned in the previous section, each `Action` has a specific `Input` class passed to its execution method. For
-example, a Load Action receives the `LoadInput` in the `load()` method. Each `Input` class is unique for each Action
-type, with some combination of the fields below.
+Each `Action` has a specific `Input` class passed to its execution method. For example, a Load Action receives the
+`LoadInput` in the `load()` method. Each `Input` class is unique for each Action type, with some combination of the
+fields below.
 
 ```java
-/* The presence of fields varies by Action type: */
-Map<String, Domain> domains;
-Map<String, Enrichment> enrichment;
+List<ActionContent> contentList;
 Map<String, String> metadata;
-List<Content> contentList;
-FormattedData formattedData;
+Map<String, Domain> domains;
+Map<String, Enrichment> enrichments;
 ```
 
 ### Results
 
-Each `Action` type has a specialized `Result` class that contains some combination of content, metadata, domains,
-and enrichment produced by the execution of that Action.
+Each `Action` returns a specific `Result` class from its execution method. The `Result` contains some combination of
+content, metadata, domains, and enrichments produced by the execution of that Action.
 
 Actions may return an `ErrorResult` if something goes wrong. Errors terminate the flow and raise the error cause
 to an operator's attention for possible retry.

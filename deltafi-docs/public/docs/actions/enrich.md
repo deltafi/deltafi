@@ -1,88 +1,77 @@
 # Enrich Action
 
+## Description
+
+An Enrich Action adds Enrichments. It may also add annotations.
+
 ## Java
 
 ### Interface
 
 An EgressAction must implement the `enrich` method which receives:
 * `ActionContext` describing the action's environment and current execution
-* `ActionParameters` as specified in the template specialization
-* `EnrichInput` provides source, metadata, and content input to the action
+* `ActionParameters` containing flow parameters specified for the action
+* `EnrichInput` providing the Domains and prior Enrichments along with the content and metadata to be used to add
+Enrichments
 
-An EnrichAction also must implement the `getRequiresDomain()` method, and my implemented the `getRequiresEnrichment()` method.  These methods return a list of
-domains and enrichment that are required to be present in DeltaFiles that it receives. Either of these can return
-`DeltaFiConstants.MATCHES_ANY` if you can accept any domain or enrichment, which would then be defined in a flow yaml.
-If you require either just domains or just enrichment, you can set the other to an empty list.
+An EnrichAction also must implement the `getRequiresDomains()` method, and may implement the `getRequiresEnrichments()`
+method. These methods return a list of Domains and Enrichments that are required to be present in the input it
+receives. Either of these can return `DeltaFiConstants.MATCHES_ANY` if the action can accept any Domain or Enrichment.
 
 ### Enrich Input
 
 ```java
 public class EnrichInput {
-    // Content emitted by the last ingress flow action, or as
-    // received at Ingress if there was no action-generated content.
-    List<Content> contentList;
-    // Metadata produced by the Load Action
+    List<ActionContent> contentList;
     Map<String, String> metadata;
-    // named domains and their values
     Map<String, Domain> domains;
-    // named enrichment and their values
     Map<String, Enrichment> enrichments;
 }
 ```
 
 ### Return Types
 
-The `enrich` method must return an `EnrichResultType`, which is currently implemented by `EnrichResult`,  and `ErrorResult`.
+The `enrich` method must return an `EnrichResultType`, which is implemented by `EnrichResult`, and `ErrorResult`.
 
-An `EnrichResult` contains the named enrichment entries and annotations created by the `EnrichAction`.
+The `EnrichResult` contains the Enrichments and Annotations to add.
 
 ### Example
 
 ```java
-package org.deltafi.passthrough.action;
+package org.deltafi.example;
 
 import org.deltafi.actionkit.action.enrich.EnrichAction;
 import org.deltafi.actionkit.action.enrich.EnrichInput;
 import org.deltafi.actionkit.action.enrich.EnrichResult;
 import org.deltafi.actionkit.action.enrich.EnrichResultType;
-import org.deltafi.common.constant.DeltaFiConstants;
-import org.deltafi.common.types.*;
-import org.deltafi.passthrough.param.RoteEnrichParameters;
+import org.deltafi.actionkit.action.error.ErrorResult;
+import org.deltafi.common.types.ActionContext;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
-import javax.ws.rs.core.MediaType;
 import java.util.List;
 
 @Component
-@SuppressWarnings("unused")
-public class RoteEnrichAction extends EnrichAction<RoteEnrichParameters> {
-
-    @SuppressWarnings("unused")
-    public RoteEnrichAction() {
-        super("Populate enrichment with the parameterized key/value pairs");
-    }
-
-    public EnrichResultType enrich(
-        @NotNull ActionContext context,
-        @NotNull RoteEnrichParameters params,
-        @NotNull EnrichInput input) {
-
-        EnrichResult result = new EnrichResult(context);
-        if (null != params.getEnrichments()) {
-            params.getEnrichments().forEach((k, v) -> result.addEnrichment(k, v, MediaType.TEXT_PLAIN));
-        }
-
-        if (null != params.getAnnotations()) {
-            result.addAnnotations(params.getAnnotations());
-        }
-
-        return result;
+public class HelloWorldEnrichAction extends EnrichAction<Parameters> {
+    public HelloWorldEnrichAction() {
+        super("We need more hellos in the world");
     }
 
     @Override
     public List<String> getRequiresDomains() {
-        return List.of(DeltaFiConstants.MATCHES_ANY);
+        return List.of("javaHelloWorld");
+    }
+
+    @Override
+    public EnrichResultType enrich(@NotNull ActionContext context, @NotNull Parameters params, @NotNull EnrichInput enrichInput) {
+        if ((Math.random() * 1000) < 1)  {
+            return new ErrorResult(context, "Something bad happened I guess");
+        }
+        
+        EnrichResult enrichResult = new EnrichResult(context);
+        enrichResult.addEnrichment("helloWorld", "java was here", "text/plain");
+        enrichResult.addAnnotation("enrichKey", "enrichValue");
+        return enrichResult;
     }
 }
 ```
@@ -93,19 +82,18 @@ public class RoteEnrichAction extends EnrichAction<RoteEnrichParameters> {
 
 An EnrichAction must implement the `enrich` method which receives:
 * `Context` describing the action's environment and current execution
-* `BaseModel` contains flow parameters for use by the action, matching the type specified by `param_class()` method, which must inherit from `BaseMmodel`, or a default/empty `BaseModel` if unspecified.
-* `EnrichInput` provides source, metadata, and content input to the action
+* `BaseModel` containing flow parameters for use by the action, matching the type specified by the `param_class()`
+method, which must inherit from `BaseMmodel`, or a default/empty `BaseModel` if unspecified.
+* `EnrichInput` providing the Domains and prior Enrichments along with the content and metadata to be used to add
+Enrichments
 
-A list of required domains, and list of required enrichment  must be passed to the EnrichAction constructor.
-If you require either just domains or just enrichment, you can set the other to an empty list.
+A list of required domains, and a list of required enrichments must be passed to the EnrichAction constructor. If the
+Action only requires Domains, an empty list can be passed for required enrichments.
 
 ### Enrich Input
 
-A description of each Input field can be found in the Java section above.
-
 ```python
 class EnrichInput(NamedTuple):
-    source_filename: str
     content: List[Content]
     metadata: dict
     domains: Dict[str, Domain]
@@ -115,6 +103,8 @@ class EnrichInput(NamedTuple):
 ### Return Types
 
 The `enrich()` method must return one of: `EnrichResult`, or `ErrorResult`.
+
+The `EnrichResult` contains the Enrichments and Annotations to add.
 
 ### Example
 
@@ -133,7 +123,8 @@ class HelloWorldEnrichAction(EnrichAction):
 
     def enrich(self, context: Context, params: BaseModel, enrich_input: EnrichInput):
         if randrange(1000) != 0:
-            return EnrichResult(context).enrich('helloWorld', 'python was here', 'text/plain')\
+            return EnrichResult(context)
+                .enrich('helloWorld', 'python was here', 'text/plain')\
                 .annotate('enrichKey', 'enrichValue')
         else:
             context.logger.error('haha gremlins')
