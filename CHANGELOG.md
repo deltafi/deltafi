@@ -5,6 +5,59 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.0.0-RC5] - 2023-06-12
+
+### Added
+- Updated the date/component on the Search Page.
+- Updated calendar component on Events Page 
+- Added a `deltafi disable` command that disables all DeltaFi processes
+- Added a `deltafi reenable` command that reenables all DeltaFi processes
+- Added a `deltafi scale` command that allows you to edit the replica counts across all deployments and statefulsets and then apply the changes
+- Descriptions and "Hello World" examples to action documentation
+- Increased validation checks for ActionEvent
+- Added the option to have python plugins pass their coordinates into the plugin init method
+- Added the option to have python plugins specify the package where actions can be found and loaded
+- Added Makefile support to the cluster command for building plugin images
+- Added a new `cluster expose` command that exposes the services necessary to run a plugin outside the cluster
+- Added a new `cluster plugin run` command that will run the plugin outside the cluster
+
+### Changed
+- Renamed the `compose stop` command to `compose uninstall`
+- Renamed the `compose stop-service` command to `compose stop-services`
+
+### Fixed
+- The core now performs an extra check for every requeued DeltaFile to ensure it is not already in the queue. The redis ZSET already checks for exact matches, but in cases where a different returnAddress is used there were still opportunities for duplication. 
+
+### Removed
+- Removed unused `time` field from ActionEvent
+
+### Tech-Debt/Refactor
+- Refactored the Search Page. 
+- Removed items from the deltafi-cli/config.template that should not be configurable 
+- Renamed enrichment to enrichments
+- JSON object serialization/deserialization for Redis data moved to ActionEventQueue
+- Additional tests for handling invalid ActionEvents
+- DeltaFile: Merge formatted data content and metadata into actions
+- Handle multiple format actions in the DeltaFile actions array. This is prep work to allow for more flexible resume scenarios.
+
+### Upgrade and Migration
+- The python plugin method has changed, the description is now the first argument followed by optional arguments.
+  ```python
+  # Before
+   Plugin([
+    HelloWorldDomainAction,
+    HelloWorldEgressAction,
+    HelloWorldEnrichAction,
+    HelloWorldFormatAction,
+    HelloWorldLoadAction,
+    HelloWorldLoadManyAction,
+    HelloWorldTransformAction,
+    HelloWorldValidateAction],
+    "Proof of concept for Python plugins").run()
+  # After (using action_package instead specifying the action list
+  Plugin("Proof of concept for Python plugins",  action_package="deltafi_python_poc.actions").run() 
+  ```
+
 ## [1.0.0-RC3] - 2023-06-02
 
 ### Added
@@ -1794,7 +1847,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC3...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC5...main
+[1.0.0-RC5]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC3...1.0.0-RC5
 [1.0.0-RC3]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC2...1.0.0-RC3
 [1.0.0-RC2]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC1...1.0.0-RC2
 [1.0.0-RC1]: https://gitlab.com/deltafi/deltafi/-/compare/0.109.0...1.0.0-RC1
