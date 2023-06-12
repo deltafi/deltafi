@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.0.0-RC4] - 2023-06-12
+
+- No changes for this release
+
 ## [1.0.0-RC3] - 2023-06-02
 
 ### Added
@@ -1794,7 +1798,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC3...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC4...main
+[1.0.0-RC4]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC3...1.0.0-RC4
 [1.0.0-RC3]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC2...1.0.0-RC3
 [1.0.0-RC2]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC1...1.0.0-RC2
 [1.0.0-RC1]: https://gitlab.com/deltafi/deltafi/-/compare/0.109.0...1.0.0-RC1
