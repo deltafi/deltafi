@@ -23,8 +23,11 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.Protocol;
+import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.params.ZAddParams;
 import redis.clients.jedis.resps.KeyedZSetElement;
+import redis.clients.jedis.resps.ScanResult;
+import redis.clients.jedis.resps.Tuple;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -64,12 +67,27 @@ public class JedisKeyedBlockingQueue {
     /**
      * Puts an object into the queue.
      *
-     * @param key   the key for the object
+     * @param key   the key for the queue
      * @param value the object
      */
     public void put(String key, String value) {
         try (Jedis jedis = jedisPool.getResource()) {
             put(jedis, key, value);
+        }
+    }
+
+    /**
+     * Check if an object exists in the queue based on the search pattern
+     * @param key    the key for the object
+     * @param search the search pattern
+     * @return true if the pattern exists
+     */
+    public boolean exists(String key, String search) {
+        ScanParams scanParams = new ScanParams().match(search);
+
+        try (Jedis jedis = jedisPool.getResource()) {
+            ScanResult<Tuple> scanResult = jedis.zscan(key, ScanParams.SCAN_POINTER_START, scanParams);
+            return !scanResult.getResult().isEmpty();
         }
     }
 

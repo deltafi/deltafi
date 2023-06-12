@@ -1219,7 +1219,7 @@ public class DeltaFilesService {
                 .toList();
         if (!actions.isEmpty()) {
             log.warn(actions.size() + " actions exceeded requeue threshold of " + getProperties().getRequeueSeconds() + " seconds, requeuing now");
-            enqueueActions(actions);
+            enqueueActions(actions, true);
         }
     }
 
@@ -1368,8 +1368,12 @@ public class DeltaFilesService {
     }
 
     private void enqueueActions(List<ActionInput> enqueueActions) throws EnqueueActionException {
+        enqueueActions(enqueueActions, false);
+    }
+
+    private void enqueueActions(List<ActionInput> enqueueActions, boolean checkUnique) throws EnqueueActionException {
         try {
-            actionEventQueue.putActions(enqueueActions);
+            actionEventQueue.putActions(enqueueActions, checkUnique);
         } catch (Exception e) {
             log.error("Failed to queue action(s)", e);
             throw new EnqueueActionException("Failed to queue action(s)", e);

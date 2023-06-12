@@ -775,7 +775,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(250, child2.getLastDataAmendedContent().get(0).getSegments().get(0).getOffset());
 		assertEquals(1, child2.getLastDataAmendedContent().size());
 
-		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture());
+		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture(), anyBoolean());
 		List<ActionInput> actionInputs = actionInputListCaptor.getValue();
 		assertThat(actionInputs).hasSize(2);
 
@@ -839,7 +839,7 @@ class DeltaFiCoreApplicationTests {
 		Domain child2Domain = new Domain("sampleDomain", "secondDomainValue", "application/octet-stream");
 		org.assertj.core.api.Assertions.assertThat(child2.getDomains()).hasSize(1).contains(child2Domain);
 
-		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture());
+		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture(), anyBoolean());
 		List<ActionInput> actionInputs = actionInputListCaptor.getValue();
 		assertThat(actionInputs).hasSize(2);
 
@@ -894,7 +894,7 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void testEnrichDidHasUnicode() {
-		String did = "\u0102\u0202\u0203\u0404";
+		String did = "ĂȂȃЄ";
 		deltaFileRepo.save(postDomainDeltaFile(did));
 
 		org.assertj.core.api.Assertions.assertThatThrownBy(
@@ -1001,7 +1001,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals("input.txt", child2.getSourceInfo().getFilename());
 		assertEquals(250, child2.formatActionFor("sampleEgress").getContent().get(0).getSegments().get(0).getOffset());
 
-		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture());
+		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture(), anyBoolean());
 		assertEquals(4, actionInputListCaptor.getValue().size());
 		assertEquals(child1.getDid(), actionInputListCaptor.getValue().get(0).getActionContext().getDid());
 		assertEquals(child1.getDid(), actionInputListCaptor.getValue().get(1).getActionContext().getDid());
@@ -1023,7 +1023,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		assertEqualsIgnoringDates(postValidateDeltaFile(did), deltaFile);
 
-		Mockito.verify(actionEventQueue, never()).putActions(any());
+		Mockito.verify(actionEventQueue, never()).putActions(any(), anyBoolean());
 		assertEqualsIgnoringDates(postValidateDeltaFile(did), deltaFile);
 
 		Map<String, String> tags = tagsFor(ActionEventType.VALIDATE, "sampleEgress.SampleValidateAction", INGRESS_FLOW_NAME, EGRESS_FLOW_NAME);
@@ -1198,7 +1198,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		assertEqualsIgnoringDates(postEgressDeltaFile(did), deltaFile);
 
-		Mockito.verify(actionEventQueue, never()).putActions(any());
+		Mockito.verify(actionEventQueue, never()).putActions(any(), anyBoolean());
 		Map<String, String> tags = tagsFor(ActionEventType.EGRESS, "sampleEgress.SampleEgressAction", INGRESS_FLOW_NAME, EGRESS_FLOW_NAME);
 
 		Mockito.verify(metricService, Mockito.atLeast(4)).increment(metricCaptor.capture());
@@ -1240,7 +1240,7 @@ class DeltaFiCoreApplicationTests {
 		);
 		MatcherAssert.assertThat(deltaFile.getTestModeReason(), containsString(INGRESS_FLOW_NAME));
 
-		Mockito.verify(actionEventQueue, never()).putActions(any());
+		Mockito.verify(actionEventQueue, never()).putActions(any(), anyBoolean());
 	}
 
 	@Test
@@ -1259,7 +1259,7 @@ class DeltaFiCoreApplicationTests {
 				deltaFile
 		);
 		MatcherAssert.assertThat(deltaFile.getTestModeReason(), containsString(EGRESS_FLOW_NAME));
-		Mockito.verify(actionEventQueue, never()).putActions(any());
+		Mockito.verify(actionEventQueue, never()).putActions(any(), anyBoolean());
 		Map<String, String> tags = tagsFor(ActionEventType.VALIDATE, "sampleEgress.AuthorityValidateAction", INGRESS_FLOW_NAME, EGRESS_FLOW_NAME);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Mockito.verifyNoMoreInteractions(metricService);
@@ -1402,7 +1402,7 @@ class DeltaFiCoreApplicationTests {
 			assertTrue(actual.getFiltered());
 			assertEquals("you got filtered", action.getFilteredCause());
 
-			Mockito.verify(actionEventQueue, never()).putActions(any());
+			Mockito.verify(actionEventQueue, never()).putActions(any(), anyBoolean());
 		} else {
 			assertEquals(ActionState.ERROR, action.getState());
 			assertEquals(DeltaFileStage.ERROR, actual.getStage());
@@ -3657,7 +3657,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile afterMutation = deltaFilesService.getDeltaFile(expected.getDid());
 		assertEqualsIgnoringDates(expected, afterMutation);
 
-		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture());
+		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture(), anyBoolean());
 		List<ActionInput> actionInputs = actionInputListCaptor.getValue();
 		assertThat(actionInputs).hasSize(forActions.length);
 		for (int i = 0; i < forActions.length; i++) {
@@ -3999,7 +3999,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		assertEqualsIgnoringDates(transformFlowPostEgressDeltaFile(did), deltaFile);
 
-		Mockito.verify(actionEventQueue, never()).putActions(any());
+		Mockito.verify(actionEventQueue, never()).putActions(any(), anyBoolean());
 		Map<String, String> tags = tagsFor(ActionEventType.EGRESS, "sampleTransform.SampleEgressAction", TRANSFORM_FLOW_NAME, TRANSFORM_FLOW_NAME);
 
 		Mockito.verify(metricService, Mockito.atLeast(4)).increment(metricCaptor.capture());
@@ -4054,7 +4054,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals("input.txt", child2.getSourceInfo().getFilename());
 		assertEquals(250, child2.getLastDataAmendedAction().getContent().get(0).getSegments().get(0).getOffset());
 
-		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture());
+		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture(), anyBoolean());
 		assertEquals(2, actionInputListCaptor.getValue().size());
 		assertEquals(child1.getDid(), actionInputListCaptor.getValue().get(0).getActionContext().getDid());
 		assertEquals(child2.getDid(), actionInputListCaptor.getValue().get(1).getActionContext().getDid());

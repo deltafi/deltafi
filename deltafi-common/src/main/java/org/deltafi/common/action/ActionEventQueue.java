@@ -56,14 +56,36 @@ public class ActionEventQueue {
         log.info("Jedis pool size: " + maxTotal);
     }
 
-    public void putActions(List<ActionInput> actionInputs) {
+    /**
+     * Puts the given action inputs into the appropriate Redis queue(s).
+     * If the {@code checkUnique} parameter is set to {@code true}, this method will ensure that no other item with the
+     * same 'did' field value already exists in the queue before adding an action input.
+     *
+     * Note that checking for uniqueness is an expensive operation as it involves scanning the Redis set, which can be
+     * slow and resource-intensive, particularly for larger sets. Therefore, it's recommended to use this option only in
+     * requeue scenarios.
+     *
+     * If the conversion of an action input to JSON fails, the method will log an error and skip that input.
+     *
+     * @param actionInputs a list of action inputs to be queued
+     * @param checkUnique  if {@code true}, the method will check for uniqueness of 'did' field values before queuing an action input;
+     *                     if {@code false}, the method will queue all action inputs without checking for uniqueness
+     */
+    public void putActions(List<ActionInput> actionInputs, boolean checkUnique) {
         List<Pair<String, String>> actions = new ArrayList<>();
         for (ActionInput actionInput : actionInputs) {
+            if (checkUnique) {
+                String pattern = "*\"did\":\"" + actionInput.getActionContext().getDid() + "\"*";
+                if (jedisKeyedBlockingQueue.exists(actionInput.getQueueName(), pattern)) {
+                    log.warn("Skipping queueing for potential duplicate action event: {}", actionInput);
+                    continue;
+                }
+            }
+
             try {
                 actions.add(Pair.of(actionInput.getQueueName(), OBJECT_MAPPER.writeValueAsString(actionInput)));
             } catch (JsonProcessingException e) {
                 log.error("Unable to convert action to JSON", e);
-                return;
             }
         }
 
