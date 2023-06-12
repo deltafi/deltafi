@@ -751,7 +751,7 @@ public class DeltaFilesService {
             childDeltaFiles = formatInputs.stream().map(formatInput -> {
                 DeltaFile child = createChildDeltaFile(deltaFile, event, UUID.randomUUID().toString());
                 deltaFile.getChildDids().add(child.getDid());
-                Action formatAction = child.formatActionFor(egressFlow.getName());
+                Action formatAction = child.lastFormatActionFor(egressFlow.getName());
                 formatAction.setContent(List.of(formatInput.getContent()));
                 formatAction.setMetadata(formatInput.getMetadata());
 

@@ -992,14 +992,14 @@ class DeltaFiCoreApplicationTests {
 		assertFalse(child1.getTestMode());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child1.getParentDids());
 		assertEquals("input.txt", child1.getSourceInfo().getFilename());
-		assertEquals(0, child1.formatActionFor("sampleEgress").getContent().get(0).getSegments().get(0).getOffset());
+		assertEquals(0, child1.lastFormatActionFor("sampleEgress").getContent().get(0).getSegments().get(0).getOffset());
 
 		DeltaFile child2 = children.get(1);
 		assertEquals(DeltaFileStage.EGRESS, child2.getStage());
 		assertFalse(child2.getTestMode());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child2.getParentDids());
 		assertEquals("input.txt", child2.getSourceInfo().getFilename());
-		assertEquals(250, child2.formatActionFor("sampleEgress").getContent().get(0).getSegments().get(0).getOffset());
+		assertEquals(250, child2.lastFormatActionFor("sampleEgress").getContent().get(0).getSegments().get(0).getOffset());
 
 		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture(), anyBoolean());
 		assertEquals(4, actionInputListCaptor.getValue().size());

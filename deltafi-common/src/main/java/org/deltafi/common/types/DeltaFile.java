@@ -480,24 +480,59 @@ public class DeltaFile {
     return egress;
   }
 
-  public Action formatActionFor(String flow) {
-    return actions.stream().filter(f -> f.getType() == ActionType.FORMAT && f.getFlow().equals(flow)).findFirst().orElse(null);
+  public Action lastFormatActionFor(String flow) {
+    List<Action> formatActions = formatActionsFor(flow);
+    return formatActions.isEmpty() ? null : formatActions.get(formatActions.size() - 1);
+  }
+
+  public List<Action> formatActionsFor(String flow) {
+    return actions.stream()
+            .filter(f -> f.getType() == ActionType.FORMAT && f.getFlow().equals(flow))
+            .toList();
+  }
+
+  public boolean formatComplete(String flow) {
+    List<Action> formatActions = formatActionsFor(flow);
+
+    return !formatActions.isEmpty() && formatActions.stream().allMatch(Action::terminal);
+  }
+
+  public Map<String, String> formatMetadata(String flow) {
+    List<Action> formatActions = formatActionsFor(flow);
+
+    Map<String, String> formatMetadata = new HashMap<>();
+    for (Action action : formatActions) {
+      formatMetadata.putAll(action.getMetadata());
+      for (String key : action.getDeleteMetadataKeys()) {
+        formatMetadata.remove(key);
+      }
+    }
+
+    return formatMetadata;
+  }
+
+  public List<Content> formatContent(String flow) {
+    Action formatAction = lastFormatActionFor(flow);
+
+    if (formatAction  == null) {
+      return Collections.emptyList();
+    }
+
+    return formatAction.getContent();
   }
 
   public DeltaFileMessage forQueue(String flow) {
     DeltaFileMessage.DeltaFileMessageBuilder builder =
         DeltaFileMessage.builder();
 
-    Action formatAction = formatActionFor(flow);
-
-    if (formatAction == null || !formatAction.terminal()) {
+    if (formatComplete(flow)) {
+      builder.contentList(formatContent(flow))
+              .metadata(formatMetadata(flow));
+    } else {
       builder.contentList(getLastDataAmendedContent())
               .metadata(getMetadata())
               .domains(getDomains())
               .enrichments(getEnrichments());
-    } else {
-      builder.contentList(formatAction.getContent())
-              .metadata(formatAction.getMetadata());
     }
 
     return builder.build();
