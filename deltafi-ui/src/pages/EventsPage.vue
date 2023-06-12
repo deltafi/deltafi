@@ -17,15 +17,12 @@
 -->
 
 <template>
-  <div>
+  <div class="events-page">
     <PageHeader heading="Events">
       <div class="time-range btn-toolbar mb-2 mb-md-0">
         <Button class="p-button-text p-button-sm p-button-secondary" disabled>{{ shortTimezone() }}</Button>
-        <Calendar v-model="startTimeDate" :show-time="true" :show-seconds="true" :manual-input="true" input-class="deltafi-input-field" @input="updateInputStartTime" />
-        <span class="mt-2 ml-2">&mdash;</span>
-        <Calendar v-model="endTimeDate" :show-time="true" :show-seconds="true" :manual-input="true" input-class="deltafi-input-field ml-2" @input="updateInputEndTime" />
-        <Button class="p-button p-button-secondary p-button-outlined deltafi-input-field ml-3" icon="far fa-regular fa-calendar" label="Today" @click="setDateTimeToday()" />
-        <Button class="p-button p-button-outlined deltafi-input-field ml-3" :icon="refreshButtonIcon" label="Refresh" @click="getEvents()" />
+        <date-picker :key="Math.random()" ref="datePickerRef" :date-input="dateInput" :calendar-date-input="calendarDateInput" switch-button-label="All Day" :format="timestampFormat" :same-date-format="sameDateFormat" :initial-dates="[startTimeDate, endTimeDate]" :show-helper-buttons="true" @date-applied="updateInputDateTime" @on-reset="resetDateTime" />
+        <Button class="p-button p-button-outlined deltafi-input-field ml-3" icon="fa fa-sync-alt" :loading="loading" label="Refresh" @click="getEvents()" />
       </div>
     </PageHeader>
     <Panel :header="'Events' + eventCount" class="events-panel table-panel" @contextmenu="onPanelRightClick">
@@ -119,19 +116,19 @@
 </template>
 
 <script setup>
+import DatePicker from "vue-time-date-range-picker/src/Components/DatePicker";
 import EventViewerDialog from "@/components/events/EventViewerDialog.vue";
 import EventSeverityBadge from "@/components/events/EventSeverityBadge.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useEvents from "@/composables/useEvents";
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import { computed, inject, nextTick, onMounted, ref, watch } from "vue";
+import { computed, inject, onBeforeMount, ref, watch } from "vue";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import _ from "lodash";
 
 import Button from "primevue/button";
-import Calendar from "primevue/calendar";
 import Column from "primevue/column";
 import ContextMenu from "primevue/contextmenu";
 import DataTable from "primevue/datatable";
@@ -145,7 +142,7 @@ import TriStateCheckbox from "primevue/tristatecheckbox";
 dayjs.extend(utc);
 
 const uiConfig = inject("uiConfig");
-const watchEnabled = ref(false)
+const watchEnabled = ref(false);
 const hasPermission = inject("hasPermission");
 const loading = ref(true);
 const selectedEvents = ref([]);
@@ -153,7 +150,7 @@ const activeEvent = ref({});
 const showEventDialog = ref(false);
 const eventsTable = ref(null);
 const { data: events, fetch: fetchEvents, acknowledgeEvent, unacknowledgeEvent } = useEvents();
-const { formatTimestamp, shortTimezone } = useUtilFunctions();
+const { shortTimezone } = useUtilFunctions();
 const filters = ref({
   global: { value: null, matchMode: FilterMatchMode.CONTAINS },
   severity: { value: null, matchMode: FilterMatchMode.IN },
@@ -165,7 +162,7 @@ const filters = ref({
 const initFilters = JSON.parse(JSON.stringify(filters.value));
 const menu = ref();
 
-// Dates
+// Dates/Time Variables
 const timestampFormat = "YYYY-MM-DD HH:mm:ss";
 const defaultStartTimeDate = computed(() => {
   const date = dayjs().utc();
@@ -181,23 +178,27 @@ const setDateTimeToday = () => {
   startTimeDate.value = new Date(defaultStartTimeDate.value.format(timestampFormat));
   endTimeDate.value = new Date(defaultEndTimeDate.value.format(timestampFormat));
 };
-
-const updateInputStartTime = async (e) => {
-  await nextTick();
-  if (dayjs(e.target.value.trim()).isValid()) {
-    startTimeDate.value = new Date(formatTimestamp(e.target.value.trim(), timestampFormat));
-  } else {
-    startTimeDate.value = new Date(defaultStartTimeDate.value.format(timestampFormat));
-  }
+const datePickerRef = ref(null);
+const sameDateFormat = {
+  from: timestampFormat,
+  to: timestampFormat,
 };
-
-const updateInputEndTime = async (e) => {
-  await nextTick();
-  if (dayjs(e.target.value.trim()).isValid()) {
-    endTimeDate.value = new Date(formatTimestamp(e.target.value.trim(), timestampFormat));
-  } else {
-    endTimeDate.value = new Date(defaultEndTimeDate.value.format(timestampFormat));
-  }
+const calendarDateInput = {
+  labelStarts: "Start",
+  labelEnds: "End",
+  inputClass: null,
+  format: "YYYY-MM-DD",
+};
+const dateInput = {
+  placeholder: "Select Date",
+  inputClass: "p-inputtext p-component deltafi-input-field input-area-width",
+};
+const updateInputDateTime = async (startDate, endDate) => {
+  startTimeDate.value = startDate;
+  endTimeDate.value = endDate;
+};
+const resetDateTime = async () => {
+  datePickerRef.value.onApply(new Date(defaultStartTimeDate.value.format(timestampFormat)), new Date(defaultEndTimeDate.value.format(timestampFormat)));
 };
 
 const startDateISOString = computed(() => {
@@ -211,12 +212,6 @@ const endDateISOString = computed(() => {
 const eventCount = computed(() => {
   let count = _.get(eventsTable.value, "totalRecordsLength", 0);
   return " (" + count + ")";
-});
-
-const refreshButtonIcon = computed(() => {
-  let classes = ["fa", "fa-sync-alt"];
-  if (loading.value) classes.push("fa-spin");
-  return classes.join(" ");
 });
 
 const severityOptions = computed(() => {
@@ -308,7 +303,7 @@ const getEvents = async () => {
   loading.value = false;
 };
 
-onMounted(() => {
+onBeforeMount(() => {
   setDateTimeToday();
   watchEnabled.value = true;
   getEvents();
@@ -321,38 +316,48 @@ watch(startTimeDate, () => {
 watch(endTimeDate, () => {
   if (watchEnabled.value) getEvents();
 });
-
 </script>
 
 <style lang="scss">
-.time-range .form-control:disabled,
-.time-range .form-control[readonly] {
-  background-color: #ffffff;
-}
+.events-page {
+  .input-area-width {
+    width: 335px;
+  }
 
-.events-panel {
-  .p-panel-header {
-    padding: 0 1.25rem;
+  .vdpr-datepicker__calendar-dialog {
+    margin-left: -275px;
+  }
 
-    .p-panel-title {
-      padding: 1rem 0;
+  .vdpr-datepicker__button-reset {
+    color: white;
+    background-color: #dc3545;
+    border-color: #d00f27;
+  }
+
+  .events-panel {
+    .p-panel-header {
+      padding: 0 1.25rem;
+
+      .p-panel-title {
+        padding: 1rem 0;
+      }
     }
-  }
 
-  td.severity-col,
-  td.source-col,
-  td.notification-col,
-  td.acknowledged-col {
-    width: 1rem;
-  }
+    td.severity-col,
+    td.source-col,
+    td.notification-col,
+    td.acknowledged-col {
+      width: 1rem;
+    }
 
-  td.severity-col {
-    padding: 0 0.5rem !important;
-  }
+    td.severity-col {
+      padding: 0 0.5rem !important;
+    }
 
-  td.timestamp-col {
-    font-size: 90%;
-    width: 12rem;
+    td.timestamp-col {
+      font-size: 90%;
+      width: 12rem;
+    }
   }
 }
 </style>
