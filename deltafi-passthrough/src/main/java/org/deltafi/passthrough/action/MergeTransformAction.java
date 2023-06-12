@@ -37,7 +37,7 @@ public class MergeTransformAction extends TransformAction<MergeTransformParamete
 
     @Override
     public TransformResultType transform(@NotNull ActionContext context, @NotNull MergeTransformParameters params, @NotNull TransformInput input) {
-        ActionContent firstContent = input.getContentList().get(0);
+        ActionContent firstContent = input.content(0);
         ActionContent mergedContent = firstContent.copy();
 
         String name = params.getMergedFilename();
@@ -51,8 +51,8 @@ public class MergeTransformAction extends TransformAction<MergeTransformParamete
             mergedContent.setMediaType(mediaType);
         }
 
-        if (input.getContentList().size() > 1) {
-            input.getContentList().subList(1, input.getContentList().size()).forEach(mergedContent::append);
+        if (input.content().size() > 1) {
+            input.content().subList(1, input.content().size()).forEach(mergedContent::append);
         }
 
         TransformResult result = new TransformResult(context);

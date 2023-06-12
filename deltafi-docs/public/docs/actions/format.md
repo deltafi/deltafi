@@ -62,7 +62,7 @@ public class RoteFormatAction extends FormatAction<RoteParameters> {
     }
 
     public FormatResultType format(@NotNull ActionContext context, @NotNull RoteParameters parameters, @NotNull FormatInput input) {
-        return new FormatResult(context, input.getContentList().get(0));
+        return new FormatResult(context, input.content(0));
     }
 
     @Override

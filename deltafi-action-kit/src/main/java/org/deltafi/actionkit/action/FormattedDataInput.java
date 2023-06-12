@@ -17,20 +17,16 @@
  */
 package org.deltafi.actionkit.action;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.exception.MissingMetadataException;
-import org.deltafi.common.types.Content;
-import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Map;
 
 @AllArgsConstructor
@@ -38,90 +34,19 @@ import java.util.Map;
 @SuperBuilder
 @Slf4j
 public abstract class FormattedDataInput {
-    private ActionContext actionContext;
-    private Content content;
     @Getter
-    @Setter
+    private ActionContent content;
+    @Getter
     private Map<String, String> metadata;
 
     /**
-     * Load content from the content storage service as a byte array
-     * @param content content to be loaded
-     * @return a byte array for the loaded content
-     */
-    @SuppressWarnings("unused")
-    private byte[] loadContent(Content content) {
-        byte[] bytes = null;
-        try (InputStream contentInputStream = loadContentAsInputStream(content)) {
-            bytes = contentInputStream.readAllBytes();
-        } catch (IOException e) {
-            log.warn("Unable to close content input stream", e);
-        }
-        return bytes;
-    }
-
-    /**
-     * Load content from the content storage service as an InputStream
-     * @param content content to be loaded
-     * @return an InputStream for the loaded content
-     */
-    private InputStream loadContentAsInputStream(Content content) {
-        try {
-            return actionContext.getContentStorageService().load(content);
-        } catch (ObjectStorageException e) {
-            throw new ActionKitException("Failed to load content from storage", e);
-        }
-    }
-
-    /**
-     * Load the content associated with the formatted data as an InputStream.
+     * Return content associated with the formatted data as ActionContent.
      *
-     * @return an InputStream for the loaded content
+     * @return an ActionContent for the content
      */
-    public InputStream loadFormattedDataStream() {
-        return loadContentAsInputStream(content);
+    public ActionContent content() {
+        return content;
     }
-
-    /**
-     * Load the content associated with the formatted data as a byte array.
-     *
-     * @return a byte array for the loaded content
-     */
-    @SuppressWarnings("unused")
-    public byte[] loadFormattedDataBytes() {
-        return loadContent(content);
-    }
-
-    /**
-     * Get the media type associated with the formatted data.
-     *
-     * @return a string representing the media type
-     */
-    @JsonIgnore
-    public String getMediaType() {
-        return content.getMediaType();
-    }
-
-    /**
-     * Get the size of the formatted data.
-     *
-     * @return a long representing the size of the formatted data in bytes
-     */
-    @JsonIgnore
-    public long getFormattedDataSize() {
-        return content.getSize();
-    }
-
-    /**
-     * Get the filename associated with the formatted data.
-     *
-     * @return a string representing the filename
-     */
-    @JsonIgnore
-    public String getFilename() {
-        return content.getName();
-    }
-
 
     /**
      * Returns the value of the formatted metadata for the given key.

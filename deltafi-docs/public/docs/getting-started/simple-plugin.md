@@ -184,7 +184,7 @@ public class JsonToYamlAction extends TransformAction<ActionParameters> {
     @Override
     public TransformResultType transform(@NotNull ActionContext context, @NotNull ActionParameters params, @NotNull TransformInput transformInput) {
         TransformResult transformResult = new TransformResult(context);
-        ActionContent actionContent = transformInput.getContentList().get(0);
+        ActionContent actionContent = transformInput.content(0);
         byte[] content = actionContent.loadBytes();
 
         try {
@@ -320,7 +320,7 @@ public class JsonToYamlAction extends TransformAction<ActionParameters> {
     @Override
     public TransformResultType transform(@NotNull ActionContext context, @NotNull ActionParameters params, @NotNull TransformInput transformInput) {
         TransformResult transformResult = new TransformResult(context);
-        ActionContent actionContent = transformInput.getContentList().get(0);
+        ActionContent actionContent = transformInput.content(0);
         byte[] content = actionContent.loadBytes();
 
         try {

@@ -18,6 +18,7 @@
 package org.deltafi.actionkit.action.egress;
 
 import org.deltafi.actionkit.action.Action;
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
@@ -40,9 +41,8 @@ public abstract class EgressAction<P extends ActionParameters> extends Action<P>
 
     private static EgressInput egressInput(DeltaFileMessage deltaFileMessage, ActionContext context) {
         return EgressInput.builder()
-                .content(deltaFileMessage.getContentList().get(0))
+                .content(new ActionContent(deltaFileMessage.getContentList().get(0), context.getContentStorageService()))
                 .metadata(deltaFileMessage.getMetadata())
-                .actionContext(context)
                 .build();
     }
 

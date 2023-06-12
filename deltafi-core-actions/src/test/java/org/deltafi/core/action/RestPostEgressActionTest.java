@@ -20,6 +20,7 @@ package org.deltafi.core.action;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.egress.EgressResultType;
@@ -72,9 +73,8 @@ class RestPostEgressActionTest {
     private static final String CONTENT_TYPE = "application/json";
 
     private static final Segment SEGMENT = new Segment(UUID.randomUUID().toString(), 0, DATA.length, DID);
-    private static final Content CONTENT = new Content(POST_FILENAME, CONTENT_TYPE, List.of(SEGMENT));
     private static final ActionContext CONTEXT = ActionContext.builder().did(DID).name(ACTION).sourceFilename(ORIG_FILENAME).ingressFlow(FLOW).egressFlow(EGRESS_FLOW).build();
-    private static final EgressInput EGRESS_INPUT = EgressInput.builder().actionContext(CONTEXT).content(CONTENT).metadata(Map.of()).build();
+    private static final Content CONTENT = new Content(POST_FILENAME, CONTENT_TYPE, List.of(SEGMENT));
     static final Integer NUM_TRIES = 3;
     static final Integer RETRY_WAIT = 10;
     private static final RestPostEgressParameters PARAMS = new RestPostEgressParameters(URL, METADATA_KEY, NUM_TRIES, RETRY_WAIT);
@@ -151,7 +151,7 @@ class RestPostEgressActionTest {
         } else {
             when(httpService.post(any(), any(), any(), any())).thenReturn(httpResponse, httpResponse, httpResponse);
         }
-        EgressResultType result = action.egress(CONTEXT, PARAMS, EGRESS_INPUT);
+        EgressResultType result = action.egress(CONTEXT, PARAMS, egressInput());
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Map<String, String>> headersCaptor = ArgumentCaptor.forClass(Map.class);
@@ -208,5 +208,13 @@ class RestPostEgressActionTest {
         public void close() throws IOException {
             throw new IOException();
         }
+    }
+
+    private ActionContent actionContent() {
+        return new ActionContent(CONTENT, contentStorageService);
+    }
+
+    private EgressInput egressInput() {
+        return EgressInput.builder().content(actionContent()).metadata(Map.of()).build();
     }
 }

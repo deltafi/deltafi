@@ -18,6 +18,7 @@
 package org.deltafi.core.action;
 
 import org.apache.nifi.util.FlowFileUnpackagerV1;
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.egress.EgressResultType;
@@ -86,7 +87,6 @@ class FlowfileEgressActionTest {
 
     private static final Content CONTENT = new Content(POST_FILENAME, CONTENT_TYPE, new Segment(UUID.randomUUID().toString(), 0, DATA.length, DID));
     private static final ActionContext CONTEXT = ActionContext.builder().did(DID).name(ACTION).sourceFilename(ORIG_FILENAME).ingressFlow(FLOW).egressFlow(EGRESS_FLOW).build();
-    private static final EgressInput EGRESS_INPUT = EgressInput.builder().actionContext(CONTEXT).content(CONTENT).metadata(METADATA).build();
 
     final static Integer NUM_TRIES = 3;
     final static Integer RETRY_WAIT = 10;
@@ -148,7 +148,7 @@ class FlowfileEgressActionTest {
                     };
                 }
         );
-        EgressResultType result = action.egress(CONTEXT, PARAMS, EGRESS_INPUT);
+        EgressResultType result = action.egress(CONTEXT, PARAMS, egressInput());
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Map<String, String>> headersCaptor = ArgumentCaptor.forClass(Map.class);
@@ -193,5 +193,13 @@ class FlowfileEgressActionTest {
         assertThat(result, instanceOf(ErrorResult.class));
         assertThat(((ErrorResult) result).getErrorCause(), containsString("505"));
         assertThat(((ErrorResult) result).getErrorCause(), containsString("Hello there"));
+    }
+
+    private ActionContent actionContent() {
+        return new ActionContent(CONTENT, contentStorageService);
+    }
+
+    private EgressInput egressInput() {
+        return EgressInput.builder().content(actionContent()).metadata(METADATA).build();
     }
 }

@@ -42,7 +42,7 @@ public class LineSplitterTransformAction extends TransformAction<LineSplitterPar
     @Override
     public TransformResultType transform(@NotNull ActionContext context, @NotNull LineSplitterParameters params, @NotNull TransformInput transformInput) {
         TransformResult result = new TransformResult(context);
-        ActionContent originalContent = transformInput.getContentList().get(0);
+        ActionContent originalContent = transformInput.content(0);
 
         try {
             result.addContent(LineSplitter.splitContent(originalContent, params));

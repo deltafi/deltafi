@@ -38,7 +38,7 @@ public class DeleteMetadataTransformAction extends TransformAction<DeleteMetadat
     @Override
     public TransformResultType transform(@NotNull ActionContext context, @NotNull DeleteMetadataTransformParameters params, @NotNull TransformInput transformInput) {
         TransformResult result = new TransformResult(context);
-        result.addContent(transformInput.getContentList().get(0));
+        result.addContent(transformInput.content(0));
         result.setDeleteMetadataKeys(params.getDeleteMetadataKeys());
         return result;
     }

@@ -20,13 +20,18 @@ package org.deltafi.actionkit.action.content;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.ActionKitException;
+import org.deltafi.actionkit.action.converters.ContentConverter;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
+import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.Content;
+import org.deltafi.common.types.SaveManyContent;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.util.Collections;
+import java.util.List;
 
 @Slf4j
 public class ActionContent {
@@ -218,5 +223,65 @@ public class ActionContent {
      */
     public void append(ActionContent other) {
         content.getSegments().addAll(other.content.getSegments());
+    }
+
+    /**
+     * Save content to content storage and return the new ActionContent
+     * @param context The ActionContext from the current input being processed
+     * @param content String content to store.  The entire string will be stored in content storage
+     * @param name the content name
+     * @param mediaType Media type for the content being stored
+     * @return The ActionContent that was stored
+     */
+    @SuppressWarnings("unused")
+    public static ActionContent saveContent(ActionContext context, String content, String name, String mediaType) {
+        return saveContent(context, content.getBytes(), name, mediaType);
+    }
+
+    /**
+     * Save content to content storage and return the new ActionContent
+     * @param context The ActionContext from the current input being processed
+     * @param bytes Byte array of content to store.  The entire byte array will be stored in content storage
+     * @param name the content name
+     * @param mediaType Media type for the content being stored
+     * @return The ActionContent that was stored
+     */
+    @SuppressWarnings("unused")
+    public static ActionContent saveContent(ActionContext context, byte[] bytes, String name, String mediaType) {
+        try {
+            return new ActionContent(context.getContentStorageService().save(context.getDid(), bytes, name, mediaType),
+                    context.getContentStorageService());
+        } catch(ObjectStorageException e) {
+            throw new ActionKitException("Failed to store content " + name, e);
+        }
+    }
+
+    /**
+     * Save content to content storage and return the new ActionContent
+     * @param context The ActionContext from the current input being processed
+     * @param stream InputStream of content to store.  The entire stream will be read into content storage, and the
+     *                stream may be closed by underlying processors after execution
+     * @param name the content name
+     * @param mediaType Media type for the content being stored
+     * @return The ActionContent that was stored
+     */
+    public static ActionContent saveContent(ActionContext context, InputStream stream, String name, @SuppressWarnings("SameParameterValue") String mediaType) {
+        try {
+            return new ActionContent(context.getContentStorageService().save(context.getDid(), stream, name, mediaType),
+                    context.getContentStorageService());
+        } catch(ObjectStorageException e) {
+            throw new ActionKitException("Failed to store content " + name, e);
+        }
+    }
+
+    /**
+     * Create an empty ActionContent object
+     * @param context The ActionContext from the current input being processed
+     * @param name the content name
+     * @param mediaType Media type for the content being stored
+     * @return The empty ActionContent
+     */
+    public static ActionContent emptyContent(ActionContext context, String name, String mediaType) {
+        return new ActionContent(new Content(name, mediaType, Collections.emptyList()), context.getContentStorageService());
     }
 }

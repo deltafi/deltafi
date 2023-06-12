@@ -65,7 +65,7 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
                                          @NotNull TransformInput input) {
         TransformResult result = new TransformResult(context);
         String decompressionType = params.getDecompressionType().getValue();
-        ActionContent content = input.getContentList().get(0);
+        ActionContent content = input.content(0);
 
         try (InputStream contentStream = content.loadInputStream()) {
             try {

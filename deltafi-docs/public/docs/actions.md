@@ -62,7 +62,7 @@ class Context(NamedTuple):
 
 ### Content Storage
 
-Actions are passed or can create `Content` that serve as pointers to content data that is stored on disk.
+Actions are passed or can create `ActionContent` that serve as pointers to content data that is stored on disk.
 
 To retrieve content as a byte array, string, or from a stream:
 
@@ -95,10 +95,10 @@ List<ActionContent> existingContentList = input.getContentList();
 transformResult.addContent(existingContentList);
 
 // you can also manipulate existing content to store new content on disk
-ActionContent copyOfFirstContent = existingContentList.get(0).copy();
+ActionContent copyOfFirstContent = existingContent.copy();
 copyOfFirstContent.setName("new-name.txt");
 // get the first 50 bytes
-ActionContent partOfSecondContent = existingContentList.get(1).subcontent(0, 50);
+ActionContent partOfSecondContent = anotherContent.subcontent(0, 50);
 copyOfFirstContent.append(partOfSecondContent);
 // store the pointers to the stitched-together content without writing to disk
 transformResult.addContent(copyOfFirstContent);

@@ -19,7 +19,7 @@ public class {{className}} extends ValidateAction<{{paramClassName}}> {
 
     @Override
     public ValidateResultType validate(@NotNull ActionContext context, @NotNull {{paramClassName}} params, @NotNull ValidateInput validateInput) {
-        byte[] formattedData = validateInput.loadFormattedDataBytes();
+        byte[] formattedData = validateInput.content().loadBytes();
 
         // TODO: add logic to validate the formatted data
         boolean valid = true;

@@ -33,4 +33,33 @@ import java.util.List;
 @Slf4j
 public abstract class ContentListInput {
     private List<ActionContent> contentList;
+
+    /**
+     * Return the contentList
+     * @return the contentList
+     */
+    public List<ActionContent> content() {
+        return contentList;
+    }
+
+    /**
+     * Checks if the content list is not empty.
+     * @return {@code true} if the content list is not empty, {@code false} otherwise.
+     */
+    public boolean hasContent() {
+        return !contentList.isEmpty();
+    }
+
+    /**
+     * Retrieves the first action content in the list.
+     * @return The first action content.
+     * @throws ActionKitException If no content is found in the input.
+     */
+    public ActionContent content(int index) {
+        if (contentList.size() <= index) {
+            throw new ActionKitException("Requested content at index " + index + ", but only " + contentList.size() + " are available.");
+        }
+
+        return contentList.get(index);
+    }
 }

@@ -21,8 +21,8 @@ public class {{className}} extends FormatAction<{{paramClassName}}> {
 
     @Override
     public FormatResultType format(@NotNull ActionContext context, @NotNull {{paramClassName}} params, @NotNull FormatInput formatInput) {
-        ActionContent actionContent = formatInput.getContentList().get(0);
-        byte[] content = formatInput.getContentList().get(0).loadBytes();
+        ActionContent actionContent = formatInput.content(0);
+        byte[] content = actionContent.loadBytes();
         return new FormatResult(context, content, actionContent.getName(), actionContent.getMediaType());
     }
 

@@ -48,10 +48,10 @@ public class RestPostEgressAction extends HttpEgressActionBase<RestPostEgressPar
     }
 
     protected EgressResultType doEgress(@NotNull ActionContext context, @NotNull RestPostEgressParameters params, @NotNull EgressInput input) {
-        try (InputStream inputStream = input.loadFormattedDataStream()) {
+        try (InputStream inputStream = input.content().loadInputStream()) {
             HttpResponse<InputStream> response = httpPostService.post(params.getUrl(), Map.of(params.getMetadataKey(),
-                    buildHeadersMapString(context.getDid(), context.getSourceFilename(), input.getFilename(), context.getIngressFlow(),
-                            context.getEgressFlow(), input.getMetadata())), inputStream, input.getMediaType());
+                    buildHeadersMapString(context.getDid(), context.getSourceFilename(), input.content().getName(), context.getIngressFlow(),
+                            context.getEgressFlow(), input.getMetadata())), inputStream, input.content().getMediaType());
             Response.Status status = Response.Status.fromStatusCode(response.statusCode());
             if (Objects.isNull(status) || status.getFamily() != Response.Status.Family.SUCCESSFUL) {
                 try (InputStream body = response.body()) {
@@ -67,7 +67,7 @@ public class RestPostEgressAction extends HttpEgressActionBase<RestPostEgressPar
             return new ErrorResult(context, "Service post failure", e);
         }
 
-        return new EgressResult(context, params.getUrl(), input.getFormattedDataSize());
+        return new EgressResult(context, params.getUrl(), input.content().getSize());
     }
 
     private String buildHeadersMapString(String did, String sourceFilename, String filename, String ingressFlow, String egressFlow, Map<String, String> metadata)

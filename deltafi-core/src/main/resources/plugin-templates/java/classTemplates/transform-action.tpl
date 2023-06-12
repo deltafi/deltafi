@@ -20,7 +20,7 @@ public class {{className}} extends TransformAction<{{paramClassName}}> {
     @Override
     public TransformResultType transform(@NotNull ActionContext context, @NotNull {{paramClassName}} params, @NotNull TransformInput transformInput) {
         TransformResult transformResult = new TransformResult(context);
-        ActionContent actionContent = transformInput.getContentList().get(0);
+        ActionContent actionContent = transformInput.content(0);
         byte[] content = actionContent.loadBytes();
 
         // TODO - add logic to transform the content

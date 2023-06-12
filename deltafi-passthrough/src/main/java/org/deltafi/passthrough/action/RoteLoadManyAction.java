@@ -41,7 +41,7 @@ public class RoteLoadManyAction extends LoadAction<RoteLoadParameters> {
 
         LoadManyResult loadManyResult = new LoadManyResult(context);
 
-        input.getContentList().stream()
+        input.content().stream()
                 .map(content -> buildLoadResult(context, content, params.getDomains()))
                 .forEach(loadManyResult::add);
 

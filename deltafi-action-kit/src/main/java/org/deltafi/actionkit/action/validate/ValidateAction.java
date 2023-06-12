@@ -18,6 +18,7 @@
 package org.deltafi.actionkit.action.validate;
 
 import org.deltafi.actionkit.action.Action;
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
@@ -40,9 +41,8 @@ public abstract class ValidateAction<P extends ActionParameters> extends Action<
 
     private static ValidateInput validateInput(DeltaFileMessage deltaFileMessage, ActionContext context) {
         return ValidateInput.builder()
-                .content(deltaFileMessage.getContentList().get(0))
+                .content(new ActionContent(deltaFileMessage.getContentList().get(0), context.getContentStorageService()))
                 .metadata(deltaFileMessage.getMetadata())
-                .actionContext(context)
                 .build();
     }
 

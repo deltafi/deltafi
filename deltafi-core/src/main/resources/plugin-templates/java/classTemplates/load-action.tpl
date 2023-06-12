@@ -23,7 +23,7 @@ public class {{className}} extends LoadAction<{{paramClassName}}> {
     @Override
     public LoadResultType load(@NotNull ActionContext context, @NotNull {{paramClassName}} params, @NotNull LoadInput loadInput) {
         LoadResult loadResult = new LoadResult(context, new ArrayList<>());
-        ActionContent actionContent = loadInput.getContentList().get(0);
+        ActionContent actionContent = loadInput.content(0);
 
         byte[] contentBytes = actionContent.loadBytes();
         loadResult.saveContent(contentBytes, actionContent.getName(), actionContent.getName());
