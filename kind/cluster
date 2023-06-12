@@ -527,7 +527,7 @@ metadata:
 data:
 $(while (( "$#" )); do
 local pass
-pass=$(printf '%s' "$2" | base64)
+pass=$(printf '%s' "$2" | base64 -w0)
 echo "  $1: $pass"
 shift 2
 done)

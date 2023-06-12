@@ -70,7 +70,7 @@ metadata:
 data:
 $(while (( "$#" )); do
 local pass
-pass=$(printf '%s' "$2" | base64)
+pass=$(printf '%s' "$2" | base64 -w0)
 echo "  $1: $pass"
 shift 2
 done)
@@ -81,7 +81,7 @@ EOF
 
 _random_password() {
   local size=${1:-20}
-  printf '%s%s%s' "$(printf '%s' $RANDOM | md5sum | head -c 20)" "$(printf '%s' $RANDOM | md5sum | head -c 20)" "$(printf '%s' $RANDOM | md5sum | head -c 20)" | base64 | head -c "$size"
+  printf '%s%s%s' "$(printf '%s' $RANDOM | md5sum | head -c 20)" "$(printf '%s' $RANDOM | md5sum | head -c 20)" "$(printf '%s' $RANDOM | md5sum | head -c 20)" | base64 -w0 | head -c "$size"
 }
 
 _k8s_prerequisites() {
