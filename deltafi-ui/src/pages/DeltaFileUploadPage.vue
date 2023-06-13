@@ -102,10 +102,10 @@
             </Column>
             <Column field="uploadedMetadata" header="Metadata" class="metadata-column">
               <template #body="file">
-                <span v-if="!_.isEmpty(file.data.uploadedMetadata)">
-                  <MetadataViewer id="viewMetadata" :metadata-references="formatMetadataforViewer(file.data.filename, file.data.uploadedMetadata)">
+                <span v-if="!_.isEmpty(file.data.uploadedMetadata)" class="btn-group">
+                  <DialogTemplate component-name="MetadataViewer" header="Metadata" :metadata="formatMetadataforViewer(file.data.filename, file.data.uploadedMetadata)">
                     <Button v-tooltip.top.hover="'View Metadata'" icon="fas fa-table" class="content-button p-button-link p-0" />
-                  </MetadataViewer>
+                  </DialogTemplate>
                   <Button id="replayMetadata" v-tooltip.top.hover="'Reuse Metadata'" icon="fas fa-redo" class="content-button p-button-link button2 p-0" @click="replayMetadata(file.data)" />
                 </span>
               </template>
@@ -120,10 +120,10 @@
 
 <script setup>
 import CollapsiblePanel from "@/components/CollapsiblePanel";
+import DialogTemplate from "@/components/DialogTemplate.vue";
 import DidLink from "@/components/DidLink.vue";
 import FileUpload from "@/components/deprecatedPrimeVue/FileUpload";
 import ImportMetadataDialog from "@/components/ImportMetadataDialog.vue";
-import MetadataViewer from "@/components/MetadataViewer.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
 import Timestamp from "@/components/Timestamp.vue";

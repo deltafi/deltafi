@@ -18,36 +18,45 @@
 
 <template>
   <div class="metadata-viewer">
-    <span @click="showDialog()">
-      <slot />
-    </span>
-    <Dialog v-model:visible="dialogVisible" position="top" header="Metadata" :style="{ width: '75vw' }" :maximizable="true" :modal="true" :dismissable-mask="true">
-      <div class="metadata-viewer">
-        <div v-for="(metadataArray, actionName) in props.metadataReferences" :key="actionName">
-          <CollapsiblePanel :header="actionName" class="table-panel mb-3">
-            <DataTable responsive-layout="scroll" :value="metadataArray" striped-rows sort-field="key" :sort-order="1" class="p-datatable-sm" scroll-height="500px">
-              <Column field="key" header="Key" :style="{ width: '25%' }" :sortable="true" />
-              <Column field="value" header="Value" :style="{ width: '75%' }" :sortable="true" />
-            </DataTable>
-          </CollapsiblePanel>
-        </div>
-      </div>
-    </Dialog>
+    <div v-for="(metadataArray, actionName) in props.metadata" :key="actionName">
+      <CollapsiblePanel :header="actionName" class="table-panel">
+        <DataTable responsive-layout="scroll" :value="metadataArray" striped-rows sort-field="key" :sort-order="1" class="p-datatable-sm" scroll-height="500px">
+          <Column field="key" header="Key" :style="{ width: '25%' }" :sortable="true" />
+          <Column field="value" header="Value" :style="{ width: '75%' }" :sortable="true" />
+        </DataTable>
+      </CollapsiblePanel>
+      <CollapsiblePanel v-if="!_.isEmpty(props.deletedMetadata)" header="Deleted Metadata" class="table-panel mt-3">
+        <DataTable responsive-layout="scroll" :value="deletedMetadata" striped-rows sort-field="key" :sort-order="1" class="p-datatable-sm" scroll-height="500px">
+          <template #empty>No Deleted Metadata found.</template>
+          <Column field="name" header="Action" :style="{ width: '25%' }" :sortable="true" />
+          <Column field="deleteMetadataKeys" header="Deleted Metadata Keys" :style="{ width: '75%' }" :sortable="true">
+            <template #body="{ data }">
+              {{ data.deleteMetadataKeys.join(", ") }}
+            </template>
+          </Column>
+        </DataTable>
+      </CollapsiblePanel>
+    </div>
   </div>
 </template>
 
 <script setup>
-import Dialog from "primevue/dialog";
-import DataTable from "primevue/datatable";
-import Column from "primevue/column";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
-
 import { ref, defineProps, defineExpose } from "vue";
 
+import Column from "primevue/column";
+import DataTable from "primevue/datatable";
+import _ from "lodash";
+
 const props = defineProps({
-  metadataReferences: {
+  metadata: {
     type: Object,
     required: true,
+  },
+  deletedMetadata: {
+    type: Object || null,
+    required: false,
+    default: null,
   },
 });
 
