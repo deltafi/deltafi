@@ -62,7 +62,10 @@ public abstract class Action<P extends ActionParameters> {
         Type type = clazz.getGenericSuperclass();
         while (type != null) {
             try {
-                return (Class<P>) ((ParameterizedType) type).getActualTypeArguments()[0];
+                Class<P> typeClz = (Class<P>) ((ParameterizedType) type).getActualTypeArguments()[0];
+                if (ActionParameters.class.isAssignableFrom(typeClz)) {
+                    return typeClz;
+                }
             } catch (Throwable t) {
                 // Must be a non-generic class in the inheritance tree
             }
@@ -72,7 +75,7 @@ public abstract class Action<P extends ActionParameters> {
         throw new RuntimeException("Cannot instantiate" + getClass());
     }
 
-    private final Class<P> paramClass = getGenericParameterType();
+    protected final Class<P> paramClass = getGenericParameterType();
 
     private final ActionType actionType;
     private final String description;

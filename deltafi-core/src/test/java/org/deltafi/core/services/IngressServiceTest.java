@@ -135,7 +135,7 @@ class IngressServiceTest {
         Mockito.when(ingressFlowService.maxErrorsPerFlow()).thenReturn(Map.of("flow", 1));
         Mockito.when(ingressFlowService.getRunningFlowByName("flow")).thenReturn(new IngressFlow());
         Mockito.when(errorCountService.generateErrorMessage("flow", 1)).thenReturn(null);
-        DeltaFile deltaFile = DeltaFile.newBuilder().sourceInfo(SourceInfo.builder().flow("flow").build()).build();
+        DeltaFile deltaFile = DeltaFile.builder().sourceInfo(SourceInfo.builder().flow("flow").build()).build();
         Mockito.when(deltaFilesService.ingress(ingressEventCaptor.capture())).thenReturn(deltaFile);
 
         UUID_GENERATOR.setUuid("TEST-UUID");

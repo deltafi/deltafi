@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -70,7 +70,7 @@ public class FullFlowExemplars {
         DeltaFile deltaFile = postTransformHadErrorDeltaFile(did);
         deltaFile.retryErrors();
         deltaFile.setStage(DeltaFileStage.INGRESS);
-        deltaFile.getActions().add(Action.newBuilder().name(retryAction).state(QUEUED).attempt(2).build());
+        deltaFile.getActions().add(Action.builder().name(retryAction).state(QUEUED).attempt(2).build());
         deltaFile.getSourceInfo().setMetadata(Map.of("AuthorizedBy", "ABC", "removeMe.original", "whatever", "AuthorizedBy.original", "XYZ", "anotherKey", "anotherValue"));
         return deltaFile;
     }
@@ -114,6 +114,29 @@ public class FullFlowExemplars {
         deltaFile.completeAction("sampleEnrich.SampleEnrichAction", START_TIME, STOP_TIME);
         deltaFile.addEnrichment("sampleEnrichment", "enrichmentData");
         deltaFile.addAnnotations(Map.of("first", "one", "second", "two"));
+        deltaFile.addEgressFlow(EGRESS_FLOW_NAME);
+        return deltaFile;
+    }
+
+    public static DeltaFile postEnrichNoEgressDeltaFile(String did, OffsetDateTime nextExecution) {
+        DeltaFile deltaFile = postDomainDeltaFile(did);
+        deltaFile.completeAction("sampleEnrich.SampleEnrichAction", START_TIME, STOP_TIME);
+        deltaFile.addEnrichment("sampleEnrichment", "enrichmentData");
+        deltaFile.addAnnotations(Map.of("first", "one", "second", "two"));
+        // now the error...
+        deltaFile.setStage(DeltaFileStage.ERROR);
+        deltaFile.queueNewAction(DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION, ActionType.UNKNOWN, "MISSING");
+        deltaFile.errorAction(DeltaFilesService.buildNoEgressConfiguredErrorEvent(deltaFile, OffsetDateTime.now()));
+        deltaFile.setNextAutoResume(nextExecution);
+        deltaFile.setNextAutoResumeReason("reason");
+        return deltaFile;
+    }
+
+    public static DeltaFile postEnrichNoEgressResumedDeltaFile(String did, OffsetDateTime nextExecution) {
+        DeltaFile deltaFile = postEnrichNoEgressDeltaFile(did, nextExecution);
+        deltaFile.setStage(DeltaFileStage.EGRESS);
+        deltaFile.retryErrors();
+        deltaFile.queueAction("sampleEgress.SampleFormatAction", ActionType.FORMAT, "sampleEgress");
         deltaFile.addEgressFlow(EGRESS_FLOW_NAME);
         return deltaFile;
     }
@@ -173,7 +196,7 @@ public class FullFlowExemplars {
         DeltaFile deltaFile = postErrorDeltaFile(did);
         deltaFile.retryErrors();
         deltaFile.setStage(DeltaFileStage.EGRESS);
-        deltaFile.getActions().add(Action.newBuilder().name(retryAction).state(QUEUED).attempt(2).build());
+        deltaFile.getActions().add(Action.builder().name(retryAction).state(QUEUED).attempt(2).build());
         deltaFile.getSourceInfo().addMetadata("a", "b");
         return deltaFile;
     }

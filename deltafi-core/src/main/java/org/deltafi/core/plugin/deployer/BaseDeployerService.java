@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -102,7 +102,7 @@ public abstract class BaseDeployerService implements DeployerService {
     public Result uninstallPlugin(PluginCoordinates pluginCoordinates) {
         List<String> uninstallPreCheckErrors = pluginRegistryService.canBeUninstalled(pluginCoordinates);
         if (!uninstallPreCheckErrors.isEmpty()) {
-            return Result.newBuilder().success(false).errors(uninstallPreCheckErrors).build();
+            return Result.builder().success(false).errors(uninstallPreCheckErrors).build();
         }
 
         pluginRegistryService.uninstallPlugin(pluginCoordinates);

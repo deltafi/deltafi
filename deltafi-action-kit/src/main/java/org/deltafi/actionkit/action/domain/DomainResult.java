@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -42,18 +42,13 @@ public class DomainResult extends Result<DomainResult> implements HasAnnotations
      * @param context Context of the executed action
      */
     public DomainResult(@NotNull ActionContext context) {
-        super(context);
-    }
-
-    @Override
-    protected final ActionEventType actionEventType() {
-        return ActionEventType.DOMAIN;
+        super(context, ActionEventType.DOMAIN);
     }
 
     @Override
     public final ActionEvent toEvent() {
         ActionEvent event = super.toEvent();
-        event.setDomain(DomainEvent.newBuilder().annotations(annotations).build());
+        event.setDomain(DomainEvent.builder().annotations(annotations).build());
         return event;
     }
 

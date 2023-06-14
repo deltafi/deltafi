@@ -100,12 +100,12 @@ public class SystemSnapshotDatafetcherTestHelper {
     private static void setDeletePolicies(SystemSnapshot systemSnapshot) {
         DeletePolicies deletePolicies = new DeletePolicies();
 
-        TimedDeletePolicy afterComplete = TimedDeletePolicy.newBuilder().id("afterComplete").name("afterComplete").enabled(true).afterComplete("P4D").deleteMetadata(true).build();
-        TimedDeletePolicy deleteSmoke = TimedDeletePolicy.newBuilder().id("66e4572f-3c5f-45dc-b35d-b3ffd7f70245").name("deleteSmoke1MafterComplete").enabled(false).flow("smoke").afterComplete("PT2M").deleteMetadata(false).build();
+        TimedDeletePolicy afterComplete = TimedDeletePolicy.builder().id("afterComplete").name("afterComplete").enabled(true).afterComplete("P4D").deleteMetadata(true).build();
+        TimedDeletePolicy deleteSmoke = TimedDeletePolicy.builder().id("66e4572f-3c5f-45dc-b35d-b3ffd7f70245").name("deleteSmoke1MafterComplete").enabled(false).flow("smoke").afterComplete("PT2M").deleteMetadata(false).build();
 
         deletePolicies.setTimedPolicies(List.of(afterComplete, deleteSmoke));
 
-        DiskSpaceDeletePolicy diskSpaceDeletePolicy = DiskSpaceDeletePolicy.newBuilder().id("percentDisk").name("percentDisk").enabled(true).maxPercent(75).build();
+        DiskSpaceDeletePolicy diskSpaceDeletePolicy = DiskSpaceDeletePolicy.builder().id("percentDisk").name("percentDisk").enabled(true).maxPercent(75).build();
         deletePolicies.setDiskSpacePolicies(List.of(diskSpaceDeletePolicy));
 
         systemSnapshot.setDeletePolicies(deletePolicies);
@@ -153,14 +153,14 @@ public class SystemSnapshotDatafetcherTestHelper {
     private static void setPluginVariables(SystemSnapshot systemSnapshot) {
         PluginVariables pluginVariables = new PluginVariables();
         pluginVariables.setSourcePlugin(PluginCoordinates.builder().groupId("org.deltafi.passthrough").artifactId("deltafi-passthrough").version("0.102.1-SNAPSHOT").build());
-        Variable annotations = Variable.newBuilder()
+        Variable annotations = Variable.builder()
                 .name("annotations")
                 .description("Searchable annotations in the DeltaFile")
                 .dataType(VariableDataType.MAP)
                 .required(false)
                 .value("test_key: value, X: O").build();
 
-        Variable sampleList = Variable.newBuilder()
+        Variable sampleList = Variable.builder()
                 .name("sampleList")
                 .description("Noop sample list variable")
                 .dataType(VariableDataType.LIST)

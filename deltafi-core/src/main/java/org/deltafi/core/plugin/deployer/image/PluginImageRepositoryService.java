@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -63,7 +63,7 @@ public class PluginImageRepositoryService implements Snapshotter {
             imageRepositoryRepo.deleteById(id);
             return new Result();
         } else {
-            return Result.newBuilder().success(false).errors(List.of("No plugin image repository config exists with an id of " + id)).build();
+            return Result.builder().success(false).errors(List.of("No plugin image repository config exists with an id of " + id)).build();
         }
     }
 

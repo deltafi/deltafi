@@ -82,7 +82,7 @@ const setPersistedParams = () => {
     tabs: activeTab.value,
     showAcknowledged: showAcknowledged.value,
     ingressFlowNameSelected: ingressFlowNameSelected.value,
-    errorMessageSelected: errorMessageSelected.value
+    errorMessageSelected: errorMessageSelected.value,
   };
   // URL
   params.tab = activeTab.value;
@@ -103,9 +103,9 @@ const getPersistedParams = async () => {
     errorMessageSelected.value = params.errorMsg ? decodeURIComponent(params.errorMsg) : errorPanelState.value.errorMessageSelected;
   } else {
     activeTab.value = errorPanelState.value.tabs ? parseInt(errorPanelState.value.tabs) : 0;
-    showAcknowledged.value = errorPanelState.value.showAcknowledged;
-    ingressFlowNameSelected.value = errorPanelState.value.ingressFlowNameSelected;
-    errorMessageSelected.value = errorPanelState.value.errorMessageSelected;
+    showAcknowledged.value = _.get(errorPanelState.value, "showAcknowledged", false);
+    ingressFlowNameSelected.value = _.get(errorPanelState.value, "ingressFlowNameSelected", null);
+    errorMessageSelected.value = _.get(errorPanelState.value, "errorMessageSelected", null);
   }
   setPersistedParams();
 };

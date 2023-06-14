@@ -62,17 +62,29 @@ const generateData = () => {
             mediaType: "application/octet-stream",
             segments: [
               {
-                "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
-                "offset": 0,
-                "size": 36,
-                "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
-              }
+                uuid: "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
+                offset: 0,
+                size: 36,
+                did: "b558ef37-4d20-4082-84d6-31e6d62e6f4a",
+              },
             ],
-            size: 36
+            size: 36,
           },
         ],
-        metadata: {},
-        deleteMetadataKeys: [],
+        metadata: {
+          "absolute.path": "/home/testFile/",
+          path: "/",
+          filename: "testfile",
+          "file.group": "test",
+          "file.lastModifiedTime": "2023-03-12T20:02:18+0000",
+          "file.creationTime": "2023-03-12T20:02:18+0000",
+          "file.lastAccessTime": "2023-06-09T20:49:31+0000",
+          "file.owner": "test",
+          "file.permissions": "rw-rw-r--",
+          uuid: "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
+          flow: "ingress",
+        },
+        deleteMetadataKeys: ["fakeKey1", "fakeKey2"],
       },
       {
         name: "MockTransformAction",
@@ -90,11 +102,11 @@ const generateData = () => {
             name: "TestFile.json",
             segments: [
               {
-                "uuid": "19a12f6f-3b63-4c20-8f69-8fcd464d390d",
-                "offset": 0,
-                "size": 36,
-                "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
-              }
+                uuid: "19a12f6f-3b63-4c20-8f69-8fcd464d390d",
+                offset: 0,
+                size: 36,
+                did: "b558ef37-4d20-4082-84d6-31e6d62e6f4a",
+              },
             ],
             size: 488,
             mediaType: "application/json",
@@ -103,11 +115,11 @@ const generateData = () => {
             name: "TestFile.xml",
             segments: [
               {
-                "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
-                "offset": 0,
-                "size": 36,
-                "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
-              }
+                uuid: "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
+                offset: 0,
+                size: 36,
+                did: "b558ef37-4d20-4082-84d6-31e6d62e6f4a",
+              },
             ],
             size: 718,
             mediaType: "application/xml",
@@ -116,11 +128,11 @@ const generateData = () => {
             name: "TestFile.bin",
             segments: [
               {
-                "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
-                "offset": 0,
-                "size": 128,
-                "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
-              }
+                uuid: "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
+                offset: 0,
+                size: 128,
+                did: "b558ef37-4d20-4082-84d6-31e6d62e6f4a",
+              },
             ],
             size: 128,
             mediaType: "application/octet-stream",
@@ -129,18 +141,29 @@ const generateData = () => {
             name: "TestFile.txt",
             segments: [
               {
-                "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
-                "offset": 0,
-                "size": 32,
-                "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
-              }
+                uuid: "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
+                offset: 0,
+                size: 32,
+                did: "b558ef37-4d20-4082-84d6-31e6d62e6f4a",
+              },
             ],
             size: 32,
             mediaType: "text/plain",
-          }
+          },
         ],
-        metadata: {},
-        deleteMetadataKeys: [],
+        metadata: {
+          "absolute.path": "/home/testFile/",
+          path: "/",
+          filename: "testfile",
+          "file.group": "test",
+          "file.lastModifiedTime": "2023-03-12T20:02:18+0000",
+          "file.creationTime": "2023-03-12T20:02:18+0000",
+          "file.lastAccessTime": "2023-06-09T20:49:31+0000",
+          "file.owner": "test",
+          "file.permissions": "rw-rw-r--",
+          uuid: "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
+        },
+        deleteMetadataKeys: ["flow"],
       },
       {
         name: "MockLoadAction",
@@ -158,11 +181,11 @@ const generateData = () => {
             name: "testfile1.txt",
             segments: [
               {
-                "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
-                "offset": 0,
-                "size": 36,
-                "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
-              }
+                uuid: "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
+                offset: 0,
+                size: 36,
+                did: "b558ef37-4d20-4082-84d6-31e6d62e6f4a",
+              },
             ],
             size: 23423,
             mediaType: "application/octet-stream",
@@ -171,17 +194,29 @@ const generateData = () => {
             name: "foobar.txt",
             segments: [
               {
-                "uuid": "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
-                "offset": 0,
-                "size": 36,
-                "did": "b558ef37-4d20-4082-84d6-31e6d62e6f4a"
-              }
+                uuid: "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
+                offset: 0,
+                size: 36,
+                did: "b558ef37-4d20-4082-84d6-31e6d62e6f4a",
+              },
             ],
             size: 24,
             mediaType: "application/octet-stream",
           },
         ],
-        metadata: {},
+        metadata: {
+          "absolute.path": "/home/testFile/",
+          path: "/",
+          filename: "testfile",
+          "file.group": "test",
+          "file.lastModifiedTime": "2023-03-12T20:02:18+0000",
+          "file.creationTime": "2023-03-12T20:02:18+0000",
+          "file.lastAccessTime": "2023-06-09T20:49:31+0000",
+          "file.owner": "test",
+          "file.permissions": "rw-rw-r--",
+          uuid: "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
+          newMetadata: "fake metadata",
+        },
         deleteMetadataKeys: [],
       },
       {
@@ -273,6 +308,19 @@ const generateData = () => {
     contentDeletedReason: null,
     errorAcknowledged: null,
     errorAcknowledgedReason: null,
+    metadata: {
+      "absolute.path": "/home/centos/stix-examples/2.1/cti-stix-elevator/",
+      path: "/",
+      filename: "archive-file.json",
+      "file.group": "centos",
+      "file.lastModifiedTime": "2023-03-12T20:02:18+0000",
+      "file.creationTime": "2023-03-12T20:02:18+0000",
+      "file.lastAccessTime": "2023-06-09T20:49:31+0000",
+      "file.owner": "centos",
+      "file.permissions": "rw-rw-r--",
+      uuid: "b358260d-a1c2-4412-8259-c617cae96700",
+      flow: "stix2_1",
+    },
   };
 
   return data;

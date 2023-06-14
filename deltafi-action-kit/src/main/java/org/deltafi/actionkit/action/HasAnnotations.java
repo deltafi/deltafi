@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -35,7 +35,7 @@ public interface HasAnnotations {
      * Add all the annotations in the given map to this Result. These entries will be searchable.
      * @param metadata map of entries that will be added to the annotations
      */
-    default void addAnnotation(Map<String, String> metadata) {
+    default void addAnnotations(Map<String, String> metadata) {
         getAnnotations().putAll(metadata);
     }
 
@@ -44,6 +44,4 @@ public interface HasAnnotations {
      * @return Map of annotations
      */
     Map<String, String> getAnnotations();
-
-
 }

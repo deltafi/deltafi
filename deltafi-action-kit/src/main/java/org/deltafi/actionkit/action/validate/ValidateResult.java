@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -30,16 +30,7 @@ import org.jetbrains.annotations.NotNull;
 @Getter
 @EqualsAndHashCode(callSuper = true)
 public class ValidateResult extends Result<ValidateResult> implements ValidateResultType {
-
-    /**
-     * @param context Context of executing action
-     */
     public ValidateResult(@NotNull ActionContext context) {
-        super(context);
-    }
-
-    @Override
-    protected final ActionEventType actionEventType() {
-        return ActionEventType.VALIDATE;
+        super(context, ActionEventType.VALIDATE);
     }
 }

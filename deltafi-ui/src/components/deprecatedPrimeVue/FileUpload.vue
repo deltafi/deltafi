@@ -17,6 +17,7 @@
 -->
 
 <template>
+  <span class="fileupload-page">
     <div v-if="isAdvanced" class="p-fileupload p-fileupload-advanced p-component">
         <div class="p-fileupload-buttonbar">
             <span v-ripple :class="advancedChooseButtonClass" :style="style" tabindex="0" @click="choose" @keydown.enter="choose" @focus="onFocus" @blur="onBlur">
@@ -55,6 +56,7 @@
             <input v-if="!hasFiles" ref="fileInput" type="file" :accept="accept" :disabled="disabled" :multiple="multiple" @change="onFileSelect" @focus="onFocus" @blur="onBlur" />
         </span>
     </div>
+  </span>
 </template>
 
 <script>
@@ -490,55 +492,57 @@ export default {
 </script>
 
 <style lang="scss">
-.p-fileupload-content {
-    position: relative;
-}
+.fileupload-page{
+    .p-fileupload-content {
+        position: relative;
+    }
 
-.p-fileupload-row {
-    display: flex;
-    align-items: center;
-}
+    .p-fileupload-row {
+        display: flex;
+        align-items: center;
+    }
 
-.p-fileupload-row > div {
-    flex: 1 1 auto;
-    width: 25%;
-}
+    .p-fileupload-row > div {
+        flex: 1 1 auto;
+        width: 25%;
+    }
 
-.p-fileupload-row > div:last-child {
-    text-align: right;
-}
+    .p-fileupload-row > div:last-child {
+        text-align: right;
+    }
 
-.p-fileupload-content .p-progressbar {
-    width: 100%;
-    position: absolute;
-    top: 0;
-    left: 0;
-}
+    .p-fileupload-content .p-progressbar {
+        width: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
 
-.p-button.p-fileupload-choose {
-    position: relative;
-    overflow: hidden;
-}
+    .p-button.p-fileupload-choose {
+        position: relative;
+        overflow: hidden;
+    }
 
-.p-button.p-fileupload-choose input[type=file] {
-    display: none;
-}
+    .p-button.p-fileupload-choose input[type=file] {
+        display: none;
+    }
 
-.p-fileupload-choose.p-fileupload-choose-selected input[type=file] {
-    display: none;
-}
+    .p-fileupload-choose.p-fileupload-choose-selected input[type=file] {
+        display: none;
+    }
 
-.p-fileupload-filename {
-    word-break: break-all;
-}
+    .p-fileupload-filename {
+        word-break: break-all;
+    }
 
-.p-fluid .p-fileupload .p-button {
-    width: auto;
-}
+    .p-fluid .p-fileupload .p-button {
+        width: auto;
+    }
 
-.p-fileupload-buttonbar {
-  > * {
-    margin-right: .5rem;
-  }
+    .p-fileupload-buttonbar {
+    > * {
+        margin-right: .5rem;
+    }
+    }
 }
 </style>

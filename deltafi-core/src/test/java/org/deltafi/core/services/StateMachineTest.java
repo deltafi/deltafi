@@ -303,12 +303,12 @@ class StateMachineTest {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", INGRESS_FLOW);
         deltaFile.setStage(DeltaFileStage.EGRESS);
 
-        Action formatAction = Action.newBuilder().state(ActionState.COMPLETE).name(FORMAT_ACTION).build();
-        Action completedAction = Action.newBuilder().state(ActionState.COMPLETE).name("ValidateAction1").build();
-        Action dispatchedAction = Action.newBuilder().state(ActionState.QUEUED).name("ValidateAction2").build();
+        Action formatAction = Action.builder().state(ActionState.COMPLETE).name(FORMAT_ACTION).build();
+        Action completedAction = Action.builder().state(ActionState.COMPLETE).name("ValidateAction1").build();
+        Action dispatchedAction = Action.builder().state(ActionState.QUEUED).name("ValidateAction2").build();
 
         deltaFile.setActions(new ArrayList<>(List.of(formatAction, completedAction, dispatchedAction)));
-        deltaFile.setEgress(Collections.singletonList(Egress.newBuilder().flow(EGRESS_FLOW).build()));
+        deltaFile.setEgress(Collections.singletonList(Egress.builder().flow(EGRESS_FLOW).build()));
 
         EgressFlow egressFlow = EgressFlowMaker.builder().name(EGRESS_FLOW).validateActions(List.of("ValidateAction1", "ValidateAction2")).build().makeEgressFlow();
 
@@ -327,9 +327,9 @@ class StateMachineTest {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", INGRESS_FLOW);
         deltaFile.setStage(DeltaFileStage.EGRESS);
 
-        Action formatAction = Action.newBuilder().state(ActionState.COMPLETE).name(FORMAT_ACTION).build();
-        Action completedAction = Action.newBuilder().state(ActionState.COMPLETE).name("ValidateAction1").type(ActionType.VALIDATE).build();
-        Action dispatchedAction = Action.newBuilder().state(ActionState.COMPLETE).name("ValidateAction2").type(ActionType.VALIDATE).build();
+        Action formatAction = Action.builder().state(ActionState.COMPLETE).name(FORMAT_ACTION).build();
+        Action completedAction = Action.builder().state(ActionState.COMPLETE).name("ValidateAction1").type(ActionType.VALIDATE).build();
+        Action dispatchedAction = Action.builder().state(ActionState.COMPLETE).name("ValidateAction2").type(ActionType.VALIDATE).build();
 
         deltaFile.setActions(new ArrayList<>(Arrays.asList(formatAction, completedAction, dispatchedAction)));
 
@@ -491,7 +491,7 @@ class StateMachineTest {
     void testAdvanceCompleteEgressAction_onePending() throws MissingEgressFlowException {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", INGRESS_FLOW);
         deltaFile.setStage(DeltaFileStage.EGRESS);
-        deltaFile.setEgress(List.of(Egress.newBuilder().flow(EGRESS_FLOW).build(), Egress.newBuilder().flow(EGRESS_FLOW + "2").build()));
+        deltaFile.setEgress(List.of(Egress.builder().flow(EGRESS_FLOW).build(), Egress.builder().flow(EGRESS_FLOW + "2").build()));
 
         deltaFile.queueNewAction("EgressAction2", ActionType.EGRESS, EGRESS_FLOW);
         addCompletedActions(deltaFile, "EnrichAction1", "EnrichAction2", "FormatAction1", "FormatAction2", "ValidateAction1", "ValidateAction2", "EgressAction1");
@@ -523,7 +523,7 @@ class StateMachineTest {
     void testAdvanceCompleteEgressAction_allComplete() throws MissingEgressFlowException {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", INGRESS_FLOW);
         deltaFile.setStage(DeltaFileStage.EGRESS);
-        deltaFile.setEgress(List.of(Egress.newBuilder().flow(EGRESS_FLOW).build(), Egress.newBuilder().flow(EGRESS_FLOW + "2").build()));
+        deltaFile.setEgress(List.of(Egress.builder().flow(EGRESS_FLOW).build(), Egress.builder().flow(EGRESS_FLOW + "2").build()));
 
         addCompletedActions(deltaFile, "EnrichAction1", "EnrichAction2", "FormatAction1", "FormatAction2", "ValidateAction1", "ValidateAction2", "EgressAction1", "EgressAction2");
 
@@ -566,10 +566,10 @@ class StateMachineTest {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", INGRESS_FLOW);
         deltaFile.setStage(DeltaFileStage.ENRICH);
         deltaFile.queueNewAction("ErrorEnrichAction", ActionType.ENRICH, ENRICH_FLOW);
-        deltaFile.errorAction(ActionEvent.newBuilder()
+        deltaFile.errorAction(ActionEvent.builder()
                 .did(deltaFile.getDid())
                 .action("ErrorEnrichAction")
-                .error(ErrorEvent.newBuilder()
+                .error(ErrorEvent.builder()
                         .context("context")
                         .cause("cause")
                         .build())
@@ -584,7 +584,7 @@ class StateMachineTest {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", INGRESS_FLOW);
         deltaFile.setStage(DeltaFileStage.INGRESS);
         deltaFile.queueNewAction("SplitLoadAction", ActionType.LOAD, INGRESS_FLOW);
-        deltaFile.reinjectAction(ActionEvent.newBuilder()
+        deltaFile.reinjectAction(ActionEvent.builder()
                 .did(deltaFile.getDid())
                 .action("SplitLoadAction")
                 .build());
@@ -598,7 +598,7 @@ class StateMachineTest {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", INGRESS_FLOW);
         deltaFile.setStage(DeltaFileStage.INGRESS);
         deltaFile.queueNewAction("FilteredLoadAction", ActionType.LOAD, INGRESS_FLOW);
-        deltaFile.filterAction(ActionEvent.newBuilder()
+        deltaFile.filterAction(ActionEvent.builder()
                 .did(deltaFile.getDid())
                 .action("FilteredLoadAction")
                 .build(), "filtered");

@@ -33,7 +33,7 @@ the set of those fields included in the resume policy.
 For the error cause search, the comparison uses a substring match of the policy `errorSubstring`;
 the other fields require an exact match.
 In addition, the number of attempt for that action must be below the `maxAttempts` value of the resume policy.
-The value for `action` must include prefixed flow name (e.g., `smoke.SmokeFormatAction`). A resume policy for `NoEgressFlowConfiguredAction` is not permitted.
+The value for `action` must include prefixed flow name (e.g., `smoke.SmokeFormatAction`). A resume policy for `NoEgressFlowConfiguredAction` does not require the flow name prefix.
 
 It is possible for more than one resume policy to match an action error. Only the first policy that matches will be applied to the DeltaFile. Because of this, careful consideration should be used when setting the `priority` of your resume policy. An initial  `priority` will be calculated for each resume rule upon creation based on the complexity of the match criteria.
 The more specific the policy, the higher the priority.

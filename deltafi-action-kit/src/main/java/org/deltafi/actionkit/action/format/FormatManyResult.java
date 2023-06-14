@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -18,8 +18,6 @@
 package org.deltafi.actionkit.action.format;
 
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEvent;
@@ -33,17 +31,15 @@ import java.util.List;
  * Specialized result class for FORMAT actions that generate multiple formatted results to be independently egressed.
  * Each FormatResult added to the FormatManyResult will be processed by applicable egress actions.
  */
-@Getter
-@Setter
 @EqualsAndHashCode(callSuper = true)
 public class FormatManyResult extends Result<FormatManyResult> implements FormatResultType {
-    private List<FormatResult> formatResults = new ArrayList<>();
+    private final List<FormatResult> formatResults = new ArrayList<>();
 
     /**
      * @param context Execution context of the action
      */
     public FormatManyResult(@NotNull ActionContext context) {
-        super(context);
+        super(context, ActionEventType.FORMAT_MANY);
     }
 
     /**
@@ -53,14 +49,6 @@ public class FormatManyResult extends Result<FormatManyResult> implements Format
     @SuppressWarnings("unused")
     public void add(FormatResult formatResult) {
         formatResults.add(formatResult);
-    }
-
-    @SuppressWarnings("unused")
-    public List<FormatResult> getFormatResults() { return formatResults; }
-
-    @Override
-    protected final ActionEventType actionEventType() {
-        return ActionEventType.FORMAT_MANY;
     }
 
     @Override

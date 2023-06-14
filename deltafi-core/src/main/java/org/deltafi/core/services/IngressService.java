@@ -196,7 +196,7 @@ public class IngressService {
 
         Content content = contentStorageService.save(did, contentInputStream, filename, mediaType);
 
-        IngressEvent ingressEvent = IngressEvent.newBuilder()
+        IngressEvent ingressEvent = IngressEvent.builder()
                 .did(did)
                 .sourceInfo(sourceInfo)
                 .content(List.of(content))

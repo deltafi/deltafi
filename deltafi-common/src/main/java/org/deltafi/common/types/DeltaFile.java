@@ -37,7 +37,7 @@ import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM_VA
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder(builderMethodName = "newBuilder")
+@Builder
 @Document
 public class DeltaFile {
   @Id
@@ -113,7 +113,7 @@ public class DeltaFile {
 
   public void queueNewAction(String name, ActionType type, String flow) {
     OffsetDateTime now = OffsetDateTime.now();
-    getActions().add(Action.newBuilder()
+    getActions().add(Action.builder()
             .name(name)
             .type(type)
             .flow(flow)

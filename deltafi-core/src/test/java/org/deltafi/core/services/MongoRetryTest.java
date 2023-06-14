@@ -21,12 +21,12 @@ import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.types.*;
 import org.deltafi.core.MockDeltaFiPropertiesService;
-import org.deltafi.core.util.Util;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.configuration.ClockConfiguration;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.repo.DeltaFiPropertiesRepo;
 import org.deltafi.core.repo.DeltaFileRepo;
+import org.deltafi.core.util.Util;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -70,7 +70,9 @@ class MongoRetryTest {
         }
 
         @Bean
-        public DidMutexService didMutexService() { return new DidMutexService(); }
+        public DidMutexService didMutexService() {
+            return new DidMutexService();
+        }
     }
 
     @Test
@@ -79,7 +81,7 @@ class MongoRetryTest {
         String fromAction = "egressAction";
 
         DeltaFile deltaFile = Util.emptyDeltaFile(did, "flow");
-        deltaFile.setActions(new ArrayList<>(Collections.singletonList(Action.newBuilder().name(fromAction).state(ActionState.QUEUED).build())));
+        deltaFile.setActions(new ArrayList<>(Collections.singletonList(Action.builder().name(fromAction).state(ActionState.QUEUED).build())));
         // contrived, but it won't try to save if it's not complete, and the state machine flows aren't populated
         deltaFile.setStage(DeltaFileStage.COMPLETE);
 
@@ -87,7 +89,7 @@ class MongoRetryTest {
 
         Mockito.doThrow(new OptimisticLockingFailureException("failed")).doNothing().when(deltaFileCacheService).save(Mockito.any());
 
-        Assertions.assertDoesNotThrow(() -> deltaFilesService.processResult(ActionEvent.newBuilder().type(ActionEventType.EGRESS).did(did).action(fromAction).start(OffsetDateTime.now()).build()));
+        Assertions.assertDoesNotThrow(() -> deltaFilesService.processResult(ActionEvent.builder().type(ActionEventType.EGRESS).did(did).action(fromAction).start(OffsetDateTime.now()).build()));
     }
 
 }

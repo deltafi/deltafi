@@ -26,7 +26,7 @@
           <router-link v-slot="{ navigate }" to="/events" custom>
             <Button label="View All Events" class="p-button-sm p-button-text mr-2" @click="navigate(); closeNotificationsPanel();"></Button>
           </router-link>
-          <Button v-if="$hasPermission('EventAcknowledge')" label="Acknowledge All" :disabled="notificationCount == 0" icon="fas fa-solid fa-thumbs-up" class="p-button-sm" @click="onAckAll()"></Button>
+          <Button v-if="$hasPermission('EventAcknowledge')" label="Acknowledge All" :loading="loading" :disabled="notificationCount == 0" icon="fas fa-solid fa-thumbs-up" class="p-button-sm" @click="onAckAll()"></Button>
         </div>
         <div v-if="notifications.length > 0">
           <div v-for="msg in notifications" :key="msg._id" :class="severityClass(msg.severity)" @click="showEvent(msg, $event)">
@@ -69,6 +69,7 @@ const { notifications, fetchNotifications, ackNotification, ackAllNotifications 
 const notificationOverlayPanel = ref(null);
 const showEventDialog = ref(false);
 const activeEvent = ref({});
+const loading = ref(false);
 
 serverSentEvents.addEventListener("notificationCount", (event) => {
   if (notificationCount.value !== parseInt(event.data)) fetchNotifications();
@@ -109,7 +110,9 @@ const onAck = async (id) => {
 }
 
 const onAckAll = async () => {
+  loading.value = true;
   await ackAllNotifications();
+  loading.value = false;
   closeNotificationsPanel();
 }
 

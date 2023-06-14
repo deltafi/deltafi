@@ -47,20 +47,15 @@ public class FilterResult extends Result<FilterResult> implements EgressResultTy
      * @param filteredCause Message explaining the reason for the filtered action
      */
     public FilterResult(@NotNull ActionContext context, @NotNull String filteredCause) {
-        super(context);
+        super(context, ActionEventType.FILTER);
 
         this.filteredCause = filteredCause;
     }
 
     @Override
-    protected final ActionEventType actionEventType() {
-        return ActionEventType.FILTER;
-    }
-
-    @Override
     public final ActionEvent toEvent() {
         ActionEvent event = super.toEvent();
-        event.setFilter(FilterEvent.newBuilder().message(filteredCause).build());
+        event.setFilter(FilterEvent.builder().message(filteredCause).build());
         return event;
     }
 }

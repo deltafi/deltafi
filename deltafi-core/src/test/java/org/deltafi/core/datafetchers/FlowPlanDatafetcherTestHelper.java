@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -176,7 +176,7 @@ public class FlowPlanDatafetcherTestHelper {
     }
 
     public static boolean savePluginVariables(DgsQueryExecutor dgsQueryExecutor) {
-        List<Variable> variableInputs = List.of(Variable.newBuilder().name("var").defaultValue("default").required(false).description("description").dataType(VariableDataType.STRING).build());
+        List<Variable> variableInputs = List.of(Variable.builder().name("var").defaultValue("default").required(false).description("description").dataType(VariableDataType.STRING).build());
         PluginVariablesInput pluginVariablesInput = PluginVariablesInput.newBuilder().sourcePlugin(PLUGIN_COORDINATES).variables(variableInputs).build();
         return executeQuery(dgsQueryExecutor, SavePluginVariablesGraphQLQuery.newRequest().pluginVariablesInput(pluginVariablesInput).build());
     }

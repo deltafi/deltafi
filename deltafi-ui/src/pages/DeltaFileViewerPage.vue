@@ -83,7 +83,9 @@
     <ConfirmDialog />
     <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="[did]" @acknowledged="onAcknowledged" />
     <MetadataDialog ref="metadataDialog" :did="[did]" @update="loadDeltaFileData" />
-    <CumulativeMetadataDialog ref="cumulativeMetadataDialog" :metadata="allMetadata" />
+    <DialogTemplate component-name="MetadataViewer" header="Metadata" :metadata="{ ['All Metadata']: allMetadata }" :deleted-metadata="deletedMetadata">
+      <span id="cumulativeMetadataDialog" />
+    </DialogTemplate>
     <AnnotateDialog ref="annotateDialog" :dids="[did]" @refresh-page="loadDeltaFileData" />
     <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="autoResumeSelected">
       <span id="autoResumeDialog" />
@@ -106,7 +108,6 @@ import PageHeader from "@/components/PageHeader.vue";
 import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
 import HighlightedCode from "@/components/HighlightedCode.vue";
 import MetadataDialog from "@/components/MetadataDialog.vue";
-import CumulativeMetadataDialog from "@/components/CumulativeMetadataDialog.vue";
 import useDeltaFiles from "@/composables/useDeltaFiles";
 import useErrorCount from "@/composables/useErrorCount";
 import useNotifications from "@/composables/useNotifications";
@@ -145,7 +146,6 @@ const rawJSONDialog = reactive({
   header: null,
   body: null,
 });
-const cumulativeMetadataDialog = ref();
 const metadataDialog = ref();
 const menu = ref();
 const staticMenuItems = reactive([
@@ -161,7 +161,7 @@ const staticMenuItems = reactive([
     icon: "fas fa-database fa-fw",
     visible: () => hasMetadata.value,
     command: () => {
-      cumulativeMetadataDialog.value.showDialog();
+      document.getElementById("cumulativeMetadataDialog").click();
     },
   },
   {
@@ -286,6 +286,16 @@ const allMetadata = computed(() => {
   return Object.entries(deltaFile.metadata).map(([key, value]) => ({ key, value }));
 });
 
+const deletedMetadata = computed(() => {
+  if (!loaded.value) return {};
+  let deletedMetadataList = _.filter(deltaFile.actions, function (o) {
+    return o.deleteMetadataKeys.length > 0;
+  });
+
+  if (_.isEmpty(deletedMetadataList)) return null;
+  return deletedMetadataList;
+});
+
 const validDID = computed(() => {
   return uuidRegex.test(did.value);
 });
@@ -393,7 +403,7 @@ const onCancelClick = () => {
     accept: () => {
       onCancel();
     },
-    reject: () => { },
+    reject: () => {},
   });
 };
 

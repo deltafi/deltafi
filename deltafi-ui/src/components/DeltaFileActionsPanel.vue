@@ -47,9 +47,9 @@
         <Column header="Metadata" class="metadata-column">
           <template #body="{ data: action }">
             <span v-if="action.hasOwnProperty('metadata') && Object.keys(action.metadata).length > 0">
-              <MetadataViewer :metadata-references="{ [action.name]: metadataAsArray(action.metadata) }">
+              <DialogTemplate component-name="MetadataViewer" header="Metadata" :metadata="{ [action.name]: metadataAsArray(action.metadata) }" :deleted-metadata="deletedMetadata(action.name, action.deleteMetadataKeys)">
                 <Button icon="fas fa-table" label="View" class="content-button p-button-link" />
-              </MetadataViewer>
+              </DialogTemplate>
             </span>
           </template>
         </Column>
@@ -60,19 +60,17 @@
 </template>
 
 <script setup>
-import { computed, reactive, defineProps, inject } from "vue";
-
-import Column from "primevue/column";
-import DataTable from "primevue/datatable";
-import Button from "primevue/button";
-
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import ContentDialog from "@/components/ContentDialog.vue";
-import MetadataViewer from "@/components/MetadataViewer.vue";
+import DialogTemplate from "@/components/DialogTemplate.vue";
 import ErrorViewerDialog from "@/components/errors/ErrorViewerDialog.vue";
 import Timestamp from "@/components/Timestamp.vue";
-
 import useUtilFunctions from "@/composables/useUtilFunctions";
+import { computed, reactive, defineProps, inject } from "vue";
+
+import Button from "primevue/button";
+import Column from "primevue/column";
+import DataTable from "primevue/datatable";
 
 const hasPermission = inject("hasPermission");
 
@@ -91,8 +89,8 @@ const errorViewer = reactive({
 });
 
 const contentDeleted = computed(() => {
-  return (deltaFile.contentDeleted !== null);
-})
+  return deltaFile.contentDeleted !== null;
+});
 
 const actions = computed(() => {
   return deltaFile.actions.map((action) => {
@@ -110,6 +108,15 @@ const metadataAsArray = (metadataObject) => {
   return Object.entries(metadataObject).map(([key, value]) => ({ key, value }));
 };
 
+const deletedMetadata = (deletedMetadataActionName) => {
+  let deletedMetadataList = _.filter(deltaFile.actions, function (o) {
+    return o.deleteMetadataKeys.length > 0 && _.isEqual(o.name, deletedMetadataActionName);
+  });
+
+  if (_.isEmpty(deletedMetadataList)) return null;
+  return deletedMetadataList;
+};
+
 const rowClass = (action) => {
   if (action.state === "ERROR") return "table-danger action-error";
   if (action.state === "RETRIED") return "table-warning action-error";
@@ -123,7 +130,6 @@ const rowClick = (event) => {
   errorViewer.visible = true;
   errorViewer.action = action;
 };
-
 </script>
 
 <style lang="scss">

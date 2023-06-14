@@ -53,7 +53,7 @@ task publishToMavenLocal(type: Exec) {
 }
 
 clean.dependsOn cleanDist
-build.dependsOn poetryBuild
+assemble.dependsOn poetryBuild
 
 test {
     it.dependsOn testPython

@@ -46,7 +46,7 @@ public class RoteEnrichAction extends EnrichAction<RoteEnrichParameters> {
         }
 
         if (null != params.getAnnotations()) {
-            result.addAnnotation(params.getAnnotations());
+            result.addAnnotations(params.getAnnotations());
         }
 
         return result;

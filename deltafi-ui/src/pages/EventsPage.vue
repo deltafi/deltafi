@@ -334,6 +334,10 @@ watch(endTimeDate, () => {
     border-color: #d00f27;
   }
 
+  .vdpr-datepicker__switch {
+    margin-top: 6px;
+  }
+
   .events-panel {
     .p-panel-header {
       padding: 0 1.25rem;

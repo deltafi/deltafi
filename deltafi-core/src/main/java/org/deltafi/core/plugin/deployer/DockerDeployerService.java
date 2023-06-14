@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -97,7 +97,7 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
                 .exec();
 
         if (containers == null || containers.isEmpty()) {
-            return Result.newBuilder().success(false).errors(List.of("No container was found for " + pluginCoordinates.groupAndArtifact())).build();
+            return Result.builder().success(false).errors(List.of("No container was found for " + pluginCoordinates.groupAndArtifact())).build();
         }
 
         containers.forEach(this::stopAndRemoveContainer);

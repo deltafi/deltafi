@@ -1,4 +1,4 @@
-/**
+/*
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -20,10 +20,10 @@ package org.deltafi.actionkit.action.egress;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import org.deltafi.common.types.Metric;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEventType;
+import org.deltafi.common.types.Metric;
 import org.jetbrains.annotations.NotNull;
 
 import static org.deltafi.common.constant.DeltaFiConstants.BYTES_OUT;
@@ -42,14 +42,10 @@ public class EgressResult extends Result<EgressResult> implements EgressResultTy
      */
     @Builder
     public EgressResult(@NotNull ActionContext context, String destination, long bytesEgressed) {
-        super(context);
+        super(context, ActionEventType.EGRESS);
+
         String endpoint = destination.replace(';', '_').replace('=', '_');
         add(new Metric(FILES_OUT, 1).addTag("endpoint", endpoint));
         add(new Metric(BYTES_OUT, bytesEgressed).addTag("endpoint", endpoint));
-    }
-
-    @Override
-    protected final ActionEventType actionEventType() {
-        return ActionEventType.EGRESS;
     }
 }
