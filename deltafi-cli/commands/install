@@ -38,6 +38,24 @@ set -- "${POSITIONAL[@]}"
 ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
 
+_base64() {
+  local TEMPFILE
+  if _tool_exists mktemp; then
+    TEMPFILE=$(mktemp)
+  else
+    TEMPFILE=/tmp/base64.foo
+    touch $TEMPFILE
+  fi
+
+  local BASE64_ARGS=""
+  if base64 -i "$TEMPFILE" -w0 > /dev/null 2>&1; then
+    BASE64_ARGS="-w0"
+  fi
+
+  rm -f "$TEMPFILE"
+  base64 $BASE64_ARGS
+}
+
 _k8s_add_namespace() {
   local ns=$1
   if ! ${KUBECTL_BIN} get namespace "$ns" > /dev/null 2>&1 ; then
@@ -70,7 +88,7 @@ metadata:
 data:
 $(while (( "$#" )); do
 local pass
-pass=$(printf '%s' "$2" | base64 -w0)
+pass=$(printf '%s' "$2" | _base64)
 echo "  $1: $pass"
 shift 2
 done)
@@ -81,7 +99,7 @@ EOF
 
 _random_password() {
   local size=${1:-20}
-  printf '%s%s%s' "$(printf '%s' $RANDOM | md5sum | head -c 20)" "$(printf '%s' $RANDOM | md5sum | head -c 20)" "$(printf '%s' $RANDOM | md5sum | head -c 20)" | base64 -w0 | head -c "$size"
+  printf '%s%s%s' "$(printf '%s' $RANDOM | md5sum | head -c 20)" "$(printf '%s' $RANDOM | md5sum | head -c 20)" "$(printf '%s' $RANDOM | md5sum | head -c 20)" | _base64 | head -c "$size"
 }
 
 _k8s_prerequisites() {

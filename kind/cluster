@@ -140,6 +140,24 @@ PV_DIR=$BASE_PATH/data
 SUDO=$(which sudo)
 KIND_DIR="${ROOT}/deltafi/kind"
 
+_base64() {
+  local TEMPFILE
+  if _tool_exists mktemp; then
+    TEMPFILE=$(mktemp)
+  else
+    TEMPFILE=/tmp/base64.foo
+    touch $TEMPFILE
+  fi
+
+  local BASE64_ARGS=""
+  if base64 -i "$TEMPFILE" -w0 > /dev/null 2>&1; then
+    BASE64_ARGS="-w0"
+  fi
+
+  rm -f "$TEMPFILE"
+  base64 $BASE64_ARGS
+}
+
 if [[ "$(basename "$0")" == "deltafi" ]]; then
   # Deltafi wrapper mode
 
@@ -517,7 +535,7 @@ _k8s_add_secret() {
   local name=$1
   shift
   if ! ${KUBECTL} get secret "$name" > /dev/null 2>&1; then
-    cat <<EOF | ${KUBECTL} apply -f -
+    cat <<EOF | _conditional "Create secret $name" _annotated_subshell ${KUBECTL} apply -f -
 apiVersion: v1
 kind: Secret
 type: Opaque
@@ -527,7 +545,7 @@ metadata:
 data:
 $(while (( "$#" )); do
 local pass
-pass=$(printf '%s' "$2" | base64 -w0)
+pass=$(printf '%s' "$2" | _base64 )
 echo "  $1: $pass"
 shift 2
 done)
@@ -661,6 +679,8 @@ _k8s_init() {
   _k8s_add_pv egress-sink "${PV_STORAGE}" 1000
   _k8s_add_pv auth "${PV_STORAGE}" 1000
   _k8s_add_pv docker-registry "${PV_STORAGE}" 1000
+  mkdir -p "${PV_DIR}/docker-registry/docker/registry/v2/repositories"
+  mkdir -p "${PV_DIR}/docker-registry/docker/registry/v2/blobs"
   _k8s_add_secret "deltafi-docker-registry-secret" \
     "password" "password" \
     "haSharedSecret" "password" \
