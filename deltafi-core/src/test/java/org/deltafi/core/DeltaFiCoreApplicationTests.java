@@ -1095,6 +1095,14 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void testAutoResumeForNoEgressFlowConfigured() {
+		String did = UUID.randomUUID().toString();
+		deltaFileRepo.save(postEnrichNoEgressDeltaFile(did, MONGO_NOW.minusDays(1)));
+		assertEquals(1, deltaFilesService.autoResume(MONGO_NOW));
+		verifyActionEventResults(postEnrichNoEgressResumedDeltaFile(did, MONGO_NOW.minusDays(1)), "sampleEgress.SampleFormatAction");
+	}
+
+	@Test
 	void testResumeClearsAcknowledged() throws IOException {
 		String did = UUID.randomUUID().toString();
 		DeltaFile postErrorDeltaFile = postErrorDeltaFile(did);

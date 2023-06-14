@@ -48,9 +48,9 @@ class ResumePolicyTest {
         good.setAction("smoke.SmokeFormatAction");
         assertTrue(good.validate().isEmpty());
 
-        ResumePolicy notPermitted = getValid();
-        notPermitted.setAction("smoke.NoEgressFlowConfiguredAction");
-        assertEquals(notPermitted.validate(), List.of(ResumePolicy.ACTION_NOT_PERMITTED));
+        ResumePolicy flowPrefixNotRequired = getValid();
+        flowPrefixNotRequired.setAction("NoEgressFlowConfiguredAction");
+        assertTrue(flowPrefixNotRequired.validate().isEmpty());
 
         ResumePolicy invalid = getValid();
         invalid.setAction("ActionNameWithoutFlowPrefix");

@@ -447,6 +447,8 @@ public class DeltaFilesService {
         ActionConfiguration actionConfiguration = actionConfiguration(event.getAction(), deltaFile);
         if (actionConfiguration != null) {
             resumeDetails = resumePolicyService.getAutoResumeDelay(deltaFile, event, actionConfiguration.getActionType().name());
+        } else if (event.getAction().equals(NO_EGRESS_FLOW_CONFIGURED_ACTION)) {
+            resumeDetails = resumePolicyService.getAutoResumeDelay(deltaFile, event, ActionEventType.UNKNOWN.name());
         }
         resumeDetails.ifPresentOrElse(
                 details -> deltaFile.errorAction(event, details.name(), details.delay()),

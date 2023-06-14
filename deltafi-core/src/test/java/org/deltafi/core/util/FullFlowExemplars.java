@@ -118,6 +118,29 @@ public class FullFlowExemplars {
         return deltaFile;
     }
 
+    public static DeltaFile postEnrichNoEgressDeltaFile(String did, OffsetDateTime nextExecution) {
+        DeltaFile deltaFile = postDomainDeltaFile(did);
+        deltaFile.completeAction("sampleEnrich.SampleEnrichAction", START_TIME, STOP_TIME);
+        deltaFile.addEnrichment("sampleEnrichment", "enrichmentData");
+        deltaFile.addAnnotations(Map.of("first", "one", "second", "two"));
+        // now the error...
+        deltaFile.setStage(DeltaFileStage.ERROR);
+        deltaFile.queueNewAction(DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION, ActionType.UNKNOWN, "MISSING");
+        deltaFile.errorAction(DeltaFilesService.buildNoEgressConfiguredErrorEvent(deltaFile, OffsetDateTime.now()));
+        deltaFile.setNextAutoResume(nextExecution);
+        deltaFile.setNextAutoResumeReason("reason");
+        return deltaFile;
+    }
+
+    public static DeltaFile postEnrichNoEgressResumedDeltaFile(String did, OffsetDateTime nextExecution) {
+        DeltaFile deltaFile = postEnrichNoEgressDeltaFile(did, nextExecution);
+        deltaFile.setStage(DeltaFileStage.EGRESS);
+        deltaFile.retryErrors();
+        deltaFile.queueAction("sampleEgress.SampleFormatAction", ActionType.FORMAT, "sampleEgress");
+        deltaFile.addEgressFlow(EGRESS_FLOW_NAME);
+        return deltaFile;
+    }
+
     public static DeltaFile postEnrichDeltaFileWithUnicodeAnnotation(String did) {
         DeltaFile deltaFile = postEnrichDeltaFile(did);
         deltaFile.addAnnotationIfAbsent("\u0101\u0202", "\u0303\u0404");

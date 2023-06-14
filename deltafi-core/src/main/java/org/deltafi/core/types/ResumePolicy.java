@@ -25,7 +25,6 @@ import java.util.List;
 import static org.deltafi.common.constant.DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION;
 
 public class ResumePolicy extends org.deltafi.core.generated.types.ResumePolicy {
-    public static final String ACTION_NOT_PERMITTED = "resume policy not permitted for this action";
     public static final String INVALID_ACTION = "action must include a flow name prefix";
     public static final String INVALID_DELAY = "delay must not be negative";
     public static final String INVALID_MAX_ATTEMPTS = "maxAttempts must be greater than 1";
@@ -66,9 +65,8 @@ public class ResumePolicy extends org.deltafi.core.generated.types.ResumePolicy 
         }
 
         if (StringUtils.isNotBlank(getAction())) {
-            if (getAction().contains(NO_EGRESS_FLOW_CONFIGURED_ACTION)) {
-                errors.add(ACTION_NOT_PERMITTED);
-            } else if (!getAction().contains(".")) {
+            if (!(NO_EGRESS_FLOW_CONFIGURED_ACTION.equals(getAction())
+                    || getAction().contains("."))) {
                 errors.add(INVALID_ACTION);
             }
         }
