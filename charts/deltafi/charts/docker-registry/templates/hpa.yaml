@@ -1,3 +1,4 @@
+{{- if .Values.enabled }}
 {{- if .Values.autoscaling.enabled }}
 {{- $apiVersions := .Capabilities.APIVersions -}}
 {{- if $apiVersions.Has "autoscaling/v2" }}
@@ -37,6 +38,7 @@ spec:
 {{- with .Values.autoscaling.behavior }}
   behavior:
     {{- toYaml . | nindent 4 }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}

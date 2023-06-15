@@ -385,6 +385,7 @@ graphite:
     interface: TCP
 
 docker-registry:
+  enabled: false
   image:
     tag: 2.8.1
   persistence:

@@ -1,3 +1,4 @@
+{{- if .Values.enabled }}
 {{- if .Values.ingress.enabled -}}
 {{- $apiVersions := .Capabilities.APIVersions -}}
 {{- $serviceName := include "docker-registry.fullname" . -}}
@@ -48,3 +49,4 @@ spec:
 {{ toYaml .Values.ingress.tls | indent 4 }}
   {{- end -}}
 {{- end -}}
+{{- end }}

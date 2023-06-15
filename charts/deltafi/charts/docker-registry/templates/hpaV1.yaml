@@ -1,3 +1,4 @@
+{{- if .Values.enabled }}
 {{- if .Values.autoscaling.enabled }}
 {{- $apiVersions := .Capabilities.APIVersions -}}
 {{- if not ($apiVersions.Has "autoscaling/v2") }}
@@ -18,5 +19,6 @@ spec:
   minReplicas: {{ .Values.autoscaling.minReplicas }}
   maxReplicas: {{ .Values.autoscaling.maxReplicas }}
   targetCPUUtilizationPercentage: {{ .Values.autoscaling.targetCPUUtilizationPercentage }}
+{{- end }}
 {{- end }}
 {{- end }}

@@ -1,3 +1,4 @@
+{{- if .Values.enabled }}
 {{- if .Values.garbageCollect.enabled }}
 apiVersion: batch/v1
 kind: CronJob
@@ -64,4 +65,5 @@ spec:
           tolerations: {{ toYaml .Values.tolerations | nindent 12 }}
           {{- end }}
           volumes: {{ include "docker-registry.volumes" . | nindent 12 }}
+{{- end }}
 {{- end }}

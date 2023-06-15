@@ -1,3 +1,4 @@
+{{- if .Values.enabled }}
 {{- if and .Values.metrics.enabled .Values.metrics.serviceMonitor.enabled -}}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -18,4 +19,5 @@ spec:
   endpoints:
   - port: http-metrics
     interval: 15s
+{{- end }}
 {{- end }}
