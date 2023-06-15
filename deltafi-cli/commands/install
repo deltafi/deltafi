@@ -38,6 +38,10 @@ set -- "${POSITIONAL[@]}"
 ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
 
+_tool_exists() {
+  command -v "$1" &> /dev/null
+}
+
 _base64() {
   local TEMPFILE
   if _tool_exists mktemp; then
