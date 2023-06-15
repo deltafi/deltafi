@@ -5,6 +5,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.0.0-RC7] - 2023-06-15
+
+### Added
+- Registry chart has an enabled flag
+
+### Changed
+- Registry is disabled by default
+
+### Fixed
+- UI: CSS text alignment fix for buttons without icons.
+- CLI: Fixed bug in install command resulting in `command not found` error message.
+
 ## [1.0.0-RC6] - 2023-06-15
 
 ### Added
@@ -1878,7 +1890,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC6...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC7...main
+[1.0.0-RC7]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC6...1.0.0-RC7
 [1.0.0-RC6]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC5...1.0.0-RC6
 [1.0.0-RC5]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC3...1.0.0-RC5
 [1.0.0-RC3]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC2...1.0.0-RC3
