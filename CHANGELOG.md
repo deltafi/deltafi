@@ -5,6 +5,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.0.0-RC6] - 2023-06-15
+
+### Added
+- UI now displays deleteMetadataKeys in metadata viewer for each Action 
+- UI: Added loading indicator to "Acknowledge All" button in Notifications panel.
+
+### Changed
+- The `NoEgressFlowConfiguredAction` error can now be auto resumed
+- Created default auto resume policies for no egress flow configured and storage read errors
+
+### Fixed
+- Fixed css issues with new datepicker component used in search page and events page
+- Fixed file upload and metadata buttons css issues on delta file upload page.
+- Fixed warnings in JS console on Errors Page being thrown by acknowledged expecting Boolean got Undefined bug. 
+- Bug with base64 on Linux in kind/cluster (-w flag default differs between OSes)
+- Fix issue with generics that always assigned the first generic type found to ActionParameters class causing Jackson serialization issues
+- KinD: Add subdirectories needed for registry cleanup jobs
+
+### Tech-Debt/Refactor
+- Make license headers not javadoc
+- Refactor Result and Event classes
+- Standardize builder method name to "builder"
+
+### Upgrade and Migration
+- Update docker base images:
+  - deltafi-python-base:1.0.0
+  - deltafi-spring-base:1.0.0
+  - deltafi-ruby-base:1.0.0
+  - nginx:1.25.1-alpine
+  - alpine:3.18.2
+
 ## [1.0.0-RC5] - 2023-06-12
 
 ### Added
@@ -1847,7 +1878,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC5...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC6...main
+[1.0.0-RC6]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC5...1.0.0-RC6
 [1.0.0-RC5]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC3...1.0.0-RC5
 [1.0.0-RC3]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC2...1.0.0-RC3
 [1.0.0-RC2]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC1...1.0.0-RC2
