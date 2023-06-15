@@ -146,3 +146,7 @@ td.did-column {
 .p-progressbar .p-progressbar-label {
   color: #212529 !important;
 }
+
+span.p-button-icon:empty {
+  display: none;
+}
