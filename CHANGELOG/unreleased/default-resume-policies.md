@@ -5,6 +5,7 @@ Document any changes on this branch here.
 
 ### Changed
 - The `NoEgressFlowConfiguredAction` error can now be auto resumed
+- Created default auto resume policies for no egress flow configured and storage read errors
 
 ### Fixed
 - 
@@ -22,4 +23,3 @@ Document any changes on this branch here.
 - 
 
 ### Upgrade and Migration
-- Created default auto resume policies for no egress flow configued and storage read errors
