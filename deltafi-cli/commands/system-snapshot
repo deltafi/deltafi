@@ -176,6 +176,7 @@ ALL_SNAPSHOT_FIELDS="id
             }
             resumePolicies {
               id
+              name
               errorSubstring
               flow
               action
@@ -263,7 +264,7 @@ else
   if [[ "$DGS_ERRORS" != "" ]]; then
     log_failed "$DGS_ERRORS"
   else
-    cat ${TMPFILE} | jq -r "${EXTRACT_PATH}"
+    cat ${TMPFILE} | jq -rM "${EXTRACT_PATH}"
   fi
 fi
 

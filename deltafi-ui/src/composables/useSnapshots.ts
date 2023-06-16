@@ -61,6 +61,7 @@ export default function useSystemSnapshots() {
         },
         resumePolicies: {
           id: true,
+          name: true,
           errorSubstring: true,
           flow: true,
           action: true,
