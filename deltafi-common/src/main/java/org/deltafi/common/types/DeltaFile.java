@@ -472,7 +472,10 @@ public class DeltaFile {
   }
 
   public @NotNull List<Enrichment> getEnrichments() {
-    return enrichments == null ? Collections.emptyList() : enrichments;
+    if (enrichments == null) {
+      enrichments = new ArrayList<>();
+    }
+    return enrichments;
   }
 
   public @NotNull List<Egress> getEgress() {

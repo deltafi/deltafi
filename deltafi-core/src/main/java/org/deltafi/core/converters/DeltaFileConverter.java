@@ -30,6 +30,7 @@ import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
 import org.springframework.data.mongodb.core.mapping.event.AfterConvertCallback;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -265,7 +266,7 @@ public class DeltaFileConverter implements AfterConvertCallback<DeltaFile> {
     }
 
     private void updateToV5(DeltaFile deltaFile, Document document) {
-        deltaFile.setEnrichments(uncheckedGetList(document, "enrichment"));
+        deltaFile.setEnrichments(new ArrayList<>(uncheckedGetList(document, "enrichment")));
     }
 
     private List<Content> convertDocumentListToContentList(List<Document> documentList) {
