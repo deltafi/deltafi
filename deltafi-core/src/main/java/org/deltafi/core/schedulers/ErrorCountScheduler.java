@@ -30,6 +30,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.Set;
 
 @ConditionalOnProperty(value = "schedule.errorCount", havingValue = "true", matchIfMissing = true)
@@ -52,7 +53,7 @@ public class ErrorCountScheduler {
     }
 
     public void populateErrorCounts() {
-        Set<String> flowNames = ingressFlowService.maxErrorsPerFlow().keySet();
+        Set<String> flowNames = new HashSet<>(ingressFlowService.maxErrorsPerFlow().keySet());
         flowNames.addAll(transformFlowService.maxErrorsPerFlow().keySet());
         errorCountService.populateErrorCounts(flowNames);
     }
