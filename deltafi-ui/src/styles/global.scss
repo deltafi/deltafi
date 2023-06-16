@@ -147,6 +147,9 @@ td.did-column {
   color: #212529 !important;
 }
 
-span.p-button-icon:empty {
-  display: none;
+.p-confirm-popup-accept,
+.p-confirm-popup-reject {
+  span.p-button-icon:empty {
+    display: none;
+  }
 }
