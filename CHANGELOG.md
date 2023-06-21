@@ -5,6 +5,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.0.0] - 2023-06-21
+
+### Fixed
+- Querying for the distinct annotation keys no longer fails if a DeltaFile is missing the `annotationKeys` field
+
+### Deprecated
+- All releases prior to 1.0.0 should now be considered deprecated and
+  no longer supported.  All bug fixes and features will be only added
+  to the 1.0.0 tree.
+
+### Upgrade and Migration
+- For upgrades to 1.0.0, the `deltafi-passthrough` plugin flows should be disabled
+  and the plugin should be uninstalled.  The plugin is now built-in and the external
+  plugin will cause conflicts.  This is not a concern for new installations
+
 ## [1.0.0-RC8] - 2023-06-19
 
 ### Added
@@ -1896,7 +1911,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC8...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0...main
+[1.0.0]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC8...1.0.0
 [1.0.0-RC8]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC7...1.0.0-RC8
 [1.0.0-RC7]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC6...1.0.0-RC7
 [1.0.0-RC6]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC5...1.0.0-RC6
