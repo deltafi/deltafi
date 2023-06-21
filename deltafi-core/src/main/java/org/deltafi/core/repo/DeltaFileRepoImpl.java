@@ -21,6 +21,7 @@ import com.google.common.collect.Lists;
 import com.mongodb.client.MongoCollection;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.BsonValue;
 import org.bson.Document;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.types.ActionState;
@@ -907,11 +908,18 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             query.addCriteria(Criteria.where(DOMAINS_NAME).is(domain));
         }
 
-        return mongoTemplate.findDistinct(query, ANNOTATION_KEYS, DeltaFile.class, Object.class).stream()
-                .filter(Objects::nonNull)
-                .filter(o -> o instanceof String)
-                .map(o -> (String) o)
+        return mongoTemplate.findDistinct(query, ANNOTATION_KEYS, DeltaFile.class, BsonValue.class).stream()
+                .filter(this::filterStrings)
+                .map(this::bsonValueAsString)
                 .toList();
+    }
+
+    private boolean filterStrings(BsonValue bsonValue) {
+        return bsonValue != null && bsonValue.isString();
+    }
+
+    private String bsonValueAsString(BsonValue bsonValue) {
+        return bsonValue.asString().getValue();
     }
 
     @Override

@@ -2835,6 +2835,43 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void testAnnotationKeys() {
+		assertThat(deltaFilesService.annotationKeys(null)).isEmpty();
+
+		DeltaFile nullKeys = new DeltaFile();
+		nullKeys.setDid("nullKeys");
+		nullKeys.setAnnotationKeys(null);
+		deltaFileRepo.save(nullKeys);
+
+		assertThat(deltaFilesService.annotationKeys(null)).isEmpty();
+		assertThat(deltaFilesService.annotationKeys("domain")).isEmpty();
+
+		DeltaFile emptyKeys = new DeltaFile();
+		emptyKeys.setDid("emptyKeys");
+		emptyKeys.setAnnotationKeys(Set.of());
+		deltaFileRepo.save(emptyKeys);
+
+		assertThat(deltaFilesService.annotationKeys(null)).isEmpty();
+		assertThat(deltaFilesService.annotationKeys("domain")).isEmpty();
+
+		DeltaFile withKeys = new DeltaFile();
+		withKeys.setDid("withKeys");
+		withKeys.setDomains(List.of(new Domain("domain", "", "")));
+		withKeys.setAnnotationKeys(Set.of("a", "b"));
+
+		DeltaFile otherDomain = new DeltaFile();
+		otherDomain.setDid("otherDomain");
+		otherDomain.setDomains(List.of(new Domain("otherDomain", "", "")));
+		otherDomain.setAnnotationKeys(Set.of("b", "c", "d"));
+		deltaFileRepo.saveAll(List.of(withKeys, otherDomain));
+
+		assertThat(deltaFilesService.annotationKeys(null)).hasSize(4).contains("a", "b", "c", "d");
+		assertThat(deltaFilesService.annotationKeys("domain")).hasSize(2).contains("a", "b");
+		assertThat(deltaFilesService.annotationKeys("otherDomain")).hasSize(3).contains("b", "c", "d");
+		assertThat(deltaFilesService.annotationKeys("miss")).isEmpty();
+	}
+
+	@Test
 	void deleteTransformFlowPlanByPlugin() {
 		clearForFlowTests();
 		PluginCoordinates pluginToDelete = PluginCoordinates.builder().groupId("group").artifactId("deltafi-actions").version("1.0.0").build();
