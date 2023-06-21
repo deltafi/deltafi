@@ -29,6 +29,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -74,7 +75,7 @@ public class IngressFlowService extends FlowService<IngressFlowPlan, IngressFlow
      * logs a warning and returns false. If the update is successful, the method refreshes the
      * cache and returns true.
      *
-     * @param flowName The name of the flow to update, represented as a {@code String}.
+     * @param flowName  The name of the flow to update, represented as a {@code String}.
      * @param maxErrors The new maximum number of errors to be set for the specified flow, as an {@code int}.
      * @return A {@code boolean} value indicating whether the update was successful (true) or not (false).
      */
@@ -114,4 +115,12 @@ public class IngressFlowService extends FlowService<IngressFlowPlan, IngressFlow
                 .filter(s -> s.getMaxErrors() >= 0 && s.getCurrErrors() > s.getMaxErrors())
                 .toList();
     }
+
+    public Set<String> flowErrorsExceeded() {
+        return ingressFlowErrorsExceeded()
+                .stream()
+                .map(f -> f.getName())
+                .collect(Collectors.toSet());
+    }
+
 }

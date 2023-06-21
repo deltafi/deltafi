@@ -55,6 +55,10 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class DeltaFilesServiceTest {
+
+    private static final String ERRORS_EXCEEDED_TRANSFORM_FLOW = "errorsExceededFlow";
+    private static final String GOOD_INGRESS_FLOW = "goodIngressFlow";
+
     private final IngressFlowService ingressFlowService;
     private final EgressFlowService egressFlowService;
     private final TransformFlowService transformFlowService;
@@ -72,13 +76,15 @@ class DeltaFilesServiceTest {
 
     @Captor
     ArgumentCaptor<List<String>> stringListCaptor;
+    @Captor
+    ArgumentCaptor<DeltaFile> deltaFileCaptor;
 
     DeltaFilesServiceTest(@Mock IngressFlowService ingressFlowService, @Mock EnrichFlowService enrichFlowService,
-            @Mock EgressFlowService egressFlowService, @Mock TransformFlowService transformFlowService, @Mock StateMachine stateMachine,
-            @Mock DeltaFileRepo deltaFileRepo, @Mock ActionEventQueue actionEventQueue, @Mock ResumePolicyService resumePolicyService,
-            @Mock ContentStorageService contentStorageService, @Mock MetricService metricService,
-            @Mock CoreAuditLogger coreAuditLogger, @Mock IdentityService identityService,
-            @Mock DeltaFileCacheService deltaFileCacheService) {
+                          @Mock EgressFlowService egressFlowService, @Mock TransformFlowService transformFlowService, @Mock StateMachine stateMachine,
+                          @Mock DeltaFileRepo deltaFileRepo, @Mock ActionEventQueue actionEventQueue, @Mock ResumePolicyService resumePolicyService,
+                          @Mock ContentStorageService contentStorageService, @Mock MetricService metricService,
+                          @Mock CoreAuditLogger coreAuditLogger, @Mock IdentityService identityService,
+                          @Mock DeltaFileCacheService deltaFileCacheService) {
         this.ingressFlowService = ingressFlowService;
         this.egressFlowService = egressFlowService;
         this.transformFlowService = transformFlowService;
@@ -95,9 +101,6 @@ class DeltaFilesServiceTest {
                 deltaFileRepo, actionEventQueue, contentStorageService, resumePolicyService, metricService,
                 coreAuditLogger, identityService, new DidMutexService(), deltaFileCacheService);
     }
-
-    @Captor
-    ArgumentCaptor<DeltaFile> deltaFileCaptor;
 
     @Test
     void setsAndGets() {
@@ -305,19 +308,19 @@ class DeltaFilesServiceTest {
     }
 
     @Test
-    void testSplitNoChildFlow() {
+    void testReinjectNoChildFlow() {
         IngressFlow flow = new IngressFlow();
         LoadActionConfiguration actionConfig = new LoadActionConfiguration("loadAction", null);
-        flow.setName("loadAction");
+        flow.setName(GOOD_INGRESS_FLOW);
         flow.setLoadAction(actionConfig);
 
-        // "good" flow is available
-        when(ingressFlowService.getRunningFlowByName("good")).thenReturn(flow);
-        // "bad" flow is not available
+        // "good" flow is running
+        when(ingressFlowService.getRunningFlowByName(GOOD_INGRESS_FLOW)).thenReturn(flow);
+        // "bad" flow is not running
         when(ingressFlowService.getRunningFlowByName("bad")).thenThrow(new DgsEntityNotFoundException());
 
         DeltaFile deltaFile = DeltaFile.builder()
-                .sourceInfo(SourceInfo.builder().flow("good").build())
+                .sourceInfo(SourceInfo.builder().flow(GOOD_INGRESS_FLOW).build())
                 .actions(new ArrayList<>(List.of(Action.builder()
                         .name("loadAction").state(ActionState.QUEUED).build())))
                 .did("00000000-0000-0000-00000-000000000000")
@@ -328,7 +331,7 @@ class DeltaFilesServiceTest {
                         .action("loadAction")
                         .reinject(List.of(
                                 ReinjectEvent.builder()
-                                        .flow("good")
+                                        .flow(GOOD_INGRESS_FLOW)
                                         .content(List.of(createContent("first")))
                                         .build(),
                                 ReinjectEvent.builder()
@@ -337,6 +340,7 @@ class DeltaFilesServiceTest {
                         .build());
 
         assertTrue(deltaFile.hasErroredAction());
+        assertEquals(0, deltaFile.getChildDids().size());
         assertTrue(deltaFile.getActions().stream().filter(a -> a.getState() == ActionState.ERROR).map(Action::getErrorCause)
                 .allMatch(DeltaFilesService.NO_CHILD_INGRESS_CONFIGURED_CAUSE::equals));
         assertTrue(deltaFile.getActions().stream().filter(a -> a.getState() == ActionState.ERROR).map(Action::getErrorContext)
@@ -344,19 +348,17 @@ class DeltaFilesServiceTest {
     }
 
     @Test
-    void testSplitCorrectChildFlow() {
+    void testReinjectCorrectChildFlow() {
         IngressFlow flow = new IngressFlow();
         LoadActionConfiguration actionConfig = new LoadActionConfiguration("loadAction", null);
-        flow.setName("loadAction");
+        flow.setName(GOOD_INGRESS_FLOW);
         flow.setLoadAction(actionConfig);
 
-        // "good" flow is available
-        when(ingressFlowService.hasRunningFlow("good")).thenReturn(true);
-        when(ingressFlowService.getRunningFlowByName("good")).thenReturn(flow);
-        // "bad" flow is not available
+        when(ingressFlowService.hasRunningFlow(GOOD_INGRESS_FLOW)).thenReturn(true);
+        when(ingressFlowService.getRunningFlowByName(GOOD_INGRESS_FLOW)).thenReturn(flow);
 
         DeltaFile deltaFile = DeltaFile.builder()
-                .sourceInfo(SourceInfo.builder().flow("good").build())
+                .sourceInfo(SourceInfo.builder().flow(GOOD_INGRESS_FLOW).build())
                 .actions(new ArrayList<>(List.of(Action.builder()
                         .name("loadAction").state(ActionState.QUEUED).build())))
                 .did("00000000-0000-0000-00000-000000000000")
@@ -367,16 +369,63 @@ class DeltaFilesServiceTest {
                         .action("loadAction")
                         .reinject(List.of(
                                 ReinjectEvent.builder()
-                                        .flow("good")
+                                        .flow(GOOD_INGRESS_FLOW)
                                         .content(List.of(createContent("first"))).build(),
                                 ReinjectEvent.builder()
-                                        .flow("good")
+                                        .flow(GOOD_INGRESS_FLOW)
                                         .content(List.of(createContent("second"))).build()))
-
                         .build());
 
         assertFalse(deltaFile.hasErroredAction());
+        assertEquals(2, deltaFile.getChildDids().size());
         assertTrue(deltaFile.getActions().stream().noneMatch(a -> a.getState() == ActionState.ERROR));
+    }
+
+    @Test
+    void testReinjectErrorsExceeded() {
+        IngressFlow goodFlow = new IngressFlow();
+        LoadActionConfiguration loadActionConfig = new LoadActionConfiguration("loadAction", null);
+        goodFlow.setName(GOOD_INGRESS_FLOW);
+        goodFlow.setLoadAction(loadActionConfig);
+
+        TransformFlow errorsFlow = new TransformFlow();
+        TransformActionConfiguration transformActionConfig = new TransformActionConfiguration("transformAction", null);
+        errorsFlow.setName(ERRORS_EXCEEDED_TRANSFORM_FLOW);
+        errorsFlow.setTransformActions(List.of(transformActionConfig));
+
+        when(ingressFlowService.flowErrorsExceeded()).thenReturn(Set.of("other"));
+        when(transformFlowService.flowErrorsExceeded()).thenReturn(Set.of(ERRORS_EXCEEDED_TRANSFORM_FLOW));
+
+        when(ingressFlowService.hasRunningFlow(GOOD_INGRESS_FLOW)).thenReturn(true);
+        when(ingressFlowService.hasRunningFlow(ERRORS_EXCEEDED_TRANSFORM_FLOW)).thenReturn(false);
+        when(transformFlowService.hasRunningFlow(ERRORS_EXCEEDED_TRANSFORM_FLOW)).thenReturn(true);
+        when(ingressFlowService.getRunningFlowByName(GOOD_INGRESS_FLOW)).thenReturn(goodFlow);
+
+        DeltaFile deltaFile = DeltaFile.builder()
+                .sourceInfo(SourceInfo.builder().flow(GOOD_INGRESS_FLOW).build())
+                .actions(new ArrayList<>(List.of(Action.builder()
+                        .name("loadAction").state(ActionState.QUEUED).build())))
+                .did("00000000-0000-0000-00000-000000000000")
+                .build();
+
+        deltaFilesService.reinject(deltaFile,
+                ActionEvent.builder()
+                        .action("loadAction")
+                        .reinject(List.of(
+                                ReinjectEvent.builder()
+                                        .flow(GOOD_INGRESS_FLOW)
+                                        .content(List.of(createContent("first"))).build(),
+                                ReinjectEvent.builder()
+                                        .flow(ERRORS_EXCEEDED_TRANSFORM_FLOW)
+                                        .content(List.of(createContent("second"))).build()))
+                        .build());
+
+        assertTrue(deltaFile.hasErroredAction());
+        assertEquals(0, deltaFile.getChildDids().size());
+        assertTrue(deltaFile.getActions().stream().filter(a -> a.getState() == ActionState.ERROR).map(Action::getErrorCause)
+                .allMatch(DeltaFilesService.CHILD_FLOW_INGRESS_DISABLED_CAUSE::equals));
+        assertTrue(deltaFile.getActions().stream().filter(a -> a.getState() == ActionState.ERROR).map(Action::getErrorContext)
+                .allMatch(ec -> ec.startsWith(DeltaFilesService.CHILD_FLOW_INGRESS_DISABLED_CONTEXT)));
     }
 
     @Test
@@ -399,8 +448,8 @@ class DeltaFilesServiceTest {
     void testAnnotationDeltaFile_badDid() {
         Map<String, String> metadata = Map.of("sys-ack", "true");
         Assertions.assertThatThrownBy(() -> deltaFilesService.addAnnotations("did", metadata, true))
-                        .isInstanceOf(DgsEntityNotFoundException.class)
-                        .hasMessage("DeltaFile did not found.");
+                .isInstanceOf(DgsEntityNotFoundException.class)
+                .hasMessage("DeltaFile did not found.");
     }
 
     @Test

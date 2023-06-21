@@ -89,6 +89,8 @@ public class DeltaFilesService {
 
     private static final ObjectWriter PRETTY_OBJECT_WRITER = OBJECT_MAPPER.writerWithDefaultPrettyPrinter();
 
+    public static final String CHILD_FLOW_INGRESS_DISABLED_CAUSE = "Child ingress flow disabled";
+    public static final String CHILD_FLOW_INGRESS_DISABLED_CONTEXT = "Child ingress flow disabled due to max errors exceeded: ";
     public static final String NO_EGRESS_CONFIGURED_CAUSE = "No egress flow configured";
     public static final String NO_EGRESS_CONFIGURED_CONTEXT = "This DeltaFile does not match the criteria of any running egress flows";
     public static final String NO_CHILD_INGRESS_CONFIGURED_CAUSE = "No child ingress flow configured";
@@ -582,6 +584,20 @@ public class DeltaFilesService {
                 .build();
     }
 
+    public static ActionEvent buildFlowIngressDisabledErrorEvent(DeltaFile deltaFile, String action, String flow,
+                                                         OffsetDateTime time) {
+        return ActionEvent.builder()
+                .did(deltaFile.getDid())
+                .action(action)
+                .start(time)
+                .stop(time)
+                .error(ErrorEvent.builder()
+                        .cause(CHILD_FLOW_INGRESS_DISABLED_CAUSE)
+                        .context(CHILD_FLOW_INGRESS_DISABLED_CONTEXT + flow)
+                        .build())
+                .build();
+    }
+
     public void loadMany(DeltaFile deltaFile, ActionEvent event) throws MissingEgressFlowException {
         List<LoadEvent> loadEvents = event.getLoadMany();
         List<DeltaFile> childDeltaFiles = Collections.emptyList();
@@ -668,6 +684,9 @@ public class DeltaFilesService {
 
             OffsetDateTime now = OffsetDateTime.now(clock);
 
+            Set<String> normalizationFlowsDisabled = ingressFlowService.flowErrorsExceeded();
+            Set<String> transformationFlowsDisabled = transformFlowService.flowErrorsExceeded();
+
             childDeltaFiles = reinjects.stream().map(reinject -> {
                 if (!encounteredError.isEmpty()) {
                     // Fail fast on first error
@@ -677,9 +696,23 @@ public class DeltaFilesService {
                 // Before we build a DeltaFile, make sure the reinject makes sense to do--i.e. the flow is enabled and valid
                 ProcessingType processingType;
                 if (ingressFlowService.hasRunningFlow(reinject.getFlow())) {
-                    processingType = ProcessingType.NORMALIZATION;
+                    if (normalizationFlowsDisabled.contains(reinject.getFlow())) {
+                        deltaFile.errorAction(buildFlowIngressDisabledErrorEvent(deltaFile, event.getAction(),
+                                reinject.getFlow(), OffsetDateTime.now(clock)));
+                        encounteredError.add(deltaFile.getDid());
+                        return null;
+                    } else {
+                        processingType = ProcessingType.NORMALIZATION;
+                    }
                 } else if (transformFlowService.hasRunningFlow(reinject.getFlow())) {
-                    processingType = ProcessingType.TRANSFORMATION;
+                    if (transformationFlowsDisabled.contains(reinject.getFlow())) {
+                        deltaFile.errorAction(buildFlowIngressDisabledErrorEvent(deltaFile, event.getAction(),
+                                reinject.getFlow(), OffsetDateTime.now(clock)));
+                        encounteredError.add(deltaFile.getDid());
+                        return null;
+                    } else {
+                        processingType = ProcessingType.TRANSFORMATION;
+                    }
                 } else {
                     deltaFile.errorAction(buildNoChildFlowErrorEvent(deltaFile, event.getAction(),
                             reinject.getFlow(), OffsetDateTime.now(clock)));

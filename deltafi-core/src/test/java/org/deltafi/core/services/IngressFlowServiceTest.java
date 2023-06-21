@@ -109,7 +109,7 @@ class IngressFlowServiceTest {
 
         SystemSnapshot systemSnapshot = new SystemSnapshot();
         systemSnapshot.setRunningIngressFlows(List.of("running", "stopped", "invalid", "missing"));
-        systemSnapshot.setTestIngressFlows(List.of("stopped","missing"));
+        systemSnapshot.setTestIngressFlows(List.of("stopped", "missing"));
 
         Mockito.when(ingressFlowRepo.findAll()).thenReturn(List.of(running, stopped, invalid));
         Mockito.when(ingressFlowRepo.findById("running")).thenReturn(Optional.of(running));
@@ -146,25 +146,20 @@ class IngressFlowServiceTest {
 
     @Test
     void testIngressFlowErrorsExceeded() {
-        IngressFlow flow1 = ingressFlow("flow1", FlowState.RUNNING, false);
-        flow1.setMaxErrors(0);
-        IngressFlow flow2 = ingressFlow("flow2", FlowState.RUNNING, false);
-        flow2.setMaxErrors(5);
-        IngressFlow flow3 = ingressFlow("flow3", FlowState.RUNNING, false);
-        flow3.setMaxErrors(5);
-        IngressFlow flow4 = ingressFlow("flow4", FlowState.STOPPED, false);
-        flow3.setMaxErrors(5);
-
-        Mockito.when(ingressFlowRepo.findAll()).thenReturn(List.of(flow1, flow2, flow3, flow4));
-        Mockito.when(errorCountService.errorsForFlow("flow1")).thenReturn(5);
-        Mockito.when(errorCountService.errorsForFlow("flow2")).thenReturn(5);
-        Mockito.when(errorCountService.errorsForFlow("flow3")).thenReturn(6);
-
-        ingressFlowService.refreshCache();
-
+        setupErrorExceeded();
         List<IngressFlowErrorState> errorStates = ingressFlowService.ingressFlowErrorsExceeded();
-        assertEquals(1, errorStates.size());
-        assertEquals(new IngressFlowErrorState("flow3", 6, 5), errorStates.get(0));
+        assertEquals(2, errorStates.size());
+        assertThat(errorStates.contains(new IngressFlowErrorState("flow3", 6, 5))).isTrue();
+        assertThat(errorStates.contains(new IngressFlowErrorState("flow1", 1, 0))).isTrue();
+    }
+
+    @Test
+    void testFlowErrorsExceeded() {
+        setupErrorExceeded();
+        Set<String> errorsExceeded = ingressFlowService.flowErrorsExceeded();
+        assertEquals(2, errorsExceeded.size());
+        assertThat(errorsExceeded.contains("flow1")).isTrue();
+        assertThat(errorsExceeded.contains("flow3")).isTrue();
     }
 
     @Test
@@ -175,11 +170,29 @@ class IngressFlowServiceTest {
         IngressFlow c = FlowBuilders.buildIngressFlow("c", coordinates);
 
         Mockito.when(ingressFlowRepo.findByGroupIdAndArtifactId("group", "artId"))
-                        .thenReturn(List.of(a, b, c));
+                .thenReturn(List.of(a, b, c));
 
         ingressFlowService.upgradeFlows(coordinates, List.of(), Set.of("a", "b"));
         Mockito.verify(ingressFlowRepo).saveAll(Mockito.eq(List.of()));
         Mockito.verify(ingressFlowRepo).deleteAllById(Set.of("c"));
+    }
+
+    void setupErrorExceeded() {
+        IngressFlow flow1 = ingressFlow("flow1", FlowState.RUNNING, false);
+        flow1.setMaxErrors(0);
+        IngressFlow flow2 = ingressFlow("flow2", FlowState.RUNNING, false);
+        flow2.setMaxErrors(5);
+        IngressFlow flow3 = ingressFlow("flow3", FlowState.RUNNING, false);
+        flow3.setMaxErrors(5);
+        IngressFlow flow4 = ingressFlow("flow4", FlowState.STOPPED, false);
+        flow4.setMaxErrors(5);
+
+        Mockito.when(ingressFlowRepo.findAll()).thenReturn(List.of(flow1, flow2, flow3, flow4));
+        Mockito.when(errorCountService.errorsForFlow("flow1")).thenReturn(1);
+        Mockito.when(errorCountService.errorsForFlow("flow2")).thenReturn(5);
+        Mockito.when(errorCountService.errorsForFlow("flow3")).thenReturn(6);
+
+        ingressFlowService.refreshCache();
     }
 
     IngressFlow runningFlow(String name) {
@@ -193,6 +206,7 @@ class IngressFlowServiceTest {
         flowStatus.setState(flowState);
         flowStatus.setTestMode(testMode);
         ingressFlow.setFlowStatus(flowStatus);
+        ingressFlow.setSchemaVersion(IngressFlow.CURRENT_SCHEMA_VERSION);
         return ingressFlow;
     }
 }

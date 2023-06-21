@@ -385,6 +385,8 @@ public class FlowPlanDatafetcher {
     @DgsQuery
     @NeedsPermission.FlowView
     public List<IngressFlowErrorState> ingressFlowErrorsExceeded() {
-        return ingressFlowService.ingressFlowErrorsExceeded();
+        List<IngressFlowErrorState> flowErrorStats = new ArrayList<>(ingressFlowService.ingressFlowErrorsExceeded());
+        flowErrorStats.addAll(transformFlowService.ingressFlowErrorsExceeded());
+        return flowErrorStats;
     }
 }

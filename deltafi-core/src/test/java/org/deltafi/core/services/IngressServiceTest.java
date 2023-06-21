@@ -120,18 +120,19 @@ class IngressServiceTest {
     }
 
     private void mockNormalExecution() {
-        mockExecution(true);
+        mockExecution(true, false);
     }
 
-    private void mockExecution(boolean flowFound) {
+    private void mockExecution(boolean ingressFlow, boolean transformFlow) {
         DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
         IngressProperties ingressProperties = new IngressProperties();
         ingressProperties.setEnabled(true);
         deltaFiProperties.setIngress(ingressProperties);
         Mockito.when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
         Mockito.when(diskSpaceService.isContentStorageDepleted()).thenReturn(false);
-        Mockito.when(ingressFlowService.hasRunningFlow(any())).thenReturn(flowFound);
-        Mockito.when(transformFlowService.hasRunningFlow(any())).thenReturn(flowFound);
+        Mockito.when(ingressFlowService.hasRunningFlow(any())).thenReturn(ingressFlow);
+        Mockito.when(transformFlowService.hasRunningFlow(any())).thenReturn(transformFlow);
+        Mockito.when(transformFlowService.maxErrorsPerFlow()).thenReturn(Map.of("flow", 1));
         Mockito.when(ingressFlowService.maxErrorsPerFlow()).thenReturn(Map.of("flow", 1));
         Mockito.when(ingressFlowService.getRunningFlowByName("flow")).thenReturn(new IngressFlow());
         Mockito.when(errorCountService.generateErrorMessage("flow", 1)).thenReturn(null);
@@ -421,7 +422,7 @@ class IngressServiceTest {
 
     @Test
     void ingressBinaryFlowNotRunning() {
-        mockExecution(false);
+        mockExecution(false, false);
 
         Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
         IngressException ingressException = assertThrows(IngressException.class,
@@ -439,6 +440,25 @@ class IngressServiceTest {
     @Test
     void ingressBinaryFlowErrorsExceeded() {
         mockNormalExecution();
+
+        Mockito.when(errorCountService.generateErrorMessage("flow", 1)).thenReturn("errors exceeded");
+
+        Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
+        IngressException ingressException = assertThrows(IngressException.class,
+                () -> ingressService.ingress("flow", "filename", MediaType.APPLICATION_OCTET_STREAM,
+                        "username", OBJECT_MAPPER.writeValueAsString(headerMetadata),
+                        new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)), TIME));
+
+        assertEquals("errors exceeded", ingressException.getMessage());
+
+        Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
+                DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.INGRESS_FLOW, "flow");
+        Mockito.verify(metricService).increment(DeltaFiConstants.FILES_DROPPED, metricTags, 1);
+    }
+
+    @Test
+    void transformFlowErrorsExceeded() {
+        mockExecution(false, true);
 
         Mockito.when(errorCountService.generateErrorMessage("flow", 1)).thenReturn("errors exceeded");
 

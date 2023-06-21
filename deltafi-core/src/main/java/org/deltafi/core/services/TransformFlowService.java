@@ -20,6 +20,7 @@ package org.deltafi.core.services;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.TransformFlowPlan;
 import org.deltafi.core.converters.TransformFlowPlanConverter;
+import org.deltafi.core.generated.types.IngressFlowErrorState;
 import org.deltafi.core.repo.TransformFlowRepo;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.types.Flow;
@@ -39,8 +40,12 @@ public class TransformFlowService extends FlowService<TransformFlowPlan, Transfo
 
     private static final TransformFlowPlanConverter TRANSFORM_FLOW_PLAN_CONVERTER = new TransformFlowPlanConverter();
 
-    public TransformFlowService(TransformFlowRepo transformFlowRepo, PluginVariableService pluginVariableService, TransformFlowValidator transformFlowValidator) {
+    private final ErrorCountService errorCountService;
+
+    public TransformFlowService(TransformFlowRepo transformFlowRepo, PluginVariableService pluginVariableService, TransformFlowValidator transformFlowValidator, ErrorCountService errorCountService) {
         super("transform", transformFlowRepo, pluginVariableService, TRANSFORM_FLOW_PLAN_CONVERTER, transformFlowValidator);
+
+        this.errorCountService = errorCountService;
     }
 
     @Override
@@ -75,7 +80,7 @@ public class TransformFlowService extends FlowService<TransformFlowPlan, Transfo
      * logs a warning and returns false. If the update is successful, the method refreshes the
      * cache and returns true.
      *
-     * @param flowName The name of the flow to update, represented as a {@code String}.
+     * @param flowName  The name of the flow to update, represented as a {@code String}.
      * @param maxErrors The new maximum number of errors to be set for the specified flow, as an {@code int}.
      * @return A {@code boolean} value indicating whether the update was successful (true) or not (false).
      */
@@ -99,7 +104,7 @@ public class TransformFlowService extends FlowService<TransformFlowPlan, Transfo
      * Sets the expected set of annotations for a given flow, identified by its name. If the update is successful,
      * the method refreshes the cache and returns true.
      *
-     * @param flowName The name of the flow to update, represented as a {@code String}.
+     * @param flowName            The name of the flow to update, represented as a {@code String}.
      * @param expectedAnnotations The new set of expected annotations to be set for the specified flow, as an {@code set}
      * @return A {@code boolean} value indicating whether the update was successful (true) or not (false)
      */
@@ -129,7 +134,22 @@ public class TransformFlowService extends FlowService<TransformFlowPlan, Transfo
      */
     public Map<String, Integer> maxErrorsPerFlow() {
         return getRunningFlows().stream()
-                .filter(e -> e.isRunning() && e.getMaxErrors() > 0)
+                .filter(e -> e.getMaxErrors() >= 0)
                 .collect(Collectors.toMap(Flow::getName, TransformFlow::getMaxErrors));
     }
+
+    public List<IngressFlowErrorState> ingressFlowErrorsExceeded() {
+        return getRunningFlows().stream()
+                .map(f -> new IngressFlowErrorState(f.getName(), errorCountService.errorsForFlow(f.getName()), f.getMaxErrors()))
+                .filter(s -> s.getMaxErrors() >= 0 && s.getCurrErrors() > s.getMaxErrors())
+                .toList();
+    }
+
+    public Set<String> flowErrorsExceeded() {
+        return ingressFlowErrorsExceeded()
+                .stream()
+                .map(f -> f.getName())
+                .collect(Collectors.toSet());
+    }
+
 }

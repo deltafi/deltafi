@@ -57,7 +57,7 @@ public class ErrorCountService {
      * @param maxErrors The maximum number of allowed errors, represented as an {@code int}.
      * @return A {@code boolean} value indicating whether the max errors were exceeded.
      */
-    public boolean flowErrorsExceeded(String flow, int maxErrors) {
+    private boolean flowErrorsExceeded(String flow, int maxErrors) {
         return maxErrors < errorsForFlow(flow);
     }
 

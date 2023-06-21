@@ -44,7 +44,7 @@ public class IngressFlow extends Flow {
      * 0 - original
      * 1 - change default/unlimited number of maxErrors from 0 to -1
      */
-    private static final int CURRENT_SCHEMA_VERSION = 1;
+    public static final int CURRENT_SCHEMA_VERSION = 1;
 
     @Override
     public boolean migrate() {

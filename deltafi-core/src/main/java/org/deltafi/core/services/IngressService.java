@@ -28,11 +28,7 @@ import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.nifi.FlowFile;
 import org.deltafi.common.nifi.FlowFileUtil;
 import org.deltafi.common.storage.s3.ObjectStorageException;
-import org.deltafi.common.types.ActionType;
-import org.deltafi.common.types.Content;
-import org.deltafi.common.types.IngressEvent;
-import org.deltafi.common.types.ProcessingType;
-import org.deltafi.common.types.SourceInfo;
+import org.deltafi.common.types.*;
 import org.deltafi.common.uuid.UUIDGenerator;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.exceptions.*;
@@ -176,15 +172,17 @@ public class IngressService {
         }
 
         // ensure flow is running before accepting ingress
+        Integer maxErrors;
         if (ingressFlowService.hasRunningFlow(sourceInfo.getFlow())) {
             sourceInfo.setProcessingType(ProcessingType.NORMALIZATION);
+            maxErrors = ingressFlowService.maxErrorsPerFlow().get(sourceInfo.getFlow());
         } else if (transformFlowService.hasRunningFlow(sourceInfo.getFlow())) {
             sourceInfo.setProcessingType(ProcessingType.TRANSFORMATION);
+            maxErrors = transformFlowService.maxErrorsPerFlow().get(sourceInfo.getFlow());
         } else {
             throw new IngressException("Flow " + sourceInfo.getFlow() + " is not running");
         }
 
-        Integer maxErrors = ingressFlowService.maxErrorsPerFlow().get(sourceInfo.getFlow());
         if (maxErrors != null && maxErrors >= 0) {
             String error = errorCountService.generateErrorMessage(sourceInfo.getFlow(), maxErrors);
             if (error != null) {
