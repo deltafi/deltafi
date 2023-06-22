@@ -173,6 +173,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         INDICES.put("domain_name_index", new Index().named("domain_name_index").on(DOMAINS_NAME, Sort.Direction.ASC));
         INDICES.put("metadata_keys_index", new Index().named("metadata_keys_index").on(ANNOTATION_KEYS, Sort.Direction.ASC));
         INDICES.put("disk_space_delete_index", new Index().named("disk_space_delete_index").on(CONTENT_DELETED, Sort.Direction.ASC).on(STAGE, Sort.Direction.ASC).on(CREATED, Sort.Direction.ASC).on(TOTAL_BYTES, Sort.Direction.ASC));
+        INDICES.put("pending_annotations_for_flows_index", new Index().named("pending_annotations_for_flows_index").on(PENDING_ANNOTATIONS_FOR_FLOWS, Sort.Direction.ASC));
     }
 
     private final MongoTemplate mongoTemplate;
@@ -592,6 +593,14 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                 andCriteria.add(Criteria.where(REPLAYED).ne(null));
             } else {
                 andCriteria.add(Criteria.where(REPLAYED).isNull());
+            }
+        }
+
+        if (nonNull(filter.getPendingAnnotations())) {
+            if (filter.getPendingAnnotations()) {
+                andCriteria.add(Criteria.where(PENDING_ANNOTATIONS_FOR_FLOWS).ne(null));
+            } else {
+                andCriteria.add(Criteria.where(PENDING_ANNOTATIONS_FOR_FLOWS).is(null));
             }
         }
 

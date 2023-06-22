@@ -2829,6 +2829,17 @@ class DeltaFiCoreApplicationTests {
 		testFilter(DeltaFilesFilter.newBuilder().stage(DeltaFileStage.INGRESS).terminalStage(true).build(), cancelled, error, complete, ingress);
 	}
 
+	@Test
+	void testFilterByPendingAnnotations() {
+		DeltaFile pending = buildDeltaFile("1", "a", DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(2), MONGO_NOW.minusSeconds(2));
+		pending.setPendingAnnotationsForFlows(Set.of("a"));
+		DeltaFile notPending = buildDeltaFile("2", "a", DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(2), MONGO_NOW.minusSeconds(2));
+
+		deltaFileRepo.saveAll(List.of(pending, notPending));
+		testFilter(DeltaFilesFilter.newBuilder().pendingAnnotations(true).build(), pending);
+		testFilter(DeltaFilesFilter.newBuilder().pendingAnnotations(false).build(), notPending);
+	}
+
 	private void testFilter(DeltaFilesFilter filter, DeltaFile... expected) {
 		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 50, filter, null);
 		assertEquals(new ArrayList<>(Arrays.asList(expected)), deltaFiles.getDeltaFiles());
