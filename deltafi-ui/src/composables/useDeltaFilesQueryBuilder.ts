@@ -31,6 +31,7 @@ export default function useDeltaFilesQueryBuilder() {
     sortField?: string;
     // Advanced Options query options
     fileName?: string | null;
+    pendingAnnotations?: string | null;
     validatedAnnotations?: Array<object>;
     annotations?: Array<object>;
     ingressFlows?: Array<string>;
@@ -85,6 +86,7 @@ export default function useDeltaFilesQueryBuilder() {
             filteredCause: queryParams.filteredCause,
             replayable: queryParams.replayable,
             terminalStage: queryParams.terminalStage,
+            pendingAnnotations: queryParams.pendingAnnotations,
           },
           orderBy: {
             direction: queryParams.sortDirection ? new EnumType(queryParams.sortDirection) : null,

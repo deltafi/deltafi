@@ -234,7 +234,7 @@ const setupWatchers = () => {
   );
 
   watch(
-    () => [model.value.sizeMin, model.value.sizeMax, model.value.stage, model.value.egressed, model.value.filtered, model.value.testMode, model.value.requeueMin, model.value.replayable, model.value.processingType, model.value.terminalStage],
+    () => [model.value.sizeMin, model.value.sizeMax, model.value.stage, model.value.egressed, model.value.filtered, model.value.testMode, model.value.requeueMin, model.value.replayable, model.value.processingType, model.value.terminalStage, model.value.pendingAnnotations],
     () => {
       fetchDeltaFilesData();
     }
@@ -368,6 +368,7 @@ const defaultQueryParamsTemplate = {
   startTimeDate: new Date(defaultStartTimeDate.value.format(timestampFormat)),
   endTimeDate: new Date(defaultEndTimeDate.value.format(timestampFormat)),
   fileName: null,
+  pendingAnnotations: null,
   validatedAnnotations: [],
   annotations: [],
   ingressFlows: [],
@@ -437,7 +438,8 @@ const advanceOptionsPanelInfo = computed(() => {
     { field: "processingType", column: 3, order: 2, componentType: "Dropdown", label: "Processing Type:", placeholder: "Select a Processing Type", options: processingTypeOptions.value, formatOptions: false, class: "deltafi-input-field min-width" },
     { field: "stage", column: 3, order: 3, componentType: "Dropdown", label: "Stage:", placeholder: "Select a Stage", options: stageOptions.value, formatOptions: false, class: "deltafi-input-field min-width" },
     { field: "domains", column: 3, order: 4, componentType: "Dropdown", label: "Domain:", placeholder: "Select a Domain", options: domainOptions.value, formatOptions: false, class: "deltafi-input-field min-width" },
-    { field: "annotations", column: 3, order: 5, componentType: "Annotations", label: "Annotations:" },
+    { field: "pendingAnnotations", column: 3, order: 5, componentType: "Dropdown", label: "Pending Annotations:", placeholder: "Select if Pending Annotations", options: booleanOptions.value, formatOptions: true, class: "deltafi-input-field min-width" },
+    { field: "annotations", column: 3, order: 6, componentType: "Annotations", label: "Annotations:" },
   ];
 });
 
@@ -557,13 +559,13 @@ const onPage = (event) => {
   fetchDeltaFilesDataNoDebounce();
 };
 
-const openPanel = ["fileName", "filteredCause", "requeueMin", "stage", "processingType", "ingressFlows", "egressFlows", "egressed", "filtered", "testMode", "replayable", "terminalStage", "domains", "sizeMin", "sizeMax", "validatedAnnotations", "annotations", "sizeUnit", "sizeType"];
+const openPanel = ["fileName", "filteredCause", "requeueMin", "stage", "processingType", "ingressFlows", "egressFlows", "egressed", "filtered", "testMode", "replayable", "terminalStage", "domains", "sizeMin", "sizeMax", "validatedAnnotations", "pendingAnnotations", "annotations", "sizeUnit", "sizeType"];
 
 const decodePersistedParams = (obj) =>
   _.transform(obj, (r, v, k) => {
     if (["startTimeDate", "endTimeDate"].includes(k)) {
       r[k] = isoStringToDate(v);
-    } else if (["egressed", "filtered", "testMode", "replayable", "terminalStage"].includes(k)) {
+    } else if (["egressed", "filtered", "testMode", "replayable", "terminalStage", "pendingAnnotations"].includes(k)) {
       r[k] = Boolean(v);
     } else if (["requeueMin", "sizeMin", "sizeMax", "perPage"].includes(k)) {
       r[k] = Number(v);
@@ -595,7 +597,7 @@ const encodePersistedParams = (obj) =>
   _.transform(obj, (r, v, k) => {
     if (["startTimeDate", "endTimeDate"].includes(k)) {
       r[k] = dateToISOString(v);
-    } else if (["egressed", "filtered", "testMode", "replayable", "terminalStage"].includes(k)) {
+    } else if (["egressed", "filtered", "testMode", "replayable", "terminalStage", "pendingAnnotations"].includes(k)) {
       r[k] = Boolean(v);
     } else if (["requeueMin", "sizeMin", "sizeMax", "perPage"].includes(k)) {
       r[k] = Number(v);
