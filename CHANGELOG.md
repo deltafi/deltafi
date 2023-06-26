@@ -5,6 +5,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.0.1] - 2023-06-26
+
+### Added
+- Added a `DeltaFileFilter` to search for `DeltaFiles` that are waiting for annotations
+- Added the ability to search for DeltaFiles with annotations that are pending from Search Page.
+
+### Changed
+- `ingressFlowErrorsExceeded` DGS query includes INGRESS and TRANSFORM flow details
+
+### Fixed
+- Max errors checked for ingress flows during REINJECT
+- Max errors checked for transform flows during INGRESS and REINJECT
+
+### Tech-Debt/Refactor
+- remove unused federation.graphql file
+
 ## [1.0.0] - 2023-06-21
 
 ### Fixed
@@ -1911,7 +1927,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.1...main
+[1.0.1]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0...1.0.1
 [1.0.0]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC8...1.0.0
 [1.0.0-RC8]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC7...1.0.0-RC8
 [1.0.0-RC7]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC6...1.0.0-RC7
