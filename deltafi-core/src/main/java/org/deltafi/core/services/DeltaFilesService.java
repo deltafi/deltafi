@@ -148,6 +148,33 @@ public class DeltaFilesService {
         return OBJECT_MAPPER.writeValueAsString(deltaFile);
     }
 
+    /**
+     * Find the set of annotations that are pending for the DeltaFile
+     * with the given did
+     * @param did of the DeltaFile to check
+     * @return set of annotations this DeltaFile is waiting for
+     */
+    public Set<String> getPendingAnnotations(String did) {
+        DeltaFile deltaFile = getDeltaFile(did);
+
+        if (deltaFile == null) {
+            throw new DgsEntityNotFoundException("DeltaFile " + did + " not found.");
+        }
+
+        if (deltaFile.getPendingAnnotationsForFlows() == null || deltaFile.getPendingAnnotationsForFlows().isEmpty()) {
+            return Set.of();
+        }
+
+        Set<String> allExpectedAnnotations = deltaFile.getPendingAnnotationsForFlows().stream()
+                .map(flow -> getPendingAnnotations(deltaFile.getSourceInfo().getProcessingType(), flow))
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
+
+
+        return deltaFile.pendingAnnotations(allExpectedAnnotations);
+    }
+
     public DeltaFiles deltaFiles(Integer offset, Integer limit, DeltaFilesFilter filter, DeltaFileOrder orderBy) {
         return deltaFiles(offset, limit, filter, orderBy, null);
     }

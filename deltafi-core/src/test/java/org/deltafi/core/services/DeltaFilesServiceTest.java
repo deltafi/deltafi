@@ -33,6 +33,7 @@ import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.types.DeltaFiles;
+import org.deltafi.core.types.EgressFlow;
 import org.deltafi.core.types.IngressFlow;
 import org.deltafi.core.types.TransformFlow;
 import org.deltafi.core.types.UniqueKeyValues;
@@ -520,6 +521,37 @@ class DeltaFilesServiceTest {
         deltaFilesService.egress(deltaFile, actionEvent);
 
         Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).isNull();
+    }
+
+    @Test
+    void testGetPendingAnnotations() {
+        DeltaFile deltaFile = new DeltaFile();
+        deltaFile.setSourceInfo(SourceInfo.builder().processingType(ProcessingType.NORMALIZATION).build());
+        deltaFile.setPendingAnnotationsForFlows(Set.of("a", "b", "c"));
+        deltaFile.addAnnotations(Map.of("2", "2"));
+
+        EgressFlow a = new EgressFlow();
+        a.setExpectedAnnotations(Set.of("1", "2"));
+
+        EgressFlow b = new EgressFlow();
+        b.setExpectedAnnotations(Set.of("3"));
+
+        EgressFlow c = new EgressFlow(); // test handling null expectedAnnotations on the flow
+
+        Mockito.when(deltaFileRepo.findById("did")).thenReturn(Optional.of(deltaFile));
+        Mockito.when(egressFlowService.getRunningFlowByName("a")).thenReturn(a);
+        Mockito.when(egressFlowService.getRunningFlowByName("b")).thenReturn(b);
+        Mockito.when(egressFlowService.getRunningFlowByName("c")).thenReturn(c);
+
+        Assertions.assertThat(deltaFilesService.getPendingAnnotations("did")).hasSize(2).contains("1", "3");
+    }
+
+    @Test
+    void testGetPendingAnnotations_nullPendingList() {
+        DeltaFile deltaFile = new DeltaFile();
+
+        Mockito.when(deltaFileRepo.findById("did")).thenReturn(Optional.of(deltaFile));
+        Assertions.assertThat(deltaFilesService.getPendingAnnotations("did")).isEmpty();
     }
 
     @Test

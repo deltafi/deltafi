@@ -80,6 +80,12 @@ public class DeltaFilesDatafetcher {
 
   @DgsQuery
   @NeedsPermission.DeltaFileMetadataView
+  public Collection<String> pendingAnnotations(@InputArgument String did) {
+    return deltaFilesService.getPendingAnnotations(did);
+  }
+
+  @DgsQuery
+  @NeedsPermission.DeltaFileMetadataView
   public DeltaFiles deltaFiles(DataFetchingEnvironment dfe, @InputArgument Integer offset, @InputArgument Integer limit) {
     DeltaFilesFilter filter = objectMapper.convertValue(dfe.getArgument("filter"), DeltaFilesFilter.class);
     DeltaFileOrder orderBy = objectMapper.convertValue(dfe.getArgument("orderBy"), DeltaFileOrder.class);

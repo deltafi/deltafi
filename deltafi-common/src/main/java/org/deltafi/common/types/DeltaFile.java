@@ -434,19 +434,28 @@ public class DeltaFile {
       return;
     }
 
+    // if there are no expected annotations for this flow, remove it from the pending list
+    if (pendingAnnotations(expectedAnnotations).isEmpty()) {
+      pendingAnnotationsForFlows.remove(flow);
+      if (pendingAnnotationsForFlows.isEmpty()) {
+        pendingAnnotationsForFlows = null;
+      }
+    }
+  }
+
+  /**
+   * Get the set of annotations that are still pending from the given set of expected annotations
+   * @param expectedAnnotations annotations that are expected to be set on the DeltaFile
+   * @return annotations that have not been added to the DeltaFile yet
+   */
+  public Set<String> pendingAnnotations(Set<String> expectedAnnotations) {
     // make sure the expectedAnnotations set is modifiable
     expectedAnnotations = expectedAnnotations != null ? new HashSet<>(expectedAnnotations) : new HashSet<>();
 
     Set<String> indexedKeys = getAnnotations().keySet();
     indexedKeys.forEach(expectedAnnotations::remove);
 
-    // if there are no expected annotations for this flow, remove it from the pending list
-    if (expectedAnnotations.isEmpty()) {
-      pendingAnnotationsForFlows.remove(flow);
-      if (pendingAnnotationsForFlows.isEmpty()) {
-        pendingAnnotationsForFlows = null;
-      }
-    }
+    return expectedAnnotations;
   }
 
   @JsonIgnore

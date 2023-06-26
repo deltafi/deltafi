@@ -149,4 +149,18 @@ class DeltaFileTest {
         // key of c is added, the flow should be removed from pendingAnnotationForFlows
         Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).hasSize(1).contains("flow2");
     }
+
+    @Test
+    void testPendingAnnotations() {
+        DeltaFile deltaFile = new DeltaFile();
+        Assertions.assertThat(deltaFile.pendingAnnotations(null)).isEmpty();
+        Assertions.assertThat(deltaFile.pendingAnnotations(Set.of())).isEmpty();
+
+        deltaFile.addAnnotations(Map.of("a", "1"));
+        Set<String> expected = Set.of("a", "b", "c");
+
+        Assertions.assertThat(deltaFile.pendingAnnotations(expected)).hasSize(2).contains("b", "c");
+        deltaFile.addAnnotations(Map.of("b", "2", "c", ""));
+        Assertions.assertThat(deltaFile.pendingAnnotations(expected)).isEmpty();
+    }
 }
