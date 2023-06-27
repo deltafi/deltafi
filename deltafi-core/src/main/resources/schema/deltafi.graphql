@@ -191,6 +191,7 @@ type DeltaFile {
   replayDid: String
   nextAutoResume: DateTime
   nextAutoResumeReason: String
+  pendingAnnotationsForFlows: [String]
 }
 
 type DeltaFiles {
