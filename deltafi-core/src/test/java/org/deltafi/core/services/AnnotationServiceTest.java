@@ -69,7 +69,7 @@ class AnnotationServiceTest {
     void testClearRemovedAnnotations() {
         Mockito.when(transformFlowService.setExpectedAnnotations(FLOW, null)).thenReturn(true);
         annotationService.setExpectedAnnotations(FlowType.TRANSFORM, FLOW, Set.of());
-        Mockito.verify(deltaFilesService).updatePendingAnnotationsForFlows(FLOW, null);
+        Mockito.verify(deltaFilesService).asyncUpdatePendingAnnotationsForFlows(FLOW, null);
     }
 
     @Test

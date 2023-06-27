@@ -61,7 +61,7 @@ public class AnnotationService {
         }
 
         if (updated) {
-            deltaFilesService.updatePendingAnnotationsForFlows(flowName, expectedAnnotations);
+            deltaFilesService.asyncUpdatePendingAnnotationsForFlows(flowName, expectedAnnotations);
         }
 
         return updated;

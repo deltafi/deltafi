@@ -49,6 +49,7 @@ import org.deltafi.core.types.UniqueKeyValues;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -532,6 +533,11 @@ public class DeltaFilesService {
         if (expectedAnnotations != null) {
             deltaFile.updatePendingAnnotationsForFlows(flowName, expectedAnnotations);
         }
+    }
+
+    @Async
+    public void asyncUpdatePendingAnnotationsForFlows(String flowName, Set<String> expectedAnnotations) {
+        updatePendingAnnotationsForFlows(flowName, expectedAnnotations);
     }
 
     /**
