@@ -98,10 +98,9 @@ report_disk_metrics() {
 
 report_memory_metrics() {
     TOTAL=$(cat /proc/meminfo | grep ^MemTotal: | awk '{print $2}')
-    FREE=$(cat /proc/meminfo | grep ^MemFree: | awk '{print $2}')
     AVAILABLE=$(cat /proc/meminfo | grep ^MemAvailable: | awk '{print $2}')
     LIMIT=$(($TOTAL * 1000))
-    USAGE=$((($TOTAL - $FREE - $AVAILABLE) * 1000))
+    USAGE=$((($TOTAL - $AVAILABLE) * 1000))
     TIMESTAMP=$(date +%s)
     echo "gauge.node.memory.usage;hostname=$NODE_NAME $USAGE $TIMESTAMP" | nc -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
     echo "gauge.node.memory.limit;hostname=$NODE_NAME $LIMIT $TIMESTAMP" | nc -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
