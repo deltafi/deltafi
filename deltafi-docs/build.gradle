@@ -47,6 +47,7 @@ assemble.dependsOn copyChangelog
 task licenseLocal(type: LicenseCheck) {
     source = fileTree(dir: ".")
 }
+licenseLocal.dependsOn assemble
 
 task licenseFormatLocal(type: LicenseFormat) {
     source = fileTree(dir: ".")

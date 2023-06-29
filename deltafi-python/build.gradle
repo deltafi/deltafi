@@ -67,6 +67,7 @@ license {
 task licenseLocal(type: LicenseCheck) {
     source = fileTree(dir: ".").include("**/*.py")
 }
+licenseLocal.dependsOn copyTemplate
 
 task licenseFormatLocal(type: LicenseFormat) {
     source = fileTree(dir: ".").include("**/*.py")
