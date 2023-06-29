@@ -76,7 +76,7 @@ minio:
 mongodb:
   image:
     repository: bitnami/mongodb
-    tag: 5.0.14
+    tag: 5.0.17
   architecture: standalone
   useStatefulSet: false
   auth:
@@ -97,7 +97,7 @@ mongodb:
 redis:
   image:
     repository: bitnami/redis
-    tag: 7.0.8
+    tag: 7.0.11
   architecture: standalone
   auth:
     existingSecret: redis-password
@@ -198,7 +198,7 @@ grafana:
         uid: deltafi-loki
 promtail:
   image:
-    tag: 2.8.0
+    tag: 2.8.2
   persistence:
     enabled: true
     existingClaim: deltafi-promtail
@@ -330,7 +330,7 @@ promtail:
                   expression: "/healthz"
 loki:
   image:
-    tag: 2.8.0
+    tag: 2.8.2
   persistence:
     enabled: true
     existingClaim: deltafi-loki
@@ -387,7 +387,7 @@ graphite:
 docker-registry:
   enabled: false
   image:
-    tag: 2.8.1
+    tag: 2.8.2
   persistence:
     enabled: true
     existingClaim: deltafi-docker-registry
