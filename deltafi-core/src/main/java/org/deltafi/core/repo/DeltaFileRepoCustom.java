@@ -84,6 +84,25 @@ public interface DeltaFileRepoCustom {
     List<DeltaFile> findReadyForAutoResume(OffsetDateTime maxReadyTime);
 
     /**
+     * Search for DeltaFiles in an ERROR stage which may be candidates for applying
+     *  a new or recently updated auto resume policy.
+     *
+     * @param flowName Optionally limit search to those matching flow
+     * @return the list of the DeltaFiles to be checked
+     */
+    List<DeltaFile> findResumePolicyCandidates(String flowName);
+
+    /**
+     *  Schedule a list of DeltaFiles for auto resume, by setting
+     *  the next resume properties.
+     *
+     * @param dids A list of dids which should be updated
+     * @param policyName The auto resume policy name which prompted the update
+     * @param nextAutoResume The time the DeltaFile(s) should be scheduled for auto resume
+     */
+    void updateForAutoResume(List<String> dids, String policyName, OffsetDateTime nextAutoResume);
+
+    /**
      * Find DeltaFiles that match the given criteria.
      * Any actions in a non-terminal state will be marked as errors stating the given policy
      * marked the DeltaFile for deletion.

@@ -59,7 +59,7 @@ public class ResumePolicyService implements Snapshotter {
      *
      * @param attempt    number of times action attempted
      * @param errorCause error cause text.
-     * @param flow       flow where error occurred.
+     * @param flow       the sourceInfo flow.
      * @param action     name of action with error.
      * @param actionType type of action with error.
      * @return Optional ResumePolicy if found, else empty.
@@ -71,6 +71,49 @@ public class ResumePolicyService implements Snapshotter {
             }
         }
         return Optional.empty();
+    }
+
+    Optional<ResumePolicy> findByName(String name) {
+        return policiesCache.stream()
+                .filter(p -> p.getName().equals(name))
+                .findFirst();
+    }
+
+    /**
+     * Compare the last action with ERROR of the DeltaFile
+     * for a match against the resume policy.
+     *
+     * @param policy    the resume policy
+     * @param deltaFile the DeltaFile
+     * @return true if a match; otherwise false
+     */
+    boolean matchesActionError(ResumePolicy policy, DeltaFile deltaFile) {
+        Optional<Action> action = deltaFile.firstActionError();
+        if (action.isPresent()) {
+            return policy.isMatch(action.get().getAttempt(),
+                    action.get().getErrorCause(),
+                    deltaFile.getSourceInfo().getFlow(),
+                    action.get().getName(),
+                    action.get().getType().name());
+        }
+        return false;
+    }
+
+    /**
+     * Determine if the named resume policy can be applied to a list of DeltaFiles
+     * and return the ones that match.
+     *
+     * @param policy      The policy to use for evaluation
+     * @param deltaFiles  A list of DeltaFiles to be checked against the named policy
+     * @param excludeDids A set of DeltaFile dids to ignore
+     * @return List of DeltaFiles that can be resumed
+     */
+    public List<String> canBeApplied(ResumePolicy policy, List<DeltaFile> deltaFiles, Set<String> excludeDids) {
+        return deltaFiles.stream()
+                .filter(d -> !excludeDids.contains(d.getDid()))
+                .filter(d -> matchesActionError(policy, d))
+                .map(DeltaFile::getDid)
+                .toList();
     }
 
     /**

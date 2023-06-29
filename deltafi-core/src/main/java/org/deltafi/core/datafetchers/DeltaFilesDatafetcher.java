@@ -35,6 +35,7 @@ import org.deltafi.core.generated.types.*;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.DeltaFilesService;
 import org.deltafi.core.types.DeltaFiles;
+import org.deltafi.core.types.Result;
 import org.deltafi.core.types.UniqueKeyValues;
 
 import java.time.OffsetDateTime;
@@ -167,6 +168,12 @@ public class DeltaFilesDatafetcher {
   @NeedsPermission.DeltaFileCancel
   public List<CancelResult> cancel(@InputArgument List<String> dids) {
     return deltaFilesService.cancel(dids);
+  }
+
+  @DgsMutation
+  @NeedsPermission.ResumePolicyApply
+  public Result applyResumePolicies(@InputArgument List<String> names) {
+    return deltaFilesService.applyResumePolicies(names);
   }
 
   @DgsQuery

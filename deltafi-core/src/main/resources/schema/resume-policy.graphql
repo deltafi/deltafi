@@ -60,6 +60,7 @@ extend type Query {
 }
 
 extend type Mutation {
+  applyResumePolicies(names: [String!]!): Result!
   loadResumePolicies(replaceAll: Boolean!, policies: [ResumePolicyInput!]!): [Result!]!
     removeResumePolicy(id: String!) : Boolean!
     updateResumePolicy(resumePolicy: ResumePolicyInput!) : Result!

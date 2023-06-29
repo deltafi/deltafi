@@ -22,15 +22,9 @@ import org.deltafi.common.content.Segment;
 import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 class DeltaFileTest {
     @Test
@@ -79,6 +73,37 @@ class DeltaFileTest {
         assertEquals(ActionState.RETRIED, deltaFile.getActions().get(0).getState());
         assertEquals(ActionState.COMPLETE, deltaFile.getActions().get(1).getState());
         assertEquals(ActionState.RETRIED, deltaFile.getActions().get(2).getState());
+    }
+
+    @Test
+    void testFirstActionError() {
+        OffsetDateTime now = OffsetDateTime.now();
+        Action action1 = Action.builder()
+                .name("action1")
+                .state(ActionState.ERROR)
+                .build();
+        Action action2 = Action.builder()
+                .name("action2")
+                .state(ActionState.COMPLETE)
+                .build();
+        Action action3 = Action.builder()
+                .name("action3")
+                .state(ActionState.ERROR)
+                .build();
+
+        DeltaFile deltaFile = DeltaFile.builder()
+                .actions(new ArrayList<>(List.of(action1, action2, action3)))
+                .build();
+
+        Optional<Action> firstActionError = deltaFile.firstActionError();
+        assertTrue(firstActionError.isPresent());
+        assertEquals("action1", firstActionError.get().getName());
+
+        DeltaFile deltaFile2 = DeltaFile.builder()
+                .actions(new ArrayList<>(List.of( action2)))
+                .build();
+
+        assertFalse(deltaFile2.firstActionError().isPresent());
     }
 
     @Test

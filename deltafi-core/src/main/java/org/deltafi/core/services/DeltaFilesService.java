@@ -45,6 +45,8 @@ import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.retry.MongoRetryable;
 import org.deltafi.core.types.DeltaFiles;
 import org.deltafi.core.types.EgressFlow;
+import org.deltafi.core.types.Result;
+import org.deltafi.core.types.ResumePolicy;
 import org.deltafi.core.types.UniqueKeyValues;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -1523,5 +1525,69 @@ public class DeltaFilesService {
 
     public DeltaFileStats deltaFileStats(boolean inFlightOnly, boolean includeDeletedContent) {
         return deltaFileRepo.deltaFileStats(inFlightOnly, includeDeletedContent);
+    }
+
+    public Result applyResumePolicies(List<String> policyNames) {
+        List<String> information = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+        List<ResumePolicy> foundPolicies = new ArrayList<>();
+        boolean allHaveFlowName = true;
+
+        if (policyNames == null || policyNames.isEmpty()) {
+            errors.add("Must provide one or more policy names");
+        }
+
+        if (errors.isEmpty()) {
+            for (String policyName : new LinkedHashSet<>(policyNames)) {
+                Optional<ResumePolicy> policy = resumePolicyService.findByName(policyName);
+                if (policy.isPresent()) {
+                    foundPolicies.add(policy.get());
+                    if (policy.get().getFlow() == null) {
+                        allHaveFlowName = false;
+                    }
+                } else {
+                    errors.add("Policy name " + policyName + " not found");
+                }
+            }
+        }
+
+        if (errors.isEmpty()) {
+            OffsetDateTime now = OffsetDateTime.now(clock);
+            Set<String> previousDids = new HashSet<>();
+
+            /*
+             * If we have any resume policies that are not flow-specific,
+             * then we will query for all DeltaFiles with an ERROR, and
+             * reuse the result for any other policies without a flow name.
+             */
+            List<DeltaFile> allErrorDeltaFiles = null;
+            if (!allHaveFlowName) {
+                allErrorDeltaFiles = deltaFileRepo.findResumePolicyCandidates(null);
+            }
+
+            for (ResumePolicy resumePolicy : foundPolicies) {
+                List<DeltaFile> checkFiles;
+                if (resumePolicy.getFlow() == null) {
+                    checkFiles = allErrorDeltaFiles;
+                } else {
+                    checkFiles = deltaFileRepo.findResumePolicyCandidates(resumePolicy.getFlow());
+                }
+
+                List<String> dids = resumePolicyService.canBeApplied(resumePolicy, checkFiles, previousDids);
+                if (dids.isEmpty()) {
+                    information.add("No DeltaFile errors can be resumed by policy " + resumePolicy.getName());
+                } else {
+                    deltaFileRepo.updateForAutoResume(dids, resumePolicy.getName(),
+                            now.plusSeconds(resumePolicy.getBackOff().getDelay()));
+                    previousDids.addAll(dids);
+                    information.add("Applied " + resumePolicy.getName() + " policy to " + dids.size() + " DeltaFiles");
+                }
+            }
+        }
+
+        return Result.builder().success(errors.isEmpty())
+                .errors(errors)
+                .info(information)
+                .build();
     }
 }

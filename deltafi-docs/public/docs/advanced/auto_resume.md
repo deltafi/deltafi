@@ -12,7 +12,7 @@ A Resume Policy consist of the following:
 * id (auto-generated UUID)
 * name
 * errorSubstring
-* flow
+* flow (sourceInfo flow)
 * action (full action name)
 * actionType
 * maxAttempts
@@ -28,7 +28,7 @@ The backOff properties are:
 
 ## Behavior
 
-When an action error occurs, the details of the error are compared to all resume policies in decreasing priority order. In order for there to be a match, the error cause, flow, action, and/or action type from the action error must match
+When an action error occurs, the details of the error are compared to all resume policies in decreasing priority order. In order for there to be a match, the error cause, sourceInfo flow, action, and/or action type from the action error must match
 the set of those fields included in the resume policy.
 For the error cause search, the comparison uses a substring match of the policy `errorSubstring`;
 the other fields require an exact match.
@@ -39,8 +39,10 @@ It is possible for more than one resume policy to match an action error. Only th
 The more specific the policy, the higher the priority.
 Calculated priority ranges from 5o to 250.
 An `errorSubstring` with at least 11 characters is worth 100; shorter values are worth 50.
-If the `action` is specified, that is worth 150.
-However, if `action` is not included, `flow` and `actionType` are worth 50 each when set.
+If the `action` is specified, that is worth 100.
+However, if `action` is not included,  `actionType` is worth 50 when set.
+If the `flow` is specified, that is worth 50.
+
 
 When a resume policy match is found, an automatic resume of the DeltaFile is scheduled. The `name` of the resume policy which was applied is recorded in the DeltaFile `nextAutoResumeReason` field.
 

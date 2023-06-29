@@ -2032,6 +2032,89 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void testApplyResumePolicies() throws IOException {
+		List<Result> results = ResumePolicyDatafetcherTestHelper.loadResumePolicyWithDuplicate(dgsQueryExecutor);
+		assertTrue(results.get(0).isSuccess());
+
+		Result applyResultNoPolicies = ResumePolicyDatafetcherTestHelper.applyResumePolicies(dgsQueryExecutor, Collections.emptyList());
+		assertFalse(applyResultNoPolicies.isSuccess());
+		assertTrue(applyResultNoPolicies.getErrors().contains("Must provide one or more policy names"));
+		assertTrue(applyResultNoPolicies.getInfo().isEmpty());
+
+		Result applyResultInvalidPolicy = ResumePolicyDatafetcherTestHelper.applyResumePolicies(dgsQueryExecutor, List.of(
+				ResumePolicyDatafetcherTestHelper.POLICY_NAME1,
+				"not-found",
+				ResumePolicyDatafetcherTestHelper.POLICY_NAME2));
+		assertFalse(applyResultInvalidPolicy.isSuccess());
+		assertEquals(1, applyResultInvalidPolicy.getErrors().size());
+		assertTrue(applyResultInvalidPolicy.getErrors().contains("Policy name not-found not found"));
+		assertTrue(applyResultInvalidPolicy.getInfo().isEmpty());
+
+		Result applyResultGoodNames = ResumePolicyDatafetcherTestHelper.applyResumePolicies(dgsQueryExecutor, List.of(
+				ResumePolicyDatafetcherTestHelper.POLICY_NAME1,
+				ResumePolicyDatafetcherTestHelper.POLICY_NAME1, // dupe ok
+				ResumePolicyDatafetcherTestHelper.POLICY_NAME2));
+		assertTrue(applyResultGoodNames.isSuccess());
+		assertTrue(applyResultGoodNames.getErrors().isEmpty());
+		assertEquals(2, applyResultGoodNames.getInfo().size());
+		assertTrue(applyResultGoodNames.getInfo().contains("No DeltaFile errors can be resumed by policy policyName1"));
+		assertTrue(applyResultGoodNames.getInfo().contains("No DeltaFile errors can be resumed by policy policyName2"));
+
+		// Real apply test
+		String did1 = UUID.randomUUID().toString();
+		String did2 = UUID.randomUUID().toString();
+		String did3 = UUID.randomUUID().toString();
+		DeltaFile before1 = postValidateDeltaFile(did1);
+		deltaFileRepo.save(before1);
+		DeltaFile before2 = postValidateDeltaFile(did2);
+		deltaFileRepo.save(before2);
+		DeltaFile before3 = postValidateDeltaFile(did3);
+		before3.getSourceInfo().setFlow("flow3");
+		deltaFileRepo.save(before3);
+
+		deltaFilesService.handleActionEvent(actionEvent("error", did1));
+		deltaFilesService.handleActionEvent(actionEvent("error", did2));
+		deltaFilesService.handleActionEvent(actionEvent("error", did3));
+
+		DeltaFile during1 = deltaFilesService.getDeltaFile(did1);
+		DeltaFile during2 = deltaFilesService.getDeltaFile(did2);
+		DeltaFile during3 = deltaFilesService.getDeltaFile(did3);
+
+		assertNull(during1.getNextAutoResume());
+		assertNull(during2.getNextAutoResume());
+		assertNull(during3.getNextAutoResume());
+
+		final String errorCause = "Authority XYZ not recognized";
+
+		List<Result> loadA = ResumePolicyDatafetcherTestHelper.loadResumePolicy(dgsQueryExecutor,
+				true, "policy1", during1.getSourceInfo().getFlow(), null);
+		List<Result> loadB = ResumePolicyDatafetcherTestHelper.loadResumePolicy(dgsQueryExecutor,
+				false, "policy2", null, errorCause);
+
+		assertTrue(loadA.get(0).isSuccess());
+		assertTrue(loadB.get(0).isSuccess());
+
+		Result applyResults = ResumePolicyDatafetcherTestHelper.applyResumePolicies(dgsQueryExecutor, List.of("policy1", "policy2"));
+		assertTrue(applyResults.isSuccess());
+		assertTrue(applyResults.getErrors().isEmpty());
+		assertEquals(2, applyResults.getInfo().size());
+		assertEquals("Applied policy1 policy to 2 DeltaFiles", applyResults.getInfo().get(0));
+		assertEquals("Applied policy2 policy to 1 DeltaFiles", applyResults.getInfo().get(1));
+
+		DeltaFile final1 = deltaFilesService.getDeltaFile(did1);
+		DeltaFile final2 = deltaFilesService.getDeltaFile(did2);
+		DeltaFile final3 = deltaFilesService.getDeltaFile(did3);
+
+		assertNotNull(final1.getNextAutoResume());
+		assertNotNull(final2.getNextAutoResume());
+		assertNotNull(final3.getNextAutoResume());
+
+		assertEquals("policy1", final1.getNextAutoResumeReason());
+		assertEquals("policy1", final2.getNextAutoResumeReason());
+		assertEquals("policy2", final3.getNextAutoResumeReason());
+	}
+
+	@Test
 	void deltaFile() {
 		DeltaFile expected = deltaFilesService.ingress(INGRESS_INPUT);
 

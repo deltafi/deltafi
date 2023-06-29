@@ -48,7 +48,24 @@ public class ResumePolicyDatafetcherTestHelper {
     public static final int MULTIPLIER = 1;
     public static final boolean RANDOM = false;
 
-    static public List<ResumePolicy> getAllResumePolicies(DgsQueryExecutor dgsQueryExecutor) {
+    public static Result applyResumePolicies(DgsQueryExecutor dgsQueryExecutor, List<String> names) {
+        ApplyResumePoliciesProjectionRoot projection = new ApplyResumePoliciesProjectionRoot()
+                .success()
+                .info()
+                .errors();
+
+        ApplyResumePoliciesGraphQLQuery query =
+                ApplyResumePoliciesGraphQLQuery.newRequest().names(names).build();
+        GraphQLQueryRequest graphQLQueryRequest =
+                new GraphQLQueryRequest(query, projection);
+
+        return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+                graphQLQueryRequest.serialize(),
+                "data." + query.getOperationName(),
+                Result.class);
+    }
+
+    public static List<ResumePolicy> getAllResumePolicies(DgsQueryExecutor dgsQueryExecutor) {
         GetAllResumePoliciesProjectionRoot projection = new GetAllResumePoliciesProjectionRoot()
                 .id()
                 .name()
@@ -79,7 +96,7 @@ public class ResumePolicyDatafetcherTestHelper {
                 policyListType);
     }
 
-    static public ResumePolicy getResumePolicy(DgsQueryExecutor dgsQueryExecutor, String id) {
+    public static ResumePolicy getResumePolicy(DgsQueryExecutor dgsQueryExecutor, String id) {
         GetResumePolicyProjectionRoot projection = new GetResumePolicyProjectionRoot()
                 .id()
                 .name()
@@ -107,7 +124,7 @@ public class ResumePolicyDatafetcherTestHelper {
                 ResumePolicy.class);
     }
 
-    static public List<Result> loadResumePolicyWithDuplicate(DgsQueryExecutor dgsQueryExecutor) {
+    public static List<Result> loadResumePolicyWithDuplicate(DgsQueryExecutor dgsQueryExecutor) {
         ResumePolicyInput input = makeResumePolicy(POLICY_NAME1, ERROR_SUBSTRING, FLOW_NAME1, ACTION1, ACTION_TYPE, MAX_ATTEMPTS, DELAY);
         ResumePolicyInput duplicateCriteria = makeResumePolicy("different", ERROR_SUBSTRING, FLOW_NAME1, ACTION1, ACTION_TYPE, MAX_ATTEMPTS, DELAY);
         ResumePolicyInput duplicateName = makeResumePolicy(POLICY_NAME1, "different", FLOW_NAME1, ACTION1, ACTION_TYPE, MAX_ATTEMPTS, DELAY);
@@ -115,7 +132,17 @@ public class ResumePolicyDatafetcherTestHelper {
         return executeLoadPolicies(dgsQueryExecutor, true, List.of(input, duplicateCriteria, duplicateName, third));
     }
 
-    static public BackOffInput makeBackOff(int delay) {
+    public static List<Result> loadResumePolicy(
+            DgsQueryExecutor dgsQueryExecutor,
+            boolean replace,
+            String policyNane,
+            String flowName,
+            String errorSubstring) {
+        ResumePolicyInput input = makeResumePolicy(policyNane, errorSubstring, flowName, null, null, MAX_ATTEMPTS, DELAY);
+        return executeLoadPolicies(dgsQueryExecutor, replace, List.of(input));
+    }
+
+    public static BackOffInput makeBackOff(int delay) {
         return BackOffInput.newBuilder()
                 .delay(delay)
                 .maxDelay(MAX_DELAY)
@@ -124,7 +151,7 @@ public class ResumePolicyDatafetcherTestHelper {
                 .build();
     }
 
-    static public ResumePolicyInput makeResumePolicy(
+    public static ResumePolicyInput makeResumePolicy(
             String name,
             String errorSubstring,
             String flow,
@@ -144,11 +171,11 @@ public class ResumePolicyDatafetcherTestHelper {
                 .build();
     }
 
-    static public boolean isDefaultFlow(ResumePolicy policy) {
+    public static boolean isDefaultFlow(ResumePolicy policy) {
         return policy.getFlow().equals(FLOW_NAME1);
     }
 
-    static public boolean matchesDefault(ResumePolicy policy) {
+    public static boolean matchesDefault(ResumePolicy policy) {
         return policy.getErrorSubstring().equals(ERROR_SUBSTRING) &&
                 policy.getFlow().equals(FLOW_NAME1) &&
                 policy.getAction().equals(ACTION1) &&
@@ -162,7 +189,7 @@ public class ResumePolicyDatafetcherTestHelper {
                 policy.getBackOff().getRandom() == RANDOM;
     }
 
-    static public boolean matchesUpdated(ResumePolicy policy) {
+    public static boolean matchesUpdated(ResumePolicy policy) {
         return policy.getErrorSubstring().equals(ERROR_SUBSTRING) &&
                 policy.getFlow().equals(FLOW_NAME3) &&
                 policy.getAction().equals(ACTION3) &&
@@ -193,7 +220,7 @@ public class ResumePolicyDatafetcherTestHelper {
                 resultListType);
     }
 
-    static public boolean removeResumePolicy(DgsQueryExecutor dgsQueryExecutor, String id) {
+    public static boolean removeResumePolicy(DgsQueryExecutor dgsQueryExecutor, String id) {
         RemoveResumePolicyGraphQLQuery query = RemoveResumePolicyGraphQLQuery.newRequest().id(id).build();
 
         GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, null);
@@ -203,7 +230,7 @@ public class ResumePolicyDatafetcherTestHelper {
                 "data." + query.getOperationName(), Boolean.class);
     }
 
-    static public Result updateResumePolicy(DgsQueryExecutor dgsQueryExecutor, String id) {
+    public static Result updateResumePolicy(DgsQueryExecutor dgsQueryExecutor, String id) {
         ResumePolicyInput input = makeResumePolicy(POLICY_NAME3, ERROR_SUBSTRING, FLOW_NAME3, ACTION3, ACTION_TYPE, MAX_ATTEMPTS, 2 * DELAY);
         input.setId(id);
 

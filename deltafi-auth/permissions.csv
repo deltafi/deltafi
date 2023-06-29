@@ -58,6 +58,7 @@ Events,EventUpdate,Grants the ability to edit Events
 Events,EventDelete,Grants the ability to delete Events
 Events,EventAcknowledge,Grants the ability to acknowledge Events
 Stress Tests,StressTest,Grants the ability to execute Stress Tests
+Resume Policies,ResumePolicyApply,Grants the ability to apply Resume Policies to DeltaFiles already in an ERROR state
 Resume Policies,ResumePolicyCreate,Grants the ability to create Resume Policies
 Resume Policies,ResumePolicyRead,Grants the ability to view Resume Policies
 Resume Policies,ResumePolicyUpdate,Grants the ability to edit Resume Policies

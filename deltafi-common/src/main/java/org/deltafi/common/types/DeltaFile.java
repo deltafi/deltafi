@@ -139,6 +139,12 @@ public class DeltaFile {
             .reduce((first, second) -> second);
   }
 
+  public Optional<Action> firstActionError() {
+    return getActions().stream()
+            .filter(a -> a.getState().equals(ActionState.ERROR))
+            .findFirst();
+  }
+
   public boolean isNewAction(String name) {
     return actionNamed(name).isEmpty();
   }

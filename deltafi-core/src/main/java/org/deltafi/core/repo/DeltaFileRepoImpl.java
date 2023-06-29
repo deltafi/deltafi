@@ -83,6 +83,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String REPLAYED = "replayed";
     public static final String REQUEUE_COUNT = "requeueCount";
     public static final String NEXT_AUTO_RESUME = "nextAutoResume";
+    public static final String NEXT_AUTO_RESUME_REASON = "nextAutoResumeReason";
     public static final String SOURCE_INFO_FILENAME = "sourceInfo.filename";
     public static final String SOURCE_INFO_FLOW = "sourceInfo.flow";
     public static final String SOURCE_INFO_METADATA = "sourceInfo.metadata";
@@ -92,9 +93,11 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String FORMATTED_DATA_METADATA = "formattedData.metadata";
     public static final String FORMATTED_DATA_EGRESS_ACTIONS = "formattedData.egressActions";
     public static final String ACTIONS = "actions";
+    public static final String ACTIONS_ATTEMPT = "actions.attempt";
     public static final String ACTIONS_ERROR_CAUSE = "actions.errorCause";
     public static final String ACTIONS_NAME = "actions.name";
     public static final String ACTIONS_STATE = "actions.state";
+    public static final String ACTIONS_TYPE = "actions.type";
     public static final String ACTIONS_MODIFIED = "actions.modified";
     public static final String ACTION_MODIFIED = "action.modified";
     public static final String ACTION_STATE = "action.state";
@@ -257,6 +260,42 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         requeueQuery.fields().include(ID, SOURCE_INFO_FLOW);
 
         return requeueQuery;
+    }
+
+    @Override
+    public List<DeltaFile> findResumePolicyCandidates(String flowName) {
+        return mongoTemplate.find(buildResumePolicyCanidatesQuery(flowName), DeltaFile.class);
+    }
+
+    private Query buildResumePolicyCanidatesQuery(String flowName) {
+        List<Criteria> andCriteria = new ArrayList<>();
+
+        andCriteria.add(Criteria.where(STAGE).is(DeltaFileStage.ERROR));
+        andCriteria.add(Criteria.where(NEXT_AUTO_RESUME).isNull());
+        andCriteria.add(Criteria.where(ERROR_ACKNOWLEDGED).isNull());
+        andCriteria.add(Criteria.where(CONTENT_DELETED).isNull());
+
+        if (nonNull(flowName)) {
+            andCriteria.add(Criteria.where(SOURCE_INFO_FLOW).is(flowName));
+        }
+
+        Query requeueQuery = new Query(new Criteria().andOperator(andCriteria.toArray(new Criteria[0])));
+        requeueQuery.fields().include(ID, SOURCE_INFO_FLOW, ACTIONS_NAME, ACTIONS_ERROR_CAUSE, ACTIONS_STATE, ACTIONS_TYPE, ACTIONS_ATTEMPT);
+
+        return requeueQuery;
+    }
+
+    @Override
+    public void updateForAutoResume(List<String> dids, String policyName, OffsetDateTime nextAutoResume) {
+        if (dids != null && !dids.isEmpty()) {
+            BulkOperations bulkOps = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, DeltaFile.class);
+            Update update = new Update().set(NEXT_AUTO_RESUME, nextAutoResume).set(NEXT_AUTO_RESUME_REASON, policyName);
+            for (List<String> batch : Lists.partition(dids, 1000)) {
+                Query query = new Query().addCriteria(Criteria.where(ID).in(batch));
+                bulkOps.updateMulti(query, update);
+            }
+            bulkOps.execute();
+        }
     }
 
     @Override

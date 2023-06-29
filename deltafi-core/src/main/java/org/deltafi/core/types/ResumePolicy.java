@@ -94,15 +94,15 @@ public class ResumePolicy extends org.deltafi.core.generated.types.ResumePolicy 
             }
         }
         if (StringUtils.isNotBlank(getAction())) {
-            // The action name already starts with the flow name
-            tempPriority += 150;
+            tempPriority += 100;
         } else {
-            if (StringUtils.isNotBlank(getFlow())) {
-                tempPriority += 50;
-            }
             if (StringUtils.isNotBlank(getActionType())) {
                 tempPriority += 50;
             }
+        }
+
+        if (StringUtils.isNotBlank(getFlow())) {
+            tempPriority += 50;
         }
         return tempPriority;
     }
@@ -134,6 +134,18 @@ public class ResumePolicy extends org.deltafi.core.generated.types.ResumePolicy 
         }
     }
 
+    /**
+     * Compare contents of this policy with provided parameters
+     * values (pulled from the DeltaFile/Action where the error
+     * occurred) to see if they are satisfied.
+     *
+     * @param attempt    the number of times the action was attempted
+     * @param error      the errorCause message from the action
+     * @param flow       the DeltaFile;s sourceInfo flow
+     * @param action     the name of the action, including flow prefix
+     * @param actionType the action type
+     * @return true if a match; otherwise false
+     */
     public boolean isMatch(int attempt, String error, String flow, String action, String actionType) {
         return attempt < getMaxAttempts() &&
                 errorMatch(error) &&
