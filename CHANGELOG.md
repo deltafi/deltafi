@@ -5,6 +5,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.0.2] - 2023-06-29
+
+### Added
+- Added a query to get the set of annotations that are expected on a DeltaFile but not present 
+- Added the `pendingAnnotationsForFlows` field to the `DeltaFile` graphql schema
+- New mutation `applyResumePolicies` allows recently added auto resume policies to be retroactively applied to any oustanding DeltaFiles in the ERROR stage (whicn are still resumable)
+- New user role `ResumePolicyApply` in the `Resume Policies` group grants permisson to execute the `applyResumePolicies` mutation
+
+### Changed
+- Clarified documentration that the `flow` in an auto resume policy refers to the DeltaFile's sourceInfo flow. I.e., the ingress or transformation flow name
+
+### Fixed
+- Nodemonitor used RAM calculation fixed
+
+### Tech-Debt/Refactor
+- Update the DeltaFiles in a new thread when expected annotations are changed to prevent blocking the graphql response 
+
 ## [1.0.1] - 2023-06-26
 
 ### Added
@@ -1927,7 +1944,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.1...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.2...main
+[1.0.2]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.1...1.0.2
 [1.0.1]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0...1.0.1
 [1.0.0]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC8...1.0.0
 [1.0.0-RC8]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0-RC7...1.0.0-RC8
