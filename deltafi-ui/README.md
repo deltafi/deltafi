@@ -53,14 +53,14 @@ For example, to run the app and point the proxy at your local DeltaFi instance, 
     DELTAFI_DOMAIN=local.deltafi.org npm run dev
 
 #### Mocking
-To run the mocking service, run:
+To run the dev server with mocking enabled, run:
 
     VUE_APP_MOCK_RESPONSES=successResponse npm run dev
 
 To update mockServiceWorker.js to a newer version add lines to package.json file:
 
-    "msw": {
-      "workerDirectory": "public"
+      "msw": {
+        "workerDirectory": "public"
       }
 
 Then run command:
@@ -76,6 +76,14 @@ To run the linter, run:
 To run the linter and try to automatically fix issues, run:
 
     npm run lint:fix
+
+## Testing
+
+To run the Cypress test suite locally, you must first run a development instance with mocking enabled. (See the [Mocking](#mocking) section above.)
+
+Then run the following:
+
+    npx cypress run
 
 ## Production
 

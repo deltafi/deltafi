@@ -29,6 +29,7 @@
     "comlink-loader-webpack5": "^1.0.0",
     "cookie-parser": "~1.4.6",
     "core-js": "^3.30.2",
+    "cypress": "^12.16.0",
     "d3": "^3.5.17",
     "dayjs": "^1.11.7",
     "debug": "~4.3.4",
