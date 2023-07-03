@@ -167,7 +167,7 @@ const staticMenuItems = reactive([
   {
     label: "Replay",
     icon: "fas fa-sync fa-fw",
-    visible: () => !beenReplayed.value && hasPermission("DeltaFileReplay"),
+    visible: () => !beenReplayed.value && !beenDeleted.value && hasPermission("DeltaFileReplay"),
     command: () => {
       metadataDialog.value.showConfirmDialog("Replay");
     },
@@ -182,7 +182,7 @@ const staticMenuItems = reactive([
   },
   {
     separator: true,
-    visible: computed(() => isError.value && hasSomePermissions("DeltaFileAcknowledge", "DeltaFileResume", "ResumePolicyCreate")),
+    visible: computed(() => isError.value && !beenDeleted.value && hasSomePermissions("DeltaFileAcknowledge", "DeltaFileResume", "ResumePolicyCreate")),
   },
   {
     label: "Acknowledge Error",
@@ -306,6 +306,10 @@ const isError = computed(() => {
 
 const beenReplayed = computed(() => {
   return deltaFile.replayed !== null;
+});
+
+const beenDeleted = computed(() => {
+  return deltaFile.contentDeleted !== null;
 });
 
 const hasMetadata = computed(() => {
