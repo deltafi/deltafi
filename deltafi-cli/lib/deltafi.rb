@@ -27,7 +27,7 @@ module Deltafi
 
   def self.log(message)
     output = `. #{COMMON_PATH}; cli_log "#{message}"`
-    puts output.to_s
+    puts output
   end
 end
 

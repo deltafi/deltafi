@@ -32,7 +32,7 @@ module Deltafi
   DELTAFI_MODE = ENV['DELTAFI_MODE'] || 'CLUSTER'
 
   def self.k8s_client
-    debug "#{__method__} called from #{caller[0]}"
+    debug "#{__method__} called from #{caller(1..1).first}"
     ENV['RUNNING_IN_CLUSTER'].nil? ? K8s::Client.config(K8s::Config.load_file(File.expand_path('~/.kube/config'))) : K8s::Client.in_cluster_config
   end
 
@@ -48,7 +48,7 @@ module Deltafi
   end
 
   def self.graphql(query)
-    debug "#{__method__} called from #{caller[0]}"
+    debug "#{__method__} called from #{caller(1..1).first}"
     graphql_url = File.join(BASE_URL, 'graphql')
 
     response = HTTParty.post(graphql_url,
@@ -68,15 +68,15 @@ module Deltafi
   end
 
   def self.core_rest_get(endpoint)
-    debug "#{__method__} called from #{caller[0]}"
+    debug "#{__method__} called from #{caller(1..1).first}"
     core_url = File.join(BASE_URL, endpoint)
 
     response = HTTParty.get(core_url,
-                           headers: {
-                             'Content-Type' => 'application/json',
-                             'X-User-Permissions' => 'Admin',
-                             'X-User-Name' => 'Admin'
-                           })
+                            headers: {
+                              'Content-Type' => 'application/json',
+                              'X-User-Permissions' => 'Admin',
+                              'X-User-Name' => 'Admin'
+                            })
 
     raise "#{response.code} error from core: #{response.message}" unless response.success?
 
@@ -84,7 +84,7 @@ module Deltafi
   end
 
   def self.redis_client
-    debug "#{__method__} called from #{caller[0]}"
+    debug "#{__method__} called from #{caller(1..1).first}"
     redis_password = ENV.fetch('REDIS_PASSWORD', nil)
     redis_url = ENV['REDIS_URL']&.gsub(/^http/, 'redis') || 'redis://deltafi-redis-master:6379'
 

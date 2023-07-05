@@ -58,8 +58,12 @@ class ApiServer < Sinatra::Base
   end
 end
 
-class Sinatra::Helpers::Stream
-  def send_heartbeat
-    self << "event: heartbeat\ndata: #{Time.now.to_i}\n\n"
+module Sinatra
+  module Helpers
+    class Stream
+      def send_heartbeat
+        self << "event: heartbeat\ndata: #{Time.now.to_i}\n\n"
+      end
+    end
   end
 end

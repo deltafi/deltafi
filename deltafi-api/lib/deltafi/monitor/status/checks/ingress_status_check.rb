@@ -126,13 +126,13 @@ module Deltafi
 
             @@disabled_flows = disabled.keys
 
-            unless @@disabled_flows.empty?
-              self.code = 1
-              message_lines << "##### Ingress is disabled for flows with too many errors\n"
-              message_lines << 'Acknowledge or resolve errors on these flows to continue:'
-              disabled.each do |k, v|
-                message_lines << "\n- #{k}: #{v[:currErrors]} errors, #{v[:maxErrors]} allowed"
-              end
+            return if @@disabled_flows.empty?
+
+            self.code = 1
+            message_lines << "##### Ingress is disabled for flows with too many errors\n"
+            message_lines << 'Acknowledge or resolve errors on these flows to continue:'
+            disabled.each do |k, v|
+              message_lines << "\n- #{k}: #{v[:currErrors]} errors, #{v[:maxErrors]} allowed"
             end
           end
 
@@ -157,9 +157,9 @@ module Deltafi
             raise StandardError, parsed_response[:errors]&.first&.dig(:message) if parsed_response.key?(:errors)
 
             flow_errors = parsed_response.dig(:data, :ingressFlowErrorsExceeded) || []
-            flow_errors.map do |r|
+            flow_errors.to_h do |r|
               [ r[:name], { maxErrors: r[:maxErrors], currErrors: r[:currErrors] } ]
-            end.to_h
+            end
           end
         end
       end

@@ -6,7 +6,7 @@ require 'logger'
 namespace :db do
   desc 'Migrate database'
   task :migrate do
-    logger = Logger.new(STDOUT)
+    logger = Logger.new($stdout)
     db_location = File.join(ENV['DATA_DIR'] || 'db', 'auth.sqlite3')
     logger.info "Migrating database located at #{db_location}"
     db = Sequel.connect("sqlite://#{db_location}")

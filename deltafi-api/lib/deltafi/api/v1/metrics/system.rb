@@ -109,7 +109,7 @@ module Deltafi
             end
 
             def apps_by_node_core
-              DF.core_rest_get("appsByNode")
+              DF.core_rest_get('appsByNode')
             end
 
             def apps_by_node

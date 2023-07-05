@@ -51,7 +51,7 @@ module Deltafi
           end
 
           def standalone_apps
-            DF.core_rest_get("app/versions")
+            DF.core_rest_get('app/versions')
           end
         end
       end

@@ -56,10 +56,8 @@ module Deltafi
                 )
               end
             end
-
           end
         end
-
       end
     end
   end

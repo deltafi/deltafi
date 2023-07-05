@@ -48,9 +48,7 @@ class EgressSinkServer < Sinatra::Base
   get('/probe') {}
 
   post '/blackhole' do
-    if params['latency']
-      sleep(params['latency'].to_f)
-    end
+    sleep(params['latency'].to_f) if params['latency']
 
     request.body.read
 
