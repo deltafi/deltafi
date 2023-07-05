@@ -123,9 +123,14 @@
           </template>
         </div>
       </TabPanel>
-      <template v-if="!_.isEmpty(variables)">
+      <template v-if="!_.isEmpty(flowData?.variables)">
         <TabPanel header="Flow Variables">
-          <FlowVariableViewer :header="header" :variables="variables"></FlowVariableViewer>
+          <FlowVariableViewer :header="header" :variables="flowData?.variables"></FlowVariableViewer>
+        </TabPanel>
+      </template>
+      <template v-if="['transform', 'egress'].includes(flowType)">
+        <TabPanel header="Read Receipts">
+          <FlowExpectedAnnotationsViewer :key="Math.random()" :header="header" :expected-annotations="expectedAnnotations" :flow-name="flowName" :flow-type="flowType" @reload-flow-viewer="fetchFlows(flowName, flowType)"></FlowExpectedAnnotationsViewer>
         </TabPanel>
       </template>
     </TabView>
@@ -135,10 +140,11 @@
 <script setup>
 import ActionMetricsTable from "@/components/ActionMetricsTable.vue";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
+import FlowExpectedAnnotationsViewer from "@/components/flow/FlowExpectedAnnotationsViewer.vue";
 import FlowVariableViewer from "@/components/flow/FlowVariableViewer.vue";
 import useActionMetrics from "@/composables/useActionMetrics";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
-import { computed, defineExpose, defineProps, inject, onBeforeMount, onUnmounted, reactive, ref } from "vue";
+import { computed, defineProps, inject, onBeforeMount, onUnmounted, reactive, ref } from "vue";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 
 import Divider from "primevue/divider";
@@ -169,20 +175,14 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  variables: {
-    type: Object,
-    required: false,
-    default: null,
-  },
 });
 
-const { header, flowName, flowType, variables } = reactive(props);
+const { header, flowName, flowType } = reactive(props);
 
 const actionsList = ["transformActions", "loadAction", "deleteActions", "domainActions", "enrichActions", "formatAction", "validateActions", "egressAction"];
 
 const refreshInterval = 5000; // 5 seconds
 const flowData = ref("");
-const dialogVisible = ref(false);
 const ingressFlowNameSelected = ref(null);
 
 let autoRefresh = null;
@@ -192,16 +192,9 @@ onUnmounted(() => {
 });
 
 onBeforeMount(async () => {
-  fetchFlows(flowName, flowType);
+  await fetchFlows(flowName, flowType);
   await fetchActionMetrics();
   autoRefresh = setInterval(fetchActionMetrics, refreshInterval);
-});
-const showDialog = () => {
-  dialogVisible.value = true;
-};
-
-defineExpose({
-  showDialog,
 });
 
 const fetchActionMetrics = async () => {
@@ -242,6 +235,10 @@ const grafanaLogLink = computed(() => {
       "disable-grafana-link": !hasPermission("MetricsView"),
     },
   ];
+});
+
+const expectedAnnotations = computed(() => {
+  return flowData.value.expectedAnnotations ? flowData.value.expectedAnnotations : null;
 });
 
 const panelHeader = (actionType) => {

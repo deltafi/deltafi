@@ -24,7 +24,7 @@
       <Column header="Name" field="name" class="name-column" :sortable="true">
         <template #body="{ data }">
           <div class="d-flex justify-content-start">
-            <DialogTemplate component-name="flow/FlowViewer" :header="data.name" :flow-name="data.name" :flow-type="data.flowType" :variables="data.variables">
+            <DialogTemplate component-name="flow/FlowViewer" :header="data.name" :flow-name="data.name" :flow-type="data.flowType">
               <span class="cursor-pointer">
                 {{ data.name }}
                 <i v-tooltip.right="'View Flow information' + errorTooltip(data) + ' for ' + data.name" :class="infoIconClass(data)" />

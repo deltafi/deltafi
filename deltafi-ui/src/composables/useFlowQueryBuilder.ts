@@ -19,7 +19,7 @@
 import useGraphQL from "./useGraphQL";
 
 export default function useFlowQueryBuilder() {
-  const { response, errors, queryGraphQL,loaded,loading } = useGraphQL();
+  const { response, errors, queryGraphQL, loaded, loading } = useGraphQL();
 
   // Get all flows grouped by plugin
   const getFlowsGroupedByPlugin = () => {
@@ -63,6 +63,14 @@ export default function useFlowQueryBuilder() {
             parameters: true,
             apiVersion: true,
           },
+          variables: {
+            name: true,
+            value: true,
+            description: true,
+            defaultValue: true,
+            dataType: true,
+          },
+          expectedAnnotations: true,
         },
         ingressFlows: {
           name: true,
@@ -89,6 +97,13 @@ export default function useFlowQueryBuilder() {
             type: true,
             parameters: true,
             apiVersion: true,
+          },
+          variables: {
+            name: true,
+            value: true,
+            description: true,
+            defaultValue: true,
+            dataType: true,
           },
         },
         enrichFlows: {
@@ -163,6 +178,7 @@ export default function useFlowQueryBuilder() {
             defaultValue: true,
             dataType: true,
           },
+          expectedAnnotations: true,
         },
       },
     };
@@ -210,6 +226,7 @@ export default function useFlowQueryBuilder() {
             defaultValue: true,
             dataType: true,
           },
+          expectedAnnotations: true,
         },
         ingress: {
           name: true,
@@ -331,6 +348,7 @@ export default function useFlowQueryBuilder() {
             defaultValue: true,
             dataType: true,
           },
+          expectedAnnotations: true,
         },
       },
     };
@@ -379,6 +397,7 @@ export default function useFlowQueryBuilder() {
           defaultValue: true,
           required: true,
         },
+        expectedAnnotations: true,
       },
     };
     return sendGraphQLQuery(query, "getTransformFlowByName");
@@ -530,6 +549,7 @@ export default function useFlowQueryBuilder() {
           defaultValue: true,
           required: true,
         },
+        expectedAnnotations: true,
       },
     };
     return sendGraphQLQuery(query, "getEgressFlowByName");
@@ -798,24 +818,51 @@ export default function useFlowQueryBuilder() {
     return sendGraphQLQuery(query, "disableEgressTestModeFlowByName", "mutation");
   };
 
-    // sets max errors for an ingress flow
-    const setMaxErrors = (flowName: string, maxErrors: number) => {
-      const query = {
-        setMaxErrors: {
-          __args: {
-            flowName: flowName,
-            maxErrors: maxErrors
-          },
+  // sets max errors for an ingress flow
+  const setMaxErrors = (flowName: string, maxErrors: number) => {
+    const query = {
+      setMaxErrors: {
+        __args: {
+          flowName: flowName,
+          maxErrors: maxErrors,
         },
-      };
-      return sendGraphQLQuery(query, "setMaxErrors", "mutation");
+      },
     };
+    return sendGraphQLQuery(query, "setMaxErrors", "mutation");
+  };
+
+  // sets expected annotations for an transform flow
+  const setTransformFlowExpectedAnnotations = (flowName: string, expectedAnnotations: Array<string>) => {
+    const query = {
+      setTransformFlowExpectedAnnotations: {
+        __args: {
+          flowName: flowName,
+          expectedAnnotations: expectedAnnotations,
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "setTransformFlowExpectedAnnotations", "mutation");
+  };
+
+  // sets expected annotations for an egress flow
+  const setEgressFlowExpectedAnnotations = (flowName: string, expectedAnnotations: Array<string>) => {
+    const query = {
+      setEgressFlowExpectedAnnotations: {
+        __args: {
+          flowName: flowName,
+          expectedAnnotations: expectedAnnotations,
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "setEgressFlowExpectedAnnotations", "mutation");
+  };
 
   const sendGraphQLQuery = async (query: any, operationName: string, queryType?: string) => {
     try {
       await queryGraphQL(query, operationName, queryType);
       return response.value;
-    } catch {
+    } catch (e: any) {
+      return e.value;
       // Continue regardless of error
     }
   };
@@ -847,8 +894,10 @@ export default function useFlowQueryBuilder() {
     enableTestEgressFlowByName,
     disableTestEgressFlowByName,
     setMaxErrors,
+    setTransformFlowExpectedAnnotations,
+    setEgressFlowExpectedAnnotations,
     loaded,
     loading,
-    errors
+    errors,
   };
 }
