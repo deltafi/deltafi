@@ -109,6 +109,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String ACTIONS_UPDATE_HISTORY = "actions.$[action].history";
     private static final String COLLECTION = "deltaFile";
     private static final String TTL_INDEX_NAME = "ttl_index";
+    private static final String SCHEMA_VERSION = "schemaVersion";
     // Aggregation variables
     private static final String COUNT_FOR_PAGING = "countForPaging";
     private static final String COUNT_LOWER_CASE = "count";
@@ -358,6 +359,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         query.limit(limit);
 
         if (Objects.nonNull(includeFields)) {
+            query.fields().include(SCHEMA_VERSION);
             for (String includeField : includeFields) {
                 query.fields().include(includeField);
             }

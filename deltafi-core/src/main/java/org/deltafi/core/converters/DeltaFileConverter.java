@@ -135,16 +135,7 @@ public class DeltaFileConverter implements AfterConvertCallback<DeltaFile> {
         List<Document> protocolStackDocuments = uncheckedGetList(document, "protocolStack");
         for (Document protocolLayerDocument : protocolStackDocuments) {
             String actionName = protocolLayerDocument.getString("action");
-
-            // find the last action with the matching name
-            Action action = null;
-            for (int j = deltaFile.getActions().size() - 1; j >= 0; j--) {
-                Action currAction = deltaFile.getActions().get(j);
-                if (currAction.getName().equals(actionName)) {
-                    action = currAction;
-                    break;
-                }
-            }
+            Action action = deltaFile.lastAction(actionName);
 
             if (action != null) {
                 List<Document> content = uncheckedGetList(protocolLayerDocument, "content");
@@ -230,16 +221,7 @@ public class DeltaFileConverter implements AfterConvertCallback<DeltaFile> {
         List<Document> formattedDataDocuments = uncheckedGetList(document, "formattedData");
         for (Document formattedDataDocument : formattedDataDocuments) {
             String actionName = formattedDataDocument.getString("formatAction");
-
-            // find the last action with the matching name
-            Action action = null;
-            for (int j = deltaFile.getActions().size() - 1; j >= 0; j--) {
-                Action currAction = deltaFile.getActions().get(j);
-                if (currAction.getName().equals(actionName)) {
-                    action = currAction;
-                    break;
-                }
-            }
+            Action action = deltaFile.lastAction(actionName);
 
             if (action != null) {
                 if (formattedDataDocument.containsKey("content")) {

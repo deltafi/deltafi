@@ -595,6 +595,17 @@ public class DeltaFile {
     return getStage() == DeltaFileStage.COMPLETE || getStage() == DeltaFileStage.ERROR || getStage() == DeltaFileStage.CANCELLED;
   }
 
+  public Action lastAction(String actionName) {
+    if (actionName == null) {
+      return null;
+    }
+
+    return actions.stream()
+            .filter(a -> a.getName().equals(actionName))
+            .reduce((first, second) -> second)
+            .orElse(null);
+  }
+
   @SuppressWarnings("unused")
   public static class DeltaFileBuilder {
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
