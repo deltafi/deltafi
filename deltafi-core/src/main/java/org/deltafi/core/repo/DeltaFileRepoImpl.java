@@ -63,8 +63,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String CREATED = "created";
     public static final String STAGE = "stage";
     public static final String STATE = "state";
-    public static final String DOMAINS_NAME = "domains.name";
-    public static final String ENRICHMENTS_NAME = "enrichments.name";
+    public static final String DOMAINS_NAME = "actions.domains.name";
+    public static final String ENRICHMENTS_NAME = "actions.enrichments.name";
     public static final String CONTENT_DELETED = "contentDeleted";
     public static final String CONTENT_DELETED_REASON = "contentDeletedReason";
     public static final String KEY = "key";

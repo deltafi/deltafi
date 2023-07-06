@@ -18,12 +18,12 @@
 package org.deltafi.common.types;
 
 import lombok.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
+import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE;
 
 @Data
 @NoArgsConstructor
@@ -51,6 +51,10 @@ public class Action {
   private Map<String, String> metadata = new HashMap<>();
   @Builder.Default
   private List<String> deleteMetadataKeys = new ArrayList<>();
+  @Builder.Default
+  private List<Domain> domains = new ArrayList<>();
+  @Builder.Default
+  private List<Enrichment> enrichments = new ArrayList<>();
 
   private static List<ActionType> DATA_AMENDED_TYPES = List.of(
           ActionType.INGRESS,
@@ -63,5 +67,27 @@ public class Action {
 
   public boolean amendedData() {
     return state == ActionState.COMPLETE && DATA_AMENDED_TYPES.contains(type);
+  }
+
+  public void addDomain(@NotNull String domainKey, String domainValue, @NotNull String mediaType) {
+    Optional<Domain> domain = getDomains().stream().filter(d -> d.getName().equals(domainKey)).findFirst();
+    if (domain.isPresent()) {
+      domain.get().setValue(domainValue);
+    } else {
+      getDomains().add(new Domain(domainKey, domainValue, mediaType));
+    }
+  }
+
+  public void addEnrichment(@NotNull String enrichmentKey, String enrichmentValue) {
+    addEnrichment(enrichmentKey, enrichmentValue, APPLICATION_OCTET_STREAM_VALUE);
+  }
+
+  public void addEnrichment(@NotNull String enrichmentKey, String enrichmentValue, @NotNull String mediaType) {
+    Optional<Enrichment> enrichment = getEnrichments().stream().filter(d -> d.getName().equals(enrichmentKey)).findFirst();
+    if (enrichment.isPresent()) {
+      enrichment.get().setValue(enrichmentValue);
+    } else {
+      getEnrichments().add(new Enrichment(enrichmentKey, enrichmentValue, mediaType));
+    }
   }
 }

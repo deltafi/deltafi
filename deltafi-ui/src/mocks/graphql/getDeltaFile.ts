@@ -279,31 +279,31 @@ const generateData = () => {
         content: [],
         metadata: {},
         deleteMetadataKeys: [],
-      },
-    ],
-    domains: [
-      {
-        name: "xml",
-        value: '<?xml version="1.0" encoding="UTF-8"?><note><to>Alice</to><from>Bob</from><heading>Congratulations!</heading><body>Congratulations, Alice! 🎉</body></note>',
-        mediaType: "application/xml",
+        domains: [
+          {
+            name: "xml",
+            value: '<?xml version="1.0" encoding="UTF-8"?><note><to>Alice</to><from>Bob</from><heading>Congratulations!</heading><body>Congratulations, Alice! 🎉</body></note>',
+            mediaType: "application/xml",
+          },
+        ],
+        enrichments: [
+          {
+            name: "mockEnrichment",
+            value: '{"stage":"ERROR","actions":[{"name":"IngressAction","state":"ERROR","errorCause":"Failed Ingress","errorContext":"Details..."}],"sourceInfo":{"flow":"smoke"}}',
+            mediaType: "application/json",
+          },
+          {
+            name: "MockEnrichmentTwo",
+            value: "smoke more enrichment value",
+            mediaType: "text/plain",
+          },
+        ],
       },
     ],
     annotations: {
       a: "b",
       c: "d",
     },
-    enrichments: [
-      {
-        name: "mockEnrichment",
-        value: '{"stage":"ERROR","actions":[{"name":"IngressAction","state":"ERROR","errorCause":"Failed Ingress","errorContext":"Details..."}],"sourceInfo":{"flow":"smoke"}}',
-        mediaType: "application/json",
-      },
-      {
-        name: "MockEnrichmentTwo",
-        value: "smoke more enrichment value",
-        mediaType: "text/plain",
-      },
-    ],
     contentDeleted: null,
     contentDeletedReason: null,
     errorAcknowledged: null,

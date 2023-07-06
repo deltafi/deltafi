@@ -32,8 +32,6 @@ import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE;
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -52,7 +50,6 @@ public class DeltaFile {
   @Builder.Default
   private List<Action> actions = new ArrayList<>();
   private SourceInfo sourceInfo;
-  private List<Domain> domains;
   @Transient
   @Builder.Default
   private Map<String, String> metadata = new HashMap<>();
@@ -60,7 +57,6 @@ public class DeltaFile {
   private Map<String, String> annotations = new HashMap<>();
   // Do not set @Builder.Default, see special handling in the builder
   private Set<String> annotationKeys = new HashSet<>();
-  private List<Enrichment> enrichments;
   @Builder.Default
   private List<Egress> egress = new ArrayList<>();
   private OffsetDateTime created;
@@ -86,7 +82,7 @@ public class DeltaFile {
   @JsonIgnore
   private long version;
 
-  public final static int CURRENT_SCHEMA_VERSION = 5;
+  public final static int CURRENT_SCHEMA_VERSION = 6;
   private int schemaVersion;
 
   public Map<String, String> getMetadata() {
@@ -149,29 +145,22 @@ public class DeltaFile {
     return actionNamed(name).isEmpty();
   }
 
-  public void completeAction(ActionEvent event) {
-    completeAction(event.getAction(), event.getStart(), event.getStop(), null, null, null);
+  public Action completeAction(ActionEvent event) {
+    return completeAction(event.getAction(), event.getStart(), event.getStop(), null, null, null, null, null);
   }
 
   public void completeAction(ActionEvent event, List<Content> content, Map<String, String> metadata,
-                             List<String> deleteMetadataKeys) {
-    completeAction(event.getAction(), event.getStart(), event.getStop(), content, metadata, deleteMetadataKeys);
+                             List<String> deleteMetadataKeys, List<Domain> domains, List<Enrichment> enrichments) {
+    completeAction(event.getAction(), event.getStart(), event.getStop(), content, metadata, deleteMetadataKeys, domains, enrichments);
   }
 
-  public void completeAction(String name, OffsetDateTime start, OffsetDateTime stop) {
-    completeAction(name, start, stop, List.of());
+  public Action completeAction(String name, OffsetDateTime start, OffsetDateTime stop) {
+    return completeAction(name, start, stop, null, null, null, null, null);
   }
 
-  public void completeAction(String name, OffsetDateTime start, OffsetDateTime stop, List<Content> content) {
-    completeAction(name, start, stop, content, Map.of());
-  }
-
-  public void completeAction(String name, OffsetDateTime start, OffsetDateTime stop, List<Content> content, Map<String, String> metadata) {
-    completeAction(name, start, stop, content, metadata, List.of());
-  }
-
-  public void completeAction(String name, OffsetDateTime start, OffsetDateTime stop,
-                               List<Content> content, Map<String, String> metadata, List<String> deleteMetadataKeys) {
+  public Action completeAction(String name, OffsetDateTime start, OffsetDateTime stop, List<Content> content,
+                             Map<String, String> metadata, List<String> deleteMetadataKeys,
+                             List<Domain> domains, List<Enrichment> enrichments) {
     Optional<Action> optionalAction = getActions().stream()
             .filter(a -> a.getName().equals(name) && !a.terminal())
             .findFirst();
@@ -190,6 +179,20 @@ public class DeltaFile {
       if (deleteMetadataKeys != null) {
         action.setDeleteMetadataKeys(deleteMetadataKeys);
       }
+
+      if (domains != null) {
+        for (Domain domain : domains) {
+          action.addDomain(domain.getName(), domain.getValue(), domain.getMediaType());
+        }
+      }
+
+      if (enrichments != null) {
+        for (Enrichment enrichment : enrichments) {
+          action.addDomain(enrichment.getName(), enrichment.getValue(), enrichment.getMediaType());
+        }
+      }
+
+      return action;
     } else {
       throw new UnexpectedActionException(name, did, queuedActions());
     }
@@ -289,17 +292,8 @@ public class DeltaFile {
     return getActions().stream().filter(action -> action.getState().equals(ActionState.QUEUED)).map(Action::getName).toList();
   }
 
-  public void addDomain(@NotNull String domainKey, String domainValue, @NotNull String mediaType) {
-    Optional<Domain> domain = getDomains().stream().filter(d -> d.getName().equals(domainKey)).findFirst();
-    if (domain.isPresent()) {
-      domain.get().setValue(domainValue);
-    } else {
-      getDomains().add(new Domain(domainKey, domainValue, mediaType));
-    }
-  }
-
   public boolean hasDomains(List<String> domains) {
-    return domains.stream().allMatch(domain -> getDomains().stream().anyMatch(d -> d.getName().equals(domain)));
+    return domains.stream().allMatch(domain -> domains().stream().anyMatch(d -> d.getName().equals(domain)));
   }
 
   public void addAnnotations(Map<String, String> metadata) {
@@ -330,26 +324,8 @@ public class DeltaFile {
     }
   }
 
-  @SuppressWarnings("unused")
-  public Enrichment getEnrichment(String enrichment) {
-    return getEnrichments().stream().filter(e -> e.getName().equals(enrichment)).findFirst().orElse(null);
-  }
-
-  public void addEnrichment(@NotNull String enrichmentKey, String enrichmentValue) {
-    addEnrichment(enrichmentKey, enrichmentValue, APPLICATION_OCTET_STREAM_VALUE);
-  }
-
-  public void addEnrichment(@NotNull String enrichmentKey, String enrichmentValue, @NotNull String mediaType) {
-    Optional<Enrichment> enrichment = getEnrichments().stream().filter(d -> d.getName().equals(enrichmentKey)).findFirst();
-    if (enrichment.isPresent()) {
-      enrichment.get().setValue(enrichmentValue);
-    } else {
-      getEnrichments().add(new Enrichment(enrichmentKey, enrichmentValue, mediaType));
-    }
-  }
-
   public boolean hasEnrichments(List<String> enrichments) {
-    return enrichments.stream().allMatch(enrichment -> getEnrichments().stream().anyMatch(e -> e.getName().equals(enrichment)));
+    return enrichments.stream().allMatch(enrichment -> enrichments().stream().anyMatch(e -> e.getName().equals(enrichment)));
   }
 
   public boolean hasErroredAction() {
@@ -482,15 +458,12 @@ public class DeltaFile {
     return lastDataAmendedAction.getContent();
   }
 
-  public @NotNull List<Domain> getDomains() {
-    return domains == null ? Collections.emptyList() : domains;
+  public @NotNull List<Domain> domains() {
+    return actions.stream().map(Action::getDomains).flatMap(Collection::stream).toList();
   }
 
-  public @NotNull List<Enrichment> getEnrichments() {
-    if (enrichments == null) {
-      enrichments = new ArrayList<>();
-    }
-    return enrichments;
+  public @NotNull List<Enrichment> enrichments() {
+    return actions.stream().map(Action::getEnrichments).flatMap(Collection::stream).toList();
   }
 
   public @NotNull List<Egress> getEgress() {
@@ -549,8 +522,8 @@ public class DeltaFile {
     } else {
       builder.contentList(getLastDataAmendedContent())
               .metadata(getMetadata())
-              .domains(getDomains())
-              .enrichments(getEnrichments());
+              .domains(domains())
+              .enrichments(enrichments());
     }
 
     return builder.build();

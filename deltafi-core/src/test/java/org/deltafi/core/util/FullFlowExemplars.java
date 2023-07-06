@@ -43,7 +43,7 @@ public class FullFlowExemplars {
         DeltaFile deltaFile = postIngressDeltaFile(did);
         deltaFile.setStage(DeltaFileStage.INGRESS);
         Content content = new Content("file.json", "application/octet-stream", new Segment("utf8ObjectName", 0, 500, did));
-        deltaFile.completeAction("sampleIngress.Utf8TransformAction", START_TIME, STOP_TIME, List.of(content), Map.of("deleteMe", "soon"));
+        deltaFile.completeAction("sampleIngress.Utf8TransformAction", START_TIME, STOP_TIME, List.of(content), Map.of("deleteMe", "soon"), List.of(), List.of(), List.of());
         deltaFile.queueAction("sampleIngress.SampleTransformAction", ActionType.TRANSFORM, "sampleIngress");
         return deltaFile;
     }
@@ -52,7 +52,7 @@ public class FullFlowExemplars {
         DeltaFile deltaFile = postTransformUtf8DeltaFile(did);
         deltaFile.setStage(DeltaFileStage.INGRESS);
         Content content = new Content("transformed", "application/octet-stream", new Segment("objectName", 0, 500, did));
-        deltaFile.completeAction("sampleIngress.SampleTransformAction", START_TIME, STOP_TIME, List.of(content), TRANSFORM_METADATA, List.of("deleteMe"));
+        deltaFile.completeAction("sampleIngress.SampleTransformAction", START_TIME, STOP_TIME, List.of(content), TRANSFORM_METADATA, List.of("deleteMe"), List.of(), List.of());
         deltaFile.queueAction("sampleIngress.SampleLoadAction", ActionType.LOAD, "sampleIngress");
         deltaFile.addAnnotations(Map.of("transformKey", "transformValue"));
         return deltaFile;
@@ -80,8 +80,7 @@ public class FullFlowExemplars {
         deltaFile.setStage(DeltaFileStage.ENRICH);
         deltaFile.queueAction("sampleEnrich.SampleDomainAction", ActionType.DOMAIN, "sampleEnrich");
         Content content = new Content("load-content", "application/octet-stream", new Segment("objectName", 0, 500, did));
-        deltaFile.completeAction("sampleIngress.SampleLoadAction", START_TIME, STOP_TIME, List.of(content), LOAD_METADATA);
-        deltaFile.addDomain("sampleDomain", "sampleDomainValue", "application/octet-stream");
+        deltaFile.completeAction("sampleIngress.SampleLoadAction", START_TIME, STOP_TIME, List.of(content), LOAD_METADATA, List.of(), List.of(new Domain("sampleDomain", "sampleDomainValue", "application/octet-stream")), List.of());
         deltaFile.addAnnotations(Map.of("loadKey", "loadValue"));
         return deltaFile;
     }
@@ -93,7 +92,6 @@ public class FullFlowExemplars {
         deltaFile.setStage(DeltaFileStage.ERROR);
         deltaFile.queueNewAction(DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION, ActionType.UNKNOWN, "MISSING");
         deltaFile.errorAction(DeltaFilesService.buildNoEgressConfiguredErrorEvent(deltaFile, OffsetDateTime.now()));
-        deltaFile.addDomain("sampleDomain", "sampleDomainValue", "application/octet-stream");
         deltaFile.getLastDataAmendedAction().setMetadata(LOAD_WRONG_METADATA);
         return deltaFile;
     }
@@ -111,8 +109,8 @@ public class FullFlowExemplars {
         DeltaFile deltaFile = postDomainDeltaFile(did);
         deltaFile.setStage(DeltaFileStage.EGRESS);
         deltaFile.queueAction("sampleEgress.SampleFormatAction", ActionType.FORMAT, "sampleEgress");
-        deltaFile.completeAction("sampleEnrich.SampleEnrichAction", START_TIME, STOP_TIME);
-        deltaFile.addEnrichment("sampleEnrichment", "enrichmentData");
+        Action action = deltaFile.completeAction("sampleEnrich.SampleEnrichAction", START_TIME, STOP_TIME);
+        action.addEnrichment("sampleEnrichment", "enrichmentData");
         deltaFile.addAnnotations(Map.of("first", "one", "second", "two"));
         deltaFile.addEgressFlow(EGRESS_FLOW_NAME);
         return deltaFile;
@@ -120,8 +118,8 @@ public class FullFlowExemplars {
 
     public static DeltaFile postEnrichNoEgressDeltaFile(String did, OffsetDateTime nextExecution) {
         DeltaFile deltaFile = postDomainDeltaFile(did);
-        deltaFile.completeAction("sampleEnrich.SampleEnrichAction", START_TIME, STOP_TIME);
-        deltaFile.addEnrichment("sampleEnrichment", "enrichmentData");
+        Action action = deltaFile.completeAction("sampleEnrich.SampleEnrichAction", START_TIME, STOP_TIME);
+        action.addEnrichment("sampleEnrichment", "enrichmentData");
         deltaFile.addAnnotations(Map.of("first", "one", "second", "two"));
         // now the error...
         deltaFile.setStage(DeltaFileStage.ERROR);
@@ -143,7 +141,7 @@ public class FullFlowExemplars {
 
     public static DeltaFile postEnrichDeltaFileWithUnicodeAnnotation(String did) {
         DeltaFile deltaFile = postEnrichDeltaFile(did);
-        deltaFile.addAnnotationIfAbsent("\u0101\u0202", "\u0303\u0404");
+        deltaFile.addAnnotationIfAbsent("āȂ", "̃Є");
         return deltaFile;
     }
 
@@ -160,7 +158,7 @@ public class FullFlowExemplars {
         deltaFile.setStage(DeltaFileStage.EGRESS);
         deltaFile.queueAction("sampleEgress.AuthorityValidateAction", ActionType.VALIDATE, "sampleEgress");
         deltaFile.queueAction("sampleEgress.SampleValidateAction", ActionType.VALIDATE, "sampleEgress");
-        deltaFile.completeAction("sampleEgress.SampleFormatAction", START_TIME, STOP_TIME, List.of(new Content("output.txt", "application/octet-stream", new Segment("formattedObjectName", 0, 1000, did))), Map.of("key1", "value1", "key2", "value2"));
+        deltaFile.completeAction("sampleEgress.SampleFormatAction", START_TIME, STOP_TIME, List.of(new Content("output.txt", "application/octet-stream", new Segment("formattedObjectName", 0, 1000, did))), Map.of("key1", "value1", "key2", "value2"), List.of(), List.of(), List.of());
         return deltaFile;
     }
 
@@ -231,7 +229,7 @@ public class FullFlowExemplars {
         DeltaFile deltaFile = postValidateAuthorityDeltaFile(did);
         deltaFile.setStage(DeltaFileStage.COMPLETE);
         deltaFile.setEgressed(true);
-        deltaFile.completeAction("sampleEgress.SampleEgressAction", START_TIME, STOP_TIME, List.of(new Content("output.txt", "application/octet-stream", new Segment("formattedObjectName", 0, 1000, did))), Map.of("key1", "value1", "key2", "value2"));
+        deltaFile.completeAction("sampleEgress.SampleEgressAction", START_TIME, STOP_TIME, List.of(new Content("output.txt", "application/octet-stream", new Segment("formattedObjectName", 0, 1000, did))), Map.of("key1", "value1", "key2", "value2"), List.of(), List.of(), List.of());
         deltaFile.addEgressFlow(EGRESS_FLOW_NAME);
         return deltaFile;
     }
@@ -249,7 +247,7 @@ public class FullFlowExemplars {
         DeltaFile deltaFile = transformFlowPostIngressDeltaFile(did);
         deltaFile.setStage(DeltaFileStage.INGRESS);
         Content content = new Content("file.json", "application/octet-stream", new Segment("utf8ObjectName", 0, 500, did));
-        deltaFile.completeAction("sampleTransform.Utf8TransformAction", START_TIME, STOP_TIME, List.of(content));
+        deltaFile.completeAction("sampleTransform.Utf8TransformAction", START_TIME, STOP_TIME, List.of(content), Map.of(), List.of(), List.of(), List.of());
         deltaFile.queueAction("sampleTransform.SampleTransformAction", ActionType.TRANSFORM, "sampleTransform");
         return deltaFile;
     }
@@ -258,7 +256,7 @@ public class FullFlowExemplars {
         DeltaFile deltaFile = transformFlowPostTransformUtf8DeltaFile(did);
         deltaFile.setStage(DeltaFileStage.EGRESS);
         Content content = new Content("transformed", "application/octet-stream", new Segment("objectName", 0, 500, did));
-        deltaFile.completeAction("sampleTransform.SampleTransformAction", START_TIME, STOP_TIME, List.of(content), TRANSFORM_METADATA);
+        deltaFile.completeAction("sampleTransform.SampleTransformAction", START_TIME, STOP_TIME, List.of(content), TRANSFORM_METADATA, List.of(), List.of(), List.of());
         deltaFile.queueAction("sampleTransform.SampleEgressAction", ActionType.EGRESS, "sampleTransform");
         deltaFile.addEgressFlow(TRANSFORM_FLOW_NAME);
         return deltaFile;
@@ -269,7 +267,7 @@ public class FullFlowExemplars {
         deltaFile.setStage(DeltaFileStage.COMPLETE);
         deltaFile.setEgressed(true);
         Content content = new Content("transformed", "application/octet-stream", new Segment("objectName", 0, 500, did));
-        deltaFile.completeAction("sampleTransform.SampleEgressAction", START_TIME, STOP_TIME, List.of(content), deltaFile.getMetadata());
+        deltaFile.completeAction("sampleTransform.SampleEgressAction", START_TIME, STOP_TIME, List.of(content), deltaFile.getMetadata(), List.of(), List.of(), List.of());
         return deltaFile;
     }
 }

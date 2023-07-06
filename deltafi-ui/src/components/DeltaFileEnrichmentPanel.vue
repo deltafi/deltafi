@@ -31,7 +31,7 @@
                 <i class="far fa-window-maximize" />
               </div>
               <small class="mb-1 text-muted d-flex w-100 justify-content-between">
-                <span>{{ item.mediaType }}</span>
+                <span>{{ item.action }}</span>
                 <span>{{ formattedBytes(item.size) }}</span>
               </small>
             </div>
@@ -59,17 +59,28 @@ const { formattedBytes } = useUtilFunctions();
 const deltaFile = reactive(props.deltaFileData);
 
 const enrichmentContentReferences = computed(() => {
-  return deltaFile.enrichments.map((enrichment) => {
-    const content = enrichment.value || "";
-    return {
-      name: enrichment.name,
-      did: deltaFile.did,
-      content: content,
-      filename: `${deltaFile.did}-enrichment-${enrichment.name}`,
-      size: content.length,
-      mediaType: enrichment.mediaType
-    };
+  let contentReferences = [];
+
+  deltaFile.actions.forEach((action) => {
+    if (action.enrichments) {
+      const enrichmentRefs = action.enrichments.map((enrichment) => {
+        const content = enrichment.value || "";
+        return {
+          name: enrichment.name,
+          did: deltaFile.did,
+          content: content,
+          filename: `${deltaFile.did}-enrichment-${enrichment.name}`,
+          size: content.length,
+          mediaType: enrichment.mediaType,
+          action: action.name
+        };
+      });
+
+      contentReferences = contentReferences.concat(enrichmentRefs);
+    }
   });
+
+  return contentReferences;
 });
 </script>
 

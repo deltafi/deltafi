@@ -368,8 +368,6 @@ class ResumePolicyServiceTest {
                 .sourceInfo(SourceInfo.builder()
                         .flow("1" + FLOW)
                         .filename("filename").build())
-                .domains(Collections.emptyList())
-                .enrichments(Collections.emptyList())
                 .created(now)
                 .modified(now)
                 .egressed(false)

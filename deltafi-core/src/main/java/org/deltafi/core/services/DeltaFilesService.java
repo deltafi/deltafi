@@ -246,8 +246,6 @@ public class DeltaFilesService {
                 .stage(DeltaFileStage.INGRESS)
                 .actions(new ArrayList<>(List.of(ingressAction)))
                 .sourceInfo(sourceInfo)
-                .domains(Collections.emptyList())
-                .enrichments(Collections.emptyList())
                 .created(ingressEvent.getCreated())
                 .modified(now)
                 .egressed(false)
@@ -363,7 +361,7 @@ public class DeltaFilesService {
     public void transform(DeltaFile deltaFile, ActionEvent event) {
         TransformEvent transformEvent = event.getTransform();
         deltaFile.completeAction(event, transformEvent.getContent(), transformEvent.getMetadata(),
-                transformEvent.getDeleteMetadataKeys());
+                transformEvent.getDeleteMetadataKeys(), Collections.emptyList(), Collections.emptyList());
 
         deltaFile.addAnnotations(transformEvent.getAnnotations());
 
@@ -377,13 +375,7 @@ public class DeltaFilesService {
     public void load(DeltaFile deltaFile, ActionEvent event) {
         LoadEvent loadEvent = event.getLoad();
         deltaFile.completeAction(event, loadEvent.getContent(), loadEvent.getMetadata(),
-                loadEvent.getDeleteMetadataKeys());
-
-        if (loadEvent.getDomains() != null) {
-            for (Domain domain : loadEvent.getDomains()) {
-                deltaFile.addDomain(domain.getName(), domain.getValue(), domain.getMediaType());
-            }
-        }
+                loadEvent.getDeleteMetadataKeys(), loadEvent.getDomains(), Collections.emptyList());
 
         deltaFile.addAnnotations(loadEvent.getAnnotations());
 
@@ -399,11 +391,11 @@ public class DeltaFilesService {
     }
 
     public void enrich(DeltaFile deltaFile, ActionEvent event) {
-        deltaFile.completeAction(event);
+        Action action = deltaFile.completeAction(event);
 
         if (event.getEnrich().getEnrichments() != null) {
             for (Enrichment enrichment : event.getEnrich().getEnrichments()) {
-                deltaFile.addEnrichment(enrichment.getName(), enrichment.getValue(), enrichment.getMediaType());
+                action.addEnrichment(enrichment.getName(), enrichment.getValue(), enrichment.getMediaType());
             }
         }
 
@@ -422,7 +414,7 @@ public class DeltaFilesService {
         }
 
         FormatEvent formatEvent = event.getFormat();
-        deltaFile.completeAction(event, List.of(formatEvent.getContent()), formatEvent.getMetadata(), Collections.emptyList());
+        deltaFile.completeAction(event, List.of(formatEvent.getContent()), formatEvent.getMetadata(), Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
 
         advanceAndSave(deltaFile);
     }
@@ -439,7 +431,7 @@ public class DeltaFilesService {
         // replicate the message that was sent to this action so we can republish the content and metadata that was processed
         DeltaFileMessage sentMessage = deltaFile.forQueue(flowName);
 
-        deltaFile.completeAction(event, sentMessage.getContentList(), sentMessage.getMetadata(), Collections.emptyList());
+        deltaFile.completeAction(event, sentMessage.getContentList(), sentMessage.getMetadata(), Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
         deltaFile.setEgressed(true);
 
         Set<String> expectedAnnotations = getPendingAnnotations(deltaFile.getSourceInfo().getProcessingType(), flowName);
@@ -687,7 +679,7 @@ public class DeltaFilesService {
 
         if (loadEvent.getDomains() != null) {
             for (Domain domain : loadEvent.getDomains()) {
-                child.addDomain(domain.getName(), domain.getValue(), domain.getMediaType());
+                action.addDomain(domain.getName(), domain.getValue(), domain.getMediaType());
             }
         }
 
@@ -781,8 +773,6 @@ public class DeltaFilesService {
                                 .metadata(reinject.getMetadata())
                                 .processingType(processingType)
                                 .build())
-                        .domains(Collections.emptyList())
-                        .enrichments(Collections.emptyList())
                         .created(now)
                         .modified(now)
                         .egressed(false)
@@ -1033,8 +1023,6 @@ public class DeltaFilesService {
                                     .stage(DeltaFileStage.INGRESS)
                                     .actions(new ArrayList<>(List.of(action)))
                                     .sourceInfo(deltaFile.getSourceInfo())
-                                    .domains(Collections.emptyList())
-                                    .enrichments(Collections.emptyList())
                                     .created(now)
                                     .modified(now)
                                     .egressed(false)

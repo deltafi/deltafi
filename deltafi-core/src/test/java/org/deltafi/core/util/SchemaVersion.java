@@ -57,6 +57,26 @@ public class SchemaVersion {
                     "attempt" : 1
                 },
                 {
+                    "name" : "smoke.SmokeLoadAction",
+                    "state" : "COMPLETE",
+                    "created" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "queued" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "start" : ISODate("2023-05-10T10:38:56.823Z"),
+                    "stop" : ISODate("2023-05-10T10:38:56.833Z"),
+                    "modified" : ISODate("2023-05-10T10:38:56.896Z"),
+                    "attempt" : 1
+                },
+                {
+                    "name" : "smoke.SmokeEnrichAction",
+                    "state" : "COMPLETE",
+                    "created" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "queued" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "start" : ISODate("2023-05-10T10:38:56.823Z"),
+                    "stop" : ISODate("2023-05-10T10:38:56.833Z"),
+                    "modified" : ISODate("2023-05-10T10:38:56.896Z"),
+                    "attempt" : 1
+                },
+                {
                     "name" : "smoke.SmokeFormatAction",
                     "state" : "COMPLETE",
                     "created" : ISODate("2023-05-10T10:38:56.639Z"),
@@ -201,6 +221,26 @@ public class SchemaVersion {
                     "attempt" : 1
                 },
                 {
+                    "name" : "smoke.SmokeLoadAction",
+                    "state" : "COMPLETE",
+                    "created" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "queued" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "start" : ISODate("2023-05-10T10:38:56.823Z"),
+                    "stop" : ISODate("2023-05-10T10:38:56.833Z"),
+                    "modified" : ISODate("2023-05-10T10:38:56.896Z"),
+                    "attempt" : 1
+                },
+                {
+                    "name" : "smoke.SmokeEnrichAction",
+                    "state" : "COMPLETE",
+                    "created" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "queued" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "start" : ISODate("2023-05-10T10:38:56.823Z"),
+                    "stop" : ISODate("2023-05-10T10:38:56.833Z"),
+                    "modified" : ISODate("2023-05-10T10:38:56.896Z"),
+                    "attempt" : 1
+                },
+                {
                     "name" : "smoke.SmokeFormatAction",
                     "state" : "COMPLETE",
                     "created" : ISODate("2023-05-10T10:38:56.639Z"),
@@ -335,6 +375,26 @@ public class SchemaVersion {
                 },
                 {
                     "name" : "smoke.SmokeTransformAction",
+                    "state" : "COMPLETE",
+                    "created" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "queued" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "start" : ISODate("2023-05-10T10:38:56.823Z"),
+                    "stop" : ISODate("2023-05-10T10:38:56.833Z"),
+                    "modified" : ISODate("2023-05-10T10:38:56.896Z"),
+                    "attempt" : 1
+                },
+                {
+                    "name" : "smoke.SmokeLoadAction",
+                    "state" : "COMPLETE",
+                    "created" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "queued" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "start" : ISODate("2023-05-10T10:38:56.823Z"),
+                    "stop" : ISODate("2023-05-10T10:38:56.833Z"),
+                    "modified" : ISODate("2023-05-10T10:38:56.896Z"),
+                    "attempt" : 1
+                },
+                {
+                    "name" : "smoke.SmokeEnrichAction",
                     "state" : "COMPLETE",
                     "created" : ISODate("2023-05-10T10:38:56.639Z"),
                     "queued" : ISODate("2023-05-10T10:38:56.639Z"),
@@ -521,6 +581,34 @@ public class SchemaVersion {
                     "deleteMetadataKeys": []
                 },
                 {
+                    "name" : "smoke.SmokeLoadAction",
+                    "type" : "LOAD",
+                    "state" : "COMPLETE",
+                    "created" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "queued" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "start" : ISODate("2023-05-10T10:38:56.823Z"),
+                    "stop" : ISODate("2023-05-10T10:38:56.833Z"),
+                    "modified" : ISODate("2023-05-10T10:38:56.896Z"),
+                    "attempt" : 1
+                    "content" : [],
+                    "metadata": {},
+                    "deleteMetadataKeys": []
+                },
+                {
+                    "name" : "smoke.SmokeEnrichAction",
+                    "type" : "ENRICH",
+                    "state" : "COMPLETE",
+                    "created" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "queued" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "start" : ISODate("2023-05-10T10:38:56.823Z"),
+                    "stop" : ISODate("2023-05-10T10:38:56.833Z"),
+                    "modified" : ISODate("2023-05-10T10:38:56.896Z"),
+                    "attempt" : 1
+                    "content" : [],
+                    "metadata": {},
+                    "deleteMetadataKeys": []
+                },
+                {
                     "name" : "smoke.SmokeFormatAction",
                     "type" : "FORMAT",
                     "state" : "COMPLETE",
@@ -663,6 +751,36 @@ public class SchemaVersion {
                     "deleteMetadataKeys": []
                 },
                 {
+                    "name" : "smoke.SmokeLoadAction",
+                    "type" : "LOAD",
+                    "flow" : "smoke",
+                    "state" : "COMPLETE",
+                    "created" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "queued" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "start" : ISODate("2023-05-10T10:38:56.823Z"),
+                    "stop" : ISODate("2023-05-10T10:38:56.833Z"),
+                    "modified" : ISODate("2023-05-10T10:38:56.896Z"),
+                    "attempt" : 1
+                    "content" : [],
+                    "metadata": {},
+                    "deleteMetadataKeys": []
+                },
+                {
+                    "name" : "smoke.SmokeEnrichAction",
+                    "type" : "ENRICH",
+                    "flow" : "smoke",
+                    "state" : "COMPLETE",
+                    "created" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "queued" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "start" : ISODate("2023-05-10T10:38:56.823Z"),
+                    "stop" : ISODate("2023-05-10T10:38:56.833Z"),
+                    "modified" : ISODate("2023-05-10T10:38:56.896Z"),
+                    "attempt" : 1
+                    "content" : [],
+                    "metadata": {},
+                    "deleteMetadataKeys": []
+                },
+                {
                     "name" : "smoke.SmokeFormatAction",
                     "type" : "FORMAT",
                     "flow" : "smoke",
@@ -728,18 +846,350 @@ public class SchemaVersion {
             "schemaVersion" : 4
         }""";
 
+    private static final String DELTAFILE_JSON_V5 = """
+        {
+            "_id" : "v5",
+            "parentDids" : [ ],
+            "childDids" : [ ],
+            "requeueCount" : 0,
+            "ingressBytes" : NumberLong(36),
+            "referencedBytes" : NumberLong(36),
+            "totalBytes" : NumberLong(36),
+            "stage" : "COMPLETE",
+            "actions" : [
+                {
+                    "name" : "IngressAction",
+                    "type" : "INGRESS",
+                    "flow" : "",
+                    "state" : "COMPLETE",
+                    "created" : ISODate("2023-05-10T10:38:56.521Z"),
+                    "modified" : ISODate("2023-05-10T10:38:56.637Z"),
+                    "attempt" : 1,
+                    "content" : [
+                        {
+                            "name" : "smoke-f7bc6fc1-0d56-4c5b-9e58-7b758f522ea2",
+                            "mediaType" : "application/octet-stream",
+                            "segments" : [
+                                {
+                                    "uuid" : "cf06a93c-d8c4-4784-8269-279b642f6903",
+                                    "offset" : NumberLong(0),
+                                    "size" : NumberLong(36),
+                                    "did" : "f8cea8af-185e-4d96-80c7-68c47a8f5609"
+                                }
+                            ]
+                        }
+                    ],
+                    "metadata": {},
+                    "deleteMetadataKeys": []
+                },
+                {
+                    "name" : "smoke.SmokeTransformAction",
+                    "type" : "TRANSFORM",
+                    "flow" : "smoke",
+                    "state" : "COMPLETE",
+                    "created" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "queued" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "start" : ISODate("2023-05-10T10:38:56.823Z"),
+                    "stop" : ISODate("2023-05-10T10:38:56.833Z"),
+                    "modified" : ISODate("2023-05-10T10:38:56.896Z"),
+                    "attempt" : 1,
+                    "content" : [
+                        {
+                            "name" : "smoke-f7bc6fc1-0d56-4c5b-9e58-7b758f522ea2",
+                            "mediaType" : "application/octet-stream",
+                            "segments" : [
+                                {
+                                    "uuid" : "df06a93c-d8c4-4784-8269-279b642f6903",
+                                    "offset" : NumberLong(0),
+                                    "size" : NumberLong(36),
+                                    "did" : "f8cea8af-185e-4d96-80c7-68c47a8f5609"
+                                }
+                            ]
+                        }
+                    ],
+                    "metadata": {},
+                    "deleteMetadataKeys": []
+                },
+                {
+                    "name" : "smoke.SmokeLoadAction",
+                    "type" : "LOAD",
+                    "flow" : "smoke",
+                    "state" : "COMPLETE",
+                    "created" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "queued" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "start" : ISODate("2023-05-10T10:38:56.823Z"),
+                    "stop" : ISODate("2023-05-10T10:38:56.833Z"),
+                    "modified" : ISODate("2023-05-10T10:38:56.896Z"),
+                    "attempt" : 1
+                    "content" : [],
+                    "metadata": {},
+                    "deleteMetadataKeys": []
+                },
+                {
+                    "name" : "smoke.SmokeEnrichAction",
+                    "type" : "ENRICH",
+                    "flow" : "smoke",
+                    "state" : "COMPLETE",
+                    "created" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "queued" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "start" : ISODate("2023-05-10T10:38:56.823Z"),
+                    "stop" : ISODate("2023-05-10T10:38:56.833Z"),
+                    "modified" : ISODate("2023-05-10T10:38:56.896Z"),
+                    "attempt" : 1
+                    "content" : [],
+                    "metadata": {},
+                    "deleteMetadataKeys": []
+                },
+                {
+                    "name" : "smoke.SmokeFormatAction",
+                    "type" : "FORMAT",
+                    "flow" : "smoke",
+                    "state" : "COMPLETE",
+                    "created" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "queued" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "start" : ISODate("2023-05-10T10:38:56.823Z"),
+                    "stop" : ISODate("2023-05-10T10:38:56.833Z"),
+                    "modified" : ISODate("2023-05-10T10:38:56.896Z"),
+                    "attempt" : 1,
+                    "content" : [
+                        {
+                            "name" : "smoke-f7bc6fc1-0d56-4c5b-9e58-7b758f522ea2",
+                            "mediaType" : "application/octet-stream",
+                            "segments" : [
+                                {
+                                    "uuid" : "ef06a93c-d8c4-4784-8269-279b642f6903",
+                                    "offset" : NumberLong(0),
+                                    "size" : NumberLong(36),
+                                    "did" : "f8cea8af-185e-4d96-80c7-68c47a8f5609"
+                                }
+                            ]
+                        }],
+                    "metadata": {},
+                    "deleteMetadataKeys": []
+                }
+            ],
+            "sourceInfo" : {
+                "filename" : "smoke-f7bc6fc1-0d56-4c5b-9e58-7b758f522ea2",
+                "flow" : "smoke",
+                "metadata" : {},
+                "processingType" : "NORMALIZATION"
+            },
+            "domains" : [
+                {
+                    "name" : "binary",
+                    "mediaType" : "text/plain"
+                }
+            ],
+            "annotations" : {
+              "keyA" : "valueA",
+              "keyB" : "valueB",
+            },
+            "annotationKeys" : [ "keyA", "keyB" ],
+            "enrichments" : [
+                {
+                    "name" : "binaryEnrichment",
+                    "value" : "binary enrichment value",
+                    "mediaType" : "text/plain"
+                }
+            ],
+            "egress" : [
+                {
+                    "flow" : "smoke"
+                }
+            ],
+            "created" : ISODate("2023-05-10T10:38:56.521Z"),
+            "modified" : ISODate("2023-05-10T10:38:57.402Z"),
+            "egressed" : true,
+            "filtered" : false,
+            "version" : NumberLong(7),
+            "_class" : "org.deltafi.common.types.DeltaFile"
+            "schemaVersion" : 5
+        }""";
+
+    private static final String DELTAFILE_JSON_V6 = """
+        {
+            "_id" : "v6",
+            "parentDids" : [ ],
+            "childDids" : [ ],
+            "requeueCount" : 0,
+            "ingressBytes" : NumberLong(36),
+            "referencedBytes" : NumberLong(36),
+            "totalBytes" : NumberLong(36),
+            "stage" : "COMPLETE",
+            "actions" : [
+                {
+                    "name" : "IngressAction",
+                    "type" : "INGRESS",
+                    "flow" : "",
+                    "state" : "COMPLETE",
+                    "created" : ISODate("2023-05-10T10:38:56.521Z"),
+                    "modified" : ISODate("2023-05-10T10:38:56.637Z"),
+                    "attempt" : 1,
+                    "content" : [
+                        {
+                            "name" : "smoke-f7bc6fc1-0d56-4c5b-9e58-7b758f522ea2",
+                            "mediaType" : "application/octet-stream",
+                            "segments" : [
+                                {
+                                    "uuid" : "cf06a93c-d8c4-4784-8269-279b642f6903",
+                                    "offset" : NumberLong(0),
+                                    "size" : NumberLong(36),
+                                    "did" : "f8cea8af-185e-4d96-80c7-68c47a8f5609"
+                                }
+                            ]
+                        }
+                    ],
+                    "metadata": {},
+                    "deleteMetadataKeys": [],
+                    "domains" : [],
+                    "enrichments" : []
+                },
+                {
+                    "name" : "smoke.SmokeTransformAction",
+                    "type" : "TRANSFORM",
+                    "flow" : "smoke",
+                    "state" : "COMPLETE",
+                    "created" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "queued" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "start" : ISODate("2023-05-10T10:38:56.823Z"),
+                    "stop" : ISODate("2023-05-10T10:38:56.833Z"),
+                    "modified" : ISODate("2023-05-10T10:38:56.896Z"),
+                    "attempt" : 1,
+                    "content" : [
+                        {
+                            "name" : "smoke-f7bc6fc1-0d56-4c5b-9e58-7b758f522ea2",
+                            "mediaType" : "application/octet-stream",
+                            "segments" : [
+                                {
+                                    "uuid" : "df06a93c-d8c4-4784-8269-279b642f6903",
+                                    "offset" : NumberLong(0),
+                                    "size" : NumberLong(36),
+                                    "did" : "f8cea8af-185e-4d96-80c7-68c47a8f5609"
+                                }
+                            ]
+                        }
+                    ],
+                    "metadata": {},
+                    "deleteMetadataKeys": [],
+                    "domains" : [],
+                    "enrichments" : []
+                },
+                {
+                    "name" : "smoke.SmokeLoadAction",
+                    "type" : "LOAD",
+                    "flow" : "smoke",
+                    "state" : "COMPLETE",
+                    "created" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "queued" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "start" : ISODate("2023-05-10T10:38:56.823Z"),
+                    "stop" : ISODate("2023-05-10T10:38:56.833Z"),
+                    "modified" : ISODate("2023-05-10T10:38:56.896Z"),
+                    "attempt" : 1
+                    "content" : [],
+                    "metadata": {},
+                    "deleteMetadataKeys": [],
+                    "domains" : [
+                        {
+                            "name" : "binary",
+                            "mediaType" : "text/plain"
+                        }
+                    ],
+                    "enrichments" : []
+                },
+                {
+                    "name" : "smoke.SmokeEnrichAction",
+                    "type" : "ENRICH",
+                    "flow" : "smoke",
+                    "state" : "COMPLETE",
+                    "created" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "queued" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "start" : ISODate("2023-05-10T10:38:56.823Z"),
+                    "stop" : ISODate("2023-05-10T10:38:56.833Z"),
+                    "modified" : ISODate("2023-05-10T10:38:56.896Z"),
+                    "attempt" : 1
+                    "content" : [],
+                    "metadata": {},
+                    "deleteMetadataKeys": [],
+                    "domains" : [],
+                    "enrichments" : [
+                        {
+                            "name" : "binaryEnrichment",
+                            "value" : "binary enrichment value",
+                            "mediaType" : "text/plain"
+                        }
+                    ]
+                },
+                {
+                    "name" : "smoke.SmokeFormatAction",
+                    "type" : "FORMAT",
+                    "flow" : "smoke",
+                    "state" : "COMPLETE",
+                    "created" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "queued" : ISODate("2023-05-10T10:38:56.639Z"),
+                    "start" : ISODate("2023-05-10T10:38:56.823Z"),
+                    "stop" : ISODate("2023-05-10T10:38:56.833Z"),
+                    "modified" : ISODate("2023-05-10T10:38:56.896Z"),
+                    "attempt" : 1,
+                    "content" : [
+                        {
+                            "name" : "smoke-f7bc6fc1-0d56-4c5b-9e58-7b758f522ea2",
+                            "mediaType" : "application/octet-stream",
+                            "segments" : [
+                                {
+                                    "uuid" : "ef06a93c-d8c4-4784-8269-279b642f6903",
+                                    "offset" : NumberLong(0),
+                                    "size" : NumberLong(36),
+                                    "did" : "f8cea8af-185e-4d96-80c7-68c47a8f5609"
+                                }
+                            ]
+                        }],
+                    "metadata": {},
+                    "deleteMetadataKeys": [],
+                    "domains" : [],
+                    "enrichments" : []
+                }
+            ],
+            "sourceInfo" : {
+                "filename" : "smoke-f7bc6fc1-0d56-4c5b-9e58-7b758f522ea2",
+                "flow" : "smoke",
+                "metadata" : {},
+                "processingType" : "NORMALIZATION"
+            },
+            "annotations" : {
+              "keyA" : "valueA",
+              "keyB" : "valueB",
+            },
+            "annotationKeys" : [ "keyA", "keyB" ],
+            "egress" : [
+                {
+                    "flow" : "smoke"
+                }
+            ],
+            "created" : ISODate("2023-05-10T10:38:56.521Z"),
+            "modified" : ISODate("2023-05-10T10:38:57.402Z"),
+            "egressed" : true,
+            "filtered" : false,
+            "version" : NumberLong(7),
+            "_class" : "org.deltafi.common.types.DeltaFile"
+            "schemaVersion" : 6
+        }""";
+
     private static final Document DELTAFILE_DOC_V0 = Document.parse(DELTAFILE_JSON_V0);
     private static final Document DELTAFILE_DOC_V1 = Document.parse(DELTAFILE_JSON_V1);
     private static final Document DELTAFILE_DOC_V2 = Document.parse(DELTAFILE_JSON_V2);
     private static final Document DELTAFILE_DOC_V3 = Document.parse(DELTAFILE_JSON_V3);
-    private static final Document DELTAFILE_LATEST = Document.parse(DELTAFILE_JSON_V4);
+    private static final Document DELTAFILE_DOC_V4 = Document.parse(DELTAFILE_JSON_V4);
+    private static final Document DELTAFILE_DOC_V5 = Document.parse(DELTAFILE_JSON_V5);
+    private static final Document DELTAFILE_LATEST = Document.parse(DELTAFILE_JSON_V6);
 
     public static final Map<Integer, Document> deltaFileDocs = Map.of(
             0, DELTAFILE_DOC_V0,
             1, DELTAFILE_DOC_V1,
             2, DELTAFILE_DOC_V2,
             3, DELTAFILE_DOC_V3,
-            4, DELTAFILE_LATEST);
+            4, DELTAFILE_DOC_V4,
+            5, DELTAFILE_DOC_V5,
+            6, DELTAFILE_LATEST);
 
     public static void assertConverted(DeltaFileRepo deltaFileRepo, MongoTemplate mongoTemplate, int version) {
         Document document = deltaFileDocs.get(version);

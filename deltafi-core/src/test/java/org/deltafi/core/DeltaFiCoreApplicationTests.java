@@ -819,7 +819,7 @@ class DeltaFiCoreApplicationTests {
 		org.assertj.core.api.Assertions.assertThat(child1Action.getContent()).hasSize(1).contains(childContent);
 
 		Domain child1Domain = new Domain("sampleDomain", "firstDomainValue", "application/octet-stream");
-		org.assertj.core.api.Assertions.assertThat(child1.getDomains()).hasSize(1).contains(child1Domain);
+		org.assertj.core.api.Assertions.assertThat(child1.domains()).hasSize(1).contains(child1Domain);
 
 		DeltaFile child2 = children.get(1);
 		assertEquals("child2", child2.getDid());
@@ -837,7 +837,7 @@ class DeltaFiCoreApplicationTests {
 		org.assertj.core.api.Assertions.assertThat(child2Action.getContent()).hasSize(1).contains(child2Content);
 
 		Domain child2Domain = new Domain("sampleDomain", "secondDomainValue", "application/octet-stream");
-		org.assertj.core.api.Assertions.assertThat(child2.getDomains()).hasSize(1).contains(child2Domain);
+		org.assertj.core.api.Assertions.assertThat(child2.domains()).hasSize(1).contains(child2Domain);
 
 		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture(), anyBoolean());
 		List<ActionInput> actionInputs = actionInputListCaptor.getValue();
@@ -2733,12 +2733,16 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile1 = buildDeltaFile("1", null, DeltaFileStage.COMPLETE, MONGO_NOW.minusSeconds(2), MONGO_NOW.plusSeconds(2));
 		deltaFile1.setIngressBytes(100L);
 		deltaFile1.setTotalBytes(1000L);
-		deltaFile1.setDomains(List.of(new Domain("domain1", null, null)));
 		deltaFile1.addAnnotations(Map.of("a.1", "first", "common", "value"));
-		deltaFile1.setEnrichments(List.of(new Enrichment("enrichment1", null, null)));
 		deltaFile1.setContentDeleted(MONGO_NOW);
 		deltaFile1.setSourceInfo(new SourceInfo("filename1", "flow1", Map.of("key1", "value1", "key2", "value2")));
-		deltaFile1.setActions(List.of(Action.builder().name("action1").state(ActionState.COMPLETE).content(List.of(new Content("formattedFilename1", "mediaType"))).metadata(Map.of("formattedKey1", "formattedValue1", "formattedKey2", "formattedValue2")).build()));
+		deltaFile1.setActions(List.of(Action.builder().name("action1")
+				.state(ActionState.COMPLETE)
+				.content(List.of(new Content("formattedFilename1", "mediaType")))
+				.metadata(Map.of("formattedKey1", "formattedValue1", "formattedKey2", "formattedValue2"))
+				.domains(List.of(new Domain("domain1", null, null)))
+				.enrichments(List.of(new Enrichment("enrichment1", null, null)))
+				.build()));
 		deltaFile1.setErrorAcknowledged(MONGO_NOW);
 		deltaFile1.incrementRequeueCount();
 		deltaFile1.addEgressFlow("MyEgressFlow");
@@ -2748,11 +2752,19 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile2 = buildDeltaFile("2", null, DeltaFileStage.ERROR, MONGO_NOW.plusSeconds(2), MONGO_NOW.minusSeconds(2));
 		deltaFile2.setIngressBytes(200L);
 		deltaFile2.setTotalBytes(2000L);
-		deltaFile2.setDomains(List.of(new Domain("domain1", null, null), new Domain("domain2", null, null)));
 		deltaFile2.addAnnotations(Map.of("a.2", "first", "common", "value"));
-		deltaFile2.setEnrichments(List.of(new Enrichment("enrichment1", null, null), new Enrichment("enrichment2", null, null)));
 		deltaFile2.setSourceInfo(new SourceInfo("filename2", "flow2", Map.of()));
-		deltaFile2.setActions(List.of(Action.builder().name("action1").state(ActionState.ERROR).errorCause("Cause").build(), Action.builder().name("action2").state(ActionState.COMPLETE).content(List.of(new Content("formattedFilename2", "mediaType"))).build()));
+		deltaFile2.setActions(List.of(
+				Action.builder().name("action1")
+						.state(ActionState.ERROR)
+						.errorCause("Cause")
+						.build(),
+				Action.builder().name("action2")
+						.state(ActionState.COMPLETE)
+						.content(List.of(new Content("formattedFilename2", "mediaType")))
+						.domains(List.of(new Domain("domain1", null, null), new Domain("domain2", null, null)))
+						.enrichments(List.of(new Enrichment("enrichment1", null, null), new Enrichment("enrichment2", null, null)))
+						.build()));
 		deltaFile2.setEgressed(true);
 		deltaFile2.setFiltered(true);
 		deltaFile2.addEgressFlow("MyEgressFlow");
@@ -2762,11 +2774,21 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile3 = buildDeltaFile("3", null, DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(2), MONGO_NOW.minusSeconds(2));
 		deltaFile3.setIngressBytes(300L);
 		deltaFile3.setTotalBytes(3000L);
-		deltaFile3.setDomains(List.of(new Domain("domain3", null, null)));
 		deltaFile3.addAnnotations(Map.of("b.2", "first", "common", "value"));
-		deltaFile3.setEnrichments(List.of(new Enrichment("enrichment3", null, null), new Enrichment("enrichment4", null, null)));
 		deltaFile3.setSourceInfo(new SourceInfo("filename3", "flow3", Map.of(), ProcessingType.TRANSFORMATION));
-		deltaFile3.setActions(List.of(Action.builder().name("action2").state(ActionState.FILTERED).filteredCause("Coffee").build(), Action.builder().name("action2").state(ActionState.COMPLETE).content(List.of(new Content("formattedFilename3", "mediaType"))).build()));
+		deltaFile3.setActions(List.of(
+				Action.builder()
+						.name("action2")
+						.state(ActionState.FILTERED)
+						.filteredCause("Coffee")
+						.build(),
+				Action.builder()
+						.name("action2")
+						.state(ActionState.COMPLETE)
+						.content(List.of(new Content("formattedFilename3", "mediaType")))
+						.domains(List.of(new Domain("domain3", null, null)))
+						.enrichments(List.of(new Enrichment("enrichment3", null, null), new Enrichment("enrichment4", null, null)))
+						.build()));
 		deltaFile3.setEgressed(true);
 		deltaFile3.setFiltered(true);
 		deltaFile3.addEgressFlow("MyEgressFlow3");
@@ -2950,12 +2972,14 @@ class DeltaFiCoreApplicationTests {
 
 		DeltaFile withKeys = new DeltaFile();
 		withKeys.setDid("withKeys");
-		withKeys.setDomains(List.of(new Domain("domain", "", "")));
+		withKeys.setActions(List.of(
+				Action.builder().domains(List.of(new Domain("domain", "", ""))).build()));
 		withKeys.setAnnotationKeys(Set.of("a", "b"));
 
 		DeltaFile otherDomain = new DeltaFile();
 		otherDomain.setDid("otherDomain");
-		otherDomain.setDomains(List.of(new Domain("otherDomain", "", "")));
+		otherDomain.setActions(List.of(
+				Action.builder().domains(List.of(new Domain("otherDomain", "", ""))).build()));
 		otherDomain.setAnnotationKeys(Set.of("b", "c", "d"));
 		deltaFileRepo.saveAll(List.of(withKeys, otherDomain));
 
@@ -3825,10 +3849,10 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void domains() {
 		deltaFileRepo.insert(DeltaFile.builder()
-				.domains(List.of(Domain.builder().name("a").build(), Domain.builder().name("b").build()))
+				.actions(List.of(Action.builder().domains(List.of(Domain.builder().name("a").build(), Domain.builder().name("b").build())).build()))
 				.build());
 		deltaFileRepo.insert(DeltaFile.builder()
-				.domains(List.of(Domain.builder().name("b").build(), Domain.builder().name("c").build()))
+				.actions(List.of(Action.builder().domains(List.of(Domain.builder().name("b").build(), Domain.builder().name("c").build())).build()))
 				.build());
 
 		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(new DomainsGraphQLQuery("query"));
@@ -3858,11 +3882,11 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void annotations() {
 		deltaFileRepo.insert(DeltaFile.builder()
-				.domains(List.of(Domain.builder().name("a").build(), Domain.builder().name("b").build()))
+				.actions(List.of(Action.builder().domains(List.of(Domain.builder().name("a").build(), Domain.builder().name("b").build())).build()))
 				.annotations(Map.of("x", "1", "y", "2"))
 				.build());
 		deltaFileRepo.insert(DeltaFile.builder()
-				.domains(List.of(Domain.builder().name("b").build(), Domain.builder().name("c").build()))
+				.actions(List.of(Action.builder().domains(List.of(Domain.builder().name("b").build(), Domain.builder().name("c").build())).build()))
 				.annotations(Map.of("y", "3", "z", "4"))
 				.build());
 
@@ -3880,11 +3904,11 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void annotationPerDomain() {
 		deltaFileRepo.insert(DeltaFile.builder()
-				.domains(List.of(Domain.builder().name("a").build(), Domain.builder().name("b").build()))
+				.actions(List.of(Action.builder().domains(List.of(Domain.builder().name("a").build(), Domain.builder().name("b").build())).build()))
 				.annotations(Map.of("x", "1", "y", "2"))
 				.build());
 		deltaFileRepo.insert(DeltaFile.builder()
-				.domains(List.of(Domain.builder().name("b").build(), Domain.builder().name("c").build()))
+				.actions(List.of(Action.builder().domains(List.of(Domain.builder().name("b").build(), Domain.builder().name("c").build())).build()))
 				.annotations(Map.of("y", "3", "z", "4"))
 				.build());
 
@@ -4224,6 +4248,16 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	public void testConvertDeltaFileV4() {
+		assertConverted(deltaFileRepo, mongoTemplate, 4);
+	}
+
+	@Test
+	public void testConvertDeltaFileV5() {
+		assertConverted(deltaFileRepo, mongoTemplate, 5);
+	}
+
+	@Test
 	public void testDeletesV0() {
 		assertDeleted(deltaFileRepo, mongoTemplate, 0);
 	}
@@ -4241,5 +4275,15 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	public void testDeletesV3() {
 		assertDeleted(deltaFileRepo, mongoTemplate, 3);
+	}
+
+	@Test
+	public void testDeletesV4() {
+		assertDeleted(deltaFileRepo, mongoTemplate, 4);
+	}
+
+	@Test
+	public void testDeletesV5() {
+		assertDeleted(deltaFileRepo, mongoTemplate, 5);
 	}
 }

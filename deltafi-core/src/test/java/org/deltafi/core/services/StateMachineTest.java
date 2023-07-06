@@ -618,9 +618,9 @@ class StateMachineTest {
     void testAdvanceEnrichFlows_onePending() throws MissingEgressFlowException {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", INGRESS_FLOW);
         deltaFile.setStage(DeltaFileStage.ENRICH);
-        deltaFile.addDomain(DOMAIN, "value", MediaType.ALL_VALUE);
         deltaFile.queueNewAction("EnrichAction1", ActionType.ENRICH, ENRICH_FLOW);
         addCompletedActions(deltaFile, "DomainAction1");
+        deltaFile.getActions().get(2).addDomain(DOMAIN, "value", MediaType.ALL_VALUE);
 
         EnrichFlow enrich1 = EnrichFlowMaker.builder()
                 .name(ENRICH_FLOW)
@@ -656,8 +656,8 @@ class StateMachineTest {
     private DeltaFile makeCustomFile(boolean withSourceInfo) {
         Content content = new Content("name", "application/octet-stream", List.of(new Segment("objectName", 0, 500, "did")));
         DeltaFile deltaFile = Util.emptyDeltaFile("did", INGRESS_FLOW, List.of(content), Map.of(METADATA_KEY, "value"));
-        deltaFile.addDomain(DOMAIN, "value", MediaType.ALL_VALUE);
-        deltaFile.addEnrichment(ENRICH, "value", MediaType.ALL_VALUE);
+        deltaFile.getActions().get(0).addDomain(DOMAIN, "value", MediaType.ALL_VALUE);
+        deltaFile.getActions().get(0).addEnrichment(ENRICH, "value", MediaType.ALL_VALUE);
 
         if (withSourceInfo) {
             deltaFile.setSourceInfo(new SourceInfo("input.txt", "sample", Map.of(SOURCE_KEY, "value")));

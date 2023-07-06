@@ -31,7 +31,7 @@
                 <i class="far fa-window-maximize" />
               </div>
               <small class="mb-1 text-muted d-flex w-100 justify-content-between">
-                <span>{{ item.mediaType }}</span>
+                <span>{{ item.action }}</span>
                 <span>{{ formattedBytes(item.size) }}</span>
               </small>
             </div>
@@ -59,17 +59,28 @@ const { formattedBytes } = useUtilFunctions();
 const deltaFile = reactive(props.deltaFileData);
 
 const domainContentReferences = computed(() => {
-  return deltaFile.domains.map((domain) => {
-    const content = domain.value || "";
-    return {
-      name: domain.name,
-      did: deltaFile.did,
-      content: content,
-      filename: `${deltaFile.did}-domain-${domain.name}`,
-      size: content.length,
-      mediaType: domain.mediaType
-    };
+  let contentReferences = [];
+
+  deltaFile.actions.forEach((action) => {
+    if (action.domains) {
+      const domainRefs = action.domains.map((domain) => {
+        const content = domain.value || "";
+        return {
+          name: domain.name,
+          did: deltaFile.did,
+          content: content,
+          filename: `${deltaFile.did}-domain-${domain.name}`,
+          size: content.length,
+          mediaType: domain.mediaType,
+          action: action.name
+        };
+      });
+
+      contentReferences = contentReferences.concat(domainRefs);
+    }
   });
+
+  return contentReferences;
 });
 </script>
 

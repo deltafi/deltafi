@@ -143,8 +143,6 @@ public class Util {
                 .created(created)
                 .modified(modified)
                 .actions(Stream.of(ingressAction).collect(Collectors.toCollection(ArrayList::new)))
-                .domains(new ArrayList<>())
-                .enrichments(new ArrayList<>())
                 .egress(new ArrayList<>())
                 .egressed(false)
                 .filtered(false)
@@ -159,10 +157,10 @@ public class Util {
         Assertions.assertThat(actual.getIngressBytes()).isEqualTo(expected.getIngressBytes());
         assertActionsEqualIgnoringDates(expected.getActions(), actual.getActions());
         Assertions.assertThat(actual.getSourceInfo()).isEqualTo(expected.getSourceInfo());
-        Assertions.assertThat(actual.getDomains()).isEqualTo(expected.getDomains());
+        Assertions.assertThat(actual.domains()).isEqualTo(expected.domains());
         Assertions.assertThat(actual.getAnnotations()).isEqualTo(expected.getAnnotations());
         Assertions.assertThat(actual.getAnnotationKeys()).isEqualTo(expected.getAnnotationKeys());
-        Assertions.assertThat(actual.getEnrichments()).isEqualTo(expected.getEnrichments());
+        Assertions.assertThat(actual.enrichments()).isEqualTo(expected.enrichments());
         Assertions.assertThat(actual.getEgressed()).isEqualTo(expected.getEgressed());
         Assertions.assertThat(actual.getFiltered()).isEqualTo(expected.getFiltered());
         Assertions.assertThat(actual.getEgress()).isEqualTo(expected.getEgress());

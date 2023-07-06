@@ -159,6 +159,8 @@ type Action {
   content: [Content!]!
   metadata: Metadata
   deleteMetadataKeys: [String!]!
+  domains: [Domain!]!
+  enrichments: [Enrichment!]!
 }
 
 type DeltaFile {
@@ -172,10 +174,8 @@ type DeltaFile {
   stage: DeltaFileStage!
   actions: [Action!]!
   sourceInfo: SourceInfo!
-  domains: [Domain!]!
   metadata: Metadata!
   annotations: Metadata
-  enrichments: [Enrichment!]!
   egress: [Egress!]!
   created: DateTime!
   modified: DateTime!

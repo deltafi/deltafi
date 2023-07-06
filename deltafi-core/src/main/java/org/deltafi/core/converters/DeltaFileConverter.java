@@ -30,11 +30,7 @@ import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
 import org.springframework.data.mongodb.core.mapping.event.AfterConvertCallback;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
@@ -84,8 +80,9 @@ public class DeltaFileConverter implements AfterConvertCallback<DeltaFile> {
         }
 
         // Version 5 - rename enrichment to enrichments
-        if (deltaFile.getSchemaVersion() < 5) {
-            updateToV5(deltaFile, document);
+        // Version 6 - move domains and enrichments to actions
+        if (deltaFile.getSchemaVersion() < 6) {
+            updateToV6(deltaFile, document);
         }
 
         return deltaFile;
@@ -247,8 +244,37 @@ public class DeltaFileConverter implements AfterConvertCallback<DeltaFile> {
         }
     }
 
-    private void updateToV5(DeltaFile deltaFile, Document document) {
-        deltaFile.setEnrichments(new ArrayList<>(uncheckedGetList(document, "enrichment")));
+    private void updateToV6(DeltaFile deltaFile, Document document) {
+        List<Document> enrichments = new ArrayList<>(uncheckedGetList(document, "enrichments"));
+        enrichments.addAll(uncheckedGetList(document, "enrichment"));
+
+        if (!enrichments.isEmpty()) {
+            Action enrichAction = deltaFile.getActions().stream().filter(a -> a.getType() == ActionType.ENRICH).findFirst().orElse(null);
+            if (enrichAction != null) {
+                for (Document enrichment : enrichments) {
+                    enrichAction.getEnrichments().add(Enrichment.builder()
+                            .name(enrichment.getString("name"))
+                            .mediaType(enrichment.getString("mediaType"))
+                            .value(enrichment.getString("value"))
+                            .build());
+                }
+            }
+        }
+
+        List<Document> domains = uncheckedGetList(document, "domains");
+
+        if (!domains.isEmpty()) {
+            Action loadAction = deltaFile.getActions().stream().filter(a -> a.getType() == ActionType.LOAD).findFirst().orElse(null);
+            if (loadAction != null) {
+                for (Document domain : domains) {
+                    loadAction.getDomains().add(Domain.builder()
+                            .name(domain.getString("name"))
+                            .mediaType(domain.getString("mediaType"))
+                            .value(domain.getString("value"))
+                            .build());
+                }
+            }
+        }
     }
 
     private List<Content> convertDocumentListToContentList(List<Document> documentList) {
