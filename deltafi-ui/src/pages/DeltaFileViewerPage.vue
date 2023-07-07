@@ -109,6 +109,7 @@ import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
 import HighlightedCode from "@/components/HighlightedCode.vue";
 import MetadataDialog from "@/components/MetadataDialog.vue";
 import useDeltaFiles from "@/composables/useDeltaFiles";
+import useDeltaFilesQueryBuilder from "@/composables/useDeltaFilesQueryBuilder";
 import useErrorCount from "@/composables/useErrorCount";
 import useNotifications from "@/composables/useNotifications";
 import { computed, inject, onMounted, reactive, ref, watch } from "vue";
@@ -136,6 +137,7 @@ const uiConfig = inject("uiConfig");
 const { data: deltaFile, getDeltaFile, getRawDeltaFile, cancelDeltaFile, loaded, loading } = useDeltaFiles();
 const { fetchErrorCount } = useErrorCount();
 const notify = useNotifications();
+const { pendingAnnotations } = useDeltaFilesQueryBuilder();
 const showForm = ref(true);
 const did = ref(null);
 const ackErrorsDialog = reactive({
@@ -258,6 +260,18 @@ const deltaFileLinks = computed(() => {
   });
 });
 
+watch(
+  () => deltaFile.annotations,
+  () => {
+    fetchPendingAnnotations();
+  }
+);
+
+const fetchPendingAnnotations = async () => {
+  let response = await pendingAnnotations(did.value.toLowerCase());
+  deltaFile["pendingAnnotations"] = response.data.pendingAnnotations.join(", ");
+};
+
 const menuItems = computed(() => {
   let items = staticMenuItems;
   const customLinks = deltaFileLinks.value.map((link) => {
@@ -339,6 +353,7 @@ const loadDeltaFileData = async () => {
   try {
     showForm.value = false;
     await getDeltaFile(did.value);
+    fetchPendingAnnotations();
   } catch {
     showForm.value = true;
   }

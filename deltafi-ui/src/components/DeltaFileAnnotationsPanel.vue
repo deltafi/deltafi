@@ -20,11 +20,12 @@
   <div class="annotations-panel">
     <CollapsiblePanel header="Annotations" class="links-panel pl-0">
       <div v-if="_.isEmpty(_.get(deltaFile, 'annotations', null))" class="d-flex w-100 justify-content-between no-data-panel-content">
-        <span class="p-2">No Annotations Available</span>
+        <span v-if="!_.isEmpty(props.deltaFileData.pendingAnnotations)" class="p-2">No Annotations Available. Expected Read Receipts: {{ props.deltaFileData.pendingAnnotations }}</span>
+        <span v-else class="p-2">No Annotations Available</span>
       </div>
-      <div v-else>
+      <div v-else class="list-group list-group-flush">
         <span class="list-group-item list-group-item-action remove-border">
-          <DialogTemplate component-name="AnnotationsViewer" header="Annotations" dialog-width="50vw" :annotations="annotations">
+          <DialogTemplate component-name="AnnotationsViewer" header="Annotations" dialog-width="50vw" :annotations="annotations" :pending-annotations="props.deltaFileData.pendingAnnotations">
             <div class="content-viewer-button">
               <div class="d-flex w-100 justify-content-between">
                 <strong class="mb-0">View</strong>
@@ -45,8 +46,7 @@
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import useUtilFunctions from "@/composables/useUtilFunctions";
-import { computed, reactive, defineProps } from "vue";
-
+import { computed, defineProps, reactive } from "vue";
 import _ from "lodash";
 
 const props = defineProps({

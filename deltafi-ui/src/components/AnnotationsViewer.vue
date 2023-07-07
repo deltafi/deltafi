@@ -18,6 +18,9 @@
 
 <template>
   <div class="annotations-viewer">
+    <div v-if="!_.isEmpty(pendingAnnotations)">
+      <Message severity="warn" :closable="false" class="mb-2 mt-0"> Expected Read Receipts: {{ pendingAnnotations }}</Message>
+    </div>
     <div v-for="(annotationsArray, actionName) in props.annotations" :key="actionName">
       <DataTable responsive-layout="scroll" :value="annotationsArray" striped-rows sort-field="key" :sort-order="1" class="p-datatable-sm" scroll-height="500px">
         <Column header="Key" field="key" :style="{ width: '25%' }" :sortable="true" />
@@ -40,6 +43,7 @@ import { useStorage, StorageSerializers } from "@vueuse/core";
 
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
+import Message from "primevue/message";
 
 import _ from "lodash";
 
@@ -47,6 +51,11 @@ const props = defineProps({
   annotations: {
     type: Object,
     required: true,
+  },
+  pendingAnnotations: {
+    type: String,
+    required: false,
+    default: null,
   },
 });
 
@@ -69,4 +78,8 @@ const setSearchableAnnotations = (rowData) => {
     panelState.value["validatedAnnotations"] = searchableAnnotationsArray;
   }
 };
+
+const pendingAnnotations = computed(() => {
+  return props.pendingAnnotations ? props.pendingAnnotations : null;
+});
 </script>

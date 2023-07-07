@@ -34,6 +34,7 @@
               <span v-if="key === 'Stage'">
                 <ErrorAcknowledgedBadge v-if="deltaFile.errorAcknowledged" :reason="deltaFile.errorAcknowledgedReason" :timestamp="deltaFile.errorAcknowledged" class="ml-2" />
                 <AutoResumeBadge v-if="deltaFile.stage === 'ERROR' && deltaFile.nextAutoResume !== null" :timestamp="deltaFile.nextAutoResume" :reason="deltaFile.nextAutoResumeReason" class="ml-2" />
+                <PendingAnnotationsBadge v-if="!_.isEmpty(deltaFile.pendingAnnotationsForFlows)" :pending-annotations="deltaFile.pendingAnnotations" class="ml-2" />
               </span>
             </dd>
           </dl>
@@ -44,12 +45,14 @@
 </template>
 
 <script setup>
-import { computed, reactive, defineProps } from "vue";
+import { computed, defineProps, reactive } from "vue";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import FormattedBytes from "@/components/FormattedBytes.vue";
 import ErrorAcknowledgedBadge from "@/components/errors/AcknowledgedBadge.vue";
 import AutoResumeBadge from "./errors/AutoResumeBadge.vue";
+import PendingAnnotationsBadge from "@/components/PendingAnnotationsBadge.vue";
 import Timestamp from "@/components/Timestamp.vue";
+import _ from "lodash";
 
 const props = defineProps({
   deltaFileData: {

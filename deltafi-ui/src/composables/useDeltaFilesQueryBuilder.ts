@@ -182,6 +182,17 @@ export default function useDeltaFilesQueryBuilder() {
     return sendGraphQLQuery(query, "getConfigByType");
   };
 
+  const pendingAnnotations = (did: string) => {
+    const query = {
+      pendingAnnotations: {
+        __args: {
+          did: did,
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "pendingAnnotations");
+  };
+
   const sendGraphQLQuery = async (query: any, operationName: string) => {
     try {
       await queryGraphQL(query, operationName);
@@ -196,5 +207,6 @@ export default function useDeltaFilesQueryBuilder() {
     getDeltaFilesByDIDs,
     getEnumValuesByEnumType,
     getConfigByType,
+    pendingAnnotations,
   };
 }

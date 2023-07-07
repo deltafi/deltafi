@@ -321,6 +321,7 @@ const generateData = () => {
       uuid: "b358260d-a1c2-4412-8259-c617cae96700",
       flow: "stix2_1",
     },
+    pendingAnnotationsForFlows: ["mock_DevFlow1"],
   };
 
   return data;

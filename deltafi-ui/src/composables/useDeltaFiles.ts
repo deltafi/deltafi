@@ -16,8 +16,8 @@
    limitations under the License.
 */
 
-import { reactive, ref } from 'vue'
-import useGraphQL from './useGraphQL'
+import { reactive, ref } from "vue";
+import useGraphQL from "./useGraphQL";
 
 export default function useDeltaFiles() {
   const { response, queryGraphQL, loading, errors } = useGraphQL();
@@ -93,28 +93,29 @@ export default function useDeltaFiles() {
         nextAutoResume: true,
         nextAutoResumeReason: true,
         metadata: true,
-      }
-    }
+        pendingAnnotationsForFlows: true,
+      },
+    };
   };
 
   const getDeltaFile = async (did: string) => {
     await queryGraphQL(buildGetDeltaFileQuery(did), "getDeltaFile");
-    Object.assign(data, response.value.data.deltaFile)
+    Object.assign(data, response.value.data.deltaFile);
     loaded.value = true;
-  }
+  };
 
   const getRawDeltaFile = async (did: string) => {
     const query = {
       rawDeltaFile: {
         __args: {
           did: did,
-          pretty: false
-        }
-      }
-    }
+          pretty: false,
+        },
+      },
+    };
     await queryGraphQL(query, "getRawDeltaFile");
     return response.value.data.rawDeltaFile;
-  }
+  };
 
   const cancelDeltaFile = async (dids: Array<string>) => {
     const query = {
@@ -124,12 +125,12 @@ export default function useDeltaFiles() {
         },
         did: true,
         success: true,
-        error: true
-      }
+        error: true,
+      },
     };
     await queryGraphQL(query, "cancelDeltaFile", "mutation");
     return response.value.data.cancel;
-  }
+  };
 
   return { data, loading, loaded, getDeltaFile, getRawDeltaFile, cancelDeltaFile, errors };
 }
