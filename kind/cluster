@@ -794,6 +794,7 @@ Options:
   restart     Down a cluster, restart it, and install deltafi and plugins
   bounce      Restart an application (deltafi-api, etc.).  App name must follow command
   nocore      Skips building core DeltaFi and UI (build only)
+  noui        Skips building DeltaFi UI (build only)
   destroy     Destroys the cluster before proceeding
   expose      Expose ports for deltafi-core, minio and redis on localhost
   -f | force  Skip "are you sure?"
@@ -826,6 +827,7 @@ loc() {
   local BOUNCE=
   local FORCE=
   local NOCORE=
+  local NOUI=
   local DESTROY=
 
   [[ -z "$1" ]] && _loc_help
@@ -848,6 +850,9 @@ loc() {
         ;;
       nocore)
         NOCORE=nocore
+        ;;
+      noui)
+        NOUI=noui
         ;;
       install)
         INSTALL=install
@@ -970,10 +975,12 @@ _local_build() {
     _attention "Building deltafi"
     ./gradlew "${BUILD_TARGETS[@]}" -x test publishToMavenLocal docker dockerPushLocal
 
-    _attention "Building deltafi-ui"
-    cd "$ROOT/deltafi/deltafi-ui"
-    time docker build -t localhost:5000/deltafi-ui:latest .
-    docker push localhost:5000/deltafi-ui:latest
+    if [[ -z "$NOUI" ]]; then
+      _attention "Building deltafi-ui"
+      cd "$ROOT/deltafi/deltafi-ui"
+      time docker build -t localhost:5000/deltafi-ui:latest .
+      docker push localhost:5000/deltafi-ui:latest
+    fi
   fi
 
   export DELTAFI_PYTHON
