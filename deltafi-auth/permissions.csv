@@ -4,6 +4,9 @@ General,UIAccess,Grants access to the UI
 General,StatusView,Grants the ability to view system status
 General,DashboardView,Grants the ability to view the UI dashboard
 General,VersionsView,Grants the ability to view running versions
+Registry,RegistryView,Grants the ability to view internal registry contents
+Registry,RegistryUpload,Grants the ability to upload to the internal registry
+Registry,RegistryDelete,Grants the ability to remove content from the internal registry
 Metrics,MetricsAdmin,Grants the Admin role in Grafana
 Metrics,MetricsView,Grants the Viewer role in Grafana
 Metrics,MetricsEdit,Grants the Editor role in Grafana

@@ -51,6 +51,36 @@ class ApiServer < Sinatra::Base
   get('/probe') { return }
 
   namespace '/api/v1' do
+    get '/registry/catalog' do
+      authorize! :RegistryDelete
+      DF::API::V1::Registry.catalog
+    end
+
+    post '/registry/upload' do
+      authorize! :RegistryUpload
+      unless (image_name = request.env['HTTP_NAME'])
+        status 400
+        return build_error_response '"name" header is required for upload'
+      end
+      tempfile = Tempfile.new('registry_upload')
+      begin
+        tempfile.binmode
+        IO.copy_stream(request.body, tempfile)
+        tempfile.close
+
+        response = DF::API::V1::Registry.upload image_name: image_name, tarball: tempfile.path
+        audit("Uploaded #{image_name}, original name #{tempfile.inspect}")
+        retval = build_response({ result: response })
+      rescue StandardError => e
+        status 500
+        retval = build_error_response e.message
+      ensure
+        tempfile.close unless tempfile.closed?
+        tempfile.unlink
+      end
+      retval
+    end
+
     get '/config' do
       authorize! :UIAccess
 

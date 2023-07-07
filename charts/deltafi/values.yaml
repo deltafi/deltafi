@@ -391,6 +391,7 @@ docker-registry:
   persistence:
     enabled: true
     existingClaim: deltafi-docker-registry
+    deleteEnabled: true
   serviceAccount:
     create: true
   garbageCollect:
