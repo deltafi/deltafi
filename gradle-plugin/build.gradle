@@ -23,10 +23,14 @@ dependencies {
 
 group 'org.deltafi.gradle-plugin'
 
-gradlePlugin {
+pluginBundle {
     website = 'https://deltafi.org'
     vcsUrl = 'https://github.com/deltafi-org/deltafi'
+    tags = ['deltafi', 'DeltaFi', 'normalization']
     description = 'Gradle plugins used with DeltaFi'
+}
+
+gradlePlugin {
     plugins {
         pluginPlugin {
             id = 'org.deltafi.plugin'
