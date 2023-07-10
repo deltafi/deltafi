@@ -37,6 +37,7 @@ import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.index.Index;
 import org.springframework.data.mongodb.core.index.IndexInfo;
 import org.springframework.data.mongodb.core.index.IndexOperations;
+import org.springframework.data.mongodb.core.index.PartialIndexFilter;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -76,6 +77,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String EGRESS_FLOW = "egress.flow";
     public static final String FILTERED = "filtered";
     public static final String PENDING_ANNOTATIONS_FOR_FLOWS = "pendingAnnotationsForFlows";
+    public static final String FIRST_PENDING_ANNOTATIONS_FOR_FLOWS = "pendingAnnotationsForFlows.0";
     public static final String TEST_MODE = "testMode";
     public static final String REFERENCED_BYTES = "referencedBytes";
     public static final String TOTAL_BYTES = "totalBytes";
@@ -178,6 +180,17 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         INDICES.put("metadata_keys_index", new Index().named("metadata_keys_index").on(ANNOTATION_KEYS, Sort.Direction.ASC));
         INDICES.put("disk_space_delete_index", new Index().named("disk_space_delete_index").on(CONTENT_DELETED, Sort.Direction.ASC).on(STAGE, Sort.Direction.ASC).on(CREATED, Sort.Direction.ASC).on(TOTAL_BYTES, Sort.Direction.ASC));
         INDICES.put("pending_annotations_for_flows_index", new Index().named("pending_annotations_for_flows_index").on(PENDING_ANNOTATIONS_FOR_FLOWS, Sort.Direction.ASC));
+        INDICES.put("egress_flow_index", new Index().named("egress_flow_index").on(EGRESS_FLOW, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
+        INDICES.put("processing_type_index", new Index().named("processing_type_index").on(SOURCE_INFO_PROCESSING_TYPE, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
+
+        // partial index to support finding DeltaFiles that are pending annotations
+        INDICES.put("first_pending_annotations_for_flows_index", new Index().named("first_pending_annotations_for_flows_index")
+                .on(FIRST_PENDING_ANNOTATIONS_FOR_FLOWS, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(FIRST_PENDING_ANNOTATIONS_FOR_FLOWS).exists(true))).on(MODIFIED, Sort.Direction.ASC));
+
+        // use partial indexes for boolean fields filtering on the more selective value
+        INDICES.put("egressed_index", new Index().named("egressed_index").on(EGRESSED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(EGRESSED).is(false))).on(MODIFIED, Sort.Direction.ASC));
+        INDICES.put("test_mode_index", new Index().named("test_mode_index").on(TEST_MODE, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(TEST_MODE).is(true))).on(MODIFIED, Sort.Direction.ASC));
+        INDICES.put("filtered_index", new Index().named("filtered_index").on(FILTERED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(FILTERED).is(true))).on(MODIFIED, Sort.Direction.ASC));
     }
 
     private final MongoTemplate mongoTemplate;
@@ -563,6 +576,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (filter.getFilteredCause() != null) {
+            boolean filtered = filter.getFiltered() != null ? filter.getFiltered() : true;
+            andCriteria.add(Criteria.where(FILTERED).is(filtered));
             Criteria actionElemMatch = new Criteria().andOperator(Criteria.where(STATE).is(ActionState.FILTERED),
                     Criteria.where(FILTERED_CAUSE).regex(filter.getFilteredCause()));
             andCriteria.add(Criteria.where(ACTIONS).elemMatch(actionElemMatch));
@@ -639,7 +654,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         if (nonNull(filter.getPendingAnnotations())) {
             if (filter.getPendingAnnotations()) {
-                andCriteria.add(Criteria.where(PENDING_ANNOTATIONS_FOR_FLOWS).ne(null));
+                andCriteria.add(Criteria.where(FIRST_PENDING_ANNOTATIONS_FOR_FLOWS).exists(true));
             } else {
                 andCriteria.add(Criteria.where(PENDING_ANNOTATIONS_FOR_FLOWS).is(null));
             }
