@@ -52,8 +52,27 @@ class ApiServer < Sinatra::Base
 
   namespace '/api/v1' do
     get '/registry/catalog' do
-      authorize! :RegistryDelete
+      authorize! :RegistryView
       DF::API::V1::Registry.catalog
+    end
+
+    get '/registry/list' do
+      authorize! :RegistryView
+      build_response({ result: DF::API::V1::Registry.list })
+    end
+
+    post '/registry/add/*' do
+      authorize! :RegistryUpload
+
+      unless (image_name = params[:splat]&.join('/'))
+        status 400
+        return build_error_response '"name" header is required for upload'
+      end
+
+      new_name = request.env['HTTP_NEW_NAME'] || params[:new_name]
+
+      puts "Adding image #{image_name} to registry #{"as #{new_name}" if new_name}"
+      DF::API::V1::Registry.add image_name: image_name, new_name: new_name
     end
 
     post '/registry/upload' do
@@ -79,6 +98,27 @@ class ApiServer < Sinatra::Base
         tempfile.unlink
       end
       retval
+    end
+
+    delete '/registry/delete/*' do
+      authorize! :RegistryDelete
+
+      image_tag = request.env['HTTP_TAG'] || params[:tag]
+      image_splat = params[:splat]
+      unless image_tag
+        tag_candidate = image_splat.pop
+        if tag_candidate.split(':').size == 2
+          image_splat << tag_candidate.split(':').first
+          image_tag = tag_candidate.split(':').last
+        else
+          image_splat << tag_candidate
+          image_tag = 'latest'
+        end
+      end
+      image_name = image_splat.join('/')
+      puts "Deleting image #{image_name} with tag #{image_tag}"
+
+      build_response({ result: DF::API::V1::Registry.delete(image_name: image_name, image_tag: image_tag) })
     end
 
     get '/config' do

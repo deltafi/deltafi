@@ -396,7 +396,11 @@ docker-registry:
     create: true
   garbageCollect:
     enabled: true
-    schedule: "0 * * * *"
+    schedule: "*/15 * * * *"
+  configData:
+    storage:
+      cache:
+        blobdescriptor: ""
 
 registry-ui:
   enabled: false
