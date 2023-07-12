@@ -120,6 +120,28 @@ _readlink() {
   fi
 }
 
+_tool_exists() {
+  command -v "$1" &> /dev/null
+}
+
+_base64() {
+  local TEMPFILE
+  if _tool_exists mktemp; then
+    TEMPFILE=$(mktemp)
+  else
+    TEMPFILE=/tmp/base64.foo
+    touch $TEMPFILE
+  fi
+
+  local BASE64_ARGS=""
+  if base64 -i "$TEMPFILE" -w0 > /dev/null 2>&1; then
+    BASE64_ARGS="-w0"
+  fi
+
+  rm -f "$TEMPFILE"
+  base64 $BASE64_ARGS
+}
+
 DELTAFI_COMPOSE_PATH=$(cd $(dirname $(_readlink -f $0)) && pwd)
 COMPOSE_FILE="${DELTAFI_COMPOSE_PATH}/docker-compose.yml"
 
@@ -144,7 +166,7 @@ _is_arm() {
 
 _random_password() {
   local size=${1:-20}
-  printf '%s%s%s' "$(printf '%s' $RANDOM | md5sum | head -c 20)" "$(printf '%s' $RANDOM | md5sum | head -c 20)" "$(printf '%s' $RANDOM | md5sum | head -c 20)" | base64 -w0 | head -c "$size"
+  printf '%s%s%s' "$(printf '%s' $RANDOM | md5sum | head -c 20)" "$(printf '%s' $RANDOM | md5sum | head -c 20)" "$(printf '%s' $RANDOM | md5sum | head -c 20)" | _base64 | head -c "$size"
 }
 
 _setup_secrets() {
