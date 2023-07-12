@@ -50,9 +50,29 @@ module Deltafi
             minio_options = minio_object_options(content_segment)
             minio_client.head_object(minio_options)
           rescue Aws::S3::Errors::NotFound => e
+            parent_did = content_segment[:did]
+            deltafile = begin
+              query_deltafile(parent_did)
+            rescue StandardError => ee
+              raise ee, "Parent DeltaFile (#{parent_did}) has been deleted."
+            end
+            raise e, "Parent DeltaFile (#{parent_did}) content has been deleted. Reason for this deletion: #{deltafile['contentDeletedReason']}" if deltafile['contentDeleted']
+
             raise e, "Content not found: #{e.message}"
           rescue Aws::S3::Errors::Forbidden => e
             raise e, "Access denied: #{e.message}"
+          end
+
+          def query_deltafile(did)
+            query = <<-QUERY
+              {
+                deltaFile(did: "#{did}") {
+                  contentDeleted
+                  contentDeletedReason
+                }
+              }
+            QUERY
+            Deltafi.graphql(query).parsed_response.dig('data', 'deltaFile')
           end
 
           def empty_output(media_type)
