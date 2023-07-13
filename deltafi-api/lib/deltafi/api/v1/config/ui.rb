@@ -34,6 +34,7 @@ module Deltafi
               config[:title] = system_properties['systemName'] || 'DeltaFi'
               config[:domain] = DOMAIN
               config[:authMode] = AUTH_MODE
+              config[:clusterMode] = Deltafi.cluster_mode?
               config
             end
           end

@@ -235,7 +235,7 @@ const staticMenuItems = ref([
         name: "Kubernetes Dashboard",
         icon: "icomoon kubernetes",
         url: computed(() => buildURL("k8s", "/#/workloads?namespace=deltafi")),
-        visible: computed(() => hasPermission("Admin")),
+        visible: computed(() => hasPermission("Admin") && uiConfig.clusterMode),
       },
       {
         name: "GraphiQL",

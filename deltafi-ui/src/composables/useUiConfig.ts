@@ -42,7 +42,8 @@ export type UiConfig = {
     url: String
   }>
   useUTC?: Boolean,
-  authMode?: String
+  authMode?: String,
+  clusterMode?: Boolean
 }
 
 const uiConfig: UiConfig = reactive({
@@ -56,6 +57,7 @@ const uiConfig: UiConfig = reactive({
   deltaFileLinks: [],
   useUTC: false,
   authMode: 'disabled',
+  clusterMode: true,
 })
 
 export default function useUiConfig(): {
