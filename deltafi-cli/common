@@ -60,6 +60,14 @@ _is_standalone() {
   fi
 }
 
+_exit_1() {
+  {
+    printf "%s " "$(tput setaf 1)!$(tput sgr0)"
+    "${@}"
+  } 1>&2
+  exit 1
+}
+
 _current_replica_counts() {
   deployments=$($KUBECTL_BIN get deployments --output=json | jq '[.items[] | {name: .metadata.name, count: .spec.replicas}]')
   statefulsets=$($KUBECTL_BIN get sts --output=json | jq '[.items[] | {name: .metadata.name, count: .spec.replicas}]')
@@ -82,3 +90,30 @@ _reset_replica_counts_from_file() {
 
   rm "$state_file"
 }
+
+_tool_exists() {
+    command -v "$1" &> /dev/null
+}
+
+_require_command() {
+  command -v $1 &> /dev/null || _exit_1 echo "Command '$@' is not installed. DeltaFi CLI cannot execute."
+}
+
+_version_check() {
+  local minimumVersion=$1
+  local actualVersion=$2
+  [[ "${minimumVersion}" = "$(echo -e "${minimumVersion}\n${actualVersion}" | sort -V | head -n1)" ]]
+}
+
+_pretty_json() {
+  [[ "$QUIET" ]]  && return 0
+  if _tool_exists python; then
+    python -m json.tool
+  elif _tool_exists python3; then
+    python3 -m json.tool
+  else
+    cat
+    echo
+  fi
+}
+

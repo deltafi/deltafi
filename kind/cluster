@@ -175,6 +175,9 @@ if [[ "$(basename "$0")" == "deltafi" ]]; then
       version|uninstall|did|list-actions|list-flows|list-plugins|list-plans|list-policies|mongol-cli|mongo-migrate|mongo-eval|redis-watch|redis-cli|redis-stats|redis-latency|serviceip)
         "$DELTAFI_PATH/deltafi-cli/deltafi" "$@"
         ;;
+      registry)
+        "$DELTAFI_PATH/deltafi-cli/deltafi" "$@" --api-host local.deltafi.org
+        ;;
       ingress)
         INGRESS_DIR=$PV_DIR/ingress
         shift

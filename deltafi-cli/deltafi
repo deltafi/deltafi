@@ -160,6 +160,7 @@ Commands:
   redis-stats            monitor redis connection stats
   redis-watch            watch every command issued to redis
   reenanble              reenable all DeltaFi processes
+  registry               manage local Docker registry
   scale                  edit the replica counts for all deployments and statefulsets
   secrets                show k8s secrets
   serviceip              show service IP
@@ -315,6 +316,9 @@ case "$1" in
     ;;
   reenable)
     "$DELTAFICLI_WORKDIR/commands/reenable" "$@"
+    ;;
+  registry)
+    "$DELTAFICLI_WORKDIR/commands/registry" "$@"
     ;;
   scale)
     "$DELTAFICLI_WORKDIR/commands/scale" "$@"

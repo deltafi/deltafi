@@ -69,10 +69,12 @@ class ApiServer < Sinatra::Base
         return build_error_response '"name" header is required for upload'
       end
 
-      new_name = request.env['HTTP_NEW_NAME'] || params[:new_name]
+      name = request.env['HTTP_NAME'] || params[:name]
 
-      puts "Adding image #{image_name} to registry #{"as #{new_name}" if new_name}"
-      DF::API::V1::Registry.add image_name: image_name, new_name: new_name
+      puts "Adding image #{image_name} to registry #{"as #{name}" if name}"
+      response = DF::API::V1::Registry.add image_name: image_name, new_name: name
+      audit("Uploaded #{name || image_name}#{", original name #{image_name}" if image_name != name}")
+      build_response({ result: response })
     end
 
     post '/registry/upload' do
@@ -118,7 +120,11 @@ class ApiServer < Sinatra::Base
       image_name = image_splat.join('/')
       puts "Deleting image #{image_name} with tag #{image_tag}"
 
-      build_response({ result: DF::API::V1::Registry.delete(image_name: image_name, image_tag: image_tag) })
+      response = build_response({ result: DF::API::V1::Registry.delete(image_name: image_name, image_tag: image_tag) })
+
+      audit("Deleted #{image_name} with tag #{image_tag}")
+
+      response
     end
 
     get '/config' do

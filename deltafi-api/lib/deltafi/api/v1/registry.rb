@@ -99,7 +99,7 @@ module Deltafi
             logger.info result
             raise "Unable to upload image #{image_name} (#{$CHILD_STATUS.exitstatus})\n#{result}" unless $CHILD_STATUS.success?
 
-            "Successful add of image #{image_name}"
+            "Successful add of image #{new_name || image_name} #{"from #{image_name}" if image_name != new_name}"
           end
         end
       end
