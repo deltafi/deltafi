@@ -682,8 +682,6 @@ _k8s_init() {
   _k8s_add_pv egress-sink "${PV_STORAGE}" 1000
   _k8s_add_pv auth "${PV_STORAGE}" 1000
   _k8s_add_pv docker-registry "${PV_STORAGE}" 1000
-  mkdir -p "${PV_DIR}/docker-registry/docker/registry/v2/repositories"
-  mkdir -p "${PV_DIR}/docker-registry/docker/registry/v2/blobs"
   _k8s_add_secret "deltafi-docker-registry-secret" \
     "password" "password" \
     "haSharedSecret" "password" \

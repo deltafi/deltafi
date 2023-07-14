@@ -387,7 +387,8 @@ graphite:
 docker-registry:
   enabled: false
   image:
-    tag: 2.8.2
+    repository: deltafi/registry
+    tag: latest #2.8.2-0
   persistence:
     enabled: true
     existingClaim: deltafi-docker-registry
@@ -397,6 +398,7 @@ docker-registry:
   garbageCollect:
     enabled: true
     schedule: "*/15 * * * *"
+    deleteUntagged: true
   configData:
     storage:
       cache:
