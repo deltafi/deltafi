@@ -5,6 +5,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.0.5] - 2023-07-17
+
+### Added
+- Hide k8s dashboard in compose mode 
+- New registry APIs added:
+  - `api/v1/registry/add/path/to/registry:tag` - allows direct pull of any publicly accessable docker image into the local registry
+```
+curl -X POST http://local.deltafi.org/api/v1/registry/add/deltafi/deltafi-stix:1.0.0
+```
+  - `api/v1/registry/delete/path/to/registry:tag` - allows deletion of local registry image
+```
+curl -X DELETE http://local.deltafi.org/api/v1/registry/delete/deltafi/deltafi-stix:1.0.0
+```
+  - `api/v1/registry/list` - generates a json summary of all local registry repositories and their tags
+- Added new indices to improve the performance of the `deltaFiles` query
+
+### Changed
+- Better handling of when DeltaFile content can't be found.
+
+### Fixed
+- Add the base64 flag check to the compose script 
+- Docker registry image will automatically initialize the docker file system on initialization
+  to avoid garbage collection errors with an empty registry
+
 ## [1.0.4] - 2023-07-09
 
 ### Added
@@ -1993,7 +2017,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.4...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.5...main
+[1.0.5]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.4...1.0.5
 [1.0.4]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.2...1.0.4
 [1.0.2]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.1...1.0.2
 [1.0.1]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.0...1.0.1
