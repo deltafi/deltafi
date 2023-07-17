@@ -112,6 +112,7 @@ public class DeletePolicyDatafetcherTestHelper {
 
         LoadDeletePoliciesProjectionRoot projection = new LoadDeletePoliciesProjectionRoot()
                 .success()
+                .info()
                 .errors();
 
         GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, projection);

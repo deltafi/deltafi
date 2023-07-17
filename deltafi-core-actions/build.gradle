@@ -12,9 +12,9 @@ license {
 dependencies {
     implementation project(':deltafi-action-kit')
 
-    implementation 'org.apache.commons:commons-compress:1.21'
+    implementation 'org.apache.commons:commons-compress:1.23'
     implementation 'org.tukaani:xz:1.9'
-    implementation 'org.apache.nifi:nifi-flowfile-packager:1.18.0'
+    implementation 'org.apache.nifi:nifi-flowfile-packager:1.22.0'
 
     testImplementation project(':deltafi-common-test')
     testImplementation project(':deltafi-action-kit-test')

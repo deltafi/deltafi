@@ -38,7 +38,7 @@ public class Result {
     @Builder.Default
     private List<String> errors = new ArrayList<>();
 
-    public static Result success() {
+    public static Result successResult() {
         return new Result();
     }
 }

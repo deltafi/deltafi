@@ -2315,7 +2315,7 @@ class DeltaFiCoreApplicationTests {
 		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(uninstallPluginGraphQLQuery, UNINSTALL_PLUGIN_PROJECTION_ROOT);
 
 
-		Result mockResult = Result.success();
+		Result mockResult = Result.successResult();
 		Mockito.when(deployerService.uninstallPlugin(plugin.getPluginCoordinates())).thenReturn(mockResult);
 		Result result = dgsQueryExecutor.executeAndExtractJsonPathAsObject(graphQLQueryRequest.serialize(),
 				"data." + uninstallPluginGraphQLQuery.getOperationName(), Result.class);
