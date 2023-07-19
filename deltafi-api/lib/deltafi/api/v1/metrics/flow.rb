@@ -90,7 +90,7 @@ module Deltafi
 
               output = Hash.new { |hash, key| hash[key] = hash.dup.clear }
               results.each do |metric|
-                metric_name = metric[:tags][:name].gsub(/stats_counts\./, '')
+                metric_name = metric[:tags][:name].gsub('stats_counts.', '')
                 ingress_flow = metric[:tags][:ingressFlow]
                 count = metric[:datapoints].reduce(0) { |val, point| val + (point.first || 0) }
                 output[ingress_flow][:metrics][metric_name] = count

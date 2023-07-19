@@ -48,7 +48,7 @@ module Deltafi
 
                 queue_list << {
                   name: metric[:target],
-                  size: metric[:datapoints].map(&:first).compact.last, # Use the oldest non-null datapoint for the gauge value
+                  size: metric[:datapoints].filter_map(&:first).last, # Use the oldest non-null datapoint for the gauge value
                   timestamp: metric[:datapoints].last.last.to_i * 1000
                 }
               end

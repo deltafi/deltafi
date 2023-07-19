@@ -27,6 +27,7 @@ module Deltafi
       module Content
         MINIO_BUCKET = 'storage'
         MINIO_REGION = 'us-east-1'
+        REQUIRED_KEYS = %i[did uuid size offset].freeze
 
         class << self
           def get_segment(content_segment, &block)
@@ -112,7 +113,7 @@ module Deltafi
           end
 
           def content_size(content)
-            content[:segments].map { |segment| head_segment(segment).content_length }.sum
+            content[:segments].sum { |segment| head_segment(segment).content_length }
           end
 
           def verify_content(content)
@@ -121,7 +122,7 @@ module Deltafi
             end
 
             content[:segments].each do |segment|
-              %i[did uuid size offset].each do |key|
+              REQUIRED_KEYS.each do |key|
                 raise "Invalid content: #{key} required for each segment" unless segment[key]
               end
             end

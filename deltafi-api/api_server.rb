@@ -30,7 +30,7 @@ require 'sinatra/namespace'
 $sse_service = DF::API::V1::ServerSentEvents::Service.new unless ENV['RUNNING_IN_CLUSTER'].nil?
 
 class ApiServer < Sinatra::Base
-  %w[helpers models routes].each { |dir| Dir.glob("./#{dir}/*.rb").sort.each(&method(:require)) }
+  %w[helpers models routes].each { |dir| Dir.glob("./#{dir}/*.rb").sort.each { |x| require(x) } }
 
   helpers Sinatra::Streaming
 

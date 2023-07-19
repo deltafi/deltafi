@@ -31,10 +31,10 @@ module Deltafi
     extend self
     extend Deltafi::Logger
 
-    SERVICES = DF::Monitor.constants.map do |c|
+    SERVICES = DF::Monitor.constants.filter_map do |c|
       mod = DF::Monitor.const_get(c)
       mod::Service if mod.constants.include?(:Service)
-    end.compact
+    end
 
     def run
       Process.setproctitle('monitor - parent')
