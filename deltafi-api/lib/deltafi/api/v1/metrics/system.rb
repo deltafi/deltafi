@@ -92,7 +92,9 @@ module Deltafi
                 _, _, resouce, measurement = metric[:tags][:name].split('.').map(&:to_sym)
                 nodes[hostname] ||= {}
                 nodes[hostname][resouce] ||= {}
-                nodes[hostname][resouce][measurement] = metric[:datapoints].last.first.to_i
+                nodes[hostname][resouce][measurement] = metric[:datapoints].reverse.find { |p| p[0].positive? }&.first
+
+                raise "Invalid metric: #{metric}" if nodes[hostname][resouce][measurement].nil?
               end
 
               nodes
