@@ -178,7 +178,7 @@ public class DeltaFiPropertiesService implements Snapshotter {
         }
 
         refreshProperties();
-        return Result.successResult();
+        return Result.success();
     }
 
     private boolean refresh(boolean changed) {

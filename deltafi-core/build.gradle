@@ -16,28 +16,33 @@ license {
 dependencies {
 	implementation project(':deltafi-common')
 
-	implementation 'org.apache.commons:commons-collections4:4.4'
+	implementation "org.apache.commons:commons-collections4:4.4"
 
 	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.cloud:spring-cloud-starter-kubernetes-fabric8'
 
-	implementation 'io.fabric8:kubernetes-client:6.7.2'
+	implementation 'io.fabric8:kubernetes-client'
+	constraints {
+		implementation('io.fabric8:kubernetes-client:5.11.2') {
+			because 'CVE-2021-4178 https://security.snyk.io/vuln/SNYK-JAVA-IOFABRIC8-2331709'
+		}
+	}
 
-	implementation 'com.networknt:json-schema-validator:1.0.86'
+	implementation 'com.networknt:json-schema-validator:1.0.74'
 
 	implementation 'com.netflix.graphql.dgs:graphql-dgs-extended-scalars'
 	implementation 'com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter'
 	implementation 'org.apache.commons:commons-text:1.10.0'
-	implementation 'io.dropwizard.metrics:metrics-core:4.2.19'
+	implementation 'io.dropwizard.metrics:metrics-core:4.2.18'
 	implementation 'com.github.docker-java:docker-java-core:3.3.0'
 	implementation 'com.github.docker-java:docker-java-transport-httpclient5:3.3.0'
 
 	testImplementation project(':deltafi-common-test')
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
-	testImplementation 'org.apache.nifi:nifi-flowfile-packager:1.22.0'
+	testImplementation 'org.apache.nifi:nifi-flowfile-packager:1.19.1'
 	testImplementation 'org.awaitility:awaitility:4.2.0'
 
 	testImplementation "org.testcontainers:mongodb:${testContainersVersion}"

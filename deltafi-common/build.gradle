@@ -23,23 +23,23 @@ dependencies {
     api(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:${dgsVersion}"))
     api 'com.netflix.graphql.dgs:graphql-dgs-client'
     api "com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-client-core:${dgsCodegenClientVersion}"
-    api 'commons-io:commons-io:2.13.0'
-    api(platform('io.github.openfeign:feign-bom:12.3'))
-    api 'io.github.openfeign:feign-core'
-    api 'io.github.openfeign:feign-jackson'
-    api 'io.github.openfeign:feign-slf4j'
+    api "commons-io:commons-io:2.11.0"
+    api(platform("io.github.openfeign:feign-bom:12.1"))
+    api "io.github.openfeign:feign-core"
+    api "io.github.openfeign:feign-jackson"
+    api "io.github.openfeign:feign-slf4j"
     api "io.minio:minio:${minioVersion}"
     api 'javax.ws.rs:javax.ws.rs-api:2.1.1'
     api 'org.apache.commons:commons-lang3:3.12.0'
-    api 'org.json:json:20230618'
+    api 'org.json:json:20230227'
     api(platform("org.springframework.boot:spring-boot-dependencies:${springBootVersion}"))
-    api 'org.springframework.boot:spring-boot-starter-aop'
-    api 'org.springframework.boot:spring-boot-starter-logging'
+    api "org.springframework.boot:spring-boot-starter-aop"
+    api "org.springframework.boot:spring-boot-starter-logging"
     api 'org.springframework.boot:spring-boot-autoconfigure'
     api 'org.springframework.data:spring-data-mongodb'
     api "org.springframework.retry:spring-retry"
     api "redis.clients:jedis"
-    api 'org.apache.nifi:nifi-flowfile-packager:1.22.0'
+    api 'org.apache.nifi:nifi-flowfile-packager:1.18.0'
 
     implementation 'org.apache.commons:commons-text'
     constraints {
@@ -47,9 +47,15 @@ dependencies {
             because 'CVE-2022-42889 https://security.snyk.io/vuln/SNYK-JAVA-ORGAPACHECOMMONS-3043138'
         }
     }
+    implementation 'org.yaml:snakeyaml'
+    constraints {
+        implementation('org.yaml:snakeyaml:1.33') {
+            because 'CVE-2022-25857 https://security.snyk.io/vuln/SNYK-JAVA-ORGYAML-2806360'
+        }
+    }
 
-    compileOnly 'org.springframework.boot:spring-boot-starter-cache'
-    testImplementation 'org.springframework.boot:spring-boot-starter-cache'
+    compileOnly "org.springframework.boot:spring-boot-starter-cache"
+    testImplementation "org.springframework.boot:spring-boot-starter-cache"
     compileOnly 'com.github.ben-manes.caffeine:caffeine:3.1.4'
     testImplementation 'com.github.ben-manes.caffeine:caffeine:3.1.4'
 
@@ -65,5 +71,5 @@ dependencies {
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${jupiterVersion}"
     testImplementation "org.mockito:mockito-junit-jupiter:${mockitoJupiterVersion}"
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'com.github.tomakehurst:wiremock-jre8-standalone:2.35.0'
+    testImplementation "com.github.tomakehurst:wiremock-jre8-standalone:2.35.0"
 }
