@@ -1250,20 +1250,10 @@ public class DeltaFilesService {
     }
 
     public List<DeltaFile> delete(long bytesToDelete, String flow, String policy, boolean deleteMetadata) {
-        List<DeltaFile> allDeleted = new ArrayList<>();
-        long bytesLeft = bytesToDelete;
         int batchSize = deltaFiPropertiesService.getDeltaFiProperties().getDelete().getPolicyBatchSize();
 
-        int found;
-        do {
-            log.info("Searching for batch of up to " + batchSize + " deltaFiles to delete for policy " + policy);
-            List<DeltaFile> deltaFiles = delete(deltaFileRepo.findForDelete(bytesToDelete, flow, policy, batchSize), policy, deleteMetadata);
-            found = deltaFiles.size();
-            allDeleted.addAll(deltaFiles);
-            bytesLeft = bytesLeft - deltaFiles.stream().map(DeltaFile::getTotalBytes).reduce(0L, Long::sum);
-        } while (found == batchSize && bytesLeft > 0);
-
-        return allDeleted;
+        log.info("Searching for batch of up to " + batchSize + " deltaFiles to delete for policy " + policy);
+        return delete(deltaFileRepo.findForDelete(bytesToDelete, flow, policy, batchSize), policy, deleteMetadata);
     }
 
     public List<DeltaFile> delete(List<DeltaFile> deltaFiles, String policy, boolean deleteMetadata) {

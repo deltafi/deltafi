@@ -50,10 +50,25 @@ public class DiskSpaceDelete extends DeletePolicyWorker {
             if (contentMetrics != null && contentMetrics.percentUsed() > maxPercent) {
                 log.info("Disk delete policy for " + (flow == null ? "all flows" : flow) + " executing: current used = " + contentMetrics.percentUsed() + "%, maximum = " + maxPercent + "%");
                 long bytesToDelete = contentMetrics.bytesOverPercentage(maxPercent);
-                log.info("Deleting up to " + bytesToDelete + " bytes");
-                List<DeltaFile> deleted = deltaFilesService.delete(bytesToDelete, flow, name, false);
-                if (deleted.isEmpty()) {
-                    log.warn("No DeltaFiles deleted -- disk is above threshold despite all content already being deleted.");
+                log.info("Deleting at least " + bytesToDelete + " bytes");
+                while (bytesToDelete > 0) {
+                    List<DeltaFile> deleted = deltaFilesService.delete(bytesToDelete, flow, name, false);
+                    long bytesDeleted = deleted.stream().map(DeltaFile::getTotalBytes).reduce(0L, Long::sum);
+                    bytesToDelete -= bytesDeleted;
+                    log.info("Deleted batch of " + deleted.size() + " files, " + bytesDeleted + " bytes. Remaining: " + Math.max(0, bytesToDelete) + " bytes");
+                    if (deleted.isEmpty()) {
+                        log.warn("No DeltaFiles deleted -- disk is above threshold despite all content already being deleted.");
+                        break;
+                    }
+
+                    if (bytesToDelete > 0) {
+                        contentMetrics = diskSpaceService.uncachedContentMetrics();
+                        if (contentMetrics != null && contentMetrics.percentUsed() <= maxPercent) {
+                            log.info("Disk space delete batching stopped early due to disk usage below threshold.");
+                            break;
+                        }
+
+                    }
                 }
             }
         } catch (DeltafiApiException e) {

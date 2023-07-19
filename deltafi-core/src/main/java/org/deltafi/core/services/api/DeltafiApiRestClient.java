@@ -66,7 +66,15 @@ public class DeltafiApiRestClient implements DeltafiApiClient {
             }
             JSONObject jsonObject = new JSONObject(response.body());
             JSONObject content = jsonObject.getJSONObject("content");
-            return new DiskMetrics(content.getLong("limit"), content.getLong("usage"));
+
+            long limit = content.getLong("limit");
+            long usage = content.getLong("usage");
+            if (limit == 0 || usage == 0) {
+                log.error("Received invalid disk metrics from API");
+                throw new DeltafiApiException("Received invalid disk metrics from API");
+            }
+
+            return new DiskMetrics(limit, usage);
         } catch (ConnectException e) {
             log.error("Unable to connect to DeltaFi API");
             throw new DeltafiApiException("Unable to connect to API", e);
