@@ -76,6 +76,7 @@ Arguments:
                              for docker archive files.
   -d|--docker-client         Pull the image from the local docker client cache instead of a docker registry.
   -a|--docker-archive <file> Upload a docker archive file.  Requires -n option to be specified.
+  -r|--replace               Replace all image tags with this one
   -h                         help
 
 Examples:
@@ -142,6 +143,7 @@ delete() {
 add() {
   prerequisites
   ADD_URL="http://${API_HOST}/api/v1/registry/add"
+  [[ -n "$REPLACE" ]] && ADD_URL="http://${API_HOST}/api/v1/registry/replace"
   UPLOAD_URL="http://${API_HOST}/api/v1/registry/upload"
   local image_name
   local result
@@ -250,7 +252,7 @@ case "$SUBCOMMAND" in
     delete "$@"
     ;;
   add)
-    VALID_ARGS=$(getopt -o hdn:a --long help,docker-client,docker-archive,name:,api-host: -- "$@")
+    VALID_ARGS=$(getopt -o hdn:ar --long help,docker-client,docker-archive,name:,api-host:,replace -- "$@")
     if [[ $? -ne 0 ]]; then
       exit 1;
     fi
@@ -277,6 +279,10 @@ case "$SUBCOMMAND" in
         -n | --name)
           NAME="$2"
           shift 2
+          ;;
+        -r | --replace)
+          REPLACE=true
+          shift
           ;;
         --) shift;
           break

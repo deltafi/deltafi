@@ -66,6 +66,25 @@ module Deltafi
             result
           end
 
+          def repository_tags(repository_name)
+            response = HTTParty.get("#{REGISTRY_URL}/#{repository_name}/tags/list", basic_auth: BASIC_AUTH)
+            json = JSON.parse(response.to_s, symbolize_names: true)
+            raise "#{json[:errors].first[:message]} - #{json[:errors].first[:detail]}" if json[:errors]
+
+            json[:tags] || []
+          end
+
+          def delete_repository(repository_name:)
+            tags = repository_tags(repository_name)
+            raise "No tags to delete in repository: #{repository_name}" if tags.nil? || tags.empty?
+
+            tags.each do |tag|
+              delete image_name: repository_name, image_tag: tag
+            end
+
+            "Successfully deleted repository #{repository_name} #{tags}"
+          end
+
           def delete(image_name:, image_tag:)
             response = HTTParty.get("#{REGISTRY_URL}/#{image_name}/manifests/#{image_tag}",
                                     headers: { 'Accept' => 'application/vnd.docker.distribution.manifest.v2+json' },
@@ -85,6 +104,26 @@ module Deltafi
             raise "Unable to delete image #{image_name}:#{image_tag} [#{response.code}]: #{response.body}" unless response.success?
 
             "Deletion of image #{image_name}:#{image_tag} successful"
+          end
+
+          def replace(image_name:, new_name:)
+            image = (new_name || image_name).split(':')
+            repository_name = image.first
+            new_tag = image.last
+
+            begin
+              delete_tags = repository_tags(repository_name)
+            rescue StandardError
+              delete_tags = []
+            end
+
+            delete_tags.delete(new_tag)
+            add image_name: image_name, new_name: new_name
+            delete_tags&.each do |tag|
+              delete image_name: repository_name, image_tag: tag
+            end
+
+            "Successfully replaced repository #{repository_name} with #{new_name || image_name}"
           end
 
           def add(image_name:, new_name:)

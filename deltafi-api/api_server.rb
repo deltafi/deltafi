@@ -77,6 +77,23 @@ class ApiServer < Sinatra::Base
       build_response({ result: response })
     end
 
+    post '/registry/replace/*' do
+      authorize! :RegistryUpload
+      authorize! :RegistryDelete
+
+      unless (image_name = params[:splat]&.join('/'))
+        status 400
+        return build_error_response '"name" header is required for upload'
+      end
+
+      name = request.env['HTTP_NAME'] || params[:name]
+
+      puts "Replacement add image #{image_name} to registry #{"as #{name}" if name}"
+      response = DF::API::V1::Registry.replace image_name: image_name, new_name: name
+      audit("Uploaded (replacement) #{name || image_name}#{", original name #{image_name}" if image_name != name}")
+      build_response({ result: response })
+    end
+
     post '/registry/upload' do
       authorize! :RegistryUpload
       unless (image_name = request.env['HTTP_NAME'])
@@ -123,6 +140,20 @@ class ApiServer < Sinatra::Base
       response = build_response({ result: DF::API::V1::Registry.delete(image_name: image_name, image_tag: image_tag) })
 
       audit("Deleted #{image_name} with tag #{image_tag}")
+
+      response
+    end
+
+    delete '/registry/repository/delete/*' do
+      authorize! :RegistryDelete
+
+      repository_name = params[:splat].join('/')
+
+      puts "Deleting all tags in #{repository_name}"
+
+      response = build_response({ result: DF::API::V1::Registry.delete_repository(repository_name: repository_name) })
+
+      audit("Deleted all tags from #{repository_name}")
 
       response
     end
