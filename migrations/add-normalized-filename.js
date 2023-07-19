@@ -1,0 +1,1 @@
+db.deltaFile.updateMany({"sourceInfo.normalizedFilename": {$exists: false}}, [{$set: {"sourceInfo.normalizedFilename": {"$toLower": "$sourceInfo.filename"}}}])

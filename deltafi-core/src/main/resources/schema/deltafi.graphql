@@ -71,12 +71,20 @@ type SourceInfo {
 }
 
 input SourceInfoFilter {
+  # deprecated: use filenameFilter
   filename: String
+  filenameFilter: FilenameFilter
   # deprecated: use ingressFlows
   flow: String
   ingressFlows: [String!]
   metadata: [KeyValueInput!]
   processingType: ProcessingType
+}
+
+input FilenameFilter {
+  filename: String!
+  regex: Boolean
+  caseSensitive: Boolean
 }
 
 type FlowAssignmentRule {

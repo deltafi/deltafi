@@ -18,9 +18,13 @@
 package org.deltafi.common.types;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -55,5 +59,23 @@ class SourceInfoTest {
         Map<String, String> expected = new HashMap<>(sut.getMetadata());
         expected.putAll(addedMap);
         assertEquals(expected, sut.getMetadata());
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void testNormalizedFilename(SourceInfo sourceInfo) {
+        assertEquals("TeSt", sourceInfo.getFilename());
+        assertEquals("test", sourceInfo.getNormalizedFilename());
+    }
+
+    private static Stream<Arguments> testNormalizedFilename() {
+        String filename = "TeSt";
+        SourceInfo sourceInfo1 = new SourceInfo();
+        sourceInfo1.setFilename(filename);
+        return Stream.of(
+                Arguments.of(sourceInfo1),
+                Arguments.of(SourceInfo.builder().filename(filename).build()),
+                Arguments.of(new SourceInfo(filename, "flow", Map.of("a", "b"))),
+                Arguments.of(new SourceInfo(filename, "flow", Map.of("a", "b"), ProcessingType.TRANSFORMATION)));
     }
 }

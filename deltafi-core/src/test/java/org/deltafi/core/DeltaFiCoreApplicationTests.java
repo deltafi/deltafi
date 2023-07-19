@@ -2945,6 +2945,38 @@ class DeltaFiCoreApplicationTests {
 		testFilter(DeltaFilesFilter.newBuilder().pendingAnnotations(false).build(), notPending);
 	}
 
+	@Test
+	void testFilterByFilename() {
+		DeltaFile deltaFile = new DeltaFile();
+		SourceInfo sourceInfo = SourceInfo.builder().filename("filename").build();
+		deltaFile.setSourceInfo(sourceInfo);
+
+		DeltaFile deltaFile1 = new DeltaFile();
+		SourceInfo sourceInfo1 = SourceInfo.builder().filename("file").build();
+		deltaFile1.setSourceInfo(sourceInfo1);
+
+		deltaFileRepo.saveAll(List.of(deltaFile1, deltaFile));
+
+		// verify the filename filter is used when filenameFilter is not present
+		testFilter(DeltaFilesFilter.newBuilder().sourceInfo(SourceInfoFilter.newBuilder().filename("iLe").build()).build(), deltaFile, deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().sourceInfo(SourceInfoFilter.newBuilder().filename("i.*e").build()).build(), deltaFile, deltaFile1);
+
+		testFilter(filenameFilter("iLe", true, true));
+		testFilter(filenameFilter("iLe", true, false), deltaFile, deltaFile1);
+		testFilter(filenameFilter("ile", true, true), deltaFile, deltaFile1);
+		testFilter(filenameFilter("ilen", true, true), deltaFile);
+		testFilter(filenameFilter("^FILE", true, false), deltaFile, deltaFile1);
+
+		testFilter(filenameFilter("FILE", false, true));
+		testFilter(filenameFilter("FILE", false, false), deltaFile1);
+		testFilter(filenameFilter("file", false, true), deltaFile1);
+	}
+
+	private DeltaFilesFilter filenameFilter(String filename, boolean regex, boolean caseSensitive) {
+		FilenameFilter filenameFilter = FilenameFilter.newBuilder().filename(filename).regex(regex).caseSensitive(caseSensitive).build();
+		return DeltaFilesFilter.newBuilder().sourceInfo(SourceInfoFilter.newBuilder().filenameFilter(filenameFilter).build()).build();
+	}
+
 	private void testFilter(DeltaFilesFilter filter, DeltaFile... expected) {
 		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 50, filter, null);
 		assertEquals(new ArrayList<>(Arrays.asList(expected)), deltaFiles.getDeltaFiles());

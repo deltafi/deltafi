@@ -18,29 +18,34 @@
 package org.deltafi.common.types;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.AllArgsConstructor;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.*;
 
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class SourceInfo {
     private String filename;
     private String flow;
-    @Builder.Default
     private Map<String, String> metadata = new HashMap<>();
     private ProcessingType processingType;
+    @Setter(AccessLevel.NONE)
+    private String normalizedFilename;
 
     public SourceInfo(String filename, String flow, Map<String, String> metadata) {
-        this.filename = filename;
+        this(filename, flow, metadata, ProcessingType.NORMALIZATION);
+    }
+
+    @Builder
+    public SourceInfo(String filename, String flow, Map<String, String> metadata, ProcessingType processingType) {
+        setFilename(filename);
         this.flow = flow;
-        this.metadata = metadata;
-        this.processingType = ProcessingType.NORMALIZATION;
+        this.metadata = metadata != null ? metadata : new HashMap<>();
+        setProcessingType(processingType);
     }
 
     public ProcessingType getProcessingType() {
@@ -49,6 +54,11 @@ public class SourceInfo {
         }
 
         return processingType;
+    }
+
+    public void setFilename(String filename) {
+        this.filename = filename;
+        this.normalizedFilename = filename != null ? filename.toLowerCase() : null;
     }
 
     public void setProcessingType(ProcessingType processingType) {

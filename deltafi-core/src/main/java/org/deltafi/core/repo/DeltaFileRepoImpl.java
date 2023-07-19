@@ -87,6 +87,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String NEXT_AUTO_RESUME = "nextAutoResume";
     public static final String NEXT_AUTO_RESUME_REASON = "nextAutoResumeReason";
     public static final String SOURCE_INFO_FILENAME = "sourceInfo.filename";
+    public static final String SOURCE_INFO_NORMALIZED_FILENAME = "sourceInfo.normalizedFilename";
     public static final String SOURCE_INFO_FLOW = "sourceInfo.flow";
     public static final String SOURCE_INFO_METADATA = "sourceInfo.metadata";
     public static final String SOURCE_INFO_PROCESSING_TYPE = "sourceInfo.processingType";
@@ -182,6 +183,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         INDICES.put("pending_annotations_for_flows_index", new Index().named("pending_annotations_for_flows_index").on(PENDING_ANNOTATIONS_FOR_FLOWS, Sort.Direction.ASC));
         INDICES.put("egress_flow_index", new Index().named("egress_flow_index").on(EGRESS_FLOW, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
         INDICES.put("processing_type_index", new Index().named("processing_type_index").on(SOURCE_INFO_PROCESSING_TYPE, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
+        INDICES.put("filename_index", new Index().named("filename_index").on(SOURCE_INFO_FILENAME, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
+        INDICES.put("normalized_filename_index", new Index().named("normalized_filename_index").on(SOURCE_INFO_NORMALIZED_FILENAME, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
 
         // partial index to support finding DeltaFiles that are pending annotations
         INDICES.put("first_pending_annotations_for_flows_index", new Index().named("first_pending_annotations_for_flows_index")
@@ -538,8 +541,14 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (nonNull(filter.getSourceInfo())) {
-            if (nonNull(filter.getSourceInfo().getFilename())) {
-                andCriteria.add(Criteria.where(SOURCE_INFO_FILENAME).regex(".*" + filter.getSourceInfo().getFilename() + ".*", "i"));
+            if (nonNull(filter.getSourceInfo().getFilename()) && filter.getSourceInfo().getFilenameFilter() == null) {
+                // fall back to using the filename if it is set and filenameFilter is null
+                FilenameFilter filenameFilter = new FilenameFilter(".*" + filter.getSourceInfo().getFilename() + ".*", true, false);
+                filter.getSourceInfo().setFilenameFilter(filenameFilter);
+            }
+
+            if (nonNull(filter.getSourceInfo().getFilenameFilter())) {
+                andCriteria.add(filenameCriteria(filter.getSourceInfo().getFilenameFilter()));
             }
 
             if (nonNull(filter.getSourceInfo().getFlow())) {
@@ -1053,5 +1062,21 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         Query query = Query.query(Criteria.where(PENDING_ANNOTATIONS_FOR_FLOWS).is(List.of()));
         Update unsetEmptyList = new Update().unset(PENDING_ANNOTATIONS_FOR_FLOWS);
         mongoTemplate.updateMulti(query, unsetEmptyList, DeltaFile.class);
+    }
+
+    private Criteria filenameCriteria(FilenameFilter filenameFilter) {
+        String filename = filenameFilter.getFilename();
+        String searchField = SOURCE_INFO_NORMALIZED_FILENAME;
+
+        if (!Boolean.TRUE.equals(filenameFilter.getCaseSensitive())) {
+            filename = filename != null ? filename.toLowerCase() : null;
+        } else {
+            searchField = SOURCE_INFO_FILENAME;
+        }
+
+        // use the exact match criteria by default
+        return Boolean.TRUE.equals(filenameFilter.getRegex()) ?
+            Criteria.where(searchField).regex(filename) :
+            Criteria.where(searchField).is(filename);
     }
 }
