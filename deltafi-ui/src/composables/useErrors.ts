@@ -35,7 +35,7 @@ export default function useErrors() {
             },
             stage: new EnumType('ERROR'),
             errorAcknowledged: showAcknowledged,
-            errorCause: errorCause,
+            errorCause: `\\Q${errorCause}\\E`,
             filteredCause: filteredCause,
           },
           orderBy: {
