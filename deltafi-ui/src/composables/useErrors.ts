@@ -16,9 +16,10 @@
    limitations under the License.
 */
 
-import { ref } from 'vue'
-import useGraphQL from './useGraphQL'
-import { EnumType } from 'json-to-graphql-query';
+import { ref } from "vue";
+import useGraphQL from "./useGraphQL";
+import { EnumType } from "json-to-graphql-query";
+import _ from "lodash";
 export default function useErrors() {
   const { response, queryGraphQL, loading, loaded, errors } = useGraphQL();
   const data = ref(null);
@@ -31,17 +32,17 @@ export default function useErrors() {
           offset: offSet,
           filter: {
             sourceInfo: {
-              flow: flowName
+              flow: flowName,
             },
-            stage: new EnumType('ERROR'),
+            stage: new EnumType("ERROR"),
             errorAcknowledged: showAcknowledged,
-            errorCause: `\\Q${errorCause}\\E`,
+            errorCause: !_.isEmpty(errorCause) ? `\\Q${errorCause}\\E` : null,
             filteredCause: filteredCause,
           },
           orderBy: {
             direction: new EnumType(sortDirection),
             field: sortBy,
-          }
+          },
         },
         offset: true,
         count: true,
@@ -68,13 +69,12 @@ export default function useErrors() {
           errorAcknowledgedReason: true,
           nextAutoResume: true,
           nextAutoResumeReason: true,
-        }
-      }
+        },
+      },
     };
     await queryGraphQL(searchParams, "getErrors");
     data.value = response.value.data;
   };
-
 
   return { data, loading, loaded, fetch, errors };
 }
