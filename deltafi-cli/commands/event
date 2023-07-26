@@ -97,8 +97,7 @@ create_event() {
   local notification=false
   [[ "$NOTIFICATION" ]] && notification=true
   local severity=${SEVERITY:-info}
-
-  curl -0 -X POST --connect-timeout 3 -s -H "$PERMISSION" -H 'Content-Type: application/json' "${API_URL}" --data @- <<EOF | pretty_json
+  curl -0 -X POST --connect-timeout 3 -s -H "$PERMISSION" -H 'Content-Type: application/json' "${API_URL}" --data @- <<EOF | tac | tac | pretty_json
 {
   "summary": "${summary}",
   ${content}
