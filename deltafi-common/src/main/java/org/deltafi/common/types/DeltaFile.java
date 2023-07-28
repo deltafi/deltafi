@@ -485,7 +485,7 @@ public class DeltaFile {
   public boolean formatComplete(String flow) {
     List<Action> formatActions = formatActionsFor(flow);
 
-    return !formatActions.isEmpty() && formatActions.stream().allMatch(Action::terminal);
+    return !formatActions.isEmpty() && formatActions.stream().anyMatch(Action::complete);
   }
 
   public Map<String, String> formatMetadata(String flow) {

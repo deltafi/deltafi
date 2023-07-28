@@ -1095,6 +1095,25 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void testResume_afterFormatFail() {
+		String did = UUID.randomUUID().toString();
+		DeltaFile deltaFile = postEnrichDeltaFile(did);
+		Action format = deltaFile.getActions().stream().filter(action -> "sampleEgress.SampleFormatAction".equals(action.getName())).findFirst().orElseThrow();
+		format.setState(ActionState.ERROR);
+
+		deltaFileRepo.save(deltaFile);
+
+		deltaFilesService.resume(List.of(did), List.of(), List.of());
+
+		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture(), anyBoolean());
+
+		List<ActionInput> actionInputs = actionInputListCaptor.getValue();
+
+		DeltaFileMessage message = actionInputs.get(0).getDeltaFileMessages().get(0);
+		assertThat(message.getContentList()).hasSize(1);
+	}
+
+	@Test
 	void testAutoResumeForNoEgressFlowConfigured() {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postEnrichNoEgressDeltaFile(did, MONGO_NOW.minusDays(1)));

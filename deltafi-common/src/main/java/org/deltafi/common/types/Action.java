@@ -65,6 +65,10 @@ public class Action {
     return state != ActionState.QUEUED;
   }
 
+  boolean complete() {
+    return state == ActionState.COMPLETE;
+  }
+
   public boolean amendedData() {
     return state == ActionState.COMPLETE && DATA_AMENDED_TYPES.contains(type);
   }
