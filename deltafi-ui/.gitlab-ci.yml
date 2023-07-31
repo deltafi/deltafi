@@ -8,7 +8,7 @@ ui:eslint:
     - cd deltafi-ui
     # Install eslint
     - |
-      npm install eslint eslint-plugin-vue
+      npm install eslint@8.40.0 eslint-plugin-vue@9.11.1
     # Run eslint
     - npm run lint
 
