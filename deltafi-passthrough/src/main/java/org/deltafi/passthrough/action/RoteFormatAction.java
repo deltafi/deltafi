@@ -39,7 +39,7 @@ public class RoteFormatAction extends FormatAction<RoteParameters> {
     public FormatResultType format(@NotNull ActionContext context, @NotNull RoteParameters parameters, @NotNull FormatInput input) {
         RandSleeper.sleep(parameters.getMinRoteDelayMS(), parameters.getMaxRoteDelayMS());
 
-        return new FormatResult(context, input.getContentList().get(0));
+        return new FormatResult(context, input.content().get(0));
     }
 
     @Override

@@ -43,7 +43,7 @@ public class SplitterLoadAction extends LoadAction<ReinjectParameters> {
                                @NotNull LoadInput input) {
         ReinjectResult result = new ReinjectResult(context);
 
-        for (ActionContent content : input.getContentList()) {
+        for (ActionContent content : input.content()) {
             result.addChild(content.getName(),
                     params.getReinjectFlow(),
                     Collections.singletonList(content),

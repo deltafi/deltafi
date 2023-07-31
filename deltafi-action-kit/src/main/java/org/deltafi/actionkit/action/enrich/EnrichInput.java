@@ -20,59 +20,10 @@ package org.deltafi.actionkit.action.enrich;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
-import org.deltafi.actionkit.action.ContentListInput;
-import org.deltafi.actionkit.exception.MissingMetadataException;
-import org.deltafi.common.types.*;
-
-import java.util.Map;
+import org.deltafi.actionkit.action.EnrichmentsInput;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
-public class EnrichInput extends ContentListInput {
-    Map<String, String> metadata;
-    Map<String, Domain> domains;
-    Map<String, Enrichment> enrichments;
-
-    /**
-     * Returns the Domain object for the given domain name.
-     * @param domainName the name of the domain.
-     * @return the Domain object for the given domain name.
-     */
-    public Domain domain(String domainName) {
-        return domains.get(domainName);
-    }
-
-    /**
-     * Returns the Enrichment object for the given enrichment name.
-     * @param enrichmentName the name of the enrichment.
-     * @return the Enrichment object for the given enrichment name.
-     */
-    public Enrichment enrichment(String enrichmentName) {
-        return enrichments.get(enrichmentName);
-    }
-
-    /**
-     * Returns the value of the last action's metadata for the given key.
-     * @param key the key for the metadata.
-     * @return the value of the metadata for the given key.
-     * @throws MissingMetadataException if the key is not found in the metadata map.
-     */
-    public String metadata(String key) {
-        if (!metadata.containsKey(key)) {
-            throw new MissingMetadataException(key);
-        }
-
-        return metadata.get(key);
-    }
-
-    /**
-     * Returns the value of the last action's  metadata for the given key or a default value if the key is not found.
-     * @param key the key for the metadata.
-     * @param defaultValue the default value to return if the key is not found.
-     * @return the value of the metadata for the given key or the default value if the key is not found.
-     */
-    public String metadata(String key, String defaultValue) {
-        return metadata.getOrDefault(key, defaultValue);
-    }
+public class EnrichInput extends EnrichmentsInput {
 }

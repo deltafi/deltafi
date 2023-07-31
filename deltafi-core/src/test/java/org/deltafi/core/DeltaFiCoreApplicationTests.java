@@ -915,7 +915,7 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void testEnrichMissingAction() throws IOException {
+	void testEnrichMissingAction() {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postDomainDeltaFile(did));
 
@@ -926,7 +926,7 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void testEnrichMissingDid() throws IOException {
+	void testEnrichMissingDid() {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postDomainDeltaFile(did));
 
@@ -973,11 +973,20 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void testFormatMany() throws IOException {
+		testFormatMany("formatMany");
+	}
+
+	@Test
+	void testFormatManyLegacy() throws IOException {
+		testFormatMany("formatManyLegacy");
+	}
+
+	void testFormatMany(String eventFile) throws IOException {
 		String did = UUID.randomUUID().toString();
 		DeltaFile postEnrich = postEnrichDeltaFile(did);
 		deltaFileRepo.save(postEnrich);
 
-		deltaFilesService.handleActionEvent(actionEvent("formatMany", did));
+		deltaFilesService.handleActionEvent(actionEvent(eventFile, did));
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		assertEquals(DeltaFileStage.COMPLETE, deltaFile.getStage());

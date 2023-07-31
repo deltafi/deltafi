@@ -15,15 +15,20 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.actionkit.action.validate;
+package org.deltafi.common.types;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.deltafi.actionkit.action.FormattedContentInput;
 
+import java.util.ArrayList;
+import java.util.List;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
-@Data
-public class ValidateInput extends FormattedContentInput {
+public class DomainChangeEvent extends ContentChangeEvent {
+  @Builder.Default
+  private List<Domain> domains = new ArrayList<>();
 }

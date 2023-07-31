@@ -20,13 +20,9 @@ package org.deltafi.common.types;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-import java.util.List;
-
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
-public class TransformEvent extends AnnotatedEvent {
-  private List<Content> content;
+public class TransformEvent extends ContentChangeEvent {
 }

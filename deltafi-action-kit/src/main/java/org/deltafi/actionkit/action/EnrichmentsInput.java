@@ -15,15 +15,33 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.actionkit.action.validate;
+package org.deltafi.actionkit.action;
 
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
-import org.deltafi.actionkit.action.FormattedContentInput;
+import org.deltafi.common.types.Enrichment;
 
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Action input that may include enrichments, domains, content, or metadata
+ */
+@Data
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
-@Data
-public class ValidateInput extends FormattedContentInput {
+public class EnrichmentsInput extends DomainsInput {
+    @Builder.Default
+    protected final Map<String, Enrichment> enrichments = new HashMap<>();
+
+    /**
+     * Returns the Enrichment object for the given enrichment name.
+     * @param enrichmentName the name of the enrichment.
+     * @return the Enrichment object for the given enrichment name.
+     */
+    public Enrichment enrichment(String enrichmentName) {
+        return enrichments.get(enrichmentName);
+    }
 }

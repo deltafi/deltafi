@@ -43,7 +43,7 @@ public abstract class TransformAction<P extends ActionParameters> extends Action
 
     private static TransformInput transformInput(DeltaFileMessage deltaFileMessage, ActionContext context) {
         return TransformInput.builder()
-                .contentList(ContentConverter.convert(deltaFileMessage.getContentList(), context.getContentStorageService()))
+                .content(ContentConverter.convert(deltaFileMessage.getContentList(), context.getContentStorageService()))
                 .metadata(deltaFileMessage.getMetadata())
                 .build();
     }

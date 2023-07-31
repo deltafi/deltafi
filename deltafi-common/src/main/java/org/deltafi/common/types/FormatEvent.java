@@ -17,7 +17,6 @@
  */
 package org.deltafi.common.types;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -25,9 +24,8 @@ import lombok.experimental.SuperBuilder;
 
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
-public class FormatEvent extends MetadataEvent {
+public class FormatEvent extends MetadataChangeEvent {
   private Content content;
 }

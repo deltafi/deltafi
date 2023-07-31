@@ -20,18 +20,15 @@ package org.deltafi.actionkit.action.content;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.ActionKitException;
-import org.deltafi.actionkit.action.converters.ContentConverter;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.Content;
-import org.deltafi.common.types.SaveManyContent;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.Collections;
-import java.util.List;
 
 @Slf4j
 public class ActionContent {
@@ -40,8 +37,74 @@ public class ActionContent {
     protected final ContentStorageService contentStorageService;
 
     /**
+     * Save content to content storage and return the new ActionContent
+     *
+     * @param context The ActionContext from the current input being processed
+     * @param content String content to store.  The entire string will be stored in content storage
+     * @param name the content name
+     * @param mediaType Media type for the content being stored
+     * @return The ActionContent that was stored
+     */
+    @SuppressWarnings("unused")
+    public static ActionContent saveContent(ActionContext context, String content, String name, String mediaType) {
+        return saveContent(context, content.getBytes(), name, mediaType);
+    }
+
+    /**
+     * Save content to content storage and return the new ActionContent
+     *
+     * @param context The ActionContext from the current input being processed
+     * @param bytes Byte array of content to store.  The entire byte array will be stored in content storage
+     * @param name the content name
+     * @param mediaType Media type for the content being stored
+     * @return The ActionContent that was stored
+     */
+    @SuppressWarnings("unused")
+    public static ActionContent saveContent(ActionContext context, byte[] bytes, String name, String mediaType) {
+        try {
+            return new ActionContent(context.getContentStorageService().save(context.getDid(), bytes, name, mediaType),
+                    context.getContentStorageService());
+        } catch (ObjectStorageException e) {
+            throw new ActionKitException("Failed to store content " + name, e);
+        }
+    }
+
+    /**
+     * Save content to content storage and return the new ActionContent
+     *
+     * @param context The ActionContext from the current input being processed
+     * @param stream InputStream of content to store.  The entire stream will be read into content storage, and the
+     * stream may be closed by underlying processors after execution
+     * @param name the content name
+     * @param mediaType Media type for the content being stored
+     * @return The ActionContent that was stored
+     */
+    public static ActionContent saveContent(ActionContext context, InputStream stream, String name,
+            @SuppressWarnings("SameParameterValue") String mediaType) {
+        try {
+            return new ActionContent(context.getContentStorageService().save(context.getDid(), stream, name, mediaType),
+                    context.getContentStorageService());
+        } catch (ObjectStorageException e) {
+            throw new ActionKitException("Failed to store content " + name, e);
+        }
+    }
+
+    /**
+     * Create an empty ActionContent object
+     *
+     * @param context The ActionContext from the current input being processed
+     * @param name the content name
+     * @param mediaType Media type for the content being stored
+     * @return The empty ActionContent
+     */
+    public static ActionContent emptyContent(ActionContext context, String name, String mediaType) {
+        return new ActionContent(new Content(name, mediaType, Collections.emptyList()), context.getContentStorageService());
+    }
+
+    /**
      * Constructs a new {@code ActionContent} instance with the specified name, content reference,
      * and content storage service.
+     *
      * @param content the content to embed
      * @param contentStorageService the content storage service used for loading the content
      */
@@ -65,7 +128,7 @@ public class ActionContent {
      * with the specified offset and size, using the same name and media type as this instance.
      *
      * @param offset the starting offset of the subcontent
-     * @param size   the size of the subcontent
+     * @param size the size of the subcontent
      * @return a new {@code ActionContent} instance representing the specified subcontent
      */
     public ActionContent subcontent(long offset, long size) {
@@ -77,8 +140,8 @@ public class ActionContent {
      * with the specified offset, size, and name, using the same media type as this instance.
      *
      * @param offset the starting offset of the subcontent
-     * @param size   the size of the subcontent
-     * @param name   the name of the new subcontent
+     * @param size the size of the subcontent
+     * @param name the name of the new subcontent
      * @return a new {@code ActionContent} instance representing the specified subcontent
      */
     public ActionContent subcontent(long offset, long size, String name) {
@@ -89,9 +152,9 @@ public class ActionContent {
      * Creates a new {@code ActionContent} instance representing a subset of this content
      * with the specified offset, size, name, and media type.
      *
-     * @param offset    the starting offset of the subcontent
-     * @param size      the size of the subcontent
-     * @param name      the name of the new subcontent
+     * @param offset the starting offset of the subcontent
+     * @param size the size of the subcontent
+     * @param name the name of the new subcontent
      * @param mediaType the media type of the new subcontent
      * @return a new {@code ActionContent} instance representing the specified subcontent
      */
@@ -102,7 +165,7 @@ public class ActionContent {
     /**
      * Retrieves the size of this {@code ActionContent} instance.
      *
-     *  @return the size of the content
+     * @return the size of the content
      */
     public long getSize() {
         return content.getSize();
@@ -223,65 +286,5 @@ public class ActionContent {
      */
     public void append(ActionContent other) {
         content.getSegments().addAll(other.content.getSegments());
-    }
-
-    /**
-     * Save content to content storage and return the new ActionContent
-     * @param context The ActionContext from the current input being processed
-     * @param content String content to store.  The entire string will be stored in content storage
-     * @param name the content name
-     * @param mediaType Media type for the content being stored
-     * @return The ActionContent that was stored
-     */
-    @SuppressWarnings("unused")
-    public static ActionContent saveContent(ActionContext context, String content, String name, String mediaType) {
-        return saveContent(context, content.getBytes(), name, mediaType);
-    }
-
-    /**
-     * Save content to content storage and return the new ActionContent
-     * @param context The ActionContext from the current input being processed
-     * @param bytes Byte array of content to store.  The entire byte array will be stored in content storage
-     * @param name the content name
-     * @param mediaType Media type for the content being stored
-     * @return The ActionContent that was stored
-     */
-    @SuppressWarnings("unused")
-    public static ActionContent saveContent(ActionContext context, byte[] bytes, String name, String mediaType) {
-        try {
-            return new ActionContent(context.getContentStorageService().save(context.getDid(), bytes, name, mediaType),
-                    context.getContentStorageService());
-        } catch(ObjectStorageException e) {
-            throw new ActionKitException("Failed to store content " + name, e);
-        }
-    }
-
-    /**
-     * Save content to content storage and return the new ActionContent
-     * @param context The ActionContext from the current input being processed
-     * @param stream InputStream of content to store.  The entire stream will be read into content storage, and the
-     *                stream may be closed by underlying processors after execution
-     * @param name the content name
-     * @param mediaType Media type for the content being stored
-     * @return The ActionContent that was stored
-     */
-    public static ActionContent saveContent(ActionContext context, InputStream stream, String name, @SuppressWarnings("SameParameterValue") String mediaType) {
-        try {
-            return new ActionContent(context.getContentStorageService().save(context.getDid(), stream, name, mediaType),
-                    context.getContentStorageService());
-        } catch(ObjectStorageException e) {
-            throw new ActionKitException("Failed to store content " + name, e);
-        }
-    }
-
-    /**
-     * Create an empty ActionContent object
-     * @param context The ActionContext from the current input being processed
-     * @param name the content name
-     * @param mediaType Media type for the content being stored
-     * @return The empty ActionContent
-     */
-    public static ActionContent emptyContent(ActionContext context, String name, String mediaType) {
-        return new ActionContent(new Content(name, mediaType, Collections.emptyList()), context.getContentStorageService());
     }
 }

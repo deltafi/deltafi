@@ -626,14 +626,14 @@ public class DeltaFilesService {
     }
 
     public void loadMany(DeltaFile deltaFile, ActionEvent event) throws MissingEgressFlowException {
-        List<LoadEvent> loadEvents = event.getLoadMany();
+        List<ChildLoadEvent> childLoadEvents = event.getLoadMany();
         List<DeltaFile> childDeltaFiles = Collections.emptyList();
         List<ActionInput> enqueueActions = new ArrayList<>();
 
         String loadActionName = ingressFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow()).getLoadAction().getName();
         if (!event.getAction().equals(loadActionName)) {
             deltaFile.errorAction(event, "Attempted to split using a LoadMany result in an Action that is not a LoadAction: " + event.getAction(), "");
-        } else if (loadEvents.isEmpty()) {
+        } else if (childLoadEvents.isEmpty()) {
             deltaFile.errorAction(event, "Attempted to split a DeltaFile into 0 children using a LoadMany result", "");
         } else {
             if (deltaFile.getChildDids() == null) {
@@ -641,8 +641,8 @@ public class DeltaFilesService {
             }
 
             OffsetDateTime now = OffsetDateTime.now();
-            childDeltaFiles = loadEvents.stream()
-                    .map(loadEvent -> this.buildLoadManyChildAndEnqueue(deltaFile, event, loadEvent, enqueueActions, now))
+            childDeltaFiles = childLoadEvents.stream()
+                    .map(childLoadEvent -> buildLoadManyChildAndEnqueue(deltaFile, event, childLoadEvent, enqueueActions, now))
                     .toList();
 
             deltaFile.reinjectAction(event);
@@ -653,38 +653,35 @@ public class DeltaFilesService {
         // do this in two shots.  saveAll performs a bulk insert, but only if all the entries are new
         deltaFileCacheService.save(deltaFile);
         deltaFileRepo.saveAll(childDeltaFiles);
+
         enqueueActions(enqueueActions);
     }
 
     private DeltaFile buildLoadManyChildAndEnqueue(DeltaFile parentDeltaFile, ActionEvent actionEvent,
-            LoadEvent loadEvent, List<ActionInput> enqueueActions, OffsetDateTime now) {
-        DeltaFile child = createChildDeltaFile(parentDeltaFile, loadEvent.getDid());
+            ChildLoadEvent childLoadEvent, List<ActionInput> enqueueActions, OffsetDateTime now) {
+        DeltaFile child = createChildDeltaFile(parentDeltaFile, childLoadEvent.getDid());
         child.setModified(now);
 
         parentDeltaFile.getChildDids().add(child.getDid());
 
         Action action = child.getPendingAction(actionEvent.getAction());
-
-        if (loadEvent.getContent() != null) {
-            action.setContent(loadEvent.getContent());
+        if (childLoadEvent.getContent() != null) {
+            action.setContent(childLoadEvent.getContent());
         }
-
-        if (loadEvent.getMetadata() != null) {
-            action.setMetadata(loadEvent.getMetadata());
+        if (childLoadEvent.getMetadata() != null) {
+            action.setMetadata(childLoadEvent.getMetadata());
         }
-
-        if (loadEvent.getDeleteMetadataKeys() != null) {
-            action.setDeleteMetadataKeys(loadEvent.getDeleteMetadataKeys());
+        if (childLoadEvent.getDeleteMetadataKeys() != null) {
+            action.setDeleteMetadataKeys(childLoadEvent.getDeleteMetadataKeys());
         }
-
-        if (loadEvent.getDomains() != null) {
-            for (Domain domain : loadEvent.getDomains()) {
+        if (childLoadEvent.getDomains() != null) {
+            for (Domain domain : childLoadEvent.getDomains()) {
                 action.addDomain(domain.getName(), domain.getValue(), domain.getMediaType());
             }
         }
-
         child.completeAction(actionEvent);
-        child.addAnnotations(loadEvent.getAnnotations());
+
+        child.addAnnotations(childLoadEvent.getAnnotations());
 
         enqueueActions.addAll(advanceOnly(child, true));
 
@@ -805,16 +802,14 @@ public class DeltaFilesService {
     }
 
     public void formatMany(DeltaFile deltaFile, ActionEvent event) throws MissingEgressFlowException {
-        List<FormatEvent> formatInputs = event.getFormatMany();
+        List<ChildFormatEvent> childFormatEvents = event.getFormatMany();
         List<DeltaFile> childDeltaFiles = Collections.emptyList();
-
         List<ActionInput> enqueueActions = new ArrayList<>();
 
         List<String> formatActions = egressFlowService.getAll().stream().map(ef -> ef.getFormatAction().getName()).toList();
-
         if (!formatActions.contains(event.getAction())) {
             deltaFile.errorAction(event, "Attempted to split from an Action that is not a current FormatAction: " + event.getAction(), "");
-        } else if (formatInputs.isEmpty()) {
+        } else if (childFormatEvents.isEmpty()) {
             deltaFile.errorAction(event, "Attempted to split DeltaFile into 0 children with formatMany", "");
         } else {
             if (deltaFile.getChildDids() == null) {
@@ -823,12 +818,14 @@ public class DeltaFilesService {
 
             EgressFlow egressFlow = egressFlowService.withFormatActionNamed(event.getAction());
 
-            childDeltaFiles = formatInputs.stream().map(formatInput -> {
-                DeltaFile child = createChildDeltaFile(deltaFile, event, UUID.randomUUID().toString());
+            childDeltaFiles = childFormatEvents.stream().map(childFormatEvent -> {
+                // Maintain backwards compatibility with FORMAT_MANY events not supplying child dids
+                String childDid = childFormatEvent.getDid() != null ? childFormatEvent.getDid() : UUID.randomUUID().toString();
+                DeltaFile child = createChildDeltaFile(deltaFile, event, childDid);
                 deltaFile.getChildDids().add(child.getDid());
                 Action formatAction = child.lastFormatActionFor(egressFlow.getName());
-                formatAction.setContent(List.of(formatInput.getContent()));
-                formatAction.setMetadata(formatInput.getMetadata());
+                formatAction.setContent(List.of(childFormatEvent.getContent()));
+                formatAction.setMetadata(childFormatEvent.getMetadata());
 
                 enqueueActions.addAll(advanceOnly(child, true));
 

@@ -19,25 +19,19 @@ package org.deltafi.actionkit.action.domain;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import org.deltafi.actionkit.action.HasAnnotations;
-import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.AnnotationsResult;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionEventType;
 import org.deltafi.common.types.DomainEvent;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * Specialized result class for DOMAIN actions
  */
 @Getter
 @EqualsAndHashCode(callSuper = true)
-public class DomainResult extends Result<DomainResult> implements HasAnnotations, DomainResultType {
-    private final Map<String, String> annotations = new HashMap<>();
-
+public class DomainResult extends AnnotationsResult<DomainResult> implements DomainResultType {
     /**
      * @param context Context of the executed action
      */
@@ -51,5 +45,4 @@ public class DomainResult extends Result<DomainResult> implements HasAnnotations
         event.setDomain(DomainEvent.builder().annotations(annotations).build());
         return event;
     }
-
 }

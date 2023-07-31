@@ -17,7 +17,6 @@
  */
 package org.deltafi.actionkit.action;
 
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.deltafi.actionkit.action.content.ActionContent;
@@ -25,27 +24,33 @@ import org.deltafi.actionkit.action.converters.ContentConverter;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEventType;
-import org.deltafi.common.types.Content;
 import org.deltafi.common.types.SaveManyContent;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
- * Specialization of the Result base class that allows metadata and content to be collected in the result.
- * <p>
- * This class is extended for Load and Transform results
+ * A Result that may include changes to content, annotations, or metadata
  */
-@Getter
-@Setter
-@EqualsAndHashCode(callSuper = true)
-public abstract class DataAmendedResult extends MetadataAmendedResult {
-    protected List<ActionContent> content = new ArrayList<>();
+public abstract class ContentResult<T extends Result<T>> extends MetadataResult<T> {
+    @Getter
+    @Setter
+    protected List<ActionContent> content;
 
-    public DataAmendedResult(ActionContext context, ActionEventType actionEventType) {
+    @Getter
+    protected final Map<String, String> annotations = new HashMap<>();
+
+    public ContentResult(ActionContext context, ActionEventType actionEventType) {
+        this(context, actionEventType, new ArrayList<>());
+    }
+
+    public ContentResult(ActionContext context, ActionEventType actionEventType, List<ActionContent> content) {
         super(context, actionEventType);
+        this.content = content;
     }
 
     /**
@@ -59,17 +64,17 @@ public abstract class DataAmendedResult extends MetadataAmendedResult {
 
     /**
      * Add a list of Content objects to the list of content in the result
-     * @param contentList Content object to add to the result
+     * @param content Content object to add to the result
      */
     @SuppressWarnings("unused")
-    public void addContent(@NotNull List<ActionContent> contentList) {
-        content.addAll(contentList);
+    public void addContent(@NotNull List<ActionContent> content) {
+        this.content.addAll(content);
     }
 
     /**
      * Save content to content storage and attach to the result
-     * @param content String content to store.  The entire string will be stored in content storage
-     * @param name the content name
+     * @param content   String content to store.  The entire string will be stored in content storage
+     * @param name      the content name
      * @param mediaType Media type for the content being stored
      */
     @SuppressWarnings("unused")
@@ -79,18 +84,13 @@ public abstract class DataAmendedResult extends MetadataAmendedResult {
 
     /**
      * Save content to content storage and attach to the result
-     * @param bytes Byte array of content to store.  The entire byte array will be stored in content storage
-     * @param name the content name
+     * @param bytes     Byte array of content to store.  The entire byte array will be stored in content storage
+     * @param name      the content name
      * @param mediaType Media type for the content being stored
      */
     @SuppressWarnings("unused")
     public void saveContent(byte[] bytes, String name, String mediaType) {
-        try {
-            Content content = context.getContentStorageService().save(context.getDid(), bytes, name, mediaType);
-            addContent(new ActionContent(content, context.getContentStorageService()));
-        } catch (ObjectStorageException e) {
-            throw new ActionKitException("Failed to store content " + name, e);
-        }
+        addContent(ActionContent.saveContent(context, bytes, name, mediaType));
     }
 
     /**
@@ -101,12 +101,7 @@ public abstract class DataAmendedResult extends MetadataAmendedResult {
      * @param mediaType Media type for the content being stored
      */
     public void saveContent(InputStream stream, String name, @SuppressWarnings("SameParameterValue") String mediaType) {
-        try {
-            Content content = context.getContentStorageService().save(context.getDid(), stream, name, mediaType);
-            addContent(new ActionContent(content, context.getContentStorageService()));
-        } catch (ObjectStorageException e) {
-            throw new ActionKitException("Failed to store content " + name, e);
-        }
+        addContent(ActionContent.saveContent(context, stream, name, mediaType));
     }
 
     /**
@@ -124,7 +119,31 @@ public abstract class DataAmendedResult extends MetadataAmendedResult {
         }
     }
 
-    protected List<org.deltafi.common.types.Content> contentList() {
-        return content.stream().map(ContentConverter::convert).toList();
+    /**
+     * @deprecated Use {@link ContentConverter#convert(List)} instead
+     */
+    @Deprecated
+    public List<org.deltafi.common.types.Content> content() {
+        return ContentConverter.convert(content);
+    }
+
+    /**
+     * Add annotation to this DeltaFile that will be made searchable.
+     * Multiple entries can be added by repeatedly calling this method.
+     * @param key that will be annotated
+     * @param value value for the given key
+     */
+    @SuppressWarnings("unused")
+    public void addAnnotation(String key, String value) {
+        annotations.put(key, value);
+    }
+
+    /**
+     * Add all the annotations in the given map to this Result. These entries will be searchable.
+     * @param metadata map of entries that will be added to the annotations
+     */
+    @SuppressWarnings("unused")
+    public void addAnnotations(Map<String, String> metadata) {
+        annotations.putAll(metadata);
     }
 }

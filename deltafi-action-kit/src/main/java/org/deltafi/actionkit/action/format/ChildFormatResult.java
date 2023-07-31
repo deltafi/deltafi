@@ -15,44 +15,41 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.actionkit.action.load;
+package org.deltafi.actionkit.action.format;
 
 import lombok.Data;
 import org.deltafi.actionkit.action.converters.ContentConverter;
-import org.deltafi.common.types.ChildLoadEvent;
+import org.deltafi.common.types.ChildFormatEvent;
 
 import java.util.UUID;
 
 @Data
-public class ChildLoadResult {
+class ChildFormatResult {
     private final String did;
-    private LoadResult loadResult;
+    private FormatResult formatResult;
 
     /**
-     * Create a ChildLoadResult with a random did
+     * Create a ChildFormatResult with a random did
      */
-    public ChildLoadResult() {
+    ChildFormatResult() {
         this.did = UUID.randomUUID().toString();
     }
 
     /**
-     * Create a ChildLoadResult with the given loadResult and a random did
-     * @param loadResult load result for this child
+     * Create a ChildFormatResult with the given formatResult and a random did
+     * @param formatResult format result for this child
      */
-    ChildLoadResult(LoadResult loadResult) {
+    ChildFormatResult(FormatResult formatResult) {
         this();
-        this.loadResult = loadResult;
+        this.formatResult = formatResult;
     }
 
-    ChildLoadEvent toEvent() {
-        return ChildLoadEvent.builder()
+    ChildFormatEvent toEvent() {
+        return ChildFormatEvent.builder()
                 .did(did)
-                .domains(loadResult.getDomains())
-                .content(ContentConverter.convert(loadResult.getContent()))
-                .annotations(loadResult.getAnnotations())
-                .metadata(loadResult.getMetadata())
-                .deleteMetadataKeys(loadResult.getDeleteMetadataKeys())
+                .content(ContentConverter.convert(formatResult.getContent()))
+                .metadata(formatResult.getMetadata())
+                .deleteMetadataKeys(formatResult.getDeleteMetadataKeys())
                 .build();
     }
-
 }

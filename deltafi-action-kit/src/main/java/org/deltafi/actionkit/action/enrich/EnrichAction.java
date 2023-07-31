@@ -66,7 +66,7 @@ public abstract class EnrichAction<P extends ActionParameters> extends Action<P>
 
     private static EnrichInput enrichInput(DeltaFileMessage deltaFileMessage, ActionContext context) {
         return EnrichInput.builder()
-                .contentList(ContentConverter.convert(deltaFileMessage.getContentList(), context.getContentStorageService()))
+                .content(ContentConverter.convert(deltaFileMessage.getContentList(), context.getContentStorageService()))
                 .metadata(deltaFileMessage.getMetadata())
                 .domains(deltaFileMessage.domainMap())
                 .enrichments(deltaFileMessage.enrichmentMap())

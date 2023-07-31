@@ -20,10 +20,10 @@ package org.deltafi.actionkit.action.egress;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
-import org.deltafi.actionkit.action.FormattedDataInput;
+import org.deltafi.actionkit.action.FormattedContentInput;
 
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 @Data
-public class EgressInput extends FormattedDataInput {
+public class EgressInput extends FormattedContentInput {
 }

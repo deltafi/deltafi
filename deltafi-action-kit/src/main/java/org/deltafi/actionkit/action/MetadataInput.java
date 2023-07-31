@@ -17,53 +17,38 @@
  */
 package org.deltafi.actionkit.action;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.Builder;
+import lombok.Data;
 import lombok.experimental.SuperBuilder;
-import lombok.extern.slf4j.Slf4j;
-import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.exception.MissingMetadataException;
-import org.deltafi.common.types.ActionContext;
 
+import java.util.HashMap;
 import java.util.Map;
 
-@AllArgsConstructor
-@NoArgsConstructor
+/**
+ * Action input that may include metadata
+ */
+@Data
 @SuperBuilder
-@Slf4j
-public abstract class FormattedDataInput {
-    @Getter
-    private ActionContent content;
-    @Getter
-    private Map<String, String> metadata;
+public abstract class MetadataInput {
+    @Builder.Default
+    protected Map<String, String> metadata = new HashMap<>();
 
     /**
-     * Return content associated with the formatted data as ActionContent.
-     *
-     * @return an ActionContent for the content
-     */
-    public ActionContent content() {
-        return content;
-    }
-
-    /**
-     * Returns the value of the formatted metadata for the given key.
+     * Returns the value of the last action's metadata for the given key.
      * @param key the key for the metadata.
      * @return the value of the metadata for the given key.
-     * @throws MissingMetadataException if the key is not found in the source metadata map.
+     * @throws MissingMetadataException if the key is not found in the metadata map.
      */
     public String metadata(String key) {
-        if (metadata.containsKey(key)) {
-            return metadata.get(key);
-        } else {
+        if (!metadata.containsKey(key)) {
             throw new MissingMetadataException(key);
         }
+        return metadata.get(key);
     }
 
     /**
-     * Returns the value of the formatted metadata for the given key or a default value if the key is not found.
+     * Returns the value of the last action's  metadata for the given key or a default value if the key is not found.
      * @param key the key for the metadata.
      * @param defaultValue the default value to return if the key is not found.
      * @return the value of the metadata for the given key or the default value if the key is not found.

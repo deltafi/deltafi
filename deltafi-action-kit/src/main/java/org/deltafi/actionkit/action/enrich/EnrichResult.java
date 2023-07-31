@@ -19,24 +19,20 @@ package org.deltafi.actionkit.action.enrich;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import org.deltafi.actionkit.action.HasAnnotations;
-import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.AnnotationsResult;
 import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Specialized result class for ENRICH actions
  */
 @Getter
 @EqualsAndHashCode(callSuper = true)
-public class EnrichResult extends Result<EnrichResult> implements HasAnnotations, EnrichResultType {
+public class EnrichResult extends AnnotationsResult<EnrichResult> implements EnrichResultType {
     private final List<Enrichment> enrichments = new ArrayList<>();
-    private final Map<String, String> annotations = new HashMap<>();
 
     public EnrichResult(@NotNull ActionContext context) {
         super(context, ActionEventType.ENRICH);

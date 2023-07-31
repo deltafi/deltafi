@@ -20,7 +20,7 @@ package org.deltafi.test.action;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.content.ActionContent;
-import org.deltafi.actionkit.action.DataAmendedResult;
+import org.deltafi.actionkit.action.ContentResult;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.converters.ContentConverter;
@@ -229,7 +229,7 @@ public abstract class ActionTest {
         return list.stream().filter(isCorrectOne).findFirst().orElseGet(ifNotFound);
     }
 
-    protected List<byte[]> getExpectedContentOutputNormalized(DataAmendedResult expectedResult, DataAmendedResult actualResult, TestCaseBase<?> testCase, List<? extends IOContent> outputs) {
+    protected List<byte[]> getExpectedContentOutputNormalized(ContentResult<?> expectedResult, ContentResult<?> actualResult, TestCaseBase<?> testCase, List<? extends IOContent> outputs) {
         final List<ActionContent> expectedContent = createContents(testCase, outputs);
 
         List<ActionContent> normalizedExpectedContent = orderListByAnother(actualResult.getContent(), expectedContent, ActionContent::getName);

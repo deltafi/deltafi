@@ -38,11 +38,11 @@ public class ActionEvent {
   private ActionEventType type;
   private TransformEvent transform;
   private LoadEvent load;
-  private List<LoadEvent> loadMany;
+  private List<ChildLoadEvent> loadMany;
   private DomainEvent domain;
   private EnrichEvent enrich;
   private FormatEvent format;
-  private List<FormatEvent> formatMany;
+  private List<ChildFormatEvent> formatMany;
   private ErrorEvent error;
   private FilterEvent filter;
   private List<ReinjectEvent> reinject;

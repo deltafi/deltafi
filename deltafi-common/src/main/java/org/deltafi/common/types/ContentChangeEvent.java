@@ -15,15 +15,23 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.actionkit.action.validate;
+package org.deltafi.common.types;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.deltafi.actionkit.action.FormattedContentInput;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
-@Data
-public class ValidateInput extends FormattedContentInput {
+public class ContentChangeEvent extends MetadataChangeEvent {
+    private List<Content> content;
+
+    @Builder.Default
+    private Map<String, String> annotations = new HashMap<>();
 }

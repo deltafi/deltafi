@@ -17,29 +17,47 @@
  */
 package org.deltafi.actionkit.action;
 
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
-import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.content.ActionContent;
 
+import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Action input that may include content or metadata
+ */
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 @SuperBuilder
-@Slf4j
-public abstract class ContentListInput {
-    private List<ActionContent> contentList;
+public class ContentInput extends MetadataInput {
+    @Builder.Default
+    protected List<ActionContent> content = new ArrayList<>();
+
+    public List<ActionContent> content() {
+        return content;
+    }
 
     /**
-     * Return the contentList
-     * @return the contentList
+     * @deprecated Use {@link #content()} instead.
      */
-    public List<ActionContent> content() {
-        return contentList;
+    @Deprecated
+    public List<ActionContent> getContentList() {
+        return content;
+    }
+
+    public void setContent(List<ActionContent> content) {
+        this.content = content;
+    }
+
+    /**
+     * @deprecated Use {@link #setContent(List)} instead.
+     */
+    @Deprecated
+    public void setContentList(List<ActionContent> contentList) {
+        this.content = contentList;
     }
 
     /**
@@ -47,19 +65,20 @@ public abstract class ContentListInput {
      * @return {@code true} if the content list is not empty, {@code false} otherwise.
      */
     public boolean hasContent() {
-        return !contentList.isEmpty();
+        return !content.isEmpty();
     }
 
     /**
-     * Retrieves the first action content in the list.
-     * @return The first action content.
+     * Gets the content at the specified index.
+     * @param index The index of the content
+     * @return The first action content
      * @throws ActionKitException If no content is found in the input.
      */
     public ActionContent content(int index) {
-        if (contentList.size() <= index) {
-            throw new ActionKitException("Requested content at index " + index + ", but only " + contentList.size() + " are available.");
+        if (content.size() <= index) {
+            throw new ActionKitException("Requested content at index " + index + ", but only " + content.size() + " are available.");
         }
 
-        return contentList.get(index);
+        return content.get(index);
     }
 }

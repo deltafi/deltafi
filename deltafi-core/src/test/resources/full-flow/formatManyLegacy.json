@@ -6,7 +6,7 @@
     "type": "FORMAT_MANY",
     "formatMany": [
         {
-            "did": "child1",
+            "metadata": {},
             "content": {
                 "name": "file1",
                 "segments": [{
@@ -15,11 +15,10 @@
                     "size": 250,
                     "did": "%1$s" }],
                 "mediaType": "application/octet-stream"
-            },
-            "metadata": {}
+            }
         },
         {
-            "did": "child2",
+            "metadata": {},
             "content": {
                 "name": "file2",
                 "segments": [{
@@ -28,8 +27,7 @@
                     "size": 250,
                     "did": "%1$s" }],
                 "mediaType": "application/octet-stream"
-            },
-            "metadata": {}
+            }
         }
     ]
 }

@@ -15,26 +15,25 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.types;
+package org.deltafi.actionkit.action;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.experimental.SuperBuilder;
+import org.deltafi.actionkit.action.content.ActionContent;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+/**
+ * Action input that may include formatted content or metadata
+ */
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 @SuperBuilder
-public class MetadataEvent {
-    @Builder.Default
-    private Map<String, String> metadata = new HashMap<>();
-    @Builder.Default
-    private List<String> deleteMetadataKeys = new ArrayList<>();
+public class FormattedContentInput extends MetadataInput {
+    @Getter
+    private ActionContent content;
+
+    public ActionContent content() {
+        return content;
+    }
 }

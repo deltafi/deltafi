@@ -39,7 +39,7 @@ public class RoteLoadAction extends LoadAction<RoteLoadParameters> {
     public LoadResultType load(@NotNull ActionContext context, @NotNull RoteLoadParameters params, @NotNull LoadInput input) {
         RandSleeper.sleep(params.getMinRoteDelayMS(), params.getMaxRoteDelayMS());
 
-        LoadResult result = new LoadResult(context, input.getContentList());
+        LoadResult result = new LoadResult(context, input.content());
         if (null != params.getDomains()) {
             params.getDomains().forEach(d -> result.addDomain(d, null, MediaType.TEXT_PLAIN));
         }

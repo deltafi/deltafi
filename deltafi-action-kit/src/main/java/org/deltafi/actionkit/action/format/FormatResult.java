@@ -17,14 +17,13 @@
  */
 package org.deltafi.actionkit.action.format;
 
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.Setter;
-import org.deltafi.actionkit.action.ActionKitException;
-import org.deltafi.actionkit.action.MetadataAmendedResult;
+import org.deltafi.actionkit.action.MetadataResult;
 import org.deltafi.actionkit.action.content.ActionContent;
-import org.deltafi.common.storage.s3.ObjectStorageException;
-import org.deltafi.common.types.*;
+import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionEvent;
+import org.deltafi.common.types.ActionEventType;
+import org.deltafi.common.types.FormatEvent;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.InputStream;
@@ -32,10 +31,8 @@ import java.io.InputStream;
 /**
  * Specialized result class for FORMAT actions
  */
-@Getter
-@Setter
-@EqualsAndHashCode(callSuper = true)
-public class FormatResult extends MetadataAmendedResult implements FormatResultType {
+public class FormatResult extends MetadataResult<FormatResult> implements FormatResultType {
+    @Getter
     private final ActionContent content;
 
     /**
@@ -55,8 +52,7 @@ public class FormatResult extends MetadataAmendedResult implements FormatResultT
      */
     @SuppressWarnings("unused")
     public FormatResult(@NotNull ActionContext context, @NotNull String content, @NotNull String name, @NotNull String mediaType) {
-        super(context, ActionEventType.FORMAT);
-        this.content = saveContent(content.getBytes(), name, mediaType);
+        this(context, content.getBytes(), name, mediaType);
     }
 
     /**
@@ -68,7 +64,7 @@ public class FormatResult extends MetadataAmendedResult implements FormatResultT
     @SuppressWarnings("unused")
     public FormatResult(@NotNull ActionContext context, @NotNull byte[] content, @NotNull String name, @NotNull String mediaType) {
         super(context, ActionEventType.FORMAT);
-        this.content = saveContent(content, name, mediaType);
+        this.content = ActionContent.saveContent(context, content, name, mediaType);
     }
 
     /**
@@ -81,25 +77,7 @@ public class FormatResult extends MetadataAmendedResult implements FormatResultT
     @SuppressWarnings("unused")
     public FormatResult(@NotNull ActionContext context, @NotNull InputStream content, @NotNull String name, @NotNull String mediaType) {
         super(context, ActionEventType.FORMAT);
-        this.content = saveContent(content, name, mediaType);
-    }
-
-    private ActionContent saveContent(byte[] bytes, String name, String mediaType) {
-        try {
-            Content content = context.getContentStorageService().save(context.getDid(), bytes, name, mediaType);
-            return new ActionContent(content, context.getContentStorageService());
-        } catch(ObjectStorageException e) {
-            throw new ActionKitException("Failed to store content " + name, e);
-        }
-    }
-
-    private ActionContent saveContent(InputStream stream, String name, String mediaType) {
-        try {
-            Content content = context.getContentStorageService().save(context.getDid(), stream, name, mediaType);
-            return new ActionContent(content, context.getContentStorageService());
-        } catch(ObjectStorageException e) {
-            throw new ActionKitException("Failed to store content " + name, e);
-        }
+        this.content = ActionContent.saveContent(context, content, name, mediaType);
     }
 
     @Override
@@ -108,6 +86,7 @@ public class FormatResult extends MetadataAmendedResult implements FormatResultT
         event.setFormat(FormatEvent.builder()
                 .content(content.getContent())
                 .metadata(metadata)
+                .deleteMetadataKeys(deleteMetadataKeys)
                 .build());
         return event;
     }

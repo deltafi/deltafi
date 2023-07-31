@@ -43,7 +43,7 @@ public abstract class LoadAction<P extends ActionParameters> extends Action<P> {
 
     private static LoadInput loadInput(DeltaFileMessage deltaFileMessage, ActionContext context) {
         return LoadInput.builder()
-                .contentList(ContentConverter.convert(deltaFileMessage.getContentList(), context.getContentStorageService()))
+                .content(ContentConverter.convert(deltaFileMessage.getContentList(), context.getContentStorageService()))
                 .metadata(deltaFileMessage.getMetadata())
                 .build();
     }

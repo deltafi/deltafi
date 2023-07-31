@@ -38,7 +38,7 @@ public class RoteTransformAction extends TransformAction<RoteParameters> {
         RandSleeper.sleep(params.getMinRoteDelayMS(), params.getMaxRoteDelayMS());
 
         TransformResult result = new TransformResult(context);
-        result.setContent(input.getContentList());
+        result.setContent(input.content());
         result.addMetadata(input.getMetadata());
         return result;
     }

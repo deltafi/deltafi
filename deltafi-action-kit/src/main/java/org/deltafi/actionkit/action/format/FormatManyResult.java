@@ -33,7 +33,7 @@ import java.util.List;
  */
 @EqualsAndHashCode(callSuper = true)
 public class FormatManyResult extends Result<FormatManyResult> implements FormatResultType {
-    private final List<FormatResult> formatResults = new ArrayList<>();
+    private final List<ChildFormatResult> childFormatResults = new ArrayList<>();
 
     /**
      * @param context Execution context of the action
@@ -48,13 +48,13 @@ public class FormatManyResult extends Result<FormatManyResult> implements Format
      */
     @SuppressWarnings("unused")
     public void add(FormatResult formatResult) {
-        formatResults.add(formatResult);
+        childFormatResults.add(new ChildFormatResult(formatResult));
     }
 
     @Override
     public final ActionEvent toEvent() {
         ActionEvent event = super.toEvent();
-        event.setFormatMany(formatResults.stream().map(f -> f.toEvent().getFormat()).toList());
+        event.setFormatMany(childFormatResults.stream().map(ChildFormatResult::toEvent).toList());
         return event;
     }
 }

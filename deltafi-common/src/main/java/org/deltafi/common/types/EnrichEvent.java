@@ -17,16 +17,14 @@
  */
 package org.deltafi.common.types;
 
-import lombok.*;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-
-import java.util.List;
 
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
-public class EnrichEvent extends AnnotatedEvent {
-  private List<Enrichment> enrichments;
+public class EnrichEvent extends EnrichmentChangeEvent {
 }

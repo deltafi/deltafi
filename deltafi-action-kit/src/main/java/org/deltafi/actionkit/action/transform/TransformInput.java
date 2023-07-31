@@ -20,38 +20,10 @@ package org.deltafi.actionkit.action.transform;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
-import org.deltafi.actionkit.action.ContentListInput;
-import org.deltafi.actionkit.exception.MissingMetadataException;
+import org.deltafi.actionkit.action.ContentInput;
 
-import java.util.Map;
-
+@Data
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
-@Data
-public class TransformInput extends ContentListInput {
-    Map<String, String> metadata;
-
-    /**
-     * Returns the value of the last action's metadata for the given key.
-     * @param key the key for the metadata.
-     * @return the value of the metadata for the given key.
-     * @throws MissingMetadataException if the key is not found in the metadata map.
-     */
-    public String metadata(String key) {
-        if (metadata.containsKey(key)) {
-            return metadata.get(key);
-        } else {
-            throw new MissingMetadataException(key);
-        }
-    }
-
-    /**
-     * Returns the value of the last action's  metadata for the given key or a default value if the key is not found.
-     * @param key the key for the metadata.
-     * @param defaultValue the default value to return if the key is not found.
-     * @return the value of the metadata for the given key or the default value if the key is not found.
-     */
-    public String metadata(String key, String defaultValue) {
-        return metadata.getOrDefault(key, defaultValue);
-    }
+public class TransformInput extends ContentInput {
 }

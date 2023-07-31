@@ -17,29 +17,22 @@
  */
 package org.deltafi.actionkit.action.load;
 
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import org.deltafi.actionkit.action.HasAnnotations;
-import lombok.Setter;
+import org.deltafi.actionkit.action.ContentResult;
 import org.deltafi.actionkit.action.content.ActionContent;
-import org.deltafi.actionkit.action.DataAmendedResult;
+import org.deltafi.actionkit.action.converters.ContentConverter;
 import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Specialized result class for LOAD actions
  */
-@Getter
-@Setter
-@EqualsAndHashCode(callSuper = true)
-public class LoadResult extends DataAmendedResult implements HasAnnotations, LoadResultType {
+public class LoadResult extends ContentResult<LoadResult> implements LoadResultType {
+    @Getter
     private final List<Domain> domains = new ArrayList<>();
-    private final Map<String, String> annotations = new HashMap<>();
 
     public LoadResult(@NotNull ActionContext context) {
         super(context, ActionEventType.LOAD);
@@ -47,11 +40,10 @@ public class LoadResult extends DataAmendedResult implements HasAnnotations, Loa
 
     /**
      * @param context Context of executing action
-     * @param contentList List of content objects to be processed with the execution result
+     * @param content List of content objects to be processed with the execution result
      */
-    public LoadResult(@NotNull ActionContext context, @NotNull List<ActionContent> contentList) {
-        super(context, ActionEventType.LOAD);
-        setContent(contentList);
+    public LoadResult(@NotNull ActionContext context, @NotNull List<ActionContent> content) {
+        super(context, ActionEventType.LOAD, content);
     }
 
     /**
@@ -70,10 +62,10 @@ public class LoadResult extends DataAmendedResult implements HasAnnotations, Loa
         ActionEvent event = super.toEvent();
         event.setLoad(LoadEvent.builder()
                 .domains(domains)
-                .content(contentList())
+                .content(ContentConverter.convert(content))
+                .annotations(annotations)
                 .metadata(metadata)
                 .deleteMetadataKeys(deleteMetadataKeys)
-                .annotations(annotations)
                 .build());
 
         return event;

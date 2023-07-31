@@ -29,18 +29,17 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Specialization of the Result base class that allows metadata and content to be collected in the result.
- * <p>
- * This class is extended for Load and Transform results
+ * A Result that may include changes to metadata
  */
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true)
-public abstract class MetadataAmendedResult extends Result<MetadataAmendedResult> {
+public abstract class MetadataResult<T extends Result<T>> extends Result<T> {
+    @Getter
     protected Map<String, String> metadata = new HashMap<>();
     protected List<String> deleteMetadataKeys = new ArrayList<>();
 
-    public MetadataAmendedResult(ActionContext context, ActionEventType actionEventType) {
+    public MetadataResult(ActionContext context, ActionEventType actionEventType) {
         super(context, actionEventType);
     }
 

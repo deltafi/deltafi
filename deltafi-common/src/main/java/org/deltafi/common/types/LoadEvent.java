@@ -17,19 +17,14 @@
  */
 package org.deltafi.common.types;
 
-import lombok.*;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
-public class LoadEvent extends TransformEvent {
-  @Builder.Default
-  private List<Domain> domains = new ArrayList<>();
-  private String did;
+public class LoadEvent extends DomainChangeEvent {
 }

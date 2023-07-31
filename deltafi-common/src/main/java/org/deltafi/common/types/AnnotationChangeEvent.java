@@ -26,9 +26,8 @@ import java.util.Map;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper = true)
 @SuperBuilder
-public class AnnotatedEvent extends MetadataEvent {
+public class AnnotationChangeEvent {
     @Builder.Default
     private Map<String, String> annotations = new HashMap<>();
 }

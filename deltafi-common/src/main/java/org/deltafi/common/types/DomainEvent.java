@@ -24,5 +24,5 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
-public class DomainEvent extends AnnotatedEvent {
+public class DomainEvent extends AnnotationChangeEvent {
 }

@@ -17,29 +17,21 @@
  */
 package org.deltafi.actionkit.action.transform;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
-import org.deltafi.actionkit.action.DataAmendedResult;
-import org.deltafi.actionkit.action.HasAnnotations;
+import org.deltafi.actionkit.action.ContentResult;
+import org.deltafi.actionkit.action.content.ActionContent;
+import org.deltafi.actionkit.action.converters.ContentConverter;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionEventType;
 import org.deltafi.common.types.TransformEvent;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 /**
  * Specialized result class for TRANSFORM actions
  */
-@Getter
-@Setter
-@EqualsAndHashCode(callSuper = true)
-public class TransformResult extends DataAmendedResult implements HasAnnotations, TransformResultType {
-    private final Map<String, String> annotations = new HashMap<>();
-
+public class TransformResult extends ContentResult<TransformResult> implements TransformResultType {
     /**
      * @param context Context of executing action
      */
@@ -47,14 +39,22 @@ public class TransformResult extends DataAmendedResult implements HasAnnotations
         super(context, ActionEventType.TRANSFORM);
     }
 
+    /**
+     * @param context Context of executing action
+     * @param content List of content objects to be processed with the execution result
+     */
+    public TransformResult(@NotNull ActionContext context, @NotNull List<ActionContent> content) {
+        super(context, ActionEventType.TRANSFORM, content);
+    }
+
     @Override
     public final ActionEvent toEvent() {
         ActionEvent event = super.toEvent();
         event.setTransform(TransformEvent.builder()
-                .content(contentList())
+                .content(ContentConverter.convert(content))
+                .annotations(annotations)
                 .metadata(metadata)
                 .deleteMetadataKeys(deleteMetadataKeys)
-                .annotations(annotations)
                 .build());
         return event;
     }

@@ -66,7 +66,7 @@ public abstract class FormatAction<P extends ActionParameters> extends Action<P>
 
     private static FormatInput formatInput(DeltaFileMessage deltaFileMessage, ActionContext context) {
         return FormatInput.builder()
-                .contentList(ContentConverter.convert(deltaFileMessage.getContentList(), context.getContentStorageService()))
+                .content(ContentConverter.convert(deltaFileMessage.getContentList(), context.getContentStorageService()))
                 .metadata(deltaFileMessage.getMetadata())
                 .domains(deltaFileMessage.domainMap())
                 .enrichments(deltaFileMessage.enrichmentMap())

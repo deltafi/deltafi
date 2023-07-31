@@ -17,31 +17,31 @@
  */
 package org.deltafi.actionkit.action;
 
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.SuperBuilder;
+import org.deltafi.common.types.Domain;
+
+import java.util.HashMap;
 import java.util.Map;
 
-public interface HasAnnotations {
+/**
+ * Action input that may include domains, content, or metadata
+ */
+@Data
+@EqualsAndHashCode(callSuper = true)
+@SuperBuilder
+public class DomainsInput extends ContentInput {
+    @Builder.Default
+    protected final Map<String, Domain> domains = new HashMap<>();
 
     /**
-     * Add annotation to this DeltaFile that will be made searchable.
-     * Multiple entries can be added by repeatedly calling this method.
-     * @param key that will be annotated
-     * @param value value for the given key
+     * Returns the Domain object for the given domain name.
+     * @param domainName the name of the domain.
+     * @return the Domain object for the given domain name.
      */
-    default void addAnnotation(String key, String value) {
-        getAnnotations().put(key, value);
+    public Domain domain(String domainName) {
+        return domains.get(domainName);
     }
-
-    /**
-     * Add all the annotations in the given map to this Result. These entries will be searchable.
-     * @param metadata map of entries that will be added to the annotations
-     */
-    default void addAnnotations(Map<String, String> metadata) {
-        getAnnotations().putAll(metadata);
-    }
-
-    /**
-     * Get the annotations map
-     * @return Map of annotations
-     */
-    Map<String, String> getAnnotations();
 }
