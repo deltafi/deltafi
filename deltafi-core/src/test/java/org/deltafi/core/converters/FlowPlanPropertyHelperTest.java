@@ -18,6 +18,8 @@
 package org.deltafi.core.converters;
 
 import org.deltafi.common.types.ActionDescriptor;
+import org.deltafi.common.types.ActionType;
+import org.deltafi.common.types.LoadActionConfiguration;
 import org.deltafi.common.types.Variable;
 import org.deltafi.common.types.VariableDataType;
 import org.deltafi.core.util.Util;
@@ -243,11 +245,27 @@ class FlowPlanPropertyHelperTest {
         Map<String, Object> mappedParameters = flowPlanPropertyHelper.replaceMapPlaceholders(parameters, "");
 
         ActionConfiguration actionConfiguration = new EgressActionConfiguration(null, null);
-        actionConfiguration.setParameters(mappedParameters);
+        actionConfiguration.setInternalParameters(mappedParameters);
 
         ActionDescriptor egressActionDescriptor = Util.egressActionDescriptor("config-test/complex-parameter-action-descriptor.json");
         List<FlowConfigError> errors = validator.validateAgainstSchema(egressActionDescriptor, actionConfiguration);
         assertThat(errors).isEmpty();
+    }
+
+    @Test
+    void testDelegateToMaskedHelper() {
+        Variable notMasked = Util.buildVariable("notMasked", "plainValue", null);
+        Variable masked = Util.buildVariable("masked", "maskedValue", null);
+        masked.setMasked(true);
+        List<Variable> variables = List.of(notMasked, masked);
+        FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(variables, "action");
+        ActionConfiguration toPopulate = new LoadActionConfiguration("", ActionType.LOAD.name());
+        ActionConfiguration template = new LoadActionConfiguration("Loader", ActionType.LOAD.name());
+        template.setParameters(Map.of("notMasked", "${notMasked}", "masked", "${masked}"));
+        flowPlanPropertyHelper.replaceCommonActionPlaceholders(toPopulate, template);
+
+        assertThat(toPopulate.getParameters()).hasSize(2).containsEntry("notMasked", "plainValue").containsEntry("masked", Variable.MASK_STRING);
+        assertThat(toPopulate.getInternalParameters()).hasSize(2).containsEntry("notMasked", "plainValue").containsEntry("masked", "maskedValue");
     }
 
     Object executeResolvePrimitive(Object object, List<Variable> variables) {

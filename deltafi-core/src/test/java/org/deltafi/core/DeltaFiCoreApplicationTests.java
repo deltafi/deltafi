@@ -100,6 +100,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -3237,6 +3238,37 @@ class DeltaFiCoreApplicationTests {
 
 		assertThat(pluginVariableRepo.findById(newVersion)).isEmpty();
 		assertThat(pluginVariableRepo.findIgnoringVersion(newVersion.getGroupId(), newVersion.getArtifactId())).hasSize(1).contains(variables);
+	}
+
+	@Test
+	void testResetAllUnmaskedVariableValues() {
+		PluginVariables variables = new PluginVariables();
+		PluginCoordinates coords = PluginCoordinates.builder().groupId("org").artifactId("reset-test").version("1").build();
+		variables.setSourcePlugin(coords);
+
+		Variable notSet = Util.buildVariable("notSet", null, "default");
+		Variable notSetAndMasked = Util.buildVariable("notSetAndMasked", null, "default");
+		notSetAndMasked.setMasked(true);
+		Variable setValue = Util.buildVariable("setValue", "value", "default");
+		Variable setValueAndMasked = Util.buildVariable("setValueAndMasked", "value", "default");
+		setValueAndMasked.setMasked(true);
+
+		variables.setVariables(List.of(notSet, notSetAndMasked, setValue, setValueAndMasked));
+
+		pluginVariableRepo.save(variables);
+
+		pluginVariableRepo.resetAllUnmaskedVariableValues();
+
+		Map<String, Variable> updatedVars = pluginVariableRepo.findById(coords).orElseThrow()
+				.getVariables().stream().collect(Collectors.toMap(Variable::getName, Function.identity()));
+
+		assertThat(updatedVars.get("notSet")).isEqualTo(notSet);
+		assertThat(updatedVars.get("notSetAndMasked")).isEqualTo(notSetAndMasked);
+		assertThat(updatedVars.get("setValueAndMasked")).isEqualTo(setValueAndMasked);
+
+		Variable updatedSetValue = updatedVars.get("setValue");
+		assertThat(updatedSetValue).isNotEqualTo(setValue);
+		assertThat(updatedSetValue.getValue()).isNull();
 	}
 
 	@Test

@@ -32,6 +32,8 @@ import org.deltafi.core.types.Result;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -124,15 +126,25 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
                 .defaultValue(incoming.getDefaultValue())
                 .dataType(incoming.getDataType())
                 .required(incoming.isRequired())
+                .masked(incoming.isMasked())
                 .description(incoming.getDescription())
                 .build();
 
         existingValues.stream()
                 .filter(existing -> existing.getName().equals(incoming.getName()))
-                .findFirst().map(Variable::getValue)
-                .ifPresent(variable::setValue);
+                .findFirst()
+                .ifPresent(existingVariable -> copyPersistedValue(variable, existingVariable));
 
         return variable;
+    }
+
+    private void copyPersistedValue(Variable target, Variable source) {
+        // Do not copy a previously masked value into an unmasked variable
+        if (target.isNotMasked() && source.isMasked()) {
+           return;
+        }
+
+        target.setValue(source.getValue());
     }
 
     private void insertVariables(PluginCoordinates pluginCoordinates, List<Variable> variables) {
@@ -211,36 +223,42 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
     public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
         if (hardReset) {
             // Unset all the values, a full deleteAll/replace could lead to problems if this snapshot is from a different version of DeltaFi
-            pluginVariableRepo.resetAllVariableValues();
+            // Masked variables are left in place b/c imported snapshots will not have those values
+            pluginVariableRepo.resetAllUnmaskedVariableValues();
         }
 
-        List<PluginVariables> variablesToSet = pluginVariableRepo.findAll();
-        List<PluginVariables> snapshotVariables = systemSnapshot.getPluginVariables();
+        List<PluginVariables> storedPluginVariables = pluginVariableRepo.findAll();
+        Map<PluginCoordinates, PluginVariables> snapshotVariables = systemSnapshot.getPluginVariables().stream()
+                .collect(Collectors.toMap(PluginVariables::getSourcePlugin, Function.identity()));
 
-        List<PluginVariables> resetPluginVariables = variablesToSet.stream().map(rollbackVariables -> rollbackValues(rollbackVariables, snapshotVariables)).toList();
+        storedPluginVariables.forEach(targetVariables -> rollbackValues(targetVariables, snapshotVariables.get(targetVariables.getSourcePlugin())));
         
-        pluginVariableRepo.saveAll(resetPluginVariables);
+        pluginVariableRepo.saveAll(storedPluginVariables);
 
         return new Result();
     }
 
-    PluginVariables rollbackValues(PluginVariables variablesToSet, List<PluginVariables> valuesToUse) {
-        Optional<PluginVariables> valuesT = valuesToUse.stream()
-                .filter(snapshot -> snapshot.getSourcePlugin().equals(variablesToSet.getSourcePlugin()))
-                .findFirst();
-
-        if (valuesT.isPresent()) {
-            PluginVariables valueHolder = valuesT.get();
-            valueHolder.getVariables().forEach(rollbackVariable -> rollbackValues(variablesToSet, rollbackVariable));
+    void rollbackValues(PluginVariables targetVariables, PluginVariables sourceVariables) {
+        if (sourceVariables == null) {
+            return;
         }
 
-        return variablesToSet;
+        Map<String, Variable> sourceVariableMap = sourceVariables.getVariables().stream().collect(Collectors.toMap(Variable::getName, Function.identity()));
+        targetVariables.getVariables().forEach(targetVariable -> copySnapshotVariable(targetVariable, sourceVariableMap.get(targetVariable.getName())));
     }
 
-    void rollbackValues(PluginVariables pluginVariables, Variable rollbackValue) {
-        pluginVariables.getVariables().stream()
-                .filter(variable -> variable.getName().equals(rollbackValue.getName()))
-                .findFirst().ifPresent(variable -> variable.setValue(rollbackValue.getValue()));
+    void copySnapshotVariable(Variable target, Variable source) {
+        if (source == null) {
+            return;
+        }
+
+        // ignore masked variables when resetting from a snapshot unless they have a real value
+        // do not copy a variable that was masked into an unmasked target
+        if (source.isMasked() && (Variable.MASK_STRING.equals(source.getValue()) || target.isNotMasked())) {
+            return;
+        }
+
+        target.setValue(source.getValue());
     }
 
     @Override

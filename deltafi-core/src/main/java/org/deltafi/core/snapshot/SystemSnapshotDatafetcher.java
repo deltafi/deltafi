@@ -36,7 +36,7 @@ public class SystemSnapshotDatafetcher {
     @DgsQuery
     @NeedsPermission.SnapshotRead
     public SystemSnapshot getSystemSnapshot(@InputArgument String snapshotId) {
-        return systemSnapshotService.get(snapshotId);
+        return systemSnapshotService.getWithMaskedVariables(snapshotId);
     }
 
     @DgsQuery
@@ -61,7 +61,7 @@ public class SystemSnapshotDatafetcher {
     @DgsMutation
     @NeedsPermission.SnapshotCreate
     public SystemSnapshot importSnapshot(@InputArgument SystemSnapshot snapshot) {
-        return systemSnapshotService.saveSnapshot(snapshot);
+        return systemSnapshotService.importSnapshot(snapshot);
     }
 
     @DgsMutation

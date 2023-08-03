@@ -91,7 +91,7 @@ class PluginVariableServiceTest {
 
         Result result = pluginVariableService.resetFromSnapshot(systemSnapshot, true);
 
-        Mockito.verify(pluginVariableRepo).resetAllVariableValues();
+        Mockito.verify(pluginVariableRepo).resetAllUnmaskedVariableValues();
 
         Mockito.verify(pluginVariableRepo).saveAll(List.of(restoredPluginA, storedPluginB));
 

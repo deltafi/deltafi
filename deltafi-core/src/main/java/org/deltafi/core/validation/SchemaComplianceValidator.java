@@ -85,7 +85,7 @@ public class SchemaComplianceValidator {
     private Optional<FlowConfigError> validateParameters(ActionConfiguration actionConfig, ActionDescriptor actionDescriptor) {
         JsonNode schemaNode = OBJECT_MAPPER.convertValue(actionDescriptor.getSchema(), JsonNode.class);
 
-        Map<String, Object> paramMap = Objects.nonNull(actionConfig.getParameters()) ? actionConfig.getParameters() : new HashMap<>();
+        Map<String, Object> paramMap = Objects.nonNull(actionConfig.getInternalParameters()) ? actionConfig.getInternalParameters() : new HashMap<>();
         JsonNode params = OBJECT_MAPPER.convertValue(paramMap, JsonNode.class);
 
         final JsonSchema schema = FACTORY.getSchema(schemaNode, validatorsConfig);

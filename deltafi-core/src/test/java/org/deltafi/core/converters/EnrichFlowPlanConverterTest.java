@@ -49,7 +49,11 @@ class EnrichFlowPlanConverterTest {
 
         assertThat(enrichFlow.getName()).isEqualTo("passthrough");
         assertThat(enrichFlow.getDescription()).isEqualTo("Flow that passes data through unchanged");
+
+        EnrichActionConfiguration expected = expectedEnrichAction();
         assertThat(enrichFlow.getEnrichActions()).hasSize(1).contains(expectedEnrichAction());
+        assertThat(enrichFlow.getEnrichActions().get(0).getInternalParameters()).isEqualTo(expected.getInternalParameters());
+        assertThat(enrichFlow.getEnrichActions().get(0).getParameters()).isEqualTo(expected.getParameters());
     }
 
     @Test
@@ -68,7 +72,8 @@ class EnrichFlowPlanConverterTest {
     EnrichActionConfiguration expectedEnrichAction() {
         EnrichActionConfiguration enrichActionConfiguration = new EnrichActionConfiguration("passthrough.PassthroughEnrichAction", "org.deltafi.passthrough.action.RoteEnrichAction", List.of("binary"));
         enrichActionConfiguration.setRequiresEnrichments(List.of("binary"));
-        enrichActionConfiguration.setParameters(Map.of("enrichments", Map.of("passthroughEnrichment", "customized enrichment value")));
+        enrichActionConfiguration.setInternalParameters(Map.of("enrichments", Map.of("passthroughEnrichment", "customized enrichment value", "secret", "maskedValue")));
+        enrichActionConfiguration.setParameters(Map.of("enrichments", Map.of("passthroughEnrichment", "customized enrichment value", "secret", Variable.MASK_STRING)));
         return enrichActionConfiguration;
     }
 
@@ -78,6 +83,7 @@ class EnrichFlowPlanConverterTest {
                 Variable.builder().name("transform.produces").defaultValue("passthrough-binary").dataType(VariableDataType.STRING).build(),
                 Variable.builder().name("domain.type").defaultValue("binary").dataType(VariableDataType.STRING).build(),
                 Variable.builder().name("enrichment.value").defaultValue("enrichment value").value("customized enrichment value").dataType(VariableDataType.STRING).build(),
-                Variable.builder().name("enrichUrl").defaultValue("http://deltafi-enrich-sink-service").dataType(VariableDataType.STRING).build());
+                Variable.builder().name("enrichUrl").defaultValue("http://deltafi-enrich-sink-service").dataType(VariableDataType.STRING).build(),
+                Variable.builder().name("masked").value("maskedValue").dataType(VariableDataType.STRING).masked(true).build());
     }
 }

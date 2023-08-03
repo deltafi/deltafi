@@ -17,7 +17,9 @@
  */
 package org.deltafi.core.datafetchers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
@@ -27,15 +29,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.types.*;
-import org.deltafi.core.converters.YamlRepresenter;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.plugin.PluginRegistryService;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.*;
 import org.deltafi.core.types.*;
-import org.yaml.snakeyaml.LoaderOptions;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 import java.util.*;
 
@@ -46,13 +44,8 @@ public class FlowPlanDatafetcher {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public static final ActionFamily INGRESS_FAMILY = ActionFamily.newBuilder().family("INGRESS").actionNames(List.of(DeltaFiConstants.INGRESS_ACTION)).build();
-    private static final LoaderOptions LOADER_OPTIONS;
-    static {
-        LoaderOptions loaderOptions = new LoaderOptions();
-        loaderOptions.setAllowRecursiveKeys(false);
-        LOADER_OPTIONS = loaderOptions;
-    }
-    private static final Yaml YAML_EXPORTER = new Yaml(new SafeConstructor(LOADER_OPTIONS), new YamlRepresenter());
+
+    private static final ObjectMapper YAML_EXPORTER = new ObjectMapper(new YAMLFactory());
 
     private final IngressFlowPlanService ingressFlowPlanService;
     private final IngressFlowService ingressFlowService;
@@ -314,14 +307,14 @@ public class FlowPlanDatafetcher {
 
     @DgsQuery
     @NeedsPermission.FlowView
-    public String exportConfigAsYaml() {
+    public String exportConfigAsYaml() throws JsonProcessingException {
         Map<String, List<? extends Flow>> flowMap = new HashMap<>();
         flowMap.put("ingressFlows", ingressFlowService.getAll());
         flowMap.put("enrichFlows", enrichFlowService.getAll());
         flowMap.put("egressFlows", egressFlowService.getAll());
         flowMap.put("transformFlows", transformFlowService.getAll());
 
-        return YAML_EXPORTER.dumpAsMap(flowMap);
+        return YAML_EXPORTER.writeValueAsString(flowMap);
     }
 
     @DgsQuery

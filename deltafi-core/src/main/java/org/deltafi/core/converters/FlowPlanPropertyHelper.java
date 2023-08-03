@@ -27,6 +27,7 @@ import org.deltafi.core.generated.types.FlowErrorType;
 import org.springframework.util.PropertyPlaceholderHelper;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.nonNull;
 
@@ -40,11 +41,23 @@ public class FlowPlanPropertyHelper {
     private final VariablePlaceholderResolver flowPlanPlaceholderResolver;
     private final Set<FlowConfigError> errors;
     private final String actionNamePrefix;
+    private final Optional<FlowPlanPropertyHelper> maskedDelegate;
 
     public FlowPlanPropertyHelper(List<Variable> variables, String actionNamePrefix) {
+        this(variables, actionNamePrefix, variables != null && variables.stream().anyMatch(Variable::isMasked));
+    }
+
+    private FlowPlanPropertyHelper(List<Variable> variables, String actionNamePrefix, boolean createMaskedDelegate) {
         this.flowPlanPlaceholderResolver = new VariablePlaceholderResolver(variables);
         this.actionNamePrefix = actionNamePrefix;
         this.errors = new HashSet<>();
+
+        FlowPlanPropertyHelper maybeDelegate = null;
+        if (createMaskedDelegate) {
+            List<Variable> maskedVariables = variables.stream().map(Variable::maskIfSensitive).toList();
+            maybeDelegate = new FlowPlanPropertyHelper(maskedVariables, actionNamePrefix, false);
+        }
+        this.maskedDelegate = Optional.ofNullable(maybeDelegate);
     }
 
     public Set<FlowConfigError> getErrors() {
@@ -56,7 +69,8 @@ public class FlowPlanPropertyHelper {
     }
 
     public <C extends ActionConfiguration> void replaceCommonActionPlaceholders(C actionConfiguration, ActionConfiguration actionTemplate) {
-        actionConfiguration.setParameters(replaceMapPlaceholders(actionTemplate.getParameters(), actionConfiguration.getName()));
+        actionConfiguration.setInternalParameters(replaceMapPlaceholders(actionTemplate.getParameters(), actionConfiguration.getName()));
+        actionConfiguration.setParameters(maskedDelegate.orElse(this).replaceMapPlaceholders(actionTemplate.getParameters(), actionConfiguration.getName()));
     }
 
     public List<String> replaceListOfPlaceholders(List<String> values, String inActionNamed) {
@@ -176,7 +190,7 @@ public class FlowPlanPropertyHelper {
     }
 
     public Set<Variable> getAppliedVariables() {
-        return flowPlanPlaceholderResolver.getAppliedVariables();
+        return flowPlanPlaceholderResolver.getAppliedVariables().stream().map(Variable::maskIfSensitive).collect(Collectors.toSet());
     }
 
     public static boolean isArrayString(String value) {

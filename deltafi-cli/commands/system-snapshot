@@ -161,6 +161,7 @@ ALL_SNAPSHOT_FIELDS="id
                 required
                 defaultValue
                 value
+                masked
               }
             }
             flowAssignmentRules {

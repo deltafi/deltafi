@@ -20,6 +20,7 @@ package org.deltafi.core.repo;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.core.types.PluginVariables;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
@@ -29,9 +30,11 @@ public class PluginVariableRepoImpl implements PluginVariableRepoCustom {
     private final MongoTemplate mongoTemplate;
 
     @Override
-    public void resetAllVariableValues() {
+    public void resetAllUnmaskedVariableValues() {
         Update unsetValues = new Update();
-        unsetValues.unset("variables.$[].value");
+        unsetValues.unset("variables.$[variable].value");
+        unsetValues.filterArray(Criteria.where("variable.masked").ne(true));
+
         mongoTemplate.updateMulti(new Query(), unsetValues, PluginVariables.class);
     }
 }

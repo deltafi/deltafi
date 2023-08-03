@@ -21,21 +21,27 @@ import org.deltafi.common.types.ActionDescriptor;
 import org.deltafi.common.types.Plugin;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.PluginRegistration;
+import org.deltafi.common.types.Variable;
+import org.deltafi.core.security.DeltaFiUserDetailsService;
 import org.deltafi.core.services.*;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.types.Result;
+import org.deltafi.core.util.Util;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -237,6 +243,47 @@ class PluginRegistryServiceTest {
                 .contains("Installed plugin org.installed:installed-plugin:1.0.0 was not installed at the time of the snapshot");
     }
 
+    @Test
+    void testGetPluginsWithVariablesAsAdmin() {
+        try (MockedStatic<DeltaFiUserDetailsService> userDetailsServiceMockedStatic = Mockito.mockStatic(DeltaFiUserDetailsService.class)) {
+            testGetPluginsWithVariables(userDetailsServiceMockedStatic, true);
+        }
+    }
+
+    @Test
+    void testGetPluginsWithVariablesAsNonAdmin() {
+        try (MockedStatic<DeltaFiUserDetailsService> userDetailsServiceMockedStatic = Mockito.mockStatic(DeltaFiUserDetailsService.class)) {
+            testGetPluginsWithVariables(userDetailsServiceMockedStatic, false);
+        }
+    }
+
+    private void testGetPluginsWithVariables(MockedStatic<DeltaFiUserDetailsService> userDetailsServiceMockedStatic, boolean isAdmin) {
+        Plugin one = makeDependencyPlugin();
+        Plugin two = makeDependencyPlugin();
+        Variable variable = Util.buildNewVariable("setValue");
+        one.setVariables(List.of(variable));
+        Mockito.when(pluginRepository.findAll()).thenReturn(List.of(one, two));
+        Mockito.when(pluginVariableService.getVariablesByPlugin(Mockito.any())).thenReturn(variableList());
+
+        userDetailsServiceMockedStatic.when(DeltaFiUserDetailsService::currentUserCanViewMasked).thenReturn(isAdmin);
+        List<Plugin> plugins = pluginRegistryService.getPluginsWithVariables();
+        assertThat(plugins).hasSize(2);
+        Consumer<Variable> checker = isAdmin ? this::verifyNoMaskedValues : this::verifyMaskedValues;
+        plugins.stream().map(Plugin::getVariables).flatMap(Collection::stream).forEach(checker);
+    }
+
+    private void verifyNoMaskedValues(Variable variable) {
+        assertThat(variable.getValue()).isNotEqualTo(Variable.MASK_STRING);
+    }
+
+    private void verifyMaskedValues(Variable variable) {
+        if (variable.isMasked() && variable.getValue() != null) {
+            assertThat(variable.getValue()).isEqualTo(Variable.MASK_STRING);
+        } else {
+            assertThat(variable.getValue()).isNotEqualTo(Variable.MASK_STRING);
+        }
+    }
+
     private Plugin makeDependencyPlugin() {
         Plugin plugin = new Plugin();
         plugin.setPluginCoordinates(PLUGIN_COORDINATES_2);
@@ -254,5 +301,15 @@ class PluginRegistryServiceTest {
                 ActionDescriptor.builder().name("action-1").build(),
                 ActionDescriptor.builder().name("action-2").build()));
         return plugin;
+    }
+
+    List<Variable> variableList() {
+        Variable notSet = Util.buildVariable("notSet", null, "default");
+        Variable notSetAndMasked = Util.buildVariable("notSetAndMasked", null, "default");
+        notSetAndMasked.setMasked(true);
+        Variable setValue = Util.buildVariable("setValue", "value", "default");
+        Variable setValueAndMasked = Util.buildVariable("setValueAndMasked", "value", "default");
+        setValueAndMasked.setMasked(true);
+        return List.of(notSet, notSetAndMasked, setValue, setValueAndMasked);
     }
 }

@@ -20,8 +20,10 @@ package org.deltafi.core.security;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.constant.DeltaFiConstants;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -41,5 +43,20 @@ public class DeltaFiUserDetailsService implements org.springframework.security.c
         List<GrantedAuthority> grantedAuthorities = AuthorityUtils.commaSeparatedStringToAuthorityList(permissions);
 
         return new User(username, "", grantedAuthorities);
+    }
+
+    public static boolean currentUserCanViewMasked() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || authentication.getAuthorities() == null) {
+            return false;
+        }
+
+        return authentication.getAuthorities().stream().anyMatch(DeltaFiUserDetailsService::hasPluginVariableUpdate);
+    }
+
+    private static boolean hasPluginVariableUpdate(GrantedAuthority grantedAuthority) {
+        String auth = grantedAuthority != null ? grantedAuthority.getAuthority() : null;
+        return DeltaFiConstants.ADMIN_PERMISSION.equals(auth) || "PluginVariableUpdate".equals(auth);
     }
 }

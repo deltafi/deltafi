@@ -19,7 +19,8 @@
       ],
       "parameters": {
         "enrichments": {
-          "passthroughEnrichment": "${enrichment.value}"
+          "passthroughEnrichment": "${enrichment.value}",
+          "secret": "${masked}"
         }
       }
     }

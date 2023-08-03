@@ -21,6 +21,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.Flows;
+import org.deltafi.core.security.DeltaFiUserDetailsService;
 import org.deltafi.core.services.*;
 import org.deltafi.core.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.snapshot.Snapshotter;
@@ -140,7 +141,13 @@ public class PluginRegistryService implements Snapshotter {
     }
 
     private void addVariables(Plugin plugin) {
-        plugin.setVariables(pluginVariableService.getVariablesByPlugin(plugin.getPluginCoordinates()));
+        List<Variable> variables = pluginVariableService.getVariablesByPlugin(plugin.getPluginCoordinates());
+
+        if (!DeltaFiUserDetailsService.currentUserCanViewMasked()) {
+            variables = variables.stream().map(Variable::maskIfSensitive).toList();
+        }
+
+        plugin.setVariables(variables);
     }
 
     public List<Flows> getFlowsByPlugin() {

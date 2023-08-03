@@ -19,6 +19,9 @@ package org.deltafi.core.repo;
 
 public interface PluginVariableRepoCustom {
 
-    void resetAllVariableValues();
+    /**
+     * Reset all variable values unless they are masked
+     */
+    void resetAllUnmaskedVariableValues();
 
 }

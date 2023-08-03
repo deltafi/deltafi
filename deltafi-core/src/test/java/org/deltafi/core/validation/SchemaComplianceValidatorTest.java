@@ -198,7 +198,7 @@ class SchemaComplianceValidatorTest {
     private EgressActionConfiguration egressConfig(String name, String type, Map<String, Object> params) {
         EgressActionConfiguration restEgressConfig = new EgressActionConfiguration(name, type);
         restEgressConfig.setApiVersion("0.19.0");
-        restEgressConfig.setParameters(params);
+        restEgressConfig.setInternalParameters(params);
         return restEgressConfig;
     }
 

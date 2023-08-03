@@ -19,11 +19,14 @@ package org.deltafi.core.snapshot;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.types.Variable;
+import org.deltafi.core.types.PluginVariables;
 import org.deltafi.core.types.Result;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @Slf4j
@@ -33,12 +36,32 @@ public class SystemSnapshotService {
     private List<Snapshotter> snapshotters;
     private SystemSnapshotRepo systemSnapshotRepo;
 
-    public SystemSnapshot get(String snapshotId) {
+    public SystemSnapshot getWithMaskedVariables(String snapshotId) {
+        SystemSnapshot snapshot = getById(snapshotId);
+        applyMaskToVariables(snapshot);
+        return snapshot;
+    }
+
+    private SystemSnapshot getById(String snapshotId) {
         return systemSnapshotRepo.findById(snapshotId).orElseThrow(() -> new IllegalArgumentException("No system snapshot found with an id of " + snapshotId));
     }
 
     public List<SystemSnapshot> getAll() {
-        return systemSnapshotRepo.findAll();
+        List<SystemSnapshot> snapshots = systemSnapshotRepo.findAll();
+        snapshots.forEach(this::applyMaskToVariables);
+        return snapshots;
+    }
+
+    void applyMaskToVariables(SystemSnapshot systemSnapshot) {
+        if (systemSnapshot.getPluginVariables() != null) {
+            systemSnapshot.getPluginVariables().forEach(this::applyMaskToVariables);
+        }
+    }
+
+    void applyMaskToVariables(PluginVariables pluginVariables) {
+        if (pluginVariables.getVariables() != null) {
+            pluginVariables.setVariables(pluginVariables.getVariables().stream().map(Variable::maskIfSensitive).toList());
+        }
     }
 
     public SystemSnapshot createSnapshot(String reason) {
@@ -49,11 +72,45 @@ public class SystemSnapshotService {
     }
 
     public Result resetFromSnapshot(String snapshotId, boolean hardReset) {
-        return resetFromSnapshot(get(snapshotId), hardReset);
+        return resetFromSnapshot(getById(snapshotId), hardReset);
     }
 
     public SystemSnapshot saveSnapshot(SystemSnapshot systemSnapshot) {
         return systemSnapshotRepo.save(systemSnapshot);
+    }
+
+    public SystemSnapshot importSnapshot(SystemSnapshot systemSnapshot) {
+        if (systemSnapshot == null) {
+            return null;
+        }
+
+        removeMaskedVariables(systemSnapshot);
+        return saveSnapshot(systemSnapshot);
+    }
+
+    void removeMaskedVariables(SystemSnapshot systemSnapshot) {
+        if (systemSnapshot.getPluginVariables() != null) {
+            systemSnapshot.setPluginVariables(systemSnapshot.getPluginVariables().stream()
+                    .map(this::removeMaskedVariables).filter(Objects::nonNull).toList());
+        }
+    }
+
+    PluginVariables removeMaskedVariables(PluginVariables pluginVariables) {
+        List<Variable> maskedVariables = removeMaskedVariables(pluginVariables.getVariables());
+        if (maskedVariables.isEmpty()) {
+            return null;
+        }
+
+        pluginVariables.setVariables(maskedVariables);
+        return pluginVariables;
+    }
+
+    List<Variable> removeMaskedVariables(List<Variable> variables) {
+        return variables != null ? variables.stream().filter(this::isNotMasked).toList() : List.of();
+    }
+
+    private boolean isNotMasked(Variable variable) {
+        return variable != null && variable.isNotMasked();
     }
 
     public Result deleteSnapshot(String id) {
@@ -99,5 +156,4 @@ public class SystemSnapshotService {
     private static boolean blankList(List<String> value) {
         return null == value || value.isEmpty();
     }
-
 }

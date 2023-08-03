@@ -117,7 +117,7 @@ class EgressFlowPlanConverterTest {
 
     EgressActionConfiguration expectedEgressAction() {
         EgressActionConfiguration egressActionConfiguration = new EgressActionConfiguration("passthrough.PassthroughEgressAction", "org.deltafi.core.action.RestPostEgressAction");
-        egressActionConfiguration.setParameters(Map.of("egressFlow", "egressFlow", "metadataKey", "deltafiMetadata", "url", "http://deltafi-egress-sink-service"));
+        egressActionConfiguration.setInternalParameters(Map.of("egressFlow", "egressFlow", "metadataKey", "deltafiMetadata", "url", "http://deltafi-egress-sink-service"));
         return egressActionConfiguration;
     }
 

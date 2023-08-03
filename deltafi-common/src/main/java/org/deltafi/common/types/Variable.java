@@ -17,6 +17,7 @@
  */
 package org.deltafi.common.types;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,14 +28,40 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class Variable {
+
+  public static final String MASK_STRING = "*********";
+
   private String name;
   private String description;
   private VariableDataType dataType;
   private boolean required;
   private String defaultValue;
   private String value;
+  private boolean masked;
 
   public boolean hasValue() {
     return null != value;
   }
+
+  public Variable maskIfSensitive() {
+    return masked ? copyWithMaskedValue() : this;
+  }
+
+  @JsonIgnore
+  public boolean isNotMasked() {
+    return !masked;
+  }
+
+  private Variable copyWithMaskedValue() {
+    return Variable.builder()
+            .name(name)
+            .description(description)
+            .value(MASK_STRING)
+            .defaultValue(MASK_STRING)
+            .dataType(dataType)
+            .required(required)
+            .masked(masked)
+            .build();
+  }
+
 }

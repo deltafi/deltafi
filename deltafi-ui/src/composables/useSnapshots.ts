@@ -147,7 +147,8 @@ export default function useSystemSnapshots() {
             dataType: true,
             required: true,
             defaultValue: true,
-            value: true
+            value: true,
+            masked: true
           }
         },
         runningTransformFlows: true,

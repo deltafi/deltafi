@@ -45,6 +45,8 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
     protected final ActionType actionType;
     protected final String type;
 
+    @JsonIgnore
+    protected Map<String, Object> internalParameters;
     protected Map<String, Object> parameters;
 
     protected ActionConfiguration(String name, ActionType actionType, String type) {
@@ -78,8 +80,8 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
      */
     public ActionInput buildActionInput(DeltaFile deltaFile, String systemName, String egressFlow, String returnAddress) {
 
-        if (Objects.isNull(parameters)) {
-            setParameters(Collections.emptyMap());
+        if (Objects.isNull(internalParameters)) {
+            setInternalParameters(Collections.emptyMap());
         }
 
         return ActionInput.builder()
@@ -92,7 +94,7 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
                         .egressFlow(egressFlow)
                         .systemName(systemName)
                         .build())
-                .actionParams(parameters)
+                .actionParams(internalParameters)
                 .deltaFileMessages(List.of(deltaFile.forQueue(egressFlow)))
                 .returnAddress(returnAddress)
                 .build();
