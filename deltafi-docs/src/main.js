@@ -24,6 +24,9 @@ new Docute({
   sourcePath: 'docs',
   detectSystemDarkTheme: true,
   darkThemeToggler: true,
+  cssVariables(theme) {
+    return theme === 'dark' ? { accentColor: 'rgb(98,135,239)' } : { accentColor: 'rgb(57,105,228)'}
+  },
   nav: [
     {
       title: 'Home',
@@ -32,6 +35,10 @@ new Docute({
     {
       title: 'GitLab',
       link: 'https://gitlab.com/deltafi/deltafi'
+    },
+    {
+      title: 'DeltaFi.org',
+      link: 'https://deltafi.org'
     }
   ],
   sidebar: [
