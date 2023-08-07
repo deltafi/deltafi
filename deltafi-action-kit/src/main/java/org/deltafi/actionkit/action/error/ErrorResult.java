@@ -79,6 +79,20 @@ public class ErrorResult extends Result<ErrorResult> implements DomainResultType
     }
 
     /**
+     * @param context      Execution context of the errored action
+     * @param errorMessage Message explaining the error result
+     * @param errorDetails Additional details about the error
+     */
+    @SuppressWarnings("unused")
+    public ErrorResult(@NotNull ActionContext context, @NotNull String errorMessage, @NotNull String errorDetails) {
+        super(context, ActionEventType.ERROR);
+
+        this.errorCause = errorMessage;
+        this.errorContext = errorDetails;
+        this.errorSummary = errorMessage + ": " + context.getDid() + "\n" + errorDetails;
+    }
+
+    /**
      * Log the error summary of the result.  Should be used prior to returning the result
      * @param logger A logger object to log the error summary
      * @return this ErrorResult for continued operations

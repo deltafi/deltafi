@@ -192,7 +192,7 @@ class FlowfileEgressActionTest {
 
         assertThat(result, instanceOf(ErrorResult.class));
         assertThat(((ErrorResult) result).getErrorCause(), containsString("505"));
-        assertThat(((ErrorResult) result).getErrorCause(), containsString("Hello there"));
+        assertThat(((ErrorResult) result).getErrorContext(), containsString("Hello there"));
     }
 
     private ActionContent actionContent() {
