@@ -923,8 +923,7 @@ public class DeltaFilesService {
                                 result.setError("DeltaFile with did " + did + " had no errors");
                             } else {
                                 deltaFile.setStage(DeltaFileStage.INGRESS);
-                                deltaFile.setErrorAcknowledged(null);
-                                deltaFile.setErrorAcknowledgedReason(null);
+                                deltaFile.clearErrorAcknowledged();
 
                                 applyRetryOverrides(deltaFile, null, null, removeSourceMetadata, replaceSourceMetadata);
 
@@ -1076,8 +1075,7 @@ public class DeltaFilesService {
                             result.setSuccess(false);
                             result.setError("DeltaFile with did " + did + " not found");
                         } else {
-                            deltaFile.setErrorAcknowledged(now);
-                            deltaFile.setErrorAcknowledgedReason(reason);
+                            deltaFile.acknowledgeError(now, reason);
                             changedDeltaFiles.add(deltaFile);
                         }
                     } catch (Exception e) {

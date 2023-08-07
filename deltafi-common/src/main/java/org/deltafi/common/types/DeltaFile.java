@@ -63,6 +63,7 @@ public class DeltaFile {
   private OffsetDateTime modified;
   private OffsetDateTime contentDeleted;
   private String contentDeletedReason;
+  @Setter(AccessLevel.NONE)
   private OffsetDateTime errorAcknowledged;
   private String errorAcknowledgedReason;
   @Setter(AccessLevel.NONE)
@@ -577,6 +578,18 @@ public class DeltaFile {
             .filter(a -> a.getName().equals(actionName))
             .reduce((first, second) -> second)
             .orElse(null);
+  }
+
+  public void acknowledgeError(@NotNull OffsetDateTime now, String reason) {
+    errorAcknowledged = now;
+    errorAcknowledgedReason = reason;
+    setNextAutoResume(null);
+    setNextAutoResumeReason(null);
+  }
+
+  public void clearErrorAcknowledged() {
+    errorAcknowledged = null;
+    errorAcknowledgedReason = null;
   }
 
   @SuppressWarnings("unused")

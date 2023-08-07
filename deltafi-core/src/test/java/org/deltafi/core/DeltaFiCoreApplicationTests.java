@@ -1135,8 +1135,7 @@ class DeltaFiCoreApplicationTests {
 	void testResumeClearsAcknowledged() throws IOException {
 		String did = UUID.randomUUID().toString();
 		DeltaFile postErrorDeltaFile = postErrorDeltaFile(did);
-		postErrorDeltaFile.setErrorAcknowledged(OffsetDateTime.now());
-		postErrorDeltaFile.setErrorAcknowledgedReason("some reason");
+		postErrorDeltaFile.acknowledgeError(OffsetDateTime.now(), "some reason");
 		deltaFileRepo.save(postErrorDeltaFile);
 
 		dgsQueryExecutor.executeAndExtractJsonPathAsObject(
@@ -2559,7 +2558,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile3 = buildDeltaFile("3", null, DeltaFileStage.ERROR, OffsetDateTime.now(), OffsetDateTime.now());
 		deltaFileRepo.save(deltaFile3);
 		DeltaFile deltaFile4 = buildDeltaFile("4", null, DeltaFileStage.ERROR, OffsetDateTime.now(), OffsetDateTime.now());
-		deltaFile4.setErrorAcknowledged(OffsetDateTime.now());
+		deltaFile4.acknowledgeError(OffsetDateTime.now(), null);
 		deltaFileRepo.save(deltaFile4);
 		DeltaFile deltaFile5 = buildDeltaFile("5", null, DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now());
 		deltaFile5.setPendingAnnotationsForFlows(Set.of("a"));
@@ -2772,7 +2771,7 @@ class DeltaFiCoreApplicationTests {
 				.domains(List.of(new Domain("domain1", null, null)))
 				.enrichments(List.of(new Enrichment("enrichment1", null, null)))
 				.build()));
-		deltaFile1.setErrorAcknowledged(MONGO_NOW);
+		deltaFile1.acknowledgeError(MONGO_NOW, null);
 		deltaFile1.incrementRequeueCount();
 		deltaFile1.addEgressFlow("MyEgressFlow");
 		deltaFile1.setTestModeReason("TestModeReason");
@@ -3739,7 +3738,7 @@ class DeltaFiCoreApplicationTests {
 		// causeZ, f2: 1, f3: 3. f1: 1 (which is not the last action)
 		DeltaFile deltaFileWithAck = Util.buildErrorDeltaFile(
 				"6", "f3", "causeZ", "x", now);
-		deltaFileWithAck.setErrorAcknowledged(now);
+		deltaFileWithAck.acknowledgeError(now, null);
 		deltaFileRepo.save(deltaFileWithAck);
 		deltaFileRepo.save(Util.buildErrorDeltaFile(
 				"7", "f3", "causeZ", "x", now));

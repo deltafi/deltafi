@@ -43,6 +43,29 @@ class DeltaFileTest {
     }
 
     @Test
+    void testAcknowledgeClearsAutoResume() {
+        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime now2 = OffsetDateTime.now();
+        Action action1 = Action.builder()
+                .name("action1")
+                .state(ActionState.ERROR)
+                .build();
+
+        DeltaFile deltaFile = DeltaFile.builder()
+                .actions(new ArrayList<>(List.of(action1)))
+                .nextAutoResume(now)
+                .nextAutoResumeReason("policy-name")
+                .build();
+
+        deltaFile.acknowledgeError(now2, "reason");
+
+        assertNull(deltaFile.getNextAutoResumeReason());
+        assertNull(deltaFile.getNextAutoResume());
+        assertEquals("reason", deltaFile.getErrorAcknowledgedReason());
+        assertEquals(now2, deltaFile.getErrorAcknowledged());
+    }
+
+    @Test
     void testRetryErrors() {
         OffsetDateTime now = OffsetDateTime.now();
         Action action1 = Action.builder()
