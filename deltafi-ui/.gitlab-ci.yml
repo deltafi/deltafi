@@ -6,9 +6,9 @@ ui:eslint:
   needs: []
   script:
     - cd deltafi-ui
-    # Install eslint
+    # Install ui dependencies
     - |
-      npm install eslint@8.40.0 eslint-plugin-vue@9.11.1
+      npm install
     # Run eslint
     - npm run lint
 
