@@ -33,7 +33,7 @@
       <Column field="count" header="Count" :sortable="true" />
       <Column field="message" header="Message" :sortable="true">
         <template #body="msg">
-          <a class="monospace" @click="showAll(msg.data.message)">{{ msg.data.message }}</a>
+          <a class="monospace" @click="showAll(msg.data.message, msg.data.flow)">{{ msg.data.message }}</a>
         </template>
       </Column>
     </DataTable>
@@ -79,7 +79,7 @@ const sortField = ref("modified");
 const metadataDialog = ref();
 const sortDirection = ref("DESC");
 const selectedErrors = ref([]);
-const emit = defineEmits(["refreshErrors", "changeTab:errorMessage"]);
+const emit = defineEmits(["refreshErrors", "changeTab:errorMessage:flowSelected"]);
 const notify = useNotifications();
 const annotateDialog = ref();
 const { pluralize } = useUtilFunctions();
@@ -169,8 +169,8 @@ const onRefresh = () => {
   fetchErrorsMessages();
 };
 
-const showAll = (errorMessage) => {
-  emit("changeTab:errorMessage", errorMessage);
+const showAll = (errorMessage, flowSel) => {
+  emit("changeTab:errorMessage:flowSelected", errorMessage, flowSel);
 };
 
 const filterSelectedDids = computed(() => {

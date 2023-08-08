@@ -33,7 +33,7 @@
         <ErrorsSummaryByFlowPanel ref="errorSummaryFlowPanel" :awknowledged="showAcknowledged" :ingress-flow-name="ingressFlowNameSelected" @refresh-errors="onRefresh()" />
       </TabPanel>
       <TabPanel header="By Message">
-        <ErrorsSummaryByMessagePanel ref="errorSummaryMessagePanel" :awknowledged="showAcknowledged" :ingress-flow-name="ingressFlowNameSelected" @refresh-errors="onRefresh()" @change-tab:error-message="tabChange" />
+        <ErrorsSummaryByMessagePanel ref="errorSummaryMessagePanel" :awknowledged="showAcknowledged" :ingress-flow-name="ingressFlowNameSelected" @refresh-errors="onRefresh()" @change-tab:error-message:flow-selected="tabChange" />
       </TabPanel>
     </TabView>
   </div>
@@ -122,7 +122,8 @@ const refreshButtonIcon = computed(() => {
   return classes.join(" ");
 });
 
-const tabChange = (errorMessage) => {
+const tabChange = (errorMessage, flowSelected) => {
+  ingressFlowNameSelected.value = flowSelected;
   errorMessageSelected.value = errorMessage;
   activeTab.value = 0;
 };
