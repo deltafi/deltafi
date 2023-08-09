@@ -45,6 +45,7 @@ public abstract class LoadActionTest extends ActionTest {
     public void assertLoadResult(LoadActionTestCase testCase, LoadResult loadResult) {
         LoadResult expectedResult = new LoadResult(context(), List.of(new ActionContent(testCase.getExpectedContent(), context().getContentStorageService())));
         expectedResult.addMetadata(testCase.getResultMetadata());
+        expectedResult.setDeleteMetadataKeys(testCase.getResultDeleteMetadataKeys());
         if(testCase.getOutputDomain()!=null) {
             // Load text string as the file to domain... for each entry in the map
             testCase.getOutputDomain().forEach((key, value) -> {

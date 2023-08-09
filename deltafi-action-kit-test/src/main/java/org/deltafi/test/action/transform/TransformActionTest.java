@@ -52,6 +52,7 @@ public abstract class TransformActionTest extends ActionTest {
         List<byte[]> expectedContent = getExpectedContentOutput(expectedResult, testCase, testCase.getOutputs());
 
         expectedResult.addMetadata(testCase.getResultMetadata());
+        expectedResult.setDeleteMetadataKeys(testCase.getResultDeleteMetadataKeys());
         ActionEvent actualEvent = normalizeEvent(result.toEvent());
         ActionEvent expectedEvent = normalizeEvent(expectedResult.toEvent());
         Assertions.assertEquals(expectedEvent, actualEvent);

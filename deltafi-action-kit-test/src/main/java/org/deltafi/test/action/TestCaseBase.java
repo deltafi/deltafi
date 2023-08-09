@@ -54,6 +54,9 @@ public class TestCaseBase<A extends Action<? extends ActionParameters>> {
     @Builder.Default
     private Map<String, String> resultMetadata = Collections.emptyMap();
 
+    @Builder.Default
+    private List<String> resultDeleteMetadataKeys = Collections.emptyList();
+
     private Pattern regex;
 
     @Builder.Default

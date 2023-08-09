@@ -32,13 +32,13 @@ import org.springframework.stereotype.Component;
 public class DeleteMetadataTransformAction extends TransformAction<DeleteMetadataTransformParameters> {
 
     public DeleteMetadataTransformAction() {
-        super("Removes metadata from the DeltaFile");
+        super("Removes metadata from the DeltaFile. DEPRECATED for the more flexible ModifyMetadataTransformAction");
     }
 
     @Override
     public TransformResultType transform(@NotNull ActionContext context, @NotNull DeleteMetadataTransformParameters params, @NotNull TransformInput transformInput) {
         TransformResult result = new TransformResult(context);
-        result.addContent(transformInput.content(0));
+        result.setContent(transformInput.content());
         result.setDeleteMetadataKeys(params.getDeleteMetadataKeys());
         return result;
     }
