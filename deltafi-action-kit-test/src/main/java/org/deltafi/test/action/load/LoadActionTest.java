@@ -68,7 +68,7 @@ public abstract class LoadActionTest extends ActionTest {
 
         List<byte[]> expectedContent = Collections.emptyList();
         if(!testCase.getOutputs().isEmpty()) {
-            expectedContent = getExpectedContentOutputNormalized(expectedResult, loadResult, testCase, testCase.getOutputs());
+            expectedContent = getExpectedContentOutputNormalized(expectedResult, testCase, testCase.getOutputs());
         }
 
         String expectedEvent = normalizeData(expectedResult.toEvent().toString());
@@ -93,10 +93,6 @@ public abstract class LoadActionTest extends ActionTest {
                             IOContent.builder().name(child.getName()).contentType(child.getContentType()).metadata(child.getMetadata()).build()
                     ), testCase, "split."), child.getMetadata());
         });
-
-        List<ReinjectEvent> ordered = orderListByAnother(reinjectResult.getReinjectEvents(), expectedResult.getReinjectEvents(), ReinjectEvent::getFilename);
-        expectedResult.getReinjectEvents().clear();
-        expectedResult.getReinjectEvents().addAll(ordered);
 
         String expectedEvent = normalizeData(expectedResult.toEvent().toString());
         String outputEvent = normalizeData(reinjectResult.toEvent().toString());

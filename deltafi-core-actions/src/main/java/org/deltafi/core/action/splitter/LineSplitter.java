@@ -98,12 +98,14 @@ public class LineSplitter {
         }
 
         // anything leftover becomes the final chunk
-        if (bytesRead > 0) {
+        if (bytesRead > 0 || (chunks.isEmpty() && header.getSize() > 0)) {
             ActionContent chunk;
             ActionContent subcontent = content.subcontent(offset, content.getSize() - offset);
-            if (params.isIncludeHeaderInAllChunks()) {
+            if (params.isIncludeHeaderInAllChunks() || chunks.isEmpty()) {
                 chunk = header.copy();
-                chunk.append(subcontent);
+                if (subcontent.getSize() > 0) {
+                    chunk.append(subcontent);
+                }
             } else {
                 chunk = subcontent;
             }

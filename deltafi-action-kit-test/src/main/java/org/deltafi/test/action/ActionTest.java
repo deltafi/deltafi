@@ -43,7 +43,6 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
@@ -218,23 +217,11 @@ public abstract class ActionTest {
         return getTestResourceOrDefault(testCaseName, file, () -> new ByteArrayInputStream(new byte[0]));
     }
 
-    protected <R> List<R> orderListByAnother(List<R> orderBy, List<R> toOrder, Function<R, ?> getIdProperty) {
-        return orderBy.stream().map(getIdProperty).map(
-                itemValue -> getObjectByLambda(toOrder, item -> getIdProperty.apply(item).equals(itemValue), () ->
-                Assertions.fail("Unable to find correct item in list to normalize"))).toList();
-    }
-
-    protected <R> R getObjectByLambda(List<R> list, Predicate<R> isCorrectOne, Supplier<R> ifNotFound) {
-        return list.stream().filter(isCorrectOne).findFirst().orElseGet(ifNotFound);
-    }
-
-    protected List<byte[]> getExpectedContentOutputNormalized(ContentResult<?> expectedResult, ContentResult<?> actualResult, TestCaseBase<?> testCase, List<? extends IOContent> outputs) {
+    protected List<byte[]> getExpectedContentOutputNormalized(ContentResult<?> expectedResult, TestCaseBase<?> testCase, List<? extends IOContent> outputs) {
         final List<ActionContent> expectedContent = createContents(testCase, outputs);
+        expectedResult.setContent(expectedContent);
 
-        List<ActionContent> normalizedExpectedContent = orderListByAnother(actualResult.getContent(), expectedContent, ActionContent::getName);
-        expectedResult.setContent(normalizedExpectedContent);
-
-        return normalizedExpectedContent.stream().map(ActionContent::loadBytes).toList();
+        return expectedContent.stream().map(ActionContent::loadBytes).toList();
     }
 
     protected void assertContentIsEqual(List<byte[]> expected, List<byte[]> actual) {

@@ -48,7 +48,7 @@ public abstract class TransformActionTest extends ActionTest {
     private void assertTransformResult(TransformActionTestCase testCase, TransformResult result) {
         TransformResult expectedResult = new TransformResult(context());
 
-        List<byte[]> expectedContent = getExpectedContentOutputNormalized(expectedResult, result, testCase, testCase.getOutputs());
+        List<byte[]> expectedContent = getExpectedContentOutputNormalized(expectedResult, testCase, testCase.getOutputs());
 
         expectedResult.addMetadata(testCase.getResultMetadata());
         String expectedEvent = normalizeData(expectedResult.toEvent().toString());
