@@ -35,8 +35,10 @@ module Deltafi
           DOCKER_PASSWORD = 'password' # FIXME
           BASIC_AUTH = { username: DOCKER_USERNAME, password: DOCKER_PASSWORD }.freeze
 
+          HTTPARTY_PARAMS = { verify: false, basic_auth: BASIC_AUTH }.freeze
+
           def catalog
-            HTTParty.get(CATALOG_URL, basic_auth: BASIC_AUTH).to_s
+            HTTParty.get(CATALOG_URL, HTTPARTY_PARAMS).to_s
           end
 
           def upload(tarball:, image_name:)
@@ -53,13 +55,13 @@ module Deltafi
           end
 
           def list
-            catalog_response = HTTParty.get(CATALOG_URL, basic_auth: BASIC_AUTH)
+            catalog_response = HTTParty.get(CATALOG_URL, HTTPARTY_PARAMS)
             repositories = JSON.parse(catalog_response.to_s, symbolize_names: true)[:repositories]
 
             result = []
 
             repositories.each do |repository|
-              response = HTTParty.get("#{REGISTRY_URL}/#{repository}/tags/list", basic_auth: BASIC_AUTH)
+              response = HTTParty.get("#{REGISTRY_URL}/#{repository}/tags/list", HTTPARTY_PARAMS)
               tags = JSON.parse(response.to_s, symbolize_names: true)[:tags]
               result << { name: repository, tags: tags.sort } if tags.present?
             end
@@ -67,7 +69,7 @@ module Deltafi
           end
 
           def repository_tags(repository_name)
-            response = HTTParty.get("#{REGISTRY_URL}/#{repository_name}/tags/list", basic_auth: BASIC_AUTH)
+            response = HTTParty.get("#{REGISTRY_URL}/#{repository_name}/tags/list", HTTPARTY_PARAMS)
             json = JSON.parse(response.to_s, symbolize_names: true)
             raise "#{json[:errors].first[:message]} - #{json[:errors].first[:detail]}" if json[:errors]
 
@@ -87,8 +89,9 @@ module Deltafi
 
           def delete(image_name:, image_tag:)
             response = HTTParty.get("#{REGISTRY_URL}/#{image_name}/manifests/#{image_tag}",
-                                    headers: { 'Accept' => 'application/vnd.docker.distribution.manifest.v2+json' },
-                                    basic_auth: BASIC_AUTH)
+                                    HTTPARTY_PARAMS.merge(
+                                      { headers: { 'Accept' => 'application/vnd.docker.distribution.manifest.v2+json' } }
+                                    ))
 
             unless response.success?
               puts response
@@ -99,7 +102,7 @@ module Deltafi
             raise "Unable to locate digest for image #{image_name}:#{image_tag} for deletion" unless response&.headers && response.headers['docker-content-digest']
 
             digest = response.headers['docker-content-digest']
-            response = HTTParty.delete("#{REGISTRY_URL}/#{image_name}/manifests/#{digest}", basic_auth: BASIC_AUTH)
+            response = HTTParty.delete("#{REGISTRY_URL}/#{image_name}/manifests/#{digest}", HTTPARTY_PARAMS)
 
             raise "Unable to delete image #{image_name}:#{image_tag} [#{response.code}]: #{response.body}" unless response.success?
 

@@ -14,10 +14,12 @@ Options:
   exit 1
 }
 
-TMPFILE="/tmp/.deltafi-install.$$"
+TMPDIR=$(mktemp -d)
+TMPFILE="$TMPDIR/.deltafi-install.$$"
+
 
 cleanup() {
-  rm -f $TMPFILE
+  rm -rf $TMPDIR
   exit
 }
 
@@ -113,6 +115,11 @@ _k8s_prerequisites() {
   _k8s_add_secret minio-keys rootUser "deltafi" rootPassword "$(_random_password 40)"
   _k8s_add_secret redis-password redis-password "$(_random_password 16)"
   _k8s_add_secret config-repo-secret config-token "$(_random_password 16)"
+  _k8s_add_secret deltafi-docker-registry-secret \
+    "username" "deltafi" \
+    "password" "password" \
+    "htpasswd" 'deltafi:$2y$05$1eNSa6WKdGY7ewxd9.tJPusPaZXJ0xMEO3T/gcqMkaBKzBuyaB0NC' \
+    "haSharedSecret" "password"
 }
 
 _k8s_install() {
@@ -130,12 +137,10 @@ _k8s_install() {
   if [[ -n "${ORIG_CORE_POD}" ]]; then
     _pre_upgrade_tasks
   fi
-
   helm upgrade --install --wait \
     --values $DELTAFICLI_CHART_PATH/values.yaml \
     --namespace $DELTAFICLI_K8S_NAMESPACE $DELTAFICLI_PROJECT_NAME $DELTAFICLI_CHART_PATH \
     --create-namespace --timeout 10m ${ARGS[@]:1}
-
   HELM_RETURN_CODE=$?
   [[ "$HELM_RETURN_CODE" != "0" ]] && exit $HELM_RETURN_CODE
 

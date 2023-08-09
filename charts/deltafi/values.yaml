@@ -388,11 +388,14 @@ docker-registry:
   enabled: false
   image:
     repository: deltafi/registry
-    tag: latest #2.8.2-0
+    tag: 2.8.2-0
   persistence:
     enabled: true
     existingClaim: deltafi-docker-registry
     deleteEnabled: true
+  service:
+    type: NodePort
+    nodePort: 31333
   serviceAccount:
     create: true
   garbageCollect:

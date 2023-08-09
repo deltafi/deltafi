@@ -534,31 +534,6 @@ EOF
   _ok "KinD cluster fully instantiated"
 }
 
-_k8s_add_secret() {
-  local name=$1
-  shift
-  if ! ${KUBECTL} get secret "$name" > /dev/null 2>&1; then
-    cat <<EOF | _conditional "Create secret $name" _annotated_subshell ${KUBECTL} apply -f -
-apiVersion: v1
-kind: Secret
-type: Opaque
-metadata:
-  name: $name
-  namespace: deltafi
-data:
-$(while (( "$#" )); do
-local pass
-pass=$(printf '%s' "$2" | _base64 )
-echo "  $1: $pass"
-shift 2
-done)
-EOF
-    _ok "Created secret $name"
-  else
-    _ok "Secret $name exists"
-  fi
-}
-
 _k8s_add_namespace() {
   local ns=$1
   if ! ${KUBECTL} get namespace "$ns" > /dev/null 2>&1 ; then
@@ -682,10 +657,6 @@ _k8s_init() {
   _k8s_add_pv egress-sink "${PV_STORAGE}" 1000
   _k8s_add_pv auth "${PV_STORAGE}" 1000
   _k8s_add_pv docker-registry "${PV_STORAGE}" 1000
-  _k8s_add_secret "deltafi-docker-registry-secret" \
-    "password" "password" \
-    "haSharedSecret" "password" \
-    "htpasswd" 'deltafi:$2y$05$1eNSa6WKdGY7ewxd9.tJPusPaZXJ0xMEO3T/gcqMkaBKzBuyaB0NC'
 
   _ok "Kubernetes prerequisites"
 }
