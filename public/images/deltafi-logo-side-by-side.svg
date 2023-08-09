@@ -1,150 +1,87 @@
-<svg
-        version="1.0"
-        xmlns="http://www.w3.org/2000/svg"
-        xmlns:xlink="http://www.w3.org/1999/xlink"
-        width="750"
-        height="186"
->
-    <svg
-            version="1.0"
-            xmlns="http://www.w3.org/2000/svg"
-            width="0"
-            height="0"
-            viewBox="0 0 340.000000 250.000000"
-            preserveAspectRatio="xMidYMid meet"
-            color-interpolation-filters="sRGB"
-            xmlns:xlink="http://www.w3.org/1999/xlink"
-    >
-        <defs>
-            <pattern
-                    id="watermark"
-                    patternUnits="userSpaceOnUse"
-                    width="100%"
-                    height="100%"
-            >
-                <image
-                        xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAAGQCAYAAAAUdV17AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyhpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMTM4IDc5LjE1OTgyNCwgMjAxNi8wOS8xNC0wMTowOTowMSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTcgKE1hY2ludG9zaCkiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6RTVGN0VCRjlGMjcwMTFFOUIyNjM4MDRGRkI5QkJENjEiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6RTVGN0VCRkFGMjcwMTFFOUIyNjM4MDRGRkI5QkJENjEiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDpFNUY3RUJGN0YyNzAxMUU5QjI2MzgwNEZGQjlCQkQ2MSIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDpFNUY3RUJGOEYyNzAxMUU5QjI2MzgwNEZGQjlCQkQ2MSIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/Pgp++w8AAAPuSURBVHja7NSxDQAACMMw+v/R5QoGJPuEDEnbAfgghgUYFoBhAYYFYFgAhgUYFoBhARgWYFgAhgVgWIBhARgWgGEBhgVgWACGBRgWgGEBGBZgWACGBWBYgGEBGBaAYQGGBWBYgGEZFmBYAIYFGBaAYQEYFmBYAIYFYFiAYQEYFoBhAYYFYFgAhgUYFoBhARgWYFgAhgVgWIBhARgWgGEBhgVgWACGBRgWgGEBhmVYgGEBGBZgWACGBWBYgGEBGBaAYQGGBWBYAIYFGBaAYQEYFmBYAIYFYFiAYQEYFoBhAYYFYFgAhgUYFoBhARgWYFgAhgUYlgqAYQEYFmBYAIYFYFiAYQEYFoBhAYYFYFgAhgUYFoBhARgWYFgAhgVgWIBhARgWgGEBhgVgWACGBRgWgGEBGBZgWACGBRgWgGEBGBZgWACGBWBYgGEBGBaAYQGGBWBYAIYFGBaAYQEYFmBYAIYFYFiAYQEYFoBhAYYFYFgAhgUYFoBhARgWYFgAhgUYFoBhARgWYFgAhgVgWIBhARgWgGEBhgVgWACGBRgWgGEBGBZgWACGBWBYgGEBGBaAYQGGBWBYAIYFGBaAYQEYFmBYAIYFGBaAYQEYFmBYAIYFYFiAYQEYFoBhAYYFYFgAhgUYFoBhARgWYFgAhgVgWIBhARgWgGEBhgVgWACGBRgWgGEBGBZgWACGBRgWgGEBGBZgWACGBWBYgGEBGBaAYQGGBWBYAIYFGBaAYQEYFmBYAIYFYFiAYQEYFoBhAYYFYFgAhgUYFoBhARgWYFgAhgUYFoBhARgWYFgAhgVgWIBhARgWgGEBhgVgWACGBRgWgGEBGBZgWACGBWBYgGEBGBaAYQGGBWBYAIYFGBaAYQGGZViAYQEYFmBYAIYFYFiAYQEYFoBhAYYFYFgAhgUYFoBhARgWYFgAhgVgWIBhARgWgGEBhgVgWACGBRgWgGEBGBZgWACGBRiWYQGGBWBYgGEBGBaAYQGGBWBYAIYFGBaAYQEYFmBYAIYFYFiAYQEYFoBhAYYFYFgAhgUYFoBhARgWYFgAhgVgWIBhARgWYFiGBRgWgGEBhgVgWACGBRgWgGEBGBZgWACGBWBYgGEBGBaAYQGGBWBYAIYFGBaAYQEYFmBYAIYFYFiAYQEYFoBhAYYFYFiAYakAGBaAYQGGBWBYAIYFGBaAYQEYFmBYAIYFYFiAYQEYFoBhAYYFYFgAhgUYFoBhARgWYFgAhgVgWIBhARgWgGEBhgVgWIBhARgWgGEBhgVgWACGBRgWgGEBGBZgWACGBWBYgGEBGBaAYQGGBWBYAIYFGBaAYQEYFmBYAIYFYFiAYQFcWgEGAJzsrR2jCcEwAAAAAElFTkSuQmCC"
-                        x="0"
-                        y="0"
-                        width="100%"
-                        height="100%"
-                ></image>
-            </pattern>
-        </defs>
-    </svg>
-    <rect
-            x="0"
-            y="0"
-            width="100%"
-            height="100%"
-            fill="#ffffff"
-            fill-opacity="1"
-    ></rect>
-    <svg
-            version="1.0"
-            xmlns="http://www.w3.org/2000/svg"
-            xmlns:xlink="http://www.w3.org/1999/xlink"
-            x="0"
-            y="0"
-            width="800"
-            height="600"
-            viewBox="0 0 340.000000 250.000000"
-            preserveAspectRatio="xMidYMid meet"
-            color-interpolation-filters="sRGB"
-    >
-        <defs>
-            <linearGradient id="92" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#fa71cd"/>
-                <stop offset="100%" stop-color="#9b59b6"/>
-            </linearGradient>
-            <linearGradient id="93" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#f9d423"/>
-                <stop offset="100%" stop-color="#f83600"/>
-            </linearGradient>
-            <linearGradient id="94" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#0064d2"/>
-                <stop offset="100%" stop-color="#1cb0f6"/>
-            </linearGradient>
-            <linearGradient id="95" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#f00978"/>
-                <stop offset="100%" stop-color="#3f51b1"/>
-            </linearGradient>
-            <linearGradient id="96" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#7873f5"/>
-                <stop offset="100%" stop-color="#ec77ab"/>
-            </linearGradient>
-            <linearGradient id="97" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#f9d423"/>
-                <stop offset="100%" stop-color="#e14fad"/>
-            </linearGradient>
-            <linearGradient id="98" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#009efd"/>
-                <stop offset="100%" stop-color="#2af598"/>
-            </linearGradient>
-            <linearGradient id="99" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#ffcc00"/>
-                <stop offset="100%" stop-color="#00b140"/>
-            </linearGradient>
-            <linearGradient id="100" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#d51007"/>
-                <stop offset="100%" stop-color="#ff8177"/>
-            </linearGradient>
-            <linearGradient id="102" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#a2b6df"/>
-                <stop offset="100%" stop-color="#0c3483"/>
-            </linearGradient>
-            <linearGradient id="103" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#7ac5d8"/>
-                <stop offset="100%" stop-color="#eea2a2"/>
-            </linearGradient>
-            <linearGradient id="104" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#00ecbc"/>
-                <stop offset="100%" stop-color="#007adf"/>
-            </linearGradient>
-            <linearGradient id="105" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#b88746"/>
-                <stop offset="100%" stop-color="#fdf5a6"/>
-            </linearGradient>
-        </defs>
-        <g fill="#333" class="icon-text-wrapper icon-svg-group iconsvg"
-           transform="translate(10,10)">
-            <g class="iconsvg-imagesvg" transform="translate(0,0)">
-                <g>
-                    <rect fill="#333" fill-opacity="0" stroke-width="2" x="0" y="0" width="60"
-                          height="53.62745010412663" class="image-rect"/>
-                    <svg x="0" y="0" width="60" height="53.62745010412663" filtersec="colorsb2049362578"
-                         class="image-svg-svg primary" style="overflow: visible;">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 188.1199951171875 168.13999938964844">
-                            <path d="M60.82 168.14H172l16.09-28.82h-111zM168.49 104.49h-32.35l-16.09 28.64h32.18z"
-                                  fill="#205CAE"/>
-                            <path d="M168.49 98.3L113 0H80.62l55.69 98.3z" fill="#205CAE"/>
-                            <path d="M0 136.31l16.09 28.47 55.69-98.3L55.52 38zM55.52 164.78l16.26-28.47-16.26-28.64-16.09 28.64z"
-                                  fill="#205CAE"/>
-                            <path d="M61 34.83l16.09 28.64h32.35L93.18 34.83z" fill="#205CAE"/>
-                            <path d="M188.12 133.13l-14.32-25.28-14.33 25.28zM114.74 130l16.09-28.47-16.09-28.69-16.26 28.64zM60.82 104.49l16.27 28.64h32.35l-16.27-28.64zM77.09 69.66L60.82 98.3h32.35l16.09-28.64zM21.39 168.14h28.82l-14.32-25.46zM75.32 3.18l-14.5 25.46h28.82z"
-                                  fill="#A0A5A6"/>
-                        </svg>
-                    </svg>
-                </g>
-            </g>
-            <g transform="translate(70,7)">
-                <g fill-rule="" stroke="#333" class="tp-name iconsvg-namesvg" transform="translate(0,0)">
-                    <g transform="scale(1)">
-                        <g>
-                            <path d="M32.44-29.22L32.44-9 12.22-9 12.22-29.22 32.44-29.22ZM41.44-6.74L41.44-31.47Q41.44-34.27 39.48-36.25L39.48-36.25Q37.49-38.22 34.7-38.22L34.7-38.22 3.22-38.22 3.22 0 34.7 0Q37.49 0 39.48-1.99L39.48-1.99Q41.44-3.95 41.44-6.74L41.44-6.74ZM81.1-38.22L42.88-38.22 42.88 0 81.1 0 81.1-9 51.88-9 51.88-14.61 81.1-14.61 81.1-23.61 51.88-23.61 51.88-29.22 81.1-29.22 81.1-38.22ZM91.54-38.22L82.54-38.22 82.54 0 117.4 0 117.4-9 91.54-9 91.54-38.22ZM143.64-38.22L105.42-38.22 105.42-29.22 120.03-29.22 120.03 0 129.03 0 129.03-29.22 143.64-29.22 143.64-38.22ZM159.9-38.22L149.51-38.22 131.65 0 141.48 0 154.72-27.66 168.44 0 178.27 0 159.9-38.22ZM217.93-38.22L179.72-38.22 179.72 0 188.72 0 188.72-14.61 217.93-14.61 217.93-23.61 188.72-23.61 188.72-29.22 217.93-29.22 217.93-38.22ZM219.38-38.22L219.38 0 228.38 0 228.38-38.22 219.38-38.22Z"
-                                  transform="translate(-3.2200000286102295, 38.220001220703125)" stroke-width="2.7"
-                                  stroke-linejoin="round" mask="url(#bXV9l6hhKWMCNoeuWYnQd)"/>
-                        </g>
-                    </g>
-                </g>
-            </g>
-        </g>
-        <mask id="bXV9l6hhKWMCNoeuWYnQd">
-            <path d="M32.44-29.22L32.44-9 12.22-9 12.22-29.22 32.44-29.22ZM41.44-6.74L41.44-31.47Q41.44-34.27 39.48-36.25L39.48-36.25Q37.49-38.22 34.7-38.22L34.7-38.22 3.22-38.22 3.22 0 34.7 0Q37.49 0 39.48-1.99L39.48-1.99Q41.44-3.95 41.44-6.74L41.44-6.74ZM81.1-38.22L42.88-38.22 42.88 0 81.1 0 81.1-9 51.88-9 51.88-14.61 81.1-14.61 81.1-23.61 51.88-23.61 51.88-29.22 81.1-29.22 81.1-38.22ZM91.54-38.22L82.54-38.22 82.54 0 117.4 0 117.4-9 91.54-9 91.54-38.22ZM143.64-38.22L105.42-38.22 105.42-29.22 120.03-29.22 120.03 0 129.03 0 129.03-29.22 143.64-29.22 143.64-38.22ZM159.9-38.22L149.51-38.22 131.65 0 141.48 0 154.72-27.66 168.44 0 178.27 0 159.9-38.22ZM217.93-38.22L179.72-38.22 179.72 0 188.72 0 188.72-14.61 217.93-14.61 217.93-23.61 188.72-23.61 188.72-29.22 217.93-29.22 217.93-38.22ZM219.38-38.22L219.38 0 228.38 0 228.38-38.22 219.38-38.22Z"
-                  stroke-width="2.7" stroke-linejoin="round" stroke="#000" fill="#fff"/>
-        </mask>
-        <defs v-gra="od"/>
-    </svg>
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 27.6.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 240.9 63.2" style="enable-background:new 0 0 240.9 63.2;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:#005394;}
+	.st1{fill:#E1DFE0;}
+	.st2{fill:#8A8C8E;}
+	.st3{fill:#9D9EA0;}
+	.st4{fill:#B2B1B3;}
+	.st5{fill:#C8C7C8;}
+	.st6{fill:url(#SVGID_1_);}
+	.st7{fill:none;stroke:#C8C7C8;stroke-width:0.5;stroke-miterlimit:10;}
+	.st8{fill:url(#SVGID_00000139260220526544947630000009268297871556579258_);}
+	.st9{fill:url(#SVGID_00000051385441354051821960000004196499866391589283_);}
+	.st10{fill:#171717;}
+	.st11{fill:#087AC0;}
+	.st12{fill:url(#SVGID_00000052792015435153170090000008509768565397094287_);}
+	.st13{fill:url(#SVGID_00000079456061137991237750000007610325951331864497_);}
+	.st14{fill:url(#SVGID_00000163057377834748865410000010280085835498320572_);}
+	.st15{fill:url(#SVGID_00000003799747599172528190000015475528886615711107_);}
+	.st16{fill:#8EC1D7;}
+	.st17{fill:#BCD7DD;}
+	.st18{fill:url(#SVGID_00000098912394812146383370000016297604780257752759_);}
+	.st19{fill:url(#SVGID_00000173878020230815041430000006805060857001322641_);}
+	.st20{fill:url(#SVGID_00000104686755558011372470000001075408567877289138_);}
+	.st21{fill:url(#SVGID_00000108290094942629703380000003655381043073641148_);}
+	.st22{fill:url(#SVGID_00000171688331100799903380000012101211738829952915_);}
+	.st23{fill:url(#SVGID_00000093135862954872229130000013691790361232155284_);}
+	.st24{fill:#FFFFFF;}
+	.st25{fill:url(#SVGID_00000141421731103018268820000011609786374917714613_);}
+	.st26{fill:url(#SVGID_00000139996183300803893320000008590789063952364440_);}
+	.st27{fill:url(#SVGID_00000012457348433885602580000002207391448931208850_);}
+	.st28{fill:url(#SVGID_00000163793329313119538690000011002999762871893144_);}
+	.st29{fill:url(#SVGID_00000018936704624723335660000014774837547756401801_);}
+	.st30{fill:url(#SVGID_00000008848582979446239140000017594000670558518449_);}
+	.st31{fill:url(#SVGID_00000097476800470161629920000017820406830072644260_);}
+	.st32{fill:url(#SVGID_00000034060996793058380900000002086092464999705766_);}
+	.st33{fill:url(#SVGID_00000022542933306660881190000002444300101409577607_);}
+	.st34{fill:url(#SVGID_00000151514902199940777340000014118643275647123120_);}
+</style>
+<g>
+	<g transform="translate(57.41999840736389,75.5762710571289)">
+		<g transform="translate(82.58000183105469,0)">
+			<g>
+				<radialGradient id="SVGID_1_" cx="-109.2915" cy="-44.576" r="24.2496" gradientUnits="userSpaceOnUse">
+					<stop  offset="0" style="stop-color:#007AC1"/>
+					<stop  offset="1" style="stop-color:#005394"/>
+				</radialGradient>
+				<path class="st6" d="M-118.3-21.7h30.2l4.4-7.8h-30.2L-118.3-21.7z M-89.1-39h-8.8l-4.4,7.8h8.7L-89.1-39z M-89.1-40.7
+					l-15.1-26.7h-8.8l15.1,26.7H-89.1z M-134.9-30.4l4.4,7.7l15.1-26.7l-4.4-7.7L-134.9-30.4z M-119.8-22.6l4.4-7.7l-4.4-7.8
+					l-4.4,7.8L-119.8-22.6z M-118.3-58l4.4,7.8h8.8l-4.4-7.8H-118.3z"/>
+				
+					<radialGradient id="SVGID_00000147181383342535145690000014612238720041530796_" cx="-106.3798" cy="-44.1438" r="22.5441" gradientUnits="userSpaceOnUse">
+					<stop  offset="5.618000e-03" style="stop-color:#BCD7DD"/>
+					<stop  offset="0.2369" style="stop-color:#BED8DE"/>
+					<stop  offset="0.3594" style="stop-color:#C6DCE2"/>
+					<stop  offset="0.4564" style="stop-color:#D3E3E7"/>
+					<stop  offset="0.4719" style="stop-color:#D6E5E9"/>
+					<stop  offset="0.4758" style="stop-color:#D4E4E8"/>
+					<stop  offset="0.5469" style="stop-color:#BAD7E2"/>
+					<stop  offset="0.6249" style="stop-color:#A6CDDD"/>
+					<stop  offset="0.7135" style="stop-color:#98C6D9"/>
+					<stop  offset="0.8211" style="stop-color:#8FC2D7"/>
+					<stop  offset="1" style="stop-color:#8DC1D7"/>
+				</radialGradient>
+				<path style="fill:url(#SVGID_00000147181383342535145690000014612238720041530796_);" d="M-83.7-31.2l-3.9-6.9l-3.9,6.9H-83.7z
+					 M-103.7-32.1l4.4-7.7l-4.4-7.8l-4.4,7.8L-103.7-32.1z M-118.3-39l4.4,7.8h8.8l-4.4-7.8H-118.3z M-113.9-48.5l-4.4,7.8h8.8
+					l4.4-7.8H-113.9z M-129-21.7h7.8l-3.9-6.9L-129-21.7z M-114.4-66.6l-3.9,6.9h7.8L-114.4-66.6z"/>
+			</g>
+		</g>
+	</g>
+	<g>
+		<path class="st10" d="M73.6,23.3h-8.9v15.4h8.9c4.1,0,9-1.4,9-7.9C82.5,25.7,79.6,23.3,73.6,23.3z M66.9,25.3h6.6
+			c4.4,0,6.6,1.8,6.6,5.6c0,3.9-2.2,5.8-6.6,5.8h-6.6V25.3z"/>
+		<polygon class="st10" points="96.8,31.8 104.3,31.8 104.3,29.8 96.8,29.8 96.8,25.3 108.8,25.3 108.8,23.3 94.5,23.3 94.5,38.7 
+			109.7,38.7 109.7,36.7 96.8,36.7 		"/>
+		<polygon class="st10" points="123.4,23.3 121.1,23.3 121.1,38.7 134.7,38.7 134.7,36.7 123.4,36.7 		"/>
+		<polygon class="st10" points="140.8,25.3 147.3,25.3 147.3,38.7 149.6,38.7 149.6,25.3 156.2,25.3 156.2,23.3 140.8,23.3 		"/>
+		<path class="st10" d="M173.2,23.3h-1.6l-8.5,15.4h2.5l2.2-4.1h8.9l2.2,4.1h2.7L173.2,23.3L173.2,23.3z M175.7,32.6h-6.8l3.4-6.3
+			L175.7,32.6z"/>
+		<polygon class="st11" points="192.4,38.7 194.7,38.7 194.7,32.2 202.2,32.2 202.2,30.2 194.7,30.2 194.7,25.3 206.6,25.3 
+			206.6,23.3 192.4,23.3 		"/>
+		<rect x="217.7" y="23.3" class="st11" width="2.3" height="15.4"/>
+	</g>
+</g>
 </svg>
-
-
