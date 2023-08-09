@@ -42,19 +42,11 @@ import java.nio.charset.StandardCharsets;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.regex.Pattern;
 
 @ExtendWith(MockitoExtension.class)
 @Slf4j
 public abstract class ActionTest {
-
-    private static final Map<String, Pattern> NORMALIZED_REPLACEMENTS_MAP = Map.of(
-            "\"stop\":\"stopDateTime\"", Pattern.compile("\"stop\":\"\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(-\\d{2}:\\d{2})?Z?\""),
-            "\"segments\":[]", Pattern.compile("\"segments\":\\[(.*?)\\]")
-    );
-
     protected final String DID = "did";
     protected final String HOSTNAME = "hostname";
 
@@ -80,30 +72,10 @@ public abstract class ActionTest {
                 return new ActionContent(content, contentStorageService);
             }
             catch(Throwable t) {
-                log.error("Error getting content", t);
+                log.error("Error loading content " + ioContent.getName(), t);
                 return null;
             }
         }).toList();
-    }
-
-    protected List<ActionContent> createContents(TestCaseBase<?> testCase, List<? extends IOContent> outputs) {
-        return outputs.stream().map(convertOutputToContent(testCase))
-                .toList();
-    }
-
-    protected Function<IOContent, ActionContent> convertOutputToContent(TestCaseBase<?> testCase) {
-        return (output) -> {
-            try {
-                byte[] bytes = getTestResourceOrEmpty(testCase.getTestName(), output.getName()).readAllBytes();
-                String name = output.getName().startsWith("output.") ? output.getName().substring(7) : output.getName();
-                Content content = contentStorageService.save(DID, bytes, name, output.getContentType());
-                return new ActionContent(content, contentStorageService);
-            }
-            catch (Throwable t) {
-                log.error("Error converting output to content", t);
-                return null;
-            }
-        };
     }
 
     /**
@@ -205,20 +177,31 @@ public abstract class ActionTest {
         return expectedResultType.cast(result);
     }
 
-    protected String normalizeData(String input) {
-        return NORMALIZED_REPLACEMENTS_MAP.entrySet().stream().reduce(input, this::applyPattern, (u1, u2) -> u2);
+    protected ActionEvent normalizeEvent(ActionEvent actionEvent) {
+        actionEvent.setStop(OffsetDateTime.MAX);
+        if (actionEvent.getTransform() != null) {
+            actionEvent.getTransform().getContent().forEach(this::normalizeContent);
+        } else if (actionEvent.getLoad() != null) {
+            actionEvent.getLoad().getContent().forEach(this::normalizeContent);
+        } else if (actionEvent.getFormat() != null) {
+            normalizeContent(actionEvent.getFormat().getContent());
+        } else if (actionEvent.getFormatMany() != null) {
+            actionEvent.getFormatMany().forEach(child -> normalizeContent(child.getContent()));
+        } else if (actionEvent.getLoadMany() != null) {
+            actionEvent.getLoadMany().forEach(child -> child.getContent().forEach(this::normalizeContent));
+        } else if (actionEvent.getReinject() != null) {
+            actionEvent.getReinject().forEach(child -> child.getContent().forEach(this::normalizeContent));
+        }
+
+        return actionEvent;
     }
 
-    private String applyPattern(String input, Map.Entry<String, Pattern> entry) {
-        return entry.getValue().matcher(input).replaceAll(entry.getKey());
+    protected void normalizeContent(Content content) {
+        content.setSegments(List.of());
     }
 
-    protected InputStream getTestResourceOrEmpty(String testCaseName, String file) {
-        return getTestResourceOrDefault(testCaseName, file, () -> new ByteArrayInputStream(new byte[0]));
-    }
-
-    protected List<byte[]> getExpectedContentOutputNormalized(ContentResult<?> expectedResult, TestCaseBase<?> testCase, List<? extends IOContent> outputs) {
-        final List<ActionContent> expectedContent = createContents(testCase, outputs);
+    protected List<byte[]> getExpectedContentOutput(ContentResult<?> expectedResult, TestCaseBase<?> testCase, List<? extends IOContent> outputs) {
+        final List<ActionContent> expectedContent = getContents(outputs, testCase, "output.");
         expectedResult.setContent(expectedContent);
 
         return expectedContent.stream().map(ActionContent::loadBytes).toList();

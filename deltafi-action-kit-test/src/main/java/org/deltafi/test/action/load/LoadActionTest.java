@@ -68,11 +68,11 @@ public abstract class LoadActionTest extends ActionTest {
 
         List<byte[]> expectedContent = Collections.emptyList();
         if(!testCase.getOutputs().isEmpty()) {
-            expectedContent = getExpectedContentOutputNormalized(expectedResult, testCase, testCase.getOutputs());
+            expectedContent = getExpectedContentOutput(expectedResult, testCase, testCase.getOutputs());
         }
 
-        String expectedEvent = normalizeData(expectedResult.toEvent().toString());
-        String outputEvent = normalizeData(loadResult.toEvent().toString());
+        ActionEvent expectedEvent = normalizeEvent(expectedResult.toEvent());
+        ActionEvent outputEvent = normalizeEvent(loadResult.toEvent());
         Assertions.assertEquals(expectedEvent, outputEvent);
 
         // TODO Check various ways to check contents
@@ -94,8 +94,8 @@ public abstract class LoadActionTest extends ActionTest {
                     ), testCase, "split."), child.getMetadata());
         });
 
-        String expectedEvent = normalizeData(expectedResult.toEvent().toString());
-        String outputEvent = normalizeData(reinjectResult.toEvent().toString());
+        ActionEvent expectedEvent = normalizeEvent(expectedResult.toEvent());
+        ActionEvent outputEvent = normalizeEvent(reinjectResult.toEvent());
         Assertions.assertEquals(expectedEvent, outputEvent);
     }
 
