@@ -17,6 +17,10 @@
  */
 package org.deltafi.common.types;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -48,6 +52,10 @@ public class ActionEvent {
   private List<ReinjectEvent> reinject;
   private List<Metric> metrics;
 
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+          .registerModule(new JavaTimeModule())
+          .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
   public String validate() {
     if (StringUtils.isEmpty(did)) {
       return "Missing did";
@@ -78,5 +86,14 @@ public class ActionEvent {
       case VALIDATE, EGRESS -> true;
       default -> false;
     };
+  }
+
+  @Override
+  public String toString() {
+    try {
+      return OBJECT_MAPPER.writeValueAsString(this);
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

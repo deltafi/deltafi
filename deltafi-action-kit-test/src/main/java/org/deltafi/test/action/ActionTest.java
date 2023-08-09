@@ -52,10 +52,9 @@ import java.util.regex.Pattern;
 public abstract class ActionTest {
 
     private static final Map<String, Pattern> NORMALIZED_REPLACEMENTS_MAP = Map.of(
-            "stop=stopDateTime", Pattern.compile("stop=\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(-\\d{2}:\\d{2})?"),
-            "segments=[]", Pattern.compile("segments=\\[(.*?)\\]")
+            "\"stop\":\"stopDateTime\"", Pattern.compile("\"stop\":\"\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(-\\d{2}:\\d{2})?Z?\""),
+            "\"segments\":[]", Pattern.compile("\"segments\":\\[(.*?)\\]")
     );
-
 
     protected final String DID = "did";
     protected final String HOSTNAME = "hostname";
@@ -82,7 +81,7 @@ public abstract class ActionTest {
                 return new ActionContent(content, contentStorageService);
             }
             catch(Throwable t) {
-                t.printStackTrace();
+                log.error("Error getting content", t);
                 return null;
             }
         }).toList();
@@ -101,8 +100,8 @@ public abstract class ActionTest {
                 Content content = contentStorageService.save(DID, bytes, name, output.getContentType());
                 return new ActionContent(content, contentStorageService);
             }
-            catch(Throwable t) {
-                t.printStackTrace();
+            catch (Throwable t) {
+                log.error("Error converting output to content", t);
                 return null;
             }
         };
