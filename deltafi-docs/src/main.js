@@ -19,13 +19,16 @@ import Docute from 'docute';
 
 new Docute({
   target: '#docs',
-  title: 'DeltaFi Documentation',
+  title: '',
   highlight: ['java', 'yaml'],
   sourcePath: 'docs',
   detectSystemDarkTheme: true,
   darkThemeToggler: true,
+  headerBackground: '#2f3136',
+  headerTextColor: '#ffffffe0',
+  headerHeight: '66px',
   cssVariables(theme) {
-    return theme === 'dark' ? { accentColor: 'rgb(98,135,239)' } : { accentColor: 'rgb(57,105,228)'}
+    return theme === 'dark' ? { headerHeight: '66px', accentColor: 'rgb(12,123,192)', logo: 'url(\'./logo-dark.png\')' } : { headerHeight: '66px', accentColor: 'rgb(12,123,192)', logo: 'url(\'./logo.png\')' }
   },
   nav: [
     {
