@@ -36,13 +36,11 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.function.Supplier;
 
 @ExtendWith(MockitoExtension.class)
 @Slf4j
@@ -64,9 +62,7 @@ public abstract class ActionTest {
     protected List<ActionContent> getContents(List<? extends IOContent> contents, TestCaseBase<?> testCase, String stripIfStartsWith) {
         return contents.stream().map(ioContent -> {
             try {
-                byte[] bytes = getTestResourceOrDefault(testCase.getTestName(), ioContent.getName(),
-                        () -> new ByteArrayInputStream(ioContent.getName().getBytes(StandardCharsets.UTF_8)))
-                        .readAllBytes();
+                byte[] bytes = ioContent.getContent() == null ? getTestResource(testCase.getTestName(), ioContent.getName()) : ioContent.getContent();
                 String name = ioContent.getName().startsWith(stripIfStartsWith) ? ioContent.getName().substring(stripIfStartsWith.length()) : ioContent.getName();
                 Content content = contentStorageService.save(DID, bytes, name, ioContent.getContentType());
                 return new ActionContent(content, contentStorageService);
@@ -84,16 +80,18 @@ public abstract class ActionTest {
      *
      * @param testCaseName name of the test case
      * @param file name of file to be used as test data
-     * @param supplier supplier input stream to be used for test data
      *
-     * @return test data input stream
+     * @return test data byte array
      */
-    protected InputStream getTestResourceOrDefault(String testCaseName, String file, Supplier<InputStream> supplier) {
-        try(InputStream ret = getClass().getClassLoader().getResourceAsStream(getClass().getSimpleName() + "/" + testCaseName + "/" + file)) {
-            return ret==null ? supplier.get() : new ByteArrayInputStream(ret.readAllBytes());
-        }
-        catch(Throwable t) {
-            return supplier.get();
+    protected byte[] getTestResource(String testCaseName, String file) {
+        String filename = getClass().getSimpleName() + "/" + (testCaseName == null ? "" : testCaseName + "/") + file;
+        try (InputStream ret = getClass().getClassLoader().getResourceAsStream(filename)) {
+            if (ret == null) {
+                throw new IllegalArgumentException(filename + " not found");
+            }
+            return ret.readAllBytes();
+        } catch (IOException e) {
+            throw new IllegalArgumentException(filename + " not found");
         }
     }
 

@@ -50,7 +50,7 @@ class FilterByFiatTransformActionTest extends TransformActionTest {
         TransformActionTestCase testCase = TransformActionTestCase.builder()
                 .testName("transform")
                 .action(action)
-                .inputs(Collections.singletonList(IOContent.builder().name("content").contentType("application/binary").build()))
+                .inputs(Collections.singletonList(IOContent.builder().name("content").content(new byte[0]).contentType("application/binary").build()))
                 .expectFilter("Filtered by fiat")
                 .build();
         execute(testCase);

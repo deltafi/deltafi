@@ -37,7 +37,7 @@ class ErrorByFiatTransformActionTest extends TransformActionTest {
         TransformActionTestCase testCase = TransformActionTestCase.builder()
                 .testName("transform")
                 .action(action)
-                .inputs(Collections.singletonList(IOContent.builder().name("nonExistent").contentType("application/data").build()))
+                .inputs(Collections.singletonList(IOContent.builder().name("nonExistent").content(new byte[0]).contentType("application/data").build()))
                 .expectError("Errored by fiat")
                 .build();
         execute(testCase);

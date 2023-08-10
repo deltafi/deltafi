@@ -17,12 +17,8 @@
  */
 package org.deltafi.test.action;
 
-import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.SuperBuilder;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Data
 @SuperBuilder
@@ -30,4 +26,7 @@ public class IOContent {
     String name;
     String contentType;
     long offset;
+
+    // if content is set, test data will not be loaded from disk
+    byte[] content;
 }
