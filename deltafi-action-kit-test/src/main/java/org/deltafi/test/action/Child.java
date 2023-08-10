@@ -17,15 +17,20 @@
  */
 package org.deltafi.test.action;
 
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Data
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 public class Child extends IOContent {
-
     String flow;
 
+    @Builder.Default
+    Map<String, String> metadata = new HashMap<>();
 }

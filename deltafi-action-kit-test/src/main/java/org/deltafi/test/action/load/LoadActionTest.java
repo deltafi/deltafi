@@ -90,7 +90,7 @@ public abstract class LoadActionTest extends ActionTest {
             String name = child.getName().startsWith("split.") ? child.getName().substring(6) : child.getName();
             expectedResult.addChild(name, child.getFlow(),
                     getContents(Collections.singletonList(
-                            IOContent.builder().name(child.getName()).contentType(child.getContentType()).metadata(child.getMetadata()).build()
+                            IOContent.builder().name(child.getName()).contentType(child.getContentType()).build()
                     ), testCase, "split."), child.getMetadata());
         });
 

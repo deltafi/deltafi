@@ -37,26 +37,26 @@ public class DecompressionTransformActionTest extends TransformActionTest {
 
     private List<IOContent> getTarResult() {
         return List.of(
-                IOContent.builder().name("thing1.txt").contentType(CONTENT_TYPE).metadata(Map.of("lastModified", convertUTCDateToLocal("Wed Mar 09 22:33:51 UTC 2022"))).build(),
-                IOContent.builder().name("thing2.txt").contentType(CONTENT_TYPE).metadata(Map.of("lastModified", convertUTCDateToLocal("Wed Mar 09 22:33:49 UTC 2022"))).build());
+                IOContent.builder().name("thing1.txt").contentType(CONTENT_TYPE).build(),
+                IOContent.builder().name("thing2.txt").contentType(CONTENT_TYPE).build());
     }
 
     private List<IOContent> getInPlaceTarResult() {
         return List.of(
-                IOContent.builder().name("thing1.txt").contentType(CONTENT_TYPE).offset(512).metadata(Map.of("lastModified", convertUTCDateToLocal("Wed Mar 09 22:33:51 UTC 2022"))).build(),
-                IOContent.builder().name("thing2.txt").contentType(CONTENT_TYPE).offset(1536).metadata(Map.of("lastModified", convertUTCDateToLocal("Wed Mar 09 22:33:49 UTC 2022"))).build());
+                IOContent.builder().name("thing1.txt").contentType(CONTENT_TYPE).offset(512).build(),
+                IOContent.builder().name("thing2.txt").contentType(CONTENT_TYPE).offset(1536).build());
     }
     private List<IOContent> getZipResult() {
         return List.of(
-                IOContent.builder().name("thing1.txt").contentType(CONTENT_TYPE).metadata(Map.of("lastModified", convertUTCDateToLocal("Wed Mar 09 22:37:40 UTC 2022"))).build(),
-                IOContent.builder().name("thing2.txt").contentType(CONTENT_TYPE).metadata(Map.of("lastModified", convertUTCDateToLocal("Wed Mar 09 22:37:45 UTC 2022"))).build()
+                IOContent.builder().name("thing1.txt").contentType(CONTENT_TYPE).build(),
+                IOContent.builder().name("thing2.txt").contentType(CONTENT_TYPE).build()
         );
     }
 
     private List<IOContent> getArResult() {
         return List.of(
-                IOContent.builder().name("thing1.txt").contentType(CONTENT_TYPE).metadata(Map.of("lastModified", convertUTCDateToLocal("Fri Apr 01 20:10:09 UTC 2022"))).build(),
-                IOContent.builder().name("thing2.txt").contentType(CONTENT_TYPE).metadata(Map.of("lastModified", convertUTCDateToLocal("Wed Mar 09 22:33:49 UTC 2022"))).build()
+                IOContent.builder().name("thing1.txt").contentType(CONTENT_TYPE).build(),
+                IOContent.builder().name("thing2.txt").contentType(CONTENT_TYPE).build()
         );
     }
 
@@ -322,12 +322,12 @@ public class DecompressionTransformActionTest extends TransformActionTest {
                 .inputs(Collections.singletonList(IOContent.builder().name("foobar.tar").contentType(CONTENT_TYPE).build()))
                 .resultMetadata(Map.of("decompressionType", "tar"))
                 .expectTransformResult(Arrays.asList(
-                        IOContent.builder().name("bar/2/baz").offset(2560).contentType(CONTENT_TYPE).metadata(Map.of("lastModified", convertUTCDateToLocal("Fri Apr 01 16:21:41 UTC 2022"))).build(),
-                        IOContent.builder().name("bar/3/baz").offset(3584).contentType(CONTENT_TYPE).metadata(Map.of("lastModified", convertUTCDateToLocal("Fri Apr 01 16:21:41 UTC 2022"))).build(),
-                        IOContent.builder().name("bar/1/baz").offset(4608).contentType(CONTENT_TYPE).metadata(Map.of("lastModified", convertUTCDateToLocal("Fri Apr 01 16:21:41 UTC 2022"))).build(),
-                        IOContent.builder().name("foo/2/baz").offset(7680).contentType(CONTENT_TYPE).metadata(Map.of("lastModified", convertUTCDateToLocal("Fri Apr 01 16:21:41 UTC 2022"))).build(),
-                        IOContent.builder().name("foo/3/baz").offset(8704).contentType(CONTENT_TYPE).metadata(Map.of("lastModified", convertUTCDateToLocal("Fri Apr 01 16:21:41 UTC 2022"))).build(),
-                        IOContent.builder().name("foo/1/baz").offset(9728).contentType(CONTENT_TYPE).metadata(Map.of("lastModified", convertUTCDateToLocal("Fri Apr 01 16:21:41 UTC 2022"))).build()
+                        IOContent.builder().name("bar/2/baz").offset(2560).contentType(CONTENT_TYPE).build(),
+                        IOContent.builder().name("bar/3/baz").offset(3584).contentType(CONTENT_TYPE).build(),
+                        IOContent.builder().name("bar/1/baz").offset(4608).contentType(CONTENT_TYPE).build(),
+                        IOContent.builder().name("foo/2/baz").offset(7680).contentType(CONTENT_TYPE).build(),
+                        IOContent.builder().name("foo/3/baz").offset(8704).contentType(CONTENT_TYPE).build(),
+                        IOContent.builder().name("foo/1/baz").offset(9728).contentType(CONTENT_TYPE).build()
                 ))
                 .build());
     }
@@ -341,12 +341,12 @@ public class DecompressionTransformActionTest extends TransformActionTest {
                 .inputs(Collections.singletonList(IOContent.builder().name("foobar.zip").contentType(CONTENT_TYPE).build()))
                 .resultMetadata(Map.of("decompressionType", "zip"))
                 .expectTransformResult(Arrays.asList(
-                        IOContent.builder().name("bar/1/baz").contentType(CONTENT_TYPE).metadata(Map.of("lastModified", convertUTCDateToLocal("Fri Apr 01 16:21:41 UTC 2022"))).build(),
-                        IOContent.builder().name("bar/3/baz").contentType(CONTENT_TYPE).metadata(Map.of("lastModified", convertUTCDateToLocal("Fri Apr 01 16:21:41 UTC 2022"))).build(),
-                        IOContent.builder().name("bar/2/baz").contentType(CONTENT_TYPE).metadata(Map.of("lastModified", convertUTCDateToLocal("Fri Apr 01 16:21:41 UTC 2022"))).build(),
-                        IOContent.builder().name("foo/1/baz").contentType(CONTENT_TYPE).metadata(Map.of("lastModified", convertUTCDateToLocal("Fri Apr 01 16:21:41 UTC 2022"))).build(),
-                        IOContent.builder().name("foo/3/baz").contentType(CONTENT_TYPE).metadata(Map.of("lastModified", convertUTCDateToLocal("Fri Apr 01 16:21:41 UTC 2022"))).build(),
-                        IOContent.builder().name("foo/2/baz").contentType(CONTENT_TYPE).metadata(Map.of("lastModified", convertUTCDateToLocal("Fri Apr 01 16:21:41 UTC 2022"))).build()
+                        IOContent.builder().name("bar/1/baz").contentType(CONTENT_TYPE).build(),
+                        IOContent.builder().name("bar/3/baz").contentType(CONTENT_TYPE).build(),
+                        IOContent.builder().name("bar/2/baz").contentType(CONTENT_TYPE).build(),
+                        IOContent.builder().name("foo/1/baz").contentType(CONTENT_TYPE).build(),
+                        IOContent.builder().name("foo/3/baz").contentType(CONTENT_TYPE).build(),
+                        IOContent.builder().name("foo/2/baz").contentType(CONTENT_TYPE).build()
                 ))
                 .build());
     }
@@ -360,12 +360,12 @@ public class DecompressionTransformActionTest extends TransformActionTest {
                 .inputs(Collections.singletonList(IOContent.builder().name("foobar.zip").contentType(CONTENT_TYPE).build()))
                 .resultMetadata(Map.of("decompressionType", "zip"))
                 .expectTransformResult(Arrays.asList(
-                        IOContent.builder().name("bar/1/baz").contentType(CONTENT_TYPE).metadata(Map.of("lastModified", convertUTCDateToLocal("Fri Apr 01 16:21:41 UTC 2022"))).build(),
-                        IOContent.builder().name("bar/3/baz").contentType(CONTENT_TYPE).metadata(Map.of("lastModified", convertUTCDateToLocal("Fri Apr 01 16:21:41 UTC 2022"))).build(),
-                        IOContent.builder().name("bar/2/baz").contentType(CONTENT_TYPE).metadata(Map.of("lastModified", convertUTCDateToLocal("Fri Apr 01 16:21:41 UTC 2022"))).build(),
-                        IOContent.builder().name("foo/1/baz").contentType(CONTENT_TYPE).metadata(Map.of("lastModified", convertUTCDateToLocal("Fri Apr 01 16:21:41 UTC 2022"))).build(),
-                        IOContent.builder().name("foo/3/baz").contentType(CONTENT_TYPE).metadata(Map.of("lastModified", convertUTCDateToLocal("Fri Apr 01 16:21:41 UTC 2022"))).build(),
-                        IOContent.builder().name("foo/2/baz").contentType(CONTENT_TYPE).metadata(Map.of("lastModified", convertUTCDateToLocal("Fri Apr 01 16:21:41 UTC 2022"))).build()
+                        IOContent.builder().name("bar/1/baz").contentType(CONTENT_TYPE).build(),
+                        IOContent.builder().name("bar/3/baz").contentType(CONTENT_TYPE).build(),
+                        IOContent.builder().name("bar/2/baz").contentType(CONTENT_TYPE).build(),
+                        IOContent.builder().name("foo/1/baz").contentType(CONTENT_TYPE).build(),
+                        IOContent.builder().name("foo/3/baz").contentType(CONTENT_TYPE).build(),
+                        IOContent.builder().name("foo/2/baz").contentType(CONTENT_TYPE).build()
                         ))
                 .build());
     }

@@ -27,12 +27,7 @@ import java.util.Map;
 @Data
 @SuperBuilder
 public class IOContent {
-
     String name;
     String contentType;
     long offset;
-
-    @Builder.Default
-    Map<String, String> metadata = new HashMap<>();
-
 }

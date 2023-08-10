@@ -71,7 +71,7 @@ public class FormatActionTest extends ActionTest {
     public void assertFormatResult(FormatActionTestCase testCase, FormatResult result) {
         IOContent formatOutput = testCase.getOutputs().get(0);
 
-        Assertions.assertEquals(formatOutput.getMetadata(), result.getMetadata());
+        Assertions.assertEquals(testCase.getResultMetadata(), result.getMetadata());
         Assertions.assertEquals(formatOutput.getContentType(), result.getContent().getMediaType());
         Assertions.assertEquals(formatOutput.getName(), result.getContent().getName());
 
