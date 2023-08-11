@@ -1,0 +1,13 @@
+{
+  "name": "detect-media-type",
+  "type": "TRANSFORM",
+  "description": "Detect content mediaTypes, then run to ground",
+  "transformActions": [{
+    "name": "DetectMediaTypeTransformAction",
+    "type": "org.deltafi.core.action.DetectMediaTypeTransformAction"
+  }],
+  "egressAction": {
+    "name": "RunToGround",
+    "type": "org.deltafi.core.action.FilterEgressAction"
+  }
+}
