@@ -37,16 +37,25 @@
         </DataTable>
       </CollapsiblePanel>
     </div>
+    <teleport v-if="isMounted" to="#dialogTemplate">
+      <div class="p-dialog-footer">
+        <Button v-tooltip.bottom="'Download Metadata To File'" label="Download Metadata" icon="fas fa-download fa-fw" class="p-button-md p-button-secondary p-button-outlined mx-1" @click="onExportMetadata" />
+      </div>
+    </teleport>
   </div>
 </template>
 
 <script setup>
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import { ref, defineProps, defineExpose } from "vue";
+import { useMounted } from "@vueuse/core";
 
+import Button from "primevue/button";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import _ from "lodash";
+
+const isMounted = ref(useMounted());
 
 const props = defineProps({
   metadata: {
@@ -58,7 +67,38 @@ const props = defineProps({
     required: false,
     default: null,
   },
+  flowName: {
+    type: String || null,
+    required: false,
+    default: null,
+  },
 });
+
+const onExportMetadata = () => {
+  let formattedMetadata = {};
+  if (!_.isEmpty(props.flowName)) {
+    formattedMetadata["flow"] = props.flowName;
+  }
+
+  // Combine objects of Key Name and Value Name into a key value pair
+  let combineKeyValue = props.metadata["All Metadata"].reduce((r, { key, value }) => ((r[key] = value), r), {});
+  formattedMetadata["metadata"] = combineKeyValue;
+
+  exportMetadataFile(formattedMetadata);
+};
+
+const exportMetadataFile = (formattedMetadata) => {
+  let link = document.createElement("a");
+  let downloadFileName = "metadata_export_" + new Date(Date.now()).toLocaleDateString();
+  link.download = downloadFileName.toLowerCase();
+  let blob = new Blob([JSON.stringify(formattedMetadata, null, 2)], {
+    type: "application/json",
+  });
+  link.href = URL.createObjectURL(blob);
+  link.click();
+  URL.revokeObjectURL(link.href);
+  link.remove();
+};
 
 const dialogVisible = ref(false);
 

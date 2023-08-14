@@ -83,7 +83,7 @@
     <ConfirmDialog />
     <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="[did]" @acknowledged="onAcknowledged" />
     <MetadataDialog ref="metadataDialog" :did="[did]" @update="loadDeltaFileData" />
-    <DialogTemplate component-name="MetadataViewer" header="Metadata" :metadata="{ ['All Metadata']: allMetadata }" :deleted-metadata="deletedMetadata">
+    <DialogTemplate component-name="MetadataViewer" header="Metadata" :flow-name="deltaFile.sourceInfo?.flow" :metadata="{ ['All Metadata']: allMetadata }" :deleted-metadata="deletedMetadata">
       <span id="cumulativeMetadataDialog" />
     </DialogTemplate>
     <AnnotateDialog ref="annotateDialog" :dids="[did]" @refresh-page="loadDeltaFileData" />
