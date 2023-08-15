@@ -85,6 +85,11 @@ public class DeltaFileConverter implements AfterConvertCallback<DeltaFile> {
             updateToV6(deltaFile, document);
         }
 
+        // Version 7 - separate flow from action name
+        if (deltaFile.getSchemaVersion() < 7) {
+            updateToV7(deltaFile);
+        }
+
         return deltaFile;
     }
 
@@ -273,6 +278,15 @@ public class DeltaFileConverter implements AfterConvertCallback<DeltaFile> {
                             .value(domain.getString("value"))
                             .build());
                 }
+            }
+        }
+    }
+
+    private void updateToV7(DeltaFile deltaFile) {
+        for (Action action : deltaFile.getActions()) {
+            int dotIndex = action.getName().indexOf('.');
+            if (dotIndex != -1) {
+                action.setName(action.getName().substring(dotIndex + 1));
             }
         }
     }

@@ -125,7 +125,7 @@ public class ResumePolicyService implements Snapshotter {
      * @return An Optional of the delay details for the next execution
      */
     public Optional<ResumeDetails> getAutoResumeDelay(DeltaFile deltaFile, ActionEvent event, String actionType) {
-        Optional<Action> action = deltaFile.actionNamed(event.getAction());
+        Optional<Action> action = deltaFile.actionNamed(event.getFlow(), event.getAction());
         if (action.isPresent()) {
             Optional<ResumePolicy> policy = find(
                     action.get().getAttempt(),

@@ -58,7 +58,7 @@ class FlowPlanPropertyHelperTest {
         String toResolve = "${value}";
         Variable variable = Variable.builder().name("value").value(null).defaultValue(null).required(true).dataType(VariableDataType.LIST).build();
 
-        FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(List.of(variable), "action");
+        FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(List.of(variable));
         Object result = flowPlanPropertyHelper.resolveObject(toResolve, "");
 
         // when the list is required the null value will cause an error to be tracked in the helper and return the original unresolved value
@@ -71,7 +71,7 @@ class FlowPlanPropertyHelperTest {
         String toResolve = "${value}";
         Variable variable = Variable.builder().name("value").value(null).defaultValue(null).required(false).dataType(VariableDataType.LIST).build();
 
-        FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(List.of(variable), "action");
+        FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(List.of(variable));
         Object result = flowPlanPropertyHelper.resolveObject(toResolve, "");
 
         // when the list is optional the null value will be returned and no errors will be added
@@ -120,7 +120,7 @@ class FlowPlanPropertyHelperTest {
         String toResolve = "${value}";
         Variable variable = Variable.builder().name("value").value(null).defaultValue(null).required(true).dataType(VariableDataType.MAP).build();
 
-        FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(List.of(variable), "action");
+        FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(List.of(variable));
         Object result = flowPlanPropertyHelper.resolveObject(toResolve, "");
 
         // when the map is required the null value will cause an error to be tracked in the helper and return the original unresolved value
@@ -133,7 +133,7 @@ class FlowPlanPropertyHelperTest {
         String toResolve = "${value}";
         Variable variable = Variable.builder().name("value").value(null).defaultValue(null).required(false).dataType(VariableDataType.MAP).build();
 
-        FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(List.of(variable), "action");
+        FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(List.of(variable));
         Object result = flowPlanPropertyHelper.resolveObject(toResolve, "");
 
         // when the map is optional the null value will be returned and no errors will be added
@@ -182,7 +182,7 @@ class FlowPlanPropertyHelperTest {
         listToProcess.add("${unsetOptional}");
         listToProcess.add("${expandMe}");
 
-        FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(List.of(setValue, optionalValue, expandMe), "action");
+        FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(List.of(setValue, optionalValue, expandMe));
         Object result = flowPlanPropertyHelper.replaceListPlaceholders(listToProcess, "");
 
         assertThat(result).isInstanceOf(List.class);
@@ -219,7 +219,7 @@ class FlowPlanPropertyHelperTest {
         mapToProcess.put("pruneOptional", "${unsetOptional}");
         mapToProcess.put("expanded", "${expandMe}");
 
-        FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(List.of(setValue, optionalValue, expandMe), "action");
+        FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(List.of(setValue, optionalValue, expandMe));
         Object result = flowPlanPropertyHelper.replaceMapPlaceholders(mapToProcess, "");
 
         assertThat(result).isInstanceOf(Map.class);
@@ -241,7 +241,7 @@ class FlowPlanPropertyHelperTest {
 
         Map<String, Object> parameters = Util.readResource("config-test/complex-parameter-values.json", Map.class);
 
-        FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(variables(), "action");
+        FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(variables());
         Map<String, Object> mappedParameters = flowPlanPropertyHelper.replaceMapPlaceholders(parameters, "");
 
         ActionConfiguration actionConfiguration = new EgressActionConfiguration(null, null);
@@ -258,7 +258,7 @@ class FlowPlanPropertyHelperTest {
         Variable masked = Util.buildVariable("masked", "maskedValue", null);
         masked.setMasked(true);
         List<Variable> variables = List.of(notMasked, masked);
-        FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(variables, "action");
+        FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(variables);
         ActionConfiguration toPopulate = new LoadActionConfiguration("", ActionType.LOAD.name());
         ActionConfiguration template = new LoadActionConfiguration("Loader", ActionType.LOAD.name());
         template.setParameters(Map.of("notMasked", "${notMasked}", "masked", "${masked}"));
@@ -269,7 +269,7 @@ class FlowPlanPropertyHelperTest {
     }
 
     Object executeResolvePrimitive(Object object, List<Variable> variables) {
-        FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(variables, "action");
+        FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(variables);
 
         return flowPlanPropertyHelper.resolveObject(object, "");
     }

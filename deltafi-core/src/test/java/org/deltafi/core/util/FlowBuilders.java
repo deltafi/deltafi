@@ -30,9 +30,9 @@ import static org.deltafi.core.util.Constants.*;
 
 public class FlowBuilders {
     public static IngressFlow buildIngressFlow(FlowState flowState) {
-        LoadActionConfiguration lc = new LoadActionConfiguration("sampleIngress.SampleLoadAction", "type");
-        TransformActionConfiguration tc = new TransformActionConfiguration("sampleIngress.Utf8TransformAction", "type");
-        TransformActionConfiguration tc2 = new TransformActionConfiguration("sampleIngress.SampleTransformAction", "type");
+        LoadActionConfiguration lc = new LoadActionConfiguration("SampleLoadAction", "type");
+        TransformActionConfiguration tc = new TransformActionConfiguration("Utf8TransformAction", "type");
+        TransformActionConfiguration tc2 = new TransformActionConfiguration("SampleTransformAction", "type");
 
         return buildFlow(INGRESS_FLOW_NAME, lc, List.of(tc, tc2), flowState, false);
     }
@@ -52,10 +52,10 @@ public class FlowBuilders {
     }
 
     public static EgressFlow buildEgressFlow(FlowState flowState) {
-        FormatActionConfiguration sampleFormat = new FormatActionConfiguration("sampleEgress.SampleFormatAction", "type", List.of("sampleDomain"));
+        FormatActionConfiguration sampleFormat = new FormatActionConfiguration("SampleFormatAction", "type", List.of("sampleDomain"));
         sampleFormat.setRequiresEnrichments(List.of("sampleEnrichment"));
 
-        EgressActionConfiguration sampleEgress = new EgressActionConfiguration("sampleEgress.SampleEgressAction", "type");
+        EgressActionConfiguration sampleEgress = new EgressActionConfiguration("SampleEgressAction", "type");
 
         return buildFlow(EGRESS_FLOW_NAME, sampleFormat, sampleEgress, flowState, false);
     }
@@ -64,9 +64,9 @@ public class FlowBuilders {
         EnrichFlow enrichFlow = new EnrichFlow();
         enrichFlow.setName("sampleEnrich");
 
-        DomainActionConfiguration sampleDomain = new DomainActionConfiguration("sampleEnrich.SampleDomainAction", "type", List.of("sampleDomain"));
+        DomainActionConfiguration sampleDomain = new DomainActionConfiguration("SampleDomainAction", "type", List.of("sampleDomain"));
 
-        EnrichActionConfiguration sampleEnrich = new EnrichActionConfiguration("sampleEnrich.SampleEnrichAction", "type", List.of("sampleDomain"));
+        EnrichActionConfiguration sampleEnrich = new EnrichActionConfiguration("SampleEnrichAction", "type", List.of("sampleDomain"));
         sampleEnrich.setRequiresMetadataKeyValues(List.of(new KeyValue("loadSampleType", "load-sample-type")));
 
         enrichFlow.setDomainActions(List.of(sampleDomain));

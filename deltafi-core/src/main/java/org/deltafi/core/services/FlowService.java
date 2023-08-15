@@ -18,35 +18,27 @@
 package org.deltafi.core.services;
 
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.common.types.Variable;
-import org.deltafi.common.types.ActionConfiguration;
-import org.deltafi.core.types.ConfigType;
-import org.deltafi.common.types.DeltaFiConfiguration;
-import org.deltafi.core.types.Flow;
-import org.deltafi.common.types.FlowPlan;
-import org.deltafi.core.generated.types.*;
+import org.deltafi.common.types.*;
 import org.deltafi.core.converters.FlowPlanConverter;
-import org.deltafi.common.types.Plugin;
+import org.deltafi.core.generated.types.*;
 import org.deltafi.core.plugin.PluginUninstallCheck;
 import org.deltafi.core.repo.FlowRepo;
 import org.deltafi.core.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.snapshot.Snapshotter;
 import org.deltafi.core.snapshot.SystemSnapshot;
+import org.deltafi.core.types.ConfigType;
+import org.deltafi.core.types.Flow;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.validation.FlowValidator;
 
-import jakarta.annotation.PostConstruct;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
 public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow> implements PluginUninstallCheck, Snapshotter {
-
-    private static final char FLOW_DELIMITER = '.';
-
     protected final FlowRepo<FlowT> flowRepo;
     protected final PluginVariableService pluginVariableService;
     private final String flowType;
@@ -387,10 +379,6 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         return flow.findActionConfigByName(actionName);
     }
 
-    public ActionConfiguration findActionConfig(String actionName) {
-        return findActionConfig(getFlowName(actionName), actionName);
-    }
-
     /**
      * Find all flows grouped by their source plugin
      * @return map of plugin coordinates to the list of associated flows
@@ -440,15 +428,6 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
      */
     void copyFlowSpecificFields(FlowT sourceFlow, FlowT targetFlow) {
 
-    }
-
-    static String getFlowName(String actionName) {
-        int delimiterIdx = actionName.indexOf(FLOW_DELIMITER);
-        if (delimiterIdx == -1 || delimiterIdx == actionName.length() - 1) {
-            throw new IllegalArgumentException("Unable to get the flow name from the actionName: " + actionName);
-        }
-
-        return actionName.substring(0, delimiterIdx);
     }
 
     private List<DeltaFiConfiguration> findConfigsWithFilter(ConfigQueryInput configQueryInput) {

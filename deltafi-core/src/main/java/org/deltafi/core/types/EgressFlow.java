@@ -38,6 +38,31 @@ public class EgressFlow extends Flow {
     private EgressActionConfiguration egressAction;
     private Set<String> expectedAnnotations;
 
+    /**
+     * Schema versions:
+     * 0 - original
+     * 1 - skipped
+     * 2 - separate flow and action name
+     */
+    public static final int CURRENT_SCHEMA_VERSION = 2;
+    private int schemaVersion;
+
+    @Override
+    public boolean migrate() {
+        if (schemaVersion < 2) {
+            migrateAction(formatAction);
+            validateActions.forEach(this::migrateAction);
+            migrateAction(egressAction);
+        }
+
+        if (schemaVersion < CURRENT_SCHEMA_VERSION) {
+            schemaVersion = CURRENT_SCHEMA_VERSION;
+            return true;
+        }
+
+        return false;
+    }
+
     @Override
     public ActionConfiguration findActionConfigByName(String actionName) {
         if (nameMatches(formatAction, actionName)) {

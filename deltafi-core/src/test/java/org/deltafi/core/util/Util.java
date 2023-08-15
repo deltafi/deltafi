@@ -95,11 +95,12 @@ public class Util {
         DeltaFile deltaFile = Util.buildDeltaFile(did, flow, DeltaFileStage.ERROR, created, modified, content);
         if (extraAction) {
             if (!errorIsLast) {
-                deltaFile.queueNewAction("ErrorAction", ActionType.UNKNOWN, flow);
-                deltaFile.errorAction("ErrorAction", modified, modified, cause, context);
+                deltaFile.queueNewAction(flow, "ErrorAction", ActionType.UNKNOWN);
+                deltaFile.errorAction(flow, "ErrorAction", modified, modified, cause, context);
             }
-            deltaFile.queueNewAction("OtherAction", ActionType.UNKNOWN, flow);
+            deltaFile.queueNewAction(flow, "OtherAction", ActionType.UNKNOWN);
             deltaFile.completeAction(ActionEvent.builder()
+                    .flow(flow)
                     .action("OtherAction")
                     .start(modified)
                     .stop(modified)
@@ -107,13 +108,13 @@ public class Util {
         }
 
         if (errorIsLast || !extraAction) {
-            deltaFile.queueNewAction("ErrorAction", ActionType.UNKNOWN, flow);
-            deltaFile.errorAction("ErrorAction", modified, modified, cause, context);
+            deltaFile.queueNewAction(flow, "ErrorAction", ActionType.UNKNOWN);
+            deltaFile.errorAction(flow, "ErrorAction", modified, modified, cause, context);
         }
 
         if (extraError != null) {
-            deltaFile.queueNewAction("AnotherErrorAction", ActionType.UNKNOWN, flow);
-            deltaFile.errorAction("AnotherErrorAction", modified, modified, extraError, context);
+            deltaFile.queueNewAction(flow, "AnotherErrorAction", ActionType.UNKNOWN);
+            deltaFile.errorAction(flow, "AnotherErrorAction", modified, modified, extraError, context);
         }
         deltaFile.setModified(modified);
 
@@ -123,6 +124,7 @@ public class Util {
     public static DeltaFile buildDeltaFile(String did, String flow, DeltaFileStage stage, OffsetDateTime created,
                                            OffsetDateTime modified, List<Content> content, Map<String, String> metadata) {
         Action ingressAction = Action.builder()
+                .flow(flow)
                 .name(INGRESS_ACTION)
                 .type(ActionType.INGRESS)
                 .state(ActionState.COMPLETE)
@@ -233,8 +235,8 @@ public class Util {
         return ActionEventQueue.convertEvent(json);
     }
 
-    public static ActionEvent filterActionEvent(String did, String filteredAction) throws IOException {
-        String json = String.format(new String(Objects.requireNonNull(Util.class.getClassLoader().getResourceAsStream("full-flow/filter.json")).readAllBytes()), did, filteredAction);
+    public static ActionEvent filterActionEvent(String did, String flow, String filteredAction) throws IOException {
+        String json = String.format(new String(Objects.requireNonNull(Util.class.getClassLoader().getResourceAsStream("full-flow/filter.json")).readAllBytes()), did, flow, filteredAction);
         return ActionEventQueue.convertEvent(json);
     }
 

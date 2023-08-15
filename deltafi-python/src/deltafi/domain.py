@@ -25,6 +25,7 @@ from deltafi.storage import ContentService, Segment
 
 class Context(NamedTuple):
     did: str
+    action_flow: str
     action_name: str
     source_filename: str
     ingress_flow: str
@@ -37,7 +38,9 @@ class Context(NamedTuple):
     @classmethod
     def create(cls, context: dict, hostname: str, content_service: ContentService, logger: Logger):
         did = context['did']
-        action_name = context['name']
+        action_name_parts = context['name'].split(".")
+        action_flow = action_name_parts[0]
+        action_name = action_name_parts[1]
         if 'sourceFilename' in context:
             source_filename = context['sourceFilename']
         else:
@@ -49,6 +52,7 @@ class Context(NamedTuple):
             egress_flow = None
         system = context['systemName']
         return Context(did=did,
+                       action_flow=action_flow,
                        action_name=action_name,
                        source_filename=source_filename,
                        ingress_flow=ingress_flow,

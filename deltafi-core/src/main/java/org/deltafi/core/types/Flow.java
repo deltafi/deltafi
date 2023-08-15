@@ -50,6 +50,17 @@ public abstract class Flow {
         return false;
     }
 
+    protected void migrateAction(ActionConfiguration actionConfiguration) {
+        if (actionConfiguration == null) {
+            return;
+        }
+
+        int dotIndex = actionConfiguration.getName().indexOf('.');
+        if (dotIndex != -1) {
+            actionConfiguration.setName(actionConfiguration.getName().substring(dotIndex + 1));
+        }
+    }
+
     /**
      * Get all the configurations in this flow, including itself
      * @return all configurations in the flow

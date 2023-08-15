@@ -81,7 +81,7 @@ class EgressFlowPlanConverterTest {
         List<Variable> variables = new ArrayList<>(variables());
         variables.add(Variable.builder().name("flows").value("b, c,  d ").dataType(VariableDataType.LIST).build());
 
-        FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(variables, "plan");
+        FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(variables);
         List<String> input = List.of("${flows}");
         List<String> output = egressFlowPlanConverter.buildFlowList(input, flowPlanPropertyHelper, "plan");
         assertThat(output).isEqualTo(List.of("b", "c", "d"));
@@ -92,7 +92,7 @@ class EgressFlowPlanConverterTest {
         List<Variable> variables = new ArrayList<>(variables());
         variables.add(Variable.builder().name("flows").value("b, c ").dataType(VariableDataType.LIST).build());
 
-        FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(variables, "plan");
+        FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(variables);
         List<String> input = List.of("a", "${flows}", "d");
         List<String> output = egressFlowPlanConverter.buildFlowList(input, flowPlanPropertyHelper, "plan");
         assertThat(output).isEqualTo(List.of("a", "b", "c", "d"));
@@ -100,23 +100,23 @@ class EgressFlowPlanConverterTest {
 
     @Test
     void testBuildFlowList_null() {
-        FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(variables(), "plan");
+        FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(variables());
         List<String> output = egressFlowPlanConverter.buildFlowList(null, flowPlanPropertyHelper, "plan");
         assertThat(output).isNull();
     }
 
     FormatActionConfiguration expectedFormatAction() {
-        FormatActionConfiguration formatActionConfiguration = new FormatActionConfiguration("passthrough.PassthroughFormatAction", "org.deltafi.passthrough.action.RoteFormatAction", List.of("binary"));
+        FormatActionConfiguration formatActionConfiguration = new FormatActionConfiguration("PassthroughFormatAction", "org.deltafi.passthrough.action.RoteFormatAction", List.of("binary"));
         formatActionConfiguration.setRequiresEnrichments(List.of("binary"));
         return formatActionConfiguration;
     }
 
     ValidateActionConfiguration expectedValidateAction() {
-        return new ValidateActionConfiguration("passthrough.PassthroughValidateAction", "org.deltafi.passthrough.action.RubberStampValidateAction");
+        return new ValidateActionConfiguration("PassthroughValidateAction", "org.deltafi.passthrough.action.RubberStampValidateAction");
     }
 
     EgressActionConfiguration expectedEgressAction() {
-        EgressActionConfiguration egressActionConfiguration = new EgressActionConfiguration("passthrough.PassthroughEgressAction", "org.deltafi.core.action.RestPostEgressAction");
+        EgressActionConfiguration egressActionConfiguration = new EgressActionConfiguration("PassthroughEgressAction", "org.deltafi.core.action.RestPostEgressAction");
         egressActionConfiguration.setInternalParameters(Map.of("egressFlow", "egressFlow", "metadataKey", "deltafiMetadata", "url", "http://deltafi-egress-sink-service"));
         return egressActionConfiguration;
     }

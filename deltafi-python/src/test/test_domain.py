@@ -118,6 +118,7 @@ def test_context_json():
         "HOSTNAME", mock_content_service, logger)
 
     assert context.did == TEST_DID
+    assert context.action_flow == "ACTION_FLOW"
     assert context.action_name == "ACTION_NAME_IN_FLOW"
     assert context.source_filename == 'FILENAME'
     assert context.egress_flow == "OUT"
@@ -150,6 +151,8 @@ def test_event():
         "HOSTNAME", mock_content_service, logger)
 
     assert event.context.did == TEST_DID
+    assert event.context.action_flow == "ACTION_FLOW"
+    assert event.context.action_name == "ACTION_NAME_IN_FLOW"
     assert event.context.ingress_flow == "IN"
     assert event.context.content_service == mock_content_service
     assert event.context.logger is None

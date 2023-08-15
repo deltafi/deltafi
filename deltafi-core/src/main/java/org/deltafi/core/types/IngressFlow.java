@@ -37,19 +37,25 @@ public class IngressFlow extends Flow {
     private List<TransformActionConfiguration> transformActions = new ArrayList<>();
     private LoadActionConfiguration loadAction;
     private int maxErrors = -1;
-    private int schemaVersion;
 
     /**
      * Schema versions:
      * 0 - original
      * 1 - change default/unlimited number of maxErrors from 0 to -1
+     * 2 - separate flow and action name
      */
-    public static final int CURRENT_SCHEMA_VERSION = 1;
+    public static final int CURRENT_SCHEMA_VERSION = 2;
+    private int schemaVersion;
 
     @Override
     public boolean migrate() {
         if (schemaVersion < 1 && maxErrors == 0) {
             maxErrors = -1;
+        }
+
+        if (schemaVersion < 2) {
+            transformActions.forEach(this::migrateAction);
+            migrateAction(loadAction);
         }
 
         if (schemaVersion < CURRENT_SCHEMA_VERSION) {

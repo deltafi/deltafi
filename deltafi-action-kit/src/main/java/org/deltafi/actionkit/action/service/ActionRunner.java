@@ -103,6 +103,11 @@ public class ActionRunner {
             while (!Thread.currentThread().isInterrupted()) {
                 log.trace("{} listening", action.getClassCanonicalName());
                 ActionInput actionInput = actionEventQueue.takeAction(action.getClassCanonicalName());
+                // To maintain compatibility with legacy actions, flow and name were combined in the name field of the
+                // ActionContext sent to the action in the ActionInput. Put them in their own fields.
+                String[] actionNameParts = actionInput.getActionContext().getName().split("\\.");
+                actionInput.getActionContext().setFlow(actionNameParts[0]);
+                actionInput.getActionContext().setName(actionNameParts[1]);
                 actionInput.getActionContext().setActionVersion(buildProperties.getVersion());
                 actionInput.getActionContext().setHostname(hostnameService.getHostname());
                 actionInput.getActionContext().setStartTime(OffsetDateTime.now());

@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.converters;
 
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.KeyValue;
@@ -39,33 +40,28 @@ public class FlowPlanPropertyHelper {
     private static final PropertyPlaceholderHelper PLACEHOLDER_HELPER = new PropertyPlaceholderHelper(PLACEHOLDER_PREFIX, PLACEHOLDER_SUFFIX, null, false);
 
     private final VariablePlaceholderResolver flowPlanPlaceholderResolver;
+    @Getter
     private final Set<FlowConfigError> errors;
-    private final String actionNamePrefix;
     private final Optional<FlowPlanPropertyHelper> maskedDelegate;
 
-    public FlowPlanPropertyHelper(List<Variable> variables, String actionNamePrefix) {
-        this(variables, actionNamePrefix, variables != null && variables.stream().anyMatch(Variable::isMasked));
+    public FlowPlanPropertyHelper(List<Variable> variables) {
+        this(variables, variables != null && variables.stream().anyMatch(Variable::isMasked));
     }
 
-    private FlowPlanPropertyHelper(List<Variable> variables, String actionNamePrefix, boolean createMaskedDelegate) {
+    private FlowPlanPropertyHelper(List<Variable> variables, boolean createMaskedDelegate) {
         this.flowPlanPlaceholderResolver = new VariablePlaceholderResolver(variables);
-        this.actionNamePrefix = actionNamePrefix;
         this.errors = new HashSet<>();
 
         FlowPlanPropertyHelper maybeDelegate = null;
         if (createMaskedDelegate) {
             List<Variable> maskedVariables = variables.stream().map(Variable::maskIfSensitive).toList();
-            maybeDelegate = new FlowPlanPropertyHelper(maskedVariables, actionNamePrefix, false);
+            maybeDelegate = new FlowPlanPropertyHelper(maskedVariables, false);
         }
         this.maskedDelegate = Optional.ofNullable(maybeDelegate);
     }
 
-    public Set<FlowConfigError> getErrors() {
-        return this.errors;
-    }
-
     public String getReplacedName(ActionConfiguration actionTemplate) {
-        return actionNamePrefix + "." + replaceValue(actionTemplate.getName(), actionTemplate.getName());
+        return replaceValue(actionTemplate.getName(), actionTemplate.getName());
     }
 
     public <C extends ActionConfiguration> void replaceCommonActionPlaceholders(C actionConfiguration, ActionConfiguration actionTemplate) {

@@ -73,7 +73,7 @@ class RestPostEgressActionTest {
     private static final String CONTENT_TYPE = "application/json";
 
     private static final Segment SEGMENT = new Segment(UUID.randomUUID().toString(), 0, DATA.length, DID);
-    private static final ActionContext CONTEXT = ActionContext.builder().did(DID).name(ACTION).sourceFilename(ORIG_FILENAME).ingressFlow(FLOW).egressFlow(EGRESS_FLOW).build();
+    private static final ActionContext CONTEXT = ActionContext.builder().did(DID).flow(EGRESS_FLOW).name(ACTION).sourceFilename(ORIG_FILENAME).ingressFlow(FLOW).egressFlow(EGRESS_FLOW).build();
     private static final Content CONTENT = new Content(POST_FILENAME, CONTENT_TYPE, List.of(SEGMENT));
     static final Integer NUM_TRIES = 3;
     static final Integer RETRY_WAIT = 10;
@@ -100,7 +100,7 @@ class RestPostEgressActionTest {
 
         assertTrue(result instanceof EgressResult);
         assertEquals(DID, result.toEvent().getDid());
-        assertEquals(ACTION, result.toEvent().getAction());
+        assertEquals(EGRESS_FLOW + "." + ACTION, result.toEvent().getAction());
     }
 
     @SuppressWarnings("unchecked")

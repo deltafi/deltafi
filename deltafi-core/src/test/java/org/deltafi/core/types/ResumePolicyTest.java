@@ -43,21 +43,6 @@ class ResumePolicyTest {
     }
 
     @Test
-    void testActionFormat() {
-        ResumePolicy good = getValid();
-        good.setAction("smoke.SmokeFormatAction");
-        assertTrue(good.validate().isEmpty());
-
-        ResumePolicy flowPrefixNotRequired = getValid();
-        flowPrefixNotRequired.setAction("NoEgressFlowConfiguredAction");
-        assertTrue(flowPrefixNotRequired.validate().isEmpty());
-
-        ResumePolicy invalid = getValid();
-        invalid.setAction("ActionNameWithoutFlowPrefix");
-        assertEquals(invalid.validate(), List.of(ResumePolicy.INVALID_ACTION));
-    }
-
-    @Test
     void testValidateBackOff() {
         ResumePolicy invalidDelay = getValid();
         invalidDelay.getBackOff().setDelay(-1);

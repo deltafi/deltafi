@@ -36,6 +36,10 @@ import lombok.Data;
         @JsonSubTypes.Type(value = EgressActionConfiguration.class, name = "EgressActionConfiguration")
 })
 public class DeltaFiConfiguration {
-    protected final String name;
+    protected String name;
     protected String apiVersion;
+
+    public DeltaFiConfiguration(String name) {
+        this.name = name;
+    }
 }

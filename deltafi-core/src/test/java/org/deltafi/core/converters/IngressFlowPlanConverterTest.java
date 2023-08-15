@@ -76,13 +76,13 @@ class IngressFlowPlanConverterTest {
     }
 
     TransformActionConfiguration expectedTransform() {
-        TransformActionConfiguration expected = new TransformActionConfiguration("passthrough.PassthroughTransformAction", "org.deltafi.passthrough.action.RoteTransformAction");
+        TransformActionConfiguration expected = new TransformActionConfiguration("PassthroughTransformAction", "org.deltafi.passthrough.action.RoteTransformAction");
         expected.setInternalParameters(Map.of("resultType", "passthrough-binary"));
         return expected;
     }
 
     LoadActionConfiguration expectedLoadAction() {
-        LoadActionConfiguration loadActionConfiguration = new LoadActionConfiguration("passthrough.PassthroughLoadAction", "org.deltafi.passthrough.action.RoteLoadAction");
+        LoadActionConfiguration loadActionConfiguration = new LoadActionConfiguration("PassthroughLoadAction", "org.deltafi.passthrough.action.RoteLoadAction");
         loadActionConfiguration.setInternalParameters(Map.of("domains", List.of("binary")));
         return loadActionConfiguration;
     }

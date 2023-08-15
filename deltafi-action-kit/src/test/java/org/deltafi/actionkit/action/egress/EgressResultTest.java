@@ -30,7 +30,7 @@ public class EgressResultTest {
 
     final String DESTINATION = "overThere";
     final long BYTES_EGRESSED = 42;
-    final ActionContext actionContext = new ActionContext("myDid", "myName", "mySourceFilename", "myIngressFlow", "myEgressFlow", "myHostName",
+    final ActionContext actionContext = new ActionContext("myDid", "myFlow", "myName", "mySourceFilename", "myIngressFlow", "myEgressFlow", "myHostName",
             "myActionVersion", null, null, null);
     final EgressResult sut = new EgressResult(actionContext, DESTINATION, BYTES_EGRESSED);
     

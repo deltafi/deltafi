@@ -31,6 +31,7 @@ import java.time.OffsetDateTime;
 @NoArgsConstructor
 public class ActionContext {
     private String did;
+    private String flow;
     private String name;
     private String sourceFilename;
     private String ingressFlow;

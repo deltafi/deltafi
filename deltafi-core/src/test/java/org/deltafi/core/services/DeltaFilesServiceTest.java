@@ -258,10 +258,11 @@ class DeltaFilesServiceTest {
         OffsetDateTime modified = OffsetDateTime.now();
         DeltaFile deltaFile = Util.buildDeltaFile("1");
         deltaFile.setStage(DeltaFileStage.EGRESS);
-        deltaFile.getActions().add(Action.builder().name("action").type(ActionType.EGRESS).state(ActionState.QUEUED).modified(modified).build());
+        deltaFile.getActions().add(Action.builder().flow("myFlow").name("action").type(ActionType.EGRESS)
+                .state(ActionState.QUEUED).modified(modified).build());
 
         ActionConfiguration actionConfiguration = new FormatActionConfiguration(null, null, null);
-        Mockito.when(egressFlowService.findActionConfig("action")).thenReturn(actionConfiguration);
+        Mockito.when(egressFlowService.findActionConfig("myFlow", "action")).thenReturn(actionConfiguration);
 
         List<ActionInput> toQueue = deltaFilesService.requeuedActionInput(deltaFile, modified);
         Assertions.assertThat(toQueue).hasSize(1);
@@ -272,7 +273,7 @@ class DeltaFilesServiceTest {
     void testRequeue_actionNotFound() throws MissingEgressFlowException {
         OffsetDateTime modified = OffsetDateTime.now();
         DeltaFile deltaFile = Util.buildDeltaFile("1");
-        deltaFile.getActions().add(Action.builder().name("action").state(ActionState.QUEUED).modified(modified).build());
+        deltaFile.getActions().add(Action.builder().flow("flow").name("action").state(ActionState.QUEUED).modified(modified).build());
 
         List<ActionInput> toQueue = deltaFilesService.requeuedActionInput(deltaFile, modified);
         Assertions.assertThat(toQueue).isEmpty();
@@ -283,7 +284,7 @@ class DeltaFilesServiceTest {
         List<DeltaFile> captured = deltaFileCaptor.getAllValues();
 
         DeltaFile erroredDeltaFile = captured.get(0);
-        Optional<Action> maybeAction = erroredDeltaFile.actionNamed("action");
+        Optional<Action> maybeAction = erroredDeltaFile.actionNamed("flow", "action");
         Assertions.assertThat(maybeAction).isPresent();
         Action action = maybeAction.get();
         Assertions.assertThat(action.getState()).isEqualTo(ActionState.ERROR);
@@ -297,7 +298,7 @@ class DeltaFilesServiceTest {
         DeltaFile deltaFile = Util.buildDeltaFile("1");
         deltaFile.getSourceInfo().setProcessingType(ProcessingType.TRANSFORMATION);
         deltaFile.setStage(DeltaFileStage.EGRESS);
-        deltaFile.getActions().add(Action.builder().name("action").type(ActionType.EGRESS)
+        deltaFile.getActions().add(Action.builder().flow("myFlow").name("action").type(ActionType.EGRESS)
                 .state(ActionState.QUEUED).modified(modified).build());
 
         ActionConfiguration actionConfiguration = new EgressActionConfiguration(null, null);
@@ -322,13 +323,14 @@ class DeltaFilesServiceTest {
 
         DeltaFile deltaFile = DeltaFile.builder()
                 .sourceInfo(SourceInfo.builder().flow(GOOD_INGRESS_FLOW).build())
-                .actions(new ArrayList<>(List.of(Action.builder()
+                .actions(new ArrayList<>(List.of(Action.builder().flow(GOOD_INGRESS_FLOW)
                         .name("loadAction").state(ActionState.QUEUED).build())))
                 .did("00000000-0000-0000-00000-000000000000")
                 .build();
 
         deltaFilesService.reinject(deltaFile,
                 ActionEvent.builder()
+                        .flow(GOOD_INGRESS_FLOW)
                         .action("loadAction")
                         .reinject(List.of(
                                 ReinjectEvent.builder()
@@ -360,13 +362,14 @@ class DeltaFilesServiceTest {
 
         DeltaFile deltaFile = DeltaFile.builder()
                 .sourceInfo(SourceInfo.builder().flow(GOOD_INGRESS_FLOW).build())
-                .actions(new ArrayList<>(List.of(Action.builder()
+                .actions(new ArrayList<>(List.of(Action.builder().flow(GOOD_INGRESS_FLOW)
                         .name("loadAction").state(ActionState.QUEUED).build())))
                 .did("00000000-0000-0000-00000-000000000000")
                 .build();
 
         deltaFilesService.reinject(deltaFile,
                 ActionEvent.builder()
+                        .flow(GOOD_INGRESS_FLOW)
                         .action("loadAction")
                         .reinject(List.of(
                                 ReinjectEvent.builder()
@@ -404,13 +407,14 @@ class DeltaFilesServiceTest {
 
         DeltaFile deltaFile = DeltaFile.builder()
                 .sourceInfo(SourceInfo.builder().flow(GOOD_INGRESS_FLOW).build())
-                .actions(new ArrayList<>(List.of(Action.builder()
+                .actions(new ArrayList<>(List.of(Action.builder().flow(GOOD_INGRESS_FLOW)
                         .name("loadAction").state(ActionState.QUEUED).build())))
                 .did("00000000-0000-0000-00000-000000000000")
                 .build();
 
         deltaFilesService.reinject(deltaFile,
                 ActionEvent.builder()
+                        .flow(GOOD_INGRESS_FLOW)
                         .action("loadAction")
                         .reinject(List.of(
                                 ReinjectEvent.builder()
@@ -500,10 +504,11 @@ class DeltaFilesServiceTest {
         Mockito.when(transformFlowService.getRunningFlowByName("flow")).thenReturn(transformFlow);
 
         ActionEvent actionEvent = new ActionEvent();
-        actionEvent.setAction("flow.transform");
+        actionEvent.setFlow("flow");
+        actionEvent.setAction("transform");
         DeltaFile deltaFile = Util.buildDeltaFile("1");
         deltaFile.setSourceInfo(SourceInfo.builder().processingType(ProcessingType.TRANSFORMATION).build());
-        deltaFile.queueAction("flow.transform", ActionType.TRANSFORM, "flow");
+        deltaFile.queueAction("flow", "transform", ActionType.TRANSFORM);
         deltaFilesService.egress(deltaFile, actionEvent);
 
         Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).hasSize(1).contains("flow");
@@ -515,9 +520,10 @@ class DeltaFilesServiceTest {
         Mockito.when(egressFlowService.getRunningFlowByName("flow")).thenThrow(new DgsEntityNotFoundException("not running"));
 
         ActionEvent actionEvent = new ActionEvent();
-        actionEvent.setAction("flow.egress");
+        actionEvent.setFlow("flow");
+        actionEvent.setAction("egress");
         DeltaFile deltaFile = Util.buildDeltaFile("1");
-        deltaFile.queueAction("flow.egress", ActionType.EGRESS, "flow");
+        deltaFile.queueAction("flow", "egress", ActionType.EGRESS);
         deltaFilesService.egress(deltaFile, actionEvent);
 
         Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).isNull();

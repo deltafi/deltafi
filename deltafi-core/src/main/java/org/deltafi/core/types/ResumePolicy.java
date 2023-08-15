@@ -22,17 +22,13 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.deltafi.common.constant.DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION;
-
 public class ResumePolicy extends org.deltafi.core.generated.types.ResumePolicy {
-    public static final String INVALID_ACTION = "action must include a flow name prefix";
     public static final String INVALID_DELAY = "delay must not be negative";
     public static final String INVALID_MAX_ATTEMPTS = "maxAttempts must be greater than 1";
     public static final String INVALID_MAX_DELAY = "maxDelay must not be negative";
     public static final String INVALID_MULTIPLIER = "multiplier must be positive";
     public static final String MAX_DELAY_ERROR = "maxDelay must not be lower than delay";
-    public static final String MISSING_CRITERIA =
-            "Must specify errorSubstring, flow, action, and/or actionType";
+    public static final String MISSING_CRITERIA = "Must specify errorSubstring, flow, action, and actionType";
     public static final String MISSING_ID = "missing id";
     public static final String MISSING_NAME = "missing name";
     public static final String MISSING_BACKOFF = "missing backOff";
@@ -62,13 +58,6 @@ public class ResumePolicy extends org.deltafi.core.generated.types.ResumePolicy 
                 StringUtils.isBlank(getAction()) &&
                 StringUtils.isBlank(getActionType())) {
             errors.add(MISSING_CRITERIA);
-        }
-
-        if (StringUtils.isNotBlank(getAction())) {
-            if (!(NO_EGRESS_FLOW_CONFIGURED_ACTION.equals(getAction())
-                    || getAction().contains("."))) {
-                errors.add(INVALID_ACTION);
-            }
         }
 
         if (getMaxAttempts() < 2) {

@@ -20,8 +20,8 @@ package org.deltafi.core.exceptions;
 import java.util.List;
 
 public class UnexpectedActionException extends RuntimeException {
-    public UnexpectedActionException(String actionName, String did, List<String> nextActions) {
-        super("Unexpected action " + actionName + " performed on DeltaFile " + did + ". " +
+    public UnexpectedActionException(String flow, String actionName, String did, List<String> nextActions) {
+        super("Unexpected action " + actionName + " in flow " + flow + " performed on DeltaFile " + did + ". " +
                 (nextActions.isEmpty() ? "No Actions are currently expected." : "Expected one of [" + String.join(", ", nextActions) + "]"));
     }
 }

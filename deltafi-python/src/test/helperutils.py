@@ -31,8 +31,9 @@ def make_context_dict():
     return {
         'did': TEST_DID,
         'sourceFilename': 'FILENAME',
+        'flow': "ACTION_FLOW",
+        'name': "ACTION_FLOW.ACTION_NAME_IN_FLOW",
         'ingressFlow': "IN",
-        'name': "ACTION_NAME_IN_FLOW",
         'egressFlow': "OUT",
         'systemName': "SYSTEM"
     }
@@ -65,6 +66,7 @@ def make_delta_file_message_dict():
 
 def make_context():
     return Context(did="did",
+                   action_flow="action_flow",
                    action_name="action_name",
                    source_filename="source_filename",
                    ingress_flow="ingress_flow",

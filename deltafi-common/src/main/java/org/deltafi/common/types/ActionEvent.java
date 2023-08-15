@@ -36,6 +36,7 @@ import java.util.List;
 @Builder
 public class ActionEvent {
   private String did;
+  private String flow;
   private String action;
   private OffsetDateTime start;
   private OffsetDateTime stop;

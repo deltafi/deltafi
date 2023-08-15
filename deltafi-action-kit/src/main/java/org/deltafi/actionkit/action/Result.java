@@ -47,7 +47,7 @@ public abstract class Result<T extends Result<T>> implements ResultType {
     public ActionEvent toEvent() {
         return ActionEvent.builder()
                 .type(actionEventType)
-                .action(context.getName())
+                .action(context.getFlow() + "." + context.getName())
                 .did(context.getDid())
                 .start(context.getStartTime())
                 .stop(OffsetDateTime.now())

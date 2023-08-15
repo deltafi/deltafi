@@ -29,7 +29,7 @@ import java.util.List;
 public abstract class FlowPlanConverter<FlowPlanT extends FlowPlan, FlowT extends Flow> {
 
     public FlowT convert(FlowPlanT flowPlan, List<Variable> variables) {
-        FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(variables, flowPlan.getName());
+        FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(variables);
 
         FlowT flow = getFlowInstance();
 

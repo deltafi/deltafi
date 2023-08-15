@@ -18,7 +18,7 @@
 package org.deltafi.core.exceptions;
 
 public class MultipleActionException extends RuntimeException {
-    public MultipleActionException(String actionName, String did) {
-        super("Multiple copies of action " + actionName + " fount on DeltaFile " + did + ". This should never happen.");
+    public MultipleActionException(String flow, String actionName, String did) {
+        super("Multiple copies of action " + actionName + " for flow " + flow + " found on DeltaFile " + did + ". This should never happen.");
     }
 }

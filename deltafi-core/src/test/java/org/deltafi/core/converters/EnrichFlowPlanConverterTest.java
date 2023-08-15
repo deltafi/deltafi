@@ -70,7 +70,7 @@ class EnrichFlowPlanConverterTest {
     }
 
     EnrichActionConfiguration expectedEnrichAction() {
-        EnrichActionConfiguration enrichActionConfiguration = new EnrichActionConfiguration("passthrough.PassthroughEnrichAction", "org.deltafi.passthrough.action.RoteEnrichAction", List.of("binary"));
+        EnrichActionConfiguration enrichActionConfiguration = new EnrichActionConfiguration("PassthroughEnrichAction", "org.deltafi.passthrough.action.RoteEnrichAction", List.of("binary"));
         enrichActionConfiguration.setRequiresEnrichments(List.of("binary"));
         enrichActionConfiguration.setInternalParameters(Map.of("enrichments", Map.of("passthroughEnrichment", "customized enrichment value", "secret", "maskedValue")));
         enrichActionConfiguration.setParameters(Map.of("enrichments", Map.of("passthroughEnrichment", "customized enrichment value", "secret", Variable.MASK_STRING)));

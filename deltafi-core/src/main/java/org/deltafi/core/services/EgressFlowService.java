@@ -52,8 +52,8 @@ public class EgressFlowService extends FlowService<EgressFlowPlan, EgressFlow> {
                 .toList();
     }
 
-    public EgressFlow withFormatActionNamed(String formatActionName) {
-        EgressFlow egressFlow = getRunningFlowByName(getFlowName(formatActionName));
+    public EgressFlow withFormatActionNamed(String flow, String formatActionName) {
+        EgressFlow egressFlow = getRunningFlowByName(flow);
 
         if (!formatActionName.equals(egressFlow.getFormatAction().getName())) {
             throw new DeltafiConfigurationException("Egress flow " + egressFlow + " no longer contains a format action with the name " + formatActionName);

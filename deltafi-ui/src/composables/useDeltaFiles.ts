@@ -47,6 +47,7 @@ export default function useDeltaFiles() {
         created: true,
         modified: true,
         actions: {
+          flow: true,
           name: true,
           type: true,
           state: true,

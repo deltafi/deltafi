@@ -35,6 +35,30 @@ public class EnrichFlow extends Flow {
     private List<DomainActionConfiguration> domainActions = new ArrayList<>();
     private List<EnrichActionConfiguration> enrichActions = new ArrayList<>();
 
+    /**
+     * Schema versions:
+     * 0 - original
+     * 1 - skipped
+     * 2 - separate flow and action name
+     */
+    public static final int CURRENT_SCHEMA_VERSION = 2;
+    private int schemaVersion;
+
+    @Override
+    public boolean migrate() {
+        if (schemaVersion < 2) {
+            domainActions.forEach(this::migrateAction);
+            enrichActions.forEach(this::migrateAction);
+        }
+
+        if (schemaVersion < CURRENT_SCHEMA_VERSION) {
+            schemaVersion = CURRENT_SCHEMA_VERSION;
+            return true;
+        }
+
+        return false;
+    }
+
     @Override
     public ActionConfiguration findActionConfigByName(String actionName) {
         ActionConfiguration domainActionConfiguration = actionNamed(domainActions, actionName);

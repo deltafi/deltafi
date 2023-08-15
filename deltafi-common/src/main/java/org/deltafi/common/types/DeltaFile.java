@@ -83,7 +83,7 @@ public class DeltaFile {
   @JsonIgnore
   private long version;
 
-  public final static int CURRENT_SCHEMA_VERSION = 6;
+  public final static int CURRENT_SCHEMA_VERSION = 7;
   private int schemaVersion;
 
   public Map<String, String> getMetadata() {
@@ -99,16 +99,16 @@ public class DeltaFile {
     return metadata;
   }
 
-  public void queueAction(String name, ActionType type, String flow) {
-    Optional<Action> maybeAction = actionNamed(name);
+  public void queueAction(String flow, String name, ActionType type) {
+    Optional<Action> maybeAction = actionNamed(flow, name);
     if (maybeAction.isPresent()) {
       setActionState(maybeAction.get(), ActionState.QUEUED, null, null);
     } else {
-      queueNewAction(name, type, flow);
+      queueNewAction(flow, name, type);
     }
   }
 
-  public void queueNewAction(String name, ActionType type, String flow) {
+  public void queueNewAction(String flow, String name, ActionType type) {
     OffsetDateTime now = OffsetDateTime.now();
     getActions().add(Action.builder()
             .name(name)
@@ -130,9 +130,9 @@ public class DeltaFile {
   }
 
   /* Get the most recent action with the given name */
-  public Optional<Action> actionNamed(String name) {
+  public Optional<Action> actionNamed(String flow, String name) {
     return getActions().stream()
-            .filter(a -> a.getName().equals(name) && !retried(a))
+            .filter(action -> action.getFlow().equals(flow) && action.getName().equals(name) && !retried(action))
             .reduce((first, second) -> second);
   }
 
@@ -142,72 +142,72 @@ public class DeltaFile {
             .findFirst();
   }
 
-  public boolean isNewAction(String name) {
-    return actionNamed(name).isEmpty();
+  public boolean isNewAction(String flow, String name) {
+    return actionNamed(flow, name).isEmpty();
   }
 
   public Action completeAction(ActionEvent event) {
-    return completeAction(event.getAction(), event.getStart(), event.getStop(), null, null, null, null, null);
+    return completeAction(event.getFlow(), event.getAction(), event.getStart(), event.getStop(), null, null, null, null, null);
   }
 
-  public void completeAction(ActionEvent event, List<Content> content, Map<String, String> metadata,
+  public Action completeAction(ActionEvent event, List<Content> content, Map<String, String> metadata,
                              List<String> deleteMetadataKeys, List<Domain> domains, List<Enrichment> enrichments) {
-    completeAction(event.getAction(), event.getStart(), event.getStop(), content, metadata, deleteMetadataKeys, domains, enrichments);
+    return completeAction(event.getFlow(), event.getAction(), event.getStart(), event.getStop(), content, metadata, deleteMetadataKeys, domains, enrichments);
   }
 
-  public Action completeAction(String name, OffsetDateTime start, OffsetDateTime stop) {
-    return completeAction(name, start, stop, null, null, null, null, null);
+  public Action completeAction(String flow, String name, OffsetDateTime start, OffsetDateTime stop) {
+    return completeAction(flow, name, start, stop, null, null, null, null, null);
   }
 
-  public Action completeAction(String name, OffsetDateTime start, OffsetDateTime stop, List<Content> content,
+  public Action completeAction(String flow, String name, OffsetDateTime start, OffsetDateTime stop, List<Content> content,
                              Map<String, String> metadata, List<String> deleteMetadataKeys,
                              List<Domain> domains, List<Enrichment> enrichments) {
     Optional<Action> optionalAction = getActions().stream()
-            .filter(a -> a.getName().equals(name) && !a.terminal())
+            .filter(action -> action.getFlow().equals(flow) && action.getName().equals(name) && !action.terminal())
             .findFirst();
-    if (optionalAction.isPresent()) {
-      Action action = optionalAction.get();
-      setActionState(action, ActionState.COMPLETE, start, stop);
-
-      if (content != null) {
-        action.setContent(content);
-      }
-
-      if (metadata != null) {
-        action.setMetadata(metadata);
-      }
-
-      if (deleteMetadataKeys != null) {
-        action.setDeleteMetadataKeys(deleteMetadataKeys);
-      }
-
-      if (domains != null) {
-        for (Domain domain : domains) {
-          action.addDomain(domain.getName(), domain.getValue(), domain.getMediaType());
-        }
-      }
-
-      if (enrichments != null) {
-        for (Enrichment enrichment : enrichments) {
-          action.addDomain(enrichment.getName(), enrichment.getValue(), enrichment.getMediaType());
-        }
-      }
-
-      return action;
-    } else {
-      throw new UnexpectedActionException(name, did, queuedActions());
+    if (optionalAction.isEmpty()) {
+      throw new UnexpectedActionException(flow, name, did, queuedActions());
     }
+
+    Action action = optionalAction.get();
+    setActionState(action, ActionState.COMPLETE, start, stop);
+
+    if (content != null) {
+      action.setContent(content);
+    }
+
+    if (metadata != null) {
+      action.setMetadata(metadata);
+    }
+
+    if (deleteMetadataKeys != null) {
+      action.setDeleteMetadataKeys(deleteMetadataKeys);
+    }
+
+    if (domains != null) {
+      for (Domain domain : domains) {
+        action.addDomain(domain.getName(), domain.getValue(), domain.getMediaType());
+      }
+    }
+
+    if (enrichments != null) {
+      for (Enrichment enrichment : enrichments) {
+        action.addDomain(enrichment.getName(), enrichment.getValue(), enrichment.getMediaType());
+      }
+    }
+
+    return action;
   }
 
   public void filterAction(ActionEvent event, String filterMessage) {
     getActions().stream()
-            .filter(action -> action.getName().equals(event.getAction()) && !action.terminal())
+            .filter(action -> action.getFlow().equals(event.getFlow()) && action.getName().equals(event.getAction()) && !action.terminal())
             .forEach(action -> setFilteredActionState(action, event.getStart(), event.getStop(), filterMessage));
   }
 
   public void reinjectAction(ActionEvent event) {
     getActions().stream()
-            .filter(action -> action.getName().equals(event.getAction()) && !action.terminal())
+            .filter(action -> action.getFlow().equals(event.getFlow()) && action.getName().equals(event.getAction()) && !action.terminal())
             .forEach(action -> setActionState(action, ActionState.REINJECTED, event.getStart(), event.getStop()));
   }
 
@@ -224,27 +224,27 @@ public class DeltaFile {
   }
 
   public void errorAction(ActionEvent event) {
-    errorAction(event.getAction(), event.getStart(), event.getStop(), event.getError().getCause(),
+    errorAction(event.getFlow(), event.getAction(), event.getStart(), event.getStop(), event.getError().getCause(),
             event.getError().getContext());
   }
 
   public void errorAction(ActionEvent event, String policyName, Integer delay) {
     setNextAutoResumeReason(policyName);
-    errorAction(event.getAction(), event.getStart(), event.getStop(), event.getError().getCause(),
+    errorAction(event.getFlow(), event.getAction(), event.getStart(), event.getStop(), event.getError().getCause(),
             event.getError().getContext(), event.getStop().plusSeconds(delay));
   }
 
   public void errorAction(ActionEvent event, String errorCause, String errorContext) {
-    errorAction(event.getAction(), event.getStart(), event.getStop(), errorCause, errorContext, null);
+    errorAction(event.getFlow(), event.getAction(), event.getStart(), event.getStop(), errorCause, errorContext, null);
   }
 
-  public void errorAction(String name, OffsetDateTime start, OffsetDateTime stop, String errorCause, String errorContext) {
-    errorAction(name, start, stop, errorCause, errorContext, null);
+  public void errorAction(String flow, String name, OffsetDateTime start, OffsetDateTime stop, String errorCause, String errorContext) {
+    errorAction(flow, name, start, stop, errorCause, errorContext, null);
   }
 
-  public void errorAction(String name, OffsetDateTime start, OffsetDateTime stop, String errorCause, String errorContext, OffsetDateTime nextAutoResume) {
+  public void errorAction(String flow, String name, OffsetDateTime start, OffsetDateTime stop, String errorCause, String errorContext, OffsetDateTime nextAutoResume) {
     getActions().stream()
-            .filter(action -> action.getName().equals(name) && !action.terminal())
+            .filter(action -> action.getFlow().equals(flow) && action.getName().equals(name) && !action.terminal())
             .forEach(action -> setActionState(action, ActionState.ERROR, start, stop, errorCause, errorContext, nextAutoResume));
   }
 
@@ -346,21 +346,22 @@ public class DeltaFile {
     return getActions().stream().anyMatch(action -> action.getState().equals(ActionState.REINJECTED));
   }
 
-  public void ensurePendingAction(String name) {
-    long actionCount = countPendingActions(name);
+  public void ensurePendingAction(String flow, String name) {
+    long actionCount = countPendingActions(flow, name);
     if (actionCount == 0) {
-      throw new UnexpectedActionException(name, did, queuedActions());
+      throw new UnexpectedActionException(flow, name, did, queuedActions());
     } else if (actionCount > 1) {
-      throw new MultipleActionException(name, did);
+      throw new MultipleActionException(flow, name, did);
     }
   }
 
-  public Action getPendingAction(String name) {
-    return getActions().stream().filter(action -> action.getName().equals(name) && !action.terminal()).findFirst().orElseThrow(() -> new UnexpectedActionException(name, did, queuedActions()));
+  public Action getPendingAction(String flow, String name) {
+    return getActions().stream().filter(action -> action.getFlow().equals(flow) && action.getName().equals(name) &&
+            !action.terminal()).findFirst().orElseThrow(() -> new UnexpectedActionException(flow, name, did, queuedActions()));
   }
 
-  private long countPendingActions(String name) {
-    return getActions().stream().filter(action -> action.getName().equals(name) && !action.terminal()).count();
+  private long countPendingActions(String flow, String name) {
+    return getActions().stream().filter(action -> action.getFlow().equals(flow) && action.getName().equals(name) && !action.terminal()).count();
   }
 
   private boolean retried(Action action) {
@@ -368,16 +369,18 @@ public class DeltaFile {
   }
 
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-  public boolean hasTerminalAction(String name) {
-    return getActions().stream().anyMatch(action -> action.getName().equals(name) && !retried(action) && action.terminal());
+  public boolean hasTerminalAction(String flow, String name) {
+    return getActions().stream().anyMatch(action -> action.getFlow().equals(flow) && action.getName().equals(name) &&
+            !retried(action) && action.terminal());
   }
 
-  public boolean hasCompletedAction(String name) {
-    return getActions().stream().anyMatch(action -> action.getName().equals(name) && action.getState().equals(ActionState.COMPLETE));
+  public boolean hasCompletedAction(String flow, String name) {
+    return getActions().stream().anyMatch(action -> action.getFlow().equals(flow) && action.getName().equals(name) &&
+            action.getState().equals(ActionState.COMPLETE));
   }
 
-  public boolean hasCompletedActions(List<String> names) {
-    return names.stream().allMatch(this::hasCompletedAction);
+  public boolean hasCompletedActions(String flow, List<String> names) {
+    return names.stream().allMatch(name -> hasCompletedAction(flow, name));
   }
 
   public String sourceMetadata(String key) {

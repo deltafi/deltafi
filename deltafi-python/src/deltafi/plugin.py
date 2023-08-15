@@ -270,7 +270,7 @@ class Plugin(object):
 
                 response = {
                     'did': event.context.did,
-                    'action': event.context.action_name,
+                    'action': event.context.action_flow + "." + event.context.action_name,
                     'start': start_time,
                     'stop': time.time(),
                     'type': result.result_type,

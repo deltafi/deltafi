@@ -41,7 +41,7 @@ class ResumePolicyServiceTest {
     private static final String DEFAULT_ID = "1";
     private static final String ERROR = "error";
     private static final String FLOW = "flow";
-    private static final String ACTION = FLOW + ".action";
+    private static final String ACTION = "action";
     private static final String LOAD_ACTION_TYPE = ActionType.LOAD.name();
     private static final String NOT_FOUND = "notFound";
     private static final int MAX_ATTEMPTS = 3;
@@ -114,9 +114,9 @@ class ResumePolicyServiceTest {
         Optional<ResumePolicyService.ResumeDetails> resumeDetails = resumePolicyService.getAutoResumeDelay(
                 getDeltaFile(MAX_ATTEMPTS - 1),
                 ActionEvent.builder()
+                        .flow("1" + FLOW)
                         .action("1" + ACTION)
-                        .error(ErrorEvent.builder()
-                                .cause(ERROR).build())
+                        .error(ErrorEvent.builder().cause(ERROR).build())
                         .build(),
                 LOAD_ACTION_TYPE);
         assertFalse(resumeDetails.isEmpty());
@@ -126,9 +126,9 @@ class ResumePolicyServiceTest {
         Optional<ResumePolicyService.ResumeDetails> rollToNextPolicy = resumePolicyService.getAutoResumeDelay(
                 getDeltaFile(MAX_ATTEMPTS + 1),
                 ActionEvent.builder()
+                        .flow("1" + FLOW)
                         .action("1" + ACTION)
-                        .error(ErrorEvent.builder()
-                                .cause(ERROR).build())
+                        .error(ErrorEvent.builder().cause(ERROR).build())
                         .build(),
                 LOAD_ACTION_TYPE);
         assertFalse(rollToNextPolicy.isEmpty());
@@ -138,9 +138,9 @@ class ResumePolicyServiceTest {
         Optional<ResumePolicyService.ResumeDetails> tooManyAttempts = resumePolicyService.getAutoResumeDelay(
                 getDeltaFile(MAX_ATTEMPTS * 2),
                 ActionEvent.builder()
+                        .flow("1" + FLOW)
                         .action("1" + ACTION)
-                        .error(ErrorEvent.builder()
-                                .cause(ERROR).build())
+                        .error(ErrorEvent.builder().cause(ERROR).build())
                         .build(),
                 LOAD_ACTION_TYPE);
         assertTrue(tooManyAttempts.isEmpty());
@@ -148,9 +148,9 @@ class ResumePolicyServiceTest {
         Optional<ResumePolicyService.ResumeDetails> wrongError = resumePolicyService.getAutoResumeDelay(
                 getDeltaFile(1),
                 ActionEvent.builder()
+                        .flow("1" + FLOW)
                         .action("1" + ACTION)
-                        .error(ErrorEvent.builder()
-                                .cause("not-a-match").build())
+                        .error(ErrorEvent.builder().cause("not-a-match").build())
                         .build(),
                 LOAD_ACTION_TYPE);
         assertTrue(wrongError.isEmpty());
@@ -160,10 +160,8 @@ class ResumePolicyServiceTest {
     void testComputeDelay() {
         BackOff backOff = new BackOff();
         backOff.setDelay(100);
-        assertEquals(100, resumePolicyService
-                .computeDelay(backOff, 1));
-        assertEquals(100, resumePolicyService
-                .computeDelay(backOff, 2));
+        assertEquals(100, resumePolicyService.computeDelay(backOff, 1));
+        assertEquals(100, resumePolicyService.computeDelay(backOff, 2));
 
         backOff.setRandom(true);
         backOff.setMaxDelay(200);
@@ -182,12 +180,9 @@ class ResumePolicyServiceTest {
         backOff.setRandom(false);
         backOff.setMultiplier(2);
 
-        assertEquals(200, resumePolicyService
-                .computeDelay(backOff, 1));
-        assertEquals(400, resumePolicyService
-                .computeDelay(backOff, 2));
-        assertEquals(600, resumePolicyService
-                .computeDelay(backOff, 3));
+        assertEquals(200, resumePolicyService.computeDelay(backOff, 1));
+        assertEquals(400, resumePolicyService.computeDelay(backOff, 2));
+        assertEquals(600, resumePolicyService.computeDelay(backOff, 3));
     }
 
     @Test
@@ -198,12 +193,9 @@ class ResumePolicyServiceTest {
         backOff.setMultiplier(2);
         backOff.setMaxDelay(250);
 
-        assertEquals(200, resumePolicyService
-                .computeDelay(backOff, 1));
-        assertEquals(250, resumePolicyService
-                .computeDelay(backOff, 2));
-        assertEquals(250, resumePolicyService
-                .computeDelay(backOff, 3));
+        assertEquals(200, resumePolicyService.computeDelay(backOff, 1));
+        assertEquals(250, resumePolicyService.computeDelay(backOff, 2));
+        assertEquals(250, resumePolicyService.computeDelay(backOff, 3));
     }
 
     @Test
@@ -353,6 +345,7 @@ class ResumePolicyServiceTest {
     private DeltaFile getDeltaFile(int attempt) {
         OffsetDateTime now = OffsetDateTime.now();
         Action action = Action.builder()
+                .flow("1" + FLOW)
                 .name("1" + ACTION)
                 .state(ActionState.QUEUED)
                 .created(now)
