@@ -38,3 +38,17 @@ ui:docker-multiarch:
   extends:
     - .ui
     - .docker-multiarch
+
+ui:test:
+  image: deltafi/deltafi-ui-test
+  stage: test
+  script:
+    - cd deltafi-ui
+    # link node_modules from base image
+    - ln -s /app/node_modules ./node_modules
+    # start the server (with mocking enabled) in the background
+    - VUE_APP_MOCK_RESPONSES=successResponse npm run dev &
+    # wait for the server to start
+    - npx wait-on -t 120000 http://127.0.0.1:8080
+    # run Cypress tests
+    - npx cypress run --e2e
