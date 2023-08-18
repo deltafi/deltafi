@@ -51,6 +51,10 @@ public class LoadManyResult extends Result<LoadManyResult> implements LoadResult
         childLoadResults.add(childLoadResult);
     }
 
+    public List<LoadResult> getChildLoadResults() {
+        return childLoadResults != null ? childLoadResults.stream().map(ChildLoadResult::getLoadResult).toList() : List.of();
+    }
+
     @Override
     public final ActionEvent toEvent() {
         ActionEvent event = super.toEvent();

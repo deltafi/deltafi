@@ -16,40 +16,40 @@
  *    limitations under the License.
  */
 package org.deltafi.core.action;
-import lombok.extern.slf4j.Slf4j;
-import org.deltafi.test.action.IOContent;
-import org.deltafi.test.action.transform.TransformActionTest;
-import org.deltafi.test.action.transform.TransformActionTestCase;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.stereotype.Component;
 
+import org.deltafi.actionkit.action.ResultType;
+import org.deltafi.actionkit.action.transform.TransformInput;
+import org.deltafi.core.parameters.ModifyMetadataParameters;
+import org.deltafi.test.action.transform.TransformActionTest;
+import org.deltafi.test.asserters.ActionResultAssertions;
+import org.deltafi.test.content.DeltaFiTestRunner;
+import org.junit.jupiter.api.Test;
+
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Component
-@Slf4j
-@ExtendWith(MockitoExtension.class)
+
 class ModifyMetadataTransformActionTest extends TransformActionTest {
 
-    @InjectMocks
-    ModifyMetadataTransformAction action;
+    ModifyMetadataTransformAction action = new ModifyMetadataTransformAction();
+    DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action);
 
     @Test
     void testTransform() {
-        execute(TransformActionTestCase.builder()
-                .action(action)
-                .parameters(Map.of("addOrModifyMetadata", Map.of("key1", "value1", "key2", "value2"),
-                        "copyMetadata", Map.of("origKey1", "key3, key4 ,key5"),
-                        "deleteMetadataKeys", List.of("origKey2", "origKey3", "key5")))
-                .inputs(List.of(IOContent.builder().name("test.txt").contentType("*/*").build()))
-                .sourceMetadata(Map.of("origKey1", "origVal1", "origKey2", "origVal2"))
-                .expectTransformResult(List.of(IOContent.builder().name("test.txt").contentType("*/*").build()))
-                .resultMetadata(Map.of("key1", "value1", "key2", "value2", "key3", "origVal1", "key4", "origVal1"))
-                .resultDeleteMetadataKeys(List.of("origKey2"))
-                .build());
+        ModifyMetadataParameters params = new ModifyMetadataParameters();
+        params.setAddOrModifyMetadata(new HashMap<>(Map.of("key1", "value1", "key2", "value2")));
+        params.setCopyMetadata(Map.of("origKey1", "key3, key4 ,key5"));
+        params.setDeleteMetadataKeys(List.of("origKey2", "origKey3", "key5"));
+
+        TransformInput input = TransformInput.builder()
+                .metadata(Map.of("origKey1", "origVal1", "origKey2", "origVal2")).build();
+
+        ResultType result = action.transform(runner.actionContext(), params, input);
+
+        ActionResultAssertions.assertTransformResult(result)
+                        .addedMetadataEquals(Map.of("key1", "value1", "key2", "value2", "key3", "origVal1", "key4", "origVal1"))
+                        .deletedKeyEquals("origKey2");
 
     }
 }

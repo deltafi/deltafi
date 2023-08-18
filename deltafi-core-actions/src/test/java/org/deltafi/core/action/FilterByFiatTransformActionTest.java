@@ -16,45 +16,32 @@
  *    limitations under the License.
  */
 package org.deltafi.core.action;
-import lombok.extern.slf4j.Slf4j;
-import org.deltafi.test.action.IOContent;
-import org.deltafi.test.action.transform.TransformActionTest;
-import org.deltafi.test.action.transform.TransformActionTestCase;
+
+import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.actionkit.action.transform.TransformInput;
+import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.stereotype.Component;
 
-import java.util.Collections;
+import static org.deltafi.test.asserters.ActionResultAssertions.assertFilterResult;
 
-@Component
-@Slf4j
-@ExtendWith(MockitoExtension.class)
-class FilterByFiatTransformActionTest extends TransformActionTest {
+class FilterByFiatTransformActionTest {
 
-    @InjectMocks
-    FilterByFiatTransformAction action;
+    private static final ActionParameters EMPTY = new ActionParameters();
+
+    FilterByFiatTransformAction action = new FilterByFiatTransformAction();
+    DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action);
 
     @Test
     void testTransform() {
-        execute(TransformActionTestCase.builder()
-                .action(action)
-                .expectFilter("Filtered by fiat")
-                .build());
-
+        assertFilterResult(action.transform(runner.actionContext(), EMPTY, TransformInput.builder().build()))
+                        .hasCause("Filtered by fiat");
     }
 
     @Test
     void transformTest2() {
-        TransformActionTestCase testCase = TransformActionTestCase.builder()
-                .testName("transform")
-                .action(action)
-                .inputs(Collections.singletonList(IOContent.builder().name("content").content(new byte[0]).contentType("application/binary").build()))
-                .expectFilter("Filtered by fiat")
-                .build();
-        execute(testCase);
+        TransformInput input = TransformInput.builder().content(runner.saveContent("some content")).build();
+        assertFilterResult(action.transform(runner.actionContext(), EMPTY, input))
+                .hasCause("Filtered by fiat");
     }
-
 
 }

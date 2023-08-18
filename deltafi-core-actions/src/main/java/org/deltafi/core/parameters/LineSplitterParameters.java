@@ -18,23 +18,32 @@
 package org.deltafi.core.parameters;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.springframework.util.unit.DataSize;
 
 @Data
+@Builder
 @EqualsAndHashCode(callSuper = true)
+@NoArgsConstructor
+@AllArgsConstructor
 public class LineSplitterParameters extends ActionParameters {
     @JsonPropertyDescription("Characters that indicate the line is a comment when searching for headers")
     private String commentChars;
 
+    @Builder.Default
     @JsonPropertyDescription("True to include the header line (excluding any comments before the header) in all child files")
     private boolean includeHeaderInAllChunks = false;
 
+    @Builder.Default
     @JsonPropertyDescription("Max number of rows that should be included in each child file")
     private int maxRows = Integer.MAX_VALUE;
 
+    @Builder.Default
     @JsonPropertyDescription("Max size in bytes of each child file (including the header line if includeHeaders is true)")
     private long maxSize = DataSize.ofMegabytes(500).toBytes();
 

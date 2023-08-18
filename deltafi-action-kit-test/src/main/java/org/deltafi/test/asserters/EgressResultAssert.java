@@ -1,4 +1,4 @@
-/*
+/**
  *    DeltaFi - Data transformation and enrichment platform
  *
  *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
@@ -15,22 +15,14 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.action;
+package org.deltafi.test.asserters;
 
-import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.actionkit.action.transform.TransformInput;
-import org.deltafi.common.types.ActionContext;
-import org.junit.jupiter.api.Test;
+import org.deltafi.actionkit.action.egress.EgressResult;
 
-import static org.deltafi.test.asserters.ActionResultAssertions.assertErrorResult;
+public class EgressResultAssert extends ResultAssert<EgressResultAssert, EgressResult> {
 
-class ErrorByFiatTransformActionTest {
-
-    ErrorByFiatTransformAction action = new ErrorByFiatTransformAction();
-
-    @Test
-    void testTransform() {
-        assertErrorResult(action.transform(new ActionContext(), new ActionParameters(), TransformInput.builder().build()))
-                .hasCause("Errored by fiat");
+    public EgressResultAssert(EgressResult egressResult) {
+        super(egressResult, EgressResultAssert.class);
     }
+
 }

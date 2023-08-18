@@ -51,6 +51,10 @@ public class FormatManyResult extends Result<FormatManyResult> implements Format
         childFormatResults.add(new ChildFormatResult(formatResult));
     }
 
+    public List<FormatResult> getChildFormatResults() {
+        return childFormatResults != null ? childFormatResults.stream().map(ChildFormatResult::getFormatResult).toList() : List.of();
+    }
+
     @Override
     public final ActionEvent toEvent() {
         ActionEvent event = super.toEvent();

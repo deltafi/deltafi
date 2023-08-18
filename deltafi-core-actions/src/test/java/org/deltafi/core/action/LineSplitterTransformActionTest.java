@@ -17,80 +17,76 @@
  */
 package org.deltafi.core.action;
 
-import org.deltafi.test.action.Child;
-import org.deltafi.test.action.IOContent;
-import org.deltafi.test.action.transform.TransformActionTest;
-import org.deltafi.test.action.transform.TransformActionTestCase;
+import org.deltafi.actionkit.action.ResultType;
+import org.deltafi.actionkit.action.transform.TransformInput;
+import org.deltafi.common.types.ActionContext;
+import org.deltafi.core.parameters.LineSplitterParameters;
+import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.IntStream;
 
-@ExtendWith(MockitoExtension.class)
-class LineSplitterTransformActionTest extends TransformActionTest {
+import static org.deltafi.test.asserters.ActionResultAssertions.*;
 
-    @InjectMocks
-    LineSplitterTransformAction action;
+class LineSplitterTransformActionTest {
 
-    // TODO: restore
+    LineSplitterTransformAction action = new LineSplitterTransformAction();
+    DeltaFiTestRunner deltaFiTestRunner = DeltaFiTestRunner.setup(action, "LineSplitterTransformActionTest");
+    ActionContext context = deltaFiTestRunner.actionContext();
 
     @Test
     void testCommentsAndHeader() {
-        TransformActionTestCase testCase = TransformActionTestCase.builder()
-                .action(action)
-                .testName("commentsAndHeader")
-                .inputs(Collections.singletonList(IOContent.builder().name("input.content").contentType("application/binary").build()))
-                .parameters(Map.of("includeHeaderInAllChunks", "true", "commentChars", "#", "maxRows", "1"))
-                .expectTransformResult(List.of(
-                        Child.builder().name("content.0").flow("testFlow").contentType("application/binary").build(),
-                        Child.builder().name("content.1").flow("testFlow").contentType("application/binary").build(),
-                        Child.builder().name("content.2").flow("testFlow").contentType("application/binary").build()
-                ))
-                .build();
-        execute(testCase);
+        LineSplitterParameters params = LineSplitterParameters.builder().includeHeaderInAllChunks(true).commentChars("#").maxRows(1).build();
+
+        ResultType result = action.transform(context, params, buildInput("commentsAndHeader"));
+
+        assertTransformResult(result)
+                .hasContentCount(3)
+                .contentLoadStringEquals(getExpectedContent("commentsAndHeader", 3));
     }
 
     @Test
     void testDontIncludeHeader() {
-        TransformActionTestCase testCase = TransformActionTestCase.builder()
-                .action(action)
-                .testName("dontIncludeHeader")
-                .inputs(Collections.singletonList(IOContent.builder().name("input.content").contentType("application/binary").build()))
-                .parameters(Map.of("includeHeaderInAllChunks", "false", "commentChars", "#", "maxRows", "1"))
-                .expectTransformResult(List.of(
-                        Child.builder().name("content.0").flow("testFlow").contentType("application/binary").build(),
-                        Child.builder().name("content.1").flow("testFlow").contentType("application/binary").build(),
-                        Child.builder().name("content.2").flow("testFlow").contentType("application/binary").build()
-                ))
-                .build();
-        execute(testCase);
+        LineSplitterParameters params = LineSplitterParameters.builder().includeHeaderInAllChunks(false).commentChars("#").maxRows(1).build();
+
+        ResultType result = action.transform(context, params, buildInput("dontIncludeHeader"));
+
+        assertTransformResult(result)
+                .contentLoadStringEquals(getExpectedContent("dontIncludeHeader", 3));
     }
 
     @Test
     void testHeaderExceedsMaxSize() {
-        TransformActionTestCase testCase = TransformActionTestCase.builder()
-                .action(action)
-                .testName("commentsAndHeader")
-                .inputs(Collections.singletonList(IOContent.builder().name("input.content").contentType("application/binary").build()))
-                .parameters(Map.of("maxSize", "1"))
-                .expectError("The current line will not fit within the max size limit")
+        TransformInput transformInput = TransformInput.builder()
+                .content(deltaFiTestRunner.saveContent("overflow"))
                 .build();
-        execute(testCase);
+
+        ResultType result = action.transform(context, LineSplitterParameters.builder().maxSize(1).build(), transformInput);
+
+        assertErrorResult(result)
+                .hasCauseLike(".*The current line will not fit within the max size limit.*");
     }
 
     @Test
     void testHeaderOnly() {
-        TransformActionTestCase testCase = TransformActionTestCase.builder()
-                .action(action)
-                .testName("headerOnly")
-                .inputs(Collections.singletonList(IOContent.builder().name("input.content").contentType("application/binary").build()))
-                .parameters(Map.of("includeHeaderInAllChunks", "true", "commentChars", "#", "maxRows", "1"))
-                .expectTransformResult(List.of(Child.builder().name("content.0").flow("testFlow").contentType("application/binary").build()))
-                .build();
-        execute(testCase);
+        LineSplitterParameters params = LineSplitterParameters.builder().includeHeaderInAllChunks(true).commentChars("#").maxRows(1).build();
+
+        ResultType result = action.transform(context, params, buildInput("headerOnly"));
+
+        assertTransformResult(result)
+                .contentLoadStringEquals(getExpectedContent("headerOnly", 1));
     }
+
+    TransformInput buildInput(String folder) {
+        return TransformInput.builder()
+                .content(deltaFiTestRunner.saveContentFromResource(folder + "/input.content"))
+                .build();
+    }
+
+    List<String> getExpectedContent(String folder, int contentCount) {
+        return IntStream.range(0, contentCount)
+                .mapToObj(i -> deltaFiTestRunner.readResourceAsString(folder + "/content." + i)).toList();
+    }
+
 }

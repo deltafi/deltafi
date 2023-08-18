@@ -17,389 +17,230 @@
  */
 package org.deltafi.core.action;
 
+import org.assertj.core.api.Assertions;
+import org.deltafi.actionkit.action.ResultType;
+import org.deltafi.actionkit.action.content.ActionContent;
+import org.deltafi.actionkit.action.transform.TransformInput;
+import org.deltafi.core.parameters.DecompressionTransformParameters;
 import org.deltafi.core.parameters.DecompressionType;
-import org.deltafi.test.action.IOContent;
-import org.deltafi.test.action.transform.TransformActionTest;
-import org.deltafi.test.action.transform.TransformActionTestCase;
+import org.deltafi.test.asserters.ContentAssert;
+import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.*;
+import static org.deltafi.test.asserters.ActionResultAssertions.*;
 
-@ExtendWith(MockitoExtension.class)
-public class DecompressionTransformActionTest extends TransformActionTest {
+class DecompressionTransformActionTest {
     private static final String CONTENT_TYPE = "application/octet-stream";
 
-    @InjectMocks
-    DecompressionTransformAction action;
+    DecompressionTransformAction action = new DecompressionTransformAction();
+    DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action, "DecompressionTransformActionTest");
 
-    private List<IOContent> getTarResult() {
-        return List.of(
-                IOContent.builder().name("thing1.txt").contentType(CONTENT_TYPE).build(),
-                IOContent.builder().name("thing2.txt").contentType(CONTENT_TYPE).build());
-    }
-
-    private List<IOContent> getInPlaceTarResult() {
-        return List.of(
-                IOContent.builder().name("thing1.txt").contentType(CONTENT_TYPE).offset(512).build(),
-                IOContent.builder().name("thing2.txt").contentType(CONTENT_TYPE).offset(1536).build());
-    }
-    private List<IOContent> getZipResult() {
-        return List.of(
-                IOContent.builder().name("thing1.txt").contentType(CONTENT_TYPE).build(),
-                IOContent.builder().name("thing2.txt").contentType(CONTENT_TYPE).build()
-        );
-    }
-
-    private List<IOContent> getArResult() {
-        return List.of(
-                IOContent.builder().name("thing1.txt").contentType(CONTENT_TYPE).build(),
-                IOContent.builder().name("thing2.txt").contentType(CONTENT_TYPE).build()
-        );
+    @Test
+    void decompressTarGz() {
+        validateUnarchiveResult("decompressTarGz/things.tar.gz", DecompressionType.TAR_GZIP, "tar.gz");
     }
 
     @Test
-    public void decompressTarGz() {
-        execute(TransformActionTestCase.builder()
-                .action(action)
-                .parameters(Map.of("decompressionType", DecompressionType.TAR_GZIP))
-                .testName("decompressTarGz")
-                .inputs(Collections.singletonList(IOContent.builder().name("things.tar.gz").contentType(CONTENT_TYPE).build()))
-                .resultMetadata(Map.of("decompressionType", "tar.gz"))
-                .expectTransformResult(getTarResult())
-                .build());
+    void autoDecompressTarGz() {
+        validateUnarchiveResult("autoDecompressTarGz/things.tar.gz", DecompressionType.AUTO, "tar.gz");
     }
 
     @Test
-    public void autoDecompressTarGz() {
-        execute(TransformActionTestCase.builder()
-                .action(action)
-                .testName("autoDecompressTarGz")
-                .parameters(Map.of("decompressionType", DecompressionType.AUTO))
-                .inputs(Collections.singletonList(IOContent.builder().name("things.tar.gz").contentType(CONTENT_TYPE).build()))
-                .resultMetadata(Map.of("decompressionType", "tar.gz"))
-                .expectTransformResult(getTarResult())
-                .build());
+    void autoDecompressTarZ() {
+        validateUnarchiveResult("autoDecompressTarZ/things.tar.Z", DecompressionType.AUTO, "tar.z");
     }
 
     @Test
-    public void autoDecompressTarZ() {
-        execute(TransformActionTestCase.builder()
-                .action(action)
-                .testName("autoDecompressTarZ")
-                .parameters(Map.of("decompressionType", DecompressionType.AUTO))
-                .inputs(Collections.singletonList(IOContent.builder().name("things.tar.Z").contentType(CONTENT_TYPE).build()))
-                .resultMetadata(Map.of("decompressionType", "tar.z"))
-                .expectTransformResult(getTarResult())
-                .build());
-    }
-
-    @Test
-    public void autoDecompressTarXZ() {
-        execute(TransformActionTestCase.builder()
-                .action(action)
-                .testName("autoDecompressTarXZ")
-                .parameters(Map.of("decompressionType", DecompressionType.AUTO))
-                .inputs(Collections.singletonList(IOContent.builder().name("things.tar.xz").contentType(CONTENT_TYPE).build()))
-                .resultMetadata(Map.of("decompressionType", "tar.xz"))
-                .expectTransformResult(getTarResult())
-                .build());
+    void autoDecompressTarXZ() {
+        validateUnarchiveResult("autoDecompressTarXZ/things.tar.xz", DecompressionType.AUTO, "tar.xz");
     }
 
 
     @Test
-    public void decompressTarXZ() {
-        execute(TransformActionTestCase.builder()
-                .action(action)
-                .testName("decompressTarXZ")
-                .parameters(Map.of("decompressionType", DecompressionType.TAR_XZ))
-                .inputs(Collections.singletonList(IOContent.builder().name("things.tar.xz").contentType(CONTENT_TYPE).build()))
-                .resultMetadata(Map.of("decompressionType", "tar.xz"))
-                .expectTransformResult(getTarResult())
-                .build());
+    void decompressTarXZ() {
+        validateUnarchiveResult("decompressTarXZ/things.tar.xz", DecompressionType.TAR_XZ, "tar.xz");
     }
 
     @Test
-    public void decompressTarZ() {
-        execute(TransformActionTestCase.builder()
-                .action(action)
-                .testName("decompressTarZ")
-                .parameters(Map.of("decompressionType", DecompressionType.TAR_Z))
-                .inputs(Collections.singletonList(IOContent.builder().name("things.tar.Z").contentType(CONTENT_TYPE).build()))
-                .resultMetadata(Map.of("decompressionType", "tar.z"))
-                .expectTransformResult(getTarResult())
-                .build());
+    void decompressTarZ() {
+        validateUnarchiveResult("decompressTarZ/things.tar.Z", DecompressionType.TAR_Z, "tar.z");
     }
 
     @Test
-    public void decompressAR() {
-        execute(TransformActionTestCase.builder()
-                .action(action)
-                .testName("decompressAR")
-                .parameters(Map.of("decompressionType", DecompressionType.AR))
-                .inputs(Collections.singletonList(IOContent.builder().name("things.ar").contentType(CONTENT_TYPE).build()))
-                .resultMetadata(Map.of("decompressionType", "ar"))
-                .expectTransformResult(getArResult())
-                .build());
+    void decompressAR() {
+        validateUnarchiveResult("decompressAR/things.ar", DecompressionType.AR, "ar");
     }
 
     @Test
-    public void autoDecompressAR() {
-        execute(TransformActionTestCase.builder()
-            .action(action)
-            .testName("autoDecompressAR")
-            .parameters(Map.of("decompressionType", DecompressionType.AUTO))
-            .inputs(Collections.singletonList(IOContent.builder().name("things.ar").contentType(CONTENT_TYPE).build()))
-            .resultMetadata(Map.of("decompressionType", "ar"))
-            .expectTransformResult(getArResult())
-            .build());
+    void autoDecompressAR() {
+        validateUnarchiveResult("autoDecompressAR/things.ar", DecompressionType.AUTO, "ar");
     }
 
     @Test
-    public void autoDecompressZip() {
-        execute(TransformActionTestCase.builder()
-                .action(action)
-                .testName("autoDecompressZip")
-                .parameters(Map.of("decompressionType", DecompressionType.AUTO))
-                .inputs(Collections.singletonList(IOContent.builder().name("things.zip").contentType(CONTENT_TYPE).build()))
-                .resultMetadata(Map.of("decompressionType", "zip"))
-                .expectTransformResult(getZipResult())
-                .build());
+    void autoDecompressZip() {
+        validateUnarchiveResult("autoDecompressZip/things.zip", DecompressionType.AUTO, "zip");
     }
 
     @Test
-    public void autoDecompressTar() {
-        execute(TransformActionTestCase.builder()
-                .action(action)
-                .testName("autoDecompressTar")
-                .parameters(Map.of("decompressionType", DecompressionType.AUTO))
-                .inputs(Collections.singletonList(IOContent.builder().name("things.tar").contentType(CONTENT_TYPE).build()))
-                .resultMetadata(Map.of("decompressionType", "tar"))
-                .expectTransformResult(getInPlaceTarResult())
-                .build());
+    void autoDecompressTar() {
+        ResultType result = runAction("autoDecompressTar/things.tar", DecompressionType.AUTO);
+        validateUnarchiveTar(result);
     }
 
     @Test
-    public void autoDecompressGzip() {
-        execute(TransformActionTestCase.builder()
-                .action(action)
-                .testName("autoDecompressGzip")
-                .parameters(Map.of("decompressionType", DecompressionType.AUTO))
-                .inputs(Collections.singletonList(IOContent.builder().name("thing1.txt.gz").contentType(CONTENT_TYPE).build()))
-                .resultMetadata(Map.of("decompressionType", "gz"))
-                .expectTransformResult(Collections.singletonList(
-                        IOContent.builder().name("output.thing1.txt.gz").contentType(CONTENT_TYPE).build()
-                ))
-                .build());
+    void autoDecompressGzip() {
+        validateDecompressResult("autoDecompressGzip/thing1.txt.gz", DecompressionType.AUTO, "thing1.txt.gz", "gz");
     }
 
     @Test
     void decompressZip() {
-        execute(TransformActionTestCase.builder()
-                .action(action)
-                .testName("decompressZip")
-                .parameters(Map.of("decompressionType", DecompressionType.ZIP))
-                .inputs(Collections.singletonList(IOContent.builder().name("things.zip").contentType(CONTENT_TYPE).build()))
-                .resultMetadata(Map.of("decompressionType", "zip"))
-                .expectTransformResult(getZipResult())
-                .build());
+        validateUnarchiveResult("decompressZip/things.zip", DecompressionType.ZIP, "zip");
     }
 
     @Test
     void decompressGzip() {
-        execute(TransformActionTestCase.builder()
-                .action(action)
-                .testName("decompressGzip")
-                .parameters(Map.of("decompressionType", DecompressionType.GZIP))
-                .inputs(Collections.singletonList(IOContent.builder().name("thing1.txt.gz").contentType(CONTENT_TYPE).build()))
-                .resultMetadata(Map.of("decompressionType", "gz"))
-                .expectTransformResult(Collections.singletonList(
-                        IOContent.builder().name("output.thing1.txt.gz").contentType(CONTENT_TYPE).build()
-                ))
-                .build());
+        validateDecompressResult("decompressGzip/thing1.txt.gz", DecompressionType.GZIP, "thing1.txt.gz", "gz");
     }
 
     @Test
     void autoDecompressXZ() {
-        execute(TransformActionTestCase.builder()
-                .action(action)
-                .testName("autoDecompressXZ")
-                .parameters(Map.of("decompressionType", DecompressionType.AUTO))
-                .inputs(Collections.singletonList(IOContent.builder().name("thing1.txt.xz").contentType(CONTENT_TYPE).build()))
-                .resultMetadata(Map.of("decompressionType", "xz"))
-                .expectTransformResult(Collections.singletonList(
-                        IOContent.builder().name("output.thing1.txt.xz").contentType(CONTENT_TYPE).build()
-                ))
-                .build());
+        validateDecompressResult("autoDecompressXZ/thing1.txt.xz", DecompressionType.AUTO, "thing1.txt.xz", "xz");
     }
 
     @Test
     void decompressXZ() {
-        execute(TransformActionTestCase.builder()
-                .action(action)
-                .testName("decompressXZ")
-                .parameters(Map.of("decompressionType", DecompressionType.XZ))
-                .inputs(Collections.singletonList(IOContent.builder().name("thing1.txt.xz").contentType(CONTENT_TYPE).build()))
-                .resultMetadata(Map.of("decompressionType", "xz"))
-                .expectTransformResult(Collections.singletonList(
-                        IOContent.builder().name("output.thing1.txt.xz").contentType(CONTENT_TYPE).build()
-                ))
-                .build());
+        validateDecompressResult("decompressXZ/thing1.txt.xz", DecompressionType.XZ, "thing1.txt.xz", "xz");
     }
 
     @Test
     void decompressZ() {
-        execute(TransformActionTestCase.builder()
-                .action(action)
-                .testName("decompressZ")
-                .parameters(Map.of("decompressionType", DecompressionType.Z))
-                .inputs(Collections.singletonList(IOContent.builder().name("thing1.txt.Z").contentType(CONTENT_TYPE).build()))
-                .resultMetadata(Map.of("decompressionType", "z"))
-                .expectTransformResult(Collections.singletonList(
-                        IOContent.builder().name("output.thing1.txt.Z").contentType(CONTENT_TYPE).build()
-                ))
-                .build());
+        validateDecompressResult("decompressZ/thing1.txt.Z", DecompressionType.Z, "thing1.txt.Z", "z");
     }
 
     @Test
     void autoDecompressZ() {
-        execute(TransformActionTestCase.builder()
-                .action(action)
-                .testName("autoDecompressZ")
-                .parameters(Map.of("decompressionType", DecompressionType.Z))
-                .inputs(Collections.singletonList(IOContent.builder().name("thing1.txt.Z").contentType(CONTENT_TYPE).build()))
-                .resultMetadata(Map.of("decompressionType", "z"))
-                .expectTransformResult(Collections.singletonList(
-                        IOContent.builder().name("output.thing1.txt.Z").contentType(CONTENT_TYPE).build()
-                ))
-                .build());
+        validateDecompressResult("autoDecompressZ/thing1.txt.Z", DecompressionType.AUTO, "thing1.txt.Z", "z");
     }
 
     @Test
     void unarchiveTar() {
-        execute(TransformActionTestCase.builder()
-                .action(action)
-                .testName("unarchiveTar")
-                .parameters(Map.of("decompressionType", DecompressionType.TAR))
-                .inputs(Collections.singletonList(IOContent.builder().name("things.tar").contentType(CONTENT_TYPE).build()))
-                .resultMetadata(Map.of("decompressionType", "tar"))
-                .expectTransformResult(getInPlaceTarResult())
-                .build());
+        ResultType result = runAction("unarchiveTar/things.tar", DecompressionType.TAR);
+        validateUnarchiveTar(result);
     }
 
     @Test
     void autoUnarchiveTarZ() {
-        execute(TransformActionTestCase.builder()
-                .action(action)
-                .testName("autoUnarchiveTarZ")
-                .parameters(Map.of("decompressionType", DecompressionType.AUTO))
-                .inputs(Collections.singletonList(IOContent.builder().name("things.tar.Z").contentType(CONTENT_TYPE).build()))
-                .resultMetadata(Map.of("decompressionType", "tar.z"))
-                .expectTransformResult(getTarResult())
-                .build());
+        validateUnarchiveResult("autoUnarchiveTarZ/things.tar.Z", DecompressionType.AUTO, "tar.z");
     }
 
     @Test
     void autoUnarchiveTarXZ() {
-        execute(TransformActionTestCase.builder()
-                .action(action)
-                .testName("autoUnarchiveTarXZ")
-                .parameters(Map.of("decompressionType", DecompressionType.AUTO))
-                .inputs(Collections.singletonList(IOContent.builder().name("things.tar.xz").contentType(CONTENT_TYPE).build()))
-                .resultMetadata(Map.of("decompressionType", "tar.xz"))
-                .expectTransformResult(getTarResult())
-                .build());
+        validateUnarchiveResult("autoUnarchiveTarXZ/things.tar.xz", DecompressionType.AUTO, "tar.xz");
     }
 
     @Test
     void unarchiveSubdirectoryTar() {
-        execute(TransformActionTestCase.builder()
-                .action(action)
-                .testName("unarchiveSubdirectoryTar")
-                .parameters(Map.of("decompressionType", DecompressionType.TAR))
-                .inputs(Collections.singletonList(IOContent.builder().name("foobar.tar").contentType(CONTENT_TYPE).build()))
-                .resultMetadata(Map.of("decompressionType", "tar"))
-                .expectTransformResult(Arrays.asList(
-                        IOContent.builder().name("bar/2/baz").offset(2560).contentType(CONTENT_TYPE).build(),
-                        IOContent.builder().name("bar/3/baz").offset(3584).contentType(CONTENT_TYPE).build(),
-                        IOContent.builder().name("bar/1/baz").offset(4608).contentType(CONTENT_TYPE).build(),
-                        IOContent.builder().name("foo/2/baz").offset(7680).contentType(CONTENT_TYPE).build(),
-                        IOContent.builder().name("foo/3/baz").offset(8704).contentType(CONTENT_TYPE).build(),
-                        IOContent.builder().name("foo/1/baz").offset(9728).contentType(CONTENT_TYPE).build()
-                ))
-                .build());
+        ResultType resultType = runAction("unarchiveSubdirectoryTar/foobar.tar", DecompressionType.TAR);
+
+        assertTransformResult(resultType)
+                .addedMetadata("decompressionType", "tar")
+                .hasContentMatchingAt(0, actionContent -> contentMatches(actionContent, "bar/2/baz", "bar2\n", 2560))
+                .hasContentMatchingAt(1, actionContent -> contentMatches(actionContent, "bar/3/baz", "bar3\n", 3584))
+                .hasContentMatchingAt(2, actionContent -> contentMatches(actionContent, "bar/1/baz", "bar1\n", 4608))
+                .hasContentMatchingAt(3, actionContent -> contentMatches(actionContent, "foo/2/baz", "foo2\n", 7680))
+                .hasContentMatchingAt(4, actionContent -> contentMatches(actionContent, "foo/3/baz", "foo3\n", 8704))
+                .hasContentMatchingAt(5, actionContent -> contentMatches(actionContent, "foo/1/baz", "foo1\n", 9728));
     }
 
     @Test
     void unarchiveSubdirectoryZip() {
-        execute(TransformActionTestCase.builder()
-                .action(action)
-                .testName("unarchiveSubdirectoryZip")
-                .parameters(Map.of("decompressionType", DecompressionType.ZIP))
-                .inputs(Collections.singletonList(IOContent.builder().name("foobar.zip").contentType(CONTENT_TYPE).build()))
-                .resultMetadata(Map.of("decompressionType", "zip"))
-                .expectTransformResult(Arrays.asList(
-                        IOContent.builder().name("bar/1/baz").contentType(CONTENT_TYPE).build(),
-                        IOContent.builder().name("bar/3/baz").contentType(CONTENT_TYPE).build(),
-                        IOContent.builder().name("bar/2/baz").contentType(CONTENT_TYPE).build(),
-                        IOContent.builder().name("foo/1/baz").contentType(CONTENT_TYPE).build(),
-                        IOContent.builder().name("foo/3/baz").contentType(CONTENT_TYPE).build(),
-                        IOContent.builder().name("foo/2/baz").contentType(CONTENT_TYPE).build()
-                ))
-                .build());
+        ResultType resultType = runAction("unarchiveSubdirectoryZip/foobar.zip", DecompressionType.ZIP);
+        validateUnarchiveZipWithSubdirectories(resultType);
     }
 
     @Test
     void unarchiveSubdirectoryAutoZip() {
-        execute(TransformActionTestCase.builder()
-                .action(action)
-                .testName("unarchiveSubdirectoryAutoZip")
-                .parameters(Map.of("decompressionType", DecompressionType.AUTO))
-                .inputs(Collections.singletonList(IOContent.builder().name("foobar.zip").contentType(CONTENT_TYPE).build()))
-                .resultMetadata(Map.of("decompressionType", "zip"))
-                .expectTransformResult(Arrays.asList(
-                        IOContent.builder().name("bar/1/baz").contentType(CONTENT_TYPE).build(),
-                        IOContent.builder().name("bar/3/baz").contentType(CONTENT_TYPE).build(),
-                        IOContent.builder().name("bar/2/baz").contentType(CONTENT_TYPE).build(),
-                        IOContent.builder().name("foo/1/baz").contentType(CONTENT_TYPE).build(),
-                        IOContent.builder().name("foo/3/baz").contentType(CONTENT_TYPE).build(),
-                        IOContent.builder().name("foo/2/baz").contentType(CONTENT_TYPE).build()
-                        ))
-                .build());
+        ResultType resultType = runAction("unarchiveSubdirectoryAutoZip/foobar.zip", DecompressionType.AUTO);
+        validateUnarchiveZipWithSubdirectories(resultType);
     }
 
     @Test
     void decompressionTypeMismatch() {
-        execute(TransformActionTestCase.builder()
-                .action(action)
-                .testName("decompressionTypeMismatch")
-                .parameters(Map.of("decompressionType", DecompressionType.ZIP))
-                .inputs(Collections.singletonList(IOContent.builder().name("things.tar.gz").contentType(CONTENT_TYPE).build()))
-                .expectError("Unable to decompress zip")
-                .build());
+        assertErrorResult(runAction("decompressionTypeMismatch/things.tar.gz", DecompressionType.ZIP))
+                .hasCause("Unable to decompress zip");
     }
 
     @Test
     void truncatedFile() {
-        execute(TransformActionTestCase.builder()
-                .action(action)
-                .testName("truncatedFile")
-                .parameters(Map.of("decompressionType", DecompressionType.TAR_GZIP))
-                .inputs(Collections.singletonList(IOContent.builder().name("bad.things.tar.gz").contentType(CONTENT_TYPE).build()))
-                .expectError("Unable to unarchive tar")
-                .build());
+        assertErrorResult(runAction("truncatedFile/bad.things.tar.gz", DecompressionType.TAR_GZIP))
+                .hasCause("Unable to unarchive tar");
     }
 
     @Test
     void autoNoCompression() {
-        execute(TransformActionTestCase.builder()
-                .action(action)
-                .testName("autoNoCompression")
-                .parameters(Map.of("decompressionType", DecompressionType.AUTO))
-                .inputs(Collections.singletonList(IOContent.builder().name("thing1.txt").contentType(CONTENT_TYPE).build()))
-                .expectError("No compression or archive formats detected")
-                .build());
+        assertErrorResult(runAction("autoNoCompression/thing1.txt", DecompressionType.AUTO))
+                .hasCause("No compression or archive formats detected");
+    }
+
+    void validateUnarchiveResult(String archiveFile, DecompressionType decompressionType, String metadataValue) {
+        ResultType resultType = runAction(archiveFile, decompressionType);
+        assertTransformResult(resultType)
+                .addedMetadata("decompressionType", metadataValue)
+                .hasContentMatchingAt(0, actionContent -> contentMatches(actionContent, "thing1.txt", "thing1\n"))
+                .hasContentMatchingAt(1, actionContent -> contentMatches(actionContent, "thing2.txt", "thing2\n"));
+    }
+
+    void validateDecompressResult(String archiveFile, DecompressionType decompressionType, String contentName, String metadataValue) {
+        ResultType resultType = runAction(archiveFile, decompressionType);
+        assertTransformResult(resultType)
+                .addedMetadata("decompressionType", metadataValue)
+                .hasContentMatchingAt(0, actionContent -> contentMatches(actionContent, contentName, "thing1\n"));
+    }
+
+    private void validateUnarchiveZipWithSubdirectories(ResultType resultType) {
+        assertTransformResult(resultType)
+                .addedMetadata("decompressionType", "zip")
+                .hasContentMatchingAt(0, actionContent -> contentMatches(actionContent, "bar/1/baz", "bar1\n"))
+                .hasContentMatchingAt(1, actionContent -> contentMatches(actionContent, "bar/3/baz", "bar3\n"))
+                .hasContentMatchingAt(2, actionContent -> contentMatches(actionContent, "bar/2/baz", "bar2\n"))
+                .hasContentMatchingAt(3, actionContent -> contentMatches(actionContent, "foo/1/baz", "foo1\n"))
+                .hasContentMatchingAt(4, actionContent -> contentMatches(actionContent, "foo/3/baz", "foo3\n"))
+                .hasContentMatchingAt(5, actionContent -> contentMatches(actionContent, "foo/2/baz", "foo2\n"));
+    }
+
+    private void validateUnarchiveTar(ResultType result) {
+        assertTransformResult(result)
+                .addedMetadata("decompressionType", "tar")
+                .hasContentMatchingAt(0, actionContent -> contentMatches(actionContent, "thing1.txt", "thing1\n", 512))
+                .hasContentMatchingAt(1, actionContent -> contentMatches(actionContent, "thing2.txt", "thing2\n", 1536));
+    }
+
+    boolean contentMatches(ActionContent actionContent, String name, String value) {
+        ContentAssert.assertThat(actionContent)
+                .hasName(name)
+                .hasMediaType(CONTENT_TYPE)
+                .loadStringIsEqualTo(value);
+        return true;
+    }
+
+    boolean contentMatches(ActionContent actionContent, String expectedName, String contentValue, long expectedOffset) {
+        ContentAssert.assertThat(actionContent)
+                .hasName(expectedName)
+                .hasMediaType(CONTENT_TYPE)
+                .loadStringIsEqualTo(contentValue);
+
+        Assertions.assertThat(actionContent.getContent().getSegments()).hasSize(1);
+        Assertions.assertThat(actionContent.getContent().getSegments().get(0).getOffset()).isEqualTo(expectedOffset);
+        return true;
+    }
+
+    ResultType runAction(String archiveFile, DecompressionType decompressionType) {
+        return action.transform(runner.actionContext(), new DecompressionTransformParameters(decompressionType), input(archiveFile));
+    }
+
+    TransformInput input(String archiveFile) {
+        return TransformInput.builder()
+                .content(runner.saveContentFromResource(archiveFile))
+                .build();
     }
 }
