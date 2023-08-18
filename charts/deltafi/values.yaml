@@ -33,6 +33,12 @@ deltafi:
       url: http://127.0.0.1:8080/
   api:
     image: deltafi/deltafi-api:1.0.6
+  clickhouse_etl:
+    image: deltafi/deltafi-api:1.0.6
+    enabled: false
+    interval: 10   # Period (seconds) between sync jobs
+    lag: 30        # Lag time (seconds) for deltafiles to settle into MongoDB
+    batch: 1000    # Maximum count of deltafiles to transfer at a time
   ui:
     image: deltafi/deltafi-ui:1.0.6
   egress_sink:
@@ -138,13 +144,18 @@ kubernetes-dashboard:
 grafana:
   image:
     repository: deltafi/grafana
-    tag: 10.0.1-0
+    tag: 10.0.3-0
   persistence:
     enabled: true
     existingClaim: deltafi-grafana
   nodeSelector:
     node-role.deltafi.org/storage: "true"
   grafana.ini:
+    paths:
+      data: /var/lib/grafana/
+      logs: /var/log/grafana
+      plugins: /var/lib/grafana-plugins
+      provisioning: /etc/grafana/provisioning
     auth.anonymous:
       enabled: false
     auth.basic:
@@ -196,6 +207,17 @@ grafana:
         isDefault: false
         version: 2
         uid: deltafi-loki
+      - name: ClickHouse
+        uid: deltafi-clickhouse
+        type: grafana-clickhouse-datasource
+        jsonData:
+          defaultDatabase: deltafi
+          port: 9000
+          server: deltafi-clickhouse
+          username: default
+          tlsSkipVerify: true
+        secureJsonData:
+          password: deltafi
 promtail:
   image:
     tag: 2.8.2
@@ -410,3 +432,28 @@ docker-registry:
 registry-ui:
   enabled: false
   registryHost: deltafi-docker-registry
+
+# Clickhouse Configuration
+clickhouse:
+  enabled: false
+  image:
+    repository: bitnami/clickhouse
+    tag: 23.7.2-debian-11-r0
+  shards: 1
+  replicaCount: 1
+  keeper:
+    enabled: false
+  externalAccess:
+    enabled: false
+    service:
+      type: ClusterIP
+  ingress:
+    enabled: false
+  persistence:
+    enabled: true
+    existingClaim: deltafi-clickhouse
+  zookeeper:
+    enabled: false
+  auth:
+    existingSecret: clickhouse-password
+    existingSecretKey: clickhouse-password

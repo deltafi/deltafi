@@ -124,6 +124,7 @@ Version: $(cat $DELTAFICLI_WORKDIR/VERSION)
 Usage: $cli_name [command]
 
 Commands:
+  clickhouse-cli         launch the clickhouse CLI
   did                    show did for filename
   disable                stop all DeltaFi processes
   egress-flow            start, stop or validate an egress flow
@@ -206,6 +207,9 @@ if [ -f "$DELTAFICLI_DISABLED_STATE_PATH" ]; then
 fi
 
 case "$1" in
+  clickhouse-cli)
+    "$DELTAFICLI_WORKDIR/commands/clickhouse-cli" "$@"
+    ;;
   did)
     "$DELTAFICLI_WORKDIR/commands/did" "$@"
     ;;

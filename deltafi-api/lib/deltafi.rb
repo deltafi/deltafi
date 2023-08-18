@@ -47,6 +47,61 @@ module Deltafi
     }
   end
 
+  def self.clickhouse_config
+    {
+      host: ENV['CLICKHOUSE_HOST'] || 'deltafi-clickhouse',
+      port: ENV['CLICKHOUSE_PORT'] || '8123',
+      database: ENV['CLICKHOUSE_DATABASE'] || 'deltafi',
+      user: ENV['CLICKHOUSE_USER'] || 'default',
+      password: ENV['CLICKHOUSE_PASSWORD'] || 'deltafi'
+    }
+  end
+
+  def self.clickhouse_client
+    info 'Establishing connection to clickhouse'
+    conf = ClickHouse::Config.new do |config|
+      config.logger = logger
+      # config.database = database
+      config.timeout = 60
+      config.open_timeout = 3
+      config.ssl_verify = false
+      # set to true to symbolize keys for SELECT and INSERT statements (type casting)
+      config.symbolize_keys = true
+      config.headers = {}
+
+      # or provide connection options separately
+      config.scheme = 'http'
+      config.host = clickhouse_config[:host]
+      config.port = clickhouse_config[:port]
+
+      config.username = clickhouse_config[:user]
+      config.password = clickhouse_config[:password]
+
+      # if you want to add settings to all queries
+      # config.global_params = { mutations_sync: 1 }
+
+      # choose a ruby JSON parser (default one)
+      # config.json_parser = ClickHouse::Middleware::ParseJson
+      # or Oj parser
+      # config.json_parser = ClickHouse::Middleware::ParseJsonOj
+
+      # JSON.dump (default one)
+      # config.json_serializer = ClickHouse::Serializer::JsonSerializer
+      # or Oj.dump
+      # config.json_serializer = ClickHouse::Serializer::JsonOjSerializer
+    end
+
+    # Connect and create database if it does not exist, then return connection to database
+    ClickHouse::Connection.new(conf).create_database(clickhouse_config[:database], if_not_exists: true, engine: nil, cluster: nil)
+    conf.database = clickhouse_config[:database]
+    ClickHouse::Connection.new(conf)
+  rescue StandardError => e
+    error e.message
+    warning 'Will retry connection in 10 seconds'
+    sleep 10
+    retry
+  end
+
   def self.graphql(query)
     debug "#{__method__} called from #{caller(1..1).first}"
     graphql_url = File.join(BASE_URL, 'graphql')

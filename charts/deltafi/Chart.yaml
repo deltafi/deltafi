@@ -68,3 +68,7 @@ dependencies:
     tags:
       - metrics
       - logs
+  - name: clickhouse
+    version: 3.3.5
+    # repository: https://charts.bitnami.com/bitnami
+    condition: enable.clickhouse

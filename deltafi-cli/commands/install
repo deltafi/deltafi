@@ -120,6 +120,7 @@ _k8s_prerequisites() {
     "password" "password" \
     "htpasswd" 'deltafi:$2y$05$1eNSa6WKdGY7ewxd9.tJPusPaZXJ0xMEO3T/gcqMkaBKzBuyaB0NC' \
     "haSharedSecret" "password"
+  _k8s_add_secret clickhouse-password clickhouse-password "deltafi"
 }
 
 _k8s_install() {
