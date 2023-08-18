@@ -18,7 +18,8 @@
 
 import { rest, graphql } from "msw";
 
-const requestDelay = 500;
+const requestDelay = parseInt(process.env.VUE_APP_MOCK_REQUEST_DELAY || "500");
+console.log("Mock Request Delay: ", requestDelay);
 
 export default [
   rest.get("/api/v1/sse", (req, res, ctx) => {

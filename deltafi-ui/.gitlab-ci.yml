@@ -42,13 +42,15 @@ ui:docker-multiarch:
 ui:test:
   image: deltafi/deltafi-ui-test
   stage: test
+  needs:
+    - job: "ui:eslint"
   script:
     - cd deltafi-ui
     # link node_modules from base image
     - ln -s /app/node_modules ./node_modules
     # start the server (with mocking enabled) in the background
-    - VUE_APP_MOCK_RESPONSES=successResponse npm run dev &
+    - VUE_APP_MOCK_RESPONSES=successResponse VUE_APP_MOCK_REQUEST_DELAY=1 npm run dev &
     # wait for the server to start
     - npx wait-on -t 120000 http://127.0.0.1:8080
     # run Cypress tests
-    - npx cypress run --e2e
+    - npx cypress run --e2e --config video=false
