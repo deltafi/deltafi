@@ -40,34 +40,28 @@ public class ModifyMetadataTransformAction extends TransformAction<ModifyMetadat
         TransformResult result = new TransformResult(context);
         result.addContent(input.content());
 
-        if (params.getAddOrModifyMetadata() != null) {
-            result.setMetadata(params.getAddOrModifyMetadata());
-        }
+        result.setMetadata(params.getAddOrModifyMetadata());
 
-        if (params.getCopyMetadata() != null) {
-            params.getCopyMetadata().forEach((key, value) -> {
-                if (input.getMetadata().containsKey(key)) {
-                    String[] newKeys = value.split(",");
+        params.getCopyMetadata().forEach((key, value) -> {
+            if (input.getMetadata().containsKey(key)) {
+                String[] newKeys = value.split(",");
 
-                    for (String newKey : newKeys) {
-                        String trimmedKey = newKey.trim();
-                        result.addMetadata(trimmedKey, input.getMetadata().get(key));
-                    }
+                for (String newKey : newKeys) {
+                    String trimmedKey = newKey.trim();
+                    result.addMetadata(trimmedKey, input.getMetadata().get(key));
                 }
-            });
-        }
+            }
+        });
 
-        if (params.getDeleteMetadataKeys() != null) {
-            params.getDeleteMetadataKeys().forEach(key -> {
-                // if this was just added, de-add it
-                result.getMetadata().remove(key);
+        params.getDeleteMetadataKeys().forEach(key -> {
+            // if this was just added, de-add it
+            result.getMetadata().remove(key);
 
-                // if it was in the input, remove it
-                if (input.getMetadata().containsKey(key)) {
-                    result.deleteMetadataKey(key);
-                }
-            });
-        }
+            // if it was in the input, remove it
+            if (input.getMetadata().containsKey(key)) {
+                result.deleteMetadataKey(key);
+            }
+        });
 
         return result;
     }

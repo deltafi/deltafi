@@ -21,9 +21,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.*;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Data
@@ -31,13 +29,13 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
-public class ModifyMetadataParameters extends ActionParameters {
-    @JsonPropertyDescription("Key value pairs of metadata to be added or modified")
-    public Map<String, String> addOrModifyMetadata = new HashMap<>();
+public class ModifyMediaTypeParameters extends ActionParameters {
+    @JsonPropertyDescription("A map of old to new media types. Supports wildcards (*) in the old media types. These will be applied before and overridden by the indexMediaTypeMap values, if present.")
+    public Map<String, String> mediaTypeMap = new HashMap<>();
 
-    @JsonPropertyDescription("Copy existing metadata values. Expressed as a map of old key names to new key names. The new names can be a comma-separated list, to make multiple copies. If the original key does not exist, this will be ignored. Copies will overwrite existing values. Copies are always performed before deletes.")
-    public Map<String, String> copyMetadata = new HashMap<>();
+    @JsonPropertyDescription("A map of indexes to media types. Used to update the media type of specific content by index.")
+    Map<Integer, String> indexMediaTypeMap = new HashMap<>();
 
-    @JsonPropertyDescription("List of metadata keys to delete")
-    public List<String> deleteMetadataKeys = new ArrayList<>();
+    @JsonPropertyDescription("If true, throw an exception if a content is missing an index specified in indexMediaTypeMap")
+    public boolean errorOnMissingIndex = false;
 }
