@@ -183,6 +183,7 @@ _run_migrations() {
   cli_log "Running migrations"
   deltafi event create -q -s "cli" "Running Mongo migrations"
   MONGO_RESULTS=$(deltafi mongo-migrate | sed -e 's|>>|\\n* |g')
+  echo "${MONGO_RESULTS}"
   deltafi event create -q -s "cli" --success "Completed Mongo migrations" --content "${MONGO_RESULTS}"
 
   deltafi event create -q -s "cli" --success --notification "Installed DeltaFi version $( cat "${DELTAFICLI_WORKDIR}/VERSION")"
