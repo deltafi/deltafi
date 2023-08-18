@@ -80,9 +80,13 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
      * @return ActionInput containing the ActionConfiguration
      */
     public ActionInput buildActionInput(String flow, DeltaFile deltaFile, String systemName, String egressFlow, String returnAddress) {
-
         if (Objects.isNull(internalParameters)) {
-            setInternalParameters(Collections.emptyMap());
+            if (parameters != null) {
+                // fall back to using parameters if internalParameters do not exist yet
+                setInternalParameters(parameters);
+            } else {
+                setInternalParameters(Collections.emptyMap());
+            }
         }
 
         return ActionInput.builder()
