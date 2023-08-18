@@ -118,8 +118,7 @@ class TestCaseBase(ABC):
         A test case for DeltaFi python actions
         :param data: Dict of test case fields
         - action: instance of the action being tested
-        - pkg_name: str: name of the actions package for finding resources
-        - test_name: str: name of the test for finding test files, e.g. test/data/{test_name)
+        - data_dir: str: subdirectory name (e.g., test name) for locating test data files, i.e., test/data/{data_dir)
         - compare_tool: (optional) CompareHelper instanced for comparing output content
         - inputs: (optional) List[IOContent]: input content to action
         - parameters: (optional) Dict: map of action input parameters
@@ -132,15 +131,10 @@ class TestCaseBase(ABC):
         else:
             raise ValueError("action is required")
 
-        if "pkg_name" in data:
-            self.pkg_name = data["pkg_name"]
+        if "data_dir" in data:
+            self.data_dir = data["data_dir"]
         else:
-            raise ValueError("pkg_name is required")
-
-        if "test_name" in data:
-            self.test_name = data["test_name"]
-        else:
-            raise ValueError("test_name is required")
+            raise ValueError("data_dir is required")
 
         if "compare_tool" in data:
             self.compare_tool = data["compare_tool"]
@@ -178,11 +172,17 @@ class TestCaseBase(ABC):
 
 
 class ActionTest(ABC):
-    def __init__(self):
+    def __init__(self, package_name: str):
+        """
+        Provides structure for testing DeltaFi actions
+        Args:
+            package_name: name of the actions package for finding resources
+        """
         self.content_service = InternalContentService()
         self.did = ""
         self.expected_outputs = []
         self.loaded_inputs = []
+        self.package_name = package_name
         self.res_path = ""
 
     def __reset__(self):
@@ -199,8 +199,8 @@ class ActionTest(ABC):
         return contents
 
     def get_contents(self, test_case: TestCaseBase):
-        pkg_path = files(test_case.pkg_name)
-        self.res_path = pkg_path.joinpath(f"test/data/{test_case.test_name}/")
+        pkg_path = files(self.package_name)
+        self.res_path = pkg_path.joinpath(f"test/data/{test_case.data_dir}/")
 
         # Load inputs
         for input_ioc in test_case.inputs:
@@ -240,6 +240,7 @@ class ActionTest(ABC):
     def make_context(self, test_case: TestCaseBase):
         action_name = INGRESS_FLOW + "." + test_case.action.__class__.__name__
         return Context(did=self.did,
+                       action_flow=INGRESS_FLOW,
                        action_name=action_name,
                        source_filename=test_case.file_name,
                        ingress_flow=INGRESS_FLOW,
@@ -293,16 +294,19 @@ class ActionTest(ABC):
         assert_equal(expected.content_type, actual.media_type)
         assert_equal(expected.name, actual.name)
 
+    def compare_one_content(self, comparitor: CompareHelper, expected: LoadedContent, actual, index):
+        self.compare_content_details(expected, actual)
+        seg_id = actual.segments[0].uuid
+        comparitor.compare(
+            expected.data,
+            self.content_service.get_output(seg_id),
+            f"Content[{index}]"
+        )
+
     def compare_all_output(self, comparitor: CompareHelper, content: List):
         assert_equal_len(self.expected_outputs, content)
         for index, expected in enumerate(self.expected_outputs):
-            self.compare_content_details(expected, content[index])
-            seg_id = content[index].segments[0].uuid
-            comparitor.compare(
-                expected.data,
-                self.content_service.get_output(seg_id),
-                f"Content[{index}]"
-            )
+            self.compare_one_content(comparitor, expected, content[index], index)
 
     def compare_domains(self, comparitor: CompareHelper, expected_items: List[Dict], results: List[Dict]):
         assert_equal_len(expected_items, results)

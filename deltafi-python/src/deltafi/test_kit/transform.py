@@ -38,8 +38,13 @@ class TransformTestCase(TestCaseBase):
 
 
 class TransformActionTest(ActionTest):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, package_name: str):
+        """
+        Provides structure for testing DeltaFi Transform action
+        Args:
+            package_name: name of the actions package for finding resources
+        """
+        super().__init__(package_name)
 
     def transform(self, test_case: TransformTestCase):
         if test_case.expected_result_type == TransformResult:

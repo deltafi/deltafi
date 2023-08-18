@@ -44,14 +44,26 @@ class LoadTestCase(TestCaseBase):
         self.annotations = annotations
         self.domains = domains
 
-    def expect_reinject_result(self, children: List):
+    def add_reinject_child(self, filename: str, flow: str, content: IOContent, metadata: Dict):
         self.expected_result_type = ReinjectResult
-        self.children = children
+        self.children.append(
+            {
+                "filename": filename,
+                "flow": flow,
+                "content": content,
+                "metadata": metadata
+            }
+        )
 
 
 class LoadActionTest(ActionTest):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, package_name: str):
+        """
+        Provides structure for testing DeltaFi Load action
+        Args:
+            package_name: name of the actions package for finding resources
+        """
+        super().__init__(package_name)
 
     def load(self, test_case: LoadTestCase):
         if test_case.expected_result_type == ReinjectResult:

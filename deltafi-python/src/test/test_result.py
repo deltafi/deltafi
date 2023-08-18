@@ -16,10 +16,10 @@
 #    limitations under the License.
 #
 
-from deltafi.domain import Content, Context
+from deltafi.domain import Content
 from deltafi.metric import Metric
 from deltafi.result import DomainResult, EgressResult, EnrichResult, ErrorResult, FilterResult, FormatResult, \
-    FormatManyResult, LoadResult, ReinjectResult, TransformResult, ValidateResult
+    FormatManyResult, LoadResult, ReinjectResult, TransformResult, ValidateResult, ChildFormatResult
 
 from .helperutils import make_context, make_segment
 
@@ -137,7 +137,7 @@ def make_format_result(context, file_name, seg_id):
 
 
 def verify_format_result(response, file_name, seg_id):
-    assert len(response.items()) == 2
+    assert len(response.items()) == 3
     assert response.get('content')['name'] == file_name
     assert response.get('content')['segments'][0]['uuid'] == seg_id
     verify_all_metadata(response)
@@ -151,9 +151,19 @@ def test_format_result():
     verify_format_result(result.response(), "filename1", "id1")
 
 
+def verify_child_format_result(response, file_name, seg_id):
+    assert len(response.items()) == 4
+    did = response.get("did")
+    assert len(did) == 36
+    assert response.get('content')['name'] == file_name
+    assert response.get('content')['segments'][0]['uuid'] == seg_id
+    verify_all_metadata(response)
+
+
 def test_format_many_result():
     result = FormatManyResult(make_context())
-    result.add_format_result(make_format_result(make_context(), "fn1", "id1"))
+    child_result1 = ChildFormatResult(make_format_result(make_context(), "fn1", "id1"))
+    result.add_format_result(child_result1)
     result.add_format_result(make_format_result(make_context(), "fn2", "id2"))
     assert result.result_key == "formatMany"
     assert result.result_type == "FORMAT_MANY"
@@ -161,8 +171,8 @@ def test_format_many_result():
 
     responses = result.response()
     assert len(responses) == 2
-    verify_format_result(responses[0], "fn1", "id1")
-    verify_format_result(responses[1], "fn2", "id2")
+    verify_child_format_result(responses[0], "fn1", "id1")
+    verify_child_format_result(responses[1], "fn2", "id2")
 
 
 def make_content(content_service, name, seg_id):

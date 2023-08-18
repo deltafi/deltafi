@@ -17,8 +17,8 @@
 #
 
 import abc
-from typing import Dict, List
 import uuid
+from typing import Dict, List
 
 from deltafi.domain import Content, Context
 from deltafi.metric import Metric
@@ -123,10 +123,15 @@ class FormatResult(Result):
     def __init__(self, context: Context):
         super().__init__('format', 'FORMAT', context)
         self.content = None
+        self.delete_metadata_keys = []
         self.metadata = {}
 
     def add_metadata(self, key: str, value: str):
         self.metadata[key] = value
+        return self
+
+    def delete_metadata_key(self, key: str):
+        self.delete_metadata_keys.append(key)
         return self
 
     def set_content(self, content: Content):
@@ -135,19 +140,37 @@ class FormatResult(Result):
 
     def save_string_content(self, string_data: str, name: str, media_type: str):
         segment = self.context.content_service.put_str(self.context.did, string_data)
-        self.content = Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service)
+        self.content = Content(name=name, segments=[segment], media_type=media_type,
+                               content_service=self.context.content_service)
         return self
 
     def save_byte_content(self, byte_data: bytes, name: str, media_type: str):
         segment = self.context.content_service.put_bytes(self.context.did, byte_data)
-        self.content = Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service)
+        self.content = Content(name=name, segments=[segment], media_type=media_type,
+                               content_service=self.context.content_service)
         return self
 
     def response(self):
         return {
             'content': self.content.json(),
-            'metadata': self.metadata
+            'metadata': self.metadata,
+            'deleteMetadataKeys': self.delete_metadata_keys
         }
+
+
+class ChildFormatResult:
+    def __init__(self, format_result: FormatResult = None):
+        self._did = str(uuid.uuid4())
+        self.format_result = format_result
+
+    @property
+    def did(self):
+        return self._did
+
+    def response(self):
+        res = self.format_result.response()
+        res["did"] = self._did
+        return res
 
 
 class FormatManyResult(Result):
@@ -155,8 +178,11 @@ class FormatManyResult(Result):
         super().__init__('formatMany', 'FORMAT_MANY', context)
         self.format_results = []
 
-    def add_format_result(self, format_result: FormatResult):
-        self.format_results.append(format_result)
+    def add_format_result(self, format_result):
+        if isinstance(format_result, ChildFormatResult):
+            self.format_results.append(format_result)
+        else:
+            self.format_results.append(ChildFormatResult(format_result))
         return self
 
     def response(self):
@@ -184,12 +210,14 @@ class LoadResult(Result):
 
     def save_string_content(self, string_data: str, name: str, media_type: str):
         segment = self.context.content_service.put_str(self.context.did, string_data)
-        self.content.append(Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service))
+        self.content.append(
+            Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service))
         return self
 
     def save_byte_content(self, byte_data: bytes, name: str, media_type: str):
         segment = self.context.content_service.put_bytes(self.context.did, byte_data)
-        self.content.append(Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service))
+        self.content.append(
+            Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service))
         return self
 
     def add_metadata(self, key: str, value: str):
@@ -300,12 +328,14 @@ class TransformResult(Result):
 
     def save_string_content(self, string_data: str, name: str, media_type: str):
         segment = self.context.content_service.put_str(self.context.did, string_data)
-        self.content.append(Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service))
+        self.content.append(
+            Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service))
         return self
 
     def save_byte_content(self, byte_data: bytes, name: str, media_type: str):
         segment = self.context.content_service.put_bytes(self.context.did, byte_data)
-        self.content.append(Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service))
+        self.content.append(
+            Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service))
         return self
 
     def add_metadata(self, key: str, value: str):
