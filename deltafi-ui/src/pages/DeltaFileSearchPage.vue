@@ -143,7 +143,7 @@ import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import DidLink from "@/components/DidLink.vue";
 import FormattedBytes from "@/components/FormattedBytes.vue";
 import PageHeader from "@/components/PageHeader.vue";
-import RetryResumeDialog from "@/components/MetadataDialog.vue";
+import RetryResumeDialog from "@/components/MetadataDialogReplay.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useDeltaFilesQueryBuilder from "@/composables/useDeltaFilesQueryBuilder";
 import useDomains from "@/composables/useDomains";
@@ -695,7 +695,7 @@ const menuItems = ref([
     label: "Replay Selected",
     icon: "fas fa-sync fa-fw",
     command: () => {
-      retryResumeDialog.value.showConfirmDialog("Replay");
+      retryResumeDialog.value.showConfirmDialog();
     },
     visible: computed(() => hasPermission("DeltaFileReplay")),
     disabled: computed(() => selectedDids.value.length == 0),

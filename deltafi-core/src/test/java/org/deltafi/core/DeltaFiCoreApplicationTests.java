@@ -680,8 +680,21 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(did, retryResults.get(0).getDid());
 		assertTrue(retryResults.get(0).getSuccess());
 
-		DeltaFile expected = postResumeTransformDeltaFile(did, "sampleIngress", "SampleTransformAction");
+		DeltaFile expected = postResumeTransformDeltaFile(did);
 		verifyActionEventResults(expected, ActionContext.builder().flow("sampleIngress").name("sampleIngress.SampleTransformAction").build());
+
+		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
+		deltaFile.errorAction("sampleIngress", "SampleTransformAction", OffsetDateTime.now(), OffsetDateTime.now(), "cause", "context");
+		deltaFileRepo.save(deltaFile);
+
+		List<PerActionUniqueKeyValues> errorMetadataUnion = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+                "query getMetadata { errorMetadataUnion (dids: [\"" + did + "\"]) { action keyVals { key values } } }",
+				"data." + DgsConstants.QUERY.ErrorMetadataUnion,
+				new TypeRef<>() {});
+
+		assertEquals(1, errorMetadataUnion.size());
+		assertEquals("SampleTransformAction", errorMetadataUnion.get(0).getAction());
+		assertEquals(List.of("AuthorizedBy", "anotherKey", "deleteMe"), errorMetadataUnion.get(0).getKeyVals().stream().map(UniqueKeyValues::getKey).sorted().toList());
 
 		Mockito.verifyNoInteractions(metricService);
 	}
@@ -730,7 +743,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile loaded = postLoadDeltaFile(did);
 
 		// mock loading the incorrect metadata so the enrichAction is not fired
-		loaded.getLastDataAmendedAction().setMetadata(LOAD_WRONG_METADATA);
+		loaded.lastCompleteDataAmendedAction().setMetadata(LOAD_WRONG_METADATA);
 		deltaFileRepo.save(loaded);
 
 		deltaFilesService.handleActionEvent(actionEvent("domain", did));
@@ -766,15 +779,15 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(DeltaFileStage.INGRESS, child1.getStage());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child1.getParentDids());
 		assertEquals("file1", child1.getSourceInfo().getFilename());
-		assertEquals(0, child1.getLastDataAmendedContent().get(0).getSegments().get(0).getOffset());
-		assertEquals(2, child1.getLastDataAmendedContent().size());
+		assertEquals(0, child1.lastDataAmendedContent().get(0).getSegments().get(0).getOffset());
+		assertEquals(2, child1.lastDataAmendedContent().size());
 
 		DeltaFile child2 = children.get(1);
 		assertEquals(DeltaFileStage.INGRESS, child2.getStage());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child2.getParentDids());
 		assertEquals("file2", child2.getSourceInfo().getFilename());
-		assertEquals(250, child2.getLastDataAmendedContent().get(0).getSegments().get(0).getOffset());
-		assertEquals(1, child2.getLastDataAmendedContent().size());
+		assertEquals(250, child2.lastDataAmendedContent().get(0).getSegments().get(0).getOffset());
+		assertEquals(1, child2.lastDataAmendedContent().size());
 
 		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture(), anyBoolean());
 		List<ActionInput> actionInputs = actionInputListCaptor.getValue();
@@ -811,7 +824,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child1.getParentDids());
 		assertEquals("input.txt", child1.getSourceInfo().getFilename());
 
-		Action child1Action = child1.getLastDataAmendedAction();
+		Action child1Action = child1.lastCompleteDataAmendedAction();
 		org.assertj.core.api.Assertions.assertThat(child1Action.getName()).isEqualTo("SampleLoadAction");
 		org.assertj.core.api.Assertions.assertThat(child1Action.getMetadata()).containsEntry("loadSampleType", "load-sample-type").containsEntry("loadSampleVersion", "2.2");
 
@@ -829,7 +842,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(Collections.singletonList(did), child2.getParentDids());
 		assertEquals("input.txt", child2.getSourceInfo().getFilename());
 
-		Action child2Action = child2.getLastDataAmendedAction();
+		Action child2Action = child2.lastCompleteDataAmendedAction();
 		org.assertj.core.api.Assertions.assertThat(child2Action.getName()).isEqualTo("SampleLoadAction");
 		org.assertj.core.api.Assertions.assertThat(child2Action.getMetadata()).containsEntry("loadSampleType", "load-sample-type").containsEntry("loadSampleVersion", "2.2");
 
@@ -966,6 +979,31 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void testResumeFormat() throws IOException {
+		String did = UUID.randomUUID().toString();
+		deltaFileRepo.save(postFormatHadErrorDeltaFile(did));
+
+		List<RetryResult> retryResults = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				String.format(graphQL("resumeFormat"), did),
+				"data." + DgsConstants.MUTATION.Resume,
+				new TypeRef<>() {});
+
+		assertEquals(1, retryResults.size());
+		assertEquals(did, retryResults.get(0).getDid());
+		assertTrue(retryResults.get(0).getSuccess());
+
+		DeltaFile expected = postResumeFormatDeltaFile(did);
+		verifyActionEventResults(expected, ActionContext.builder().flow("sampleEgress").name("sampleEgress.SampleFormatAction").build());
+
+		Mockito.verifyNoInteractions(metricService);
+
+		DeltaFile resumed = deltaFilesService.getDeltaFile(did);
+		DeltaFileMessage message = resumed.forQueue("sampleEgress");
+		assertFalse(message.getMetadata().containsKey("loadSampleVersion"));
+		assertEquals("b", message.getMetadata().get("a"));
+	}
+
+	@Test
 	void testFormatMissingContent() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postEnrichDeltaFile(did));
@@ -1006,14 +1044,14 @@ class DeltaFiCoreApplicationTests {
 		assertFalse(child1.getTestMode());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child1.getParentDids());
 		assertEquals("input.txt", child1.getSourceInfo().getFilename());
-		assertEquals(0, child1.lastFormatActionFor("sampleEgress").getContent().get(0).getSegments().get(0).getOffset());
+		assertEquals(0, child1.lastFormatAction("sampleEgress").getContent().get(0).getSegments().get(0).getOffset());
 
 		DeltaFile child2 = children.get(1);
 		assertEquals(DeltaFileStage.EGRESS, child2.getStage());
 		assertFalse(child2.getTestMode());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child2.getParentDids());
 		assertEquals("input.txt", child2.getSourceInfo().getFilename());
-		assertEquals(250, child2.lastFormatActionFor("sampleEgress").getContent().get(0).getSegments().get(0).getOffset());
+		assertEquals(250, child2.lastFormatAction("sampleEgress").getContent().get(0).getSegments().get(0).getOffset());
 
 		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture(), anyBoolean());
 		assertEquals(4, actionInputListCaptor.getValue().size());
@@ -1103,7 +1141,7 @@ class DeltaFiCoreApplicationTests {
 		assertTrue(retryResults.get(0).getSuccess());
 		assertFalse(retryResults.get(1).getSuccess());
 
-		verifyActionEventResults(postResumeDeltaFile(did, "sampleEgress", "AuthorityValidateAction"),
+		verifyActionEventResults(postResumeDeltaFile(did, "sampleEgress", "AuthorityValidateAction", ActionType.VALIDATE),
 				ActionContext.builder().flow("sampleEgress").name("sampleEgress.AuthorityValidateAction").build());
 
 		Mockito.verifyNoInteractions(metricService);
@@ -1119,7 +1157,7 @@ class DeltaFiCoreApplicationTests {
 		format.setState(ActionState.ERROR);
 		deltaFileRepo.save(deltaFile);
 
-		deltaFilesService.resume(List.of(did), List.of(), List.of());
+		deltaFilesService.resume(List.of(did), List.of());
 
 		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture(), anyBoolean());
 
@@ -4312,14 +4350,14 @@ class DeltaFiCoreApplicationTests {
 		assertFalse(child1.getTestMode());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child1.getParentDids());
 		assertEquals("input.txt", child1.getSourceInfo().getFilename());
-		assertEquals(0, child1.getLastDataAmendedAction().getContent().get(0).getSegments().get(0).getOffset());
+		assertEquals(0, child1.lastCompleteDataAmendedAction().getContent().get(0).getSegments().get(0).getOffset());
 
 		DeltaFile child2 = children.get(1);
 		assertEquals(DeltaFileStage.EGRESS, child2.getStage());
 		assertFalse(child2.getTestMode());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child2.getParentDids());
 		assertEquals("input.txt", child2.getSourceInfo().getFilename());
-		assertEquals(250, child2.getLastDataAmendedAction().getContent().get(0).getSegments().get(0).getOffset());
+		assertEquals(250, child2.lastCompleteDataAmendedAction().getContent().get(0).getSegments().get(0).getOffset());
 
 		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture(), anyBoolean());
 		assertEquals(2, actionInputListCaptor.getValue().size());

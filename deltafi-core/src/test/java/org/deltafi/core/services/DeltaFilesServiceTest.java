@@ -32,11 +32,7 @@ import org.deltafi.core.generated.types.DeltaFilesFilter;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.core.repo.DeltaFileRepo;
-import org.deltafi.core.types.DeltaFiles;
-import org.deltafi.core.types.EgressFlow;
-import org.deltafi.core.types.IngressFlow;
-import org.deltafi.core.types.TransformFlow;
-import org.deltafi.core.types.UniqueKeyValues;
+import org.deltafi.core.types.*;
 import org.deltafi.core.util.Util;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -50,8 +46,9 @@ import java.util.*;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_XML;
 import static org.deltafi.common.constant.DeltaFiConstants.FILES_ERRORED;
-import static org.deltafi.core.repo.DeltaFileRepoImpl.SOURCE_INFO_METADATA;
+import static org.deltafi.core.repo.DeltaFileRepoImpl.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -119,7 +116,7 @@ class DeltaFilesServiceTest {
         assertNotNull(deltaFile);
         assertEquals(ingressFlow.getName(), deltaFile.getSourceInfo().getFlow());
         assertEquals(did, deltaFile.getDid());
-        assertNotNull(deltaFile.getLastDataAmendedAction());
+        assertNotNull(deltaFile.lastCompleteDataAmendedAction());
     }
 
     @Test
@@ -569,5 +566,49 @@ class DeltaFilesServiceTest {
 
     private Content createContent(String did) {
         return new Content("name", APPLICATION_XML, new Segment(UUID.randomUUID().toString(), 0L, 32L, did));
+    }
+
+    @Test
+    void testErrorMetadataUnion() {
+        DeltaFile deltaFile1 = Util.buildDeltaFile("1", List.of());
+        deltaFile1.getActions().get(0).setMetadata(Map.of("a", "1", "b", "2"));
+        deltaFile1.queueAction("flow1", "TransformAction1", ActionType.TRANSFORM);
+        deltaFile1.errorAction("flow1", "TransformAction1", OffsetDateTime.now(), OffsetDateTime.now(), "cause", "context");
+
+        DeltaFile deltaFile2 = Util.buildDeltaFile("2", List.of());
+        deltaFile2.getActions().get(0).setMetadata(Map.of("a", "somethingElse", "c", "3"));
+        deltaFile2.queueAction("flow1", "TransformAction1", ActionType.TRANSFORM);
+        deltaFile2.errorAction("flow1", "TransformAction1", OffsetDateTime.now(), OffsetDateTime.now(), "cause", "context");
+
+        DeltaFile deltaFile3 = Util.buildDeltaFile("2", List.of());
+        deltaFile3.getActions().get(0).setMetadata(Map.of("d", "4"));
+        deltaFile3.queueAction("flow2", "TransformAction2", ActionType.TRANSFORM);
+        deltaFile3.errorAction("flow2", "TransformAction2", OffsetDateTime.now(), OffsetDateTime.now(), "cause", "context");
+
+        DeltaFile deltaFile4 = Util.buildDeltaFile("3", List.of());
+        deltaFile4.getActions().get(0).setMetadata(Map.of("e", "5"));
+        deltaFile4.queueAction("flow3", "TransformAction3", ActionType.TRANSFORM);
+
+        DeltaFiles deltaFiles = new DeltaFiles(0, 4, 4, List.of(deltaFile1, deltaFile2, deltaFile3, deltaFile4));
+        when(deltaFileRepo.deltaFiles(eq(0), eq(3), any(), any(), any())).thenReturn(deltaFiles);
+
+        List<PerActionUniqueKeyValues> actionVals = deltaFilesService.errorMetadataUnion(List.of(deltaFile1.getDid(), deltaFile2.getDid(), deltaFile3.getDid()));
+
+        assertEquals(2, actionVals.size());
+        actionVals.sort(Comparator.comparing(PerActionUniqueKeyValues::getAction));
+        assertEquals("flow1", actionVals.get(0).getFlow());
+        assertEquals("TransformAction1", actionVals.get(0).getAction());
+        assertEquals(3, actionVals.get(0).getKeyVals().size());
+        assertEquals("a", actionVals.get(0).getKeyVals().get(0).getKey());
+        assertEquals(List.of("1", "somethingElse"), actionVals.get(0).getKeyVals().get(0).getValues());
+        assertEquals("b", actionVals.get(0).getKeyVals().get(1).getKey());
+        assertEquals(List.of("2"), actionVals.get(0).getKeyVals().get(1).getValues());
+        assertEquals("c", actionVals.get(0).getKeyVals().get(2).getKey());
+        assertEquals(List.of("3"), actionVals.get(0).getKeyVals().get(2).getValues());
+        assertEquals("TransformAction2", actionVals.get(1).getAction());
+        assertEquals("flow2", actionVals.get(1).getFlow());
+        assertEquals(1, actionVals.get(1).getKeyVals().size());
+        assertEquals("d", actionVals.get(1).getKeyVals().get(0).getKey());
+        assertEquals(List.of("4"), actionVals.get(1).getKeyVals().get(0).getValues());
     }
 }

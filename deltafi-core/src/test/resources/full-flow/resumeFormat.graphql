@@ -21,13 +21,10 @@ mutation {
         dids: ["%1$s"],
         resumeMetadata: [
             {
-                flow: "sampleIngress"
-                action: "SampleTransformAction"
-                metadata: [
-                    { key: "AuthorizedBy", value: "ABC"},
-                    { key: "anotherKey", value: "anotherValue" }
-                ],
-                deleteMetadataKeys: [ "removeMe" ]
+                flow: "sampleEgress"
+                action: "SampleFormatAction"
+                metadata: [ { key: "a" value: "b" } ]
+                deleteMetadataKeys: [ "loadSampleVersion" ]
             }
         ]
     ) {

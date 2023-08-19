@@ -83,7 +83,8 @@
     <ConfirmDialog />
     <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="[did]" @acknowledged="onAcknowledged" />
     <MetadataDialog ref="metadataDialog" :did="[did]" @update="loadDeltaFileData" />
-    <DialogTemplate component-name="MetadataViewer" header="Metadata" :flow-name="deltaFile.sourceInfo?.flow" :metadata="{ ['All Metadata']: allMetadata }" :deleted-metadata="deletedMetadata">
+    <MetadataDialogResume ref="metadataDialogResume" :did="[did]" @update="loadDeltaFileData" />
+    <DialogTemplate component-name="MetadataViewer" header="Metadata" :flow-name="deltaFile.sourceInfo?.flow" :metadata="{ ['All Metadata']: allMetadata }" :deleted-metadata="deletedMetadata" :dismissable-mask="true">
       <span id="cumulativeMetadataDialog" />
     </DialogTemplate>
     <AnnotateDialog ref="annotateDialog" :dids="[did]" @refresh-page="loadDeltaFileData" />
@@ -107,7 +108,8 @@ import DialogTemplate from "@/components/DialogTemplate.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
 import HighlightedCode from "@/components/HighlightedCode.vue";
-import MetadataDialog from "@/components/MetadataDialog.vue";
+import MetadataDialog from "@/components/MetadataDialogReplay.vue";
+import MetadataDialogResume from "@/components/errors/MetadataDialogResume.vue";
 import useDeltaFiles from "@/composables/useDeltaFiles";
 import useDeltaFilesQueryBuilder from "@/composables/useDeltaFilesQueryBuilder";
 import useErrorCount from "@/composables/useErrorCount";
@@ -149,6 +151,7 @@ const rawJSONDialog = reactive({
   body: null,
 });
 const metadataDialog = ref();
+const metadataDialogResume = ref();
 const menu = ref();
 const staticMenuItems = reactive([
   {
@@ -171,7 +174,7 @@ const staticMenuItems = reactive([
     icon: "fas fa-sync fa-fw",
     visible: () => !beenReplayed.value && !beenDeleted.value && hasPermission("DeltaFileReplay"),
     command: () => {
-      metadataDialog.value.showConfirmDialog("Replay");
+      metadataDialog.value.showConfirmDialog();
     },
   },
   {
@@ -199,7 +202,7 @@ const staticMenuItems = reactive([
     icon: "fas fa-redo fa-fw",
     visible: computed(() => isError.value && hasPermission("DeltaFileResume")),
     command: () => {
-      metadataDialog.value.showConfirmDialog("Resume");
+      metadataDialogResume.value.showConfirmDialog();
     },
   },
   {

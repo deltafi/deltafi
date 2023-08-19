@@ -47,8 +47,8 @@
         </Column>
         <Column header="Metadata" class="metadata-column">
           <template #body="{ data: action }">
-            <span v-if="action.hasOwnProperty('metadata') && Object.keys(action.metadata).length > 0">
-              <DialogTemplate component-name="MetadataViewer" header="Metadata" :metadata="{ [action.name]: metadataAsArray(action.metadata) }" :deleted-metadata="deletedMetadata(action.name, action.deleteMetadataKeys)">
+            <span v-if="(action.hasOwnProperty('metadata') && Object.keys(action.metadata).length > 0) || action.deleteMetadataKeys.length > 0">
+              <DialogTemplate component-name="MetadataViewer" header="Metadata" :metadata="{ [action.name]: metadataAsArray(action.metadata) }" :deleted-metadata="deletedMetadata(action.name, action.deleteMetadataKeys)" :dismissable-mask="true">
                 <Button icon="fas fa-table" label="View" class="content-button p-button-link" />
               </DialogTemplate>
             </span>
@@ -109,12 +109,13 @@ const metadataAsArray = (metadataObject) => {
   return Object.entries(metadataObject).map(([key, value]) => ({ key, value }));
 };
 
-const deletedMetadata = (deletedMetadataActionName) => {
-  let deletedMetadataList = _.filter(deltaFile.actions, function (o) {
-    return o.deleteMetadataKeys.length > 0 && _.isEqual(o.name, deletedMetadataActionName);
-  });
-
-  if (_.isEmpty(deletedMetadataList)) return null;
+const deletedMetadata = (deletedMetadataActionName, deletedMetadataActionDeletedKeys) => {
+  if (_.isEmpty(deletedMetadataActionDeletedKeys)) return null;
+  let deletedMetadataList = [];
+  let deletedMetadataObject = {};
+  deletedMetadataObject["name"] = deletedMetadataActionName;
+  deletedMetadataObject["deleteMetadataKeys"] = deletedMetadataActionDeletedKeys;
+  deletedMetadataList.push(deletedMetadataObject);
   return deletedMetadataList;
 };
 

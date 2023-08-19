@@ -43,29 +43,21 @@
       <template #footer>
         <Button label="Add Metadata Field" icon="pi pi-plus" class="p-button-secondary p-button-outlined" @click="addMetadataField" />
         <Button label="Cancel" icon="pi pi-times" class="p-button-secondary p-button-outlined" @click="closeMetadataDialog" />
-        <Button v-if="resumeReplay === 'Resume'" label="Resume" icon="fas fa-play" :disabled="hasDuplicateKeys" @click="resumeReplayClick" />
-        <Button v-else label="Replay" icon="fas fa-play" @click="resumeReplayClick" />
+        <Button label="Replay" icon="fas fa-play" @click="replayClick" />
       </template>
     </Dialog>
     <Dialog v-model:visible="confirmDialogVisible" class="confirm-dialog" header="Confirm" :modal="true">
       <template #header>
-        <strong>{{ resumeReplay }}</strong>
+        <strong>Replay</strong>
       </template>
-      {{ resumeReplay }} {{ pluralized }}?
+      Replay {{ pluralized }}?
       <template #footer>
         <Button label="Modify Metadata" icon="fas fa-database fa-fw" class="p-button-secondary p-button-outlined" @click="showMetadataDialog" />
         <Button label="Cancel" icon="pi pi-times" class="p-button-secondary p-button-outlined" @click="closeConfirmDialog" />
-        <Button v-if="resumeReplay === 'Resume'" label="Resume" icon="fas fa-play" @click="resumeReplayClean" />
-        <Button v-else label="Replay" icon="fas fa-play" @click="resumeReplayClean" />
+        <Button label="Replay" icon="fas fa-play" @click="replayClean" />
       </template>
     </Dialog>
   </div>
-  <Dialog v-model:visible="displayBatchingDialog" :breakpoints="{ '960px': '75vw', '940px': '90vw' }" :style="{ width: '30vw' }" :modal="true" :closable="false" :close-on-escape="false" :draggable="false" header="Resuming">
-    <div>
-      <p>Resume in progress. Please do not refresh the page!</p>
-      <ProgressBar :value="batchCompleteValue" />
-    </div>
-  </Dialog>
   <Dialog v-model:visible="displayBatchingDialogReplay" :breakpoints="{ '960px': '75vw', '940px': '90vw' }" :style="{ width: '30vw' }" :modal="true" :closable="false" :close-on-escape="false" :draggable="false" header="Replaying">
     <div>
       <p>Replay in progress. Please do not refresh the page!</p>
@@ -82,7 +74,6 @@
 
 <script setup>
 import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
-import useErrorResume from "@/composables/useErrorResume";
 import useMetadata from "@/composables/useMetadata";
 import useNotifications from "@/composables/useNotifications";
 import useReplay from "@/composables/useReplay";
@@ -111,11 +102,9 @@ const props = defineProps({
   },
 });
 
-const { resume } = useErrorResume();
 const { replay } = useReplay();
 const { fetch: meta, data: batchMetadata } = useMetadata();
 
-const resumeReplay = ref();
 const modifiedMetadata = ref([]);
 const removedMetadata = ref([]);
 const metadataDialogVisible = ref(false);
@@ -169,8 +158,7 @@ const getUniqueMetadataKeys = async (originalMetadata) => {
   return data;
 };
 
-const showConfirmDialog = async (replayResume) => {
-  resumeReplay.value = replayResume;
+const showConfirmDialog = async () => {
   modifiedMetadata.value = [];
   removedMetadata.value = [];
   pluralized.value = pluralize(props.did.length, "DeltaFile");
@@ -197,8 +185,8 @@ const removeMetadataField = (field) => {
   modifiedMetadata.value.splice(index, 1);
 };
 
-const resumeReplayClick = () => {
-  requestResumeReplay();
+const replayClick = () => {
+  requestReplay();
   closeMetadataDialog();
 };
 
@@ -240,78 +228,46 @@ const formatMetadata = async () => {
   }
 };
 
-const resumeReplayClean = () => {
+const replayClean = () => {
   closeConfirmDialog();
-  requestResumeReplay();
+  requestReplay();
 };
 
-const requestResumeReplay = async () => {
+const requestReplay = async () => {
   let response;
   let batchedDids = getBatchDids(props.did);
   let success = false;
   let completedBatches = 0;
   try {
-    if (resumeReplay.value === "Resume") {
-      displayBatchingDialog.value = true;
-      batchCompleteValue.value = 0;
-      for (const dids of batchedDids) {
-        response = await resume(dids, removedMetadata.value, getModifiedMetadata());
-        if (response.value.data !== undefined && response.value.data !== null) {
-          let successResume = new Array();
-          for (const resumeStatus of response.value.data.resume) {
-            if (resumeStatus.success) {
-              successResume.push(resumeStatus);
-            } else {
-              notify.error(`Resume request failed for ${resumeStatus.did}`, resumeStatus.error);
-            }
-          }
-          if (successResume.length > 0) {
-            success = true;
+    displayBatchingDialogReplay.value = true;
+    batchCompleteValue.value = 0;
+    const newDids = new Array();
+    for (const dids of batchedDids) {
+      response = await replay(dids, removedMetadata.value, getModifiedMetadata());
+      if (response.value.data !== undefined && response.value.data !== null) {
+        let successReplayBatch = new Array();
+        for (const replayStatus of response.value.data.replay) {
+          if (replayStatus.success) {
+            successReplayBatch.push(replayStatus);
+            newDids.push(replayStatus.did);
+          } else {
+            notify.error(`Replay request failed for ${replayStatus.did}`, replayStatus.error);
           }
         }
-        completedBatches += dids.length;
-        batchCompleteValue.value = Math.round((completedBatches / props.did.length) * 100);
-      }
-      displayBatchingDialog.value = false;
-      batchCompleteValue.value = 0;
-      if (success) {
-        const links = props.did.slice(0, maxSuccessDisplay).map((did) => `<a href="/deltafile/viewer/${did}" class="monospace">${did}</a>`);
-        if (props.did.length > maxSuccessDisplay) links.push("...");
-        let pluralized = pluralize(props.did.length, "DeltaFile");
-        notify.success(`Resume request sent successfully for ${pluralized}`, links.join(", "));
-        emit("update");
-      }
-    } else { // Replay
-      displayBatchingDialogReplay.value = true;
-      batchCompleteValue.value = 0;
-      const newDids = new Array();
-      for (const dids of batchedDids) {
-        response = await replay(dids, removedMetadata.value, getModifiedMetadata());
-        if (response.value.data !== undefined && response.value.data !== null) {
-          let successReplayBatch = new Array();
-          for (const replayStatus of response.value.data.replay) {
-            if (replayStatus.success) {
-              successReplayBatch.push(replayStatus);
-              newDids.push(replayStatus.did)
-            } else {
-              notify.error(`Replay request failed for ${replayStatus.did}`, replayStatus.error);
-            }
-          }
-          if (successReplayBatch.length > 0) {
-            success = true;
-          }
+        if (successReplayBatch.length > 0) {
+          success = true;
         }
-        completedBatches += dids.length;
-        batchCompleteValue.value = Math.round((completedBatches / props.did.length) * 100);
       }
-      displayBatchingDialogReplay.value = false;
-      batchCompleteValue.value = 0;
-      if (success) {
-        let pluralized = pluralize(newDids.length, "DeltaFile");
-        const links = newDids.slice(0, maxSuccessDisplay).map((did) => `<a href="/deltafile/viewer/${did}" class="monospace">${did}</a>`);
-        notify.success(`Replay request sent successfully for ${pluralized}`, links.join(", "));
-        emit("update");
-      }
+      completedBatches += dids.length;
+      batchCompleteValue.value = Math.round((completedBatches / props.did.length) * 100);
+    }
+    displayBatchingDialogReplay.value = false;
+    batchCompleteValue.value = 0;
+    if (success) {
+      let pluralized = pluralize(newDids.length, "DeltaFile");
+      const links = newDids.slice(0, maxSuccessDisplay).map((did) => `<a href="/deltafile/viewer/${did}" class="monospace">${did}</a>`);
+      notify.success(`Replay request sent successfully for ${pluralized}`, links.join(", "));
+      emit("update");
     }
   } catch (error) {
     displayBatchingDialog.value = false;

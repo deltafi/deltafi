@@ -31,6 +31,12 @@ input KeyValueInput {
   value: String
 }
 
+type PerActionUniqueKeyValues {
+  flow: String!
+  action: String!
+  keyVals: [UniqueKeyValues!]!
+}
+
 type UniqueKeyValues {
   key: String!
   values: [String]!
@@ -319,6 +325,13 @@ type DeltaFileStats {
   referencedBytes: Long!
 }
 
+input ResumeMetadata {
+  flow: String!
+  action: String!
+  metadata: [KeyValueInput!]
+  deleteMetadataKeys: [String!]
+}
+
 type Query {
   getIngressFlowPlan(planName: String!): IngressFlowPlan!
   getEgressFlowPlan(planName: String!): EgressFlowPlan!
@@ -355,6 +368,7 @@ type Query {
   errorSummaryByFlow(offset: Int, limit: Int, filter: ErrorSummaryFilter, orderBy: DeltaFileOrder): ErrorsByFlow!
   errorSummaryByMessage(offset: Int, limit: Int, filter: ErrorSummaryFilter, orderBy: DeltaFileOrder): ErrorsByMessage!
 
+  errorMetadataUnion(dids: [String!]!) : [PerActionUniqueKeyValues!]!
   sourceMetadataUnion(dids: [String!]!) : [UniqueKeyValues!]!
 
   deltaFiConfigs(configQuery: ConfigQueryInput) : [DeltaFiConfiguration]!
@@ -407,7 +421,7 @@ type Mutation {
   setTransformFlowExpectedAnnotations(flowName: String!, expectedAnnotations: [String]) : Boolean!
   setEgressFlowExpectedAnnotations(flowName: String!, expectedAnnotations: [String]) : Boolean!
 
-  resume(dids: [String!]!, removeSourceMetadata: [String!], replaceSourceMetadata: [KeyValueInput!]) : [RetryResult!]!
+  resume(dids: [String!]!, resumeMetadata: [ResumeMetadata!]) : [RetryResult!]!
   replay(dids: [String!]!, replaceFilename: String, replaceFlow: String, removeSourceMetadata: [String!], replaceSourceMetadata: [KeyValueInput!]) : [RetryResult!]!
   acknowledge(dids: [String!]!, reason: String) : [AcknowledgeResult!]!
   cancel(dids: [String!]!) : [CancelResult!]!

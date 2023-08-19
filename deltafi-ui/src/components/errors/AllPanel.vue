@@ -92,7 +92,7 @@
     <ErrorViewerDialog v-model:visible="errorViewer.visible" :action="errorViewer.action" />
     <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="ackErrorsDialog.dids" @acknowledged="onAcknowledged" />
     <AnnotateDialog ref="annotateDialog" :dids="filterSelectedDids" @refresh-page="onRefresh()" />
-    <MetadataDialog ref="metadataDialog" :did="filterSelectedDids" @update="onRefresh()" />
+    <MetadataDialogResume ref="metadataDialogResume" :did="filterSelectedDids" />
     <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="autoResumeSelected">
       <span id="allPanelAutoResumeDialog" />
     </DialogTemplate>
@@ -116,7 +116,7 @@ import DidLink from "@/components/DidLink.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useErrors from "@/composables/useErrors";
 import useErrorCount from "@/composables/useErrorCount";
-import MetadataDialog from "@/components/MetadataDialog.vue";
+import MetadataDialogResume from "@/components/errors/MetadataDialogResume.vue";
 import useNotifications from "@/composables/useNotifications";
 import { FilterMatchMode } from "primevue/api";
 import useUtilFunctions from "@/composables/useUtilFunctions";
@@ -129,7 +129,7 @@ import _ from "lodash";
 
 const hasPermission = inject("hasPermission");
 const hasSomePermissions = inject("hasSomePermissions");
-const metadataDialog = ref();
+const metadataDialogResume = ref();
 const { data: errorsMessages, fetchAllMessage: getAllErrorsMessage } = useErrorsSummary();
 const { pluralize } = useUtilFunctions();
 const { fetchErrorCount } = useErrorCount();
@@ -210,7 +210,7 @@ const menuItems = ref([
     label: "Resume Selected",
     icon: "fas fa-redo fa-fw",
     command: () => {
-      metadataDialog.value.showConfirmDialog("Resume");
+      metadataDialogResume.value.showConfirmDialog();
     },
     visible: computed(() => hasPermission("DeltaFileResume")),
     disabled: computed(() => selectedErrors.value.length == 0),

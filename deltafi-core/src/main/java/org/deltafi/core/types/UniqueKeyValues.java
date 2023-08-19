@@ -54,4 +54,8 @@ public class UniqueKeyValues {
     public void addValue(String value) {
         valuesSet.add(value);
     }
+
+    public void addValues(List<String> values) {
+        valuesSet.addAll(values);
+    }
 }

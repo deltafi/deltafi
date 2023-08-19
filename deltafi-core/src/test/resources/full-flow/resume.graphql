@@ -19,7 +19,13 @@
 mutation {
     resume(
         dids: ["%1$s", "fakedid"],
-        replaceSourceMetadata: [ { key: "a" value: "b" } ]
+        resumeMetadata: [
+            {
+                flow: "sampleEgress"
+                action: "AuthorityValidateAction"
+                metadata: [ { key: "a" value: "b" } ]
+            }
+        ]
     ) {
         did
         success

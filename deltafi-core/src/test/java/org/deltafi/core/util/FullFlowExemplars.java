@@ -36,6 +36,7 @@ public class FullFlowExemplars {
         deltaFile.setIngressBytes(500L);
         deltaFile.queueAction("sampleIngress", "Utf8TransformAction", ActionType.TRANSFORM);
         deltaFile.setSourceInfo(new SourceInfo("input.txt", INGRESS_FLOW_NAME, SOURCE_METADATA));
+        deltaFile.getActions().get(0).setMetadata(SOURCE_METADATA);
         return deltaFile;
     }
 
@@ -66,12 +67,11 @@ public class FullFlowExemplars {
     }
 
     @SuppressWarnings("SameParameterValue")
-    public static DeltaFile postResumeTransformDeltaFile(String did, String flow, String retryAction) {
+    public static DeltaFile postResumeTransformDeltaFile(String did) {
         DeltaFile deltaFile = postTransformHadErrorDeltaFile(did);
-        deltaFile.retryErrors();
+        deltaFile.retryErrors(List.of(new ResumeMetadata("sampleIngress", "SampleTransformAction", Map.of("AuthorizedBy", "ABC", "anotherKey", "anotherValue"), List.of("removeMe"))));
         deltaFile.setStage(DeltaFileStage.INGRESS);
-        deltaFile.getActions().add(Action.builder().flow(flow).name(retryAction).state(QUEUED).attempt(2).build());
-        deltaFile.getSourceInfo().setMetadata(Map.of("AuthorizedBy", "ABC", "removeMe.original", "whatever", "AuthorizedBy.original", "XYZ", "anotherKey", "anotherValue"));
+        deltaFile.getActions().add(Action.builder().flow("sampleIngress").name("SampleTransformAction").type(ActionType.TRANSFORM).state(QUEUED).attempt(2).build());
         return deltaFile;
     }
 
@@ -92,7 +92,7 @@ public class FullFlowExemplars {
         deltaFile.setStage(DeltaFileStage.ERROR);
         deltaFile.queueNewAction("MISSING", DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION, ActionType.UNKNOWN);
         deltaFile.errorAction(DeltaFilesService.buildNoEgressConfiguredErrorEvent(deltaFile, OffsetDateTime.now()));
-        deltaFile.getLastDataAmendedAction().setMetadata(LOAD_WRONG_METADATA);
+        deltaFile.lastCompleteDataAmendedAction().setMetadata(LOAD_WRONG_METADATA);
         return deltaFile;
     }
 
@@ -133,7 +133,7 @@ public class FullFlowExemplars {
     public static DeltaFile postEnrichNoEgressResumedDeltaFile(String did, OffsetDateTime nextExecution) {
         DeltaFile deltaFile = postEnrichNoEgressDeltaFile(did, nextExecution);
         deltaFile.setStage(DeltaFileStage.EGRESS);
-        deltaFile.retryErrors();
+        deltaFile.retryErrors(Collections.emptyList());
         deltaFile.queueAction("sampleEgress", "SampleFormatAction", ActionType.FORMAT);
         deltaFile.addEgressFlow(EGRESS_FLOW_NAME);
         return deltaFile;
@@ -150,6 +150,21 @@ public class FullFlowExemplars {
         deltaFile.setStage(DeltaFileStage.ERROR);
         deltaFile.errorAction("sampleEnrich", "SampleEnrichAction", START_TIME, STOP_TIME,
                 INVALID_ACTION_EVENT_RECEIVED, "STARTS:Action event type does not match the populated object");
+        return deltaFile;
+    }
+
+    public static DeltaFile postFormatHadErrorDeltaFile(String did) {
+        DeltaFile deltaFile = postEnrichDeltaFile(did);
+        deltaFile.setStage(DeltaFileStage.ERROR);
+        deltaFile.errorAction("sampleEgress", "SampleFormatAction", START_TIME, STOP_TIME, "format failed", "message");
+        return deltaFile;
+    }
+
+    public static DeltaFile postResumeFormatDeltaFile(String did) {
+        DeltaFile deltaFile = postFormatHadErrorDeltaFile(did);
+        deltaFile.retryErrors(List.of(new ResumeMetadata("sampleEgress", "SampleFormatAction", Map.of("a", "b"), List.of("loadSampleVersion"))));
+        deltaFile.setStage(DeltaFileStage.EGRESS);
+        deltaFile.getActions().add(Action.builder().flow("sampleEgress").name("SampleFormatAction").state(QUEUED).attempt(2).build());
         return deltaFile;
     }
 
@@ -185,12 +200,11 @@ public class FullFlowExemplars {
         return deltaFile;
     }
 
-    public static DeltaFile postResumeDeltaFile(String did, String flow, String retryAction) {
+    public static DeltaFile postResumeDeltaFile(String did, String flow, String retryAction, ActionType actionType) {
         DeltaFile deltaFile = postErrorDeltaFile(did);
-        deltaFile.retryErrors();
+        deltaFile.retryErrors(List.of(new ResumeMetadata("sampleEgress", "AuthorityValidateAction", Map.of("a", "b"), Collections.emptyList())));
         deltaFile.setStage(DeltaFileStage.EGRESS);
-        deltaFile.getActions().add(Action.builder().flow(flow).name(retryAction).state(QUEUED).attempt(2).build());
-        deltaFile.getSourceInfo().addMetadata("a", "b");
+        deltaFile.getActions().add(Action.builder().flow(flow).name(retryAction).type(actionType).state(QUEUED).attempt(2).build());
         return deltaFile;
     }
 

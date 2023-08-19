@@ -33,7 +33,7 @@
       <Column field="count" header="Count" :sortable="true" />
     </DataTable>
   </Panel>
-  <MetadataDialog ref="metadataDialog" :did="filterSelectedDids" @update="onRefresh()" />
+  <MetadataDialogResume ref="metadataDialogResume" :did="filterSelectedDids" />
   <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="ackErrorsDialog.dids" @acknowledged="onAcknowledged" />
   <AnnotateDialog ref="annotateDialog" :dids="filterSelectedDids" @refresh-page="onRefresh()" />
   <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="autoResumeSelected">
@@ -51,7 +51,7 @@ import ContextMenu from "primevue/contextmenu";
 import Paginator from "primevue/paginator";
 import useErrorsSummary from "@/composables/useErrorsSummary";
 import useErrorCount from "@/composables/useErrorCount";
-import MetadataDialog from "@/components/MetadataDialog.vue";
+import MetadataDialogResume from "@/components/errors/MetadataDialogResume.vue";
 import useNotifications from "@/composables/useNotifications";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
@@ -71,7 +71,7 @@ const totalErrorsFlow = ref(0);
 const offset = ref(0);
 const perPage = ref();
 const sortField = ref("modified");
-const metadataDialog = ref();
+const metadataDialogResume = ref();
 const sortDirection = ref("DESC");
 const selectedErrors = ref([]);
 const notify = useNotifications();
@@ -135,7 +135,7 @@ const menuItems = ref([
     label: "Resume Selected",
     icon: "fas fa-redo fa-fw",
     command: () => {
-      metadataDialog.value.showConfirmDialog("Resume");
+      metadataDialogResume.value.showConfirmDialog();
     },
     visible: computed(() => hasPermission("DeltaFileResume")),
     disabled: computed(() => selectedErrors.value.length == 0),

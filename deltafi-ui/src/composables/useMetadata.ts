@@ -36,5 +36,23 @@ export default function useMetadata() {
     data.value = response.value.data.sourceMetadataUnion;
   };
 
-  return { data, loading, loaded, fetch, errors };
+  const fetchAll = async (dids: Array<string>) => {
+    const searchParamsUnion = {
+      errorMetadataUnion: {
+        __args: {
+          dids: dids,
+        },
+        flow: true,
+        action: true,
+        keyVals:{
+          key: true,
+          values: true,
+        },
+      },
+    };
+    await queryGraphQL(searchParamsUnion, "getMetadata");
+    data.value = response.value.data.errorMetadataUnion;
+  };
+
+  return { data, loading, loaded, fetch, errors, fetchAll };
 }

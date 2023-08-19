@@ -64,6 +64,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String CREATED = "created";
     public static final String STAGE = "stage";
     public static final String STATE = "state";
+    public static final String ACTIONS_METADATA = "actions.metadata";
+    public static final String ACTIONS_DELETE_METADATA_KEYS = "actions.deleteMetadataKeys";
     public static final String DOMAINS_NAME = "actions.domains.name";
     public static final String ENRICHMENTS_NAME = "actions.enrichments.name";
     public static final String CONTENT_DELETED = "contentDeleted";
@@ -99,8 +101,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String ACTIONS_ATTEMPT = "actions.attempt";
     public static final String ACTIONS_ERROR_CAUSE = "actions.errorCause";
     public static final String ACTIONS_NAME = "actions.name";
-    public static final String ACTIONS_STATE = "actions.state";
     public static final String ACTIONS_TYPE = "actions.type";
+    public static final String ACTIONS_FLOW = "actions.flow";
+    public static final String ACTIONS_STATE = "actions.state";
     public static final String ACTIONS_MODIFIED = "actions.modified";
     public static final String ACTION_MODIFIED = "action.modified";
     public static final String ACTION_STATE = "action.state";

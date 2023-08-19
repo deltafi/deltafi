@@ -20,13 +20,12 @@ import useGraphQL from "./useGraphQL";
 
 export default function useErrorResume() {
   const { response, queryGraphQL } = useGraphQL();
-  const buildResumeQuery = (dids: Array<string>, removeSourceMetadata: Array<string>, replaceSourceMetadata: Array<Object>) => {
+  const buildResumeQuery = (dids: Array<string>, metadata: Array<Object>) => {
     return {
       resume: {
         __args: {
           dids: dids,
-          removeSourceMetadata: removeSourceMetadata,
-          replaceSourceMetadata: replaceSourceMetadata,
+          resumeMetadata: metadata,
         },
         did: true,
         success: true,
@@ -35,8 +34,8 @@ export default function useErrorResume() {
     };
   };
 
-  const resume = async (dids: Array<string>, removeSourceMetadata: Array<string>, replaceSourceMetadata: Array<Object>) => {
-    await queryGraphQL(buildResumeQuery(dids, removeSourceMetadata, replaceSourceMetadata), "errorsResume", "mutation");
+  const resume = async (dids: Array<string>,  metadata: Array<Object>) => {
+    await queryGraphQL(buildResumeQuery(dids,metadata), "errorsResume", "mutation");
     return Promise.resolve(response);
   };
 

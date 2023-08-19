@@ -70,7 +70,11 @@ public class Action {
   }
 
   public boolean amendedData() {
-    return state == ActionState.COMPLETE && DATA_AMENDED_TYPES.contains(type);
+    return (state == ActionState.COMPLETE || state == ActionState.RETRIED) && DATA_AMENDED_TYPES.contains(type);
+  }
+
+  public boolean afterFormat() {
+    return type == ActionType.VALIDATE || type == ActionType.EGRESS;
   }
 
   public void addDomain(@NotNull String domainKey, String domainValue, @NotNull String mediaType) {

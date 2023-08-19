@@ -70,14 +70,20 @@ class DeltaFileTest {
         OffsetDateTime now = OffsetDateTime.now();
         Action action1 = Action.builder()
                 .name("action1")
+                .type(ActionType.TRANSFORM)
+                .flow("flow1")
                 .state(ActionState.ERROR)
                 .build();
         Action action2 = Action.builder()
                 .name("action2")
+                .type(ActionType.LOAD)
+                .flow("flow2")
                 .state(ActionState.COMPLETE)
                 .build();
         Action action3 = Action.builder()
                 .name("action3")
+                .type(ActionType.LOAD)
+                .flow("flow3")
                 .state(ActionState.ERROR)
                 .build();
 
@@ -87,20 +93,25 @@ class DeltaFileTest {
                 .nextAutoResumeReason("policy-name")
                 .build();
 
-        List<String> retried = deltaFile.retryErrors();
+        List<String> retried = deltaFile.retryErrors(List.of(
+                new ResumeMetadata("flow1", "action1", Map.of("a", "b"), List.of("c", "d")),
+                new ResumeMetadata("flow3", "action3", Map.of("x", "y"), List.of("z"))));
         assertNull(deltaFile.getNextAutoResume());
         assertEquals("policy-name", deltaFile.getNextAutoResumeReason());
         assertEquals(List.of("action1", "action3"), retried);
 
         assertEquals(3, deltaFile.getActions().size());
         assertEquals(ActionState.RETRIED, deltaFile.getActions().get(0).getState());
+        assertEquals(Map.of("a", "b"), deltaFile.getActions().get(0).getMetadata());
+        assertEquals(List.of("c", "d"), deltaFile.getActions().get(0).getDeleteMetadataKeys());
         assertEquals(ActionState.COMPLETE, deltaFile.getActions().get(1).getState());
         assertEquals(ActionState.RETRIED, deltaFile.getActions().get(2).getState());
+        assertEquals(Map.of("x", "y"), deltaFile.getActions().get(2).getMetadata());
+        assertEquals(List.of("z"), deltaFile.getActions().get(2).getDeleteMetadataKeys());
     }
 
     @Test
     void testFirstActionError() {
-        OffsetDateTime now = OffsetDateTime.now();
         Action action1 = Action.builder()
                 .name("action1")
                 .state(ActionState.ERROR)

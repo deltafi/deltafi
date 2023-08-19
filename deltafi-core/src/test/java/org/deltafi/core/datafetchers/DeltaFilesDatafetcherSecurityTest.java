@@ -84,7 +84,7 @@ class DeltaFilesDatafetcherSecurityTest {
         callables.add(() -> deltaFilesDatafetcher.rawDeltaFile("did", true));
         callables.add(() -> deltaFilesDatafetcher.acknowledge(List.of("did"), "reason"));
         callables.add(() -> deltaFilesDatafetcher.cancel(List.of("did")));
-        callables.add(() -> deltaFilesDatafetcher.resume(List.of("did"), null, null));
+        callables.add(() -> deltaFilesDatafetcher.resume(List.of("did"), null));
         callables.add(() -> deltaFilesDatafetcher.replay(List.of("did"), null, null, null, null));
         callables.add(() -> deltaFilesDatafetcher.lastCreated(1));
         callables.add(() -> deltaFilesDatafetcher.lastModified(1));

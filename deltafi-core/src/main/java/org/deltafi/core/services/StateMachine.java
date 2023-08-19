@@ -223,7 +223,7 @@ public class StateMachine {
             return true;
         }
 
-        if (matchesAllMetadata(requiresMetadata, deltaFile.getLastDataAmendedAction().getMetadata())) {
+        if (matchesAllMetadata(requiresMetadata, deltaFile.lastCompleteDataAmendedAction().getMetadata())) {
             return true;
         }
 

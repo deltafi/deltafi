@@ -31,10 +31,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.*;
+import org.deltafi.common.types.ResumeMetadata;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.DeltaFilesService;
 import org.deltafi.core.types.DeltaFiles;
+import org.deltafi.core.types.PerActionUniqueKeyValues;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.types.UniqueKeyValues;
 
@@ -148,8 +150,8 @@ public class DeltaFilesDatafetcher {
 
   @DgsMutation
   @NeedsPermission.DeltaFileResume
-  public List<RetryResult> resume(@InputArgument List<String> dids, @InputArgument List<String> removeSourceMetadata, @InputArgument List<KeyValue> replaceSourceMetadata) {
-    return deltaFilesService.resume(dids, (removeSourceMetadata == null) ? Collections.emptyList() : removeSourceMetadata, (replaceSourceMetadata == null) ? Collections.emptyList() : replaceSourceMetadata);
+  public List<RetryResult> resume(@InputArgument List<String> dids, @InputArgument List<ResumeMetadata> resumeMetadata) {
+    return deltaFilesService.resume(dids, (resumeMetadata == null) ? Collections.emptyList() : resumeMetadata);
   }
 
   @DgsMutation
@@ -178,10 +180,15 @@ public class DeltaFilesDatafetcher {
 
   @DgsQuery
   @NeedsPermission.DeltaFileMetadataView
+  public List<PerActionUniqueKeyValues> errorMetadataUnion(@InputArgument List<String> dids) {
+    return deltaFilesService.errorMetadataUnion(dids);
+  }
+
+  @DgsQuery
+  @NeedsPermission.DeltaFileMetadataView
   public List<UniqueKeyValues> sourceMetadataUnion(@InputArgument List<String> dids) {
     return deltaFilesService.sourceMetadataUnion(dids);
   }
-
   @DgsMutation
   @NeedsPermission.StressTest
   public int stressTest(@InputArgument String flow, @InputArgument Integer contentSize, @InputArgument Integer numFiles, @InputArgument Map<String, String> metadata, @InputArgument Integer batchSize) throws ObjectStorageException {

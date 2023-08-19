@@ -19,7 +19,7 @@
 <template>
   <div class="metadata-viewer">
     <div v-for="(metadataArray, actionName) in props.metadata" :key="actionName">
-      <CollapsiblePanel :header="actionName" class="table-panel">
+      <CollapsiblePanel v-if="metadataArray.length > 0" :header="actionName" class="table-panel">
         <DataTable responsive-layout="scroll" :value="metadataArray" striped-rows sort-field="key" :sort-order="1" class="p-datatable-sm" scroll-height="500px">
           <Column field="key" header="Key" :style="{ width: '25%' }" :sortable="true" />
           <Column field="value" header="Value" :style="{ width: '75%' }" :sortable="true" />

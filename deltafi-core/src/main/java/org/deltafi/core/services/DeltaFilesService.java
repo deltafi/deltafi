@@ -27,11 +27,13 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.content.ContentUtil;
 import org.deltafi.common.types.*;
+import org.deltafi.common.types.ResumeMetadata;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.exceptions.EnqueueActionException;
@@ -45,6 +47,7 @@ import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.retry.MongoRetryable;
 import org.deltafi.core.types.DeltaFiles;
 import org.deltafi.core.types.EgressFlow;
+import org.deltafi.core.types.PerActionUniqueKeyValues;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.types.ResumePolicy;
 import org.deltafi.core.types.UniqueKeyValues;
@@ -70,7 +73,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static org.deltafi.common.constant.DeltaFiConstants.*;
-import static org.deltafi.core.repo.DeltaFileRepoImpl.SOURCE_INFO_METADATA;
+import static org.deltafi.core.repo.DeltaFileRepoImpl.*;
 
 @Service
 @RequiredArgsConstructor
@@ -855,7 +858,7 @@ public class DeltaFilesService {
                 String childDid = childFormatEvent.getDid() != null ? childFormatEvent.getDid() : UUID.randomUUID().toString();
                 DeltaFile child = createChildDeltaFile(deltaFile, event, childDid);
                 deltaFile.getChildDids().add(child.getDid());
-                Action formatAction = child.lastFormatActionFor(egressFlow.getName());
+                Action formatAction = child.lastFormatAction(egressFlow.getName());
                 formatAction.setContent(List.of(childFormatEvent.getContent()));
                 formatAction.setMetadata(childFormatEvent.getMetadata());
 
@@ -888,11 +891,11 @@ public class DeltaFilesService {
         // remove the egress action, since we want the last transform to show SPLIT
         deltaFile.removeLastAction();
 
-        List<Content> contentList = deltaFile.getLastDataAmendedAction().getContent();
+        List<Content> contentList = deltaFile.lastCompleteDataAmendedAction().getContent();
 
         List<DeltaFile> childDeltaFiles = contentList.stream().map(content -> {
             DeltaFile child = createChildDeltaFile(deltaFile, UUID.randomUUID().toString());
-            child.getLastDataAmendedAction().setContent(Collections.singletonList(content));
+            child.lastCompleteDataAmendedAction().setContent(Collections.singletonList(content));
             deltaFile.getChildDids().add(child.getDid());
 
             enqueueActions.addAll(advanceOnly(child, true));
@@ -928,7 +931,7 @@ public class DeltaFilesService {
         return child;
     }
 
-    public List<RetryResult> resume(@NotNull List<String> dids, @NotNull List<String> removeSourceMetadata, @NotNull List<KeyValue> replaceSourceMetadata) {
+    public List<RetryResult> resume(@NotNull List<String> dids, @NotNull List<ResumeMetadata> resumeMetadata) {
         Map<String, DeltaFile> deltaFiles = deltaFiles(dids);
         List<DeltaFile> advanceAndSaveDeltaFiles = new ArrayList<>();
 
@@ -949,15 +952,13 @@ public class DeltaFilesService {
                             result.setSuccess(false);
                             result.setError("Cannot resume DeltaFile " + did + " after content was deleted (" + deltaFile.getContentDeletedReason() + ")");
                         } else {
-                            List<String> requeueActions = deltaFile.retryErrors();
+                            List<String> requeueActions = deltaFile.retryErrors(resumeMetadata);
                             if (requeueActions.isEmpty()) {
                                 result.setSuccess(false);
                                 result.setError("DeltaFile with did " + did + " had no errors");
                             } else {
                                 deltaFile.setStage(DeltaFileStage.INGRESS);
                                 deltaFile.clearErrorAcknowledged();
-
-                                applyRetryOverrides(deltaFile, null, null, removeSourceMetadata, replaceSourceMetadata);
 
                                 advanceAndSaveDeltaFiles.add(deltaFile);
                             }
@@ -1159,6 +1160,28 @@ public class DeltaFilesService {
         return results;
     }
 
+    public List<PerActionUniqueKeyValues> errorMetadataUnion(List<String> dids) {
+        DeltaFilesFilter filter = new DeltaFilesFilter();
+        filter.setDids(dids);
+        DeltaFiles deltaFiles = deltaFiles(0, dids.size(), filter, null, List.of(ACTIONS_NAME, ACTIONS_TYPE, ACTIONS_FLOW, ACTIONS_STATE, ACTIONS_METADATA, ACTIONS_DELETE_METADATA_KEYS));
+
+        Map<Pair<String, String>, PerActionUniqueKeyValues> actionKeyValues = new HashMap<>();
+        for (DeltaFile deltaFile : deltaFiles.getDeltaFiles()) {
+            for (Action action : deltaFile.erroredActions()) {
+                if (action.getType() == ActionType.UNKNOWN) {
+                    // ignore synthetic actions like NoEgressFlowConfigured
+                    continue;
+                }
+                if (!actionKeyValues.containsKey(Pair.of(action.getFlow(), action.getName()))) {
+                    actionKeyValues.put(Pair.of(action.getFlow(), action.getName()), new PerActionUniqueKeyValues(action.getFlow(), action.getName()));
+                }
+                deltaFile.getErrorMetadata(action)
+                        .forEach((key, value) -> actionKeyValues.get(Pair.of(action.getFlow(), action.getName())).addValue(key, value));
+            }
+        }
+        return new ArrayList<>(actionKeyValues.values());
+    }
+
     public List<UniqueKeyValues> sourceMetadataUnion(List<String> dids) {
         DeltaFilesFilter filter = new DeltaFilesFilter();
         filter.setDids(dids);
@@ -1199,7 +1222,7 @@ public class DeltaFilesService {
         if (deltaFile.getStage() == DeltaFileStage.EGRESS) {
             // this is our first time having egress assigned
             // determine if the deltaFile needs to be split
-            if (deltaFile.getLastDataAmendedAction().getContent().size() > 1) {
+            if (deltaFile.lastCompleteDataAmendedAction().getContent().size() > 1) {
                 splitForTransformationProcessingEgress(deltaFile);
                 return;
             }
@@ -1355,8 +1378,7 @@ public class DeltaFilesService {
         if (!autoResumeDeltaFiles.isEmpty()) {
             Map<String, String> flowByDid = autoResumeDeltaFiles.stream()
                     .collect(Collectors.toMap(DeltaFile::getDid, d -> d.getSourceInfo().getFlow()));
-            List<RetryResult> results = resume(flowByDid.keySet().stream().toList(),
-                    Collections.emptyList(), Collections.emptyList());
+            List<RetryResult> results = resume(flowByDid.keySet().stream().toList(), Collections.emptyList());
             Map<String, Integer> countByFlow = new HashMap<>();
             for (RetryResult result : results) {
                 if (result.getSuccess()) {
