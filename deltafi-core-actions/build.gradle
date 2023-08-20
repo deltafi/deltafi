@@ -16,6 +16,7 @@ dependencies {
     implementation 'org.tukaani:xz:1.9'
     implementation 'org.apache.nifi:nifi-flowfile-packager:1.18.0'
     implementation 'org.apache.tika:tika-core:2.8.0'
+    implementation 'com.jayway.jsonpath:json-path:2.8.0'
 
     testImplementation project(':deltafi-common-test')
     testImplementation project(':deltafi-action-kit-test')
