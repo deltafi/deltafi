@@ -754,7 +754,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     public ErrorsByFlow getErrorSummaryByFlow(Integer offset, int limit, ErrorSummaryFilter filter, DeltaFileOrder orderBy) {
-
         long elementsToSkip = (nonNull(offset) && offset > 0) ? offset : 0;
 
         MatchOperation matchesErrorStage = Aggregation.match(buildErrorSummaryCriteria(filter));
@@ -775,7 +774,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         if (countForPaging > 0) {
             Aggregation pagingAggregation = Aggregation.newAggregation(
                     matchesErrorStage,
-                    group(SOURCE_INFO_FLOW).count().as(GROUP_COUNT).push(ID).as(DIDS),
+                    group(SOURCE_INFO_FLOW).count().as(GROUP_COUNT).addToSet(ID).as(DIDS),
                     project(DIDS, GROUP_COUNT).and(SOURCE_INFO_FLOW).previousOperation(),
                     errorSummaryByFlowSort(orderBy),
                     skip(elementsToSkip),
@@ -788,7 +787,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             for (FlowCountAndDids r : aggResults.getMappedResults()) {
                 countPerFlow.add(CountPerFlow.newBuilder()
                         .flow(r.sourceInfo.flow)
-                        .count(r.groupCount)
+                        .count(r.dids.size())
                         .dids(r.dids)
                         .build()
                 );
@@ -804,14 +803,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     public ErrorsByMessage getErrorSummaryByMessage(Integer offset, int limit, ErrorSummaryFilter filter, DeltaFileOrder orderBy) {
-
         long elementsToSkip = (nonNull(offset) && offset > 0) ? offset : 0;
 
         MatchOperation matchesErrorStage = Aggregation.match(buildErrorSummaryCriteria(filter));
 
         GroupOperation groupByCauseAndFlow = Aggregation.group(ERROR_MESSAGE, FLOW_LOWER_CASE)
                 .count().as(GROUP_COUNT)
-                .push(DID).as(DIDS);
+                .addToSet(DID).as(DIDS);
 
         List<AggregationOperation> mainStages = Arrays.asList(
                 matchesErrorStage,
