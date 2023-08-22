@@ -89,7 +89,7 @@
         </template>
       </DataTable>
     </Panel>
-    <ErrorViewerDialog v-model:visible="errorViewer.visible" :action="errorViewer.action" />
+    <ErrorViewerDialog v-model:visible="errorViewer.visible" :action="errorViewer.action" @update="onRefresh" />
     <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="ackErrorsDialog.dids" @acknowledged="onAcknowledged" />
     <AnnotateDialog ref="annotateDialog" :dids="filterSelectedDids" @refresh-page="onRefresh()" />
     <MetadataDialogResume ref="metadataDialogResume" :did="filterSelectedDids" />
@@ -156,7 +156,7 @@ const props = defineProps({
     required: false,
     default: undefined,
   },
-  awknowledged: {
+  acknowledged: {
     type: Boolean,
     required: true,
   },
@@ -240,9 +240,9 @@ const fetchErrors = async () => {
   await getPersistedParams();
   let ingressFlowName = props.ingressFlowName != null ? props.ingressFlowName : null;
   let errorMessage = filters.value.last_error_cause.value != null ? filters.value.last_error_cause.value.message : null;
-  let showAcknowled = props.awknowledged ? null : false;
+  let showAcknowledged = props.acknowledged ? null : false;
   loading.value = true;
-  await getErrors(showAcknowled, offset.value, perPage.value, sortField.value, sortDirection.value, ingressFlowName, errorMessage);
+  await getErrors(showAcknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, ingressFlowName, errorMessage);
   errors.value = response.value.deltaFiles.deltaFiles;
   totalErrors.value = response.value.deltaFiles.totalCount;
   loading.value = false;
@@ -359,7 +359,7 @@ const setupWatchers = () => {
   );
 
   watch(
-    () => props.awknowledged,
+    () => props.acknowledged,
     () => {
       selectedErrors.value = [];
       fetchErrors();

@@ -27,13 +27,13 @@
     </PageHeader>
     <TabView v-model:activeIndex="activeTab">
       <TabPanel header="All">
-        <AllErrorsPanel ref="errorsSummaryPanel" :awknowledged="showAcknowledged" :ingress-flow-name="ingressFlowNameSelected" :errors-message-selected="errorMessageSelected" @refresh-errors="onRefresh()" @error-message-changed:error-message="messageSelected" />
+        <AllErrorsPanel ref="errorsSummaryPanel" :acknowledged="showAcknowledged" :ingress-flow-name="ingressFlowNameSelected" :errors-message-selected="errorMessageSelected" @refresh-errors="onRefresh()" @error-message-changed:error-message="messageSelected" />
       </TabPanel>
       <TabPanel header="By Flow">
-        <ErrorsSummaryByFlowPanel ref="errorSummaryFlowPanel" :awknowledged="showAcknowledged" :ingress-flow-name="ingressFlowNameSelected" @refresh-errors="onRefresh()" />
+        <ErrorsSummaryByFlowPanel ref="errorSummaryFlowPanel" :acknowledged="showAcknowledged" :ingress-flow-name="ingressFlowNameSelected" @refresh-errors="onRefresh()" />
       </TabPanel>
       <TabPanel header="By Message">
-        <ErrorsSummaryByMessagePanel ref="errorSummaryMessagePanel" :awknowledged="showAcknowledged" :ingress-flow-name="ingressFlowNameSelected" @refresh-errors="onRefresh()" @change-tab:error-message:flow-selected="tabChange" />
+        <ErrorsSummaryByMessagePanel ref="errorSummaryMessagePanel" :acknowledged="showAcknowledged" :ingress-flow-name="ingressFlowNameSelected" @refresh-errors="onRefresh()" @change-tab:error-message:flow-selected="tabChange" />
       </TabPanel>
     </TabView>
   </div>

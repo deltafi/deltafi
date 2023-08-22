@@ -33,7 +33,7 @@
       <Column field="count" header="Count" :sortable="true" />
     </DataTable>
   </Panel>
-  <MetadataDialogResume ref="metadataDialogResume" :did="filterSelectedDids" />
+  <MetadataDialogResume ref="metadataDialogResume" :did="filterSelectedDids" @update="onRefresh" />
   <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="ackErrorsDialog.dids" @acknowledged="onAcknowledged" />
   <AnnotateDialog ref="annotateDialog" :dids="filterSelectedDids" @refresh-page="onRefresh()" />
   <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="autoResumeSelected">
@@ -89,7 +89,7 @@ const props = defineProps({
     required: false,
     default: undefined,
   },
-  awknowledged: {
+  acknowledged: {
     type: Boolean,
     required: true,
   },
@@ -167,9 +167,9 @@ const { data: response, fetchByFlow: getErrorsByFlow } = useErrorsSummary();
 const fetchErrorsFlow = async () => {
   getPersistedParams();
   let ingressFlowName = props.ingressFlowName != null ? props.ingressFlowName : null;
-  let showAcknowled = props.awknowledged ? null : false;
+  let showAcknowledged = props.acknowledged ? null : false;
   loading.value = true;
-  await getErrorsByFlow(showAcknowled, offset.value, perPage.value, sortField.value, sortDirection.value, ingressFlowName);
+  await getErrorsByFlow(showAcknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, ingressFlowName);
   errorsFlow.value = response.value.countPerFlow;
   totalErrorsFlow.value = response.value.totalCount;
   loading.value = false;
@@ -253,7 +253,7 @@ const setupWatchers = () => {
   );
 
   watch(
-    () => props.awknowledged,
+    () => props.acknowledged,
     () => {
       selectedErrors.value = [];
       fetchErrorsFlow();
