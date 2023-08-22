@@ -307,15 +307,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     public void updateForAutoResume(List<String> dids, String policyName, OffsetDateTime nextAutoResume) {
-        if (dids != null && !dids.isEmpty()) {
-            BulkOperations bulkOps = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, DeltaFile.class);
-            Update update = new Update().set(NEXT_AUTO_RESUME, nextAutoResume).set(NEXT_AUTO_RESUME_REASON, policyName);
-            for (List<String> batch : Lists.partition(dids, 1000)) {
-                Query query = new Query().addCriteria(Criteria.where(ID).in(batch));
-                bulkOps.updateMulti(query, update);
-            }
-            bulkOps.execute();
-        }
+        batchedBulkUpdateByIds(dids, new Update().set(NEXT_AUTO_RESUME, nextAutoResume).set(NEXT_AUTO_RESUME_REASON, policyName));
     }
 
     @Override
@@ -405,6 +397,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     Update buildRequeueUpdate(OffsetDateTime modified, int requeueSeconds) {
+        if (modified == null) {
+            modified = OffsetDateTime.now();
+        }
+
         Update update = new Update();
         update.inc(REQUEUE_COUNT, 1);
 
@@ -414,7 +410,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         update.set(ACTIONS_UPDATE_MODIFIED, modified);
         update.set(ACTIONS_UPDATE_QUEUED, modified);
 
-        update.set(MODIFIED, nonNull(modified) ? modified : OffsetDateTime.now());
+        update.set(MODIFIED, modified);
 
         Criteria queued = Criteria.where(ACTION_STATE).is(ActionState.QUEUED.name());
 
@@ -518,7 +514,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (nonNull(filter.getContentDeleted())) {
-            if (filter.getContentDeleted()) {
+            if (isTrue(filter.getContentDeleted())) {
                 andCriteria.add(Criteria.where(CONTENT_DELETED).ne(null));
             } else {
                 andCriteria.add(Criteria.where(CONTENT_DELETED).is(null));
@@ -534,11 +530,11 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (nonNull(filter.getStage()) && nonNull(filter.getTerminalStage())) {
-            Set<DeltaFileStage> stages = new HashSet<>(filter.getTerminalStage() ? TERMINAL_STAGES : ACTIVE_STAGES);
+            Set<DeltaFileStage> stages = new HashSet<>(isTrue(filter.getTerminalStage()) ? TERMINAL_STAGES : ACTIVE_STAGES);
             stages.add(filter.getStage());
             andCriteria.add(Criteria.where(STAGE).in(stages));
         } else if (nonNull(filter.getTerminalStage())) {
-            andCriteria.add(Criteria.where(STAGE).in(filter.getTerminalStage() ? TERMINAL_STAGES : ACTIVE_STAGES));
+            andCriteria.add(Criteria.where(STAGE).in(isTrue(filter.getTerminalStage()) ? TERMINAL_STAGES : ACTIVE_STAGES));
         } else if (nonNull(filter.getStage())) {
             andCriteria.add(Criteria.where(STAGE).is(filter.getStage().name()));
         }
@@ -588,7 +584,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (filter.getFilteredCause() != null) {
-            boolean filtered = filter.getFiltered() != null ? filter.getFiltered() : true;
+            boolean filtered = filter.getFiltered() == null || filter.getFiltered();
             andCriteria.add(Criteria.where(FILTERED).is(filtered));
             Criteria actionElemMatch = new Criteria().andOperator(Criteria.where(STATE).is(ActionState.FILTERED),
                     Criteria.where(FILTERED_CAUSE).regex(filter.getFilteredCause()));
@@ -624,7 +620,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (nonNull(filter.getErrorAcknowledged())) {
-            if (filter.getErrorAcknowledged()) {
+            if (isTrue(filter.getErrorAcknowledged())) {
                 andCriteria.add(Criteria.where(ERROR_ACKNOWLEDGED).ne(null));
             } else {
                 andCriteria.add(Criteria.where(ERROR_ACKNOWLEDGED).is(null));
@@ -640,7 +636,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (nonNull(filter.getTestMode())) {
-            if (filter.getTestMode()) {
+            if (isTrue(filter.getTestMode())) {
                 andCriteria.add(Criteria.where(TEST_MODE).is(true));
             } else {
                 andCriteria.add(Criteria.where(TEST_MODE).ne(true));
@@ -648,7 +644,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (nonNull(filter.getReplayable())) {
-            if (filter.getReplayable()) {
+            if (isTrue(filter.getReplayable())) {
                 andCriteria.add(Criteria.where(REPLAYED).isNull());
                 andCriteria.add(Criteria.where(CONTENT_DELETED).isNull());
             } else {
@@ -657,7 +653,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (nonNull(filter.getReplayed())) {
-            if (filter.getReplayed()) {
+            if (isTrue(filter.getReplayed())) {
                 andCriteria.add(Criteria.where(REPLAYED).ne(null));
             } else {
                 andCriteria.add(Criteria.where(REPLAYED).isNull());
@@ -665,7 +661,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (nonNull(filter.getPendingAnnotations())) {
-            if (filter.getPendingAnnotations()) {
+            if (isTrue(filter.getPendingAnnotations())) {
                 andCriteria.add(Criteria.where(FIRST_PENDING_ANNOTATIONS_FOR_FLOWS).exists(true));
             } else {
                 andCriteria.add(Criteria.where(PENDING_ANNOTATIONS_FOR_FLOWS).is(null));
@@ -951,7 +947,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (nonNull(filter.getErrorAcknowledged())) {
-            if (filter.getErrorAcknowledged()) {
+            if (isTrue(filter.getErrorAcknowledged())) {
                 andCriteria.add(Criteria.where(ERROR_ACKNOWLEDGED).ne(null));
             } else {
                 andCriteria.add(Criteria.where(ERROR_ACKNOWLEDGED).is(null));
@@ -999,13 +995,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     public void setContentDeletedByDidIn(List<String> dids, OffsetDateTime now, String reason) {
-        BulkOperations bulkOps = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, DeltaFile.class);
-        Update update = new Update().set(CONTENT_DELETED, now).set(CONTENT_DELETED_REASON, reason);
-        for (List<String> batch : Lists.partition(dids, 1000)) {
-            Query query = new Query().addCriteria(Criteria.where(ID).in(batch));
-            bulkOps.updateMulti(query, update);
-        }
-        bulkOps.execute();
+        batchedBulkUpdateByIds(dids, new Update().set(CONTENT_DELETED, now).set(CONTENT_DELETED_REASON, reason));
     }
 
     @Override
@@ -1030,9 +1020,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             MatchOperation match = Aggregation.match(andCriteria);
             aggregationOps.add(match);
         }
-        aggregationOps.add(group("null").count().as("count")
-                .sum("totalBytes").as("totalBytes")
-                .sum("referencedBytes").as("referencedBytes"));
+        aggregationOps.add(group("null").count().as(COUNT_LOWER_CASE)
+                .sum(TOTAL_BYTES).as(TOTAL_BYTES)
+                .sum(REFERENCED_BYTES).as(REFERENCED_BYTES));
 
         Aggregation aggregation = Aggregation.newAggregation(aggregationOps)
                 .withOptions(AggregationOptions.builder().allowDiskUse(true).build());
@@ -1065,12 +1055,27 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         mongoTemplate.updateMulti(query, unsetEmptyList, DeltaFile.class);
     }
 
+    private void batchedBulkUpdateByIds(List<String> dids, Update update) {
+        if (dids == null || dids.isEmpty()) {
+            return;
+        }
+
+        BulkOperations bulkOps = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, DeltaFile.class);
+        for (List<String> batch : Lists.partition(dids, 1000)) {
+            Query query = new Query().addCriteria(Criteria.where(ID).in(batch));
+            bulkOps.updateMulti(query, update);
+        }
+        bulkOps.execute();
+    }
+
     private Criteria filenameCriteria(FilenameFilter filenameFilter) {
         String filename = filenameFilter.getFilename();
+        Objects.requireNonNull(filename, "The filename must be provided in the FilenameFilter");
+
         String searchField = SOURCE_INFO_NORMALIZED_FILENAME;
 
         if (!Boolean.TRUE.equals(filenameFilter.getCaseSensitive())) {
-            filename = filename != null ? filename.toLowerCase() : null;
+            filename =  filename.toLowerCase();
         } else {
             searchField = SOURCE_INFO_FILENAME;
         }
@@ -1079,5 +1084,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         return Boolean.TRUE.equals(filenameFilter.getRegex()) ?
             Criteria.where(searchField).regex(filename) :
             Criteria.where(searchField).is(filename);
+    }
+
+    private boolean isTrue(Boolean value) {
+        return Boolean.TRUE.equals(value);
     }
 }
