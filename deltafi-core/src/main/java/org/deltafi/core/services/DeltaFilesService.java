@@ -1577,20 +1577,18 @@ public class DeltaFilesService {
             Set<String> previousDids = new HashSet<>();
 
             /*
-             * If we have any resume policies that are not flow-specific,
-             * then we will query for all DeltaFiles with an ERROR, and
-             * reuse the result for any other policies without a flow name.
+             * If applying any resume policy that is not flow-specific,
+             * then query for all DeltaFiles with an ERROR, and use that
+             * result set for all policies without a flow name.
              */
-            List<DeltaFile> allErrorDeltaFiles = null;
+            List<DeltaFile> allErrorDeltaFiles = new ArrayList<>();
             if (!allHaveFlowName) {
                 allErrorDeltaFiles = deltaFileRepo.findResumePolicyCandidates(null);
             }
 
             for (ResumePolicy resumePolicy : foundPolicies) {
-                List<DeltaFile> checkFiles;
-                if (resumePolicy.getFlow() == null) {
-                    checkFiles = allErrorDeltaFiles;
-                } else {
+                List<DeltaFile> checkFiles = allErrorDeltaFiles;
+                if (resumePolicy.getFlow() != null) {
                     checkFiles = deltaFileRepo.findResumePolicyCandidates(resumePolicy.getFlow());
                 }
 
