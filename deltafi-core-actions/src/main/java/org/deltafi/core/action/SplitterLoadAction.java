@@ -17,11 +17,11 @@
  */
 package org.deltafi.core.action;
 
+import org.deltafi.actionkit.action.ReinjectResult;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.load.LoadInput;
 import org.deltafi.actionkit.action.load.LoadResultType;
 import org.deltafi.actionkit.action.load.LoadAction;
-import org.deltafi.actionkit.action.load.ReinjectResult;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.actionkit.action.parameters.ReinjectParameters;
 import org.jetbrains.annotations.NotNull;

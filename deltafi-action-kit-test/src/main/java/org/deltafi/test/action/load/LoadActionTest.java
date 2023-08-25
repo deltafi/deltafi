@@ -20,7 +20,7 @@ package org.deltafi.test.action.load;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.load.LoadResult;
-import org.deltafi.actionkit.action.load.ReinjectResult;
+import org.deltafi.actionkit.action.ReinjectResult;
 import org.deltafi.common.types.*;
 import org.deltafi.test.action.Child;
 import org.deltafi.test.action.IOContent;

@@ -140,7 +140,7 @@ class TransformAction(Action):
         transform_input = TransformInput(content=event.delta_file_messages[0].content_list,
                                          metadata=event.delta_file_messages[0].metadata)
         result = self.transform(event.context, self.param_class().parse_obj(event.params), transform_input)
-        self.validate_type(result, (TransformResult, ErrorResult, FilterResult))
+        self.validate_type(result, (TransformResult, ErrorResult, FilterResult, ReinjectResult))
         return result
 
     @abstractmethod

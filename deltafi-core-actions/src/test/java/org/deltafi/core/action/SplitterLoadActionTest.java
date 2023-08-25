@@ -68,5 +68,4 @@ public class SplitterLoadActionTest {
         Assertions.assertThat(runner.readContent(event.getContent().get(0))).isEqualTo(expectedContent);
         return true;
     }
-
 }

@@ -45,12 +45,8 @@ import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.retry.MongoRetryable;
-import org.deltafi.core.types.DeltaFiles;
-import org.deltafi.core.types.EgressFlow;
-import org.deltafi.core.types.PerActionUniqueKeyValues;
-import org.deltafi.core.types.Result;
+import org.deltafi.core.types.*;
 import org.deltafi.core.types.ResumePolicy;
-import org.deltafi.core.types.UniqueKeyValues;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
@@ -731,9 +727,19 @@ public class DeltaFilesService {
         List<String> encounteredError = new ArrayList<>();
         List<ActionInput> enqueueActions = new ArrayList<>();
 
-        String loadActionName = ingressFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow()).getLoadAction().getName();
-        if (!event.getAction().equals(loadActionName)) {
-            deltaFile.errorAction(event, "Attempted to reinject from an Action that is not a LoadAction: " + event.getAction(), "");
+        List<String> allowedActions = new ArrayList<>();
+        if (ingressFlowService.hasRunningFlow(deltaFile.getSourceInfo().getFlow())) {
+            IngressFlow ingressFlow = ingressFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow());
+            allowedActions.add(ingressFlow.getLoadAction().getName());
+            allowedActions.addAll(ingressFlow.getTransformActions().stream().map(TransformActionConfiguration::getName).toList());
+        }
+        if (transformFlowService.hasRunningFlow(deltaFile.getSourceInfo().getFlow())) {
+            TransformFlow transformFlow = transformFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow());
+            allowedActions.addAll(transformFlow.getTransformActions().stream().map(TransformActionConfiguration::getName).toList());
+        }
+
+        if (!allowedActions.contains(event.getAction())) {
+            deltaFile.errorAction(event, "Attempted to reinject from an Action that is not a TransformAction or LoadAction: " + event.getAction(), "");
         } else if (reinjects.isEmpty()) {
             deltaFile.errorAction(event, "Attempted to reinject DeltaFile into 0 children", "");
         } else {

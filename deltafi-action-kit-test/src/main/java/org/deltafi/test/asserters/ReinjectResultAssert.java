@@ -18,7 +18,7 @@
 package org.deltafi.test.asserters;
 
 import org.assertj.core.api.Assertions;
-import org.deltafi.actionkit.action.load.ReinjectResult;
+import org.deltafi.actionkit.action.ReinjectResult;
 import org.deltafi.common.types.ReinjectEvent;
 
 import java.util.function.Predicate;

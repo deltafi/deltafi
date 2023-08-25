@@ -17,6 +17,7 @@
  */
 package org.deltafi.test.asserters;
 
+import org.deltafi.actionkit.action.ReinjectResult;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.domain.DomainResult;
@@ -28,7 +29,6 @@ import org.deltafi.actionkit.action.format.FormatManyResult;
 import org.deltafi.actionkit.action.format.FormatResult;
 import org.deltafi.actionkit.action.load.LoadManyResult;
 import org.deltafi.actionkit.action.load.LoadResult;
-import org.deltafi.actionkit.action.load.ReinjectResult;
 import org.deltafi.actionkit.action.transform.TransformResult;
 import org.deltafi.actionkit.action.validate.ValidateResult;
 

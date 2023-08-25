@@ -15,26 +15,18 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.actionkit.action.load;
+package org.deltafi.core.parameters;
 
-import lombok.EqualsAndHashCode;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.deltafi.common.types.ActionContext;
 
-/**
- * Specialized result class for LOAD actions that reinjects one or more DeltaFiles into child flows. Each child added to
- * this result object will be ingressed as a new DeltaFile on the specified flow.
- *
- * DEPRECATED - use org.deltafi.actionkit.action.ReinjectResult
- */
-@Deprecated
+@AllArgsConstructor
 @Getter
-@EqualsAndHashCode(callSuper = true)
-public class ReinjectResult extends org.deltafi.actionkit.action.ReinjectResult {
-    /**
-     * @param context Execution context for the current action
-     */
-    public ReinjectResult(ActionContext context) {
-        super(context);
-    }
+public enum NoMatchBehavior {
+    @JsonProperty("ERROR") ERROR("ERROR"),
+    @JsonProperty("FILTER") FILTER("FILTER"),
+    @JsonProperty("PASSTHROUGH") PASSTHROUGH("PASSTHROUGH");
+
+    private final String value;
 }

@@ -38,9 +38,9 @@ public class FilterByCriteriaTransformAction extends TransformAction<FilterByCri
         super("""
                 The FilterByCriteriaTransformAction allows you to filter or pass DeltaFiles based on specific criteria defined using Spring Expression Language (SpEL). The action takes a list of SpEL expressions that are evaluated against the metadata and content. Depending on the configured filter behavior, the action filters if 'ANY', 'ALL', or 'NONE' of the expressions match.
                 Examples:
-                - To filter if metadata key 'x' is set to 'y': "#metadata['x'] == 'y'"
-                - To filter if 'x' is not 'y' or if 'x' is not present: "#metadata['x'] != 'y' || !#metadata.containsKey('x')"
-                - To filter if no content is JSON: "!#content.stream().anyMatch(c -> c.getMediaType.equals('application/json'))"
+                - To filter if metadata key 'x' is set to 'y': "metadata['x'] == 'y'"
+                - To filter if 'x' is not 'y' or if 'x' is not present: "metadata['x'] != 'y' || !metadata.containsKey('x')"
+                - To filter if no content is JSON: "!content.stream().anyMatch(c -> c.getMediaType.equals('application/json'))"
                 """);
     }
 

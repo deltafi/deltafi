@@ -314,9 +314,10 @@ class DeltaFilesServiceTest {
         flow.setLoadAction(actionConfig);
 
         // "good" flow is running
+        when(ingressFlowService.hasRunningFlow(GOOD_INGRESS_FLOW)).thenReturn(true);
         when(ingressFlowService.getRunningFlowByName(GOOD_INGRESS_FLOW)).thenReturn(flow);
         // "bad" flow is not running
-        when(ingressFlowService.getRunningFlowByName("bad")).thenThrow(new DgsEntityNotFoundException());
+        when(ingressFlowService.hasRunningFlow("bad")).thenReturn(false);
 
         DeltaFile deltaFile = DeltaFile.builder()
                 .sourceInfo(SourceInfo.builder().flow(GOOD_INGRESS_FLOW).build())

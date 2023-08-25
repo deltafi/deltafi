@@ -24,10 +24,12 @@ public class TransformInput {
 
 ### Return Types
 
-The `transform` method must return a `TransformResultType`, which is implemented by `TransformResult`, `ErrorResult`,
-and `FilterResult`.
+The `transform` method must return a `TransformResultType`, which is implemented by `TransformResult`, `ReinjectResult`,
+`ErrorResult`, and `FilterResult`.
 
 The `TransformResult` contains the content, metadata, and annotations created by the `TransformAction`.
+The `ReinjectResult` contains a list of `ReinjectEvent`. Each `ReinjectEvent` will create a new DeltaFile that will be
+ingressed to a specified flow.
 
 ### Example
 
@@ -85,9 +87,11 @@ class TransformInput(NamedTuple):
 
 ### Return Types
 
-The `transform()` method must return one of: `TransformResult`, `ErrorResult`, or `FilterResult`.
+The `transform()` method must return one of: `TransformResult`, `ReinjectResult`, `ErrorResult`, or `FilterResult`.
 
 The `TransformResult` contains the content, metadata, and annotations created by the `TransformAction`.
+The `ReinjectResult` contains a list of `ReinjectEvent`. Each `ReinjectEvent` will create a new DeltaFile that will be
+ingressed to a specified flow.
 
 ### Example
 

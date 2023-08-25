@@ -21,7 +21,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.deltafi.actionkit.action.load.LoadAction;
 import org.deltafi.actionkit.action.load.LoadResult;
-import org.deltafi.actionkit.action.load.ReinjectResult;
+import org.deltafi.actionkit.action.ReinjectResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.Content;
 import org.deltafi.test.action.Child;
