@@ -16,33 +16,52 @@
  *    limitations under the License.
  */
 package org.deltafi.core.action;
-import org.deltafi.test.action.IOContent;
+import org.apache.tika.exception.TikaException;
+import org.deltafi.actionkit.action.content.ActionContent;
+import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.actionkit.action.transform.TransformInput;
+import org.deltafi.actionkit.action.transform.TransformResultType;
 import org.deltafi.test.action.transform.TransformActionTest;
-import org.deltafi.test.action.transform.TransformActionTestCase;
+import org.deltafi.test.asserters.ContentAssert;
+import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
+import java.io.IOException;
+
+import static org.deltafi.test.asserters.ActionResultAssertions.*;
 
 @ExtendWith(MockitoExtension.class)
 class DetectMediaTypeTransformActionTest extends TransformActionTest {
 
-    @InjectMocks
-    DetectMediaTypeTransformAction action;
+    DetectMediaTypeTransformAction action = new DetectMediaTypeTransformAction();
+    DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action, "DetectMediaTypeTransformActionTest");
+
+    DetectMediaTypeTransformActionTest() throws TikaException, IOException {
+    }
 
     @Test
     void testTransform() {
-        TransformActionTestCase testCase = TransformActionTestCase.builder()
-                .action(action)
-                .inputs(List.of(IOContent.builder().name("foobar.tar").contentType("application/data").build(),
-                        IOContent.builder().name("foobar.zip").contentType("application/data").build(),
-                        IOContent.builder().name("thing1.txt").contentType("*/*").build()))
-                .expectTransformResult(List.of(IOContent.builder().name("foobar.tar").contentType("application/x-tar").build(),
-                        IOContent.builder().name("foobar.zip").contentType("application/zip").build(),
-                        IOContent.builder().name("thing1.txt").contentType("text/plain").build()))
+        TransformInput input = TransformInput.builder()
+                .content(runner.saveContentFromResource("foobar.tar", "foobar.zip", "thing1.txt"))
                 .build();
-        execute(testCase);
+        input.getContent().get(0).setMediaType("application/data");
+        input.getContent().get(1).setMediaType("application/data");
+        input.getContent().get(2).setMediaType("*/*");
+
+        TransformResultType result = action.transform(runner.actionContext(), new ActionParameters(), input);
+        assertTransformResult(result)
+                .hasContentMatchingAt(0, actionContent -> contentMatches(actionContent, "foobar.tar", "application/x-tar"))
+                .hasContentMatchingAt(1, actionContent -> contentMatches(actionContent, "foobar.zip", "application/zip"))
+                .hasContentMatchingAt(2, actionContent -> contentMatches(actionContent, "thing1.txt", "text/plain"));
+    }
+
+    boolean contentMatches(ActionContent actionContent, String expectedName, String expectedMediaType) {
+        ContentAssert.assertThat(actionContent)
+                .hasName(expectedName)
+                .hasMediaType(expectedMediaType);
+
+        return true;
     }
 }
