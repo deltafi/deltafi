@@ -28,6 +28,7 @@
           </template>
         </Column>
         <Column field="sourceInfo.filename" header="Filename" :sortable="true" />
+        <Column field="sourceInfo.flow" header="Flow" :sortable="true" />
         <Column field="stage" header="Stage" class="stage-col" :sortable="true" />
       </DataTable>
     </CollapsiblePanel>
