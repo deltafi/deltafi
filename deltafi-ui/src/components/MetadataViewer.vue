@@ -81,7 +81,7 @@ const onExportMetadata = () => {
   }
 
   // Combine objects of Key Name and Value Name into a key value pair
-  let combineKeyValue = props.metadata["All Metadata"].reduce((r, { key, value }) => ((r[key] = value), r), {});
+  let combineKeyValue = Object.values(props.metadata)[0].reduce((r, { key, value }) => ((r[key] = value), r), {});
   formattedMetadata["metadata"] = combineKeyValue;
 
   exportMetadataFile(formattedMetadata);
