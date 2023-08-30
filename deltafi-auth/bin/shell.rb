@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby
 #
 #    DeltaFi - Data transformation and enrichment platform
 #
@@ -15,8 +16,6 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-
-# !/usr/bin/env ruby
 
 # frozen_string_literal: true
 

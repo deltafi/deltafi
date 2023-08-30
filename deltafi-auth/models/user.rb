@@ -29,7 +29,7 @@ class User < Sequel::Model
 
   FIELDS = %i[name dn username password role_ids].freeze
 
-  def initialize(**args)
+  def initialize(args)
     @role_ids = args.delete(:role_ids)
     super(args)
   end

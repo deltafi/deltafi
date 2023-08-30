@@ -18,6 +18,8 @@
 
 # frozen_string_literal: true
 
+$LOAD_PATH.unshift File.expand_path(File.dirname(__FILE__))
+
 Dir[File.join(File.dirname(__FILE__), 'deltafi', '*.rb')].each do |f|
   require "deltafi/#{File.basename(f).split('.')[0]}"
 end

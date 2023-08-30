@@ -1,4 +1,4 @@
-FROM deltafi/deltafi-ruby-base:1.0.0
+FROM deltafi/deltafi-ruby-base:1.1.0
 WORKDIR /app
 COPY . /app
 COPY probe.sh /
