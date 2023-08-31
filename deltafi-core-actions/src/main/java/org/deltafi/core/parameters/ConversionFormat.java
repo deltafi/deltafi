@@ -18,7 +18,6 @@
 package org.deltafi.core.parameters;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.net.MediaType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

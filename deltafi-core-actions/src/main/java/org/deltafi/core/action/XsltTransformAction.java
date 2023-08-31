@@ -24,7 +24,6 @@ import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.actionkit.action.transform.TransformResult;
 import org.deltafi.actionkit.action.transform.TransformResultType;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.core.parameters.ModifyMediaTypeParameters;
 import org.deltafi.core.parameters.XsltParameters;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;

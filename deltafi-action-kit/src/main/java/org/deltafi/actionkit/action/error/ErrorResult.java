@@ -68,6 +68,23 @@ public class ErrorResult extends Result<ErrorResult> implements DomainResultType
     /**
      * @param context Execution context of the errored action
      * @param errorMessage Message explaining the error result
+     * @param errorDetails Additional details about the error
+     * @param throwable An exception that indicates the reason for the error. The stack trace will be appended to errorDetails
+     */
+    public ErrorResult(@NotNull ActionContext context, @NotNull String errorMessage, @NotNull String errorDetails, @NotNull Throwable throwable) {
+        super(context, ActionEventType.ERROR);
+
+        this.errorCause = errorMessage;
+
+        StringWriter stackWriter = new StringWriter();
+        throwable.printStackTrace(new PrintWriter(stackWriter));
+        this.errorContext = errorDetails + "\n" + throwable + "\n" + stackWriter;
+        this.errorSummary = errorMessage + ": " + context.getDid() + "\n" + errorContext;
+    }
+
+    /**
+     * @param context Execution context of the errored action
+     * @param errorMessage Message explaining the error result
      */
     @SuppressWarnings("unused")
     public ErrorResult(@NotNull ActionContext context, @NotNull String errorMessage) {

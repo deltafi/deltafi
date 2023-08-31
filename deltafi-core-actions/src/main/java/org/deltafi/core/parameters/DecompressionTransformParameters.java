@@ -22,7 +22,6 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.*;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 
-
 @Data
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)

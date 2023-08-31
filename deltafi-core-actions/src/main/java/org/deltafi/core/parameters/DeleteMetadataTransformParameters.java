@@ -24,7 +24,6 @@ import org.deltafi.actionkit.action.parameters.ActionParameters;
 
 import java.util.List;
 
-
 @Data
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)

@@ -33,6 +33,9 @@ import java.util.*;
 
 @Component
 public class ExtractJsonMetadataTransformAction extends TransformAction<ExtractJsonMetadataParameters> {
+    private static final Configuration CONFIGURATION = Configuration.builder()
+            .options(Option.SUPPRESS_EXCEPTIONS, Option.ALWAYS_RETURN_LIST)
+            .build();
 
     public ExtractJsonMetadataTransformAction() {
         super("Extract JSON keys based on JSONPath and write them as metadata");
@@ -56,15 +59,11 @@ public class ExtractJsonMetadataTransformAction extends TransformAction<ExtractJ
                                 .anyMatch(pattern -> matchesPattern(c.getName(), pattern)))
                 .toList();
 
-        Configuration configuration = Configuration.builder()
-                .options(Option.SUPPRESS_EXCEPTIONS, Option.ALWAYS_RETURN_LIST)
-                .build();
-
         // Iterate through content and extract values using JSONPath
         for (ActionContent content : contentList) {
             String json = content.loadString();
 
-            ReadContext ctx = JsonPath.using(configuration).parse(json);
+            ReadContext ctx = JsonPath.using(CONFIGURATION).parse(json);
             for (Map.Entry<String, String> entry : params.getJsonPathToMetadataKeysMap().entrySet()) {
                 String jsonPath = entry.getKey();
                 Object readResult = ctx.read(jsonPath);
@@ -80,13 +79,17 @@ public class ExtractJsonMetadataTransformAction extends TransformAction<ExtractJ
             String metadataKey = entry.getValue();
             List<String> values = valuesMap.getOrDefault(jsonPath, Collections.emptyList());
 
-            if (values.isEmpty() && params.isErrorOnKeyNotFound()) {
-                return new ErrorResult(context, "Key not found: " + jsonPath);
+            if (values.isEmpty()) {
+                if (params.isErrorOnKeyNotFound()) {
+                    return new ErrorResult(context, "Key not found: " + jsonPath);
+                } else {
+                    continue;
+                }
             }
 
             String value = switch (params.getHandleMultipleKeys()) {
-                case FIRST -> values.isEmpty() ? null : values.get(0);
-                case LAST -> values.isEmpty() ? null : values.get(values.size() - 1);
+                case FIRST -> values.get(0);
+                case LAST -> values.get(values.size() - 1);
                 default -> String.join(params.getAllKeysDelimiter(), values);
             };
 

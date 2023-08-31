@@ -19,21 +19,19 @@ package org.deltafi.core.action;
 
 import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.content.ActionContent;
-import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.transform.TransformInput;
-import org.deltafi.actionkit.action.transform.TransformResult;
 import org.deltafi.core.parameters.ExtractJsonMetadataParameters;
 import org.deltafi.core.parameters.HandleMultipleKeysType;
 import org.deltafi.test.action.transform.TransformActionTest;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import static org.deltafi.test.asserters.ActionResultAssertions.assertErrorResult;
 import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformResult;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ExtractJsonMetadataTransformActionTest extends TransformActionTest {
 
@@ -49,11 +47,7 @@ class ExtractJsonMetadataTransformActionTest extends TransformActionTest {
         TransformInput input = TransformInput.builder().content(List.of(content)).build();
 
         ResultType result = action.transform(runner.actionContext(), params, input);
-        assertTransformResult(result);
-
-        TransformResult transformResult = (TransformResult) result;
-        assertEquals("John", transformResult.getMetadata().get("nameMetadata"));
-        assertEquals("john@example.com", transformResult.getMetadata().get("emailMetadata"));
+        assertTransformResult(result).addedMetadataEquals(Map.of("nameMetadata", "John", "emailMetadata", "john@example.com"));
     }
 
     @Test
@@ -80,10 +74,7 @@ class ExtractJsonMetadataTransformActionTest extends TransformActionTest {
         TransformInput input = TransformInput.builder().content(List.of(content)).build();
 
         ResultType result = action.transform(runner.actionContext(), params, input);
-        assertTransformResult(result);
-
-        TransformResult transformResult = (TransformResult) result;
-        assertEquals(expectedValue, transformResult.getMetadata().get("valuesMetadata"));
+        assertTransformResult(result).addedMetadataEquals(Map.of("valuesMetadata", expectedValue));
     }
 
     @Test
@@ -97,10 +88,7 @@ class ExtractJsonMetadataTransformActionTest extends TransformActionTest {
         TransformInput input = TransformInput.builder().content(List.of(content, content2)).build();
 
         ResultType result = action.transform(runner.actionContext(), params, input);
-        assertTransformResult(result);
-
-        TransformResult transformResult = (TransformResult) result;
-        assertEquals("firstValue|nextValue", transformResult.getMetadata().get("valuesMetadata"));
+        assertTransformResult(result).addedMetadataEquals(Map.of("valuesMetadata", "firstValue|nextValue"));
     }
 
     @Test
@@ -116,10 +104,7 @@ class ExtractJsonMetadataTransformActionTest extends TransformActionTest {
         TransformInput input = TransformInput.builder().content(List.of(content, content2, content3)).build();
 
         ResultType result = action.transform(runner.actionContext(), params, input);
-        assertTransformResult(result);
-
-        TransformResult transformResult = (TransformResult) result;
-        assertEquals("firstValue,nextValue", transformResult.getMetadata().get("valuesMetadata"));
+        assertTransformResult(result).addedMetadataEquals(Map.of("valuesMetadata", "firstValue,nextValue"));
     }
 
     @Test
@@ -136,10 +121,7 @@ class ExtractJsonMetadataTransformActionTest extends TransformActionTest {
         TransformInput input = TransformInput.builder().content(List.of(content, content2, content3, content4)).build();
 
         ResultType result = action.transform(runner.actionContext(), params, input);
-        assertTransformResult(result);
-
-        TransformResult transformResult = (TransformResult) result;
-        assertEquals("1,2,3", transformResult.getMetadata().get("valuesMetadata"));
+        assertTransformResult(result).addedMetadata("valuesMetadata", "1,2,3");
     }
 
     @Test
@@ -155,10 +137,7 @@ class ExtractJsonMetadataTransformActionTest extends TransformActionTest {
         TransformInput input = TransformInput.builder().content(List.of(content, content2, content3)).build();
 
         ResultType result = action.transform(runner.actionContext(), params, input);
-        assertTransformResult(result);
-
-        TransformResult transformResult = (TransformResult) result;
-        assertEquals("firstValue,lastValue", transformResult.getMetadata().get("valuesMetadata"));
+        assertTransformResult(result).addedMetadataEquals(Map.of("valuesMetadata", "firstValue,lastValue"));
     }
 
     @Test
@@ -172,8 +151,23 @@ class ExtractJsonMetadataTransformActionTest extends TransformActionTest {
         TransformInput input = TransformInput.builder().content(List.of(content)).build();
 
         ResultType result = action.transform(runner.actionContext(), params, input);
-        assertErrorResult(result);
-        assertEquals("Key not found: $.missingKey", ((ErrorResult) result).getErrorCause());
+        assertErrorResult(result).hasCause("Key not found: $.missingKey");
+    }
+
+
+
+    @Test
+    void testNoErrorOnKeyNotFound() {
+        ExtractJsonMetadataParameters params = new ExtractJsonMetadataParameters();
+        params.setJsonPathToMetadataKeysMap(Map.of("$.missingKey", "missingMetadata"));
+        params.setErrorOnKeyNotFound(false);
+
+        ActionContent content = saveJson("{\"key\":\"value\"}");
+
+        TransformInput input = TransformInput.builder().content(List.of(content)).build();
+
+        ResultType result = action.transform(runner.actionContext(), params, input);
+        assertTransformResult(result).addedMetadataEquals(Collections.emptyMap());
     }
 
     private ActionContent saveJson(String json) {

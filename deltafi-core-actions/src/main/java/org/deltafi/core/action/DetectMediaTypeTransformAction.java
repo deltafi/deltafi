@@ -30,7 +30,6 @@ import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.actionkit.action.transform.TransformResult;
 import org.deltafi.actionkit.action.transform.TransformResultType;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.core.parameters.DeleteMetadataTransformParameters;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
