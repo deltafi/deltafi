@@ -145,11 +145,7 @@ _k8s_install() {
   HELM_RETURN_CODE=$?
   [[ "$HELM_RETURN_CODE" != "0" ]] && exit $HELM_RETURN_CODE
 
-  NEW_CORE_POD=$(${KUBECTL_BIN} get pods | grep "^deltafi-core-[a-f0-9]\{10\}-" | head -n 1 | cut -d' ' -f1)
-
-  if ! [ "${ORIG_CORE_POD}" = "${NEW_CORE_POD}" ]; then
-    _run_migrations
-  fi
+  _run_migrations
 }
 
 _compose_install() {
@@ -162,12 +158,7 @@ _compose_install() {
 
   "${DELTAFICLI_COMPOSE_PATH}"/compose start ${ARGS[@]:1}
 
-
-  NEW_CORE_CONTAINER=$(${core_finder})
-
-  if ! [ "${ORIG_CORE_CONTAINER}" = "${NEW_CORE_CONTAINER}" ]; then
-    _run_migrations
-  fi
+  _run_migrations
 }
 
 _pre_upgrade_tasks() {
