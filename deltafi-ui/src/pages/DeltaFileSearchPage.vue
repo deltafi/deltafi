@@ -22,7 +22,7 @@
       <PageHeader heading="DeltaFile Search">
         <div class="time-range btn-toolbar mb-2 mb-md-0">
           <Button class="p-button-text p-button-sm p-button-secondary" disabled>{{ shortTimezone() }}</Button>
-          <date-picker :key="Math.random()" ref="datePickerRef" :date-input="dateInput" :calendar-date-input="calendarDateInput" switch-button-label="All Day" :format="timestampFormat" :same-date-format="sameDateFormat" :initial-dates="[model.startTimeDate, model.endTimeDate]" :show-helper-buttons="true" @date-applied="updateInputDateTime" @on-reset="resetDateTime" />
+          <date-picker :key="Math.random()" ref="datePickerRef" :date-input="dateInput" :calendar-date-input="calendarDateInput" switch-button-label="All Day" :format="timestampFormat" :same-date-format="sameDateFormat" :initial-dates="[model.startTimeDate, model.endTimeDate]" :show-helper-buttons="true" :helper-buttons="helperButtons" @date-applied="updateInputDateTime" @on-reset="resetDateTime" @datepicker-opened="updateHelperButtons" />
           <Button class="p-button p-button-outlined deltafi-input-field ml-3" icon="fa fa-sync-alt" :loading="loading" label="Refresh" @click="fetchDeltaFilesData()" />
         </div>
       </PageHeader>
@@ -300,6 +300,7 @@ onBeforeMount(async () => {
   if (model.value.domains == null) fetchAnnotationKeys();
   await fetchDeltaFilesDataNoDebounce();
   setupWatchers();
+  updateHelperButtons();
 });
 
 // Fetches all the options used in the dropdown
@@ -316,6 +317,53 @@ const fetchStages = async () => {
 };
 
 // Dates/Time Variables
+const helperButtons = ref([]);
+const updateHelperButtons = () => {
+  const buttons = [
+    {
+      name: "Last Hour",
+      from: new Date(new Date().setHours(new Date().getHours() - 1)),
+      to: new Date(),
+    },
+    {
+      name: "Last 4 Hours",
+      from: new Date(new Date().setHours(new Date().getHours() - 4)),
+      to: new Date(),
+    },
+    {
+      name: "Last 8 Hours",
+      from: new Date(new Date().setHours(new Date().getHours() - 8)),
+      to: new Date(),
+    },
+    {
+      name: "Last 12 Hours",
+      from: new Date(new Date().setHours(new Date().getHours() - 12)),
+      to: new Date(),
+    },
+    {
+      name: "Last 24 Hours",
+      from: new Date(new Date().setHours(new Date().getHours() - 24)),
+      to: new Date(),
+    },
+    {
+      name: "Last 3 Days",
+      from: new Date(new Date().setDate(new Date().getDate() - 3)),
+      to: new Date(),
+    },
+    {
+      name: "Last 7 Days",
+      from: new Date(new Date().setDate(new Date().getDate() - 7)),
+      to: new Date(),
+    },
+    {
+      name: "Last 14 Days",
+      from: new Date(new Date().setDate(new Date().getDate() - 14)),
+      to: new Date(),
+    },
+  ];
+  helperButtons.value.length = 0
+  buttons.forEach((button) => helperButtons.value.push(button))
+};
 const timestampFormat = "YYYY-MM-DD HH:mm:ss";
 const defaultStartTimeDate = computed(() => {
   const date = dayjs().utc();
