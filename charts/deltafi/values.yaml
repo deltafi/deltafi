@@ -452,6 +452,8 @@ clickhouse:
   persistence:
     enabled: true
     existingClaim: deltafi-clickhouse
+  podSecurityContext:
+    enabled: false
   zookeeper:
     enabled: false
   auth:
