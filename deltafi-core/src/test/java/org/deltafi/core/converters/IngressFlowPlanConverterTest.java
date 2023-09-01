@@ -69,7 +69,7 @@ class IngressFlowPlanConverterTest {
         assertThat(ingressFlow.getFlowStatus().getState()).isEqualTo(FlowState.INVALID);
         FlowConfigError expected = FlowConfigError.newBuilder()
                 .configName("${missing.placeholder:defaultignored}")
-                .errorType(FlowErrorType.UNRESOLVED_VARIABLE).message("Could not resolve placeholder 'missing.placeholder:defaultignored' in value \"${missing.placeholder:defaultignored}\"").build();
+                .errorType(FlowErrorType.UNRESOLVED_VARIABLE).message("Could not find a variable named 'missing.placeholder:defaultignored' used in value \"${missing.placeholder:defaultignored}\"").build();
 
         assertThat(ingressFlow.getFlowStatus().getErrors()).hasSize(1).contains(expected);
 
@@ -77,13 +77,15 @@ class IngressFlowPlanConverterTest {
 
     TransformActionConfiguration expectedTransform() {
         TransformActionConfiguration expected = new TransformActionConfiguration("PassthroughTransformAction", "org.deltafi.passthrough.action.RoteTransformAction");
-        expected.setInternalParameters(Map.of("resultType", "passthrough-binary"));
+        expected.setInternalParameters(Map.of("resultType", "passthrough-binary", "someString", "[a, b, c]"));
+        expected.setParameters(Map.of("resultType", "passthrough-binary", "someString", "[a, b, c]"));
         return expected;
     }
 
     LoadActionConfiguration expectedLoadAction() {
         LoadActionConfiguration loadActionConfiguration = new LoadActionConfiguration("PassthroughLoadAction", "org.deltafi.passthrough.action.RoteLoadAction");
         loadActionConfiguration.setInternalParameters(Map.of("domains", List.of("binary")));
+        loadActionConfiguration.setParameters(Map.of("domains", List.of("binary")));
         return loadActionConfiguration;
     }
 

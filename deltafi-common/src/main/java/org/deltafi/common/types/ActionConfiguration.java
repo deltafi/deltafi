@@ -20,8 +20,10 @@ package org.deltafi.common.types;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.springframework.data.annotation.Transient;
 
@@ -39,6 +41,8 @@ import java.util.*;
         @JsonSubTypes.Type(value = ValidateActionConfiguration.class, name = "ValidateActionConfiguration"),
         @JsonSubTypes.Type(value = EgressActionConfiguration.class, name = "EgressActionConfiguration")
 })
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true, exclude = "internalParameters")
 public abstract class ActionConfiguration extends DeltaFiConfiguration {
     @JsonIgnore
     @Transient
@@ -81,12 +85,8 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
      */
     public ActionInput buildActionInput(String flow, DeltaFile deltaFile, String systemName, String egressFlow, String returnAddress) {
         if (Objects.isNull(internalParameters)) {
-            if (parameters != null) {
-                // fall back to using parameters if internalParameters do not exist yet
-                setInternalParameters(parameters);
-            } else {
-                setInternalParameters(Collections.emptyMap());
-            }
+            // fall back to using parameters if internalParameters do not exist yet
+            setInternalParameters(Objects.requireNonNullElse(parameters, Collections.emptyMap()));
         }
 
         return ActionInput.builder()

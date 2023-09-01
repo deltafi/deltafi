@@ -18,14 +18,18 @@
 package org.deltafi.common.types;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.util.List;
 
 @Getter
 @Setter
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public class EgressFlowConfiguration extends DeltaFiConfiguration {
     private List<String> includeIngressFlows;
     private List<String> excludeIngressFlows;

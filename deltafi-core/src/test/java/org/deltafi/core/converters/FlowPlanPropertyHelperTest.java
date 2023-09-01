@@ -102,6 +102,23 @@ class FlowPlanPropertyHelperTest {
     }
 
     @Test
+    void resolve_listWhitespaceHandling() {
+        String toResolve = "${value}";
+        Variable variable = Variable.builder().name("value").value(" [ ] ").defaultValue(null).required(false).dataType(VariableDataType.LIST).build();
+
+        Object result = executeResolvePrimitive(toResolve, List.of(variable));
+        assertThat(result).isInstanceOf(List.class);
+        List<String> castedResult = (List<String>) result;
+        assertThat(castedResult).isEmpty();
+
+        variable = Variable.builder().name("value").value(" [a,b]").dataType(VariableDataType.LIST).build();
+        result = executeResolvePrimitive(toResolve, List.of(variable));
+        assertThat(result).isInstanceOf(List.class);
+        castedResult = (List<String>) result;
+        assertThat(castedResult).containsExactly("a", "b");
+    }
+
+    @Test
     void resolve_populatedMap() {
         String toResolve = "${value}";
 
@@ -268,12 +285,30 @@ class FlowPlanPropertyHelperTest {
         assertThat(toPopulate.getInternalParameters()).hasSize(2).containsEntry("notMasked", "plainValue").containsEntry("masked", "maskedValue");
     }
 
+    @Test
+    void resolve_multiVariables() {
+        String toResolve = "[mixedValueTypes-${value}-${value2}]";
+        Variable variableString = Variable.builder().name("value").value("myvalue").defaultValue(null).required(true).dataType(VariableDataType.STRING).build();
+        Variable variableNumber = Variable.builder().name("value2").value("3").defaultValue(null).required(true).dataType(VariableDataType.NUMBER).build();
+        Object result = executeResolvePrimitive(toResolve, List.of(variableString, variableNumber));
+
+        assertThat(result).isInstanceOf(String.class).isEqualTo("[mixedValueTypes-myvalue-3]");
+    }
+
+    @Test
+    void resolve_doNotRecurseOnVariableValues() {
+        String toResolve = "${value}";
+        Variable variableString = Variable.builder().name("value").value("${someOtherPlaceholder}").defaultValue(null).required(true).dataType(VariableDataType.STRING).build();
+        Object result = executeResolvePrimitive(toResolve, List.of(variableString));
+
+        assertThat(result).isInstanceOf(String.class).isEqualTo("${someOtherPlaceholder}");
+    }
+
     Object executeResolvePrimitive(Object object, List<Variable> variables) {
         FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(variables);
 
         return flowPlanPropertyHelper.resolveObject(object, "");
     }
-
 
     List<Variable> variables() {
         return List.of(

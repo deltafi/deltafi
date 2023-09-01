@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.EgressActionConfiguration;
 import org.deltafi.common.types.FormatActionConfiguration;
 import org.deltafi.common.types.ValidateActionConfiguration;
+import org.deltafi.common.types.VariableDataType;
 import org.deltafi.core.types.EgressFlow;
 import org.deltafi.common.types.EgressFlowPlan;
 
@@ -105,13 +106,13 @@ public class EgressFlowPlanConverter extends FlowPlanConverter<EgressFlowPlan, E
      * If the replacement is wrapped as an array string split it up
      */
     private List<String> handleValue(String inputValue, FlowPlanPropertyHelper flowPlanPropertyHelper, String inEgressPlanNamed) {
-        String replacement = flowPlanPropertyHelper.replaceValue(inputValue, inEgressPlanNamed);
+        String replacement = flowPlanPropertyHelper.replaceValueAsString(inputValue, inEgressPlanNamed);
         if (StringUtils.isBlank(replacement)) {
             return null;
         } else if (replacement.equals(inputValue)) {
             return List.of(inputValue);
-        } else if(FlowPlanPropertyHelper.isArrayString(replacement)) {
-            return FlowPlanPropertyHelper.readStringAsList(replacement);
+        } else if(isArrayString(replacement)) {
+            return VariableDataType.readStringAsList(replacement);
         } else {
             return List.of(replacement);
         }
@@ -125,10 +126,10 @@ public class EgressFlowPlanConverter extends FlowPlanConverter<EgressFlowPlan, E
                 continue;
             }
 
-            String replacement = flowPlanPropertyHelper.replaceValue(inputValue, inEgressPlanNamed);
+            String replacement = flowPlanPropertyHelper.replaceValueAsString(inputValue, inEgressPlanNamed);
             if (StringUtils.isNotBlank(replacement) && !replacement.equals(inputValue)) {
-                if (FlowPlanPropertyHelper.isArrayString(replacement)) {
-                    flowList.addAll(FlowPlanPropertyHelper.readStringAsList(replacement));
+                if (isArrayString(replacement)) {
+                    flowList.addAll(VariableDataType.readStringAsList(replacement));
                 } else {
                     flowList.add(replacement);
                 }
@@ -137,6 +138,10 @@ public class EgressFlowPlanConverter extends FlowPlanConverter<EgressFlowPlan, E
             }
         }
         return new ArrayList<>(flowList);
+    }
+
+    private static boolean isArrayString(String value) {
+        return value.startsWith("[") && value.endsWith("]");
     }
 
     @Override

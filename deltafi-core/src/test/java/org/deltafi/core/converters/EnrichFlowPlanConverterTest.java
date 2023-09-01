@@ -64,7 +64,7 @@ class EnrichFlowPlanConverterTest {
         assertThat(enrichFlow.getFlowStatus().getState()).isEqualTo(FlowState.INVALID);
         FlowConfigError expected = FlowConfigError.newBuilder()
                 .configName("${missing.placeholder:defaultignored}")
-                .errorType(FlowErrorType.UNRESOLVED_VARIABLE).message("Could not resolve placeholder 'missing.placeholder:defaultignored' in value \"${missing.placeholder:defaultignored}\"").build();
+                .errorType(FlowErrorType.UNRESOLVED_VARIABLE).message("Could not find a variable named 'missing.placeholder:defaultignored' used in value \"${missing.placeholder:defaultignored}\"").build();
 
         assertThat(enrichFlow.getFlowStatus().getErrors()).hasSize(1).contains(expected);
     }
@@ -74,6 +74,7 @@ class EnrichFlowPlanConverterTest {
         enrichActionConfiguration.setRequiresEnrichments(List.of("binary"));
         enrichActionConfiguration.setInternalParameters(Map.of("enrichments", Map.of("passthroughEnrichment", "customized enrichment value", "secret", "maskedValue")));
         enrichActionConfiguration.setParameters(Map.of("enrichments", Map.of("passthroughEnrichment", "customized enrichment value", "secret", Variable.MASK_STRING)));
+        enrichActionConfiguration.setRequiresMetadataKeyValues(List.of());
         return enrichActionConfiguration;
     }
 

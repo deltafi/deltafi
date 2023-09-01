@@ -17,10 +17,14 @@
  */
 package org.deltafi.common.types;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.util.List;
 
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public class RequiresDomainsActionConfiguration extends ActionConfiguration {
     @Getter
     private final List<String> requiresDomains;

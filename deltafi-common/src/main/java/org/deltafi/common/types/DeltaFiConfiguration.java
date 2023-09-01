@@ -20,6 +20,8 @@ package org.deltafi.common.types;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 @Data
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "__typename")
@@ -35,6 +37,8 @@ import lombok.Data;
         @JsonSubTypes.Type(value = ValidateActionConfiguration.class, name = "ValidateActionConfiguration"),
         @JsonSubTypes.Type(value = EgressActionConfiguration.class, name = "EgressActionConfiguration")
 })
+@ToString
+@EqualsAndHashCode
 public class DeltaFiConfiguration {
     protected String name;
     protected String apiVersion;

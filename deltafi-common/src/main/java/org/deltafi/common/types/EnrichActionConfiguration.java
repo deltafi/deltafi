@@ -20,13 +20,17 @@ package org.deltafi.common.types;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import org.springframework.data.annotation.PersistenceCreator;
 
 import java.util.List;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public class EnrichActionConfiguration extends RequiresDomainsAndEnrichmentsActionConfiguration {
     @Getter
     @Setter

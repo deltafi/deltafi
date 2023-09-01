@@ -71,7 +71,7 @@ class EgressFlowPlanConverterTest {
         assertThat(egressFlow.getFlowStatus().getState()).isEqualTo(FlowState.INVALID);
         FlowConfigError expected = FlowConfigError.newBuilder()
                 .configName("${missing.placeholder:defaultignored}")
-                .errorType(FlowErrorType.UNRESOLVED_VARIABLE).message("Could not resolve placeholder 'missing.placeholder:defaultignored' in value \"${missing.placeholder:defaultignored}\"").build();
+                .errorType(FlowErrorType.UNRESOLVED_VARIABLE).message("Could not find a variable named 'missing.placeholder:defaultignored' used in value \"${missing.placeholder:defaultignored}\"").build();
 
         assertThat(egressFlow.getFlowStatus().getErrors()).hasSize(1).contains(expected);
     }
@@ -118,6 +118,7 @@ class EgressFlowPlanConverterTest {
     EgressActionConfiguration expectedEgressAction() {
         EgressActionConfiguration egressActionConfiguration = new EgressActionConfiguration("PassthroughEgressAction", "org.deltafi.core.action.RestPostEgressAction");
         egressActionConfiguration.setInternalParameters(Map.of("egressFlow", "egressFlow", "metadataKey", "deltafiMetadata", "url", "http://deltafi-egress-sink-service"));
+        egressActionConfiguration.setParameters(Map.of("egressFlow", "egressFlow", "metadataKey", "deltafiMetadata", "url", "http://deltafi-egress-sink-service"));
         return egressActionConfiguration;
     }
 

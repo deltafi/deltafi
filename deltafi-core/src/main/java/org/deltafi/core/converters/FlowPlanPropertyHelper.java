@@ -18,14 +18,12 @@
 package org.deltafi.core.converters;
 
 import lombok.Getter;
-import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.KeyValue;
-import org.deltafi.common.types.VariableDataType;
 import org.deltafi.common.types.Variable;
+import org.deltafi.common.types.VariableDataType;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
-import org.springframework.util.PropertyPlaceholderHelper;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -34,22 +32,17 @@ import static java.util.Objects.nonNull;
 
 public class FlowPlanPropertyHelper {
 
-    private static final String PLACEHOLDER_PREFIX = "${";
-    private static final String PLACEHOLDER_SUFFIX = "}";
-
-    private static final PropertyPlaceholderHelper PLACEHOLDER_HELPER = new PropertyPlaceholderHelper(PLACEHOLDER_PREFIX, PLACEHOLDER_SUFFIX, null, false);
-
-    private final VariablePlaceholderResolver flowPlanPlaceholderResolver;
+    private final VariablePlaceholderHelper variablePlaceholderHelper;
     @Getter
     private final Set<FlowConfigError> errors;
-    private final Optional<FlowPlanPropertyHelper> maskedDelegate;
+    private final FlowPlanPropertyHelper maskedDelegate;
 
     public FlowPlanPropertyHelper(List<Variable> variables) {
         this(variables, variables != null && variables.stream().anyMatch(Variable::isMasked));
     }
 
     private FlowPlanPropertyHelper(List<Variable> variables, boolean createMaskedDelegate) {
-        this.flowPlanPlaceholderResolver = new VariablePlaceholderResolver(variables);
+        this.variablePlaceholderHelper = new VariablePlaceholderHelper(variables);
         this.errors = new HashSet<>();
 
         FlowPlanPropertyHelper maybeDelegate = null;
@@ -57,21 +50,21 @@ public class FlowPlanPropertyHelper {
             List<Variable> maskedVariables = variables.stream().map(Variable::maskIfSensitive).toList();
             maybeDelegate = new FlowPlanPropertyHelper(maskedVariables, false);
         }
-        this.maskedDelegate = Optional.ofNullable(maybeDelegate);
+        this.maskedDelegate = maybeDelegate;
     }
 
     public String getReplacedName(ActionConfiguration actionTemplate) {
-        return replaceValue(actionTemplate.getName(), actionTemplate.getName());
+        return replaceValueAsString(actionTemplate.getName(), actionTemplate.getName());
     }
 
     public <C extends ActionConfiguration> void replaceCommonActionPlaceholders(C actionConfiguration, ActionConfiguration actionTemplate) {
         actionConfiguration.setInternalParameters(replaceMapPlaceholders(actionTemplate.getParameters(), actionConfiguration.getName()));
-        actionConfiguration.setParameters(maskedDelegate.orElse(this).replaceMapPlaceholders(actionTemplate.getParameters(), actionConfiguration.getName()));
+        actionConfiguration.setParameters(maskedDelegate().orElse(this).replaceMapPlaceholders(actionTemplate.getParameters(), actionConfiguration.getName()));
     }
 
     public List<String> replaceListOfPlaceholders(List<String> values, String inActionNamed) {
         return nonNull(values) ? values.stream()
-                .map(value -> this.replaceValue(value, inActionNamed))
+                .map(value -> this.replaceValueAsString(value, inActionNamed))
                 .toList() : Collections.emptyList();
     }
 
@@ -87,8 +80,8 @@ public class FlowPlanPropertyHelper {
         }
 
         KeyValue resolvedKeyValue = new KeyValue();
-        resolvedKeyValue.setKey(replaceValue(keyValue.getKey(), inActionNamed));
-        resolvedKeyValue.setValue(replaceValue(keyValue.getValue(), inActionNamed));
+        resolvedKeyValue.setKey(replaceValueAsString(keyValue.getKey(), inActionNamed));
+        resolvedKeyValue.setValue(replaceValueAsString(keyValue.getValue(), inActionNamed));
         return resolvedKeyValue;
     }
 
@@ -104,7 +97,7 @@ public class FlowPlanPropertyHelper {
                     continue;
                 }
 
-                String resolvedKey = replaceValue(entry.getKey(), inActionNamed);
+                String resolvedKey = replaceValueAsString(entry.getKey(), inActionNamed);
                 Object resolvedObject = resolveObject(entry.getValue(), inActionNamed);
                 if (null != resolvedObject) {
                     resolvedMap.put(resolvedKey, resolvedObject);
@@ -127,10 +120,10 @@ public class FlowPlanPropertyHelper {
             return null;
         }
 
-        if (object instanceof Collection) {
-            return replaceListPlaceholders((Collection) object, actionNamed);
-        } else if (object instanceof Map) {
-            return replaceMapPlaceholders((Map<String, Object>) object, actionNamed);
+        if (object instanceof Collection collectionObject) {
+            return replaceListPlaceholders(collectionObject, actionNamed);
+        } else if (object instanceof Map mapObject) {
+            return replaceMapPlaceholders(mapObject, actionNamed);
         }
 
         return resolvePrimitive(object, actionNamed);
@@ -159,22 +152,21 @@ public class FlowPlanPropertyHelper {
      * @return replaced value if it was templated, original value if not or null if there was no value
      */
     Object resolvePrimitive(Object object, String inActionNamed) {
-        String resolvedValue = replaceValue(object.toString(), inActionNamed);
-        if (null != resolvedValue && !resolvedValue.isBlank()) {
-            if (isArrayString(resolvedValue)) {
-                return readStringAsList(resolvedValue);
-            } else if (isMapString(resolvedValue)) {
-                return VariableDataType.readStringAsMap(stripWrappers(resolvedValue));
-            } else {
-                return resolvedValue;
-            }
+        ResolvedPlaceholder resolvedValue = replaceValue(object.toString(), inActionNamed);
+        if (null != resolvedValue && !resolvedValue.result().isBlank()) {
+            return resolvedValue.dataType().convertValue(resolvedValue.result());
         }
         return null;
     }
 
-    public String replaceValue(String value, String inActionNamed) {
+    public String replaceValueAsString(String value, String inActionNamed) {
+        ResolvedPlaceholder resolvedPlaceholder = replaceValue(value, inActionNamed);
+        return resolvedPlaceholder != null ? resolvedPlaceholder.result() : null;
+    }
+
+    public ResolvedPlaceholder replaceValue(String value, String inActionNamed) {
         try {
-            return nonNull(value) ? PLACEHOLDER_HELPER.replacePlaceholders(value, flowPlanPlaceholderResolver) : null;
+            return nonNull(value) ? variablePlaceholderHelper.replacePlaceholders(value) : null;
         } catch (IllegalArgumentException e) {
             FlowConfigError configError = new FlowConfigError();
             configError.setConfigName(inActionNamed);
@@ -182,43 +174,17 @@ public class FlowPlanPropertyHelper {
             configError.setMessage(e.getMessage());
             errors.add(configError);
         }
-        return value;
+
+        // return the original value that has no corresponding variable, a config error is added above
+        return new ResolvedPlaceholder(value, VariableDataType.STRING);
     }
 
     public Set<Variable> getAppliedVariables() {
-        return flowPlanPlaceholderResolver.getAppliedVariables().stream().map(Variable::maskIfSensitive).collect(Collectors.toSet());
+        return variablePlaceholderHelper.getAppliedVariables().stream().map(Variable::maskIfSensitive).collect(Collectors.toSet());
     }
 
-    public static boolean isArrayString(String value) {
-        return value.startsWith("[") && value.endsWith("]");
-    }
-
-    public static boolean isMapString(String value) {
-        return value.startsWith("{") && value.endsWith("}");
-    }
-
-    /**
-     * Takes in a comma seperated list in a string and splits it into a list of strings.
-     * Each value will be trimmed
-     * @param value string containing a comma separated list that is wrapped in brackets
-     * @return value split into a list
-     */
-    public static List<String> readStringAsList(String value) {
-        if (value == null || StringUtils.isBlank(value) || "[]".equals(value)) {
-            return List.of();
-        }
-
-        String[] splitValues = stripWrappers(value).split(",");
-        List<String> results = new ArrayList<>();
-        for (String splitValue: splitValues) {
-            results.add(splitValue.trim());
-        }
-
-        return results;
-    }
-
-    public static String stripWrappers(String value) {
-        return value.substring(1, value.length() - 1);
+    private Optional<FlowPlanPropertyHelper> maskedDelegate() {
+        return Optional.ofNullable(maskedDelegate);
     }
 
 }

@@ -12,7 +12,8 @@
       "name": "PassthroughTransformAction",
       "type": "org.deltafi.passthrough.action.RoteTransformAction",
       "parameters": {
-        "resultType": "${transform.produces}"
+        "resultType": "${transform.produces}",
+        "someString": "[a, b, c]"
       }
     }
   ],

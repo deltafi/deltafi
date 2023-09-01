@@ -15,26 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.types;
+package org.deltafi.core.converters;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import org.deltafi.common.types.VariableDataType;
 
-import java.util.List;
-
-@Getter
-@Setter
-@JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
-@EqualsAndHashCode(callSuper = true)
-@ToString(callSuper = true)
-public class EnrichFlowConfiguration extends DeltaFiConfiguration {
-    private List<String> domainActions;
-    private List<String> enrichActions;
-
-    public EnrichFlowConfiguration(String name) {
-        super(name);
-    }
-}
+public record ResolvedPlaceholder(String result, VariableDataType dataType){}
