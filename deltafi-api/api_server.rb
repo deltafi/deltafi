@@ -275,17 +275,12 @@ class ApiServer < Sinatra::Base
   def stream_content(content)
     DF::API::V1::Content.verify_content(content)
 
-    size = [
-      DF::API::V1::Content.content_size(content),
-      content[:size]
-    ].min
-
     filename = content[:name] || content[:uuid]
     headers['Content-Disposition'] = "attachment; filename=#{filename};"
     headers['Content-Transfer-Encoding'] = 'binary'
     headers['Cache-Control'] = 'no-cache'
     headers['Content-Type'] = content[:mediaType]
-    headers['Content-Length'] = size.to_s
+    headers['Content-Length'] = content[:size].to_s
 
     bytes_left = content[:size]
 
