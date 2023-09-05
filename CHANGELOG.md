@@ -5,6 +5,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.1.0] - 2023-09-05
+
+### Added
+- Added custom default time buttons to calendars 
+- Added Flow column to Parent/Child DeltaFiles tables on Viewer 
+- Add ConvertContentTransformAction that converts between JSON, XML, and CSV. 
+- ExtractJsonMetadataTransformAction - Extract JSON keys based on JSONPath and write them as metadata
+- ExtractXmlMetadataTransformAction - Extract XML keys based on XPath and write them as metadata
+- Add MetadataToContentTransformAction 
+- `deltafi mongo-migrate` now accepts `-f` flag to force migrations to run, as well as a list of migrations to run
+- Add RouteByCriteriaTransformAction - reinject or pass DeltaFiles based on criteria defined using Spring Expression Language (SpEL) 
+- Add XsltTransformAction for XML transformations using XSLT 
+
+### Changed
+- `deltafi mongo-migrate` batches all migrations in a single exec to speed up the migration execution process
+- Allow TransformActions to reinject.
+
+### Fixed
+- Fixed bug with Download Metadata button when viewing individual actions.
+- Disable pod security context for clickhouse to avoid pod security failure
+- Use the variable datatype to determine the object type when resolving placeholders
+
+### Tech-Debt/Refactor
+- Remove vestigial content processing code in the API 
+- Fix compiler warning in apply resume policy code
+
+### Upgrade and Migration
+- Upgraded both `deltafi-api` and `deltafi-auth` to Ruby 3.2.2 (`deltafi-ruby-base:1.1.0`)
+
 ## [1.0.7] - 2023-08-22
 
 ### Added
@@ -2120,7 +2149,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.7...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.0...main
+[1.1.0]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.7...1.1.0
 [1.0.7]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.6...1.0.7
 [1.0.6]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.5...1.0.6
 [1.0.5]: https://gitlab.com/deltafi/deltafi/-/compare/1.0.4...1.0.5
