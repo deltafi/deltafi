@@ -36,7 +36,7 @@ public class Constants {
     public static final OffsetDateTime START_TIME = OffsetDateTime.of(2021, 7, 11, 13, 44, 22, 183, ZoneOffset.UTC);
     public static final OffsetDateTime STOP_TIME = OffsetDateTime.of(2021, 7, 11, 13, 44, 22, 184, ZoneOffset.UTC);
 
-    public static final String INGRESS_FLOW_NAME = "sampleIngress";
+    public static final String NORMALIZE_FLOW_NAME = "sampleIngress";
     public static final String EGRESS_FLOW_NAME = "sampleEgress";
     public static final String TRANSFORM_FLOW_NAME = "sampleTransform";
 

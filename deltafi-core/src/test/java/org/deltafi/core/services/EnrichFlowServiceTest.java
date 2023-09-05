@@ -21,15 +21,24 @@ import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
 import org.deltafi.core.repo.EnrichFlowRepo;
 import org.deltafi.core.snapshot.SystemSnapshot;
+import org.deltafi.core.snapshot.types.EnrichFlowSnapshot;
+import org.deltafi.core.snapshot.types.FlowSnapshot;
 import org.deltafi.core.types.EnrichFlow;
+import org.deltafi.core.types.Flow;
+import org.deltafi.core.types.Result;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,38 +46,75 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ExtendWith(MockitoExtension.class)
 class EnrichFlowServiceTest {
 
-    private static final List<String> RUNNING_FLOWS = List.of("a", "b");
-    private static final List<String> TEST_FLOWS = List.of();
-
     @InjectMocks
     EnrichFlowService enrichFlowService;
 
     @Mock
     EnrichFlowRepo enrichFlowRepo;
 
+    @Captor
+    ArgumentCaptor<List<EnrichFlow>> flowCaptor;
+
     @Test
     void updateSnapshot() {
-        List<EnrichFlow> flows = RUNNING_FLOWS.stream().map(this::runningFlow).collect(Collectors.toList());
-
-        flows.add(enrichFlow("c", FlowState.STOPPED));
+        List<EnrichFlow> flows = List.of(enrichFlow("a", FlowState.RUNNING), enrichFlow("b", FlowState.STOPPED));
         Mockito.when(enrichFlowRepo.findAll()).thenReturn(flows);
 
         SystemSnapshot systemSnapshot = new SystemSnapshot();
         enrichFlowService.updateSnapshot(systemSnapshot);
 
-        assertThat(systemSnapshot.getRunningEnrichFlows()).isEqualTo(RUNNING_FLOWS);
+        assertThat(systemSnapshot.getEnrichFlows()).hasSize(2);
+
+        Map<String, EnrichFlowSnapshot> enrichFlowSnapshotMap = systemSnapshot.getEnrichFlows().stream()
+                .collect(Collectors.toMap(FlowSnapshot::getName, Function.identity()));
+
+        EnrichFlowSnapshot aFlowSnapshot = enrichFlowSnapshotMap.get("a");
+        assertThat(aFlowSnapshot.isRunning()).isTrue();
+        assertThat(aFlowSnapshot.isTestMode()).isFalse();
+
+        EnrichFlowSnapshot bFlowSnapshot = enrichFlowSnapshotMap.get("b");
+        assertThat(bFlowSnapshot.isRunning()).isFalse();
+
+        assertThat(systemSnapshot.getRunningEnrichFlows()).isNull();
     }
 
     @Test
-    void getRunningFromSnapshot() {
-        SystemSnapshot systemSnapshot = new SystemSnapshot();
-        systemSnapshot.setRunningEnrichFlows(List.of("a", "b"));
-        assertThat(enrichFlowService.getRunningFromSnapshot(systemSnapshot)).isEqualTo(RUNNING_FLOWS);
-        assertThat(enrichFlowService.getTestModeFromSnapshot(systemSnapshot)).isEqualTo(TEST_FLOWS);
-    }
+    void testResetFromSnapshot() {
+        // TODO - verify old fields can be used to reset
+        EnrichFlow running = enrichFlow("running", FlowState.RUNNING);
+        EnrichFlow stopped = enrichFlow("stopped", FlowState.STOPPED);
+        EnrichFlow invalid = enrichFlow("invalid", FlowState.INVALID);
 
-    EnrichFlow runningFlow(String name) {
-        return enrichFlow(name, FlowState.RUNNING);
+        SystemSnapshot systemSnapshot = new SystemSnapshot();
+        systemSnapshot.setRunningEnrichFlows(List.of("running", "stopped", "invalid", "missing"));
+
+        Mockito.when(enrichFlowRepo.findAll()).thenReturn(List.of(running, stopped, invalid));
+        Mockito.when(enrichFlowRepo.findById("running")).thenReturn(Optional.of(running));
+        Mockito.when(enrichFlowRepo.findById("stopped")).thenReturn(Optional.of(stopped));
+        Mockito.when(enrichFlowRepo.findById("invalid")).thenReturn(Optional.of(invalid));
+        Mockito.when(enrichFlowRepo.findById("missing")).thenReturn(Optional.empty());
+
+        Result result = enrichFlowService.resetFromSnapshot(systemSnapshot, true);
+
+        // verify the hard reset stopped any running flows
+        Mockito.verify(enrichFlowRepo).updateFlowState("running", FlowState.STOPPED);
+
+        Mockito.verify(enrichFlowRepo).saveAll(flowCaptor.capture());
+
+        Map<String, EnrichFlow> updatedFlows = flowCaptor.getValue().stream()
+                .collect(Collectors.toMap(Flow::getName, Function.identity()));
+
+        // running is already running/testMode so no updates are made
+        assertThat(updatedFlows).doesNotContainKey("running");
+
+        // stopped flow should be restarted since it was marked as running in the snapshot
+        assertThat(updatedFlows.get("stopped").isRunning()).isTrue();
+
+        assertThat(result.isSuccess()).isFalse();
+        assertThat(result.getInfo()).isEmpty();
+        assertThat(result.getErrors()).hasSize(2)
+                .contains("Flow missing is no longer installed")
+                .contains("Flow: invalid is invalid and cannot be started");
     }
 
     EnrichFlow enrichFlow(String name, FlowState flowState) {

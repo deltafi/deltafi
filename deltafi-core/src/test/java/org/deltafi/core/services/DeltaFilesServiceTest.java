@@ -55,9 +55,9 @@ import static org.mockito.Mockito.*;
 class DeltaFilesServiceTest {
 
     private static final String ERRORS_EXCEEDED_TRANSFORM_FLOW = "errorsExceededFlow";
-    private static final String GOOD_INGRESS_FLOW = "goodIngressFlow";
+    private static final String GOOD_NORMALIZE_FLOW = "goodNormalizeFlow";
 
-    private final IngressFlowService ingressFlowService;
+    private final NormalizeFlowService normalizeFlowService;
     private final EgressFlowService egressFlowService;
     private final TransformFlowService transformFlowService;
     private final StateMachine stateMachine;
@@ -77,13 +77,13 @@ class DeltaFilesServiceTest {
     @Captor
     ArgumentCaptor<DeltaFile> deltaFileCaptor;
 
-    DeltaFilesServiceTest(@Mock IngressFlowService ingressFlowService, @Mock EnrichFlowService enrichFlowService,
+    DeltaFilesServiceTest(@Mock NormalizeFlowService normalizeFlowService, @Mock EnrichFlowService enrichFlowService,
                           @Mock EgressFlowService egressFlowService, @Mock TransformFlowService transformFlowService, @Mock StateMachine stateMachine,
                           @Mock DeltaFileRepo deltaFileRepo, @Mock ActionEventQueue actionEventQueue, @Mock ResumePolicyService resumePolicyService,
                           @Mock ContentStorageService contentStorageService, @Mock MetricService metricService,
                           @Mock CoreAuditLogger coreAuditLogger, @Mock IdentityService identityService,
                           @Mock DeltaFileCacheService deltaFileCacheService) {
-        this.ingressFlowService = ingressFlowService;
+        this.normalizeFlowService = normalizeFlowService;
         this.egressFlowService = egressFlowService;
         this.transformFlowService = transformFlowService;
         this.stateMachine = stateMachine;
@@ -94,7 +94,7 @@ class DeltaFilesServiceTest {
         this.deltaFileCacheService = deltaFileCacheService;
 
         Clock clock = new TestClock();
-        deltaFilesService = new DeltaFilesService(clock, ingressFlowService, enrichFlowService,
+        deltaFilesService = new DeltaFilesService(clock, normalizeFlowService, enrichFlowService,
                 egressFlowService, transformFlowService, new MockDeltaFiPropertiesService(), stateMachine,
                 deltaFileRepo, actionEventQueue, contentStorageService, resumePolicyService, metricService,
                 coreAuditLogger, identityService, new DidMutexService(), deltaFileCacheService);
@@ -102,19 +102,19 @@ class DeltaFilesServiceTest {
 
     @Test
     void setsAndGets() {
-        IngressFlow ingressFlow = new IngressFlow();
-        ingressFlow.setName("theFlow");
-        when(ingressFlowService.getRunningFlowByName(ingressFlow.getName())).thenReturn(ingressFlow);
+        NormalizeFlow normalizeFlow = new NormalizeFlow();
+        normalizeFlow.setName("theFlow");
+        when(normalizeFlowService.getRunningFlowByName(normalizeFlow.getName())).thenReturn(normalizeFlow);
 
         String did = UUID.randomUUID().toString();
-        SourceInfo sourceInfo = new SourceInfo("filename", ingressFlow.getName(), Map.of());
+        SourceInfo sourceInfo = new SourceInfo("filename", normalizeFlow.getName(), Map.of());
         List<Content> content = Collections.singletonList(new Content("name", "mediaType"));
         IngressEvent ingressInput = new IngressEvent(did, sourceInfo, content, OffsetDateTime.now());
 
         DeltaFile deltaFile = deltaFilesService.ingress(ingressInput);
 
         assertNotNull(deltaFile);
-        assertEquals(ingressFlow.getName(), deltaFile.getSourceInfo().getFlow());
+        assertEquals(normalizeFlow.getName(), deltaFile.getSourceInfo().getFlow());
         assertEquals(did, deltaFile.getDid());
         assertNotNull(deltaFile.lastCompleteDataAmendedAction());
     }
@@ -308,31 +308,31 @@ class DeltaFilesServiceTest {
 
     @Test
     void testReinjectNoChildFlow() {
-        IngressFlow flow = new IngressFlow();
+        NormalizeFlow flow = new NormalizeFlow();
         LoadActionConfiguration actionConfig = new LoadActionConfiguration("loadAction", null);
-        flow.setName(GOOD_INGRESS_FLOW);
+        flow.setName(GOOD_NORMALIZE_FLOW);
         flow.setLoadAction(actionConfig);
 
         // "good" flow is running
-        when(ingressFlowService.hasRunningFlow(GOOD_INGRESS_FLOW)).thenReturn(true);
-        when(ingressFlowService.getRunningFlowByName(GOOD_INGRESS_FLOW)).thenReturn(flow);
+        when(normalizeFlowService.hasRunningFlow(GOOD_NORMALIZE_FLOW)).thenReturn(true);
+        when(normalizeFlowService.getRunningFlowByName(GOOD_NORMALIZE_FLOW)).thenReturn(flow);
         // "bad" flow is not running
-        when(ingressFlowService.hasRunningFlow("bad")).thenReturn(false);
+        when(normalizeFlowService.hasRunningFlow("bad")).thenReturn(false);
 
         DeltaFile deltaFile = DeltaFile.builder()
-                .sourceInfo(SourceInfo.builder().flow(GOOD_INGRESS_FLOW).build())
-                .actions(new ArrayList<>(List.of(Action.builder().flow(GOOD_INGRESS_FLOW)
+                .sourceInfo(SourceInfo.builder().flow(GOOD_NORMALIZE_FLOW).build())
+                .actions(new ArrayList<>(List.of(Action.builder().flow(GOOD_NORMALIZE_FLOW)
                         .name("loadAction").state(ActionState.QUEUED).build())))
                 .did("00000000-0000-0000-00000-000000000000")
                 .build();
 
         deltaFilesService.reinject(deltaFile,
                 ActionEvent.builder()
-                        .flow(GOOD_INGRESS_FLOW)
+                        .flow(GOOD_NORMALIZE_FLOW)
                         .action("loadAction")
                         .reinject(List.of(
                                 ReinjectEvent.builder()
-                                        .flow(GOOD_INGRESS_FLOW)
+                                        .flow(GOOD_NORMALIZE_FLOW)
                                         .content(List.of(createContent("first")))
                                         .build(),
                                 ReinjectEvent.builder()
@@ -350,31 +350,31 @@ class DeltaFilesServiceTest {
 
     @Test
     void testReinjectCorrectChildFlow() {
-        IngressFlow flow = new IngressFlow();
+        NormalizeFlow flow = new NormalizeFlow();
         LoadActionConfiguration actionConfig = new LoadActionConfiguration("loadAction", null);
-        flow.setName(GOOD_INGRESS_FLOW);
+        flow.setName(GOOD_NORMALIZE_FLOW);
         flow.setLoadAction(actionConfig);
 
-        when(ingressFlowService.hasRunningFlow(GOOD_INGRESS_FLOW)).thenReturn(true);
-        when(ingressFlowService.getRunningFlowByName(GOOD_INGRESS_FLOW)).thenReturn(flow);
+        when(normalizeFlowService.hasRunningFlow(GOOD_NORMALIZE_FLOW)).thenReturn(true);
+        when(normalizeFlowService.getRunningFlowByName(GOOD_NORMALIZE_FLOW)).thenReturn(flow);
 
         DeltaFile deltaFile = DeltaFile.builder()
-                .sourceInfo(SourceInfo.builder().flow(GOOD_INGRESS_FLOW).build())
-                .actions(new ArrayList<>(List.of(Action.builder().flow(GOOD_INGRESS_FLOW)
+                .sourceInfo(SourceInfo.builder().flow(GOOD_NORMALIZE_FLOW).build())
+                .actions(new ArrayList<>(List.of(Action.builder().flow(GOOD_NORMALIZE_FLOW)
                         .name("loadAction").state(ActionState.QUEUED).build())))
                 .did("00000000-0000-0000-00000-000000000000")
                 .build();
 
         deltaFilesService.reinject(deltaFile,
                 ActionEvent.builder()
-                        .flow(GOOD_INGRESS_FLOW)
+                        .flow(GOOD_NORMALIZE_FLOW)
                         .action("loadAction")
                         .reinject(List.of(
                                 ReinjectEvent.builder()
-                                        .flow(GOOD_INGRESS_FLOW)
+                                        .flow(GOOD_NORMALIZE_FLOW)
                                         .content(List.of(createContent("first"))).build(),
                                 ReinjectEvent.builder()
-                                        .flow(GOOD_INGRESS_FLOW)
+                                        .flow(GOOD_NORMALIZE_FLOW)
                                         .content(List.of(createContent("second"))).build()))
                         .build());
 
@@ -385,9 +385,9 @@ class DeltaFilesServiceTest {
 
     @Test
     void testReinjectErrorsExceeded() {
-        IngressFlow goodFlow = new IngressFlow();
+        NormalizeFlow goodFlow = new NormalizeFlow();
         LoadActionConfiguration loadActionConfig = new LoadActionConfiguration("loadAction", null);
-        goodFlow.setName(GOOD_INGRESS_FLOW);
+        goodFlow.setName(GOOD_NORMALIZE_FLOW);
         goodFlow.setLoadAction(loadActionConfig);
 
         TransformFlow errorsFlow = new TransformFlow();
@@ -395,28 +395,28 @@ class DeltaFilesServiceTest {
         errorsFlow.setName(ERRORS_EXCEEDED_TRANSFORM_FLOW);
         errorsFlow.setTransformActions(List.of(transformActionConfig));
 
-        when(ingressFlowService.flowErrorsExceeded()).thenReturn(Set.of("other"));
+        when(normalizeFlowService.flowErrorsExceeded()).thenReturn(Set.of("other"));
         when(transformFlowService.flowErrorsExceeded()).thenReturn(Set.of(ERRORS_EXCEEDED_TRANSFORM_FLOW));
 
-        when(ingressFlowService.hasRunningFlow(GOOD_INGRESS_FLOW)).thenReturn(true);
-        when(ingressFlowService.hasRunningFlow(ERRORS_EXCEEDED_TRANSFORM_FLOW)).thenReturn(false);
+        when(normalizeFlowService.hasRunningFlow(GOOD_NORMALIZE_FLOW)).thenReturn(true);
+        when(normalizeFlowService.hasRunningFlow(ERRORS_EXCEEDED_TRANSFORM_FLOW)).thenReturn(false);
         when(transformFlowService.hasRunningFlow(ERRORS_EXCEEDED_TRANSFORM_FLOW)).thenReturn(true);
-        when(ingressFlowService.getRunningFlowByName(GOOD_INGRESS_FLOW)).thenReturn(goodFlow);
+        when(normalizeFlowService.getRunningFlowByName(GOOD_NORMALIZE_FLOW)).thenReturn(goodFlow);
 
         DeltaFile deltaFile = DeltaFile.builder()
-                .sourceInfo(SourceInfo.builder().flow(GOOD_INGRESS_FLOW).build())
-                .actions(new ArrayList<>(List.of(Action.builder().flow(GOOD_INGRESS_FLOW)
+                .sourceInfo(SourceInfo.builder().flow(GOOD_NORMALIZE_FLOW).build())
+                .actions(new ArrayList<>(List.of(Action.builder().flow(GOOD_NORMALIZE_FLOW)
                         .name("loadAction").state(ActionState.QUEUED).build())))
                 .did("00000000-0000-0000-00000-000000000000")
                 .build();
 
         deltaFilesService.reinject(deltaFile,
                 ActionEvent.builder()
-                        .flow(GOOD_INGRESS_FLOW)
+                        .flow(GOOD_NORMALIZE_FLOW)
                         .action("loadAction")
                         .reinject(List.of(
                                 ReinjectEvent.builder()
-                                        .flow(GOOD_INGRESS_FLOW)
+                                        .flow(GOOD_NORMALIZE_FLOW)
                                         .content(List.of(createContent("first"))).build(),
                                 ReinjectEvent.builder()
                                         .flow(ERRORS_EXCEEDED_TRANSFORM_FLOW)

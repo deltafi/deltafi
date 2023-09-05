@@ -17,9 +17,9 @@ followed by an Egress Action.
 Otherwise, the DeltaFile will be processed by the ingest Ingress Flow, followed by any number of qualifying Enrich
 Flows, and finally any number of qualifying Egress Flows.
 
-### Ingress Flows
+### Normalize Flows
 
-Ingress Flows transform ingressed data and add Domains to DeltaFiles. They contain a list of Transform Actions that
+Normalize Flows transform ingressed data and add Domains to DeltaFiles. They contain a list of Transform Actions that
 execute sequentially followed by a single Load Action.
 
 ### Enrich Flows
@@ -32,6 +32,10 @@ Enrichments produced by prior Enrich Actions.
 
 Egress Flows format and validate content before sending it to downstream recipients. They contain a single Format
 Action, followed by a list of Validate Actions that execute concurrently, and finally a single Egress Action.
+
+### Transform Flows
+
+Transform Flows transform ingressed data and egress the results. They contain a list of transform actions followed by a single egress action.
 
 ## Actions
 

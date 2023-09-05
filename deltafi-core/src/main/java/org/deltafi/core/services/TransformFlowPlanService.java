@@ -19,12 +19,13 @@ package org.deltafi.core.services;
 
 import org.deltafi.common.types.TransformFlowPlan;
 import org.deltafi.core.repo.TransformFlowPlanRepo;
+import org.deltafi.core.snapshot.types.TransformFlowSnapshot;
 import org.deltafi.core.types.TransformFlow;
 import org.deltafi.core.validation.TransformFlowPlanValidator;
 import org.springframework.stereotype.Service;
 
 @Service
-public class TransformFlowPlanService extends FlowPlanService<TransformFlowPlan, TransformFlow> {
+public class TransformFlowPlanService extends FlowPlanService<TransformFlowPlan, TransformFlow, TransformFlowSnapshot> {
     public TransformFlowPlanService(TransformFlowPlanValidator transformFlowPlanValidator, TransformFlowPlanRepo flowPlanRepo, TransformFlowService flowService) {
         super(transformFlowPlanValidator, flowPlanRepo, flowService);
     }

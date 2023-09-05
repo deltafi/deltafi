@@ -30,9 +30,9 @@ import java.util.List;
 @EnableScheduling
 public class FlowConfigurationCacheEvictScheduler {
 
-    final List<FlowService<?, ?>> flowServices;
+    final List<FlowService<?, ?, ?>> flowServices;
 
-    public FlowConfigurationCacheEvictScheduler(List<FlowService<?, ?>> flowServices) {
+    public FlowConfigurationCacheEvictScheduler(List<FlowService<?, ?, ?>> flowServices) {
         this.flowServices = flowServices;
     }
 

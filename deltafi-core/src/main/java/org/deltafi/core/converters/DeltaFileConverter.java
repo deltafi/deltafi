@@ -22,7 +22,7 @@ import org.deltafi.common.types.*;
 import org.deltafi.core.services.*;
 import org.deltafi.core.types.EgressFlow;
 import org.deltafi.core.types.EnrichFlow;
-import org.deltafi.core.types.IngressFlow;
+import org.deltafi.core.types.NormalizeFlow;
 import org.deltafi.core.types.TransformFlow;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.Lazy;
@@ -40,18 +40,18 @@ public class DeltaFileConverter implements AfterConvertCallback<DeltaFile> {
 
     private final MappingMongoConverter converter;
     private final TransformFlowService transformFlowService;
-    private final IngressFlowService ingressFlowService;
+    private final NormalizeFlowService normalizeFlowService;
     private final EnrichFlowService enrichFlowService;
     private final EgressFlowService egressFlowService;
 
     public DeltaFileConverter(@Lazy MappingMongoConverter converter,
                               @Lazy TransformFlowService transformFlowService,
-                              @Lazy IngressFlowService ingressFlowService,
+                              @Lazy NormalizeFlowService normalizeFlowService,
                               @Lazy EnrichFlowService enrichFlowService,
                               @Lazy EgressFlowService egressFlowService) {
         this.converter = converter;
         this.transformFlowService = transformFlowService;
-        this.ingressFlowService = ingressFlowService;
+        this.normalizeFlowService = normalizeFlowService;
         this.enrichFlowService = enrichFlowService;
         this.egressFlowService = egressFlowService;
     }
@@ -186,8 +186,8 @@ public class DeltaFileConverter implements AfterConvertCallback<DeltaFile> {
                         } else if (flow.getTransformActions().stream().map(DeltaFiConfiguration::getName).toList().contains(action.getName())) {
                             action.setType(ActionType.TRANSFORM);
                         }
-                    } else if (ingressFlowService.hasFlow(flowName)) {
-                        IngressFlow flow = ingressFlowService.getFlowOrThrow(flowName);
+                    } else if (normalizeFlowService.hasFlow(flowName)) {
+                        NormalizeFlow flow = normalizeFlowService.getFlowOrThrow(flowName);
                         if (flow.getLoadAction().getName().equals(action.getName())) {
                             action.setType(ActionType.LOAD);
                         } else if (flow.getTransformActions().stream().map(DeltaFiConfiguration::getName).toList().contains(action.getName())) {

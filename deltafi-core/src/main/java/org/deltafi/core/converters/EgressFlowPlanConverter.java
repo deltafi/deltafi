@@ -37,8 +37,8 @@ public class EgressFlowPlanConverter extends FlowPlanConverter<EgressFlowPlan, E
         egressFlow.setValidateActions(buildValidateActions(egressFlowPlan.getValidateActions(), flowPlanPropertyHelper));
         egressFlow.setEgressAction(buildEgressAction(egressFlowPlan.getEgressAction(), flowPlanPropertyHelper));
 
-        egressFlow.setIncludeIngressFlows(buildFlowList(egressFlowPlan.getIncludeIngressFlows(), flowPlanPropertyHelper, egressFlow.getName()));
-        egressFlow.setExcludeIngressFlows(buildFlowList(egressFlowPlan.getExcludeIngressFlows(), flowPlanPropertyHelper, egressFlow.getName()));
+        egressFlow.setIncludeNormalizeFlows(buildFlowList(egressFlowPlan.getIncludeNormalizeFlows(), flowPlanPropertyHelper, egressFlow.getName()));
+        egressFlow.setExcludeNormalizeFlows(buildFlowList(egressFlowPlan.getExcludeNormalizeFlows(), flowPlanPropertyHelper, egressFlow.getName()));
     }
 
     /**

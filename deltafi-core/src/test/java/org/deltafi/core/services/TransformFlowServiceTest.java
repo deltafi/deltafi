@@ -24,20 +24,28 @@ import org.deltafi.core.generated.types.FlowStatus;
 import org.deltafi.core.generated.types.IngressFlowErrorState;
 import org.deltafi.core.repo.TransformFlowRepo;
 import org.deltafi.core.snapshot.SystemSnapshot;
+import org.deltafi.core.snapshot.types.FlowSnapshot;
+import org.deltafi.core.snapshot.types.TransformFlowSnapshot;
+import org.deltafi.core.types.Flow;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.types.TransformFlow;
 import org.deltafi.core.validation.TransformFlowValidator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,9 +53,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(MockitoExtension.class)
 class TransformFlowServiceTest {
-
-    private static final List<String> RUNNING_FLOWS = List.of("a", "b");
-    private static final List<String> TEST_FLOWS = List.of("a", "b");
 
     @Mock
     TransformFlowRepo transformFlowRepo;
@@ -61,11 +66,13 @@ class TransformFlowServiceTest {
     @InjectMocks
     TransformFlowService transformFlowService;
 
+    @Captor
+    ArgumentCaptor<List<TransformFlow>> flowCaptor;
+
     @Test
     void buildFlow() {
-        TransformFlow running = transformFlow("running", FlowState.RUNNING, true);
-        running.setMaxErrors(10);
-        TransformFlow stopped = transformFlow("stopped", FlowState.STOPPED, false);
+        TransformFlow running = transformFlow("running", FlowState.RUNNING, true, 10);
+        TransformFlow stopped = transformFlow("stopped", FlowState.STOPPED, false, -1);
         Mockito.when(transformFlowRepo.findById("running")).thenReturn(Optional.of(running));
         Mockito.when(transformFlowRepo.findById("stopped")).thenReturn(Optional.of(stopped));
         Mockito.when(flowValidator.validate(Mockito.any())).thenReturn(Collections.emptyList());
@@ -87,23 +94,45 @@ class TransformFlowServiceTest {
 
     @Test
     void updateSnapshot() {
-        List<TransformFlow> flows = RUNNING_FLOWS.stream().map(this::runningFlow).collect(Collectors.toList());
+        List<TransformFlow> flows = new ArrayList<>();
+        flows.add(transformFlow("a", FlowState.RUNNING, false, -1));
+        flows.add(transformFlow("b", FlowState.STOPPED, false, 1));
+        flows.add(transformFlow("c", FlowState.INVALID, true, 1));
 
-        flows.add(transformFlow("c", FlowState.STOPPED, false));
         Mockito.when(transformFlowRepo.findAll()).thenReturn(flows);
 
         SystemSnapshot systemSnapshot = new SystemSnapshot();
         transformFlowService.updateSnapshot(systemSnapshot);
 
-        assertThat(systemSnapshot.getRunningTransformFlows()).isEqualTo(RUNNING_FLOWS);
-        assertThat(systemSnapshot.getTestTransformFlows()).isEqualTo(TEST_FLOWS);
+        assertThat(systemSnapshot.getTransformFlows()).hasSize(3);
+
+        Map<String, TransformFlowSnapshot> transformFlowSnapshotMap = systemSnapshot.getTransformFlows().stream()
+                .collect(Collectors.toMap(FlowSnapshot::getName, Function.identity()));
+
+        TransformFlowSnapshot aFlowSnapshot = transformFlowSnapshotMap.get("a");
+        assertThat(aFlowSnapshot.isRunning()).isTrue();
+        assertThat(aFlowSnapshot.isTestMode()).isFalse();
+        assertThat(aFlowSnapshot.getMaxErrors()).isEqualTo(-1);
+
+        TransformFlowSnapshot bFlowSnapshot = transformFlowSnapshotMap.get("b");
+        assertThat(bFlowSnapshot.isRunning()).isFalse();
+        assertThat(bFlowSnapshot.isTestMode()).isFalse();
+        assertThat(bFlowSnapshot.getMaxErrors()).isEqualTo(1);
+
+        TransformFlowSnapshot cFlowSnapshot = transformFlowSnapshotMap.get("c");
+        assertThat(cFlowSnapshot.isRunning()).isFalse();
+        assertThat(cFlowSnapshot.isTestMode()).isTrue();
+        assertThat(cFlowSnapshot.getMaxErrors()).isEqualTo(1);
+
+        assertThat(systemSnapshot.getRunningTransformFlows()).isNull();
+        assertThat(systemSnapshot.getTestTransformFlows()).isNull();
     }
 
     @Test
     void testResetFromSnapshot() {
-        TransformFlow running = transformFlow("running", FlowState.RUNNING, true);
-        TransformFlow stopped = transformFlow("stopped", FlowState.STOPPED, false);
-        TransformFlow invalid = transformFlow("invalid", FlowState.INVALID, false);
+        TransformFlow running = transformFlow("running", FlowState.RUNNING, true, -1);
+        TransformFlow stopped = transformFlow("stopped", FlowState.STOPPED, false, 1);
+        TransformFlow invalid = transformFlow("invalid", FlowState.INVALID, false, 2);
 
         SystemSnapshot systemSnapshot = new SystemSnapshot();
         systemSnapshot.setRunningTransformFlows(List.of("running", "stopped", "invalid", "missing"));
@@ -119,27 +148,25 @@ class TransformFlowServiceTest {
 
         // verify the hard reset stopped any running flows
         Mockito.verify(transformFlowRepo).updateFlowState("running", FlowState.STOPPED);
-        // stopped flow should be restarted since it was marked as running in the snapshot
-        Mockito.verify(transformFlowRepo).updateFlowState("stopped", FlowState.RUNNING);
 
-        Mockito.verify(transformFlowRepo).updateFlowTestMode("stopped", true);
+        Mockito.verify(transformFlowRepo).saveAll(flowCaptor.capture());
 
+        Map<String, TransformFlow> updatedFlows = flowCaptor.getValue().stream()
+                .collect(Collectors.toMap(Flow::getName, Function.identity()));
+
+        // running is already running/testMode so no updates are made
+        assertThat(updatedFlows).doesNotContainKey("running");
+
+        // stopped flow should be restarted since it was marked as running in the snapshot, it should also be in test mode
+        assertThat(updatedFlows.get("stopped").isRunning()).isTrue();
+        assertThat(updatedFlows.get("stopped").isTestMode()).isTrue();
+        assertThat(updatedFlows.get("stopped").getMaxErrors()).isEqualTo(-1); // reset to the default
 
         assertThat(result.isSuccess()).isFalse();
         assertThat(result.getInfo()).isEmpty();
-        assertThat(result.getErrors()).hasSize(3)
-                .contains("Flow: missing is no longer installed and cannot be started")
-                .contains("Flow: invalid is invalid and cannot be started")
-                .contains("Flow: missing is no longer installed and cannot be set to test mode");
-    }
-
-    @Test
-    void getRunningFromSnapshot() {
-        SystemSnapshot systemSnapshot = new SystemSnapshot();
-        systemSnapshot.setRunningTransformFlows(List.of("a", "b"));
-        systemSnapshot.setTestTransformFlows(List.of("c", "d"));
-        assertThat(transformFlowService.getRunningFromSnapshot(systemSnapshot)).isEqualTo(RUNNING_FLOWS);
-        assertThat(transformFlowService.getTestModeFromSnapshot(systemSnapshot)).isEqualTo(List.of("c", "d"));
+        assertThat(result.getErrors()).hasSize(2)
+                .contains("Flow missing is no longer installed")
+                .contains("Flow: invalid is invalid and cannot be started");
     }
 
     @Test
@@ -156,19 +183,14 @@ class TransformFlowServiceTest {
         setupErrorExceeded();
         Set<String> errorsExceeded = transformFlowService.flowErrorsExceeded();
         assertEquals(2, errorsExceeded.size());
-        assertThat(errorsExceeded.contains("flow1")).isTrue();
-        assertThat(errorsExceeded.contains("flow3")).isTrue();
+        assertThat(errorsExceeded).contains("flow1").contains("flow3");
     }
 
     void setupErrorExceeded() {
-        TransformFlow flow1 = transformFlow("flow1", FlowState.RUNNING, false);
-        flow1.setMaxErrors(0);
-        TransformFlow flow2 = transformFlow("flow2", FlowState.RUNNING, false);
-        flow2.setMaxErrors(5);
-        TransformFlow flow3 = transformFlow("flow3", FlowState.RUNNING, false);
-        flow3.setMaxErrors(5);
-        TransformFlow flow4 = transformFlow("flow4", FlowState.STOPPED, false);
-        flow4.setMaxErrors(5);
+        TransformFlow flow1 = transformFlow("flow1", FlowState.RUNNING, false, 0);
+        TransformFlow flow2 = transformFlow("flow2", FlowState.RUNNING, false, 5);
+        TransformFlow flow3 = transformFlow("flow3", FlowState.RUNNING, false, 5);
+        TransformFlow flow4 = transformFlow("flow4", FlowState.STOPPED, false, 5);
 
         Mockito.when(transformFlowRepo.findAll()).thenReturn(List.of(flow1, flow2, flow3, flow4));
         Mockito.when(errorCountService.errorsForFlow("flow1")).thenReturn(1);
@@ -178,13 +200,10 @@ class TransformFlowServiceTest {
         transformFlowService.refreshCache();
     }
 
-    TransformFlow runningFlow(String name) {
-        return transformFlow(name, FlowState.RUNNING, true);
-    }
-
-    TransformFlow transformFlow(String name, FlowState flowState, boolean testMode) {
+    TransformFlow transformFlow(String name, FlowState flowState, boolean testMode, int maxErrors) {
         TransformFlow transformFlow = new TransformFlow();
         transformFlow.setName(name);
+        transformFlow.setMaxErrors(maxErrors);
         FlowStatus flowStatus = new FlowStatus();
         flowStatus.setState(flowState);
         flowStatus.setTestMode(testMode);

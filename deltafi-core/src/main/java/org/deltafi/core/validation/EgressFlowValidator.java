@@ -39,9 +39,9 @@ public class EgressFlowValidator extends FlowValidator<EgressFlow> {
     }
 
     List<FlowConfigError> excludedAndIncluded(EgressFlow egressFlow) {
-        if (Objects.nonNull(egressFlow.getExcludeIngressFlows()) && Objects.nonNull(egressFlow.getIncludeIngressFlows())) {
-            return egressFlow.getExcludeIngressFlows().stream()
-                    .filter(flowName -> egressFlow.getIncludeIngressFlows().contains(flowName))
+        if (Objects.nonNull(egressFlow.getExcludeNormalizeFlows()) && Objects.nonNull(egressFlow.getIncludeNormalizeFlows())) {
+            return egressFlow.getExcludeNormalizeFlows().stream()
+                    .filter(flowName -> egressFlow.getIncludeNormalizeFlows().contains(flowName))
                     .map(flowName -> excludedAndIncludedError(egressFlow.getName(), flowName))
                     .toList();
         }
@@ -49,11 +49,11 @@ public class EgressFlowValidator extends FlowValidator<EgressFlow> {
         return Collections.emptyList();
     }
 
-    FlowConfigError excludedAndIncludedError(String egressFlow, String ingressFlow) {
+    FlowConfigError excludedAndIncludedError(String egressFlow, String normalizeFlow) {
         FlowConfigError configError = new FlowConfigError();
         configError.setConfigName(egressFlow);
         configError.setErrorType(FlowErrorType.INVALID_CONFIG);
-        configError.setMessage("Flow: " + ingressFlow + " is both included and excluded");
+        configError.setMessage("Flow: " + normalizeFlow + " is both included and excluded");
         return configError;
     }
 }

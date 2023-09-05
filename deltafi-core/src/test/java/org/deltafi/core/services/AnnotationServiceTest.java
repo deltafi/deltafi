@@ -18,6 +18,9 @@
 package org.deltafi.core.services;
 
 import org.deltafi.common.types.FlowType;
+import org.deltafi.core.snapshot.SystemSnapshot;
+import org.deltafi.core.snapshot.types.EgressFlowSnapshot;
+import org.deltafi.core.snapshot.types.TransformFlowSnapshot;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -25,6 +28,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -62,7 +66,7 @@ class AnnotationServiceTest {
 
     @Test
     void testSetExpectedAnnotations_invalidFlowType() {
-        assertThatThrownBy(() -> annotationService.setExpectedAnnotations(FlowType.INGRESS, FLOW, ANNOTATION_KEYS)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> annotationService.setExpectedAnnotations(FlowType.NORMALIZE, FLOW, ANNOTATION_KEYS)).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -77,5 +81,43 @@ class AnnotationServiceTest {
         Mockito.when(transformFlowService.setExpectedAnnotations(FLOW, null)).thenReturn(false);
         annotationService.setExpectedAnnotations(FlowType.TRANSFORM, FLOW, Set.of());
         Mockito.verifyNoInteractions(deltaFilesService);
+    }
+
+    @Test
+    void resetFromSnapshot() {
+        SystemSnapshot systemSnapshot = new SystemSnapshot();
+        systemSnapshot.setTransformFlows(List.of(transformFlowSnapshot("transformNoChange", ANNOTATION_KEYS),
+                transformFlowSnapshot("transformChanged", ANNOTATION_KEYS), transformFlowSnapshot("emptyset", Set.of())));
+
+        systemSnapshot.setEgressFlows(List.of(egressFlowSnapshot("egressNoChange", ANNOTATION_KEYS),
+                egressFlowSnapshot("egressChanged", ANNOTATION_KEYS), egressFlowSnapshot("nullset", null)));
+
+        Mockito.when(transformFlowService.setExpectedAnnotations("transformNoChange", ANNOTATION_KEYS)).thenReturn(false);
+        Mockito.when(transformFlowService.setExpectedAnnotations("transformChanged", ANNOTATION_KEYS)).thenReturn(true);
+        Mockito.when(transformFlowService.setExpectedAnnotations("emptyset", null)).thenReturn(false);
+
+        Mockito.when(egressFlowService.setExpectedAnnotations("egressNoChange", ANNOTATION_KEYS)).thenReturn(false);
+        Mockito.when(egressFlowService.setExpectedAnnotations("egressChanged", ANNOTATION_KEYS)).thenReturn(true);
+        Mockito.when(egressFlowService.setExpectedAnnotations("nullset", null)).thenReturn(true);
+
+        annotationService.resetFromSnapshot(systemSnapshot, true);
+
+        Mockito.verify(transformFlowService, Mockito.times(3)).setExpectedAnnotations(Mockito.any(), Mockito.any());
+        Mockito.verify(egressFlowService, Mockito.times(3)).setExpectedAnnotations(Mockito.any(), Mockito.any());
+        Mockito.verify(deltaFilesService, Mockito.times(2)).asyncUpdatePendingAnnotationsForFlows(Mockito.any(), Mockito.anySet());
+        Mockito.verify(deltaFilesService).asyncUpdatePendingAnnotationsForFlows("transformChanged", ANNOTATION_KEYS);
+        Mockito.verify(deltaFilesService).asyncUpdatePendingAnnotationsForFlows("egressChanged", ANNOTATION_KEYS);
+    }
+
+    TransformFlowSnapshot transformFlowSnapshot(String name, Set<String> expectedAnnotations) {
+        TransformFlowSnapshot flowSnapshot = new TransformFlowSnapshot(name);
+        flowSnapshot.setExpectedAnnotations(expectedAnnotations);
+        return flowSnapshot;
+    }
+
+    EgressFlowSnapshot egressFlowSnapshot(String name, Set<String> expectedAnnotations) {
+        EgressFlowSnapshot flowSnapshot = new EgressFlowSnapshot(name);
+        flowSnapshot.setExpectedAnnotations(expectedAnnotations);
+        return flowSnapshot;
     }
 }

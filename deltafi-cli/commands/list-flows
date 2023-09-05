@@ -18,7 +18,7 @@ ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " || " ${ARGS[@]} " =~ " -h " ]] && cli_help_command
 
 FIELDS="{ name flowStatus {state}}"
-QUERY="query { getAllFlows { transform $FIELDS ingress $FIELDS enrich $FIELDS egress $FIELDS}}"
+QUERY="query { getAllFlows { transform $FIELDS normalize $FIELDS enrich $FIELDS egress $FIELDS}}"
 RESULT=$(deltafi query "$QUERY")
 
 print_flows() {
@@ -33,7 +33,7 @@ if [[ "$DGS_ERRORS" != "" ]]; then
 else
   print_flows "transform"
   echo
-  print_flows "ingress"
+  print_flows "normalize"
   echo
   print_flows "enrich"
   echo

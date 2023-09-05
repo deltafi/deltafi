@@ -62,10 +62,10 @@ class PluginRegistryServiceTest {
     PluginVariableService pluginVariableService;
 
     @Mock
-    IngressFlowPlanService ingressFlowPlanService;
+    NormalizeFlowPlanService normalizeFlowPlanService;
 
     @Mock
-    IngressFlowService ingressFlowService;
+    NormalizeFlowService normalizeFlowService;
 
     @Mock
     EnrichFlowPlanService enrichFlowPlanService;
@@ -96,11 +96,11 @@ class PluginRegistryServiceTest {
     @BeforeEach
     public void setup() {
         MockitoAnnotations.openMocks(this);
-        List<PluginCleaner> cleaners = List.of(ingressFlowPlanService, enrichFlowPlanService, egressFlowPlanService, transformFlowPlanService, pluginVariableService, actionDescriptorService, actionEventQueuePluginCleaner);
-        List<PluginUninstallCheck> checkers = List.of(ingressFlowService, enrichFlowService, egressFlowService, transformFlowService);
-        pluginRegistryService = new PluginRegistryService(ingressFlowService, enrichFlowService, egressFlowService,
+        List<PluginCleaner> cleaners = List.of(normalizeFlowPlanService, enrichFlowPlanService, egressFlowPlanService, transformFlowPlanService, pluginVariableService, actionDescriptorService, actionEventQueuePluginCleaner);
+        List<PluginUninstallCheck> checkers = List.of(normalizeFlowService, enrichFlowService, egressFlowService, transformFlowService);
+        pluginRegistryService = new PluginRegistryService(normalizeFlowService, enrichFlowService, egressFlowService,
                 transformFlowService, pluginRepository, pluginValidator, actionDescriptorService, pluginVariableService,
-                ingressFlowPlanService, enrichFlowPlanService, egressFlowPlanService, transformFlowPlanService, checkers, cleaners);
+                normalizeFlowPlanService, enrichFlowPlanService, egressFlowPlanService, transformFlowPlanService, checkers, cleaners);
     }
 
     @Test
@@ -147,7 +147,7 @@ class PluginRegistryServiceTest {
         Plugin plugin1 = makePlugin();
 
         Mockito.when(pluginRepository.findById(PLUGIN_COORDINATES_1)).thenReturn(Optional.of(plugin1));
-        Mockito.when(ingressFlowService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following ingress flows which are still running: mockIngress");
+        Mockito.when(normalizeFlowService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following ingress flows which are still running: mockIngress");
 
         List<String> errors = pluginRegistryService.canBeUninstalled(PLUGIN_COORDINATES_1);
 
@@ -174,7 +174,7 @@ class PluginRegistryServiceTest {
 
         Mockito.when(pluginRepository.findById(PLUGIN_COORDINATES_1)).thenReturn(Optional.of(plugin1));
         Mockito.when(pluginRepository.findPluginsWithDependency(PLUGIN_COORDINATES_1)).thenReturn(List.of(plugin1, plugin2));
-        Mockito.when(ingressFlowService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following ingress flows which are still running: mockIngress");
+        Mockito.when(normalizeFlowService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following ingress flows which are still running: mockIngress");
         Mockito.when(enrichFlowService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following enrich flows which are still running: mockEnrich");
         Mockito.when(egressFlowService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following egress flows which are still running: mockEgress");
 
@@ -196,7 +196,7 @@ class PluginRegistryServiceTest {
         pluginRegistryService.uninstallPlugin(PLUGIN_COORDINATES_1);
 
         Mockito.verify(pluginRepository).deleteById(PLUGIN_COORDINATES_1);
-        Mockito.verify(ingressFlowPlanService).cleanupFor(plugin1);
+        Mockito.verify(normalizeFlowPlanService).cleanupFor(plugin1);
         Mockito.verify(enrichFlowPlanService).cleanupFor(plugin1);
         Mockito.verify(egressFlowPlanService).cleanupFor(plugin1);
         Mockito.verify(pluginVariableService).cleanupFor(plugin1);

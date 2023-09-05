@@ -131,7 +131,7 @@ const generateFlows = () => {
         variables: [],
       }
     ],
-    ingress: [
+    normalize: [
       {
         name: "smoke",
         description: "Test flow that passes data through unchanged",
@@ -230,7 +230,7 @@ const generateFlows = () => {
       },
       {
         name: "stix1_x",
-        description: "Defines stix1_x ingress flow that transforms stix 1.x to stix 2.1 domain objects.",
+        description: "Defines stix1_x normalize flow that transforms stix 1.x to stix 2.1 domain objects.",
         type: "stix1_x",
         flowStatus: {
           state: "RUNNING",
@@ -258,7 +258,7 @@ const generateFlows = () => {
       },
       {
         name: "stix2_1",
-        description: "Defines stix2_1 ingress flow.",
+        description: "Defines stix2_1 normalize flow.",
         type: "stix2_1",
         flowStatus: {
           state: "STOPPED",
@@ -293,8 +293,8 @@ const generateFlows = () => {
           groupId: "org.deltafi",
           version: "0.17.0",
         },
-        includeIngressFlows: [],
-        excludeIngressFlows: [],
+        includeNormalizeFlows: [],
+        excludeNormalizeFlows: [],
         enrichActions: [],
         formatAction: {
           name: "error.ErrorFormatAction",
@@ -327,8 +327,8 @@ const generateFlows = () => {
           groupId: "org.deltafi",
           version: "0.17.0",
         },
-        includeIngressFlows: ["passthrough"],
-        excludeIngressFlows: [],
+        includeNormalizeFlows: ["passthrough"],
+        excludeNormalizeFlows: [],
         enrichActions: [],
         formatAction: {
           name: "passthrough.PassthroughFormatAction",
@@ -382,8 +382,8 @@ const generateFlows = () => {
           groupId: "org.deltafi",
           version: "0.17.0",
         },
-        includeIngressFlows: ["smoke"],
-        excludeIngressFlows: [],
+        includeNormalizeFlows: ["smoke"],
+        excludeNormalizeFlows: [],
         enrichActions: [
           {
             name: "smoke.SmokeEnrichAction",
@@ -443,8 +443,8 @@ const generateFlows = () => {
           groupId: "org.deltafi",
           version: "0.17.0",
         },
-        includeIngressFlows: [],
-        excludeIngressFlows: [],
+        includeNormalizeFlows: [],
+        excludeNormalizeFlows: [],
         enrichActions: [],
         formatAction: {
           name: "stix1_x.Stix1_xFormatAction",
@@ -485,8 +485,8 @@ const generateFlows = () => {
           groupId: "org.deltafi",
           version: "0.17.0",
         },
-        includeIngressFlows: [],
-        excludeIngressFlows: [],
+        includeNormalizeFlows: [],
+        excludeNormalizeFlows: [],
         enrichActions: [],
         formatAction: {
           name: "stix2_1.Stix2_1FormatAction",

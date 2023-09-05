@@ -25,6 +25,7 @@ import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import lombok.AllArgsConstructor;
 import org.deltafi.common.types.FlowPlan;
 import org.deltafi.common.types.PluginCoordinates;
+import org.deltafi.core.snapshot.types.FlowSnapshot;
 import org.deltafi.core.types.*;
 import org.deltafi.core.exceptions.DeltafiConfigurationException;
 import org.deltafi.common.types.Plugin;
@@ -41,7 +42,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
-public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends Flow> implements PluginCleaner, Snapshotter {
+public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends Flow, FlowSnapshotT extends FlowSnapshot> implements PluginCleaner, Snapshotter {
 
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .registerModule(new JavaTimeModule())
@@ -50,7 +51,7 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
 
     private final FlowPlanValidator<FlowPlanT> flowPlanValidator;
     private final FlowPlanRepo<FlowPlanT> flowPlanRepo;
-    private final FlowService<FlowPlanT, FlowT> flowService;
+    private final FlowService<FlowPlanT, FlowT, FlowSnapshotT> flowService;
 
     /**
      * Save the given list of flow plans. Find and remove any flow plans for the

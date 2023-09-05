@@ -30,8 +30,8 @@ import java.util.*;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class EgressFlow extends Flow {
-    private List<String> includeIngressFlows;
-    private List<String> excludeIngressFlows;
+    private List<String> includeNormalizeFlows;
+    private List<String> excludeNormalizeFlows;
 
     private FormatActionConfiguration formatAction;
     private List<ValidateActionConfiguration> validateActions = new ArrayList<>();
@@ -108,8 +108,8 @@ public class EgressFlow extends Flow {
     @Override
     public DeltaFiConfiguration asFlowConfiguration() {
         EgressFlowConfiguration egressFlowConfiguration = new EgressFlowConfiguration(name, formatAction.getName(), egressAction.getName());
-        egressFlowConfiguration.setIncludeIngressFlows(includeIngressFlows);
-        egressFlowConfiguration.setExcludeIngressFlows(excludeIngressFlows);
+        egressFlowConfiguration.setIncludeIngressFlows(includeNormalizeFlows);
+        egressFlowConfiguration.setExcludeIngressFlows(excludeNormalizeFlows);
         egressFlowConfiguration.setValidateActions(validateActionNames());
 
         return egressFlowConfiguration;
@@ -124,11 +124,11 @@ public class EgressFlow extends Flow {
     }
 
     private boolean includesFlow(String flow) {
-        return null == getIncludeIngressFlows() || getIncludeIngressFlows().contains(flow);
+        return null == getIncludeNormalizeFlows() || getIncludeNormalizeFlows().contains(flow);
     }
 
     private boolean notExcludedFlow(String flow) {
-        return nullOrEmpty(getExcludeIngressFlows()) || !getExcludeIngressFlows().contains(flow);
+        return nullOrEmpty(getExcludeNormalizeFlows()) || !getExcludeNormalizeFlows().contains(flow);
     }
 
     private boolean nullOrEmpty(List<String> list) {

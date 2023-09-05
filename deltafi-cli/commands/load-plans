@@ -128,10 +128,10 @@ load_plan() {
 
   local VARIABLES="{\"flowPlan\": ${JSON} }"
 
-  if [[ "${JSON}" == *"\"type\": \"INGRESS\""* ]]; then
-    local LOAD_TYPE="ingress flow plan"
-    local OPERATION_NAME="saveIngressFlowPlan"
-    local QUERY="mutation(\$flowPlan: IngressFlowPlanInput!) {saveIngressFlowPlan(ingressFlowPlan: \$flowPlan) { name }}"
+  if [[ "${JSON}" == *"\"type\": \"INGRESS\""* || "${JSON}" == *"\"type\": \"NORMALIZE\""* ]]; then
+    local LOAD_TYPE="normalize flow plan"
+    local OPERATION_NAME="saveNormalizeFlowPlan"
+    local QUERY="mutation(\$flowPlan: NormalizeFlowPlanInput!) {saveNormalizeFlowPlan(normalizeFlowPlan: \$flowPlan) { name }}"
   elif [[ "${JSON}" == *"\"type\": \"EGRESS\""* ]]; then
     local LOAD_TYPE="egress flow plan"
     local OPERATION_NAME="saveEgressFlowPlan"

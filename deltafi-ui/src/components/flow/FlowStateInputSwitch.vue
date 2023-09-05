@@ -48,7 +48,7 @@ import { useConfirm } from "primevue/useconfirm";
 import _ from "lodash";
 
 const confirm = useConfirm();
-const { startTransformFlowByName, stopTransformFlowByName, startIngressFlowByName, stopIngressFlowByName, startEnrichFlowByName, stopEnrichFlowByName, startEgressFlowByName, stopEgressFlowByName } = useFlowQueryBuilder();
+const { startTransformFlowByName, stopTransformFlowByName, startNormalizeFlowByName, stopNormalizeFlowByName, startEnrichFlowByName, stopEnrichFlowByName, startEgressFlowByName, stopEgressFlowByName } = useFlowQueryBuilder();
 const notify = useNotifications();
 
 const props = defineProps({
@@ -91,11 +91,11 @@ const toggleFlowState = async (flowName, newflowState, flowType) => {
     } else {
       await stopTransformFlowByName(flowName);
     }
-  } else if (_.isEqual(flowType, "ingress")) {
+  } else if (_.isEqual(flowType, "normalize")) {
     if (_.isEqual(newflowState, "STOPPED")) {
-      await startIngressFlowByName(flowName);
+      await startNormalizeFlowByName(flowName);
     } else {
-      await stopIngressFlowByName(flowName);
+      await stopNormalizeFlowByName(flowName);
     }
   } else if (_.isEqual(flowType, "enrich")) {
     if (_.isEqual(newflowState, "STOPPED")) {

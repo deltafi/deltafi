@@ -34,7 +34,7 @@ module Deltafi
       BASE_CORE_URL = ENV['CORE_URL'] || 'http://deltafi-core-service'
       BASE_INGRESS_URL = ENV['INGRESS_URL'] || 'http://deltafi-ingress-service'
       GRAPHQL_URL = File.join(BASE_CORE_URL, 'graphql')
-      GET_FLOWS = '{"query":"{ getRunningFlows { ingress { name flowStatus { state } } enrich { name flowStatus { state } } egress { name flowStatus { state } } } }"}'
+      GET_FLOWS = '{"query":"{ getRunningFlows { normalize { name flowStatus { state } } enrich { name flowStatus { state } } egress { name flowStatus { state } } } }"}'
       INGRESS_URL = File.join(BASE_INGRESS_URL, 'deltafile/ingress')
       SURVEY_URL = File.join(BASE_INGRESS_URL, 'survey')
 
@@ -90,7 +90,7 @@ module Deltafi
           return false
         end
         flows = response.parsed_response.dig('data', 'getRunningFlows')
-        return flow_running?(flows['ingress']) && flow_running?(flows['egress']) && flow_running?(flows['enrich'])
+        return flow_running?(flows['normalize']) && flow_running?(flows['egress']) && flow_running?(flows['enrich'])
       end
 
       def timeout_smoke

@@ -55,8 +55,8 @@ const generateData = () => {
       version: "0.95.4",
     },
     flowStatus: flowStatusMap.get(flowStatus[Math.floor(Math.random() * flowStatus.length)]),
-    includeIngressFlows: ["passthrough"],
-    excludeIngressFlows: [],
+    includeNormalizeFlows: ["passthrough"],
+    excludeNormalizeFlows: [],
     formatAction: {
       name: "passthrough.PassthroughFormatAction",
       parameters: null,

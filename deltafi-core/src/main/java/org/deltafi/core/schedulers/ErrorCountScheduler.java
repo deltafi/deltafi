@@ -21,7 +21,7 @@ package org.deltafi.core.schedulers;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.core.services.ErrorCountService;
-import org.deltafi.core.services.IngressFlowService;
+import org.deltafi.core.services.NormalizeFlowService;
 import org.deltafi.core.services.TransformFlowService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.TaskScheduler;
@@ -40,7 +40,7 @@ import java.util.Set;
 public class ErrorCountScheduler {
 
     private final ErrorCountService errorCountService;
-    private final IngressFlowService ingressFlowService;
+    private final NormalizeFlowService normalizeFlowService;
     private final TransformFlowService transformFlowService;
     private final TaskScheduler taskScheduler;
 
@@ -53,7 +53,7 @@ public class ErrorCountScheduler {
     }
 
     public void populateErrorCounts() {
-        Set<String> flowNames = new HashSet<>(ingressFlowService.maxErrorsPerFlow().keySet());
+        Set<String> flowNames = new HashSet<>(normalizeFlowService.maxErrorsPerFlow().keySet());
         flowNames.addAll(transformFlowService.maxErrorsPerFlow().keySet());
         errorCountService.populateErrorCounts(flowNames);
     }

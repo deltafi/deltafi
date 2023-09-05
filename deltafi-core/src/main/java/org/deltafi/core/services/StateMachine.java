@@ -24,7 +24,7 @@ import org.deltafi.common.types.*;
 import org.deltafi.core.exceptions.MissingEgressFlowException;
 import org.deltafi.core.types.EgressFlow;
 import org.deltafi.core.types.EnrichFlow;
-import org.deltafi.core.types.IngressFlow;
+import org.deltafi.core.types.NormalizeFlow;
 import org.deltafi.core.types.TransformFlow;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
@@ -33,13 +33,13 @@ import java.time.OffsetDateTime;
 import java.util.*;
 
 import static org.deltafi.common.constant.DeltaFiConstants.SYNTHETIC_EGRESS_ACTION_FOR_TEST_EGRESS;
-import static org.deltafi.common.constant.DeltaFiConstants.SYNTHETIC_EGRESS_ACTION_FOR_TEST_INGRESS;
+import static org.deltafi.common.constant.DeltaFiConstants.SYNTHETIC_EGRESS_ACTION_FOR_TEST_NORMALIZE;
 
 @Service
 @AllArgsConstructor
 public class StateMachine {
 
-    private final IngressFlowService ingressFlowService;
+    private final NormalizeFlowService normalizeFlowService;
     private final EnrichFlowService enrichFlowService;
     private final EgressFlowService egressFlowService;
     private final TransformFlowService transformFlowService;
@@ -122,20 +122,20 @@ public class StateMachine {
             return Collections.emptyList();
         }
 
-        IngressFlow ingressFlow = ingressFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow());
+        NormalizeFlow normalizeFlow = normalizeFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow());
 
-        TransformActionConfiguration nextTransformAction = ingressFlow.getTransformActions().stream()
-                .filter(transformAction -> !deltaFile.hasTerminalAction(ingressFlow.getName(), transformAction.getName()))
+        TransformActionConfiguration nextTransformAction = normalizeFlow.getTransformActions().stream()
+                .filter(transformAction -> !deltaFile.hasTerminalAction(normalizeFlow.getName(), transformAction.getName()))
                 .findFirst().orElse(null);
         if (nextTransformAction != null) {
-            deltaFile.queueAction(ingressFlow.getName(), nextTransformAction.getName(), ActionType.TRANSFORM);
-            return List.of(buildActionInput(ingressFlow.getName(), nextTransformAction, deltaFile, null, newDeltaFile));
+            deltaFile.queueAction(normalizeFlow.getName(), nextTransformAction.getName(), ActionType.TRANSFORM);
+            return List.of(buildActionInput(normalizeFlow.getName(), nextTransformAction, deltaFile, null, newDeltaFile));
         }
 
-        LoadActionConfiguration loadAction = ingressFlow.getLoadAction();
-        if ((loadAction != null) && !deltaFile.hasTerminalAction(ingressFlow.getName(), loadAction.getName())) {
-            deltaFile.queueAction(ingressFlow.getName(), loadAction.getName(), ActionType.LOAD);
-            return List.of(buildActionInput(ingressFlow.getName(), loadAction, deltaFile, null, newDeltaFile));
+        LoadActionConfiguration loadAction = normalizeFlow.getLoadAction();
+        if ((loadAction != null) && !deltaFile.hasTerminalAction(normalizeFlow.getName(), loadAction.getName())) {
+            deltaFile.queueAction(normalizeFlow.getName(), loadAction.getName(), ActionType.LOAD);
+            return List.of(buildActionInput(normalizeFlow.getName(), loadAction, deltaFile, null, newDeltaFile));
         }
 
         deltaFile.setStage(DeltaFileStage.ENRICH);
@@ -282,19 +282,19 @@ public class StateMachine {
             return Collections.emptyList();
         }
 
-        IngressFlow ingressFlow = null;
+        NormalizeFlow normalizeFlow = null;
         try {
-            ingressFlow = ingressFlowService.getFlowOrThrow(deltaFile.getSourceInfo().getFlow());
+            normalizeFlow = normalizeFlowService.getFlowOrThrow(deltaFile.getSourceInfo().getFlow());
         } catch (DgsEntityNotFoundException ignored) {
             // if the ingress flow cannot be found, keep it set to null and assume it was not in test mode
         }
-        if (egressFlow.isTestMode() || (ingressFlow != null && ingressFlow.isTestMode())) {
-            String action = egressFlow.isTestMode() ? SYNTHETIC_EGRESS_ACTION_FOR_TEST_EGRESS : SYNTHETIC_EGRESS_ACTION_FOR_TEST_INGRESS;
+        if (egressFlow.isTestMode() || (normalizeFlow != null && normalizeFlow.isTestMode())) {
+            String action = egressFlow.isTestMode() ? SYNTHETIC_EGRESS_ACTION_FOR_TEST_EGRESS : SYNTHETIC_EGRESS_ACTION_FOR_TEST_NORMALIZE;
             deltaFile.queueAction(egressFlow.getName(), action, ActionType.EGRESS);
             deltaFile.completeAction(egressFlow.getName(), action, OffsetDateTime.now(), OffsetDateTime.now());
             deltaFile.addEgressFlow(egressFlow.getName());
-            if (ingressFlow != null && ingressFlow.isTestMode()) {
-                deltaFile.setTestModeReason("Ingress flow '" + ingressFlow.getName() + "' in test mode");
+            if (normalizeFlow != null && normalizeFlow.isTestMode()) {
+                deltaFile.setTestModeReason("Normalize flow '" + normalizeFlow.getName() + "' in test mode");
             } else {
                 deltaFile.setTestModeReason("Egress flow '" + egressFlow.getName() + "' in test mode");
             }
@@ -330,6 +330,6 @@ public class StateMachine {
                 deltaFile.hasCompletedActions(egressFlow.getName(), egressFlow.validateActionNames()) &&
                 !deltaFile.hasTerminalAction(egressFlow.getName(), egressFlow.getEgressAction().getName()) &&
                 !deltaFile.hasTerminalAction(egressFlow.getName(), SYNTHETIC_EGRESS_ACTION_FOR_TEST_EGRESS) &&
-                !deltaFile.hasTerminalAction(egressFlow.getName(), SYNTHETIC_EGRESS_ACTION_FOR_TEST_INGRESS);
+                !deltaFile.hasTerminalAction(egressFlow.getName(), SYNTHETIC_EGRESS_ACTION_FOR_TEST_NORMALIZE);
     }
 }

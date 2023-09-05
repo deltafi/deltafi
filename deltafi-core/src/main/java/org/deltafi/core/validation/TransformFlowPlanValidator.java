@@ -18,11 +18,10 @@
 package org.deltafi.core.validation;
 
 import lombok.AllArgsConstructor;
-import org.deltafi.common.types.IngressFlowPlan;
 import org.deltafi.common.types.TransformFlowPlan;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
-import org.deltafi.core.repo.IngressFlowPlanRepo;
+import org.deltafi.core.repo.NormalizeFlowPlanRepo;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -31,20 +30,20 @@ import java.util.List;
 @AllArgsConstructor
 @Service
 public class TransformFlowPlanValidator extends FlowPlanValidator<TransformFlowPlan> {
-    private final IngressFlowPlanRepo ingressFlowPlanRepo;
+    private final NormalizeFlowPlanRepo normalizeFlowPlanRepo;
 
     /**
      * Flow plan type specific validation checks
-     * Cross check the transform flow plan names against the ingress flow plan names
+     * Cross-check the transform flow plan names against the normalize flow plan names
      * @return list of errors
      */
     @Override
     public List<FlowConfigError> flowPlanSpecificValidation(TransformFlowPlan flowPlan) {
         List<FlowConfigError> errors = new ArrayList<>();
 
-        ingressFlowPlanRepo.findById(flowPlan.getName()).ifPresent(existingIngressFlow -> errors.add(FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG)
+        normalizeFlowPlanRepo.findById(flowPlan.getName()).ifPresent(existingNormalizeFlow -> errors.add(FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG)
                 .configName(flowPlan.getName())
-                .message("Cannot add transform flow plan, an ingress flow plan with the name: " + flowPlan.getName() + " already exists in plugin: " + existingIngressFlow.getSourcePlugin()).build()));
+                .message("Cannot add transform flow plan, an normalize flow plan with the name: " + flowPlan.getName() + " already exists in plugin: " + existingNormalizeFlow.getSourcePlugin()).build()));
 
         return errors;
     }

@@ -76,13 +76,13 @@ public class FlowPlanGeneratorService {
     private final List<Variable> SAMPLE_VARS = List.of(SAMPLE_STRING_VAR, SAMPLE_NUMBER_VAR, SAMPLE_BOOLEAN_VAR, SAMPLE_LIST_VAR, SAMPLE_MAP_VAR);
 
     private final TransformFlowPlanGenerator transformFlowPlanGenerator;
-    private final IngressFlowPlanGenerator ingressFlowPlanGenerator;
+    private final NormalizeFlowPlanGenerator normalizeFlowPlanGenerator;
     private final EnrichFlowPlanGenerator enrichFlowPlanGenerator;
     private final EgressFlowPlanGenerator egressFlowPlanGenerator;
 
-    public FlowPlanGeneratorService(TransformFlowPlanGenerator transformFlowPlanGenerator, IngressFlowPlanGenerator ingressFlowPlanGenerator, EnrichFlowPlanGenerator enrichFlowPlanGenerator, EgressFlowPlanGenerator egressFlowPlanGenerator) {
+    public FlowPlanGeneratorService(TransformFlowPlanGenerator transformFlowPlanGenerator, NormalizeFlowPlanGenerator normalizeFlowPlanGenerator, EnrichFlowPlanGenerator enrichFlowPlanGenerator, EgressFlowPlanGenerator egressFlowPlanGenerator) {
         this.transformFlowPlanGenerator = transformFlowPlanGenerator;
-        this.ingressFlowPlanGenerator = ingressFlowPlanGenerator;
+        this.normalizeFlowPlanGenerator = normalizeFlowPlanGenerator;
         this.enrichFlowPlanGenerator = enrichFlowPlanGenerator;
         this.egressFlowPlanGenerator = egressFlowPlanGenerator;
     }
@@ -103,7 +103,7 @@ public class FlowPlanGeneratorService {
         if (ProcessingType.TRANSFORMATION.equals(processingType)) {
             flowPlans.addAll(transformFlowPlanGenerator.generateTransformFlows(baseFlowName, pluginGeneratorInput.getTransformActions(), pluginGeneratorInput.getEgressActions()));
         } else {
-            flowPlans.addAll(ingressFlowPlanGenerator.generateIngressFlowPlans(baseFlowName, pluginGeneratorInput.getTransformActions(), pluginGeneratorInput.getLoadActions()));
+            flowPlans.addAll(normalizeFlowPlanGenerator.generateNormalizeFlowPlans(baseFlowName, pluginGeneratorInput.getTransformActions(), pluginGeneratorInput.getLoadActions()));
             flowPlans.addAll(enrichFlowPlanGenerator.generateEnrichFlowPlan(baseFlowName, pluginGeneratorInput.getDomainActions(), pluginGeneratorInput.getEnrichActions()));
             flowPlans.addAll(egressFlowPlanGenerator.generateEgressFlowPlans(baseFlowName, pluginGeneratorInput.getFormatActions(), pluginGeneratorInput.getValidateActions(), pluginGeneratorInput.getEgressActions()));
         }

@@ -23,6 +23,7 @@ import org.deltafi.core.converters.EgressFlowPlanConverter;
 import org.deltafi.core.exceptions.DeltafiConfigurationException;
 import org.deltafi.core.repo.EgressFlowRepo;
 import org.deltafi.core.snapshot.SystemSnapshot;
+import org.deltafi.core.snapshot.types.EgressFlowSnapshot;
 import org.deltafi.core.types.EgressFlow;
 
 import org.deltafi.core.validation.EgressFlowValidator;
@@ -34,7 +35,7 @@ import java.util.Set;
 
 @Slf4j
 @Service
-public class EgressFlowService extends FlowService<EgressFlowPlan, EgressFlow> {
+public class EgressFlowService extends FlowService<EgressFlowPlan, EgressFlow, EgressFlowSnapshot> {
 
     private static final EgressFlowPlanConverter EGRESS_FLOW_PLAN_CONVERTER = new EgressFlowPlanConverter();
 
@@ -42,13 +43,13 @@ public class EgressFlowService extends FlowService<EgressFlowPlan, EgressFlow> {
         super("egress", flowRepo, pluginVariableService, EGRESS_FLOW_PLAN_CONVERTER, egressFlowValidator);
     }
 
-    public List<EgressFlow> getMatchingFlows(String ingressFlow) {
-        return findMatchingFlows(ingressFlow);
+    public List<EgressFlow> getMatchingFlows(String egressFlow) {
+        return findMatchingFlows(egressFlow);
     }
 
-    List<EgressFlow> findMatchingFlows(String ingressFlow) {
+    List<EgressFlow> findMatchingFlows(String egressFlow) {
         return getRunningFlows().stream()
-                .filter(egressFlow -> egressFlow.flowMatches(ingressFlow))
+                .filter(runningEgressFlow -> runningEgressFlow.flowMatches(egressFlow))
                 .toList();
     }
 
@@ -94,17 +95,11 @@ public class EgressFlowService extends FlowService<EgressFlowPlan, EgressFlow> {
     @Override
     public void updateSnapshot(SystemSnapshot systemSnapshot) {
         refreshCache();
-        systemSnapshot.setRunningEgressFlows(getRunningFlowNames());
-        systemSnapshot.setTestEgressFlows(getTestFlowNames());
+        systemSnapshot.setEgressFlows(getAll().stream().map(EgressFlowSnapshot::new).toList());
     }
 
     @Override
-    List<String> getRunningFromSnapshot(SystemSnapshot systemSnapshot) {
-        return systemSnapshot.getRunningEgressFlows();
-    }
-
-    @Override
-    List<String> getTestModeFromSnapshot(SystemSnapshot systemSnapshot) {
-        return systemSnapshot.getTestEgressFlows();
+    public List<EgressFlowSnapshot> getFlowSnapshots(SystemSnapshot systemSnapshot) {
+        return systemSnapshot.getEgressFlows();
     }
 }

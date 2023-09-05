@@ -101,7 +101,7 @@ public class DeltaFilesService {
     private static final int DEFAULT_QUERY_LIMIT = 50;
 
     private final Clock clock;
-    private final IngressFlowService ingressFlowService;
+    private final NormalizeFlowService normalizeFlowService;
     private final EnrichFlowService enrichFlowService;
     private final EgressFlowService egressFlowService;
 
@@ -661,7 +661,7 @@ public class DeltaFilesService {
         List<DeltaFile> childDeltaFiles = Collections.emptyList();
         List<ActionInput> enqueueActions = new ArrayList<>();
 
-        String loadActionName = ingressFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow()).getLoadAction().getName();
+        String loadActionName = normalizeFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow()).getLoadAction().getName();
         if (!event.getAction().equals(loadActionName)) {
             deltaFile.errorAction(event, "Attempted to split using a LoadMany result in an Action that is not a LoadAction: " + event.getAction(), "");
         } else if (childLoadEvents.isEmpty()) {
@@ -728,10 +728,10 @@ public class DeltaFilesService {
         List<ActionInput> enqueueActions = new ArrayList<>();
 
         List<String> allowedActions = new ArrayList<>();
-        if (ingressFlowService.hasRunningFlow(deltaFile.getSourceInfo().getFlow())) {
-            IngressFlow ingressFlow = ingressFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow());
-            allowedActions.add(ingressFlow.getLoadAction().getName());
-            allowedActions.addAll(ingressFlow.getTransformActions().stream().map(TransformActionConfiguration::getName).toList());
+        if (normalizeFlowService.hasRunningFlow(deltaFile.getSourceInfo().getFlow())) {
+            NormalizeFlow normalizeFlow = normalizeFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow());
+            allowedActions.add(normalizeFlow.getLoadAction().getName());
+            allowedActions.addAll(normalizeFlow.getTransformActions().stream().map(TransformActionConfiguration::getName).toList());
         }
         if (transformFlowService.hasRunningFlow(deltaFile.getSourceInfo().getFlow())) {
             TransformFlow transformFlow = transformFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow());
@@ -749,7 +749,7 @@ public class DeltaFilesService {
 
             OffsetDateTime now = OffsetDateTime.now(clock);
 
-            Set<String> normalizationFlowsDisabled = ingressFlowService.flowErrorsExceeded();
+            Set<String> normalizationFlowsDisabled = normalizeFlowService.flowErrorsExceeded();
             Set<String> transformationFlowsDisabled = transformFlowService.flowErrorsExceeded();
 
             childDeltaFiles = reinjects.stream().map(reinject -> {
@@ -760,7 +760,7 @@ public class DeltaFilesService {
 
                 // Before we build a DeltaFile, make sure the reinject makes sense to do--i.e. the flow is enabled and valid
                 ProcessingType processingType;
-                if (ingressFlowService.hasRunningFlow(reinject.getFlow())) {
+                if (normalizeFlowService.hasRunningFlow(reinject.getFlow())) {
                     if (normalizationFlowsDisabled.contains(reinject.getFlow())) {
                         deltaFile.errorAction(buildFlowIngressDisabledErrorEvent(deltaFile, event.getFlow(),
                                 event.getAction(), reinject.getFlow(), OffsetDateTime.now(clock)));
@@ -1430,7 +1430,7 @@ public class DeltaFilesService {
         }
 
         return switch (stage) {
-            case INGRESS -> ingressFlowService.findActionConfig(flow, actionName);
+            case INGRESS -> normalizeFlowService.findActionConfig(flow, actionName);
             case ENRICH -> enrichFlowService.findActionConfig(flow, actionName);
             case EGRESS -> egressFlowService.findActionConfig(flow, actionName);
             default -> null;

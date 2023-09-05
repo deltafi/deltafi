@@ -17,6 +17,7 @@
  */
 package org.deltafi.common.types;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -24,6 +25,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.PersistenceCreator;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,8 +35,11 @@ import java.util.List;
 @Setter
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 public class EgressFlowPlan extends FlowPlan {
-    private List<String> includeIngressFlows;
-    private List<String> excludeIngressFlows;
+
+    @JsonAlias({"includeNormalizeFlows", "includeIngressFlows"})
+    private List<String> includeNormalizeFlows;
+    @JsonAlias({"excludeNormalizeFlows", "excludeIngressFlows"})
+    private List<String> excludeNormalizeFlows;
 
     private final FormatActionConfiguration formatAction;
     private List<ValidateActionConfiguration> validateActions;

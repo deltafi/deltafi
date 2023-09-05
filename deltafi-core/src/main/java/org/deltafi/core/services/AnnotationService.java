@@ -17,16 +17,21 @@
  */
 package org.deltafi.core.services;
 
-
+import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.FlowType;
+import org.deltafi.core.snapshot.SnapshotRestoreOrder;
+import org.deltafi.core.snapshot.Snapshotter;
+import org.deltafi.core.snapshot.SystemSnapshot;
+import org.deltafi.core.snapshot.types.HasExpectedAnnotations;
+import org.deltafi.core.types.Result;
 import org.springframework.stereotype.Service;
 
 import java.util.Set;
 
 @Slf4j
 @Service
-public class AnnotationService {
+public class AnnotationService implements Snapshotter {
 
     private final TransformFlowService transformFlowService;
     private final EgressFlowService egressFlowService;
@@ -65,5 +70,36 @@ public class AnnotationService {
         }
 
         return updated;
+    }
+
+    @Override
+    public void updateSnapshot(SystemSnapshot systemSnapshot) {
+        // Nothing to be done here
+    }
+
+    @Override
+    public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
+        Result result = new Result();
+        if (systemSnapshot.getTransformFlows() != null) {
+            systemSnapshot.getTransformFlows().forEach(transformFlowSnapshot -> resetFromSnapshot(transformFlowSnapshot, result));
+        }
+        if (systemSnapshot.getEgressFlows() != null) {
+            systemSnapshot.getEgressFlows().forEach(egressFlowSnapshot -> resetFromSnapshot(egressFlowSnapshot, result));
+        }
+        result.setSuccess(result.getErrors().isEmpty());
+        return result;
+    }
+
+    public void resetFromSnapshot(HasExpectedAnnotations flowSnapshot, Result result) {
+        try {
+            setExpectedAnnotations(flowSnapshot.getFlowType(), flowSnapshot.getName(), flowSnapshot.getExpectedAnnotations());
+        } catch (DgsEntityNotFoundException e) {
+            result.getErrors().add("Flow " + flowSnapshot.getName() + " is no longer installed");
+        }
+    }
+
+    @Override
+    public int getOrder() {
+        return SnapshotRestoreOrder.EXPECTED_ANNOTATIONS_ORDER;
     }
 }

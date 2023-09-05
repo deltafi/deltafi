@@ -45,28 +45,28 @@ export default function useFlowQueryBuilder() {
     return sendGraphQLQuery(query, "removeTransformFlowPlanByName", "mutation");
   };
 
-  // Save an IngressFlowPlan
-  const saveIngressFlowPlan = (flowPlan: Object) => {
+  // Save an NormalizeFlowPlan
+  const saveNormalizeFlowPlan = (flowPlan: Object) => {
     const query = {
-      saveIngressFlowPlan: {
+      saveNormalizeFlowPlan: {
         __args: {
-          ingressFlowPlan: flowPlan
+          normalizeFlowPlan: flowPlan
         }
       }
     };
-    return sendGraphQLQuery(query, "saveIngressFlowPlan", "mutation");
+    return sendGraphQLQuery(query, "saveNormalizeFlowPlan", "mutation");
   };
 
-  // Remove an IngressFlowPlan
-  const removeIngressFlowPlanByName = (flowPlanName: string) => {
+  // Remove an NormalizeFlowPlan
+  const removeNormalizeFlowPlanByName = (flowPlanName: string) => {
     const query = {
-      removeIngressFlowPlan: {
+      removeNormalizeFlowPlan: {
         __args: {
           name: flowPlanName
         }
       }
     };
-    return sendGraphQLQuery(query, "removeIngressFlowPlanByName", "mutation");
+    return sendGraphQLQuery(query, "removeNormalizeFlowPlanByName", "mutation");
   };
 
   // Save an EgressFlowPlan
@@ -105,8 +105,8 @@ export default function useFlowQueryBuilder() {
   return {
     saveTransformFlowPlan,
     removeTransformFlowPlanByName,
-    saveIngressFlowPlan,
-    removeIngressFlowPlanByName,
+    saveNormalizeFlowPlan,
+    removeNormalizeFlowPlanByName,
     saveEgressFlowPlan,
     removeEgressFlowPlanByName
   };

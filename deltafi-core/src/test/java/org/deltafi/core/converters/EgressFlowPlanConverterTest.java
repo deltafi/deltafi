@@ -57,8 +57,8 @@ class EgressFlowPlanConverterTest {
         assertThat(egressFlow.getEgressAction()).isEqualTo(expectedEgressAction());
         assertThat(egressFlow.getFormatAction()).isEqualTo(expectedFormatAction());
         assertThat(egressFlow.getValidateActions()).hasSize(1).contains(expectedValidateAction());
-        assertThat(egressFlow.getIncludeIngressFlows()).isNull();
-        assertThat(egressFlow.getExcludeIngressFlows()).hasSize(3).contains("a", "b", "c");
+        assertThat(egressFlow.getIncludeNormalizeFlows()).isNull();
+        assertThat(egressFlow.getExcludeNormalizeFlows()).hasSize(3).contains("a", "b", "c");
         assertThat(egressFlow.getFlowStatus().getState()).isEqualTo(FlowState.STOPPED);
         assertThat(egressFlow.getFlowStatus().getTestMode()).isFalse();
     }

@@ -7,16 +7,16 @@ logical name used in the flow. Each `type` of Action can have many named instant
 
 ## Normalization Flows
 
-Normalization Flows include Ingress Flows, Enrich Flows, and Egress Flows. They process data using a multi-stage approach.
+Normalization Flows include Normalize Flows, Enrich Flows, and Egress Flows. They process data using a multi-stage approach. 
 
-### Ingress Flows
+### Normalize Flows
 
-Ingress flows steer data through an optional series of Transform Actions and into a Load Action.
+Normalize flows steer data through an optional series of Transform Actions and into a Load Action.
 
 ```json
 {
   "name": "passthrough",
-  "type": "INGRESS",
+  "type": "NORMALIZE",
   "description": "Flow that passes data through unchanged",
   "transformActions": [ {
       "name": "PassthroughTransformAction",
@@ -107,7 +107,7 @@ The Egress Action is triggered when all Validate Actions complete.
   "name": "passthrough",
   "type": "EGRESS",
   "description": "Egress flow that passes data through unchanged",
-  "includeIngressFlows": [
+  "includeNormalizeFlows": [
     "passthrough"
   ],
   "formatAction": {

@@ -97,8 +97,8 @@ class EgressFlowValidatorTest {
     void testExcludedAndIncluded() {
         EgressFlow egressFlow = new EgressFlow();
         egressFlow.setName("egressFlowName");
-        egressFlow.setIncludeIngressFlows(List.of("passthrough", "dupe2", "included"));
-        egressFlow.setExcludeIngressFlows(List.of("passthrough", "dupe2", "excluded"));
+        egressFlow.setIncludeNormalizeFlows(List.of("passthrough", "dupe2", "included"));
+        egressFlow.setExcludeNormalizeFlows(List.of("passthrough", "dupe2", "excluded"));
         List<FlowConfigError> errors = egressFlowValidator.excludedAndIncluded(egressFlow);
         Assertions.assertThat(errors).hasSize(2);
 
@@ -114,8 +114,8 @@ class EgressFlowValidatorTest {
     void testExcludedAndIncluded_null() {
         EgressFlow egressFlow = new EgressFlow();
         egressFlow.setName("egressFlowName");
-        egressFlow.setIncludeIngressFlows(null);
-        egressFlow.setExcludeIngressFlows(List.of("passthrough", "dupe2", "excluded"));
+        egressFlow.setIncludeNormalizeFlows(null);
+        egressFlow.setExcludeNormalizeFlows(List.of("passthrough", "dupe2", "excluded"));
         Assertions.assertThat(egressFlowValidator.excludedAndIncluded(egressFlow)).isEmpty();
     }
 

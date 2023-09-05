@@ -36,7 +36,7 @@ import org.deltafi.core.exceptions.IngressMetadataException;
 import org.deltafi.core.exceptions.IngressStorageException;
 import org.deltafi.core.exceptions.IngressUnavailableException;
 import org.deltafi.core.metrics.MetricService;
-import org.deltafi.core.types.IngressFlow;
+import org.deltafi.core.types.NormalizeFlow;
 import org.deltafi.core.types.IngressResult;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -74,7 +74,7 @@ class IngressServiceTest {
     private final DeltaFilesService deltaFilesService;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
     private final FlowAssignmentService flowAssignmentService;
-    private final IngressFlowService ingressFlowService;
+    private final NormalizeFlowService normalizeFlowService;
     private final TransformFlowService transformFlowService;
     private final ErrorCountService errorCountService;
 
@@ -88,7 +88,7 @@ class IngressServiceTest {
     IngressServiceTest(@Mock MetricService metricService, @Mock CoreAuditLogger coreAuditLogger,
                        @Mock DiskSpaceService diskSpaceService, @Mock DeltaFilesService deltaFilesService,
                        @Mock DeltaFiPropertiesService deltaFiPropertiesService, @Mock FlowAssignmentService flowAssignmentService,
-                       @Mock IngressFlowService ingressFlowService, @Mock TransformFlowService transformFlowService,
+                       @Mock NormalizeFlowService normalizeFlowService, @Mock TransformFlowService transformFlowService,
                        @Mock ErrorCountService errorCountService) {
         this.metricService = metricService;
         this.coreAuditLogger = coreAuditLogger;
@@ -96,12 +96,12 @@ class IngressServiceTest {
         this.deltaFilesService = deltaFilesService;
         this.deltaFiPropertiesService = deltaFiPropertiesService;
         this.flowAssignmentService = flowAssignmentService;
-        this.ingressFlowService = ingressFlowService;
+        this.normalizeFlowService = normalizeFlowService;
         this.transformFlowService = transformFlowService;
         this.errorCountService = errorCountService;
 
         ingressService = new IngressService(metricService, coreAuditLogger, diskSpaceService, CONTENT_STORAGE_SERVICE,
-                deltaFilesService, deltaFiPropertiesService, flowAssignmentService, ingressFlowService,
+                deltaFilesService, deltaFiPropertiesService, flowAssignmentService, normalizeFlowService,
                 transformFlowService, errorCountService, UUID_GENERATOR);
     }
 
@@ -130,11 +130,11 @@ class IngressServiceTest {
         deltaFiProperties.setIngress(ingressProperties);
         Mockito.when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
         Mockito.when(diskSpaceService.isContentStorageDepleted()).thenReturn(false);
-        Mockito.when(ingressFlowService.hasRunningFlow(any())).thenReturn(ingressFlow);
+        Mockito.when(normalizeFlowService.hasRunningFlow(any())).thenReturn(ingressFlow);
         Mockito.when(transformFlowService.hasRunningFlow(any())).thenReturn(transformFlow);
         Mockito.when(transformFlowService.maxErrorsPerFlow()).thenReturn(Map.of("flow", 1));
-        Mockito.when(ingressFlowService.maxErrorsPerFlow()).thenReturn(Map.of("flow", 1));
-        Mockito.when(ingressFlowService.getRunningFlowByName("flow")).thenReturn(new IngressFlow());
+        Mockito.when(normalizeFlowService.maxErrorsPerFlow()).thenReturn(Map.of("flow", 1));
+        Mockito.when(normalizeFlowService.getRunningFlowByName("flow")).thenReturn(new NormalizeFlow());
         Mockito.when(errorCountService.generateErrorMessage("flow", 1)).thenReturn(null);
         DeltaFile deltaFile = DeltaFile.builder().sourceInfo(SourceInfo.builder().flow("flow").build()).build();
         Mockito.when(deltaFilesService.ingress(ingressEventCaptor.capture())).thenReturn(deltaFile);

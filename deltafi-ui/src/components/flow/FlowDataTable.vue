@@ -47,7 +47,7 @@
           <span v-else>{{ data[field] }}</span>
         </template>
       </Column>
-      <Column v-if="FlowTypeTitle === 'Ingress' || FlowTypeTitle === 'Transform'" header="Max Errors" field="maxErrors" class="max-error-column">
+      <Column v-if="FlowTypeTitle === 'Normalize' || FlowTypeTitle === 'Transform'" header="Max Errors" field="maxErrors" class="max-error-column">
         <template #body="{ data, field }">
           <span v-if="data[field] === null">-</span>
           <span v-else>{{ data[field] }}</span>
@@ -186,7 +186,7 @@ const flowDataByType = computed(() => {
 
 const formatBitRate = async () => {
   if (!isIdle.value) {
-    if (_.isEqual(props.flowTypeProp, "ingress") || _.isEqual(props.flowTypeProp, "transform")) {
+    if (_.isEqual(props.flowTypeProp, "normalize") || _.isEqual(props.flowTypeProp, "transform")) {
       await fetchIngressFlowsByteRate();
     } else if (_.isEqual(props.flowTypeProp, "egress")) {
       await fetchEgressFlowsByteRate();
@@ -195,7 +195,7 @@ const formatBitRate = async () => {
     }
 
     for (let value of metricsData.value) {
-      let newKey = value["tags"].ingressFlow;
+      let newKey = value["tags"].normalizeFlow;
       formattedBitRate.value[`${newKey}`] = value;
     }
   }

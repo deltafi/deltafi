@@ -207,7 +207,7 @@ const onImport = async (snapShotData) => {
   await importSnapshot(clean);
   if (mutationResponse.value.id === snapShotData.value.id) {
     notify.success("Successfully Imported Snapshot", mutationResponse.value.id);
-    showSnapshot(clean);
+    showSnapshot(mutationResponse.value);
   } else {
     close();
     notify.error("Error Importing Snapshot");

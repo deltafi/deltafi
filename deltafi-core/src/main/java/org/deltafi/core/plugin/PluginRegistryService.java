@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 @Slf4j
 public class PluginRegistryService implements Snapshotter {
-    private final IngressFlowService ingressFlowService;
+    private final NormalizeFlowService normalizeFlowService;
     private final EnrichFlowService enrichFlowService;
     private final EgressFlowService egressFlowService;
     private final TransformFlowService transformFlowService;
@@ -44,7 +44,7 @@ public class PluginRegistryService implements Snapshotter {
     private final PluginValidator pluginValidator;
     private final ActionDescriptorService actionDescriptorService;
     private final PluginVariableService pluginVariableService;
-    private final IngressFlowPlanService ingressFlowPlanService;
+    private final NormalizeFlowPlanService normalizeFlowPlanService;
     private final EnrichFlowPlanService enrichFlowPlanService;
     private final EgressFlowPlanService egressFlowPlanService;
     private final TransformFlowPlanService transformFlowPlanService;
@@ -53,6 +53,7 @@ public class PluginRegistryService implements Snapshotter {
     private final List<PluginCleaner> pluginCleaners;
 
     public Result register(PluginRegistration pluginRegistration) {
+        log.info("{}", pluginRegistration);
         Plugin plugin = pluginRegistration.toPlugin();
         GroupedFlowPlans groupedFlowPlans = groupPlansByFlowType(pluginRegistration);
 
@@ -79,7 +80,7 @@ public class PluginRegistryService implements Snapshotter {
     private List<String> validate(Plugin plugin, GroupedFlowPlans groupedFlowPlans, List<Variable> variables) {
         List<String> errors = new ArrayList<>();
         errors.addAll(pluginValidator.validate(plugin));
-        errors.addAll(ingressFlowPlanService.validateFlowPlans(groupedFlowPlans.ingressFlowPlans));
+        errors.addAll(normalizeFlowPlanService.validateFlowPlans(groupedFlowPlans.normalizeFlowPlans));
         errors.addAll(transformFlowPlanService.validateFlowPlans(groupedFlowPlans.transformFlowPlans));
         errors.addAll(enrichFlowPlanService.validateFlowPlans(groupedFlowPlans.enrichFlowPlans));
         errors.addAll(egressFlowPlanService.validateFlowPlans(groupedFlowPlans.egressFlowPlans));
@@ -88,7 +89,7 @@ public class PluginRegistryService implements Snapshotter {
     }
 
     private void upgradeFlowPlans(PluginCoordinates sourcePlugin, GroupedFlowPlans groupedFlowPlans) {
-        ingressFlowPlanService.upgradeFlowPlans(sourcePlugin, groupedFlowPlans.ingressFlowPlans());
+        normalizeFlowPlanService.upgradeFlowPlans(sourcePlugin, groupedFlowPlans.normalizeFlowPlans());
         transformFlowPlanService.upgradeFlowPlans(sourcePlugin, groupedFlowPlans.transformFlowPlans());
         enrichFlowPlanService.upgradeFlowPlans(sourcePlugin, groupedFlowPlans.enrichFlowPlans());
         egressFlowPlanService.upgradeFlowPlans(sourcePlugin, groupedFlowPlans.egressFlowPlans());
@@ -100,7 +101,7 @@ public class PluginRegistryService implements Snapshotter {
      * @return lists of each flow by type
      */
     private GroupedFlowPlans groupPlansByFlowType(PluginRegistration pluginRegistration) {
-        List<IngressFlowPlan> ingressFlowPlans = new ArrayList<>();
+        List<NormalizeFlowPlan> normalizeFlowPlans = new ArrayList<>();
         List<TransformFlowPlan> transformFlowPlans = new ArrayList<>();
         List<EnrichFlowPlan> enrichFlowPlans = new ArrayList<>();
         List<EgressFlowPlan> egressFlowPlans = new ArrayList<>();
@@ -108,8 +109,8 @@ public class PluginRegistryService implements Snapshotter {
         if (pluginRegistration.getFlowPlans() != null) {
             pluginRegistration.getFlowPlans().forEach(flowPlan -> {
                 flowPlan.setSourcePlugin(pluginRegistration.getPluginCoordinates());
-                if (flowPlan instanceof IngressFlowPlan plan) {
-                    ingressFlowPlans.add(plan);
+                if (flowPlan instanceof NormalizeFlowPlan plan) {
+                    normalizeFlowPlans.add(plan);
                 } else if (flowPlan instanceof TransformFlowPlan plan) {
                     transformFlowPlans.add(plan);
                 } else if (flowPlan instanceof EnrichFlowPlan plan) {
@@ -122,7 +123,7 @@ public class PluginRegistryService implements Snapshotter {
             });
         }
 
-        return new GroupedFlowPlans(ingressFlowPlans, transformFlowPlans, enrichFlowPlans, egressFlowPlans);
+        return new GroupedFlowPlans(normalizeFlowPlans, transformFlowPlans, enrichFlowPlans, egressFlowPlans);
     }
 
     public Optional<Plugin> getPlugin(PluginCoordinates pluginCoordinates) {
@@ -151,13 +152,13 @@ public class PluginRegistryService implements Snapshotter {
     }
 
     public List<Flows> getFlowsByPlugin() {
-        Map<PluginCoordinates, List<IngressFlow>> ingressFlows = ingressFlowService.getFlowsGroupedByPlugin();
+        Map<PluginCoordinates, List<NormalizeFlow>> normalizeFlows = normalizeFlowService.getFlowsGroupedByPlugin();
         Map<PluginCoordinates, List<EgressFlow>> egressFlows = egressFlowService.getFlowsGroupedByPlugin();
         Map<PluginCoordinates, List<EnrichFlow>> enrichFlows = enrichFlowService.getFlowsGroupedByPlugin();
         Map<PluginCoordinates, List<TransformFlow>> transformFlows = transformFlowService.getFlowsGroupedByPlugin();
 
         return getPluginsWithVariables().stream()
-                .map(plugin -> toPluginFlows(plugin, ingressFlows, enrichFlows, egressFlows, transformFlows))
+                .map(plugin -> toPluginFlows(plugin, normalizeFlows, enrichFlows, egressFlows, transformFlows))
                 .toList();
     }
 
@@ -171,11 +172,11 @@ public class PluginRegistryService implements Snapshotter {
         return actionDescriptorService.verifyActionsExist(plugin.actionNames());
     }
 
-    private Flows toPluginFlows(Plugin plugin, Map<PluginCoordinates, List<IngressFlow>> ingressFlows, Map<PluginCoordinates, List<EnrichFlow>> enrichFlows, Map<PluginCoordinates, List<EgressFlow>> egressFlows, Map<PluginCoordinates, List<TransformFlow>> transformFlows) {
+    private Flows toPluginFlows(Plugin plugin, Map<PluginCoordinates, List<NormalizeFlow>> normalizeFlows, Map<PluginCoordinates, List<EnrichFlow>> enrichFlows, Map<PluginCoordinates, List<EgressFlow>> egressFlows, Map<PluginCoordinates, List<TransformFlow>> transformFlows) {
         return Flows.newBuilder()
                 .sourcePlugin(plugin.getPluginCoordinates())
                 .variables(plugin.getVariables())
-                .ingressFlows(ingressFlows.getOrDefault(plugin.getPluginCoordinates(), Collections.emptyList()))
+                .normalizeFlows(normalizeFlows.getOrDefault(plugin.getPluginCoordinates(), Collections.emptyList()))
                 .enrichFlows(enrichFlows.getOrDefault(plugin.getPluginCoordinates(), Collections.emptyList()))
                 .egressFlows(egressFlows.getOrDefault(plugin.getPluginCoordinates(), Collections.emptyList()))
                 .transformFlows(transformFlows.getOrDefault(plugin.getPluginCoordinates(), Collections.emptyList()))
@@ -271,6 +272,6 @@ public class PluginRegistryService implements Snapshotter {
         removePlugin(plugin);
     }
 
-    private record GroupedFlowPlans(List<IngressFlowPlan> ingressFlowPlans, List<TransformFlowPlan> transformFlowPlans, List<EnrichFlowPlan> enrichFlowPlans, List<EgressFlowPlan> egressFlowPlans){}
+    private record GroupedFlowPlans(List<NormalizeFlowPlan> normalizeFlowPlans, List<TransformFlowPlan> transformFlowPlans, List<EnrichFlowPlan> enrichFlowPlans, List<EgressFlowPlan> egressFlowPlans){}
 
 }

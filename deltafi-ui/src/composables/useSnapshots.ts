@@ -23,147 +23,167 @@ export default function useSystemSnapshots() {
   const data = ref(null);
   const mutationData = ref(null);
 
+  const snapshotFields = {
+    id: true,
+    reason: true,
+    created: true,
+    deletePolicies: {
+      timedPolicies: {
+        id: true,
+        name: true,
+        enabled: true,
+        flow: true,
+        afterCreate: true,
+        afterComplete: true,
+        minBytes: true,
+        deleteMetadata: true
+      },
+      diskSpacePolicies: {
+        id: true,
+        name: true,
+        enabled: true,
+        flow: true,
+        maxPercent: true
+      }
+    },
+    flowAssignmentRules: {
+      id: true,
+      name: true,
+      flow: true,
+      priority: true,
+      filenameRegex: true,
+      requiredMetadata: {
+        key: true,
+        value: true
+      }
+    },
+    resumePolicies: {
+      id: true,
+      name: true,
+      errorSubstring: true,
+      flow: true,
+      action: true,
+      actionType: true,
+      maxAttempts: true,
+      backOff: {
+        delay: true,
+        maxDelay: true,
+        multiplier: true,
+        random: true
+      }
+    },
+    deltaFiProperties: {
+      systemName: true,
+      requeueSeconds: true,
+      autoResumeCheckFrequency: true,
+      coreServiceThreads: true,
+      scheduledServiceThreads: true,
+      ui: {
+        useUTC: true,
+        deltaFileLinks: {
+          name: true,
+          url: true,
+          description: true
+        },
+        externalLinks: {
+          name: true,
+          url: true,
+          description: true
+        },
+        topBar: {
+          textColor: true,
+          backgroundColor: true
+        },
+        securityBanner: {
+          enabled: true,
+          text: true,
+          textColor: true,
+          backgroundColor: true
+        }
+      },
+      delete: {
+        ageOffDays: true,
+        frequency: true,
+        policyBatchSize: true,
+      },
+      ingress: {
+        enabled: true,
+        diskSpaceRequirementInMb: true
+      },
+      metrics: {
+        enabled: true
+      },
+      plugins: {
+        imageRepositoryBase: true,
+        imagePullSecret: true
+      },
+      checks: {
+        actionQueueSizeThreshold: true,
+        contentStoragePercentThreshold: true
+      },
+      setProperties: true
+    },
+    pluginImageRepositories: {
+      imageRepositoryBase: true,
+      pluginGroupIds: true,
+      imagePullSecret: true
+    },
+    installedPlugins: {
+      groupId: true,
+      artifactId: true,
+      version: true
+    },
+    pluginVariables: {
+      sourcePlugin: {
+        groupId: true,
+        artifactId: true,
+        version: true
+      },
+      variables: {
+        name: true,
+        description: true,
+        dataType: true,
+        required: true,
+        defaultValue: true,
+        value: true,
+        masked: true
+      }
+    },
+    transformFlows: {
+      name: true,
+      running: true,
+      testMode: true,
+      maxErrors: true,
+      expectedAnnotations: true
+    },
+    normalizeFlows: {
+      name: true,
+      running: true,
+      testMode: true,
+      maxErrors: true
+    },
+    enrichFlows: {
+      name: true,
+      running: true,
+    },
+    egressFlows: {
+      name: true,
+      running: true,
+      testMode: true,
+      expectedAnnotations: true
+    },
+    pluginCustomizationConfigs: {
+      groupId: true,
+      artifactId: true,
+      urlTemplate: true,
+      secretName: true
+    }
+  }
+
   const fetch = async () => {
     const query = {
       getSystemSnapshots: {
-        id: true,
-        reason: true,
-        created: true,
-        deletePolicies: {
-          timedPolicies: {
-            id: true,
-            name: true,
-            enabled: true,
-            flow: true,
-            afterCreate: true,
-            afterComplete: true,
-            minBytes: true,
-            deleteMetadata: true
-          },
-          diskSpacePolicies: {
-            id: true,
-            name: true,
-            enabled: true,
-            flow: true,
-            maxPercent: true
-          }
-        },
-        flowAssignmentRules: {
-          id: true,
-          name: true,
-          flow: true,
-          priority: true,
-          filenameRegex: true,
-          requiredMetadata: {
-            key: true,
-            value: true
-          }
-        },
-        resumePolicies: {
-          id: true,
-          name: true,
-          errorSubstring: true,
-          flow: true,
-          action: true,
-          actionType: true,
-          maxAttempts: true,
-          backOff: {
-            delay: true,
-            maxDelay: true,
-            multiplier: true,
-            random: true
-          }
-        },
-        deltaFiProperties: {
-          systemName: true,
-          requeueSeconds: true,
-          autoResumeCheckFrequency: true,
-          coreServiceThreads: true,
-          scheduledServiceThreads: true,
-          ui: {
-            useUTC: true,
-            deltaFileLinks: {
-              name: true,
-              url: true,
-              description: true
-            },
-            externalLinks: {
-              name: true,
-              url: true,
-              description: true
-            },
-            topBar: {
-              textColor: true,
-              backgroundColor: true
-            },
-            securityBanner: {
-              enabled: true,
-              text: true,
-              textColor: true,
-              backgroundColor: true
-            }
-          },
-          delete: {
-            ageOffDays: true,
-            frequency: true,
-            policyBatchSize: true,
-          },
-          ingress: {
-            enabled: true,
-            diskSpaceRequirementInMb: true
-          },
-          metrics: {
-            enabled: true
-          },
-          plugins: {
-            imageRepositoryBase: true,
-            imagePullSecret: true
-          },
-          checks: {
-            actionQueueSizeThreshold: true,
-            contentStoragePercentThreshold: true
-          },
-          setProperties: true
-        },
-        pluginImageRepositories: {
-          imageRepositoryBase: true,
-          pluginGroupIds: true,
-          imagePullSecret: true
-        },
-        installedPlugins: {
-          groupId: true,
-          artifactId: true,
-          version: true
-        },
-        pluginVariables: {
-          sourcePlugin: {
-            groupId: true,
-            artifactId: true,
-            version: true
-          },
-          variables: {
-            name: true,
-            description: true,
-            dataType: true,
-            required: true,
-            defaultValue: true,
-            value: true,
-            masked: true
-          }
-        },
-        runningTransformFlows: true,
-        runningIngressFlows: true,
-        runningEnrichFlows: true,
-        runningEgressFlows: true,
-        testTransformFlows: true,
-        testIngressFlows: true,
-        testEgressFlows: true,
-        pluginCustomizationConfigs: {
-          groupId: true,
-          artifactId: true,
-          urlTemplate: true,
-          secretName: true
-        }
+        ...snapshotFields
       }
     };
     await queryGraphQL(query, "getSystemSnapshots");
@@ -203,7 +223,7 @@ export default function useSystemSnapshots() {
         __args: {
           snapshot: snapshot
         },
-        id: true,
+        ...snapshotFields
       },
     };
     await queryGraphQL(query, "postImportSystemSnapshot", "mutation", true);

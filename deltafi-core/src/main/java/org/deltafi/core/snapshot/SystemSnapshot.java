@@ -23,6 +23,10 @@ import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.plugin.deployer.customization.PluginCustomizationConfig;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
+import org.deltafi.core.snapshot.types.EgressFlowSnapshot;
+import org.deltafi.core.snapshot.types.EnrichFlowSnapshot;
+import org.deltafi.core.snapshot.types.NormalizeFlowSnapshot;
+import org.deltafi.core.snapshot.types.TransformFlowSnapshot;
 import org.deltafi.core.types.DeletePolicies;
 import org.deltafi.core.types.FlowAssignmentRule;
 import org.deltafi.core.types.PluginVariables;
@@ -52,8 +56,14 @@ public class SystemSnapshot {
     private List<String> runningEnrichFlows;
     private List<String> runningEgressFlows;
     private List<String> testEgressFlows;
-    private List<String> runningTransformFlows = new ArrayList<>();
-    private List<String> testTransformFlows = new ArrayList<>();
+    private List<String> runningTransformFlows;
+    private List<String> testTransformFlows;
+
+    private List<NormalizeFlowSnapshot> normalizeFlows = new ArrayList<>();
+    private List<TransformFlowSnapshot> transformFlows = new ArrayList<>();
+    private List<EnrichFlowSnapshot> enrichFlows = new ArrayList<>();
+    private List<EgressFlowSnapshot> egressFlows = new ArrayList<>();
+
     private Set<PluginCoordinates> installedPlugins;
     private List<PluginCustomizationConfig> pluginCustomizationConfigs = new ArrayList<>();
     private List<PluginImageRepository> pluginImageRepositories = new ArrayList<>();

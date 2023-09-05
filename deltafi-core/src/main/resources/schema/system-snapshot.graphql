@@ -16,6 +16,34 @@
 #    limitations under the License.
 #
 
+type NormalizeFlowSnapshot {
+    name: String!
+    running: Boolean!
+    testMode: Boolean!
+    maxErrors: Int
+}
+
+type TransformFlowSnapshot {
+    name: String!
+    running: Boolean!
+    testMode: Boolean!
+    maxErrors: Int
+    expectedAnnotations: [String]
+}
+
+type EnrichFlowSnapshot {
+    name: String!
+    running: Boolean!
+    testMode: Boolean!
+}
+
+type EgressFlowSnapshot {
+    name: String!
+    running: Boolean!
+    testMode: Boolean!
+    expectedAnnotations: [String]
+}
+
 type SystemSnapshot {
     id: String!
     reason: String
@@ -25,16 +53,47 @@ type SystemSnapshot {
     deltaFiProperties: DeltaFiProperties!
     installedPlugins: [PluginCoordinates]!
     pluginVariables: [PluginVariables]!
-    runningTransformFlows: [String]!
-    runningIngressFlows: [String]!
-    runningEnrichFlows: [String]!
-    runningEgressFlows: [String]!
-    testTransformFlows: [String]!
-    testIngressFlows: [String]!
-    testEgressFlows: [String]!
+    runningTransformFlows: [String]
+    runningIngressFlows: [String]
+    runningEnrichFlows: [String]
+    runningEgressFlows: [String]
+    testTransformFlows: [String]
+    testIngressFlows: [String]
+    testEgressFlows: [String]
+    normalizeFlows: [NormalizeFlowSnapshot]
+    transformFlows: [TransformFlowSnapshot]
+    enrichFlows: [EnrichFlowSnapshot]
+    egressFlows: [EgressFlowSnapshot]
     pluginImageRepositories: [PluginImageRepository]!
     pluginCustomizationConfigs: [PluginCustomizationConfig]!
     resumePolicies: [ResumePolicy]!
+}
+
+input NormalizeFlowSnapshotInput {
+    name: String!
+    running: Boolean!
+    testMode: Boolean!
+    maxErrors: Int
+}
+
+input TransformFlowSnapshotInput {
+    name: String!
+    running: Boolean!
+    testMode: Boolean!
+    maxErrors: Int
+    expectedAnnotations: [String]
+}
+
+input EnrichFlowSnapshotInput {
+    name: String!
+    running: Boolean!
+}
+
+input EgressFlowSnapshotInput {
+    name: String!
+    running: Boolean!
+    testMode: Boolean!
+    expectedAnnotations: [String]
 }
 
 input SystemSnapshotInput {
@@ -46,13 +105,18 @@ input SystemSnapshotInput {
     deltaFiProperties: DeltaFiPropertiesInput!
     installedPlugins: [PluginCoordinatesInput]!
     pluginVariables: [PluginVariablesInput]!
-    runningTransformFlows: [String]!
-    runningIngressFlows: [String]!
-    runningEnrichFlows: [String]!
-    runningEgressFlows: [String]!
-    testTransformFlows: [String]!
-    testIngressFlows: [String]!
-    testEgressFlows: [String]!
+    # deprecated - running*Flows, test*Flows now wrapped in flow snapshot objects
+    runningTransformFlows: [String]
+    runningIngressFlows: [String]
+    runningEnrichFlows: [String]
+    runningEgressFlows: [String]
+    testTransformFlows: [String]
+    testIngressFlows: [String]
+    testEgressFlows: [String]
+    normalizeFlows: [NormalizeFlowSnapshotInput]
+    transformFlows: [TransformFlowSnapshotInput]
+    enrichFlows: [EnrichFlowSnapshotInput]
+    egressFlows: [EgressFlowSnapshotInput]
     pluginImageRepositories: [PluginImageRepositoryInput]!
     pluginCustomizationConfigs: [PluginCustomizationConfigInput]!
     resumePolicies: [ResumePolicyInput]!

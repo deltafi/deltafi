@@ -21,7 +21,7 @@ import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.types.EgressFlow;
 import org.deltafi.core.types.EnrichFlow;
-import org.deltafi.core.types.IngressFlow;
+import org.deltafi.core.types.NormalizeFlow;
 import org.deltafi.core.types.TransformFlow;
 
 import java.util.List;
@@ -29,26 +29,26 @@ import java.util.List;
 import static org.deltafi.core.util.Constants.*;
 
 public class FlowBuilders {
-    public static IngressFlow buildIngressFlow(FlowState flowState) {
+    public static NormalizeFlow buildNormalizeFlow(FlowState flowState) {
         LoadActionConfiguration lc = new LoadActionConfiguration("SampleLoadAction", "type");
         TransformActionConfiguration tc = new TransformActionConfiguration("Utf8TransformAction", "type");
         TransformActionConfiguration tc2 = new TransformActionConfiguration("SampleTransformAction", "type");
 
-        return buildFlow(INGRESS_FLOW_NAME, lc, List.of(tc, tc2), flowState, false);
+        return buildFlow(NORMALIZE_FLOW_NAME, lc, List.of(tc, tc2), flowState, false);
     }
 
-    public static IngressFlow buildRunningFlow(String name, LoadActionConfiguration loadActionConfiguration, List<TransformActionConfiguration> transforms, boolean testMode) {
+    public static NormalizeFlow buildRunningFlow(String name, LoadActionConfiguration loadActionConfiguration, List<TransformActionConfiguration> transforms, boolean testMode) {
         return buildFlow(name, loadActionConfiguration, transforms, FlowState.RUNNING, testMode);
     }
 
-    public static IngressFlow buildFlow(String name, LoadActionConfiguration loadActionConfiguration, List<TransformActionConfiguration> transforms, FlowState flowState, boolean testMode) {
-        IngressFlow ingressFlow = new IngressFlow();
-        ingressFlow.setName(name);
-        ingressFlow.getFlowStatus().setState(flowState);
-        ingressFlow.setLoadAction(loadActionConfiguration);
-        ingressFlow.setTransformActions(transforms);
-        ingressFlow.setTestMode(testMode);
-        return ingressFlow;
+    public static NormalizeFlow buildFlow(String name, LoadActionConfiguration loadActionConfiguration, List<TransformActionConfiguration> transforms, FlowState flowState, boolean testMode) {
+        NormalizeFlow normalizeFlow = new NormalizeFlow();
+        normalizeFlow.setName(name);
+        normalizeFlow.getFlowStatus().setState(flowState);
+        normalizeFlow.setLoadAction(loadActionConfiguration);
+        normalizeFlow.setTransformActions(transforms);
+        normalizeFlow.setTestMode(testMode);
+        return normalizeFlow;
     }
 
     public static EgressFlow buildEgressFlow(FlowState flowState) {
@@ -84,7 +84,7 @@ public class FlowBuilders {
         egressFlow.setName(name);
         egressFlow.setFormatAction(formatAction);
         egressFlow.setEgressAction(egressAction);
-        egressFlow.setIncludeIngressFlows(null);
+        egressFlow.setIncludeNormalizeFlows(null);
         egressFlow.getFlowStatus().setState(flowState);
         egressFlow.setTestMode(testMode);
         return egressFlow;
@@ -112,29 +112,29 @@ public class FlowBuilders {
         return buildFlow(name, egressActionConfiguration, transforms, FlowState.RUNNING, testMode);
     }
 
-    public static IngressFlow buildIngressFlow(String name, String groupId, String artifactId, String version) {
+    public static NormalizeFlow buildNormalizeFlow(String name, String groupId, String artifactId, String version) {
         PluginCoordinates pluginCoordinates = PluginCoordinates.builder()
                 .groupId(groupId).artifactId(artifactId).version(version).build();
-        return buildIngressFlow(name, pluginCoordinates);
+        return buildNormalizeFlow(name, pluginCoordinates);
     }
 
-    public static IngressFlow buildIngressFlow(String name, PluginCoordinates pluginCoordinates) {
-        IngressFlow ingressFlow = new IngressFlow();
-        ingressFlow.setName(name);
-        ingressFlow.setSourcePlugin(pluginCoordinates);
-        ingressFlow.migrate();
-        return ingressFlow;
+    public static NormalizeFlow buildNormalizeFlow(String name, PluginCoordinates pluginCoordinates) {
+        NormalizeFlow normalizeFlow = new NormalizeFlow();
+        normalizeFlow.setName(name);
+        normalizeFlow.setSourcePlugin(pluginCoordinates);
+        normalizeFlow.migrate();
+        return normalizeFlow;
     }
 
-    public static IngressFlowPlan buildIngressFlowPlan(String name, String groupId, String artifactId, String version) {
+    public static NormalizeFlowPlan buildNormalizeFlowPlan(String name, String groupId, String artifactId, String version) {
         PluginCoordinates pluginCoordinates = PluginCoordinates.builder()
                 .groupId(groupId).artifactId(artifactId).version(version).build();
-        return buildIngressFlowPlan(name, pluginCoordinates);
+        return buildNormalizeFlowPlan(name, pluginCoordinates);
     }
 
-    public static IngressFlowPlan buildIngressFlowPlan(String name, PluginCoordinates pluginCoordinates) {
-        IngressFlowPlan ingressFlow = new IngressFlowPlan(name, FlowType.INGRESS, "desc");
-        ingressFlow.setSourcePlugin(pluginCoordinates);
-        return ingressFlow;
+    public static NormalizeFlowPlan buildNormalizeFlowPlan(String name, PluginCoordinates pluginCoordinates) {
+        NormalizeFlowPlan normalizeFlowPlan = new NormalizeFlowPlan(name, FlowType.NORMALIZE, "desc");
+        normalizeFlowPlan.setSourcePlugin(pluginCoordinates);
+        return normalizeFlowPlan;
     }
 }

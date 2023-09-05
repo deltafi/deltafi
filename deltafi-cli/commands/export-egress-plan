@@ -34,8 +34,8 @@ QUERY="fragment ActionFields on ActionConfiguration {
               artifactId
               version
             }
-            includeIngressFlows
-            excludeIngressFlows
+            includeNormalizeFlows
+            excludeNormalizeFlows
             formatAction {
               ... ActionFields
               requiresDomains

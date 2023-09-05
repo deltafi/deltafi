@@ -17,19 +17,19 @@
  */
 package org.deltafi.core.services;
 
+import org.deltafi.common.types.EnrichFlowPlan;
 import org.deltafi.core.converters.EnrichFlowPlanConverter;
 import org.deltafi.core.repo.EnrichFlowRepo;
 import org.deltafi.core.snapshot.SystemSnapshot;
+import org.deltafi.core.snapshot.types.EnrichFlowSnapshot;
 import org.deltafi.core.types.EnrichFlow;
-import org.deltafi.common.types.EnrichFlowPlan;
 import org.deltafi.core.validation.EnrichFlowValidator;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
 import java.util.List;
 
 @Service
-public class EnrichFlowService extends FlowService<EnrichFlowPlan, EnrichFlow> {
+public class EnrichFlowService extends FlowService<EnrichFlowPlan, EnrichFlow, EnrichFlowSnapshot> {
 
     private static final EnrichFlowPlanConverter ENRICH_FLOW_PLAN_CONVERTER = new EnrichFlowPlanConverter();
 
@@ -40,17 +40,11 @@ public class EnrichFlowService extends FlowService<EnrichFlowPlan, EnrichFlow> {
     @Override
     public void updateSnapshot(SystemSnapshot systemSnapshot) {
         refreshCache();
-        systemSnapshot.setRunningEnrichFlows(getRunningFlowNames());
-    }
-
-
-    @Override
-    List<String> getRunningFromSnapshot(SystemSnapshot systemSnapshot) {
-        return systemSnapshot.getRunningEnrichFlows();
+        systemSnapshot.setEnrichFlows(getAll().stream().map(EnrichFlowSnapshot::new).toList());
     }
 
     @Override
-    List<String> getTestModeFromSnapshot(SystemSnapshot systemSnapshot) {
-        return Collections.emptyList();
+    public List<EnrichFlowSnapshot> getFlowSnapshots(SystemSnapshot systemSnapshot) {
+        return systemSnapshot.getEnrichFlows();
     }
 }

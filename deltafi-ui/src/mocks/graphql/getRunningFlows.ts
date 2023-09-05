@@ -18,7 +18,7 @@
 
 const generateData = () => {
   const data = {
-    ingress: [
+    normalize: [
       {
         name: "mock_stix1_x",
       },

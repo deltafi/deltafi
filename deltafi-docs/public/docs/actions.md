@@ -1,6 +1,6 @@
 # Actions
 
-Actions are isolated units of business logic that perform a function within Ingress, Enrichment, and Egress Flows.
+Actions are isolated units of business logic that perform a function within Transform, Normalize, Enrichment, and Egress Flows.
 Actions receive required data from the DeltaFile on a queue, perform whatever logic is needed, and issue a response that
 augments the DeltaFile so that it can be handed off to the next Action in the flow.
 
@@ -183,7 +183,11 @@ Sometimes you want to halt a flow but not raise an error. In this case use a Fil
 return new FilterResult(context, "Description of why this DeltaFile was filtered");
 ```
 
-## Ingress Flow Actions
+## Transform Flow Actions
+- [Transform Action](/actions/transform)
+- [Egress Action](/actions/egress)
+
+## Normalize Flow Actions
 - [Transform Action](/actions/transform)
 - [Load Action](/actions/load)
 
@@ -192,7 +196,6 @@ return new FilterResult(context, "Description of why this DeltaFile was filtered
 - [Enrich Action](/actions/enrich)
 
 ## Egress Flow Actions
-
 - [Format Action](/actions/format)
 - [Validate Action](/actions/validate)
 - [Egress Action](/actions/egress)

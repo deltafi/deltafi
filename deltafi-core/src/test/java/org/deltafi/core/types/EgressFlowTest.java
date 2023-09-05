@@ -28,7 +28,7 @@ class EgressFlowTest {
     @Test
     void testFlowIncluded() {
         EgressFlow config = new EgressFlow();
-        config.setIncludeIngressFlows(Collections.singletonList("includedFlow"));
+        config.setIncludeNormalizeFlows(Collections.singletonList("includedFlow"));
 
         Assertions.assertTrue(config.flowMatches("includedFlow"));
     }
@@ -36,7 +36,7 @@ class EgressFlowTest {
     @Test
     void testFlowNotIncluded() {
         EgressFlow config = new EgressFlow();
-        config.setIncludeIngressFlows(Collections.singletonList("includedFlow"));
+        config.setIncludeNormalizeFlows(Collections.singletonList("includedFlow"));
 
         Assertions.assertFalse(config.flowMatches("notIncludedFlow"));
     }
@@ -44,7 +44,7 @@ class EgressFlowTest {
     @Test
     void testFlowExcluded() {
         EgressFlow config = new EgressFlow();
-        config.setExcludeIngressFlows(Collections.singletonList("excludedFlow"));
+        config.setExcludeNormalizeFlows(Collections.singletonList("excludedFlow"));
 
         Assertions.assertFalse(config.flowMatches("excludedFlow"));
     }
@@ -52,8 +52,8 @@ class EgressFlowTest {
     @Test
     void testFlowNotExcluded() {
         EgressFlow config = new EgressFlow();
-        config.setIncludeIngressFlows(null);
-        config.setExcludeIngressFlows(Collections.singletonList("excludedFlow"));
+        config.setIncludeNormalizeFlows(null);
+        config.setExcludeNormalizeFlows(Collections.singletonList("excludedFlow"));
 
         Assertions.assertTrue(config.flowMatches("notExcludedFlow"));
     }
@@ -61,8 +61,8 @@ class EgressFlowTest {
     @Test
     void testEmptyInclude() {
         EgressFlow config = new EgressFlow();
-        config.setIncludeIngressFlows(List.of());
-        config.setExcludeIngressFlows(Collections.singletonList("excludedFlow"));
+        config.setIncludeNormalizeFlows(List.of());
+        config.setExcludeNormalizeFlows(Collections.singletonList("excludedFlow"));
 
         Assertions.assertFalse(config.flowMatches("notExcludedFlow"));
     }

@@ -29,7 +29,7 @@ public class DeltaFiConstants {
     public static final String MONGO_MAP_KEY_DOT_REPLACEMENT = ";;";
     public static final String NO_EGRESS_FLOW_CONFIGURED_ACTION = "NoEgressFlowConfiguredAction";
     public static final String PERMISSIONS_HEADER = "X-User-Permissions";
-    public static final String SYNTHETIC_EGRESS_ACTION_FOR_TEST_INGRESS = "SyntheticEgressActionForTestIngress";
+    public static final String SYNTHETIC_EGRESS_ACTION_FOR_TEST_NORMALIZE = "SyntheticEgressActionForTestNormalize";
     public static final String SYNTHETIC_EGRESS_ACTION_FOR_TEST_EGRESS = "SyntheticEgressActionForTestEgress";
     public static final String USER_HEADER = "X-User-Name";
 

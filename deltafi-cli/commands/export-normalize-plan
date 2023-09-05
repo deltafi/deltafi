@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: export-normalize-plan
+
+Usage:
+  export-normalize-plan FLOW_PLAN_NAME"
+  exit 1
+}
+
+ARGS=($@)
+[[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
+
+PLANNAME=${ARGS[@]:1}
+[[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
+
+QUERY="fragment ActionFields on ActionConfiguration {
+          name
+          actionType
+          type
+          parameters
+        }
+
+        query {
+          getNormalizeFlowPlan(planName: \"$PLANNAME\") {
+            name
+            type
+            description
+            sourcePlugin {
+              groupId
+              artifactId
+              version
+            }
+            transformActions {
+              ... ActionFields
+            }
+            loadAction {
+              ... ActionFields
+            }
+          }
+        }
+        "
+
+RESULT=$(deltafi query "$QUERY")
+DGS_ERRORS=$(echo $RESULT | jq -r "select(.errors) | .errors[] | .message")
+if [[ "$DGS_ERRORS" != "" ]]; then
+  cli_log "${red}${BASENAME}: Failed to export normalize flow plan: $PLANNAME${normal}"
+  echo -e "${red}Error: ${DGS_ERRORS}${normal}"
+else
+  echo "$RESULT" | jq '.data.getNormalizeFlowPlan'
+fi

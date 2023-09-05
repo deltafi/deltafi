@@ -62,7 +62,7 @@ public class IngressService {
     private final DeltaFilesService deltaFilesService;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
     private final FlowAssignmentService flowAssignmentService;
-    private final IngressFlowService ingressFlowService;
+    private final NormalizeFlowService normalizeFlowService;
     private final TransformFlowService transformFlowService;
     private final ErrorCountService errorCountService;
     private final UUIDGenerator uuidGenerator;
@@ -173,9 +173,9 @@ public class IngressService {
 
         // ensure flow is running before accepting ingress
         Integer maxErrors;
-        if (ingressFlowService.hasRunningFlow(sourceInfo.getFlow())) {
+        if (normalizeFlowService.hasRunningFlow(sourceInfo.getFlow())) {
             sourceInfo.setProcessingType(ProcessingType.NORMALIZATION);
-            maxErrors = ingressFlowService.maxErrorsPerFlow().get(sourceInfo.getFlow());
+            maxErrors = normalizeFlowService.maxErrorsPerFlow().get(sourceInfo.getFlow());
         } else if (transformFlowService.hasRunningFlow(sourceInfo.getFlow())) {
             sourceInfo.setProcessingType(ProcessingType.TRANSFORMATION);
             maxErrors = transformFlowService.maxErrorsPerFlow().get(sourceInfo.getFlow());

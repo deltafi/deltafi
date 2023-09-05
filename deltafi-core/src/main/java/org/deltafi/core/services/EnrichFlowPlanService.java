@@ -19,12 +19,13 @@ package org.deltafi.core.services;
 
 import org.deltafi.common.types.EnrichFlowPlan;
 import org.deltafi.core.repo.EnrichFlowPlanRepo;
+import org.deltafi.core.snapshot.types.EnrichFlowSnapshot;
 import org.deltafi.core.types.EnrichFlow;
 import org.deltafi.core.validation.EnrichFlowPlanValidator;
 import org.springframework.stereotype.Service;
 
 @Service
-public class EnrichFlowPlanService extends FlowPlanService<EnrichFlowPlan, EnrichFlow> {
+public class EnrichFlowPlanService extends FlowPlanService<EnrichFlowPlan, EnrichFlow, EnrichFlowSnapshot> {
     public EnrichFlowPlanService(EnrichFlowPlanValidator enrichFlowPlanValidator, EnrichFlowPlanRepo flowPlanRepo, EnrichFlowService flowService) {
         super(enrichFlowPlanValidator, flowPlanRepo, flowService);
     }

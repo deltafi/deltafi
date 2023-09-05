@@ -190,13 +190,29 @@ ALL_SNAPSHOT_FIELDS="id
                 random
               }
             }
-            testTransformFlows
-            testIngressFlows
-            testEgressFlows
-            runningTransformFlows
-            runningIngressFlows
-            runningEnrichFlows
-            runningEgressFlows
+            transformFlows {
+              name
+              running
+              testMode
+              maxErrors
+              expectedAnnotations
+            }
+            normalizeFlows {
+              name
+              running
+              testMode
+              maxErrors
+            }
+            enrichFlows {
+              name
+              running
+            }
+            egressFlows {
+              name
+              running
+              testMode
+              expectedAnnotations
+            }
             pluginCustomizationConfigs {
               groupId
               artifactId

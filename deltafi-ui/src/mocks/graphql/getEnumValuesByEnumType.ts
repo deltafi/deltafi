@@ -32,7 +32,7 @@ const generateData = () => {
         name: "FORMAT_ACTION",
       },
       {
-        name: "INGRESS_FLOW",
+        name: "NORMALIZE_FLOW",
       },
       {
         name: "LOAD_ACTION",

@@ -333,15 +333,15 @@ input ResumeMetadata {
 }
 
 type Query {
-  getIngressFlowPlan(planName: String!): IngressFlowPlan!
+  getNormalizeFlowPlan(planName: String!): NormalizeFlowPlan!
   getEgressFlowPlan(planName: String!): EgressFlowPlan!
   getEnrichFlowPlan(planName: String!): EnrichFlowPlan!
   getTransformFlowPlan(planName: String!): TransformFlowPlan!
-  getIngressFlow(flowName: String!): IngressFlow!
+  getNormalizeFlow(flowName: String!): NormalizeFlow!
   getEgressFlow(flowName: String!): EgressFlow!
   getEnrichFlow(flowName: String!): EnrichFlow!
   getTransformFlow(flowName: String!): TransformFlow!
-  validateIngressFlow(flowName: String!): IngressFlow!
+  validateNormalizeFlow(flowName: String!): NormalizeFlow!
   validateEgressFlow(flowName: String!): EgressFlow!
   validateEnrichFlow(flowName: String!): EnrichFlow!
   validateTransformFlow(flowName: String!): TransformFlow!
@@ -392,17 +392,17 @@ type Mutation {
   removeFlowAssignmentRule(id: String!): Boolean!
   updateFlowAssignmentRule(rule: FlowAssignmentRuleInput!): Result!
 
-  saveIngressFlowPlan(ingressFlowPlan: IngressFlowPlanInput!) : IngressFlow!
+  saveNormalizeFlowPlan(normalizeFlowPlan: NormalizeFlowPlanInput!) : NormalizeFlow!
   saveEnrichFlowPlan(enrichFlowPlan: EnrichFlowPlanInput!) : EnrichFlow!
   saveEgressFlowPlan(egressFlowPlan: EgressFlowPlanInput!) : EgressFlow!
   saveTransformFlowPlan(transformFlowPlan: TransformFlowPlanInput!) : TransformFlow!
-  removeIngressFlowPlan(name: String!) : Boolean!
+  removeNormalizeFlowPlan(name: String!) : Boolean!
   removeEnrichFlowPlan(name: String!) : Boolean!
   removeEgressFlowPlan(name: String!) : Boolean!
   removeTransformFlowPlan(name: String!) : Boolean!
 
-  startIngressFlow(flowName: String!) : Boolean!
-  stopIngressFlow(flowName: String!) : Boolean!
+  startNormalizeFlow(flowName: String!) : Boolean!
+  stopNormalizeFlow(flowName: String!) : Boolean!
   startEgressFlow(flowName: String!) : Boolean!
   startTransformFlow(flowName: String!) : Boolean!
   stopEgressFlow(flowName: String!) : Boolean!
@@ -411,8 +411,8 @@ type Mutation {
   stopTransformFlow(flowName: String!) : Boolean!
 
   setMaxErrors(flowName: String!, maxErrors: Int!) : Boolean!
-  enableIngressTestMode(flowName: String!) : Boolean!
-  disableIngressTestMode(flowName: String!) : Boolean!
+  enableNormalizeTestMode(flowName: String!) : Boolean!
+  disableNormalizeTestMode(flowName: String!) : Boolean!
   enableEgressTestMode(flowName: String!) : Boolean!
   disableEgressTestMode(flowName: String!) : Boolean!
   setTransformMaxErrors(flowName: String!, maxErrors: Int!) : Boolean!

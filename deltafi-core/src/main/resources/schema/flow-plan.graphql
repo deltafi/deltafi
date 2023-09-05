@@ -54,7 +54,7 @@ input PluginVariablesInput {
   variables: [VariableInput]!
 }
 
-type IngressFlowPlan {
+type NormalizeFlowPlan {
   name: String!
   type: String!
   description: String!
@@ -63,7 +63,7 @@ type IngressFlowPlan {
   loadAction: LoadActionConfiguration
 }
 
-input IngressFlowPlanInput {
+input NormalizeFlowPlanInput {
   name: String!
   type: String!
   description: String!
@@ -95,8 +95,8 @@ type EgressFlowPlan {
   type: String!
   description: String!
   sourcePlugin: PluginCoordinates!
-  includeIngressFlows: [String]
-  excludeIngressFlows: [String]
+  includeNormalizeFlows: [String]
+  excludeNormalizeFlows: [String]
   formatAction: FormatActionConfiguration!
   validateActions: [ValidateActionConfiguration]
   egressAction: EgressActionConfiguration!
@@ -107,8 +107,8 @@ input EgressFlowPlanInput {
   type: String!
   description: String!
   sourcePlugin: PluginCoordinatesInput!
-  includeIngressFlows: [String]
-  excludeIngressFlows: [String]
+  includeNormalizeFlows: [String]
+  excludeNormalizeFlows: [String]
   formatAction: FormatActionConfigurationInput!
   validateActions: [ValidateActionConfigurationInput]
   egressAction: EgressActionConfigurationInput!
@@ -161,27 +161,27 @@ type FlowStatus {
 type Flows {
   sourcePlugin: PluginCoordinates!
   variables: [Variable]
-  ingressFlows: [IngressFlow]
+  normalizeFlows: [NormalizeFlow]
   enrichFlows: [EnrichFlow]
   egressFlows: [EgressFlow]
   transformFlows: [TransformFlow]
 }
 
 type SystemFlows {
-  ingress: [IngressFlow]!
+  normalize: [NormalizeFlow]!
   enrich: [EnrichFlow]!
   egress: [EgressFlow]!
   transform: [TransformFlow]!
 }
 
 type SystemFlowPlans {
-  ingressPlans: [IngressFlowPlan]!
+  normalizePlans: [NormalizeFlowPlan]!
   enrichPlans: [EnrichFlowPlan]!
   egressPlans: [EgressFlowPlan]!
   transformPlans: [TransformFlowPlan]!
 }
 
-type IngressFlow {
+type NormalizeFlow {
   name: String!
   description: String!
   sourcePlugin: PluginCoordinates!
@@ -208,8 +208,8 @@ type EgressFlow {
   description: String!
   sourcePlugin: PluginCoordinates!
   flowStatus: FlowStatus!
-  includeIngressFlows: [String]
-  excludeIngressFlows: [String]
+  includeNormalizeFlows: [String]
+  excludeNormalizeFlows: [String]
   expectedAnnotations: [String]
   formatAction: FormatActionConfiguration!
   validateActions: [ValidateActionConfiguration]
@@ -235,7 +235,7 @@ type ActionFamily {
 }
 
 type FlowNames {
-  ingress: [String]!
+  normalize: [String]!
   enrich: [String]!
   egress: [String]!
   transform: [String]!

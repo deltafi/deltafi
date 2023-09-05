@@ -28,6 +28,8 @@ import org.deltafi.core.repo.FlowRepo;
 import org.deltafi.core.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.snapshot.Snapshotter;
 import org.deltafi.core.snapshot.SystemSnapshot;
+import org.deltafi.core.snapshot.types.FlowSnapshot;
+import org.deltafi.core.snapshot.util.SnapshotUtil;
 import org.deltafi.core.types.ConfigType;
 import org.deltafi.core.types.Flow;
 import org.deltafi.core.types.Result;
@@ -38,7 +40,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
-public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow> implements PluginUninstallCheck, Snapshotter {
+public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow, FlowSnapshotT extends FlowSnapshot> implements PluginUninstallCheck, Snapshotter {
+
     protected final FlowRepo<FlowT> flowRepo;
     protected final PluginVariableService pluginVariableService;
     private final String flowType;
@@ -58,12 +61,15 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     @PostConstruct
     public synchronized void refreshCache() {
         flowCache = flowRepo.findAll().stream()
-                .peek(f -> {
-                    if (f.migrate()) {
-                        flowRepo.save(f);
-                    }
-                })
+                .map(this::migrate)
                 .collect(Collectors.toMap(Flow::getName, Function.identity()));
+    }
+
+    private FlowT migrate(FlowT flow) {
+        if (flow.migrate()) {
+            flowRepo.save(flow);
+        }
+        return flow;
     }
 
     /**
@@ -282,56 +288,77 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         return getAll().stream().filter(Flow::isRunning).map(Flow::getName).toList();
     }
 
-    public List<String> getTestFlowNames() {
-        return getAll().stream().filter(Flow::isTestMode).map(Flow::getName).toList();
-    }
-
-    abstract List<String> getRunningFromSnapshot(SystemSnapshot systemSnapshot);
-    abstract List<String> getTestModeFromSnapshot(SystemSnapshot systemSnapshot);
-
     @Override
     public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
         refreshCache();
-
-        Result result = new Result();
-        List<String> runningFlowsInSnapshot = getRunningFromSnapshot(systemSnapshot);
-        List<String> testModeFlowsInSnapshot = getTestModeFromSnapshot(systemSnapshot);
+        SnapshotUtil.upgrade(systemSnapshot);
 
         if (hardReset) {
             getRunningFlowNames().forEach(this::stopFlow);
         }
 
-        for (String flow : testModeFlowsInSnapshot) {
-            flowRepo.findById(flow).ifPresentOrElse(this::setToTestMode,
-                    () -> result.getErrors().add("Flow: " + flow + " is no longer installed and cannot be set to test mode"));
+        return resetFromSnapshot(systemSnapshot);
+    }
+
+    public Result resetFromSnapshot(SystemSnapshot systemSnapshot) {
+        Result result = new Result();
+        List<FlowSnapshotT> flowSnapshots = getFlowSnapshots(systemSnapshot);
+
+        if (flowSnapshots == null || flowSnapshots.isEmpty()) {
+            return result;
         }
 
-        for (String flow : runningFlowsInSnapshot) {
-            flowRepo.findById(flow).ifPresentOrElse(existingFlow -> resetFlowState(existingFlow, result),
-                    () -> result.getErrors().add("Flow: " + flow + " is no longer installed and cannot be started"));
+        List<FlowT> updatedFlows = new ArrayList<>();
+        for (FlowSnapshotT snapshot : flowSnapshots) {
+            FlowT existing = flowRepo.findById(snapshot.getName()).orElse(null);
+
+            if (existing == null) {
+                result.getErrors().add("Flow " + snapshot.getName() + " is no longer installed");
+            } else if (updateFromSnapshot(existing, snapshot, result)) {
+                updatedFlows.add(existing);
+            }
         }
 
-        refreshCache();
+        if (!updatedFlows.isEmpty()) {
+            saveAll(updatedFlows);
+            refreshCache();
+        }
 
         result.setSuccess(result.getErrors().isEmpty());
         return result;
     }
 
+
+    public abstract List<FlowSnapshotT> getFlowSnapshots(SystemSnapshot systemSnapshot);
+
+    public boolean updateFromSnapshot(FlowT flow, FlowSnapshotT flowSnapshot, Result result) {
+        boolean changed = false;
+        if (flowSnapshot.isRunning()) {
+            if (flow.isStopped()) {
+                flow.getFlowStatus().setState(FlowState.RUNNING);
+                changed = true;
+            } else if (flow.isInvalid()) {
+                result.getErrors().add("Flow: " + flow.getName() + " is invalid and cannot be started");
+            }
+        }
+
+        if (flowSnapshot.isTestMode() && !flow.isTestMode()) {
+            flow.setTestMode(true);
+            changed = true;
+        }
+
+        boolean flowSpecificChanges = flowSpecificUpdateFromSnapshot(flow, flowSnapshot, result);
+        return changed || flowSpecificChanges;
+    }
+
+    public boolean flowSpecificUpdateFromSnapshot(FlowT flow, FlowSnapshotT flowSnapshotT, Result result) {
+        // expected annotations are handled in the AnnotationService, currently only used for max errors
+        return false;
+    }
+
     @Override
     public int getOrder() {
         return SnapshotRestoreOrder.FLOW_ORDER;
-    }
-
-    void resetFlowState(FlowT flow, Result result) {
-        if (flow.isStopped()) {
-            startFlow(flow.getName());
-        } else if (flow.isInvalid()) {
-            result.getErrors().add("Flow: " + flow.getName() + " is invalid and cannot be started");
-        }
-    }
-
-    void setToTestMode(FlowT flow) {
-        enableTestMode(flow.getName());
     }
 
     /**

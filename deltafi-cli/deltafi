@@ -132,11 +132,11 @@ Commands:
   export-config          export all the loaded flow configurations as yaml
   export-egress-plan     export a single egress flow plan by name as JSON
   export-enrich-plan     export a single enrich flow plan by name as JSON
-  export-ingress-plan    export a single ingress flow plan by name as JSON
+  export-normalize-plan  export a single normalize flow plan by name as JSON
   export-transform-plan  export a single transform flow plan by name as JSON
   export-rules           export all ingress-flow assignment rules as JSON
   ingress                ingress one or more files to a flow
-  ingress-flow           start, stop or validate an ingress flow
+  normalize-flow         start, stop or validate an normalize flow
   install                install/upgrade the DeltaFi core
   install-plugin         install/upgrade a DeltaFi plugin
   list-actions           list the actions registered with deltafi
@@ -234,8 +234,8 @@ case "$1" in
   export-enrich-plan)
     "$DELTAFICLI_WORKDIR/commands/export-enrich-plan" "$@"
     ;;
-  export-ingress-plan)
-    "$DELTAFICLI_WORKDIR/commands/export-ingress-plan" "$@"
+  export-normalize-plan)
+    "$DELTAFICLI_WORKDIR/commands/export-normalize-plan" "$@"
     ;;
   export-transform-plan)
     "$DELTAFICLI_WORKDIR/commands/export-transform-plan" "$@"
@@ -246,8 +246,8 @@ case "$1" in
   ingress)
     "$DELTAFICLI_WORKDIR/commands/ingress" "$@"
     ;;
-  ingress-flow)
-    "$DELTAFICLI_WORKDIR/commands/ingress-flow" "$@"
+  normalize-flow)
+    "$DELTAFICLI_WORKDIR/commands/normalize-flow" "$@"
     ;;
   install|update|upgrade|start)
     "$DELTAFICLI_WORKDIR/commands/install" "$@"

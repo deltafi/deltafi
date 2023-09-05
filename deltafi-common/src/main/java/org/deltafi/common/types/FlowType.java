@@ -17,6 +17,8 @@
  */
 package org.deltafi.common.types;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+
 public enum FlowType {
-    INGRESS, ENRICH, EGRESS, TRANSFORM
+    @JsonAlias("INGRESS") NORMALIZE, ENRICH, EGRESS, TRANSFORM;
 }

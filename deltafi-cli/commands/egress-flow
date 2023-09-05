@@ -87,8 +87,8 @@ case "$SUBCOMMAND" in
                    message
                  }
                }
-               includeIngressFlows
-               excludeIngressFlows
+               includeNormalizeFlows
+               excludeNormalizeFlows
                expectedAnnotations
                formatAction {
                  name

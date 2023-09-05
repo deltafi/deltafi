@@ -23,7 +23,7 @@ import org.deltafi.common.types.ActionType;
 import org.deltafi.core.plugin.generator.flows.EgressFlowPlanGenerator;
 import org.deltafi.core.plugin.generator.flows.EnrichFlowPlanGenerator;
 import org.deltafi.core.plugin.generator.flows.FlowPlanGeneratorService;
-import org.deltafi.core.plugin.generator.flows.IngressFlowPlanGenerator;
+import org.deltafi.core.plugin.generator.flows.NormalizeFlowPlanGenerator;
 import org.deltafi.core.plugin.generator.flows.TransformFlowPlanGenerator;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -44,7 +44,7 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@SpringBootTest(classes = {JavaPluginGenerator.class, FlowPlanGeneratorService.class, IngressFlowPlanGenerator.class,
+@SpringBootTest(classes = {JavaPluginGenerator.class, FlowPlanGeneratorService.class, NormalizeFlowPlanGenerator.class,
         TransformFlowPlanGenerator.class, EnrichFlowPlanGenerator.class, EgressFlowPlanGenerator.class, ProjectInfoAutoConfiguration.class})
 class JavaPluginGeneratorTest {
 

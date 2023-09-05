@@ -19,7 +19,7 @@
 const generateData = () => {
   const data = {
     getFlowNames: {
-      ingress: [
+      normalize: [
         "decompress-and-merge",
         "decompress-passthrough",
         "passthrough",

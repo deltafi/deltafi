@@ -19,12 +19,13 @@ package org.deltafi.core.services;
 
 import org.deltafi.common.types.EgressFlowPlan;
 import org.deltafi.core.repo.EgressFlowPlanRepo;
+import org.deltafi.core.snapshot.types.EgressFlowSnapshot;
 import org.deltafi.core.types.EgressFlow;
 import org.deltafi.core.validation.EgressFlowPlanValidator;
 import org.springframework.stereotype.Service;
 
 @Service
-public class EgressFlowPlanService extends FlowPlanService<EgressFlowPlan, EgressFlow> {
+public class EgressFlowPlanService extends FlowPlanService<EgressFlowPlan, EgressFlow, EgressFlowSnapshot> {
     public EgressFlowPlanService(EgressFlowPlanValidator egressFlowPlanValidator, EgressFlowPlanRepo flowPlanRepo, EgressFlowService flowService) {
         super(egressFlowPlanValidator, flowPlanRepo, flowService);
     }

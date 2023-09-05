@@ -53,8 +53,4 @@ public class DeltaFileMessage {
 
         return getEnrichments().stream().collect(Collectors.toMap(Enrichment::getName, Function.identity()));
     }
-
-    public SourceInfo buildSourceInfo(ActionContext context) {
-        return SourceInfo.builder().flow(context.getIngressFlow()).metadata(metadata).build();
-    }
 }

@@ -23,7 +23,9 @@ import org.deltafi.core.converters.TransformFlowPlanConverter;
 import org.deltafi.core.generated.types.IngressFlowErrorState;
 import org.deltafi.core.repo.TransformFlowRepo;
 import org.deltafi.core.snapshot.SystemSnapshot;
+import org.deltafi.core.snapshot.types.TransformFlowSnapshot;
 import org.deltafi.core.types.Flow;
+import org.deltafi.core.types.Result;
 import org.deltafi.core.types.TransformFlow;
 import org.deltafi.core.validation.TransformFlowValidator;
 import org.springframework.stereotype.Service;
@@ -36,7 +38,7 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
-public class TransformFlowService extends FlowService<TransformFlowPlan, TransformFlow> {
+public class TransformFlowService extends FlowService<TransformFlowPlan, TransformFlow, TransformFlowSnapshot> {
 
     private static final TransformFlowPlanConverter TRANSFORM_FLOW_PLAN_CONVERTER = new TransformFlowPlanConverter();
 
@@ -57,21 +59,22 @@ public class TransformFlowService extends FlowService<TransformFlowPlan, Transfo
     @Override
     public void updateSnapshot(SystemSnapshot systemSnapshot) {
         refreshCache();
-        systemSnapshot.setRunningTransformFlows(getRunningFlowNames());
-        systemSnapshot.setTestTransformFlows(getTestFlowNames());
-    }
-
-
-    @Override
-    List<String> getRunningFromSnapshot(SystemSnapshot systemSnapshot) {
-        List<String> flows = systemSnapshot.getRunningTransformFlows();
-        return flows == null ? List.of() : flows;
+        systemSnapshot.setTransformFlows(getAll().stream().map(TransformFlowSnapshot::new).toList());
     }
 
     @Override
-    List<String> getTestModeFromSnapshot(SystemSnapshot systemSnapshot) {
-        List<String> flows = systemSnapshot.getTestTransformFlows();
-        return flows == null ? List.of() : flows;
+    public List<TransformFlowSnapshot> getFlowSnapshots(SystemSnapshot systemSnapshot) {
+        return systemSnapshot.getTransformFlows();
+    }
+
+    @Override
+    public boolean flowSpecificUpdateFromSnapshot(TransformFlow flow, TransformFlowSnapshot transformFlowSnapshot, Result result) {
+        if (flow.getMaxErrors() != transformFlowSnapshot.getMaxErrors()) {
+            flow.setMaxErrors(transformFlowSnapshot.getMaxErrors());
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -148,7 +151,7 @@ public class TransformFlowService extends FlowService<TransformFlowPlan, Transfo
     public Set<String> flowErrorsExceeded() {
         return ingressFlowErrorsExceeded()
                 .stream()
-                .map(f -> f.getName())
+                .map(IngressFlowErrorState::getName)
                 .collect(Collectors.toSet());
     }
 

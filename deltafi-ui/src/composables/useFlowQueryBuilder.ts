@@ -21,168 +21,150 @@ import useGraphQL from "./useGraphQL";
 export default function useFlowQueryBuilder() {
   const { response, errors, queryGraphQL, loaded, loading } = useGraphQL();
 
-  // Get all flows grouped by plugin
-  const getFlowsGroupedByPlugin = () => {
-    const query = {
-      getFlows: {
-        sourcePlugin: {
-          artifactId: true,
-          groupId: true,
-          version: true,
-        },
-        variables: {
-          name: true,
-          value: true,
-          description: true,
-          defaultValue: true,
-          dataType: true,
-        },
-        transformFlows: {
-          name: true,
-          description: true,
-          type: true,
-          flowStatus: {
-            state: true,
-            errors: {
-              configName: true,
-              errorType: true,
-              message: true,
-            },
-            testMode: true,
-          },
-          maxErrors: true,
-          transformActions: {
-            name: true,
-            type: true,
-            parameters: true,
-            apiVersion: true,
-          },
-          egressAction: {
-            name: true,
-            type: true,
-            parameters: true,
-            apiVersion: true,
-          },
-          variables: {
-            name: true,
-            value: true,
-            description: true,
-            defaultValue: true,
-            dataType: true,
-          },
-          expectedAnnotations: true,
-        },
-        ingressFlows: {
-          name: true,
-          description: true,
-          type: true,
-          flowStatus: {
-            state: true,
-            errors: {
-              configName: true,
-              errorType: true,
-              message: true,
-            },
-            testMode: true,
-          },
-          maxErrors: true,
-          transformActions: {
-            name: true,
-            type: true,
-            parameters: true,
-            apiVersion: true,
-          },
-          loadAction: {
-            name: true,
-            type: true,
-            parameters: true,
-            apiVersion: true,
-          },
-          variables: {
-            name: true,
-            value: true,
-            description: true,
-            defaultValue: true,
-            dataType: true,
-          },
-        },
-        enrichFlows: {
-          name: true,
-          description: true,
-          flowStatus: {
-            state: true,
-            errors: {
-              configName: true,
-              message: true,
-              errorType: true,
-            },
-          },
-          domainActions: {
-            name: true,
-            type: true,
-            requiresDomains: true,
-            parameters: true,
-            apiVersion: true,
-          },
-          enrichActions: {
-            name: true,
-            type: true,
-            requiresDomains: true,
-            requiresEnrichments: true,
-            requiresMetadataKeyValues: {
-              key: true,
-              value: true,
-            },
-            parameters: true,
-            apiVersion: true,
-          },
-        },
-        egressFlows: {
-          name: true,
-          description: true,
-          flowStatus: {
-            state: true,
-            errors: {
-              configName: true,
-              errorType: true,
-              message: true,
-            },
-            testMode: true,
-          },
-          includeIngressFlows: true,
-          excludeIngressFlows: true,
-          formatAction: {
-            name: true,
-            type: true,
-            requiresDomains: true,
-            requiresEnrichments: true,
-            parameters: true,
-            apiVersion: true,
-          },
-          validateActions: {
-            name: true,
-            type: true,
-            parameters: true,
-            apiVersion: true,
-          },
-          egressAction: {
-            name: true,
-            type: true,
-            parameters: true,
-            apiVersion: true,
-          },
-          variables: {
-            name: true,
-            value: true,
-            description: true,
-            defaultValue: true,
-            dataType: true,
-          },
-          expectedAnnotations: true,
-        },
+  const sourcePluginFields = {
+    sourcePlugin: {
+      artifactId: true,
+      groupId: true,
+      version: true,
+    }
+  };
+
+  const variableFields = {
+    variables: {
+      name: true,
+      value: true,
+      description: true,
+      defaultValue: true,
+      dataType: true,
+    }
+  };
+
+  const transformFlowFields = {
+    name: true,
+    description: true,
+    flowStatus: {
+      state: true,
+      errors: {
+        configName: true,
+        errorType: true,
+        message: true,
       },
-    };
-    return sendGraphQLQuery(query, "getFlowsGroupedByPlugin");
+      testMode: true,
+    },
+    maxErrors: true,
+    transformActions: {
+      name: true,
+      type: true,
+      parameters: true,
+      apiVersion: true,
+    },
+    egressAction: {
+      name: true,
+      type: true,
+      parameters: true,
+      apiVersion: true,
+    },
+    ...variableFields,
+    expectedAnnotations: true,
+  };
+
+  const normalizeFlowFields = {
+    name: true,
+    description: true,
+    flowStatus: {
+      state: true,
+      errors: {
+        configName: true,
+        errorType: true,
+        message: true,
+      },
+      testMode: true,
+    },
+    maxErrors: true,
+    transformActions: {
+      name: true,
+      type: true,
+      parameters: true,
+      apiVersion: true,
+    },
+    loadAction: {
+      name: true,
+      type: true,
+      parameters: true,
+      apiVersion: true,
+    },
+    ...variableFields
+  };
+
+  const enrichFlowFields = {
+    name: true,
+    description: true,
+    flowStatus: {
+      state: true,
+      errors: {
+        configName: true,
+        message: true,
+        errorType: true,
+      },
+    },
+    domainActions: {
+      name: true,
+      type: true,
+      requiresDomains: true,
+      parameters: true,
+      apiVersion: true,
+    },
+    enrichActions: {
+      name: true,
+      type: true,
+      requiresDomains: true,
+      requiresEnrichments: true,
+      requiresMetadataKeyValues: {
+        key: true,
+        value: true,
+      },
+      parameters: true,
+      apiVersion: true,
+    },
+    ...variableFields
+  };
+
+  const egressFlowFields = {
+    name: true,
+    description: true,
+    flowStatus: {
+      state: true,
+      errors: {
+        configName: true,
+        errorType: true,
+        message: true,
+      },
+      testMode: true,
+    },
+    includeNormalizeFlows: true,
+    excludeNormalizeFlows: true,
+    formatAction: {
+      name: true,
+      type: true,
+      requiresDomains: true,
+      requiresEnrichments: true,
+      parameters: true,
+      apiVersion: true,
+    },
+    validateActions: {
+      name: true,
+      type: true,
+      parameters: true,
+      apiVersion: true,
+    },
+    egressAction: {
+      name: true,
+      type: true,
+      parameters: true,
+      apiVersion: true,
+    },
+    ...variableFields,
+    expectedAnnotations: true,
   };
 
   // Get all flows (no grouping)
@@ -190,165 +172,20 @@ export default function useFlowQueryBuilder() {
     const query = {
       getAllFlows: {
         transform: {
-          name: true,
-          description: true,
-          sourcePlugin: {
-            artifactId: true,
-            groupId: true,
-            version: true,
-          },
-          flowStatus: {
-            state: true,
-            errors: {
-              configName: true,
-              errorType: true,
-              message: true,
-            },
-            testMode: true,
-          },
-          maxErrors: true,
-          transformActions: {
-            name: true,
-            type: true,
-            parameters: true,
-            apiVersion: true,
-          },
-          egressAction: {
-            name: true,
-            type: true,
-            parameters: true,
-            apiVersion: true,
-          },
-          variables: {
-            name: true,
-            value: true,
-            description: true,
-            defaultValue: true,
-            dataType: true,
-          },
-          expectedAnnotations: true,
+          ...sourcePluginFields,
+          ...transformFlowFields
         },
-        ingress: {
-          name: true,
-          description: true,
-          sourcePlugin: {
-            artifactId: true,
-            groupId: true,
-            version: true,
-          },
-          flowStatus: {
-            state: true,
-            errors: {
-              configName: true,
-              errorType: true,
-              message: true,
-            },
-            testMode: true,
-          },
-          maxErrors: true,
-          transformActions: {
-            name: true,
-            type: true,
-            parameters: true,
-            apiVersion: true,
-          },
-          loadAction: {
-            name: true,
-            type: true,
-            parameters: true,
-            apiVersion: true,
-          },
-          variables: {
-            name: true,
-            value: true,
-            description: true,
-            defaultValue: true,
-            dataType: true,
-          },
+        normalize: {
+          ...sourcePluginFields,
+          ...normalizeFlowFields
         },
         enrich: {
-          name: true,
-          description: true,
-          sourcePlugin: {
-            groupId: true,
-            artifactId: true,
-            version: true,
-          },
-          flowStatus: {
-            state: true,
-            errors: {
-              configName: true,
-              message: true,
-              errorType: true,
-            },
-          },
-          domainActions: {
-            name: true,
-            type: true,
-            requiresDomains: true,
-            parameters: true,
-            apiVersion: true,
-          },
-          enrichActions: {
-            name: true,
-            type: true,
-            requiresDomains: true,
-            requiresEnrichments: true,
-            requiresMetadataKeyValues: {
-              key: true,
-              value: true,
-            },
-            parameters: true,
-            apiVersion: true,
-          },
+          ...sourcePluginFields,
+          ...enrichFlowFields
         },
         egress: {
-          name: true,
-          description: true,
-          sourcePlugin: {
-            artifactId: true,
-            groupId: true,
-            version: true,
-          },
-          flowStatus: {
-            state: true,
-            errors: {
-              configName: true,
-              errorType: true,
-              message: true,
-            },
-            testMode: true,
-          },
-          includeIngressFlows: true,
-          excludeIngressFlows: true,
-          formatAction: {
-            name: true,
-            type: true,
-            requiresDomains: true,
-            requiresEnrichments: true,
-            parameters: true,
-            apiVersion: true,
-          },
-          validateActions: {
-            name: true,
-            type: true,
-            parameters: true,
-            apiVersion: true,
-          },
-          egressAction: {
-            name: true,
-            type: true,
-            parameters: true,
-            apiVersion: true,
-          },
-          variables: {
-            name: true,
-            value: true,
-            description: true,
-            defaultValue: true,
-            dataType: true,
-          },
-          expectedAnnotations: true,
+          ...sourcePluginFields,
+          ...egressFlowFields
         },
       },
     };
@@ -362,92 +199,25 @@ export default function useFlowQueryBuilder() {
         __args: {
           flowName: flowName,
         },
-        name: true,
-        description: true,
-        sourcePlugin: {
-          groupId: true,
-          artifactId: true,
-          version: true,
-        },
-        flowStatus: {
-          state: true,
-          errors: {
-            configName: true,
-            message: true,
-            errorType: true,
-          },
-          testMode: true,
-        },
-        transformActions: {
-          name: true,
-          type: true,
-          parameters: true,
-          apiVersion: true,
-        },
-        egressAction: {
-          name: true,
-          type: true,
-          parameters: true,
-          apiVersion: true,
-        },
-        variables: {
-          name: true,
-          dataType: true,
-          description: true,
-          defaultValue: true,
-          required: true,
-        },
-        expectedAnnotations: true,
+        ...sourcePluginFields,
+        ...transformFlowFields
       },
     };
     return sendGraphQLQuery(query, "getTransformFlowByName");
   };
 
-  // Get an Ingress Flow - (if you want to grab a single flow, return type is IngressFlow)
-  const getIngressFlowByName = (flowName: string) => {
+  // Get a Normalize Flow - (if you want to grab a single flow, return type is NormalizeFlow)
+  const getNormalizeFlowByName = (flowName: string) => {
     const query = {
-      getIngressFlow: {
+      getNormalizeFlow: {
         __args: {
           flowName: flowName,
         },
-        name: true,
-        description: true,
-        sourcePlugin: {
-          groupId: true,
-          artifactId: true,
-          version: true,
-        },
-        flowStatus: {
-          state: true,
-          errors: {
-            configName: true,
-            message: true,
-            errorType: true,
-          },
-          testMode: true,
-        },
-        transformActions: {
-          name: true,
-          type: true,
-          parameters: true,
-          apiVersion: true,
-        },
-        loadAction: {
-          name: true,
-          type: true,
-          parameters: true,
-          apiVersion: true,
-        },
-        variables: {
-          name: true,
-          dataType: true,
-          description: true,
-          defaultValue: true,
-          required: true,
-        },
+        ...sourcePluginFields,
+        ...normalizeFlowFields
       },
     };
-    return sendGraphQLQuery(query, "getIngressFlowByName");
+    return sendGraphQLQuery(query, "getNormalizeFlowByName");
   };
 
   // Get an Enrich Flow - (if you want to grab a single flow, return type is EnrichFlow)
@@ -457,40 +227,8 @@ export default function useFlowQueryBuilder() {
         __args: {
           flowName: flowName,
         },
-        name: true,
-        description: true,
-        sourcePlugin: {
-          groupId: true,
-          artifactId: true,
-          version: true,
-        },
-        flowStatus: {
-          state: true,
-          errors: {
-            configName: true,
-            message: true,
-            errorType: true,
-          },
-        },
-        domainActions: {
-          name: true,
-          type: true,
-          requiresDomains: true,
-          parameters: true,
-          apiVersion: true,
-        },
-        enrichActions: {
-          name: true,
-          type: true,
-          requiresDomains: true,
-          requiresEnrichments: true,
-          requiresMetadataKeyValues: {
-            key: true,
-            value: true,
-          },
-          parameters: true,
-          apiVersion: true,
-        },
+        ...sourcePluginFields,
+        ...enrichFlowFields
       },
     };
     return sendGraphQLQuery(query, "getEnrichFlowByName");
@@ -503,53 +241,8 @@ export default function useFlowQueryBuilder() {
         __args: {
           flowName: flowName,
         },
-        name: true,
-        description: true,
-        sourcePlugin: {
-          groupId: true,
-          artifactId: true,
-          version: true,
-        },
-        flowStatus: {
-          state: true,
-          errors: {
-            configName: true,
-            errorType: true,
-            message: true,
-          },
-          testMode: true,
-        },
-        includeIngressFlows: true,
-        excludeIngressFlows: true,
-        formatAction: {
-          name: true,
-          type: true,
-          requiresDomains: true,
-          requiresEnrichments: true,
-          parameters: true,
-          apiVersion: true,
-        },
-        validateActions: {
-          name: true,
-          type: true,
-          parameters: true,
-          apiVersion: true,
-        },
-        egressAction: {
-          name: true,
-          type: true,
-          parameters: true,
-          apiVersion: true,
-        },
-        variables: {
-          name: true,
-          value: true,
-          dataType: true,
-          description: true,
-          defaultValue: true,
-          required: true,
-        },
-        expectedAnnotations: true,
+        ...sourcePluginFields,
+        ...egressFlowFields
       },
     };
     return sendGraphQLQuery(query, "getEgressFlowByName");
@@ -576,10 +269,10 @@ export default function useFlowQueryBuilder() {
     return sendGraphQLQuery(query, "validateTransformFlow");
   };
 
-  // Validate an ingress flow - return type is IngressFlow
-  const validateIngressFlow = (flowName: string) => {
+  // Validate a normalize flow - return type is NormalizeFlow
+  const validateNormalizeFlow = (flowName: string) => {
     const query = {
-      validateIngressFlow: {
+      validateNormalizeFlow: {
         __args: {
           flowName: flowName,
         },
@@ -594,7 +287,7 @@ export default function useFlowQueryBuilder() {
         },
       },
     };
-    return sendGraphQLQuery(query, "validateIngressFlow");
+    return sendGraphQLQuery(query, "validateNormalizeFlow");
   };
 
   // Validate an Enrich flow - return type is EnrichFlow
@@ -674,28 +367,28 @@ export default function useFlowQueryBuilder() {
     return sendGraphQLQuery(query, "stopTransformFlowByName", "mutation");
   };
 
-  // Starts an ingress flow
-  const startIngressFlowByName = (flowName: string) => {
+  // Starts an normalize flow
+  const startNormalizeFlowByName = (flowName: string) => {
     const query = {
-      startIngressFlow: {
+      startNormalizeFlow: {
         __args: {
           flowName: flowName,
         },
       },
     };
-    return sendGraphQLQuery(query, "startIngressFlowByName", "mutation");
+    return sendGraphQLQuery(query, "startNormalizeFlowByName", "mutation");
   };
 
-  // Stops an ingress flow
-  const stopIngressFlowByName = (flowName: string) => {
+  // Stops an normalize flow
+  const stopNormalizeFlowByName = (flowName: string) => {
     const query = {
-      stopIngressFlow: {
+      stopNormalizeFlow: {
         __args: {
           flowName: flowName,
         },
       },
     };
-    return sendGraphQLQuery(query, "stopIngressFlowByName", "mutation");
+    return sendGraphQLQuery(query, "stopNormalizeFlowByName", "mutation");
   };
 
   // Starts an enrich flow
@@ -770,28 +463,28 @@ export default function useFlowQueryBuilder() {
     return sendGraphQLQuery(query, "disableTransformTestModeFlowByName", "mutation");
   };
 
-  // sets an ingress flow to test mode
-  const enableTestIngressFlowByName = (flowName: string) => {
+  // sets an normalize flow to test mode
+  const enableTestNormalizeFlowByName = (flowName: string) => {
     const query = {
-      enableIngressTestMode: {
+      enableNormalizeTestMode: {
         __args: {
           flowName: flowName,
         },
       },
     };
-    return sendGraphQLQuery(query, "enableIngressTestModeFlowByName", "mutation");
+    return sendGraphQLQuery(query, "enableNormalizeTestModeFlowByName", "mutation");
   };
 
-  // sets an ingress flow to test mode
-  const disableTestIngressFlowByName = (flowName: string) => {
+  // sets an normalize flow to test mode
+  const disableTestNormalizeFlowByName = (flowName: string) => {
     const query = {
-      disableIngressTestMode: {
+      disableNormalizeTestMode: {
         __args: {
           flowName: flowName,
         },
       },
     };
-    return sendGraphQLQuery(query, "disableIngressTestModeFlowByName", "mutation");
+    return sendGraphQLQuery(query, "disableNormalizeTestModeFlowByName", "mutation");
   };
 
   // sets an egress flow to test mode
@@ -818,7 +511,7 @@ export default function useFlowQueryBuilder() {
     return sendGraphQLQuery(query, "disableEgressTestModeFlowByName", "mutation");
   };
 
-  // sets max errors for an ingress flow
+  // sets max errors for a normalize or transform flow
   const setMaxErrors = (flowName: string, maxErrors: number) => {
     const query = {
       setMaxErrors: {
@@ -868,29 +561,28 @@ export default function useFlowQueryBuilder() {
   };
 
   return {
-    getFlowsGroupedByPlugin,
     getAllFlows,
     getTransformFlowByName,
-    getIngressFlowByName,
+    getNormalizeFlowByName,
     getEnrichFlowByName,
     getEgressFlowByName,
     validateTransformFlow,
-    validateIngressFlow,
+    validateNormalizeFlow,
     validateEnrichFlow,
     validateEgressFlow,
     setPluginVariables,
     startTransformFlowByName,
     stopTransformFlowByName,
-    startIngressFlowByName,
-    stopIngressFlowByName,
+    startNormalizeFlowByName,
+    stopNormalizeFlowByName,
     startEnrichFlowByName,
     stopEnrichFlowByName,
     startEgressFlowByName,
     stopEgressFlowByName,
     enableTestTransformFlowByName,
     disableTestTransformFlowByName,
-    enableTestIngressFlowByName,
-    disableTestIngressFlowByName,
+    enableTestNormalizeFlowByName,
+    disableTestNormalizeFlowByName,
     enableTestEgressFlowByName,
     disableTestEgressFlowByName,
     setMaxErrors,

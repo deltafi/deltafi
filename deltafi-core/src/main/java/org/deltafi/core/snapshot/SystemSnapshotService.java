@@ -20,6 +20,7 @@ package org.deltafi.core.snapshot;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.Variable;
+import org.deltafi.core.snapshot.util.SnapshotUtil;
 import org.deltafi.core.types.PluginVariables;
 import org.deltafi.core.types.Result;
 import org.springframework.stereotype.Service;
@@ -38,7 +39,7 @@ public class SystemSnapshotService {
 
     public SystemSnapshot getWithMaskedVariables(String snapshotId) {
         SystemSnapshot snapshot = getById(snapshotId);
-        applyMaskToVariables(snapshot);
+        maskAndUpgradeSnapshots(snapshot);
         return snapshot;
     }
 
@@ -48,8 +49,13 @@ public class SystemSnapshotService {
 
     public List<SystemSnapshot> getAll() {
         List<SystemSnapshot> snapshots = systemSnapshotRepo.findAll();
-        snapshots.forEach(this::applyMaskToVariables);
+        snapshots.forEach(this::maskAndUpgradeSnapshots);
         return snapshots;
+    }
+
+    void maskAndUpgradeSnapshots(SystemSnapshot systemSnapshot) {
+        applyMaskToVariables(systemSnapshot);
+        SnapshotUtil.upgrade(systemSnapshot);
     }
 
     void applyMaskToVariables(SystemSnapshot systemSnapshot) {
@@ -72,7 +78,9 @@ public class SystemSnapshotService {
     }
 
     public Result resetFromSnapshot(String snapshotId, boolean hardReset) {
-        return resetFromSnapshot(getById(snapshotId), hardReset);
+        SystemSnapshot systemSnapshot = getById(snapshotId);
+        SnapshotUtil.upgrade(systemSnapshot);
+        return resetFromSnapshot(systemSnapshot, hardReset);
     }
 
     public SystemSnapshot saveSnapshot(SystemSnapshot systemSnapshot) {
@@ -84,6 +92,7 @@ public class SystemSnapshotService {
             return null;
         }
 
+        SnapshotUtil.upgrade(systemSnapshot);
         removeMaskedVariables(systemSnapshot);
         return saveSnapshot(systemSnapshot);
     }

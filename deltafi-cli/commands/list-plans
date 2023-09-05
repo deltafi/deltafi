@@ -18,7 +18,7 @@ ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " || " ${ARGS[@]} " =~ " -h " ]] && cli_help_command
 
 FIELDS="{ name description sourcePlugin {groupId artifactId version}}"
-QUERY="query { getAllFlowPlans { transformPlans $FIELDS ingressPlans $FIELDS enrichPlans $FIELDS egressPlans $FIELDS}}"
+QUERY="query { getAllFlowPlans { transformPlans $FIELDS normalizePlans $FIELDS enrichPlans $FIELDS egressPlans $FIELDS}}"
 RESULT=$(deltafi query "$QUERY")
 
 print_plans() {
@@ -33,7 +33,7 @@ if [[ "$DGS_ERRORS" != "" ]]; then
 else
   print_plans "transform"
   echo
-  print_plans "ingress"
+  print_plans "normalize"
   echo
   print_plans "enrich"
   echo

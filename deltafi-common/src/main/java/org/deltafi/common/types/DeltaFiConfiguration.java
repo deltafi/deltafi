@@ -26,7 +26,7 @@ import lombok.ToString;
 @Data
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "__typename")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = IngressFlowConfiguration.class, name = "IngressFlowConfiguration"),
+        @JsonSubTypes.Type(value = NormalizeFlowConfiguration.class, name = "NormalizeFlowConfiguration"),
         @JsonSubTypes.Type(value = EnrichFlowConfiguration.class, name = "EnrichFlowConfiguration"),
         @JsonSubTypes.Type(value = EgressFlowConfiguration.class, name = "EgressFlowConfiguration"),
         @JsonSubTypes.Type(value = TransformActionConfiguration.class, name = "TransformActionConfiguration"),

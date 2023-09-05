@@ -18,7 +18,7 @@
 package org.deltafi.core.types;
 
 public enum ConfigType {
-    INGRESS_FLOW,
+    NORMALIZE_FLOW,
     ENRICH_FLOW,
     EGRESS_FLOW,
     TRANSFORM_FLOW,

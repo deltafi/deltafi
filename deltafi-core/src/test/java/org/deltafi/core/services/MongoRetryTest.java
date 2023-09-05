@@ -49,7 +49,7 @@ import java.util.Collections;
 @ExtendWith(SpringExtension.class)
 @Import({DeltaFilesService.class, ClockConfiguration.class})
 @ImportAutoConfiguration(RefreshAutoConfiguration.class)
-@MockBean({StateMachine.class, IngressFlowService.class, EnrichFlowService.class, EgressFlowService.class, TransformFlowService.class,
+@MockBean({StateMachine.class, NormalizeFlowService.class, EnrichFlowService.class, EgressFlowService.class, TransformFlowService.class,
         ActionEventQueue.class, ContentStorageService.class, FlowAssignmentService.class, CoreAuditLogger.class,
         MetricService.class, DeltaFiPropertiesRepo.class, ResumePolicyService.class,
         IdentityService.class, DeltaFileRepo.class})
