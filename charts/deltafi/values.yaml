@@ -144,7 +144,7 @@ kubernetes-dashboard:
 grafana:
   image:
     repository: deltafi/grafana
-    tag: 10.0.3-0
+    tag: 10.1.1-0
   persistence:
     enabled: true
     existingClaim: deltafi-grafana
@@ -220,7 +220,7 @@ grafana:
           password: deltafi
 promtail:
   image:
-    tag: 2.8.2
+    tag: 2.9.0
   persistence:
     enabled: true
     existingClaim: deltafi-promtail
@@ -352,7 +352,7 @@ promtail:
                   expression: "/healthz"
 loki:
   image:
-    tag: 2.8.2
+    tag: 2.9.0
   persistence:
     enabled: true
     existingClaim: deltafi-loki
@@ -397,7 +397,7 @@ loki:
 # Graphite Configuration
 graphite:
   image:
-    tag: 1.1.10-4
+    tag: 1.1.10-5
   persistence:
     enabled: true
     existingClaim: deltafi-graphite
@@ -438,7 +438,7 @@ clickhouse:
   enabled: false
   image:
     repository: bitnami/clickhouse
-    tag: 23.7.2-debian-11-r0
+    tag: 23.8.2-debian-11-r0
   shards: 1
   replicaCount: 1
   keeper:
