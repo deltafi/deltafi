@@ -55,7 +55,7 @@ public class PluginCoordinates {
   }
 
   public boolean equalsIgnoreVersion(PluginCoordinates pluginCoordinates) {
-    return groupId.equals(pluginCoordinates.groupId) && artifactId.equals(pluginCoordinates.artifactId);
+    return pluginCoordinates != null && groupId.equals(pluginCoordinates.groupId) && artifactId.equals(pluginCoordinates.artifactId);
   }
 
   @Override

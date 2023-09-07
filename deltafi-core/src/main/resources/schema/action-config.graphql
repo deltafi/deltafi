@@ -35,7 +35,6 @@ type TransformActionConfiguration implements ActionConfiguration & DeltaFiConfig
 input TransformActionConfigurationInput {
     name: String!
     apiVersion: String
-    actionType: String!
     type: String!
     parameters: JSON
 }
@@ -51,7 +50,6 @@ type LoadActionConfiguration implements ActionConfiguration & DeltaFiConfigurati
 input LoadActionConfigurationInput {
     name: String!
     apiVersion: String
-    actionType: String!
     type: String!
     parameters: JSON
 }
@@ -68,7 +66,6 @@ type DomainActionConfiguration implements ActionConfiguration & DeltaFiConfigura
 input DomainActionConfigurationInput {
     name: String!
     apiVersion: String
-    actionType: String!
     type: String!
     parameters: JSON
     requiresDomains: [String]!
@@ -88,7 +85,6 @@ type EnrichActionConfiguration implements ActionConfiguration & DeltaFiConfigura
 input EnrichActionConfigurationInput {
     name: String!
     apiVersion: String
-    actionType: String!
     type: String!
     parameters: JSON
     requiresDomains: [String]!
@@ -109,7 +105,6 @@ type FormatActionConfiguration implements ActionConfiguration & DeltaFiConfigura
 input FormatActionConfigurationInput {
     name: String!
     apiVersion: String
-    actionType: String!
     type: String!
     parameters: JSON
     requiresDomains: [String]!
@@ -127,7 +122,6 @@ type ValidateActionConfiguration implements ActionConfiguration & DeltaFiConfigu
 input ValidateActionConfigurationInput {
     name: String!
     apiVersion: String
-    actionType: String!
     type: String!
     parameters: JSON
 }
@@ -143,7 +137,6 @@ type EgressActionConfiguration implements ActionConfiguration & DeltaFiConfigura
 input EgressActionConfigurationInput {
     name: String!
     apiVersion: String
-    actionType: String!
     type: String!
     parameters: JSON
 }

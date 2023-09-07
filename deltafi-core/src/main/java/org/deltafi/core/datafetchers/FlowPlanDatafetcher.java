@@ -31,8 +31,10 @@ import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.plugin.PluginRegistryService;
+import org.deltafi.core.plugin.SystemPluginService;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.*;
+import org.deltafi.core.snapshot.types.FlowSnapshot;
 import org.deltafi.core.types.*;
 
 import java.util.*;
@@ -58,17 +60,18 @@ public class FlowPlanDatafetcher {
     private final AnnotationService annotationService;
     private final PluginVariableService pluginVariableService;
     private final PluginRegistryService pluginRegistryService;
+    private final SystemPluginService systemPluginService;
 
     @DgsMutation
     @NeedsPermission.FlowPlanCreate
     public NormalizeFlow saveNormalizeFlowPlan(@InputArgument NormalizeFlowPlanInput normalizeFlowPlan) {
-        return normalizeFlowPlanService.saveFlowPlan(OBJECT_MAPPER.convertValue(normalizeFlowPlan, NormalizeFlowPlan.class));
+        return saveFlowPlan(normalizeFlowPlanService, normalizeFlowPlan, NormalizeFlowPlan.class);
     }
 
     @DgsMutation
     @NeedsPermission.FlowPlanDelete
     public boolean removeNormalizeFlowPlan(@InputArgument String name) {
-        return normalizeFlowPlanService.removePlan(name);
+        return removeFlowAndFlowPlan(normalizeFlowPlanService, name);
     }
 
     @DgsMutation
@@ -126,13 +129,13 @@ public class FlowPlanDatafetcher {
     @DgsMutation
     @NeedsPermission.FlowPlanCreate
     public EnrichFlow saveEnrichFlowPlan(@InputArgument EnrichFlowPlanInput enrichFlowPlan) {
-        return enrichFlowPlanService.saveFlowPlan(OBJECT_MAPPER.convertValue(enrichFlowPlan, EnrichFlowPlan.class));
+        return saveFlowPlan(enrichFlowPlanService, enrichFlowPlan, EnrichFlowPlan.class);
     }
 
     @DgsMutation
     @NeedsPermission.FlowPlanDelete
     public boolean removeEnrichFlowPlan(@InputArgument String name) {
-        return enrichFlowPlanService.removePlan(name);
+        return removeFlowAndFlowPlan(enrichFlowPlanService, name);
     }
 
     @DgsMutation
@@ -150,13 +153,13 @@ public class FlowPlanDatafetcher {
     @DgsMutation
     @NeedsPermission.FlowPlanCreate
     public EgressFlow saveEgressFlowPlan(@InputArgument EgressFlowPlanInput egressFlowPlan) {
-        return egressFlowPlanService.saveFlowPlan(OBJECT_MAPPER.convertValue(egressFlowPlan, EgressFlowPlan.class));
+        return saveFlowPlan(egressFlowPlanService, egressFlowPlan, EgressFlowPlan.class);
     }
 
     @DgsMutation
     @NeedsPermission.FlowPlanDelete
     public boolean removeEgressFlowPlan(@InputArgument String name) {
-        return egressFlowPlanService.removePlan(name);
+        return removeFlowAndFlowPlan(egressFlowPlanService,name);
     }
 
     @DgsMutation
@@ -174,13 +177,13 @@ public class FlowPlanDatafetcher {
     @DgsMutation
     @NeedsPermission.FlowPlanCreate
     public TransformFlow saveTransformFlowPlan(@InputArgument TransformFlowPlanInput transformFlowPlan) {
-        return transformFlowPlanService.saveFlowPlan(OBJECT_MAPPER.convertValue(transformFlowPlan, TransformFlowPlan.class));
+        return saveFlowPlan(transformFlowPlanService, transformFlowPlan, TransformFlowPlan.class);
     }
 
     @DgsMutation
     @NeedsPermission.FlowPlanDelete
     public boolean removeTransformFlowPlan(@InputArgument String name) {
-        return transformFlowPlanService.removePlan(name);
+        return removeFlowAndFlowPlan(transformFlowPlanService, name);
     }
 
     @DgsMutation
@@ -205,8 +208,15 @@ public class FlowPlanDatafetcher {
 
     @DgsMutation
     @NeedsPermission.PluginVariableUpdate
-    public boolean savePluginVariables(@InputArgument PluginVariablesInput pluginVariablesInput) {
-        pluginVariableService.validateAndSaveVariables(pluginVariablesInput.getSourcePlugin(), pluginVariablesInput.getVariables());
+    public boolean savePluginVariables(@InputArgument List<Variable> variables) {
+        pluginVariableService.validateAndSaveVariables(systemPluginService.getSystemPluginCoordinates(), variables);
+        return true;
+    }
+
+    @DgsMutation
+    @NeedsPermission.PluginVariableUpdate
+    public boolean removePluginVariables() {
+        pluginVariableService.removeVariables(systemPluginService.getSystemPluginCoordinates());
         return true;
     }
 
@@ -381,5 +391,15 @@ public class FlowPlanDatafetcher {
         List<IngressFlowErrorState> flowErrorStats = new ArrayList<>(normalizeFlowService.ingressFlowErrorsExceeded());
         flowErrorStats.addAll(transformFlowService.ingressFlowErrorsExceeded());
         return flowErrorStats;
+    }
+
+    private boolean removeFlowAndFlowPlan(FlowPlanService<?, ?, ?> flowPlanService, String flowPlanName) {
+        return flowPlanService.removePlan(flowPlanName, systemPluginService.getSystemPluginCoordinates());
+    }
+
+    private <T extends FlowPlan, R extends Flow, S extends FlowSnapshot> R saveFlowPlan(FlowPlanService<T, R, S> flowPlanService, Object input, Class<T> clazz) {
+        T flowPlan = OBJECT_MAPPER.convertValue(input, clazz);
+        flowPlan.setSourcePlugin(systemPluginService.getSystemPluginCoordinates());
+        return flowPlanService.saveFlowPlan(flowPlan);
     }
 }

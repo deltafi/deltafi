@@ -24,6 +24,7 @@ import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.snapshot.types.EnrichFlowSnapshot;
 import org.deltafi.core.types.EnrichFlow;
 import org.deltafi.core.validation.EnrichFlowValidator;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -33,8 +34,8 @@ public class EnrichFlowService extends FlowService<EnrichFlowPlan, EnrichFlow, E
 
     private static final EnrichFlowPlanConverter ENRICH_FLOW_PLAN_CONVERTER = new EnrichFlowPlanConverter();
 
-    public EnrichFlowService(EnrichFlowRepo flowRepo, PluginVariableService pluginVariableService, EnrichFlowValidator enrichFlowValidator) {
-        super("enrich", flowRepo, pluginVariableService, ENRICH_FLOW_PLAN_CONVERTER, enrichFlowValidator);
+    public EnrichFlowService(EnrichFlowRepo flowRepo, PluginVariableService pluginVariableService, EnrichFlowValidator enrichFlowValidator, BuildProperties buildProperties) {
+        super("enrich", flowRepo, pluginVariableService, ENRICH_FLOW_PLAN_CONVERTER, enrichFlowValidator, buildProperties);
     }
 
     @Override

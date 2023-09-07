@@ -34,6 +34,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.info.BuildProperties;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,6 +54,9 @@ class EgressFlowServiceTest {
 
     @Mock
     EgressFlowRepo egressFlowRepo;
+
+    @Mock
+    BuildProperties buildProperties;
 
     @Captor
     ArgumentCaptor<List<EgressFlow>> flowCaptor;

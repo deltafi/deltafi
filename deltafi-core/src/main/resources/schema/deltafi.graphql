@@ -426,7 +426,8 @@ type Mutation {
   acknowledge(dids: [String!]!, reason: String) : [AcknowledgeResult!]!
   cancel(dids: [String!]!) : [CancelResult!]!
 
-  savePluginVariables(pluginVariablesInput: PluginVariablesInput!) : Boolean!
+  savePluginVariables(variables: [VariableInput]!) : Boolean!
+  removePluginVariables: Boolean!
   setPluginVariableValues(pluginCoordinates: PluginCoordinatesInput!, variables: [KeyValueInput!]) : Boolean!
 
   stressTest(flow: String!, contentSize: Int!, numFiles: Int!, metadata: [KeyValueInput!], batchSize: Int) : Int!

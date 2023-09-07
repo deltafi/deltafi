@@ -7,7 +7,7 @@ cli_help_command() {
 Command: load-plans
 
 Usage:
-  load-plans FLOWS_DIRECTORY PLUGIN_GROUP:PLUGIN_ARTIFACT_ID:PLUGIN_VERSION
+  load-plans <plan_or_flows_dir>
   
 Options:
   -h, --help  Show help"
@@ -42,20 +42,18 @@ done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
-[[ ${#ARGS[@]} -lt 3 ]] && cli_help_command
+[[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
+
 
 FLOWS_DIRECTORY=${ARGS[1]}
-if [ ! -d "${FLOWS_DIRECTORY}" ]; then
-  cli_log "${red}${FLOWS_DIRECTORY}: Flows directory not found${normal}"
+if [ ! -e "${FLOWS_DIRECTORY}" ]; then
+    cli_log "${red}${FLOWS_DIRECTORY}: Flow plan or flows directory not found${normal}"
   exit 1
 fi
-FLOWS_DIRECTORY=$(cd ${FLOWS_DIRECTORY} && pwd)
 
-OLDIFS="$IFS"
-IFS=':' PLUGIN_COORDINATES=(${ARGS[2]})
-IFS="${OLDIFS}"
-PLUGIN_ID="{\"groupId\": \"${PLUGIN_COORDINATES[0]}\", \"artifactId\": \"${PLUGIN_COORDINATES[1]}\", \"version\": \"${PLUGIN_COORDINATES[2]}\"}"
-echo ${PLUGIN_ID}
+if [ -d "${FLOWS_DIRECTORY}" ]; then
+  FLOWS_DIRECTORY=$(cd ${FLOWS_DIRECTORY} && pwd)
+fi
 
 DELTAFI_DGS=$(deltafi serviceip deltafi-core-service)
 
@@ -67,11 +65,6 @@ read_file() {
   fi
 
   JSON=$(cat "${FLOW_PLAN_FILE}")
-
-  # add the source plugin info into the JSON if it does not already exist
-  if [ "$( jq 'has("sourcePlugin")' <<< ${JSON} )" == "false" ]; then
-    JSON=$(echo "${JSON}" | jq --argjson json "${PLUGIN_ID}" '. + {sourcePlugin: $json}')
-  fi
 
   echo "${JSON}"
 }
@@ -104,7 +97,7 @@ load_variables() {
   local JSON=$(read_file "${VARIABLES_FILE}")
 
   local VARIABLES="{\"variables\": ${JSON} }"
-  local QUERY="mutation(\$variables: PluginVariablesInput!) { savePluginVariables(pluginVariablesInput: \$variables)}"
+  local QUERY="mutation(\$variables: [VariableInput]!) { savePluginVariables(variables: \$variables)}"
   local POST_QUERY="{ \"query\": \"${QUERY}\",\"variables\":${VARIABLES}}"
 
   MUTATION_RESPONSE=$(execute_graphql "${POST_QUERY}")
@@ -124,7 +117,6 @@ load_plan() {
   local FLOW_PLAN_FILE="$@"
   local BASENAME="$(basename ${FLOW_PLAN_FILE})"
   local JSON=$(read_file "${FLOW_PLAN_FILE}")
-  echo ${JSON}
 
   local VARIABLES="{\"flowPlan\": ${JSON} }"
 
@@ -164,50 +156,24 @@ load_plan() {
   fi
 }
 
-are_actions_registered() {
-  local VARIABLES=$(echo "{}" |  jq --argjson pluginId "${PLUGIN_ID}" '. + {pluginCoordinates: $pluginId}')
-  local QUERY="query(\$pluginCoordinates: PluginCoordinatesInput!) {verifyActionsAreRegistered(pluginCoordinates: \$pluginCoordinates)}"
-  local POST_QUERY="{ \"query\": \"${QUERY}\",\"variables\":${VARIABLES}}"
+cli_log "Loading flow plan(s) and/or variables to the system-plugin"
 
-  QUERY_RESPONSE=$(execute_graphql "${POST_QUERY}")
-  QUERY_RETURN_CODE=$?
-
-  if [[ "${QUERY_RETURN_CODE}" == "0" ]]; then
-    local REGISTERED=$(echo -e "${QUERY_RESPONSE}" | jq -r ".data.verifyActionsAreRegistered")
-    if [[ "${REGISTERED}" == "true" ]]; then
-      return 0
-    fi
+if [[ -d ${FLOWS_DIRECTORY} ]]; then
+  if [[ -f ${FLOWS_DIRECTORY}/variables.json ]]; then
+    load_variables "${FLOWS_DIRECTORY}/variables.json"
   fi
 
-  return 1
-}
-
-wait_for_action_registration() {
-  SECONDS=0
-  until are_actions_registered
-  do
-    if (( ${SECONDS} > 60 )); then
-       PRETTY_PLUGIN_ID=$(jq "(.groupId + \":\" + .artifactId + \":\" + .version)" <<< "${PLUGIN_ID}")
-       cli_log "${yellow}One or more required action schemas are missing for plugin: ${PRETTY_PLUGIN_ID}${normal}"
-       echo -e "${yellow}Warning: This may result in flow errors${normal}"
-       return 1
+  for flowFile in "${FLOWS_DIRECTORY}"/*.json; do
+    if [[ ! "${flowFile}" =~ "variables.json" ]]; then
+      load_plan "$flowFile"
     fi
-
-    sleep 1
   done
-}
-
-cli_log "Loading plugin variables and flow plans ... waiting for required actions to register"
-wait_for_action_registration
-
-if [[ -f ${FLOWS_DIRECTORY}/variables.json ]]; then
-  load_variables "${FLOWS_DIRECTORY}/variables.json"
-fi
-
-for flowFile in "${FLOWS_DIRECTORY}"/*.json; do
-  if [[ ! "${flowFile}" =~ "variables.json" ]]; then
-    load_plan "$flowFile"
+elif [[ -f ${FLOWS_DIRECTORY} ]]; then
+  if [[ "${FLOWS_DIRECTORY}" =~ "variables.json" ]]; then
+    load_variables "${FLOWS_DIRECTORY}"
+  else
+    load_plan "${FLOWS_DIRECTORY}"
   fi
-done
+fi
 
 cleanup

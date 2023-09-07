@@ -102,12 +102,11 @@ public class FlowPlanDatafetcherTestHelper {
     }
 
     public static TransformFlow saveTransformFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
-        EgressActionConfigurationInput egressActionConfigurationInput = EgressActionConfigurationInput.newBuilder().name("egress").actionType("EGRESS").type("org.deltafi.action.Egress").build();
+        EgressActionConfigurationInput egressActionConfigurationInput = EgressActionConfigurationInput.newBuilder().name("egress").type("org.deltafi.action.Egress").build();
         TransformFlowPlanInput input = TransformFlowPlanInput.newBuilder()
                 .name("flowPlan")
                 .type("TRANSFORM")
                 .description("description")
-                .sourcePlugin(PLUGIN_COORDINATES)
                 .egressAction(egressActionConfigurationInput)
                 .build();
 
@@ -115,12 +114,11 @@ public class FlowPlanDatafetcherTestHelper {
     }
 
     public static NormalizeFlow saveNormalizeFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
-        LoadActionConfigurationInput loadActionConfigurationInput = LoadActionConfigurationInput.newBuilder().name("loader").actionType("LOAD").type("org.deltafi.action.Loader").build();
+        LoadActionConfigurationInput loadActionConfigurationInput = LoadActionConfigurationInput.newBuilder().name("loader").type("org.deltafi.action.Loader").build();
         NormalizeFlowPlanInput input = NormalizeFlowPlanInput.newBuilder()
                 .name("flowPlan")
                 .type("INGRESS")
                 .description("description")
-                .sourcePlugin(PLUGIN_COORDINATES)
                 .loadAction(loadActionConfigurationInput)
                 .build();
 
@@ -128,13 +126,12 @@ public class FlowPlanDatafetcherTestHelper {
     }
 
     public static EgressFlow saveEgressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
-        FormatActionConfigurationInput format = FormatActionConfigurationInput.newBuilder().name("format").actionType("FORMAT").type("org.deltafi.actions.Formatter").requiresDomains(List.of("domain")).build();
-        EgressActionConfigurationInput egress = EgressActionConfigurationInput.newBuilder().name("egress").actionType("EGRESS").type("org.deltafi.actions.EgressAction").build();
+        FormatActionConfigurationInput format = FormatActionConfigurationInput.newBuilder().name("format").type("org.deltafi.actions.Formatter").requiresDomains(List.of("domain")).build();
+        EgressActionConfigurationInput egress = EgressActionConfigurationInput.newBuilder().name("egress").type("org.deltafi.actions.EgressAction").build();
         EgressFlowPlanInput input = EgressFlowPlanInput.newBuilder()
                 .name("flowPlan")
                 .type("EGRESS")
                 .description("description")
-                .sourcePlugin(PLUGIN_COORDINATES)
                 .formatAction(format)
                 .egressAction(egress)
                 .build();
@@ -179,8 +176,11 @@ public class FlowPlanDatafetcherTestHelper {
 
     public static boolean savePluginVariables(DgsQueryExecutor dgsQueryExecutor) {
         List<Variable> variableInputs = List.of(Variable.builder().name("var").defaultValue("default").required(false).description("description").dataType(VariableDataType.STRING).build());
-        PluginVariablesInput pluginVariablesInput = PluginVariablesInput.newBuilder().sourcePlugin(PLUGIN_COORDINATES).variables(variableInputs).build();
-        return executeQuery(dgsQueryExecutor, SavePluginVariablesGraphQLQuery.newRequest().pluginVariablesInput(pluginVariablesInput).build());
+        return executeQuery(dgsQueryExecutor, SavePluginVariablesGraphQLQuery.newRequest().variables(variableInputs).build());
+    }
+
+    public static boolean removePluginVariables(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, RemovePluginVariablesGraphQLQuery.newRequest().build());
     }
 
     public static boolean setPluginVariableValues(DgsQueryExecutor dgsQueryExecutor) {

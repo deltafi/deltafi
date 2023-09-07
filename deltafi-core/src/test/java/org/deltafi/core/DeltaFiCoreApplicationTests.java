@@ -21,6 +21,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
+import com.netflix.graphql.dgs.exceptions.QueryException;
 import io.minio.MinioClient;
 import lombok.SneakyThrows;
 import org.deltafi.common.action.ActionEventQueue;
@@ -43,7 +44,9 @@ import org.deltafi.core.generated.client.*;
 import org.deltafi.core.generated.types.ConfigType;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.metrics.MetricService;
+import org.deltafi.core.plugin.PluginRegistryService;
 import org.deltafi.core.plugin.PluginRepository;
+import org.deltafi.core.plugin.SystemPluginService;
 import org.deltafi.core.plugin.deployer.DeployerService;
 import org.deltafi.core.plugin.deployer.credential.CredentialProvider;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
@@ -221,6 +224,9 @@ class DeltaFiCoreApplicationTests {
 
 	@Autowired
 	PluginVariableService pluginVariableService;
+
+	@Autowired
+	SystemPluginService systemPluginService;
 
 	@Autowired
 	ResumePolicyRepo resumePolicyRepo;
@@ -1847,6 +1853,12 @@ class DeltaFiCoreApplicationTests {
 		clearForFlowTests();
 		TransformFlowPlan transformFlowPlan = new TransformFlowPlan("flowPlan", null, null);
 		transformFlowPlanRepo.save(transformFlowPlan);
+		assertThatThrownBy(() -> FlowPlanDatafetcherTestHelper.removeTransformFlowPlan(dgsQueryExecutor))
+				.isInstanceOf(QueryException.class)
+				.hasMessageContaining("Flow plan flowPlan is not a system-plugin flow plan and cannot be removed");
+
+		transformFlowPlan.setSourcePlugin(systemPluginService.getSystemPluginCoordinates());
+		transformFlowPlanRepo.save(transformFlowPlan);
 		assertTrue(FlowPlanDatafetcherTestHelper.removeTransformFlowPlan(dgsQueryExecutor));
 	}
 
@@ -1854,6 +1866,12 @@ class DeltaFiCoreApplicationTests {
 	void testRemoveNormalizeFlowPlan() {
 		clearForFlowTests();
 		NormalizeFlowPlan normalizeFlowPlan = new NormalizeFlowPlan("flowPlan", null, null);
+		normalizeFlowPlanRepo.save(normalizeFlowPlan);
+		assertThatThrownBy(() -> FlowPlanDatafetcherTestHelper.removeNormalizeFlowPlan(dgsQueryExecutor))
+				.isInstanceOf(QueryException.class)
+				.hasMessageContaining("Flow plan flowPlan is not a system-plugin flow plan and cannot be removed");
+
+		normalizeFlowPlan.setSourcePlugin(systemPluginService.getSystemPluginCoordinates());
 		normalizeFlowPlanRepo.save(normalizeFlowPlan);
 		assertTrue(FlowPlanDatafetcherTestHelper.removeNormalizeFlowPlan(dgsQueryExecutor));
 	}
@@ -1863,7 +1881,23 @@ class DeltaFiCoreApplicationTests {
 		clearForFlowTests();
 		EgressFlowPlan egressFlowPlan = new EgressFlowPlan("flowPlan", null, null, null);
 		egressFlowPlanRepo.save(egressFlowPlan);
+		assertThatThrownBy(() -> FlowPlanDatafetcherTestHelper.removeEgressFlowPlan(dgsQueryExecutor))
+				.isInstanceOf(QueryException.class)
+				.hasMessageContaining("Flow plan flowPlan is not a system-plugin flow plan and cannot be removed");
+
+		egressFlowPlan.setSourcePlugin(systemPluginService.getSystemPluginCoordinates());
+		egressFlowPlanRepo.save(egressFlowPlan);
 		assertTrue(FlowPlanDatafetcherTestHelper.removeEgressFlowPlan(dgsQueryExecutor));
+	}
+
+	@Test
+	void testRemovePluginVariables() {
+		clearForFlowTests();
+		PluginCoordinates system = systemPluginService.getSystemPluginCoordinates();
+		List<Variable> variables = List.of(Variable.builder().name("a").dataType(VariableDataType.STRING).value("test").build());
+		pluginVariableService.saveVariables(system, variables);
+		assertTrue(FlowPlanDatafetcherTestHelper.removePluginVariables(dgsQueryExecutor));
+		assertThat(pluginVariableService.getVariablesByPlugin(system)).isEmpty();
 	}
 
 	@Test
@@ -1911,6 +1945,9 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testSavePluginVariables() {
 		assertTrue(FlowPlanDatafetcherTestHelper.savePluginVariables(dgsQueryExecutor));
+		PluginVariables variables = pluginVariableRepo.findById(systemPluginService.getSystemPluginCoordinates()).orElse(null);
+		assertThat(variables).isNotNull();
+		assertThat(variables.getVariables()).hasSize(1).anyMatch(v -> v.getName().equals("var"));
 	}
 
 	@Test

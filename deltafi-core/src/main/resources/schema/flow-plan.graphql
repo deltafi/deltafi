@@ -67,7 +67,6 @@ input NormalizeFlowPlanInput {
   name: String!
   type: String!
   description: String!
-  sourcePlugin: PluginCoordinatesInput!
   transformActions: [TransformActionConfigurationInput]
   loadAction: LoadActionConfigurationInput
 }
@@ -85,7 +84,6 @@ input EnrichFlowPlanInput {
   name: String!
   type: String!
   description: String!
-  sourcePlugin: PluginCoordinatesInput!
   domainActions: [DomainActionConfigurationInput]
   enrichActions: [EnrichActionConfigurationInput]
 }
@@ -106,7 +104,6 @@ input EgressFlowPlanInput {
   name: String!
   type: String!
   description: String!
-  sourcePlugin: PluginCoordinatesInput!
   includeNormalizeFlows: [String]
   excludeNormalizeFlows: [String]
   formatAction: FormatActionConfigurationInput!
@@ -127,7 +124,6 @@ input TransformFlowPlanInput {
   name: String!
   type: String!
   description: String!
-  sourcePlugin: PluginCoordinatesInput!
   transformActions: [TransformActionConfigurationInput!]
   egressAction: EgressActionConfigurationInput!
 }

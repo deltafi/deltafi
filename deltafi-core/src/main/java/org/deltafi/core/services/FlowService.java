@@ -34,6 +34,7 @@ import org.deltafi.core.types.ConfigType;
 import org.deltafi.core.types.Flow;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.validation.FlowValidator;
+import org.springframework.boot.info.BuildProperties;
 
 import java.util.*;
 import java.util.function.Function;
@@ -47,19 +48,22 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     private final String flowType;
     private final FlowPlanConverter<FlowPlanT, FlowT> flowPlanConverter;
     private final FlowValidator<FlowT> validator;
-    
+    private final BuildProperties buildProperties;
+
     protected volatile Map<String, FlowT> flowCache = Collections.emptyMap();
 
-    protected FlowService(String flowType, FlowRepo<FlowT> flowRepo, PluginVariableService pluginVariableService, FlowPlanConverter<FlowPlanT, FlowT> flowPlanConverter, FlowValidator<FlowT> validator) {
+    protected FlowService(String flowType, FlowRepo<FlowT> flowRepo, PluginVariableService pluginVariableService, FlowPlanConverter<FlowPlanT, FlowT> flowPlanConverter, FlowValidator<FlowT> validator, BuildProperties buildProperties) {
         this.flowType = flowType;
         this.flowRepo = flowRepo;
         this.pluginVariableService = pluginVariableService;
         this.flowPlanConverter = flowPlanConverter;
         this.validator = validator;
+        this.buildProperties = buildProperties;
     }
 
     @PostConstruct
     public synchronized void refreshCache() {
+        flowRepo.updateSystemPluginFlowVersions(buildProperties.getVersion());
         flowCache = flowRepo.findAll().stream()
                 .map(this::migrate)
                 .collect(Collectors.toMap(Flow::getName, Function.identity()));
@@ -366,8 +370,14 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
      *
      * @param flowName name of the flow to remove
      */
-    public void removeByName(String flowName) {
-        if (flowRepo.existsById(flowName)) {
+    public void removeByName(String flowName, PluginCoordinates systemPlugin) {
+        FlowT flow = flowRepo.findById(flowName).orElse(null);
+        if (flow != null) {
+            if (flow.isRunning()) {
+                throw new IllegalStateException("Flow " + flowName + " cannot be removed while it is running");
+            } else if(!systemPlugin.equalsIgnoreVersion(flow.getSourcePlugin())) {
+                throw new IllegalArgumentException("Flow " + flowName + " is not a " + systemPlugin.getArtifactId() + " flow and cannot be removed");
+            }
             flowRepo.deleteById(flowName);
             refreshCache();
         }

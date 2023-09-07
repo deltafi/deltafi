@@ -22,9 +22,13 @@ import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.types.Flow;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
+import org.springframework.data.mongodb.repository.Update;
 import org.springframework.data.repository.NoRepositoryBean;
 
 import java.util.List;
+
+import static org.deltafi.core.plugin.SystemPluginService.SYSTEM_PLUGIN_ARTIFACT_ID;
+import static org.deltafi.core.plugin.SystemPluginService.SYSTEM_PLUGIN_GROUP_ID;
 
 @NoRepositoryBean
 public interface FlowRepo<T extends Flow> extends MongoRepository<T, String>, FlowRepoCustom<T> {
@@ -52,4 +56,12 @@ public interface FlowRepo<T extends Flow> extends MongoRepository<T, String>, Fl
      * @return list of flows with the given flow state
      */
     List<T> findByFlowStatusState(FlowState state);
+
+    /**
+     * Update the system-plugin flows sourcePlugin version to the current running version
+     * @param version current running version
+     */
+    @Query("{ 'sourcePlugin.groupId': '" + SYSTEM_PLUGIN_GROUP_ID + "', 'sourcePlugin.artifactId': '" + SYSTEM_PLUGIN_ARTIFACT_ID + "'}")
+    @Update("{ '$set' : { 'sourcePlugin.version' : ?0 } }")
+    void updateSystemPluginFlowVersions(String version);
 }

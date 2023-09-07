@@ -34,8 +34,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.info.BuildProperties;
 
 import java.util.Collection;
 import java.util.List;
@@ -91,16 +91,18 @@ class PluginRegistryServiceTest {
     @Mock
     ActionEventQueuePluginCleaner actionEventQueuePluginCleaner;
 
+    @Mock
+    SystemPluginService systemPluginService;
+
     PluginRegistryService pluginRegistryService;
 
     @BeforeEach
     public void setup() {
-        MockitoAnnotations.openMocks(this);
         List<PluginCleaner> cleaners = List.of(normalizeFlowPlanService, enrichFlowPlanService, egressFlowPlanService, transformFlowPlanService, pluginVariableService, actionDescriptorService, actionEventQueuePluginCleaner);
         List<PluginUninstallCheck> checkers = List.of(normalizeFlowService, enrichFlowService, egressFlowService, transformFlowService);
         pluginRegistryService = new PluginRegistryService(normalizeFlowService, enrichFlowService, egressFlowService,
                 transformFlowService, pluginRepository, pluginValidator, actionDescriptorService, pluginVariableService,
-                normalizeFlowPlanService, enrichFlowPlanService, egressFlowPlanService, transformFlowPlanService, checkers, cleaners);
+                normalizeFlowPlanService, enrichFlowPlanService, egressFlowPlanService, transformFlowPlanService, systemPluginService, checkers, cleaners);
     }
 
     @Test

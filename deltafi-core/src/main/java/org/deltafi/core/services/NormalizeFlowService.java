@@ -21,12 +21,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.NormalizeFlowPlan;
 import org.deltafi.core.converters.NormalizeFlowPlanConverter;
 import org.deltafi.core.generated.types.IngressFlowErrorState;
+import org.deltafi.core.plugin.SystemPluginService;
 import org.deltafi.core.repo.NormalizeFlowRepo;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.snapshot.types.NormalizeFlowSnapshot;
 import org.deltafi.core.types.NormalizeFlow;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.validation.NormalizeFlowValidator;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -42,8 +44,8 @@ public class NormalizeFlowService extends FlowService<NormalizeFlowPlan, Normali
 
     private final ErrorCountService errorCountService;
 
-    public NormalizeFlowService(NormalizeFlowRepo normalizeFlowRepo, PluginVariableService pluginVariableService, NormalizeFlowValidator normalizeFlowValidator, ErrorCountService errorCountService) {
-        super("normalize", normalizeFlowRepo, pluginVariableService, NORMALIZE_FLOW_PLAN_CONVERTER, normalizeFlowValidator);
+    public NormalizeFlowService(NormalizeFlowRepo normalizeFlowRepo, PluginVariableService pluginVariableService, NormalizeFlowValidator normalizeFlowValidator, ErrorCountService errorCountService, BuildProperties buildProperties) {
+        super("normalize", normalizeFlowRepo, pluginVariableService, NORMALIZE_FLOW_PLAN_CONVERTER, normalizeFlowValidator, buildProperties);
 
         this.errorCountService = errorCountService;
     }

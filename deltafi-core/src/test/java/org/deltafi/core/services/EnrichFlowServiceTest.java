@@ -34,6 +34,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.info.BuildProperties;
 
 import java.util.List;
 import java.util.Map;
@@ -51,6 +52,9 @@ class EnrichFlowServiceTest {
 
     @Mock
     EnrichFlowRepo enrichFlowRepo;
+
+    @Mock
+    BuildProperties buildProperties;
 
     @Captor
     ArgumentCaptor<List<EnrichFlow>> flowCaptor;

@@ -22,11 +22,12 @@ import org.deltafi.core.repo.NormalizeFlowPlanRepo;
 import org.deltafi.core.snapshot.types.NormalizeFlowSnapshot;
 import org.deltafi.core.types.NormalizeFlow;
 import org.deltafi.core.validation.NormalizeFlowPlanValidator;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
 @Service
 public class NormalizeFlowPlanService extends FlowPlanService<NormalizeFlowPlan, NormalizeFlow, NormalizeFlowSnapshot> {
-    public NormalizeFlowPlanService(NormalizeFlowPlanValidator normalizeFlowPlanValidator, NormalizeFlowPlanRepo flowPlanRepo, NormalizeFlowService flowService) {
-        super(normalizeFlowPlanValidator, flowPlanRepo, flowService);
+    public NormalizeFlowPlanService(NormalizeFlowPlanValidator normalizeFlowPlanValidator, NormalizeFlowPlanRepo flowPlanRepo, NormalizeFlowService flowService, BuildProperties buildProperties) {
+        super(normalizeFlowPlanValidator, flowPlanRepo, flowService, buildProperties);
     }
 }

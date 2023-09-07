@@ -22,11 +22,12 @@ import org.deltafi.core.repo.TransformFlowPlanRepo;
 import org.deltafi.core.snapshot.types.TransformFlowSnapshot;
 import org.deltafi.core.types.TransformFlow;
 import org.deltafi.core.validation.TransformFlowPlanValidator;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
 @Service
 public class TransformFlowPlanService extends FlowPlanService<TransformFlowPlan, TransformFlow, TransformFlowSnapshot> {
-    public TransformFlowPlanService(TransformFlowPlanValidator transformFlowPlanValidator, TransformFlowPlanRepo flowPlanRepo, TransformFlowService flowService) {
-        super(transformFlowPlanValidator, flowPlanRepo, flowService);
+    public TransformFlowPlanService(TransformFlowPlanValidator transformFlowPlanValidator, TransformFlowPlanRepo flowPlanRepo, TransformFlowService flowService, BuildProperties buildProperties) {
+        super(transformFlowPlanValidator, flowPlanRepo, flowService, buildProperties);
     }
 }

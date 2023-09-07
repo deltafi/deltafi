@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
+import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import org.deltafi.common.types.FlowPlan;
 import org.deltafi.common.types.PluginCoordinates;
@@ -35,6 +36,7 @@ import org.deltafi.core.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.snapshot.Snapshotter;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.validation.FlowPlanValidator;
+import org.springframework.boot.info.BuildProperties;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,6 +54,12 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
     private final FlowPlanValidator<FlowPlanT> flowPlanValidator;
     private final FlowPlanRepo<FlowPlanT> flowPlanRepo;
     private final FlowService<FlowPlanT, FlowT, FlowSnapshotT> flowService;
+    private final BuildProperties buildProperties;
+
+    @PostConstruct
+    public void updateSystemPluginFlowPlans() {
+        flowPlanRepo.updateSystemPluginFlowPlanVersions(buildProperties.getVersion());
+    }
 
     /**
      * Save the given list of flow plans. Find and remove any flow plans for the
@@ -153,9 +161,14 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
      * @param flowPlanName name of the flow plan to remove
      * @return true if the flow plan was removed otherwise false
      */
-    public boolean removePlan(String flowPlanName) {
-        flowService.removeByName(flowPlanName);
-        if (flowPlanRepo.existsById(flowPlanName)) {
+    public boolean removePlan(String flowPlanName, PluginCoordinates systemPlugin) {
+        FlowPlanT flowPlanT = flowPlanRepo.findById(flowPlanName).orElse(null);
+        if (flowPlanT != null && !systemPlugin.equalsIgnoreVersion(flowPlanT.getSourcePlugin())) {
+            throw new IllegalArgumentException("Flow plan " + flowPlanName + " is not a " + systemPlugin.getArtifactId() + " flow plan and cannot be removed");
+        }
+
+        flowService.removeByName(flowPlanName, systemPlugin);
+        if (flowPlanT != null) {
             flowPlanRepo.deleteById(flowPlanName);
             return true;
         }

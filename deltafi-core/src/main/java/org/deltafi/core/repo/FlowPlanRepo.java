@@ -21,12 +21,17 @@ import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.FlowPlan;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
+import org.springframework.data.mongodb.repository.Update;
 import org.springframework.data.repository.NoRepositoryBean;
 
 import java.util.List;
 
+import static org.deltafi.core.plugin.SystemPluginService.SYSTEM_PLUGIN_ARTIFACT_ID;
+import static org.deltafi.core.plugin.SystemPluginService.SYSTEM_PLUGIN_GROUP_ID;
+
 @NoRepositoryBean
 public interface FlowPlanRepo<T extends FlowPlan> extends MongoRepository<T, String> {
+
     /**
      * Delete any flow plans where the source plugin matches the plugin coordinates
      * @param pluginCoordinates the plugin coordinates to match
@@ -49,4 +54,12 @@ public interface FlowPlanRepo<T extends FlowPlan> extends MongoRepository<T, Str
      */
     @Query("{ 'sourcePlugin.groupId': ?0, 'sourcePlugin.artifactId': ?1 }")
     List<T> findByGroupIdAndArtifactId(String groupId, String artifactId);
+
+    /**
+     * Update the system-plugin flow plans sourcePlugin version to the current running version
+     * @param version current running version
+     */
+    @Query("{ 'sourcePlugin.groupId': '" + SYSTEM_PLUGIN_GROUP_ID + "', 'sourcePlugin.artifactId': '" + SYSTEM_PLUGIN_ARTIFACT_ID + "'}")
+    @Update("{ '$set' : { 'sourcePlugin.version' : ?0 } }")
+    void updateSystemPluginFlowPlanVersions(String version);
 }

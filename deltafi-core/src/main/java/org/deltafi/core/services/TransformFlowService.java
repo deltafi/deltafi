@@ -28,6 +28,7 @@ import org.deltafi.core.types.Flow;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.types.TransformFlow;
 import org.deltafi.core.validation.TransformFlowValidator;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -44,8 +45,8 @@ public class TransformFlowService extends FlowService<TransformFlowPlan, Transfo
 
     private final ErrorCountService errorCountService;
 
-    public TransformFlowService(TransformFlowRepo transformFlowRepo, PluginVariableService pluginVariableService, TransformFlowValidator transformFlowValidator, ErrorCountService errorCountService) {
-        super("transform", transformFlowRepo, pluginVariableService, TRANSFORM_FLOW_PLAN_CONVERTER, transformFlowValidator);
+    public TransformFlowService(TransformFlowRepo transformFlowRepo, PluginVariableService pluginVariableService, TransformFlowValidator transformFlowValidator, ErrorCountService errorCountService, BuildProperties buildProperties) {
+        super("transform", transformFlowRepo, pluginVariableService, TRANSFORM_FLOW_PLAN_CONVERTER, transformFlowValidator, buildProperties);
 
         this.errorCountService = errorCountService;
     }

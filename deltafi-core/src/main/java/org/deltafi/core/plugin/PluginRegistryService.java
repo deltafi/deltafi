@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.plugin;
 
+import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.*;
@@ -48,9 +49,16 @@ public class PluginRegistryService implements Snapshotter {
     private final EnrichFlowPlanService enrichFlowPlanService;
     private final EgressFlowPlanService egressFlowPlanService;
     private final TransformFlowPlanService transformFlowPlanService;
-
+    private final SystemPluginService systemPluginService;
     private final List<PluginUninstallCheck> pluginUninstallChecks;
     private final List<PluginCleaner> pluginCleaners;
+
+    @PostConstruct
+    public void createSystemPlugin() {
+        Plugin systemPlugin = systemPluginService.getSystemPlugin();
+        pluginRepository.deleteOlderVersions(systemPlugin.getPluginCoordinates().getGroupId(), systemPlugin.getPluginCoordinates().getArtifactId());
+        pluginRepository.save(systemPlugin);
+    }
 
     public Result register(PluginRegistration pluginRegistration) {
         log.info("{}", pluginRegistration);

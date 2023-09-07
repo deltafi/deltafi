@@ -27,6 +27,7 @@ import org.deltafi.core.snapshot.types.EgressFlowSnapshot;
 import org.deltafi.core.types.EgressFlow;
 
 import org.deltafi.core.validation.EgressFlowValidator;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -39,8 +40,8 @@ public class EgressFlowService extends FlowService<EgressFlowPlan, EgressFlow, E
 
     private static final EgressFlowPlanConverter EGRESS_FLOW_PLAN_CONVERTER = new EgressFlowPlanConverter();
 
-    public EgressFlowService(EgressFlowRepo flowRepo, PluginVariableService pluginVariableService, EgressFlowValidator egressFlowValidator) {
-        super("egress", flowRepo, pluginVariableService, EGRESS_FLOW_PLAN_CONVERTER, egressFlowValidator);
+    public EgressFlowService(EgressFlowRepo flowRepo, PluginVariableService pluginVariableService, EgressFlowValidator egressFlowValidator, BuildProperties buildProperties) {
+        super("egress", flowRepo, pluginVariableService, EGRESS_FLOW_PLAN_CONVERTER, egressFlowValidator, buildProperties);
     }
 
     public List<EgressFlow> getMatchingFlows(String egressFlow) {
