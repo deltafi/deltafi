@@ -361,8 +361,8 @@ const updateHelperButtons = () => {
       to: new Date(),
     },
   ];
-  helperButtons.value.length = 0
-  buttons.forEach((button) => helperButtons.value.push(button))
+  helperButtons.value.length = 0;
+  buttons.forEach((button) => helperButtons.value.push(button));
 };
 const timestampFormat = "YYYY-MM-DD HH:mm:ss";
 const defaultStartTimeDate = computed(() => {
@@ -614,7 +614,7 @@ const decodePersistedParams = (obj) =>
     if (["startTimeDate", "endTimeDate"].includes(k)) {
       r[k] = isoStringToDate(v);
     } else if (["egressed", "filtered", "testMode", "replayable", "terminalStage", "pendingAnnotations"].includes(k)) {
-      r[k] = Boolean(v);
+      r[k] = JSON.parse(v);
     } else if (["requeueMin", "sizeMin", "sizeMax", "perPage"].includes(k)) {
       r[k] = Number(v);
     } else if (["ingressFlows", "egressFlows"].includes(k)) {
