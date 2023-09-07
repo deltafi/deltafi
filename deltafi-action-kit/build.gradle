@@ -9,6 +9,8 @@ description = 'DeltaFi Action Kit - Action implementation SDK for DeltaFi action
 license {
     header(rootProject.file('HEADER'))
     excludes(excludeFromLicense)
+    strictCheck true
+    mapping('java', 'SLASHSTAR_STYLE')
 }
 
 dependencies {

@@ -10,6 +10,8 @@ license {
     header(rootProject.file('HEADER'))
     excludes(excludeFromLicense)
     exclude("OrgDeltafiPluginConventionPlugin.java")
+    strictCheck true
+    mapping('java', 'SLASHSTAR_STYLE')
 }
 
 dependencies {

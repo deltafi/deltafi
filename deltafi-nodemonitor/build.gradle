@@ -10,6 +10,8 @@ plugins {
 license {
     header(rootProject.file('HEADER'))
     excludes(excludeFromLicense)
+    strictCheck true
+    mapping('java', 'SLASHSTAR_STYLE')
 }
 
 docker {
