@@ -19,6 +19,7 @@
 # frozen_string_literal: true
 
 $LOAD_PATH.unshift File.expand_path(File.join(File.dirname(__FILE__), 'lib'))
+$LOAD_PATH.unshift File.expand_path(File.join(File.dirname(__FILE__), 'models'))
 
 require 'sinatra'
 require 'sinatra/quiet_logger'
@@ -65,32 +66,6 @@ class AuthApi < Sinatra::Application
   end
 
   %w[lib helpers models routes].each { |dir| Dir.glob("./#{dir}/*.rb").sort.each(&method(:require)) }
-
-  # Default users and roles
-  if Role.count.zero?
-    Role.new(name: 'Admin', permissions: %w[Admin]).save
-    Role.new(name: 'Ingress Only', permissions: %w[DeltaFileIngress]).save
-    Role.new(name: 'Read Only', permissions: %w[
-               DashboardView
-               DeletePolicyRead
-               DeltaFileContentView
-               DeltaFileMetadataView
-               EventRead
-               FlowView
-               IngressRoutingRuleRead
-               MetricsView
-               PluginCustomizationConfigView
-               PluginImageRepoView
-               PluginsView
-               SnapshotRead
-               StatusView
-               SystemPropertiesRead
-               UIAccess
-               VersionsView
-             ]).save
-  end
-
-  User.new(name: 'Admin', username: 'admin', role_ids: [1]).save if User.count.zero?
 
   error JSON::ParserError do
     { error: 'Error parsing JSON' }.to_json

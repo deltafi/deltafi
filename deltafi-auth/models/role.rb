@@ -18,6 +18,8 @@
 
 # frozen_string_literal: true
 
+require 'permission'
+
 class Role < Sequel::Model
   many_to_many :users
 
