@@ -10,10 +10,10 @@ stages:
 default:
   timeout: 45m
 
-image: deltafi/deltafi-build:jdk17-2
+image: deltafi/deltafi-build:jdk17-python3-0
 
 .gradle:
-  image: deltafi/deltafi-build:jdk17-2
+  image: deltafi/deltafi-build:jdk17-python3-0
   variables:
     GRADLE_USER_HOME: /cache/.gradle
     GRADLE_OPTS: "-Dorg.gradle.daemon=false"
@@ -156,7 +156,7 @@ publish:docs:
       - tags
       - dev
       - main
-  image: deltafi/deltafi-build:jdk17-2
+  image: deltafi/deltafi-build:jdk17-python3-0
   before_script:
     - apt update
     - apt-get install -y python3-pip
@@ -172,7 +172,7 @@ publish:docs:
     - .publish
   rules:
     - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE != 'deltafi'
-  image: deltafi/deltafi-build:jdk17-2
+  image: deltafi/deltafi-build:jdk17-python3-0
   before_script:
     - apt update
     - apt-get install -y python3-pip

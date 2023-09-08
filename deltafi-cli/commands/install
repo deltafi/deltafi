@@ -138,12 +138,14 @@ _k8s_install() {
   if [[ -n "${ORIG_CORE_POD}" ]]; then
     _pre_upgrade_tasks
   fi
+  cli_log "Starting helmchart upgrade"
   helm upgrade --install --wait \
     --values $DELTAFICLI_CHART_PATH/values.yaml \
     --namespace $DELTAFICLI_K8S_NAMESPACE $DELTAFICLI_PROJECT_NAME $DELTAFICLI_CHART_PATH \
     --create-namespace --timeout 10m ${ARGS[@]:1}
   HELM_RETURN_CODE=$?
   [[ "$HELM_RETURN_CODE" != "0" ]] && exit $HELM_RETURN_CODE
+  cli_log "Helmchart upgrade complete"
 
   _run_migrations
 }
@@ -168,6 +170,7 @@ _pre_upgrade_tasks() {
   deltafi event create -q -s "cli" --success --notification "$message"
   snapshot_file="pre-upgrade-to-${version}-$(date +%s).json"
   deltafi system-snapshot create "$message" > "${snapshot_file}"
+  cli_log "Snapshot complete"
 }
 
 _run_migrations() {
