@@ -41,7 +41,7 @@ dependencies {
     implementation project(':deltafi-action-kit')
     implementation project(':deltafi-common-test')
 
-    implementation "org.assertj:assertj-core"
+    api "org.assertj:assertj-core"
 
     implementation "org.mockito:mockito-junit-jupiter:${mockitoJupiterVersion}"
     implementation "org.junit.jupiter:junit-jupiter-api:${jupiterVersion}"

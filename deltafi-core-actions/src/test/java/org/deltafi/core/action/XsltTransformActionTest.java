@@ -21,8 +21,9 @@ import org.assertj.core.api.Assertions;
 import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.transform.TransformInput;
+import org.deltafi.common.types.ActionContext;
 import org.deltafi.core.parameters.XsltParameters;
-import org.deltafi.test.action.transform.TransformActionTest;
+import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -30,9 +31,11 @@ import java.util.List;
 import static org.deltafi.test.asserters.ActionResultAssertions.assertErrorResult;
 import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformResult;
 
-class XsltTransformActionTest extends TransformActionTest {
-
+class XsltTransformActionTest {
+    
     XsltTransformAction action = new XsltTransformAction();
+    DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action);
+    ActionContext context = runner.actionContext();
 
     @Test
     void testXsltTransformWithMatchingFilters() {
@@ -41,7 +44,7 @@ class XsltTransformActionTest extends TransformActionTest {
         params.setFilePatterns(List.of("example.*"));
 
         TransformInput input = createInput();
-        ResultType result = action.transform(context(), params, input);
+        ResultType result = action.transform(context, params, input);
 
         assertTransformResult(result)
                 .hasContentCount(1)
@@ -54,7 +57,7 @@ class XsltTransformActionTest extends TransformActionTest {
         params.setContentIndexes(List.of(1));
 
         TransformInput input = createInput();
-        ResultType result = action.transform(context(), params, input);
+        ResultType result = action.transform(context, params, input);
 
         assertTransformResult(result)
                 .hasContentCount(1)
@@ -73,7 +76,7 @@ class XsltTransformActionTest extends TransformActionTest {
         params.setXslt("INVALID");
 
         TransformInput input = createInput();
-        assertErrorResult(action.transform(context(), params, input))
+        assertErrorResult(action.transform(context, params, input))
                 .hasCause("Error parsing XSLT");
     }
 
@@ -82,7 +85,7 @@ class XsltTransformActionTest extends TransformActionTest {
         XsltParameters params = createParameters();
 
         TransformInput input = createBadInput();
-        assertErrorResult(action.transform(context(), params, input))
+        assertErrorResult(action.transform(context, params, input))
                 .hasCause("Error transforming content at index 0");
     }
 
@@ -109,12 +112,12 @@ class XsltTransformActionTest extends TransformActionTest {
     }
 
     private TransformInput createInput() {
-        List<ActionContent> content = List.of(ActionContent.saveContent(context(), "<original>value</original>", "example.xml", "application/xml"));
-        return TransformInput.builder().content(content).build();
+        ActionContent content = runner.saveContent("<original>value</original>", "example.xml", "application/xml");
+        return TransformInput.builder().content(List.of(content)).build();
     }
 
     private TransformInput createBadInput() {
-        List<ActionContent> content = List.of(ActionContent.saveContent(context(), "INVALID", "example.xml", "application/xml"));
-        return TransformInput.builder().content(content).build();
+        ActionContent content = runner.saveContent("INVALID", "example.xml", "application/xml");
+        return TransformInput.builder().content(List.of(content)).build();
     }
 }

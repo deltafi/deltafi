@@ -21,19 +21,15 @@ import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.actionkit.action.transform.TransformResultType;
-import org.deltafi.test.action.transform.TransformActionTest;
 import org.deltafi.test.asserters.ContentAssert;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
 
 import static org.deltafi.test.asserters.ActionResultAssertions.*;
 
-@ExtendWith(MockitoExtension.class)
-class DetectMediaTypeTransformActionTest extends TransformActionTest {
+class DetectMediaTypeTransformActionTest {
 
     DetectMediaTypeTransformAction action = new DetectMediaTypeTransformAction();
     DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action, "DetectMediaTypeTransformActionTest");

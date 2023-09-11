@@ -19,8 +19,20 @@ package org.deltafi.test.asserters;
 
 import org.deltafi.actionkit.action.domain.DomainResult;
 
+/**
+ * Assertions for DomainResults
+ */
 public class DomainResultAssert extends AnnotationResultAssert<DomainResultAssert, DomainResult> {
     public DomainResultAssert(DomainResult domainResult) {
         super(domainResult, DomainResultAssert.class);
+    }
+
+    /**
+     * Create a new DomainResultAssert with the given result
+     * @param domainResult to validate
+     * @return a new DomainResultAssert
+     */
+    public static DomainResultAssert assertThat(DomainResult domainResult) {
+        return new DomainResultAssert(domainResult);
     }
 }

@@ -21,8 +21,8 @@ import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.actionkit.action.transform.TransformResult;
+import org.deltafi.common.types.ActionContext;
 import org.deltafi.core.parameters.ModifyMediaTypeParameters;
-import org.deltafi.test.action.transform.TransformActionTest;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
 
@@ -33,10 +33,11 @@ import static org.deltafi.test.asserters.ActionResultAssertions.assertErrorResul
 import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformResult;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class ModifyMediaTypeTransformActionTest extends TransformActionTest {
+class ModifyMediaTypeTransformActionTest {
 
     ModifyMediaTypeTransformAction action = new ModifyMediaTypeTransformAction();
     DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action);
+    ActionContext context = runner.actionContext();
 
     @Test
     void testTransform() {
@@ -47,12 +48,12 @@ class ModifyMediaTypeTransformActionTest extends TransformActionTest {
 
         TransformInput input = TransformInput.builder()
                 .content(List.of(
-                        ActionContent.emptyContent(context(), "file1.jpg", "image/jpeg"),
-                        ActionContent.emptyContent(context(), "file2.mp4", "video/mp4"),
-                        ActionContent.emptyContent(context(), "file3.png", "image/png")))
+                        runner.saveEmptyContent("file1.jpg", "image/jpeg"),
+                        runner.saveEmptyContent("file2.mp4", "video/mp4"),
+                        runner.saveEmptyContent("file3.png", "image/png")))
                 .build();
 
-        ResultType result = action.transform(runner.actionContext(), params, input);
+        ResultType result = action.transform(context, params, input);
 
         assertTransformResult(result);
         TransformResult transformResult = (TransformResult) result;
@@ -69,10 +70,10 @@ class ModifyMediaTypeTransformActionTest extends TransformActionTest {
         params.setErrorOnMissingIndex(true);
 
         TransformInput input = TransformInput.builder()
-                .content(List.of(ActionContent.emptyContent(context(),"file1.jpg", "image/jpeg")))
+                .content(List.of(runner.saveEmptyContent("file1.jpg", "image/jpeg")))
                 .build();
 
-        ResultType result = action.transform(runner.actionContext(), params, input);
+        ResultType result = action.transform(context, params, input);
         assertErrorResult(result);
     }
 }

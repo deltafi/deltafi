@@ -25,23 +25,52 @@ import java.nio.charset.Charset;
 import java.util.List;
 import java.util.function.Predicate;
 
+/**
+ * Assertions for FormatManyResults
+ */
 public class FormatManyResultAssert extends ResultAssert<FormatManyResultAssert, FormatManyResult> {
     public FormatManyResultAssert(FormatManyResult formatManyResult) {
         super(formatManyResult, FormatManyResultAssert.class);
     }
 
+    /**
+     * Create a new FormatManyResultAssert with the given result
+     * @param formatManyResult to validate
+     * @return a new FormatManyResultAssert
+     */
+    public static FormatManyResultAssert assertThat(FormatManyResult formatManyResult) {
+        return new FormatManyResultAssert(formatManyResult);
+    }
+
+    /**
+     * Verify that at least one child FormatResult in the results childFormatResult list
+     * satisfies the given predicate
+     * @param childMatcher predicate used to find the matching child
+     * @return this
+     */
     public FormatManyResultAssert hasChildMatching(Predicate<FormatResult> childMatcher) {
         isNotNull();
         Assertions.assertThat(actual.getChildFormatResults()).anyMatch(childMatcher);
         return this;
     }
 
+    /**
+     * Verify that the childFormatResult list has a size equal to the given count
+     * @param count expected size
+     * @return this
+     */
     public FormatManyResultAssert hasChildrenSize(int count) {
         isNotNull();
         Assertions.assertThat(actual.getChildFormatResults()).hasSize(count);
         return this;
     }
 
+    /**
+     * Load the formatted content as bytes from each child result and put the byte arrays in a list.
+     * Verify that list is equal to the list in the values parameter.
+     * @param values list containing the expected formatted content bytes from each child result
+     * @return this
+     */
     public FormatManyResultAssert hasFormattedContentEqualToBytes(List<byte[]> values) {
         if (values == null) {
             Assertions.assertThat(actual.getChildFormatResults()).isNull();
@@ -54,10 +83,22 @@ public class FormatManyResultAssert extends ResultAssert<FormatManyResultAssert,
         return this;
     }
 
+    /**
+     * Load the formatted content as strings using the {@code Charset.defaultCharset()} from each child result and put the strings in a list.
+     * Verify that list is equal to the list in the values parameter.
+     * @param values list containing the expected formatted content string from each child result
+     * @return this
+     */
     public FormatManyResultAssert hasFormattedContentEqualTo(List<String> values) {
         return this.hasFormattedContentEqualTo(values, Charset.defaultCharset());
     }
 
+    /**
+     * Load the formatted content as strings using the given charset from each child result and put the strings in a list.
+     * Verify that list is equal to the list in the values parameter.
+     * @param values list containing the expected formatted content string from each child result
+     * @return this
+     */
     public FormatManyResultAssert hasFormattedContentEqualTo(List<String> values, Charset charset) {
         if (values == null) {
             Assertions.assertThat(actual.getChildFormatResults()).isNull();

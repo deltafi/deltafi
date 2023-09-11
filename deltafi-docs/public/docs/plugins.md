@@ -270,3 +270,8 @@ Plugin([MyLoadAction, MyTransformAction],
 ## Flows
 
 Flows may be defined for a Plugin. See [Flows](/flows).
+
+
+## Testing Plugin Actions
+
+Java based actions can be tested with standard unit tests along with the helpers in the `deltafi-action-kit-test` dependency. See [Java Unit Testing](/unit-test) 

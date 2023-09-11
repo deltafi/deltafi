@@ -94,8 +94,8 @@ class RestPostEgressActionTest {
     }
 
     @Test
-    public void execute() throws IOException, ObjectStorageException {
-        when(contentStorageService.load(eq(CONTENT))).thenReturn(new ByteArrayInputStream(DATA));
+    void execute() throws IOException, ObjectStorageException {
+        when(contentStorageService.load(CONTENT)).thenReturn(new ByteArrayInputStream(DATA));
         EgressResultType result = runTest(200, "good job", 1);
 
         assertTrue(result instanceof EgressResult);
@@ -174,15 +174,15 @@ class RestPostEgressActionTest {
     }
 
     @Test
-    public void closingInputStreamThrowsIoException() throws IOException, ObjectStorageException {
-        when(contentStorageService.load(eq(CONTENT))).thenReturn(new TestInputStream(DATA));
+    void closingInputStreamThrowsIoException() throws IOException, ObjectStorageException {
+        when(contentStorageService.load(CONTENT)).thenReturn(new TestInputStream(DATA));
         EgressResultType result = runTest(200, "good job", 1);
         assertTrue(result instanceof EgressResult);
     }
 
     @Test
-    public void badResponse() throws IOException, ObjectStorageException {
-        when(contentStorageService.load(eq(CONTENT))).thenReturn(new ByteArrayInputStream(DATA));
+    void badResponse() throws IOException, ObjectStorageException {
+        when(contentStorageService.load(CONTENT)).thenReturn(new ByteArrayInputStream(DATA));
         EgressResultType result = runTest(500, "uh oh", 4);
 
         assertTrue(result instanceof ErrorResult);
@@ -191,8 +191,8 @@ class RestPostEgressActionTest {
     }
 
     @Test
-    public void badPost() throws IOException, ObjectStorageException {
-        when(contentStorageService.load(eq(CONTENT))).thenReturn(new ByteArrayInputStream(DATA));
+    void badPost() throws IOException, ObjectStorageException {
+        when(contentStorageService.load(CONTENT)).thenReturn(new ByteArrayInputStream(DATA));
         EgressResultType result = runTest(-1, "uh oh", 4);
 
         assertTrue(result instanceof ErrorResult);

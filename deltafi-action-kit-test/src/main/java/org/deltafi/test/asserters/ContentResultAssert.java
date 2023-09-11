@@ -26,18 +26,36 @@ import java.nio.charset.Charset;
 import java.util.List;
 import java.util.function.Predicate;
 
+/**
+ * Base class that provides assertions on the list of content in a result
+ * @param <A> The class that extended this
+ * @param <T> The expected result type
+ */
 public abstract class ContentResultAssert<A extends AbstractAssert<A, T>, T extends ContentResult<T>> extends MetadataResultAssert<A, T> {
 
     protected ContentResultAssert(T metadataResult, Class<?> selfType) {
         super(metadataResult, selfType);
     }
 
+    /**
+     * Verify that at least one ActionContent in the results content list
+     * satisfies the given predicate
+     * @param contentMatcher predicate used to find the matching content
+     * @return this
+     */
     public A hasContentMatching(Predicate<ActionContent> contentMatcher) {
         isNotNull();
         Assertions.assertThat(actual.getContent()).anyMatch(contentMatcher);
         return myself;
     }
 
+    /**
+     * Verify that the ActionContent at the given index of the content list
+     * satisfies the given predicate
+     * @param index of the ActionContent to check
+     * @param contentMatcher predicate used to validate the ActionContent
+     * @return this
+     */
     public A hasContentMatchingAt(int index, Predicate<ActionContent> contentMatcher) {
         isNotNull();
         if (actual.getContent() == null || actual.getContent().size() - 1  < index) {
@@ -51,6 +69,12 @@ public abstract class ContentResultAssert<A extends AbstractAssert<A, T>, T exte
         return myself;
     }
 
+    /**
+     * Load each ActionContent in the content list of the result as bytes and put them in a list.
+     * Verify that list is equal to the list in the values parameter.
+     * @param values list containing expected content bytes for each ActionContent in the result
+     * @return this
+     */
     public A contentLoadBytesEquals(List<byte[]> values) {
         if (values == null) {
             Assertions.assertThat(actual.getContent()).isNull();
@@ -66,10 +90,23 @@ public abstract class ContentResultAssert<A extends AbstractAssert<A, T>, T exte
         return myself;
     }
 
+    /**
+     * Load each ActionContent in the content list of the result as string using the default charset and put them in a list.
+     * Verify that list is equal to the list in the values parameter.
+     * @param values list containing expected content string for each ActionContent in the result
+     * @return this
+     */
     public A contentLoadStringEquals(List<String> values) {
         return contentLoadStringEquals(values, Charset.defaultCharset());
     }
 
+    /**
+     * Load each ActionContent in the content list of the result as string using the given charset and put them in a list.
+     * Verify that list is equal to the list in the values parameter.
+     * @param values list containing expected content string for each ActionContent in the result
+     * @param charset used when laoding each content as a string
+     * @return this
+     */
     public A contentLoadStringEquals(List<String> values, Charset charset) {
         if (values == null) {
             Assertions.assertThat(actual.getContent()).isNull();
@@ -84,12 +121,21 @@ public abstract class ContentResultAssert<A extends AbstractAssert<A, T>, T exte
         return myself;
     }
 
+    /**
+     * Verify the size of the content list in the result
+     * @param count expected content list size
+     * @return this
+     */
     public A hasContentCount(int count) {
         isNotNull();
         Assertions.assertThat(actual.getContent()).hasSize(count);
         return myself;
     }
 
+    /**
+     * Verify that the content list in the result is not null
+     * @return this
+     */
     public A contentIsNotNull() {
         isNotNull();
         Assertions.assertThat(actual.getContent()).isNotNull();

@@ -22,7 +22,6 @@ import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.core.parameters.ExtractJsonMetadataParameters;
 import org.deltafi.core.parameters.HandleMultipleKeysType;
-import org.deltafi.test.action.transform.TransformActionTest;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
 
@@ -33,7 +32,7 @@ import java.util.Map;
 import static org.deltafi.test.asserters.ActionResultAssertions.assertErrorResult;
 import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformResult;
 
-class ExtractJsonMetadataTransformActionTest extends TransformActionTest {
+class ExtractJsonMetadataTransformActionTest {
 
     ExtractJsonMetadataTransformAction action = new ExtractJsonMetadataTransformAction();
     DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action);
@@ -171,6 +170,6 @@ class ExtractJsonMetadataTransformActionTest extends TransformActionTest {
     }
 
     private ActionContent saveJson(String json) {
-        return ActionContent.saveContent(runner.actionContext(), json, "example.json","application/json");
+        return runner.saveContent(json, "example.json","application/json");
     }
 }

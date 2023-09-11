@@ -24,6 +24,11 @@ import org.deltafi.actionkit.action.egress.EgressAction;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.test.action.TestCaseBase;
 
+/**
+ * @deprecated Use the DeltaFiTestRunner to set up the test and run the action directly.
+ * The result can be verified using {@link org.deltafi.test.asserters.ActionResultAssertions}.
+ */
+@Deprecated
 @Data
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)

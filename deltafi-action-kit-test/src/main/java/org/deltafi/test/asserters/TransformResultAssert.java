@@ -20,10 +20,22 @@ package org.deltafi.test.asserters;
 
 import org.deltafi.actionkit.action.transform.TransformResult;
 
+/**
+ * Assertions for TransformResults
+ */
 public class TransformResultAssert extends ContentResultAssert<TransformResultAssert, TransformResult> {
 
     public TransformResultAssert(TransformResult transformResult) {
         super(transformResult, TransformResultAssert.class);
+    }
+
+    /**
+     * Create a new TransformResultAssert with the given result
+     * @param transformResult to validate
+     * @return a new TransformResultAssert
+     */
+    public static TransformResultAssert assertThat(TransformResult transformResult) {
+        return new TransformResultAssert(transformResult);
     }
 
 }

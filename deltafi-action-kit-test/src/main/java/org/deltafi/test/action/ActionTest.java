@@ -42,6 +42,11 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
+/**
+ * @deprecated Use the DeltaFiTestRunner to set up the test and run the action directly.
+ * The result can be verified using {@link org.deltafi.test.asserters.ActionResultAssertions}.
+ */
+@Deprecated
 @ExtendWith(MockitoExtension.class)
 @Slf4j
 public abstract class ActionTest {

@@ -23,17 +23,42 @@ import org.deltafi.common.types.ReinjectEvent;
 
 import java.util.function.Predicate;
 
+/**
+ * Assertions for ReinjectResults
+ */
 public class ReinjectResultAssert extends ResultAssert<ReinjectResultAssert, ReinjectResult> {
     public ReinjectResultAssert(ReinjectResult reinjectResult) {
         super(reinjectResult, ReinjectResultAssert.class);
     }
 
+    /**
+     * Create a new ReinjectResultAssert with the given result
+     * @param reinjectResult to validate
+     * @return a new ReinjectResultAssert
+     */
+    public static ReinjectResultAssert assertThat(ReinjectResult reinjectResult) {
+        return new ReinjectResultAssert(reinjectResult);
+    }
+
+    /**
+     * Verify that at least one ReinjectEvent in the results reinjectEvents list
+     * satisfies the given predicate
+     * @param reinjectEventMatcher predicate used to find the matching reinjectEvent
+     * @return this
+     */
     public ReinjectResultAssert hasReinjectEventMatching(Predicate<ReinjectEvent> reinjectEventMatcher) {
         isNotNull();
         Assertions.assertThat(actual.getReinjectEvents()).anyMatch(reinjectEventMatcher);
         return this;
     }
 
+    /**
+     * Verify that the ReinjectEvent at the given index of the reinjectEvents list
+     * satisfies the given predicate
+     * @param index of the ReinjectEvent to check
+     * @param reinjectEventMatcher predicate used to validate the ReinjectEvent
+     * @return this
+     */
     public ReinjectResultAssert hasReinjectEventMatchingAt(int index, Predicate<ReinjectEvent> reinjectEventMatcher) {
         isNotNull();
         if (actual.getReinjectEvents() == null || actual.getReinjectEvents().size() -1 < index) {
@@ -46,9 +71,14 @@ public class ReinjectResultAssert extends ResultAssert<ReinjectResultAssert, Rei
         return this;
     }
 
-    public ReinjectResultAssert hasReinjectEventSize(int count) {
+    /**
+     * Verify that the reinjectEventList size matches the given size
+     * @param size expected size of the reinjectEvent list
+     * @return
+     */
+    public ReinjectResultAssert hasReinjectEventSize(int size) {
         isNotNull();
-        Assertions.assertThat(actual.getReinjectEvents()).hasSize(count);
+        Assertions.assertThat(actual.getReinjectEvents()).hasSize(size);
         return this;
     }
 }

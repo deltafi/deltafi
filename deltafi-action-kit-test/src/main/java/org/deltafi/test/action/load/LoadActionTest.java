@@ -32,6 +32,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+/**
+ * @deprecated Use the DeltaFiTestRunner to set up the test and run the action directly.
+ * The result can be verified using {@link org.deltafi.test.asserters.ActionResultAssertions}.
+ */
+@Deprecated
 @ExtendWith(MockitoExtension.class)
 @Slf4j
 public abstract class LoadActionTest extends ActionTest {

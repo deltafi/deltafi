@@ -25,6 +25,11 @@ import org.deltafi.common.types.Metric;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * The base class that provides common metric checks
+ * @param <A> The class that extended this
+ * @param <T> The expected result type
+ */
 public class ResultAssert <A extends AbstractAssert<A, T>, T extends Result<T>>
         extends AbstractAssert<A, T> {
 
@@ -32,20 +37,41 @@ public class ResultAssert <A extends AbstractAssert<A, T>, T extends Result<T>>
         super(t, selfType);
     }
 
+    /**
+     * Verify that the result contains a metric with the given name, value and tags
+     * @param name of the expected metric
+     * @param value of the expected metric
+     * @param tags of the expected metric
+     * @return myself
+     */
     public A hasMetric(String name, long value, Map<String, String> tags) {
         return hasMetric(new Metric(name, value, tags));
     }
 
+    /**
+     * Verify that the result contains the given metric
+     * @param metric expected metric
+     * @return myself
+     */
     public A hasMetric(Metric metric) {
         Assertions.assertThat(actual.getCustomMetrics()).contains(metric);
         return myself;
     }
 
+    /**
+     * Verify that the result contains a metric with the given name
+     * @param name of the expected metric
+     * @return myself
+     */
     public A hasMetricNamed(String name) {
         Assertions.assertThat(actual.getCustomMetrics()).anyMatch(m -> Objects.equals(name, m.getName()));
         return myself;
     }
 
+    /**
+     * Get the result that is being verified
+     * @return the original result with casted to the correct class
+     */
     public T getResult() {
         return actual;
     }

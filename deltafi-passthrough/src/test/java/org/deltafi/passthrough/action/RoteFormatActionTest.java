@@ -17,36 +17,35 @@
  */
 package org.deltafi.passthrough.action;
 
-import org.deltafi.test.action.IOContent;
-import org.deltafi.test.action.format.FormatActionTest;
-import org.deltafi.test.action.format.FormatActionTestCase;
+import org.deltafi.actionkit.action.ResultType;
+import org.deltafi.actionkit.action.content.ActionContent;
+import org.deltafi.actionkit.action.format.FormatInput;
+import org.deltafi.passthrough.param.RoteParameters;
+import org.deltafi.test.asserters.ActionResultAssertions;
+import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
-@ExtendWith(MockitoExtension.class)
-class RoteFormatActionTest extends FormatActionTest {
+class RoteFormatActionTest {
 
-    @InjectMocks
-    RoteFormatAction action;
+
+    RoteFormatAction action = new RoteFormatAction();
+    DeltaFiTestRunner deltaFiTestRunner = DeltaFiTestRunner.setup(action);
 
     @Test
     void testDefault() {
-        FormatActionTestCase testCase = FormatActionTestCase.builder()
-                .action(action)
-                .testName("testDefault")
-                .inputs(List.of(
-                        IOContent.builder().name("input.file1").contentType("application/binary").build(),
-                        IOContent.builder().name("input.file2").contentType("application/binary").build()))
-                .inputDomains(Collections.emptyMap())
-                .parameters(Map.of("minRoteDelayMS", "1", "maxRoteDelayMS", "2"))
-                .expectFormatAction(IOContent.builder().name("file1").contentType("application/binary").build())
+        ActionContent fileOne = deltaFiTestRunner.saveContent("input 1", "file1", "text/plain");
+        ActionContent fileTwo = deltaFiTestRunner.saveContent("input 2", "file2", "text/plain");
+
+        FormatInput input = FormatInput.builder()
+                .content(List.of(fileOne, fileTwo))
                 .build();
-        execute(testCase);
+
+        ResultType result = action.format(deltaFiTestRunner.actionContext(), new RoteParameters(), input);
+
+        // RoteFormat only keeps the first content, verify the formatted content matches data from file1
+        ActionResultAssertions.assertFormatResult(result)
+                        .hasFormattedContent("file1", "input 1", "text/plain");
     }
 }

@@ -32,6 +32,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * @deprecated Use the DeltaFiTestRunner to set up the test and run the action directly.
+ * The result can be verified using {@link org.deltafi.test.asserters.ActionResultAssertions}.
+ */
+@Deprecated
 @Data
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)

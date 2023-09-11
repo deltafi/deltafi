@@ -21,6 +21,10 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
 
+/**
+ * @deprecated Use the DeltaFiTestRunner to save content that will be made available to the action under test
+ */
+@Deprecated
 @Data
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)

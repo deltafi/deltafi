@@ -22,28 +22,60 @@ import org.deltafi.actionkit.action.error.ErrorResult;
 
 import java.util.regex.Pattern;
 
+/**
+ * Assertions for ErrorResults
+ */
 public class ErrorResultAssert extends ResultAssert<ErrorResultAssert, ErrorResult> {
 
     public ErrorResultAssert(ErrorResult errorResult) {
         super(errorResult, ErrorResultAssert.class);
     }
 
+    /**
+     * Create a new ErrorResultAssert with the given result
+     * @param errorResult to validate
+     * @return a new ErrorResultAssert
+     */
+    public static ErrorResultAssert assertThat(ErrorResult errorResult) {
+        return new ErrorResultAssert(errorResult);
+    }
+
+    /**
+     * Verify the error cause is equal to the given cause
+     * @param exactMatch expected error cause
+     * @return this
+     */
     public ErrorResultAssert hasCause(String exactMatch) {
         Assertions.assertThat(actual.getErrorCause()).isEqualTo(exactMatch);
         return this;
     }
 
+    /**
+     * Verify the error cause matches the given regex pattern
+     * @param regexPattern to match against the error cause
+     * @return this
+     */
     public ErrorResultAssert hasCauseLike(String regexPattern) {
         Pattern pattern = Pattern.compile(regexPattern);
         Assertions.assertThat(actual.getErrorCause()).matches(pattern);
         return this;
     }
 
+    /**
+     * Verify the error context is equal to the given context
+     * @param exactMatch expected errorContext
+     * @return this
+     */
     public ErrorResultAssert hasContext(String exactMatch) {
         Assertions.assertThat(actual.getErrorContext()).isEqualTo(exactMatch);
         return this;
     }
 
+    /**
+     * Verify the error context matches the given regex pattern
+     * @param regexPattern to match against the error context
+     * @return this
+     */
     public ErrorResultAssert hasContextLike(String regexPattern) {
         Pattern pattern = Pattern.compile(regexPattern);
         Assertions.assertThat(actual.getErrorContext()).matches(pattern);

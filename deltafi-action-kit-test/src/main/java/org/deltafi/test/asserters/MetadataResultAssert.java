@@ -23,6 +23,11 @@ import org.deltafi.actionkit.action.MetadataResult;
 
 import java.util.Map;
 
+/**
+ * Base class that provides assertions on the map of metadata in a result
+ * @param <A> The class that extended this
+ * @param <T> The expected result type
+ */
 public abstract class MetadataResultAssert<A extends AbstractAssert<A, T>, T extends MetadataResult<T>>
         extends ResultAssert<A, T> {
 
@@ -31,16 +36,32 @@ public abstract class MetadataResultAssert<A extends AbstractAssert<A, T>, T ext
         super(metadataResult, selfType);
     }
 
+    /**
+     * Verify that the result includes the key and value in the metadata map
+     * @param key to search for
+     * @param value that should be set for the key
+     * @return this
+     */
     public A addedMetadata(String key, String value) {
         Assertions.assertThat(actual.getMetadata()).containsEntry(key, value);
         return myself;
     }
 
+    /**
+     * Verify that the result include all the given metadata
+     * @param metadata that should be included in the result
+     * @return this
+     */
     public A addedMetadataEquals(Map<String, String> metadata) {
         Assertions.assertThat(actual.getMetadata()).isEqualTo(metadata);
         return myself;
     }
 
+    /**
+     * Verify that result deleted the given list of keys from the metadata
+     * @param keys zero or more keys that should have been deleted
+     * @return
+     */
     public A deletedKeyEquals(String ... keys) {
         Assertions.assertThat(actual.getDeleteMetadataKeys()).containsExactly(keys);
         return myself;

@@ -21,8 +21,9 @@ import org.assertj.core.api.Assertions;
 import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.transform.TransformInput;
+import org.deltafi.common.types.ActionContext;
 import org.deltafi.core.parameters.MetadataToContentParameters;
-import org.deltafi.test.action.transform.TransformActionTest;
+import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -31,13 +32,14 @@ import java.util.Map;
 
 import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformResult;
 
-class MetadataToContentTransformActionTest extends TransformActionTest {
-
+class MetadataToContentTransformActionTest {
     MetadataToContentTransformAction action = new MetadataToContentTransformAction();
+    DeltaFiTestRunner testRunner = DeltaFiTestRunner.setup(action);
+    ActionContext context = testRunner.actionContext();
 
     @Test
     void testMetadataToContentWithAllMetadata() {
-        ResultType result = action.transform(context(), new MetadataToContentParameters(), createInput());
+        ResultType result = action.transform(context, new MetadataToContentParameters(), createInput());
 
         assertTransformResult(result)
                 .hasContentCount(2) // Original content plus metadata
@@ -49,7 +51,7 @@ class MetadataToContentTransformActionTest extends TransformActionTest {
         MetadataToContentParameters params = new MetadataToContentParameters();
         params.setMetadataPatterns(List.of("key\\d+"));
 
-        ResultType result = action.transform(context(), params, createInput());
+        ResultType result = action.transform(context, params, createInput());
 
         assertTransformResult(result)
                 .hasContentCount(2)
@@ -67,7 +69,7 @@ class MetadataToContentTransformActionTest extends TransformActionTest {
         MetadataToContentParameters params = new MetadataToContentParameters();
         params.setReplaceExistingContent(true);
 
-        ResultType result = action.transform(context(), params, createInput());
+        ResultType result = action.transform(context, params, createInput());
 
         assertTransformResult(result)
                 .hasContentCount(1) // Only metadata, original content replaced
@@ -82,11 +84,11 @@ class MetadataToContentTransformActionTest extends TransformActionTest {
     }
 
     private TransformInput createInput() {
-        List<ActionContent> content = List.of(ActionContent.saveContent(context(), "{\"data\": \"value\"}", "example.json", "application/json"));
+        ActionContent content = testRunner.saveContent("{\"data\": \"value\"}", "example.json", "application/json");
         Map<String, String> metadata = new HashMap<>();
         metadata.put("key1", "value1");
         metadata.put("key2", "value2");
         metadata.put("unmatched", "value3");
-        return TransformInput.builder().content(content).metadata(metadata).build();
+        return TransformInput.builder().content(List.of(content)).metadata(metadata).build();
     }
 }

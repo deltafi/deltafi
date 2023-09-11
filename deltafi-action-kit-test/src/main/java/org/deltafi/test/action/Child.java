@@ -25,6 +25,10 @@ import lombok.experimental.SuperBuilder;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * @deprecated Use the DeltaFiTestRunner to save content that will be made available to the action under test
+ */
+@Deprecated
 @Data
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)

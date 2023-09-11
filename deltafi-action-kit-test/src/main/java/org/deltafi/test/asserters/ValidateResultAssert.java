@@ -19,10 +19,22 @@ package org.deltafi.test.asserters;
 
 import org.deltafi.actionkit.action.validate.ValidateResult;
 
+/**
+ * Assertions for ValidateResults
+ */
 public class ValidateResultAssert extends ResultAssert<ValidateResultAssert, ValidateResult> {
 
     public ValidateResultAssert(ValidateResult validateResult) {
         super(validateResult, ValidateResultAssert.class);
+    }
+
+    /**
+     * Create a new ValidateResultAssert with the given result
+     * @param validateResult to validate
+     * @return a new ValidateResultAssert
+     */
+    public static ValidateResultAssert assertThat(ValidateResult validateResult) {
+        return new ValidateResultAssert(validateResult);
     }
 
 }

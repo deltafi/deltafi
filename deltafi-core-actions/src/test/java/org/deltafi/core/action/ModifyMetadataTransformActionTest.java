@@ -20,7 +20,6 @@ package org.deltafi.core.action;
 import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.core.parameters.ModifyMetadataParameters;
-import org.deltafi.test.action.transform.TransformActionTest;
 import org.deltafi.test.asserters.ActionResultAssertions;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
@@ -30,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 
 
-class ModifyMetadataTransformActionTest extends TransformActionTest {
+class ModifyMetadataTransformActionTest {
 
     ModifyMetadataTransformAction action = new ModifyMetadataTransformAction();
     DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action);

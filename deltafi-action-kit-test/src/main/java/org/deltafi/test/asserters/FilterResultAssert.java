@@ -22,17 +22,39 @@ import org.deltafi.actionkit.action.filter.FilterResult;
 
 import java.util.regex.Pattern;
 
+/**
+ * Assertions for FilterResults
+ */
 public class FilterResultAssert extends ResultAssert<FilterResultAssert, FilterResult> {
 
     public FilterResultAssert(FilterResult filterResult) {
         super(filterResult, FilterResultAssert.class);
     }
 
+    /**
+     * Create a new FilterResultAssert with the given result
+     * @param filterResult to validate
+     * @return a new FilterResultAssert
+     */
+    public static FilterResultAssert assertThat(FilterResult filterResult) {
+        return new FilterResultAssert(filterResult);
+    }
+
+    /**
+     * Verify the filter cause is equal to the given cause
+     * @param exactMatch expected filter cause
+     * @return this
+     */
     public FilterResultAssert hasCause(String exactMatch) {
         Assertions.assertThat(actual.getFilteredCause()).isEqualTo(exactMatch);
         return this;
     }
 
+    /**
+     * Verify the filter cause matches the given regex pattern
+     * @param regexPattern to match against the filter cause
+     * @return this
+     */
     public FilterResultAssert hasCauseLike(String regexPattern) {
         Pattern pattern = Pattern.compile(regexPattern);
         Assertions.assertThat(actual.getFilteredCause()).matches(pattern);

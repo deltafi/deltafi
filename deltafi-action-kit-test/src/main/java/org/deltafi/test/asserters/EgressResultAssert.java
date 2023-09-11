@@ -19,10 +19,22 @@ package org.deltafi.test.asserters;
 
 import org.deltafi.actionkit.action.egress.EgressResult;
 
+/**
+ * Assertions for EgressResults
+ */
 public class EgressResultAssert extends ResultAssert<EgressResultAssert, EgressResult> {
 
     public EgressResultAssert(EgressResult egressResult) {
         super(egressResult, EgressResultAssert.class);
+    }
+
+    /**
+     * Create a new EgressResultAssert with the given result
+     * @param egressResult to validate
+     * @return new EgressResultAssert
+     */
+    public static EgressResultAssert assertThat(EgressResult egressResult) {
+        return new EgressResultAssert(egressResult);
     }
 
 }

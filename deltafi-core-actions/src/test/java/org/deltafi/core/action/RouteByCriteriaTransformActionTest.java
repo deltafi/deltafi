@@ -25,7 +25,6 @@ import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ReinjectEvent;
 import org.deltafi.core.parameters.NoMatchBehavior;
 import org.deltafi.core.parameters.RouteByCriteriaParameters;
-import org.deltafi.test.action.transform.TransformActionTest;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -33,7 +32,7 @@ import java.util.Map;
 
 import static org.deltafi.test.asserters.ActionResultAssertions.*;
 
-class RouteByCriteriaTransformActionTest extends TransformActionTest {
+class RouteByCriteriaTransformActionTest {
 
     RouteByCriteriaTransformAction action = new RouteByCriteriaTransformAction();
 
@@ -128,9 +127,8 @@ class RouteByCriteriaTransformActionTest extends TransformActionTest {
         return true;
     }
 
-    @Override
     protected ActionContext context() {
-        ActionContext context = super.context();
+        ActionContext context = new ActionContext();
         context.setFlow(SOURCE_FLOW);
         return context;
     }

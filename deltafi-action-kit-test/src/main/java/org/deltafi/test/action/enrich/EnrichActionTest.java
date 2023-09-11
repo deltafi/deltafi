@@ -28,6 +28,11 @@ import org.junit.jupiter.api.Assertions;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+/**
+ * @deprecated Use the DeltaFiTestRunner to set up the test and run the action directly.
+ * The result can be verified using {@link org.deltafi.test.asserters.ActionResultAssertions}.
+ */
+@Deprecated
 public class EnrichActionTest extends ActionTest {
 
     public void execute(EnrichActionTestCase testCase) {

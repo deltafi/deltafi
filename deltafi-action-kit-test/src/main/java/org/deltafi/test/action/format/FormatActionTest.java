@@ -30,6 +30,11 @@ import org.junit.jupiter.api.Assertions;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * @deprecated Use the DeltaFiTestRunner to set up the test and run the action directly.
+ * The result can be verified using {@link org.deltafi.test.asserters.ActionResultAssertions}.
+ */
+@Deprecated
 public class FormatActionTest extends ActionTest {
 
     @SneakyThrows

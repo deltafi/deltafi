@@ -23,20 +23,43 @@ import org.deltafi.actionkit.action.load.LoadResult;
 
 import java.util.function.Predicate;
 
+/**
+ * Assertions for LoadManyResults
+ */
 public class LoadManyResultAssert extends ResultAssert<LoadManyResultAssert, LoadManyResult> {
     public LoadManyResultAssert(LoadManyResult loadManyResult) {
         super(loadManyResult, LoadManyResultAssert.class);
     }
 
+    /**
+     * Create a new LoadManyResultAssert with the given result
+     * @param loadManyResult to validate
+     * @return new LoadManyResultAssert
+     */
+    public static LoadManyResultAssert assertThat(LoadManyResult loadManyResult) {
+        return new LoadManyResultAssert(loadManyResult);
+    }
+
+    /**
+     * Verify that at least one child LoadResult in the results childLoadResult list
+     * satisfies the given predicate
+     * @param childMatcher predicate used to find the matching child LoadResult
+     * @return this
+     */
     public LoadManyResultAssert hasChildMatching(Predicate<LoadResult> childMatcher) {
         isNotNull();
         Assertions.assertThat(actual.getChildLoadResults()).anyMatch(childMatcher);
         return this;
     }
 
-    public LoadManyResultAssert hasChildrenSize(int count) {
+    /**
+     * Verify that the list of child LoadResults has the given size
+     * @param size expected child LoadResult list size
+     * @return this
+     */
+    public LoadManyResultAssert hasChildrenSize(int size) {
         isNotNull();
-        Assertions.assertThat(actual.getChildLoadResults()).hasSize(count);
+        Assertions.assertThat(actual.getChildLoadResults()).hasSize(size);
         return this;
     }
 }

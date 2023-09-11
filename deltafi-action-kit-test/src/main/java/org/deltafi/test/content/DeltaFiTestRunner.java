@@ -32,6 +32,11 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Stream;
 
+/**
+ * Class used to set up an action for testing. Provides methods for interacting with
+ * a memory backed ContentStorageService. Provides a method to return a populated
+ * ActionContext that has a reference to the ContentStorageService.
+ */
 public class DeltaFiTestRunner {
 
     protected static final String DID = "did";
@@ -112,6 +117,27 @@ public class DeltaFiTestRunner {
     }
 
     /**
+     * Create an empty ActionContent with the given name and mediaType
+     * @param name of the content
+     * @param mediaType of the content
+     * @return an empty ActionContent with the given name and mediaType
+     */
+    public ActionContent saveEmptyContent(String name, String mediaType) {
+        return saveContent(ContentLoader.contentLoader().contentName(name).mediaType(mediaType));
+    }
+
+    /**
+     * Save the content with the given name and mediaType
+     * @param content content to save
+     * @param name of the content
+     * @param mediaType of the content
+     * @return an ActionContent with the given name and mediaType that holds the given content
+     */
+    public ActionContent saveContent(String content, String name, String mediaType) {
+        return saveContent(ContentLoader.contentLoader().contentName(name).string(content).mediaType(mediaType));
+    }
+
+    /**
      * Load the values from the ContentLoader into the ContentStorageService
      * @param contentLoader holds the value and details of the content to store
      * @return ActionContent that should be added to the test input
@@ -146,16 +172,31 @@ public class DeltaFiTestRunner {
                 .build();
     }
 
+    /**
+     * Read the bytes of file at the given classpath resource path
+     * @param path of the file to read
+     * @return byte[] from the content of the file
+     */
     public byte[] readResourceAsBytes(String path) {
         path = joinPath(path);
         return ContentLoader.readAsBytesFromClasspath(path).get(0);
     }
 
+    /**
+     * Read the classpath resource at the given path as a string using the default charset
+     * @param path of the resource to read
+     * @return the contents of the resource as a string
+     */
     public String readResourceAsString(String path) {
         path = joinPath(path);
         return ContentLoader.readAsStringFromClasspath(List.of(path)).get(0);
     }
 
+    /**
+     * Read the content from the storage service as a string
+     * @param content to read
+     * @return string stored for the given content
+     */
     public String readContent(Content content) {
         ActionContent actionContent = new ActionContent(content, storageService);
         return actionContent.loadString();
@@ -163,8 +204,7 @@ public class DeltaFiTestRunner {
 
     private String joinPath(String path) {
         return testDataFolder != null ?
-                new File(testDataFolder, path).getPath() :
-                path;
+                new File(testDataFolder, path).getPath() : path;
     }
 
     private static class DeltaFiTestException extends RuntimeException {

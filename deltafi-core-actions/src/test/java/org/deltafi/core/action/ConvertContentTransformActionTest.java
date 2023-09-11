@@ -20,19 +20,16 @@ package org.deltafi.core.action;
 import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.transform.TransformInput;
-import org.deltafi.actionkit.action.transform.TransformResult;
 import org.deltafi.core.parameters.ConversionFormat;
 import org.deltafi.core.parameters.ConvertContentParameters;
-import org.deltafi.test.action.transform.TransformActionTest;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformResult;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class ConvertContentTransformActionTest extends TransformActionTest {
+class ConvertContentTransformActionTest {
 
     ConvertContentTransformAction action = new ConvertContentTransformAction();
     DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action);
@@ -239,16 +236,15 @@ class ConvertContentTransformActionTest extends TransformActionTest {
         params.setContentIndexes(contentIndexes);
         params.setRetainExistingContent(retainExistingContent);
 
-        ActionContent content = ActionContent.saveContent(runner.actionContext(), inputContent, "example.json", "application/json");
+        ActionContent content = runner.saveContent(inputContent, "example.json", "application/json");
         TransformInput input = TransformInput.builder().content(List.of(content)).build();
 
         ResultType result = action.transform(runner.actionContext(), params, input);
-        assertTransformResult(result);
 
-        TransformResult transformResult = (TransformResult) result;
-        assertEquals(expectedOutputContent, transformResult.getContent().get(retainExistingContent ? 1 : 0).loadString());
-        if (retainExistingContent) {
-            assertEquals(inputContent, transformResult.getContent().get(0).loadString());
-        }
+        List<String> expected = retainExistingContent ?
+                List.of(inputContent, expectedOutputContent) : List.of(expectedOutputContent);
+
+        assertTransformResult(result)
+                .contentLoadStringEquals(expected);
     }
 }

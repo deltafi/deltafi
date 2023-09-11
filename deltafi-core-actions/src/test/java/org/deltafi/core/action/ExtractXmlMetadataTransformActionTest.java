@@ -22,7 +22,6 @@ import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.core.parameters.ExtractXmlMetadataParameters;
 import org.deltafi.core.parameters.HandleMultipleKeysType;
-import org.deltafi.test.action.transform.TransformActionTest;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
 
@@ -33,7 +32,7 @@ import java.util.Map;
 import static org.deltafi.test.asserters.ActionResultAssertions.assertErrorResult;
 import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformResult;
 
-class ExtractXmlMetadataTransformActionTest extends TransformActionTest {
+class ExtractXmlMetadataTransformActionTest {
 
     ExtractXmlMetadataTransformAction action = new ExtractXmlMetadataTransformAction();
     DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action);
@@ -119,6 +118,6 @@ class ExtractXmlMetadataTransformActionTest extends TransformActionTest {
     }
 
     private ActionContent saveXml(String xml) {
-        return ActionContent.saveContent(runner.actionContext(), xml, "example.xml","application/xml");
+        return runner.saveContent(xml, "example.xml","application/xml");
     }
 }

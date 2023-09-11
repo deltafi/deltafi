@@ -19,5 +19,10 @@ package org.deltafi.test.action.egress;
 
 import org.deltafi.test.action.ActionTest;
 
+/**
+ * @deprecated Use the DeltaFiTestRunner to set up the test and run the action directly.
+ * The result can be verified using {@link org.deltafi.test.asserters.ActionResultAssertions}.
+ */
+@Deprecated
 public class EgressActionTest extends ActionTest {
 }
