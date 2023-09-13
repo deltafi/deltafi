@@ -1371,7 +1371,7 @@ public class DeltaFilesService {
 
         return actionConfiguration.buildActionInput(action.getFlow(), deltaFile,
                 getProperties().getSystemName(), egressFlow(action, deltaFile),
-                identityService.getUniqueId());
+                identityService.getUniqueId(), action.getCreated());
     }
 
     public void autoResume() {

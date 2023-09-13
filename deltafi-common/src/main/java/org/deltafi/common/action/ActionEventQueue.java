@@ -25,10 +25,12 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.deltafi.common.queue.jedis.JedisKeyedBlockingQueue;
+import org.deltafi.common.queue.jedis.SortedSetEntry;
 import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionInput;
 
 import java.net.URISyntaxException;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -72,7 +74,7 @@ public class ActionEventQueue {
      *                     if {@code false}, the method will queue all action inputs without checking for uniqueness
      */
     public void putActions(List<ActionInput> actionInputs, boolean checkUnique) {
-        List<Pair<String, String>> actions = new ArrayList<>();
+        List<SortedSetEntry> actions = new ArrayList<>();
         for (ActionInput actionInput : actionInputs) {
             if (checkUnique) {
                 String pattern = "*\"did\":\"" + actionInput.getActionContext().getDid() + "\"*";
@@ -83,7 +85,7 @@ public class ActionEventQueue {
             }
 
             try {
-                actions.add(Pair.of(actionInput.getQueueName(), OBJECT_MAPPER.writeValueAsString(actionInput)));
+                actions.add(new SortedSetEntry(actionInput.getQueueName(), OBJECT_MAPPER.writeValueAsString(actionInput), actionInput.getActionCreated()));
             } catch (JsonProcessingException e) {
                 log.error("Unable to convert action to JSON", e);
             }
@@ -119,8 +121,7 @@ public class ActionEventQueue {
      * @throws JsonProcessingException if the outgoing event cannot be deserialized
      */
     public void putResult(ActionEvent result, String returnAddress) throws JsonProcessingException {
-        jedisKeyedBlockingQueue.put(queueName(returnAddress),
-                OBJECT_MAPPER.writeValueAsString(result));
+        jedisKeyedBlockingQueue.put(new SortedSetEntry(queueName(returnAddress), OBJECT_MAPPER.writeValueAsString(result), OffsetDateTime.now()));
     }
 
     public ActionEvent takeResult(String returnAddress) throws JsonProcessingException {

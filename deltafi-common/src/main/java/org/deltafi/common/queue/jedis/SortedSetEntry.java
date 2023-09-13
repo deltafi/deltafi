@@ -15,29 +15,26 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.types;
+package org.deltafi.common.queue.jedis;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Map;
 
-@Data
-@Builder
-@NoArgsConstructor
 @AllArgsConstructor
-public class ActionInput {
-    private List<DeltaFileMessage> deltaFileMessages;
-    private ActionContext actionContext;
-    private Map<String, Object> actionParams;
-    private String queueName;
-    private String returnAddress;
+@Data
+public class SortedSetEntry {
+    private String key;
+    private String value;
+    private OffsetDateTime score;
 
-    @JsonIgnore
-    private OffsetDateTime actionCreated;
+    /**
+     * Converts the score to milliseconds since the epoch.
+     *
+     * @return the score in milliseconds since the epoch
+     */
+    public long getScoreEpochMilli() {
+        return score.toInstant().toEpochMilli();
+    }
 }

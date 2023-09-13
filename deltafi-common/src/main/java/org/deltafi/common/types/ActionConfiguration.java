@@ -27,6 +27,7 @@ import lombok.ToString;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.springframework.data.annotation.Transient;
 
+import java.time.OffsetDateTime;
 import java.util.*;
 
 @Getter
@@ -83,7 +84,7 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
      * @param returnAddress the unique address of this core instance
      * @return ActionInput containing the ActionConfiguration
      */
-    public ActionInput buildActionInput(String flow, DeltaFile deltaFile, String systemName, String egressFlow, String returnAddress) {
+    public ActionInput buildActionInput(String flow, DeltaFile deltaFile, String systemName, String egressFlow, String returnAddress, OffsetDateTime actionCreated) {
         if (Objects.isNull(internalParameters)) {
             // fall back to using parameters if internalParameters do not exist yet
             setInternalParameters(Objects.requireNonNullElse(parameters, Collections.emptyMap()));
@@ -103,6 +104,7 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
                 .actionParams(internalParameters)
                 .deltaFileMessages(List.of(deltaFile.forQueue(egressFlow)))
                 .returnAddress(returnAddress)
+                .actionCreated(actionCreated)
                 .build();
     }
 

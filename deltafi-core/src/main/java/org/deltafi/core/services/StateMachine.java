@@ -149,7 +149,7 @@ public class StateMachine {
                 deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().isEnabled() ?
                 identityService.getUniqueId() : null;
         return actionConfiguration.buildActionInput(flow, deltaFile,
-                deltaFiPropertiesService.getDeltaFiProperties().getSystemName(), egressFlow, returnAddress);
+                deltaFiPropertiesService.getDeltaFiProperties().getSystemName(), egressFlow, returnAddress, OffsetDateTime.now());
     }
 
     private List<ActionInput> advanceEnrichStage(DeltaFile deltaFile, boolean newDeltaFile) {

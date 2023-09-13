@@ -144,10 +144,8 @@ public class ActionEventQueueTest {
     public void testConvertBasic() throws JsonProcessingException, URISyntaxException {
         try (MockedConstruction<JedisKeyedBlockingQueue> mock =
                      Mockito.mockConstruction(JedisKeyedBlockingQueue.class, (mockJedis, context)
-                             -> {
-                         Mockito.when(mockJedis.take(DGS_QUEUE_NAME))
-                                 .thenReturn(GOOD_BASIC);
-                     })) {
+                             -> Mockito.when(mockJedis.take(DGS_QUEUE_NAME))
+                                     .thenReturn(GOOD_BASIC))) {
 
             ActionEventQueue actionEventQueue = new ActionEventQueue(new ActionEventQueueProperties(), 2);
             assertEquals(1, mock.constructed().size());
@@ -160,10 +158,8 @@ public class ActionEventQueueTest {
     public void testConvertLarge() throws JsonProcessingException, URISyntaxException {
         try (MockedConstruction<JedisKeyedBlockingQueue> mock =
                      Mockito.mockConstruction(JedisKeyedBlockingQueue.class, (mockJedis, context)
-                             -> {
-                         Mockito.when(mockJedis.take(DGS_QUEUE_NAME))
-                                 .thenReturn(loadFile("largeFile"));
-                     })) {
+                             -> Mockito.when(mockJedis.take(DGS_QUEUE_NAME))
+                                     .thenReturn(loadFile("largeFile")))) {
 
             ActionEventQueue actionEventQueue = new ActionEventQueue(new ActionEventQueueProperties(), 2);
             assertEquals(1, mock.constructed().size());
@@ -177,10 +173,8 @@ public class ActionEventQueueTest {
     public void testConvertUnicode() throws JsonProcessingException, URISyntaxException {
         try (MockedConstruction<JedisKeyedBlockingQueue> mock =
                      Mockito.mockConstruction(JedisKeyedBlockingQueue.class, (mockJedis, context)
-                             -> {
-                         Mockito.when(mockJedis.take(DGS_QUEUE_NAME))
-                                 .thenReturn(GOOD_UNICODE);
-                     })) {
+                             -> Mockito.when(mockJedis.take(DGS_QUEUE_NAME))
+                                     .thenReturn(GOOD_UNICODE))) {
 
             ActionEventQueue actionEventQueue = new ActionEventQueue(new ActionEventQueueProperties(), 2);
             assertEquals(1, mock.constructed().size());
@@ -193,10 +187,8 @@ public class ActionEventQueueTest {
     public void testExtraFieldsIgnored() throws JsonProcessingException, URISyntaxException {
         try (MockedConstruction<JedisKeyedBlockingQueue> mock =
                      Mockito.mockConstruction(JedisKeyedBlockingQueue.class, (mockJedis, context)
-                             -> {
-                         Mockito.when(mockJedis.take(DGS_QUEUE_NAME))
-                                 .thenReturn(EXTRA_FIELDS_IGNORED);
-                     })) {
+                             -> Mockito.when(mockJedis.take(DGS_QUEUE_NAME))
+                                     .thenReturn(EXTRA_FIELDS_IGNORED))) {
 
             ActionEventQueue actionEventQueue = new ActionEventQueue(new ActionEventQueueProperties(), 2);
             assertEquals(1, mock.constructed().size());

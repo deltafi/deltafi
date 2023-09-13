@@ -44,7 +44,6 @@ import org.deltafi.core.generated.client.*;
 import org.deltafi.core.generated.types.ConfigType;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.metrics.MetricService;
-import org.deltafi.core.plugin.PluginRegistryService;
 import org.deltafi.core.plugin.PluginRepository;
 import org.deltafi.core.plugin.SystemPluginService;
 import org.deltafi.core.plugin.deployer.DeployerService;

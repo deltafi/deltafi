@@ -17,7 +17,6 @@
  */
 package org.deltafi.common.queue.jedis;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -31,7 +30,6 @@ import redis.clients.jedis.resps.Tuple;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
 
@@ -67,12 +65,11 @@ public class JedisKeyedBlockingQueue {
     /**
      * Puts an object into the queue.
      *
-     * @param key   the key for the queue
-     * @param value the object
+     * @param entry the SortedSetEntry to add to the queue
      */
-    public void put(String key, String value) {
+    public void put(SortedSetEntry entry) {
         try (Jedis jedis = jedisPool.getResource()) {
-            put(jedis, key, value);
+            put(jedis, entry);
         }
     }
 
@@ -106,23 +103,19 @@ public class JedisKeyedBlockingQueue {
         keys.forEach(jedis::del);
     }
 
-    private void put(Jedis jedis, String key, String value) {
-        jedis.zadd(key, Instant.now().toEpochMilli(), value,
-                ZAddParams.zAddParams().nx());
+    private void put(Jedis jedis, SortedSetEntry entry) {
+        jedis.zadd(entry.getKey(), entry.getScoreEpochMilli(), entry.getValue(), ZAddParams.zAddParams().nx());
     }
 
     /**
      * Puts multiple objects into the queue.
      *
-     * @param items a list of key/object pairss to put into the queue
+     * @param items a list of SortedSetEntry to put into the queue
      */
-    public void put(List<Pair<String, String>> items) {
+    public void put(List<SortedSetEntry> items) {
         try (Jedis jedis = jedisPool.getResource()) {
             Pipeline p = jedis.pipelined();
-            for (Pair<String, String> item : items) {
-                p.zadd(item.getKey(), Instant.now().toEpochMilli(),
-                        item.getValue(), ZAddParams.zAddParams().nx());
-            }
+            items.forEach(item -> p.zadd(item.getKey(), item.getScoreEpochMilli(), item.getValue(), ZAddParams.zAddParams().nx()));
             p.sync();
         }
     }
