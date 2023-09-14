@@ -31,11 +31,12 @@ import java.io.File;
 
 public class FeignClientFactory {
     /**
-     * Builds a client for the provided Feign-annotated interface. Methods of the interface will accept a URI to access.
+     * Builds a client for the provided Feign-annotated interface. Methods of the interface will accept a URI to
+     * access.
      *
      * @param clientClass the Feign-annotated interface class
-     * @return a Feign-generated instance of the provided interface
      * @param <T> the interface type
+     * @return a Feign-generated instance of the provided interface
      */
     public static <T> T build(Class<T> clientClass) {
         return build(clientClass, null, null, null, null);
@@ -46,8 +47,8 @@ public class FeignClientFactory {
      *
      * @param clientClass the Feign-annotated interface class
      * @param url the URL the client will access
-     * @return a Feign-generated instance of the provided interface for accessing the given URL
      * @param <T> the interface type
+     * @return a Feign-generated instance of the provided interface for accessing the given URL
      */
     public static <T> T build(Class<T> clientClass, String url) {
         return build(clientClass, url, null, null, null);
@@ -61,11 +62,28 @@ public class FeignClientFactory {
      * @param encoder the encoder used to encode instances to strings
      * @param decoder the decoder used to decode strings to instances
      * @param retryer the retryer used on failed requests
-     * @return a Feign-generated instance of the provided interface for accessing the given URL
      * @param <T> the interface type
+     * @return a Feign-generated instance of the provided interface for accessing the given URL
      */
     public static <T> T build(Class<T> clientClass, String url, Encoder encoder, Decoder decoder, Retryer retryer) {
-        return build(createBuilder(clientClass, encoder, decoder, retryer), clientClass, url);
+        return build(clientClass, url, encoder, decoder, retryer, (Request.Options) null);
+    }
+
+    /**
+     * Builds a client for the provided Feign-annotated interface for the resources at the given URL.
+     *
+     * @param clientClass the Feign-annotated interface class
+     * @param url the URL the client will access
+     * @param encoder the encoder used to encode instances to strings
+     * @param decoder the decoder used to decode strings to instances
+     * @param retryer the retryer used on failed requests
+     * @param options additional options for requests
+     * @param <T> the interface type
+     * @return a Feign-generated instance of the provided interface for accessing the given URL
+     */
+    public static <T> T build(Class<T> clientClass, String url, Encoder encoder, Decoder decoder, Retryer retryer,
+            Request.Options options) {
+        return build(createBuilder(clientClass, encoder, decoder, retryer, options), clientClass, url);
     }
 
     /**
@@ -74,8 +92,8 @@ public class FeignClientFactory {
      *
      * @param clientClass the Feign-annotated interface class
      * @param sslProperties the SSL properties used to build an SSL context
-     * @return a Feign-generated instance of the provided interface
      * @param <T> the interface type
+     * @return a Feign-generated instance of the provided interface
      */
     public static <T> T build(Class<T> clientClass, SslProperties sslProperties) throws SslContextFactory.SslException {
         return build(clientClass, null, null, null, null, sslProperties);
@@ -87,8 +105,8 @@ public class FeignClientFactory {
      * @param clientClass the Feign-annotated interface class
      * @param url the URL the client will access
      * @param sslProperties the SSL properties used to build an SSL context
-     * @return a Feign-generated instance of the provided interface for accessing the given URL
      * @param <T> the interface type
+     * @return a Feign-generated instance of the provided interface for accessing the given URL
      */
     public static <T> T build(Class<T> clientClass, String url, SslProperties sslProperties) throws SslContextFactory.SslException {
         return build(clientClass, url, null, null, null, sslProperties);
@@ -103,12 +121,30 @@ public class FeignClientFactory {
      * @param decoder the decoder used to decode strings to instances
      * @param retryer the retryer used on failed requests
      * @param sslProperties the SSL properties used to build an SSL context
-     * @return a Feign-generated instance of the provided interface for accessing the given URL
      * @param <T> the interface type
+     * @return a Feign-generated instance of the provided interface for accessing the given URL
      */
     public static <T> T build(Class<T> clientClass, String url, Encoder encoder, Decoder decoder, Retryer retryer,
             SslProperties sslProperties) throws SslContextFactory.SslException {
-        Feign.Builder builder = createBuilder(clientClass, encoder, decoder, retryer);
+        return build(clientClass, url, encoder, decoder, retryer, null, sslProperties);
+    }
+
+    /**
+     * Builds an SSL-enabled client for the provided Feign-annotated interface for the resources at the given URL.
+     *
+     * @param clientClass the Feign-annotated interface class
+     * @param url the URL the client will access
+     * @param encoder the encoder used to encode instances to strings
+     * @param decoder the decoder used to decode strings to instances
+     * @param retryer the retryer used on failed requests
+     * @param options additional options for requests
+     * @param sslProperties the SSL properties used to build an SSL context
+     * @param <T> the interface type
+     * @return a Feign-generated instance of the provided interface for accessing the given URL
+     */
+    public static <T> T build(Class<T> clientClass, String url, Encoder encoder, Decoder decoder, Retryer retryer,
+            Request.Options options, SslProperties sslProperties) throws SslContextFactory.SslException {
+        Feign.Builder builder = createBuilder(clientClass, encoder, decoder, retryer, options);
 
         if ((sslProperties != null) && keystoreExists(sslProperties.getKeyStore())) {
             SSLContext context = SslContextFactory.buildSslContext(sslProperties);
@@ -118,13 +154,15 @@ public class FeignClientFactory {
         return build(builder, clientClass, url);
     }
 
-    private static <T> Feign.Builder createBuilder(Class<T> clientClass, Encoder encoder, Decoder decoder, Retryer retryer) {
+    private static <T> Feign.Builder createBuilder(Class<T> clientClass, Encoder encoder, Decoder decoder,
+            Retryer retryer, Request.Options options) {
         return Feign.builder()
-            .encoder(encoder == null ? new JacksonEncoder() : encoder)
-            .decoder(decoder == null ? new JacksonDecoder() : decoder)
-            .retryer(retryer == null ? new Retryer.Default(1000, 5000, 5) : retryer)
-            .logger(new Slf4jLogger(clientClass))
-            .logLevel(Logger.Level.FULL);
+                .encoder(encoder == null ? new JacksonEncoder() : encoder)
+                .decoder(decoder == null ? new JacksonDecoder() : decoder)
+                .retryer(retryer == null ? new Retryer.Default(1000, 5000, 5) : retryer)
+                .options(options == null ? new Request.Options() : options)
+                .logger(new Slf4jLogger(clientClass))
+                .logLevel(Logger.Level.FULL);
     }
 
     private static <T> T build(Feign.Builder builder, Class<T> clientClass, String url) {
