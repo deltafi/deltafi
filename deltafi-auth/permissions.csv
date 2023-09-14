@@ -10,6 +10,7 @@ Registry,RegistryDelete,Grants the ability to remove content from the internal r
 Metrics,MetricsAdmin,Grants the Admin role in Grafana
 Metrics,MetricsView,Grants the Viewer role in Grafana
 Metrics,MetricsEdit,Grants the Editor role in Grafana
+Metrics,SurveyCreate,Grants the ability to post survey metrics into the system
 DeltaFiles,DeltaFileMetadataView,Grants the ability to query for and view DeltaFiles
 DeltaFiles,DeltaFileMetadataWrite,Grants the ability to update DeltaFile metadata
 DeltaFiles,DeltaFileContentView,Grants the ability to view DeltaFile content

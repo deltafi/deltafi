@@ -138,3 +138,13 @@ metadata:
 data:
   clickhouse-metrics.json: |-
 {{ .Files.Get "files/grafana/dashboards/clickhouse-metrics.json" | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clickhouse-flow-subflow
+  labels:
+    grafana_dashboard: "1"
+data:
+  clickhouse-flow-subflow.json: |-
+{{ .Files.Get "files/grafana/dashboards/clickhouse-flow-subflow.json" | indent 4 }}
