@@ -59,7 +59,7 @@ const statValues = computed(() => {
   return [
     deltaFileStats.value.all.count.toLocaleString("en-US"),
     deltaFileStats.value.inFlight.count.toLocaleString("en-US"),
-    formattedBytes(deltaFileStats.value.all.referencedBytes),
+    formattedBytes(deltaFileStats.value.all.totalBytes),
     formattedBytes(deltaFileStats.value.inFlight.referencedBytes)
   ]
 })
