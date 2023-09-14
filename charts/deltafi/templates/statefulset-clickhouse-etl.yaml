@@ -34,6 +34,8 @@ spec:
           value: "{{ .Values.deltafi.clickhouse_etl.lag }}"
         - name: ETL_BATCH
           value: "{{ .Values.deltafi.clickhouse_etl.batch }}"
+        - name: ETL_DELETE_TTL
+          value: "{{ .Values.deltafi.clickhouse_etl.delete_ttl }}"
         {{- include "commonEnvVars" . | nindent 8 }}
         {{- include "mongoEnvVars" . | nindent 8 }}
         {{- include "clickhouseEnvVars" . | nindent 8 }}

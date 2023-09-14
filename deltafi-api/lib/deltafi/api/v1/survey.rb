@@ -32,7 +32,7 @@ module Deltafi
           Survey = Struct.new(:timestamp, :update_timestamp, :flow, :files, :ingress_bytes, :errored, :filtered, :annotations) do
             def self.create(update_timestamp, flow:, timestamp: Time.now.utc, files: 1, ingress_bytes: 0, errored: 0, filtered: 0, **args)
               timestamp = Time.parse(timestamp) if timestamp.is_a?(String)
-              %i[update_timestamp annotations egressFlow].each { |k| args.delete(k) }
+              %i[update_timestamp annotations].each { |k| args.delete(k) }
               annotations = args.empty? ? nil : args
               new timestamp.is_a?(String) ? Time.parse(timestamp) : timestamp,
                   update_timestamp.is_a?(String) ? Time.parse(update_timestamp) : update_timestamp,
@@ -57,7 +57,7 @@ module Deltafi
 
             errors = []
 
-            clickhouse_client.insert('deltafile', columns: %i[did timestamp update_timestamp flow egressFlow files ingressBytes totalBytes errored filtered annotations]) do |insert_buffer|
+            clickhouse_client.insert('deltafile', columns: %i[did timestamp update_timestamp flow files ingressBytes totalBytes errored filtered annotations]) do |insert_buffer|
               blob.each_with_index do |survey, index|
                 error_count = errors.length
                 errors << { error: "Flow missing at #{index}", source: survey.to_json.to_s } unless survey.key?(:flow)
@@ -71,7 +71,6 @@ module Deltafi
                   s.timestamp.to_i,
                   s.update_timestamp.to_i,
                   s.flow,
-                  'survey',
                   s.files,
                   s.ingress_bytes,
                   s.ingress_bytes,

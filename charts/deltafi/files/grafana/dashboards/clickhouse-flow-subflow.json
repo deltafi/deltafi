@@ -26,7 +26,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 578,
+  "id": 625,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -131,14 +131,14 @@
             ],
             "mode": "aggregate",
             "orderBy": [],
-            "table": "deltafile"
+            "table": "deltafiles"
           },
           "datasource": {
             "type": "grafana-clickhouse-datasource",
             "uid": "${clickhouseDatasource}"
           },
           "queryType": "builder",
-          "rawSql": "SELECT sum(ingressBytes) ingressBytes FROM deltafi.\"deltafile\" WHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) LIMIT 100",
+          "rawSql": "SELECT sum(ingressBytes) ingressBytes FROM deltafi.\"deltafiles\" WHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) LIMIT 100",
           "refId": "A",
           "target": ""
         }
@@ -203,7 +203,7 @@
               }
             ]
           },
-          "unit": "none"
+          "unit": "decbytes"
         },
         "overrides": []
       },
@@ -269,7 +269,7 @@
             ],
             "mode": "trend",
             "orderBy": [],
-            "table": "deltafile",
+            "table": "deltafiles",
             "timeField": "update_timestamp",
             "timeFieldType": "DateTime"
           },
@@ -319,18 +319,18 @@
               ],
               "mode": "trend",
               "orderBy": [],
-              "table": "deltafile",
+              "table": "deltafiles",
               "timeField": "update_timestamp",
               "timeFieldType": "DateTime"
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT time, flow || ' ' || subflow AS subflow, bytes \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, flow, annotations['subflow'] AS subflow, sum(ingressBytes) AS bytes \nFROM deltafi.\"deltafile\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) )\nGROUP BY flow, subflow, time \nORDER BY time ASC WITH FILL STEP $__interval_s)",
+          "rawSql": "SELECT time, flow || ' ' || subflow AS subflow, bytes \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, flow, annotations['subflow'] AS subflow, sum(ingressBytes) AS bytes \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) )\nGROUP BY flow, subflow, time \nORDER BY time ASC WITH FILL STEP $__interval_s)",
           "refId": "A",
           "selectedFormat": 0
         }
       ],
-      "title": "Files In (Clickhouse)",
+      "title": "Bytes In (Clickhouse)",
       "transformations": [
         {
           "id": "organize",
@@ -457,14 +457,14 @@
             ],
             "mode": "aggregate",
             "orderBy": [],
-            "table": "deltafile"
+            "table": "deltafiles"
           },
           "datasource": {
             "type": "grafana-clickhouse-datasource",
             "uid": "${clickhouseDatasource}"
           },
           "queryType": "builder",
-          "rawSql": "SELECT sum(files) ingressBytes FROM \"deltafi\".\"deltafile\" WHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) LIMIT 100",
+          "rawSql": "SELECT sum(files) ingressBytes FROM \"deltafi\".\"deltafiles\" WHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) LIMIT 100",
           "refId": "A"
         }
       ],
@@ -572,7 +572,7 @@
             ],
             "mode": "aggregate",
             "orderBy": [],
-            "table": "deltafile"
+            "table": "deltafiles"
           },
           "datasource": {
             "type": "grafana-clickhouse-datasource",
@@ -629,11 +629,11 @@
               ],
               "mode": "aggregate",
               "orderBy": [],
-              "table": "deltafile"
+              "table": "deltafiles"
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT flow, annotations['subflow'] AS subflow, sum(ingressBytes) value \nFROM \"deltafi\".\"deltafile\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) \nGROUP BY flow, subflow\nORDER BY value DESC\nLIMIT 10",
+          "rawSql": "SELECT flow, annotations['subflow'] AS subflow, sum(ingressBytes) value \nFROM \"deltafi\".\"deltafiles\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) \nGROUP BY flow, subflow\nORDER BY value DESC\nLIMIT 10",
           "refId": "A",
           "selectedFormat": 4
         }
@@ -753,7 +753,7 @@
                 "name": "flow"
               }
             ],
-            "table": "deltafile"
+            "table": "deltafiles"
           },
           "datasource": {
             "type": "grafana-clickhouse-datasource",
@@ -815,11 +815,11 @@
                   "name": "flow"
                 }
               ],
-              "table": "deltafile"
+              "table": "deltafiles"
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT flow, annotations['subflow'] AS subflow, sum(files) value \nFROM \"deltafi\".\"deltafile\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) \nGROUP BY flow, subflow\nORDER BY value DESC\nLIMIT 10",
+          "rawSql": "SELECT flow, annotations['subflow'] AS subflow, sum(files) value \nFROM \"deltafi\".\"deltafiles\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) \nGROUP BY flow, subflow\nORDER BY value DESC\nLIMIT 10",
           "refId": "A",
           "selectedFormat": 4
         }
@@ -956,7 +956,7 @@
             ],
             "mode": "trend",
             "orderBy": [],
-            "table": "deltafile",
+            "table": "deltafiles",
             "timeField": "update_timestamp",
             "timeFieldType": "DateTime"
           },
@@ -1006,13 +1006,13 @@
               ],
               "mode": "trend",
               "orderBy": [],
-              "table": "deltafile",
+              "table": "deltafiles",
               "timeField": "update_timestamp",
               "timeFieldType": "DateTime"
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT time, flow || '-' || subflow AS subflow, files \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, flow, annotations['subflow'] AS subflow, sum(files) AS files \nFROM deltafi.\"deltafile\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) )\nGROUP BY flow, subflow, time \nORDER BY time ASC WITH FILL STEP $__interval_s)",
+          "rawSql": "SELECT time, flow || '-' || subflow AS subflow, files \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, flow, annotations['subflow'] AS subflow, sum(files) AS files \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) )\nGROUP BY flow, subflow, time \nORDER BY time ASC WITH FILL STEP $__interval_s)",
           "refId": "A",
           "selectedFormat": 0
         }
@@ -1168,7 +1168,7 @@
             ],
             "mode": "trend",
             "orderBy": [],
-            "table": "deltafile",
+            "table": "deltafiles",
             "timeField": "update_timestamp",
             "timeFieldType": "DateTime"
           },
@@ -1218,13 +1218,13 @@
               ],
               "mode": "trend",
               "orderBy": [],
-              "table": "deltafile",
+              "table": "deltafiles",
               "timeField": "update_timestamp",
               "timeFieldType": "DateTime"
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT $__timeInterval(timestamp) as time, flow, sum(filtered) \" \" \nFROM deltafi.\"deltafile\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime )\nGROUP BY flow, time \nORDER BY time ASC WITH FILL STEP $__interval_s",
+          "rawSql": "SELECT $__timeInterval(timestamp) as time, flow, sum(filtered) \" \" \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime )\nGROUP BY flow, time \nORDER BY time ASC WITH FILL STEP $__interval_s",
           "refId": "A",
           "selectedFormat": 0
         }
@@ -1379,7 +1379,7 @@
             ],
             "mode": "trend",
             "orderBy": [],
-            "table": "deltafile",
+            "table": "deltafiles",
             "timeField": "update_timestamp",
             "timeFieldType": "DateTime"
           },
@@ -1429,13 +1429,13 @@
               ],
               "mode": "trend",
               "orderBy": [],
-              "table": "deltafile",
+              "table": "deltafiles",
               "timeField": "update_timestamp",
               "timeFieldType": "DateTime"
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT $__timeInterval(timestamp) as time, flow, sum(egressed) \" \" \nFROM deltafi.\"deltafile\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime )\nGROUP BY flow, time \nORDER BY time ASC WITH FILL STEP $__interval_s",
+          "rawSql": "SELECT $__timeInterval(timestamp) as time, flow, sum(egressed) \" \" \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime )\nGROUP BY flow, time \nORDER BY time ASC WITH FILL STEP $__interval_s",
           "refId": "A",
           "selectedFormat": 0
         }
@@ -1590,7 +1590,7 @@
             ],
             "mode": "trend",
             "orderBy": [],
-            "table": "deltafile",
+            "table": "deltafiles",
             "timeField": "update_timestamp",
             "timeFieldType": "DateTime"
           },
@@ -1640,13 +1640,13 @@
               ],
               "mode": "trend",
               "orderBy": [],
-              "table": "deltafile",
+              "table": "deltafiles",
               "timeField": "update_timestamp",
               "timeFieldType": "DateTime"
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT $__timeInterval(timestamp) as time, flow, sum(errored) \" \" \nFROM deltafi.\"deltafile\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime )\nGROUP BY flow, time \nORDER BY time ASC WITH FILL STEP $__interval_s",
+          "rawSql": "SELECT $__timeInterval(timestamp) as time, flow, sum(errored) \" \" \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime )\nGROUP BY flow, time \nORDER BY time ASC WITH FILL STEP $__interval_s",
           "refId": "A",
           "selectedFormat": 0
         }
@@ -1700,7 +1700,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1767,7 +1768,7 @@
             "limit": 100,
             "mode": "list",
             "orderBy": [],
-            "table": "deltafile"
+            "table": "deltafiles"
           },
           "datasource": {
             "type": "grafana-clickhouse-datasource",
@@ -1807,11 +1808,11 @@
               "limit": 100,
               "mode": "list",
               "orderBy": [],
-              "table": "deltafile"
+              "table": "deltafiles"
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT flow, annotations['subflow'] AS subflow, sum(ingressBytes) as values\nFROM \"deltafi\".\"deltafile\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime )\nGROUP BY flow, subflow\nORDER BY values DESC",
+          "rawSql": "SELECT flow, annotations['subflow'] AS subflow, sum(ingressBytes) as values\nFROM \"deltafi\".\"deltafiles\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime )\nGROUP BY flow, subflow\nORDER BY values DESC",
           "refId": "A",
           "selectedFormat": 4
         }
@@ -1923,7 +1924,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1989,7 +1991,7 @@
             "limit": 100,
             "mode": "list",
             "orderBy": [],
-            "table": "deltafile"
+            "table": "deltafiles"
           },
           "datasource": {
             "type": "grafana-clickhouse-datasource",
@@ -2029,11 +2031,11 @@
               "limit": 100,
               "mode": "list",
               "orderBy": [],
-              "table": "deltafile"
+              "table": "deltafiles"
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT flow, annotations['subflow'] AS subflow, sum(files) as files\nFROM \"deltafi\".\"deltafile\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime )\nGROUP BY flow, subflow\nORDER BY files DESC",
+          "rawSql": "SELECT flow, annotations['subflow'] AS subflow, sum(files) as files\nFROM \"deltafi\".\"deltafiles\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime )\nGROUP BY flow, subflow\nORDER BY files DESC",
           "refId": "A",
           "selectedFormat": 4
         }
@@ -2168,14 +2170,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "${clickhouseDatasource}"
         },
-        "definition": "SELECT DISTINCT flow FROM deltafile WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime )",
+        "definition": "SELECT DISTINCT flow FROM deltafiles WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime )",
         "hide": 0,
         "includeAll": true,
         "label": "Flow",
         "multi": true,
         "name": "flow",
         "options": [],
-        "query": "SELECT DISTINCT flow FROM deltafile WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime )",
+        "query": "SELECT DISTINCT flow FROM deltafiles WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime )",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
@@ -2190,8 +2192,6 @@
   },
   "timepicker": {
     "refresh_intervals": [
-      "10s",
-      "30s",
       "1m",
       "5m",
       "15m",
@@ -2204,6 +2204,6 @@
   "timezone": "",
   "title": "Clickhouse Flow/Subflow",
   "uid": "clickhouse-flow-subflow",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }

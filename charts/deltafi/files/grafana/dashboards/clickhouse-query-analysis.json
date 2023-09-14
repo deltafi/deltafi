@@ -1422,7 +1422,6 @@
   "schemaVersion": 38,
   "style": "dark",
   "tags": [
-    "PROTOTYPE",
     "Clickhouse"
   ],
   "templating": {
@@ -1535,8 +1534,8 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "PROTOTYPE Clickhouse Query Analysis",
-  "uid": "prototype-clickhouse-query-analysis",
+  "title": "Clickhouse Query Analysis",
+  "uid": "clickhouse-query-analysis",
   "version": 1,
   "weekStart": ""
 }

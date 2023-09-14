@@ -108,26 +108,29 @@ metadata:
 data:
   last-seen.json: |-
 {{ .Files.Get "files/grafana/dashboards/last-seen.json" | indent 4 }}
+
+
+{{- if .Values.clickhouse.enabled -}}
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: prototype-clickhouse-query-analysis
+  name: clickhouse-query-analysis
   labels:
     grafana_dashboard: "1"
 data:
-  prototype-clickhouse-query-analysis.json: |-
-{{ .Files.Get "files/grafana/dashboards/prototype-clickhouse-query-analysis.json" | indent 4 }}
+  clickhouse-query-analysis.json: |-
+{{ .Files.Get "files/grafana/dashboards/clickhouse-query-analysis.json" | indent 4 }}
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: prototype-clickhouse-stats
+  name: clickhouse-stats
   labels:
     grafana_dashboard: "1"
 data:
-  prototype-clickhouse-stats.json: |-
-{{ .Files.Get "files/grafana/dashboards/prototype-clickhouse-stats.json" | indent 4 }}
+  clickhouse-stats.json: |-
+{{ .Files.Get "files/grafana/dashboards/clickhouse-stats.json" | indent 4 }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -148,3 +151,4 @@ metadata:
 data:
   clickhouse-flow-subflow.json: |-
 {{ .Files.Get "files/grafana/dashboards/clickhouse-flow-subflow.json" | indent 4 }}
+{{- end }}

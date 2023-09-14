@@ -32,11 +32,14 @@ module Deltafi
 
     include Deltafi::Logger
 
-    def initialize(interval: 10.seconds, lag: 30.seconds, limit: 1000)
+    DELTAFILE_TABLE_NAME = 'deltafiles'
+
+    def initialize(interval: 10.seconds, lag: 30.seconds, limit: 1000, delete_ttl: '14 DAY')
       @interval = interval.to_i.seconds # Interval in seconds for each ETL sync
       @lag = lag.to_i.seconds           # Maximum number of records to batch from MongoDB to Clickhouse at once
       @limit = limit.to_i               # Number of seconds before now for deltafile query to allow all mongo insertions to settle out
       @clickhouse = DF.clickhouse_client
+      @deltafile_ttl = "timestamp + INTERVAL #{delete_ttl} DELETE"
 
       create_clickhouse_table
       # initialize last update from last clickhouse entry
@@ -90,7 +93,6 @@ module Deltafi
       error "Unable to complete ETL sync: #{e.message}"
     end
 
-    DELTAFILE_TABLE_NAME = 'deltafile'
     DELTAFILE_COLUMNS = %i[update_timestamp timestamp flow did files ingressBytes totalBytes errored filtered egressed annotations].freeze
     def extract_row(deltafile)
       [
@@ -121,7 +123,6 @@ module Deltafi
           timestamp DateTime,
           update_timestamp DateTime,
           flow String,
-          egressFlow String,
           did String,
           files UInt64,
           ingressBytes UInt64,
@@ -133,6 +134,12 @@ module Deltafi
         )
         ENGINE = ReplacingMergeTree
         ORDER BY (flow, did, timestamp)
+        PARTITION BY toYYYYMMDD(timestamp)
+        TTL #{@deltafile_ttl}
+      SQL
+
+      @clickhouse.execute <<~SQL
+        ALTER TABLE #{DELTAFILE_TABLE_NAME} MODIFY TTL #{@deltafile_ttl}
       SQL
     rescue StandardError => e
       error e.message

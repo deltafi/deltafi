@@ -2197,7 +2197,6 @@
   "schemaVersion": 38,
   "style": "dark",
   "tags": [
-    "PROTOTYPE",
     "Clickhouse"
   ],
   "templating": {
@@ -2285,8 +2284,8 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "PROTOTYPE ClickHouse Stats",
-  "uid": "prototype-clickhouse-stats",
+  "title": "ClickHouse Stats",
+  "uid": "clickhouse-stats",
   "version": 1,
   "weekStart": ""
 }

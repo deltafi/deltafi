@@ -26,5 +26,6 @@ require 'deltafi'
 DF::ClickhouseETL.new(
   interval: ENV['ETL_INTERVAL'] || 10.seconds,
   lag: ENV['ETL_LAG'] || 30.seconds,
-  limit: ENV['ETL_BATCH'] || 1000
+  limit: ENV['ETL_BATCH'] || 1000,
+  delete_ttl: ENV['ETL_DELETE_TTL'] || '7 DAY'
 ).run
