@@ -1,10 +1,9 @@
-![DeltaFi](public/images/deltafi-logo-side-by-side.svg "DeltaFi"){width=500px}
+<img src="public/images/deltafi-logo-side-by-side.svg" width="500">
 
 # DeltaFi is the open source platform for data transformation
 
 [![SYSTOLIC](public/images/powered.svg)](https://www.systolic.com)
 [![Apache 2.0](public/images/apache2.svg)](http://www.apache.org/licenses/LICENSE-2.0)
-[![Pipeline](https://gitlab.com/deltafi/deltafi/badges/main/pipeline.svg)](https://gitlab.com/deltafi/deltafi/-/commits/main)
 [![Contributor Covenant](public/images/contributor-covenant.svg)](CODE_OF_CONDUCT.md)
 [![Docker Pulls](https://img.shields.io/docker/pulls/deltafi/deltafi-api?color=yellow&logo=docker)](https://hub.docker.com/u/deltafi)
 
