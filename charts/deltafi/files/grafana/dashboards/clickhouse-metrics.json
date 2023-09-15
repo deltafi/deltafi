@@ -26,7 +26,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 577,
+  "id": 7584,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -1586,7 +1586,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               }
             ]
           },
@@ -1680,7 +1681,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1743,7 +1745,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               }
             ]
           },
@@ -1805,7 +1808,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               }
             ]
           },
@@ -1869,7 +1873,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -2081,7 +2086,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -2173,7 +2179,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -2269,7 +2276,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -2365,7 +2373,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -2486,7 +2495,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -3251,14 +3261,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "${clickhouseDatasource}"
         },
-        "definition": "SELECT DISTINCT flow FROM deltafile WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime )",
+        "definition": "SELECT DISTINCT flow FROM deltafiles WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime )",
         "hide": 0,
         "includeAll": true,
         "label": "Flow",
         "multi": true,
         "name": "flow",
         "options": [],
-        "query": "SELECT DISTINCT flow FROM deltafile WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime )",
+        "query": "SELECT DISTINCT flow FROM deltafiles WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime )",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
