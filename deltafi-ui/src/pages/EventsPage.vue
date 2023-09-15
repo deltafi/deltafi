@@ -165,50 +165,54 @@ const menu = ref();
 // Dates/Time Variables
 const helperButtons = ref([]);
 const updateHelperButtons = () => {
+  let now = new Date();
+  // If running in UTC mode, set dates in the future because the DatePicker does not have a UTC mode.
+  if (uiConfig.useUTC)
+    now = now.getTime() + now.getTimezoneOffset() * 60000;
   const buttons = [
     {
       name: "Last Hour",
-      from: new Date(new Date().setHours(new Date().getHours() - 1)),
-      to: new Date(),
+      from: new Date(now - 1 * 3600000),
+      to: new Date(now),
     },
     {
       name: "Last 4 Hours",
-      from: new Date(new Date().setHours(new Date().getHours() - 4)),
-      to: new Date(),
+      from: new Date(now - 4 * 3600000),
+      to: new Date(now),
     },
     {
       name: "Last 8 Hours",
-      from: new Date(new Date().setHours(new Date().getHours() - 8)),
-      to: new Date(),
+      from: new Date(now - 8 * 3600000),
+      to: new Date(now),
     },
     {
       name: "Last 12 Hours",
-      from: new Date(new Date().setHours(new Date().getHours() - 12)),
-      to: new Date(),
+      from: new Date(now - 12 * 3600000),
+      to: new Date(now),
     },
     {
       name: "Last 24 Hours",
-      from: new Date(new Date().setHours(new Date().getHours() - 24)),
-      to: new Date(),
+      from: new Date(now - 24 * 3600000),
+      to: new Date(now),
     },
     {
       name: "Last 3 Days",
-      from: new Date(new Date().setDate(new Date().getDate() - 3)),
-      to: new Date(),
+      from: new Date(now - 3 * 24 * 3600000),
+      to: new Date(now),
     },
     {
       name: "Last 7 Days",
-      from: new Date(new Date().setDate(new Date().getDate() - 7)),
-      to: new Date(),
+      from: new Date(now - 7 * 24 * 3600000),
+      to: new Date(now),
     },
     {
       name: "Last 14 Days",
-      from: new Date(new Date().setDate(new Date().getDate() - 14)),
-      to: new Date(),
+      from: new Date(now - 14 * 24 * 3600000),
+      to: new Date(now),
     },
   ];
-  helperButtons.value.length = 0
-  buttons.forEach((button) => helperButtons.value.push(button))
+  helperButtons.value.length = 0;
+  buttons.forEach((button) => helperButtons.value.push(button));
 };
 const timestampFormat = "YYYY-MM-DD HH:mm:ss";
 const defaultStartTimeDate = computed(() => {
