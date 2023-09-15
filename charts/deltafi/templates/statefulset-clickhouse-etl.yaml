@@ -22,7 +22,7 @@ spec:
       {{- include "initContainersWaitForDatabases" . | nindent 6 }}
       containers:
       - name: deltafi-clickhouse-etl
-        image: {{ .Values.deltafi.clickhouse_etl.image }}
+        image: {{ .Values.deltafi.api.image }}
         imagePullPolicy: IfNotPresent
         command: [ 'bundle', 'exec', 'bin/clickhouse_etl.rb' ]
         env:

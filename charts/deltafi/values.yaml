@@ -34,7 +34,6 @@ deltafi:
   api:
     image: deltafi/deltafi-api:1.1.1
   clickhouse_etl:
-    image: deltafi/deltafi-api:1.1.1
     enabled: false
     interval: 10          # Period (seconds) between sync jobs
     lag: 60               # Lag time (seconds) for deltafiles to settle into MongoDB
