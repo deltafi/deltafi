@@ -57,7 +57,7 @@ module Deltafi
 
             errors = []
 
-            clickhouse_client.insert('deltafile', columns: %i[did timestamp update_timestamp flow files ingressBytes totalBytes errored filtered annotations]) do |insert_buffer|
+            clickhouse_client.insert(Deltafi::ClickhouseETL::DELTAFILE_TABLE_NAME, columns: %i[did timestamp update_timestamp flow files ingressBytes totalBytes errored filtered annotations]) do |insert_buffer|
               blob.each_with_index do |survey, index|
                 error_count = errors.length
                 errors << { error: "Flow missing at #{index}", source: survey.to_json.to_s } unless survey.key?(:flow)

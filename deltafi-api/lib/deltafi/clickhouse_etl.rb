@@ -45,7 +45,7 @@ module Deltafi
       # initialize last update from last clickhouse entry
       # Note: Clickhouse has 1 second granularity timestamp, so there will be the possibility of up to 1 second of data overlap.  The small number of duplicates will be taken
       # care of by Clickhouse merge engine
-      @last_update = (@clickhouse.select_value('SELECT update_timestamp FROM ${DELTAFILE_TABLE_NAME} ORDER BY update_timestamp DESC LIMIT 1') || '1985-10-26 01:21:00'.to_datetime) - 1.second
+      @last_update = (@clickhouse.select_value("SELECT update_timestamp FROM #{DELTAFILE_TABLE_NAME} ORDER BY update_timestamp DESC LIMIT 1") || '1985-10-26 01:21:00'.to_datetime) - 1.second
 
       info "Last update detected on #{precise_last_update}"
       Process.setproctitle('Clickhouse ETL')
