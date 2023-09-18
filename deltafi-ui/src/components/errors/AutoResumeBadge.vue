@@ -21,7 +21,8 @@
 </template>
 
 <script setup>
-import { computed, defineProps } from "vue";
+import { computed, defineProps, onMounted, onUnmounted, ref } from "vue";
+import { useTimeAgo } from "@vueuse/core";
 
 const props = defineProps({
   reason: {
@@ -40,12 +41,46 @@ const props = defineProps({
   },
 });
 
+let autoRefresh = null;
+const refreshInterval = 1000; // 1 second
+const timestamp = computed(() => new Date(props.timestamp));
+const timeDiffInWords = ref("");
+const secondsDiff = ref(0);
+const tooltipPrefix = computed(() => secondsDiff.value <= 0 ? "Scheduled for auto resume" : "Next auto resume");
+
+const calculateTooltip = () => {
+  const now = new Date();
+  secondsDiff.value = Math.round((timestamp.value.getTime() - now) / 1000);
+  if (secondsDiff.value <= 0) {
+    // Past
+    timeDiffInWords.value = Math.abs(secondsDiff.value) < 60 ?
+      `${Math.abs(secondsDiff.value)} seconds ago` :
+      useTimeAgo(timestamp.value).value
+  } else {
+    // Future
+    timeDiffInWords.value = secondsDiff.value < 60 ?
+      `in ${secondsDiff.value} seconds` :
+      useTimeAgo(timestamp.value).value
+  }
+};
+
+onMounted(() => {
+  calculateTooltip()
+  autoRefresh = setInterval(() => {
+    calculateTooltip()
+  }, refreshInterval);
+});
+
+onUnmounted(() => {
+  clearInterval(autoRefresh);
+});
+
 const classes = computed(() => {
   return `auto-resume-icon ${props.icon}`;
 });
 
 const tooltip = computed(() => {
-  return `Next Auto Resume: ${props.timestamp}\n\n ${props.reason}`;
+  return `${tooltipPrefix.value} ${timeDiffInWords.value}\n(at ${props.timestamp})\n\n${props.reason}`;
 });
 </script>
 

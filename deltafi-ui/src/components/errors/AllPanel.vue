@@ -56,7 +56,7 @@
         <Column field="last_error_cause" header="Last Error" filter-field="last_error_cause" :show-filter-menu="true" :show-filter-match-modes="false" :show-apply-button="false" :show-clear-button="false" class="last-error-column">
           <template #body="{ data }">
             <ErrorAcknowledgedBadge v-if="data.errorAcknowledged" :reason="data.errorAcknowledgedReason" :timestamp="data.errorAcknowledged" class="mr-1" />
-            <AutoResumeBadge v-if="data.nextAutoResume !== null" :timestamp="data.nextAutoResume" :reason="data.nextAutoResumeReason" class="ml-2" />
+            <AutoResumeBadge v-if="data.nextAutoResume !== null" :timestamp="data.nextAutoResume" :reason="data.nextAutoResumeReason" />
             {{ latestError(data.actions).errorCause }}
           </template>
           <template #filter="{ filterModel, filterCallback }">
