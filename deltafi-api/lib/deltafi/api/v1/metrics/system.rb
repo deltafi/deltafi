@@ -124,7 +124,10 @@ module Deltafi
             end
 
             def content
-              nodes.find { |node| node[:apps].any? { |a| a[:name].include? 'minio' } }&.dig(:resources, :disk)
+              minio_disk_metrics = nodes.find { |node| node[:apps].any? { |a| a[:name].include? 'minio' } }&.dig(:resources, :disk)
+              raise "Unable to get content storage metrics!\n\n\t#{@@cached_graphite_metrics}" unless minio_disk_metrics&.values&.all?(&:positive?)
+
+              minio_disk_metrics
             end
           end
         end

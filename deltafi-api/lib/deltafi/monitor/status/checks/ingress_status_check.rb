@@ -20,6 +20,7 @@
 
 require 'deltafi/common'
 require 'deltafi/monitor/status/check'
+require 'bytesize'
 
 module Deltafi
   module Monitor
@@ -58,6 +59,10 @@ module Deltafi
             message_lines << "Reenable the system property '#{INGRESS_ENABLED_PROPERTY}' to restart ingress."
           end
 
+          def format_number(number)
+            number.to_i.to_s.gsub(/\B(?=(\d{3})*\b)/, ',')
+          end
+
           def check_for_storage_disabled_ingress
             remaining = remaining_bytes
             required = required_bytes
@@ -70,8 +75,8 @@ module Deltafi
               notify_storage_disabled remaining, required
               self.code = 1
               message_lines << "##### Ingress is disabled due to lack of content storage\n"
-              message_lines << "Required bytes in content storage: #{required}\n"
-              message_lines << "Remaining bytes in content storage: #{remaining}\n"
+              message_lines << "Required bytes in content storage: #{format_number(required)} (#{ByteSize.new(required)})\n"
+              message_lines << "Remaining bytes in content storage: #{format_number(remaining)} (#{ByteSize.new(remaining)})\n"
             end
           end
 

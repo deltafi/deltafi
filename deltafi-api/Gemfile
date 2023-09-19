@@ -4,6 +4,7 @@ source 'https://rubygems.org'
 
 gem 'awesome_print'
 gem 'aws-sdk-s3'
+gem 'bytesize'
 gem 'click_house'
 gem 'eventmachine', '~> 1.2.7'
 gem 'filesize'
