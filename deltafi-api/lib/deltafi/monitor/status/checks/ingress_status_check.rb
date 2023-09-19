@@ -83,8 +83,12 @@ module Deltafi
           def notify_storage_disabled(remaining, required)
             return if @@ingress_disabled_by_storage
 
-            Deltafi::Events.generate 'Alert: Disabling ingress due to depleted content storage',
-                                     content: "- Remaining bytes in content storage: #{remaining}\n- Required bytes: #{required}\n",
+            content_lines = [
+              "- Remaining bytes in content storage: #{format_number(remaining)} (#{ByteSize.new(remaining)})",
+              "- Required bytes: #{format_number(required)} (#{ByteSize.new(required)})"
+            ]
+            Deltafi::Events.generate 'Disabling ingress due to depleted content storage',
+                                     content: content_lines.join("\n"),
                                      severity: 'warn',
                                      notification: true,
                                      source: 'ingress'

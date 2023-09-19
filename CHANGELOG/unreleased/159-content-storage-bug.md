@@ -4,7 +4,7 @@ Document any changes on this branch here.
 -
 
 ### Changed
-- Added human readable bytes to Ingress Status Check.
+- Added human-readable bytes to Ingress Status Check output and event.
 
 ### Fixed
 - Added positive check to Content Storage metrics method.
