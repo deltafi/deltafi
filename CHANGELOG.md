@@ -5,6 +5,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.1.4] - 2023-09-20
+
+### Added
+- Added a scheduled task to periodically attempt to revalidate any invalid flows
+
+### Changed
+- Added human-readable bytes to Ingress Status Check output and event.
+- Plugin registration will now trigger revalidation of any invalid flows
+
+### Fixed
+- Added positive check to Content Storage metrics method.
+
 ## [1.1.3] - 2023-09-19
 
 ### Added
@@ -2217,7 +2229,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.3...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.4...main
+[1.1.4]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.3...1.1.4
 [1.1.3]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.2...1.1.3
 [1.1.2]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.1...1.1.2
 [1.1.1]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.0...1.1.1
