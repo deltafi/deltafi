@@ -76,6 +76,12 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         return flow;
     }
 
+    public void revalidateInvalidFlows() {
+        flowCache.values().stream()
+                .filter(Flow::isInvalid)
+                .forEach(this::validateAndSaveFlow);
+    }
+
     /**
      * Find the given flow and move it to a running state if it is currently stopped.
      * @param flowName name of the flow that should be started
@@ -191,8 +197,10 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
      * @return updated flow after validation is run
      */
     public FlowT validateAndSaveFlow(String flowName) {
-        FlowT flow = getFlowOrThrow(flowName);
+        return validateAndSaveFlow(getFlowOrThrow(flowName));
+    }
 
+    FlowT validateAndSaveFlow(FlowT flow) {
         List<FlowConfigError> errors = new ArrayList<>(flow.getFlowStatus()
                 .getErrors().stream().filter(error -> FlowErrorType.UNRESOLVED_VARIABLE.equals(error.getErrorType()))
                 .toList());

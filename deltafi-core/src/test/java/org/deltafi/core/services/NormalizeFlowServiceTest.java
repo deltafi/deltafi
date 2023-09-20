@@ -32,6 +32,7 @@ import org.deltafi.core.types.NormalizeFlow;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.util.FlowBuilders;
 import org.deltafi.core.validation.NormalizeFlowValidator;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -100,7 +101,6 @@ class NormalizeFlowServiceTest {
 
     @Test
     void updateSnapshot() {
-        // TODO - original tests should pass
         List<NormalizeFlow> flows = new ArrayList<>();
         flows.add(normalizeFlow("a", FlowState.RUNNING, false, -1));
         flows.add(normalizeFlow("b", FlowState.STOPPED, false, 1));
@@ -215,6 +215,23 @@ class NormalizeFlowServiceTest {
         normalizeFlowService.upgradeFlows(coordinates, List.of(), Set.of("a", "b"));
         Mockito.verify(normalizeFlowRepo).saveAll(List.of());
         Mockito.verify(normalizeFlowRepo).deleteAllById(Set.of("c"));
+    }
+
+    @Test
+    void testRevalidateFlows() {
+        // load an invalid flow into the cache
+        NormalizeFlow invalidFlow = FlowBuilders.buildNormalizeFlow(FlowState.INVALID);
+        invalidFlow.setSchemaVersion(NormalizeFlow.CURRENT_SCHEMA_VERSION);
+        Mockito.when(normalizeFlowRepo.findAll()).thenReturn(List.of(invalidFlow));
+        normalizeFlowService.refreshCache();
+
+        // mock invalid flow passing validation
+        Mockito.when(flowValidator.validate(invalidFlow)).thenReturn(List.of());
+
+        normalizeFlowService.revalidateInvalidFlows();
+
+        Assertions.assertEquals(FlowState.STOPPED, invalidFlow.getFlowStatus().getState());
+        Mockito.verify(normalizeFlowRepo).save(invalidFlow);
     }
 
     void setupErrorExceeded() {

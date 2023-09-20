@@ -35,7 +35,6 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.boot.info.BuildProperties;
 
 import java.util.Collection;
 import java.util.List;
@@ -94,6 +93,9 @@ class PluginRegistryServiceTest {
     @Mock
     SystemPluginService systemPluginService;
 
+    @Mock
+    FlowValidationService flowValidationService;
+
     PluginRegistryService pluginRegistryService;
 
     @BeforeEach
@@ -102,7 +104,7 @@ class PluginRegistryServiceTest {
         List<PluginUninstallCheck> checkers = List.of(normalizeFlowService, enrichFlowService, egressFlowService, transformFlowService);
         pluginRegistryService = new PluginRegistryService(normalizeFlowService, enrichFlowService, egressFlowService,
                 transformFlowService, pluginRepository, pluginValidator, actionDescriptorService, pluginVariableService,
-                normalizeFlowPlanService, enrichFlowPlanService, egressFlowPlanService, transformFlowPlanService, systemPluginService, checkers, cleaners);
+                normalizeFlowPlanService, enrichFlowPlanService, egressFlowPlanService, transformFlowPlanService, systemPluginService, flowValidationService, checkers, cleaners);
     }
 
     @Test
@@ -118,6 +120,7 @@ class PluginRegistryServiceTest {
         ArgumentCaptor<Plugin> pluginArgumentCaptor = ArgumentCaptor.forClass(Plugin.class);
         Mockito.verify(pluginRepository).save(pluginArgumentCaptor.capture());
         assertEquals(plugin, pluginArgumentCaptor.getValue());
+        Mockito.verify(flowValidationService).asyncRevalidateInvalidFlows();
     }
 
     @Test

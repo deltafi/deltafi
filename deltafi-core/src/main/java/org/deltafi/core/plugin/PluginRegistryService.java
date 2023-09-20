@@ -50,6 +50,7 @@ public class PluginRegistryService implements Snapshotter {
     private final EgressFlowPlanService egressFlowPlanService;
     private final TransformFlowPlanService transformFlowPlanService;
     private final SystemPluginService systemPluginService;
+    private final FlowValidationService flowValidationService;
     private final List<PluginUninstallCheck> pluginUninstallChecks;
     private final List<PluginCleaner> pluginCleaners;
 
@@ -76,6 +77,8 @@ public class PluginRegistryService implements Snapshotter {
         actionDescriptorService.registerActions(plugin.getActions());
         pluginVariableService.saveVariables(plugin.getPluginCoordinates(), pluginRegistration.getVariables());
         upgradeFlowPlans(plugin.getPluginCoordinates(), groupedFlowPlans);
+
+        flowValidationService.asyncRevalidateInvalidFlows();
 
         return Result.builder().success(true).build();
     }
