@@ -17,10 +17,7 @@
  */
 package org.deltafi.core.repo;
 
-import org.deltafi.common.types.EgressFlowPlan;
-import org.springframework.stereotype.Repository;
+public interface EgressFlowPlanRepoCustom {
 
-@Repository
-public interface EgressFlowPlanRepo extends FlowPlanRepo<EgressFlowPlan>, EgressFlowPlanRepoCustom {
-
+    void migrateIngressToNormalize();
 }

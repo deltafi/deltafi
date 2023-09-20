@@ -43,10 +43,7 @@ public class NormalizeFlowPlanRepoImpl implements NormalizeFlowPlanRepoCustom {
                 mongoTemplate.getCollection(INGRESS_FLOW_PLAN)
                         .renameCollection(new MongoNamespace(mongoTemplate.getDb().getName(), NORMALIZE_FLOW_PLAN));
 
-                Update update = new Update()
-                        .rename("includeIngressFlows", "includeNormalizeFlows")
-                        .rename("excludeIngressFlows", "excludeNormalizeFlows")
-                        .set("type", "NORMALIZE");
+                Update update = new Update().set("type", "NORMALIZE");
 
                 mongoTemplate.updateMulti(new Query(), update, NORMALIZE_FLOW_PLAN);
                 log.info("Completed migrating {} collection to {}", INGRESS_FLOW_PLAN, NORMALIZE_FLOW_PLAN);

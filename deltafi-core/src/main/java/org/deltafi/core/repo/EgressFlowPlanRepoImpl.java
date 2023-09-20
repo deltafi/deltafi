@@ -17,10 +17,26 @@
  */
 package org.deltafi.core.repo;
 
-import org.deltafi.common.types.EgressFlowPlan;
-import org.springframework.stereotype.Repository;
+import jakarta.annotation.PostConstruct;
+import org.springframework.data.mongodb.core.MongoTemplate;
 
-@Repository
-public interface EgressFlowPlanRepo extends FlowPlanRepo<EgressFlowPlan>, EgressFlowPlanRepoCustom {
+@SuppressWarnings("unused")
+public class EgressFlowPlanRepoImpl implements EgressFlowPlanRepoCustom {
 
+    private static final String EXPECTED_ANNOTATIONS = "expectedAnnotations";
+
+    private final MongoTemplate mongoTemplate;
+
+    public EgressFlowPlanRepoImpl(MongoTemplate mongoTemplate) {
+        this.mongoTemplate = mongoTemplate;
+    }
+
+    @PostConstruct
+    public void migrate() {
+        migrateIngressToNormalize();
+    }
+
+    public void migrateIngressToNormalize() {
+        EgressMigrationHelper.migrateIngressToNormalize(mongoTemplate, "egressFlowPlan");
+    }
 }

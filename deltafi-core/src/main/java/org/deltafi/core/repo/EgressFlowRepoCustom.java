@@ -22,5 +22,8 @@ import org.deltafi.core.types.EgressFlow;
 import java.util.Set;
 
 public interface EgressFlowRepoCustom extends FlowRepoCustom<EgressFlow> {
+
+    void migrateIngressToNormalize();
+
     boolean updateExpectedAnnotations(String flowName, Set<String> expectedAnnotations);
 }

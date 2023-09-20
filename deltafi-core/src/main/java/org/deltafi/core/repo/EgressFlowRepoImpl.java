@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.repo;
 
+import jakarta.annotation.PostConstruct;
 import org.deltafi.core.types.EgressFlow;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -33,6 +34,15 @@ public class EgressFlowRepoImpl extends BaseFlowRepoImpl<EgressFlow> implements 
 
     public EgressFlowRepoImpl(MongoTemplate mongoTemplate) {
         super(mongoTemplate, EgressFlow.class);
+    }
+
+    @PostConstruct
+    public void migrate() {
+        migrateIngressToNormalize();
+    }
+
+    public void migrateIngressToNormalize() {
+        EgressMigrationHelper.migrateIngressToNormalize(mongoTemplate, "egressFlow");
     }
 
     @Override

@@ -45,9 +45,6 @@ public class NormalizeFlowRepoImpl extends BaseFlowRepoImpl<NormalizeFlow> imple
                 log.info("Migrating {} collection to {}", INGRESS_FLOW, NORMALIZE_FLOW);
                 mongoTemplate.getCollection(INGRESS_FLOW)
                         .renameCollection(new MongoNamespace(mongoTemplate.getDb().getName(), NORMALIZE_FLOW));
-
-                Update update = new Update().rename("includeIngressFlows", "includeNormalizeFlows").rename("excludeIngressFlows", "excludeNormalizeFlows");
-                mongoTemplate.updateMulti(new Query(), update, NORMALIZE_FLOW);
                 log.info("Completed migrating {} collection to {}", INGRESS_FLOW, NORMALIZE_FLOW);
             } else {
                 mongoTemplate.dropCollection(INGRESS_FLOW);
