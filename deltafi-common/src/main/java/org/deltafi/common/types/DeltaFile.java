@@ -145,28 +145,31 @@ public class DeltaFile {
     return actions.stream().filter(a -> a.getState() == ActionState.ERROR).collect(Collectors.toList());
   }
 
-  public void queueAction(String flow, String name, ActionType type) {
+  public Action queueAction(String flow, String name, ActionType type, boolean coldQueue) {
     Optional<Action> maybeAction = actionNamed(flow, name);
 
     if (maybeAction.isPresent()) {
-      setActionState(maybeAction.get(), ActionState.QUEUED, null, null);
+      setActionState(maybeAction.get(), coldQueue ? ActionState.COLD_QUEUED : ActionState.QUEUED, null, null);
+      return maybeAction.get();
     } else {
-      queueNewAction(flow, name, type);
+      return queueNewAction(flow, name, type, coldQueue);
     }
   }
 
-  public void queueNewAction(String flow, String name, ActionType type) {
+  public Action queueNewAction(String flow, String name, ActionType type, boolean coldQueue) {
     OffsetDateTime now = OffsetDateTime.now();
-    getActions().add(Action.builder()
+    Action action = Action.builder()
             .name(name)
             .type(type)
             .flow(flow)
-            .state(ActionState.QUEUED)
+            .state(coldQueue ? ActionState.COLD_QUEUED : ActionState.QUEUED)
             .created(now)
             .queued(now)
             .modified(now)
             .attempt(1 + getLastAttemptNum(name))
-            .build());
+            .build();
+    actions.add(action);
+    return action;
   }
 
   private int getLastAttemptNum(String name) {
@@ -349,7 +352,7 @@ public class DeltaFile {
   }
 
   public List<String> queuedActions() {
-    return getActions().stream().filter(action -> action.getState().equals(ActionState.QUEUED)).map(Action::getName).toList();
+    return getActions().stream().filter(Action::queued).map(Action::getName).toList();
   }
 
   public boolean hasDomains(List<String> domains) {
@@ -394,7 +397,7 @@ public class DeltaFile {
 
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   public boolean hasPendingActions() {
-    return getActions().stream().anyMatch(action -> action.getState().equals(ActionState.QUEUED));
+    return getActions().stream().anyMatch(Action::queued);
   }
 
   public boolean hasFilteredAction() {
@@ -629,7 +632,7 @@ public class DeltaFile {
   public void cancelQueuedActions() {
     OffsetDateTime now = OffsetDateTime.now();
     getActions().stream()
-            .filter(a -> a.getState().equals(ActionState.QUEUED))
+            .filter(Action::queued)
             .forEach(a -> {
               a.setState(ActionState.CANCELLED);
               a.setModified(now);

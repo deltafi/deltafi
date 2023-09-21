@@ -95,10 +95,10 @@ public class Util {
         DeltaFile deltaFile = Util.buildDeltaFile(did, flow, DeltaFileStage.ERROR, created, modified, content);
         if (extraAction) {
             if (!errorIsLast) {
-                deltaFile.queueNewAction(flow, "ErrorAction", ActionType.UNKNOWN);
+                deltaFile.queueNewAction(flow, "ErrorAction", ActionType.UNKNOWN, false);
                 deltaFile.errorAction(flow, "ErrorAction", modified, modified, cause, context);
             }
-            deltaFile.queueNewAction(flow, "OtherAction", ActionType.UNKNOWN);
+            deltaFile.queueNewAction(flow, "OtherAction", ActionType.UNKNOWN, false);
             deltaFile.completeAction(ActionEvent.builder()
                     .flow(flow)
                     .action("OtherAction")
@@ -108,12 +108,12 @@ public class Util {
         }
 
         if (errorIsLast || !extraAction) {
-            deltaFile.queueNewAction(flow, "ErrorAction", ActionType.UNKNOWN);
+            deltaFile.queueNewAction(flow, "ErrorAction", ActionType.UNKNOWN, false);
             deltaFile.errorAction(flow, "ErrorAction", modified, modified, cause, context);
         }
 
         if (extraError != null) {
-            deltaFile.queueNewAction(flow, "AnotherErrorAction", ActionType.UNKNOWN);
+            deltaFile.queueNewAction(flow, "AnotherErrorAction", ActionType.UNKNOWN, false);
             deltaFile.errorAction(flow, "AnotherErrorAction", modified, modified, extraError, context);
         }
         deltaFile.setModified(modified);

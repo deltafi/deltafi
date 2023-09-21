@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.types;
 
+import lombok.Getter;
 import org.deltafi.common.types.Property;
 import org.deltafi.common.types.PropertySource;
 import org.deltafi.core.configuration.DeltaFiProperties;
@@ -306,10 +307,22 @@ public enum PropertyType {
         public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
             target.getUi().setUseUTC(source.getUi().isUseUTC());
         }
+    },
+    IN_MEMORY_QUEUE_SIZE("inMemoryQueueSize", "Maximum size for in memory action queues before tasks are moved to on-disk queues", DeltaFiProperties::getInMemoryQueueSize) {
+        @Override
+        public Object convertValue(String value) {
+            return convertInt(value, 10);
+        }
+
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.setInMemoryQueueSize(source.getInMemoryQueueSize());
+        }
     };
 
     private static final DeltaFiProperties DEFAULT = new DeltaFiProperties();
     public static final String INVALID_VALUE = "Invalid value: ";
+    @Getter
     private final String key;
     private final String description;
     private final boolean refreshable;
@@ -340,10 +353,6 @@ public enum PropertyType {
      */
     public Object convertValue(String value) {
         return value;
-    }
-
-    public String getKey() {
-        return key;
     }
 
     public Object getProperty(DeltaFiProperties deltaFiProperties) {
@@ -383,6 +392,7 @@ public enum PropertyType {
         return intValue;
     }
 
+    @SuppressWarnings("SameParameterValue")
     static long convertLong(String value, int min) {
         long longValue = Long.parseLong(value);
         if (longValue < min) {
@@ -391,6 +401,7 @@ public enum PropertyType {
         return longValue;
     }
 
+    @SuppressWarnings("SameParameterValue")
     static int convertInt(String value, int min, int max) {
         int intValue = Integer.parseInt(value);
         if (intValue < min || intValue > max) {

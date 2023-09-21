@@ -61,8 +61,10 @@ public class Action {
           ActionType.TRANSFORM,
           ActionType.LOAD);
 
+  boolean queued() { return state == ActionState.QUEUED || state == ActionState.COLD_QUEUED; }
+
   boolean terminal() {
-    return state != ActionState.QUEUED;
+    return !queued();
   }
 
   boolean complete() {

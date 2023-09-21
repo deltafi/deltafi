@@ -186,6 +186,7 @@ type DeltaFiProperties {
     plugins: PluginProperties!
     checks: SystemCheckProperties!
     ui: UiProperties!
+    inMemoryQueueSize: Int!
     setProperties: [String]!
 }
 
@@ -201,6 +202,7 @@ input DeltaFiPropertiesInput {
     plugins: PluginPropertiesInput!
     checks: SystemCheckPropertiesInput!
     ui: UiPropertiesInput!
+    inMemoryQueueSize: Int!
     setProperties: [String]!
 }
 

@@ -23,16 +23,17 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
 import org.deltafi.common.queue.jedis.JedisKeyedBlockingQueue;
 import org.deltafi.common.queue.jedis.SortedSetEntry;
 import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionInput;
+import org.deltafi.common.types.ActionState;
 
 import java.net.URISyntaxException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Service for pushing and popping action events to a redis queue.
@@ -76,6 +77,10 @@ public class ActionEventQueue {
     public void putActions(List<ActionInput> actionInputs, boolean checkUnique) {
         List<SortedSetEntry> actions = new ArrayList<>();
         for (ActionInput actionInput : actionInputs) {
+            if (actionInput.getAction().getState() == ActionState.COLD_QUEUED) {
+                continue;
+            }
+
             if (checkUnique) {
                 String pattern = "*\"did\":\"" + actionInput.getActionContext().getDid() + "\"*";
                 if (jedisKeyedBlockingQueue.exists(actionInput.getQueueName(), pattern)) {
@@ -143,5 +148,11 @@ public class ActionEventQueue {
 
     public void drop(List<String> actionNames) {
         jedisKeyedBlockingQueue.drop(actionNames);
+    }
+
+    public Set<String> keys() { return jedisKeyedBlockingQueue.keys(); }
+
+    public long size(String key) {
+        return jedisKeyedBlockingQueue.sortedSetSize(key);
     }
 }

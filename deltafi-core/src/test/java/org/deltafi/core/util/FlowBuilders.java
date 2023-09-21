@@ -64,7 +64,7 @@ public class FlowBuilders {
         EnrichFlow enrichFlow = new EnrichFlow();
         enrichFlow.setName("sampleEnrich");
 
-        DomainActionConfiguration sampleDomain = new DomainActionConfiguration("SampleDomainAction", "type", List.of("sampleDomain"));
+        DomainActionConfiguration sampleDomain = new DomainActionConfiguration("SampleDomainAction", "SampleDomainType", List.of("sampleDomain"));
 
         EnrichActionConfiguration sampleEnrich = new EnrichActionConfiguration("SampleEnrichAction", "type", List.of("sampleDomain"));
         sampleEnrich.setRequiresMetadataKeyValues(List.of(new KeyValue("loadSampleType", "load-sample-type")));

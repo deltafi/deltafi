@@ -15,15 +15,20 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.types;
+package org.deltafi.core.types;
 
-public enum ActionState {
-  COLD_QUEUED,
-  QUEUED,
-  COMPLETE,
-  ERROR,
-  RETRIED,
-  FILTERED,
-  REINJECTED,
-  CANCELLED
+import lombok.Data;
+import org.deltafi.common.types.ActionType;
+
+@Data
+public class ColdQueuedActionSummary {
+    private String actionName;
+    private ActionType actionType;
+    private int count;
+
+    public ColdQueuedActionSummary(String actionName, ActionType actionType, int count) {
+        this.actionName = actionName;
+        this.actionType = actionType;
+        this.count = count;
+    }
 }

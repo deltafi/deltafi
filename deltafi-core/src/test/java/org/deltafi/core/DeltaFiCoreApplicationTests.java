@@ -278,6 +278,9 @@ class DeltaFiCoreApplicationTests {
 	@Autowired
 	ErrorCountService errorCountService;
 
+	@Autowired
+	QueueManagementService queueManagementService;
+
 	// mongo eats microseconds, jump through hoops
 	private final OffsetDateTime MONGO_NOW = OffsetDateTime.of(LocalDateTime.ofEpochSecond(OffsetDateTime.now().toInstant().toEpochMilli(), 0, ZoneOffset.UTC), ZoneOffset.UTC);
 
@@ -741,6 +744,36 @@ class DeltaFiCoreApplicationTests {
 		Map<String, String> tags = tagsFor(ActionEventType.LOAD, "SampleLoadAction", NORMALIZE_FLOW_NAME, null);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Mockito.verifyNoMoreInteractions(metricService);
+	}
+
+	@Test
+	void testLoadToColdQueue() throws IOException {
+		String did = UUID.randomUUID().toString();
+		DeltaFile postTransform = postTransformDeltaFile(did);
+		deltaFileRepo.save(postTransform);
+		queueManagementService.getColdQueues().put("SampleDomainType", 999999L);
+
+		deltaFilesService.handleActionEvent(actionEvent("load", did));
+
+		DeltaFile postLoadColdQueued = postLoadDeltaFile(did);
+		postLoadColdQueued.getActions().get(postLoadColdQueued.getActions().size() - 1).setState(ActionState.COLD_QUEUED);
+		verifyActionEventResults(postLoadColdQueued, ActionContext.builder().flow("sampleEnrich").name("sampleEnrich.SampleDomainAction").build());
+
+		Map<String, String> tags = tagsFor(ActionEventType.LOAD, "SampleLoadAction", NORMALIZE_FLOW_NAME, null);
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
+		Mockito.verifyNoMoreInteractions(metricService);
+	}
+
+	@Test
+	void testColdRequeue() {
+		String did = UUID.randomUUID().toString();
+		DeltaFile postTransform = postTransformDeltaFile(did);
+		postTransform.getActions().get(postTransform.getActions().size() - 1).setState(ActionState.COLD_QUEUED);
+		deltaFileRepo.save(postTransform);
+
+		queueManagementService.coldToWarm();
+
+		verifyActionEventResults(postTransformDeltaFile(did), ActionContext.builder().flow(NORMALIZE_FLOW_NAME).name("sampleIngress.SampleLoadAction").build());
 	}
 
 	@Test
@@ -2559,7 +2592,7 @@ class DeltaFiCoreApplicationTests {
 		miss2.setActions(Arrays.asList(shouldStay, shouldStay));
 		deltaFileRepo.save(miss2);
 
-		List<DeltaFile> hits = deltaFileRepo.updateForRequeue(MONGO_NOW, 30);
+		List<DeltaFile> hits = deltaFileRepo.updateForRequeue(MONGO_NOW, 30, Collections.emptySet());
 
 		assertEquals(1, hits.size());
 		assertEquals(hit.getDid(), hits.get(0).getDid());

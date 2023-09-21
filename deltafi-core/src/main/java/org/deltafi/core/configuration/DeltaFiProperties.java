@@ -44,6 +44,7 @@ public class DeltaFiProperties {
     private PluginProperties plugins = new PluginProperties();
     private SystemCheckProperties checks = new SystemCheckProperties();
     private UiProperties ui = new UiProperties();
+    private int inMemoryQueueSize = 5000;
 
     private Set<String> setProperties = new HashSet<>();
 }

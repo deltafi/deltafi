@@ -22,7 +22,7 @@ spring:
       database: deltafi-test
   mongodb:
     embedded:
-      version: 4.0.27
+      version: 5.0.20
       features:
         - SYNC_DELAY
         - NO_HTTP_INTERFACE_ARG

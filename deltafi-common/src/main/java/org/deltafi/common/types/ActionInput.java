@@ -40,4 +40,7 @@ public class ActionInput {
 
     @JsonIgnore
     private OffsetDateTime actionCreated;
+
+    @JsonIgnore
+    Action action;
 }

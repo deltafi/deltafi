@@ -22,6 +22,7 @@ import org.assertj.core.api.Assertions;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.core.security.SecurityConfig;
 import org.deltafi.core.services.DeltaFilesService;
+import org.deltafi.core.services.TransformFlowService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -42,6 +43,9 @@ class DeltaFilesDatafetcherSecurityTest {
 
     @MockBean
     DeltaFilesService deltaFilesService;
+
+    @MockBean
+    TransformFlowService transformFlowService;
 
     @MockBean
     ContentStorageService contentStorageService;

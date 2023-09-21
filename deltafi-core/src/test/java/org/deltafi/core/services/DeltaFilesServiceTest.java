@@ -78,11 +78,13 @@ class DeltaFilesServiceTest {
     ArgumentCaptor<DeltaFile> deltaFileCaptor;
 
     DeltaFilesServiceTest(@Mock NormalizeFlowService normalizeFlowService, @Mock EnrichFlowService enrichFlowService,
-                          @Mock EgressFlowService egressFlowService, @Mock TransformFlowService transformFlowService, @Mock StateMachine stateMachine,
-                          @Mock DeltaFileRepo deltaFileRepo, @Mock ActionEventQueue actionEventQueue, @Mock ResumePolicyService resumePolicyService,
+                          @Mock EgressFlowService egressFlowService, @Mock TransformFlowService transformFlowService,
+                          @Mock StateMachine stateMachine, @Mock DeltaFileRepo deltaFileRepo,
+                          @Mock ActionEventQueue actionEventQueue, @Mock ResumePolicyService resumePolicyService,
                           @Mock ContentStorageService contentStorageService, @Mock MetricService metricService,
                           @Mock CoreAuditLogger coreAuditLogger, @Mock IdentityService identityService,
-                          @Mock DeltaFileCacheService deltaFileCacheService) {
+                          @Mock DeltaFileCacheService deltaFileCacheService,
+                          @Mock QueueManagementService queueManagementService) {
         this.normalizeFlowService = normalizeFlowService;
         this.egressFlowService = egressFlowService;
         this.transformFlowService = transformFlowService;
@@ -97,7 +99,7 @@ class DeltaFilesServiceTest {
         deltaFilesService = new DeltaFilesService(clock, normalizeFlowService, enrichFlowService,
                 egressFlowService, transformFlowService, new MockDeltaFiPropertiesService(), stateMachine,
                 deltaFileRepo, actionEventQueue, contentStorageService, resumePolicyService, metricService,
-                coreAuditLogger, identityService, new DidMutexService(), deltaFileCacheService);
+                coreAuditLogger, identityService, new DidMutexService(), deltaFileCacheService, queueManagementService);
     }
 
     @Test
@@ -506,7 +508,7 @@ class DeltaFilesServiceTest {
         actionEvent.setAction("transform");
         DeltaFile deltaFile = Util.buildDeltaFile("1");
         deltaFile.setSourceInfo(SourceInfo.builder().processingType(ProcessingType.TRANSFORMATION).build());
-        deltaFile.queueAction("flow", "transform", ActionType.TRANSFORM);
+        deltaFile.queueAction("flow", "transform", ActionType.TRANSFORM, false);
         deltaFilesService.egress(deltaFile, actionEvent);
 
         Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).hasSize(1).contains("flow");
@@ -521,7 +523,7 @@ class DeltaFilesServiceTest {
         actionEvent.setFlow("flow");
         actionEvent.setAction("egress");
         DeltaFile deltaFile = Util.buildDeltaFile("1");
-        deltaFile.queueAction("flow", "egress", ActionType.EGRESS);
+        deltaFile.queueAction("flow", "egress", ActionType.EGRESS, false);
         deltaFilesService.egress(deltaFile, actionEvent);
 
         Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).isNull();
@@ -573,22 +575,22 @@ class DeltaFilesServiceTest {
     void testErrorMetadataUnion() {
         DeltaFile deltaFile1 = Util.buildDeltaFile("1", List.of());
         deltaFile1.getActions().get(0).setMetadata(Map.of("a", "1", "b", "2"));
-        deltaFile1.queueAction("flow1", "TransformAction1", ActionType.TRANSFORM);
+        deltaFile1.queueAction("flow1", "TransformAction1", ActionType.TRANSFORM, false);
         deltaFile1.errorAction("flow1", "TransformAction1", OffsetDateTime.now(), OffsetDateTime.now(), "cause", "context");
 
         DeltaFile deltaFile2 = Util.buildDeltaFile("2", List.of());
         deltaFile2.getActions().get(0).setMetadata(Map.of("a", "somethingElse", "c", "3"));
-        deltaFile2.queueAction("flow1", "TransformAction1", ActionType.TRANSFORM);
+        deltaFile2.queueAction("flow1", "TransformAction1", ActionType.TRANSFORM, false);
         deltaFile2.errorAction("flow1", "TransformAction1", OffsetDateTime.now(), OffsetDateTime.now(), "cause", "context");
 
         DeltaFile deltaFile3 = Util.buildDeltaFile("2", List.of());
         deltaFile3.getActions().get(0).setMetadata(Map.of("d", "4"));
-        deltaFile3.queueAction("flow2", "TransformAction2", ActionType.TRANSFORM);
+        deltaFile3.queueAction("flow2", "TransformAction2", ActionType.TRANSFORM, false);
         deltaFile3.errorAction("flow2", "TransformAction2", OffsetDateTime.now(), OffsetDateTime.now(), "cause", "context");
 
         DeltaFile deltaFile4 = Util.buildDeltaFile("3", List.of());
         deltaFile4.getActions().get(0).setMetadata(Map.of("e", "5"));
-        deltaFile4.queueAction("flow3", "TransformAction3", ActionType.TRANSFORM);
+        deltaFile4.queueAction("flow3", "TransformAction3", ActionType.TRANSFORM, false);
 
         DeltaFiles deltaFiles = new DeltaFiles(0, 4, 4, List.of(deltaFile1, deltaFile2, deltaFile3, deltaFile4));
         when(deltaFileRepo.deltaFiles(eq(0), eq(3), any(), any(), any())).thenReturn(deltaFiles);

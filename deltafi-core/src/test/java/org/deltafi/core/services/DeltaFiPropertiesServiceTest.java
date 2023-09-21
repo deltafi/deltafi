@@ -137,6 +137,7 @@ class DeltaFiPropertiesServiceTest {
         targetProperties.getSetProperties().addAll(setTargetProps);
         targetProperties.getUi().getExternalLinks().addAll(List.of(targetCommon, targetOnly));
         targetProperties.getUi().getDeltaFileLinks().addAll(List.of(targetCommon, targetOnly));
+        targetProperties.setInMemoryQueueSize(10);
         Mockito.when(deltaFiPropertiesRepo.findById(DeltaFiProperties.PROPERTY_ID)).thenReturn(Optional.of(targetProperties));
 
         Link sourceCommon = link("both", "source.both.com", "source both");
@@ -151,6 +152,7 @@ class DeltaFiPropertiesServiceTest {
         snapshotSource.getUi().getDeltaFileLinks().addAll(List.of(sourceCommon, sourceOnly));
         snapshotSource.getSetProperties().addAll(setInBoth);
         snapshotSource.getSetProperties().addAll(setSourceProps);
+        snapshotSource.setInMemoryQueueSize(50);
 
         DeltaFiProperties updated = deltaFiPropertiesService.mergeProperties(snapshotSource);
 
@@ -168,6 +170,7 @@ class DeltaFiPropertiesServiceTest {
 
         assertThat(updated.getUi().getExternalLinks()).hasSize(3).contains(targetOnly, sourceCommon, sourceOnly);
         assertThat(updated.getUi().getDeltaFileLinks()).hasSize(3).contains(targetOnly, sourceCommon, sourceOnly);
+        assertThat(updated.getInMemoryQueueSize()).isEqualTo(10);
     }
 
     DeltaFiProperties deltaFiProperties() {

@@ -29,6 +29,7 @@ import org.deltafi.core.generated.types.FlowStatus;
 import org.deltafi.core.types.EgressFlow;
 import org.deltafi.core.types.EnrichFlow;
 import org.deltafi.core.types.NormalizeFlow;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -36,7 +37,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.util.Pair;
 import org.springframework.http.MediaType;
 
 import java.util.*;
@@ -45,6 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.deltafi.common.constant.DeltaFiConstants.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
 
 @ExtendWith(MockitoExtension.class)
 class StateMachineTest {
@@ -82,14 +83,22 @@ class StateMachineTest {
     @SuppressWarnings("unused")
     DeltaFiPropertiesService deltaFiPropertiesService = new MockDeltaFiPropertiesService();
 
+    @Mock
+    QueueManagementService queueManagementService;
+
+    @BeforeEach
+    void setup() {
+        Mockito.lenient().when(queueManagementService.coldQueue(anyString())).thenReturn(false);
+    }
+
     @Test
     void testGetEnrichActions() {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", NORMALIZE_FLOW);
         EnrichFlow enrichFlow = EnrichFlowMaker.builder().build().makeEnrichFlow();
 
-        List<ActionInput> actionInputs = stateMachine.nextEnrichActions(enrichFlow, deltaFile, false);
+        List<EnrichActionConfiguration> actionInputs = stateMachine.nextEnrichActions(enrichFlow, deltaFile);
 
-        assertThat(actionInputs).hasSize(1).matches((list) -> list.get(0).getActionContext().getName().equals(ENRICH_ACTION));
+        assertThat(actionInputs).hasSize(1).matches((list) -> list.get(0).getName().equals(ENRICH_ACTION));
     }
 
     @Test
@@ -101,8 +110,8 @@ class StateMachineTest {
                 .enrichRequiresEnrichment(ENRICH)
                 .build().makeEnrichFlow();
 
-        List<ActionInput> actionInputs = stateMachine.nextEnrichActions(enrichFlow, deltaFile, false);
-        assertThat(actionInputs).hasSize(1).matches((list) -> list.get(0).getActionContext().getName().equals(ENRICH_ACTION));
+        List<EnrichActionConfiguration> actionInputs = stateMachine.nextEnrichActions(enrichFlow, deltaFile);
+        assertThat(actionInputs).hasSize(1).matches((list) -> list.get(0).getName().equals(ENRICH_ACTION));
     }
 
     @Test
@@ -114,7 +123,7 @@ class StateMachineTest {
                 .enrichRequiresEnrichment(ENRICH)
                 .build().makeEnrichFlow();
 
-        assertThat(stateMachine.nextEnrichActions(enrichFlow, deltaFile, false)).isEmpty();
+        assertThat(stateMachine.nextEnrichActions(enrichFlow, deltaFile)).isEmpty();
     }
 
     @Test
@@ -126,7 +135,7 @@ class StateMachineTest {
                 .enrichRequiresEnrichment("otherEnrich")
                 .build().makeEnrichFlow();
 
-        assertThat(stateMachine.nextEnrichActions(enrichFlow, deltaFile, false)).isEmpty();
+        assertThat(stateMachine.nextEnrichActions(enrichFlow, deltaFile)).isEmpty();
     }
 
     @Test
@@ -139,7 +148,7 @@ class StateMachineTest {
                 .enrichRequiresMetadata(new KeyValue("wrongKey", "value"))
                 .build().makeEnrichFlow();
 
-        assertThat(stateMachine.nextEnrichActions(enrichFlow, deltaFile, false)).isEmpty();
+        assertThat(stateMachine.nextEnrichActions(enrichFlow, deltaFile)).isEmpty();
     }
 
     @Test
@@ -152,7 +161,7 @@ class StateMachineTest {
                 .enrichRequiresMetadata(new KeyValue(SOURCE_KEY, "value"))
                 .build().makeEnrichFlow();
 
-        assertThat(stateMachine.nextEnrichActions(enrichFlow, deltaFile, false)).isEmpty();
+        assertThat(stateMachine.nextEnrichActions(enrichFlow, deltaFile)).isEmpty();
     }
 
     @Test
@@ -165,8 +174,8 @@ class StateMachineTest {
                 .enrichRequiresMetadata(new KeyValue(SOURCE_KEY, "value"))
                 .build().makeEnrichFlow();
 
-        List<ActionInput> actionInputs = stateMachine.nextEnrichActions(enrichFlow, deltaFile, false);
-        assertThat(actionInputs).hasSize(1).matches((list) -> list.get(0).getActionContext().getName().equals(ENRICH_ACTION));
+        List<EnrichActionConfiguration> actionInputs = stateMachine.nextEnrichActions(enrichFlow, deltaFile);
+        assertThat(actionInputs).hasSize(1).matches((list) -> list.get(0).getName().equals(ENRICH_ACTION));
     }
 
     @Test
@@ -179,8 +188,8 @@ class StateMachineTest {
                 .enrichRequiresMetadata(new KeyValue(METADATA_KEY, "value"))
                 .build().makeEnrichFlow();
 
-        List<ActionInput> actionInputs = stateMachine.nextEnrichActions(enrichFlow, deltaFile, false);
-        assertThat(actionInputs).hasSize(1).matches((list) -> list.get(0).getActionContext().getName().equals(ENRICH_ACTION));
+        List<EnrichActionConfiguration> actionInputs = stateMachine.nextEnrichActions(enrichFlow, deltaFile);
+        assertThat(actionInputs).hasSize(1).matches((list) -> list.get(0).getName().equals(ENRICH_ACTION));
     }
 
     @Test
@@ -191,8 +200,9 @@ class StateMachineTest {
 
         EgressFlow egressFlow = EgressFlowMaker.builder().build().makeEgressFlow();
 
-        List<Pair<ActionInput, ActionType>> actionInputs = stateMachine.nextEgressFlowActions(egressFlow, deltaFile, false);
-        assertThat(actionInputs).hasSize(1).matches((list) -> list.get(0).getFirst().getActionContext().getName().equals(FORMAT_ACTION));
+        assertThat(stateMachine.nextEgressFlowActions(egressFlow, deltaFile))
+                .hasSize(1)
+                .matches((list) -> list.get(0).getSecond().getName().equals(FORMAT_ACTION));
     }
 
     @Test
@@ -204,8 +214,9 @@ class StateMachineTest {
 
         EgressFlow egressFlow = EgressFlowMaker.builder().build().makeEgressFlow();
 
-        List<Pair<ActionInput, ActionType>> actionInputs = stateMachine.nextEgressFlowActions(egressFlow, deltaFile, false);
-        assertThat(actionInputs).hasSize(1).matches((list) -> list.get(0).getFirst().getActionContext().getName().equals(EGRESS_ACTION));
+        assertThat(stateMachine.nextEgressFlowActions(egressFlow, deltaFile))
+                .hasSize(1)
+                .matches((list) -> list.get(0).getSecond().getName().equals(EGRESS_ACTION));
     }
 
     @Test
@@ -219,8 +230,9 @@ class StateMachineTest {
                 .formatRequiresEnrichment(ENRICH)
                 .build().makeEgressFlow();
 
-        assertThat(stateMachine.nextEgressFlowActions(egressFlow, deltaFile, false))
-                .hasSize(1).matches((list) -> list.get(0).getFirst().getActionContext().getName().equals(FORMAT_ACTION));
+        assertThat(stateMachine.nextEgressFlowActions(egressFlow, deltaFile))
+                .hasSize(1)
+                .matches((list) -> list.get(0).getSecond().getName().equals(FORMAT_ACTION));
     }
 
     @Test
@@ -234,7 +246,7 @@ class StateMachineTest {
                 .formatRequiresEnrichment(ENRICH)
                 .build().makeEgressFlow();
 
-        assertThat(stateMachine.nextEgressFlowActions(egressFlow, deltaFile, false)).isEmpty();
+        assertThat(stateMachine.nextEgressFlowActions(egressFlow, deltaFile)).isEmpty();
     }
 
     @Test
@@ -248,7 +260,7 @@ class StateMachineTest {
                 .formatRequiresEnrichment("otherEnrich")
                 .build().makeEgressFlow();
 
-        assertThat(stateMachine.nextEgressFlowActions(egressFlow, deltaFile, false)).isEmpty();
+        assertThat(stateMachine.nextEgressFlowActions(egressFlow, deltaFile)).isEmpty();
     }
 
     @Test
@@ -260,8 +272,9 @@ class StateMachineTest {
 
         EgressFlow egressFlow = EgressFlowMaker.builder().build().makeEgressFlow();
 
-        assertThat(stateMachine.nextEgressFlowActions(egressFlow, deltaFile, false))
-                .hasSize(1).matches((list) -> list.get(0).getFirst().getActionContext().getName().equals(VALIDATE_ACTION));
+        assertThat(stateMachine.nextEgressFlowActions(egressFlow, deltaFile))
+                .hasSize(1)
+                .matches((list) -> list.get(0).getSecond().getName().equals(VALIDATE_ACTION));
 
     }
 
@@ -271,12 +284,12 @@ class StateMachineTest {
 
         addCompletedActions(deltaFile, ENRICH_FLOW, ENRICH_ACTION);
 
-        deltaFile.queueAction(EGRESS_FLOW, FORMAT_ACTION, ActionType.FORMAT);
+        deltaFile.queueAction(EGRESS_FLOW, FORMAT_ACTION, ActionType.FORMAT, false);
         deltaFile.errorAction(EGRESS_FLOW, FORMAT_ACTION, null, null, "failed", "failed");
 
         EgressFlow egressFlow = EgressFlowMaker.builder().build().makeEgressFlow();
 
-        assertThat(stateMachine.nextEgressFlowActions(egressFlow, deltaFile, false)).isEmpty();
+        assertThat(stateMachine.nextEgressFlowActions(egressFlow, deltaFile)).isEmpty();
     }
 
     @Test
@@ -288,8 +301,9 @@ class StateMachineTest {
 
         EgressFlow egressFlow = EgressFlowMaker.builder().build().makeEgressFlow();
 
-        assertThat(stateMachine.nextEgressFlowActions(egressFlow, deltaFile, false))
-                .hasSize(1).matches((list) -> list.get(0).getFirst().getActionContext().getName().equals(EGRESS_ACTION));
+        assertThat(stateMachine.nextEgressFlowActions(egressFlow, deltaFile))
+                .hasSize(1)
+                .matches((list) -> list.get(0).getSecond().getName().equals(EGRESS_ACTION));
 
     }
 
@@ -519,7 +533,7 @@ class StateMachineTest {
                 .egressActionName("EgressAction2")
                 .build().makeEgressFlow();
         addCompletedActions(deltaFile, egress2.getName(), "FormatAction2", "ValidateAction2");
-        deltaFile.queueNewAction(egress2.getName(), "EgressAction2", ActionType.EGRESS);
+        deltaFile.queueNewAction(egress2.getName(), "EgressAction2", ActionType.EGRESS, false);
 
         Mockito.when(egressFlowService.getMatchingFlows(NORMALIZE_FLOW)).thenReturn(List.of(egress1, egress2));
 
@@ -578,7 +592,7 @@ class StateMachineTest {
     void testNoEgressFlowCheckSkippedForErrorActions() throws MissingEgressFlowException {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", NORMALIZE_FLOW);
         deltaFile.setStage(DeltaFileStage.ENRICH);
-        deltaFile.queueNewAction(ENRICH_FLOW, "ErrorEnrichAction", ActionType.ENRICH);
+        deltaFile.queueNewAction(ENRICH_FLOW, "ErrorEnrichAction", ActionType.ENRICH, false);
         deltaFile.errorAction(ActionEvent.builder()
                 .did(deltaFile.getDid())
                 .flow(ENRICH_FLOW)
@@ -597,7 +611,7 @@ class StateMachineTest {
     void testNoEgressFlowRequiredForSplitLoadActions() throws MissingEgressFlowException {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", NORMALIZE_FLOW);
         deltaFile.setStage(DeltaFileStage.INGRESS);
-        deltaFile.queueNewAction(NORMALIZE_FLOW, "SplitLoadAction", ActionType.LOAD);
+        deltaFile.queueNewAction(NORMALIZE_FLOW, "SplitLoadAction", ActionType.LOAD, false);
         deltaFile.reinjectAction(ActionEvent.builder()
                 .did(deltaFile.getDid())
                 .flow(NORMALIZE_FLOW)
@@ -612,7 +626,7 @@ class StateMachineTest {
     void testNoEgressFlowRequiredForFilteredLoadActions() throws MissingEgressFlowException {
         DeltaFile deltaFile = Util.emptyDeltaFile("did", NORMALIZE_FLOW);
         deltaFile.setStage(DeltaFileStage.INGRESS);
-        deltaFile.queueNewAction(NORMALIZE_FLOW, "FilteredLoadAction", ActionType.LOAD);
+        deltaFile.queueNewAction(NORMALIZE_FLOW, "FilteredLoadAction", ActionType.LOAD, false);
         deltaFile.filterAction(ActionEvent.builder()
                 .did(deltaFile.getDid())
                 .flow(NORMALIZE_FLOW)
@@ -625,7 +639,7 @@ class StateMachineTest {
 
     private void addCompletedActions(DeltaFile deltaFile, String flow, String... actions) {
         for (String action : actions) {
-            deltaFile.queueAction(flow, action, ActionType.UNKNOWN);
+            deltaFile.queueAction(flow, action, ActionType.UNKNOWN, false);
             deltaFile.completeAction(flow, action, null, null);
         }
     }
@@ -649,7 +663,7 @@ class StateMachineTest {
                 .enrichActionName("EnrichAction1")
                 .requiresDomain(DOMAIN)
                 .build().makeEnrichFlow();
-        deltaFile.queueNewAction(enrich2.getName(), "EnrichAction1", ActionType.ENRICH);
+        deltaFile.queueNewAction(enrich2.getName(), "EnrichAction1", ActionType.ENRICH, false);
         deltaFile.getActions().get(2).addDomain(DOMAIN, "value", MediaType.ALL_VALUE);
 
         Mockito.when(enrichFlowService.getRunningFlows()).thenReturn(List.of(enrich1, enrich2));

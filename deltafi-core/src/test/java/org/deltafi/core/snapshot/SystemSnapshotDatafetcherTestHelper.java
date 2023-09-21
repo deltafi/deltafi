@@ -143,6 +143,7 @@ public class SystemSnapshotDatafetcherTestHelper {
         deltaFiProperties.getDelete().setFrequency(Duration.ofSeconds(30));
         deltaFiProperties.getDelete().setPolicyBatchSize(5000);
         deltaFiProperties.setAutoResumeCheckFrequency(Duration.ofMinutes(10));
+        deltaFiProperties.setInMemoryQueueSize(10);
         Set<String> props = Stream.of(PropertyType.AUTO_RESUME_CHECK_FREQUENCY, PropertyType.CHECKS_ACTION_QUEUE_SIZE_THRESHOLD, PropertyType.DELETE_FREQUENCY, PropertyType.DELETE_POLICY_BATCH_SIZE, PropertyType.INGRESS_DISK_SPACE_REQUIREMENT_IN_MB, PropertyType.INGRESS_ENABLED, PropertyType.UI_USE_UTC)
                 .map(Enum::name).collect(Collectors.toSet());
         deltaFiProperties.setSetProperties(props);
@@ -325,6 +326,7 @@ public class SystemSnapshotDatafetcherTestHelper {
                                     backgroundColor: null
                                 }
                             }
+                            inMemoryQueueSize: 10
                             delete: { ageOffDays: 13, frequency: "PT30S", policyBatchSize: 5000 }
                             ingress: { enabled: true, diskSpaceRequirementInMb: 5000 }
                             metrics: { enabled: true }
@@ -503,6 +505,7 @@ public class SystemSnapshotDatafetcherTestHelper {
                   backgroundColor
                 }
               }
+              inMemoryQueueSize
               setProperties
             }
             deletePolicies {

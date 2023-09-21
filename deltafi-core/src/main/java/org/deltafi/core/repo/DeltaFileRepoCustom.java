@@ -19,6 +19,7 @@ package org.deltafi.core.repo;
 
 import org.deltafi.common.types.DeltaFile;
 import org.deltafi.core.generated.types.*;
+import org.deltafi.core.types.ColdQueuedActionSummary;
 import org.deltafi.core.types.DeltaFiles;
 import org.springframework.data.mongodb.core.index.IndexInfo;
 
@@ -71,9 +72,20 @@ public interface DeltaFileRepoCustom {
      *
      * @param requeueTime    age for searching for expired actions to requeue
      * @param requeueSeconds timestamp for searching and updating actions
+     * @param skipActions Set of actions to not requeue
      * @return the list of the DeltaFiles to be requeued
      */
-    List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, int requeueSeconds);
+    List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, int requeueSeconds, Set<String> skipActions);
+
+    /**
+     * Requeue up to maxFiles COLD_QUEUED DeltaFiles with the given action names
+     *
+     * @param actionNames requeue actions with these names
+     * @param maxFiles limit the query to this many files
+     * @param modified time to mark the files QUEUED
+     * @return the list of the DeltaFiles to be requeued
+     */
+    List<DeltaFile> updateColdQueuedForRequeue(List<String> actionNames, int maxFiles, OffsetDateTime modified);
 
     /**
      * Find DeltaFiles that are ready for an automatic resume after encountering an error.
@@ -221,4 +233,11 @@ public interface DeltaFileRepoCustom {
      * @param flow that should be removed from pendingAnnotationsForFlows
      */
     void removePendingAnnotationsForFlow(String flow);
+
+    /**
+     * Retrieves a summary of all cold queued actions.
+     *
+     * @return A list of ColdQueuedActionSummary objects representing the summary of cold queued actions.
+     */
+    public List<ColdQueuedActionSummary> coldQueuedActionsSummary();
 }

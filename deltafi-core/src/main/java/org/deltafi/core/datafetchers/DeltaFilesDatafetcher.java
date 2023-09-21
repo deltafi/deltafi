@@ -35,6 +35,7 @@ import org.deltafi.common.types.ResumeMetadata;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.DeltaFilesService;
+import org.deltafi.core.services.TransformFlowService;
 import org.deltafi.core.types.DeltaFiles;
 import org.deltafi.core.types.PerActionUniqueKeyValues;
 import org.deltafi.core.types.Result;
@@ -49,12 +50,14 @@ import java.util.stream.Collectors;
 public class DeltaFilesDatafetcher {
   final DeltaFilesService deltaFilesService;
   final ContentStorageService contentStorageService;
+  final TransformFlowService transformFlowService;
 
   static final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
-  DeltaFilesDatafetcher(DeltaFilesService deltaFilesService, ContentStorageService contentStorageService) {
+  DeltaFilesDatafetcher(DeltaFilesService deltaFilesService, ContentStorageService contentStorageService, TransformFlowService transformFlowService) {
     this.deltaFilesService = deltaFilesService;
     this.contentStorageService = contentStorageService;
+    this.transformFlowService = transformFlowService;
   }
 
   @DgsQuery
@@ -194,6 +197,9 @@ public class DeltaFilesDatafetcher {
   public int stressTest(@InputArgument String flow, @InputArgument Integer contentSize, @InputArgument Integer numFiles, @InputArgument Map<String, String> metadata, @InputArgument Integer batchSize) throws ObjectStorageException {
     Random random = new Random();
     SourceInfo sourceInfo = new SourceInfo("stressTestData", flow, metadata == null ? new HashMap<>() : metadata);
+    if (transformFlowService.hasRunningFlow(flow)) {
+        sourceInfo.setProcessingType(ProcessingType.TRANSFORMATION);
+    }
 
     // batches let us test quick bursts of ingress traffic, deferring ingress until after content is stored for the batch
     if (batchSize == null || batchSize < 1) {

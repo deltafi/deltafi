@@ -117,6 +117,7 @@ public class DeltaFilesService {
     private final IdentityService identityService;
     private final DidMutexService didMutexService;
     private final DeltaFileCacheService deltaFileCacheService;
+    private final QueueManagementService queueManagementService;
 
     private ExecutorService executor;
 
@@ -1276,7 +1277,7 @@ public class DeltaFilesService {
     }
 
     private void handleMissingEgressFlow(DeltaFile deltaFile) {
-        deltaFile.queueNewAction("MISSING", DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION, ActionType.UNKNOWN);
+        deltaFile.queueNewAction("MISSING", DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION, ActionType.UNKNOWN, false);
         processErrorEvent(deltaFile, buildNoEgressConfiguredErrorEvent(deltaFile, OffsetDateTime.now(clock)));
         deltaFile.setStage(DeltaFileStage.ERROR);
     }
@@ -1331,7 +1332,7 @@ public class DeltaFilesService {
 
     public void requeue() {
         OffsetDateTime modified = OffsetDateTime.now(clock);
-        List<DeltaFile> requeuedDeltaFiles = deltaFileRepo.updateForRequeue(modified, getProperties().getRequeueSeconds());
+        List<DeltaFile> requeuedDeltaFiles = deltaFileRepo.updateForRequeue(modified, getProperties().getRequeueSeconds(), queueManagementService.coldQueueActions());
         List<ActionInput> actions = requeuedDeltaFiles.stream()
                 .map(deltaFile -> requeuedActionInput(deltaFile, modified))
                 .flatMap(Collection::stream)
@@ -1343,6 +1344,27 @@ public class DeltaFilesService {
     }
 
     List<ActionInput> requeuedActionInput(DeltaFile deltaFile, OffsetDateTime modified) {
+        return deltaFile.getActions().stream()
+                .filter(a -> a.getState().equals(ActionState.QUEUED) && a.getModified().toInstant().toEpochMilli() == modified.toInstant().toEpochMilli())
+                .map(action -> toActionInput(action, deltaFile))
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    public void requeueColdQueueActions(List<String> actionNames, int maxFiles) {
+        OffsetDateTime modified = OffsetDateTime.now(clock);
+        List<DeltaFile> requeuedDeltaFiles = deltaFileRepo.updateColdQueuedForRequeue(actionNames, maxFiles, modified);
+        List<ActionInput> actions = requeuedDeltaFiles.stream()
+                .map(deltaFile -> requeuedColdQueueActionInput(deltaFile, modified))
+                .flatMap(Collection::stream)
+                .toList();
+        if (!actions.isEmpty()) {
+            log.warn("Moving " + actions.size() + " from the cold to warm queue");
+            enqueueActions(actions, true);
+        }
+    }
+
+    List<ActionInput> requeuedColdQueueActionInput(DeltaFile deltaFile, OffsetDateTime modified) {
         return deltaFile.getActions().stream()
                 .filter(a -> a.getState().equals(ActionState.QUEUED) && a.getModified().toInstant().toEpochMilli() == modified.toInstant().toEpochMilli())
                 .map(action -> toActionInput(action, deltaFile))
@@ -1371,7 +1393,7 @@ public class DeltaFilesService {
 
         return actionConfiguration.buildActionInput(action.getFlow(), deltaFile,
                 getProperties().getSystemName(), egressFlow(action, deltaFile),
-                identityService.getUniqueId(), action.getCreated());
+                identityService.getUniqueId(), action.getCreated(), action);
     }
 
     public void autoResume() {

@@ -19,15 +19,18 @@ package org.deltafi.core.repo;
 
 import com.google.common.collect.Lists;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.UpdateOptions;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.BsonValue;
 import org.bson.Document;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.types.ActionState;
+import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.DeltaFile;
 import org.deltafi.common.types.DeltaFileStage;
 import org.deltafi.core.generated.types.*;
+import org.deltafi.core.types.ColdQueuedActionSummary;
 import org.deltafi.core.types.DeltaFiles;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.UncategorizedMongoDbException;
@@ -41,6 +44,7 @@ import org.springframework.data.mongodb.core.index.PartialIndexFilter;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.mongodb.core.query.UpdateDefinition;
 import org.springframework.util.StringUtils;
 
 import java.time.Duration;
@@ -254,13 +258,27 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
-    public List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, int requeueSeconds) {
-        List<DeltaFile> filesToRequeue = mongoTemplate.find(buildReadyForRequeueQuery(requeueTime, requeueSeconds), DeltaFile.class);
+    public List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, int requeueSeconds, Set<String> skipActions) {
+        List<DeltaFile> filesToRequeue = mongoTemplate.find(buildReadyForRequeueQuery(requeueTime, requeueSeconds, skipActions), DeltaFile.class);
         List<DeltaFile> requeuedDeltaFiles = new ArrayList<>();
         for (List<DeltaFile> batch : Lists.partition(filesToRequeue, 1000)) {
             List<String> dids = batch.stream().map(DeltaFile::getDid).toList();
             Query query = new Query().addCriteria(Criteria.where(ID).in(dids));
             mongoTemplate.updateMulti(query, buildRequeueUpdate(requeueTime, requeueSeconds), DeltaFile.class);
+            requeuedDeltaFiles.addAll(mongoTemplate.find(query, DeltaFile.class));
+        }
+
+        return requeuedDeltaFiles;
+    }
+
+    @Override
+    public List<DeltaFile> updateColdQueuedForRequeue(List<String> actionNames, int maxFiles, OffsetDateTime modified) {
+        List<DeltaFile> filesToRequeue = mongoTemplate.find(buildReadyForColdRequeueQuery(actionNames, maxFiles), DeltaFile.class);
+        List<DeltaFile> requeuedDeltaFiles = new ArrayList<>();
+        for (List<DeltaFile> batch : Lists.partition(filesToRequeue, 1000)) {
+            List<String> dids = batch.stream().map(DeltaFile::getDid).toList();
+            Query query = new Query().addCriteria(Criteria.where(ID).in(dids));
+            mongoTemplate.updateMulti(query, buildColdRequeueUpdate(modified), DeltaFile.class);
             requeuedDeltaFiles.addAll(mongoTemplate.find(query, DeltaFile.class));
         }
 
@@ -422,14 +440,60 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         return update;
     }
 
-    private Query buildReadyForRequeueQuery(OffsetDateTime requeueTime, int requeueSeconds) {
+    Update buildColdRequeueUpdate(OffsetDateTime modified) {
+        Update update = new Update();
+        update.inc(REQUEUE_COUNT, 1);
+
+        // clear out any old error messages
+        update.set(ACTIONS_UPDATE_ERROR, null);
+        update.set(ACTIONS_UPDATE_ERROR_CONTEXT, null);
+        update.set(ACTIONS_UPDATE_MODIFIED, modified);
+        update.set(ACTIONS_UPDATE_QUEUED, modified);
+
+        update.set(ACTIONS_UPDATE_STATE, ActionState.QUEUED.name());
+        update.filterArray(Criteria.where("action.state").is(ActionState.COLD_QUEUED.name()));
+        update.set(MODIFIED, modified);
+
+        return update;
+    }
+
+    private Query buildReadyForRequeueQuery(OffsetDateTime requeueTime, int requeueSeconds, Set<String> skipActions) {
         Criteria notComplete = Criteria.where(STAGE).not().in(DeltaFileStage.COMPLETE, DeltaFileStage.ERROR, DeltaFileStage.CANCELLED);
 
         long epochMs = requeueThreshold(requeueTime, requeueSeconds).toInstant().toEpochMilli();
         Criteria expired = Criteria.where(MODIFIED).lt(new Date(epochMs));
 
-        Query requeueQuery = new Query(new Criteria().andOperator(notComplete, expired));
+        // Excludes actions with 'state' of 'QUEUED' and a 'name' in the skipActions list.
+        Criteria skipActionsCriteria = Criteria.where("actions").not().elemMatch(
+                new Criteria().andOperator(
+                        Criteria.where("state").is("QUEUED"),
+                        Criteria.where("name").in(skipActions)
+                )
+        );
+
+        Criteria notColdQueued = Criteria.where("actions").not().elemMatch(
+                Criteria.where("state").is("COLD_QUEUED")
+        );
+
+        Query requeueQuery = new Query(new Criteria().andOperator(notComplete, expired, skipActionsCriteria, notColdQueued));
         requeueQuery.fields().include(ID);
+
+        return requeueQuery;
+    }
+
+    private Query buildReadyForColdRequeueQuery(List<String> actionNames, int maxFiles) {
+        Criteria notComplete = Criteria.where("stage").not().in(DeltaFileStage.COMPLETE, DeltaFileStage.ERROR, DeltaFileStage.CANCELLED);
+
+        Criteria coldQueuedCriteria = new Criteria().andOperator(
+                Criteria.where("name").in(actionNames),
+                Criteria.where("state").is(ActionState.COLD_QUEUED.name())
+        );
+
+        Criteria actionMatch = Criteria.where("actions").elemMatch(coldQueuedCriteria);
+
+        Query requeueQuery = new Query(new Criteria().andOperator(notComplete, actionMatch));
+        requeueQuery.fields().include(ID);
+        requeueQuery.limit(maxFiles);
 
         return requeueQuery;
     }
@@ -1041,6 +1105,38 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public void removePendingAnnotationsForFlow(String flow) {
         pullFlowFromPendingAnnotationsForFlow(flow);
         unsetEmptyPendingAnnotationsForFlow();
+    }
+
+    @Override
+    public List<ColdQueuedActionSummary> coldQueuedActionsSummary() {
+        Criteria stageCriteria = Criteria.where("stage").nin("ERROR", "COMPLETE", "CANCELLED");
+        MatchOperation matchStage = Aggregation.match(stageCriteria);
+
+        UnwindOperation unwindActions = Aggregation.unwind("actions");
+
+        Criteria actionStateCriteria = Criteria.where("actions.state").is("COLD_QUEUED");
+        MatchOperation matchActionState = Aggregation.match(actionStateCriteria);
+
+        GroupOperation groupByActionNameAndType = Aggregation.group(Fields.fields().and("actions.name").and("actions.type"))
+                .count().as("count");
+
+        Aggregation aggregation = Aggregation.newAggregation(
+                matchStage,
+                unwindActions,
+                matchActionState,
+                groupByActionNameAndType
+        ).withOptions(AggregationOptions.builder().allowDiskUse(true).build());
+
+        AggregationResults<Document> aggResults = mongoTemplate.aggregate(aggregation, "deltaFile", Document.class);
+
+        return aggResults.getMappedResults().stream()
+                .map(doc -> {
+                    String actionName = ((Document) doc.get("_id")).getString("name");
+                    String actionType = ((Document) doc.get("_id")).getString("type");
+                    Integer count = doc.getInteger("count");
+                    return new ColdQueuedActionSummary(actionName, ActionType.valueOf(actionType), count);
+                })
+                .toList();
     }
 
     private void pullFlowFromPendingAnnotationsForFlow(String flow) {

@@ -32,6 +32,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Set;
 
 /**
  * A keyed blocking queue based on the Jedis client library for Redis.
@@ -145,6 +146,27 @@ public class JedisKeyedBlockingQueue {
         try (Jedis jedis = jedisPool.getResource()) {
             KeyedZSetElement keyedZSetElement = jedis.bzpopmin(0, key);
             return keyedZSetElement.getElement();
+        }
+    }
+
+    /**
+     * Get a list of unique keys from redis
+     * @return the set of keys
+     */
+    public Set<String> keys() {
+        try (Jedis jedis = jedisPool.getResource()) {
+            return jedis.keys("*");
+        }
+    }
+
+    /**
+     * Get the size of the sorted set
+     * @param key the name of the sorted set
+     * @return the number of elements in the sorted set
+     */
+    public long sortedSetSize(String key) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            return jedis.zcard(key);
         }
     }
 }
