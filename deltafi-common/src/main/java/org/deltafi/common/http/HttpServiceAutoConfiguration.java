@@ -26,15 +26,25 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 
 import java.net.http.HttpClient;
+import java.time.Duration;
+import java.util.List;
 
 @AutoConfiguration
 @EnableConfigurationProperties(SslProperties.class)
 @Slf4j
 public class HttpServiceAutoConfiguration {
 
+    public static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofMillis(1000L);
+    private final List<HttpClientCustomizer> httpClientCustomizers;
+
+    public HttpServiceAutoConfiguration(List<HttpClientCustomizer> httpClientCustomizers) {
+        this.httpClientCustomizers = httpClientCustomizers;
+    }
+
     @Bean
     public HttpClient httpClient(SslProperties sslProperties) {
         HttpClient.Builder httpClientBuilder = HttpClient.newBuilder();
+        httpClientBuilder.connectTimeout(DEFAULT_CONNECT_TIMEOUT);
 
         tryAlternativeEnvVariables(sslProperties);
         if (isConfigured(sslProperties)) {
@@ -43,6 +53,10 @@ public class HttpServiceAutoConfiguration {
             } catch (SslContextFactory.SslException e) {
                 log.error("Unable to build SSL context. SSL will be disabled.", e);
             }
+        }
+
+        if (httpClientCustomizers != null) {
+            httpClientCustomizers.forEach(httpClientCustomizer -> httpClientCustomizer.customize(httpClientBuilder));
         }
 
         return httpClientBuilder.build();

@@ -25,12 +25,17 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.net.http.HttpClient;
+import java.time.Duration;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(MockitoExtension.class)
 class HttpServiceAutoConfigurationTest {
 
-    final HttpServiceAutoConfiguration autoConfiguration = new HttpServiceAutoConfiguration();
+    final HttpClientCustomizer customizer = (builder) -> builder.connectTimeout(Duration.ofSeconds(10L));
+    final HttpServiceAutoConfiguration autoConfiguration = new HttpServiceAutoConfiguration(List.of(customizer));
 
     @Test
     void httpClient_sslConfigured() {
@@ -68,6 +73,12 @@ class HttpServiceAutoConfigurationTest {
         // null passwords are replaced with not-set by readEnvVar
         assertEquals(SslProperties.NOT_SET, sslProperties.getKeyStorePassword());
         assertEquals(SslProperties.NOT_SET, sslProperties.getTrustStorePassword());
+    }
+
+    @Test
+    void testCustomizationApplied() {
+        HttpClient client = autoConfiguration.httpClient(new SslProperties());
+        assertEquals(Duration.ofSeconds(10L), client.connectTimeout().orElse(null));
     }
 
     SslProperties sslProperties() {
