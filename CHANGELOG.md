@@ -5,6 +5,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.1.5] - 2023-09-21
+
+### Added
+- Cap size of redis queues. If a redis queue exceeds a configured maximum size, new actions are placed in a "cold queued" state until the pressure has been relieved.
+- Added a default connectTimeout of 1 second to the `HttpClient` that is created by autoconfiguration
+- Added the `HttpClientCustomizer` interface, plugins can create this bean to customize the settings of the `HttpClient` created by autoconfiguration 
+
+### Fixed
+- The stressTest endpoint has been fixed to work with transform flows.
+- Fixed migration issue where`includeNormalizeFlows` and `excludeNormalizeFlows` were not getting set in existing egress flows and plans
+
 ## [1.1.4] - 2023-09-20
 
 ### Added
@@ -2229,7 +2240,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.4...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.5...main
+[1.1.5]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.4...1.1.5
 [1.1.4]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.3...1.1.4
 [1.1.3]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.2...1.1.3
 [1.1.2]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.1...1.1.2
