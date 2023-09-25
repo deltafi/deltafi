@@ -384,6 +384,7 @@ type Query {
 
   version: String!
   totalCount: Long
+  countUnacknowledgedErrors: Long
 
   deltaFileStats(inFlightOnly: Boolean, includeDeletedContent: Boolean): DeltaFileStats!
 }

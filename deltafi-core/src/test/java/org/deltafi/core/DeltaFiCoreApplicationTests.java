@@ -4509,7 +4509,8 @@ class DeltaFiCoreApplicationTests {
 		egressFlowPlanRepo.migrateIngressToNormalize();
 
 		Document afterUpdate = mongoTemplate.findOne(new Query(Criteria.where("_id").is("passthrough-migration-test")), Document.class, "egressFlowPlan");
-		assertThat(afterUpdate.get("includeIngressFlows")).isEqualTo(List.of("decompress-and-merge", "passthrough", "split-lines-passthrough"));
+        assert afterUpdate != null;
+        assertThat(afterUpdate.get("includeIngressFlows")).isEqualTo(List.of("decompress-and-merge", "passthrough", "split-lines-passthrough"));
 		assertThat(afterUpdate.get("includeNormalizeFlows")).isEqualTo(List.of("decompress-and-merge", "passthrough", "split-lines-passthrough"));
 		assertThat(afterUpdate.get("excludeIngressFlows")).isEqualTo(List.of("smoke"));
 		assertThat(afterUpdate.get("excludeNormalizeFlows")).isEqualTo(List.of("smoke"));
@@ -4523,7 +4524,8 @@ class DeltaFiCoreApplicationTests {
 		egressFlowRepo.migrateIngressToNormalize();
 
 		Document afterUpdate = mongoTemplate.findOne(new Query(Criteria.where("_id").is("passthrough-migration-test")), Document.class, "egressFlow");
-		assertThat(afterUpdate.get("includeIngressFlows")).isEqualTo(List.of("decompress-and-merge", "passthrough", "split-lines-passthrough"));
+        assert afterUpdate != null;
+        assertThat(afterUpdate.get("includeIngressFlows")).isEqualTo(List.of("decompress-and-merge", "passthrough", "split-lines-passthrough"));
 		assertThat(afterUpdate.get("includeNormalizeFlows")).isEqualTo(List.of("decompress-and-merge", "passthrough", "split-lines-passthrough"));
 		assertThat(afterUpdate.get("excludeIngressFlows")).isEqualTo(List.of("smoke"));
 		assertThat(afterUpdate.get("excludeNormalizeFlows")).isEqualTo(List.of("smoke"));
@@ -4652,5 +4654,23 @@ class DeltaFiCoreApplicationTests {
 				        "_class" : "org.deltafi.common.types.EgressFlowPlan"
 				}
 				""";
+	}
+
+	@Test
+	void testCountUnacknowledgedErrors() {
+		List<DeltaFile> deltaFiles = new ArrayList<>();
+		for (int i = 0; i < 50005; i++) {
+			DeltaFile deltaFile = Util.buildDeltaFile(Integer.toString(i), List.of());
+			deltaFile.setStage(DeltaFileStage.ERROR);
+
+			if (i >= 50001) {
+				deltaFile.acknowledgeError(OffsetDateTime.now(), "acked");
+			}
+			deltaFiles.add(deltaFile);
+		}
+		deltaFileRepo.saveAll(deltaFiles);
+
+		assertEquals(50005, deltaFileRepo.count());
+		assertEquals(50001, deltaFilesService.countUnacknowledgedErrors());
 	}
 }

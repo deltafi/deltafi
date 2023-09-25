@@ -21,6 +21,7 @@ import org.deltafi.common.types.DeltaFile;
 import org.deltafi.common.types.DeltaFileStage;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.repository.CountQuery;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
@@ -43,4 +44,7 @@ public interface DeltaFileRepo extends MongoRepository<DeltaFile, String>, Delta
      * @return stream of matching DeltaFiles
      */
     Stream<DeltaFile> findByPendingAnnotationsForFlows(String flowName);
+
+    @CountQuery("{'stage': ?0, 'errorAcknowledged': null}")
+    long countByStageAndErrorAcknowledgedIsNull(DeltaFileStage stage);
 }

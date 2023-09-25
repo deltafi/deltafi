@@ -26,7 +26,7 @@ module Deltafi
     module ErrorCount
       class Service < Deltafi::Monitor::Service
         SSE_REDIS_CHANNEL = [DF::Common::SSE_REDIS_CHANNEL_PREFIX, 'errorCount'].compact.join('.')
-        QUERY = 'query { deltaFiles (filter: {stage: ERROR, errorAcknowledged: false}) { totalCount } }'
+        QUERY = 'query { countUnacknowledgedErrors }'
         INTERVAL = 5
 
         def run
@@ -35,7 +35,7 @@ module Deltafi
             parsed_response = JSON.parse(response.body, symbolize_names: true)
             raise StandardError, parsed_response[:errors]&.first&.dig(:message) if parsed_response.key?(:errors)
 
-            count = parsed_response.dig(:data, :deltaFiles, :totalCount)
+            count = parsed_response.dig(:data, :countUnacknowledgedErrors)
             @redis.publish(SSE_REDIS_CHANNEL, count) unless count.nil?
           end
         end

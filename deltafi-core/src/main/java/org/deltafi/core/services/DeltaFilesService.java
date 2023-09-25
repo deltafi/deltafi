@@ -213,6 +213,10 @@ public class DeltaFilesService {
         return matches.isEmpty() ? null : matches.get(0);
     }
 
+    public long countUnacknowledgedErrors() {
+        return deltaFileRepo.countByStageAndErrorAcknowledgedIsNull(DeltaFileStage.ERROR);
+    }
+
     public DeltaFile ingress(IngressEvent ingressEvent) {
         return ingress(ingressEvent, Collections.emptyList());
     }

@@ -255,6 +255,12 @@ public class DeltaFilesDatafetcher {
 
   @DgsQuery
   @NeedsPermission.DeltaFileMetadataView
+  public Long countUnacknowledgedErrors() {
+    return deltaFilesService.countUnacknowledgedErrors();
+  }
+
+  @DgsQuery
+  @NeedsPermission.DeltaFileMetadataView
   public DeltaFileStats deltaFileStats(Boolean inFlightOnly, Boolean includeDeletedContent) {
     return deltaFilesService.deltaFileStats((inFlightOnly != null) && inFlightOnly,
             (includeDeletedContent != null) && includeDeletedContent);
