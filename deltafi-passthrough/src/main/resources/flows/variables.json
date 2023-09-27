@@ -77,5 +77,19 @@
     "dataType": "NUMBER",
     "required": true,
     "defaultValue": 0
+  },
+  {
+    "name": "compressEgressUrl",
+    "description": "The URL to post the DeltaFile to",
+    "dataType": "STRING",
+    "required": true,
+    "defaultValue": "http://deltafi-egress-sink-service"
+  },
+  {
+    "name": "archiveType",
+    "description": "Archive/compression type for compression format action",
+    "dataType": "STRING",
+    "required": true,
+    "defaultValue": "tar.gz"
   }
 ]

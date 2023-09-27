@@ -15,23 +15,14 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.parameters;
+package org.deltafi.core.exception;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+public class CompressionFormatException extends RuntimeException {
+    public CompressionFormatException(String reason, Throwable e) {
+        super(reason, e);
+    }
 
-@AllArgsConstructor
-@Getter
-public enum ArchiveType {
-    @JsonProperty("ar") AR("ar", "application/x-archive"),
-    @JsonProperty("gz") GZIP("gz", "application/gzip"),
-    @JsonProperty("tar") TAR("tar", "application/x-tar"),
-    @JsonProperty("tar.gz") TAR_GZIP("tar.gz", "application/gzip"),
-    @JsonProperty("tar.xz") TAR_XZ("tar.xz", "application/x-xz"),
-    @JsonProperty("xz") XZ("xz", "application/x-xz"),
-    @JsonProperty("zip") ZIP("zip", "application/zip");
-
-    private final String value;
-    private final String mediaType;
+    public CompressionFormatException(String reason) {
+        super(reason);
+    }
 }

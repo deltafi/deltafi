@@ -1,0 +1,21 @@
+{
+  "name": "decompress-to-list",
+  "type": "INGRESS",
+  "description": "Unarchives the input, and produces a content list",
+  "transformActions": [{
+    "name": "DecompressToListTransformAction",
+    "type": "org.deltafi.core.action.DecompressionTransformAction",
+    "parameters": {
+      "decompressionType": "auto"
+    }
+  }],
+  "loadAction": {
+    "name": "DecompressToListLoadAction",
+    "type": "org.deltafi.passthrough.action.RoteLoadAction",
+    "parameters": {
+      "domains": [ "binary" ],
+      "minRoteDelayMS": "${minRoteDelayMS}",
+      "maxRoteDelayMS": "${maxRoteDelayMS}"
+    }
+  }
+}

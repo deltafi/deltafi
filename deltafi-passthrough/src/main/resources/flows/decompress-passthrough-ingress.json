@@ -1,7 +1,7 @@
 {
   "name": "decompress-passthrough",
   "type": "INGRESS",
-  "description": "Flow that passes data through unchanged",
+  "description": "Decompress and/or unarchive input file, and  reinject each result individually",
   "transformActions": [{
     "name": "DecompressPassthroughTransformAction",
     "type": "org.deltafi.core.action.DecompressionTransformAction",

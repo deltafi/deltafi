@@ -1,0 +1,30 @@
+{
+  "name": "compress",
+  "type": "EGRESS",
+  "description": "Egress flow that compresses all content",
+  "includeNormalizeFlows": [
+    "decompress-to-list"
+  ],
+  "formatAction": {
+    "name": "CompressFormatAction",
+    "actionType": "FORMAT",
+    "type": "org.deltafi.core.action.CompressionFormatAction",
+    "requiresDomains": [
+      "binary"
+    ],
+    "parameters": {
+      "archiveType": "${archiveType}",
+      "addArchiveSuffix": "true"
+    }
+  },
+  "validateActions": [],
+  "egressAction": {
+    "name": "CompressEgressAction",
+    "actionType": "EGRESS",
+    "type": "org.deltafi.core.action.RestPostEgressAction",
+    "parameters": {
+      "metadataKey": "deltafiMetadata",
+      "url": "${compressEgressUrl}"
+    }
+  }
+}

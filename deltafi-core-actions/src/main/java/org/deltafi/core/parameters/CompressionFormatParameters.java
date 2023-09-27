@@ -18,20 +18,27 @@
 package org.deltafi.core.parameters;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import lombok.*;
+import org.deltafi.actionkit.action.parameters.ActionParameters;
 
+
+@Data
+@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
-@Getter
-public enum ArchiveType {
-    @JsonProperty("ar") AR("ar", "application/x-archive"),
-    @JsonProperty("gz") GZIP("gz", "application/gzip"),
-    @JsonProperty("tar") TAR("tar", "application/x-tar"),
-    @JsonProperty("tar.gz") TAR_GZIP("tar.gz", "application/gzip"),
-    @JsonProperty("tar.xz") TAR_XZ("tar.xz", "application/x-xz"),
-    @JsonProperty("xz") XZ("xz", "application/x-xz"),
-    @JsonProperty("zip") ZIP("zip", "application/zip");
+@NoArgsConstructor
+public class CompressionFormatParameters extends ActionParameters {
+    @JsonProperty(required = true)
+    @JsonPropertyDescription("Compression type: ar, gz, tar, tar.gz, tar.xz, xz, and zip")
+    public ArchiveType archiveType;
 
-    private final String value;
-    private final String mediaType;
+    @JsonProperty(required = false)
+    @JsonPropertyDescription("Sets the media type of the new content to the specified value. Otherwise, will be based on archiveType")
+    public String mediaType;
+
+    @JsonProperty(required = true)
+    @JsonPropertyDescription("Append the archiveType suffix to new content name(s)")
+    public Boolean addArchiveSuffix;
+
 }

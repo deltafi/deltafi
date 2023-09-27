@@ -35,6 +35,7 @@ public class FormatManyResultAssert extends ResultAssert<FormatManyResultAssert,
 
     /**
      * Create a new FormatManyResultAssert with the given result
+     *
      * @param formatManyResult to validate
      * @return a new FormatManyResultAssert
      */
@@ -45,6 +46,7 @@ public class FormatManyResultAssert extends ResultAssert<FormatManyResultAssert,
     /**
      * Verify that at least one child FormatResult in the results childFormatResult list
      * satisfies the given predicate
+     *
      * @param childMatcher predicate used to find the matching child
      * @return this
      */
@@ -56,6 +58,7 @@ public class FormatManyResultAssert extends ResultAssert<FormatManyResultAssert,
 
     /**
      * Verify that the childFormatResult list has a size equal to the given count
+     *
      * @param count expected size
      * @return this
      */
@@ -68,6 +71,7 @@ public class FormatManyResultAssert extends ResultAssert<FormatManyResultAssert,
     /**
      * Load the formatted content as bytes from each child result and put the byte arrays in a list.
      * Verify that list is equal to the list in the values parameter.
+     *
      * @param values list containing the expected formatted content bytes from each child result
      * @return this
      */
@@ -84,8 +88,31 @@ public class FormatManyResultAssert extends ResultAssert<FormatManyResultAssert,
     }
 
     /**
+     * Runs the provided match predicate against the child FormatResult at the
+     * specified index.
+     *
+     * @param index        Position of the FormatResult in the child list
+     * @param childMatcher predicate used to find the matching child
+     * @return this
+     */
+    public FormatManyResultAssert hasChildResultAt(int index, Predicate<FormatResult> childMatcher) {
+        isNotNull();
+        if (actual.getChildFormatResults() == null || actual.getChildFormatResults().size() - 1 < index) {
+            String contentSize = actual.getChildFormatResults() == null ? "content list  is null" : "content list has size " + actual.getChildFormatResults().size();
+            failWithMessage("There is no content at index %s (%s)", index, contentSize);
+            return myself;
+        }
+
+        FormatResult formatResult = actual.getChildFormatResults().get(index);
+        byte[] bytes = getContentAsBytes(formatResult);
+        Assertions.assertThat(formatResult).matches(childMatcher);
+        return myself;
+    }
+
+    /**
      * Load the formatted content as strings using the {@code Charset.defaultCharset()} from each child result and put the strings in a list.
      * Verify that list is equal to the list in the values parameter.
+     *
      * @param values list containing the expected formatted content string from each child result
      * @return this
      */
@@ -96,6 +123,7 @@ public class FormatManyResultAssert extends ResultAssert<FormatManyResultAssert,
     /**
      * Load the formatted content as strings using the given charset from each child result and put the strings in a list.
      * Verify that list is equal to the list in the values parameter.
+     *
      * @param values list containing the expected formatted content string from each child result
      * @return this
      */
