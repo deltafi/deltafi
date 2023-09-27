@@ -55,7 +55,19 @@
         <Panel header="Flow Plan" class="table-panel">
           <div class="list-group-item px-2" style="overflow: scroll">
             <div class="d-flex w-100 justify-content-between">
-              <h4>{{ _.capitalize(model.type) }} Flow</h4>
+              <div class="p-overlay-badge">
+                <Badge
+                  v-if="!_.isEmpty(displayFlowMissingValuesBadge())"
+                  v-tooltip.left="{ value: `${displayFlowMissingValuesBadge()}`, class: 'tooltip-width', showDelay: 300 }"
+                  value=" "
+                  class="mr-n2"
+                  severity="danger"
+                  :pt="{
+                    root: { class: ['pi pi-exclamation-triangle', 'pt-1'] },
+                  }"
+                />
+                <h4>{{ _.capitalize(model.type) }} Flow</h4>
+              </div>
               <i class="fa-solid fa-xmark" @click="removeFlow()"></i>
             </div>
             <dl>
@@ -74,7 +86,17 @@
                 <div v-if="_.isEmpty(actionTemplateObject[actionTemplateMap.get(action).activeContainer])" class="list-group-item">No {{ _.startCase(actionTemplateMap.get(action).activeContainer) }}</div>
                 <draggable v-model="actionTemplateObject[actionTemplateMap.get(action).activeContainer]" item-key="id" :sort="true" :group="action" ghost-class="ghost" class="dragArea list-group pb-2" @change="oneActionVerification">
                   <template #item="{ element, index }">
-                    <div class="list-group-item">
+                    <div class="list-group-item p-overlay-badge">
+                      <Badge
+                        v-if="!_.isEmpty(displayActionMissingValuesBadge(element))"
+                        v-tooltip.left="{ value: `${displayActionMissingValuesBadge(element)}`, class: 'tooltip-width', showDelay: 300 }"
+                        value=" "
+                        severity="danger"
+                        class="mr-1"
+                        :pt="{
+                          root: { class: ['pi pi-exclamation-triangle', 'pt-1'] },
+                        }"
+                      ></Badge>
                       <i class="fa-solid fa-xmark float-right" @click="removeAction(element, index)"></i>
                       <div v-for="displayActionInfo of getDisplayValues(element)" :key="displayActionInfo">
                         <template v-if="(_.isEqual(displayActionInfo, 'requiresDomains') && _.isEmpty(element[displayActionInfo])) || (_.isEqual(displayActionInfo, 'requiresEnrichments') && _.isEmpty(element[displayActionInfo])) || (_.isEqual(displayActionInfo, 'schema') && _.isEmpty(_.get(element, 'schema.properties', null)))"> </template>
@@ -116,6 +138,9 @@
             <Button v-tooltip.left="'Copy to Clipboard'" class="p-panel-header-icon p-link p-me-2" @click="copy(rawOutput)">
               <span class="fa-solid fa-copy" />
             </Button>
+            <Button v-tooltip.left="'Save'" class="p-panel-header-icon p-link p-me-2" :disabled="!isValidFlow" @click="save(rawOutput)">
+              <span class="fa-solid fa-hard-drive" />
+            </Button>
             <!-- <Button v-tooltip.left="'Show Schema'" class="p-panel-header-icon p-link p-me-2" @click="showSchma()">
               <span class="fa-solid fa-file-invoice" />
             </Button> -->
@@ -132,18 +157,21 @@
 </template>
 
 <script setup>
+import { useRouter } from "vue-router";
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import useFlowActions from "@/composables/useFlowActions";
 import usePrimeVueJsonSchemaUIRenderers from "@/composables/usePrimeVueJsonSchemaUIRenderers";
 import { computed, onBeforeMount, provide, ref } from "vue";
 import { useClipboard } from "@vueuse/core";
-
+import useFlowPlanQueryBuilder from "@/composables/useFlowPlanQueryBuilder";
+import Badge from "primevue/badge";
 import Button from "primevue/button";
 import Dropdown from "primevue/dropdown";
 import InputText from "primevue/inputtext";
 import Panel from "primevue/panel";
 import draggable from "vuedraggable";
+import useNotifications from "@/composables/useNotifications";
 
 import _ from "lodash";
 
@@ -156,10 +184,13 @@ provide("style", myStyles);
 const renderers = ref(Object.freeze(rendererList));
 
 const uischema = ref(undefined);
+const notify = useNotifications();
+const router = useRouter();
 
 const data = ref({});
 
 const { getPluginActionSchema } = useFlowActions();
+const { saveTransformFlowPlan, saveNormalizeFlowPlan, saveEgressFlowPlan, saveEnrichFlowPlan, data: saveData } = useFlowPlanQueryBuilder();
 const { copy } = useClipboard();
 
 const allActionsData = ref({});
@@ -173,6 +204,7 @@ const flowTemplate = {
 
 const defaultActionKeys = {
   name: null,
+  type: null,
   description: null,
   parameters: {},
   apiVersion: null,
@@ -321,6 +353,23 @@ const addFlow = (flowType) => {
   model.value.active = flowType.value ? true : false;
 };
 
+const save = async (rawFlow) => {
+  if (model.value.type === "TRANSFORM") {
+    await saveTransformFlowPlan(rawFlow);
+  } else if (model.value.type === "NORMALIZE") {
+    await saveNormalizeFlowPlan(rawFlow);
+  } else if (model.value.type === "ENRICH") {
+    await saveEnrichFlowPlan(rawFlow);
+  } else if (model.value.type === "EGRESS") {
+    await saveEgressFlowPlan(rawFlow);
+  }
+  if (saveData.value !== undefined) {
+    notify.success(`${saveData.value.name} Flow Plan Saved`);
+    model.value.type = null;
+    router.push({ path: `/config/flows` });
+  }
+};
+
 const removeFlow = () => {
   model.value = JSON.parse(JSON.stringify(flowTemplate));
   actionTemplateObject.value = JSON.parse(JSON.stringify(originalActionTemplateObject));
@@ -386,7 +435,13 @@ const rawOutput = computed(() => {
       if (schemaVisable.value) {
         displayOutput[actionTemplateMap.get(action).activeContainer] = displayOutput[actionTemplateMap.get(action).activeContainer].map(({ description, actionType, disableEdit, ...keepAttrs }) => keepAttrs); // eslint-disable-line @typescript-eslint/no-unused-vars
       } else {
-        displayOutput[actionTemplateMap.get(action).activeContainer] = displayOutput[actionTemplateMap.get(action).activeContainer].map(({ schema, description, actionType, disableEdit, ...keepAttrs }) => keepAttrs); // eslint-disable-line @typescript-eslint/no-unused-vars
+        if (actionTemplateMap.get(action).limit) {
+          displayOutput[actionTemplateMap.get(action).activeContainer] = displayOutput[actionTemplateMap.get(action).activeContainer].map(({ ...attrs }) => _.pick(attrs, Object.keys(actionTemplateMap.get(action).selectTemplate[0])));
+          displayOutput[actionTemplateMap.get(action).activeContainer] = displayOutput[actionTemplateMap.get(action).activeContainer].map(({ schema, description, actionType, disableEdit, ...keepAttrs }) => keepAttrs)[0]; // eslint-disable-line @typescript-eslint/no-unused-vars
+        } else {
+          displayOutput[actionTemplateMap.get(action).activeContainer] = displayOutput[actionTemplateMap.get(action).activeContainer].map(({ ...attrs }) => _.pick(attrs, Object.keys(actionTemplateMap.get(action).selectTemplate[0])));
+          displayOutput[actionTemplateMap.get(action).activeContainer] = displayOutput[actionTemplateMap.get(action).activeContainer].map(({ schema, description, actionType, disableEdit, ...keepAttrs }) => keepAttrs); // eslint-disable-line @typescript-eslint/no-unused-vars
+        }
       }
     }
   }
@@ -396,6 +451,86 @@ const rawOutput = computed(() => {
 
   return displayOutput;
 });
+
+const isValidFlow = computed(() => {
+  let allFlowMissingFields = [];
+  if (!_.isEmpty(displayFlowMissingValuesBadge())) {
+    allFlowMissingFields.push(displayFlowMissingValuesBadge());
+  }
+
+  for (let flowActionType of flowTypesMap.get(model.value.type).actions) {
+    for (let action of actionTemplateObject.value[actionTemplateMap.get(flowActionType).activeContainer]) {
+      let actionMissingRequiredFields = displayActionMissingValuesBadge(action);
+      if (!_.isEmpty(actionMissingRequiredFields)) {
+        allFlowMissingFields.push(actionMissingRequiredFields);
+      }
+    }
+  }
+
+  return allFlowMissingFields.length == 0;
+});
+
+const displayFlowMissingValuesBadge = () => {
+  let allMissingFields = [];
+  if (_.isEmpty(model.value.name)) {
+    allMissingFields.push("Name");
+  }
+  if (_.isEmpty(model.value.type)) {
+    allMissingFields.push("Type");
+  }
+  if (_.isEmpty(model.value.description)) {
+    allMissingFields.push("Description");
+  }
+
+  if (_.isEmpty(allMissingFields)) {
+    return null;
+  }
+
+  return _.capitalize(`Flow missing required fields: ${allMissingFields.join(", ")}`);
+};
+
+const displayActionMissingValuesBadge = (action) => {
+  // requiredFields are the required fields for the action.
+  let requiredFields = _.get(action.schema, "required", null);
+  // userCompletedFields are the fields that the user has filled in for the action.
+  let userCompletedFields = _.get(action, "parameters", null);
+  // keysOfUserCompletedFields are the keys of the userCompletedFields.
+  let keysOfUserCompletedFields = null;
+  let missingRequiredSchemaFields = null;
+  let allMissingFields = [];
+
+  if (!_.isEmpty(userCompletedFields)) {
+    keysOfUserCompletedFields = Object.keys(userCompletedFields);
+  }
+
+  if (!_.isEmpty(requiredFields)) {
+    missingRequiredSchemaFields = _.difference(requiredFields, keysOfUserCompletedFields);
+  }
+
+  if (_.isEmpty(action.name)) {
+    allMissingFields.push("name");
+  }
+
+  let duplicateActionNames = "";
+  if (!_.isEmpty(action.name)) {
+    let duplicateActionNamesInFlow = _.filter(actionTemplateObject.value[actionTemplateMap.get(action.actionType).activeContainer], { name: action.name, type: action.type });
+    if (duplicateActionNamesInFlow.length > 1) {
+      duplicateActionNames = `Duplicate action name: ${action.name} for action type: ${action.type}`;
+    }
+  }
+
+  if (!_.isEmpty(missingRequiredSchemaFields)) {
+    allMissingFields = _.concat(allMissingFields, missingRequiredSchemaFields);
+  }
+
+  if (_.isEmpty(allMissingFields) && _.isEmpty(duplicateActionNames)) {
+    return null;
+  }
+
+  let isValidAction = `${_.isEmpty(duplicateActionNames) ? "" : duplicateActionNames} ${!_.isEmpty(duplicateActionNames) && !_.isEmpty(allMissingFields) ? " and " : ""} ${_.isEmpty(allMissingFields) ? "" : `missing required fields: ${allMissingFields.join(", ")}`}`;
+
+  return _.capitalize(isValidAction.trim());
+};
 
 const prettyPrint = (json) => {
   if (json) {

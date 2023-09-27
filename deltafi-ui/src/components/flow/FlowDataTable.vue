@@ -33,6 +33,12 @@
             <PermissionedRouterLink :disabled="!$hasPermission('PluginsView')" :to="{ path: 'plugins/' + data.mvnCoordinates }">
               <i v-tooltip.right="data.mvnCoordinates" class="ml-1 text-muted fas fa-plug fa-rotate-90 fa-fw" />
             </PermissionedRouterLink>
+            <span v-if="data.sourcePlugin.artifactId === 'system-plugin' && data.flowStatus.state !== 'RUNNING'" class="cursor-pointer" @click="confirmationPopup($event, data)">
+              <i class="ml-2 text-muted fa-solid fa-trash-can" />
+            </span>
+            <span v-else-if="data.sourcePlugin.artifactId === 'system-plugin'" class="cursor-pointer" @click="notify.warn(`Unable to remove running flow: `, data.name)">
+              <i class="ml-2 text-muted fa-solid fa-trash-can" />
+            </span>
           </div>
         </template>
       </Column>
@@ -72,6 +78,7 @@
         </template>
       </Column>
     </DataTable>
+    <ConfirmPopup></ConfirmPopup>
   </CollapsiblePanel>
 </template>
 
@@ -84,8 +91,12 @@ import FlowTestModeInputSwitch from "@/components/flow/FlowTestModeInputSwitch.v
 import PermissionedRouterLink from "@/components/PermissionedRouterLink";
 import useGraphiteQueryBuilder from "@/composables/useGraphiteQueryBuilder";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
+import useFlowPlanQueryBuilder from "@/composables/useFlowPlanQueryBuilder";
+
 import useNotifications from "@/composables/useNotifications";
 import { computed, defineProps, inject, onBeforeMount, ref, onUnmounted, watch, defineEmits } from "vue";
+import ConfirmPopup from "primevue/confirmpopup";
+import { useConfirm } from "primevue/useconfirm";
 
 import { filesize } from "filesize";
 import { FilterMatchMode } from "primevue/api";
@@ -96,12 +107,15 @@ import _ from "lodash";
 
 const { setMaxErrors, errors } = useFlowQueryBuilder();
 const notify = useNotifications();
+const confirm = useConfirm();
+const { removeTransformFlowPlanByName, removeNormalizeFlowPlanByName, removeEgressFlowPlanByName, removeEnrichFlowPlan, data: successData } = useFlowPlanQueryBuilder();
 
 const refreshInterval = 5000; // 5 seconds
 let autoRefresh = null;
 const isIdle = inject("isIdle");
 const { data: metricsData, fetchIngressFlowsByteRate, fetchEgressFlowsByteRate } = useGraphiteQueryBuilder();
 const emit = defineEmits(["updateFlows"]);
+const flowData = ref({});
 
 const props = defineProps({
   flowTypeProp: {
@@ -136,6 +150,7 @@ onUnmounted(() => {
 });
 
 onBeforeMount(async () => {
+  flowData.value = props.flowDataProp;
   await formatBitRate();
   autoRefresh = setInterval(formatBitRate, refreshInterval);
 });
@@ -153,6 +168,29 @@ watch(
     filters.value["global"].value = props.filterFlowsTextProp;
   }
 );
+watch(
+  () => props.flowDataProp,
+  () => {
+    flowData.value = props.flowDataProp;
+  }
+);
+const deleteFlow = async (data) => {
+  if (data.flowType === "transform") {
+    await removeTransformFlowPlanByName(data.name);
+  } else if (data.flowType === "normalize") {
+    await removeNormalizeFlowPlanByName(data.name);
+  } else if (data.flowType === "enrich") {
+    await removeEnrichFlowPlan(data.name);
+  } else if (data.flowType === "egress") {
+    await removeEgressFlowPlanByName(data.name);
+  }
+  if (successData.value === true) {
+    notify.success(`Removed ${data.flowType} flow:`, data.name);
+    removeFlowFromProp(data);
+  } else {
+    notify.error(`Failed to remove`, data.name);
+  }
+};
 
 const displayDiscription = (data) => {
   return _.truncate(data, {
@@ -178,7 +216,7 @@ const FlowTypeTitle = computed(() => {
 });
 
 const flowDataByType = computed(() => {
-  return (props.flowDataProp[props.flowTypeProp] || []).map((flow) => {
+  return (flowData.value[props.flowTypeProp] || []).map((flow) => {
     if (flow.maxErrors === -1) flow.maxErrors = null;
     return flow;
   });
@@ -199,6 +237,26 @@ const formatBitRate = async () => {
       formattedBitRate.value[`${newKey}`] = value;
     }
   }
+};
+
+const confirmationPopup = (event, data) => {
+  confirm.require({
+    target: event.currentTarget,
+    message: `Are you sure you want to remove ${data.name}?`,
+    icon: "pi pi-exclamation-triangle",
+    acceptLabel: "Remove",
+    rejectLabel: "Cancel",
+    accept: () => {
+      deleteFlow(data);
+    },
+    reject: () => {},
+  });
+};
+
+const removeFlowFromProp = (data) => {
+  flowData.value[props.flowTypeProp] = flowData.value[props.flowTypeProp].filter((flow) => {
+    return flow.name !== data.name;
+  });
 };
 
 const bitRate = (bitsPerFlow) => {
