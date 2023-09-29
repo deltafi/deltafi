@@ -23,21 +23,21 @@
       <template #loading>Loading {{ FlowTypeTitle }} flows. Please wait.</template>
       <Column header="Name" field="name" class="name-column" :sortable="true">
         <template #body="{ data }">
-          <div class="d-flex justify-content-start">
-            <DialogTemplate component-name="flow/FlowViewer" :header="data.name" :flow-name="data.name" :flow-type="data.flowType">
-              <span class="cursor-pointer">
-                {{ data.name }}
-                <i v-tooltip.right="'View Flow information' + errorTooltip(data) + ' for ' + data.name" :class="infoIconClass(data)" />
-              </span>
-            </DialogTemplate>
-            <PermissionedRouterLink :disabled="!$hasPermission('PluginsView')" :to="{ path: 'plugins/' + data.mvnCoordinates }">
-              <i v-tooltip.right="data.mvnCoordinates" class="ml-1 text-muted fas fa-plug fa-rotate-90 fa-fw" />
-            </PermissionedRouterLink>
-            <span v-if="data.sourcePlugin.artifactId === 'system-plugin' && data.flowStatus.state !== 'RUNNING'" class="cursor-pointer" @click="confirmationPopup($event, data)">
-              <i class="ml-2 text-muted fa-solid fa-trash-can" />
+          <div class="d-flex justify-content-between">
+            <span>
+              <DialogTemplate component-name="flow/FlowViewer" :header="data.name" :flow-name="data.name" :flow-type="data.flowType">
+                <span v-tooltip.right="'View Flow information' + errorTooltip(data) + ' for ' + data.name" class="cursor-pointer">
+                  {{ data.name }}
+                </span>
+              </DialogTemplate>
             </span>
-            <span v-else-if="data.sourcePlugin.artifactId === 'system-plugin'" class="cursor-pointer" @click="notify.warn(`Unable to remove running flow: `, data.name)">
-              <i class="ml-2 text-muted fa-solid fa-trash-can" />
+            <span>
+              <span v-if="data.sourcePlugin.artifactId === 'system-plugin'" v-tooltip.top="'Remove ' + data.name" class="cursor-pointer" @click="confirmationPopup($event, data)">
+                <i class="ml-2 text-muted fa-solid fa-trash-can" />
+              </span>
+              <PermissionedRouterLink :disabled="!$hasPermission('PluginsView')" :to="{ path: 'plugins/' + data.mvnCoordinates }">
+                <i v-tooltip.top="data.mvnCoordinates" class="ml-2 text-muted fas fa-plug fa-rotate-90 fa-fw" />
+              </PermissionedRouterLink>
             </span>
           </div>
         </template>
@@ -203,10 +203,6 @@ const errorTooltip = (data) => {
   return _.isEmpty(data.flowStatus.errors) ? "" : " and errors";
 };
 
-const infoIconClass = (data) => {
-  return _.isEmpty(data.flowStatus.errors) ? "ml-1 text-muted fas fa-info-circle fa-fw" : "ml-1 far fa-times-circle fa-fw text-danger";
-};
-
 const actionRowClass = (data) => {
   return !_.isEmpty(data.flowStatus.errors) ? "table-danger action-error" : null;
 };
@@ -240,6 +236,10 @@ const formatBitRate = async () => {
 };
 
 const confirmationPopup = (event, data) => {
+  if (_.isEqual(data.flowStatus.state, "RUNNING")) {
+    notify.warn(`Unable to remove running flow: `, data.name);
+    return;
+  }
   confirm.require({
     target: event.currentTarget,
     message: `Are you sure you want to remove ${data.name}?`,

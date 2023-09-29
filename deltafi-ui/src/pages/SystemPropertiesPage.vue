@@ -29,7 +29,7 @@
     </span>
     <ProgressBar v-else mode="indeterminate" style="height: 0.5em" />
     <div v-for="plugin in pluginsList" :key="plugin.displayName">
-      <PluginVariablesPanel :header-prop="'Plugin Properties - ' + plugin.displayName" :plugin-coordinates-prop="plugin.pluginCoordinates" :variables-prop="plugin.variables" class="mb-3" @updated="loadPlugins" />
+      <PluginVariablesPanel v-if="plugin.variables.length" :header-prop="'Plugin Properties - ' + plugin.displayName" :plugin-coordinates-prop="plugin.pluginCoordinates" :variables-prop="plugin.variables" class="mb-3" @updated="loadPlugins" />
     </div>
     <ScrollTop target="window" :threshold="10" icon="pi pi-arrow-up" />
   </div>

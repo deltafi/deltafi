@@ -19,7 +19,7 @@
 <template>
   <CollapsiblePanel :header="header" class="table-panel">
     <DataTable :value="variables" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines plugin-variables-table" striped-rows :row-hover="true">
-      <template #empty> No Variables Included </template>
+      <template #empty>No variables included </template>
       <Column field="name" header="Name" :style="{ width: '50%' }">
         <template #body="{ data }">
           {{ data.name }}

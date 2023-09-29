@@ -19,6 +19,7 @@
 <template>
   <CollapsiblePanel header="Actions" class="table-panel">
     <DataTable :value="props.actions" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines">
+      <template #empty>No actions included</template>
       <Column field="name" header="Name"></Column>
       <Column field="description" header="Description"></Column>
       <Column field="requiresDomains" header="Requires Domains">
