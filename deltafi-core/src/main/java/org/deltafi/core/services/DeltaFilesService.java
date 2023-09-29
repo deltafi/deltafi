@@ -44,12 +44,14 @@ import org.deltafi.core.generated.types.*;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.core.repo.DeltaFileRepo;
+import org.deltafi.core.repo.QueuedAnnotationRepo;
 import org.deltafi.core.retry.MongoRetryable;
 import org.deltafi.core.types.*;
 import org.deltafi.core.types.ResumePolicy;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -118,6 +120,7 @@ public class DeltaFilesService {
     private final DidMutexService didMutexService;
     private final DeltaFileCacheService deltaFileCacheService;
     private final QueueManagementService queueManagementService;
+    private final QueuedAnnotationRepo queuedAnnotationRepo;
 
     private ExecutorService executor;
 
@@ -529,26 +532,64 @@ public class DeltaFilesService {
         return deltaFile;
     }
 
-    @MongoRetryable
-    public void addAnnotations(String did, Map<String, String> annotations, boolean allowOverwrites) {
-        synchronized(didMutexService.getMutex(did)) {
-            DeltaFile deltaFile = getCachedDeltaFile(did);
+    private DeltaFile getTerminalDeltaFileOrCache(String did) {
+        if (deltaFileCacheService.isCached(did)) {
+            return getCachedDeltaFile(did);
+        }
+        return deltaFileRepo.findByDidAndStageIn(did,
+                        Arrays.asList(DeltaFileStage.COMPLETE, DeltaFileStage.ERROR, DeltaFileStage.CANCELLED))
+                .orElse(null);
+    }
+
+    public void addAnnotations(String rawDid, Map<String, String> annotations, boolean allowOverwrites) {
+        String did = rawDid.toLowerCase();
+        synchronized (didMutexService.getMutex(did)) {
+            DeltaFile deltaFile = getTerminalDeltaFileOrCache(did);
 
             if (deltaFile == null) {
-                throw new DgsEntityNotFoundException("DeltaFile " + did + " not found.");
+                if (deltaFileRepo.existsById(did)) {
+                    QueuedAnnotation queuedAnnotation = new QueuedAnnotation(did, annotations, allowOverwrites);
+                    queuedAnnotationRepo.insert(queuedAnnotation);
+                    return;
+                } else {
+                    throw new DgsEntityNotFoundException("DeltaFile " + did + " not found.");
+                }
             }
 
-            if (allowOverwrites) {
-                deltaFile.addAnnotations(annotations);
-            } else {
-                deltaFile.addAnnotationsIfAbsent(annotations);
-            }
-
-            deltaFile.getEgress().forEach(egress -> updatePendingAnnotations(deltaFile, egress));
-
-            deltaFile.setModified(OffsetDateTime.now());
-            deltaFileCacheService.save(deltaFile);
+            addAnnotations(deltaFile, annotations, allowOverwrites, OffsetDateTime.now());
         }
+    }
+
+    public void processQueuedAnnotations() {
+        List<QueuedAnnotation> queuedAnnotations = queuedAnnotationRepo.findAllByOrderByTimeAsc();
+        for (QueuedAnnotation queuedAnnotation : queuedAnnotations) {
+            String did = queuedAnnotation.getDid();
+            synchronized (didMutexService.getMutex(did)) {
+                DeltaFile deltaFile = getTerminalDeltaFileOrCache(did);
+
+                if (deltaFile == null && deltaFileRepo.existsById(did)) {
+                    log.warn("Attempted to apply queued annotation to deltaFile {} that no longer exists", did);
+                    continue;
+                }
+
+                addAnnotations(deltaFile, queuedAnnotation.getAnnotations(), queuedAnnotation.isAllowOverwrites(), queuedAnnotation.getTime());
+                queuedAnnotationRepo.deleteById(queuedAnnotation.getId());
+            }
+        }
+    }
+
+    @MongoRetryable
+    private void addAnnotations(DeltaFile deltaFile, Map<String, String> annotations, boolean allowOverwrites, OffsetDateTime annotationTime) {
+        if (allowOverwrites) {
+            deltaFile.addAnnotations(annotations);
+        } else {
+            deltaFile.addAnnotationsIfAbsent(annotations);
+        }
+
+        deltaFile.getEgress().forEach(egress -> updatePendingAnnotations(deltaFile, egress));
+
+        deltaFile.setModified(annotationTime);
+        deltaFileCacheService.save(deltaFile);
     }
 
     void updatePendingAnnotations(DeltaFile deltaFile, Egress egress) {

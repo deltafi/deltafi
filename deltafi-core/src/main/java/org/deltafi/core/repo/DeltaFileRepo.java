@@ -26,6 +26,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 @Repository
@@ -47,4 +48,6 @@ public interface DeltaFileRepo extends MongoRepository<DeltaFile, String>, Delta
 
     @CountQuery("{'stage': ?0, 'errorAcknowledged': null}")
     long countByStageAndErrorAcknowledgedIsNull(DeltaFileStage stage);
+
+    Optional<DeltaFile> findByDidAndStageIn(String did, List<DeltaFileStage> stages);
 }

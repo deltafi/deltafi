@@ -29,6 +29,7 @@ import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.SelectedField;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.content.ContentStorageService;
+import org.deltafi.common.converters.KeyValueConverter;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.*;
 import org.deltafi.common.types.ResumeMetadata;
@@ -173,6 +174,13 @@ public class DeltaFilesDatafetcher {
   @NeedsPermission.DeltaFileCancel
   public List<CancelResult> cancel(@InputArgument List<String> dids) {
     return deltaFilesService.cancel(dids);
+  }
+
+  @DgsMutation
+  @NeedsPermission.DeltaFileMetadataWrite
+  public boolean addAnnotations(String did, List<KeyValue> annotations, boolean allowOverwrites) {
+    deltaFilesService.addAnnotations(did, KeyValueConverter.convertKeyValues(annotations), allowOverwrites);
+    return true;
   }
 
   @DgsMutation

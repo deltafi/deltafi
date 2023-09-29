@@ -32,6 +32,7 @@ import org.deltafi.core.generated.types.DeltaFilesFilter;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.core.repo.DeltaFileRepo;
+import org.deltafi.core.repo.QueuedAnnotationRepo;
 import org.deltafi.core.types.*;
 import org.deltafi.core.util.Util;
 import org.junit.jupiter.api.Test;
@@ -66,6 +67,7 @@ class DeltaFilesServiceTest {
     private final ContentStorageService contentStorageService;
     private final MetricService metricService;
     private final DeltaFileCacheService deltaFileCacheService;
+    private final QueuedAnnotationRepo queuedAnnotationRepo;
 
     private final DeltaFilesService deltaFilesService;
 
@@ -74,8 +76,12 @@ class DeltaFilesServiceTest {
 
     @Captor
     ArgumentCaptor<List<String>> stringListCaptor;
+
     @Captor
     ArgumentCaptor<DeltaFile> deltaFileCaptor;
+
+    @Captor
+    ArgumentCaptor<QueuedAnnotation> queuedAnnotationCaptor;
 
     DeltaFilesServiceTest(@Mock NormalizeFlowService normalizeFlowService, @Mock EnrichFlowService enrichFlowService,
                           @Mock EgressFlowService egressFlowService, @Mock TransformFlowService transformFlowService,
@@ -84,7 +90,8 @@ class DeltaFilesServiceTest {
                           @Mock ContentStorageService contentStorageService, @Mock MetricService metricService,
                           @Mock CoreAuditLogger coreAuditLogger, @Mock IdentityService identityService,
                           @Mock DeltaFileCacheService deltaFileCacheService,
-                          @Mock QueueManagementService queueManagementService) {
+                          @Mock QueueManagementService queueManagementService,
+                          @Mock QueuedAnnotationRepo queuedAnnotationRepo) {
         this.normalizeFlowService = normalizeFlowService;
         this.egressFlowService = egressFlowService;
         this.transformFlowService = transformFlowService;
@@ -94,12 +101,14 @@ class DeltaFilesServiceTest {
         this.contentStorageService = contentStorageService;
         this.metricService = metricService;
         this.deltaFileCacheService = deltaFileCacheService;
+        this.queuedAnnotationRepo = queuedAnnotationRepo;
 
         Clock clock = new TestClock();
         deltaFilesService = new DeltaFilesService(clock, normalizeFlowService, enrichFlowService,
                 egressFlowService, transformFlowService, new MockDeltaFiPropertiesService(), stateMachine,
                 deltaFileRepo, actionEventQueue, contentStorageService, resumePolicyService, metricService,
-                coreAuditLogger, identityService, new DidMutexService(), deltaFileCacheService, queueManagementService);
+                coreAuditLogger, identityService, new DidMutexService(), deltaFileCacheService, queueManagementService,
+                queuedAnnotationRepo);
     }
 
     @Test
@@ -438,6 +447,7 @@ class DeltaFilesServiceTest {
         DeltaFile deltaFile = Util.buildDeltaFile("1");
         deltaFile.addAnnotations(Map.of("key", "one"));
 
+        Mockito.when(deltaFileCacheService.isCached("1")).thenReturn(true);
         Mockito.when(deltaFileCacheService.get("1")).thenReturn(deltaFile);
         Mockito.when(deltaFileRepo.save(any())).thenAnswer(AdditionalAnswers.returnsFirstArg());
 
@@ -463,6 +473,7 @@ class DeltaFilesServiceTest {
         deltaFile.setAnnotations(new HashMap<>(Map.of("key", "one")));
         deltaFile.setAnnotationKeys(new HashSet<>(Set.of("key")));
 
+        Mockito.when(deltaFileCacheService.isCached("1")).thenReturn(true);
         Mockito.when(deltaFileCacheService.get("1")).thenReturn(deltaFile);
 
         deltaFilesService.addAnnotations("1", Map.of("key", "changed"), false);
@@ -474,6 +485,36 @@ class DeltaFilesServiceTest {
 
         deltaFilesService.addAnnotations("1", Map.of("key", "changed", "newKey", "value"), true);
         Assertions.assertThat(deltaFile.getAnnotations()).hasSize(2).containsEntry("key", "changed").containsEntry("newKey", "value");
+    }
+
+    @Test
+    void testQueueAnnotation_whenDeltaFileNotReady() {
+        Mockito.when(deltaFileRepo.existsById("2")).thenReturn(true);
+        Mockito.when(deltaFileCacheService.isCached("2")).thenReturn(false);
+        Mockito.when(deltaFileRepo.findByDidAndStageIn(eq("2"), anyList())).thenReturn(Optional.empty());
+
+        deltaFilesService.addAnnotations("2", Map.of("queued", "true"), false);
+
+        Mockito.verify(queuedAnnotationRepo).insert(queuedAnnotationCaptor.capture());
+        Mockito.verify(deltaFileCacheService, never()).save(any());
+        Mockito.verify(deltaFileRepo, never()).save(any());
+
+        QueuedAnnotation after = queuedAnnotationCaptor.getValue();
+        Assertions.assertThat(after.getAnnotations()).containsEntry("queued", "true");
+    }
+
+    @Test
+    void testProcessQueuedAnnotations() {
+        DeltaFile deltaFile = Util.buildDeltaFile("3");
+
+        QueuedAnnotation queuedAnnotation = new QueuedAnnotation("3", Map.of("queued", "true"), false);
+        Mockito.when(queuedAnnotationRepo.findAllByOrderByTimeAsc()).thenReturn(List.of(queuedAnnotation));
+        Mockito.when(deltaFileCacheService.isCached("3")).thenReturn(true);
+        Mockito.when(deltaFileCacheService.get("3")).thenReturn(deltaFile);
+
+        deltaFilesService.processQueuedAnnotations();
+        Mockito.verify(queuedAnnotationRepo).deleteById(queuedAnnotation.getId());
+        Assertions.assertThat(deltaFile.getAnnotations()).containsEntry("queued", "true");
     }
 
     @Test

@@ -15,18 +15,15 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.services;
+package org.deltafi.core.repo;
 
-import org.deltafi.common.types.DeltaFile;
-public abstract class DeltaFileCacheService {
+import org.deltafi.core.types.QueuedAnnotation;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.stereotype.Repository;
 
-    public abstract void clearCache();
+import java.util.List;
 
-    public abstract DeltaFile get(String did);
-
-    public abstract boolean isCached(String did);
-
-    public abstract void removeOlderThan(int seconds);
-
-    public abstract void save(DeltaFile deltaFile);
+@Repository
+public interface QueuedAnnotationRepo extends MongoRepository<QueuedAnnotation, String> {
+    List<QueuedAnnotation> findAllByOrderByTimeAsc();
 }

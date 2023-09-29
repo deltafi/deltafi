@@ -37,6 +37,10 @@ public class DeltaFileCacheServicePassthrough extends DeltaFileCacheService {
         return deltaFileRepo.findById(did.toLowerCase()).orElse(null);
     }
 
+    public boolean isCached(String did) {
+        return false;
+    }
+
     public void removeOlderThan(int seconds) {}
 
     public void save(DeltaFile deltaFile) {

@@ -428,6 +428,8 @@ type Mutation {
   acknowledge(dids: [String!]!, reason: String) : [AcknowledgeResult!]!
   cancel(dids: [String!]!) : [CancelResult!]!
 
+  addAnnotations(did: String!, annotations: [KeyValueInput!]!, allowOverwrites: Boolean!) : Boolean!
+
   savePluginVariables(variables: [VariableInput]!) : Boolean!
   removePluginVariables: Boolean!
   setPluginVariableValues(pluginCoordinates: PluginCoordinatesInput!, variables: [KeyValueInput!]) : Boolean!

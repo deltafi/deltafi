@@ -26,6 +26,7 @@ import org.deltafi.core.configuration.ClockConfiguration;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.repo.DeltaFiPropertiesRepo;
 import org.deltafi.core.repo.DeltaFileRepo;
+import org.deltafi.core.repo.QueuedAnnotationRepo;
 import org.deltafi.core.util.Util;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -52,7 +53,7 @@ import java.util.Collections;
 @MockBean({StateMachine.class, NormalizeFlowService.class, EnrichFlowService.class, EgressFlowService.class,
         TransformFlowService.class, ActionEventQueue.class, ContentStorageService.class, FlowAssignmentService.class,
         CoreAuditLogger.class, MetricService.class, DeltaFiPropertiesRepo.class, ResumePolicyService.class,
-        IdentityService.class, DeltaFileRepo.class, QueueManagementService.class})
+        IdentityService.class, DeltaFileRepo.class, QueueManagementService.class, QueuedAnnotationRepo.class})
 @EnableRetry
 class MongoRetryTest {
 

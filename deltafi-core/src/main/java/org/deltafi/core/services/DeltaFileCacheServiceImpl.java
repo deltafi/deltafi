@@ -51,6 +51,10 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
         }
     }
 
+    public boolean isCached(String did) {
+        return deltaFileCache.containsKey(did);
+    }
+
     private DeltaFile getFromRepo(String did) {
         return deltaFileRepo.findById(did.toLowerCase()).orElse(null);
     }
