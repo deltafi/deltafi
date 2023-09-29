@@ -17,14 +17,15 @@
  */
 package org.deltafi.core.action;
 
-import org.deltafi.actionkit.action.content.ActionContent;
+import org.deltafi.actionkit.action.domain.DomainAction;
+import org.deltafi.actionkit.action.domain.DomainInput;
+import org.deltafi.actionkit.action.domain.DomainResult;
+import org.deltafi.actionkit.action.domain.DomainResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.actionkit.action.transform.TransformAction;
-import org.deltafi.actionkit.action.transform.TransformInput;
-import org.deltafi.actionkit.action.transform.TransformResult;
-import org.deltafi.actionkit.action.transform.TransformResultType;
+import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.core.parameters.ExtractXmlMetadataParameters;
+import org.deltafi.common.types.Domain;
+import org.deltafi.core.parameters.ExtractXmlAnnotationsParameters;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 import org.w3c.dom.Document;
@@ -40,10 +41,9 @@ import java.io.StringReader;
 import java.util.*;
 
 @Component
-public class ExtractXmlMetadataTransformAction extends TransformAction<ExtractXmlMetadataParameters> {
+public class ExtractXmlAnnotationsDomainAction extends DomainAction<ExtractXmlAnnotationsParameters> {
     private static final int MAX_CACHE_SIZE = 1000;
     private static final XPath X_PATH = XPathFactory.newInstance().newXPath();
-
     // use an LRU cache to avoid recomputing the xpath expression each time but control memory usage
     private final Map<String, XPathExpression> X_PATH_CACHE = Collections.synchronizedMap(
             new LinkedHashMap<>(16, 0.75f, true) {
@@ -54,35 +54,44 @@ public class ExtractXmlMetadataTransformAction extends TransformAction<ExtractXm
             }
     );
 
-    public ExtractXmlMetadataTransformAction() {
-        super("Extract XML keys based on XPath and write them as metadata");
+    public ExtractXmlAnnotationsDomainAction() {
+        super("Extract XML keys based on XPath from domain(s), and write them as annotations");
     }
 
     @Override
-    public TransformResultType transform(@NotNull ActionContext context,
-                                         @NotNull ExtractXmlMetadataParameters params,
-                                         @NotNull TransformInput input) {
-        TransformResult result = new TransformResult(context);
-        result.addContent(input.content());
+    public List<String> getRequiresDomains() {
+        return List.of(DeltaFiConstants.MATCHES_ANY);
+    }
+
+    @Override
+    public DomainResultType extractAndValidate(@NotNull ActionContext context,
+                                               @NotNull ExtractXmlAnnotationsParameters params,
+                                               @NotNull DomainInput input) {
+        DomainResult result = new DomainResult(context);
+        List<String> domainNames = input.getDomains().keySet().stream().sorted().toList();
 
         Map<String, List<String>> valuesMap = new HashMap<>();
-        List<ActionContent> contentList = params.getContentIndexes() == null ? input.content() : params.getContentIndexes().stream().map(input.content()::get).toList();
-        contentList = contentList.stream()
-                .filter(c -> params.getMediaTypes().stream()
-                        .anyMatch(allowedType -> matchesPattern(c.getMediaType(), allowedType)))
-                .filter(c -> params.getFilePatterns() == null || params.getFilePatterns().isEmpty() ||
-                        params.getFilePatterns().stream()
-                                .anyMatch(pattern -> matchesPattern(c.getName(), pattern)))
+        List<String> names = params.getDomains() == null ? domainNames : params.getDomains();
+        List<Domain> domains = new ArrayList<>();
+        for (String name : names) {
+            if (input.domain(name) != null) {
+                domains.add(input.domain(name));
+            }
+        }
+
+        domains = domains.stream()
+                .filter(d -> params.getMediaTypes().stream()
+                        .anyMatch(allowedType -> matchesPattern(d.getMediaType(), allowedType)))
                 .toList();
 
-        for (ActionContent content : contentList) {
+        for (Domain domain : domains) {
             Document document;
             try {
                 document = DocumentBuilderFactory.newInstance()
                         .newDocumentBuilder()
-                        .parse(new InputSource(new StringReader(content.loadString())));
+                        .parse(new InputSource(new StringReader(domain.getValue())));
             } catch (ParserConfigurationException | SAXException | IOException e) {
-                return new ErrorResult(context, "Unable to read XML content", "Failed to read " + content.getName(), e);
+                return new ErrorResult(context, "Unable to read XML domain", "Failed to read " + domain.getName(), e);
             }
 
             for (Map.Entry<String, String> entry : params.getXpathToMetadataKeysMap().entrySet()) {
@@ -123,7 +132,7 @@ public class ExtractXmlMetadataTransformAction extends TransformAction<ExtractXm
                 default -> String.join(params.getAllKeysDelimiter(), values);
             };
 
-            result.addMetadata(metadataKey, value);
+            result.addAnnotation(metadataKey, value);
         }
 
         return result;

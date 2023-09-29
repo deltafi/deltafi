@@ -40,10 +40,10 @@ public class ExtractJsonMetadataParameters extends ActionParameters {
     @JsonPropertyDescription("List of file patterns to consider. Supports wildcards (*) and if empty, all filenames are considered.")
     public List<String> filePatterns = List.of();
 
-    @JsonPropertyDescription("How to handle multiple occurrences of a key. Can be 'FIRST', 'LAST', or 'ALL'. Defaults to ALL, which writes a delimited list.")
+    @JsonPropertyDescription("How to handle multiple occurrences of a key. Can be 'FIRST', 'LAST', 'DISTINCT', or 'ALL'. Defaults to ALL, which writes a delimited list.")
     public HandleMultipleKeysType handleMultipleKeys = HandleMultipleKeysType.ALL;
 
-    @JsonPropertyDescription("The delimiter to use if handleMultipleKeys is set to ALL")
+    @JsonPropertyDescription("The delimiter to use if handleMultipleKeys is set to DISTINCT or ALL")
     public String allKeysDelimiter = ",";
 
     @JsonPropertyDescription("List of content indexes to consider. If empty, all content is considered.")

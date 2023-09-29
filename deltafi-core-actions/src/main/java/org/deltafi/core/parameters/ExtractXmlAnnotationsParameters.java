@@ -30,15 +30,12 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
-public class ExtractXmlMetadataParameters extends ActionParameters {
+public class ExtractXmlAnnotationsParameters extends ActionParameters {
     @JsonPropertyDescription("A map of XPath expressions to metadata keys. Values will be extracted using XPath and added to the corresponding metadata keys.")
     public Map<String, String> xpathToMetadataKeysMap = new HashMap<>();
 
     @JsonPropertyDescription("List of allowed media types. Supports wildcards (*) and defaults to application/xml if empty.")
     public List<String> mediaTypes = List.of("application/xml");
-
-    @JsonPropertyDescription("List of file patterns to consider. Supports wildcards (*) and if empty, all filenames are considered.")
-    public List<String> filePatterns = List.of();
 
     @JsonPropertyDescription("How to handle multiple occurrences of a key. Can be 'FIRST', 'LAST', 'DISTINCT', or 'ALL'. Defaults to ALL, which writes a delimited list.")
     public HandleMultipleKeysType handleMultipleKeys = HandleMultipleKeysType.ALL;
@@ -46,8 +43,8 @@ public class ExtractXmlMetadataParameters extends ActionParameters {
     @JsonPropertyDescription("The delimiter to use if handleMultipleKeys is set to DISTINCT or ALL")
     public String allKeysDelimiter = ",";
 
-    @JsonPropertyDescription("List of content indexes to consider. If empty, all content is considered.")
-    public List<Integer> contentIndexes;
+    @JsonPropertyDescription("List of domain names to consider. If empty, all domains considered.")
+    public List<String> domains;
 
     @JsonPropertyDescription("Whether to return an error if a key is not found. Defaults to false.")
     public boolean errorOnKeyNotFound = false;

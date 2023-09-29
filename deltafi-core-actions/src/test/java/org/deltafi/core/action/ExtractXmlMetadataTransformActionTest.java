@@ -50,17 +50,37 @@ class ExtractXmlMetadataTransformActionTest {
     }
 
     @Test
-    void testMultipleValues() {
+    void testMultipleValues_All() {
+        singleContentTester(HandleMultipleKeysType.ALL, "first|second|first|fourth");
+    }
+
+    @Test
+    void testMultipleValues_Distinct() {
+        singleContentTester(HandleMultipleKeysType.DISTINCT, "first|second|fourth");
+    }
+
+    @Test
+    void testMultipleValues_First() {
+        singleContentTester(HandleMultipleKeysType.FIRST, "first");
+    }
+
+    @Test
+    void testMultipleValues_Last() {
+        singleContentTester(HandleMultipleKeysType.LAST, "fourth");
+    }
+
+    void singleContentTester(HandleMultipleKeysType option, String expected) {
         ExtractXmlMetadataParameters params = new ExtractXmlMetadataParameters();
-        params.setHandleMultipleKeys(HandleMultipleKeysType.ALL);
+        params.setHandleMultipleKeys(option);
         params.setAllKeysDelimiter("|");
         params.setXpathToMetadataKeysMap(Map.of("/root/values/value", "valuesMetadata"));
 
-        ActionContent content = saveXml("<root><values><value>first</value><value>second</value><value>third</value></values></root>");
+        ActionContent content = saveXml(
+                "<root><values><value>first</value><value>second</value><value>first</value><value>fourth</value></values></root>");
         TransformInput input = TransformInput.builder().content(List.of(content)).build();
 
         ResultType result = action.transform(runner.actionContext(), params, input);
-        assertTransformResult(result).addedMetadataEquals(Map.of("valuesMetadata", "first|second|third"));
+        assertTransformResult(result).addedMetadataEquals(Map.of("valuesMetadata", expected));
     }
 
     @Test
@@ -118,6 +138,6 @@ class ExtractXmlMetadataTransformActionTest {
     }
 
     private ActionContent saveXml(String xml) {
-        return runner.saveContent(xml, "example.xml","application/xml");
+        return runner.saveContent(xml, "example.xml", "application/xml");
     }
 }

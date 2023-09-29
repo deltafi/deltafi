@@ -90,6 +90,8 @@ public class ExtractJsonMetadataTransformAction extends TransformAction<ExtractJ
             String value = switch (params.getHandleMultipleKeys()) {
                 case FIRST -> values.get(0);
                 case LAST -> values.get(values.size() - 1);
+                case DISTINCT -> String.join(params.getAllKeysDelimiter(),
+                        values.stream().distinct().toList());
                 default -> String.join(params.getAllKeysDelimiter(), values);
             };
 

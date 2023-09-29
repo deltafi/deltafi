@@ -61,7 +61,12 @@ class ExtractJsonMetadataTransformActionTest {
 
     @Test
     void testHandleMultipleKeysAll() {
-        testMultipleKeysPolicy(HandleMultipleKeysType.ALL, "firstValue,middleValue,lastValue");
+        testMultipleKeysPolicy(HandleMultipleKeysType.ALL, "firstValue,middleValue,firstValue,lastValue");
+    }
+
+    @Test
+    void testHandleMultipleKeysDistinct() {
+        testMultipleKeysPolicy(HandleMultipleKeysType.DISTINCT, "firstValue,middleValue,lastValue");
     }
 
     private void testMultipleKeysPolicy(HandleMultipleKeysType policy, String expectedValue) {
@@ -69,7 +74,7 @@ class ExtractJsonMetadataTransformActionTest {
         params.setHandleMultipleKeys(policy);
         params.setJsonPathToMetadataKeysMap(Map.of("$.values[*]", "valuesMetadata"));
 
-        ActionContent content = saveJson("{\"values\":[\"firstValue\",\"middleValue\",\"lastValue\"]}");
+        ActionContent content = saveJson("{\"values\":[\"firstValue\",\"middleValue\"\"firstValue\",,\"lastValue\"]}");
         TransformInput input = TransformInput.builder().content(List.of(content)).build();
 
         ResultType result = action.transform(runner.actionContext(), params, input);
@@ -97,8 +102,8 @@ class ExtractJsonMetadataTransformActionTest {
         params.setMediaTypes(List.of("application/json", "nonstandard/*"));
 
         ActionContent content = saveJson("{\"value\":\"firstValue\"}");
-        ActionContent content2 = ActionContent.saveContent(runner.actionContext(), "{\"value\":\"nextValue\"}", "example2.json","nonstandard/json");
-        ActionContent content3 = ActionContent.saveContent(runner.actionContext(), "{\"value\":\"ignoredValue\"}", "example3.json","application/somethingElse");
+        ActionContent content2 = ActionContent.saveContent(runner.actionContext(), "{\"value\":\"nextValue\"}", "example2.json", "nonstandard/json");
+        ActionContent content3 = ActionContent.saveContent(runner.actionContext(), "{\"value\":\"ignoredValue\"}", "example3.json", "application/somethingElse");
 
         TransformInput input = TransformInput.builder().content(List.of(content, content2, content3)).build();
 
@@ -112,10 +117,10 @@ class ExtractJsonMetadataTransformActionTest {
         params.setJsonPathToMetadataKeysMap(Map.of("$.value", "valuesMetadata"));
         params.setFilePatterns(List.of("example*", "*.json"));
 
-        ActionContent content = ActionContent.saveContent(runner.actionContext(), "{\"value\":\"1\"}", "example1.txt","application/json");
-        ActionContent content2 = ActionContent.saveContent(runner.actionContext(), "{\"value\":\"2\"}", "example2.json","application/json");
-        ActionContent content3 = ActionContent.saveContent(runner.actionContext(), "{\"value\":\"3\"}", "another.json","application/json");
-        ActionContent content4 = ActionContent.saveContent(runner.actionContext(), "{\"value\":\"4\"}", "ignored.txt","application/json");
+        ActionContent content = ActionContent.saveContent(runner.actionContext(), "{\"value\":\"1\"}", "example1.txt", "application/json");
+        ActionContent content2 = ActionContent.saveContent(runner.actionContext(), "{\"value\":\"2\"}", "example2.json", "application/json");
+        ActionContent content3 = ActionContent.saveContent(runner.actionContext(), "{\"value\":\"3\"}", "another.json", "application/json");
+        ActionContent content4 = ActionContent.saveContent(runner.actionContext(), "{\"value\":\"4\"}", "ignored.txt", "application/json");
 
         TransformInput input = TransformInput.builder().content(List.of(content, content2, content3, content4)).build();
 
@@ -154,7 +159,6 @@ class ExtractJsonMetadataTransformActionTest {
     }
 
 
-
     @Test
     void testNoErrorOnKeyNotFound() {
         ExtractJsonMetadataParameters params = new ExtractJsonMetadataParameters();
@@ -170,6 +174,6 @@ class ExtractJsonMetadataTransformActionTest {
     }
 
     private ActionContent saveJson(String json) {
-        return runner.saveContent(json, "example.json","application/json");
+        return runner.saveContent(json, "example.json", "application/json");
     }
 }

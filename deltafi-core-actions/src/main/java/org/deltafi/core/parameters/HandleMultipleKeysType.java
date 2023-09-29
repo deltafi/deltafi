@@ -26,6 +26,7 @@ import lombok.Getter;
 public enum HandleMultipleKeysType {
     @JsonProperty("FIRST") FIRST("FIRST"),
     @JsonProperty("LAST") LAST("LAST"),
+    @JsonProperty("DISTINCT") DISTINCT("DISTINCT"),
     @JsonProperty("ALL") ALL("ALL");
 
     private final String value;
