@@ -279,6 +279,15 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     }
 
     /**
+     * Get all flows in the system without caching
+     * @return all flows
+     */
+    public List<FlowT> getAllUncached() {
+        refreshCache();
+        return new ArrayList<>(flowCache.values());
+    }
+
+    /**
      * Get all flows in a running state
      * @return all running flows
      */

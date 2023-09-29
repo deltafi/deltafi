@@ -351,10 +351,10 @@ public class FlowPlanDatafetcher {
     @NeedsPermission.FlowView
     public SystemFlows getAllFlows() {
         return SystemFlows.newBuilder()
-                .normalize(normalizeFlowService.getAll())
-                .enrich(enrichFlowService.getAll())
-                .egress(egressFlowService.getAll())
-                .transform(transformFlowService.getAll()).build();
+                .normalize(normalizeFlowService.getAllUncached())
+                .enrich(enrichFlowService.getAllUncached())
+                .egress(egressFlowService.getAllUncached())
+                .transform(transformFlowService.getAllUncached()).build();
     }
 
     @DgsQuery
