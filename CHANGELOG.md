@@ -5,6 +5,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.1.6] - 2023-09-30
+
+### Added
+- New `CompressionFormatAction` that compresses/archives all content
+- Added save button to Flows Plan Builder page.
+- Added remove button to flows page.
+- Status check for invalid flows.
+- Add addAnnotations GraphQL mutation. 
+- New action ExtractXmlAnnotationsDomainAction
+
+### Changed
+- getAllFlows GraphQL query bypasses caching and always gets live values from the database 
+- Icons on Flows page are now right-justified.
+
+### Fixed
+- Resolve race condition between deltaFile caching and externally applied annotations.
+- Error count badge is no longer limited to the first 50000 errors
+- System Properties page no longer renders panels for plugins without variables.
+- Plugins page now properly handles plugins without variables.
+
+### Removed
+- Removed redundant info icon on Flows page.
+
 ## [1.1.5] - 2023-09-21
 
 ### Added
@@ -2240,7 +2263,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.5...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.6...main
+[1.1.6]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.5...1.1.6
 [1.1.5]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.4...1.1.5
 [1.1.4]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.3...1.1.4
 [1.1.3]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.2...1.1.3
