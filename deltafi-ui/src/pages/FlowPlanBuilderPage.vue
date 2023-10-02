@@ -327,7 +327,7 @@ onBeforeMount(async () => {
 const fetchData = async () => {
   let responseFlowAction = await getPluginActionSchema();
   allActionsData.value = responseFlowAction.data.plugins;
-  getloadedActions();
+  getLoadedActions();
 };
 
 const model = computed({
@@ -408,16 +408,18 @@ const oneActionVerification = (event) => {
   }
 };
 
-const getloadedActions = () => {
+const getLoadedActions = () => {
   for (const plugins of allActionsData.value) {
-    for (const actions of plugins["actions"]) {
-      actions["disableEdit"] = true;
-      actions["actionType"] = actions["type"];
-      actions["type"] = actions["name"];
-      actions["name"] = "";
-      actions["parameters"] = null;
+    for (const action of plugins["actions"]) {
+      if (action.type === "TIMED_INGRESS") continue;
 
-      loadedActions.value[actions.actionType].push(actions);
+      action["disableEdit"] = true;
+      action["actionType"] = action["type"];
+      action["type"] = action["name"];
+      action["name"] = "";
+      action["parameters"] = null;
+
+      loadedActions.value[action.actionType].push(action);
     }
   }
 };
