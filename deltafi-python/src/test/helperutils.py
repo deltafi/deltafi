@@ -75,7 +75,4 @@ def make_context():
                    egress_flow="egress_flow",
                    system="system",
                    hostname="hostname",
-                   content_service=None,
-                   collect=None,
-                   collected_dids=None,
-                   logger=None)
+                   content_service=None)

@@ -33,9 +33,9 @@ class Context(NamedTuple):
     system: str
     hostname: str
     content_service: ContentService
-    collect: dict
-    collected_dids: List[str]
-    logger: Logger
+    collect: dict = None
+    collected_dids: List[str] = None
+    logger: Logger = None
 
     @classmethod
     def create(cls, context: dict, hostname: str, content_service: ContentService, logger: Logger):
