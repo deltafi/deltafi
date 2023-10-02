@@ -41,7 +41,7 @@ public class EgressResult extends Result<EgressResult> implements EgressResultTy
      * @param bytesEgressed Number of bytes egressed in the action
      */
     @Builder
-    public EgressResult(@NotNull ActionContext context, String destination, long bytesEgressed) {
+    public EgressResult(@NotNull ActionContext context, @NotNull String destination, long bytesEgressed) {
         super(context, ActionEventType.EGRESS);
 
         String endpoint = destination.replace(';', '_').replace('=', '_');

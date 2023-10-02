@@ -21,6 +21,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEventType;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -33,7 +34,7 @@ public abstract class AnnotationsResult<T extends Result<T>> extends Result<T> {
     @Getter
     protected final Map<String, String> annotations = new HashMap<>();
 
-    public AnnotationsResult(ActionContext context, ActionEventType actionEventType) {
+    public AnnotationsResult(@NotNull ActionContext context, @NotNull ActionEventType actionEventType) {
         super(context, actionEventType);
     }
 
@@ -43,7 +44,7 @@ public abstract class AnnotationsResult<T extends Result<T>> extends Result<T> {
      * @param key that will be annotated
      * @param value value for the given key
      */
-    public void addAnnotation(String key, String value) {
+    public void addAnnotation(@NotNull String key, @NotNull String value) {
         annotations.put(key, value);
     }
 
@@ -51,7 +52,7 @@ public abstract class AnnotationsResult<T extends Result<T>> extends Result<T> {
      * Add all the annotations in the given map to this Result. These entries will be searchable.
      * @param metadata map of entries that will be added to the annotations
      */
-    public void addAnnotations(Map<String, String> metadata) {
+    public void addAnnotations(@NotNull Map<String, String> metadata) {
         annotations.putAll(metadata);
     }
 }

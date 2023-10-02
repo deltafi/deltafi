@@ -20,6 +20,7 @@ package org.deltafi.actionkit.action.load;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.deltafi.common.types.ActionContext;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Specialized result class for LOAD actions that reinjects one or more DeltaFiles into child flows. Each child added to
@@ -34,7 +35,7 @@ public class ReinjectResult extends org.deltafi.actionkit.action.ReinjectResult 
     /**
      * @param context Execution context for the current action
      */
-    public ReinjectResult(ActionContext context) {
+    public ReinjectResult(@NotNull ActionContext context) {
         super(context);
     }
 }

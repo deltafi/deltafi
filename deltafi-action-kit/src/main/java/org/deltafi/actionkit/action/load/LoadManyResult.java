@@ -39,7 +39,7 @@ public class LoadManyResult extends Result<LoadManyResult> implements LoadResult
      * Add a load result to the list of results
      * @param loadResult A load result to be added to the result object
      */
-    public void add(LoadResult loadResult) {
+    public void add(@NotNull LoadResult loadResult) {
         childLoadResults.add(new ChildLoadResult(loadResult));
     }
 
@@ -47,7 +47,7 @@ public class LoadManyResult extends Result<LoadManyResult> implements LoadResult
      * Add a child load result to the list of results
      * @param childLoadResult A child load result to be added to the result object
      */
-    public void add(ChildLoadResult childLoadResult) {
+    public void add(@NotNull ChildLoadResult childLoadResult) {
         childLoadResults.add(childLoadResult);
     }
 

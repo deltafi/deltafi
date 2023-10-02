@@ -67,6 +67,30 @@ public enum PropertyType {
             target.getChecks().setContentStoragePercentThreshold(source.getChecks().getContentStoragePercentThreshold());
         }
     },
+    COLLECT_LOCK_CHECK_INTERVAL("collect.lockCheckInterval", "Frequency that database locks on collect entries are " +
+            "checked against the collect.maxLockDuration", props -> props.getCollect().getLockCheckInterval()) {
+        @Override
+        public Object convertValue(String value) {
+            return convertDuration(value, "The collect.lockCheckInterval must be greater than 0");
+        }
+
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.getCollect().setLockCheckInterval(source.getCollect().getLockCheckInterval());
+        }
+    },
+    COLLECT_MAX_LOCK_DURATION("collect.maxLockDuration", "Maximum duration a database lock can be held on a " +
+            "collect entry before it is automatically unlocked", props -> props.getCollect().getMaxLockDuration()) {
+        @Override
+        public Object convertValue(String value) {
+            return convertDuration(value, "The collect.maxLockDuration must be greater than 0");
+        }
+
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.getCollect().setMaxLockDuration(source.getCollect().getMaxLockDuration());
+        }
+    },
     CORE_SERVICE_THREADS("coreServiceThreads", "The number of threads used in core processing",
             DeltaFiProperties::getCoreServiceThreads) {
         @Override

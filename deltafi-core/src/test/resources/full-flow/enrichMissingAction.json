@@ -1,5 +1,6 @@
 {
     "did": "%1$s",
+    "flow": "sampleEnrich",
     "start": "2021-07-11T13:44:22.183Z",
     "stop": "2021-07-11T13:44:22.184Z",
     "type": "ENRICH",

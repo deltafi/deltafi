@@ -72,7 +72,7 @@ def test_load_action():
 
     action = SampleLoadAction()
     assert action.action_type.value == "load"
-    result = action.execute(make_event(mock_content_service))
+    result = action.execute_action(make_event(mock_content_service))
     assert type(result) == LoadResult
 
     expected_response = {
@@ -101,4 +101,4 @@ def test_invalid_result():
 
     action = InvalidResult()
     with pytest.raises(ValueError):
-        action.execute(make_event(mock_content_service))
+        action.execute_action(make_event(mock_content_service))

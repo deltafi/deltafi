@@ -28,8 +28,6 @@ import org.deltafi.core.generated.types.ErrorsByMessage;
 import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -144,7 +142,7 @@ public class Util {
                 .stage(stage)
                 .created(created)
                 .modified(modified)
-                .actions(Stream.of(ingressAction).collect(Collectors.toCollection(ArrayList::new)))
+                .actions(new ArrayList<>(List.of(ingressAction)))
                 .egress(new ArrayList<>())
                 .egressed(false)
                 .filtered(false)
@@ -225,8 +223,8 @@ public class Util {
         return null;
     }
 
-    public static ActionEvent actionEvent(String filename, String did) throws IOException {
-        String json = String.format(new String(Objects.requireNonNull(Util.class.getClassLoader().getResourceAsStream("full-flow/" + filename + ".json")).readAllBytes()), did);
+    public static ActionEvent actionEvent(String filename, String... dids) throws IOException {
+        String json = String.format(new String(Objects.requireNonNull(Util.class.getClassLoader().getResourceAsStream("full-flow/" + filename + ".json")).readAllBytes()), (Object[]) dids);
         return ActionEventQueue.convertEvent(json);
     }
 

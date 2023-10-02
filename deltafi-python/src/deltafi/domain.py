@@ -33,6 +33,8 @@ class Context(NamedTuple):
     system: str
     hostname: str
     content_service: ContentService
+    collect: dict
+    collected_dids: List[str]
     logger: Logger
 
     @classmethod
@@ -51,6 +53,14 @@ class Context(NamedTuple):
         else:
             egress_flow = None
         system = context['systemName']
+        if 'collect' in context:
+            collect = context['collect']
+        else:
+            collect = None
+        if 'collectedDids' in context:
+            collected_dids = context['collectedDids']
+        else:
+            collected_dids = None
         return Context(did=did,
                        action_flow=action_flow,
                        action_name=action_name,
@@ -60,6 +70,8 @@ class Context(NamedTuple):
                        system=system,
                        hostname=hostname,
                        content_service=content_service,
+                       collect=collect,
+                       collected_dids=collected_dids,
                        logger=logger)
 
 

@@ -46,9 +46,12 @@ import java.util.List;
 @Slf4j
 public class PluginRegistrar {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    static {
+        OBJECT_MAPPER.registerModule(new JavaTimeModule());
+    }
 
     @Autowired(required = false)
-    private final List<Action<?>> actions = Collections.emptyList();
+    private final List<Action<?, ?, ?>> actions = Collections.emptyList();
 
     @Autowired
     BuildProperties buildProperties;

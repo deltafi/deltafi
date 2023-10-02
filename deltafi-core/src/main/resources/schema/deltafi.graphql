@@ -144,6 +144,9 @@ enum ActionState {
   FILTERED
   REINJECTED 
   CANCELLED
+  READY_TO_COLLECT
+  COLLECTING
+  COLLECTED
 }
 
 enum ActionType {
@@ -180,6 +183,7 @@ type Action {
 }
 
 type DeltaFile {
+  schemaVersion: Int!
   did: String!
   parentDids: [String!]!
   childDids: [String!]!

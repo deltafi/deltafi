@@ -24,6 +24,7 @@ import org.deltafi.actionkit.action.converters.ContentConverter;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEventType;
+import org.deltafi.common.types.Content;
 import org.deltafi.common.types.SaveManyContent;
 import org.jetbrains.annotations.NotNull;
 
@@ -43,11 +44,11 @@ public abstract class ContentResult<T extends Result<T>> extends MetadataResult<
 
     protected final Map<String, String> annotations = new HashMap<>();
 
-    public ContentResult(ActionContext context, ActionEventType actionEventType) {
+    public ContentResult(@NotNull ActionContext context, @NotNull ActionEventType actionEventType) {
         this(context, actionEventType, new ArrayList<>());
     }
 
-    public ContentResult(ActionContext context, ActionEventType actionEventType, List<ActionContent> content) {
+    public ContentResult(@NotNull ActionContext context, @NotNull ActionEventType actionEventType, @NotNull List<ActionContent> content) {
         super(context, actionEventType);
         this.content = content;
     }
@@ -77,7 +78,7 @@ public abstract class ContentResult<T extends Result<T>> extends MetadataResult<
      * @param mediaType Media type for the content being stored
      */
     @SuppressWarnings("unused")
-    public void saveContent(String content, String name, String mediaType) {
+    public void saveContent(@NotNull String content, @NotNull String name, @NotNull String mediaType) {
         saveContent(content.getBytes(), name, mediaType);
     }
 
@@ -88,7 +89,7 @@ public abstract class ContentResult<T extends Result<T>> extends MetadataResult<
      * @param mediaType Media type for the content being stored
      */
     @SuppressWarnings("unused")
-    public void saveContent(byte[] bytes, String name, String mediaType) {
+    public void saveContent(@NotNull byte[] bytes, @NotNull String name, @NotNull String mediaType) {
         addContent(ActionContent.saveContent(context, bytes, name, mediaType));
     }
 
@@ -99,7 +100,7 @@ public abstract class ContentResult<T extends Result<T>> extends MetadataResult<
      * @param name the content name
      * @param mediaType Media type for the content being stored
      */
-    public void saveContent(InputStream stream, String name, String mediaType) {
+    public void saveContent(@NotNull InputStream stream, @NotNull String name, @NotNull String mediaType) {
         addContent(ActionContent.saveContent(context, stream, name, mediaType));
     }
 
@@ -108,7 +109,7 @@ public abstract class ContentResult<T extends Result<T>> extends MetadataResult<
      * @param saveManyContentList a list of SaveManyContent objects containing the file name, media type, and bytes that
      * need to be stored for each content
      */
-    public void saveContent(List<SaveManyContent> saveManyContentList) {
+    public void saveContent(@NotNull List<SaveManyContent> saveManyContentList) {
         try {
             content.addAll(ContentConverter.convert(
                     context.getContentStorageService().saveMany(context.getDid(), saveManyContentList),
@@ -122,7 +123,7 @@ public abstract class ContentResult<T extends Result<T>> extends MetadataResult<
      * @deprecated Use {@link ContentConverter#convert(List)} instead
      */
     @Deprecated
-    public List<org.deltafi.common.types.Content> content() {
+    public List<Content> content() {
         return ContentConverter.convert(content);
     }
 
@@ -133,7 +134,7 @@ public abstract class ContentResult<T extends Result<T>> extends MetadataResult<
      * @param value value for the given key
      */
     @SuppressWarnings("unused")
-    public void addAnnotation(String key, String value) {
+    public void addAnnotation(@NotNull String key, @NotNull String value) {
         annotations.put(key, value);
     }
 
@@ -142,7 +143,7 @@ public abstract class ContentResult<T extends Result<T>> extends MetadataResult<
      * @param metadata map of entries that will be added to the annotations
      */
     @SuppressWarnings("unused")
-    public void addAnnotations(Map<String, String> metadata) {
+    public void addAnnotations(@NotNull Map<String, String> metadata) {
         annotations.putAll(metadata);
     }
 }

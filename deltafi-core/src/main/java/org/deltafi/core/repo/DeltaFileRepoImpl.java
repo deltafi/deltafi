@@ -19,7 +19,6 @@ package org.deltafi.core.repo;
 
 import com.google.common.collect.Lists;
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.UpdateOptions;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.BsonValue;
@@ -44,7 +43,6 @@ import org.springframework.data.mongodb.core.index.PartialIndexFilter;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
-import org.springframework.data.mongodb.core.query.UpdateDefinition;
 import org.springframework.util.StringUtils;
 
 import java.time.Duration;

@@ -41,6 +41,7 @@ public class ActionEvent {
   private OffsetDateTime start;
   private OffsetDateTime stop;
   private ActionEventType type;
+
   private TransformEvent transform;
   private LoadEvent load;
   private List<ChildLoadEvent> loadMany;
@@ -51,6 +52,7 @@ public class ActionEvent {
   private ErrorEvent error;
   private FilterEvent filter;
   private List<ReinjectEvent> reinject;
+
   private List<Metric> metrics;
   private IngressEvent ingress;
 
@@ -61,14 +63,21 @@ public class ActionEvent {
   public String validate() {
     if (StringUtils.isEmpty(did)) {
       return "Missing did";
-    } else if (StringUtils.isEmpty(action)) {
+    }
+    if (StringUtils.isEmpty(flow)) {
+      return "Missing flow";
+    }
+    if (StringUtils.isEmpty(action)) {
       return "Missing action";
-    } else if (!typeValid()) {
-      return "Action event type does not match the populated object";
-    } else if (start == null) {
+    }
+    if (start == null) {
       return "Missing start";
-    } else if (stop == null) {
+    }
+    if (stop == null) {
       return "Missing stop";
+    }
+    if (!typeValid()) {
+      return "Action event type does not match the populated object";
     }
     return null;
   }

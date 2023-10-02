@@ -22,6 +22,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
 import org.deltafi.actionkit.action.content.ActionContent;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,7 +49,7 @@ public class ContentInput extends MetadataInput {
         return content;
     }
 
-    public void setContent(List<ActionContent> content) {
+    public void setContent(@NotNull List<ActionContent> content) {
         this.content = content;
     }
 
@@ -56,7 +57,7 @@ public class ContentInput extends MetadataInput {
      * @deprecated Use {@link #setContent(List)} instead.
      */
     @Deprecated
-    public void setContentList(List<ActionContent> contentList) {
+    public void setContentList(@NotNull List<ActionContent> contentList) {
         this.content = contentList;
     }
 

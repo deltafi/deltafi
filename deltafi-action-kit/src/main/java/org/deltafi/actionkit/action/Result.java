@@ -24,6 +24,7 @@ import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionEventType;
 import org.deltafi.common.types.Metric;
+import org.jetbrains.annotations.NotNull;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -68,7 +69,7 @@ public abstract class Result<T extends Result<T>> implements ResultType {
      * @param metric Metric object to add to the list of custom metrics in the result
      * @return this instance of Result base class
      */
-    public T add(Metric metric) {
+    public T add(@NotNull Metric metric) {
         metrics.add(metric);
         //noinspection unchecked
         return (T) this;

@@ -55,6 +55,9 @@ import java.util.List;
  */
 public class PluginPlugin implements org.gradle.api.Plugin<Project> {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    static {
+        OBJECT_MAPPER.registerModule(new JavaTimeModule());
+    }
 
     public static class DeltafiPluginExtension {
         String flowsDir;

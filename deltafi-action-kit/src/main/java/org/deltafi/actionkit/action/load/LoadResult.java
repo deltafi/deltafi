@@ -30,8 +30,8 @@ import java.util.List;
 /**
  * Specialized result class for LOAD actions
  */
+@Getter
 public class LoadResult extends ContentResult<LoadResult> implements LoadResultType {
-    @Getter
     private final List<Domain> domains = new ArrayList<>();
 
     public LoadResult(@NotNull ActionContext context) {
@@ -47,8 +47,7 @@ public class LoadResult extends ContentResult<LoadResult> implements LoadResultT
     }
 
     /**
-     * Add a domain to the result.  This method can be invoked multiple times to add additional
-     * domains.
+     * Add a domain to the result.  This method can be invoked multiple times to add additional domains.
      * @param domainName Key/name of the domain that is being added
      * @param value Value of the domain that is being added
      * @param mediaType The media type of the added domain

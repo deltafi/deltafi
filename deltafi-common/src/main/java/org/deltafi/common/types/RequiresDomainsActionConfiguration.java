@@ -37,7 +37,7 @@ public class RequiresDomainsActionConfiguration extends ActionConfiguration {
 
     @Override
     public List<String> validate(ActionDescriptor actionDescriptor) {
-        List<String> errors = validateType(actionDescriptor);
+        List<String> errors = super.validate(actionDescriptor);
 
         if (null == actionDescriptor.getRequiresDomains() || actionDescriptor.getRequiresDomains().isEmpty()) {
             errors.add("The action configuration requiresDomains must have one or more values");

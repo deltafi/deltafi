@@ -18,9 +18,8 @@
 package org.deltafi.actionkit.action.ingress;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Action;
+import org.deltafi.actionkit.action.ContentInput;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.exception.IngressException;
 import org.deltafi.common.action.ActionEventQueue;
@@ -32,25 +31,28 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Specialization class for TIMED INGRESS actions.
  * @param <P> Parameter class for configuring the Timed Ingress action
  */
-public abstract class TimedIngressAction<P extends ActionParameters> extends Action<P> {
+public abstract class TimedIngressAction<P extends ActionParameters> extends Action<ContentInput, P, IngressResultType> {
     @Lazy
     @Autowired
     private ActionEventQueue actionEventQueue;
 
-    public TimedIngressAction(String description) {
+    public TimedIngressAction(@NotNull String description) {
         super(ActionType.TIMED_INGRESS, description);
     }
 
     @Override
-    protected final IngressResultType execute(@NotNull List<DeltaFileMessage> deltaFileMessages,
-                                              @NotNull ActionContext context,
-                                              @NotNull P params) {
+    protected ContentInput buildInput(@NotNull ActionContext actionContext, @NotNull DeltaFileMessage deltaFileMessage) {
+        return null;
+    }
+
+    @Override
+    protected final IngressResultType execute(@NotNull ActionContext context, @NotNull ContentInput contentInput,
+            @NotNull P params) {
         ingress(context, params);
         return null;
     }

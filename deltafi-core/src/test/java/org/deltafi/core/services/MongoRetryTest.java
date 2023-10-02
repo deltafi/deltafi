@@ -22,6 +22,7 @@ import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.types.*;
 import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.deltafi.core.audit.CoreAuditLogger;
+import org.deltafi.core.collect.CollectService;
 import org.deltafi.core.configuration.ClockConfiguration;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.repo.DeltaFiPropertiesRepo;
@@ -52,7 +53,7 @@ import java.util.Collections;
 @ImportAutoConfiguration(RefreshAutoConfiguration.class)
 @MockBean({StateMachine.class, NormalizeFlowService.class, EnrichFlowService.class, EgressFlowService.class,
         TransformFlowService.class, ActionEventQueue.class, ContentStorageService.class, FlowAssignmentService.class,
-        CoreAuditLogger.class, MetricService.class, DeltaFiPropertiesRepo.class, ResumePolicyService.class,
+        CoreAuditLogger.class, MetricService.class, DeltaFiPropertiesRepo.class, CollectService.class, ResumePolicyService.class,
         IdentityService.class, DeltaFileRepo.class, QueueManagementService.class, QueuedAnnotationRepo.class,
         TimedIngressFlowService.class, })
 @EnableRetry

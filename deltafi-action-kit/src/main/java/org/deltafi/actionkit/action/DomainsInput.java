@@ -22,6 +22,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
 import org.deltafi.common.types.Domain;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -41,7 +42,7 @@ public class DomainsInput extends ContentInput {
      * @param domainName the name of the domain.
      * @return the Domain object for the given domain name.
      */
-    public Domain domain(String domainName) {
+    public Domain domain(@NotNull String domainName) {
         return domains.get(domainName);
     }
 }

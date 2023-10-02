@@ -105,29 +105,30 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static graphql.Assert.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.deltafi.common.constant.DeltaFiConstants.USER_HEADER;
 import static org.deltafi.common.test.TestConstants.MONGODB_CONTAINER;
 import static org.deltafi.common.types.ActionState.QUEUED;
+import static org.deltafi.core.datafetchers.DeletePolicyDatafetcherTestHelper.*;
+import static org.deltafi.core.datafetchers.DeltaFilesDatafetcherTestHelper.*;
+import static org.deltafi.core.datafetchers.FlowAssignmentDatafetcherTestHelper.*;
+import static org.deltafi.core.metrics.MetricsUtil.tagsFor;
+import static org.deltafi.core.plugin.PluginDataFetcherTestHelper.*;
 import static org.deltafi.core.util.Constants.*;
 import static org.deltafi.core.util.FlowBuilders.*;
 import static org.deltafi.core.util.FullFlowExemplars.*;
 import static org.deltafi.core.util.SchemaVersion.assertConverted;
 import static org.deltafi.core.util.SchemaVersion.assertDeleted;
 import static org.deltafi.core.util.Util.*;
-import static org.deltafi.core.datafetchers.DeletePolicyDatafetcherTestHelper.*;
-import static org.deltafi.core.datafetchers.DeltaFilesDatafetcherTestHelper.*;
-import static org.deltafi.core.datafetchers.FlowAssignmentDatafetcherTestHelper.*;
-import static org.deltafi.core.metrics.MetricsUtil.tagsFor;
-import static org.deltafi.core.plugin.PluginDataFetcherTestHelper.*;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -190,9 +191,6 @@ class DeltaFiCoreApplicationTests {
 
 	@Autowired
 	NormalizeFlowService normalizeFlowService;
-
-	@Autowired
-	NormalizeFlowPlanService normalizeFlowPlanService;
 
 	@Autowired
 	EgressFlowService egressFlowService;
@@ -283,9 +281,6 @@ class DeltaFiCoreApplicationTests {
 
 	@MockBean
 	CredentialProvider credentialProvider;
-
-	@Autowired
-	ErrorCountService errorCountService;
 
 	@Autowired
 	QueueManagementService queueManagementService;
@@ -4840,5 +4835,222 @@ class DeltaFiCoreApplicationTests {
 
 		assertEquals(50005, deltaFileRepo.count());
 		assertEquals(50001, deltaFilesService.countUnacknowledgedErrors());
+	}
+
+	@Test
+	public void queuesCollectingTransformActionOnMaxNum() {
+		String FLOW = "multi-transform";
+		NormalizeFlow normalizeFlow = new NormalizeFlow();
+		normalizeFlow.setName(FLOW);
+		TransformActionConfiguration transformAction = new TransformActionConfiguration("CollectingTransformAction",
+				"org.deltafi.action.SomeCollectingTransformAction");
+		transformAction.setCollect(new CollectConfiguration(Duration.parse("PT1H"), null, 2, null));
+		normalizeFlow.getTransformActions().add(transformAction);
+		normalizeFlow.getFlowStatus().setState(FlowState.RUNNING);
+		normalizeFlowRepo.insert(normalizeFlow);
+		normalizeFlowService.refreshCache();
+
+		IngressEvent ingress1 = new IngressEvent(UUID.randomUUID().toString(), new SourceInfo(FILENAME, FLOW, null),
+				Collections.emptyList(), OffsetDateTime.now());
+		deltaFilesService.ingress(ingress1);
+
+		IngressEvent ingress2 = new IngressEvent(UUID.randomUUID().toString(), new SourceInfo("file-2", FLOW, null),
+				Collections.emptyList(), OffsetDateTime.now());
+		deltaFilesService.ingress(ingress2);
+
+		verifyCollection(ingress1.getDid(), ingress2.getDid(), FLOW, transformAction.getName(), 0);
+	}
+
+	private void verifyCollection(String did1, String did2, String actionFlow, String actionName, long timeout) {
+		Mockito.verify(actionEventQueue, Mockito.timeout(timeout))
+				.putActions(actionInputListCaptor.capture(), Mockito.anyBoolean());
+		verifyActionInputs(actionInputListCaptor.getValue(), did1, did2, actionFlow, actionName);
+	}
+
+	private void verifyActionInputs(List<ActionInput> actionInputs, String did1, String did2, String actionFlow,
+			String actionName) {
+		assertThat(actionInputs).hasSize(1);
+
+		DeltaFile parent1 = deltaFileRepo.findById(did1).orElseThrow();
+		Action action = parent1.actionNamed(actionFlow, actionName).orElseThrow();
+		assertEquals(ActionState.COLLECTED, action.getState());
+
+		DeltaFile parent2 = deltaFileRepo.findById(did2).orElseThrow();
+		action = parent2.actionNamed(actionFlow, actionName).orElseThrow();
+		assertEquals(ActionState.COLLECTED, action.getState());
+
+		ActionInput actionInput = actionInputs.get(0);
+		assertEquals(2, actionInput.getDeltaFileMessages().size());
+		assertEquals(parent1.forQueue(actionFlow), actionInput.getDeltaFileMessages().get(0));
+		assertEquals(parent2.forQueue(actionFlow), actionInput.getDeltaFileMessages().get(1));
+	}
+
+	@Test
+	public void queuesCollectingFormatActionOnMaxNum() {
+		String INGRESS_FLOW = "test";
+		NormalizeFlow normalizeFlow = new NormalizeFlow();
+		normalizeFlow.setName(INGRESS_FLOW);
+		normalizeFlow.getFlowStatus().setState(FlowState.RUNNING);
+		normalizeFlowRepo.insert(normalizeFlow);
+		normalizeFlowService.refreshCache();
+
+		String EGRESS_FLOW = "multi-format";
+		EgressFlow egressFlow = new EgressFlow();
+		egressFlow.setName(EGRESS_FLOW);
+		FormatActionConfiguration formatAction = new FormatActionConfiguration("CollectingFormatAction",
+				"org.deltafi.action.SomeCollectingFormatAction", Collections.emptyList());
+		formatAction.setCollect(new CollectConfiguration(Duration.parse("PT1H"), null, 2, null));
+		egressFlow.setFormatAction(formatAction);
+		egressFlow.getFlowStatus().setState(FlowState.RUNNING);
+		egressFlowRepo.insert(egressFlow);
+		egressFlowService.refreshCache();
+
+		IngressEvent ingress1 = new IngressEvent(UUID.randomUUID().toString(), new SourceInfo(FILENAME,
+				INGRESS_FLOW, Collections.emptyMap()), Collections.emptyList(), OffsetDateTime.now());
+		deltaFilesService.ingress(ingress1);
+
+		IngressEvent ingress2 = new IngressEvent(UUID.randomUUID().toString(), new SourceInfo("file-2",
+				INGRESS_FLOW, Collections.emptyMap()), Collections.emptyList(), OffsetDateTime.now());
+		deltaFilesService.ingress(ingress2);
+
+		verifyCollection(ingress1.getDid(), ingress2.getDid(), EGRESS_FLOW, formatAction.getName(), 0);
+	}
+
+	@Test
+	public void queuesCollectingTransformActionOnTimeout() {
+		String FLOW = "multi-transform";
+		NormalizeFlow normalizeFlow = new NormalizeFlow();
+		normalizeFlow.setName(FLOW);
+		TransformActionConfiguration transformAction = new TransformActionConfiguration("CollectingTransformAction",
+				"org.deltafi.action.SomeCollectingTransformAction");
+		transformAction.setCollect(new CollectConfiguration(Duration.parse("PT3S"), null, 5, null));
+		normalizeFlow.getTransformActions().add(transformAction);
+		normalizeFlow.getFlowStatus().setState(FlowState.RUNNING);
+		normalizeFlowRepo.insert(normalizeFlow);
+		normalizeFlowService.refreshCache();
+
+		IngressEvent ingress1 = new IngressEvent(UUID.randomUUID().toString(), new SourceInfo(FILENAME, FLOW, null),
+				Collections.emptyList(), OffsetDateTime.now());
+		deltaFilesService.ingress(ingress1);
+
+		IngressEvent ingress2 = new IngressEvent(UUID.randomUUID().toString(), new SourceInfo("file-2", FLOW, null),
+				Collections.emptyList(), OffsetDateTime.now());
+		deltaFilesService.ingress(ingress2);
+
+		verifyCollection(ingress1.getDid(), ingress2.getDid(), FLOW, transformAction.getName(), 5000);
+	}
+
+	@Test
+	public void queuesCollectingTransformActionOnMaxNumGrouping() {
+		String FLOW = "multi-transform";
+		NormalizeFlow normalizeFlow = new NormalizeFlow();
+		normalizeFlow.setName(FLOW);
+		TransformActionConfiguration transformAction = new TransformActionConfiguration("CollectingTransformAction",
+				"org.deltafi.action.SomeCollectingTransformAction");
+		transformAction.setCollect(new CollectConfiguration(Duration.parse("PT1H"), null, 2, "a"));
+		normalizeFlow.getTransformActions().add(transformAction);
+		normalizeFlow.getFlowStatus().setState(FlowState.RUNNING);
+		normalizeFlowRepo.insert(normalizeFlow);
+		normalizeFlowService.refreshCache();
+
+		IngressEvent ingress1 = new IngressEvent(UUID.randomUUID().toString(),
+				new SourceInfo(FILENAME, FLOW, Map.of("a", "1")), Collections.emptyList(), OffsetDateTime.now());
+		deltaFilesService.ingress(ingress1);
+
+		IngressEvent ingress2 = new IngressEvent(UUID.randomUUID().toString(),
+				new SourceInfo("file-2", FLOW, Map.of("a", "2")), Collections.emptyList(), OffsetDateTime.now());
+		deltaFilesService.ingress(ingress2);
+
+		IngressEvent ingress3 = new IngressEvent(UUID.randomUUID().toString(),
+				new SourceInfo("file-3", FLOW, Map.of("a", "2")), Collections.emptyList(), OffsetDateTime.now());
+		deltaFilesService.ingress(ingress3);
+
+		IngressEvent ingress4 = new IngressEvent(UUID.randomUUID().toString(),
+				new SourceInfo("file-3", FLOW, Map.of("a", "1")), Collections.emptyList(), OffsetDateTime.now());
+		deltaFilesService.ingress(ingress4);
+
+		Mockito.verify(actionEventQueue, Mockito.times(2))
+				.putActions(actionInputListCaptor.capture(), Mockito.anyBoolean());
+		List<List<ActionInput>> actionInputLists = actionInputListCaptor.getAllValues();
+		verifyActionInputs(actionInputLists.get(0), ingress2.getDid(), ingress3.getDid(), FLOW, transformAction.getName());
+		verifyActionInputs(actionInputLists.get(1), ingress1.getDid(), ingress4.getDid(), FLOW, transformAction.getName());
+	}
+
+	@Test
+	public void failsCollectingTransformActionOnMinNum() {
+		String FLOW = "multi-transform";
+		NormalizeFlow normalizeFlow = new NormalizeFlow();
+		normalizeFlow.setName(FLOW);
+		TransformActionConfiguration transformAction = new TransformActionConfiguration("CollectingTransformAction",
+				"org.deltafi.action.SomeCollectingTransformAction");
+		transformAction.setCollect(new CollectConfiguration(Duration.parse("PT3S"), 3, 5, null));
+		normalizeFlow.getTransformActions().add(transformAction);
+		normalizeFlow.getFlowStatus().setState(FlowState.RUNNING);
+		normalizeFlowRepo.insert(normalizeFlow);
+		normalizeFlowService.refreshCache();
+
+		IngressEvent ingress1 = new IngressEvent(UUID.randomUUID().toString(), new SourceInfo(FILENAME, FLOW, null),
+				Collections.emptyList(), OffsetDateTime.now());
+		deltaFilesService.ingress(ingress1);
+
+		IngressEvent ingress2 = new IngressEvent(UUID.randomUUID().toString(), new SourceInfo("file-2", FLOW, null),
+				Collections.emptyList(), OffsetDateTime.now());
+		deltaFilesService.ingress(ingress2);
+
+		await().atMost(5, TimeUnit.SECONDS).until(() -> hasErroredAction(ingress1.getDid(), FLOW, transformAction.getName()));
+		await().atMost(5, TimeUnit.SECONDS).until(() -> hasErroredAction(ingress2.getDid(), FLOW, transformAction.getName()));
+	}
+
+	private boolean hasErroredAction(String did, String actionFlow, String actionName) {
+		DeltaFile deltaFile = deltaFileRepo.findById(did).orElseThrow();
+		Action action = deltaFile.actionNamed(actionFlow, actionName).orElseThrow();
+		return action.getState() == ActionState.ERROR;
+	}
+
+	@Test
+	public void testResumeAggregate() throws IOException {
+		String FLOW = "multi-transform";
+
+		NormalizeFlow normalizeFlow = new NormalizeFlow();
+		normalizeFlow.setName(FLOW);
+		TransformActionConfiguration transformAction = new TransformActionConfiguration("CollectingTransformAction",
+				"org.deltafi.action.SomeCollectingTransformAction");
+		transformAction.setCollect(new CollectConfiguration(Duration.parse("PT1H"), null, 2, null));
+		normalizeFlow.getTransformActions().add(transformAction);
+		normalizeFlow.getFlowStatus().setState(FlowState.RUNNING);
+		normalizeFlowRepo.insert(normalizeFlow);
+		normalizeFlowService.refreshCache();
+
+		DeltaFile parent1 = Util.emptyDeltaFile("1", normalizeFlow.getName());
+		deltaFileRepo.save(parent1);
+		DeltaFile parent2 = Util.emptyDeltaFile("2", normalizeFlow.getName());
+		deltaFileRepo.save(parent2);
+
+		String did = UUID.randomUUID().toString();
+		List<String> parentDids = List.of(parent1.getDid(), parent2.getDid());
+		DeltaFile aggregate = Util.emptyDeltaFile(did, normalizeFlow.getName());
+		aggregate.setAggregate(true);
+		aggregate.setParentDids(parentDids);
+		aggregate.setStage(DeltaFileStage.ERROR);
+		aggregate.queueNewAction(FLOW, transformAction.getName(), transformAction.getActionType(), false);
+		aggregate.errorAction(FLOW, transformAction.getName(), START_TIME, STOP_TIME, "collect action failed", "message");
+		deltaFileRepo.save(aggregate);
+
+		List<RetryResult> retryResults = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				String.format(graphQL("resumeAggregate"), did),
+				"data." + DgsConstants.MUTATION.Resume,
+				new TypeRef<>() {});
+
+		assertEquals(1, retryResults.size());
+		assertEquals(did, retryResults.get(0).getDid());
+		assertTrue(retryResults.get(0).getSuccess());
+
+		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture(), Mockito.anyBoolean());
+		List<ActionInput> actionInputs = actionInputListCaptor.getValue();
+		assertThat(actionInputs).hasSize(1);
+
+		assertEquals(parentDids, actionInputs.get(0).getActionContext().getCollectedDids());
+		assertEquals(parent1.forQueue(normalizeFlow.getName()), actionInputs.get(0).getDeltaFileMessages().get(0));
+		assertEquals(parent2.forQueue(normalizeFlow.getName()), actionInputs.get(0).getDeltaFileMessages().get(1));
 	}
 }

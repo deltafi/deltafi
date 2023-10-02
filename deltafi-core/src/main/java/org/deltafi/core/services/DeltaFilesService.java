@@ -34,6 +34,9 @@ import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.content.ContentUtil;
 import org.deltafi.common.types.*;
 import org.deltafi.core.audit.CoreAuditLogger;
+import org.deltafi.core.collect.CollectEntry;
+import org.deltafi.core.collect.CollectDefinition;
+import org.deltafi.core.collect.CollectService;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.exceptions.*;
 import org.deltafi.core.generated.types.*;
@@ -42,8 +45,8 @@ import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.repo.QueuedAnnotationRepo;
 import org.deltafi.core.retry.MongoRetryable;
-import org.deltafi.core.types.*;
 import org.deltafi.core.types.ResumePolicy;
+import org.deltafi.core.types.*;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
@@ -59,11 +62,10 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import static org.deltafi.common.constant.DeltaFiConstants.*;
 import static org.deltafi.core.repo.DeltaFileRepoImpl.*;
@@ -111,6 +113,7 @@ public class DeltaFilesService {
     private final ResumePolicyService resumePolicyService;
     private final MetricService metricService;
     private final CoreAuditLogger coreAuditLogger;
+    private final CollectService collectService;
     private final IdentityService identityService;
     private final DidMutexService didMutexService;
     private final DeltaFileCacheService deltaFileCacheService;
@@ -120,12 +123,17 @@ public class DeltaFilesService {
 
     private ExecutorService executor;
 
+    private final ScheduledExecutorService timedOutCollectExecutor = Executors.newSingleThreadScheduledExecutor();
+    private ScheduledFuture<?> timedOutCollectFuture;
+
     @PostConstruct
     private void init() {
         DeltaFiProperties properties = getProperties();
         int threadCount = properties.getCoreServiceThreads() > 0 ? properties.getCoreServiceThreads() : 16;
         executor = Executors.newFixedThreadPool(threadCount);
         log.info("Executors pool size: " + threadCount);
+
+        scheduleCollectCheckForSoonestInRepository();
     }
 
     public DeltaFile getDeltaFile(String did) {
@@ -186,9 +194,21 @@ public class DeltaFilesService {
     }
 
     public Map<String, DeltaFile> deltaFiles(List<String> dids) {
-        Iterable<DeltaFile> deltaFilesIter = deltaFileRepo.findAllById(dids);
-        return StreamSupport.stream(deltaFilesIter.spliterator(), false)
-                .collect(Collectors.toMap(DeltaFile::getDid, d -> d));
+        return deltaFileRepo.findAllById(dids).stream()
+                .collect(Collectors.toMap(DeltaFile::getDid, Function.identity()));
+    }
+
+    private List<DeltaFile> findDeltaFiles(List<String> dids) throws MissingDeltaFilesException {
+        Map<String, DeltaFile> deltaFileMap = deltaFiles(dids);
+
+        if (deltaFileMap.size() < dids.size()) {
+            List<String> missingDids = dids.stream().filter(did -> !deltaFileMap.containsKey(did)).toList();
+            if (!missingDids.isEmpty()) {
+                throw new MissingDeltaFilesException(missingDids);
+            }
+        }
+
+        return dids.stream().map(deltaFileMap::get).toList();
     }
 
     public List<DeltaFile> getLastCreatedDeltaFiles(Integer last) {
@@ -290,16 +310,14 @@ public class DeltaFilesService {
 
         // To maintain compatibility with legacy actions, flow and name were combined in the name field of the
         // ActionContext sent to the action in the ActionInput (See enqueueActions()). Put them in their own fields.
-        String[] actionNameParts = event.getAction().split("\\.");
-        try {
+        if (event.getAction().contains(".")) {
+            String[] actionNameParts = event.getAction().split("\\.");
+            if (actionNameParts.length < 2) {
+                throw new InvalidActionEventException("Invalid action (" + event.getAction() + "). " +
+                        "Expected flow.action: " + OBJECT_MAPPER.writeValueAsString(event));
+            }
             event.setFlow(actionNameParts[0]);
-        } catch (NoSuchElementException e) {
-            throw new InvalidActionEventException("Missing flow: " + OBJECT_MAPPER.writeValueAsString(event));
-        }
-        try {
             event.setAction(actionNameParts[1]);
-        } catch (NoSuchElementException e) {
-            throw new InvalidActionEventException("Missing action: " + OBJECT_MAPPER.writeValueAsString(event));
         }
 
         if (event.getType() == ActionEventType.INGRESS) {
@@ -389,7 +407,7 @@ public class DeltaFilesService {
                     generateMetrics(metrics, event, deltaFile);
                     formatMany(deltaFile, event);
                 }
-                default -> throw new UnknownTypeException(event.getAction(), event.getDid(), event.getType());
+                default -> throw new UnknownTypeException(event.getAction(), deltaFile.getDid(), event.getType());
             }
         }
     }
@@ -739,7 +757,8 @@ public class DeltaFilesService {
     public void loadMany(DeltaFile deltaFile, ActionEvent event) throws MissingEgressFlowException {
         List<ChildLoadEvent> childLoadEvents = event.getLoadMany();
         List<DeltaFile> childDeltaFiles = Collections.emptyList();
-        List<ActionInput> enqueueActions = new ArrayList<>();
+
+        List<ActionInvocation> actionInvocations = new ArrayList<>();
 
         String loadActionName = normalizeFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow()).getLoadAction().getName();
         if (!event.getAction().equals(loadActionName)) {
@@ -751,9 +770,9 @@ public class DeltaFilesService {
                 deltaFile.setChildDids(new ArrayList<>());
             }
 
-            OffsetDateTime now = OffsetDateTime.now();
+            OffsetDateTime now = OffsetDateTime.now(clock);
             childDeltaFiles = childLoadEvents.stream()
-                    .map(childLoadEvent -> buildLoadManyChildAndEnqueue(deltaFile, event, childLoadEvent, enqueueActions, now))
+                    .map(childLoadEvent -> buildLoadManyChildAndEnqueue(deltaFile, event, childLoadEvent, actionInvocations, now))
                     .toList();
 
             deltaFile.reinjectAction(event);
@@ -765,11 +784,14 @@ public class DeltaFilesService {
         deltaFileCacheService.save(deltaFile);
         deltaFileRepo.saveAll(childDeltaFiles);
 
-        enqueueActions(enqueueActions);
+        actionInvocations.addAll(processReadyToCollectActions(deltaFile));
+        childDeltaFiles.forEach(childDeltaFile -> actionInvocations.addAll(processReadyToCollectActions(childDeltaFile)));
+
+        enqueueActions(actionInvocations);
     }
 
     private DeltaFile buildLoadManyChildAndEnqueue(DeltaFile parentDeltaFile, ActionEvent actionEvent,
-            ChildLoadEvent childLoadEvent, List<ActionInput> enqueueActions, OffsetDateTime now) {
+            ChildLoadEvent childLoadEvent, List<ActionInvocation> actionInvocations, OffsetDateTime now) {
         DeltaFile child = createChildDeltaFile(parentDeltaFile, childLoadEvent.getDid());
         child.setModified(now);
 
@@ -794,7 +816,7 @@ public class DeltaFilesService {
 
         child.addAnnotations(childLoadEvent.getAnnotations());
 
-        enqueueActions.addAll(advanceOnly(child, true));
+        actionInvocations.addAll(advanceOnly(child, true));
 
         child.recalculateBytes();
 
@@ -805,7 +827,7 @@ public class DeltaFilesService {
         List<ReinjectEvent> reinjects = event.getReinject();
         List<DeltaFile> childDeltaFiles = Collections.emptyList();
         List<String> encounteredError = new ArrayList<>();
-        List<ActionInput> enqueueActions = new ArrayList<>();
+        List<ActionInvocation> actionInvocations = new ArrayList<>();
 
         List<String> allowedActions = new ArrayList<>();
         if (normalizeFlowService.hasRunningFlow(deltaFile.getSourceInfo().getFlow())) {
@@ -897,7 +919,7 @@ public class DeltaFilesService {
                         .filtered(false)
                         .build();
 
-                enqueueActions.addAll(advanceOnly(child, true));
+                actionInvocations.addAll(advanceOnly(child, true));
 
                 child.recalculateBytes();
 
@@ -918,14 +940,17 @@ public class DeltaFilesService {
         if (encounteredError.isEmpty()) {
             deltaFileRepo.saveAll(childDeltaFiles);
 
-            enqueueActions(enqueueActions);
+            actionInvocations.addAll(processReadyToCollectActions(deltaFile));
+            childDeltaFiles.forEach(childDeltaFile -> actionInvocations.addAll(processReadyToCollectActions(childDeltaFile)));
+
+            enqueueActions(actionInvocations);
         }
     }
 
     public void formatMany(DeltaFile deltaFile, ActionEvent event) throws MissingEgressFlowException {
         List<ChildFormatEvent> childFormatEvents = event.getFormatMany();
         List<DeltaFile> childDeltaFiles = Collections.emptyList();
-        List<ActionInput> enqueueActions = new ArrayList<>();
+        List<ActionInvocation> actionInvocations = new ArrayList<>();
 
         List<String> formatActions = egressFlowService.getAll().stream().map(ef -> ef.getFormatAction().getName()).toList();
         if (!formatActions.contains(event.getAction())) {
@@ -948,7 +973,7 @@ public class DeltaFilesService {
                 formatAction.setContent(List.of(childFormatEvent.getContent()));
                 formatAction.setMetadata(childFormatEvent.getMetadata());
 
-                enqueueActions.addAll(advanceOnly(child, true));
+                actionInvocations.addAll(advanceOnly(child, true));
 
                 child.recalculateBytes();
 
@@ -964,11 +989,14 @@ public class DeltaFilesService {
         deltaFileCacheService.save(deltaFile);
         deltaFileRepo.saveAll(childDeltaFiles);
 
-        enqueueActions(enqueueActions);
+        actionInvocations.addAll(processReadyToCollectActions(deltaFile));
+        childDeltaFiles.forEach(childDeltaFile -> actionInvocations.addAll(processReadyToCollectActions(childDeltaFile)));
+
+        enqueueActions(actionInvocations);
     }
 
     public void splitForTransformationProcessingEgress(DeltaFile deltaFile) throws MissingEgressFlowException {
-        List<ActionInput> enqueueActions = new ArrayList<>();
+        List<ActionInvocation> actionInvocations = new ArrayList<>();
 
         if (Objects.isNull(deltaFile.getChildDids())) {
             deltaFile.setChildDids(new ArrayList<>());
@@ -984,7 +1012,7 @@ public class DeltaFilesService {
             child.lastCompleteDataAmendedAction().setContent(Collections.singletonList(content));
             deltaFile.getChildDids().add(child.getDid());
 
-            enqueueActions.addAll(advanceOnly(child, true));
+            actionInvocations.addAll(advanceOnly(child, true));
 
             child.recalculateBytes();
 
@@ -999,7 +1027,10 @@ public class DeltaFilesService {
         deltaFileCacheService.save(deltaFile);
         deltaFileRepo.saveAll(childDeltaFiles);
 
-        enqueueActions(enqueueActions);
+        actionInvocations.addAll(processReadyToCollectActions(deltaFile));
+        childDeltaFiles.forEach(childDeltaFile -> actionInvocations.addAll(processReadyToCollectActions(childDeltaFile)));
+
+        enqueueActions(actionInvocations);
     }
 
     private static DeltaFile createChildDeltaFile(DeltaFile deltaFile, ActionEvent event, String childDid) {
@@ -1094,7 +1125,7 @@ public class DeltaFilesService {
 
         List<DeltaFile> parentDeltaFiles = new ArrayList<>();
         List<DeltaFile> childDeltaFiles = new ArrayList<>();
-        List<ActionInput> enqueueActions = new ArrayList<>();
+        List<ActionInvocation> actionInvocations = new ArrayList<>();
 
         List<RetryResult> results = dids.stream()
                 .map(did -> {
@@ -1146,7 +1177,7 @@ public class DeltaFilesService {
 
                             applyRetryOverrides(child, replaceFilename, replaceFlow, removeSourceMetadata, replaceSourceMetadata);
 
-                            enqueueActions.addAll(advanceOnly(child, true));
+                            actionInvocations.addAll(advanceOnly(child, true));
 
                             child.recalculateBytes();
                             deltaFile.setReplayed(now);
@@ -1169,7 +1200,11 @@ public class DeltaFilesService {
 
         deltaFileRepo.saveAll(childDeltaFiles);
         deltaFileRepo.saveAll(parentDeltaFiles);
-        enqueueActions(enqueueActions);
+
+        parentDeltaFiles.forEach(parentDeltaFile -> actionInvocations.addAll(processReadyToCollectActions(parentDeltaFile)));
+        childDeltaFiles.forEach(childDeltaFile -> actionInvocations.addAll(processReadyToCollectActions(childDeltaFile)));
+
+        enqueueActions(actionInvocations);
 
         return results;
     }
@@ -1290,7 +1325,7 @@ public class DeltaFilesService {
      * @return list of next pending action(s)
      * @throws MissingEgressFlowException if state machine would advance DeltaFile into EGRESS stage but no EgressFlow was configured.
      */
-    private List<ActionInput> advanceOnly(DeltaFile deltaFile, boolean newDeltaFile) throws MissingEgressFlowException {
+    private List<ActionInvocation> advanceOnly(DeltaFile deltaFile, boolean newDeltaFile) throws MissingEgressFlowException {
         // MissingEgressFlowException is not expected when a DeltaFile is entering the INGRESS stage
         // such as from replay or reinject, since an ingress flow requires at least the Load action to
         // be queued, nor when handling an event for any egress flow action, e.g. format.
@@ -1303,7 +1338,7 @@ public class DeltaFilesService {
      * @param deltaFile the transformation deltaFile to advance
      */
     private void advanceAndSaveTransformationProcessing(DeltaFile deltaFile) {
-        List<ActionInput> enqueueActions = stateMachine.advance(deltaFile);
+        List<ActionInvocation> actionInvocations = new ArrayList<>(stateMachine.advance(deltaFile));
 
         if (deltaFile.getStage() == DeltaFileStage.EGRESS) {
             // this is our first time having egress assigned
@@ -1315,17 +1350,24 @@ public class DeltaFilesService {
         }
 
         deltaFileCacheService.save(deltaFile);
-        if (!enqueueActions.isEmpty()) {
-            enqueueActions(enqueueActions);
+
+        actionInvocations.addAll(processReadyToCollectActions(deltaFile));
+
+        if (!actionInvocations.isEmpty()) {
+            enqueueActions(actionInvocations);
         }
     }
 
     public void advanceAndSave(DeltaFile deltaFile) {
         try {
-            List<ActionInput> enqueueActions = stateMachine.advance(deltaFile);
+            List<ActionInvocation> actionInvocations = new ArrayList<>(stateMachine.advance(deltaFile));
+
             deltaFileCacheService.save(deltaFile);
-            if (!enqueueActions.isEmpty()) {
-                enqueueActions(enqueueActions);
+
+            actionInvocations.addAll(processReadyToCollectActions(deltaFile));
+
+            if (!actionInvocations.isEmpty()) {
+                enqueueActions(actionInvocations);
             }
         } catch (MissingEgressFlowException e) {
             handleMissingEgressFlow(deltaFile);
@@ -1333,16 +1375,16 @@ public class DeltaFilesService {
         }
     }
 
-    public void advanceAndSave(List<DeltaFile> deltaFiles) {
+    private void advanceAndSave(List<DeltaFile> deltaFiles) {
         if (deltaFiles.isEmpty()) {
             return;
         }
 
-        List<ActionInput> enqueueActions = new ArrayList<>();
+        List<ActionInvocation> actionInvocations = new ArrayList<>();
 
         deltaFiles.forEach(deltaFile -> {
             try {
-                enqueueActions.addAll(stateMachine.advance(deltaFile));
+                actionInvocations.addAll(stateMachine.advance(deltaFile));
             } catch (MissingEgressFlowException e) {
                 handleMissingEgressFlow(deltaFile);
             }
@@ -1350,10 +1392,161 @@ public class DeltaFilesService {
 
         deltaFileRepo.saveAll(deltaFiles);
 
-        if (!enqueueActions.isEmpty()) {
-            enqueueActions(enqueueActions);
+        deltaFiles.forEach(deltaFile -> actionInvocations.addAll(processReadyToCollectActions(deltaFile)));
+
+        if (!actionInvocations.isEmpty()) {
+            enqueueActions(actionInvocations);
         }
     }
+
+    private List<ActionInvocation> processReadyToCollectActions(DeltaFile deltaFile) {
+        return deltaFile.readyToCollectActions().stream()
+                .map(readyToCollectAction -> processReadyToCollectAction(readyToCollectAction, deltaFile))
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    private ActionInvocation processReadyToCollectAction(Action action, DeltaFile deltaFile) {
+        log.debug("Collecting DeltaFile with id {} for action {} of flow {}", deltaFile.getDid(), action.getName(),
+                action.getFlow());
+
+        ActionConfiguration actionConfiguration = actionConfiguration(action.getFlow(), action.getName(),
+                deltaFile.getSourceInfo().getProcessingType(), deltaFile.getStage());
+
+        if (actionConfiguration == null) {
+            return null;
+        }
+
+        String collectGroup = actionConfiguration.getCollect().metadataKey() == null ? "DEFAULT" :
+                deltaFile.getMetadata().getOrDefault(actionConfiguration.getCollect().metadataKey(), "DEFAULT");
+
+        CollectDefinition collectDefinition = new CollectDefinition(deltaFile.getSourceInfo().getProcessingType(),
+                deltaFile.getStage(), action.getFlow(), action.getName(), collectGroup);
+
+        CollectEntry collectEntry = collectService.upsertAndLock(collectDefinition,
+                OffsetDateTime.now(clock).plus(actionConfiguration.getCollect().maxAge()),
+                actionConfiguration.getCollect().minNum(), actionConfiguration.getCollect().maxNum(),
+                deltaFile.getDid());
+
+        if (collectEntry == null) {
+            log.debug("Timed out trying to lock collect entry {}", collectDefinition);
+            deltaFile.setStage(DeltaFileStage.ERROR);
+            deltaFileCacheService.save(deltaFile);
+            return null;
+        }
+
+        log.debug("Updated collect entry with {} DeltaFiles", collectEntry.getCount());
+
+        deltaFile.collectingAction(action.getFlow(), action.getName(), OffsetDateTime.now(clock),
+                OffsetDateTime.now(clock));
+        deltaFileRepo.save(deltaFile);
+        deltaFileCacheService.remove(deltaFile.getDid());
+
+        if (collectEntry.getCount() < actionConfiguration.getCollect().maxNum()) {
+            if (collectEntry.getCount() == 1) { // Only update collect check for new collect entries
+                updateCollectCheck(collectEntry.getCollectDate());
+            }
+            collectService.unlock(collectEntry.getId());
+            return null;
+        }
+
+        ActionInvocation actionInvocation = buildCollectActionInvocation(collectEntry);
+
+        scheduleCollectCheckForSoonestInRepository();
+
+        return actionInvocation;
+    }
+
+    private void updateCollectCheck(OffsetDateTime collectDate) {
+        if ((timedOutCollectFuture == null) || timedOutCollectFuture.isDone() || collectDate.isBefore(
+                OffsetDateTime.now(clock).plusSeconds(timedOutCollectFuture.getDelay(TimeUnit.SECONDS)))) {
+            scheduleCollectCheck(collectDate);
+        }
+    }
+
+    private ActionInvocation buildCollectActionInvocation(CollectEntry collectEntry) {
+        List<String> collectedDids = collectService.findCollectedDids(collectEntry.getId());
+
+        List<DeltaFile> collectedDeltaFiles;
+        try {
+            collectedDeltaFiles = findDeltaFiles(collectedDids);
+        } catch (MissingDeltaFilesException e) {
+            failCollectAction(collectEntry, collectedDids, e.getMessage());
+            return null;
+        }
+
+        ActionConfiguration actionConfiguration = actionConfiguration(collectEntry.getCollectDefinition().getFlow(),
+                collectEntry.getCollectDefinition().getAction(),
+                collectEntry.getCollectDefinition().getProcessingType(),
+                collectEntry.getCollectDefinition().getStage());
+        if (actionConfiguration == null) {
+            failCollectAction(collectEntry, collectedDids, String.format("Action configuration for collecting action " +
+                    "(%s) in flow (%s) removed", collectEntry.getCollectDefinition().getAction(),
+                    collectEntry.getCollectDefinition().getFlow()));
+            return null;
+        }
+
+        log.debug("Queuing collect action with {} entries", collectedDids.size());
+
+        OffsetDateTime now = OffsetDateTime.now(clock);
+
+        DeltaFile aggregate = DeltaFile.builder()
+                .schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
+                .did(UUID.randomUUID().toString())
+                .parentDids(collectedDids)
+                .aggregate(true)
+                .childDids(Collections.emptyList())
+                .stage(collectEntry.getCollectDefinition().getStage())
+                .sourceInfo(buildAggregateSourceInfo(collectedDeltaFiles.get(0).getSourceInfo()))
+                .created(now)
+                .modified(now)
+                .egressed(false)
+                .filtered(false)
+                .build();
+
+        Action action = aggregate.queueNewAction(collectEntry.getCollectDefinition().getFlow(),
+                collectEntry.getCollectDefinition().getAction(), actionConfiguration.getActionType(),
+                queueManagementService.coldQueue(actionConfiguration.getType()));
+        action.setMetadata(collectedDeltaFiles.stream()
+                .map(DeltaFile::getMetadata)
+                .flatMap(m -> m.entrySet().stream())
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (first, second) -> first)));
+
+        deltaFileRepo.save(aggregate);
+
+        for (DeltaFile collectedDeltaFile : collectedDeltaFiles) {
+            collectedDeltaFile.getChildDids().add(aggregate.getDid());
+            collectedDeltaFile.collectedAction(collectEntry.getCollectDefinition().getFlow(),
+                    collectEntry.getCollectDefinition().getAction(), OffsetDateTime.now(clock),
+                    OffsetDateTime.now(clock));
+            advanceAndSave(collectedDeltaFile);
+        }
+
+        collectService.delete(collectEntry.getId());
+
+        return ActionInvocation.builder()
+                .actionConfiguration(actionConfiguration)
+                .flow(collectEntry.getCollectDefinition().getFlow())
+                .deltaFile(aggregate)
+                .deltaFiles(collectedDeltaFiles)
+                .egressFlow(collectEntry.getCollectDefinition().getStage() == DeltaFileStage.EGRESS ?
+                        collectEntry.getCollectDefinition().getFlow() : null)
+                .returnAddress(identityService.getUniqueId())
+                .actionCreated(now)
+                .action(action)
+                .build();
+    }
+
+    public static final String AGGREGATE_SOURCE_FILE_NAME = "multiple";
+
+    private SourceInfo buildAggregateSourceInfo(SourceInfo sourceInfo) {
+        SourceInfo aggregateSourceInfo = new SourceInfo();
+        aggregateSourceInfo.setFilename(AGGREGATE_SOURCE_FILE_NAME);
+        aggregateSourceInfo.setFlow(sourceInfo.getFlow());
+        aggregateSourceInfo.setProcessingType(sourceInfo.getProcessingType());
+        return aggregateSourceInfo;
+    }
+
 
     private void handleMissingEgressFlow(DeltaFile deltaFile) {
         deltaFile.queueNewAction("MISSING", DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION, ActionType.UNKNOWN, false);
@@ -1412,8 +1605,8 @@ public class DeltaFilesService {
     public void requeue() {
         OffsetDateTime modified = OffsetDateTime.now(clock);
         List<DeltaFile> requeuedDeltaFiles = deltaFileRepo.updateForRequeue(modified, getProperties().getRequeueSeconds(), queueManagementService.coldQueueActions());
-        List<ActionInput> actions = requeuedDeltaFiles.stream()
-                .map(deltaFile -> requeuedActionInput(deltaFile, modified))
+        List<ActionInvocation> actions = requeuedDeltaFiles.stream()
+                .map(deltaFile -> requeuedActionInvocations(deltaFile, modified))
                 .flatMap(Collection::stream)
                 .toList();
         if (!actions.isEmpty()) {
@@ -1422,10 +1615,10 @@ public class DeltaFilesService {
         }
     }
 
-    List<ActionInput> requeuedActionInput(DeltaFile deltaFile, OffsetDateTime modified) {
+    List<ActionInvocation> requeuedActionInvocations(DeltaFile deltaFile, OffsetDateTime modified) {
         return deltaFile.getActions().stream()
-                .filter(a -> a.getState().equals(ActionState.QUEUED) && a.getModified().toInstant().toEpochMilli() == modified.toInstant().toEpochMilli())
-                .map(action -> toActionInput(action, deltaFile))
+                .filter(action -> action.getState().equals(ActionState.QUEUED) && action.getModified().toInstant().toEpochMilli() == modified.toInstant().toEpochMilli())
+                .map(action -> toActionInvocation(action, deltaFile))
                 .filter(Objects::nonNull)
                 .toList();
     }
@@ -1433,8 +1626,8 @@ public class DeltaFilesService {
     public void requeueColdQueueActions(List<String> actionNames, int maxFiles) {
         OffsetDateTime modified = OffsetDateTime.now(clock);
         List<DeltaFile> requeuedDeltaFiles = deltaFileRepo.updateColdQueuedForRequeue(actionNames, maxFiles, modified);
-        List<ActionInput> actions = requeuedDeltaFiles.stream()
-                .map(deltaFile -> requeuedColdQueueActionInput(deltaFile, modified))
+        List<ActionInvocation> actions = requeuedDeltaFiles.stream()
+                .map(deltaFile -> requeuedColdQueueActionInvocations(deltaFile, modified))
                 .flatMap(Collection::stream)
                 .toList();
         if (!actions.isEmpty()) {
@@ -1443,36 +1636,42 @@ public class DeltaFilesService {
         }
     }
 
-    List<ActionInput> requeuedColdQueueActionInput(DeltaFile deltaFile, OffsetDateTime modified) {
+    List<ActionInvocation> requeuedColdQueueActionInvocations(DeltaFile deltaFile, OffsetDateTime modified) {
         return deltaFile.getActions().stream()
                 .filter(a -> a.getState().equals(ActionState.QUEUED) && a.getModified().toInstant().toEpochMilli() == modified.toInstant().toEpochMilli())
-                .map(action -> toActionInput(action, deltaFile))
+                .map(action -> toActionInvocation(action, deltaFile))
                 .filter(Objects::nonNull)
                 .toList();
     }
 
-    private ActionInput toActionInput(Action action, DeltaFile deltaFile) {
+    private ActionInvocation toActionInvocation(Action action, DeltaFile deltaFile) {
         ActionConfiguration actionConfiguration = actionConfiguration(action.getFlow(), action.getName(),
                 deltaFile.getSourceInfo().getProcessingType(), deltaFile.getStage());
+
         if (Objects.isNull(actionConfiguration)) {
             String errorMessage = "Action named " + action.getName() + " is no longer running";
             log.error(errorMessage);
-            ErrorEvent error = ErrorEvent.builder().cause(errorMessage).build();
             ActionEvent event = ActionEvent.builder()
+                    .did(deltaFile.getDid())
                     .flow(action.getFlow())
                     .action(action.getName())
+                    .error(ErrorEvent.builder().cause(errorMessage).build())
                     .type(ActionEventType.UNKNOWN)
-                    .did(deltaFile.getDid())
-                    .error(error)
                     .build();
             error(deltaFile, event);
 
             return null;
         }
 
-        return actionConfiguration.buildActionInput(action.getFlow(), deltaFile,
-                getProperties().getSystemName(), egressFlow(action, deltaFile),
-                identityService.getUniqueId(), action.getCreated(), action);
+        return ActionInvocation.builder()
+                .actionConfiguration(actionConfiguration)
+                .flow(action.getFlow())
+                .deltaFile(deltaFile)
+                .egressFlow(egressFlow(action, deltaFile))
+                .returnAddress(identityService.getUniqueId())
+                .actionCreated(action.getCreated())
+                .action(action)
+                .build();
     }
 
     public void autoResume() {
@@ -1579,19 +1778,53 @@ public class DeltaFilesService {
         });
     }
 
-    private void enqueueActions(List<ActionInput> enqueueActions) throws EnqueueActionException {
-        enqueueActions(enqueueActions, false);
+    private void enqueueActions(List<ActionInvocation> actionInvocations) throws EnqueueActionException {
+        enqueueActions(actionInvocations, false);
     }
 
-    private void enqueueActions(List<ActionInput> enqueueActions, boolean checkUnique) throws EnqueueActionException {
+    private void enqueueActions(List<ActionInvocation> actionInvocations, boolean checkUnique) throws EnqueueActionException {
+        List<ActionInput> actionInputs = actionInvocations.stream()
+                .map(actionInvocation -> {
+                    if (actionInvocation.getDeltaFiles() != null) {
+                        // Collecting action triggered by collect complete
+                        return actionInvocation.getActionConfiguration().buildCollectionActionInput(
+                                actionInvocation.getFlow(), actionInvocation.getDeltaFile(),
+                                actionInvocation.getDeltaFiles(), getProperties().getSystemName(),
+                                actionInvocation.getEgressFlow(), actionInvocation.getReturnAddress(),
+                                actionInvocation.getActionCreated(), actionInvocation.getAction());
+                    }
+
+                    if (actionInvocation.getDeltaFile().isAggregate() &&
+                            (actionInvocation.getActionConfiguration().getCollect() != null)) {
+                        // Collecting action in aggregate triggered by requeue
+                        List<DeltaFile> deltaFiles;
+                        try {
+                            deltaFiles = findDeltaFiles(actionInvocation.getDeltaFile().getParentDids());
+                        } catch (MissingDeltaFilesException e) {
+                            throw new EnqueueActionException("Failed to queue collecting action", e);
+                        }
+                        return actionInvocation.getActionConfiguration().buildCollectionActionInput(
+                                actionInvocation.getFlow(), actionInvocation.getDeltaFile(), deltaFiles,
+                                getProperties().getSystemName(), actionInvocation.getEgressFlow(),
+                                actionInvocation.getReturnAddress(), actionInvocation.getActionCreated(),
+                                actionInvocation.getAction());
+                    }
+
+                    return actionInvocation.getActionConfiguration().buildActionInput(actionInvocation.getFlow(),
+                            actionInvocation.getDeltaFile(), getProperties().getSystemName(),
+                            actionInvocation.getEgressFlow(), actionInvocation.getReturnAddress(),
+                            actionInvocation.getActionCreated(), actionInvocation.getAction());
+                })
+                .toList();
+
         // Maintain compatibility with legacy actions by combining flow and name
-        for (ActionInput actionInput : enqueueActions) {
+        for (ActionInput actionInput : actionInputs) {
             actionInput.getActionContext().setName(actionInput.getActionContext().getFlow() + "." +
                     actionInput.getActionContext().getName());
         }
 
         try {
-            actionEventQueue.putActions(enqueueActions, checkUnique);
+            actionEventQueue.putActions(actionInputs, checkUnique);
         } catch (Exception e) {
             log.error("Failed to queue action(s)", e);
             throw new EnqueueActionException("Failed to queue action(s)", e);
@@ -1734,5 +1967,100 @@ public class DeltaFilesService {
                 .errors(errors)
                 .info(information)
                 .build();
+    }
+
+    private void scheduleCollectCheckForSoonestInRepository() {
+        List<CollectEntry> collectEntries = collectService.findAllByOrderByCollectDate();
+        if (collectEntries.isEmpty()) {
+            cancelCollectCheck();
+            return;
+        }
+
+        scheduleCollectCheck(collectEntries.get(0).getCollectDate());
+    }
+
+    private void cancelCollectCheck() {
+        if (timedOutCollectFuture != null) {
+            timedOutCollectFuture.cancel(false);
+        }
+    }
+
+    private void scheduleCollectCheck(OffsetDateTime collectDate) {
+        cancelCollectCheck();
+        log.debug("Scheduling next collect check in {} seconds",
+                Math.max(collectDate.toEpochSecond() - OffsetDateTime.now(clock).toEpochSecond(), 1));
+        timedOutCollectFuture = timedOutCollectExecutor.schedule(this::handleTimedOutCollects,
+                Math.max(collectDate.toEpochSecond() - OffsetDateTime.now(clock).toEpochSecond(), 1), TimeUnit.SECONDS);
+    }
+
+    private void handleTimedOutCollects() {
+        log.debug("Handling timed out collects");
+
+        CollectEntry collectEntry = collectService.lockOneBefore(OffsetDateTime.now(clock));
+        while (collectEntry != null) {
+            if ((collectEntry.getMinNum() != null) && (collectEntry.getCount() < collectEntry.getMinNum())) {
+                failCollectAction(collectEntry, collectService.findCollectedDids(collectEntry.getId()),
+                        String.format("Collect incomplete: Timed out after receiving %s of %s files",
+                                collectEntry.getCount(), collectEntry.getMinNum()));
+            } else {
+                ActionInvocation actionInvocation = buildCollectActionInvocation(collectEntry);
+                if (actionInvocation != null) {
+                    enqueueActions(List.of(actionInvocation));
+                }
+            }
+            collectEntry = collectService.lockOneBefore(OffsetDateTime.now(clock));
+        }
+
+        scheduleCollectCheckForSoonestInRepository();
+    }
+
+    private void failCollectAction(CollectEntry collectEntry, List<String> collectedDids, String reason) {
+        log.debug("Failing collect action");
+
+        List<String> missingDids = new ArrayList<>();
+
+        for (String did : collectedDids) {
+            try {
+                if (!saveFailedCollectAction(collectEntry, did, reason)) {
+                    missingDids.add(did);
+                }
+            } catch (OptimisticLockingFailureException e) {
+                log.warn("Unable to save DeltaFile with failed collect action", e);
+            }
+        }
+
+        if (!missingDids.isEmpty()) {
+            log.warn("DeltaFiles with the following ids were missing during failed collect: {}", missingDids);
+        }
+
+        collectService.delete(collectEntry.getId());
+    }
+
+    @MongoRetryable
+    public boolean saveFailedCollectAction(CollectEntry collectEntry, String did, String reason) {
+        DeltaFile deltaFileToCollect = getDeltaFile(did);
+
+        if (deltaFileToCollect == null) {
+            return false;
+        }
+
+        OffsetDateTime now = OffsetDateTime.now(clock);
+        deltaFileToCollect.errorAction(collectEntry.getCollectDefinition().getFlow(),
+                collectEntry.getCollectDefinition().getAction(), now, now, "Failed collect", reason);
+        deltaFileToCollect.setStage(DeltaFileStage.ERROR);
+        deltaFileRepo.save(deltaFileToCollect);
+
+        return true;
+    }
+
+    public void unlockTimedOutCollectEntryLocks() {
+        long numUnlocked = collectService.unlockBefore(
+                OffsetDateTime.now(clock).minus(getProperties().getCollect().getMaxLockDuration()));
+
+        if (numUnlocked > 0) {
+            log.warn("Unlocked {} timed out collect entries", numUnlocked);
+
+            scheduleCollectCheckForSoonestInRepository();
+        }
     }
 }

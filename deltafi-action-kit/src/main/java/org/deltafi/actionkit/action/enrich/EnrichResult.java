@@ -46,7 +46,7 @@ public class EnrichResult extends AnnotationsResult<EnrichResult> implements Enr
      * @param mediaType Media type of the applied enrichment
      */
     @SuppressWarnings("unused")
-    public void addEnrichment(@NotNull String enrichmentName, String value, @NotNull String mediaType) {
+    public void addEnrichment(@NotNull String enrichmentName, @NotNull String value, @NotNull String mediaType) {
         enrichments.add(new Enrichment(enrichmentName, value, mediaType));
     }
 

@@ -61,7 +61,7 @@ def test_domain_action():
 
     action = SampleDomainAction()
     assert action.action_type.value == "domain"
-    result = action.execute(make_event(mock_content_service))
+    result = action.execute_action(make_event(mock_content_service))
     assert type(result) == DomainResult
 
 
@@ -71,4 +71,4 @@ def test_invalid_result():
 
     action = InvalidResult()
     with pytest.raises(ValueError):
-        result = action.execute(make_event(mock_content_service))
+        result = action.execute_action(make_event(mock_content_service))

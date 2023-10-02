@@ -60,6 +60,8 @@ public class FlowPlanPropertyHelper {
     public <C extends ActionConfiguration> void replaceCommonActionPlaceholders(C actionConfiguration, ActionConfiguration actionTemplate) {
         actionConfiguration.setInternalParameters(replaceMapPlaceholders(actionTemplate.getParameters(), actionConfiguration.getName()));
         actionConfiguration.setParameters(maskedDelegate().orElse(this).replaceMapPlaceholders(actionTemplate.getParameters(), actionConfiguration.getName()));
+
+        actionConfiguration.setCollect(actionTemplate.getCollect());
     }
 
     public List<String> replaceListOfPlaceholders(List<String> values, String inActionNamed) {

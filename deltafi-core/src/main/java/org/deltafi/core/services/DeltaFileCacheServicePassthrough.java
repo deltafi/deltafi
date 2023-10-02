@@ -41,6 +41,8 @@ public class DeltaFileCacheServicePassthrough extends DeltaFileCacheService {
         return false;
     }
 
+    public void remove(String did) {}
+
     public void removeOlderThan(int seconds) {}
 
     public void save(DeltaFile deltaFile) {

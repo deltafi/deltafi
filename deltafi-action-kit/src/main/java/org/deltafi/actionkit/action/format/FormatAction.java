@@ -18,20 +18,20 @@
 package org.deltafi.actionkit.action.format;
 
 import org.deltafi.actionkit.action.Action;
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.converters.ContentConverter;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * Specialization class for FORMAT actions.
  * @param <P> Parameter class for configuring the format action
  */
-public abstract class FormatAction<P extends ActionParameters> extends Action<P> {
-    public FormatAction(String description) {
+public abstract class FormatAction<P extends ActionParameters> extends Action<FormatInput, P, FormatResultType> {
+    public FormatAction(@NotNull String description) {
         super(ActionType.FORMAT, description);
     }
 
@@ -58,13 +58,7 @@ public abstract class FormatAction<P extends ActionParameters> extends Action<P>
     }
 
     @Override
-    protected final FormatResultType execute(@NotNull List<DeltaFileMessage> deltaFileMessages,
-                                             @NotNull ActionContext context,
-                                             @NotNull P params) {
-        return format(context, params, formatInput(deltaFileMessages.get(0), context));
-    }
-
-    private static FormatInput formatInput(DeltaFileMessage deltaFileMessage, ActionContext context) {
+    protected FormatInput buildInput(@NotNull ActionContext context, @NotNull DeltaFileMessage deltaFileMessage) {
         return FormatInput.builder()
                 .content(ContentConverter.convert(deltaFileMessage.getContentList(), context.getContentStorageService()))
                 .metadata(deltaFileMessage.getMetadata())
@@ -73,19 +67,44 @@ public abstract class FormatAction<P extends ActionParameters> extends Action<P>
                 .build();
     }
 
+    @Override
+    protected FormatInput collect(@NotNull List<FormatInput> formatInputs) {
+        List<ActionContent> allContent = new ArrayList<>();
+        Map<String, String> allMetadata = new HashMap<>();
+        Map<String, Domain> allDomains = new HashMap<>();
+        Map<String, Enrichment> allEnrichments = new HashMap<>();
+
+        for (FormatInput formatInput : formatInputs) {
+            allContent.addAll(formatInput.getContent());
+            allMetadata.putAll(formatInput.getMetadata());
+            allDomains.putAll(formatInput.getDomains());
+            allEnrichments.putAll(formatInput.getEnrichments());
+        }
+
+        return FormatInput.builder()
+                .content(allContent)
+                .metadata(allMetadata)
+                .domains(allDomains)
+                .enrichments(allEnrichments)
+                .build();
+    }
+
+    @Override
+    protected final FormatResultType execute(@NotNull ActionContext context, @NotNull FormatInput input, @NotNull P params) {
+        return format(context, params, input);
+    }
+
     /**
      * Implements the format execution function of a format action
      * @param context The action configuration context object for this action execution
      * @param params The parameter class that configures the behavior of this action execution
      * @param formatInput Action input from the DeltaFile
-     * @return A result object containing results for the action execution.
-     *         The result can be an ErrorResult, FilterResult, FormatResult, or FormatManyResult
+     * @return A result object containing results for the action execution.  The result can be an ErrorResult,
+     * FilterResult, FormatResult, or FormatManyResult
      * @see FormatResult
      * @see org.deltafi.actionkit.action.error.ErrorResult
      * @see org.deltafi.actionkit.action.filter.FilterResult
      * @see FormatManyResult
      */
-    public abstract FormatResultType format(@NotNull ActionContext context,
-                                            @NotNull P params,
-                                            @NotNull FormatInput formatInput);
+    public abstract FormatResultType format(@NotNull ActionContext context, @NotNull P params, @NotNull FormatInput formatInput);
 }

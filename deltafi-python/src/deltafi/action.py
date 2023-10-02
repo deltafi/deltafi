@@ -17,6 +17,7 @@
 #
 
 from abc import ABC, abstractmethod
+from typing import Any, List
 
 from deltafi.actiontype import ActionType
 from deltafi.domain import Context, DeltaFileMessage
@@ -27,138 +28,186 @@ from pydantic import BaseModel
 
 class Action(ABC):
     def __init__(self, action_type: ActionType, description: str, requires_domains: List[str],
-                 requires_enrichments: List[str]):
+                 requires_enrichments: List[str], valid_result_types: tuple):
         self.action_type = action_type
         self.description = description
         self.requires_domains = requires_domains
         self.requires_enrichments = requires_enrichments
+        self.valid_result_types = valid_result_types
 
     @abstractmethod
-    def execute(self, event):
+    def build_input(self, context: Context, delta_file_message: DeltaFileMessage):
         pass
 
-    def param_class(self):
+    def collect(self, action_inputs: List[Any]):
+        raise RuntimeError(f"Collect is not supported for {self.__class__.__name__}")
+
+    @abstractmethod
+    def execute(self, context: Context, action_input: Any, params: BaseModel):
+        pass
+
+    def execute_action(self, event):
+        if event.delta_file_messages is None or not len(event.delta_file_messages):
+            raise RuntimeError(f"Received event with no delta file messages for did {event.context.did}")
+
+        if event.context.collect is not None:
+            result = self.execute(event.context, self.collect([self.build_input(event.context, delta_file_message)
+                                                               for delta_file_message in event.delta_file_messages]),
+                                  self.param_class().parse_obj(event.params))
+        else:
+            result = self.execute(event.context, self.build_input(event.context, event.delta_file_messages[0]),
+                                  self.param_class().parse_obj(event.params))
+
+        self.validate_type(result)
+        return result
+
+    @staticmethod
+    def param_class():
         return BaseModel
 
-    def validate_type(self, result, types: tuple):
-        if not isinstance(result, types):
+    def validate_type(self, result):
+        if not isinstance(result, self.valid_result_types):
             raise ValueError(f"{self.__class__.__name__} must return one of "
-                             f"{[result_type.__name__ for result_type in types]} "
+                             f"{[result_type.__name__ for result_type in self.valid_result_types]} "
                              f"but a {result.__class__.__name__} was returned")
 
 
-class DomainAction(Action):
+class DomainAction(Action, ABC):
     def __init__(self, description: str, requires_domains: List[str]):
-        super().__init__(ActionType.DOMAIN, description, requires_domains, [])
+        super().__init__(ActionType.DOMAIN, description, requires_domains, [], (DomainResult, ErrorResult))
 
-    def execute(self, event):
-        domain_input = DomainInput(content=event.delta_file_messages[0].content_list,
-                                   metadata=event.delta_file_messages[0].metadata,
-                                   domains={domain.name: domain for domain in event.delta_file_messages[0].domains})
-        result = self.domain(event.context, self.param_class().parse_obj(event.params), domain_input)
-        self.validate_type(result, (DomainResult, ErrorResult))
-        return result
+    def build_input(self, context: Context, delta_file_message: DeltaFileMessage):
+        return DomainInput(content=delta_file_message.content_list, metadata=delta_file_message.metadata,
+                           domains={domain.name: domain for domain in delta_file_message.domains})
 
     @abstractmethod
     def domain(self, context: Context, params: BaseModel, domain_input: DomainInput):
         pass
 
+    def execute(self, context: Context, domain_input: DomainInput, params: BaseModel):
+        return self.domain(context, params, domain_input)
 
-class EgressAction(Action):
+
+class EgressAction(Action, ABC):
     def __init__(self, description: str):
-        super().__init__(ActionType.EGRESS, description, [], [])
+        super().__init__(ActionType.EGRESS, description, [], [], (EgressResult, ErrorResult, FilterResult))
 
-    def execute(self, event):
-        egress_input = EgressInput(content=event.delta_file_messages[0].content_list[0],
-                                   metadata=event.delta_file_messages[0].metadata)
-        result = self.egress(event.context, self.param_class().parse_obj(event.params), egress_input)
-        self.validate_type(result, (EgressResult, ErrorResult, FilterResult))
-        return result
+    def build_input(self, context: Context, delta_file_message: DeltaFileMessage):
+        return EgressInput(content=delta_file_message.content_list[0], metadata=delta_file_message.metadata)
 
     @abstractmethod
     def egress(self, context: Context, params: BaseModel, egress_input: EgressInput):
         pass
 
+    def execute(self, context: Context, egress_input: EgressInput, params: BaseModel):
+        return self.egress(context, params, egress_input)
 
-class EnrichAction(Action):
+
+class EnrichAction(Action, ABC):
     def __init__(self, description: str, requires_domains: List[str], requires_enrichments: List[str]):
-        super().__init__(ActionType.ENRICH, description, requires_domains, requires_enrichments)
+        super().__init__(ActionType.ENRICH, description, requires_domains, requires_enrichments,
+                         (EnrichResult, ErrorResult))
 
-    def execute(self, event):
-        enrich_input = EnrichInput(content=event.delta_file_messages[0].content_list,
-                                   metadata=event.delta_file_messages[0].metadata,
-                                   domains={domain.name: domain for domain in event.delta_file_messages[0].domains},
-                                   enrichments={domain.name: domain for domain in event.delta_file_messages[0].enrichments})
-        result = self.enrich(event.context, self.param_class().parse_obj(event.params), enrich_input)
-        self.validate_type(result, (EnrichResult, ErrorResult))
-        return result
+    def build_input(self, context: Context, delta_file_message: DeltaFileMessage):
+        return EnrichInput(content=delta_file_message.content_list, metadata=delta_file_message.metadata,
+                           domains={domain.name: domain for domain in delta_file_message.domains},
+                           enrichments={domain.name: domain for domain in delta_file_message.enrichments})
 
     @abstractmethod
     def enrich(self, context: Context, params: BaseModel, enrich_input: EnrichInput):
         pass
 
+    def execute(self, context: Context, enrich_input: EnrichInput, params: BaseModel):
+        return self.enrich(context, params, enrich_input)
 
-class FormatAction(Action):
+
+class FormatAction(Action, ABC):
     def __init__(self, description: str, requires_domains: List[str], requires_enrichments: List[str]):
-        super().__init__(ActionType.FORMAT, description, requires_domains, requires_enrichments)
+        super().__init__(ActionType.FORMAT, description, requires_domains, requires_enrichments,
+                         (FormatResult, FormatManyResult, ErrorResult, FilterResult))
 
-    def execute(self, event):
-        format_input = FormatInput(content=event.delta_file_messages[0].content_list,
-                                   metadata=event.delta_file_messages[0].metadata,
-                                   domains={domain.name: domain for domain in event.delta_file_messages[0].domains},
-                                   enrichments={domain.name: domain for domain in event.delta_file_messages[0].enrichments})
-        result = self.format(event.context, self.param_class().parse_obj(event.params), format_input)
-        self.validate_type(result, (FormatResult, FormatManyResult, ErrorResult, FilterResult))
-        return result
+    def build_input(self, context: Context, delta_file_message: DeltaFileMessage):
+        return FormatInput(content=delta_file_message.content_list, metadata=delta_file_message.metadata,
+                           domains={domain.name: domain for domain in delta_file_message.domains},
+                           enrichments={domain.name: domain for domain in delta_file_message.enrichments})
+
+    def collect(self, format_inputs: List[FormatInput]):
+        all_content = []
+        all_metadata = {}
+        all_domains = {}
+        all_enrichments = {}
+        for format_input in format_inputs:
+            all_content += format_input.content
+            all_metadata.update(format_input.metadata)
+            all_domains.update(format_input.domains)
+            all_enrichments.update(format_input.enrichments)
+        return FormatInput(content=all_content, metadata=all_metadata, domains=all_domains, enrichments=all_enrichments)
 
     @abstractmethod
     def format(self, context: Context, params: BaseModel, format_input: FormatInput):
         pass
 
+    def execute(self, context: Context, format_input: FormatInput, params: BaseModel):
+        return self.format(context, params, format_input)
 
-class LoadAction(Action):
+
+class LoadAction(Action, ABC):
     def __init__(self, description: str):
-        super().__init__(ActionType.LOAD, description, [], [])
+        super().__init__(ActionType.LOAD, description, [], [],
+                         (LoadResult, LoadManyResult, ErrorResult, FilterResult, ReinjectResult))
 
-    def execute(self, event):
-        load_input = LoadInput(content=event.delta_file_messages[0].content_list,
-                               metadata=event.delta_file_messages[0].metadata)
-        result = self.load(event.context, self.param_class().parse_obj(event.params), load_input)
-        self.validate_type(result, (LoadResult, LoadManyResult, ErrorResult, FilterResult, ReinjectResult))
-        return result
+    def build_input(self, context: Context, delta_file_message: DeltaFileMessage):
+        return LoadInput(content=delta_file_message.content_list, metadata=delta_file_message.metadata)
+
+    def collect(self, load_inputs: List[LoadInput]):
+        all_content = []
+        all_metadata = {}
+        for load_input in load_inputs:
+            all_content += load_input.content
+            all_metadata.update(load_input.metadata)
+        return LoadInput(content=all_content, metadata=all_metadata)
 
     @abstractmethod
     def load(self, context: Context, params: BaseModel, load_input: LoadInput):
         pass
 
+    def execute(self, context: Context, load_input: LoadInput, params: BaseModel):
+        return self.load(context, params, load_input)
 
-class TransformAction(Action):
+
+class TransformAction(Action, ABC):
     def __init__(self, description: str):
-        super().__init__(ActionType.TRANSFORM, description, [], [])
+        super().__init__(ActionType.TRANSFORM, description, [], [], (TransformResult, ErrorResult, FilterResult, ReinjectResult))
 
-    def execute(self, event):
-        transform_input = TransformInput(content=event.delta_file_messages[0].content_list,
-                                         metadata=event.delta_file_messages[0].metadata)
-        result = self.transform(event.context, self.param_class().parse_obj(event.params), transform_input)
-        self.validate_type(result, (TransformResult, ErrorResult, FilterResult, ReinjectResult))
-        return result
+    def build_input(self, context: Context, delta_file_message: DeltaFileMessage):
+        return TransformInput(content=delta_file_message.content_list, metadata=delta_file_message.metadata)
+
+    def collect(self, transform_inputs: List[TransformInput]):
+        all_content = []
+        all_metadata = {}
+        for transform_input in transform_inputs:
+            all_content += transform_input.content
+            all_metadata.update(transform_input.metadata)
+        return TransformInput(content=all_content, metadata=all_metadata)
 
     @abstractmethod
     def transform(self, context: Context, params: BaseModel, transform_input: TransformInput):
         pass
 
+    def execute(self, context: Context, transform_input: TransformInput, params: BaseModel):
+        return self.transform(context, params, transform_input)
 
-class ValidateAction(Action):
+
+class ValidateAction(Action, ABC):
     def __init__(self, description: str):
-        super().__init__(ActionType.VALIDATE, description, [], [])
+        super().__init__(ActionType.VALIDATE, description, [], [], (ValidateResult, ErrorResult, FilterResult))
 
-    def execute(self, event):
-        validate_input = ValidateInput(content=event.delta_file_messages[0].content_list[0],
-                                       metadata=event.delta_file_messages[0].metadata)
-        result = self.validate(event.context, self.param_class().parse_obj(event.params), validate_input)
-        self.validate_type(result, (ValidateResult, ErrorResult, FilterResult))
-        return result
+    def build_input(self, context: Context, delta_file_message: DeltaFileMessage):
+        return ValidateInput(content=delta_file_message.content_list[0], metadata=delta_file_message.metadata)
 
     @abstractmethod
     def validate(self, context: Context, params: BaseModel, validate_input: ValidateInput):
         pass
+
+    def execute(self, context: Context, validate_input: ValidateInput, params: BaseModel):
+        return self.validate(context, params, validate_input)

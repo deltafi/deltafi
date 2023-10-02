@@ -141,7 +141,7 @@ public class DeltaFileConverter implements AfterConvertCallback<DeltaFile> {
 
             if (action != null) {
                 List<Document> content = uncheckedGetList(protocolLayerDocument, "content");
-                if (content.size() > 0) {
+                if (!content.isEmpty()) {
                     action.setContent(convertDocumentListToContentList(content));
                 }
                 if (protocolLayerDocument.containsKey("metadata")) {

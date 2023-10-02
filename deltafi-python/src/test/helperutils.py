@@ -35,7 +35,9 @@ def make_context_dict():
         'name': "ACTION_FLOW.ACTION_NAME_IN_FLOW",
         'ingressFlow': "IN",
         'egressFlow': "OUT",
-        'systemName': "SYSTEM"
+        'systemName': "SYSTEM",
+        'collect': None,
+        'collectedDids': None
     }
 
 
@@ -74,4 +76,6 @@ def make_context():
                    system="system",
                    hostname="hostname",
                    content_service=None,
+                   collect=None,
+                   collected_dids=None,
                    logger=None)

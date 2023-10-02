@@ -126,6 +126,10 @@ class FormatResult(Result):
         self.delete_metadata_keys = []
         self.metadata = {}
 
+    def set_metadata(self, metadata: dict):
+        self.metadata = metadata
+        return self
+
     def add_metadata(self, key: str, value: str):
         self.metadata[key] = value
         return self
@@ -218,6 +222,10 @@ class LoadResult(Result):
         segment = self.context.content_service.put_bytes(self.context.did, byte_data)
         self.content.append(
             Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service))
+        return self
+
+    def set_metadata(self, metadata: dict):
+        self.metadata = metadata
         return self
 
     def add_metadata(self, key: str, value: str):
@@ -336,6 +344,10 @@ class TransformResult(Result):
         segment = self.context.content_service.put_bytes(self.context.did, byte_data)
         self.content.append(
             Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service))
+        return self
+
+    def set_metadata(self, metadata: dict):
+        self.metadata = metadata
         return self
 
     def add_metadata(self, key: str, value: str):

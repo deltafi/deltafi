@@ -20,30 +20,31 @@ package org.deltafi.actionkit.action.validate;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.common.types.*;
+import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionType;
+import org.deltafi.common.types.DeltaFileMessage;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.List;
 
 /**
  * Specialization class for VALIDATE actions.
  * @param <P> Parameter class for configuring the validate action
  */
-public abstract class ValidateAction<P extends ActionParameters> extends Action<P> {
-    public ValidateAction(String description) {
+public abstract class ValidateAction<P extends ActionParameters> extends Action<ValidateInput, P, ValidateResultType> {
+    public ValidateAction(@NotNull String description) {
         super(ActionType.VALIDATE, description);
     }
 
     @Override
-    public final ValidateResultType execute(@NotNull List<DeltaFileMessage> deltaFileMessages, @NotNull ActionContext context, @NotNull P params) {
-        return validate(context,params, validateInput(deltaFileMessages.get(0), context));
-    }
-
-    private static ValidateInput validateInput(DeltaFileMessage deltaFileMessage, ActionContext context) {
+    protected ValidateInput buildInput(@NotNull ActionContext context, @NotNull DeltaFileMessage deltaFileMessage) {
         return ValidateInput.builder()
                 .content(new ActionContent(deltaFileMessage.getContentList().get(0), context.getContentStorageService()))
                 .metadata(deltaFileMessage.getMetadata())
                 .build();
+    }
+
+    @Override
+    protected final ValidateResultType execute(@NotNull ActionContext context, @NotNull ValidateInput input, @NotNull P params) {
+        return validate(context, params, input);
     }
 
     /**
@@ -51,8 +52,8 @@ public abstract class ValidateAction<P extends ActionParameters> extends Action<
      * @param context The action configuration context object for this action execution
      * @param params The parameter class that configures the behavior of this action execution
      * @param validateInput Action input from the DeltaFile
-     * @return A result object containing results for the action execution.  The result can be an ErrorResult, a FilterResult, or
-     * a ValidateResult
+     * @return A result object containing results for the action execution.  The result can be an ErrorResult, a
+     * FilterResult, or a ValidateResult
      * @see ValidateResult
      * @see org.deltafi.actionkit.action.error.ErrorResult
      * @see org.deltafi.actionkit.action.filter.FilterResult

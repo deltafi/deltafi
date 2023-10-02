@@ -54,7 +54,9 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
     protected Map<String, Object> internalParameters;
     protected Map<String, Object> parameters;
 
-    protected ActionConfiguration(String name, ActionType actionType, String type) {
+    protected CollectConfiguration collect;
+
+    public ActionConfiguration(String name, ActionType actionType, String type) {
         super(name);
         this.actionType = actionType;
         this.type = type;
@@ -83,9 +85,11 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
      * @param egressFlow the egress flow for this action
      * @param returnAddress the unique address of this core instance
      * @param actionCreated action created datetime
+     * @param action the action
      * @return ActionInput containing the ActionConfiguration
      */
-    public ActionInput buildActionInput(String flow, DeltaFile deltaFile, String systemName, String egressFlow, String returnAddress, OffsetDateTime actionCreated, Action action) {
+    public ActionInput buildActionInput(String flow, DeltaFile deltaFile, String systemName, String egressFlow,
+            String returnAddress, OffsetDateTime actionCreated, Action action) {
         if (Objects.isNull(internalParameters)) {
             // fall back to using parameters if internalParameters do not exist yet
             setInternalParameters(Objects.requireNonNullElse(parameters, Collections.emptyMap()));
@@ -94,9 +98,9 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
         return ActionInput.builder()
                 .queueName(type)
                 .actionContext(ActionContext.builder()
-                        .did(deltaFile.getDid())
                         .flow(flow)
                         .name(name)
+                        .did(deltaFile.getDid())
                         .sourceFilename(deltaFile.getSourceInfo().getFilename())
                         .ingressFlow(deltaFile.getSourceInfo().getFlow())
                         .egressFlow(egressFlow)
@@ -111,6 +115,45 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
     }
 
     /**
+     * Create the ActionInput that should be sent to an Action with a collect configuration.
+     * @param flow the flow on which the Action is specified
+     * @param aggregate the aggregate DeltaFile
+     * @param collectedDeltaFiles the DeltaFiles that will be acted upon
+     * @param systemName system name to set in context
+     * @param egressFlow the egress flow for this action
+     * @param returnAddress the unique address of this core instance
+     * @param actionCreated action created datetime
+     * @param action the action
+     * @return ActionInput containing the ActionConfiguration
+     */
+    public ActionInput buildCollectionActionInput(String flow, DeltaFile aggregate, List<DeltaFile> collectedDeltaFiles,
+            String systemName, String egressFlow, String returnAddress, OffsetDateTime actionCreated, Action action) {
+        if (Objects.isNull(internalParameters)) {
+            setInternalParameters(Collections.emptyMap());
+        }
+
+        return ActionInput.builder()
+                .queueName(type)
+                .actionContext(ActionContext.builder()
+                        .flow(flow)
+                        .name(name)
+                        .did(aggregate.getDid())
+                        .sourceFilename(aggregate.getSourceInfo().getFilename())
+                        .ingressFlow(aggregate.getSourceInfo().getFlow())
+                        .egressFlow(egressFlow)
+                        .systemName(systemName)
+                        .collect(collect)
+                        .collectedDids(collectedDeltaFiles.stream().map(DeltaFile::getDid).toList())
+                        .build())
+                .actionParams(internalParameters)
+                .deltaFileMessages(collectedDeltaFiles.stream().map(deltaFile -> deltaFile.forQueue(egressFlow)).toList())
+                .returnAddress(returnAddress)
+                .actionCreated(actionCreated)
+                .action(action)
+                .build();
+    }
+
+    /**
      * Validates this action configuration.
      *
      * @param actionDescriptor action descriptor to be validated against
@@ -118,13 +161,12 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
      * @return a List of validation errors or an empty list if there are no errors
      */
     public List<String> validate(ActionDescriptor actionDescriptor) {
-        return validateType(actionDescriptor);
-    }
-
-    public List<String> validateType(ActionDescriptor actionDescriptor) {
         List<String> errors = new ArrayList<>();
         if (actionDescriptor.getType() != actionType) {
             errors.add("Action: " + type + " is not registered as an action of type " + actionType);
+        }
+        if (collect != null) {
+            errors.addAll(collect.validate());
         }
         return errors;
     }

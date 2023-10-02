@@ -18,10 +18,12 @@
 package org.deltafi.actionkit.action.domain;
 
 import org.deltafi.actionkit.action.Action;
-import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.converters.ContentConverter;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.common.types.*;
+import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionDescriptor;
+import org.deltafi.common.types.ActionType;
+import org.deltafi.common.types.DeltaFileMessage;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -30,8 +32,8 @@ import java.util.List;
  * Specialization class for DOMAIN actions.
  * @param <P> Parameter class for configuring the domain action
  */
-public abstract class DomainAction<P extends ActionParameters> extends Action<P> {
-    public DomainAction(String description) {
+public abstract class DomainAction<P extends ActionParameters> extends Action<DomainInput, P, DomainResultType> {
+    public DomainAction(@NotNull String description) {
         super(ActionType.DOMAIN, description);
     }
 
@@ -49,13 +51,7 @@ public abstract class DomainAction<P extends ActionParameters> extends Action<P>
     }
 
     @Override
-    protected final ResultType execute(@NotNull List<DeltaFileMessage> deltaFileMessages,
-                                       @NotNull ActionContext context,
-                                       @NotNull P params) {
-        return extractAndValidate(context, params, domainInput(deltaFileMessages.get(0), context));
-    }
-
-    private static DomainInput domainInput(DeltaFileMessage deltaFileMessage, ActionContext context) {
+    protected DomainInput buildInput(@NotNull ActionContext context, @NotNull DeltaFileMessage deltaFileMessage) {
         return DomainInput.builder()
                 .content(ContentConverter.convert(deltaFileMessage.getContentList(), context.getContentStorageService()))
                 .metadata(deltaFileMessage.getMetadata())
@@ -63,18 +59,21 @@ public abstract class DomainAction<P extends ActionParameters> extends Action<P>
                 .build();
     }
 
+    @Override
+    protected final DomainResultType execute(@NotNull ActionContext context, @NotNull DomainInput input, @NotNull P params) {
+        return extractAndValidate(context, params, input);
+    }
+
     /**
      * Implements the extractAndValidate execution function of a domain action
      * @param context The action configuration context object for this action execution
      * @param params The parameter class that configures the behavior of this action execution
      * @param domainInput Action input from the DeltaFile
-     * @return A result object containing results for the action execution.  The result can be an ErrorResult, a FilterResult, or
-     * a DomainResult
+     * @return A result object containing results for the action execution.  The result can be an ErrorResult, a
+     * FilterResult, or a DomainResult
      * @see DomainResult
      * @see org.deltafi.actionkit.action.error.ErrorResult
      * @see org.deltafi.actionkit.action.filter.FilterResult
      */
-    public abstract DomainResultType extractAndValidate(@NotNull ActionContext context,
-                                                        @NotNull P params,
-                                                        @NotNull DomainInput domainInput);
+    public abstract DomainResultType extractAndValidate(@NotNull ActionContext context, @NotNull P params, @NotNull DomainInput domainInput);
 }

@@ -22,6 +22,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
 import org.deltafi.common.types.Enrichment;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -41,7 +42,7 @@ public class EnrichmentsInput extends DomainsInput {
      * @param enrichmentName the name of the enrichment.
      * @return the Enrichment object for the given enrichment name.
      */
-    public Enrichment enrichment(String enrichmentName) {
+    public Enrichment enrichment(@NotNull String enrichmentName) {
         return enrichments.get(enrichmentName);
     }
 }

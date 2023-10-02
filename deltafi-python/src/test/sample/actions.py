@@ -31,7 +31,7 @@ class SampleDomainAction(DomainAction):
         super().__init__('Domain action description', ['domain1', 'domain2'])
 
     def domain(self, context: Context, params: BaseModel, domain_input: DomainInput):
-        return DomainResult().annotate('theIndexMetaKey', 'theIndexMetaValue')
+        return DomainResult(context).annotate('theIndexMetaKey', 'theIndexMetaValue')
 
 
 class SampleLoadParameters(BaseModel):
@@ -46,9 +46,10 @@ class SampleLoadAction(LoadAction):
         return SampleLoadParameters
 
     def load(self, context: Context, params: SampleLoadParameters, load_input: LoadInput):
-        return LoadResult().add_metadata('loadKey', 'loadValue') \
+        return LoadResult(context).add_metadata('loadKey', 'loadValue') \
             .add_domain(params.domain, 'Python domain!', 'text/plain') \
-            .add_content(Content(name='loaded content', segments=[], media_type='text/plain', content_service=mock(ContentService)))
+            .add_content(Content(name='loaded content', segments=[], media_type='text/plain',
+                                 content_service=mock(ContentService)))
 
 
 class SampleAbstractLoadAction(LoadAction):
@@ -63,6 +64,7 @@ class SampleAbstractLoadAction(LoadAction):
         pass
 
     def load(self, context: Context, params: SampleLoadParameters, load_input: LoadInput):
-        return LoadResult().add_metadata('loadKey', 'loadValue') \
+        return LoadResult(context).add_metadata('loadKey', 'loadValue') \
             .add_domain(params.domain, 'Python domain!', 'text/plain') \
-            .add_content(Content(name='loaded content', segments=[], media_type='text/plain', content_service=mock(ContentService)))
+            .add_content(Content(name='loaded content', segments=[], media_type='text/plain',
+                                 content_service=mock(ContentService)))

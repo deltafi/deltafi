@@ -79,11 +79,12 @@ class Plugin(object):
         Initialize the plugin object
         :param plugin_name: Name of the plugin project
         :param description: Description of the plugin
-        :param plugin_coordinates: plugin coordinates of the plugin, if None the coordinates must be defined
-        in environment variables
+        :param plugin_coordinates: plugin coordinates of the plugin, if None the coordinates must be defined in environment variables
         :param actions: list of action classes to run
         :param action_package: name of the package containing the actions to run
         """
+        self.logger = get_logger()
+
         self.content_service = None
         self.queue = None
         self.actions = []
@@ -113,8 +114,6 @@ class Plugin(object):
         else:
             self.hostname = 'UNKNOWN'
 
-        self.logger = get_logger()
-
         self.logger.debug(f"Initialized ActionRunner with actions {self.actions}")
 
     @staticmethod
@@ -137,7 +136,7 @@ class Plugin(object):
 
             # Iterate over all members in the module
             for name, obj in inspect.getmembers(module):
-                if inspect.isclass(obj) and obj not in visited:
+                if inspect.isclass(obj) and obj.__module__.startswith(package_name) and obj not in visited:
                     if Plugin.is_action(obj):
                         classes.append(obj)
                     visited.add(obj)
@@ -246,7 +245,7 @@ class Plugin(object):
                 action_logger.debug(f"Processing event for did {event.context.did}")
 
                 try:
-                    result = action.execute(event)
+                    result = action.execute_action(event)
                 except ExpectedContentException as e:
                     result = ErrorResult(event.context,
                                          f"Action attempted to look up element {e.index + 1} (index {e.index}) from "
@@ -274,6 +273,8 @@ class Plugin(object):
                     'start': start_time,
                     'stop': time.time(),
                     'type': result.result_type,
+                    'collected': event.context.collect is not None,
+                    'collectedDids': event.context.collected_dids,
                     'metrics': [metric.json() for metric in result.metrics]
                 }
                 if result.result_key is not None:

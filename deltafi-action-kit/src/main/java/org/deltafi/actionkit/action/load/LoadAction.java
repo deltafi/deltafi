@@ -18,34 +18,53 @@
 package org.deltafi.actionkit.action.load;
 
 import org.deltafi.actionkit.action.Action;
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.converters.ContentConverter;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.common.types.*;
+import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionType;
+import org.deltafi.common.types.DeltaFileMessage;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Specialization class for LOAD actions.
  * @param <P> Parameter class for configuring the Load action
  */
-public abstract class LoadAction<P extends ActionParameters> extends Action<P> {
-    public LoadAction(String description) {
+public abstract class LoadAction<P extends ActionParameters> extends Action<LoadInput, P, LoadResultType> {
+    public LoadAction(@NotNull String description) {
         super(ActionType.LOAD, description);
     }
 
     @Override
-    protected final LoadResultType execute(@NotNull List<DeltaFileMessage> deltaFileMessages,
-                                           @NotNull ActionContext context,
-                                           @NotNull P params) {
-        return load(context, params, loadInput(deltaFileMessages.get(0), context));
-    }
-
-    private static LoadInput loadInput(DeltaFileMessage deltaFileMessage, ActionContext context) {
+    protected LoadInput buildInput(@NotNull ActionContext context, @NotNull DeltaFileMessage deltaFileMessage) {
         return LoadInput.builder()
                 .content(ContentConverter.convert(deltaFileMessage.getContentList(), context.getContentStorageService()))
                 .metadata(deltaFileMessage.getMetadata())
                 .build();
+    }
+
+    @Override
+    protected LoadInput collect(@NotNull List<LoadInput> loadInputs) {
+        List<ActionContent> allContent = new ArrayList<>();
+        Map<String, String> allMetadata = new HashMap<>();
+        for (LoadInput loadInput : loadInputs) {
+            allContent.addAll(loadInput.getContent());
+            allMetadata.putAll(loadInput.getMetadata());
+        }
+        return LoadInput.builder()
+                .content(allContent)
+                .metadata(allMetadata)
+                .build();
+    }
+
+    @Override
+    protected final LoadResultType execute(@NotNull ActionContext context, @NotNull LoadInput input, @NotNull P params) {
+        return load(context, params, input);
     }
 
     /**
@@ -60,7 +79,5 @@ public abstract class LoadAction<P extends ActionParameters> extends Action<P> {
      * @see org.deltafi.actionkit.action.filter.FilterResult
      * @see org.deltafi.actionkit.action.ReinjectResult
      */
-    public abstract LoadResultType load(@NotNull ActionContext context,
-                                        @NotNull P params,
-                                        @NotNull LoadInput loadInput);
+    public abstract LoadResultType load(@NotNull ActionContext context, @NotNull P params, @NotNull LoadInput loadInput);
 }

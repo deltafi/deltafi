@@ -21,6 +21,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.filter.FilterResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
@@ -38,7 +39,7 @@ import java.util.regex.Pattern;
 @Data
 @EqualsAndHashCode
 @SuperBuilder
-public class TestCaseBase<A extends Action<? extends ActionParameters>> {
+public class TestCaseBase<A extends Action<?, ? extends ActionParameters, ? extends ResultType>> {
 
     private Class<? extends Result<?>> expectedResultType;
 
@@ -76,7 +77,7 @@ public class TestCaseBase<A extends Action<? extends ActionParameters>> {
         STORAGE_WRITE
     }
 
-    public static abstract class TestCaseBaseBuilder<A extends Action<? extends ActionParameters>, C extends TestCaseBase<A>, B extends TestCaseBase.TestCaseBaseBuilder<A, C, B>> {
+    public static abstract class TestCaseBaseBuilder<A extends Action<?, ? extends ActionParameters, ? extends ResultType>, C extends TestCaseBase<A>, B extends TestCaseBase.TestCaseBaseBuilder<A, C, B>> {
 
         public B expectError(String errorRegex) {
             return expectError(Pattern.compile(errorRegex));

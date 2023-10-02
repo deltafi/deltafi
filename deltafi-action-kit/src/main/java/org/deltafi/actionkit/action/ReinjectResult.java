@@ -27,6 +27,7 @@ import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionEventType;
 import org.deltafi.common.types.ReinjectEvent;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,7 +45,7 @@ public class ReinjectResult extends Result<ReinjectResult> implements LoadResult
     /**
      * @param context Execution context for the current action
      */
-    public ReinjectResult(ActionContext context) {
+    public ReinjectResult(@NotNull ActionContext context) {
         super(context, ActionEventType.REINJECT);
     }
 
@@ -56,7 +57,7 @@ public class ReinjectResult extends Result<ReinjectResult> implements LoadResult
      * @param content Content of the new DeltaFile
      * @param metadata Source metadata for the new DeltaFile
      */
-    public void addChild(String filename, String flow, List<ActionContent> content, Map<String, String> metadata) {
+    public void addChild(@NotNull String filename, @NotNull String flow, @NotNull List<ActionContent> content, @NotNull Map<String, String> metadata) {
         reinjectEvents.add(ReinjectEvent.builder()
                 .filename(filename)
                 .flow(flow)

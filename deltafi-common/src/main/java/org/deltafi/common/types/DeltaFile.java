@@ -42,6 +42,7 @@ public class DeltaFile {
   @Id
   private String did;
   private List<String> parentDids;
+  private boolean aggregate;
   private List<String> childDids;
   private int requeueCount;
   private long ingressBytes;
@@ -156,20 +157,28 @@ public class DeltaFile {
     }
   }
 
-  public Action queueNewAction(String flow, String name, ActionType type, boolean coldQueue) {
-    OffsetDateTime now = OffsetDateTime.now();
-    Action action = Action.builder()
-            .name(name)
-            .type(type)
-            .flow(flow)
-            .state(coldQueue ? ActionState.COLD_QUEUED : ActionState.QUEUED)
-            .created(now)
-            .queued(now)
-            .modified(now)
-            .attempt(1 + getLastAttemptNum(name))
-            .build();
-    actions.add(action);
-    return action;
+    public Action queueNewAction(String flow, String name, ActionType type, boolean coldQueue) {
+        return addAction(flow, name, type, coldQueue ? ActionState.COLD_QUEUED : ActionState.QUEUED);
+    }
+
+    public Action addAction(String flow, String name, ActionType type, ActionState state) {
+        OffsetDateTime now = OffsetDateTime.now();
+        Action action = Action.builder()
+                .name(name)
+                .type(type)
+                .flow(flow)
+                .state(state)
+                .created(now)
+                .queued(now)
+                .modified(now)
+                .attempt(1 + getLastAttemptNum(name))
+                .build();
+        actions.add(action);
+        return action;
+    }
+
+  public void addReadyToCollectAction(String flow, String name, ActionType type) {
+    addAction(flow, name, type, ActionState.READY_TO_COLLECT);
   }
 
   private int getLastAttemptNum(String name) {
@@ -201,8 +210,9 @@ public class DeltaFile {
   }
 
   public void completeAction(ActionEvent event, List<Content> content, Map<String, String> metadata,
-                             List<String> deleteMetadataKeys, List<Domain> domains, List<Enrichment> enrichments) {
-    completeAction(event.getFlow(), event.getAction(), event.getStart(), event.getStop(), content, metadata, deleteMetadataKeys, domains, enrichments);
+          List<String> deleteMetadataKeys, List<Domain> domains, List<Enrichment> enrichments) {
+    completeAction(event.getFlow(), event.getAction(), event.getStart(), event.getStop(), content, metadata,
+            deleteMetadataKeys, domains, enrichments);
   }
 
   public Action completeAction(String flow, String name, OffsetDateTime start, OffsetDateTime stop) {
@@ -210,8 +220,7 @@ public class DeltaFile {
   }
 
   public Action completeAction(String flow, String name, OffsetDateTime start, OffsetDateTime stop, List<Content> content,
-                             Map<String, String> metadata, List<String> deleteMetadataKeys,
-                             List<Domain> domains, List<Enrichment> enrichments) {
+          Map<String, String> metadata, List<String> deleteMetadataKeys, List<Domain> domains, List<Enrichment> enrichments) {
     Optional<Action> optionalAction = getActions().stream()
             .filter(action -> action.getFlow().equals(flow) && action.getName().equals(name) && !action.terminal())
             .findFirst();
@@ -247,6 +256,18 @@ public class DeltaFile {
     }
 
     return action;
+  }
+
+  public void collectingAction(String flow, String name, OffsetDateTime start, OffsetDateTime stop) {
+    getActions().stream()
+            .filter(action -> action.getFlow().equals(flow) && action.getName().equals(name) && !action.terminal())
+            .forEach(action -> setActionState(action, ActionState.COLLECTING, start, stop));
+  }
+
+  public void collectedAction(String flow, String name, OffsetDateTime start, OffsetDateTime stop) {
+    getActions().stream()
+            .filter(action -> action.getFlow().equals(flow) && action.getName().equals(name) && !action.terminal())
+            .forEach(action -> setActionState(action, ActionState.COLLECTED, start, stop));
   }
 
   public void filterAction(ActionEvent event, String filterMessage) {
@@ -355,6 +376,10 @@ public class DeltaFile {
     return getActions().stream().filter(Action::queued).map(Action::getName).toList();
   }
 
+  public List<Action> readyToCollectActions() {
+    return getActions().stream().filter(action -> action.getState().equals(ActionState.READY_TO_COLLECT)).toList();
+  }
+
   public boolean hasDomains(List<String> domains) {
     return domains.stream().allMatch(domain -> domains().stream().anyMatch(d -> d.getName().equals(domain)));
   }
@@ -392,20 +417,24 @@ public class DeltaFile {
   }
 
   public boolean hasErroredAction() {
-    return getActions().stream().anyMatch(action -> action.getState().equals(ActionState.ERROR));
+    return hasActionInState(ActionState.ERROR);
   }
 
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   public boolean hasPendingActions() {
-    return getActions().stream().anyMatch(Action::queued);
+    return getActions().stream().anyMatch(action -> !action.terminal());
   }
 
   public boolean hasFilteredAction() {
-    return getActions().stream().anyMatch(action -> action.getState().equals(ActionState.FILTERED));
+    return hasActionInState(ActionState.FILTERED);
   }
 
   public boolean hasReinjectedAction() {
-    return getActions().stream().anyMatch(action -> action.getState().equals(ActionState.REINJECTED));
+    return hasActionInState(ActionState.REINJECTED);
+  }
+
+  public boolean hasActionInState(ActionState actionState) {
+    return getActions().stream().anyMatch(action -> action.getState().equals(actionState));
   }
 
   public void ensurePendingAction(String flow, String name) {
@@ -437,12 +466,20 @@ public class DeltaFile {
   }
 
   public boolean hasCompletedAction(String flow, String name) {
-    return getActions().stream().anyMatch(action -> action.getFlow().equals(flow) && action.getName().equals(name) &&
-            action.getState().equals(ActionState.COMPLETE));
+    return hasActionInState(flow, name, ActionState.COMPLETE);
   }
 
   public boolean hasCompletedActions(String flow, List<String> names) {
     return names.stream().allMatch(name -> hasCompletedAction(flow, name));
+  }
+
+  public boolean hasCollectedAction(String flow, String name) {
+    return hasActionInState(flow, name, ActionState.COLLECTED);
+  }
+
+  public boolean hasActionInState(String flow, String name, ActionState state) {
+    return getActions().stream().anyMatch(action -> action.getFlow().equals(flow) && action.getName().equals(name) &&
+            action.getState().equals(state));
   }
 
   public String sourceMetadata(String key) {
@@ -540,7 +577,7 @@ public class DeltaFile {
     return formatActions.isEmpty() ? null : formatActions.get(formatActions.size() - 1);
   }
 
-  public List<Action> formatActions(String flow) {
+  private List<Action> formatActions(String flow) {
     return actions.stream()
             .filter(action -> action.getType() == ActionType.FORMAT && action.getFlow().equals(flow))
             .toList();

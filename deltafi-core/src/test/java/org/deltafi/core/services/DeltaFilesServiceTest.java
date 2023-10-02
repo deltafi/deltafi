@@ -27,6 +27,7 @@ import org.deltafi.common.test.time.TestClock;
 import org.deltafi.common.types.*;
 import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.deltafi.core.audit.CoreAuditLogger;
+import org.deltafi.core.collect.CollectService;
 import org.deltafi.core.exceptions.MissingEgressFlowException;
 import org.deltafi.core.generated.types.DeltaFilesFilter;
 import org.deltafi.core.metrics.MetricService;
@@ -40,16 +41,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Clock;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_XML;
 import static org.deltafi.common.constant.DeltaFiConstants.FILES_ERRORED;
-import static org.deltafi.core.repo.DeltaFileRepoImpl.*;
+import static org.deltafi.core.repo.DeltaFileRepoImpl.SOURCE_INFO_METADATA;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -57,6 +57,9 @@ class DeltaFilesServiceTest {
 
     private static final String ERRORS_EXCEEDED_TRANSFORM_FLOW = "errorsExceededFlow";
     private static final String GOOD_NORMALIZE_FLOW = "goodNormalizeFlow";
+
+    private final TestClock testClock = new TestClock();
+    private final MockDeltaFiPropertiesService mockDeltaFiPropertiesService = new MockDeltaFiPropertiesService();
 
     private final NormalizeFlowService normalizeFlowService;
     private final EgressFlowService egressFlowService;
@@ -79,6 +82,8 @@ class DeltaFilesServiceTest {
 
     @Captor
     ArgumentCaptor<DeltaFile> deltaFileCaptor;
+    @Captor
+    ArgumentCaptor<List<ActionInput>> actionInputListCaptor;
 
     @Captor
     ArgumentCaptor<QueuedAnnotation> queuedAnnotationCaptor;
@@ -88,7 +93,7 @@ class DeltaFilesServiceTest {
                           @Mock StateMachine stateMachine, @Mock DeltaFileRepo deltaFileRepo,
                           @Mock ActionEventQueue actionEventQueue, @Mock ResumePolicyService resumePolicyService,
                           @Mock ContentStorageService contentStorageService, @Mock MetricService metricService,
-                          @Mock CoreAuditLogger coreAuditLogger, @Mock IdentityService identityService,
+                          @Mock CoreAuditLogger coreAuditLogger, @Mock CollectService collectService, @Mock IdentityService identityService,
                           @Mock DeltaFileCacheService deltaFileCacheService,
                           @Mock QueueManagementService queueManagementService,
                           @Mock QueuedAnnotationRepo queuedAnnotationRepo,
@@ -104,12 +109,11 @@ class DeltaFilesServiceTest {
         this.deltaFileCacheService = deltaFileCacheService;
         this.queuedAnnotationRepo = queuedAnnotationRepo;
 
-        Clock clock = new TestClock();
-        deltaFilesService = new DeltaFilesService(clock, normalizeFlowService, enrichFlowService,
-                egressFlowService, transformFlowService, new MockDeltaFiPropertiesService(), stateMachine,
+        deltaFilesService = new DeltaFilesService(testClock, normalizeFlowService, enrichFlowService,
+                egressFlowService, transformFlowService, mockDeltaFiPropertiesService, stateMachine,
                 deltaFileRepo, actionEventQueue, contentStorageService, resumePolicyService, metricService,
-                coreAuditLogger, identityService, new DidMutexService(), deltaFileCacheService, timedIngressFlowService,
-                queueManagementService, queuedAnnotationRepo);
+                coreAuditLogger, collectService, identityService, new DidMutexService(), deltaFileCacheService,
+                timedIngressFlowService, queueManagementService, queuedAnnotationRepo);
     }
 
     @Test
@@ -273,8 +277,8 @@ class DeltaFilesServiceTest {
         ActionConfiguration actionConfiguration = new FormatActionConfiguration(null, null, null);
         Mockito.when(egressFlowService.findActionConfig("myFlow", "action")).thenReturn(actionConfiguration);
 
-        List<ActionInput> toQueue = deltaFilesService.requeuedActionInput(deltaFile, modified);
-        Assertions.assertThat(toQueue).hasSize(1);
+        List<ActionInvocation> actionInvocations = deltaFilesService.requeuedActionInvocations(deltaFile, modified);
+        Assertions.assertThat(actionInvocations).hasSize(1);
         Mockito.verifyNoInteractions(stateMachine);
     }
 
@@ -284,8 +288,8 @@ class DeltaFilesServiceTest {
         DeltaFile deltaFile = Util.buildDeltaFile("1");
         deltaFile.getActions().add(Action.builder().flow("flow").name("action").state(ActionState.QUEUED).modified(modified).build());
 
-        List<ActionInput> toQueue = deltaFilesService.requeuedActionInput(deltaFile, modified);
-        Assertions.assertThat(toQueue).isEmpty();
+        List<ActionInvocation> actionInvocations = deltaFilesService.requeuedActionInvocations(deltaFile, modified);
+        Assertions.assertThat(actionInvocations).isEmpty();
 
         ArgumentCaptor<DeltaFile> deltaFileCaptor = ArgumentCaptor.forClass(DeltaFile.class);
         Mockito.verify(stateMachine).advance(deltaFileCaptor.capture());
@@ -313,8 +317,8 @@ class DeltaFilesServiceTest {
         ActionConfiguration actionConfiguration = new EgressActionConfiguration(null, null);
         Mockito.when(transformFlowService.findActionConfig("myFlow", "action")).thenReturn(actionConfiguration);
 
-        List<ActionInput> toQueue = deltaFilesService.requeuedActionInput(deltaFile, modified);
-        Assertions.assertThat(toQueue).hasSize(1);
+        List<ActionInvocation> actionInvocations = deltaFilesService.requeuedActionInvocations(deltaFile, modified);
+        Assertions.assertThat(actionInvocations).hasSize(1);
         Mockito.verifyNoInteractions(stateMachine);
     }
 
@@ -655,5 +659,37 @@ class DeltaFilesServiceTest {
         assertEquals(1, actionVals.get(1).getKeyVals().size());
         assertEquals("d", actionVals.get(1).getKeyVals().get(0).getKey());
         assertEquals(List.of("4"), actionVals.get(1).getKeyVals().get(0).getValues());
+    }
+
+    @Test
+    void requeuesCollectedAction() {
+        DeltaFile aggregate = Util.buildDeltaFile("3");
+        aggregate.setAggregate(true);
+        DeltaFile parent1 = Util.buildDeltaFile("1");
+        DeltaFile parent2 = Util.buildDeltaFile("2");
+        aggregate.setParentDids(List.of(parent1.getDid(), parent2.getDid()));
+        aggregate.queueAction("test-ingress", "collect-transform", ActionType.TRANSFORM, false);
+
+        testClock.setInstant(aggregate.actionNamed("test-ingress", "collect-transform").orElseThrow().getModified().toInstant());
+        when(deltaFileRepo.updateForRequeue(eq(OffsetDateTime.now(testClock)),
+                eq(mockDeltaFiPropertiesService.getDeltaFiProperties().getRequeueSeconds()), eq(Collections.emptySet())))
+                .thenReturn(List.of(aggregate));
+
+        when(deltaFileRepo.findAllById(eq(List.of(parent1.getDid(), parent2.getDid()))))
+                .thenReturn(List.of(parent1, parent2));
+
+        TransformActionConfiguration transformActionConfiguration =
+                new TransformActionConfiguration("collect-transform", "org.deltafi.SomeCollectingTransformAction");
+        transformActionConfiguration.setCollect(new CollectConfiguration(Duration.parse("PT1H"), null, 3, null));
+        when(normalizeFlowService.findActionConfig(eq("test-ingress"), eq("collect-transform")))
+                .thenReturn(transformActionConfiguration);
+
+        deltaFilesService.requeue();
+
+        verify(actionEventQueue).putActions(actionInputListCaptor.capture(), Mockito.anyBoolean());
+        List<ActionInput> enqueuedActions = actionInputListCaptor.getValue();
+        assertEquals(1, enqueuedActions.size());
+        assertEquals(List.of("1", "2"), enqueuedActions.get(0).getActionContext().getCollectedDids());
+        assertEquals(2, enqueuedActions.get(0).getDeltaFileMessages().size());
     }
 }

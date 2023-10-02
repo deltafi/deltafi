@@ -384,7 +384,7 @@ public class FlowPlanDatafetcher {
         flowMap.put("enrichFlows", enrichFlowService.getAll());
         flowMap.put("egressFlows", egressFlowService.getAll());
         flowMap.put("transformFlows", transformFlowService.getAll());
-        flowMap.put("timedIngresFlows", timedIngressFlowService.getAll());
+        flowMap.put("timedIngressFlows", timedIngressFlowService.getAll());
 
         return YAML_EXPORTER.writeValueAsString(flowMap);
     }

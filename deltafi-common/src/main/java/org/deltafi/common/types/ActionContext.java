@@ -24,6 +24,7 @@ import lombok.NoArgsConstructor;
 import org.deltafi.common.content.ContentStorageService;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -42,11 +43,14 @@ public class ActionContext {
     private String systemName;
     private ContentStorageService contentStorageService;
 
+    private CollectConfiguration collect;
+    private List<String> collectedDids;
+
     /** Create a copy of this ActionContext with a different did
      * @param newDid the new DID
      * */
     public ActionContext copy(String newDid) {
         return new ActionContext(newDid, flow, name, sourceFilename, ingressFlow, egressFlow, hostname, actionVersion,
-                startTime, systemName, contentStorageService);
+                startTime, systemName, contentStorageService, collect, collectedDids);
     }
 }

@@ -21,6 +21,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.SuperBuilder;
 import org.deltafi.actionkit.exception.MissingMetadataException;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -40,7 +41,7 @@ public abstract class MetadataInput {
      * @return the value of the metadata for the given key.
      * @throws MissingMetadataException if the key is not found in the metadata map.
      */
-    public String metadata(String key) {
+    public String metadata(@NotNull String key) {
         if (!metadata.containsKey(key)) {
             throw new MissingMetadataException(key);
         }
@@ -53,7 +54,7 @@ public abstract class MetadataInput {
      * @param defaultValue the default value to return if the key is not found.
      * @return the value of the metadata for the given key or the default value if the key is not found.
      */
-    public String metadata(String key, String defaultValue) {
+    public String metadata(@NotNull String key, @NotNull String defaultValue) {
         return metadata.getOrDefault(key, defaultValue);
     }
 }

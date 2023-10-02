@@ -31,8 +31,8 @@ import java.io.InputStream;
 /**
  * Specialized result class for FORMAT actions
  */
+@Getter
 public class FormatResult extends MetadataResult<FormatResult> implements FormatResultType {
-    @Getter
     private final ActionContent content;
 
     /**

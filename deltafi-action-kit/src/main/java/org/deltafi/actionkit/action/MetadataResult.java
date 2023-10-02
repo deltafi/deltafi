@@ -22,6 +22,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEventType;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,7 +40,7 @@ public abstract class MetadataResult<T extends Result<T>> extends Result<T> {
     protected Map<String, String> metadata = new HashMap<>();
     protected List<String> deleteMetadataKeys = new ArrayList<>();
 
-    public MetadataResult(ActionContext context, ActionEventType actionEventType) {
+    public MetadataResult(@NotNull ActionContext context, @NotNull ActionEventType actionEventType) {
         super(context, actionEventType);
     }
 
@@ -48,7 +49,7 @@ public abstract class MetadataResult<T extends Result<T>> extends Result<T> {
      * @param key Metadata key to add
      * @param value Metadata value to add
      */
-    public void addMetadata(String key, String value) {
+    public void addMetadata(@NotNull String key, @NotNull String value) {
         metadata.put(key, value);
     }
 
@@ -77,7 +78,7 @@ public abstract class MetadataResult<T extends Result<T>> extends Result<T> {
     }
 
     @SuppressWarnings("unused")
-    public void deleteMetadataKey(String key) {
+    public void deleteMetadataKey(@NotNull String key) {
         deleteMetadataKeys.add(key);
     }
 }

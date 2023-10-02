@@ -52,7 +52,7 @@ public class DeltaFiTestRunner {
      * @param action to add the in-memory ContentStorageService to
      * @return a new instance of a DeltaFiTestRunner
      */
-    public static DeltaFiTestRunner setup(Action<?> action) {
+    public static DeltaFiTestRunner setup(Action<?, ?, ?> action) {
         return setup(action, "./");
     }
 
@@ -65,7 +65,7 @@ public class DeltaFiTestRunner {
      * @param testDataFolder name of the base folder to use when loading resources
      * @return a new instance of a DeltaFiTestRunner
      */
-    public static DeltaFiTestRunner setup(Action<?> action, String testDataFolder) {
+    public static DeltaFiTestRunner setup(Action<?, ?, ?> action, String testDataFolder) {
         DeltaFiTestRunner deltaFiTestSetup = new DeltaFiTestRunner();
         deltaFiTestSetup.testDataFolder = testDataFolder;
         action.setContentStorageService(deltaFiTestSetup.storageService);

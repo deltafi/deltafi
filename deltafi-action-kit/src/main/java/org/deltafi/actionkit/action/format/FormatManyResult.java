@@ -47,7 +47,7 @@ public class FormatManyResult extends Result<FormatManyResult> implements Format
      * @param formatResult A format result to be added to the result object
      */
     @SuppressWarnings("unused")
-    public void add(FormatResult formatResult) {
+    public void add(@NotNull FormatResult formatResult) {
         childFormatResults.add(new ChildFormatResult(formatResult));
     }
 

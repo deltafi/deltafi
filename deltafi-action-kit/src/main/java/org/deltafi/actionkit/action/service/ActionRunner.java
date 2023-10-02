@@ -59,7 +59,7 @@ public class ActionRunner {
     private HostnameService hostnameService;
 
     @Autowired(required = false)
-    private List<Action<?>> actions = Collections.emptyList();
+    private List<Action<?, ?, ?>> actions = Collections.emptyList();
 
     @Autowired
     BuildProperties buildProperties;
@@ -83,7 +83,7 @@ public class ActionRunner {
 
         pluginRegistrar.register();
 
-        for (Action<?> action : actions) {
+        for (Action<?, ?, ?> action : actions) {
             String actionName = action.getClassCanonicalName();
             int numThreads = actionsProperties.getActionThreads().getOrDefault(actionName, 1);
             ExecutorService executor = Executors.newFixedThreadPool(numThreads);
@@ -98,7 +98,7 @@ public class ActionRunner {
         markRunning();
     }
 
-    private void listen(Action<?> action, long delayMs) {
+    private void listen(Action<?, ?, ?> action, long delayMs) {
         try {
             Thread.sleep(delayMs);
             while (!Thread.currentThread().isInterrupted()) {
@@ -122,10 +122,9 @@ public class ActionRunner {
         }
     }
 
-    private void executeAction(Action<?> action, ActionInput actionInput, String returnAddress) {
+    private void executeAction(Action<?, ?, ?> action, ActionInput actionInput, String returnAddress) {
         boolean ingress = action.getActionDescriptor().getType() == ActionType.TIMED_INGRESS ||
                 action.getActionDescriptor().getType() == ActionType.INGRESS;
-
         ActionContext context = actionInput.getActionContext();
         log.trace("Running action {} with input {}", action.getClassCanonicalName(), actionInput);
         ResultType result;

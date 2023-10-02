@@ -59,6 +59,10 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
         return deltaFileRepo.findById(did.toLowerCase()).orElse(null);
     }
 
+    public void remove(String did) {
+        deltaFileCache.remove(did);
+    }
+
     public void removeOlderThan(int seconds) {
         deltaFileCache.values().stream()
                 .filter(d -> d.getModified().isBefore(OffsetDateTime.now().minusSeconds(seconds)))

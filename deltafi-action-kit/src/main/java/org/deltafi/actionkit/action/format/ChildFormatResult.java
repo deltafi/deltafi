@@ -20,6 +20,7 @@ package org.deltafi.actionkit.action.format;
 import lombok.Data;
 import org.deltafi.actionkit.action.converters.ContentConverter;
 import org.deltafi.common.types.ChildFormatEvent;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
@@ -39,7 +40,7 @@ class ChildFormatResult {
      * Create a ChildFormatResult with the given formatResult and a random did
      * @param formatResult format result for this child
      */
-    ChildFormatResult(FormatResult formatResult) {
+    ChildFormatResult(@NotNull FormatResult formatResult) {
         this();
         this.formatResult = formatResult;
     }

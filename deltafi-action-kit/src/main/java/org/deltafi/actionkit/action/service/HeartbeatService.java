@@ -30,11 +30,11 @@ public class HeartbeatService {
     private ActionEventQueue actionEventQueue;
 
     @Autowired(required = false)
-    private List<Action<?>> actions = Collections.emptyList();
+    private List<Action<?, ?, ?>> actions = Collections.emptyList();
 
     @Scheduled(fixedRate = 10000)
     void setHeartbeat() {
-        for (Action<?> action : actions) {
+        for (Action<?, ?, ?> action : actions) {
             actionEventQueue.setHeartbeat(action.getClassCanonicalName());
         }
     }

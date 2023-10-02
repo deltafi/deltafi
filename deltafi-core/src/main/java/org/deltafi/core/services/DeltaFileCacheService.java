@@ -26,6 +26,8 @@ public abstract class DeltaFileCacheService {
 
     public abstract boolean isCached(String did);
 
+    public abstract void remove(String did);
+
     public abstract void removeOlderThan(int seconds);
 
     public abstract void save(DeltaFile deltaFile);

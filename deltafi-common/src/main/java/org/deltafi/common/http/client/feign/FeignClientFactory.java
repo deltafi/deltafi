@@ -17,6 +17,7 @@
  */
 package org.deltafi.common.http.client.feign;
 
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import feign.*;
 import feign.codec.Decoder;
 import feign.codec.Encoder;
@@ -28,6 +29,7 @@ import org.deltafi.common.ssl.SslProperties;
 
 import javax.net.ssl.SSLContext;
 import java.io.File;
+import java.util.List;
 
 public class FeignClientFactory {
     /**
@@ -157,8 +159,8 @@ public class FeignClientFactory {
     private static <T> Feign.Builder createBuilder(Class<T> clientClass, Encoder encoder, Decoder decoder,
             Retryer retryer, Request.Options options) {
         return Feign.builder()
-                .encoder(encoder == null ? new JacksonEncoder() : encoder)
-                .decoder(decoder == null ? new JacksonDecoder() : decoder)
+                .encoder(encoder == null ? new JacksonEncoder(List.of(new JavaTimeModule())) : encoder)
+                .decoder(decoder == null ? new JacksonDecoder(List.of(new JavaTimeModule())) : decoder)
                 .retryer(retryer == null ? new Retryer.Default(1000, 5000, 5) : retryer)
                 .options(options == null ? new Request.Options() : options)
                 .logger(new Slf4jLogger(clientClass))

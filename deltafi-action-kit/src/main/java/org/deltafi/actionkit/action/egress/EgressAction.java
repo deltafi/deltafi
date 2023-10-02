@@ -20,30 +20,31 @@ package org.deltafi.actionkit.action.egress;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.common.types.*;
+import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionType;
+import org.deltafi.common.types.DeltaFileMessage;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.List;
 
 /**
  * Specialization class for EGRESS actions.
  * @param <P> Parameter class for configuring the egress action
  */
-public abstract class EgressAction<P extends ActionParameters> extends Action<P> {
-    public EgressAction(String description) {
+public abstract class EgressAction<P extends ActionParameters> extends Action<EgressInput, P, EgressResultType> {
+    public EgressAction(@NotNull String description) {
         super(ActionType.EGRESS, description);
     }
 
     @Override
-    protected final EgressResultType execute(@NotNull List<DeltaFileMessage> deltaFileMessages, @NotNull ActionContext context, @NotNull P params) {
-        return egress(context, params, egressInput(deltaFileMessages.get(0), context));
-    }
-
-    private static EgressInput egressInput(DeltaFileMessage deltaFileMessage, ActionContext context) {
+    protected EgressInput buildInput(@NotNull ActionContext context, @NotNull DeltaFileMessage deltaFileMessage) {
         return EgressInput.builder()
                 .content(new ActionContent(deltaFileMessage.getContentList().get(0), context.getContentStorageService()))
                 .metadata(deltaFileMessage.getMetadata())
                 .build();
+    }
+
+    @Override
+    protected final EgressResultType execute(@NotNull ActionContext context, @NotNull EgressInput input, @NotNull P params) {
+        return egress(context, params, input);
     }
 
     /**
@@ -51,8 +52,8 @@ public abstract class EgressAction<P extends ActionParameters> extends Action<P>
      * @param context The action configuration context object for this action execution
      * @param params The parameter class that configures the behavior of this action execution
      * @param egressInput Action input from the DeltaFile
-     * @return A result object containing results for the action execution.  The result can be an ErrorResult, a FilterResult, or
-     * an EgressResult
+     * @return A result object containing results for the action execution.  The result can be an ErrorResult, a
+     * FilterResult, or an EgressResult
      * @see EgressResult
      * @see org.deltafi.actionkit.action.error.ErrorResult
      * @see org.deltafi.actionkit.action.filter.FilterResult

@@ -17,13 +17,15 @@
  */
 package org.deltafi.common.types;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
+import javax.ws.rs.core.MediaType;
 import java.time.OffsetDateTime;
 import java.util.*;
-
-import static org.springframework.util.MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE;
 
 @Data
 @NoArgsConstructor
@@ -64,7 +66,7 @@ public class Action {
   boolean queued() { return state == ActionState.QUEUED || state == ActionState.COLD_QUEUED; }
 
   boolean terminal() {
-    return !queued();
+    return !queued() && (state != ActionState.READY_TO_COLLECT) && (state != ActionState.COLLECTING);
   }
 
   boolean complete() {
@@ -89,7 +91,7 @@ public class Action {
   }
 
   public void addEnrichment(@NotNull String enrichmentKey, String enrichmentValue) {
-    addEnrichment(enrichmentKey, enrichmentValue, APPLICATION_OCTET_STREAM_VALUE);
+    addEnrichment(enrichmentKey, enrichmentValue, MediaType.APPLICATION_OCTET_STREAM);
   }
 
   public void addEnrichment(@NotNull String enrichmentKey, String enrichmentValue, @NotNull String mediaType) {

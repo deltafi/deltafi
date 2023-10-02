@@ -20,6 +20,7 @@ package org.deltafi.actionkit.action.load;
 import lombok.Data;
 import org.deltafi.actionkit.action.converters.ContentConverter;
 import org.deltafi.common.types.ChildLoadEvent;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
@@ -39,7 +40,7 @@ public class ChildLoadResult {
      * Create a ChildLoadResult with the given loadResult and a random did
      * @param loadResult load result for this child
      */
-    ChildLoadResult(LoadResult loadResult) {
+    ChildLoadResult(@NotNull LoadResult loadResult) {
         this();
         this.loadResult = loadResult;
     }

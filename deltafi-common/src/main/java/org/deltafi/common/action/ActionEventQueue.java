@@ -75,11 +75,11 @@ public class ActionEventQueue {
      * Puts the given action inputs into the appropriate Redis queue(s).
      * If the {@code checkUnique} parameter is set to {@code true}, this method will ensure that no other item with the
      * same 'did' field value already exists in the queue before adding an action input.
-     *
+     * <p>
      * Note that checking for uniqueness is an expensive operation as it involves scanning the Redis set, which can be
      * slow and resource-intensive, particularly for larger sets. Therefore, it's recommended to use this option only in
      * requeue scenarios.
-     *
+     * <p>
      * If the conversion of an action input to JSON fails, the method will log an error and skip that input.
      *
      * @param actionInputs a list of action inputs to be queued

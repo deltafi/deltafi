@@ -19,6 +19,7 @@ package org.deltafi.core.configuration;
 
 import lombok.Data;
 import org.deltafi.core.configuration.ui.UiProperties;
+import org.deltafi.core.collect.CollectProperties;
 import org.springframework.data.annotation.Id;
 
 import java.time.Duration;
@@ -47,4 +48,6 @@ public class DeltaFiProperties {
     private int inMemoryQueueSize = 5000;
 
     private Set<String> setProperties = new HashSet<>();
+
+    private CollectProperties collect = new CollectProperties();
 }

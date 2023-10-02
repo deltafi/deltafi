@@ -20,11 +20,13 @@ automatically discovered and loaded by the framework when your plugin is install
 ### Context
 
 Execution methods for each Java action type are passed an `ActionContext`. The context gives you access to information
-about where the action is running and the DeltaFile being processed.
+about where the action is running and the DeltaFile(s) being processed.
 
 ```java
 // the did is the DeltaFile's id
 String did = context.getDid();
+// the flow in which the action is being invoked
+String flow = context.getFlow();
 // name of the Action as configured in a flow
 String actionName = context.getName();
 // the original filename
@@ -41,10 +43,14 @@ String actionVersion = context.getActionVersion();
 OffsetDateTime startTime = context.getStartTime();
 // system name from DeltaFi System Properties
 String systemName = context.getSystemName();
+// the optional collect configuration in effect for the action
+CollectConfiguration collect = context.getCollect();
+// the optional collected DeltaFile ids
+List<String> collectedDids = context.getCollectedDids();
 ```
 
 Execution methods for each Python action type are passed a `Context`. The context gives you access to information about
-where the action is running, the DeltaFile being processed, and access to supporting services.
+where the action is running, the DeltaFile(s) being processed, and access to supporting services.
 
 ```python
 class Context(NamedTuple):
@@ -56,8 +62,55 @@ class Context(NamedTuple):
     system: str
     hostname: str
     content_service: ContentService
+    collect: dict
+    collected_dids: List[str]
     logger: Logger
 
+```
+
+### Input
+
+Each `Action` has a specific `Input` class passed to its execution method. For example, a Load Action receives the
+`LoadInput` in the `load()` method. Each `Input` class is unique for each Action type, with some combination of the
+fields below.
+
+```java
+List<ActionContent> contentList;
+Map<String, String> metadata;
+Map<String, Domain> domains;
+Map<String, Enrichment> enrichments;
+```
+
+### Parameters
+
+Actions can be configured with custom parameters by extending the `ActionParameters` class:
+
+```java
+package org.deltafi.parameters;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import lombok.*;
+import org.deltafi.actionkit.action.parameters.ActionParameters;
+
+
+@Data
+@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true)
+@AllArgsConstructor
+@NoArgsConstructor
+public class DecompressionTransformParameters extends ActionParameters {
+    @JsonProperty(required = true)
+    @JsonPropertyDescription("Description goes here")
+    public String myParameter;
+}
+```
+
+```python
+from pydantic import BaseModel, Field
+
+class MyLoadActionParameters(BaseModel):
+    domain: str = Field(description="The domain used by the load action")
 ```
 
 ### Content Storage
@@ -110,51 +163,6 @@ Or in Python save content to a Result:
     result.save_content(data, content_name, media_type)
 ```
 
-### Parameters
-
-Actions can be configured with custom parameters by extending the `ActionParameters` class:
-
-```java
-package org.deltafi.parameters;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import lombok.*;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
-
-
-@Data
-@ToString(callSuper = true)
-@EqualsAndHashCode(callSuper = true)
-@AllArgsConstructor
-@NoArgsConstructor
-public class DecompressionTransformParameters extends ActionParameters {
-    @JsonProperty(required = true)
-    @JsonPropertyDescription("Description goes here")
-    public String myParameter;
-}
-```
-
-```python
-from pydantic import BaseModel, Field
-
-class MyLoadActionParameters(BaseModel):
-    domain: str = Field(description="The domain used by the load action")
-```
-
-### Input
-
-Each `Action` has a specific `Input` class passed to its execution method. For example, a Load Action receives the
-`LoadInput` in the `load()` method. Each `Input` class is unique for each Action type, with some combination of the
-fields below.
-
-```java
-List<ActionContent> contentList;
-Map<String, String> metadata;
-Map<String, Domain> domains;
-Map<String, Enrichment> enrichments;
-```
-
 ### Results
 
 Each `Action` returns a specific `Result` class from its execution method. The `Result` contains some combination of
@@ -181,6 +189,47 @@ Sometimes you want to halt a flow but not raise an error. In this case use a Fil
 
 ```java
 return new FilterResult(context, "Description of why this DeltaFile was filtered");
+```
+
+### Collect
+
+Transform, Load, and Format actions may be configured to collect multiple DeltaFiles before executing. When the action
+is executed, the action context will include a collect configuration and a list of the DeltaFile ids that were
+collected. The collect configuration may include the following fields:
+
+* `maxAge` the maximum duration (ISO 8601) to wait after the first DeltaFile is received for a collection before the
+  action is executed
+* `minNum` the minimum number of DeltaFiles to collect within `maxAge`. If this number is not reached, all collected
+  DeltaFiles will have the action marked in error.
+* `maxNum` the maximum number of DeltaFiles to collect before the action is executed
+* `metadataKey` an optional metadata key used to get the value to group collections by (defaults to collecting all)
+
+By default, Transform and Load actions configured to collect will combine content and metadata from all collected
+DeltaFiles into the `Input` passed to the execution method. Format actions configured to collect will default to
+combining content, metadata, domains, and enrichments from all collected DeltaFiles into the `Input` passed to the
+execution method.
+
+The `collect` method may be defined by an action to override the default behavior:
+
+```java
+    @Override
+    protected TransformInput collect(List<TransformInput> transformInputs) {
+        List<ActionContent> allContent = new ArrayList<>();
+        for (TransformInput transformInput : transformInputs) {
+            allContent.addAll(transformInput.getContent());
+        }
+        return TransformInput.builder()
+                .content(allContent)
+                .build();
+    }
+```
+
+```python
+    def collect(self, transform_inputs: List[TransformInput]):
+        all_content = []
+        for transform_input in transform_inputs:
+            all_content += transform_input.content
+        return TransformInput(content=all_content)
 ```
 
 ## Transform Flow Actions

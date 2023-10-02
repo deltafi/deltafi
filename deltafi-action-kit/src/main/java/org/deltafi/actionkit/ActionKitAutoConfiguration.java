@@ -43,7 +43,7 @@ public class ActionKitAutoConfiguration {
 
     @Bean
     public ActionEventQueue actionEventQueue(ActionEventQueueProperties actionEventQueueProperties,
-                                             List<Action<?>> actions) throws URISyntaxException {
+                                             List<Action<?, ?, ?>> actions) throws URISyntaxException {
         // Calculate the total number of threads for all actions
         int totalThreads = actions.stream()
                 .mapToInt(action -> actionsProperties.getActionThreads().getOrDefault(action.getClassCanonicalName(), 1))

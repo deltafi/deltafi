@@ -20,7 +20,10 @@ package org.deltafi.actionkit.action.enrich;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.converters.ContentConverter;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.common.types.*;
+import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionDescriptor;
+import org.deltafi.common.types.ActionType;
+import org.deltafi.common.types.DeltaFileMessage;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
@@ -30,8 +33,8 @@ import java.util.List;
  * Specialization class for ENRICH actions.
  * @param <P> Parameter class for configuring the enrich action
  */
-public abstract class EnrichAction<P extends ActionParameters> extends Action<P> {
-    public EnrichAction(String description) {
+public abstract class EnrichAction<P extends ActionParameters> extends Action<EnrichInput, P, EnrichResultType> {
+    public EnrichAction(@NotNull String description) {
         super(ActionType.ENRICH, description);
     }
 
@@ -58,19 +61,18 @@ public abstract class EnrichAction<P extends ActionParameters> extends Action<P>
     }
 
     @Override
-    protected final EnrichResultType execute(@NotNull List<DeltaFileMessage> deltaFileMessages,
-                                             @NotNull ActionContext context,
-                                             @NotNull P params) {
-        return enrich(context, params, enrichInput(deltaFileMessages.get(0), context));
-    }
-
-    private static EnrichInput enrichInput(DeltaFileMessage deltaFileMessage, ActionContext context) {
+    protected EnrichInput buildInput(@NotNull ActionContext context, @NotNull DeltaFileMessage deltaFileMessage) {
         return EnrichInput.builder()
                 .content(ContentConverter.convert(deltaFileMessage.getContentList(), context.getContentStorageService()))
                 .metadata(deltaFileMessage.getMetadata())
                 .domains(deltaFileMessage.domainMap())
                 .enrichments(deltaFileMessage.enrichmentMap())
                 .build();
+    }
+
+    @Override
+    protected final EnrichResultType execute(@NotNull ActionContext context, @NotNull EnrichInput input, @NotNull P params) {
+        return enrich(context, params, input);
     }
 
     /**
@@ -84,7 +86,5 @@ public abstract class EnrichAction<P extends ActionParameters> extends Action<P>
      * @see org.deltafi.actionkit.action.error.ErrorResult
      * @see org.deltafi.actionkit.action.filter.FilterResult
      */
-    public abstract EnrichResultType enrich(@NotNull ActionContext context,
-                                            @NotNull P params,
-                                            @NotNull EnrichInput enrichInput);
+    public abstract EnrichResultType enrich(@NotNull ActionContext context, @NotNull P params, @NotNull EnrichInput enrichInput);
 }

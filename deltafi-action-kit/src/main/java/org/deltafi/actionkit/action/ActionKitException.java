@@ -17,12 +17,14 @@
  */
 package org.deltafi.actionkit.action;
 
+import org.jetbrains.annotations.NotNull;
+
 public class ActionKitException extends RuntimeException {
-    public ActionKitException(String message) {
+    public ActionKitException(@NotNull String message) {
         super(message);
     }
 
-    public ActionKitException(String message, Throwable e) {
+    public ActionKitException(@NotNull String message, @NotNull Throwable e) {
         super(message, e);
     }
 }
