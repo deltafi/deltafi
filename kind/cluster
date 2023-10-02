@@ -362,6 +362,8 @@ _create_registry() {
 
 _install_plugins() {
   for plugin in "${PLUGINS[@]}"; do
+    local version
+    version=$(_plugin_field "$plugin" "version")
     local coordinates
     coordinates=$(_plugin_field "$plugin" "plugin_coordinates")
     local imageRepo
@@ -373,8 +375,18 @@ _install_plugins() {
 
     local options=()
 
+    if [[ $version == null ]]; then
+      version=latest
+    fi
+
+    if [[ $coordinates == null ]]; then
+      coordinates="org.deltafi:$plugin:$version"
+    fi
+
     if [[ $imageRepo != null ]]; then
       options=("${options[@]}" "--image-repository-base $imageRepo")
+    else
+      options=("${options[@]}" "--image-repository-base localhost:5000")
     fi
 
     if [[ $imagePullSecret != null ]]; then
