@@ -249,6 +249,8 @@ class ActionTest(ABC):
                        system=SYSTEM,
                        hostname=HOSTNAME,
                        content_service=self.content_service,
+                       collect=None,
+                       collected_dids=None,
                        logger=get_logger())
 
     def make_event(self, test_case: TestCaseBase):
@@ -261,7 +263,7 @@ class ActionTest(ABC):
 
     def call_action(self, test_case: TestCaseBase):
         self.get_contents(test_case)
-        return test_case.action.execute(self.make_event(test_case))
+        return test_case.action.execute_action(self.make_event(test_case))
 
     def run_and_check_result_type(self, test_case: TestCaseBase, result_type):
         self.__reset__()

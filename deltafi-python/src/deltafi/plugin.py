@@ -273,8 +273,6 @@ class Plugin(object):
                     'start': start_time,
                     'stop': time.time(),
                     'type': result.result_type,
-                    'collected': event.context.collect is not None,
-                    'collectedDids': event.context.collected_dids,
                     'metrics': [metric.json() for metric in result.metrics]
                 }
                 if result.result_key is not None:
