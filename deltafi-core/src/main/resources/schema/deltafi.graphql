@@ -17,6 +17,7 @@
 #
 
 scalar DateTime
+scalar Duration
 scalar JSON
 scalar Long
 scalar Metadata
@@ -337,14 +338,17 @@ type Query {
   getNormalizeFlowPlan(planName: String!): NormalizeFlowPlan!
   getEgressFlowPlan(planName: String!): EgressFlowPlan!
   getEnrichFlowPlan(planName: String!): EnrichFlowPlan!
+  getTimedIngressFlowPlan(planName: String!): TimedIngressFlowPlan!
   getTransformFlowPlan(planName: String!): TransformFlowPlan!
   getNormalizeFlow(flowName: String!): NormalizeFlow!
   getEgressFlow(flowName: String!): EgressFlow!
   getEnrichFlow(flowName: String!): EnrichFlow!
+  getTimedIngressFlow(flowName: String!): TimedIngressFlow!
   getTransformFlow(flowName: String!): TransformFlow!
   validateNormalizeFlow(flowName: String!): NormalizeFlow!
   validateEgressFlow(flowName: String!): EgressFlow!
   validateEnrichFlow(flowName: String!): EnrichFlow!
+  validateTimedIngressFlow(flowName: String!): TimedIngressFlow!
   validateTransformFlow(flowName: String!): TransformFlow!
   getFlowNames(state: FlowState): FlowNames!
   getFlows: [Flows]!
@@ -397,19 +401,23 @@ type Mutation {
   saveNormalizeFlowPlan(normalizeFlowPlan: NormalizeFlowPlanInput!) : NormalizeFlow!
   saveEnrichFlowPlan(enrichFlowPlan: EnrichFlowPlanInput!) : EnrichFlow!
   saveEgressFlowPlan(egressFlowPlan: EgressFlowPlanInput!) : EgressFlow!
+  saveTimedIngressFlowPlan(timedIngressFlowPlan: TimedIngressFlowPlanInput!) : TimedIngressFlow!
   saveTransformFlowPlan(transformFlowPlan: TransformFlowPlanInput!) : TransformFlow!
   removeNormalizeFlowPlan(name: String!) : Boolean!
   removeEnrichFlowPlan(name: String!) : Boolean!
   removeEgressFlowPlan(name: String!) : Boolean!
+  removeTimedIngressFlowPlan(name: String!) : Boolean!
   removeTransformFlowPlan(name: String!) : Boolean!
 
   startNormalizeFlow(flowName: String!) : Boolean!
   stopNormalizeFlow(flowName: String!) : Boolean!
   startEgressFlow(flowName: String!) : Boolean!
+  startTimedIngressFlow(flowName: String!) : Boolean!
   startTransformFlow(flowName: String!) : Boolean!
   stopEgressFlow(flowName: String!) : Boolean!
   startEnrichFlow(flowName: String!) : Boolean!
   stopEnrichFlow(flowName: String!) : Boolean!
+  stopTimedIngressFlow(flowName: String!) : Boolean!
   stopTransformFlow(flowName: String!) : Boolean!
 
   setMaxErrors(flowName: String!, maxErrors: Int!) : Boolean!
@@ -417,7 +425,9 @@ type Mutation {
   disableNormalizeTestMode(flowName: String!) : Boolean!
   enableEgressTestMode(flowName: String!) : Boolean!
   disableEgressTestMode(flowName: String!) : Boolean!
-  setTransformMaxErrors(flowName: String!, maxErrors: Int!) : Boolean!
+  setTimedIngressInterval(flowName: String!, interval: Duration!) : Boolean!
+  enableTimedIngressTestMode(flowName: String!) : Boolean!
+  disableTimedIngressTestMode(flowName: String!) : Boolean!
   enableTransformTestMode(flowName: String!) : Boolean!
   disableTransformTestMode(flowName: String!) : Boolean!
   setTransformFlowExpectedAnnotations(flowName: String!, expectedAnnotations: [String]) : Boolean!

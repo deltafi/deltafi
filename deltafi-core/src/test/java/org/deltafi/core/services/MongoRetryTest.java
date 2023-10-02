@@ -53,7 +53,8 @@ import java.util.Collections;
 @MockBean({StateMachine.class, NormalizeFlowService.class, EnrichFlowService.class, EgressFlowService.class,
         TransformFlowService.class, ActionEventQueue.class, ContentStorageService.class, FlowAssignmentService.class,
         CoreAuditLogger.class, MetricService.class, DeltaFiPropertiesRepo.class, ResumePolicyService.class,
-        IdentityService.class, DeltaFileRepo.class, QueueManagementService.class, QueuedAnnotationRepo.class})
+        IdentityService.class, DeltaFileRepo.class, QueueManagementService.class, QueuedAnnotationRepo.class,
+        TimedIngressFlowService.class, })
 @EnableRetry
 class MongoRetryTest {
 

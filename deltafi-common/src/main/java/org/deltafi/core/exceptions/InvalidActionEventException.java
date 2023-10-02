@@ -17,8 +17,6 @@
  */
 package org.deltafi.core.exceptions;
 
-import java.util.List;
-
 public class InvalidActionEventException extends RuntimeException {
     public InvalidActionEventException(String text) {
         super("Invalid ActionEvent: " + text);

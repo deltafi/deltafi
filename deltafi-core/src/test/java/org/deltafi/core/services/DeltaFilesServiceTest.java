@@ -91,7 +91,8 @@ class DeltaFilesServiceTest {
                           @Mock CoreAuditLogger coreAuditLogger, @Mock IdentityService identityService,
                           @Mock DeltaFileCacheService deltaFileCacheService,
                           @Mock QueueManagementService queueManagementService,
-                          @Mock QueuedAnnotationRepo queuedAnnotationRepo) {
+                          @Mock QueuedAnnotationRepo queuedAnnotationRepo,
+                          @Mock TimedIngressFlowService timedIngressFlowService) {
         this.normalizeFlowService = normalizeFlowService;
         this.egressFlowService = egressFlowService;
         this.transformFlowService = transformFlowService;
@@ -107,8 +108,8 @@ class DeltaFilesServiceTest {
         deltaFilesService = new DeltaFilesService(clock, normalizeFlowService, enrichFlowService,
                 egressFlowService, transformFlowService, new MockDeltaFiPropertiesService(), stateMachine,
                 deltaFileRepo, actionEventQueue, contentStorageService, resumePolicyService, metricService,
-                coreAuditLogger, identityService, new DidMutexService(), deltaFileCacheService, queueManagementService,
-                queuedAnnotationRepo);
+                coreAuditLogger, identityService, new DidMutexService(), deltaFileCacheService, timedIngressFlowService,
+                queueManagementService, queuedAnnotationRepo);
     }
 
     @Test

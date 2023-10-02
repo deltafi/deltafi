@@ -52,7 +52,7 @@ public class FormatManyResult extends Result<FormatManyResult> implements Format
     }
 
     public List<FormatResult> getChildFormatResults() {
-        return childFormatResults != null ? childFormatResults.stream().map(ChildFormatResult::getFormatResult).toList() : List.of();
+        return childFormatResults.stream().map(ChildFormatResult::getFormatResult).toList();
     }
 
     @Override

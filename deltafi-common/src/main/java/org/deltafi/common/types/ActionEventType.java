@@ -18,6 +18,7 @@
 package org.deltafi.common.types;
 
 public enum ActionEventType {
+  INGRESS,
   TRANSFORM,
   LOAD,
   LOAD_MANY,

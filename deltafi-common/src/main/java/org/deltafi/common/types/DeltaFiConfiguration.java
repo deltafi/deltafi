@@ -29,6 +29,7 @@ import lombok.ToString;
         @JsonSubTypes.Type(value = NormalizeFlowConfiguration.class, name = "NormalizeFlowConfiguration"),
         @JsonSubTypes.Type(value = EnrichFlowConfiguration.class, name = "EnrichFlowConfiguration"),
         @JsonSubTypes.Type(value = EgressFlowConfiguration.class, name = "EgressFlowConfiguration"),
+        @JsonSubTypes.Type(value = TimedIngressActionConfiguration.class, name = "TimedIngressActionConfiguration"),
         @JsonSubTypes.Type(value = TransformActionConfiguration.class, name = "TransformActionConfiguration"),
         @JsonSubTypes.Type(value = LoadActionConfiguration.class, name = "LoadActionConfiguration"),
         @JsonSubTypes.Type(value = DomainActionConfiguration.class, name = "DomainActionConfiguration"),

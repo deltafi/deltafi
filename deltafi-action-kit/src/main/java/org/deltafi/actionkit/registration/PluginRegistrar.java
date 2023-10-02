@@ -19,7 +19,10 @@ package org.deltafi.actionkit.registration;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import feign.Retryer;
+import feign.jackson.JacksonDecoder;
+import feign.jackson.JacksonEncoder;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.properties.ActionsProperties;
@@ -42,7 +45,7 @@ import java.util.List;
 
 @Slf4j
 public class PluginRegistrar {
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     @Autowired(required = false)
     private final List<Action<?>> actions = Collections.emptyList();
@@ -63,7 +66,7 @@ public class PluginRegistrar {
         PluginRegistration pluginRegistration = buildPluginRegistration();
 
         log.info("Registering plugin with core: {}", pluginRegistration.getPluginCoordinates());
-        CoreClient coreClient = FeignClientFactory.build(CoreClient.class, coreUrl, null, null, new Retryer.Default(500, 2000, 3));
+        CoreClient coreClient = FeignClientFactory.build(CoreClient.class, coreUrl, new JacksonEncoder(OBJECT_MAPPER), new JacksonDecoder(OBJECT_MAPPER), new Retryer.Default(500, 2000, 3));
         coreClient.postPlugin(pluginRegistration);
     }
 

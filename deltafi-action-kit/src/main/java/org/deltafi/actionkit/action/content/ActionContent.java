@@ -79,8 +79,7 @@ public class ActionContent {
      * @param mediaType Media type for the content being stored
      * @return The ActionContent that was stored
      */
-    public static ActionContent saveContent(ActionContext context, InputStream stream, String name,
-            @SuppressWarnings("SameParameterValue") String mediaType) {
+    public static ActionContent saveContent(ActionContext context, InputStream stream, String name, String mediaType) {
         try {
             return new ActionContent(context.getContentStorageService().save(context.getDid(), stream, name, mediaType),
                     context.getContentStorageService());

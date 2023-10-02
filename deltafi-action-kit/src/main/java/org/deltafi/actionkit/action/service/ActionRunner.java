@@ -33,6 +33,7 @@ import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionInput;
+import org.deltafi.common.types.ActionType;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.info.BuildProperties;
@@ -122,12 +123,16 @@ public class ActionRunner {
     }
 
     private void executeAction(Action<?> action, ActionInput actionInput, String returnAddress) {
+        boolean ingress = action.getActionDescriptor().getType() == ActionType.TIMED_INGRESS ||
+                action.getActionDescriptor().getType() == ActionType.INGRESS;
+
         ActionContext context = actionInput.getActionContext();
         log.trace("Running action {} with input {}", action.getClassCanonicalName(), actionInput);
         ResultType result;
         try (MDC.MDCCloseable ignored = MDC.putCloseable("action", context.getName())) {
             result = action.executeAction(actionInput);
-            if (Objects.isNull(result)) {
+
+            if (!ingress && result == null) {
                 throw new RuntimeException("Action " + context.getName() + " returned null Result for did " + context.getDid());
             }
         } catch (ExpectedContentException e) {
@@ -142,7 +147,9 @@ public class ActionRunner {
         }
 
         try {
-            actionEventQueue.putResult(result.toEvent(), returnAddress);
+            if (!ingress) {
+                actionEventQueue.putResult(result.toEvent(), returnAddress);
+            }
         } catch (Throwable e) {
             log.error("Error sending result to redis for did " + context.getDid(), e);
         }

@@ -98,7 +98,7 @@ class JavaPluginGeneratorTest {
         pluginGeneratorInput.setGroupId("org.deltafi.sample.normalize");
         pluginGeneratorInput.setArtifactId("MyNormalizeApp");
         pluginGeneratorInput.setPluginLanguage(PluginLanguage.JAVA);
-        pluginGeneratorInput.setDescription("Set of sample DeltaFi Normilaztion Actions");
+        pluginGeneratorInput.setDescription("Set of sample DeltaFi Normalization Actions");
         Set<ActionGeneratorInput> actionGeneratorInputs = Arrays.stream(ActionType.values())
                 .filter(this::ignoreAction)
                 .map(this::buildActionGeneratorInput)
@@ -137,6 +137,6 @@ class JavaPluginGeneratorTest {
     }
 
     boolean ignoreAction(ActionType actionType) {
-        return !(ActionType.INGRESS.equals(actionType) || ActionType.UNKNOWN.equals(actionType));
+        return actionType != ActionType.TIMED_INGRESS && actionType != ActionType.INGRESS && actionType != ActionType.UNKNOWN;
     }
 }

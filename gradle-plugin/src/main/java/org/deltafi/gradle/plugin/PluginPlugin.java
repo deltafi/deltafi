@@ -19,6 +19,7 @@ package org.deltafi.gradle.plugin;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.Setter;
 import org.deltafi.common.types.FlowPlan;
 import org.deltafi.common.types.Variable;
@@ -53,7 +54,7 @@ import java.util.List;
  * </pre>
  */
 public class PluginPlugin implements org.gradle.api.Plugin<Project> {
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     public static class DeltafiPluginExtension {
         String flowsDir;

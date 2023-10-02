@@ -32,7 +32,6 @@ import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.converters.KeyValueConverter;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.*;
-import org.deltafi.common.types.ResumeMetadata;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.DeltaFilesService;

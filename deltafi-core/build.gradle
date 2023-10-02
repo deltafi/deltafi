@@ -55,6 +55,7 @@ generateJava {
 	packageName = 'org.deltafi.core.generated'
 	generateClient = true
 	typeMapping = [
+			"Duration": "java.time.Duration",
 			"JSON": "java.util.Map<String, Object>",
 			"Long": "java.lang.Long",
 			"Metadata": "java.util.Map<String, String>",
@@ -136,6 +137,11 @@ generateJava {
 			"SecurityBanner": "org.deltafi.core.configuration.ui.SecurityBanner",
 			"SecurityBannerInput": "org.deltafi.core.configuration.ui.SecurityBanner",
 			"Segment": "org.deltafi.common.content.Segment",
+			"TimedIngressFlow": "org.deltafi.core.types.TimedIngressFlow",
+			"TimedIngressFlowConfiguration": "org.deltafi.common.types.TimedIngressFlowConfiguration",
+			"TimedIngressFlowPlan": "org.deltafi.common.types.TimedIngressFlowPlan",
+			"TimedIngressFlowSnapshot": "org.deltafi.core.snapshot.types.TimedIngressFlowSnapshot",
+			"TimedIngressFlowSnapshotInput": "org.deltafi.core.snapshot.types.TimedIngressFlowSnapshot",
 			"TransformFlow": "org.deltafi.core.types.TransformFlow",
 			"TransformFlowConfiguration": "org.deltafi.common.types.TransformFlowConfiguration",
 			"TransformFlowPlan": "org.deltafi.common.types.TransformFlowPlan",
@@ -146,6 +152,7 @@ generateJava {
 			"SystemCheckPropertiesInput": "org.deltafi.core.configuration.SystemCheckProperties",
 			"TimedDeletePolicy": "org.deltafi.core.types.TimedDeletePolicy",
 			"TimedDeletePolicyInput": "org.deltafi.core.types.TimedDeletePolicy",
+			"TimedIngressActionConfiguration": "org.deltafi.common.types.TimedIngressActionConfiguration",
 			"TopBar": "org.deltafi.core.configuration.ui.TopBar",
 			"TopBarInput": "org.deltafi.core.configuration.ui.TopBar",
 			"TransformActionConfiguration": "org.deltafi.common.types.TransformActionConfiguration",

@@ -1,0 +1,19 @@
+{
+  "name": "smoke-test-ingress",
+  "type": "TIMED_INGRESS",
+  "description": "Create smoke DeltaFiles",
+  "sourcePlugin": {
+    "groupId": "org.deltafi.passthrough",
+    "artifactId": "deltafi-passthrough",
+    "version": "0.17.0"
+  },
+  "timedIngressAction": {
+    "name": "SmokeTestIngressAction",
+    "type": "org.deltafi.core.action.SmokeTestIngressAction",
+    "parameters": {
+      "metadata": { "smoke":  "test" }
+    }
+  },
+  "targetFlow": "smoke",
+  "interval": "PT5S"
+}

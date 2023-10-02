@@ -111,6 +111,25 @@ input EgressFlowPlanInput {
   egressAction: EgressActionConfigurationInput!
 }
 
+type TimedIngressFlowPlan {
+  name: String!
+  type: String!
+  description: String!
+  sourcePlugin: PluginCoordinates!
+  timedIngressAction: TimedIngressActionConfiguration!
+  targetFlow: String!
+  interval: Duration
+}
+
+input TimedIngressFlowPlanInput {
+  name: String!
+  type: String!
+  description: String!
+  timedIngressAction: TimedIngressActionConfigurationInput!
+  targetFlow: String!
+  interval: Duration
+}
+
 type TransformFlowPlan {
   name: String!
   type: String!
@@ -160,6 +179,7 @@ type Flows {
   normalizeFlows: [NormalizeFlow]
   enrichFlows: [EnrichFlow]
   egressFlows: [EgressFlow]
+  timedIngressFlows: [TimedIngressFlow]
   transformFlows: [TransformFlow]
 }
 
@@ -167,6 +187,7 @@ type SystemFlows {
   normalize: [NormalizeFlow]!
   enrich: [EnrichFlow]!
   egress: [EgressFlow]!
+  timedIngress: [TimedIngressFlow]!
   transform: [TransformFlow]!
 }
 
@@ -174,6 +195,7 @@ type SystemFlowPlans {
   normalizePlans: [NormalizeFlowPlan]!
   enrichPlans: [EnrichFlowPlan]!
   egressPlans: [EgressFlowPlan]!
+  timedIngressPlans: [TimedIngressFlowPlan]!
   transformPlans: [TransformFlowPlan]!
 }
 
@@ -213,6 +235,18 @@ type EgressFlow {
   variables: [Variable]!
 }
 
+type TimedIngressFlow {
+  name: String!
+  description: String!
+  sourcePlugin: PluginCoordinates!
+  flowStatus: FlowStatus!
+  targetFlow: String!
+  interval: Duration
+  lastRun: DateTime
+  timedIngressAction: TimedIngressActionConfiguration!
+  variables: [Variable]!
+}
+
 type TransformFlow {
   name: String!
   description: String!
@@ -235,6 +269,7 @@ type FlowNames {
   enrich: [String]!
   egress: [String]!
   transform: [String]!
+  timedIngress: [String]!
 }
 
 type IngressFlowErrorState {

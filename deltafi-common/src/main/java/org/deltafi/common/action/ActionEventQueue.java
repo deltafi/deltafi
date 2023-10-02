@@ -33,6 +33,7 @@ import java.net.URISyntaxException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -60,6 +61,17 @@ public class ActionEventQueue {
     }
 
     /**
+     * Checks if the queue has a tasking for the specified action.
+     *
+     * @param  actionInput  the action input object containing the queue name and action context
+     * @return true if a tasking for the action exists in the queue, false otherwise
+     */
+    public boolean queueHasTaskingForAction(ActionInput actionInput) {
+        return jedisKeyedBlockingQueue.exists(actionInput.getQueueName(), "*\"name\":\"" +
+                actionInput.getActionContext().getName() + "\"*");
+    }
+
+    /**
      * Puts the given action inputs into the appropriate Redis queue(s).
      * If the {@code checkUnique} parameter is set to {@code true}, this method will ensure that no other item with the
      * same 'did' field value already exists in the queue before adding an action input.
@@ -77,7 +89,7 @@ public class ActionEventQueue {
     public void putActions(List<ActionInput> actionInputs, boolean checkUnique) {
         List<SortedSetEntry> actions = new ArrayList<>();
         for (ActionInput actionInput : actionInputs) {
-            if (actionInput.getAction().getState() == ActionState.COLD_QUEUED) {
+            if (actionInput.getAction() != null && actionInput.getAction().getState() == ActionState.COLD_QUEUED) {
                 continue;
             }
 
@@ -122,11 +134,41 @@ public class ActionEventQueue {
     /**
      * Submit a result object for action processing
      *
-     * @param result ActionEventInput object for the result to be posted to the action queue
+     * @param result ActionEvent result to be posted to the action queue
      * @throws JsonProcessingException if the outgoing event cannot be deserialized
      */
     public void putResult(ActionEvent result, String returnAddress) throws JsonProcessingException {
         jedisKeyedBlockingQueue.put(new SortedSetEntry(queueName(returnAddress), OBJECT_MAPPER.writeValueAsString(result), OffsetDateTime.now()));
+    }
+
+    /**
+     * Submit a List of result objects for action processing
+     *
+     * @param results List of ActionEvent results to be posted to the action queue
+     * @throws JsonProcessingException if any of the outgoing events cannot be deserialized
+     */
+    public void putResults(List<ActionEvent> results, String returnAddress) throws JsonProcessingException {
+        String queueName = queueName(returnAddress);
+        final List<Exception> exceptions = new ArrayList<>();
+        OffsetDateTime now = OffsetDateTime.now();
+
+        List<SortedSetEntry> queuedResults = results.stream()
+                .map(actionEvent -> {
+                    try {
+                        return new SortedSetEntry(queueName, OBJECT_MAPPER.writeValueAsString(actionEvent), now);
+                    } catch (JsonProcessingException e) {
+                        exceptions.add(e);
+                        return null;
+                    }
+                })
+                .filter(Objects::isNull)
+                .toList();
+
+        if (!exceptions.isEmpty()) {
+            throw (JsonProcessingException) exceptions.get(0);
+        }
+
+        jedisKeyedBlockingQueue.put(queuedResults);
     }
 
     public ActionEvent takeResult(String returnAddress) throws JsonProcessingException {

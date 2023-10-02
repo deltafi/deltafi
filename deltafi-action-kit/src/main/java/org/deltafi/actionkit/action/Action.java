@@ -20,6 +20,7 @@ package org.deltafi.actionkit.action;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -45,8 +46,9 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 public abstract class Action<P extends ActionParameters> {
-    private static final ObjectMapper OBJECT_MAPPER =
-            new ObjectMapper().enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+                    .registerModule(new JavaTimeModule())
+                    .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
 
     @Autowired
     @Setter

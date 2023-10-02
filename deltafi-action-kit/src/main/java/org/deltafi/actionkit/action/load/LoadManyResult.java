@@ -52,7 +52,7 @@ public class LoadManyResult extends Result<LoadManyResult> implements LoadResult
     }
 
     public List<LoadResult> getChildLoadResults() {
-        return childLoadResults != null ? childLoadResults.stream().map(ChildLoadResult::getLoadResult).toList() : List.of();
+        return childLoadResults.stream().map(ChildLoadResult::getLoadResult).toList();
     }
 
     @Override

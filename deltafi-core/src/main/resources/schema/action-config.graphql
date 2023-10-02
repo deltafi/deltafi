@@ -24,6 +24,21 @@ interface ActionConfiguration {
     parameters: JSON
 }
 
+type TimedIngressActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
+    name: String!
+    apiVersion: String
+    actionType: String!
+    type: String!
+    parameters: JSON
+}
+
+input TimedIngressActionConfigurationInput {
+    name: String!
+    apiVersion: String
+    type: String!
+    parameters: JSON
+}
+
 type TransformActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
     name: String!
     apiVersion: String

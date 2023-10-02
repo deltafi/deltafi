@@ -65,6 +65,13 @@ type EgressFlowConfiguration implements DeltaFiConfiguration {
     egressAction: String!
 }
 
+type TimedIngressFlowConfiguration implements DeltaFiConfiguration {
+    name: String!
+    apiVersion: String
+    timedIngressAction: String!
+    interval: Duration
+}
+
 type TransformFlowConfiguration implements DeltaFiConfiguration {
     name: String!
     apiVersion: String

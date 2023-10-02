@@ -22,6 +22,7 @@ import lombok.AllArgsConstructor;
 import org.deltafi.common.converters.KeyValueConverter;
 import org.deltafi.common.types.*;
 import org.deltafi.core.exceptions.MissingEgressFlowException;
+import org.deltafi.core.exceptions.MissingFlowException;
 import org.deltafi.core.types.EgressFlow;
 import org.deltafi.core.types.EnrichFlow;
 import org.deltafi.core.types.NormalizeFlow;
@@ -61,6 +62,27 @@ public class StateMachine {
      * flow configured.
      */
     public List<ActionInput> advance(DeltaFile deltaFile, boolean newDeltaFile) throws MissingEgressFlowException {
+        if (deltaFile.getStage() == DeltaFileStage.INGRESS && deltaFile.getSourceInfo().getProcessingType() == null) {
+            if (transformFlowService.hasRunningFlow(deltaFile.getSourceInfo().getFlow())) {
+                deltaFile.getSourceInfo().setProcessingType(ProcessingType.TRANSFORMATION);
+            } else if (normalizeFlowService.hasRunningFlow(deltaFile.getSourceInfo().getFlow())) {
+                deltaFile.getSourceInfo().setProcessingType(ProcessingType.NORMALIZATION);
+            } else if (transformFlowService.hasFlow(deltaFile.getSourceInfo().getFlow()) ||
+                        normalizeFlowService.hasFlow(deltaFile.getSourceInfo().getFlow())) {
+                throw new MissingFlowException("Flow is not running: " + deltaFile.getSourceInfo().getFlow());
+            } else {
+                throw new MissingFlowException("Flow is not installed: " + deltaFile.getSourceInfo().getFlow());
+            }
+        }
+
+        Action lastAction = deltaFile.lastAction();
+        if (lastAction.getState() == ActionState.RETRIED && lastAction.getType() == ActionType.INGRESS) {
+            Action toComplete = deltaFile.queueAction(lastAction.getFlow(), lastAction.getName(), ActionType.INGRESS, false);
+            toComplete.setContent(lastAction.getContent());
+            toComplete.setMetadata(lastAction.getMetadata());
+            toComplete.setState(ActionState.COMPLETE);
+        }
+
         List<ActionInput> enqueueActions = switch (deltaFile.getSourceInfo().getProcessingType()) {
             case NORMALIZATION -> advanceNormalization(deltaFile, newDeltaFile);
             case TRANSFORMATION -> advanceTransformation(deltaFile, newDeltaFile);

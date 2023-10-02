@@ -33,13 +33,9 @@ import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.content.ContentUtil;
 import org.deltafi.common.types.*;
-import org.deltafi.common.types.ResumeMetadata;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.configuration.DeltaFiProperties;
-import org.deltafi.core.exceptions.EnqueueActionException;
-import org.deltafi.core.exceptions.InvalidActionEventException;
-import org.deltafi.core.exceptions.MissingEgressFlowException;
-import org.deltafi.core.exceptions.UnknownTypeException;
+import org.deltafi.core.exceptions.*;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.metrics.MetricsUtil;
@@ -51,7 +47,6 @@ import org.deltafi.core.types.ResumePolicy;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -119,6 +114,7 @@ public class DeltaFilesService {
     private final IdentityService identityService;
     private final DidMutexService didMutexService;
     private final DeltaFileCacheService deltaFileCacheService;
+    private final TimedIngressFlowService timedIngressFlowService;
     private final QueueManagementService queueManagementService;
     private final QueuedAnnotationRepo queuedAnnotationRepo;
 
@@ -224,7 +220,7 @@ public class DeltaFilesService {
         return ingress(ingressEvent, Collections.emptyList());
     }
 
-    public DeltaFile ingress(IngressEvent ingressEvent, List<String> parentDids) {
+    private DeltaFile buildIngressDeltaFile(IngressEvent ingressEvent, List<String> parentDids) {
         SourceInfo sourceInfo = ingressEvent.getSourceInfo();
 
         OffsetDateTime now = OffsetDateTime.now(clock);
@@ -242,7 +238,7 @@ public class DeltaFilesService {
 
         long contentSize = ContentUtil.computeContentSize(ingressEvent.getContent());
 
-        DeltaFile deltaFile = DeltaFile.builder()
+        return DeltaFile.builder()
                 .schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
                 .did(ingressEvent.getDid())
                 .parentDids(parentDids)
@@ -258,8 +254,29 @@ public class DeltaFilesService {
                 .egressed(false)
                 .filtered(false)
                 .build();
+    }
+
+    public DeltaFile ingress(IngressEvent ingressEvent, List<String> parentDids) {
+        DeltaFile deltaFile = buildIngressDeltaFile(ingressEvent, parentDids);
 
         advanceAndSave(deltaFile);
+        return deltaFile;
+    }
+
+    public DeltaFile ingressOrErrorOnMissingFlow(IngressEvent ingressEvent, String ingressActionName, String ingressFlow) {
+        DeltaFile deltaFile = buildIngressDeltaFile(ingressEvent, Collections.emptyList());
+        deltaFile.lastAction().setName(ingressActionName);
+        deltaFile.lastAction().setFlow(ingressFlow);
+
+        try {
+            advanceAndSave(deltaFile);
+        } catch (MissingFlowException e) {
+            Action ingressAction = deltaFile.getActions().get(0);
+            ingressAction.setState(ActionState.ERROR);
+            ingressAction.setErrorCause(e.getMessage());
+            deltaFile.setStage(DeltaFileStage.ERROR);
+            deltaFileRepo.save(deltaFile);
+        }
         return deltaFile;
     }
 
@@ -283,6 +300,11 @@ public class DeltaFilesService {
             event.setAction(actionNameParts[1]);
         } catch (NoSuchElementException e) {
             throw new InvalidActionEventException("Missing action: " + OBJECT_MAPPER.writeValueAsString(event));
+        }
+
+        if (event.getType() == ActionEventType.INGRESS) {
+            ingressFromAction(event);
+            return;
         }
 
         synchronized (didMutexService.getMutex(event.getDid())) {
@@ -392,6 +414,18 @@ public class DeltaFilesService {
         }
 
         return null;
+    }
+
+    public void ingressFromAction(ActionEvent event) {
+        TimedIngressFlow timedIngressFlow = timedIngressFlowService.getRunningFlowByName(event.getFlow());
+        event.getIngress().getSourceInfo().setFlow(timedIngressFlow.getTargetFlow());
+        event.getIngress().getSourceInfo().setProcessingType(null);
+        DeltaFile deltaFile = ingressOrErrorOnMissingFlow(event.getIngress(), event.getAction(), event.getFlow());
+
+        List<Metric> metrics = (event.getMetrics() != null) ? event.getMetrics() : new ArrayList<>();
+        metrics.add(new Metric(DeltaFiConstants.FILES_IN, 1));
+        metrics.add(new Metric(DeltaFiConstants.BYTES_IN, deltaFile.getIngressBytes()));
+        generateMetrics(metrics, event, deltaFile);
     }
 
     public void transform(DeltaFile deltaFile, ActionEvent event) {
@@ -1558,6 +1592,25 @@ public class DeltaFilesService {
 
         try {
             actionEventQueue.putActions(enqueueActions, checkUnique);
+        } catch (Exception e) {
+            log.error("Failed to queue action(s)", e);
+            throw new EnqueueActionException("Failed to queue action(s)", e);
+        }
+    }
+
+    public void taskTimedIngress(TimedIngressFlow timedIngressFlow) throws EnqueueActionException {
+        ActionInput actionInput = timedIngressFlow.buildActionInput(getProperties().getSystemName());
+        // Maintain compatibility with legacy actions by combining flow and name
+        actionInput.getActionContext().setName(actionInput.getActionContext().getFlow() + "." +
+                    actionInput.getActionContext().getName());
+
+        try {
+            if (!actionEventQueue.queueHasTaskingForAction(actionInput)) {
+                actionEventQueue.putActions(List.of(actionInput), false);
+            } else {
+                log.warn("Skipping queueing on {} for duplicate timed ingress action event: {}",
+                        actionInput.getQueueName(), actionInput.getActionContext().getName());
+            }
         } catch (Exception e) {
             log.error("Failed to queue action(s)", e);
             throw new EnqueueActionException("Failed to queue action(s)", e);

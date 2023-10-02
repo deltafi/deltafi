@@ -183,6 +183,9 @@ class DeltaFiCoreApplicationTests {
 	PluginRepository pluginRepository;
 
 	@Autowired
+	TimedIngressFlowService timedIngressFlowService;
+
+	@Autowired
 	TransformFlowService transformFlowService;
 
 	@Autowired
@@ -199,6 +202,12 @@ class DeltaFiCoreApplicationTests {
 
 	@Autowired
 	NormalizeFlowRepo normalizeFlowRepo;
+
+	@Autowired
+	TimedIngressFlowRepo timedIngressFlowRepo;
+
+	@Autowired
+	TimedIngressFlowPlanRepo timedIngressFlowPlanRepo;
 
 	@Autowired
 	EgressFlowRepo egressFlowRepo;
@@ -326,6 +335,7 @@ class DeltaFiCoreApplicationTests {
 		normalizeFlowService.refreshCache();
 		enrichFlowService.refreshCache();
 		egressFlowService.refreshCache();
+		timedIngressFlowService.refreshCache();
 	}
 
 	void loadConfig() {
@@ -333,6 +343,7 @@ class DeltaFiCoreApplicationTests {
 		loadNormalizeConfig();
 		loadEnrichConfig();
 		loadEgressConfig();
+		loadTimedIngressConfig();
 	}
 
 	void loadTransformConfig() {
@@ -412,6 +423,13 @@ class DeltaFiCoreApplicationTests {
 		egressFlowRepo.saveAll(List.of(sampleEgressFlow, errorFlow));
 		egressFlowService.refreshCache();
     }
+
+	void loadTimedIngressConfig() {
+		timedIngressFlowRepo.deleteAll();
+		timedIngressFlowRepo.save(buildTimedIngressFlow(FlowState.RUNNING));
+		timedIngressFlowRepo.save(buildTimedIngressErrorFlow(FlowState.RUNNING));
+		timedIngressFlowService.refreshCache();
+	}
 
 	void loadEnrichConfig() {
 		enrichFlowRepo.deleteAll();
@@ -651,7 +669,7 @@ class DeltaFiCoreApplicationTests {
 
 		deltaFilesService.handleActionEvent(actionEvent("transformUtf8", did));
 
-		verifyActionEventResults(postTransformUtf8DeltaFile(did), ActionContext.builder().flow(NORMALIZE_FLOW_NAME).name("sampleIngress.SampleTransformAction").build());
+		verifyActionEventResults(postTransformUtf8DeltaFile(did), ActionContext.builder().flow(NORMALIZE_FLOW_NAME).name("sampleNormalize.SampleTransformAction").build());
 		Map<String, String> tags = tagsFor(ActionEventType.TRANSFORM, "Utf8TransformAction", NORMALIZE_FLOW_NAME, null);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Mockito.verifyNoMoreInteractions(metricService);
@@ -664,7 +682,7 @@ class DeltaFiCoreApplicationTests {
 
 		deltaFilesService.handleActionEvent(actionEvent("transform", did));
 
-		verifyActionEventResults(postTransformDeltaFile(did), ActionContext.builder().flow(NORMALIZE_FLOW_NAME).name("sampleIngress.SampleLoadAction").build());
+		verifyActionEventResults(postTransformDeltaFile(did), ActionContext.builder().flow(NORMALIZE_FLOW_NAME).name("sampleNormalize.SampleLoadAction").build());
 
 		DeltaFile deltaFile = deltaFileRepo.findById(did).orElseThrow();
 		// check that the deleted metadata key worked
@@ -692,7 +710,7 @@ class DeltaFiCoreApplicationTests {
 		assertTrue(retryResults.get(0).getSuccess());
 
 		DeltaFile expected = postResumeTransformDeltaFile(did);
-		verifyActionEventResults(expected, ActionContext.builder().flow(NORMALIZE_FLOW_NAME).name("sampleIngress.SampleTransformAction").build());
+		verifyActionEventResults(expected, ActionContext.builder().flow(NORMALIZE_FLOW_NAME).name("sampleNormalize.SampleTransformAction").build());
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		deltaFile.errorAction(NORMALIZE_FLOW_NAME, "SampleTransformAction", OffsetDateTime.now(), OffsetDateTime.now(), "cause", "context");
@@ -773,7 +791,7 @@ class DeltaFiCoreApplicationTests {
 
 		queueManagementService.coldToWarm();
 
-		verifyActionEventResults(postTransformDeltaFile(did), ActionContext.builder().flow(NORMALIZE_FLOW_NAME).name("sampleIngress.SampleLoadAction").build());
+		verifyActionEventResults(postTransformDeltaFile(did), ActionContext.builder().flow(NORMALIZE_FLOW_NAME).name("sampleNormalize.SampleLoadAction").build());
 	}
 
 	@Test
@@ -1604,11 +1622,29 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void testGetTimedIngressFlowPlan() {
+		clearForFlowTests();
+		TimedIngressFlowPlan timedIngressFlowPlanA = new TimedIngressFlowPlan("timedIngressPlan", "description", new TimedIngressActionConfiguration("timedIngress", "type"), "flow", Duration.ofSeconds(5));
+		TimedIngressFlowPlan timedIngressFlowPlanB = new TimedIngressFlowPlan("b", "description", new TimedIngressActionConfiguration("timedIngress", "type"), "flow", Duration.ofSeconds(5));
+		timedIngressFlowPlanRepo.saveAll(List.of(timedIngressFlowPlanA, timedIngressFlowPlanB));
+		TimedIngressFlowPlan plan = FlowPlanDatafetcherTestHelper.getTimedIngressFlowPlan(dgsQueryExecutor);
+		assertThat(plan.getName()).isEqualTo("timedIngressPlan");
+	}
+
+	@Test
 	void testValidateTransformFlow() {
 		clearForFlowTests();
 		transformFlowRepo.save(buildTransformFlow(FlowState.STOPPED));
 		TransformFlow transformFlow = FlowPlanDatafetcherTestHelper.validateTransformFlow(dgsQueryExecutor);
 		assertThat(transformFlow.getFlowStatus()).isNotNull();
+	}
+
+	@Test
+	void testValidateTimedIngressFlow() {
+		clearForFlowTests();
+		timedIngressFlowRepo.save(buildTimedIngressFlow(FlowState.STOPPED));
+		TimedIngressFlow timedIngressFlow = FlowPlanDatafetcherTestHelper.validateTimedIngressFlow(dgsQueryExecutor);
+		assertThat(timedIngressFlow.getFlowStatus()).isNotNull();
 	}
 
 	@Test
@@ -1650,6 +1686,10 @@ class DeltaFiCoreApplicationTests {
 		egressFlow.setName("egress");
 		egressFlow.setSourcePlugin(pluginCoordinates);
 
+		TimedIngressFlow timedIngressFlow = new TimedIngressFlow();
+		timedIngressFlow.setName("timedIngress");
+		timedIngressFlow.setSourcePlugin(pluginCoordinates);
+
 		Plugin plugin = new Plugin();
 		plugin.setPluginCoordinates(pluginCoordinates);
 		pluginRepository.save(plugin);
@@ -1657,6 +1697,7 @@ class DeltaFiCoreApplicationTests {
 		transformFlowRepo.save(transformFlow);
 		normalizeFlowRepo.save(normalizeFlow);
 		egressFlowRepo.save(egressFlow);
+		timedIngressFlowRepo.save(timedIngressFlow);
 		refreshFlowCaches();
 
 		List<Flows> flows = FlowPlanDatafetcherTestHelper.getFlows(dgsQueryExecutor);
@@ -1666,6 +1707,7 @@ class DeltaFiCoreApplicationTests {
 		assertThat(pluginFlows.getTransformFlows().get(0).getName()).isEqualTo("transform");
 		assertThat(pluginFlows.getNormalizeFlows().get(0).getName()).isEqualTo("ingress");
 		assertThat(pluginFlows.getEgressFlows().get(0).getName()).isEqualTo("egress");
+		assertThat(pluginFlows.getTimedIngressFlows().get(0).getName()).isEqualTo("timedIngress");
 	}
 
 	@Test
@@ -1815,10 +1857,11 @@ class DeltaFiCoreApplicationTests {
 		normalizeFlowRepo.save(buildNormalizeFlow(FlowState.STOPPED));
 		enrichFlowRepo.save(buildEnrichFlow(FlowState.STOPPED));
 		egressFlowRepo.save(buildEgressFlow(FlowState.STOPPED));
+		timedIngressFlowRepo.save(buildTimedIngressFlow(FlowState.STOPPED));
 		refreshFlowCaches();
 
 		List<ActionFamily> actionFamilies = FlowPlanDatafetcherTestHelper.getActionFamilies(dgsQueryExecutor);
-		assertThat(actionFamilies).hasSize(8);
+		assertThat(actionFamilies).hasSize(9);
 
 		assertThat(getActionNames(actionFamilies, "INGRESS")).hasSize(1).contains(INGRESS_ACTION);
 		assertThat(getActionNames(actionFamilies, "TRANSFORM")).hasSize(2).contains("Utf8TransformAction", "SampleTransformAction");
@@ -1828,6 +1871,7 @@ class DeltaFiCoreApplicationTests {
 		assertThat(getActionNames(actionFamilies, "FORMAT")).hasSize(1).contains("SampleFormatAction");
 		assertThat(getActionNames(actionFamilies, "VALIDATE")).isEmpty();
 		assertThat(getActionNames(actionFamilies, "EGRESS")).hasSize(1).contains("SampleEgressAction");
+		assertThat(getActionNames(actionFamilies, "TIMED_INGRESS")).hasSize(1).contains("SampleTimedIngressAction");
 	}
 
 	@Test
@@ -1884,6 +1928,13 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void testSaveTimedIngressFlowPlan() {
+		clearForFlowTests();
+		TimedIngressFlow timedIngressFlow = FlowPlanDatafetcherTestHelper.saveTimedIngressFlowPlan(dgsQueryExecutor);
+		assertThat(timedIngressFlow).isNotNull();
+	}
+
+	@Test
 	void testRemoveTransformFlowPlan() {
 		clearForFlowTests();
 		TransformFlowPlan transformFlowPlan = new TransformFlowPlan("flowPlan", null, null);
@@ -1923,6 +1974,20 @@ class DeltaFiCoreApplicationTests {
 		egressFlowPlan.setSourcePlugin(systemPluginService.getSystemPluginCoordinates());
 		egressFlowPlanRepo.save(egressFlowPlan);
 		assertTrue(FlowPlanDatafetcherTestHelper.removeEgressFlowPlan(dgsQueryExecutor));
+	}
+
+	@Test
+	void testRemoveTimedIngressFlowPlan() {
+		clearForFlowTests();
+		TimedIngressFlowPlan timedIngressFlowPlan = new TimedIngressFlowPlan("flowPlan", null, null);
+		timedIngressFlowPlanRepo.save(timedIngressFlowPlan);
+		assertThatThrownBy(() -> FlowPlanDatafetcherTestHelper.removeTimedIngressFlowPlan(dgsQueryExecutor))
+				.isInstanceOf(QueryException.class)
+				.hasMessageContaining("Flow plan flowPlan is not a system-plugin flow plan and cannot be removed");
+
+		timedIngressFlowPlan.setSourcePlugin(systemPluginService.getSystemPluginCoordinates());
+		timedIngressFlowPlanRepo.save(timedIngressFlowPlan);
+		assertTrue(FlowPlanDatafetcherTestHelper.removeTimedIngressFlowPlan(dgsQueryExecutor));
 	}
 
 	@Test
@@ -1975,6 +2040,20 @@ class DeltaFiCoreApplicationTests {
 		clearForFlowTests();
 		egressFlowRepo.save(buildEgressFlow(FlowState.RUNNING));
 		assertTrue(FlowPlanDatafetcherTestHelper.stopEgressFlow(dgsQueryExecutor));
+	}
+
+	@Test
+	void testStartTimedIngressFlow() {
+		clearForFlowTests();
+		timedIngressFlowRepo.save(buildTimedIngressFlow(FlowState.STOPPED));
+		assertTrue(FlowPlanDatafetcherTestHelper.startTimedIngressFlow(dgsQueryExecutor));
+	}
+
+	@Test
+	void testStopTimedIngressFlow() {
+		clearForFlowTests();
+		timedIngressFlowRepo.save(buildTimedIngressFlow(FlowState.RUNNING));
+		assertTrue(FlowPlanDatafetcherTestHelper.stopTimedIngressFlow(dgsQueryExecutor));
 	}
 
 	@Test
@@ -4054,6 +4133,9 @@ class DeltaFiCoreApplicationTests {
 		egressFlowRepo.deleteAll();
 		egressFlowPlanRepo.deleteAll();
 		egressFlowService.refreshCache();
+		timedIngressFlowRepo.deleteAll();
+		timedIngressFlowPlanRepo.deleteAll();
+		timedIngressFlowService.refreshCache();
 		pluginVariableRepo.deleteAll();
 	}
 
@@ -4163,6 +4245,92 @@ class DeltaFiCoreApplicationTests {
 		HttpEntity<byte[]> request = new HttpEntity<>(body, headers);
 
 		return restTemplate.postForEntity("/deltafile/ingress", request, String.class);
+	}
+
+	DeltaFile ingressedFromAction(String did, String ingressFlow) {
+		Content content = new Content("filename", "application/text", new Segment("uuid", 0, 36, did));
+		Map<String, String> metadata = Map.of("smoke", "test");
+		Action ingressAction = Action.builder()
+				.flow(ingressFlow)
+				.name("SampleTimedIngressAction")
+				.type(ActionType.INGRESS)
+				.state(ActionState.COMPLETE)
+				.created(OffsetDateTime.now())
+				.modified(OffsetDateTime.now())
+				.content(List.of(content))
+				.metadata(metadata)
+				.build();
+
+		Action utf8Action = Action.builder()
+				.flow(TRANSFORM_FLOW_NAME)
+				.name("Utf8TransformAction")
+				.type(ActionType.INGRESS)
+				.state(ActionState.QUEUED)
+				.created(OffsetDateTime.now())
+				.modified(OffsetDateTime.now())
+				.build();
+
+		return DeltaFile.builder()
+				.schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
+				.did(did)
+				.parentDids(new ArrayList<>())
+				.childDids(new ArrayList<>())
+				.ingressBytes(36L)
+				.sourceInfo(new SourceInfo("filename", NORMALIZE_FLOW_NAME, metadata))
+				.stage(DeltaFileStage.INGRESS)
+				.created(OffsetDateTime.now())
+				.modified(OffsetDateTime.now())
+				.actions(new ArrayList<>(List.of(ingressAction, utf8Action)))
+				.egress(new ArrayList<>())
+				.egressed(false)
+				.filtered(false)
+				.build();
+	}
+
+	@Test
+	@SneakyThrows
+	void testIngressFromAction() {
+		String did = UUID.randomUUID().toString();
+
+		deltaFilesService.handleActionEvent(actionEvent("ingress", did));
+
+		verifyActionEventResults(ingressedFromAction(did, TIMED_INGRESS_FLOW_NAME),
+				ActionContext.builder().flow("sampleNormalize").name("sampleNormalize.Utf8TransformAction").build());
+
+		Map<String, String> tags = tagsFor(ActionEventType.INGRESS, "SampleTimedIngressAction", NORMALIZE_FLOW_NAME, null);
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.BYTES_IN, 36).addTags(tags));
+		Mockito.verifyNoMoreInteractions(metricService);
+	}
+
+	DeltaFile ingressedFromActionWithError(String did) {
+		DeltaFile deltaFile = ingressedFromAction(did, TIMED_INGRESS_ERROR_FLOW_NAME);
+		deltaFile.getActions().remove(1);
+		Action action = deltaFile.getActions().get(0);
+		action.setState(ActionState.ERROR);
+		action.setName("SampleTimedIngressErrorAction");
+		action.setErrorCause("Flow is not installed: missingFlow");
+		deltaFile.setStage(DeltaFileStage.ERROR);
+		deltaFile.getSourceInfo().setProcessingType(null);
+		deltaFile.getSourceInfo().setFlow("missingFlow");
+		return deltaFile;
+	}
+
+	@Test
+	@SneakyThrows
+	void testIngressErrorFromAction() {
+		String did = UUID.randomUUID().toString();
+
+		deltaFilesService.handleActionEvent(actionEvent("ingressError", did));
+
+		DeltaFile actual = deltaFilesService.getDeltaFile(did);
+		DeltaFile expected = ingressedFromActionWithError(did);
+		assertEqualsIgnoringDates(expected, actual);
+
+		Map<String, String> tags = tagsFor(ActionEventType.INGRESS, "SampleTimedIngressErrorAction", "missingFlow", null);
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.BYTES_IN, 36).addTags(tags));
+		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test

@@ -34,7 +34,7 @@ public class FullFlowExemplars {
         Content content = new Content("name", "application/octet-stream", List.of(new Segment("objectName", 0, 500, did)));
         DeltaFile deltaFile = Util.emptyDeltaFile(did, "flow", List.of(content));
         deltaFile.setIngressBytes(500L);
-        deltaFile.queueAction("sampleIngress", "Utf8TransformAction", ActionType.TRANSFORM, false);
+        deltaFile.queueAction("sampleNormalize", "Utf8TransformAction", ActionType.TRANSFORM, false);
         deltaFile.setSourceInfo(new SourceInfo("input.txt", NORMALIZE_FLOW_NAME, SOURCE_METADATA));
         deltaFile.getActions().get(0).setMetadata(SOURCE_METADATA);
         return deltaFile;

@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 public class InMemoryObjectStorageService implements ObjectStorageService {
-    Map<String, Map<String, byte[]>> objects = new HashMap<>();
+    final Map<String, Map<String, byte[]>> objects = new HashMap<>();
 
     @Override
     public InputStream getObject(ObjectReference objectReference) {

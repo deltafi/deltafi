@@ -57,6 +57,7 @@ public class ActionUtil {
 
     private ActionUtil() {}
 
+
     public static List<TransformActionConfiguration> transformActionConfigurations(List<ActionGeneratorInput> actions) {
         return notEmpty(actions) ? actions.stream().map(ActionUtil::transformActionConfiguration).toList() : null;
     }

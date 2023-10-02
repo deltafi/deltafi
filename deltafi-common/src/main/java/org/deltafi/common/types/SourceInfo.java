@@ -45,24 +45,12 @@ public class SourceInfo {
         setFilename(filename);
         this.flow = flow;
         this.metadata = metadata != null ? metadata : new HashMap<>();
-        setProcessingType(processingType);
-    }
-
-    public ProcessingType getProcessingType() {
-        if (processingType == null) {
-            processingType = ProcessingType.NORMALIZATION;
-        }
-
-        return processingType;
+        this.processingType = processingType;
     }
 
     public void setFilename(String filename) {
         this.filename = filename;
         this.normalizedFilename = filename != null ? filename.toLowerCase() : null;
-    }
-
-    public void setProcessingType(ProcessingType processingType) {
-        this.processingType = Objects.requireNonNullElse(processingType, ProcessingType.NORMALIZATION);
     }
 
     @JsonIgnore

@@ -20,6 +20,7 @@ package org.deltafi.core.validation;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.*;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.ActionDescriptor;
 import org.deltafi.common.types.ActionConfiguration;
@@ -33,6 +34,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class SchemaComplianceValidator {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();

@@ -36,12 +36,11 @@ import java.util.Map;
 /**
  * A Result that may include changes to content, annotations, or metadata
  */
+@Getter
 public abstract class ContentResult<T extends Result<T>> extends MetadataResult<T> {
-    @Getter
     @Setter
     protected List<ActionContent> content;
 
-    @Getter
     protected final Map<String, String> annotations = new HashMap<>();
 
     public ContentResult(ActionContext context, ActionEventType actionEventType) {
@@ -100,7 +99,7 @@ public abstract class ContentResult<T extends Result<T>> extends MetadataResult<
      * @param name the content name
      * @param mediaType Media type for the content being stored
      */
-    public void saveContent(InputStream stream, String name, @SuppressWarnings("SameParameterValue") String mediaType) {
+    public void saveContent(InputStream stream, String name, String mediaType) {
         addContent(ActionContent.saveContent(context, stream, name, mediaType));
     }
 

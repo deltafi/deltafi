@@ -85,6 +85,12 @@ class PluginRegistryServiceTest {
     TransformFlowService transformFlowService;
 
     @Mock
+    TimedIngressFlowPlanService timedIngressFlowPlanService;
+
+    @Mock
+    TimedIngressFlowService timedIngressFlowService;
+
+    @Mock
     PluginValidator pluginValidator;
 
     @Mock
@@ -100,11 +106,11 @@ class PluginRegistryServiceTest {
 
     @BeforeEach
     public void setup() {
-        List<PluginCleaner> cleaners = List.of(normalizeFlowPlanService, enrichFlowPlanService, egressFlowPlanService, transformFlowPlanService, pluginVariableService, actionDescriptorService, actionEventQueuePluginCleaner);
-        List<PluginUninstallCheck> checkers = List.of(normalizeFlowService, enrichFlowService, egressFlowService, transformFlowService);
+        List<PluginCleaner> cleaners = List.of(normalizeFlowPlanService, enrichFlowPlanService, egressFlowPlanService, transformFlowPlanService, timedIngressFlowPlanService, pluginVariableService, actionDescriptorService, actionEventQueuePluginCleaner);
+        List<PluginUninstallCheck> checkers = List.of(normalizeFlowService, enrichFlowService, egressFlowService, transformFlowService, timedIngressFlowService);
         pluginRegistryService = new PluginRegistryService(normalizeFlowService, enrichFlowService, egressFlowService,
-                transformFlowService, pluginRepository, pluginValidator, actionDescriptorService, pluginVariableService,
-                normalizeFlowPlanService, enrichFlowPlanService, egressFlowPlanService, transformFlowPlanService, systemPluginService, flowValidationService, checkers, cleaners);
+                transformFlowService, timedIngressFlowService, pluginRepository, pluginValidator, actionDescriptorService, pluginVariableService,
+                normalizeFlowPlanService, enrichFlowPlanService, egressFlowPlanService, transformFlowPlanService, timedIngressFlowPlanService, systemPluginService, flowValidationService, checkers, cleaners);
     }
 
     @Test

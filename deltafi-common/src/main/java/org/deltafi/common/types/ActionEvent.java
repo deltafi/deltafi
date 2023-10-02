@@ -52,6 +52,7 @@ public class ActionEvent {
   private FilterEvent filter;
   private List<ReinjectEvent> reinject;
   private List<Metric> metrics;
+  private IngressEvent ingress;
 
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
           .registerModule(new JavaTimeModule())
@@ -85,6 +86,7 @@ public class ActionEvent {
       case FILTER -> filter != null;
       case REINJECT -> reinject != null && !reinject.isEmpty();
       case VALIDATE, EGRESS -> true;
+      case INGRESS -> ingress != null;
       default -> false;
     };
   }
