@@ -34,10 +34,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.cloud.autoconfigure.RefreshAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -50,7 +48,6 @@ import java.util.Collections;
 
 @ExtendWith(SpringExtension.class)
 @Import({DeltaFilesService.class, ClockConfiguration.class})
-@ImportAutoConfiguration(RefreshAutoConfiguration.class)
 @MockBean({StateMachine.class, NormalizeFlowService.class, EnrichFlowService.class, EgressFlowService.class,
         TransformFlowService.class, ActionEventQueue.class, ContentStorageService.class, FlowAssignmentService.class,
         CoreAuditLogger.class, MetricService.class, DeltaFiPropertiesRepo.class, CollectService.class, ResumePolicyService.class,

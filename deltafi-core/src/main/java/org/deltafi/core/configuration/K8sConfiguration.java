@@ -17,7 +17,9 @@
  */
 package org.deltafi.core.configuration;
 
+import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import org.deltafi.core.plugin.PluginRegistryService;
 import org.deltafi.core.plugin.deployer.DeployerService;
 import org.deltafi.core.plugin.deployer.K8sDeployerService;
@@ -44,6 +46,12 @@ import java.net.http.HttpClient;
 @Configuration
 @ConditionalOnCloudPlatform(CloudPlatform.KUBERNETES)
 public class K8sConfiguration {
+
+    @Bean
+    public KubernetesClient kubernetesClient() {
+        Config config = Config.autoConfigure(null);
+        return new KubernetesClientBuilder().withConfig(config).build();
+    }
 
     @Bean
     public CredentialProvider credentialProvider(KubernetesClient kubernetesClient) {

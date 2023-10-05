@@ -121,6 +121,8 @@ initContainers:
 {{- end -}}
 
 {{- define "commonEnvVars" -}}
+- name: SPRING_PROFILES_ACTIVE
+  value: kubernetes
 - name: CORE_URL
   value: http://deltafi-core-service
 - name: MINIO_URL

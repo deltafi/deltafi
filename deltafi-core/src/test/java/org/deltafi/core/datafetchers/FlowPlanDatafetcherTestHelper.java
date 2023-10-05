@@ -230,10 +230,14 @@ public class FlowPlanDatafetcherTestHelper {
     }
 
     static boolean executeQuery(DgsQueryExecutor dgsQueryExecutor, GraphQLQuery query) {
-        return executeQuery(dgsQueryExecutor, query, null, Boolean.class);
+        return executeQuery(dgsQueryExecutor, query, new EmptyProjection(), Boolean.class);
     }
 
     static <T> T executeQuery(DgsQueryExecutor dgsQueryExecutor, GraphQLQuery query, BaseProjectionNode projection, Class<T> clazz) {
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(new GraphQLQueryRequest(query, projection, Map.of(Duration.class, new DurationScalar())).serialize(), "data." + query.getOperationName(), clazz);
+    }
+
+    private static class EmptyProjection extends BaseProjectionNode {
+
     }
 }
