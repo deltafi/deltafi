@@ -315,7 +315,7 @@ EOF
       ${SUDO} snap install --classic helm
     fi
     if ! tool_exists kubectx; then
-      ${SUDO} snap install kubectx
+      ${SUDO} snap install --classic kubectx
     fi
     if ! tool_exists yq; then
       ${SUDO} snap install yq
