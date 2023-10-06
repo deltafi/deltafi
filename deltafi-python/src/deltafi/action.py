@@ -23,7 +23,7 @@ from deltafi.actiontype import ActionType
 from deltafi.domain import Context, DeltaFileMessage
 from deltafi.input import DomainInput, EgressInput, EnrichInput, FormatInput, LoadInput, TransformInput, ValidateInput
 from deltafi.result import *
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 
 class Action(ABC):
