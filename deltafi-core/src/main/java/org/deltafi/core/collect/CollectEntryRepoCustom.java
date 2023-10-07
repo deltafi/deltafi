@@ -20,6 +20,8 @@ package org.deltafi.core.collect;
 import java.time.OffsetDateTime;
 
 public interface CollectEntryRepoCustom {
+    void ensureCollectDefinitionIndex();
+
     /**
      * Update or insert a locked CollectEntry with the provided DeltaFile id and index.
      *

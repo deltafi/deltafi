@@ -19,8 +19,12 @@ package org.deltafi.core.collect;
 
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
+import org.deltafi.core.repo.IndexUtils;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.index.Index;
+import org.springframework.data.mongodb.core.index.IndexOperations;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -42,6 +46,14 @@ public class CollectEntryRepoImpl implements CollectEntryRepoCustom {
 
     private final MongoTemplate mongoTemplate;
     private final Clock clock;
+
+    @Override
+    public void ensureCollectDefinitionIndex() {
+        IndexOperations indexOperations = mongoTemplate.indexOps(CollectEntry.class);
+        IndexUtils.updateIndices(indexOperations, "unique_collect_definition",
+                new Index(COLLECT_DEFINITION_FIELD, Sort.Direction.ASC).named("unique_collect_definition").unique(),
+                indexOperations.getIndexInfo());
+    }
 
     @Override
     public CollectEntry upsertAndLock(CollectDefinition collectDefinition, OffsetDateTime collectDate, Integer minNum,

@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.collect;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.springframework.dao.DuplicateKeyException;
@@ -33,6 +34,11 @@ public class CollectService {
     private final DeltaFiPropertiesService deltaFiPropertiesService;
     private final CollectEntryRepo collectEntryRepo;
     private final CollectEntryDidRepo collectEntryDidRepo;
+
+    @PostConstruct
+    public void init() {
+        collectEntryRepo.ensureCollectDefinitionIndex();
+    }
 
     public CollectEntry upsertAndLock(CollectDefinition collectDefinition, OffsetDateTime collectDate, Integer minNum,
             Integer maxNum, String did) {
