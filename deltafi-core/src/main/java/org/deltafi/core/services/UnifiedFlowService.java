@@ -48,6 +48,10 @@ public class UnifiedFlowService {
     }
 
     public ActionConfiguration runningAction(String actionName, ActionType actionType) {
+        if (actionName == null || actionType == null) {
+            return null;
+        }
+
         return switch (actionType) {
             case TRANSFORM:
                 yield runningTransformActions().stream()
