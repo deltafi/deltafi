@@ -35,7 +35,6 @@ import usePermissions from "@/composables/usePermissions";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "primevue/resources/themes/bootstrap4-light-blue/theme.css";
-import "primevue/resources/primevue.min.css";
 import "primeicons/primeicons.css";
 import "@fortawesome/fontawesome-free/css/all.css";
 import "vue-time-date-range-picker/src/Styles/DatePicker.scss";
