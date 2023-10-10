@@ -20,6 +20,7 @@ package org.deltafi.core.services;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.action.ActionEventQueue;
+import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.ActionDescriptor;
 import org.deltafi.common.types.DeltaFiConfiguration;
 import org.deltafi.core.repo.DeltaFileRepo;
@@ -119,9 +120,13 @@ public class QueueManagementService {
         List<ColdQueuedActionSummary> coldQueuedActionSummaries = deltaFileRepo.coldQueuedActionsSummary();
         Map<String, List<String>> coldQueueActions = new HashMap<>();
         for (ColdQueuedActionSummary coldQueuedActionSummary : coldQueuedActionSummaries) {
-            String queueName = unifiedFlowService.runningAction(coldQueuedActionSummary.getActionName(),
-                    coldQueuedActionSummary.getActionType()).getType();
-            coldQueueActions.computeIfAbsent(queueName, k -> new ArrayList<>()).add(coldQueuedActionSummary.getActionName());
+            ActionConfiguration coldQueuedActionConfig = unifiedFlowService.runningAction(coldQueuedActionSummary.getActionName(),
+                    coldQueuedActionSummary.getActionType());
+
+            if (coldQueuedActionConfig != null) {
+                String queueName = coldQueuedActionConfig.getType();
+                coldQueueActions.computeIfAbsent(queueName, k -> new ArrayList<>()).add(coldQueuedActionSummary.getActionName());
+            }
         }
 
         // for each of these, if there is space in the warm queue, grab the oldest entries and shift to warm

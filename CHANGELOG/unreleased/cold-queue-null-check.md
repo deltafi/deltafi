@@ -7,7 +7,7 @@ Document any changes on this branch here.
 - 
 
 ### Fixed
-- Add null check to cold queue logic to protect against bad data
+- Add null check to cold queue logic to protect against bad data and flows that are no longer running
 
 ### Removed
 - 
