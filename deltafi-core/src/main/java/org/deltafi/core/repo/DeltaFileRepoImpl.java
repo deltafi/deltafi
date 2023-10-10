@@ -518,7 +518,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (completeOnly) {
-            andCriteria.add(Criteria.where(STAGE).in(DeltaFileStage.COMPLETE, DeltaFileStage.CANCELLED));
+            Criteria complete = Criteria.where(STAGE).in(DeltaFileStage.COMPLETE, DeltaFileStage.CANCELLED);
+            Criteria acknowledged = Criteria.where(STAGE).is(DeltaFileStage.ERROR)
+                    .and(ERROR_ACKNOWLEDGED).ne(null);
+            andCriteria.add(new Criteria().orOperator(complete, acknowledged));
         }
 
         andCriteria.add(Criteria.where(PENDING_ANNOTATIONS_FOR_FLOWS).is(null));
