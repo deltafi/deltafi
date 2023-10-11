@@ -16,71 +16,133 @@
    limitations under the License.
 */
 
+
 .flow-plan-builder-page {
-  .new-action-group-item {
-    margin-top: -3px !important;
-    border-top-left-radius: unset !important;
-    border-top-right-radius: unset !important;
-  }
-  .ghost {
-    opacity: 0.5;
-    background: #c8ebfb;
-  }
-
-  .inputWidth {
-    width: 100% !important;
-  }
-
-  .textAreaWidth {
-    width: 98% !important;
-  }
-
   .p-panel .p-panel-header {
     height: 44px !important;
   }
 
-  .value-clickable {
-    cursor: pointer;
-    padding: 1rem !important;
-    width: 100%;
+  .panel-horizontal-wrap {
     display: flex;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
+    flex-wrap: wrap;
+    padding-left: 0;
+    margin-bottom: 0;
+    border-radius: 0.25rem;
+    overflow: hidden;
+    /* This one is important */
   }
 
-  .list-item::before {
-    content: "•";
-    margin-right: 0.25rem;
-    font-weight: bold;
+  .empty-action {
+    padding: 3px 15px;
+    border-radius: 10px;
+    position: relative;
+    margin: 0 0 10px;
   }
 
-  .added-action-color {
-    color: var(--primary-color);
+  .action-layout {
+    padding: 3px 15px;
+    border-radius: 10px;
+    position: relative;
+    margin: 0 0 10px;
+    width: fit-content;
   }
 
-  pre {
-    outline: 1px solid #ccc;
-    padding: 5px;
-    margin: 5px;
+  .action-transition-layout {
+    padding: 3px 15px;
+    border-radius: 10px;
+    position: relative;
+    margin: 0 0 10px;
+    width: 150px;
   }
 
-  .string {
-    color: #e91e63;
+  .tooltip-width {
+    max-width: none !important;
   }
 
-  .number {
-    color: #00bcd4;
+  .list-group-item.h-100.d-flex.justify-content-between.sortable-chosen.action-transition-layout {
+    width: fit-content !important;
+    border-radius: 0.25rem !important;
+    margin: 0.5rem !important;
   }
 
-  .boolean {
-    color: #ff00ff;
+  .action-transition-layout {
+    filter: blur(1px);
+    background: #c8ebfb !important;
+    width: fit-content !important;
+
+    .p-inputtext {
+      background: #c8ebfb !important;
+      border-radius: none !important;
+      transition: unset !important;
+    }
   }
 
-  .null {
-    color: #9e9e9e;
+  .inputtext-border-remove {
+    border: none !important;
   }
 
-  .key {
-    color: #3753a9;
+  .inputtext-border-remove {
+    &.p-inputtext::placeholder {
+      color: red;
+    }
+  }
+
+  .action-panel-content {
+    position: relative;
+    display: block;
+    padding: none;
+    background-color: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.125);
+    border-bottom-right-radius: 0.25rem !important;
+    border-bottom-left-radius: 0.25rem !important;
+  }
+}
+
+.flow-plan-builder-page-overlay {
+
+  .p-overlaypanel-close.p-link {
+    z-index: 2100 !important;
+  }
+
+  .tree-action {
+    opacity: 0.5;
+    background: #c8ebfb;
+  }
+
+  .p-tree {
+    padding: none !important;
+    border: none !important;
+  }
+
+  // Clears the blue box shadow around tree actions
+  .p-tree .p-tree-container .p-treenode:focus>.p-treenode-content {
+    box-shadow: none !important;
+  }
+
+  // Left aligns child actions within tree by adding a display none to the button class that is hidden
+  .p-treenode-leaf>.p-treenode-content .p-tree-toggler {
+    visibility: hidden !important;
+    display: none !important;
+  }
+
+  // Removes extra border around the action tree in the overlay panel
+  .p-overlaypanel-content {
+    padding: 0 !important;
+  }
+
+  .p-treenode-children {
+    .p-treenode.p-treenode-leaf {
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+
+      .p-treenode-content {
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+      }
+    }
+  }
+
+  .action-item-width {
+    width: 17vw !important;
   }
 }

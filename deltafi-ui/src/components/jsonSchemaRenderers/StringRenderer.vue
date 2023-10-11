@@ -18,24 +18,20 @@
 
 <template>
   <control-wrapper v-bind="schemaData.controlWrapper" :styles="schemaData.styles" :is-focused="schemaData.isFocused" :applied-options="schemaData.appliedOptions">
-    <template v-if="suggestions !== undefined">
-      <span>
-        <div>
-          <label :for="schemaData.control.id + '-input'">{{ schemaData.computedLabel }}</label>
-        </div>
-        <div>
-          <Dropdown :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' inputWidth'" :disabled="!schemaData.control.enabled" :autofocus="schemaData.appliedOptions.focus" :placeholder="schemaData.appliedOptions.placeholder" :options="suggestions" @change="schemaData.onChange(schemaData.control.data)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
-          <small :id="schemaData.control.id + '-input-help'">{{ schemaData.control.description }}</small>
-        </div>
-      </span>
-    </template>
-    <template v-else>
+    <div class="py-2 align-items-center">
       <div class="field">
-        <label :for="schemaData.control.id + '-input'">{{ schemaData.computedLabel }}</label>
-        <InputText :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' inputWidth'" :disabled="!schemaData.control.enabled" :autofocus="schemaData.appliedOptions.focus" :placeholder="schemaData.appliedOptions.placeholder" @change="schemaData.onChange(schemaData.control.data)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
+        <h5 v-if="!_.isEmpty(schemaData.computedLabel)" :id="schemaData.control.id + '-input-label'">{{ schemaData.computedLabel }}:</h5>
+      </div>
+      <template v-if="suggestions !== undefined">
+        <Dropdown :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' inputWidth'" :disabled="!schemaData.control.enabled" :autofocus="schemaData.appliedOptions.focus" :placeholder="schemaData.appliedOptions.placeholder" :options="suggestions" @change="schemaData.onChange(schemaData.control.data)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
+      </template>
+      <template v-else>
+        <InputText :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' inputWidth'" :disabled="!schemaData.control.enabled" :autofocus="schemaData.appliedOptions.focus" :placeholder="schemaData.appliedOptions.placeholder" @input="schemaData.onChange(schemaData.control.data)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
+      </template>
+      <div>
         <small :id="schemaData.control.id + '-input-help'">{{ schemaData.control.description }}</small>
       </div>
-    </template>
+    </div>
   </control-wrapper>
 </template>
   

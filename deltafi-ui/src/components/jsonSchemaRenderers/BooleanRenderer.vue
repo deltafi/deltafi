@@ -18,19 +18,15 @@
 
 <template>
   <control-wrapper v-bind="schemaData.controlWrapper" :styles="schemaData.styles" :is-focused="schemaData.isFocused" :applied-options="schemaData.appliedOptions">
-    <span>
-      <div>
-        <label :for="schemaData.control.id + '-input'">{{ schemaData.computedLabel }}</label>
+    <div>
+      <div class="btn-group pb-0">
+        <h5 :for="schemaData.control.id + '-input'" class="pr-1">{{ schemaData.computedLabel }}:</h5>
+        <Checkbox :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input" :binary="true" @change="schemaData.onChange(schemaData.control.data)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
       </div>
-      <div>
-        <div>
-          <Checkbox :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input" :binary="true" @change="schemaData.onChange(schemaData.control.data)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
-        </div>
-        <div>
-          <small :id="schemaData.control.id + '-input-help'">{{ schemaData.control.description }}</small>
-        </div>
+      <div class="pt-0">
+        <small :id="schemaData.control.id + '-input-help'">{{ schemaData.control.description }}</small>
       </div>
-    </span>
+    </div>
   </control-wrapper>
 </template>
   

@@ -17,183 +17,182 @@
 -->
 
 <template>
-  <div class="flow-plan-builder-page">
-    <PageHeader heading="Flow Plan Builder" />
-    <div v-if="!model.type" class="pb-2">
-      <Dropdown v-model="model.type" :options="flowTypesDisplay" option-label="header" option-value="field" placeholder="Select Flow Type" show-clear @change="addFlow($event)" />
-    </div>
-    <div v-if="model.type" class="row mx-0">
-      <div class="col pl-0 pr-1">
-        <Panel header="Actions" class="table-panel">
-          <div v-if="model.active" class="list-group-item px-2 pt-0">
-            <div v-for="value of flowTypesMap.get(model.type).actions" :key="value">
-              <h4 class="pt-2">{{ _.startCase(actionTemplateMap.get(value).activeContainer) }}:</h4>
-              <draggable v-model="loadedActions[value]" item-key="name" :sort="false" :group="{ name: value, pull: 'clone', put: false }" :clone="cloneTransformActionsTemplate" class="list-group mb-0">
-                <template #item="{ element }">
-                  <div class="list-group-item h-100 d-flex w-100 justify-content-between">
-                    <div class="btn-group">
-                      <i :class="actionTemplateClass(element)" @click="addAction(value, element)"></i>
-                      <div>{{ element.type }}</div>
-                    </div>
-                    <i v-if="!(_.findIndex(actionTemplateObject[actionTemplateMap.get(element.actionType).activeContainer], ['type', element.type]) == -1)" class="fa-solid fa-minus pr-2 pt-1" @click="removeAction(element, _.findIndex(actionTemplateObject[actionTemplateMap.get(element.actionType).activeContainer], element))"></i>
-                  </div>
-                </template>
-              </draggable>
-              <draggable v-model="actionTemplateMap.get(value).selectTemplate" item-key="id" :sort="false" :group="{ name: value, pull: 'clone', put: false }" :clone="cloneTransformActionsTemplate" class="list-group new-action-group-item">
-                <template #item="{ element }">
-                  <div class="list-group-item h-100 d-flex btn-group">
-                    <i class="fa-solid fa-plus pr-2 pt-1" @click="addAction(value, element)"></i>
-                    <div>New {{ _.capitalize(element.actionType) }} Action</div>
-                  </div>
-                </template>
-              </draggable>
-            </div>
+  <div ref="flowPlanBuilderPage" class="flow-plan-builder-page">
+    <PageHeader :heading="`test`">
+      <template #header>
+        <div class="align-items-center btn-group">
+          <h2 class="mb-0">{{ flowPlanTypeSelected }}</h2>
+          <div v-if="model.active" class="btn-group">
+            <DialogTemplate component-name="flowBuilder/FlowConfigurationDialog" :header="`Update ${model.name}`" dialog-width="25vw" :data-prop="model" edit-flow-plan @update-flow="setFlowValues">
+              <Button v-tooltip.top="`Edit ${model.name}`" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary ml-2" />
+            </DialogTemplate>
+            <Button v-tooltip.left="'Save'" icon="fa-solid fa-hard-drive" class="p-button-text p-button-secondary" :disabled="!isValidFlow" @click="save(rawOutput)" />
           </div>
-        </Panel>
-      </div>
-      <div class="col pl-1 pr-1">
-        <Panel header="Flow Plan" class="table-panel">
-          <div class="list-group-item px-2" style="overflow: scroll">
-            <div class="d-flex w-100 justify-content-between">
-              <div class="p-overlay-badge">
-                <Badge
-                  v-if="!_.isEmpty(displayFlowMissingValuesBadge())"
-                  v-tooltip.left="{ value: `${displayFlowMissingValuesBadge()}`, class: 'tooltip-width', showDelay: 300 }"
-                  value=" "
-                  class="mr-n2"
-                  severity="danger"
-                  :pt="{
-                    root: { class: ['pi pi-exclamation-triangle', 'pt-1'] },
-                  }"
-                />
-                <h4>{{ _.capitalize(model.type) }} Flow</h4>
-              </div>
-              <i class="fa-solid fa-xmark" @click="removeFlow()"></i>
-            </div>
-            <dl>
-              <dt class="pb-2">Name</dt>
-              <dd>
-                <InputText v-model="model.name" class="inputWidth" />
-              </dd>
-              <dt class="pb-2">Description</dt>
-              <dd>
-                <InputText v-model="model.description" class="inputWidth" />
-              </dd>
-            </dl>
-            <div class="list-group">
-              <div v-for="action of flowTypesMap.get(model.type).actions" :key="action">
-                <dt class="pb-2">{{ _.startCase(actionTemplateMap.get(action).activeContainer) }}:</dt>
-                <div v-if="_.isEmpty(actionTemplateObject[actionTemplateMap.get(action).activeContainer])" class="list-group-item">No {{ _.startCase(actionTemplateMap.get(action).activeContainer) }}</div>
-                <draggable v-model="actionTemplateObject[actionTemplateMap.get(action).activeContainer]" item-key="id" :sort="true" :group="action" ghost-class="ghost" class="dragArea list-group pb-2" @change="oneActionVerification">
+        </div>
+        <div>
+          <ContextMenu ref="menu" :model="menuItems" />
+          <Button icon="fas fa-bars" class="p-button-secondary p-button-outlined" @click="toggleMenu" />
+          <Menu ref="menu" :model="menuItems" :popup="true" />
+        </div>
+      </template>
+    </PageHeader>
+    <div v-if="model.type">
+      <div class="row p-2">
+        <div v-for="action of flowTypesMap.get(model.type).flowActionTypes" :key="action" :class="getColSize(action)">
+          <div>
+            <Panel :header="_.startCase(flowActionTemplateMap.get(action).activeContainer)" class="table-panel">
+              <template #icons>
+                <button class="p-panel-header-icon p-link" @click="viewActionTreeMenu($event, action)">
+                  <span class="pi pi-plus-circle"></span>
+                </button>
+              </template>
+              <div class="action-panel-content p-2">
+                <div v-if="flowActionTemplateObject[flowActionTemplateMap.get(action).activeContainer].length == 0" class="empty-action pt-2 mb-n3">No {{ _.startCase(flowActionTemplateMap.get(action).activeContainer) }}</div>
+                <draggable :id="action" v-model="flowActionTemplateObject[flowActionTemplateMap.get(action).activeContainer]" item-key="id" :sort="true" :group="action" ghost-class="action-transition-layout" drag-class="action-transition-layout" class="dragArea panel-horizontal-wrap pb-2 pt-3" @change="validateNewAction" @move="actionOrderChanged">
                   <template #item="{ element, index }">
-                    <div class="list-group-item p-overlay-badge">
-                      <Badge
-                        v-if="!_.isEmpty(displayActionMissingValuesBadge(element))"
-                        v-tooltip.left="{ value: `${displayActionMissingValuesBadge(element)}`, class: 'tooltip-width', showDelay: 300 }"
-                        value=" "
-                        severity="danger"
-                        class="mr-1"
-                        :pt="{
-                          root: { class: ['pi pi-exclamation-triangle', 'pt-1'] },
-                        }"
-                      ></Badge>
-                      <i class="fa-solid fa-xmark float-right" @click="removeAction(element, index)"></i>
-                      <div v-for="displayActionInfo of getDisplayValues(element)" :key="displayActionInfo">
-                        <template v-if="(_.isEqual(displayActionInfo, 'requiresDomains') && _.isEmpty(element[displayActionInfo])) || (_.isEqual(displayActionInfo, 'requiresEnrichments') && _.isEmpty(element[displayActionInfo])) || (_.isEqual(displayActionInfo, 'schema') && _.isEmpty(_.get(element, 'schema.properties', null)))"> </template>
-                        <template v-else>
-                          <dt class="pb-2">{{ displayMap.get(displayActionInfo).header }}</dt>
-                          <dd>
-                            <InputText v-if="_.isEqual(displayMap.get(displayActionInfo).type, 'string')" v-model="element[displayActionInfo]" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && element.disableEdit" />
-                          </dd>
-                          <dd v-if="_.isEqual(displayMap.get(displayActionInfo).type, 'object')">
-                            <template v-if="Array.isArray(element[displayActionInfo])">
-                              <template v-if="element[displayActionInfo].includes('any')">
-                                <DialogTemplate component-name="plugin/ListEdit" :model-value="element[displayActionInfo]" :header="`Add New ${_.capitalize(action)}`" dialog-width="25vw">
-                                  <div class="p-inputtext p-component">
-                                    <div v-for="item in element[displayActionInfo]" :key="item" class="list-item">{{ item }}</div>
-                                  </div>
-                                </DialogTemplate>
-                              </template>
-                              <template v-else>
-                                <div v-for="item in element[displayActionInfo]" :key="item" class="list-item">{{ item }}</div>
-                              </template>
-                            </template>
-                            <template v-if="_.isEqual(displayActionInfo, 'schema')">
-                              <json-forms :data="data" :renderers="renderers" :uischema="uischema" :schema="element['schema']" @change="onChange($event, element)" />
-                            </template>
-                          </dd>
-                        </template>
+                    <div :id="element.id" class="action-layout border border-dark rounded mx-2 my-4 p-overlay-badge">
+                      <Badge v-if="!isValidAction(element)" v-tooltip.left="{ value: `${validateAction(element)}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-exclamation-triangle pt-1'" severity="danger"></Badge>
+                      <div class="d-flex align-items-center justify-content-between">
+                        <InputText v-model="element.name" autofocus :class="'inputtext-border-remove pl-0'" placeholder="Action Name Required" />
+                        <div class="pl-2 btn-group">
+                          <DialogTemplate component-name="flowBuilder/ActionConfigurationDialog" :header="`Edit ${displayActionName(element)}`" :row-data-prop="element" :action-index-prop="index" dialog-width="75vw" @update-action="updateAction">
+                            <Button v-tooltip.top="{ value: `Edit ${displayActionName(element)}`, class: 'tooltip-width', showDelay: 300 }" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary" />
+                          </DialogTemplate>
+                          <Button v-tooltip.top="{ value: `Remove ${displayActionName(element)}`, class: 'tooltip-width', showDelay: 300 }" icon="pi pi-trash" class="p-button-text p-button-sm p-button-rounded p-button-danger" @click="removeAction(element, index)" />
+                        </div>
                       </div>
+                      <Divider class="my-0" />
+                      <dd>
+                        <span v-tooltip.bottom="{ value: `${element.type}`, class: 'tooltip-width', showDelay: 300 }">{{ element.displayName }}</span>
+                      </dd>
                     </div>
                   </template>
                 </draggable>
               </div>
-            </div>
+            </Panel>
           </div>
-        </Panel>
-      </div>
-      <div class="col pl-1 pr-0">
-        <Panel header="Output" class="table-panel header-hight">
-          <template #icons>
-            <Button v-tooltip.left="'Copy to Clipboard'" class="p-panel-header-icon p-link p-me-2" @click="copy(rawOutput)">
-              <span class="fa-solid fa-copy" />
-            </Button>
-            <Button v-tooltip.left="'Save'" class="p-panel-header-icon p-link p-me-2" :disabled="!isValidFlow" @click="save(rawOutput)">
-              <span class="fa-solid fa-hard-drive" />
-            </Button>
-            <!-- <Button v-tooltip.left="'Show Schema'" class="p-panel-header-icon p-link p-me-2" @click="showSchma()">
-              <span class="fa-solid fa-file-invoice" />
-            </Button> -->
-          </template>
-          <div class="list-group">
-            <div class="list-group-item px-0 py-0">
-              <pre class="textAreaWidth" style="text-align: start; white-space: pre-wrap; overflow: auto; border-bottom: none" v-html="prettyPrint(rawOutput)"></pre>
-            </div>
-          </div>
-        </Panel>
+        </div>
       </div>
     </div>
+    <OverlayPanel ref="actionsOverlayPanel" class="flow-plan-builder-page-overlay" append-to="body" dismissable show-close-icon :style="{ width: '22%' }">
+      <Tree ref="actionsTreeRef" v-model:expandedKeys="expandedKeys" :value="actionsTree" :filter="true" filter-mode="strict" filter-by="filterField">
+        <template #default="slotProps">
+          <b>{{ slotProps.node.label }}</b>
+        </template>
+        <template #actions="slotProps">
+          <draggable v-model="slotProps.node.data" item-key="name" :sort="false" :group="{ name: flowActionTypeGroup, pull: 'clone', put: false }" :clone="cloneAction" ghost-class="tree-action" drag-class="tree-action" class="list-group mb-0">
+            <template #item="{ element }">
+              <div class="list-group-item h-100 d-flex action-item-width justify-content-between">
+                <div class="btn-group">
+                  <i :class="actionTemplateClass(element)" @click="addAction(flowActionTypeGroup, element)"></i>
+                  <div>{{ element.displayName }}</div>
+                </div>
+              </div>
+            </template>
+          </draggable>
+        </template>
+      </Tree>
+    </OverlayPanel>
+    <DialogTemplate component-name="flowBuilder/FlowConfigurationDialog" header="Create New Flow" dialog-width="25vw" @new-flow="createNewFlow">
+      <span id="FlowConfigurationDialog" />
+    </DialogTemplate>
   </div>
 </template>
 
 <script setup>
-import { useRouter } from "vue-router";
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import useFlowActions from "@/composables/useFlowActions";
-import usePrimeVueJsonSchemaUIRenderers from "@/composables/usePrimeVueJsonSchemaUIRenderers";
-import { computed, onBeforeMount, provide, ref } from "vue";
-import { useClipboard } from "@vueuse/core";
 import useFlowPlanQueryBuilder from "@/composables/useFlowPlanQueryBuilder";
+import useNotifications from "@/composables/useNotifications";
+import { computed, nextTick, onBeforeMount, ref, watch } from "vue";
+import { useResizeObserver } from "@vueuse/core";
+import { useRouter } from "vue-router";
+
 import Badge from "primevue/badge";
 import Button from "primevue/button";
-import Dropdown from "primevue/dropdown";
+import ContextMenu from "primevue/contextmenu";
+import Divider from "primevue/divider";
 import InputText from "primevue/inputtext";
+import Menu from "primevue/menu";
 import Panel from "primevue/panel";
+import OverlayPanel from "primevue/overlaypanel";
+import Tree from "primevue/tree";
 import draggable from "vuedraggable";
-import useNotifications from "@/composables/useNotifications";
 
+import { jsPlumb } from "jsplumb";
+import $ from "jquery";
 import _ from "lodash";
 
-import { JsonForms } from "@jsonforms/vue";
+const { getPluginActionSchema } = useFlowActions();
+const actionsOverlayPanel = ref();
+const actionsTreeRef = ref(null);
 
-const { rendererList, myStyles } = usePrimeVueJsonSchemaUIRenderers();
-
-provide("style", myStyles);
-
-const renderers = ref(Object.freeze(rendererList));
-
-const uischema = ref(undefined);
 const notify = useNotifications();
 const router = useRouter();
 
-const data = ref({});
-
-const { getPluginActionSchema } = useFlowActions();
-const { saveTransformFlowPlan, saveNormalizeFlowPlan, saveEgressFlowPlan, saveEnrichFlowPlan, data: saveData } = useFlowPlanQueryBuilder();
-const { copy } = useClipboard();
+const { saveTransformFlowPlan, saveNormalizeFlowPlan, saveEgressFlowPlan, saveEnrichFlowPlan } = useFlowPlanQueryBuilder();
 
 const allActionsData = ref({});
+
+const expandedKeys = ref({});
+
+const flowPlanBuilderPage = ref(null);
+const pageWidthResizeObserver = ref(null);
+
+// The useResizeObserver determins if the sidebar has been collapsed or expanded.
+// If either has occur we redo the connections between all actions.
+useResizeObserver(flowPlanBuilderPage, (entries) => {
+  const [entry] = entries;
+  const { width } = entry.contentRect;
+  if (!pageWidthResizeObserver.value) {
+    pageWidthResizeObserver.value = width;
+  } else {
+    if (!_.isEqual(pageWidthResizeObserver.value, width)) {
+      if (model.value.type) {
+        for (let flowActionType of flowTypesMap.get(model.value.type).flowActionTypes) {
+          connectActions(flowActionType);
+        }
+      }
+    }
+  }
+  pageWidthResizeObserver.value = width;
+});
+
+// This watch on filterValue expands the tree to the full depth for values
+// that match the search filter in the action tree.
+watch(
+  () => actionsTreeRef.value?.filterValue,
+  (data) => {
+    // The tree components filteredValue is a very tempermental computed value.
+    // Making sure its not empty then making sure its not a string with just spaces
+    if (!_.isEmpty(data)) {
+      if (!_.isEmpty(data.trim())) {
+        let expandedTreeObject = {};
+        if (!_.isEmpty(actionsTreeRef.value.filteredValue)) {
+          for (let element of actionsTreeRef.value.filteredValue) {
+            expandedTreeObject[element.label] = true;
+          }
+        }
+        expandedKeys.value = expandedTreeObject;
+      } else {
+        expandedKeys.value = {};
+      }
+    } else {
+      expandedKeys.value = {};
+    }
+  }
+);
+
+// The viewActionTreeMenu function is triggered by clicking on the add button on each flowActionType panel.
+const viewActionTreeMenu = (event, flowActionType) => {
+  // The flowActionTypeGroup is the value used to dynamically set the group variable in the draggable component
+  // for linking the draggable actions to their repsentative flowActionType.
+  flowActionTypeGroup.value = flowActionType;
+  // The actionsTree is the value used to dynamically provide the array of actions for each flowActionType.
+  actionsTree.value = actionTypesTree.value[flowActionType];
+  actionsOverlayPanel.value.toggle(event);
+};
 
 const flowTemplate = {
   type: null,
@@ -205,33 +204,30 @@ const flowTemplate = {
 const defaultActionKeys = {
   name: null,
   type: null,
+  disableEdit: false,
   description: null,
   parameters: {},
   apiVersion: null,
 };
 
 const transformActionsTemplate = {
-  actionType: "TRANSFORM",
-  disableEdit: false,
+  flowActionType: "TRANSFORM",
   ...defaultActionKeys,
 };
 
 const loadActionTemplate = {
-  actionType: "LOAD",
-  disableEdit: false,
+  flowActionType: "LOAD",
   ...defaultActionKeys,
 };
 
 const domainActionsTemplate = {
-  actionType: "DOMAIN",
-  disableEdit: false,
+  flowActionType: "DOMAIN",
   ...defaultActionKeys,
   requiresDomains: [],
 };
 
 const enrichActionsTemplate = {
-  actionType: "ENRICH",
-  disableEdit: false,
+  flowActionType: "ENRICH",
   ...defaultActionKeys,
   requiresDomains: [],
   requiresEnrichments: [],
@@ -239,52 +235,42 @@ const enrichActionsTemplate = {
 };
 
 const formatActionTemplate = {
-  actionType: "FORMAT",
-  disableEdit: false,
+  flowActionType: "FORMAT",
   ...defaultActionKeys,
   requiresDomains: [],
   requiresEnrichments: [],
 };
 
 const validateActionsTemplate = {
-  actionType: "VALIDATE",
-  disableEdit: false,
+  flowActionType: "VALIDATE",
   ...defaultActionKeys,
 };
 
 const egressActionTemplate = {
-  actionType: "EGRESS",
-  disableEdit: false,
+  flowActionType: "EGRESS",
   ...defaultActionKeys,
 };
 
 const flowPlan = ref(JSON.parse(JSON.stringify(flowTemplate)));
 
-const flowTypesDisplay = [
-  { header: "Transform", field: "TRANSFORM" },
-  { header: "Normalize", field: "NORMALIZE" },
-  { header: "Enrich", field: "ENRICH" },
-  { header: "Egress", field: "EGRESS" },
-];
-
 const flowTypesMap = new Map([
-  ["TRANSFORM", { actions: ["TRANSFORM", "EGRESS"] }],
-  ["NORMALIZE", { actions: ["TRANSFORM", "LOAD"] }],
-  ["ENRICH", { actions: ["DOMAIN", "ENRICH"] }],
-  ["EGRESS", { actions: ["FORMAT", "VALIDATE", "EGRESS"] }],
+  ["TRANSFORM", { flowActionTypes: ["TRANSFORM", "EGRESS"] }],
+  ["NORMALIZE", { flowActionTypes: ["TRANSFORM", "LOAD"] }],
+  ["ENRICH", { flowActionTypes: ["DOMAIN", "ENRICH"] }],
+  ["EGRESS", { flowActionTypes: ["FORMAT", "VALIDATE", "EGRESS"] }],
 ]);
 
-const actionTemplateMap = new Map([
-  ["TRANSFORM", { actionTemplate: transformActionsTemplate, selectTemplate: [transformActionsTemplate], activeContainer: "transformActions", limit: false }],
-  ["LOAD", { actionTemplate: loadActionTemplate, selectTemplate: [loadActionTemplate], activeContainer: "loadAction", limit: true }],
-  ["DOMAIN", { actionTemplate: domainActionsTemplate, selectTemplate: [domainActionsTemplate], activeContainer: "domainActions", limit: false }],
-  ["ENRICH", { actionTemplate: enrichActionsTemplate, selectTemplate: [enrichActionsTemplate], activeContainer: "enrichActions", limit: false }],
-  ["FORMAT", { actionTemplate: formatActionTemplate, selectTemplate: [formatActionTemplate], activeContainer: "formatAction", limit: true }],
-  ["VALIDATE", { actionTemplate: validateActionsTemplate, selectTemplate: [validateActionsTemplate], activeContainer: "validateActions", limit: false }],
-  ["EGRESS", { actionTemplate: egressActionTemplate, selectTemplate: [egressActionTemplate], activeContainer: "egressAction", limit: true }],
+const flowActionTemplateMap = new Map([
+  ["TRANSFORM", { selectTemplate: [transformActionsTemplate], activeContainer: "transformActions", limit: false }],
+  ["LOAD", { selectTemplate: [loadActionTemplate], activeContainer: "loadAction", limit: true }],
+  ["DOMAIN", { selectTemplate: [domainActionsTemplate], activeContainer: "domainActions", limit: false }],
+  ["ENRICH", { selectTemplate: [enrichActionsTemplate], activeContainer: "enrichActions", limit: false }],
+  ["FORMAT", { selectTemplate: [formatActionTemplate], activeContainer: "formatAction", limit: true }],
+  ["VALIDATE", { selectTemplate: [validateActionsTemplate], activeContainer: "validateActions", limit: false }],
+  ["EGRESS", { selectTemplate: [egressActionTemplate], activeContainer: "egressAction", limit: true }],
 ]);
 
-const actionTemplateObject = ref({
+const flowActionTemplateObject = ref({
   transformActions: [],
   loadAction: [],
   domainActions: [],
@@ -294,29 +280,7 @@ const actionTemplateObject = ref({
   egressAction: [],
 });
 
-const loadedActions = ref({
-  TRANSFORM: [],
-  LOAD: [],
-  DOMAIN: [],
-  ENRICH: [],
-  FORMAT: [],
-  VALIDATE: [],
-  EGRESS: [],
-});
-
-const originalActionTemplateObject = JSON.parse(JSON.stringify(actionTemplateObject.value));
-
-const displayKeysList = ["name", "type", "description", "schema", "requiresDomains", "requiresEnrichments", "requiresMetadataKeyValues"];
-
-const displayMap = new Map([
-  ["name", { header: "Name", type: "string", disableEdit: false }],
-  ["type", { header: "Type", type: "string", disableEdit: true }],
-  ["description", { header: "Description", type: "string", disableEdit: true }],
-  ["schema", { header: "Parameters", type: "object", disableEdit: false }],
-  ["requiresDomains", { header: "Requires Domains", type: "object", disableEdit: false }],
-  ["requiresEnrichments", { header: "Requires Enrichments", type: "object", disableEdit: false }],
-  ["requiresMetadataKeyValues", { header: "Requires Metadata Key Values", type: "object", disableEdit: false }],
-]);
+const originalFlowActionTemplateObject = JSON.parse(JSON.stringify(flowActionTemplateObject.value));
 
 const schemaVisable = ref(false);
 
@@ -347,24 +311,64 @@ const model = computed({
   },
 });
 
-const addFlow = (flowType) => {
+const menu = ref();
+
+const toggleMenu = (event) => {
+  menu.value.toggle(event);
+};
+
+const menuItems = ref([
+  {
+    label: "Create New Flow",
+    icon: "pi pi-plus-circle",
+    command: () => {
+      document.getElementById("FlowConfigurationDialog").click();
+    },
+  },
+]);
+
+const flowActionTypeGroup = ref("");
+const actionsTree = ref([]);
+const flowActionSpecificJsPlumbInstance = ref({});
+
+const flowPlanTypeSelected = computed(() => {
+  let header = model.value.name ? `Flow Plan Builder - ${model.value.name}` : "Flow Plan Builder";
+  return header;
+});
+
+const getColSize = (flowActionType) => {
+  if (flowTypesMap.get(model.value.type).flowActionTypes.length <= 2) {
+    return !flowActionTemplateMap.get(flowActionType).limit ? "col pl-2 pr-1" : "col-4 pl-2 pr-1";
+  }
+  return "col pl-2 pr-1";
+};
+
+const createNewFlow = (newFlow) => {
   removeFlow();
-  model.value.type = flowType.value;
-  model.value.active = flowType.value ? true : false;
+  setFlowValues(newFlow);
+};
+
+const setFlowValues = async (flowInfo) => {
+  await nextTick();
+  model.value.type = flowInfo["type"];
+  model.value.name = flowInfo["name"];
+  model.value.description = flowInfo["description"];
+  model.value.active = true;
 };
 
 const save = async (rawFlow) => {
+  let response = null;
   if (model.value.type === "TRANSFORM") {
-    await saveTransformFlowPlan(rawFlow);
+    response = await saveTransformFlowPlan(rawFlow);
   } else if (model.value.type === "NORMALIZE") {
-    await saveNormalizeFlowPlan(rawFlow);
+    response = await saveNormalizeFlowPlan(rawFlow);
   } else if (model.value.type === "ENRICH") {
-    await saveEnrichFlowPlan(rawFlow);
+    response = await saveEnrichFlowPlan(rawFlow);
   } else if (model.value.type === "EGRESS") {
-    await saveEgressFlowPlan(rawFlow);
+    response = await saveEgressFlowPlan(rawFlow);
   }
-  if (saveData.value !== undefined) {
-    notify.success(`${saveData.value.name} Flow Plan Saved`);
+  if (response !== undefined) {
+    notify.success(`${response.data[`save${_.capitalize(model.value.type)}FlowPlan`].name} Flow Plan Saved`);
     model.value.type = null;
     router.push({ path: `/config/flows` });
   }
@@ -372,77 +376,288 @@ const save = async (rawFlow) => {
 
 const removeFlow = () => {
   model.value = JSON.parse(JSON.stringify(flowTemplate));
-  actionTemplateObject.value = JSON.parse(JSON.stringify(originalActionTemplateObject));
+  flowActionTemplateObject.value = JSON.parse(JSON.stringify(originalFlowActionTemplateObject));
+  flowActionSpecificJsPlumbInstance.value = {};
 };
 
-const addAction = (actionType, action) => {
-  if (actionTemplateMap.get(actionType).limit) {
-    if (actionTemplateObject.value[actionTemplateMap.get(actionType).activeContainer].length > 0) {
-      return;
+const connectActions = async (flowActionType) => {
+  await nextTick();
+
+  // An instance of jsPlumb is created for each flowActionType and stored in an object if one is not already
+  // present for that flowActionType. This allows for resetting of that specific jsPlumb instance everytime we
+  // need to redraw the connection.
+  if (!_.get(flowActionSpecificJsPlumbInstance.value, flowActionType, null)) {
+    flowActionSpecificJsPlumbInstance.value[flowActionType] = jsPlumb.getInstance();
+  }
+
+  let plumbIns = flowActionSpecificJsPlumbInstance.value[flowActionType];
+
+  plumbIns.ready(function () {
+    // Reset the action connects so we can rewdraw them.
+    plumbIns.deleteEveryConnection();
+    plumbIns.deleteEveryEndpoint();
+    plumbIns.reset();
+  });
+
+  // Get all the actions in the panel.
+  var actionsInPanel = [];
+  $(`#${flowActionType}`)
+    .find("div")
+    .each(function () {
+      actionsInPanel.push(this);
+    });
+  // Remove all the actions that dont have an id.
+  _.remove(actionsInPanel, { id: "" });
+
+  // Connect all the actions in the panel
+  for (let i = 0; i < actionsInPanel.length - 1; i++) {
+    const current = actionsInPanel[i];
+    const next = actionsInPanel[i + 1];
+
+    let anchorType = [];
+    // If the offesetTop of both the current and next are the same that the action hasnt wrapped to a new
+    // line. Make the arrow come from the left of the first action to the right of the next action. If it has
+    // wrapped make the arrow come from the bottom of the first action to the top of the next action.
+    if (_.isEqual(current.offsetTop, next.offsetTop)) {
+      anchorType = ["Left", "Right"];
+      //anchorType = _.merge(anchorType, ["Left", "Right", "Top", "Bottom", [0.3, 0, 0, -1], [0.7, 0, 0, -1], [0.3, 1, 0, 1], [0.7, 1, 0, 1]]);
     } else {
-      actionTemplateObject.value[actionTemplateMap.get(actionType).activeContainer].push(JSON.parse(JSON.stringify(action)));
+      anchorType = ["Bottom", "Top"];
     }
-  } else {
-    actionTemplateObject.value[actionTemplateMap.get(actionType).activeContainer].push(JSON.parse(JSON.stringify(action)));
+    plumbIns.ready(function () {
+      let defaultConnectionValues = {
+        connector: ["Flowchart", { stub: 5 }],
+        endpoint: "Blank",
+        overlays: [["Arrow", { width: 8, length: 8, location: 1 }]], // overlay
+        paintStyle: { stroke: "#909399", strokeWidth: 2 }, // connector
+      };
+      plumbIns.connect({
+        id: `${current.id}-${next.id}`,
+        source: `${current.id}`,
+        target: `${next.id}`,
+        deleteEndpointsOnDetach: true,
+        ...defaultConnectionValues,
+        anchor: anchorType,
+        scope: flowActionType,
+      });
+
+      plumbIns.repaintEverything();
+    });
   }
 };
 
-const removeAction = (removeAction, index) => {
-  actionTemplateObject.value[actionTemplateMap.get(removeAction.actionType).activeContainer].splice(index, 1);
+const addAction = async (flowActionType, action) => {
+  let addNewAction = JSON.parse(JSON.stringify(action));
+  addNewAction["id"] = _.uniqueId(flowActionType);
+  if (flowActionTemplateMap.get(flowActionType).limit) {
+    if (flowActionTemplateObject.value[flowActionTemplateMap.get(flowActionType).activeContainer].length > 0) {
+      return;
+    }
+  }
+
+  flowActionTemplateObject.value[flowActionTemplateMap.get(flowActionType).activeContainer].push(addNewAction);
+  connectActions(flowActionType);
 };
 
-const cloneTransformActionsTemplate = (event) => {
-  return JSON.parse(JSON.stringify(event));
-};
+const isValidFlow = computed(() => {
+  if (_.isEmpty(model.value.type)) {
+    return false;
+  }
+  let allFlowMissingFields = [];
+  if (!_.isEmpty(displayFlowMissingValuesBadge())) {
+    allFlowMissingFields.push(displayFlowMissingValuesBadge());
+  }
 
-const oneActionVerification = (event) => {
-  let addedEvent = _.get(event, "added");
-
-  if (!_.isEmpty(addedEvent)) {
-    let action = addedEvent.element.actionType;
-    if (actionTemplateMap.get(action).limit) {
-      if (actionTemplateObject.value[actionTemplateMap.get(action).activeContainer].length > 1) {
-        actionTemplateObject.value[actionTemplateMap.get(action).activeContainer].pop();
+  for (let flowActionType of flowTypesMap.get(model.value.type).flowActionTypes) {
+    for (let action of flowActionTemplateObject.value[flowActionTemplateMap.get(flowActionType).activeContainer]) {
+      let actionMissingRequiredFields = validateAction(action);
+      if (!_.isEmpty(actionMissingRequiredFields)) {
+        allFlowMissingFields.push(actionMissingRequiredFields);
       }
     }
   }
+
+  return allFlowMissingFields.length == 0;
+});
+
+const displayFlowMissingValuesBadge = () => {
+  let allFlowMissingFields = [];
+  if (_.isEmpty(model.value.name)) {
+    allFlowMissingFields.push("Name");
+  }
+
+  if (_.isEmpty(model.value.description)) {
+    allFlowMissingFields.push("Description");
+  }
+
+  if (_.isEmpty(allFlowMissingFields)) {
+    return null;
+  }
+
+  return _.capitalize(`Flow missing required fields: ${allFlowMissingFields.join(", ")}`);
 };
+
+const isValidAction = (action) => {
+  if (_.isEmpty(validateAction(action))) {
+    return true;
+  }
+  return false;
+};
+
+const validateAction = (action) => {
+  // List of all missing Fields in the action
+  let missingFieldsInAction = [];
+  // requiredSchemaFields is a list of all list of all the required fields for the action.
+  let requiredSchemaFields = _.get(action.schema, "required", []);
+  // completedFields is a list of all the keys of the fields that the user has filled in for the action.
+  let completedFields = Object.keys(_.get(action, "parameters", {}));
+
+  // Check if the action name is missing if so add it to the list of missing required fields. The action name is required and should not allow the flow to be saved.
+  if (_.isEmpty(action.name)) {
+    missingFieldsInAction.push("name");
+  }
+
+  // Check if there are required schema fields, if so get the list of incompleted fields by comparing the required schema fields
+  // with the keys of the user completed fields and add those to the list of missing required fields.
+  missingFieldsInAction = _.concat(missingFieldsInAction, _.difference(requiredSchemaFields, completedFields));
+
+  // Actions within the same ActionType group cannot have the same name.
+  let duplicateActionNames = "";
+  if (!_.isEmpty(action.name)) {
+    let duplicateActionNamesInFlow = _.filter(flowActionTemplateObject.value[flowActionTemplateMap.get(action.flowActionType).activeContainer], { name: action.name, type: action.type });
+    if (duplicateActionNamesInFlow.length > 1) {
+      duplicateActionNames = `Duplicate action name: ${action.name} for action type: ${action.type}`;
+    }
+  }
+
+  if (_.isEmpty(missingFieldsInAction) && _.isEmpty(duplicateActionNames)) {
+    return null;
+  }
+
+  let invalidActionFields = `${_.isEmpty(duplicateActionNames) ? "" : duplicateActionNames} ${!_.isEmpty(duplicateActionNames) && !_.isEmpty(missingFieldsInAction) ? " and " : ""} ${_.isEmpty(missingFieldsInAction) ? "" : `missing required fields: ${missingFieldsInAction.join(", ")}`}`;
+
+  return _.capitalize(invalidActionFields.trim());
+};
+
+const displayActionName = (action) => {
+  if (_.isEmpty(action.name)) {
+    return action.displayName;
+  }
+
+  return action.name;
+};
+
+const updateAction = (newActionValue) => {
+  flowActionTemplateObject.value[flowActionTemplateMap.get(newActionValue["updatedAction"].flowActionType).activeContainer].splice(newActionValue["actionIndex"], 1, newActionValue["updatedAction"]);
+  connectActions(newActionValue["updatedAction"].flowActionType);
+};
+
+const removeAction = (removeAction, index) => {
+  flowActionTemplateObject.value[flowActionTemplateMap.get(removeAction.flowActionType).activeContainer].splice(index, 1);
+  connectActions(removeAction.flowActionType);
+};
+
+const cloneAction = (clonedAction) => {
+  let addNewClonedAction = JSON.parse(JSON.stringify(clonedAction));
+  addNewClonedAction["id"] = _.uniqueId(addNewClonedAction["flowActionType"]);
+  return JSON.parse(JSON.stringify(addNewClonedAction));
+};
+
+const validateNewAction = async (event) => {
+  let addedEvent = _.get(event, "added", false);
+  let movedEvent = _.get(event, "moved", false);
+  let flowActionType = "";
+  if (addedEvent) {
+    flowActionType = addedEvent.element.flowActionType;
+    if (flowActionTemplateMap.get(flowActionType).limit) {
+      if (flowActionTemplateObject.value[flowActionTemplateMap.get(flowActionType).activeContainer].length > 1) {
+        flowActionTemplateObject.value[flowActionTemplateMap.get(flowActionType).activeContainer].pop();
+      }
+    }
+  } else if (movedEvent) {
+    flowActionType = movedEvent.element.flowActionType;
+  }
+  connectActions(flowActionType);
+};
+
+// When there are multiple actions of a certain Action Type the order of the actions can be changed.
+// If this happens we need to update the connections between each action. This
+const actionOrderChanged = (event) => {
+  let flowActionType = event.target.id;
+  connectActions(flowActionType);
+};
+
+const actionTypesTree = ref({});
 
 const getLoadedActions = () => {
   for (const plugins of allActionsData.value) {
     for (const action of plugins["actions"]) {
       if (action.type === "TIMED_INGRESS") continue;
 
+      // Reformatting each action.
       action["disableEdit"] = true;
-      action["actionType"] = action["type"];
+      action["flowActionType"] = action["type"];
       action["type"] = action["name"];
+      let displayName = action.name.split(".").pop();
+      action["displayName"] = displayName;
+      let corrdinateGrouping = action.name.split(".").slice(0, -1).join(".");
+      action["corrdinateGrouping"] = corrdinateGrouping;
       action["name"] = "";
-      action["parameters"] = null;
+      action["parameters"] = {};
 
-      loadedActions.value[action.actionType].push(action);
+      // Adding an flowActionType key to the actionTypesTree. Each root flowActionType key will hold the tree structure for that actionType.
+      if (!Object.prototype.hasOwnProperty.call(actionTypesTree.value, action["flowActionType"])) {
+        actionTypesTree.value[action["flowActionType"]] = [];
+      }
+
+      // We next group all the actions into their respective plugins. We search in the actionTypesTree to see if the plugin
+      // corridinateGrouping is already in the tree. If not we add it.
+      let mavenCorrdinateKey = actionTypesTree.value[action["flowActionType"]].find((x) => x.key === action["corrdinateGrouping"]);
+      // If no plugin corrdinateGrouping is found we create it and go ahead and add the action to it.
+      if (!mavenCorrdinateKey) {
+        let rootCorrdinateGrouping = {};
+        rootCorrdinateGrouping["key"] = action["corrdinateGrouping"];
+        rootCorrdinateGrouping["label"] = action["corrdinateGrouping"];
+        rootCorrdinateGrouping["children"] = [];
+        let pluginName = {};
+        pluginName["key"] = action["displayName"];
+        pluginName["label"] = action["displayName"];
+        pluginName["filterField"] = action["displayName"];
+        pluginName["data"] = [action];
+        pluginName["type"] = "actions";
+        rootCorrdinateGrouping["children"].push(pluginName);
+        actionTypesTree.value[action["flowActionType"]].push(rootCorrdinateGrouping);
+        actionTypesTree.value[action["flowActionType"]] = _.sortBy(actionTypesTree.value[action["flowActionType"]], "label");
+      } else {
+        // If plugin corrdinateGrouping is found we add the action to it.
+        let pluginName = {};
+        pluginName["key"] = action["displayName"];
+        pluginName["label"] = action["displayName"];
+        pluginName["filterField"] = action["displayName"];
+        pluginName["data"] = [action];
+        pluginName["type"] = "actions";
+        mavenCorrdinateKey.children.push(pluginName);
+        mavenCorrdinateKey.children = _.sortBy(mavenCorrdinateKey.children, "label");
+      }
     }
   }
-};
-
-const getDisplayValues = (obj) => {
-  return _.intersection(Object.keys(obj), displayKeysList);
 };
 
 const rawOutput = computed(() => {
   let displayOutput = JSON.parse(JSON.stringify(model.value));
 
-  for (const action of flowTypesMap.get(model.value.type).actions) {
-    if (!_.isEmpty(actionTemplateObject.value[actionTemplateMap.get(action).activeContainer])) {
-      displayOutput[actionTemplateMap.get(action).activeContainer] = JSON.parse(JSON.stringify(actionTemplateObject.value[actionTemplateMap.get(action).activeContainer]));
+  for (const flowActionType of flowTypesMap.get(model.value.type).flowActionTypes) {
+    if (!_.isEmpty(flowActionTemplateObject.value[flowActionTemplateMap.get(flowActionType).activeContainer])) {
+      displayOutput[flowActionTemplateMap.get(flowActionType).activeContainer] = JSON.parse(JSON.stringify(flowActionTemplateObject.value[flowActionTemplateMap.get(flowActionType).activeContainer]));
       if (schemaVisable.value) {
-        displayOutput[actionTemplateMap.get(action).activeContainer] = displayOutput[actionTemplateMap.get(action).activeContainer].map(({ description, actionType, disableEdit, ...keepAttrs }) => keepAttrs); // eslint-disable-line @typescript-eslint/no-unused-vars
+        displayOutput[flowActionTemplateMap.get(flowActionType).activeContainer] = displayOutput[flowActionTemplateMap.get(flowActionType).activeContainer].map(({ description, flowActionType, disableEdit, ...keepAttrs }) => keepAttrs); // eslint-disable-line @typescript-eslint/no-unused-vars
       } else {
-        if (actionTemplateMap.get(action).limit) {
-          displayOutput[actionTemplateMap.get(action).activeContainer] = displayOutput[actionTemplateMap.get(action).activeContainer].map(({ ...attrs }) => _.pick(attrs, Object.keys(actionTemplateMap.get(action).selectTemplate[0])));
-          displayOutput[actionTemplateMap.get(action).activeContainer] = displayOutput[actionTemplateMap.get(action).activeContainer].map(({ schema, description, actionType, disableEdit, ...keepAttrs }) => keepAttrs)[0]; // eslint-disable-line @typescript-eslint/no-unused-vars
+        if (flowActionTemplateMap.get(flowActionType).limit) {
+          displayOutput[flowActionTemplateMap.get(flowActionType).activeContainer] = displayOutput[flowActionTemplateMap.get(flowActionType).activeContainer].map(({ ...attrs }) => _.pick(attrs, Object.keys(flowActionTemplateMap.get(flowActionType).selectTemplate[0])));
+          displayOutput[flowActionTemplateMap.get(flowActionType).activeContainer] = displayOutput[flowActionTemplateMap.get(flowActionType).activeContainer].map(({ schema, description, flowActionType, disableEdit, ...keepAttrs }) => keepAttrs)[0]; // eslint-disable-line @typescript-eslint/no-unused-vars
         } else {
-          displayOutput[actionTemplateMap.get(action).activeContainer] = displayOutput[actionTemplateMap.get(action).activeContainer].map(({ ...attrs }) => _.pick(attrs, Object.keys(actionTemplateMap.get(action).selectTemplate[0])));
-          displayOutput[actionTemplateMap.get(action).activeContainer] = displayOutput[actionTemplateMap.get(action).activeContainer].map(({ schema, description, actionType, disableEdit, ...keepAttrs }) => keepAttrs); // eslint-disable-line @typescript-eslint/no-unused-vars
+          displayOutput[flowActionTemplateMap.get(flowActionType).activeContainer] = displayOutput[flowActionTemplateMap.get(flowActionType).activeContainer].map(({ ...attrs }) => _.pick(attrs, Object.keys(flowActionTemplateMap.get(flowActionType).selectTemplate[0])));
+          displayOutput[flowActionTemplateMap.get(flowActionType).activeContainer] = displayOutput[flowActionTemplateMap.get(flowActionType).activeContainer].map(({ schema, description, flowActionType, disableEdit, ...keepAttrs }) => keepAttrs); // eslint-disable-line @typescript-eslint/no-unused-vars
         }
       }
     }
@@ -454,126 +669,8 @@ const rawOutput = computed(() => {
   return displayOutput;
 });
 
-const isValidFlow = computed(() => {
-  let allFlowMissingFields = [];
-  if (!_.isEmpty(displayFlowMissingValuesBadge())) {
-    allFlowMissingFields.push(displayFlowMissingValuesBadge());
-  }
-
-  for (let flowActionType of flowTypesMap.get(model.value.type).actions) {
-    for (let action of actionTemplateObject.value[actionTemplateMap.get(flowActionType).activeContainer]) {
-      let actionMissingRequiredFields = displayActionMissingValuesBadge(action);
-      if (!_.isEmpty(actionMissingRequiredFields)) {
-        allFlowMissingFields.push(actionMissingRequiredFields);
-      }
-    }
-  }
-
-  return allFlowMissingFields.length == 0;
-});
-
-const displayFlowMissingValuesBadge = () => {
-  let allMissingFields = [];
-  if (_.isEmpty(model.value.name)) {
-    allMissingFields.push("Name");
-  }
-  if (_.isEmpty(model.value.type)) {
-    allMissingFields.push("Type");
-  }
-  if (_.isEmpty(model.value.description)) {
-    allMissingFields.push("Description");
-  }
-
-  if (_.isEmpty(allMissingFields)) {
-    return null;
-  }
-
-  return _.capitalize(`Flow missing required fields: ${allMissingFields.join(", ")}`);
-};
-
-const displayActionMissingValuesBadge = (action) => {
-  // requiredFields are the required fields for the action.
-  let requiredFields = _.get(action.schema, "required", null);
-  // userCompletedFields are the fields that the user has filled in for the action.
-  let userCompletedFields = _.get(action, "parameters", null);
-  // keysOfUserCompletedFields are the keys of the userCompletedFields.
-  let keysOfUserCompletedFields = null;
-  let missingRequiredSchemaFields = null;
-  let allMissingFields = [];
-
-  if (!_.isEmpty(userCompletedFields)) {
-    keysOfUserCompletedFields = Object.keys(userCompletedFields);
-  }
-
-  if (!_.isEmpty(requiredFields)) {
-    missingRequiredSchemaFields = _.difference(requiredFields, keysOfUserCompletedFields);
-  }
-
-  if (_.isEmpty(action.name)) {
-    allMissingFields.push("name");
-  }
-
-  let duplicateActionNames = "";
-  if (!_.isEmpty(action.name)) {
-    let duplicateActionNamesInFlow = _.filter(actionTemplateObject.value[actionTemplateMap.get(action.actionType).activeContainer], { name: action.name, type: action.type });
-    if (duplicateActionNamesInFlow.length > 1) {
-      duplicateActionNames = `Duplicate action name: ${action.name} for action type: ${action.type}`;
-    }
-  }
-
-  if (!_.isEmpty(missingRequiredSchemaFields)) {
-    allMissingFields = _.concat(allMissingFields, missingRequiredSchemaFields);
-  }
-
-  if (_.isEmpty(allMissingFields) && _.isEmpty(duplicateActionNames)) {
-    return null;
-  }
-
-  let isValidAction = `${_.isEmpty(duplicateActionNames) ? "" : duplicateActionNames} ${!_.isEmpty(duplicateActionNames) && !_.isEmpty(allMissingFields) ? " and " : ""} ${_.isEmpty(allMissingFields) ? "" : `missing required fields: ${allMissingFields.join(", ")}`}`;
-
-  return _.capitalize(isValidAction.trim());
-};
-
-const prettyPrint = (json) => {
-  if (json) {
-    const stringified = JSON.stringify(json, null, 2);
-
-    const stringifiedReplaced = stringified.replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
-    const regex = /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g;
-
-    let test = stringifiedReplaced.replace(regex, (match) => {
-      let className = "number";
-      if (/^"/.test(match)) {
-        if (/:$/.test(match)) {
-          className = "key";
-        } else {
-          className = "string";
-        }
-      } else if (/true|false/.test(match)) {
-        className = "boolean";
-      } else if (/null/.test(match)) {
-        className = "null";
-      }
-
-      return `<span class="${className}">${match}</span>`;
-    });
-
-    return test;
-  }
-
-  return "";
-};
-
-// const showSchma = () => {
-//   schemaVisable.value = !schemaVisable.value;
-// };
-
-const onChange = (event, element) => {
-  element["parameters"] = event.data;
-};
-
 const actionTemplateClass = (element) => {
-  return ["fa-solid", "pr-2", "pt-1", "fa-plus", { "added-action-color": !(_.findIndex(actionTemplateObject.value[actionTemplateMap.get(element.actionType).activeContainer], element) == -1) }];
+  return ["pi pi-plus-circle", "pr-2", "pt-1", { "added-action-color": !(_.findIndex(flowActionTemplateObject.value[flowActionTemplateMap.get(element.flowActionType).activeContainer], element) == -1) }];
 };
 </script>
 

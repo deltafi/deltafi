@@ -16,128 +16,269 @@
    limitations under the License.
 */
 
-import { ref } from "vue";
-import useGraphQL from './useGraphQL'
+import useGraphQL from "./useGraphQL";
 
 export default function useFlowQueryBuilder() {
   const { response, queryGraphQL } = useGraphQL();
-  const data = ref(null);
+
+  const sourcePluginFields = {
+    sourcePlugin: {
+      artifactId: true,
+      groupId: true,
+      version: true,
+    },
+  };
+
+  const variableFields = {
+    variables: {
+      name: true,
+      value: true,
+      description: true,
+      defaultValue: true,
+      dataType: true,
+    },
+  };
+
+  const transformFlowFields = {
+    name: true,
+    description: true,
+    flowStatus: {
+      state: true,
+      errors: {
+        configName: true,
+        errorType: true,
+        message: true,
+      },
+      testMode: true,
+    },
+    maxErrors: true,
+    transformActions: {
+      name: true,
+      type: true,
+      parameters: true,
+      apiVersion: true,
+    },
+    egressAction: {
+      name: true,
+      type: true,
+      parameters: true,
+      apiVersion: true,
+    },
+    ...variableFields,
+    expectedAnnotations: true,
+  };
+
+  const normalizeFlowFields = {
+    name: true,
+    description: true,
+    flowStatus: {
+      state: true,
+      errors: {
+        configName: true,
+        errorType: true,
+        message: true,
+      },
+      testMode: true,
+    },
+    maxErrors: true,
+    transformActions: {
+      name: true,
+      type: true,
+      parameters: true,
+      apiVersion: true,
+    },
+    loadAction: {
+      name: true,
+      type: true,
+      parameters: true,
+      apiVersion: true,
+    },
+    ...variableFields,
+  };
+
+  const enrichFlowFields = {
+    name: true,
+    description: true,
+    flowStatus: {
+      state: true,
+      errors: {
+        configName: true,
+        message: true,
+        errorType: true,
+      },
+    },
+    domainActions: {
+      name: true,
+      type: true,
+      requiresDomains: true,
+      parameters: true,
+      apiVersion: true,
+    },
+    enrichActions: {
+      name: true,
+      type: true,
+      requiresDomains: true,
+      requiresEnrichments: true,
+      requiresMetadataKeyValues: {
+        key: true,
+        value: true,
+      },
+      parameters: true,
+      apiVersion: true,
+    },
+    ...variableFields,
+  };
+
+  const egressFlowFields = {
+    name: true,
+    description: true,
+    flowStatus: {
+      state: true,
+      errors: {
+        configName: true,
+        errorType: true,
+        message: true,
+      },
+      testMode: true,
+    },
+    includeNormalizeFlows: true,
+    excludeNormalizeFlows: true,
+    formatAction: {
+      name: true,
+      type: true,
+      requiresDomains: true,
+      requiresEnrichments: true,
+      parameters: true,
+      apiVersion: true,
+    },
+    validateActions: {
+      name: true,
+      type: true,
+      parameters: true,
+      apiVersion: true,
+    },
+    egressAction: {
+      name: true,
+      type: true,
+      parameters: true,
+      apiVersion: true,
+    },
+    ...variableFields,
+    expectedAnnotations: true,
+  };
 
   // Save a TransformFlowPlan
-  const saveTransformFlowPlan = async (flowPlan: Object) => {
+  const saveTransformFlowPlan = (flowPlan: Object) => {
     const query = {
       saveTransformFlowPlan: {
         __args: {
-          transformFlowPlan: flowPlan
+          transformFlowPlan: flowPlan,
         },
-        name: true
-      }
+        ...sourcePluginFields,
+        ...transformFlowFields,
+      },
     };
-   await sendGraphQLQuery(query, "saveTransformFlowPlan", "mutation");
-   data.value = response.value.data.saveTransformFlowPlan;
+    return sendGraphQLQuery(query, "saveTransformFlowPlan", "mutation", true);
   };
 
   // Remove an TransformFlowPlan
-  const removeTransformFlowPlanByName = async (flowPlanName: string) => {
+  const removeTransformFlowPlanByName = (flowPlanName: string) => {
     const query = {
       removeTransformFlowPlan: {
         __args: {
-          name: flowPlanName
-        }
-      }
+          name: flowPlanName,
+        },
+      },
     };
-     await sendGraphQLQuery(query, "removeTransformFlowPlanByName", "mutation");
-     data.value = response.value.data.removeTransformFlowPlan;
+    return sendGraphQLQuery(query, "removeTransformFlowPlanByName", "mutation");
   };
 
   // Save an NormalizeFlowPlan
-  const saveNormalizeFlowPlan = async (flowPlan: Object) => {
+  const saveNormalizeFlowPlan = (flowPlan: Object) => {
     const query = {
       saveNormalizeFlowPlan: {
         __args: {
-          normalizeFlowPlan: flowPlan
+          normalizeFlowPlan: flowPlan,
         },
-        name: true
-      }
+        ...sourcePluginFields,
+        ...normalizeFlowFields,
+      },
     };
-    await sendGraphQLQuery(query, "saveNormalizeFlowPlan", "mutation");
-    data.value = response.value.data.saveNormalizeFlowPlan;
+    return sendGraphQLQuery(query, "saveNormalizeFlowPlan", "mutation", true);
   };
 
   // Remove an NormalizeFlowPlan
-  const removeNormalizeFlowPlanByName = async (flowPlanName: string) => {
+  const removeNormalizeFlowPlanByName = (flowPlanName: string) => {
     const query = {
       removeNormalizeFlowPlan: {
         __args: {
-          name: flowPlanName
-        }
-      }
+          name: flowPlanName,
+        },
+      },
     };
-    await sendGraphQLQuery(query, "removeNormalizeFlowPlanByName", "mutation");
-    data.value = response.value.data.removeNormalizeFlowPlan;
+    return sendGraphQLQuery(query, "removeNormalizeFlowPlanByName", "mutation");
   };
 
-   // Save a EnrichFlowPlan
-   const saveEnrichFlowPlan = async (flowPlan: Object) => {
+  // Save a EnrichFlowPlan
+  const saveEnrichFlowPlan = (flowPlan: Object) => {
     const query = {
       saveEnrichFlowPlan: {
         __args: {
-          enrichFlowPlan: flowPlan
+          enrichFlowPlan: flowPlan,
         },
-        name: true
-      }
+        ...sourcePluginFields,
+        ...enrichFlowFields,
+      },
     };
-   await sendGraphQLQuery(query, "saveEnrichFlowPlan", "mutation",true);
-   data.value = response.value.data.saveEnrichFlowPlan;
+    return sendGraphQLQuery(query, "saveEnrichFlowPlan", "mutation", true);
   };
 
-  // Remove an TransformFlowPlan
-  const removeEnrichFlowPlan = async (flowPlanName: string) => {
+  // Remove an EnrichFlowPlan
+  const removeEnrichFlowPlan = (flowPlanName: string) => {
     const query = {
       removeEnrichFlowPlan: {
         __args: {
-          name: flowPlanName
-        }
-      }
+          name: flowPlanName,
+        },
+      },
     };
-    await sendGraphQLQuery(query, "removeEnrichFlowPlanByName", "mutation");
-    data.value = response.value.data.removeEnrichFlowPlan;
+    return sendGraphQLQuery(query, "removeEnrichFlowPlanByName", "mutation");
   };
+
   // Save an EgressFlowPlan
-  const saveEgressFlowPlan = async (flowPlan: Object) => {
+  const saveEgressFlowPlan = (flowPlan: Object) => {
     const query = {
       saveEgressFlowPlan: {
         __args: {
-          egressFlowPlan: flowPlan
+          egressFlowPlan: flowPlan,
         },
-        name: true
-      }
+        ...sourcePluginFields,
+        ...egressFlowFields,
+      },
     };
-    await sendGraphQLQuery(query, "saveEgressFlowPlan", "mutation",true);
-    data.value = response.value.data.saveEgressFlowPlan;
+    return sendGraphQLQuery(query, "saveEgressFlowPlan", "mutation", true);
   };
 
   // Remove an EgressFlowPlan
-  const removeEgressFlowPlanByName = async (flowPlanName: string) => {
+  const removeEgressFlowPlanByName = (flowPlanName: string) => {
     const query = {
       removeEgressFlowPlan: {
         __args: {
-          name: flowPlanName
-        }
-      }
+          name: flowPlanName,
+        },
+      },
     };
-    await sendGraphQLQuery(query, "removeEgressFlowPlanByName", "mutation");
-    data.value = response.value.data.removeEgressFlowPlan;
+    return sendGraphQLQuery(query, "removeEgressFlowPlanByName", "mutation");
   };
 
   const sendGraphQLQuery = async (query: any, operationName: string, queryType?: string, bypass?: boolean) => {
     try {
-      await queryGraphQL(query, operationName, queryType,bypass);
+      await queryGraphQL(query, operationName, queryType, bypass);
       return response.value;
     } catch {
       // Continue regardless of error
     }
-  }
+  };
 
   return {
     saveTransformFlowPlan,
@@ -148,6 +289,5 @@ export default function useFlowQueryBuilder() {
     removeEgressFlowPlanByName,
     saveEnrichFlowPlan,
     removeEnrichFlowPlan,
-    data
   };
 }

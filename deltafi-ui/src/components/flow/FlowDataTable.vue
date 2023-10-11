@@ -108,7 +108,7 @@ import _ from "lodash";
 const { setMaxErrors, errors } = useFlowQueryBuilder();
 const notify = useNotifications();
 const confirm = useConfirm();
-const { removeTransformFlowPlanByName, removeNormalizeFlowPlanByName, removeEgressFlowPlanByName, removeEnrichFlowPlan, data: successData } = useFlowPlanQueryBuilder();
+const { removeTransformFlowPlanByName, removeNormalizeFlowPlanByName, removeEgressFlowPlanByName, removeEnrichFlowPlan } = useFlowPlanQueryBuilder();
 
 const refreshInterval = 5000; // 5 seconds
 let autoRefresh = null;
@@ -175,16 +175,17 @@ watch(
   }
 );
 const deleteFlow = async (data) => {
+  let response = false;
   if (data.flowType === "transform") {
-    await removeTransformFlowPlanByName(data.name);
+    response = await removeTransformFlowPlanByName(data.name);
   } else if (data.flowType === "normalize") {
-    await removeNormalizeFlowPlanByName(data.name);
+    response = await removeNormalizeFlowPlanByName(data.name);
   } else if (data.flowType === "enrich") {
-    await removeEnrichFlowPlan(data.name);
+    response = await removeEnrichFlowPlan(data.name);
   } else if (data.flowType === "egress") {
-    await removeEgressFlowPlanByName(data.name);
+    response = await removeEgressFlowPlanByName(data.name);
   }
-  if (successData.value === true) {
+  if (response) {
     notify.success(`Removed ${data.flowType} flow:`, data.name);
     removeFlowFromProp(data);
   } else {

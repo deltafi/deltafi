@@ -19,13 +19,11 @@
 <template>
   <control-wrapper v-bind="schemaData.controlWrapper" :styles="schemaData.styles" :is-focused="schemaData.isFocused" :applied-options="schemaData.appliedOptions">
     <span>
-      <div>
-        <label :for="schemaData.control.id + '-input'">{{ schemaData.computedLabel }}</label>
-      </div>
+      <label :for="schemaData.control.id + '-input'">{{ schemaData.computedLabel }}</label>
       <div>
         <InputNumber :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' inputWidth'" :step="steps" input-id="stacked-buttons" show-buttons @input="schemaData.onChange(schemaData.control.data)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
-        <small :id="schemaData.control.id + '-input-help'">{{ schemaData.control.description }}</small>
       </div>
+      <small :id="schemaData.control.id + '-input-help'">{{ schemaData.control.description }}</small>
     </span>
   </control-wrapper>
 </template>
