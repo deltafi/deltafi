@@ -7,9 +7,11 @@ Before installing DeltaFi, the prerequisites defined in this section should be s
 DeltaFi can be installed on a single node but is designed to run in a multi-node cluster. Minimum hardware requirements will be highly dependent on the environment, number of nodes, and expected data volume. For a single-node dev/test cluster, we recommend the following:
 
 * 4 CPU cores
-* 16GB RAM
-* 100GB
-  * With at least 20GB allocated to `/var`
+* 16 GB RAM
+* 100 GB
+  * with at least 20 GB allocated to `/var`
+
+Hardware support for the AVX instruction set is required.  Verify AVX support in your OS with ```cat /proc/cpuinfo | grep avx```.
 
 ## Operating system
 
