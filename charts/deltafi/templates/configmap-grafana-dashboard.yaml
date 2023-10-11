@@ -145,10 +145,10 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: clickhouse-flow-subflow
+  name: clickhouse-flow-by-annotation
   labels:
     grafana_dashboard: "1"
 data:
-  clickhouse-flow-subflow.json: |-
-{{ .Files.Get "files/grafana/dashboards/clickhouse-flow-subflow.json" | indent 4 }}
+  clickhouse-flow-by-annotation.json: |-
+{{ .Files.Get "files/grafana/dashboards/clickhouse-flow-by-annotation.json" | indent 4 }}
 {{- end }}

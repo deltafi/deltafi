@@ -26,7 +26,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 626,
+  "id": 914,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -117,6 +117,16 @@
                   }
                 ],
                 "type": "datetime"
+              },
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "key": "flow",
+                "operator": "IN",
+                "type": "String",
+                "value": [
+                  "${flow}"
+                ]
               }
             ],
             "limit": 100,
@@ -136,7 +146,7 @@
             "uid": "${clickhouseDatasource}"
           },
           "queryType": "builder",
-          "rawSql": "SELECT sum(ingressBytes) ingressBytes FROM deltafi.\"deltafiles\" WHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) LIMIT 100",
+          "rawSql": "SELECT sum(ingressBytes) ingressBytes FROM \"deltafi\".\"deltafiles\" WHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) LIMIT 100",
           "refId": "A",
           "target": ""
         }
@@ -1104,7 +1114,7 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT $__timeInterval(timestamp) as time, flow, sum(filtered) \" \" \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime )\nGROUP BY flow, time \nORDER BY time ASC WITH FILL STEP $__interval_s",
+          "rawSql": "SELECT $__timeInterval(timestamp) as time, flow, sum(filtered) \" \" \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND (flow IN (${flow}))\nGROUP BY flow, time \nORDER BY time ASC WITH FILL STEP $__interval_s",
           "refId": "A",
           "selectedFormat": 0
         }
@@ -1315,7 +1325,7 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT $__timeInterval(timestamp) as time, flow, sum(egressed) \" \" \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime )\nGROUP BY flow, time \nORDER BY time ASC WITH FILL STEP $__interval_s",
+          "rawSql": "SELECT $__timeInterval(timestamp) as time, flow, sum(egressed) \" \" \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND (flow IN (${flow}))\nGROUP BY flow, time \nORDER BY time ASC WITH FILL STEP $__interval_s",
           "refId": "A",
           "selectedFormat": 0
         }
@@ -1526,7 +1536,7 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT $__timeInterval(timestamp) as time, flow, sum(errored) \" \" \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime )\nGROUP BY flow, time \nORDER BY time ASC WITH FILL STEP $__interval_s",
+          "rawSql": "SELECT $__timeInterval(timestamp) as time, flow, sum(errored) \" \" \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND (flow IN (${flow}))\nGROUP BY flow, time \nORDER BY time ASC WITH FILL STEP $__interval_s",
           "refId": "A",
           "selectedFormat": 0
         }
@@ -1586,7 +1596,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               }
             ]
           },
@@ -1680,7 +1691,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1743,7 +1755,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               }
             ]
           },
@@ -1805,7 +1818,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               }
             ]
           },
@@ -1869,7 +1883,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -2081,7 +2096,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -2173,7 +2189,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -2269,7 +2286,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -2365,7 +2383,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -2486,7 +2505,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -2600,7 +2620,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               }
             ]
           }
@@ -2659,7 +2680,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               }
             ]
           },
@@ -2722,7 +2744,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -2820,7 +2843,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -2916,7 +2940,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -2978,7 +3003,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -3044,7 +3070,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -3142,7 +3169,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -3273,9 +3301,6 @@
   },
   "timepicker": {
     "refresh_intervals": [
-      "10s",
-      "30s",
-      "1m",
       "5m",
       "15m",
       "30m",
@@ -3287,6 +3312,6 @@
   "timezone": "",
   "title": "Clickhouse Metrics",
   "uid": "clickhouse-metrics",
-  "version": 3,
+  "version": 4,
   "weekStart": ""
 }
