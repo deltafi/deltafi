@@ -22,6 +22,7 @@ import sys
 import threading
 import time
 import traceback
+from datetime import datetime, timezone, timedelta
 from os.path import isdir, isfile, join
 from pathlib import Path
 from typing import List
@@ -32,7 +33,7 @@ import pkgutil
 from importlib import metadata
 import requests
 from deltafi.actioneventqueue import ActionEventQueue
-from deltafi.domain import Event
+from deltafi.domain import Event, ActionExecution
 from deltafi.exception import ExpectedContentException, MissingDomainException, MissingEnrichmentException, \
     MissingMetadataException
 from deltafi.logger import get_logger
@@ -72,6 +73,9 @@ class PluginCoordinates(object):
         }
 
 
+LONG_RUNNING_TASK_DURATION = timedelta(seconds=5)
+
+
 class Plugin(object):
     def __init__(self, description: str, plugin_name: str = None, plugin_coordinates: PluginCoordinates = None,
                  actions: List = None, action_package: str = None):
@@ -79,7 +83,8 @@ class Plugin(object):
         Initialize the plugin object
         :param plugin_name: Name of the plugin project
         :param description: Description of the plugin
-        :param plugin_coordinates: plugin coordinates of the plugin, if None the coordinates must be defined in environment variables
+        :param plugin_coordinates: plugin coordinates of the plugin, if None the coordinates must be defined in
+                                   environment variables
         :param actions: list of action classes to run
         :param action_package: name of the package containing the actions to run
         """
@@ -224,12 +229,30 @@ class Plugin(object):
         self.logger.info("Application initialization complete")
 
     def _heartbeat(self):
+        long_running_actions = set()
         while True:
             try:
+                # Set heartbeats
                 for action in self.actions:
                     self.queue.heartbeat(self.action_name(action))
+
+                # Record long running tasks
+                new_long_running_actions = set()
+                for action in self.actions:
+                    if action.action_execution and action.action_execution.exceeds_duration(LONG_RUNNING_TASK_DURATION):
+                        action_execution = action.action_execution
+                        new_long_running_actions.add(action_execution)
+                        self.queue.record_long_running_task(action_execution)
+
+                # Remove old long running tasks
+                tasks_to_remove = long_running_actions - new_long_running_actions
+                for action_execution in tasks_to_remove:
+                    self.queue.remove_long_running_task(action_execution)
+
+                long_running_actions = new_long_running_actions
+
             except Exception as e:
-                self.logger.error(f"Failed to register action queue heartbeat: {e}", e)
+                self.logger.error(f"Failed to register action queue heartbeat or record long running tasks: {e}", e)
             finally:
                 time.sleep(10)
 
@@ -243,6 +266,9 @@ class Plugin(object):
                 event = Event.create(json.loads(event_string), self.hostname, self.content_service, action_logger)
                 start_time = time.time()
                 action_logger.debug(f"Processing event for did {event.context.did}")
+
+                action.action_execution = ActionExecution(self.action_name(action), event.context.action_name,
+                                                          event.context.did, datetime.now(timezone.utc))
 
                 try:
                     result = action.execute_action(event)
@@ -266,6 +292,8 @@ class Plugin(object):
                 except BaseException as e:
                     result = ErrorResult(event.context,
                                          f"Action execution {type(e)} exception", f"{str(e)}\n{traceback.format_exc()}")
+
+                action.action_execution = None
 
                 response = {
                     'did': event.context.did,

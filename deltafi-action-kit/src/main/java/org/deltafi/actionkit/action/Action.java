@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +36,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -55,6 +57,9 @@ public abstract class Action<I, P extends ActionParameters, R extends ResultType
     @Autowired
     @Setter
     protected ContentStorageService contentStorageService;
+
+    @Getter
+    private ActionExecution actionExecution = null;
 
     /**
      * Deep introspection to get the ActionParameters type class.  This keeps subclasses
@@ -122,6 +127,8 @@ public abstract class Action<I, P extends ActionParameters, R extends ResultType
                     actionInput.getActionContext().getDid());
         }
 
+        actionExecution = new ActionExecution(getClassCanonicalName(), actionInput.getActionContext().getName(), actionInput.getActionContext().getDid(), OffsetDateTime.now());
+
         if (actionInput.getActionContext().getCollect() != null) {
             return execute(actionInput.getActionContext(), collect(actionInput.getDeltaFileMessages().stream()
                             .map(deltaFileMessage -> buildInput(actionInput.getActionContext(), deltaFileMessage)).toList()),
@@ -130,6 +137,10 @@ public abstract class Action<I, P extends ActionParameters, R extends ResultType
 
         return execute(actionInput.getActionContext(), buildInput(actionInput.getActionContext(),
                 actionInput.getDeltaFileMessages().get(0)), convertToParams(actionInput.getActionParams()));
+    }
+
+    public void clearActionExecution() {
+        actionExecution = null;
     }
 
     public ActionDescriptor getActionDescriptor() {

@@ -34,6 +34,7 @@ class Action(ABC):
         self.requires_domains = requires_domains
         self.requires_enrichments = requires_enrichments
         self.valid_result_types = valid_result_types
+        self.action_execution = None
 
     @abstractmethod
     def build_input(self, context: Context, delta_file_message: DeltaFileMessage):

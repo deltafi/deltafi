@@ -19,8 +19,12 @@
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 
+import json
 import redis
 import time
+
+HEARTBEAT_HASH = "org.deltafi.action-queue.heartbeat"
+LONG_RUNNING_TASKS_HASH = "org.deltafi.action-queue.long-running-tasks"
 
 
 class ActionEventQueue:
@@ -57,4 +61,20 @@ class ActionEventQueue:
     def heartbeat(self, name: str):
         conn = self.get_connection()
         utcnow = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-        conn.hset("org.deltafi.action-queue.heartbeat", name, utcnow)
+        conn.hset(HEARTBEAT_HASH, name, utcnow)
+
+    def record_long_running_task(self, action_execution):
+        try:
+            key = action_execution.key
+            start_time = action_execution.start_time.isoformat().replace("+00:00", "Z")
+            heartbeat_time = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+            value = json.dumps([start_time, heartbeat_time])
+            conn = self.get_connection()
+            conn.hset(LONG_RUNNING_TASKS_HASH, key, value)
+        except Exception as e:
+            print(f"Unable to convert long running task information to JSON: {str(e)}")
+
+    def remove_long_running_task(self, action_execution):
+        key = action_execution.key
+        conn = self.get_connection()
+        conn.hdel(LONG_RUNNING_TASKS_HASH, key)

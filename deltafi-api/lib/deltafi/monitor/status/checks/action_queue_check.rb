@@ -32,17 +32,18 @@ module Deltafi
           IGNORED_QUEUE_NAMES = [
             DF::Common::STATUS_REDIS_KEY,
             DF::Common::ACTION_HEARTBEAT_REDIS_KEY,
-            DF::Common::MONITOR_HEARTBEAT_REDIS_KEY
+            DF::Common::MONITOR_HEARTBEAT_REDIS_KEY,
+            DF::Common::LONG_RUNNING_TASKS_REDIS_KEY
           ].freeze
 
           def initialize
             super('Action Queue Check')
             @queues_over_threshold = {}
             @orphan_queues = {}
+            @redis_client = DF.redis_client
           end
 
           def run
-            @redis_client = DF.redis_client
             @threshold = size_threshold
             recent_queue_names = recent_queues.keys
 

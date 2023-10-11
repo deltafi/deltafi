@@ -144,6 +144,7 @@ public class ActionRunner {
         catch (Throwable e) {
             result = new ErrorResult(context, "Action execution exception", e).logErrorTo(log);
         }
+        action.clearActionExecution();
 
         try {
             if (!ingress) {

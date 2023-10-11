@@ -32,6 +32,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -39,6 +40,7 @@ import java.util.Set;
  */
 public class JedisKeyedBlockingQueue {
     private static final String HEARTBEAT_HASH = "org.deltafi.action-queue.heartbeat";
+    private static final String LONG_RUNNING_TASKS_HASH = "org.deltafi.action-queue.long-running-tasks";
 
     private final JedisPool jedisPool;
 
@@ -167,6 +169,52 @@ public class JedisKeyedBlockingQueue {
     public long sortedSetSize(String key) {
         try (Jedis jedis = jedisPool.getResource()) {
             return jedis.zcard(key);
+        }
+    }
+
+    /**
+     * Retrieves a map of long-running tasks
+     *
+     * @return a map containing the long running tasks
+     */
+    public Map<String, String> getLongRunningTasks() {
+        try (Jedis jedis = jedisPool.getResource()) {
+            return jedis.hgetAll(LONG_RUNNING_TASKS_HASH);
+        }
+    }
+
+    /**
+     * Retrieves the value associated with the given key from the long-running tasks
+     *
+     * @param key the key used to retrieve the value
+     * @return the value associated with the given key, or null if the key is not found
+     */
+    public String getLongRunningTask(String key) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            return jedis.hget(LONG_RUNNING_TASKS_HASH, key);
+        }
+    }
+
+    /**
+     * Records a long running task in the long-running tasks
+     *
+     * @param key the key used to retrieve the value
+     * @param value the value associated with the given key
+     */
+    public void recordLongRunningTask(String key, String value) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            jedis.hset(LONG_RUNNING_TASKS_HASH, key, value);
+        }
+    }
+
+    /**
+     * Remove a long-running task with the specified key
+     *
+     * @param key the key of the task to be removed
+     */
+    public void removeLongRunningTask(String key) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            jedis.hdel(LONG_RUNNING_TASKS_HASH, key);
         }
     }
 }

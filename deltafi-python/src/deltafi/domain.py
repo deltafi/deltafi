@@ -17,10 +17,25 @@
 #
 
 import copy
+from datetime import datetime, timedelta, timezone
 from logging import Logger
 from typing import Dict, List, NamedTuple
 
 from deltafi.storage import ContentService, Segment
+
+
+class ActionExecution(NamedTuple):
+    clazz: str
+    action: str
+    did: str
+    start_time: datetime
+
+    def exceeds_duration(self, duration: timedelta) -> bool:
+        return self.start_time + duration < datetime.now(timezone.utc)
+
+    @property
+    def key(self) -> str:
+        return f"{self.clazz}:{self.action}:{self.did}"
 
 
 class Context(NamedTuple):
