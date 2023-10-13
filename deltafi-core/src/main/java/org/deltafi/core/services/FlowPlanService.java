@@ -40,6 +40,8 @@ import org.springframework.boot.info.BuildProperties;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -117,6 +119,17 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
     public FlowT saveFlowPlan(FlowPlanT flowPlan) {
         validateFlowPlan(flowPlan);
         return flowService.buildAndSaveFlow(flowPlanRepo.save(flowPlan));
+    }
+
+    public void rebuildInvalidFlows() {
+        List<String> invalidFlows = flowService.getNamesOfInvalidFlow();
+
+        Map<PluginCoordinates, List<FlowPlanT>> flowPlans = invalidFlows.stream()
+                .map(name -> flowPlanRepo.findById(name).orElse(null))
+                .filter(Objects::nonNull)
+                .collect(Collectors.groupingBy(FlowPlanT::getSourcePlugin));
+
+        flowPlans.forEach((pluginCoordinates, plans) -> flowService.rebuildFlows(plans, pluginCoordinates));
     }
 
     /**

@@ -217,23 +217,6 @@ class NormalizeFlowServiceTest {
         Mockito.verify(normalizeFlowRepo).deleteAllById(Set.of("c"));
     }
 
-    @Test
-    void testRevalidateFlows() {
-        // load an invalid flow into the cache
-        NormalizeFlow invalidFlow = FlowBuilders.buildNormalizeFlow(FlowState.INVALID);
-        invalidFlow.setSchemaVersion(NormalizeFlow.CURRENT_SCHEMA_VERSION);
-        Mockito.when(normalizeFlowRepo.findAll()).thenReturn(List.of(invalidFlow));
-        normalizeFlowService.refreshCache();
-
-        // mock invalid flow passing validation
-        Mockito.when(flowValidator.validate(invalidFlow)).thenReturn(List.of());
-
-        normalizeFlowService.revalidateInvalidFlows();
-
-        Assertions.assertEquals(FlowState.STOPPED, invalidFlow.getFlowStatus().getState());
-        Mockito.verify(normalizeFlowRepo).save(invalidFlow);
-    }
-
     void setupErrorExceeded() {
         NormalizeFlow flow1 = normalizeFlow("flow1", FlowState.RUNNING, false, 0);
         NormalizeFlow flow2 = normalizeFlow("flow2", FlowState.RUNNING, false, 5);

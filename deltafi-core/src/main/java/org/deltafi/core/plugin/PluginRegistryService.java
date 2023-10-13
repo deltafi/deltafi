@@ -80,7 +80,7 @@ public class PluginRegistryService implements Snapshotter {
         pluginVariableService.saveVariables(plugin.getPluginCoordinates(), pluginRegistration.getVariables());
         upgradeFlowPlans(plugin.getPluginCoordinates(), groupedFlowPlans);
 
-        flowValidationService.asyncRevalidateInvalidFlows();
+        flowValidationService.asyncRebuildInvalidFlows();
 
         return Result.builder().success(true).build();
     }

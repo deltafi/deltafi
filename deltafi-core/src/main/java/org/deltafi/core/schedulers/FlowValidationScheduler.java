@@ -36,6 +36,6 @@ public class FlowValidationScheduler {
 
     @Scheduled(fixedDelay = 5000)
     public void revalidateInvalidFlows() {
-        flowValidationService.revalidateInvalidFlows();
+        flowValidationService.rebuildInvalidFlows();
     }
 }

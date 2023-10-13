@@ -62,8 +62,12 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     }
 
     @PostConstruct
-    public synchronized void refreshCache() {
+    public void postConstruct() {
         flowRepo.updateSystemPluginFlowVersions(buildProperties.getVersion());
+        refreshCache();
+    }
+
+    public synchronized void refreshCache() {
         flowCache = flowRepo.findAll().stream()
                 .map(this::migrate)
                 .collect(Collectors.toMap(Flow::getName, Function.identity()));
@@ -76,10 +80,10 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         return flow;
     }
 
-    public void revalidateInvalidFlows() {
-        flowCache.values().stream()
-                .filter(Flow::isInvalid)
-                .forEach(this::validateAndSaveFlow);
+    public List<String> getNamesOfInvalidFlow() {
+        return flowCache.values().stream()
+                .filter(FlowT::isInvalid)
+                .map(FlowT::getName).toList();
     }
 
     /**

@@ -35,6 +35,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.deltafi.core.util.FlowBuilders.buildNormalizeFlowPlan;
 
 @ExtendWith(MockitoExtension.class)
 class NormalizeFlowPlanServiceTest {
@@ -80,6 +81,26 @@ class NormalizeFlowPlanServiceTest {
 
         assertThat(errors).hasSize(2).contains("bad config",
                 "A flow plan with the name: b already exists from another source plugin: " + otherPlugin);
+    }
+
+    @Test
+    void testRebuildInvalidFlows() {
+        PluginCoordinates plugin1 = PluginCoordinates.builder().groupId("group").artifactId("plugin1").version("1.0.0").build();
+        PluginCoordinates plugin2 = PluginCoordinates.builder().groupId("group").artifactId("plugin2").version("1.0.0").build();
+
+        NormalizeFlowPlan plugin1Flow1 = buildNormalizeFlowPlan("p1-flow1", plugin1);
+        NormalizeFlowPlan plugin1Flow2 = buildNormalizeFlowPlan("p1-flow2", plugin1);
+        NormalizeFlowPlan plugin2Flow1 = buildNormalizeFlowPlan("p2-flow1", plugin2);
+
+        Mockito.when(flowService.getNamesOfInvalidFlow()).thenReturn(List.of("p1-flow1", "p1-flow2", "p2-flow1"));
+        Mockito.when(flowPlanRepo.findById("p1-flow1")).thenReturn(Optional.of(plugin1Flow1));
+        Mockito.when(flowPlanRepo.findById("p1-flow2")).thenReturn(Optional.of(plugin1Flow2));
+        Mockito.when(flowPlanRepo.findById("p2-flow1")).thenReturn(Optional.of(plugin2Flow1));
+
+        normalizeFlowPlanService.rebuildInvalidFlows();
+
+        Mockito.verify(flowService).rebuildFlows(List.of(plugin1Flow1, plugin1Flow2), plugin1);
+        Mockito.verify(flowService).rebuildFlows(List.of(plugin2Flow1), plugin2);
     }
 
 }
