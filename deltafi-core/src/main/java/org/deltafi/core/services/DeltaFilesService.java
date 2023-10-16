@@ -45,6 +45,7 @@ import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.repo.QueuedAnnotationRepo;
 import org.deltafi.core.retry.MongoRetryable;
+import org.deltafi.core.types.ErrorSummaryFilter;
 import org.deltafi.core.types.ResumePolicy;
 import org.deltafi.core.types.*;
 import org.jetbrains.annotations.NotNull;
@@ -1875,14 +1876,26 @@ public class DeltaFilesService {
 
     }
 
-    public ErrorsByFlow getErrorSummaryByFlow(Integer offset, Integer limit, ErrorSummaryFilter filter, DeltaFileOrder orderBy) {
+    public SummaryByFlow getErrorSummaryByFlow(Integer offset, Integer limit, ErrorSummaryFilter filter, DeltaFileOrder orderBy) {
         return deltaFileRepo.getErrorSummaryByFlow(offset,
                 (Objects.nonNull(limit) && limit > 0) ? limit : DEFAULT_QUERY_LIMIT,
                 filter, orderBy);
     }
 
-    public ErrorsByMessage getErrorSummaryByMessage(Integer offset, Integer limit, ErrorSummaryFilter filter, DeltaFileOrder orderBy) {
+    public SummaryByFlowAndMessage getErrorSummaryByMessage(Integer offset, Integer limit, ErrorSummaryFilter filter, DeltaFileOrder orderBy) {
         return deltaFileRepo.getErrorSummaryByMessage(offset,
+                (Objects.nonNull(limit) && limit > 0) ? limit : DEFAULT_QUERY_LIMIT,
+                filter, orderBy);
+    }
+
+    public SummaryByFlow getFilteredSummaryByFlow(Integer offset, Integer limit, FilteredSummaryFilter filter, DeltaFileOrder orderBy) {
+        return deltaFileRepo.getFilteredSummaryByFlow(offset,
+                (Objects.nonNull(limit) && limit > 0) ? limit : DEFAULT_QUERY_LIMIT,
+                filter, orderBy);
+    }
+
+    public SummaryByFlowAndMessage getFilteredSummaryByMessage(Integer offset, Integer limit, FilteredSummaryFilter filter, DeltaFileOrder orderBy) {
+        return deltaFileRepo.getFilteredSummaryByMessage(offset,
                 (Objects.nonNull(limit) && limit > 0) ? limit : DEFAULT_QUERY_LIMIT,
                 filter, orderBy);
     }

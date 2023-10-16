@@ -37,8 +37,12 @@ import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.DeltaFilesService;
 import org.deltafi.core.services.TransformFlowService;
 import org.deltafi.core.types.DeltaFiles;
+import org.deltafi.core.types.ErrorSummaryFilter;
+import org.deltafi.core.types.FilteredSummaryFilter;
 import org.deltafi.core.types.PerActionUniqueKeyValues;
 import org.deltafi.core.types.Result;
+import org.deltafi.core.types.SummaryByFlow;
+import org.deltafi.core.types.SummaryByFlowAndMessage;
 import org.deltafi.core.types.UniqueKeyValues;
 
 import java.time.OffsetDateTime;
@@ -133,7 +137,7 @@ public class DeltaFilesDatafetcher {
 
   @DgsQuery
   @NeedsPermission.DeltaFileMetadataView
-  public ErrorsByFlow errorSummaryByFlow(
+  public SummaryByFlow errorSummaryByFlow(
           @InputArgument Integer offset,
           @InputArgument Integer limit,
           @InputArgument ErrorSummaryFilter filter,
@@ -143,12 +147,32 @@ public class DeltaFilesDatafetcher {
 
   @DgsQuery
   @NeedsPermission.DeltaFileMetadataView
-  public ErrorsByMessage errorSummaryByMessage(
+  public SummaryByFlowAndMessage errorSummaryByMessage(
           @InputArgument Integer offset,
           @InputArgument Integer limit,
           @InputArgument ErrorSummaryFilter filter,
           @InputArgument DeltaFileOrder orderBy) {
     return deltaFilesService.getErrorSummaryByMessage(offset, limit, filter, orderBy);
+  }
+
+  @DgsQuery
+  @NeedsPermission.DeltaFileMetadataView
+  public SummaryByFlow filteredSummaryByFlow(
+          @InputArgument Integer offset,
+          @InputArgument Integer limit,
+          @InputArgument FilteredSummaryFilter filter,
+          @InputArgument DeltaFileOrder orderBy) {
+    return deltaFilesService.getFilteredSummaryByFlow(offset, limit, filter, orderBy);
+  }
+
+  @DgsQuery
+  @NeedsPermission.DeltaFileMetadataView
+  public SummaryByFlowAndMessage filteredSummaryByMessage(
+          @InputArgument Integer offset,
+          @InputArgument Integer limit,
+          @InputArgument FilteredSummaryFilter filter,
+          @InputArgument DeltaFileOrder orderBy) {
+    return deltaFilesService.getFilteredSummaryByMessage(offset, limit, filter, orderBy);
   }
 
   @DgsMutation

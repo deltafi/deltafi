@@ -25,6 +25,8 @@ import org.deltafi.core.generated.client.DeltaFileProjectionRoot;
 import org.deltafi.core.generated.client.DeltaFilesProjectionRoot;
 import org.deltafi.core.generated.client.ErrorSummaryByFlowProjectionRoot;
 import org.deltafi.core.generated.client.ErrorSummaryByMessageProjectionRoot;
+import org.deltafi.core.generated.client.FilteredSummaryByFlowProjectionRoot;
+import org.deltafi.core.generated.client.FilteredSummaryByMessageProjectionRoot;
 
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -161,6 +163,29 @@ public class DeltaFilesDatafetcherTestHelper {
 
     public static final ErrorSummaryByMessageProjectionRoot ERRORS_BY_MESSAGE_PROJECTION_ROOT =
             new ErrorSummaryByMessageProjectionRoot()
+                    .count()
+                    .offset()
+                    .totalCount()
+                    .countPerMessage()
+                    .message()
+                    .flow()
+                    .count()
+                    .dids()
+                    .parent();
+
+    public static final FilteredSummaryByFlowProjectionRoot FILTERED_BY_FlOW_PROJECTION_ROOT =
+            new FilteredSummaryByFlowProjectionRoot()
+                    .count()
+                    .offset()
+                    .totalCount()
+                    .countPerFlow()
+                    .flow()
+                    .count()
+                    .dids()
+                    .parent();
+
+    public static final FilteredSummaryByMessageProjectionRoot FILTERED_BY_MESSAGE_PROJECTION_ROOT =
+            new FilteredSummaryByMessageProjectionRoot()
                     .count()
                     .offset()
                     .totalCount()

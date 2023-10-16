@@ -240,6 +240,12 @@ input ErrorSummaryFilter {
   flow: String
 }
 
+input FilteredSummaryFilter {
+  modifiedAfter: DateTime
+  modifiedBefore: DateTime
+  flow: String
+}
+
 type CountPerFlow {
   flow: String!
   count: Int!
@@ -261,6 +267,20 @@ type ErrorsByFlow {
 }
 
 type ErrorsByMessage {
+  offset: Int!
+  count: Int!
+  totalCount: Int!
+  countPerMessage: [CountPerMessage!]!
+}
+
+type FilteredByFlow {
+  offset: Int!
+  count: Int!
+  totalCount: Int!
+  countPerFlow: [CountPerFlow!]!
+}
+
+type FilteredByMessage {
   offset: Int!
   count: Int!
   totalCount: Int!
@@ -376,6 +396,9 @@ type Query {
 
   errorSummaryByFlow(offset: Int, limit: Int, filter: ErrorSummaryFilter, orderBy: DeltaFileOrder): ErrorsByFlow!
   errorSummaryByMessage(offset: Int, limit: Int, filter: ErrorSummaryFilter, orderBy: DeltaFileOrder): ErrorsByMessage!
+
+  filteredSummaryByFlow(offset: Int, limit: Int, filter: FilteredSummaryFilter, orderBy: DeltaFileOrder): FilteredByFlow!
+  filteredSummaryByMessage(offset: Int, limit: Int, filter: FilteredSummaryFilter, orderBy: DeltaFileOrder): FilteredByMessage!
 
   errorMetadataUnion(dids: [String!]!) : [PerActionUniqueKeyValues!]!
   sourceMetadataUnion(dids: [String!]!) : [UniqueKeyValues!]!

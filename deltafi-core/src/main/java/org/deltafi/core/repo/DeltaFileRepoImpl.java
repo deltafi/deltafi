@@ -31,6 +31,11 @@ import org.deltafi.common.types.DeltaFileStage;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.types.ColdQueuedActionSummary;
 import org.deltafi.core.types.DeltaFiles;
+import org.deltafi.core.types.ErrorSummaryFilter;
+import org.deltafi.core.types.SummaryByFlow;
+import org.deltafi.core.types.FilteredSummaryFilter;
+import org.deltafi.core.types.SummaryByFlowAndMessage;
+import org.deltafi.core.types.SummaryFilter;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.UncategorizedMongoDbException;
 import org.springframework.data.mongodb.core.BulkOperations;
@@ -102,6 +107,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String ACTIONS = "actions";
     public static final String ACTIONS_ATTEMPT = "actions.attempt";
     public static final String ACTIONS_ERROR_CAUSE = "actions.errorCause";
+    public static final String ACTIONS_FILTERED_CAUSE = "actions.filteredCause";
     public static final String ACTIONS_NAME = "actions.name";
     public static final String ACTIONS_TYPE = "actions.type";
     public static final String ACTIONS_FLOW = "actions.flow";
@@ -814,10 +820,19 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
-    public ErrorsByFlow getErrorSummaryByFlow(Integer offset, int limit, ErrorSummaryFilter filter, DeltaFileOrder orderBy) {
+    public SummaryByFlow getErrorSummaryByFlow(Integer offset, int limit, ErrorSummaryFilter filter, DeltaFileOrder orderBy) {
+        return getSummaryByFlow(offset, limit, buildErrorSummaryCriteria(filter), orderBy);
+    }
+
+    @Override
+    public SummaryByFlow getFilteredSummaryByFlow(Integer offset, int limit, FilteredSummaryFilter filter, DeltaFileOrder orderBy) {
+        return getSummaryByFlow(offset, limit, buildFilterSummaryCriteria(filter), orderBy);
+    }
+
+    private SummaryByFlow getSummaryByFlow(Integer offset, int limit, Criteria filter, DeltaFileOrder orderBy) {
         long elementsToSkip = (nonNull(offset) && offset > 0) ? offset : 0;
 
-        MatchOperation matchesErrorStage = Aggregation.match(buildErrorSummaryCriteria(filter));
+        MatchOperation matchesErrorStage = Aggregation.match(filter);
 
         Aggregation countAggregation = Aggregation.newAggregation(
                 matchesErrorStage,
@@ -855,18 +870,21 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             }
         }
 
-        return ErrorsByFlow.newBuilder()
-                .count(countPerFlow.size())
-                .countPerFlow(countPerFlow)
-                .offset((int) elementsToSkip)
-                .totalCount(countForPaging.intValue())
-                .build();
+        return new SummaryByFlow((int)elementsToSkip, countPerFlow.size(), countForPaging.intValue(), countPerFlow);
     }
 
-    public ErrorsByMessage getErrorSummaryByMessage(Integer offset, int limit, ErrorSummaryFilter filter, DeltaFileOrder orderBy) {
+    public SummaryByFlowAndMessage getErrorSummaryByMessage(Integer offset, int limit, ErrorSummaryFilter filter, DeltaFileOrder orderBy) {
+        return getSummaryByMessage(ACTIONS_ERROR_CAUSE, ActionState.ERROR, offset, limit, buildErrorSummaryCriteria(filter), orderBy);
+    }
+
+    public SummaryByFlowAndMessage getFilteredSummaryByMessage(Integer offset, int limit, FilteredSummaryFilter filter, DeltaFileOrder orderBy) {
+        return getSummaryByMessage(ACTIONS_FILTERED_CAUSE, ActionState.FILTERED, offset, limit, buildFilterSummaryCriteria(filter), orderBy);
+    }
+
+    private SummaryByFlowAndMessage getSummaryByMessage(String messageField, ActionState actionState, Integer offset, int limit, Criteria filter, DeltaFileOrder orderBy) {
         long elementsToSkip = (nonNull(offset) && offset > 0) ? offset : 0;
 
-        MatchOperation matchesErrorStage = Aggregation.match(buildErrorSummaryCriteria(filter));
+        MatchOperation matchesErrorStage = Aggregation.match(filter);
 
         GroupOperation groupByCauseAndFlow = Aggregation.group(ERROR_MESSAGE, FLOW_LOWER_CASE)
                 .count().as(GROUP_COUNT)
@@ -878,9 +896,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                 project()
                         .and(SOURCE_INFO_FLOW).as(FLOW_LOWER_CASE)
                         .and(ID).as(DID)
-                        .and(ACTIONS_ERROR_CAUSE).as(ERROR_MESSAGE)
+                        .and(messageField).as(ERROR_MESSAGE)
                         .and(ACTIONS_STATE).as(UNWIND_STATE),
-                match(Criteria.where(UNWIND_STATE).is(ActionState.ERROR)),
+                match(Criteria.where(UNWIND_STATE).is(actionState)),
                 groupByCauseAndFlow
         );
 
@@ -917,12 +935,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             }
         }
 
-        return ErrorsByMessage.newBuilder()
-                .count(messageList.size())
-                .offset((int) elementsToSkip)
-                .totalCount(countForPaging.intValue())
-                .countPerMessage(messageList)
-                .build();
+        return new SummaryByFlowAndMessage((int) elementsToSkip, messageList.size(), countForPaging.intValue(), messageList);
     }
 
     public Map<String, Integer> errorCountsByFlow(Set<String> flows) {
@@ -1000,16 +1013,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             return criteria;
         }
 
-        List<Criteria> andCriteria = new ArrayList<>();
-        andCriteria.add(criteria);
-
-        if (nonNull(filter.getModifiedAfter())) {
-            andCriteria.add(Criteria.where(MODIFIED).gt(filter.getModifiedAfter()));
-        }
-
-        if (nonNull(filter.getModifiedBefore())) {
-            andCriteria.add(Criteria.where(MODIFIED).lt(filter.getModifiedBefore()));
-        }
+        List<Criteria> andCriteria = summaryCriteria(filter);
 
         if (nonNull(filter.getErrorAcknowledged())) {
             if (isTrue(filter.getErrorAcknowledged())) {
@@ -1019,15 +1023,45 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             }
         }
 
-        if (nonNull(filter.getFlow())) {
-            andCriteria.add(Criteria.where(SOURCE_INFO_FLOW).is(filter.getFlow()));
-        }
-
-        if (andCriteria.size() > 1) {
+        if (!andCriteria.isEmpty()) {
             criteria.andOperator(andCriteria.toArray(new Criteria[0]));
         }
 
         return criteria;
+    }
+
+    private Criteria buildFilterSummaryCriteria(FilteredSummaryFilter filter) {
+        Criteria criteria = Criteria.where(FILTERED).is(true);
+
+        if (isNull(filter)) {
+            return criteria;
+        }
+
+        List<Criteria> andCriteria = summaryCriteria(filter);
+
+        if (!andCriteria.isEmpty()) {
+            criteria.andOperator(andCriteria.toArray(new Criteria[0]));
+        }
+
+        return criteria;
+    }
+
+    private List<Criteria> summaryCriteria(SummaryFilter filter) {
+        List<Criteria> andCriteria = new ArrayList<>();
+
+        if (nonNull(filter.getModifiedAfter())) {
+            andCriteria.add(Criteria.where(MODIFIED).gt(filter.getModifiedAfter()));
+        }
+
+        if (nonNull(filter.getModifiedBefore())) {
+            andCriteria.add(Criteria.where(MODIFIED).lt(filter.getModifiedBefore()));
+        }
+
+        if (nonNull(filter.getFlow())) {
+            andCriteria.add(Criteria.where(SOURCE_INFO_FLOW).is(filter.getFlow()));
+        }
+
+        return andCriteria;
     }
 
     @Override

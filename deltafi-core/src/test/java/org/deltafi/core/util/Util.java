@@ -23,7 +23,7 @@ import org.assertj.core.api.Assertions;
 import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.ActionFamily;
-import org.deltafi.core.generated.types.ErrorsByMessage;
+import org.deltafi.core.types.SummaryByFlowAndMessage;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
@@ -269,11 +269,11 @@ public class Util {
                 .build();
     }
 
-    public static void matchesCounterPerMessage(ErrorsByMessage result, int index, String cause, String flow, List<String> dids) {
-        assertEquals(cause, result.getCountPerMessage().get(index).getMessage());
-        assertEquals(flow, result.getCountPerMessage().get(index).getFlow());
-        assertEquals(dids.size(), result.getCountPerMessage().get(index).getCount());
-        assertEquals(dids.size(), result.getCountPerMessage().get(index).getDids().size());
-        assertTrue(result.getCountPerMessage().get(index).getDids().containsAll(dids));
+    public static void matchesCounterPerMessage(SummaryByFlowAndMessage result, int index, String cause, String flow, List<String> dids) {
+        assertEquals(cause, result.countPerMessage().get(index).getMessage());
+        assertEquals(flow, result.countPerMessage().get(index).getFlow());
+        assertEquals(dids.size(), result.countPerMessage().get(index).getCount());
+        assertEquals(dids.size(), result.countPerMessage().get(index).getDids().size());
+        assertTrue(result.countPerMessage().get(index).getDids().containsAll(dids));
     }
 }
