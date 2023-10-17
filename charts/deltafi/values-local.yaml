@@ -27,6 +27,9 @@ deltafi:
     image: localhost:5000/deltafi-egress-sink:latest
   nodemonitor:
     image: localhost:5000/deltafi-nodemonitor:latest
+  clustermonitor:
+    enabled: true
+    image: localhost:5000/deltafi-clustermonitor:latest
 
 clickhouse:
   enabled: true

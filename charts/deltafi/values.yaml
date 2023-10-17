@@ -46,13 +46,11 @@ deltafi:
     image: deltafi/deltafi-egress-sink:1.1.6
   nodemonitor:
     image: deltafi/deltafi-nodemonitor:1.1.6
-    envVars:
-      - name: GRAPHITE_HOST
-        value: deltafi-graphite
-      - name: GRAPHITE_PORT
-        value: "2003"
-      - name: PERIOD
-        value: "9"
+    period: 9
+  clustermonitor:
+    enabled: true
+    image: deltafi/deltafi-clustermonitor:0.0.0 # Not yet published.  Disable clustermonitor locally to install.
+    period: 9
 
 # Kubernetes ingress config
 ingress:

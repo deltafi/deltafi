@@ -1,0 +1,82 @@
+{{- if .Values.deltafi.clustermonitor.enabled -}}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: deltafi-clustermonitor
+  labels:
+    app: deltafi-clustermonitor
+    group: deltafi-core
+spec:
+  serviceName: deltafi-clustermonitor
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: deltafi-clustermonitor
+      group: deltafi-core
+  template:
+    metadata:
+      labels:
+        app: deltafi-clustermonitor
+        group: deltafi-core
+    spec:
+      {{- include "initContainersWaitForGraphite" . | nindent 6 }}
+      serviceAccountName: deltafi-clustermonitor
+      imagePullSecrets:
+      - name: docker-secret
+      containers:
+      - name: clustermonitor
+        image: {{ .Values.deltafi.clustermonitor.image }}
+        env:
+        {{- include "defaultEnvVars" . | nindent 12 }}
+        {{- include "graphiteEnvVars" . | nindent 12 }}
+            - name: PERIOD
+              value: "{{ .Values.deltafi.clustermonitor.period }}"
+        securityContext:
+          runAsUser: 0
+        resources:
+          limits:
+            memory: 200Mi
+        volumeMounts:
+        - name: pvdata
+          mountPath: /data
+          readOnly: true
+      volumes:
+      - name: pvdata
+        hostPath:
+          path: /data
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: deltafi-clustermonitor
+subjects:
+- kind: ServiceAccount
+  name: deltafi-clustermonitor
+  namespace: deltafi
+roleRef:
+  kind: ClusterRole
+  name: deltafi-clustermonitor
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: deltafi-clustermonitor
+  labels:
+    app: deltafi-clustermonitor
+rules:
+- apiGroups: ["metrics.k8s.io"]
+  resources:
+  - pods
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: deltafi-clustermonitor
+  namespace: deltafi
+  labels:
+    app: deltafi-clustermonitor
+---
+{{- end }}

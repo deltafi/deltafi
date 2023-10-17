@@ -97,6 +97,19 @@ initContainers:
     done
 {{- end -}}
 
+{{- define "initContainersWaitForGraphite" -}}
+initContainers:
+- name: wait-for-graphite
+  image: busybox:1.36.0
+  command:
+  - 'sh'
+  - '-c'
+  - >
+    until nc -z -w 2 deltafi-graphite 2003 && echo graphite ok;
+      do sleep 1;
+    done
+{{- end -}}
+
 {{- define "initContainersWaitForDatabases" -}}
 initContainers:
 - name: wait-for-databases
@@ -143,6 +156,13 @@ initContainers:
     secretKeyRef:
       name: minio-keys
       key: rootPassword
+{{- end -}}
+
+{{- define "graphiteEnvVars" -}}
+- name: GRAPHITE_HOST
+  value: deltafi-graphite
+- name: GRAPHITE_PORT
+  value: "2003"
 {{- end -}}
 
 {{- define "sslEnvVars" -}}

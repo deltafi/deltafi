@@ -1,0 +1,14 @@
+.clustermonitor:
+  needs: []
+  variables:
+    PROJECT_NAME: deltafi-clustermonitor
+
+clustermonitor:docker:
+  extends:
+    - .clustermonitor
+    - .docker
+
+clustermonitor:docker-multiarch:
+  extends:
+    - .clustermonitor
+    - .docker-multiarch

@@ -25,11 +25,11 @@ spec:
       containers:
       - name: nodemonitor
         image: {{ .Values.deltafi.nodemonitor.image }}
-        {{- with .Values.deltafi.nodemonitor.envVars }}
         env:
-        {{- toYaml . | nindent 12 }}
-        {{- end }}
         {{- include "defaultEnvVars" . | nindent 12 }}
+        {{- include "graphiteEnvVars" . | nindent 12 }}
+            - name: PERIOD
+              value: "{{ .Values.deltafi.nodemonitor.period }}"
         securityContext:
           runAsUser: 0
         resources:

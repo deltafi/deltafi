@@ -13,8 +13,8 @@ update-helmchart:
     url: https://dev.deltafi.org
   variables:
     DEV_CHART: git@gitlab.com:systolic/deltafi/deltafi.git
-    PROJECT_LIST: "deltafi-core deltafi-ui deltafi-core-actions deltafi-docs deltafi-auth deltafi-api deltafi-egress-sink deltafi-nodemonitor deltafi-passthrough"
-    deltafi_config_server_HELM_IMAGE_PATH: deltafi.config_server.image
+    PROJECT_LIST: "deltafi-clustermonitor deltafi-core deltafi-ui deltafi-core-actions deltafi-docs deltafi-auth deltafi-api deltafi-egress-sink deltafi-nodemonitor deltafi-passthrough"
+    deltafi_clustermonitor_HELM_IMAGE_PATH: deltafi.clustermonitor.image
     deltafi_core_HELM_IMAGE_PATH: deltafi.core.image
     deltafi_core_actions_HELM_IMAGE_PATH: deltafi.core_actions.image
     deltafi_ingress_HELM_IMAGE_PATH: deltafi.ingress.image
