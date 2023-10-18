@@ -41,6 +41,7 @@ import org.deltafi.core.types.ErrorSummaryFilter;
 import org.deltafi.core.types.FilteredSummaryFilter;
 import org.deltafi.core.types.PerActionUniqueKeyValues;
 import org.deltafi.core.types.Result;
+import org.deltafi.core.types.ResumePolicy;
 import org.deltafi.core.types.SummaryByFlow;
 import org.deltafi.core.types.SummaryByFlowAndMessage;
 import org.deltafi.core.types.UniqueKeyValues;
@@ -210,6 +211,13 @@ public class DeltaFilesDatafetcher {
   @NeedsPermission.ResumePolicyApply
   public Result applyResumePolicies(@InputArgument List<String> names) {
     return deltaFilesService.applyResumePolicies(names);
+  }
+
+  @DgsQuery
+  @NeedsPermission.ResumePolicyDryRun
+  public Result resumePolicyDryRun(@InputArgument ResumePolicyInput resumePolicyInput) {
+    ResumePolicy resumePolicy = objectMapper.convertValue(resumePolicyInput, ResumePolicy.class);
+    return deltaFilesService.resumePolicyDryRun(resumePolicy);
   }
 
   @DgsQuery

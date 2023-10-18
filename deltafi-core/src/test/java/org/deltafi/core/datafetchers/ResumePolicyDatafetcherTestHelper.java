@@ -65,6 +65,25 @@ public class ResumePolicyDatafetcherTestHelper {
                 Result.class);
     }
 
+    public static Result resumePolicyDryRun(DgsQueryExecutor dgsQueryExecutor, String name, String flow, String errorSubstring) {
+        ResumePolicyDryRunProjectionRoot projection = new ResumePolicyDryRunProjectionRoot()
+                .success()
+                .info()
+                .errors();
+
+        ResumePolicyInput input = makeResumePolicy(name, errorSubstring, flow, null, null, MAX_ATTEMPTS, DELAY);
+
+        ResumePolicyDryRunGraphQLQuery query =
+                ResumePolicyDryRunGraphQLQuery.newRequest().resumePolicyInput(input).build();
+        GraphQLQueryRequest graphQLQueryRequest =
+                new GraphQLQueryRequest(query, projection);
+
+        return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+                graphQLQueryRequest.serialize(),
+                "data." + query.getOperationName(),
+                Result.class);
+    }
+
     public static List<ResumePolicy> getAllResumePolicies(DgsQueryExecutor dgsQueryExecutor) {
         GetAllResumePoliciesProjectionRoot projection = new GetAllResumePoliciesProjectionRoot()
                 .id()

@@ -2337,6 +2337,35 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void testResumePolicyDryRun() {
+		DeltaFile deltaFile = buildErrorDeltaFile("did1", "flow1", "errorCause", "context", MONGO_NOW);
+		deltaFileRepo.save(deltaFile);
+
+		DeltaFile deltaFile2 = buildErrorDeltaFile("did2", "flow2", "errorCause", "context", MONGO_NOW);
+		deltaFileRepo.save(deltaFile2);
+
+		Result missingName = ResumePolicyDatafetcherTestHelper.resumePolicyDryRun(dgsQueryExecutor, "", "flow1", "message");
+		assertFalse(missingName.isSuccess());
+		assertTrue(missingName.getErrors().contains("missing name"));
+		assertTrue(missingName.getInfo().isEmpty());
+
+		Result noMatch = ResumePolicyDatafetcherTestHelper.resumePolicyDryRun(dgsQueryExecutor, "PolicyName", "flow1", "message");
+		assertTrue(noMatch.isSuccess());
+		assertTrue(noMatch.getErrors().isEmpty());
+		assertTrue(noMatch.getInfo().contains("No DeltaFile errors can be resumed by policy PolicyName"));
+
+		Result oneMatch = ResumePolicyDatafetcherTestHelper.resumePolicyDryRun(dgsQueryExecutor, "PolicyName", "flow1", "errorCause");
+		assertTrue(oneMatch.isSuccess());
+		assertTrue(oneMatch.getErrors().isEmpty());
+		assertTrue(oneMatch.getInfo().contains("Can apply PolicyName policy to 1 DeltaFiles"));
+
+		Result twoMatches = ResumePolicyDatafetcherTestHelper.resumePolicyDryRun(dgsQueryExecutor, "PolicyName", null, "errorCause");
+		assertTrue(twoMatches.isSuccess());
+		assertTrue(twoMatches.getErrors().isEmpty());
+		assertTrue(twoMatches.getInfo().contains("Can apply PolicyName policy to 2 DeltaFiles"));
+	}
+
+	@Test
 	void deltaFile() {
 		DeltaFile expected = deltaFilesService.ingress(INGRESS_INPUT);
 

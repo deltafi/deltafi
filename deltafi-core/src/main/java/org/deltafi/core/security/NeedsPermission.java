@@ -247,6 +247,11 @@ public class NeedsPermission {
 
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('ResumePolicyDryRun'" + OR_ADMIN)
+    public @interface ResumePolicyDryRun {}
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
     @PreAuthorize(value = "hasAnyAuthority('ResumePolicyCreate'" + OR_ADMIN)
     public @interface ResumePolicyCreate {}
 

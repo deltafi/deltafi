@@ -57,6 +57,7 @@ input ResumePolicyInput {
 extend type Query {
     getAllResumePolicies: [ResumePolicy!]!
     getResumePolicy(id: String!): ResumePolicy
+    resumePolicyDryRun(resumePolicyInput: ResumePolicyInput!): Result!
 }
 
 extend type Mutation {

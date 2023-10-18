@@ -1983,6 +1983,37 @@ public class DeltaFilesService {
                 .build();
     }
 
+    public Result resumePolicyDryRun(ResumePolicy resumePolicy) {
+        List<String> information = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+
+        if (resumePolicy == null) {
+            errors.add("Resume policy must not be null");
+        } else {
+            if (StringUtils.isBlank(resumePolicy.getId())) {
+                resumePolicy.setId(UUID.randomUUID().toString());
+            }
+            errors.addAll(resumePolicy.validate());
+        }
+
+        if (errors.isEmpty()) {
+            List<DeltaFile> checkFiles =
+                    deltaFileRepo.findResumePolicyCandidates(resumePolicy.getFlow());
+
+            List<String> dids = resumePolicyService.canBeApplied(resumePolicy, checkFiles, Collections.emptySet());
+            if (dids.isEmpty()) {
+                information.add("No DeltaFile errors can be resumed by policy " + resumePolicy.getName());
+            } else {
+                information.add("Can apply " + resumePolicy.getName() + " policy to " + dids.size() + " DeltaFiles");
+            }
+        }
+
+        return Result.builder().success(errors.isEmpty())
+                .errors(errors)
+                .info(information)
+                .build();
+    }
+
     private void scheduleCollectCheckForSoonestInRepository() {
         List<CollectEntry> collectEntries = collectService.findAllByOrderByCollectDate();
         if (collectEntries.isEmpty()) {
