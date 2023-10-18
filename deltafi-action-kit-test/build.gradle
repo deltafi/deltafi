@@ -27,13 +27,12 @@ artifacts {
 }
 
 task renameJar (type: Copy) {
+    dependsOn ':deltafi-action-kit-test:jar'
     from ('build/libs/')
     include "deltafi-action-kit-test-${project.version}.jar"
     destinationDir file('build/libs')
     rename "deltafi-action-kit-test-${project.version}.jar", 'deltafi-action-kit-test.jar'
 }
-
-assemble.finalizedBy(renameJar)
 
 dependencies {
     annotationProcessor project(':deltafi-action-kit')

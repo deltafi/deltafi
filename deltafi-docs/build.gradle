@@ -49,9 +49,14 @@ assemble.dependsOn copyChangelog
 task licenseLocal(type: LicenseCheck) {
     source = fileTree(dir: ".")
 }
-licenseLocal.dependsOn assemble
+licenseLocal.dependsOn assemble, test
 
 task licenseFormatLocal(type: LicenseFormat) {
     source = fileTree(dir: ".")
 }
 licenseFormat.dependsOn licenseFormatLocal
+
+dockerPrepare {
+  dependsOn copyChangelog
+  dependsOn licenseLocal
+}
