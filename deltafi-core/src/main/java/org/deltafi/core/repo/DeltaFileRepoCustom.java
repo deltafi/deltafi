@@ -77,9 +77,10 @@ public interface DeltaFileRepoCustom {
      * @param requeueTime    age for searching for expired actions to requeue
      * @param requeueSeconds timestamp for searching and updating actions
      * @param skipActions Set of actions to not requeue
+     * @param skipDids Set of dids to not requeue
      * @return the list of the DeltaFiles to be requeued
      */
-    List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, int requeueSeconds, Set<String> skipActions);
+    List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, int requeueSeconds, Set<String> skipActions, Set<String> skipDids);
 
     /**
      * Requeue up to maxFiles COLD_QUEUED DeltaFiles with the given action names

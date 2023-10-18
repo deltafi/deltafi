@@ -56,6 +56,7 @@ import org.deltafi.core.services.*;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.snapshot.SystemSnapshotDatafetcherTestHelper;
 import org.deltafi.core.snapshot.SystemSnapshotRepo;
+import org.deltafi.core.types.ErrorSummaryFilter;
 import org.deltafi.core.types.FlowAssignmentRule;
 import org.deltafi.core.types.PluginVariables;
 import org.deltafi.core.types.ResumePolicy;
@@ -2652,6 +2653,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testUpdateForRequeue() {
 		Action shouldRequeue = Action.builder().name("hit").modified(MONGO_NOW.minusSeconds(1000)).state(QUEUED).build();
+		Action excludedRequeue = Action.builder().name("excluded").modified(MONGO_NOW.minusSeconds(1000)).state(QUEUED).build();
 		Action shouldStay = Action.builder().name("miss").modified(MONGO_NOW.plusSeconds(1000)).state(QUEUED).build();
 
 		DeltaFile hit = buildDeltaFile("did", null, DeltaFileStage.EGRESS, MONGO_NOW, MONGO_NOW.minusSeconds(1000));
@@ -2666,7 +2668,15 @@ class DeltaFiCoreApplicationTests {
 		miss2.setActions(Arrays.asList(shouldStay, shouldStay));
 		deltaFileRepo.save(miss2);
 
-		List<DeltaFile> hits = deltaFileRepo.updateForRequeue(MONGO_NOW, 30, Collections.emptySet());
+		DeltaFile excludedByDid = buildDeltaFile("did4", null, DeltaFileStage.EGRESS, MONGO_NOW, MONGO_NOW.minusSeconds(1000));
+		excludedByDid.setActions(Arrays.asList(shouldRequeue, shouldStay));
+		deltaFileRepo.save(excludedByDid);
+
+		DeltaFile excludedByAction = buildDeltaFile("did5", null, DeltaFileStage.EGRESS, MONGO_NOW, MONGO_NOW.minusSeconds(1000));
+		excludedByAction.setActions(Arrays.asList(excludedRequeue, shouldStay));
+		deltaFileRepo.save(excludedByAction);
+
+		List<DeltaFile> hits = deltaFileRepo.updateForRequeue(MONGO_NOW, 30, Set.of("excluded", "anotherAction"), Set.of("did4", "did500"));
 
 		assertEquals(1, hits.size());
 		assertEquals(hit.getDid(), hits.get(0).getDid());

@@ -1605,7 +1605,8 @@ public class DeltaFilesService {
 
     public void requeue() {
         OffsetDateTime modified = OffsetDateTime.now(clock);
-        List<DeltaFile> requeuedDeltaFiles = deltaFileRepo.updateForRequeue(modified, getProperties().getRequeueSeconds(), queueManagementService.coldQueueActions());
+        Set<String> longRunningDids = actionEventQueue.getLongRunningTasks().stream().map(ActionExecution::did).collect(Collectors.toSet());
+        List<DeltaFile> requeuedDeltaFiles = deltaFileRepo.updateForRequeue(modified, getProperties().getRequeueSeconds(), queueManagementService.coldQueueActions(), longRunningDids);
         List<ActionInvocation> actions = requeuedDeltaFiles.stream()
                 .map(deltaFile -> requeuedActionInvocations(deltaFile, modified))
                 .flatMap(Collection::stream)

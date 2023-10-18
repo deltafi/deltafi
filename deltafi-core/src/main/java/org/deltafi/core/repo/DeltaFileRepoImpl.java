@@ -262,8 +262,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
-    public List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, int requeueSeconds, Set<String> skipActions) {
-        List<DeltaFile> filesToRequeue = mongoTemplate.find(buildReadyForRequeueQuery(requeueTime, requeueSeconds, skipActions), DeltaFile.class);
+    public List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, int requeueSeconds, Set<String> skipActions, Set<String> skipDids) {
+        List<DeltaFile> filesToRequeue = mongoTemplate.find(buildReadyForRequeueQuery(requeueTime, requeueSeconds, skipActions, skipDids), DeltaFile.class);
         List<DeltaFile> requeuedDeltaFiles = new ArrayList<>();
         for (List<DeltaFile> batch : Lists.partition(filesToRequeue, 1000)) {
             List<String> dids = batch.stream().map(DeltaFile::getDid).toList();
@@ -461,25 +461,38 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         return update;
     }
 
-    private Query buildReadyForRequeueQuery(OffsetDateTime requeueTime, int requeueSeconds, Set<String> skipActions) {
+    private Query buildReadyForRequeueQuery(OffsetDateTime requeueTime, int requeueSeconds, Set<String> skipActions, Set<String> skipDids) {
+        List<Criteria> andCriteria = new ArrayList<>();
+
         Criteria notComplete = Criteria.where(STAGE).not().in(DeltaFileStage.COMPLETE, DeltaFileStage.ERROR, DeltaFileStage.CANCELLED);
+        andCriteria.add(notComplete);
 
         long epochMs = requeueThreshold(requeueTime, requeueSeconds).toInstant().toEpochMilli();
         Criteria expired = Criteria.where(MODIFIED).lt(new Date(epochMs));
+        andCriteria.add(expired);
 
-        // Excludes actions with 'state' of 'QUEUED' and a 'name' in the skipActions list.
-        Criteria skipActionsCriteria = Criteria.where("actions").not().elemMatch(
-                new Criteria().andOperator(
-                        Criteria.where("state").is("QUEUED"),
-                        Criteria.where("name").in(skipActions)
-                )
-        );
+        if (!skipDids.isEmpty()) {
+            Criteria skipDidsCriteria = Criteria.where(DID).not().in(skipDids);
+            andCriteria.add(skipDidsCriteria);
+        }
+
+        if (!skipActions.isEmpty()) {
+            // Excludes actions with 'state' of 'QUEUED' and a 'name' in the skipActions list.
+            Criteria skipActionsCriteria = Criteria.where("actions").not().elemMatch(
+                    new Criteria().andOperator(
+                            Criteria.where("state").is("QUEUED"),
+                            Criteria.where("name").in(skipActions)
+                    )
+            );
+            andCriteria.add(skipActionsCriteria);
+        }
 
         Criteria notColdQueued = Criteria.where("actions").not().elemMatch(
                 Criteria.where("state").is("COLD_QUEUED")
         );
+        andCriteria.add(notColdQueued);
 
-        Query requeueQuery = new Query(new Criteria().andOperator(notComplete, expired, skipActionsCriteria, notColdQueued));
+        Query requeueQuery = new Query(new Criteria().andOperator(andCriteria));
         requeueQuery.fields().include(ID);
 
         return requeueQuery;
