@@ -5,6 +5,131 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.1.7] - 2023-10-18
+
+### Added
+- Added a `system-plugin` where flows and variables can be added and removed without a full plugin install
+- Added a mutation, `removePluginVariables`, to remove variables from the system-plugin
+- Implemented new Flow Plan Builder 
+- Added new core action, `DeltaFiEgressAction`, for egressing data directly to another DeltaFi instace.
+- Added a query, `filteredSummaryByFlow`, to get a summary of filtered DeltaFiles grouped by flow
+  ```graphql
+    query {
+      filteredSummaryByFlow {
+        offset
+        count
+        totalCount
+        countPerFlow {
+          flow
+          count
+          dids
+        }
+      }
+  }
+  ```
+- Added a query, `filteredSummaryByMessage`, to get a summary of filtered DeltaFiles grouped by flow and the filter cause message
+  ```graphql
+    query {
+      filteredSummaryByMessage {
+        offset
+        count
+        totalCount
+        countPerMessage {
+          flow
+          message
+          count
+          dids
+        }
+      }
+    }
+  ```
+- Grafana dashboard 'Clickhouse flow by annotation' that filters on flow and a generic annotation key.  This will allow graphing based on any flow/single annotation key combination
+- Support for collecting multiple DeltaFiles for processing by a transform, load, or format action
+- Add a check for long-running actions (>5 seconds)
+- Foundational work for plugin-delivered timed ingress actions. This is not yet meant for production use.
+- New clustermonitor pod that polls kubernetes app metrics and records per-app CPU (in milli-cores) and RAM utilization
+- New metrics produced:
+  - `gauge.app.memory` tagged by pod container name
+  - `gauge.app.cpu` tagged by pod container name
+- `System Overview` dashboard updated with the following graphs:
+  - `Pod RAM Utilization Over Time`
+  - `Pod RAM Utilization` pie chart
+  - `Pod CPU Utilization Over Time`
+  - `Pod CPU Utilization` pie chart
+- New GraphQL query endpoint `resumePolicyDryRun` allows a preview of how many DeltaFile errors might be auto-resumed by a new resume policy
+- New user role `ResumePolicyDryRun` in the `Resume Policies` group grants permisson to execute the `resumePolicyDryRun` query
+
+### Changed
+- Limit flow plan mutations to the system plugin. Attempting to add or remove flow plans to a plugin other than the system plugin will result in an error
+- Change the `savePluginVariables` mutation to take a list of variables that is always added to the `system-plugin`
+- Cadence update for all libraries minor versions. 
+- Remove spring-cloud dependency and manually set up kubernetes client
+- Update documentation to reflect Ubuntu compatibility and revised system prerequisites (disk space, AVX instruction set 
+- Reduce default requeue time from 300 to 30 seconds. This was previously raised to mitigate double-queuing issues when an Action took longer than the requeue period to process.
+- `cluster`: Plugin configuration simplified to minimally plugin name with an optional git URL
+
+### Fixed
+- Fixed bug on the Search page causing Booleans to be parsed incorrectly on page refresh.
+- Fixed an error where periodic revalidation of invalid flows persisted missing variable errors that were no longer relevant.
+- Clickhouse dashboard 'Clickhouse Metrics' filters correctly on flow for all charts
+- Add null check to cold queue logic to protect against bad data and flows that are no longer running
+- DeltaFiles in an ERROR stage that have been acknowledged can be deleted by the disk space delete policy. 
+- Collect entry locking that resulted in multiple collections for the same set of conditions instead of a single collection
+- Deprecation issues in `gradle-plugin` with Gradle 8.4
+- Do not issue automatic requeues for long-running tasks that are still being processed by an Action
+- Remove the `ingressFlowPlan` and `ingressFlow` collections if they are recreated after they have already been migrated to `normalizeFlowPlan` and `normalizeFlow` collections.
+- Fixed bug on Flow Plan Builder caused by the addition of `TIMED_INGRESS` actions.
+- Bootstrap/install: Issue with using snap to install kubectx on Ubuntu
+
+### Removed
+- Grafana dashboard 'Clickhouse flow/subflow' removed
+
+### Tech-Debt/Refactor
+- Software license formatter updated
+- Refactored nodemonitor configuration in values.yaml to simplify and remove exposure of environment variables.
+
+### Upgrade and Migration
+- Upgraded base images for core docker images
+- Java plugins using the gradle plugin will be based on deltafi/deltafi-java-jre:17.0.8-0
+- Java dependency updates
+  - Upgrade caffeine to 3.1.8
+  - Upgrade commons-compress to 1.24
+  - Upgrade commons-io to 2.14.0
+  - Upgrade dgs to 7.5.3
+  - Upgrade dgs-codegen to 5.12.4
+  - Upgrade dropwizard metrics-core to 4.2.19
+  - Upgrade feign to 12.5
+  - Upgrade httpclient5 to 3.3.3
+  - Upgrade jackson to 2.15.2
+  - Upgrade json to 20230618
+  - Upgrade json-schema-validator to 1.0.87
+  - Upgrade jupiter to 5.10.0
+  - Upgrade kubernetes-client to 6.9.0
+  - Upgrade logback-classic to 1.4.11
+  - Upgrade logstash-logback-encoder to 7.4
+  - Upgrade lombok to 1.18.30
+  - Upgrade maven-artifact to 3.9.5
+  - Upgrade metrics-core to 4.2.20
+  - Upgrade minio to 8.5.6
+  - Upgrade nifi-flowfile-packager to 1.23.2
+  - Upgrade okhttp to 4.11.0
+  - Upgrade rest-assured to 5.3.2
+  - Upgrade spring boot to 3.0.11
+  - Upgrade testcontainers to 1.19.1
+  - Upgrade tika-core to 2.9.0
+- Gradle version updated to version 8.4 (From previous 7.6).  It is recommended that plugins are upgraded to the same version.
+- It is recommended in most circumstances that you set your requeueSeconds System Property to 30 if it was previously set to something higher.
+- Updated Python dependencies to match those in deltafi/python:3.10.13-0
+  - Python pedanitc was upgraded from 1.x to 2.x
+    - See migration guide: https://docs.pydantic.dev/2.4/migration/
+    - Change imports from `pydantic` to `pydantic.v1` to preserve compatiblity
+- Subsystem upgrades:
+  - Grafana: 10.1.1 (deltafi/grafana:10.1.1-0)
+  - Promtail: 2.9.0 (grafana/promtail:2.9.0)
+  - Loki: 2.9.0 (grafana/loki:2.9.0)
+  - Graphite: 1.1.10-5 (graphiteapp/graphite-statsd:1.1.10-5)
+  - Clickhouse: 23.8.2-debian-11-r0 (bitnami/clickhouse:23.8.2-debian-11.r0)
+
 ## [1.1.6] - 2023-09-30
 
 ### Added
@@ -2263,7 +2388,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.6...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.7...main
+[1.1.7]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.6...1.1.7
 [1.1.6]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.5...1.1.6
 [1.1.5]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.4...1.1.5
 [1.1.4]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.3...1.1.4
