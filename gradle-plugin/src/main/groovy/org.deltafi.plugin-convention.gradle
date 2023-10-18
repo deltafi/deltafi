@@ -84,7 +84,7 @@ springBoot {
 
 bootJar {
     dependsOn checkDeltafiPlugin
-    archiveName "deltafi-plugin.jar"
+    setArchiveFileName "deltafi-plugin.jar"
 }
 
 publishing {
@@ -120,6 +120,14 @@ bootJar.finalizedBy(copyPluginDockerfile)
 
 dockerPrepare {
     dependsOn assemble
+}
+
+assemble {
+    dependsOn copyPluginDockerfile
+}
+
+dockerfileZip {
+    dependsOn copyPluginDockerfile
 }
 
 docker {
