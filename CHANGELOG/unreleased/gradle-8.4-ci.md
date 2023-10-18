@@ -22,4 +22,4 @@ Document any changes on this branch here.
 - 
 
 ### Upgrade and Migration
-- Upgrade Gradle wrapper build from 7.6 to 8.4 
+- Gradle version updated to version 8.4 (From previous 7.6).  It is recommended that plugins are upgraded to the same version.
