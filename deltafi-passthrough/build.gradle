@@ -24,6 +24,7 @@ dependencies {
     testImplementation 'io.rest-assured:rest-assured:5.3.2'
     testImplementation "org.mockito:mockito-junit-jupiter:${mockitoJupiterVersion}"
     testImplementation "org.junit.jupiter:junit-jupiter-api:${jupiterVersion}"
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${jupiterVersion}"
 }
 

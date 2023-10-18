@@ -42,6 +42,7 @@ dependencies {
 
 	testImplementation "org.testcontainers:mongodb:${testContainersVersion}"
 	testImplementation "org.testcontainers:junit-jupiter:${testContainersVersion}"
+	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 generateJava {
