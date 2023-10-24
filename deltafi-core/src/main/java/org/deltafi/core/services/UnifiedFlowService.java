@@ -20,6 +20,7 @@ package org.deltafi.core.services;
 import lombok.AllArgsConstructor;
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.ActionType;
+import org.deltafi.common.types.EgressActionConfiguration;
 import org.deltafi.common.types.TransformActionConfiguration;
 import org.deltafi.core.types.EgressFlow;
 import org.deltafi.core.types.EnrichFlow;
@@ -44,6 +45,16 @@ public class UnifiedFlowService {
         configs.addAll(normalizeFlowService.getRunningFlows().stream()
                 .map(NormalizeFlow::getTransformActions)
                 .flatMap(Collection::stream).toList());
+        return configs;
+    }
+
+    public List<EgressActionConfiguration> runningEgressActions() {
+        List<EgressActionConfiguration> configs = new ArrayList<>(transformFlowService.getRunningFlows().stream()
+                .map(TransformFlow::getEgressAction)
+                .toList());
+        configs.addAll(egressFlowService.getRunningFlows().stream()
+                .map(EgressFlow::getEgressAction)
+                .toList());
         return configs;
     }
 
@@ -92,9 +103,8 @@ public class UnifiedFlowService {
                         .findFirst()
                         .orElse(null);
             case EGRESS:
-                yield egressFlowService.getRunningFlows().stream()
-                        .map(EgressFlow::getEgressAction)
-                        .filter(action -> action.getName().equals(actionName))
+                yield runningEgressActions().stream()
+                        .filter(action -> Objects.equals(action.getName(), actionName))
                         .findFirst()
                         .orElse(null);
             default:
