@@ -176,6 +176,21 @@ class LoadAction(Action, ABC):
         return self.load(context, params, load_input)
 
 
+class TimedIngressAction(Action, ABC):
+    def __init__(self, description: str):
+        super().__init__(ActionType.TIMED_INGRESS, description, [], [], (IngressResult, ErrorResult))
+
+    def build_input(self, context: Context, delta_file_message: DeltaFileMessage):
+        return None
+
+    @abstractmethod
+    def ingress(self, context: Context, params: BaseModel):
+        pass
+
+    def execute(self, context: Context, input_placeholder: Any, params: BaseModel):
+        return self.ingress(context, params)
+
+
 class TransformAction(Action, ABC):
     def __init__(self, description: str):
         super().__init__(ActionType.TRANSFORM, description, [], [], (TransformResult, ErrorResult, FilterResult, ReinjectResult))

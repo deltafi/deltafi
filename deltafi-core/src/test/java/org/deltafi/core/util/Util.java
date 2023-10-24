@@ -138,7 +138,7 @@ public class Util {
                 .parentDids(new ArrayList<>())
                 .childDids(new ArrayList<>())
                 .ingressBytes(0L)
-                .sourceInfo(new SourceInfo("filename", flow, metadata))
+                .sourceInfo(new SourceInfo("filename", flow, metadata, ProcessingType.NORMALIZATION))
                 .stage(stage)
                 .created(created)
                 .modified(modified)

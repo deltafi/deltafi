@@ -235,6 +235,12 @@ type EgressFlow {
   variables: [Variable]!
 }
 
+enum IngressStatus {
+  HEALTHY
+  DEGRADED
+  UNHEALTHY
+}
+
 type TimedIngressFlow {
   name: String!
   description: String!
@@ -243,6 +249,11 @@ type TimedIngressFlow {
   targetFlow: String!
   interval: Duration
   lastRun: DateTime
+  memo: String
+  currentDid: String
+  executeImmediate: Boolean
+  ingressStatus: IngressStatus
+  ingressStatusMessage: String
   timedIngressAction: TimedIngressActionConfiguration!
   variables: [Variable]!
 }

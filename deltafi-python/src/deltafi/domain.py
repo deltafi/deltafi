@@ -50,6 +50,7 @@ class Context(NamedTuple):
     content_service: ContentService
     collect: dict = None
     collected_dids: List[str] = None
+    memo: str = None
     logger: Logger = None
 
     @classmethod
@@ -76,6 +77,10 @@ class Context(NamedTuple):
             collected_dids = context['collectedDids']
         else:
             collected_dids = None
+        if 'memo' in context:
+            memo = context['memo']
+        else:
+            memo = None
         return Context(did=did,
                        action_flow=action_flow,
                        action_name=action_name,
@@ -87,6 +92,7 @@ class Context(NamedTuple):
                        content_service=content_service,
                        collect=collect,
                        collected_dids=collected_dids,
+                       memo=memo,
                        logger=logger)
 
 

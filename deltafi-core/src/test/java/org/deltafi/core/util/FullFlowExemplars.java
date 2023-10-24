@@ -35,7 +35,7 @@ public class FullFlowExemplars {
         DeltaFile deltaFile = Util.emptyDeltaFile(did, "flow", List.of(content));
         deltaFile.setIngressBytes(500L);
         deltaFile.queueAction("sampleNormalize", "Utf8TransformAction", ActionType.TRANSFORM, false);
-        deltaFile.setSourceInfo(new SourceInfo("input.txt", NORMALIZE_FLOW_NAME, SOURCE_METADATA));
+        deltaFile.setSourceInfo(new SourceInfo("input.txt", NORMALIZE_FLOW_NAME, SOURCE_METADATA, ProcessingType.NORMALIZATION));
         deltaFile.getActions().get(0).setMetadata(SOURCE_METADATA);
         return deltaFile;
     }

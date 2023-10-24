@@ -18,7 +18,8 @@
 
 import pytest
 from deltafi.action import LoadAction
-from deltafi.domain import Context, Event
+from deltafi.actiontype import ActionType
+from deltafi.domain import Event
 from deltafi.input import LoadInput
 from deltafi.result import LoadResult, EnrichResult
 from deltafi.storage import ContentService
@@ -71,7 +72,7 @@ def test_load_action():
     mock_content_service = mock(ContentService)
 
     action = SampleLoadAction()
-    assert action.action_type.value == "load"
+    assert action.action_type.value == ActionType.LOAD.value
     result = action.execute_action(make_event(mock_content_service))
     assert type(result) == LoadResult
 

@@ -35,12 +35,12 @@ public class SmokeTestParameters extends ActionParameters {
     @JsonPropertyDescription("Metadata to add to each smoke-generated DeltaFile")
     public Map<String, String> metadata = new HashMap<>();
 
-    @JsonPropertyDescription("The content's filename. If null, the DID will be used as the filename.")
-    public String filename;
-
     @JsonPropertyDescription("The content's mediaType. If null, the default is application/text.")
     public String mediaType = "application/text";
 
-    @JsonPropertyDescription("The content to attach to the DeltaFile. If null, the DeltaFile will use its own DID as the content.")
+    @JsonPropertyDescription("The content to attach to the DeltaFile. If null, random data of size contentSize will be added to the deltaFile")
     public String content;
+
+    @JsonPropertyDescription("The size in bytes of the random content to attach to the DeltaFile. Ignored if content is set")
+    public int contentSize = 500;
 }

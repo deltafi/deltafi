@@ -47,7 +47,7 @@ public class LineSplitterTransformAction extends TransformAction<LineSplitterPar
         try {
             result.addContent(LineSplitter.splitContent(originalContent, params));
         } catch (SplitException splitException) {
-            return new ErrorResult(context, splitException.getMessage(), splitException).logErrorTo(log);
+            return new ErrorResult(context, splitException.getMessage(), splitException);
         }
 
         return result;

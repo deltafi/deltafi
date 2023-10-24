@@ -18,7 +18,8 @@
 
 import pytest
 from deltafi.action import DomainAction
-from deltafi.domain import Context, Event
+from deltafi.actiontype import ActionType
+from deltafi.domain import Event
 from deltafi.input import DomainInput
 from deltafi.result import DomainResult, FilterResult
 from deltafi.storage import ContentService
@@ -60,7 +61,7 @@ def test_domain_action():
     mock_content_service = mock(ContentService)
 
     action = SampleDomainAction()
-    assert action.action_type.value == "domain"
+    assert action.action_type.value == ActionType.DOMAIN.value
     result = action.execute_action(make_event(mock_content_service))
     assert type(result) == DomainResult
 

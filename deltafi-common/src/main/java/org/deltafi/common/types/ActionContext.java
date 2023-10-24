@@ -46,11 +46,13 @@ public class ActionContext {
     private CollectConfiguration collect;
     private List<String> collectedDids;
 
+    private String memo;
+
     /** Create a copy of this ActionContext with a different did
      * @param newDid the new DID
      * */
     public ActionContext copy(String newDid) {
         return new ActionContext(newDid, flow, name, sourceFilename, ingressFlow, egressFlow, hostname, actionVersion,
-                startTime, systemName, contentStorageService, collect, collectedDids);
+                startTime, systemName, contentStorageService, collect, collectedDids, memo);
     }
 }

@@ -802,7 +802,7 @@ class StateMachineTest {
         deltaFile.getActions().get(0).addEnrichment(ENRICH, "value", MediaType.ALL_VALUE);
 
         if (withSourceInfo) {
-            deltaFile.setSourceInfo(new SourceInfo("input.txt", "sample", Map.of(SOURCE_KEY, "value")));
+            deltaFile.setSourceInfo(new SourceInfo("input.txt", "sample", Map.of(SOURCE_KEY, "value"), ProcessingType.NORMALIZATION));
         }
 
         return deltaFile;

@@ -95,7 +95,7 @@ public class ActionEvent {
       case FILTER -> filter != null;
       case REINJECT -> reinject != null && !reinject.isEmpty();
       case VALIDATE, EGRESS -> true;
-      case INGRESS -> ingress != null;
+      case INGRESS -> ingress != null && ingress.getIngressItems() != null;
       default -> false;
     };
   }

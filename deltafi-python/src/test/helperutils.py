@@ -37,7 +37,8 @@ def make_context_dict():
         'egressFlow': "OUT",
         'systemName': "SYSTEM",
         'collect': None,
-        'collectedDids': None
+        'collectedDids': None,
+        'memo': 'note to self'
     }
 
 

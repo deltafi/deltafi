@@ -18,15 +18,15 @@
 package org.deltafi.core.schedulers;
 
 import lombok.RequiredArgsConstructor;
+import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.core.services.DeltaFilesService;
+import org.deltafi.core.services.ErrorCountService;
 import org.deltafi.core.services.TimedIngressFlowService;
 import org.deltafi.core.types.TimedIngressFlow;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
-import java.time.OffsetDateTime;
 
 @ConditionalOnProperty(value = "schedule.maintenance", havingValue = "true", matchIfMissing = true)
 @Service
@@ -36,13 +36,16 @@ public class TimedIngressScheduler {
 
     private final DeltaFilesService deltaFilesService;
     private final TimedIngressFlowService timedIngressFlowService;
+    private final ActionEventQueue actionEventQueue;
+    private final ErrorCountService errorCountService;
 
     @Scheduled(fixedDelay = 1000)
     public void triggerTimedIngressFlows() {
+        timedIngressFlowService.refreshCache();
         for (TimedIngressFlow timedIngressFlow : timedIngressFlowService.getRunningFlows()) {
-            if (timedIngressFlow.due()) {
+            if (timedIngressFlow.due(actionEventQueue) &&
+                    !errorCountService.flowErrorsExceeded(timedIngressFlow.getTargetFlow())) {
                 deltaFilesService.taskTimedIngress(timedIngressFlow);
-                timedIngressFlowService.setLastRun(timedIngressFlow.getName(), OffsetDateTime.now());
             }
         }
     }

@@ -162,6 +162,7 @@ public class DeltaFilesService {
     /**
      * Find the set of annotations that are pending for the DeltaFile
      * with the given did
+     *
      * @param did of the DeltaFile to check
      * @return set of annotations this DeltaFile is waiting for
      */
@@ -190,8 +191,10 @@ public class DeltaFilesService {
         return deltaFiles(offset, limit, filter, orderBy, null);
     }
 
-    public DeltaFiles deltaFiles(Integer offset, Integer limit, DeltaFilesFilter filter, DeltaFileOrder orderBy, List<String> includeFields) {
-        return deltaFileRepo.deltaFiles(offset, (Objects.nonNull(limit) && limit > 0) ? limit : DEFAULT_QUERY_LIMIT, filter, orderBy, includeFields);
+    public DeltaFiles deltaFiles(Integer offset, Integer limit, DeltaFilesFilter filter, DeltaFileOrder orderBy,
+                                 List<String> includeFields) {
+        return deltaFileRepo.deltaFiles(offset, (Objects.nonNull(limit) && limit > 0) ? limit : DEFAULT_QUERY_LIMIT,
+                filter, orderBy, includeFields);
     }
 
     public Map<String, DeltaFile> deltaFiles(List<String> dids) {
@@ -237,31 +240,34 @@ public class DeltaFilesService {
         return deltaFileRepo.countByStageAndErrorAcknowledgedIsNull(DeltaFileStage.ERROR);
     }
 
-    public DeltaFile ingress(IngressEvent ingressEvent) {
-        return ingress(ingressEvent, Collections.emptyList());
+    public DeltaFile ingress(IngressEventItem ingressEventItem, OffsetDateTime ingressStartTime,
+                             OffsetDateTime ingressStopTime) {
+        return ingress(ingressEventItem, Collections.emptyList(), ingressStartTime, ingressStopTime);
     }
 
-    private DeltaFile buildIngressDeltaFile(IngressEvent ingressEvent, List<String> parentDids) {
-        SourceInfo sourceInfo = ingressEvent.getSourceInfo();
+    private DeltaFile buildIngressDeltaFile(IngressEventItem ingressEventItem, List<String> parentDids,
+                                            OffsetDateTime ingressStartTime, OffsetDateTime ingressStopTime) {
 
         OffsetDateTime now = OffsetDateTime.now(clock);
 
         Action ingressAction = Action.builder()
                 .name(INGRESS_ACTION)
-                .flow(ingressEvent.getSourceInfo().getFlow())
+                .flow(ingressEventItem.getFlow())
                 .type(ActionType.INGRESS)
                 .state(ActionState.COMPLETE)
-                .created(ingressEvent.getCreated())
+                .created(ingressStartTime)
                 .modified(now)
-                .content(ingressEvent.getContent())
-                .metadata(ingressEvent.getSourceInfo().getMetadata())
+                .content(ingressEventItem.getContent())
+                .metadata(ingressEventItem.getMetadata())
+                .start(ingressStartTime)
+                .stop(ingressStopTime)
                 .build();
 
-        long contentSize = ContentUtil.computeContentSize(ingressEvent.getContent());
+        long contentSize = ContentUtil.computeContentSize(ingressEventItem.getContent());
 
         return DeltaFile.builder()
                 .schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
-                .did(ingressEvent.getDid())
+                .did(ingressEventItem.getDid())
                 .parentDids(parentDids)
                 .childDids(Collections.emptyList())
                 .requeueCount(0)
@@ -269,23 +275,32 @@ public class DeltaFilesService {
                 .totalBytes(contentSize)
                 .stage(DeltaFileStage.INGRESS)
                 .actions(new ArrayList<>(List.of(ingressAction)))
-                .sourceInfo(sourceInfo)
-                .created(ingressEvent.getCreated())
+                .sourceInfo(SourceInfo.builder()
+                        .filename(ingressEventItem.getFilename())
+                        .flow(ingressEventItem.getFlow())
+                        .metadata(ingressEventItem.getMetadata())
+                        .processingType(ingressEventItem.getProcessingType())
+                        .build())
+                .created(ingressStartTime)
                 .modified(now)
                 .egressed(false)
                 .filtered(false)
                 .build();
     }
 
-    public DeltaFile ingress(IngressEvent ingressEvent, List<String> parentDids) {
-        DeltaFile deltaFile = buildIngressDeltaFile(ingressEvent, parentDids);
+    public DeltaFile ingress(IngressEventItem ingressEventItem, List<String> parentDids, OffsetDateTime ingressStartTime,
+                             OffsetDateTime ingressStopTime) {
+        DeltaFile deltaFile = buildIngressDeltaFile(ingressEventItem, parentDids, ingressStartTime, ingressStopTime);
 
         advanceAndSave(deltaFile);
         return deltaFile;
     }
 
-    public DeltaFile ingressOrErrorOnMissingFlow(IngressEvent ingressEvent, String ingressActionName, String ingressFlow) {
-        DeltaFile deltaFile = buildIngressDeltaFile(ingressEvent, Collections.emptyList());
+    public DeltaFile ingressOrErrorOnMissingFlow(IngressEventItem ingressEventItem, String ingressActionName,
+                                                 String ingressFlow, OffsetDateTime ingressStartTime,
+                                                 OffsetDateTime ingressStopTime) {
+        DeltaFile deltaFile = buildIngressDeltaFile(ingressEventItem, Collections.emptyList(), ingressStartTime,
+                ingressStopTime);
         deltaFile.lastAction().setName(ingressActionName);
         deltaFile.lastAction().setFlow(ingressFlow);
 
@@ -322,10 +337,22 @@ public class DeltaFilesService {
         }
 
         if (event.getType() == ActionEventType.INGRESS) {
-            ingressFromAction(event);
-            return;
+            handleIngressActionEvent(event);
+        } else {
+            handleProcessingActionEvent(event);
         }
+    }
 
+    public void handleIngressActionEvent(ActionEvent event) {
+        String validationError = event.validate();
+        if (validationError == null) {
+            ingressFromAction(event);
+        } else {
+            log.error("Invalid ingress event received from {}: {}", event.getAction(), validationError);
+        }
+    }
+
+    public void handleProcessingActionEvent(ActionEvent event) throws JsonProcessingException {
         synchronized (didMutexService.getMutex(event.getDid())) {
             DeltaFile deltaFile = getCachedDeltaFile(event.getDid());
 
@@ -422,6 +449,14 @@ public class DeltaFilesService {
         }
     }
 
+    private void generateIngressMetrics(List<Metric> metrics, ActionEvent event, String flow) {
+        Map<String, String> defaultTags = MetricsUtil.tagsFor(event.getType(), event.getAction(), flow, null);
+        for(Metric metric : metrics) {
+            metric.addTags(defaultTags);
+            metricService.increment(metric);
+        }
+    }
+
     private String egressFlow(String flow, String actionName, DeltaFile deltaFile) {
         Optional<Action> action = deltaFile.actionNamed(flow, actionName);
         return action.map(value -> egressFlow(value, deltaFile)).orElse(null);
@@ -437,14 +472,29 @@ public class DeltaFilesService {
 
     public void ingressFromAction(ActionEvent event) {
         TimedIngressFlow timedIngressFlow = timedIngressFlowService.getRunningFlowByName(event.getFlow());
-        event.getIngress().getSourceInfo().setFlow(timedIngressFlow.getTargetFlow());
-        event.getIngress().getSourceInfo().setProcessingType(null);
-        DeltaFile deltaFile = ingressOrErrorOnMissingFlow(event.getIngress(), event.getAction(), event.getFlow());
+        IngressEvent ingressEvent = event.getIngress();
+        boolean completedExecution = timedIngressFlowService.completeExecution(timedIngressFlow.getName(),
+                event.getDid(), ingressEvent.getMemo(), ingressEvent.isExecuteImmediate(),
+                ingressEvent.getStatus(), ingressEvent.getStatusMessage());
+        if (!completedExecution) {
+            log.warn("Received unexpected ingress event with did " + event.getDid());
+            return;
+        }
+
+        // array of length 1 is used to store the size in bytes
+        final long[] bytes = {0L};
+        ingressEvent.getIngressItems().forEach(ingressItem -> {
+                    ingressItem.setFlow(timedIngressFlow.getTargetFlow());
+                    ingressItem.setProcessingType(null);
+                    DeltaFile deltaFile = ingressOrErrorOnMissingFlow(ingressItem, event.getAction(), event.getFlow(),
+                            event.getStart(), event.getStop());
+                    bytes[0] += deltaFile.getIngressBytes();
+                });
 
         List<Metric> metrics = (event.getMetrics() != null) ? event.getMetrics() : new ArrayList<>();
-        metrics.add(new Metric(DeltaFiConstants.FILES_IN, 1));
-        metrics.add(new Metric(DeltaFiConstants.BYTES_IN, deltaFile.getIngressBytes()));
-        generateMetrics(metrics, event, deltaFile);
+        metrics.add(new Metric(DeltaFiConstants.FILES_IN, ingressEvent.getIngressItems().size()));
+        metrics.add(new Metric(DeltaFiConstants.BYTES_IN, bytes[0]));
+        generateIngressMetrics(metrics, event, timedIngressFlow.getTargetFlow());
     }
 
     public void transform(DeltaFile deltaFile, ActionEvent event) {
@@ -1815,7 +1865,7 @@ public class DeltaFilesService {
                     return actionInvocation.getActionConfiguration().buildActionInput(actionInvocation.getFlow(),
                             actionInvocation.getDeltaFile(), getProperties().getSystemName(),
                             actionInvocation.getEgressFlow(), actionInvocation.getReturnAddress(),
-                            actionInvocation.getActionCreated(), actionInvocation.getAction());
+                            actionInvocation.getActionCreated(), actionInvocation.getAction(), null);
                 })
                 .toList();
 
@@ -1841,6 +1891,7 @@ public class DeltaFilesService {
 
         try {
             if (!actionEventQueue.queueHasTaskingForAction(actionInput)) {
+                timedIngressFlowService.setLastRun(timedIngressFlow.getName(), OffsetDateTime.now(), actionInput.getActionContext().getDid());
                 actionEventQueue.putActions(List.of(actionInput), false);
             } else {
                 log.warn("Skipping queueing on {} for duplicate timed ingress action event: {}",

@@ -15,19 +15,27 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.repo;
+package org.deltafi.common.types;
 
-import org.deltafi.common.types.IngressStatus;
-import org.deltafi.core.types.TimedIngressFlow;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-public interface TimedIngressFlowRepoCustom extends FlowRepoCustom<TimedIngressFlow> {
-    boolean updateInterval(String flowName, Duration duration);
-
-    boolean updateLastRun(String flowName, OffsetDateTime lastRun, String currentDid);
-
-    boolean completeExecution(String flowName, String currentDid, String memo, boolean executeImmediate,
-                              IngressStatus status, String statusMessage);
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class IngressEventItem {
+  private String did;
+  private String filename;
+  private String flow;
+  private Map<String, String> metadata = new HashMap<>();
+  private ProcessingType processingType;
+  private List<Content> content;
 }

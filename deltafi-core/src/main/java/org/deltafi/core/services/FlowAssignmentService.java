@@ -20,7 +20,6 @@ package org.deltafi.core.services;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.deltafi.common.types.SourceInfo;
 import org.deltafi.core.repo.FlowAssignmentRuleRepo;
 import org.deltafi.core.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.snapshot.Snapshotter;
@@ -170,13 +169,14 @@ public class FlowAssignmentService implements Snapshotter {
     /**
      * Iterate through all rules to find a match for the given SourceInfo.
      *
-     * @param sourceInfo input source info to match
+     * @param filename filename to compare to rules
+     * @param metadata metadata to compare to rules
      * @return flow name if found, else null
      */
-    public String findFlow(SourceInfo sourceInfo) {
+    public String findFlow(String filename, Map<String, String> metadata) {
         final List<FlowAssignmentRule> rules = rulesCache;
         for (FlowAssignmentRule rule : rules) {
-            if (rule.matches(sourceInfo)) {
+            if (rule.matches(filename, metadata)) {
                 return rule.getFlow();
             }
         }

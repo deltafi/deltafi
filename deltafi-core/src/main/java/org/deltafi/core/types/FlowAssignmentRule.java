@@ -19,7 +19,6 @@ package org.deltafi.core.types;
 
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.converters.KeyValueConverter;
-import org.deltafi.common.types.SourceInfo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,12 +36,12 @@ public class FlowAssignmentRule extends org.deltafi.core.generated.types.FlowAss
     /**
      * Compares the SourceInfo to the rule's filenameRegex and metadata.
      *
-     * @param sourceInfo input source info to match
+     * @param filename input filename to match
+     * @param metadata input metadata to match
      * @return true if matched, else false
      */
-    public boolean matches(SourceInfo sourceInfo) {
-        return matchesRegex(sourceInfo.getFilename()) &&
-                matchesRequiredMetadata(sourceInfo.getMetadata());
+    public boolean matches(String filename, Map<String, String> metadata) {
+        return matchesRegex(filename) && matchesRequiredMetadata(metadata);
     }
 
     /**

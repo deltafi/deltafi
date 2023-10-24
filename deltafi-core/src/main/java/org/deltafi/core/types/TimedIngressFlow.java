@@ -19,6 +19,7 @@ package org.deltafi.core.types;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.ActionFamily;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -31,10 +32,16 @@ import java.util.*;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class TimedIngressFlow extends Flow {
+    private static final Duration TASKING_TIMEOUT = Duration.ofSeconds(30);
     private TimedIngressActionConfiguration timedIngressAction;
     private String targetFlow;
     private Duration interval = Duration.ofSeconds(10);
     private OffsetDateTime lastRun;
+    private String memo;
+    private String currentDid;
+    private boolean executeImmediate = false;
+    private IngressStatus ingressStatus = IngressStatus.HEALTHY;
+    private String ingressStatusMessage;
 
     /**
      * Schema versions:
@@ -93,9 +100,16 @@ public class TimedIngressFlow extends Flow {
         return timedIngressFlowConfiguration;
     }
 
-    public boolean due() {
-        if (lastRun == null) {
+    public boolean due(ActionEventQueue actionEventQueue) {
+        if (lastRun == null || executeImmediate) {
             return true;
+        }
+        if (currentDid != null && lastRun.plus(TASKING_TIMEOUT).isAfter(OffsetDateTime.now())) {
+            return false;
+        }
+        if (currentDid != null && actionEventQueue.longRunningTaskExists(timedIngressAction.getType(),
+                timedIngressAction.getName(), currentDid)) {
+            return false;
         }
         return lastRun.plus(interval).isBefore(OffsetDateTime.now());
     }
@@ -110,6 +124,6 @@ public class TimedIngressFlow extends Flow {
                 .did(UUID.randomUUID().toString())
                 .sourceInfo(SourceInfo.builder().flow(name).build())
                 .build();
-        return timedIngressAction.buildActionInput(name, deltaFile, systemName, null, null, OffsetDateTime.now(), null);
+        return timedIngressAction.buildActionInput(name, deltaFile, systemName, null, null, OffsetDateTime.now(), null, memo);
     }
 }

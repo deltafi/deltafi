@@ -20,13 +20,13 @@ from enum import Enum
 
 
 class ActionType(Enum):
-    INGRESS = "ingress"
-    TRANSFORM = "transform"
-    LOAD = "load"
-    DOMAIN = "domain"
-    ENRICH = "enrich"
-    FORMAT = "format"
-    VALIDATE = "validate"
-    EGRESS = "egress"
-    DELETE = "delete"
-    UNKNOWN = "unknown"
+    TIMED_INGRESS = "TIMED_INGRESS"
+    TRANSFORM = "TRANSFORM"
+    LOAD = "LOAD"
+    DOMAIN = "DOMAIN"
+    ENRICH = "ENRICH"
+    FORMAT = "FORMAT"
+    VALIDATE = "VALIDATE"
+    EGRESS = "EGRESS"
+    DELETE = "DELETE"
+    UNKNOWN = "UNKNOWN"

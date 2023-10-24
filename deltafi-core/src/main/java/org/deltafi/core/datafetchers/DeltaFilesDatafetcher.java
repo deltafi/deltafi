@@ -235,10 +235,6 @@ public class DeltaFilesDatafetcher {
   @NeedsPermission.StressTest
   public int stressTest(@InputArgument String flow, @InputArgument Integer contentSize, @InputArgument Integer numFiles, @InputArgument Map<String, String> metadata, @InputArgument Integer batchSize) throws ObjectStorageException {
     Random random = new Random();
-    SourceInfo sourceInfo = new SourceInfo("stressTestData", flow, metadata == null ? new HashMap<>() : metadata);
-    if (transformFlowService.hasRunningFlow(flow)) {
-        sourceInfo.setProcessingType(ProcessingType.TRANSFORMATION);
-    }
 
     // batches let us test quick bursts of ingress traffic, deferring ingress until after content is stored for the batch
     if (batchSize == null || batchSize < 1) {
@@ -263,9 +259,12 @@ public class DeltaFilesDatafetcher {
       for (int i = 0; i < Math.min(remainingFiles, batchSize); i++) {
         Content c = contentList.get(i);
         String did = c.getSegments().isEmpty() ? UUID.randomUUID().toString() : c.getSegments().get(0).getDid();
-        IngressEvent ingressEvent = new IngressEvent(did, sourceInfo, List.of(c), OffsetDateTime.now());
+        IngressEventItem ingressEventItem = new IngressEventItem(did, "stressTestData", flow,
+                metadata == null ? new HashMap<>() : metadata,
+                transformFlowService.hasRunningFlow(flow) ? ProcessingType.TRANSFORMATION : ProcessingType.NORMALIZATION,
+                List.of(c));
         log.debug("Ingressing metadata for {} ({}/{})", did, i + (numFiles - remainingFiles) + 1, numFiles);
-        deltaFilesService.ingress(ingressEvent);
+        deltaFilesService.ingress(ingressEventItem, OffsetDateTime.now(), OffsetDateTime.now());
       }
 
       remainingFiles -= batchSize;

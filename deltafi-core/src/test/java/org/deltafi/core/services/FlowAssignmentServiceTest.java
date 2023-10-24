@@ -19,7 +19,6 @@ package org.deltafi.core.services;
 
 import org.assertj.core.api.Assertions;
 import org.deltafi.common.types.KeyValue;
-import org.deltafi.common.types.SourceInfo;
 import org.deltafi.core.repo.FlowAssignmentRuleRepo;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.types.FlowAssignmentRule;
@@ -54,56 +53,50 @@ class FlowAssignmentServiceTest {
     void testRegexMatch() {
         when(flowAssignmentRuleRepo.findByOrderByPriorityAscFlowAsc()).thenReturn(getAllRules());
         flowAssignmentService.refreshCache();
-        assertEquals(REGEX_FLOW, flowAssignmentService.findFlow(
-                new SourceInfo("abcd", "", Map.of())));
+        assertEquals(REGEX_FLOW, flowAssignmentService.findFlow("abcd", Map.of()));
     }
 
     @Test
     void testNoRegexMatch() {
         when(flowAssignmentRuleRepo.findByOrderByPriorityAscFlowAsc()).thenReturn(getAllRules());
         flowAssignmentService.refreshCache();
-        assertNull(flowAssignmentService.findFlow(
-                new SourceInfo("123abc", "", Map.of())));
+        assertNull(flowAssignmentService.findFlow("123abc", Map.of()));
     }
 
     @Test
     void testNoMetaMatch() {
         when(flowAssignmentRuleRepo.findByOrderByPriorityAscFlowAsc()).thenReturn(getAllRules());
         flowAssignmentService.refreshCache();
-        assertNull(flowAssignmentService.findFlow(
-                new SourceInfo("file", "", Map.of("key1", "val1"))));
+        assertNull(flowAssignmentService.findFlow("file", Map.of("key1", "val1")));
     }
 
     @Test
     void testMetaMatch() {
         when(flowAssignmentRuleRepo.findByOrderByPriorityAscFlowAsc()).thenReturn(getAllRules());
         flowAssignmentService.refreshCache();
-        assertEquals(META_FLOW, flowAssignmentService.findFlow(
-                new SourceInfo("file", "", Map.of("key2", "val2", "key1", "val1"))));
+        assertEquals(META_FLOW, flowAssignmentService.findFlow("file",
+                Map.of("key2", "val2", "key1", "val1")));
     }
 
     @Test
     void testNoMatchesBoth() {
         when(flowAssignmentRuleRepo.findByOrderByPriorityAscFlowAsc()).thenReturn(getAllRules());
         flowAssignmentService.refreshCache();
-        assertNull(flowAssignmentService.findFlow(
-                new SourceInfo("def", "", Map.of("x", "x"))));
+        assertNull(flowAssignmentService.findFlow("def", Map.of("x", "x")));
     }
 
     @Test
     void testMatchesBoth() {
         when(flowAssignmentRuleRepo.findByOrderByPriorityAscFlowAsc()).thenReturn(getAllRules());
         flowAssignmentService.refreshCache();
-        assertEquals(BOTH_FLOW, flowAssignmentService.findFlow(
-                new SourceInfo("def", "", Map.of("key3", "val3"))));
+        assertEquals(BOTH_FLOW, flowAssignmentService.findFlow("def",  Map.of("key3", "val3")));
     }
 
     @Test
     void testMatchesNextRule() {
         when(flowAssignmentRuleRepo.findByOrderByPriorityAscFlowAsc()).thenReturn(getAllRules());
         flowAssignmentService.refreshCache();
-        assertEquals(PASS_DOWN_FLOW, flowAssignmentService.findFlow(
-                new SourceInfo("file", "", Map.of("key3", "val3"))));
+        assertEquals(PASS_DOWN_FLOW, flowAssignmentService.findFlow("file", Map.of("key3", "val3")));
     }
 
     @Test

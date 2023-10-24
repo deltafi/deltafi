@@ -61,7 +61,7 @@ public class HelloWorldTransformAction extends TransformAction<Parameters> {
         TransformResult result = new TransformResult(context);
         result.addMetadata("transformKey", "transformValue");
         result.addAnnotation("transformAnnotation", "value");
-        result.saveContent(data, "transform-named-me", "test/plain");
+        result.saveContent(data, "transform-named-me", "text/plain");
         return result;
     }
 }
@@ -115,7 +115,7 @@ class HelloWorldTransformAction(TransformAction):
         data = f"{transform_input.content[0].load_str()}\nHelloWorldTransformAction did a great job"
 
         return TransformResult(context)
-            .save_string_content(data, 'transform-named-me', 'test/plain')
+            .save_string_content(data, 'transform-named-me', 'text/plain')
             .add_metadata('transformKey', 'transformValue')
             .annotate('transformAnnotation', 'value')
 ```

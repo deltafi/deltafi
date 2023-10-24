@@ -36,10 +36,6 @@ public class SourceInfo {
     @Setter(AccessLevel.NONE)
     private String normalizedFilename;
 
-    public SourceInfo(String filename, String flow, Map<String, String> metadata) {
-        this(filename, flow, metadata, ProcessingType.NORMALIZATION);
-    }
-
     @Builder
     public SourceInfo(String filename, String flow, Map<String, String> metadata, ProcessingType processingType) {
         setFilename(filename);

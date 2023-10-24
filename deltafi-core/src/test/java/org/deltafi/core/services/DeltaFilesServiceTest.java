@@ -123,11 +123,11 @@ class DeltaFilesServiceTest {
         when(normalizeFlowService.getRunningFlowByName(normalizeFlow.getName())).thenReturn(normalizeFlow);
 
         String did = UUID.randomUUID().toString();
-        SourceInfo sourceInfo = new SourceInfo("filename", normalizeFlow.getName(), Map.of());
         List<Content> content = Collections.singletonList(new Content("name", "mediaType"));
-        IngressEvent ingressInput = new IngressEvent(did, sourceInfo, content, OffsetDateTime.now());
+        IngressEventItem ingressInputItem = new IngressEventItem(did, "filename", normalizeFlow.getName(),
+                Map.of(), ProcessingType.NORMALIZATION, content);
 
-        DeltaFile deltaFile = deltaFilesService.ingress(ingressInput);
+        DeltaFile deltaFile = deltaFilesService.ingress(ingressInputItem, OffsetDateTime.now(), OffsetDateTime.now());
 
         assertNotNull(deltaFile);
         assertEquals(normalizeFlow.getName(), deltaFile.getSourceInfo().getFlow());

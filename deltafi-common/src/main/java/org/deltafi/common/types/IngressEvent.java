@@ -22,7 +22,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -30,8 +30,9 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class IngressEvent {
-  private String did;
-  private SourceInfo sourceInfo;
-  private List<Content> content;
-  private OffsetDateTime created;
+  private String memo;
+  boolean executeImmediate = false;
+  private List<IngressEventItem> ingressItems = new ArrayList<>();
+  private IngressStatus status = IngressStatus.HEALTHY;
+  private String statusMessage;
 }

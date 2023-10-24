@@ -128,6 +128,7 @@ def test_context_json():
     assert context.content_service == mock_content_service
     assert context.collect is None
     assert context.collected_dids is None
+    assert context.memo == 'note to self'
     assert context.logger is None
 
 

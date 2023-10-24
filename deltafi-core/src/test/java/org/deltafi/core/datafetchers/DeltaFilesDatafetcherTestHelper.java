@@ -19,8 +19,8 @@ package org.deltafi.core.datafetchers;
 
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.Content;
-import org.deltafi.common.types.IngressEvent;
-import org.deltafi.common.types.SourceInfo;
+import org.deltafi.common.types.IngressEventItem;
+import org.deltafi.common.types.ProcessingType;
 import org.deltafi.core.generated.client.DeltaFileProjectionRoot;
 import org.deltafi.core.generated.client.DeltaFilesProjectionRoot;
 import org.deltafi.core.generated.client.ErrorSummaryByFlowProjectionRoot;
@@ -28,7 +28,6 @@ import org.deltafi.core.generated.client.ErrorSummaryByMessageProjectionRoot;
 import org.deltafi.core.generated.client.FilteredSummaryByFlowProjectionRoot;
 import org.deltafi.core.generated.client.FilteredSummaryByMessageProjectionRoot;
 
-import java.time.OffsetDateTime;
 import java.util.*;
 
 public class DeltaFilesDatafetcherTestHelper {
@@ -44,9 +43,8 @@ public class DeltaFilesDatafetcherTestHelper {
     static final String MEDIA_TYPE = "plain/text";
     static final List<Content> CONTENT = Collections.singletonList(new Content(FILENAME, MEDIA_TYPE, new Segment(OBJECT_UUID, 0, SIZE, DID)));
     static final List<Content> CONTENT_2 = Collections.singletonList(new Content(FILENAME, MEDIA_TYPE, new Segment(OBJECT_UUID_2, 0, SIZE, DID)));
-    static final SourceInfo SOURCE_INFO = new SourceInfo(FILENAME, FLOW, METADATA);
-    public static final IngressEvent INGRESS_INPUT = new IngressEvent(DID, SOURCE_INFO, CONTENT, OffsetDateTime.now());
-    public static final IngressEvent INGRESS_INPUT_2 = new IngressEvent(DID_2, SOURCE_INFO, CONTENT_2, OffsetDateTime.now());
+    public static final IngressEventItem INGRESS_INPUT = new IngressEventItem(DID, FILENAME, FLOW, METADATA, ProcessingType.NORMALIZATION, CONTENT);
+    public static final IngressEventItem INGRESS_INPUT_2 = new IngressEventItem(DID_2, FILENAME, FLOW, METADATA, ProcessingType.NORMALIZATION, CONTENT_2);
 
     public static final DeltaFilesProjectionRoot DELTA_FILES_PROJECTION_ROOT = new DeltaFilesProjectionRoot()
             .deltaFiles()

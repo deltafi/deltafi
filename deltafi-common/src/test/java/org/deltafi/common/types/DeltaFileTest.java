@@ -31,7 +31,7 @@ class DeltaFileTest {
     void testSourceMetadata() {
         DeltaFile deltaFile = DeltaFile.builder()
                 .sourceInfo(new SourceInfo(null, null,
-                        Map.of("key1", "value1", "key2", "value2")))
+                        Map.of("key1", "value1", "key2", "value2"), ProcessingType.NORMALIZATION))
                 .build();
 
         assertEquals("value1", deltaFile.sourceMetadata("key1"));

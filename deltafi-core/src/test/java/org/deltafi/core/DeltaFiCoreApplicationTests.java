@@ -2367,7 +2367,7 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void deltaFile() {
-		DeltaFile expected = deltaFilesService.ingress(INGRESS_INPUT);
+		DeltaFile expected = deltaFilesService.ingress(INGRESS_INPUT, OffsetDateTime.now(), OffsetDateTime.now());
 
 		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(
 				new DeltaFileGraphQLQuery.Builder().did(expected.getDid()).build(),
@@ -2422,8 +2422,8 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void resume() {
-		DeltaFile input = deltaFilesService.ingress(INGRESS_INPUT);
-		DeltaFile second = deltaFilesService.ingress(INGRESS_INPUT_2);
+		DeltaFile input = deltaFilesService.ingress(INGRESS_INPUT, OffsetDateTime.now(), OffsetDateTime.now());
+		DeltaFile second = deltaFilesService.ingress(INGRESS_INPUT_2, OffsetDateTime.now(), OffsetDateTime.now());
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(input.getDid());
 		deltaFile.errorAction(FLOW, "SampleLoadAction", START_TIME, STOP_TIME, "blah", "blah");
@@ -2995,7 +2995,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile1.setTotalBytes(1000L);
 		deltaFile1.addAnnotations(Map.of("a.1", "first", "common", "value"));
 		deltaFile1.setContentDeleted(MONGO_NOW);
-		deltaFile1.setSourceInfo(new SourceInfo("filename1", "flow1", Map.of("key1", "value1", "key2", "value2")));
+		deltaFile1.setSourceInfo(new SourceInfo("filename1", "flow1", Map.of("key1", "value1", "key2", "value2"), ProcessingType.NORMALIZATION));
 		deltaFile1.setActions(List.of(Action.builder().name("action1")
 				.state(ActionState.COMPLETE)
 				.content(List.of(new Content("formattedFilename1", "mediaType")))
@@ -3013,7 +3013,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile2.setIngressBytes(200L);
 		deltaFile2.setTotalBytes(2000L);
 		deltaFile2.addAnnotations(Map.of("a.2", "first", "common", "value"));
-		deltaFile2.setSourceInfo(new SourceInfo("filename2", "flow2", Map.of()));
+		deltaFile2.setSourceInfo(new SourceInfo("filename2", "flow2", Map.of(), ProcessingType.NORMALIZATION));
 		deltaFile2.setActions(List.of(
 				Action.builder().name("action1")
 						.state(ActionState.ERROR)
@@ -4406,7 +4406,7 @@ class DeltaFiCoreApplicationTests {
 				.parentDids(new ArrayList<>())
 				.childDids(new ArrayList<>())
 				.ingressBytes(36L)
-				.sourceInfo(new SourceInfo("filename", NORMALIZE_FLOW_NAME, metadata))
+				.sourceInfo(new SourceInfo("filename", NORMALIZE_FLOW_NAME, metadata, ProcessingType.NORMALIZATION))
 				.stage(DeltaFileStage.INGRESS)
 				.created(OffsetDateTime.now())
 				.modified(OffsetDateTime.now())
@@ -4422,6 +4422,7 @@ class DeltaFiCoreApplicationTests {
 	void testIngressFromAction() {
 		String did = UUID.randomUUID().toString();
 
+		timedIngressFlowService.setLastRun(TIMED_INGRESS_FLOW_NAME, OffsetDateTime.now(), "taskedDid");
 		deltaFilesService.handleActionEvent(actionEvent("ingress", did));
 
 		verifyActionEventResults(ingressedFromAction(did, TIMED_INGRESS_FLOW_NAME),
@@ -4451,6 +4452,7 @@ class DeltaFiCoreApplicationTests {
 	void testIngressErrorFromAction() {
 		String did = UUID.randomUUID().toString();
 
+		timedIngressFlowService.setLastRun(TIMED_INGRESS_ERROR_FLOW_NAME, OffsetDateTime.now(), "taskedDid");
 		deltaFilesService.handleActionEvent(actionEvent("ingressError", did));
 
 		DeltaFile actual = deltaFilesService.getDeltaFile(did);
@@ -5008,9 +5010,9 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void queuesCollectingTransformActionOnMaxNum() {
-		String FLOW = "multi-transform";
+		String flow = "multi-transform";
 		NormalizeFlow normalizeFlow = new NormalizeFlow();
-		normalizeFlow.setName(FLOW);
+		normalizeFlow.setName(flow);
 		TransformActionConfiguration transformAction = new TransformActionConfiguration("CollectingTransformAction",
 				"org.deltafi.action.SomeCollectingTransformAction");
 		transformAction.setCollect(new CollectConfiguration(Duration.parse("PT1H"), null, 2, null));
@@ -5019,15 +5021,15 @@ class DeltaFiCoreApplicationTests {
 		normalizeFlowRepo.insert(normalizeFlow);
 		normalizeFlowService.refreshCache();
 
-		IngressEvent ingress1 = new IngressEvent(UUID.randomUUID().toString(), new SourceInfo(FILENAME, FLOW, null),
-				Collections.emptyList(), OffsetDateTime.now());
-		deltaFilesService.ingress(ingress1);
+		IngressEventItem ingress1 = new IngressEventItem(UUID.randomUUID().toString(), FILENAME, flow, null,
+				ProcessingType.NORMALIZATION, Collections.emptyList());
+		deltaFilesService.ingress(ingress1, OffsetDateTime.now(), OffsetDateTime.now());
 
-		IngressEvent ingress2 = new IngressEvent(UUID.randomUUID().toString(), new SourceInfo("file-2", FLOW, null),
-				Collections.emptyList(), OffsetDateTime.now());
-		deltaFilesService.ingress(ingress2);
+		IngressEventItem ingress2 = new IngressEventItem(UUID.randomUUID().toString(), "file-2", flow, null,
+				ProcessingType.NORMALIZATION, Collections.emptyList());
+		deltaFilesService.ingress(ingress2, OffsetDateTime.now(), OffsetDateTime.now());
 
-		verifyCollection(ingress1.getDid(), ingress2.getDid(), FLOW, transformAction.getName(), 0);
+		verifyCollection(ingress1.getDid(), ingress2.getDid(), flow, transformAction.getName(), 0);
 	}
 
 	private void verifyCollection(String did1, String did2, String actionFlow, String actionName, long timeout) {
@@ -5074,13 +5076,13 @@ class DeltaFiCoreApplicationTests {
 		egressFlowRepo.insert(egressFlow);
 		egressFlowService.refreshCache();
 
-		IngressEvent ingress1 = new IngressEvent(UUID.randomUUID().toString(), new SourceInfo(FILENAME,
-				INGRESS_FLOW, Collections.emptyMap()), Collections.emptyList(), OffsetDateTime.now());
-		deltaFilesService.ingress(ingress1);
+		IngressEventItem ingress1 = new IngressEventItem(UUID.randomUUID().toString(), FILENAME,
+				INGRESS_FLOW, Collections.emptyMap(), ProcessingType.NORMALIZATION, Collections.emptyList());
+		deltaFilesService.ingress(ingress1, OffsetDateTime.now(), OffsetDateTime.now());
 
-		IngressEvent ingress2 = new IngressEvent(UUID.randomUUID().toString(), new SourceInfo("file-2",
-				INGRESS_FLOW, Collections.emptyMap()), Collections.emptyList(), OffsetDateTime.now());
-		deltaFilesService.ingress(ingress2);
+		IngressEventItem ingress2 = new IngressEventItem(UUID.randomUUID().toString(), "file-2",
+				INGRESS_FLOW, Collections.emptyMap(), ProcessingType.NORMALIZATION, Collections.emptyList());
+		deltaFilesService.ingress(ingress2, OffsetDateTime.now(), OffsetDateTime.now());
 
 		verifyCollection(ingress1.getDid(), ingress2.getDid(), EGRESS_FLOW, formatAction.getName(), 0);
 	}
@@ -5098,13 +5100,13 @@ class DeltaFiCoreApplicationTests {
 		normalizeFlowRepo.insert(normalizeFlow);
 		normalizeFlowService.refreshCache();
 
-		IngressEvent ingress1 = new IngressEvent(UUID.randomUUID().toString(), new SourceInfo(FILENAME, FLOW, null),
-				Collections.emptyList(), OffsetDateTime.now());
-		deltaFilesService.ingress(ingress1);
+		IngressEventItem ingress1 = new IngressEventItem(UUID.randomUUID().toString(), FILENAME, FLOW, null,
+				ProcessingType.NORMALIZATION, Collections.emptyList());
+		deltaFilesService.ingress(ingress1, OffsetDateTime.now(), OffsetDateTime.now());
 
-		IngressEvent ingress2 = new IngressEvent(UUID.randomUUID().toString(), new SourceInfo("file-2", FLOW, null),
-				Collections.emptyList(), OffsetDateTime.now());
-		deltaFilesService.ingress(ingress2);
+		IngressEventItem ingress2 = new IngressEventItem(UUID.randomUUID().toString(), "file-2", FLOW, null,
+				ProcessingType.NORMALIZATION, Collections.emptyList());
+		deltaFilesService.ingress(ingress2, OffsetDateTime.now(), OffsetDateTime.now());
 
 		verifyCollection(ingress1.getDid(), ingress2.getDid(), FLOW, transformAction.getName(), 5000);
 	}
@@ -5122,21 +5124,21 @@ class DeltaFiCoreApplicationTests {
 		normalizeFlowRepo.insert(normalizeFlow);
 		normalizeFlowService.refreshCache();
 
-		IngressEvent ingress1 = new IngressEvent(UUID.randomUUID().toString(),
-				new SourceInfo(FILENAME, FLOW, Map.of("a", "1")), Collections.emptyList(), OffsetDateTime.now());
-		deltaFilesService.ingress(ingress1);
+		IngressEventItem ingress1 = new IngressEventItem(UUID.randomUUID().toString(),
+				FILENAME, FLOW, Map.of("a", "1"), ProcessingType.NORMALIZATION, Collections.emptyList());
+		deltaFilesService.ingress(ingress1, OffsetDateTime.now(), OffsetDateTime.now());
 
-		IngressEvent ingress2 = new IngressEvent(UUID.randomUUID().toString(),
-				new SourceInfo("file-2", FLOW, Map.of("a", "2")), Collections.emptyList(), OffsetDateTime.now());
-		deltaFilesService.ingress(ingress2);
+		IngressEventItem ingress2 = new IngressEventItem(UUID.randomUUID().toString(),
+				"file-2", FLOW, Map.of("a", "2"), ProcessingType.NORMALIZATION, Collections.emptyList());
+		deltaFilesService.ingress(ingress2, OffsetDateTime.now(), OffsetDateTime.now());
 
-		IngressEvent ingress3 = new IngressEvent(UUID.randomUUID().toString(),
-				new SourceInfo("file-3", FLOW, Map.of("a", "2")), Collections.emptyList(), OffsetDateTime.now());
-		deltaFilesService.ingress(ingress3);
+		IngressEventItem ingress3 = new IngressEventItem(UUID.randomUUID().toString(),
+				"file-3", FLOW, Map.of("a", "2"), ProcessingType.NORMALIZATION, Collections.emptyList());
+		deltaFilesService.ingress(ingress3, OffsetDateTime.now(), OffsetDateTime.now());
 
-		IngressEvent ingress4 = new IngressEvent(UUID.randomUUID().toString(),
-				new SourceInfo("file-3", FLOW, Map.of("a", "1")), Collections.emptyList(), OffsetDateTime.now());
-		deltaFilesService.ingress(ingress4);
+		IngressEventItem ingress4 = new IngressEventItem(UUID.randomUUID().toString(),
+				"file-4", FLOW, Map.of("a", "1"), ProcessingType.NORMALIZATION, Collections.emptyList());
+		deltaFilesService.ingress(ingress4, OffsetDateTime.now(), OffsetDateTime.now());
 
 		Mockito.verify(actionEventQueue, Mockito.times(2))
 				.putActions(actionInputListCaptor.capture(), Mockito.anyBoolean());
@@ -5158,13 +5160,13 @@ class DeltaFiCoreApplicationTests {
 		normalizeFlowRepo.insert(normalizeFlow);
 		normalizeFlowService.refreshCache();
 
-		IngressEvent ingress1 = new IngressEvent(UUID.randomUUID().toString(), new SourceInfo(FILENAME, FLOW, null),
-				Collections.emptyList(), OffsetDateTime.now());
-		deltaFilesService.ingress(ingress1);
+		IngressEventItem ingress1 = new IngressEventItem(UUID.randomUUID().toString(), FILENAME, FLOW, null,
+				ProcessingType.NORMALIZATION, Collections.emptyList());
+		deltaFilesService.ingress(ingress1, OffsetDateTime.now(), OffsetDateTime.now());
 
-		IngressEvent ingress2 = new IngressEvent(UUID.randomUUID().toString(), new SourceInfo("file-2", FLOW, null),
-				Collections.emptyList(), OffsetDateTime.now());
-		deltaFilesService.ingress(ingress2);
+		IngressEventItem ingress2 = new IngressEventItem(UUID.randomUUID().toString(), "file-2", FLOW, null,
+				ProcessingType.NORMALIZATION, Collections.emptyList());
+		deltaFilesService.ingress(ingress2, OffsetDateTime.now(), OffsetDateTime.now());
 
 		await().atMost(5, TimeUnit.SECONDS).until(() -> hasErroredAction(ingress1.getDid(), FLOW, transformAction.getName()));
 		await().atMost(5, TimeUnit.SECONDS).until(() -> hasErroredAction(ingress2.getDid(), FLOW, transformAction.getName()));

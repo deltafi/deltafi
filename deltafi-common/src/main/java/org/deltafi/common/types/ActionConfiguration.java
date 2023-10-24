@@ -86,10 +86,11 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
      * @param returnAddress the unique address of this core instance
      * @param actionCreated action created datetime
      * @param action the action
+     * @param memo memo to set in the context
      * @return ActionInput containing the ActionConfiguration
      */
     public ActionInput buildActionInput(String flow, DeltaFile deltaFile, String systemName, String egressFlow,
-            String returnAddress, OffsetDateTime actionCreated, Action action) {
+            String returnAddress, OffsetDateTime actionCreated, Action action, String memo) {
         if (Objects.isNull(internalParameters)) {
             // fall back to using parameters if internalParameters do not exist yet
             setInternalParameters(Objects.requireNonNullElse(parameters, Collections.emptyMap()));
@@ -105,6 +106,7 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
                         .ingressFlow(deltaFile.getSourceInfo().getFlow())
                         .egressFlow(egressFlow)
                         .systemName(systemName)
+                        .memo(memo)
                         .build())
                 .actionParams(internalParameters)
                 .deltaFileMessages(List.of(deltaFile.forQueue(egressFlow)))

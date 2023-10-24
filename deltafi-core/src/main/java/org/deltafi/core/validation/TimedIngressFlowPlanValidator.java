@@ -20,8 +20,10 @@ package org.deltafi.core.validation;
 import lombok.AllArgsConstructor;
 import org.deltafi.common.types.TimedIngressFlowPlan;
 import org.deltafi.core.generated.types.FlowConfigError;
+import org.deltafi.core.generated.types.FlowErrorType;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -34,6 +36,17 @@ public class TimedIngressFlowPlanValidator extends FlowPlanValidator<TimedIngres
      */
     @Override
     public List<FlowConfigError> flowPlanSpecificValidation(TimedIngressFlowPlan flowPlan) {
-        return Collections.emptyList();
+        List<FlowConfigError> errors = new ArrayList<>();
+        if (flowPlan.getTimedIngressAction() == null) {
+            errors.add(FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG)
+                    .configName(flowPlan.getName())
+                    .message("Cannot add timed ingress flow plan, timed ingress action is missing").build());
+        }
+        if (flowPlan.getTargetFlow() == null) {
+            errors.add(FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG)
+                    .configName(flowPlan.getName())
+                    .message("Cannot add timed ingress flow plan, target flow is missing").build());
+        }
+        return errors;
     }
 }

@@ -18,6 +18,7 @@
 package org.deltafi.core.repo;
 
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.types.IngressStatus;
 import org.deltafi.core.types.TimedIngressFlow;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -31,8 +32,13 @@ import java.time.OffsetDateTime;
 @Slf4j
 public class TimedIngressFlowRepoImpl extends BaseFlowRepoImpl<TimedIngressFlow> implements TimedIngressFlowRepoCustom {
 
+    private static final String CURRENT_DID = "currentDid";
+    private static final String EXECUTE_IMMEDIATE = "executeImmediate";
+    private static final String INGRESS_STATUS = "ingressStatus";
+    private static final String INGRESS_STATUS_MESSAGE = "ingressStatusMessage";
     private static final String INTERVAL = "interval";
     private static final String LAST_RUN = "lastRun";
+    private static final String MEMO = "memo";
 
     public TimedIngressFlowRepoImpl(MongoTemplate mongoTemplate) {
         super(mongoTemplate, TimedIngressFlow.class);
@@ -46,9 +52,18 @@ public class TimedIngressFlowRepoImpl extends BaseFlowRepoImpl<TimedIngressFlow>
     }
 
     @Override
-    public boolean updateLastRun(String flowName, OffsetDateTime lastRun) {
+    public boolean updateLastRun(String flowName, OffsetDateTime lastRun, String currentDid) {
         Query idMatches = Query.query(Criteria.where(ID).is(flowName));
-        Update lastRunUpdate = Update.update(LAST_RUN, lastRun);
+        Update lastRunUpdate = Update.update(LAST_RUN, lastRun).set(CURRENT_DID, currentDid).set(EXECUTE_IMMEDIATE, false);
         return 1 == mongoTemplate.updateFirst(idMatches, lastRunUpdate, TimedIngressFlow.class).getModifiedCount();
+    }
+
+    @Override
+    public boolean completeExecution(String flowName, String currentDid, String memo, boolean executeImmediate,
+                                     IngressStatus status, String statusMessage) {
+        Query idMatches = Query.query(Criteria.where(ID).is(flowName).and(CURRENT_DID).is(currentDid));
+        Update update = Update.update(CURRENT_DID, null).set(MEMO, memo).set(EXECUTE_IMMEDIATE, executeImmediate)
+                .set(INGRESS_STATUS, status).set(INGRESS_STATUS_MESSAGE, statusMessage);
+        return 1 == mongoTemplate.updateFirst(idMatches, update, TimedIngressFlow.class).getModifiedCount();
     }
 }

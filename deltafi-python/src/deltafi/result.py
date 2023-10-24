@@ -17,6 +17,7 @@
 #
 
 import abc
+from enum import Enum
 import uuid
 from typing import Dict, List
 
@@ -191,6 +192,86 @@ class FormatManyResult(Result):
 
     def response(self):
         return [format_result.response() for format_result in self.format_results]
+
+
+class IngressResultItem:
+    def __init__(self, context: Context, filename: str):
+        self.context = context
+        self.filename = filename
+        self._did = str(uuid.uuid4())
+        self.content = []
+        self.metadata = {}
+
+    @property
+    def did(self):
+        return self._did
+
+    # content can be a single Content or a List[Content]
+    def add_content(self, content):
+        if content:
+            if type(content) == list:
+                self.content.extend(content)
+            else:
+                self.content.append(content)
+
+        return self
+
+    def save_string_content(self, string_data: str, name: str, media_type: str):
+        segment = self.context.content_service.put_str(self.context.did, string_data)
+        self.content.append(
+            Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service))
+        return self
+
+    def save_byte_content(self, byte_data: bytes, name: str, media_type: str):
+        segment = self.context.content_service.put_bytes(self.context.did, byte_data)
+        self.content.append(
+            Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service))
+        return self
+
+    def set_metadata(self, metadata: dict):
+        self.metadata = metadata
+        return self
+
+    def add_metadata(self, key: str, value: str):
+        self.metadata[key] = value
+        return self
+
+    def response(self):
+        return {
+            'did': self._did,
+            'filename': self.filename,
+            'metadata': self.metadata,
+            'content': [content.json() for content in self.content]
+        }
+
+
+class IngressStatusEnum(Enum):
+    HEALTHY = 'HEALTHY'
+    DEGRADED = 'DEGRADED'
+    UNHEALTHY = 'UNHEALTHY'
+
+
+class IngressResult(Result):
+    def __init__(self, context: Context):
+        super().__init__('ingress', 'INGRESS', context)
+        self.memo = None
+        self.execute_immediate = False
+        self.ingress_result_items = []
+        self.status = IngressStatusEnum.HEALTHY
+        self.statusMessage = None
+
+    def add_item(self, ingress_result_item: IngressResultItem):
+        self.ingress_result_items.append(ingress_result_item)
+        return self
+
+    def response(self):
+        return {
+            'memo': self.memo,
+            'executeImmediate': self.execute_immediate,
+            'ingressItems': [ingress_result_item.response() for ingress_result_item in self.ingress_result_items],
+            'status': self.status.value,
+            'statusMessage': self.statusMessage
+        }
 
 
 class LoadResult(Result):

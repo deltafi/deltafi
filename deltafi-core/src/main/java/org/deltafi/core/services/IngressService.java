@@ -157,56 +157,50 @@ public class IngressService {
 
     private IngressResult ingress(String flow, String filename, String mediaType, InputStream contentInputStream,
             Map<String, String> metadata, OffsetDateTime created) throws ObjectStorageException, IngressException {
-        SourceInfo sourceInfo = SourceInfo.builder()
-                .flow(flow)
-                .filename(filename)
-                .metadata(metadata)
-                .build();
+        String resolvedFlow = flow;
 
-        if ((sourceInfo.getFlow() == null) || sourceInfo.getFlow().equals(DeltaFiConstants.AUTO_RESOLVE_FLOW_NAME)) {
-            String lookup = flowAssignmentService.findFlow(sourceInfo);
+        if (flow == null || flow.equals(DeltaFiConstants.AUTO_RESOLVE_FLOW_NAME)) {
+            String lookup = flowAssignmentService.findFlow(filename, metadata);
             if (lookup == null) {
                 throw new IngressException("Unable to resolve flow based on current flow assignment rules");
             }
-            sourceInfo.setFlow(lookup);
+            resolvedFlow = lookup;
         }
 
+        ProcessingType processingType;
         // ensure flow is running before accepting ingress
-        Integer maxErrors;
-        if (normalizeFlowService.hasRunningFlow(sourceInfo.getFlow())) {
-            sourceInfo.setProcessingType(ProcessingType.NORMALIZATION);
-            maxErrors = normalizeFlowService.maxErrorsPerFlow().get(sourceInfo.getFlow());
-        } else if (transformFlowService.hasRunningFlow(sourceInfo.getFlow())) {
-            sourceInfo.setProcessingType(ProcessingType.TRANSFORMATION);
-            maxErrors = transformFlowService.maxErrorsPerFlow().get(sourceInfo.getFlow());
+        if (normalizeFlowService.hasRunningFlow(resolvedFlow)) {
+            processingType = ProcessingType.NORMALIZATION;
+        } else if (transformFlowService.hasRunningFlow(resolvedFlow)) {
+            processingType = ProcessingType.TRANSFORMATION;
         } else {
-            throw new IngressException("Flow " + sourceInfo.getFlow() + " is not running");
+            throw new IngressException("Flow " + resolvedFlow + " is not running");
         }
 
-        if (maxErrors != null && maxErrors >= 0) {
-            String error = errorCountService.generateErrorMessage(sourceInfo.getFlow(), maxErrors);
-            if (error != null) {
-                throw new IngressException(error);
-            }
+        String error = errorCountService.generateErrorMessage(resolvedFlow);
+        if (error != null) {
+            throw new IngressException(error);
         }
 
         String did = uuidGenerator.generate();
 
         Content content = contentStorageService.save(did, contentInputStream, filename, mediaType);
 
-        IngressEvent ingressEvent = IngressEvent.builder()
+        IngressEventItem ingressEventItem = IngressEventItem.builder()
                 .did(did)
-                .sourceInfo(sourceInfo)
+                .filename(filename)
+                .flow(resolvedFlow)
+                .metadata(metadata)
+                .processingType(processingType)
                 .content(List.of(content))
-                .created(created)
                 .build();
 
         try {
-            deltaFilesService.ingress(ingressEvent);
-            return new IngressResult(sourceInfo.getFlow(), did, content, sourceInfo.getProcessingType());
+            deltaFilesService.ingress(ingressEventItem, created, OffsetDateTime.now());
+            return new IngressResult(resolvedFlow, did, content, processingType);
         } catch (EnqueueActionException e) {
             log.warn("DeltaFile {} was ingressed but the next action could not be queued at this time", did);
-            return new IngressResult(sourceInfo.getFlow(), did, content, sourceInfo.getProcessingType());
+            return new IngressResult(resolvedFlow, did, content, processingType);
         } catch (Exception e) {
             log.warn("Ingress failed, removing content and metadata for {}", did);
             deltaFilesService.deleteContentAndMetadata(did, content);

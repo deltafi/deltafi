@@ -18,6 +18,7 @@
 package org.deltafi.core.services;
 
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.types.IngressStatus;
 import org.deltafi.common.types.TimedIngressFlowPlan;
 import org.deltafi.core.converters.TimedIngressFlowPlanConverter;
 import org.deltafi.core.repo.TimedIngressFlowRepo;
@@ -48,6 +49,9 @@ public class TimedIngressFlowService extends FlowService<TimedIngressFlowPlan, T
     void copyFlowSpecificFields(TimedIngressFlow sourceFlow, TimedIngressFlow targetFlow) {
         targetFlow.setInterval(sourceFlow.getInterval());
         targetFlow.setTargetFlow(sourceFlow.getTargetFlow());
+        targetFlow.setMemo(sourceFlow.getMemo());
+        targetFlow.setExecuteImmediate(sourceFlow.isExecuteImmediate());
+        targetFlow.setCurrentDid(sourceFlow.getCurrentDid());
     }
 
     @Override
@@ -99,8 +103,19 @@ public class TimedIngressFlowService extends FlowService<TimedIngressFlowPlan, T
         return false;
     }
 
-    public boolean setLastRun(String flowName, OffsetDateTime lastRun) {
-        if (((TimedIngressFlowRepo) flowRepo).updateLastRun(flowName, lastRun)) {
+    public boolean setLastRun(String flowName, OffsetDateTime lastRun, String currentDid) {
+        if (((TimedIngressFlowRepo) flowRepo).updateLastRun(flowName, lastRun, currentDid)) {
+            refreshCache();
+            return true;
+        }
+
+        return false;
+    }
+
+    public boolean completeExecution(String flowName, String currentDid, String memo, boolean executeImmediate,
+                                     IngressStatus status, String statusMessage) {
+        if (((TimedIngressFlowRepo) flowRepo).completeExecution(flowName, currentDid, memo, executeImmediate,
+                status == null ? IngressStatus.HEALTHY : status, statusMessage)) {
             refreshCache();
             return true;
         }

@@ -19,41 +19,42 @@ package org.deltafi.actionkit.action.ingress;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.deltafi.actionkit.action.ContentResult;
-import org.deltafi.actionkit.action.converters.ContentConverter;
+import org.deltafi.actionkit.action.Result;
 import org.deltafi.common.types.*;
-import org.jetbrains.annotations.NotNull;
 
-import java.time.OffsetDateTime;
-import java.util.UUID;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Specialized result class for INGRESS actions
  */
 @Getter
 @Setter
-public class IngressResult extends ContentResult<IngressResult> implements IngressResultType {
-    String filename;
-    public IngressResult(@NotNull ActionContext context, @NotNull String filename) {
-        super(context.copy(UUID.randomUUID().toString()), ActionEventType.INGRESS);
-        this.filename = filename;
+public class IngressResult extends Result<IngressResult> implements IngressResultType {
+    String memo;
+    List<IngressResultItem> ingressResultItems = new ArrayList<>();
+    boolean executeImmediate = false;
+    IngressStatus status = IngressStatus.HEALTHY;
+    String statusMessage;
+
+    public IngressResult(ActionContext context) {
+        super(context, ActionEventType.INGRESS);
     }
 
-    public IngressResult(@NotNull ActionContext context, @NotNull String did, @NotNull String filename) {
-        super(context.copy(did), ActionEventType.INGRESS);
-        this.filename = filename;
+    public void addItem(IngressResultItem item) {
+        ingressResultItems.add(item);
     }
 
     @Override
     public final ActionEvent toEvent() {
         ActionEvent event = super.toEvent();
         event.setIngress(IngressEvent.builder()
-                .did(context.getDid())
-                .content(ContentConverter.convert(content))
-                .sourceInfo(SourceInfo.builder().metadata(metadata).filename(filename).build())
-                .created(OffsetDateTime.now())
+                        .memo(memo)
+                        .executeImmediate(executeImmediate)
+                        .ingressItems(ingressResultItems.stream().map(IngressResultItem::toIngressEventItem).toList())
+                        .status(status)
+                        .statusMessage(statusMessage)
                 .build());
-
         return event;
     }
 }

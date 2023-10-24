@@ -15,19 +15,10 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.repo;
+package org.deltafi.common.types;
 
-import org.deltafi.common.types.IngressStatus;
-import org.deltafi.core.types.TimedIngressFlow;
-
-import java.time.Duration;
-import java.time.OffsetDateTime;
-
-public interface TimedIngressFlowRepoCustom extends FlowRepoCustom<TimedIngressFlow> {
-    boolean updateInterval(String flowName, Duration duration);
-
-    boolean updateLastRun(String flowName, OffsetDateTime lastRun, String currentDid);
-
-    boolean completeExecution(String flowName, String currentDid, String memo, boolean executeImmediate,
-                              IngressStatus status, String statusMessage);
+public enum IngressStatus {
+    HEALTHY,
+    DEGRADED,
+    UNHEALTHY
 }
