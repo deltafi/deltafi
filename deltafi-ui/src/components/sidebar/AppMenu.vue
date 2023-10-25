@@ -128,6 +128,12 @@ const staticMenuItems = ref([
         visible: computed(() => hasPermission("DeltaFileMetadataView")),
       },
       {
+        name: "Filtered",
+        icon: "fas fa-filter fa-fw",
+        path: "/deltafile/filtered",
+        visible: computed(() => hasPermission("DeltaFileMetadataView")),
+      },
+      {
         name: "Viewer",
         icon: "far fa-file fa-fw",
         path: "/deltafile/viewer/",
