@@ -60,5 +60,3 @@ docker {
     tag "local", "${localDockerRegistry}/${project.name}:latest"
     copySpec.from(bootJar.archiveFile).into("build/libs/")
 }
-
-test.dependsOn(":deltafi-action-kit-test:renameJar")

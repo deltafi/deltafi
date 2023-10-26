@@ -16,6 +16,7 @@ license {
 
 jar {
     enabled = true
+    // archiveFileName = 'deltafi-action-kit-test.jar'
 }
 
 configurations {
@@ -24,14 +25,6 @@ configurations {
 
 artifacts {
     jars jar
-}
-
-task renameJar (type: Copy) {
-    dependsOn ':deltafi-action-kit-test:jar'
-    from ('build/libs/')
-    include "deltafi-action-kit-test-${project.version}.jar"
-    destinationDir file('build/libs')
-    rename "deltafi-action-kit-test-${project.version}.jar", 'deltafi-action-kit-test.jar'
 }
 
 dependencies {

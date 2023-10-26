@@ -28,8 +28,6 @@ dependencies {
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${jupiterVersion}"
 }
 
-test.dependsOn ':deltafi-action-kit-test:renameJar'
-
 jar {
     // do not create the -plain.jar
     enabled = false
