@@ -152,12 +152,21 @@ const submit = async () => {
     errors.value.push("Description field is required.");
   }
 
+  if (!_.isEmpty(model.value.name) && !_.isEmpty(model.value.type)) {
+    let activeSystemFlowNames = _.map(allFlowPlans.value[`${_.toLower(model.value.type)}Plans`], "name");
+    let isflowNamedUsed = _.includes(activeSystemFlowNames, model.value.name.trim());
+
+    if (isflowNamedUsed) {
+      errors.value.push("Name already exists in the system. Choose a different Name.");
+    }
+  }
+
   if (!_.isEmpty(errors.value)) {
     return;
   }
 
   closeDialogCommand.command();
-  emit("createFlowPlan", { type: model.value.type, name: model.value.name, description: model.value.description, selectedFlowPlan: model.value.selectedFlowPlan });
+  emit("createFlowPlan", { type: model.value.type, name: model.value.name.trim(), description: model.value.description, selectedFlowPlan: model.value.selectedFlowPlan });
 };
 </script>
 
