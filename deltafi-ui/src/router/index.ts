@@ -168,7 +168,7 @@ const routes: Array<RouteRecordRaw> = [
     name: "Flow Plan Builder",
     component: FlowPlanBuilderPage,
     meta: {
-      permission: "FlowView",
+      permission: "FlowUpdate",
     },
   },
   {

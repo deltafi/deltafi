@@ -21,7 +21,7 @@
     <span @click="showDialog()">
       <slot />
     </span>
-    <Dialog id="dialogTemplate" v-model:visible="dialogVisible" :header="$attrs['header']" position="top" :style="{ width: dialogSize }" :maximizable="true" :modal="true" :dismissable-mask="dismissableMask" :draggable="false">
+    <Dialog id="dialogTemplate" v-model:visible="dialogVisible" :header="$attrs['header']" :position="modelPosition" :style="{ width: dialogSize }" :maximizable="true" :modal="!disableModel" :dismissable-mask="dismissableMask" :draggable="false" :closable="isClosable">
       <Component :is="loadComponent" :key="Math.random()" v-bind="$attrs" :close-dialog-command="closeDialogCommand" />
     </Dialog>
   </div>
@@ -53,6 +53,18 @@ const dialogSize = computed(() => {
 
 const dismissableMask = computed(() => {
   return _.get(attrs, "dismissable-mask", false);
+});
+
+const disableModel = computed(() => {
+  return _.get(attrs, "disable-model", false);
+});
+
+const modelPosition = computed(() => {
+  return _.get(attrs, "model-position", "top");
+});
+
+const isClosable = computed(() => {
+  return _.get(attrs, "closable", true);
 });
 
 const dialogVisible = ref(false);

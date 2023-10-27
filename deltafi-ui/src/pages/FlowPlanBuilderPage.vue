@@ -21,22 +21,16 @@
     <PageHeader :heading="`test`">
       <template #header>
         <div class="align-items-center btn-group">
-          <h2 class="mb-0">{{ flowPlanTypeSelected }}</h2>
+          <h2 class="mb-0">{{ flowPlanHeader }}</h2>
           <div v-if="model.active" class="btn-group">
-            <DialogTemplate component-name="flowBuilder/FlowConfigurationDialog" :header="`Update ${model.name}`" dialog-width="25vw" :data-prop="model" edit-flow-plan @update-flow="setFlowValues">
-              <Button v-tooltip.top="`Edit ${model.name}`" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary ml-2" />
+            <DialogTemplate component-name="flowBuilder/FlowConfigurationDialog" :header="`Edit ${model.name}`" dialog-width="25vw" model-position="center" :data-prop="model" edit-flow-plan @create-flow-plan="setFlowValues">
+              <Button v-if="!editExistingFlowPlan" v-tooltip.top="`Edit Name and Description`" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary ml-2" />
             </DialogTemplate>
-            <Button v-tooltip.left="'Save'" icon="fa-solid fa-hard-drive" class="p-button-text p-button-secondary" :disabled="!isValidFlow" @click="save(rawOutput)" />
           </div>
-        </div>
-        <div>
-          <ContextMenu ref="menu" :model="menuItems" />
-          <Button icon="fas fa-bars" class="p-button-secondary p-button-outlined" @click="toggleMenu" />
-          <Menu ref="menu" :model="menuItems" :popup="true" />
         </div>
       </template>
     </PageHeader>
-    <div v-if="model.type">
+    <div v-if="model.active">
       <div class="row p-2">
         <div v-for="action of flowTypesMap.get(model.type).flowActionTypes" :key="action" :class="getColSize(action)">
           <div>
@@ -74,6 +68,7 @@
         </div>
       </div>
     </div>
+    <HoverSaveButton v-if="model.active" target="window" :model="items" />
     <OverlayPanel ref="actionsOverlayPanel" class="flow-plan-builder-page-overlay" append-to="body" dismissable show-close-icon :style="{ width: '22%' }">
       <Tree ref="actionsTreeRef" v-model:expandedKeys="expandedKeys" :value="actionsTree" :filter="true" filter-mode="strict" filter-by="filterField">
         <template #default="slotProps">
@@ -93,28 +88,27 @@
         </template>
       </Tree>
     </OverlayPanel>
-    <DialogTemplate component-name="flowBuilder/FlowConfigurationDialog" header="Create New Flow" dialog-width="25vw" @new-flow="createNewFlow">
-      <span id="FlowConfigurationDialog" />
+    <DialogTemplate component-name="flowBuilder/FlowConfigurationDialog" header="Create New Flow Plan" dialog-width="25vw" model-position="center" :closable="false" :disable-model="true" :data-prop="model" @create-flow-plan="createFlowPlan">
+      <span id="CreateFlowPlan" />
     </DialogTemplate>
   </div>
 </template>
 
 <script setup>
+import HoverSaveButton from "@/components/flowBuilder/HoverSaveButton.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import useFlowActions from "@/composables/useFlowActions";
 import useFlowPlanQueryBuilder from "@/composables/useFlowPlanQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
 import { computed, nextTick, onBeforeMount, ref, watch } from "vue";
-import { useResizeObserver } from "@vueuse/core";
+import { useResizeObserver, useStorage, StorageSerializers } from "@vueuse/core";
 import { useRouter } from "vue-router";
 
 import Badge from "primevue/badge";
 import Button from "primevue/button";
-import ContextMenu from "primevue/contextmenu";
 import Divider from "primevue/divider";
 import InputText from "primevue/inputtext";
-import Menu from "primevue/menu";
 import Panel from "primevue/panel";
 import OverlayPanel from "primevue/overlaypanel";
 import Tree from "primevue/tree";
@@ -131,7 +125,7 @@ const actionsTreeRef = ref(null);
 const notify = useNotifications();
 const router = useRouter();
 
-const { saveTransformFlowPlan, saveNormalizeFlowPlan, saveEgressFlowPlan, saveEnrichFlowPlan } = useFlowPlanQueryBuilder();
+const { getAllFlowPlans, saveTransformFlowPlan, saveNormalizeFlowPlan, saveEgressFlowPlan, saveEnrichFlowPlan } = useFlowPlanQueryBuilder();
 
 const allActionsData = ref({});
 
@@ -139,6 +133,8 @@ const expandedKeys = ref({});
 
 const flowPlanBuilderPage = ref(null);
 const pageWidthResizeObserver = ref(null);
+const editExistingFlowPlan = ref(false);
+const originalFlowPlan = ref(null);
 
 // The useResizeObserver determins if the sidebar has been collapsed or expanded.
 // If either has occur we redo the connections between all actions.
@@ -183,6 +179,8 @@ watch(
     }
   }
 );
+
+const linkedFlowPlan = useStorage("linked-flow-plan-persisted-params", {}, sessionStorage, { serializer: StorageSerializers.object });
 
 // The viewActionTreeMenu function is triggered by clicking on the add button on each flowActionType panel.
 const viewActionTreeMenu = (event, flowActionType) => {
@@ -286,6 +284,28 @@ const schemaVisable = ref(false);
 
 onBeforeMount(async () => {
   await fetchData();
+
+  if (!_.isEmpty(_.get(linkedFlowPlan.value, "flowPlanParams", null))) {
+    let response = await getAllFlowPlans();
+    let allFlowPlans = response.data.getAllFlowPlans;
+    if (linkedFlowPlan.value.flowPlanParams.editExistingFlow) {
+      editExistingFlowPlan.value = true;
+      let flowInfo = {};
+      flowInfo["type"] = _.toUpper(linkedFlowPlan.value.flowPlanParams.type);
+      flowInfo["name"] = linkedFlowPlan.value.flowPlanParams.selectedFlowPlanName;
+      flowInfo["description"] = linkedFlowPlan.value.flowPlanParams.selectedFlowPlan.description;
+      flowInfo["selectedFlowPlan"] = _.find(allFlowPlans[`${_.toLower(linkedFlowPlan.value.flowPlanParams.type)}Plans`], { name: linkedFlowPlan.value.flowPlanParams.selectedFlowPlanName });
+      await createFlowPlan(flowInfo);
+      originalFlowPlan.value = rawOutput.value;
+    } else {
+      model.value.type = _.toUpper(linkedFlowPlan.value.flowPlanParams.type);
+      model.value.selectedFlowPlan = _.find(allFlowPlans[`${_.toLower(model.value.type)}Plans`], { name: linkedFlowPlan.value.flowPlanParams.selectedFlowPlanName });
+      document.getElementById("CreateFlowPlan").click();
+    }
+    linkedFlowPlan.value = null;
+  } else {
+    document.getElementById("CreateFlowPlan").click();
+  }
 });
 
 const fetchData = async () => {
@@ -311,27 +331,11 @@ const model = computed({
   },
 });
 
-const menu = ref();
-
-const toggleMenu = (event) => {
-  menu.value.toggle(event);
-};
-
-const menuItems = ref([
-  {
-    label: "Create New Flow",
-    icon: "pi pi-plus-circle",
-    command: () => {
-      document.getElementById("FlowConfigurationDialog").click();
-    },
-  },
-]);
-
 const flowActionTypeGroup = ref("");
 const actionsTree = ref([]);
 const flowActionSpecificJsPlumbInstance = ref({});
 
-const flowPlanTypeSelected = computed(() => {
+const flowPlanHeader = computed(() => {
   let header = model.value.name ? `Flow Plan Builder - ${model.value.name}` : "Flow Plan Builder";
   return header;
 });
@@ -343,9 +347,12 @@ const getColSize = (flowActionType) => {
   return "col pl-2 pr-1";
 };
 
-const createNewFlow = (newFlow) => {
+const createFlowPlan = async (newFlowPlan) => {
   removeFlow();
-  setFlowValues(newFlow);
+  await setFlowValues(newFlowPlan);
+  if (newFlowPlan.selectedFlowPlan) {
+    cloneFlow(newFlowPlan);
+  }
 };
 
 const setFlowValues = async (flowInfo) => {
@@ -353,7 +360,29 @@ const setFlowValues = async (flowInfo) => {
   model.value.type = flowInfo["type"];
   model.value.name = flowInfo["name"];
   model.value.description = flowInfo["description"];
+  model.value.selectedFlowPlan = flowInfo["selectedFlowPlan"];
   model.value.active = true;
+};
+
+const cloneFlow = async (cloneFlow) => {
+  for (let flowActionType of flowTypesMap.get(model.value.type).flowActionTypes) {
+    let clonedActionsByTypes = [];
+    let getClonedActionsByTypes = _.get(cloneFlow.selectedFlowPlan, flowActionTemplateMap.get(flowActionType).activeContainer);
+
+    if (_.isEmpty(getClonedActionsByTypes)) {
+      getClonedActionsByTypes = [];
+      continue;
+    }
+
+    clonedActionsByTypes = clonedActionsByTypes.concat(getClonedActionsByTypes);
+    if (!_.isEmpty(clonedActionsByTypes)) {
+      for (let clonedAction of clonedActionsByTypes) {
+        let tmpMergedActionAndActionSchema = _.find(flattenedActionsTypes.value[flowActionType], { type: clonedAction.type, flowActionType: flowActionType });
+        let mergedActionAndActionSchema = _.merge(tmpMergedActionAndActionSchema, clonedAction);
+        addAction(flowActionType, mergedActionAndActionSchema);
+      }
+    }
+  }
 };
 
 const save = async (rawFlow) => {
@@ -369,7 +398,7 @@ const save = async (rawFlow) => {
   }
   if (response !== undefined) {
     notify.success(`${response.data[`save${_.capitalize(model.value.type)}FlowPlan`].name} Flow Plan Saved`);
-    model.value.type = null;
+    model.value.active = null;
     router.push({ path: `/config/flows` });
   }
 };
@@ -460,6 +489,17 @@ const addAction = async (flowActionType, action) => {
 };
 
 const isValidFlow = computed(() => {
+  if (!_.isEmpty(originalFlowPlan.value)) {
+    // Remove any value that have not changed from the original defaultQueryParamsTemplate value it was set at
+    let changedFlowValues = _.omitBy(rawOutput.value, function (v, k) {
+      return JSON.stringify(originalFlowPlan.value[k]) === JSON.stringify(v);
+    });
+
+    if (_.isEmpty(changedFlowValues)) {
+      return false;
+    }
+  }
+
   if (_.isEmpty(model.value.type)) {
     return false;
   }
@@ -479,6 +519,18 @@ const isValidFlow = computed(() => {
 
   return allFlowMissingFields.length == 0;
 });
+
+const items = ref([
+  {
+    label: "Save",
+    icon: "fa-solid fa-hard-drive",
+    isEnabled: isValidFlow,
+
+    command: () => {
+      save(rawOutput.value);
+    },
+  },
+]);
 
 const displayFlowMissingValuesBadge = () => {
   let allFlowMissingFields = [];
@@ -510,7 +562,7 @@ const validateAction = (action) => {
   // requiredSchemaFields is a list of all list of all the required fields for the action.
   let requiredSchemaFields = _.get(action.schema, "required", []);
   // completedFields is a list of all the keys of the fields that the user has filled in for the action.
-  let completedFields = Object.keys(_.get(action, "parameters", {}));
+  let completedFields = _.keys(_.get(action, "parameters", {}));
 
   // Check if the action name is missing if so add it to the list of missing required fields. The action name is required and should not allow the flow to be saved.
   if (_.isEmpty(action.name)) {
@@ -588,6 +640,7 @@ const actionOrderChanged = (event) => {
 };
 
 const actionTypesTree = ref({});
+const flattenedActionsTypes = ref({});
 
 const getLoadedActions = () => {
   for (const plugins of allActionsData.value) {
@@ -608,7 +661,10 @@ const getLoadedActions = () => {
       // Adding an flowActionType key to the actionTypesTree. Each root flowActionType key will hold the tree structure for that actionType.
       if (!Object.prototype.hasOwnProperty.call(actionTypesTree.value, action["flowActionType"])) {
         actionTypesTree.value[action["flowActionType"]] = [];
+        flattenedActionsTypes.value[action["flowActionType"]] = [];
       }
+
+      flattenedActionsTypes.value[action["flowActionType"]].push(action);
 
       // We next group all the actions into their respective plugins. We search in the actionTypesTree to see if the plugin
       // corridinateGrouping is already in the tree. If not we add it.
@@ -644,6 +700,9 @@ const getLoadedActions = () => {
 };
 
 const rawOutput = computed(() => {
+  if (!_.isEmpty(model.value.active)) {
+    return {};
+  }
   let displayOutput = JSON.parse(JSON.stringify(model.value));
 
   for (const flowActionType of flowTypesMap.get(model.value.type).flowActionTypes) {
@@ -664,7 +723,7 @@ const rawOutput = computed(() => {
   }
 
   // Remove UI metakeys from output
-  displayOutput = _.omit(displayOutput, ["active", "flowType"]);
+  displayOutput = _.omit(displayOutput, ["active", "selectedFlowPlan"]);
 
   return displayOutput;
 });

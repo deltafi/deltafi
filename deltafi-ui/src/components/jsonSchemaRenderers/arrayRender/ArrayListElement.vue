@@ -18,8 +18,8 @@
 
 <template>
   <div :class="styles.arrayList.item + ' d-flex btn-group align-items-center'">
-    <div :class="styles.arrayList.itemLabel">{{ label }}:</div>
-    <div class="input-width ml-2 mb-4">
+    <div :class="styles.arrayList.itemLabel + 'pr-1'">{{ label }}:</div>
+    <div class="input-width ml-2">
       <slot></slot>
     </div>
     <div class="col btn-group px-0 align-items-center">

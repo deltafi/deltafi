@@ -17,154 +17,30 @@
 */
 
 import useGraphQL from "./useGraphQL";
+import { transformFlow, transformFlowPlan, normalizeFlow, normalizeFlowPlan, enrichFlow, enrichFlowPlan, egressFlow, egressFlowPlan } from "./useFlowPlanQueryVariables";
 
 export default function useFlowQueryBuilder() {
   const { response, queryGraphQL } = useGraphQL();
 
-  const sourcePluginFields = {
-    sourcePlugin: {
-      artifactId: true,
-      groupId: true,
-      version: true,
-    },
-  };
-
-  const variableFields = {
-    variables: {
-      name: true,
-      value: true,
-      description: true,
-      defaultValue: true,
-      dataType: true,
-    },
-  };
-
-  const transformFlowFields = {
-    name: true,
-    description: true,
-    flowStatus: {
-      state: true,
-      errors: {
-        configName: true,
-        errorType: true,
-        message: true,
+  // Get all flows (no grouping)
+  const getAllFlowPlans = () => {
+    const query = {
+      getAllFlowPlans: {
+        transformPlans: {
+          ...transformFlowPlan,
+        },
+        normalizePlans: {
+          ...normalizeFlowPlan,
+        },
+        enrichPlans: {
+          ...enrichFlowPlan,
+        },
+        egressPlans: {
+          ...egressFlowPlan,
+        },
       },
-      testMode: true,
-    },
-    maxErrors: true,
-    transformActions: {
-      name: true,
-      type: true,
-      parameters: true,
-      apiVersion: true,
-    },
-    egressAction: {
-      name: true,
-      type: true,
-      parameters: true,
-      apiVersion: true,
-    },
-    ...variableFields,
-    expectedAnnotations: true,
-  };
-
-  const normalizeFlowFields = {
-    name: true,
-    description: true,
-    flowStatus: {
-      state: true,
-      errors: {
-        configName: true,
-        errorType: true,
-        message: true,
-      },
-      testMode: true,
-    },
-    maxErrors: true,
-    transformActions: {
-      name: true,
-      type: true,
-      parameters: true,
-      apiVersion: true,
-    },
-    loadAction: {
-      name: true,
-      type: true,
-      parameters: true,
-      apiVersion: true,
-    },
-    ...variableFields,
-  };
-
-  const enrichFlowFields = {
-    name: true,
-    description: true,
-    flowStatus: {
-      state: true,
-      errors: {
-        configName: true,
-        message: true,
-        errorType: true,
-      },
-    },
-    domainActions: {
-      name: true,
-      type: true,
-      requiresDomains: true,
-      parameters: true,
-      apiVersion: true,
-    },
-    enrichActions: {
-      name: true,
-      type: true,
-      requiresDomains: true,
-      requiresEnrichments: true,
-      requiresMetadataKeyValues: {
-        key: true,
-        value: true,
-      },
-      parameters: true,
-      apiVersion: true,
-    },
-    ...variableFields,
-  };
-
-  const egressFlowFields = {
-    name: true,
-    description: true,
-    flowStatus: {
-      state: true,
-      errors: {
-        configName: true,
-        errorType: true,
-        message: true,
-      },
-      testMode: true,
-    },
-    includeNormalizeFlows: true,
-    excludeNormalizeFlows: true,
-    formatAction: {
-      name: true,
-      type: true,
-      requiresDomains: true,
-      requiresEnrichments: true,
-      parameters: true,
-      apiVersion: true,
-    },
-    validateActions: {
-      name: true,
-      type: true,
-      parameters: true,
-      apiVersion: true,
-    },
-    egressAction: {
-      name: true,
-      type: true,
-      parameters: true,
-      apiVersion: true,
-    },
-    ...variableFields,
-    expectedAnnotations: true,
+    };
+    return sendGraphQLQuery(query, "getAllFlows");
   };
 
   // Save a TransformFlowPlan
@@ -174,8 +50,7 @@ export default function useFlowQueryBuilder() {
         __args: {
           transformFlowPlan: flowPlan,
         },
-        ...sourcePluginFields,
-        ...transformFlowFields,
+        ...transformFlow,
       },
     };
     return sendGraphQLQuery(query, "saveTransformFlowPlan", "mutation", true);
@@ -200,8 +75,7 @@ export default function useFlowQueryBuilder() {
         __args: {
           normalizeFlowPlan: flowPlan,
         },
-        ...sourcePluginFields,
-        ...normalizeFlowFields,
+        ...normalizeFlow,
       },
     };
     return sendGraphQLQuery(query, "saveNormalizeFlowPlan", "mutation", true);
@@ -226,8 +100,7 @@ export default function useFlowQueryBuilder() {
         __args: {
           enrichFlowPlan: flowPlan,
         },
-        ...sourcePluginFields,
-        ...enrichFlowFields,
+        ...enrichFlow,
       },
     };
     return sendGraphQLQuery(query, "saveEnrichFlowPlan", "mutation", true);
@@ -252,8 +125,7 @@ export default function useFlowQueryBuilder() {
         __args: {
           egressFlowPlan: flowPlan,
         },
-        ...sourcePluginFields,
-        ...egressFlowFields,
+        ...egressFlow,
       },
     };
     return sendGraphQLQuery(query, "saveEgressFlowPlan", "mutation", true);
@@ -281,6 +153,7 @@ export default function useFlowQueryBuilder() {
   };
 
   return {
+    getAllFlowPlans,
     saveTransformFlowPlan,
     removeTransformFlowPlanByName,
     saveNormalizeFlowPlan,

@@ -17,41 +17,48 @@
 -->
 
 <template>
-  <div>
-    <div v-if="hasErrors" class="pt-2">
-      <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="clearErrors()">
-        <ul>
-          <div v-for="(error, key) in errors" :key="key">
-            <li class="text-wrap text-break">{{ error }}</li>
+  <div class="flow-configuration-dialog">
+    <div>
+      <div v-if="hasErrors" class="pt-2">
+        <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="clearErrors()">
+          <ul>
+            <div v-for="(error, key) in errors" :key="key">
+              <li class="text-wrap text-break">{{ error }}</li>
+            </div>
+          </ul>
+        </Message>
+      </div>
+      <dt>Name:</dt>
+      <dd>
+        <InputText v-model="model.name" class="inputWidth" />
+      </dd>
+      <dt>Description:</dt>
+      <dd>
+        <Textarea v-model="model.description" rows="4" cols="47" class="inputWidth" />
+      </dd>
+      <dt>Type:</dt>
+      <dd>
+        <Dropdown v-model="model.type" :options="flowTypesDisplay" option-label="header" option-value="field" placeholder="Select Flow Type" :show-clear="!editFlowPlan" :disabled="editFlowPlan" class="inputWidth" />
+      </dd>
+      <dt>Clone From: (Optional)</dt>
+      <dd>
+        <Dropdown v-model="model.selectedFlowPlan" :options="_.orderBy(allFlowPlans[`${_.toLower(model.type)}Plans`], [(flow) => flow.name.toLowerCase()], ['asc'])" option-label="name" placeholder="Select Flow" :show-clear="!editFlowPlan" :disabled="editFlowPlan" class="inputWidth" />
+      </dd>
+      <div class="delete-policy-configuration-dialog">
+        <teleport v-if="isMounted" to="#dialogTemplate">
+          <div class="p-dialog-footer">
+            <Button label="Submit" @click="submit()" />
           </div>
-        </ul>
-      </Message>
-    </div>
-    <dt>Type:</dt>
-    <dd>
-      <Dropdown v-model="model.type" :options="flowTypesDisplay" option-label="header" option-value="field" placeholder="Select Flow Type" :show-clear="!editFlowPlan" :disabled="editFlowPlan" />
-    </dd>
-    <dt>Name:</dt>
-    <dd>
-      <InputText v-model="model.name" class="inputWidth" />
-    </dd>
-    <dt>Description:</dt>
-    <dd>
-      <Textarea v-model="model.description" rows="4" cols="47" />
-    </dd>
-    <div class="delete-policy-configuration-dialog">
-      <teleport v-if="isMounted" to="#dialogTemplate">
-        <div class="p-dialog-footer">
-          <Button label="Submit" @click="submit()" />
-        </div>
-      </teleport>
+        </teleport>
+      </div>
     </div>
   </div>
 </template>
     
-    <script setup>
+<script setup>
+import useFlowPlanQueryBuilder from "@/composables/useFlowPlanQueryBuilder";
 import { useMounted } from "@vueuse/core";
-import { computed, defineEmits, defineProps, reactive, ref } from "vue";
+import { computed, defineEmits, defineProps, onMounted, reactive, ref } from "vue";
 
 import Button from "primevue/button";
 import Dropdown from "primevue/dropdown";
@@ -60,8 +67,10 @@ import Message from "primevue/message";
 import Textarea from "primevue/textarea";
 import _ from "lodash";
 
+const { getAllFlowPlans } = useFlowPlanQueryBuilder();
+
 const isMounted = ref(useMounted());
-const emit = defineEmits(["newFlow", "updateFlow"]);
+const emit = defineEmits(["createFlowPlan"]);
 const props = defineProps({
   dataProp: {
     type: Object,
@@ -83,11 +92,14 @@ const flowTemplate = {
   type: null,
   name: null,
   description: null,
+  selectedFlowPlan: null,
 };
 
 const { editFlowPlan, closeDialogCommand } = reactive(props);
 const errors = ref([]);
 const flowData = ref(Object.assign({}, props.dataProp || flowTemplate));
+
+const allFlowPlans = ref({});
 
 const model = computed({
   get() {
@@ -104,6 +116,11 @@ const model = computed({
       _.mapValues(newValue, (v) => (v === "" ? null : v))
     );
   },
+});
+
+onMounted(async () => {
+  let response = await getAllFlowPlans();
+  allFlowPlans.value = response.data.getAllFlowPlans;
 });
 
 const flowTypesDisplay = [
@@ -140,14 +157,15 @@ const submit = async () => {
   }
 
   closeDialogCommand.command();
-  if (editFlowPlan) {
-    emit("updateFlow", { type: model.value.type, name: model.value.name, description: model.value.description });
-  } else {
-    emit("newFlow", { type: model.value.type, name: model.value.name, description: model.value.description });
-  }
+  emit("createFlowPlan", { type: model.value.type, name: model.value.name, description: model.value.description, selectedFlowPlan: model.value.selectedFlowPlan });
 };
 </script>
-    
-    <style lang="scss">
+
+<style lang="scss">
+.flow-configuration-dialog {
+  .inputWidth {
+    width: 97% !important;
+  }
+}
 </style>
     

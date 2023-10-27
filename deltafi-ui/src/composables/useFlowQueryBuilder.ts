@@ -17,175 +17,26 @@
 */
 
 import useGraphQL from "./useGraphQL";
+import { transformFlow, normalizeFlow, enrichFlow, egressFlow, flowStatusFields } from "./useFlowPlanQueryVariables";
 
 export default function useFlowQueryBuilder() {
   const { response, errors, queryGraphQL, loaded, loading } = useGraphQL();
-
-  const sourcePluginFields = {
-    sourcePlugin: {
-      artifactId: true,
-      groupId: true,
-      version: true,
-    }
-  };
-
-  const variableFields = {
-    variables: {
-      name: true,
-      value: true,
-      description: true,
-      defaultValue: true,
-      dataType: true,
-    }
-  };
-
-  const transformFlowFields = {
-    name: true,
-    description: true,
-    flowStatus: {
-      state: true,
-      errors: {
-        configName: true,
-        errorType: true,
-        message: true,
-      },
-      testMode: true,
-    },
-    maxErrors: true,
-    transformActions: {
-      name: true,
-      type: true,
-      parameters: true,
-      apiVersion: true,
-    },
-    egressAction: {
-      name: true,
-      type: true,
-      parameters: true,
-      apiVersion: true,
-    },
-    ...variableFields,
-    expectedAnnotations: true,
-  };
-
-  const normalizeFlowFields = {
-    name: true,
-    description: true,
-    flowStatus: {
-      state: true,
-      errors: {
-        configName: true,
-        errorType: true,
-        message: true,
-      },
-      testMode: true,
-    },
-    maxErrors: true,
-    transformActions: {
-      name: true,
-      type: true,
-      parameters: true,
-      apiVersion: true,
-    },
-    loadAction: {
-      name: true,
-      type: true,
-      parameters: true,
-      apiVersion: true,
-    },
-    ...variableFields
-  };
-
-  const enrichFlowFields = {
-    name: true,
-    description: true,
-    flowStatus: {
-      state: true,
-      errors: {
-        configName: true,
-        message: true,
-        errorType: true,
-      },
-    },
-    domainActions: {
-      name: true,
-      type: true,
-      requiresDomains: true,
-      parameters: true,
-      apiVersion: true,
-    },
-    enrichActions: {
-      name: true,
-      type: true,
-      requiresDomains: true,
-      requiresEnrichments: true,
-      requiresMetadataKeyValues: {
-        key: true,
-        value: true,
-      },
-      parameters: true,
-      apiVersion: true,
-    },
-    ...variableFields
-  };
-
-  const egressFlowFields = {
-    name: true,
-    description: true,
-    flowStatus: {
-      state: true,
-      errors: {
-        configName: true,
-        errorType: true,
-        message: true,
-      },
-      testMode: true,
-    },
-    includeNormalizeFlows: true,
-    excludeNormalizeFlows: true,
-    formatAction: {
-      name: true,
-      type: true,
-      requiresDomains: true,
-      requiresEnrichments: true,
-      parameters: true,
-      apiVersion: true,
-    },
-    validateActions: {
-      name: true,
-      type: true,
-      parameters: true,
-      apiVersion: true,
-    },
-    egressAction: {
-      name: true,
-      type: true,
-      parameters: true,
-      apiVersion: true,
-    },
-    ...variableFields,
-    expectedAnnotations: true,
-  };
 
   // Get all flows (no grouping)
   const getAllFlows = () => {
     const query = {
       getAllFlows: {
         transform: {
-          ...sourcePluginFields,
-          ...transformFlowFields
+          ...transformFlow,
         },
         normalize: {
-          ...sourcePluginFields,
-          ...normalizeFlowFields
+          ...normalizeFlow,
         },
         enrich: {
-          ...sourcePluginFields,
-          ...enrichFlowFields
+          ...enrichFlow,
         },
         egress: {
-          ...sourcePluginFields,
-          ...egressFlowFields
+          ...egressFlow,
         },
       },
     };
@@ -199,8 +50,7 @@ export default function useFlowQueryBuilder() {
         __args: {
           flowName: flowName,
         },
-        ...sourcePluginFields,
-        ...transformFlowFields
+        ...transformFlow,
       },
     };
     return sendGraphQLQuery(query, "getTransformFlowByName");
@@ -213,8 +63,7 @@ export default function useFlowQueryBuilder() {
         __args: {
           flowName: flowName,
         },
-        ...sourcePluginFields,
-        ...normalizeFlowFields
+        ...normalizeFlow,
       },
     };
     return sendGraphQLQuery(query, "getNormalizeFlowByName");
@@ -227,8 +76,7 @@ export default function useFlowQueryBuilder() {
         __args: {
           flowName: flowName,
         },
-        ...sourcePluginFields,
-        ...enrichFlowFields
+        ...enrichFlow,
       },
     };
     return sendGraphQLQuery(query, "getEnrichFlowByName");
@@ -241,8 +89,7 @@ export default function useFlowQueryBuilder() {
         __args: {
           flowName: flowName,
         },
-        ...sourcePluginFields,
-        ...egressFlowFields
+        ...egressFlow,
       },
     };
     return sendGraphQLQuery(query, "getEgressFlowByName");
@@ -256,12 +103,7 @@ export default function useFlowQueryBuilder() {
           flowName: flowName,
         },
         flowStatus: {
-          state: true,
-          errors: {
-            configName: true,
-            errorType: true,
-            message: true,
-          },
+          ...flowStatusFields,
           testMode: true,
         },
       },
@@ -277,12 +119,7 @@ export default function useFlowQueryBuilder() {
           flowName: flowName,
         },
         flowStatus: {
-          state: true,
-          errors: {
-            configName: true,
-            errorType: true,
-            message: true,
-          },
+          ...flowStatusFields,
           testMode: true,
         },
       },
@@ -298,12 +135,7 @@ export default function useFlowQueryBuilder() {
           flowName: flowName,
         },
         flowStatus: {
-          state: true,
-          errors: {
-            configName: true,
-            errorType: true,
-            message: true,
-          },
+          ...flowStatusFields,
         },
       },
     };
@@ -318,12 +150,7 @@ export default function useFlowQueryBuilder() {
           flowName: flowName,
         },
         flowStatus: {
-          state: true,
-          errors: {
-            configName: true,
-            errorType: true,
-            message: true,
-          },
+          ...flowStatusFields,
           testMode: true,
         },
       },

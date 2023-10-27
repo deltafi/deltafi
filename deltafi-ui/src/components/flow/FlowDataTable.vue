@@ -32,11 +32,17 @@
               </DialogTemplate>
             </span>
             <span>
-              <span v-if="data.sourcePlugin.artifactId === 'system-plugin'" v-tooltip.top="'Remove ' + data.name" class="cursor-pointer" @click="confirmationPopup($event, data)">
+              <span v-if="data.sourcePlugin.artifactId === 'system-plugin'" v-tooltip.top="'Remove'" class="cursor-pointer" @click="confirmationPopup($event, data)">
                 <i class="ml-2 text-muted fa-solid fa-trash-can" />
               </span>
+              <PermissionedRouterLink v-if="data.sourcePlugin.artifactId === 'system-plugin'" :disabled="!$hasPermission('FlowUpdate')" :to="{ path: 'flow-plan-builder/' }" @click="setFlowPlanParams(data, true)">
+                <i v-tooltip.top="{ value: `Edit`, class: 'tooltip-width' }" class="ml-2 text-muted pi pi-pencil" />
+              </PermissionedRouterLink>
+              <PermissionedRouterLink :disabled="!$hasPermission('FlowUpdate')" :to="{ path: 'flow-plan-builder/' }" @click="setFlowPlanParams(data)">
+                <i v-tooltip.top="{ value: `Clone`, class: 'tooltip-width' }" class="ml-2 text-muted pi pi-clone" />
+              </PermissionedRouterLink>
               <PermissionedRouterLink :disabled="!$hasPermission('PluginsView')" :to="{ path: 'plugins/' + data.mvnCoordinates }">
-                <i v-tooltip.top="data.mvnCoordinates" class="ml-2 text-muted fas fa-plug fa-rotate-90 fa-fw" />
+                <i v-tooltip.top="data.mvnCoordinates" class="ml-1 text-muted fas fa-plug fa-rotate-90 fa-fw" />
               </PermissionedRouterLink>
             </span>
           </div>
@@ -92,17 +98,18 @@ import PermissionedRouterLink from "@/components/PermissionedRouterLink";
 import useGraphiteQueryBuilder from "@/composables/useGraphiteQueryBuilder";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import useFlowPlanQueryBuilder from "@/composables/useFlowPlanQueryBuilder";
-
 import useNotifications from "@/composables/useNotifications";
+import { useStorage, StorageSerializers } from "@vueuse/core";
 import { computed, defineProps, inject, onBeforeMount, ref, onUnmounted, watch, defineEmits } from "vue";
+
+import Column from "primevue/column";
 import ConfirmPopup from "primevue/confirmpopup";
+import DataTable from "primevue/datatable";
+import { FilterMatchMode } from "primevue/api";
+import { filesize } from "filesize";
+import InputNumber from "primevue/inputnumber";
 import { useConfirm } from "primevue/useconfirm";
 
-import { filesize } from "filesize";
-import { FilterMatchMode } from "primevue/api";
-import Column from "primevue/column";
-import DataTable from "primevue/datatable";
-import InputNumber from "primevue/inputnumber";
 import _ from "lodash";
 
 const { setMaxErrors, errors } = useFlowQueryBuilder();
@@ -116,6 +123,8 @@ const isIdle = inject("isIdle");
 const { data: metricsData, fetchIngressFlowsByteRate, fetchEgressFlowsByteRate } = useGraphiteQueryBuilder();
 const emit = defineEmits(["updateFlows"]);
 const flowData = ref({});
+
+const linkedFlowPlan = useStorage("linked-flow-plan-persisted-params", {}, sessionStorage, { serializer: StorageSerializers.object });
 
 const props = defineProps({
   flowTypeProp: {
@@ -250,7 +259,7 @@ const confirmationPopup = (event, data) => {
     accept: () => {
       deleteFlow(data);
     },
-    reject: () => {},
+    reject: () => { },
   });
 };
 
@@ -297,6 +306,10 @@ const onCellEditComplete = async (event) => {
       data[field] = resetValue;
     }
   }
+};
+
+const setFlowPlanParams = (data, editExistingFlow) => {
+  linkedFlowPlan.value["flowPlanParams"] = { type: data.flowType, selectedFlowPlanName: data.name, selectedFlowPlan: data, editExistingFlow: editExistingFlow };
 };
 </script>
 
