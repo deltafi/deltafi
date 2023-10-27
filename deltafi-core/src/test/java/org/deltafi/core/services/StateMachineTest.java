@@ -637,8 +637,9 @@ class StateMachineTest {
         deltaFile.filterAction(ActionEvent.builder()
                 .did(deltaFile.getDid())
                 .flow(NORMALIZE_FLOW)
+                .filter(FilterEvent.builder().message("filtered").build())
                 .action("FilteredLoadAction")
-                .build(), "filtered", null);
+                .build());
 
         assertThat(stateMachine.advance(deltaFile)).isEmpty();
         assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.COMPLETE);

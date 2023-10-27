@@ -68,3 +68,6 @@ Resume Policies,ResumePolicyCreate,Grants the ability to create Resume Policies
 Resume Policies,ResumePolicyRead,Grants the ability to view Resume Policies
 Resume Policies,ResumePolicyUpdate,Grants the ability to edit Resume Policies
 Resume Policies,ResumePolicyDelete,Grants the ability to delete Resume Policies
+Topics,TopicsRead,Grants the ability to read Topics
+Topics,TopicsWrite,Grants the ability to create and update Topics
+Topics,TopicsDelete,Grants the ability to delete Topics

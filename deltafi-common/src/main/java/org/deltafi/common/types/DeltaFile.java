@@ -347,10 +347,10 @@ public class DeltaFile {
             .forEach(action -> setActionState(action, ActionState.COLLECTED, start, stop));
   }
 
-  public void filterAction(ActionEvent event, String filterMessage, String filterContext) {
+  public void filterAction(ActionEvent event) {
     getActions().stream()
             .filter(action -> action.getFlow().equals(event.getFlow()) && action.getName().equals(event.getAction()) && !action.terminal())
-            .forEach(action -> setFilteredActionState(action, event.getStart(), event.getStop(), filterMessage, filterContext));
+            .forEach(action -> setFilteredActionState(action, event.getStart(), event.getStop(), event.getFilter().getMessage(), event.getFilter().getContext()));
   }
 
   public void reinjectAction(ActionEvent event) {
@@ -929,5 +929,15 @@ public class DeltaFile {
     update.set("version", this.version + 1);
 
     return update;
+  }
+
+  @JsonIgnore
+  public Map<String, String> getImmutableMetadata() {
+    return Collections.unmodifiableMap(getMetadata());
+  }
+
+  @JsonIgnore
+  public List<Content> getImmutableContent() {
+    return lastDataAmendedContent().stream().map(Content::copy).toList();
   }
 }

@@ -658,7 +658,7 @@ public class DeltaFilesService {
         }
 
         deltaFile.addAnnotations(event.getFilter().getAnnotations());
-        deltaFile.filterAction(event, event.getFilter().getMessage(), event.getFilter().getContext());
+        deltaFile.filterAction(event);
         deltaFile.setFiltered(true);
 
         advanceAndSave(deltaFile);
