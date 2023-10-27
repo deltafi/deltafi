@@ -24,6 +24,7 @@ import org.deltafi.actionkit.action.content.ActionContent;
 
 import java.nio.charset.Charset;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 
 /**
@@ -141,4 +142,38 @@ public abstract class ContentResultAssert<A extends AbstractAssert<A, T>, T exte
         Assertions.assertThat(actual.getContent()).isNotNull();
         return myself;
     }
+
+    /**
+     * Verify that the result includes the key and value in the annotation map
+     * @param key to search for
+     * @param value that should be set for the key
+     * @return this
+     */
+    public A addedAnnotation(String key, String value) {
+        isNotNull();
+        Assertions.assertThat(actual.getAnnotations()).containsEntry(key, value);
+        return myself;
+    }
+
+    /**
+     * Verify that the result include all the given annotations
+     * @param annotations that should be included in the result
+     * @return this
+     */
+    public A addedAnnotations(Map<String, String> annotations) {
+        isNotNull();
+        Assertions.assertThat(actual.getAnnotations()).containsAllEntriesOf(annotations);
+        return myself;
+    }
+
+    /**
+     * Verify that no annotations were added
+     * @return this
+     */
+    public A annotationsIsEmpty() {
+        isNotNull();
+        Assertions.assertThat(actual.getAnnotations()).isEmpty();
+        return myself;
+    }
+
 }
