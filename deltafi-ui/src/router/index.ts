@@ -30,6 +30,7 @@ import EventsPage from "@/pages/EventsPage.vue";
 import ExternalLinksPage from "@/pages/ExternalLinksPage.vue";
 import FlowPlanBuilderPage from "@/pages/FlowPlanBuilderPage.vue";
 import FlowPlansPage from "@/pages/FlowPlansPage.vue";
+import IngressActionsPage from "@/pages/IngressActionsPage.vue";
 import IngressRoutingPage from "@/pages/IngressRoutingPage.vue";
 import PageNotFound from "@/pages/PageNotFound.vue";
 import PluginRepositoryPage from "@/pages/PluginRepositoryPage.vue";
@@ -217,6 +218,14 @@ const routes: Array<RouteRecordRaw> = [
     component: ExternalLinksPage,
     meta: {
       permission: "Admin",
+    },
+  },
+  {
+    path: "/config/ingress-actions",
+    name: "Ingress Actions",
+    component: IngressActionsPage,
+    meta: {
+      permission: "FlowView",
     },
   },
   {

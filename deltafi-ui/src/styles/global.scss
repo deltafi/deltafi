@@ -153,3 +153,31 @@ td.did-column {
     display: none;
   }
 }
+
+td.inline-edit-column {
+  width: 7rem;
+  padding: 0 !important;
+
+  >span {
+    padding: 0.5rem !important;
+  }
+
+  .value-clickable {
+    cursor: pointer;
+    width: 100%;
+    display: flex;
+  }
+
+  .value-clickable>* {
+    flex: 0 0 auto;
+  }
+
+  .p-inputnumber {
+    padding: 0 !important;
+    margin: 0;
+
+    .p-inputtext {
+      width: 6.5rem;
+    }
+  }
+}

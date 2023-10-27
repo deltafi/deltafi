@@ -189,6 +189,12 @@ const staticMenuItems = ref([
         visible: computed(() => hasPermission("DeletePolicyRead")),
       },
       {
+        name: "Ingress Actions",
+        icon: "fa-solid fa-cubes fa-fw",
+        path: "/config/ingress-actions",
+        visible: computed(() => hasPermission("FlowView")),
+      },
+      {
         name: "Ingress Routing",
         icon: "fas fa-route fa-fw",
         path: "/config/ingress-routing",
