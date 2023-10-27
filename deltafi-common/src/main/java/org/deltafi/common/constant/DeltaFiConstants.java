@@ -42,6 +42,7 @@ public class DeltaFiConstants {
     public static final String FILES_FILTERED = "files_filtered";
     public static final String FILES_IN = "files_in";
     public static final String FILES_OUT = "files_out";
+    public static final String ACTION_EXECUTION_TIME_MS = "action_execution_time_ms";
     public static final String EXECUTION_TIME_MS = "execution_time_ms";
     public static final String SURVEY_FILES = "survey.files";
     public static final String SURVEY_BYTES = "survey.bytes";
@@ -55,4 +56,5 @@ public class DeltaFiConstants {
     public static final String EGRESS_FLOW = "egressFlow";
     public static final String INGRESS_FLOW = "ingressFlow";
     public static final String SOURCE = "source";
+    public static final String CLASS = "class";
 }

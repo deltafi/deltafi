@@ -62,4 +62,17 @@ public class MetricsUtil {
 
         return tags;
     }
+
+    /** Adds the CLASS tag to a set of metric tags
+     *
+     * @param tags existing tags; i.e. from tagsFor()
+     * @param className value for "class" tag
+     * @note Modifies input Map
+     */
+    static public void extendTagsForAction(@NotNull Map<String, String> tags, String className) {
+        if (className != null) {
+            tags.put(DeltaFiConstants.CLASS, className);
+        }
+    }
+
 }

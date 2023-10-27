@@ -34,8 +34,8 @@ import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.content.ContentUtil;
 import org.deltafi.common.types.*;
 import org.deltafi.core.audit.CoreAuditLogger;
-import org.deltafi.core.collect.CollectEntry;
 import org.deltafi.core.collect.CollectDefinition;
+import org.deltafi.core.collect.CollectEntry;
 import org.deltafi.core.collect.CollectService;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.exceptions.*;
@@ -45,7 +45,6 @@ import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.repo.QueuedAnnotationRepo;
 import org.deltafi.core.retry.MongoRetryable;
-import org.deltafi.core.types.ErrorSummaryFilter;
 import org.deltafi.core.types.ResumePolicy;
 import org.deltafi.core.types.*;
 import org.jetbrains.annotations.NotNull;
@@ -410,13 +409,13 @@ public class DeltaFilesService {
                     validate(deltaFile, event);
                 }
                 case EGRESS -> {
-                    egress(deltaFile, event);
                     metrics.add(
                             Metric.builder()
                                     .name(EXECUTION_TIME_MS)
                                     .value(Duration.between(deltaFile.getCreated(), deltaFile.getModified()).toMillis())
                                     .build());
                     generateMetrics(metrics, event, deltaFile);
+                    egress(deltaFile, event);
                 }
                 case ERROR -> {
                     generateMetrics(metrics, event, deltaFile);
@@ -441,19 +440,53 @@ public class DeltaFilesService {
     }
 
     private void generateMetrics(List<Metric> metrics, ActionEvent event, DeltaFile deltaFile) {
+        generateMetrics(true, metrics, event, deltaFile);
+    }
+
+    private void generateMetrics(boolean actionExecuted, List<Metric> metrics, ActionEvent event, DeltaFile deltaFile) {
         String egressFlow = egressFlow(event.getFlow(), event.getAction(), deltaFile);
         Map<String, String> defaultTags = MetricsUtil.tagsFor(event.getType(), event.getAction(), deltaFile.getSourceInfo().getFlow(), egressFlow);
-        for(Metric metric : metrics) {
+        for (Metric metric : metrics) {
             metric.addTags(defaultTags);
             metricService.increment(metric);
         }
+
+        // Don't track execution times for internally generated error events,
+        // or if we've already recorded them
+        if (actionExecuted) {
+            String actionClass = null;
+            ActionConfiguration actionConfiguration = actionConfiguration(event.getFlow(), event.getAction(),
+                    deltaFile.getSourceInfo().getProcessingType(), deltaFile.getStage());
+            if (actionConfiguration != null) {
+                actionClass = actionConfiguration.getType();
+            }
+            generateActionExecutionMetric(defaultTags, event, actionClass);
+        }
     }
 
-    private void generateIngressMetrics(List<Metric> metrics, ActionEvent event, String flow) {
+    private void generateIngressMetrics(List<Metric> metrics, ActionEvent event, String flow, String actionClass) {
         Map<String, String> defaultTags = MetricsUtil.tagsFor(event.getType(), event.getAction(), flow, null);
-        for(Metric metric : metrics) {
+        for (Metric metric : metrics) {
             metric.addTags(defaultTags);
             metricService.increment(metric);
+        }
+        generateActionExecutionMetric(defaultTags, event, actionClass);
+    }
+
+    private void generateActionExecutionMetric(Map<String, String> tags, ActionEvent event, String actionClass) {
+        if (event.getType() != ActionEventType.UNKNOWN && event.getStart() != null && event.getStop() != null) {
+            MetricsUtil.extendTagsForAction(tags, actionClass);
+
+            List<Metric> actionMetrics = new ArrayList<>();
+            actionMetrics.add(Metric.builder()
+                    .name(ACTION_EXECUTION_TIME_MS)
+                    .value(Duration.between(event.getStart(), event.getStop()).toMillis())
+                    .build());
+
+            for (Metric actionMetric : actionMetrics) {
+                actionMetric.addTags(tags);
+                metricService.increment(actionMetric);
+            }
         }
     }
 
@@ -491,10 +524,15 @@ public class DeltaFilesService {
                     bytes[0] += deltaFile.getIngressBytes();
                 });
 
+        String actionClass =
+         (timedIngressFlow.findActionConfigByName(event.getAction()) != null)
+                ? timedIngressFlow.findActionConfigByName(event.getAction()).getType()
+                 : null;
+
         List<Metric> metrics = (event.getMetrics() != null) ? event.getMetrics() : new ArrayList<>();
         metrics.add(new Metric(DeltaFiConstants.FILES_IN, ingressEvent.getIngressItems().size()));
         metrics.add(new Metric(DeltaFiConstants.BYTES_IN, bytes[0]));
-        generateIngressMetrics(metrics, event, timedIngressFlow.getTargetFlow());
+        generateIngressMetrics(metrics, event, timedIngressFlow.getTargetFlow(), actionClass);
     }
 
     public void transform(DeltaFile deltaFile, ActionEvent event) {
@@ -604,7 +642,7 @@ public class DeltaFilesService {
     }
 
     @MongoRetryable
-    public void error(DeltaFile deltaFile, ActionEvent event) {
+    private void error(DeltaFile deltaFile, ActionEvent event) {
         // If the content was deleted by a delete policy mark as CANCELLED instead of ERROR
         if (deltaFile.getContentDeleted() != null) {
             deltaFile.cancelQueuedActions();
@@ -630,7 +668,8 @@ public class DeltaFilesService {
         resumeDetails.ifPresentOrElse(
                 details -> deltaFile.errorAction(event, details.name(), details.delay()),
                 () -> deltaFile.errorAction(event));
-        generateMetrics(List.of(new Metric(DeltaFiConstants.FILES_ERRORED, 1)), event, deltaFile);
+        // false: we don't want action execution metrics, since they have already been recorded.
+        generateMetrics(false, List.of(new Metric(DeltaFiConstants.FILES_ERRORED, 1)), event, deltaFile);
 
         return deltaFile;
     }
@@ -1597,8 +1636,7 @@ public class DeltaFilesService {
         aggregateSourceInfo.setProcessingType(sourceInfo.getProcessingType());
         return aggregateSourceInfo;
     }
-
-
+    
     private void handleMissingEgressFlow(DeltaFile deltaFile) {
         deltaFile.queueNewAction("MISSING", DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION, ActionType.UNKNOWN, false);
         processErrorEvent(deltaFile, buildNoEgressConfiguredErrorEvent(deltaFile, OffsetDateTime.now(clock)));
@@ -1753,14 +1791,15 @@ public class DeltaFilesService {
             }
             if (queued > 0) {
                 log.info("Queued {} DeltaFiles for auto-resume", queued);
-                generateMetrics(FILES_AUTO_RESUMED, countByFlow);
+                generateMetricsByName(FILES_AUTO_RESUMED, countByFlow);
             }
         }
         return queued;
     }
 
-    @SuppressWarnings("SameParameterValue")
-    private void generateMetrics(String name, Map<String, Integer> countByFlow) {
+
+    private void generateMetricsByName(String name, Map<String, Integer> countByFlow) {
+        @SuppressWarnings("SameParameterValue")
         Set<String> flows = countByFlow.keySet();
         for (String flow : flows) {
             Integer count = countByFlow.get(flow);
