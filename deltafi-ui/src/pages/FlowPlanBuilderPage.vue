@@ -47,7 +47,7 @@
                     <div :id="element.id" class="action-layout border border-dark rounded mx-2 my-4 p-overlay-badge">
                       <Badge v-if="!isValidAction(element)" v-tooltip.left="{ value: `${validateAction(element)}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-exclamation-triangle pt-1'" severity="danger"></Badge>
                       <div class="d-flex align-items-center justify-content-between">
-                        <InputText v-model="element.name" autofocus :class="'inputtext-border-remove pl-0'" placeholder="Action Name Required" />
+                        <InputText v-model="element.name" :class="'inputtext-border-remove pl-0'" placeholder="Action Name Required" />
                         <div class="pl-2 btn-group">
                           <DialogTemplate component-name="flowBuilder/ActionConfigurationDialog" :header="`Edit ${displayActionName(element)}`" :row-data-prop="element" :action-index-prop="index" dialog-width="75vw" @update-action="updateAction">
                             <Button v-tooltip.top="{ value: `Edit ${displayActionName(element)}`, class: 'tooltip-width', showDelay: 300 }" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary" />
