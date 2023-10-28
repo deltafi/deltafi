@@ -5,6 +5,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.1.8] - 2023-10-28
+
+### Added
+- Added new Filtered page similar to Errors page. 
+- Added the ability to import existing flow plans into the flow builder. 
+- Added the ability to edit existing system plugun flow plans in the flow builder.
+- Added Ingress Actions page.
+- Added validation to make sure new flow plans being created dont have name that match names of existing flow plans within our system 
+- New metric `action_execution_time_ms` tracks action execution time in millisecond per action, and includes class name tag
+- New Action Execution Time graph on System Overview
+- New `MetadataToAnnotationTransformAction` allows metadata to be filtered, and stored as annotations, with optional key modification
+
+### Changed
+- Renamed Action Executions to Action Execution Count on System Overview
+- EGRESS metrics are now reported before the DeltaFile is marked as COMPLETE
+- Timed Ingress Action Improvements
+  - Return results synchronously
+  - Block execution until the last result is returned, or until the task is lost
+  - Provide a memo field in the context and result, so bookmarks/notes can be passed to the next execution
+  - Add result option to begin the next execution immediately, without waiting for the usual interval
+  - Add result status and statusMessage
+  - Respect maxErrors
+  - Add documentation
+  - Add python implementation
+
+### Fixed
+- Removed focus on the last action name rendered when importing from existing or editing existing flow plans 
+- Fix bug where cold queued egress actions in an transform flow would not be requeued. 
+- Gradle dependency issue with action-kit test
+- Test framework missing Annotation test methods in `ContentResultAssert`
+
 ## [1.1.7] - 2023-10-18
 
 ### Added
@@ -2388,7 +2419,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.7...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.8...main
+[1.1.8]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.7...1.1.8
 [1.1.7]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.6...1.1.7
 [1.1.6]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.5...1.1.6
 [1.1.5]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.4...1.1.5
