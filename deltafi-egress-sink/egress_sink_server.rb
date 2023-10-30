@@ -26,15 +26,12 @@ require 'sinatra/base'
 require 'sinatra/quiet_logger'
 
 require 'deltafi/logger'
-require 'deltafi/smoke/service'
 
 # Receive files from the RestPostEgressAction and drop them to disk
 class EgressSinkServer < Sinatra::Base
   METADATA_HEADER = 'HTTP_DELTAFIMETADATA'
   METADATA_KEYS = %w[filename flow].freeze
   OUTPUT_PATH = '/data/deltafi/egress-sink'
-
-  @@smoke_service = Deltafi::Smoke::Service.new
 
   configure do
     set :logger, Deltafi::Logger.new($stdout)
@@ -62,12 +59,6 @@ class EgressSinkServer < Sinatra::Base
     metadata = JSON.parse(json)
     METADATA_KEYS.each do |key|
       raise "Missing metadata key \"#{key}\"" unless metadata.key?(key)
-    end
-
-    if metadata['flow'].casecmp('SMOKE').zero?
-      @@smoke_service.receive_smoke(metadata, request.body.read)
-    else
-      sink_file(json, metadata, request.body.read)
     end
 
     return 200

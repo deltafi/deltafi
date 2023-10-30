@@ -11,7 +11,7 @@
     "description": "The URL to post the DeltaFile to",
     "dataType": "STRING",
     "required": true,
-    "defaultValue": "http://deltafi-egress-sink-service"
+    "defaultValue": "http://deltafi-egress-sink-service/blackhole"
   },
   {
     "name": "annotations",
