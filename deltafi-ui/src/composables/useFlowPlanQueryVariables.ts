@@ -42,6 +42,12 @@ export const transformFlowFields = {
   maxErrors: true,
   transformActions: {
     ...defaultActionFields,
+    collect: {
+      maxAge: true,
+      minNum: true,
+      maxNum: true,
+      metadataKey: true,
+    }
   },
   egressAction: {
     ...defaultActionFields,
@@ -72,9 +78,21 @@ export const normalizeFlowFields = {
   maxErrors: true,
   transformActions: {
     ...defaultActionFields,
+    collect: {
+      maxAge: true,
+      minNum: true,
+      maxNum: true,
+      metadataKey: true,
+    }
   },
   loadAction: {
     ...defaultActionFields,
+    collect: {
+      maxAge: true,
+      minNum: true,
+      maxNum: true,
+      metadataKey: true,
+    }
   },
   ...variableFields,
 };

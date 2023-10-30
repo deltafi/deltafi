@@ -154,7 +154,7 @@ const isMounted = ref(useMounted());
 
 const autoResumeRuleUpload = ref(null);
 const errorsList = ref([]);
-const actionTypeList = ref(["DOMAIN", "EGRESS", "ENRICH", "FORMAT", "JOIN", "LOAD", "TRANSFORM", "VALIDATE"]);
+const actionTypeList = ref(["DOMAIN", "EGRESS", "ENRICH", "FORMAT", "LOAD", "TRANSFORM", "VALIDATE"]);
 
 const autoResumeConfigurationMap = new Map([
   ["name", { header: "Name", placeholder: "e.g. Auto resume smoke error", type: "string", disabled: viewAutoResumeRule }],

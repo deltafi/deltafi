@@ -18,7 +18,7 @@
 
 <template>
   <div class="all-panel">
-    <Panel header="DeltaFiles with Errors" @contextmenu="onPanelRightClick">
+    <Panel header="DeltaFiles" @contextmenu="onPanelRightClick">
       <ContextMenu ref="menu" :model="menuItems" />
       <template #icons>
         <Button class="p-panel-header-icon p-link p-mr-2" @click="toggleMenu">

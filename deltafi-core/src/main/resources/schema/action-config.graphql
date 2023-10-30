@@ -39,12 +39,27 @@ input TimedIngressActionConfigurationInput {
     parameters: JSON
 }
 
+type CollectConfiguration {
+    maxAge: String
+    minNum: Int
+    maxNum: Int
+    metadataKey: String
+}
+
+input CollectConfigurationInput {
+    maxAge: String
+    minNum: Int
+    maxNum: Int
+    metadataKey: String
+}
+
 type TransformActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
     name: String!
     apiVersion: String
     actionType: String!
     type: String!
     parameters: JSON
+    collect: CollectConfiguration
 }
 
 input TransformActionConfigurationInput {
@@ -52,6 +67,7 @@ input TransformActionConfigurationInput {
     apiVersion: String
     type: String!
     parameters: JSON
+    collect: CollectConfigurationInput
 }
 
 type LoadActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
@@ -60,6 +76,7 @@ type LoadActionConfiguration implements ActionConfiguration & DeltaFiConfigurati
     actionType: String!
     type: String!
     parameters: JSON
+    collect: CollectConfiguration
 }
 
 input LoadActionConfigurationInput {
@@ -67,6 +84,7 @@ input LoadActionConfigurationInput {
     apiVersion: String
     type: String!
     parameters: JSON
+    collect: CollectConfigurationInput
 }
 
 type DomainActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
@@ -113,6 +131,7 @@ type FormatActionConfiguration implements ActionConfiguration & DeltaFiConfigura
     actionType: String!
     type: String!
     parameters: JSON
+    collect: CollectConfiguration
     requiresDomains: [String]!
     requiresEnrichments: [String]
 }
@@ -122,6 +141,7 @@ input FormatActionConfigurationInput {
     apiVersion: String
     type: String!
     parameters: JSON
+    collect: CollectConfigurationInput
     requiresDomains: [String]!
     requiresEnrichments: [String]
 }
