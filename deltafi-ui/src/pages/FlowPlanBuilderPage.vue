@@ -91,11 +91,13 @@
     <DialogTemplate component-name="flowBuilder/FlowConfigurationDialog" header="Create New Flow Plan" dialog-width="25vw" model-position="center" :closable="false" :disable-model="true" :data-prop="model" @create-flow-plan="createFlowPlan">
       <span id="CreateFlowPlan" />
     </DialogTemplate>
+    <LeavePageConfirmationDialog header="Leaving Flow Plan Builder" message="There is a flow plan in progress with unsaved changes. Leaving the page will erase those changes. Are you sure you want to leave this page?" :match-condition="flowPlanInProgress()" />
   </div>
 </template>
 
 <script setup>
 import HoverSaveButton from "@/components/flowBuilder/HoverSaveButton.vue";
+import LeavePageConfirmationDialog from "@/components/LeavePageConfirmationDialog.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import useFlowActions from "@/composables/useFlowActions";
@@ -503,6 +505,7 @@ const isValidFlow = computed(() => {
   if (_.isEmpty(model.value.type)) {
     return false;
   }
+
   let allFlowMissingFields = [];
   if (!_.isEmpty(displayFlowMissingValuesBadge())) {
     allFlowMissingFields.push(displayFlowMissingValuesBadge());
@@ -519,6 +522,24 @@ const isValidFlow = computed(() => {
 
   return allFlowMissingFields.length == 0;
 });
+
+const flowPlanInProgress = () => {
+  // If the flow plan is being edited and a value is changed return true that the flow plan should be saved
+  if (!_.isEmpty(originalFlowPlan.value)) {
+    // Remove any value that have not changed from the original defaultQueryParamsTemplate value it was set at
+    let changedFlowValues = _.omitBy(rawOutput.value, function (v, k) {
+      return JSON.stringify(originalFlowPlan.value[k]) === JSON.stringify(v);
+    });
+
+    if (_.isEmpty(changedFlowValues)) {
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+  return model.value.active;
+};
 
 const items = ref([
   {
