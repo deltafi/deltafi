@@ -3,7 +3,7 @@
 A DeltaFi deployment provides normalized metrics generation and centralized metrics collection and visualization.
 Metrics are generated and sent to a Graphite time-series database that is used as a data source for Grafana visualization.
 
-## Default metrics generation
+## Default Metrics Generation
 
 DeltaFi automatically generates metrics for action cognizance, ingress and egress volume, and system utilization.
 These metrics can be queried from the Graphite database or referenced by Grafana when creating metrics visualizations.
@@ -29,7 +29,7 @@ The following metrics are generated to the Graphite time-series database by defa
 | stats_counts.survey.subflow.bytes | surveyFlow, surveySubflow, surveyDirection | Number of bytes surveyed on a subflow |
 | stats_counts.survey.subflow.files | surveyFlow, surveySubflow, surveyDirection | Number of files surveyed on a subflow |
 
-## Custom metrics in Action Kits
+## Custom Metrics in Action Kits
 
 Each action kit has a custom metric interface built in to the Result class for the action.  To add a new custom
 metric from the load action, simply use the add interface to create custom metrics with custom tags.  Note that
@@ -48,7 +48,7 @@ result.add(
 > Use caution when generating custom metrics.  Each custom metric name-tags permutation will take up space in the
 > time series database.
 
-## Metrics visualization
+## Metrics Visualization
 
 Grafana is used to generate rich visualizations for the metrics contained in the Graphite data store.  The following
 default dashboards are included in a DeltaFi Kubernetes installation:

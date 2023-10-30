@@ -61,7 +61,7 @@ new Docute({
           link: '/getting-started/cluster'
         },
         {
-          title: 'Getting Started with a Simple Plugin',
+          title: 'Getting Started Developing a Simple Plugin',
           link: '/getting-started/simple-plugin'
         }
       ]
@@ -198,14 +198,6 @@ new Docute({
           link: '/advanced/advanced_routing'
         },
         {
-          title: 'Cluster Integration Testing with KinD',
-          link: '/advanced/kind'
-        },
-        {
-          title: 'Core Development and Contribution',
-          link: '/advanced/contribution'
-        },
-        {
           title: 'Data Retention',
           link: '/advanced/data_retention'
         },
@@ -220,8 +212,16 @@ new Docute({
       ]
     },
     {
+      title: 'KinD Cluster for Demo, Dev, and Test',
+      link: '/kind'
+    },
+    {
+      title: 'Contributing to Core Development',
+      link: '/contributing'
+    },
+    {
       title: 'DeltaFi Changelog',
       link: '/CHANGELOG'
-    },
+    }
   ]
 })

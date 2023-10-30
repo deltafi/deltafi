@@ -26,7 +26,7 @@ deltafi plugin-image-repo save image-repo-config.json
 
 > **_NOTE:_**  The plugin image repository configuration can be applied to more than one group of plugins.
 
-### Install command
+### Install Command
 Install the plugin using the `deltafi` command.
 
 ```
@@ -48,7 +48,7 @@ The `deltafi install-plugin` command supports the following flags to override th
 
 ## Advanced Deployment
 
-### Custom Deployments (sidecars)
+### Custom Deployments (e.g., Sidecars)
 
 DeltaFi can be configured to read and apply deployment customizations when generating a plugins' deployment resource. Currently, DeltaFi supports adding additional containers to the standard plugin deployment. In the following example, DeltaFi is configured to read the extra containers needed to run the `deltafi-stix-actions` plugin from a GitLab repository.
 

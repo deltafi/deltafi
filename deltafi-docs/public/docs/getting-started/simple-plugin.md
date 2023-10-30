@@ -1,22 +1,16 @@
-# Getting started with a simple DeltaFi transformation plugin
+# Getting Started Developing a Simple Plugin
 
 Source code for the final result of this example can be found here:  https://gitlab.com/deltafi/plugins/example-plugin
 
 ## Prerequisites
 
-In order to start up a demo DeltaFi or to set up a DeltaFi development environment, you will need a MacOS system or a supported Linux system (currently tested on CentOS 8 and Rocky 9).  Preferably 8GB RAM, 200GB free disk space, and 4 CPU cores, but your mileage will vary according to your system specs.  Note that the installation process requires the installation of 3rd party software on the target system (like KinD, OpenJDK 17, etc.) as well as starting up a containerized Kubernetes cluster.  This process is highly automated.
-
-The target system should also have the following installed:
-- Docker or Docker Desktop (make sure your user account can access docker without sudo)
-- curl
-- A window manager for Linux systems (KDE, XFCE, etc.)
-- A web browser (Google Chrome is preferred)
+Ensure that your system meets the [prerequisites](/kind#prerequisites) for installing and running a development instance of DeltaFi in a self-contained KinD (Kubernetes in Docker) cluster.
 
 For development, it is recommended that an IDE like IntelliJ or Visual Studio Code is installed for writing plugin code.  The IDE will be presumed and not covered in this tutorial.
 
-## Installing the development environment
+## Installing the Development Environment
 
-To execute a singlestep install of the latest released version of DeltaFi in a self-contained KinD (Kubernetes in Docker) cluster:
+To execute a singlestep install of the latest released version of DeltaFi in a self-contained KinD cluster:
 
 ```bash
 curl -fsSL https://gitlab.com/deltafi/installer/-/raw/main/kind-install.sh > kind-install.sh
@@ -49,7 +43,7 @@ deltafi status
 deltafi versions
 ```
 
-## Creating a skeleton plugin
+## Creating a Skeleton Plugin
 A new plugin can be initialized using the `deltafi plugin-init` command. This will prompt for the information necessary to create the plugin. Alternatively, you can initialize a new plugin by passing a configuration file to the command: `deltafi plugin-init -f plugin-config.json`.
 
 Below are the steps to generate the [example-project](https://gitlab.com/deltafi/example-plugin). This must be run in the parent directory of the `deltafi` directory that was created by the installer (your location after running the singlestep install process).
@@ -75,7 +69,7 @@ Generate the skeleton plugin with the following command:
 ```bash
 deltafi plugin-init -f plugin-config.json
 ```
-## Building and installing your plugin
+## Building and Installing Your Plugin
 
 DeltaFi has a development CLI command called `cluster` which we will use for this example.
 
@@ -94,7 +88,7 @@ If you want to compile and execute tests for your plugin, you can do so from the
 ./gradlew build test
 ```
 
-## Trying out the new plugin
+## Trying Out the New Plugin
 
 Flows are versioned and packaged as part of your plugin source code. In a Java project they are located in `src/main/resources/flows`, in a Python project they are located in `src/flows/`.
 Flows can reference both actions local to your plugin and any other actions that are running on your DeltaFi instance.
@@ -110,7 +104,7 @@ the plugin was installed.
 
 The default implementation of the transform simply passes data through, which is not very interesting.  Now is the time to remedy that.
 
-## Adding some logic to implement the JsonToYamlAction transformation
+## Adding Some Logic to Implement the JsonToYamlAction Transformation
 
 By default, the generated `example-plugin/src/main/java/org/deltafi/example/actions/JsonToYamlAction.java` reads 
 the content that was ingressed and rewrites the content without modification. In this section 
@@ -227,7 +221,7 @@ dependencies {
 }
 ```
 
-## Testing your plugin
+## Testing Your Plugin
 
 Now that your plugin has some new logic, you can rebuild and deploy your new plugin version.
 
@@ -351,5 +345,5 @@ cluster plugin build install
 
 Now you can go to the [errors page](http://local.deltafi.org/errors) in the DeltaFi UI and resume the errored flows.  They should continue without error and egress well-formed YAML versions of the normalized input.
 
-## Adding another flow to your plugin
+## Adding Another Flow to Your Plugin
 New flows can be created under the `flows` directory. Any code changes or flow changes will require the docker image to be rebuilt via the `cluster plugin build install` command.

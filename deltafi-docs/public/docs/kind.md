@@ -1,65 +1,107 @@
-# Cluster Integration Testing with KinD
+# KinD Cluster for Demo, Dev, and Test
 
-When developing the DeltaFi core and integrating DeltaFi plugins, it is possible to
-deploy a local, disposable and quickly modifiable Kubernetes cluster using
-[Kubernetes In Docker (KinD)](https://kind.sigs.k8s.io/).  A DeltaFi KinD cluster
-provides a rapid, iterative test environment to test core changes, version
-compatibility, and end-to-end flows in an environment with reasonable fidelity
-to a full DeltaFi Kubernetes deployment.
+DeltaFi offers a local, disposable, and quickly modifiable Kubernetes cluster using
+[Kubernetes In Docker (KinD)](https://kind.sigs.k8s.io/) with reasonable fidelity
+to a full DeltaFi Kubernetes deployment.  A DeltaFi KinD cluster provides a rapid,
+iterative environment to support the use cases of:
+- Demonstration
+- Plugin development
+- Core development
+- Integration testing, including:
+   - Version compatibility
+   - Core upgrades
+   - End-to-end flows
 
 The DeltaFi KinD cluster provides all functionality, including the DeltaFi UI, the CLI,
 the Kubernetes Dashboard, the complete metrics and logging stack with Grafana, authentication,
-and all core components.  The cluster has been extensively used on MacOS with x86 and Apple Silicon, and
-should be reasonably easy to start on non-air gapped Linux environments as well.
+and all core components.  The KinD cluster has been extensively tested in the environments noted in the [Prerequisites section](#prerequisites), and should be easy to start on non-air gapped Linux environments as well.
 
-## Setting up an integration cluster
+## Prerequisites
 
-### Prerequisites
+To start up a demo DeltaFi or to set up a DeltaFi development environment, your setup will need to meet the following requirements for hardware, OS, and packages with configurations.  Note that the installation process requires the installation of 3rd party software on the target system (like KinD, OpenJDK 17, etc.) as well as starting up a containerized Kubernetes cluster.  This process is highly automated.
 
-For a MacOS environment, the following is needed:
+### Hardware
 
-- Hardware: At least 4 cores allocated to docker, 40-50Gb of clear disk space, and 8Gb RAM allocated to the Docker VM.
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and provisioned with needed cores and RAM.
-- [Homebrew](https://brew.sh/) installed
+Hardware requiements are:
+
+- minimum system resources:
+  - 4 CPU cores
+  - 8 GB RAM
+  - 50 GB free disk space minimum, preferrably 100 GB to 200 GB depending on tool and data needs
+- support for and OS access to (including for the guest VM, if using virtualization) the AVX instruction set
+   - verify AVX support with ```cat /proc/cpuinfo | grep avx```
+
+
+### Operating System
+
+Supported operating systems include:
+- MacOS 14 (x86 and ARM64)
+- CentOS 8
+- Rocky 9
+- Ubuntu 22.04.3
+
+### VM-based Setups
+
+VM-based deployments of DeltaFi have been tested on the following confgurations:
+
+**For a Windows 11 host:**
+- VMware Workstation 17 Player/Pro with guest VMs
+  - Ubuntu 22.04.3
+- VirtualBox 6.1 with guest VMs
+  - CentOS 8
+
+**For a Linux host:**
+- VirtualBox 6.1 with guest VMs
+  - Ubuntu 22.04.3
+
+
+### Packages and Configurations
+
+The following tools must be installed and configured as follows:
+   - [Docker](https://docs.docker.com/engine/install/) or [Docker Desktop](https://docs.docker.com/desktop/), where your user can [access Docker without sudo](https://docs.docker.com/engine/install/linux-postinstall/)
+   - curl
+   - A window manager for Linux systems (KDE, XFCE, etc.)
+   - A web browser ([Google Chrome](https://www.google.com/chrome/) is preferred)
+
+
+## Installing the KinD Cluster
+
+### Installing a Demo Environment
+
+To execute a single-step install of the latest released version of DeltaFi in a self-contained KinD (Kubernetes in Docker) cluster:
+
 ```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+curl -fsSL https://gitlab.com/deltafi/installer/-/raw/main/kind-install.sh > kind-install.sh
+chmod +x kind-install.sh
+./kind-install.sh
+```
+The UI can be accessed at `http://local.deltafi.org` and the Grafana metrics dashboard can be accessed at `http://metrics.local.deltafi.org/dashboards`.  You should visit those links in your browser to verify that the installation process is complete.
+
+
+### Installing a Development or Integration Testing Environment
+
+To execute a singlestep install of the latest released version of DeltaFi in a self-contained KinD (Kubernetes in Docker) cluster:
+
+```bash
+curl -fsSL https://gitlab.com/deltafi/installer/-/raw/main/kind-install.sh > kind-install.sh
+chmod +x kind-install.sh
+./kind-install.sh --dev
 ```
 
-### Installation (MacOS specific)
-
-#### Install dependencies
-
-At a bare minimum, you will need to have the following tools installed:
-
-- docker
-- git
-- helm
-- kubectx (for kubectl)
-- jq
-- kind
-
-For a quick install of all dependencies, in the `deltafi` repository:
+If you have previously done a demo install, you can simply execute the development bootstrap as follows:
 
 ```bash
-brew bundle --file kind/Brewfile
+deltafi/bootstrap-dev.sh
 ```
+
+The UI can be accessed at `http://local.deltafi.org` and the Grafana metrics dashboard can be accessed at `http://metrics.local.deltafi.org/dashboards`.  You should visit those links in your browser to verify that the installation process is complete.
+
 
 #### Check out your code
 
 You should have a single subdirectory where you checkout `deltafi`, `deltafi-ui`, `deltafi-stix`, `deltafi-passthrough`, and any other
 plugins that you will be testing.  When the cluster is created, the cluster node will mount the directory above `deltafi` into
 the node.  Only repositories in this tree will be accessable to the cluster.
-
-#### Install the CLI tools
-
-In the `deltafi` repository:
-
-```bash
-deltafi-cli/install.sh
-kind/install.sh
-```
-
-After this, the `deltafi` and `cluster` commands will be in your path and ready to execute.
 
 ## Getting Started
 
@@ -151,4 +193,52 @@ fi
 You can also use `k9s` for monitoring and interacting with the cluster, and `lazydocker` for
 interacting with docker.  These are included in the dependency `Brewfile`, along with
 `kail`, `kubecolor`, and `tree`.  You're welcome.
+
+
+
+## Additional Reference for MacOS Systems
+
+### Setting up an integration cluster
+
+#### Prerequisites
+
+For a MacOS environment, the following is needed:
+
+- Hardware: At least 4 cores allocated to docker, 40-50Gb of clear disk space, and 8Gb RAM allocated to the Docker VM.
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and provisioned with needed cores and RAM.
+- [Homebrew](https://brew.sh/) installed
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+#### Installation (MacOS specific)
+
+##### Install dependencies
+
+At a bare minimum, you will need to have the following tools installed:
+
+- docker
+- git
+- helm
+- kubectx (for kubectl)
+- jq
+- kind
+
+For a quick install of all dependencies, in the `deltafi` repository:
+
+```bash
+brew bundle --file kind/Brewfile
+```
+
+##### Install the CLI tools
+
+In the `deltafi` repository:
+
+```bash
+deltafi-cli/install.sh
+kind/install.sh
+```
+
+After this, the `deltafi` and `cluster` commands will be in your path and ready to execute.
+
 
