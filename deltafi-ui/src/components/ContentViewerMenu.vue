@@ -77,7 +77,7 @@ const props = defineProps({
 const { model } = toRefs(props);
 
 const containerClass = computed(() => {
-  return ['context-viewer-hover-menu p-link p-component'];
+  return ['content-viewer-hover-menu p-link p-component'];
 });
 
 const disabledLabel = (item) => {
