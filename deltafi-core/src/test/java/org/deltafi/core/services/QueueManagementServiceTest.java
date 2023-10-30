@@ -30,6 +30,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.env.Environment;
 
 import java.util.*;
 
@@ -65,6 +66,9 @@ class QueueManagementServiceTest {
 
     @Mock
     DeltaFiProperties deltaFiProperties;
+
+    @Mock
+    Environment env;
 
     @InjectMocks
     QueueManagementService queueManagementService;
@@ -134,7 +138,8 @@ class QueueManagementServiceTest {
         when(deltaFiProperties.getInMemoryQueueSize()).thenReturn(10);
         when(deltaFileRepo.coldQueuedActionsSummary()).thenReturn(List.of(COLD_QUEUED_ACTION_SUMMARY));
         when(unifiedFlowService.runningAction(ACTION_NAME, ActionType.TRANSFORM)).thenReturn(ACTION_CONFIGURATION);
-        queueManagementService.coldToWarm();
+        when(env.getProperty("schedule.maintenance")).thenReturn("true");
+        queueManagementService.scheduleColdToWarm();
         verify(deltaFilesService).requeueColdQueueActions(List.of(ACTION_NAME), 2);
     }
 

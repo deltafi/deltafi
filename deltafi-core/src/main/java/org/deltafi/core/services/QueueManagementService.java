@@ -25,8 +25,8 @@ import org.deltafi.common.types.ActionDescriptor;
 import org.deltafi.common.types.DeltaFiConfiguration;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.types.ColdQueuedActionSummary;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -52,19 +52,22 @@ public class QueueManagementService {
     UnifiedFlowService unifiedFlowService;
     DeltaFilesService deltaFilesService;
     DeltaFiPropertiesService deltaFiPropertiesService;
+    Environment env;
 
     public QueueManagementService(ActionDescriptorService actionDescriptorService,
                                   ActionEventQueue actionEventQueue,
                                   DeltaFileRepo deltaFileRepo,
                                   UnifiedFlowService unifiedFlowService,
                                   @Lazy DeltaFilesService deltaFilesService,
-                                  DeltaFiPropertiesService deltaFiPropertiesService) {
+                                  DeltaFiPropertiesService deltaFiPropertiesService,
+                                  Environment env) {
         this.actionDescriptorService = actionDescriptorService;
         this.actionEventQueue = actionEventQueue;
         this.deltaFileRepo = deltaFileRepo;
         this.unifiedFlowService = unifiedFlowService;
         this.deltaFilesService = deltaFilesService;
         this.deltaFiPropertiesService = deltaFiPropertiesService;
+        this.env = env;
     }
 
     @Scheduled(fixedDelay = 2000)
@@ -110,7 +113,15 @@ public class QueueManagementService {
     }
 
     @Scheduled(fixedDelay = 2000)
-    @ConditionalOnProperty(value = "schedule.maintenance", havingValue = "true", matchIfMissing = true)
+    public void scheduleColdToWarm() {
+        // we cannot use a ConditionalOnProperty here because it is ignored by the @Scheduled annotation, check manually
+        String scheduleMaintenance = env.getProperty("schedule.maintenance");
+        if (scheduleMaintenance == null || scheduleMaintenance.equals("true")) {
+            // split into separate method for test environments where schedule.maintenance is false
+            coldToWarm();
+        }
+    }
+
     public void coldToWarm() {
         if (!checkedQueues.get()) {
             return;
