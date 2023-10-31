@@ -400,7 +400,9 @@ const save = async (rawFlow) => {
   }
   if (response !== undefined) {
     notify.success(`${response.data[`save${_.capitalize(model.value.type)}FlowPlan`].name} Flow Plan Saved`);
-    model.value.active = null;
+    model.value.active = false;
+    // Null out the originalFlowPlan value as that flow plan has changed.
+    originalFlowPlan.value = null;
     router.push({ path: `/config/flows` });
   }
 };
