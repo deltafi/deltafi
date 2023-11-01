@@ -124,7 +124,7 @@ class ApiServer < Sinatra::Base
     DF::API::V1::Content.verify_content(content)
 
     filename = content[:name] || content[:uuid]
-    headers['Content-Disposition'] = "attachment; filename=#{filename};"
+    headers['Content-Disposition'] = "attachment; filename=\"#{filename}\";"
     headers['Content-Transfer-Encoding'] = 'binary'
     headers['Cache-Control'] = 'no-cache'
     headers['Content-Type'] = content[:mediaType]
