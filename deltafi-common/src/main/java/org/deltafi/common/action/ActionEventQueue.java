@@ -48,7 +48,7 @@ public class ActionEventQueue {
             .configure(DeserializationFeature.USE_LONG_FOR_INTS, true)
             .registerModule(new JavaTimeModule());
 
-    private static final String DGS_QUEUE = "dgs";
+    public static final String DGS_QUEUE = "dgs";
     private static final Duration LONG_RUNNING_HEARTBEAT_THRESHOLD = Duration.ofSeconds(30);
 
     private final JedisKeyedBlockingQueue jedisKeyedBlockingQueue;

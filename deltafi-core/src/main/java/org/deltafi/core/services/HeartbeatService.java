@@ -24,6 +24,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import static org.deltafi.common.action.ActionEventQueue.DGS_QUEUE;
+
 @AllArgsConstructor
 @ConditionalOnProperty(value = "schedule.actionEvents", havingValue = "true", matchIfMissing = true)
 @EnableScheduling
@@ -35,5 +37,6 @@ public class HeartbeatService {
     @Scheduled(fixedDelay = 10000)
     public void heartbeat() {
         actionEventQueue.setHeartbeat(identityService.getUniqueId());
+        actionEventQueue.setHeartbeat(DGS_QUEUE);
     }
 }
