@@ -54,6 +54,8 @@ import java.util.*;
 @Component
 @Slf4j
 public class DecompressionTransformAction extends TransformAction<DecompressionTransformParameters> {
+    final private int BATCH_FILES = 500;
+    final private int BATCH_BYTES = 100 * 1024 * 1024;
 
     public DecompressionTransformAction() {
         super("Decompresses .tgz, .tar.Z, .tar.xz, .zip, .tar, .ar, .gz, .xz, .Z");
@@ -198,13 +200,35 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
     void unarchive(ArchiveInputStream archive, @NotNull TransformResult result) throws IOException {
         ArchiveEntry entry;
         List<SaveManyContent> saveManyContentList = new ArrayList<>();
+        int currentBatchSize = 0;
+
         while ((entry = archive.getNextEntry()) != null) {
             if (entry.isDirectory()) continue;
 
-            saveManyContentList.add(new SaveManyContent(entry.getName(), MediaType.APPLICATION_OCTET_STREAM, archive.readAllBytes()));
+            byte[] fileContent = archive.readAllBytes();
+            int fileSize = fileContent.length;
+
+            // Check if adding this file will exceed the batch constraints
+            if (!saveManyContentList.isEmpty() &&
+                    (saveManyContentList.size() + 1 > BATCH_FILES) || (currentBatchSize + fileSize > BATCH_BYTES)) {
+                // Save the current batch
+                result.saveContent(new ArrayList<>(saveManyContentList));
+
+                // Clear the list for the next batch and reset counters
+                saveManyContentList.clear();
+                currentBatchSize = 0;
+            }
+
+            saveManyContentList.add(new SaveManyContent(entry.getName(), MediaType.APPLICATION_OCTET_STREAM, fileContent));
+            currentBatchSize += fileSize;
         }
-        result.saveContent(saveManyContentList);
+
+        // Save any remaining files that didn't make up a full batch
+        if (!saveManyContentList.isEmpty()) {
+            result.saveContent(saveManyContentList);
+        }
     }
+
 
     void unarchiveTar(@NotNull InputStream stream, @NotNull TransformResult result) throws DecompressionTransformException {
         try (TarArchiveInputStream archive = new TarArchiveInputStream(stream)) {
