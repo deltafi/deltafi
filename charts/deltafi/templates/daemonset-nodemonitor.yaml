@@ -6,17 +6,17 @@ metadata:
   name: deltafi-nodemonitor
   namespace: deltafi
   labels:
-    app: nodemonitor
+    app: deltafi-nodemonitor
 spec:
   selector:
     matchLabels:
-      app: nodemonitor
+      app: deltafi-nodemonitor
   template:
     metadata:
       labels:
-        app: nodemonitor
+        app: deltafi-nodemonitor
     spec:
-      serviceAccountName: nodemonitor
+      serviceAccountName: deltafi-nodemonitor
       terminationGracePeriodSeconds: 1
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
@@ -47,50 +47,50 @@ spec:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: nodemonitor
+  name: deltafi-nodemonitor
 subjects:
 - kind: ServiceAccount
-  name: nodemonitor
+  name: deltafi-nodemonitor
   namespace: deltafi
 roleRef:
   kind: ClusterRole
-  name: nodemonitor
+  name: deltafi-nodemonitor
   apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: nodemonitor
+  name: deltafi-nodemonitor
   namespace: deltafi
 subjects:
   - kind: ServiceAccount
-    name: nodemonitor
+    name: deltafi-nodemonitor
     namespace: deltafi
 roleRef:
   kind: Role
-  name: nodemonitor
+  name: deltafi-nodemonitor
   apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: nodemonitor-kubeadm-config
+  name: deltafi-nodemonitor-kubeadm-config
   namespace: deltafi
 subjects:
   - kind: ServiceAccount
-    name: nodemonitor
+    name: deltafi-nodemonitor
     namespace: deltafi
 roleRef:
   kind: Role
-  name: nodemonitor-kubeadm-config
+  name: deltafi-nodemonitor-kubeadm-config
   apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: nodemonitor
+  name: deltafi-nodemonitor
   labels:
-    app: nodemonitor
+    app: deltafi-nodemonitor
 rules:
 - apiGroups: [""]
   resources:
@@ -128,11 +128,11 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: nodemonitor
+  name: deltafi-nodemonitor
   # should be the namespace where nodemonitor is running
   namespace: deltafi
   labels:
-    app: nodemonitor
+    app: deltafi-nodemonitor
 rules:
   - apiGroups:
       - coordination.k8s.io
@@ -143,10 +143,10 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: nodemonitor-kubeadm-config
+  name: deltafi-nodemonitor-kubeadm-config
   namespace: deltafi
   labels:
-    app: nodemonitor
+    app: deltafi-nodemonitor
 rules:
   - apiGroups: [""]
     resources:
@@ -158,8 +158,8 @@ rules:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: nodemonitor
+  name: deltafi-nodemonitor
   namespace: deltafi
   labels:
-    app: nodemonitor
+    app: deltafi-nodemonitor
 ---
