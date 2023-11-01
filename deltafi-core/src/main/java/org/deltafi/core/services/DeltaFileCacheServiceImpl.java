@@ -32,11 +32,13 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
     private final Map<String, DeltaFile> deltaFileCache;
     final DeltaFileRepo deltaFileRepo;
     final DeltaFiPropertiesService deltaFiPropertiesService;
+    final DidMutexService didMutexService;
 
-    public DeltaFileCacheServiceImpl(DeltaFileRepo deltaFileRepo, DeltaFiPropertiesService deltaFiPropertiesService) {
+    public DeltaFileCacheServiceImpl(DeltaFileRepo deltaFileRepo, DeltaFiPropertiesService deltaFiPropertiesService, DidMutexService didMutexService) {
         this.deltaFileCache = new ConcurrentHashMap<>();
         this.deltaFileRepo = deltaFileRepo;
         this.deltaFiPropertiesService = deltaFiPropertiesService;
+        this.didMutexService = didMutexService;
     }
 
     public void clearCache() {
@@ -67,13 +69,15 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
         deltaFileCache.values().stream()
                 .filter(d -> d.getModified().isBefore(OffsetDateTime.now().minusSeconds(seconds)))
                 .forEach(d -> {
-                    // if the cache is stale we may receive optimistic locking exceptions, or comms with mongo may be down
-                    // process files one at a time and ignore errors
-                    try {
-                        deltaFileRepo.save(d);
-                    } catch (Exception ignored) {
-                    } finally {
-                        deltaFileCache.remove(d.getDid());
+                    synchronized (didMutexService.getMutex(d.getDid())) {
+                        // if the cache is stale we may receive optimistic locking exceptions, or comms with mongo may be down
+                        // process files one at a time and ignore errors
+                        try {
+                            deltaFileRepo.save(d);
+                        } catch (Exception ignored) {
+                        } finally {
+                            deltaFileCache.remove(d.getDid());
+                        }
                     }
                 });
     }
