@@ -22,7 +22,9 @@ import org.deltafi.core.repo.DeltaFileRepo;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -33,12 +35,16 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
     final DeltaFileRepo deltaFileRepo;
     final DeltaFiPropertiesService deltaFiPropertiesService;
     final DidMutexService didMutexService;
+    final IdentityService identityService;
+    final Clock clock;
 
-    public DeltaFileCacheServiceImpl(DeltaFileRepo deltaFileRepo, DeltaFiPropertiesService deltaFiPropertiesService, DidMutexService didMutexService) {
+    public DeltaFileCacheServiceImpl(DeltaFileRepo deltaFileRepo, DeltaFiPropertiesService deltaFiPropertiesService, DidMutexService didMutexService, IdentityService identityService, Clock clock) {
         this.deltaFileCache = new ConcurrentHashMap<>();
         this.deltaFileRepo = deltaFileRepo;
         this.deltaFiPropertiesService = deltaFiPropertiesService;
         this.didMutexService = didMutexService;
+        this.identityService = identityService;
+        this.clock = clock;
     }
 
     public void clearCache() {
@@ -47,7 +53,11 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
 
     public DeltaFile get(String did) {
         if (deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().isEnabled()) {
-            return deltaFileCache.computeIfAbsent(did, this::getFromRepo);
+            DeltaFile deltaFile = deltaFileCache.computeIfAbsent(did, this::getFromRepo);
+            if (deltaFile.getCacheTime() == null) {
+                deltaFile.setCacheTime(OffsetDateTime.now(clock));
+            }
+            return deltaFile;
         } else {
             return getFromRepo(did);
         }
@@ -66,20 +76,20 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
     }
 
     public void removeOlderThan(int seconds) {
-        deltaFileCache.values().stream()
-                .filter(d -> d.getModified().isBefore(OffsetDateTime.now().minusSeconds(seconds)))
-                .forEach(d -> {
-                    synchronized (didMutexService.getMutex(d.getDid())) {
-                        // if the cache is stale we may receive optimistic locking exceptions, or comms with mongo may be down
-                        // process files one at a time and ignore errors
-                        try {
-                            deltaFileRepo.save(d);
-                        } catch (Exception ignored) {
-                        } finally {
-                            deltaFileCache.remove(d.getDid());
-                        }
-                    }
-                });
+        OffsetDateTime threshold = OffsetDateTime.now(clock).minusSeconds(seconds);
+        List<DeltaFile> filesToRemove = deltaFileCache.values().stream()
+                .filter(d -> d.getCacheTime().isBefore(threshold))
+                .toList();
+
+        for (DeltaFile d : filesToRemove) {
+            synchronized (didMutexService.getMutex(d.getDid())) {
+                try {
+                    deltaFileRepo.save(d);
+                    deltaFileCache.remove(d.getDid());
+                } catch (Exception ignored) {
+                }
+            }
+        }
     }
 
     public void save(DeltaFile deltaFile) {
@@ -93,10 +103,15 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
                 deltaFileCache.remove(deltaFile.getDid());
             }
         } else if (!deltaFileCache.containsKey(deltaFile.getDid())) {
-            deltaFileCache.putIfAbsent(deltaFile.getDid(), deltaFile);
+            deltaFile.setCacheTime(OffsetDateTime.now(clock));
+            deltaFileCache.put(deltaFile.getDid(), deltaFile);
+
             if (deltaFile.getVersion() == 0) {
                 deltaFileRepo.save(deltaFile);
             }
+        } else if(deltaFile.getCacheTime().isBefore(OffsetDateTime.now(clock).minusSeconds(deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().getSyncSeconds()))) {
+            deltaFile.setCacheTime(OffsetDateTime.now(clock));
+            deltaFileRepo.save(deltaFile);
         }
     }
 }

@@ -85,6 +85,11 @@ public class DeltaFile {
   @JsonIgnore
   private long version;
 
+  @Getter
+  @JsonIgnore
+  @Setter
+  private OffsetDateTime cacheTime = null;
+
   public final static int CURRENT_SCHEMA_VERSION = 7;
   private int schemaVersion;
 
