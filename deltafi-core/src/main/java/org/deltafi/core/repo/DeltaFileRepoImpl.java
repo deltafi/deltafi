@@ -1139,14 +1139,12 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         AggregationResults<DeltaFileStats> aggResults = mongoTemplate.aggregate(
                 aggregation, COLLECTION, DeltaFileStats.class);
 
-        long count = mongoTemplate.count(new Query(), COLLECTION);
-
         if (aggResults.getMappedResults().isEmpty()) {
-            return new DeltaFileStats(count, 0L, 0L);
+            return new DeltaFileStats(estimatedCount(), 0L, 0L);
         }
 
         DeltaFileStats deltaFileStats = aggResults.getMappedResults().get(0);
-        deltaFileStats.setTotalCount(count);
+        deltaFileStats.setTotalCount(estimatedCount());
         return deltaFileStats;
     }
 
