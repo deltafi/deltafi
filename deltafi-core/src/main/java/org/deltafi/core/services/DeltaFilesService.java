@@ -1881,7 +1881,6 @@ public class DeltaFilesService {
                     ActionConfiguration config = actionInvocation.getActionConfiguration();
                     String flow = actionInvocation.getFlow();
                     DeltaFile deltaFile = actionInvocation.getDeltaFile();
-                    log.info("{} enqueuing action {} for deltaFile {}", identityService.getUniqueId(), actionInvocation.getAction().getName(), deltaFile.getDid());
                     String egressFlow = actionInvocation.getEgressFlow();
                     String returnAddress = actionInvocation.getReturnAddress();
                     OffsetDateTime actionCreated = actionInvocation.getActionCreated();
