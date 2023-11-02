@@ -2,15 +2,15 @@
 
 ## Description
 
-A Timed Ingress Action is called on an interval and produces 0..n new DeltaFiles upon each execution. Executions are
-guaranteed to be serial, meaning that even if multiple instances of a timed ingress action are running it will only be
-called once at a time.
+A Timed Ingress Action is called on a schedule specified by a cron expression and produces 0..n new DeltaFiles upon
+each execution. Executions are guaranteed to be serial, meaning that even if multiple instances of a timed ingress
+action are running it will only be called once at a time.
 
 A Timed Ingress Action may pass a memo back that will in turn be passed to the next execution of
 that action, allowing for a bookmark to be kept if the Action needs to keep track of where it left off.
 
 The action may also send back an executeImmediate boolean indicating that it should be called again immediately, not
-waiting for the usual timed interval.
+waiting for the next scheduled execution.
 
 The action can optionally set a status (HEALTHY, DEGRADED, or UNHEALTHY) and freeform statusMessage string. These are
 returned to core for informational purposes only, and will be displayed to the operator in the GUI.

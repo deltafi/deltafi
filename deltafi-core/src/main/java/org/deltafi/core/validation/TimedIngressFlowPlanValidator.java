@@ -21,10 +21,10 @@ import lombok.AllArgsConstructor;
 import org.deltafi.common.types.TimedIngressFlowPlan;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
+import org.springframework.scheduling.support.CronExpression;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 @AllArgsConstructor
@@ -51,6 +51,14 @@ public class TimedIngressFlowPlanValidator extends FlowPlanValidator<TimedIngres
             errors.add(FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG)
                     .configName(flowPlan.getName())
                     .message("Cannot add timed ingress flow plan, cron schedule is missing").build());
+        } else {
+            try {
+                CronExpression.parse(flowPlan.getCronSchedule());
+            } catch (IllegalArgumentException e) {
+                errors.add(FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG)
+                        .configName(flowPlan.getName())
+                        .message("Cannot add timed ingress flow plan, cron schedule is invalid").build());
+            }
         }
         return errors;
     }
