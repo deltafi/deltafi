@@ -35,7 +35,9 @@ public class DeltaFiConfiguration {
     @Bean
     public ActionEventQueue actionEventQueue(ActionEventQueueProperties actionEventQueueProperties,
                                              DeltaFiPropertiesService deltaFiPropertiesService) throws URISyntaxException {
-        return new ActionEventQueue(actionEventQueueProperties, deltaFiPropertiesService.getDeltaFiProperties().getCoreServiceThreads());
+        // add two additional threads to the pool for the incoming action event threads
+        int poolSize = deltaFiPropertiesService.getDeltaFiProperties().getCoreServiceThreads() + 2;
+        return new ActionEventQueue(actionEventQueueProperties, poolSize);
     }
 
     @Bean
