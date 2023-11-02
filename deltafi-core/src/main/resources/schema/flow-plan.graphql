@@ -118,7 +118,7 @@ type TimedIngressFlowPlan {
   sourcePlugin: PluginCoordinates!
   timedIngressAction: TimedIngressActionConfiguration!
   targetFlow: String!
-  interval: Duration
+  cronSchedule: String
 }
 
 input TimedIngressFlowPlanInput {
@@ -127,7 +127,7 @@ input TimedIngressFlowPlanInput {
   description: String!
   timedIngressAction: TimedIngressActionConfigurationInput!
   targetFlow: String!
-  interval: Duration
+  cronSchedule: String
 }
 
 type TransformFlowPlan {
@@ -247,8 +247,9 @@ type TimedIngressFlow {
   sourcePlugin: PluginCoordinates!
   flowStatus: FlowStatus!
   targetFlow: String!
-  interval: Duration
+  cronSchedule: String
   lastRun: DateTime
+  nextRun: DateTime
   memo: String
   currentDid: String
   executeImmediate: Boolean

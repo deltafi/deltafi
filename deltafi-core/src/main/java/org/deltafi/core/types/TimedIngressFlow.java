@@ -33,10 +33,13 @@ import java.util.*;
 @EqualsAndHashCode(callSuper = true)
 public class TimedIngressFlow extends Flow {
     private static final Duration TASKING_TIMEOUT = Duration.ofSeconds(30);
+
     private TimedIngressActionConfiguration timedIngressAction;
     private String targetFlow;
-    private Duration interval = Duration.ofSeconds(10);
+    private String cronSchedule;
+
     private OffsetDateTime lastRun;
+    private OffsetDateTime nextRun;
     private String memo;
     private String currentDid;
     private boolean executeImmediate = false;
@@ -93,25 +96,24 @@ public class TimedIngressFlow extends Flow {
     @Override
     public DeltaFiConfiguration asFlowConfiguration() {
         TimedIngressFlowConfiguration timedIngressFlowConfiguration = new TimedIngressFlowConfiguration(name);
-        timedIngressFlowConfiguration.setInterval(interval);
         if (timedIngressAction != null) {
             timedIngressFlowConfiguration.setTimedIngressAction(timedIngressAction.getName());
         }
+        timedIngressFlowConfiguration.setCronSchedule(cronSchedule);
         return timedIngressFlowConfiguration;
     }
 
-    public boolean due(ActionEventQueue actionEventQueue) {
-        if (lastRun == null || executeImmediate) {
+    public boolean due(ActionEventQueue actionEventQueue, OffsetDateTime now) {
+        if (executeImmediate) {
             return true;
         }
-        if (currentDid != null && lastRun.plus(TASKING_TIMEOUT).isAfter(OffsetDateTime.now())) {
+
+        if (currentDid != null && (lastRun.plus(TASKING_TIMEOUT).isAfter(now) ||
+                actionEventQueue.longRunningTaskExists(timedIngressAction.getType(), timedIngressAction.getName(), currentDid))) {
             return false;
         }
-        if (currentDid != null && actionEventQueue.longRunningTaskExists(timedIngressAction.getType(),
-                timedIngressAction.getName(), currentDid)) {
-            return false;
-        }
-        return lastRun.plus(interval).isBefore(OffsetDateTime.now());
+
+        return nextRun.isBefore(now);
     }
 
     /**

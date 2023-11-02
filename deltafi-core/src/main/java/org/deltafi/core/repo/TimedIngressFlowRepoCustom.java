@@ -20,14 +20,13 @@ package org.deltafi.core.repo;
 import org.deltafi.common.types.IngressStatus;
 import org.deltafi.core.types.TimedIngressFlow;
 
-import java.time.Duration;
 import java.time.OffsetDateTime;
 
 public interface TimedIngressFlowRepoCustom extends FlowRepoCustom<TimedIngressFlow> {
-    boolean updateInterval(String flowName, Duration duration);
+    boolean updateCronSchedule(String flowName, String cronSchedule, OffsetDateTime nextRun);
 
     boolean updateLastRun(String flowName, OffsetDateTime lastRun, String currentDid);
 
     boolean completeExecution(String flowName, String currentDid, String memo, boolean executeImmediate,
-                              IngressStatus status, String statusMessage);
+            IngressStatus status, String statusMessage, OffsetDateTime nextRun);
 }

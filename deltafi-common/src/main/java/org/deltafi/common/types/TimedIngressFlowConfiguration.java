@@ -21,14 +21,12 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.Duration;
-
 @Getter
 @Setter
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 public class TimedIngressFlowConfiguration extends DeltaFiConfiguration {
     private String timedIngressAction;
-    private Duration interval;
+    private String cronSchedule;
 
     public TimedIngressFlowConfiguration(String name) {
         super(name);

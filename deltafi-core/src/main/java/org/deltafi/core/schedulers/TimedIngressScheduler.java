@@ -19,14 +19,15 @@ package org.deltafi.core.schedulers;
 
 import lombok.RequiredArgsConstructor;
 import org.deltafi.common.action.ActionEventQueue;
-import org.deltafi.core.services.DeltaFilesService;
-import org.deltafi.core.services.ErrorCountService;
-import org.deltafi.core.services.TimedIngressFlowService;
+import org.deltafi.core.services.*;
 import org.deltafi.core.types.TimedIngressFlow;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+
+import java.time.Clock;
+import java.time.OffsetDateTime;
 
 @ConditionalOnProperty(value = "schedule.maintenance", havingValue = "true", matchIfMissing = true)
 @Service
@@ -38,12 +39,17 @@ public class TimedIngressScheduler {
     private final TimedIngressFlowService timedIngressFlowService;
     private final ActionEventQueue actionEventQueue;
     private final ErrorCountService errorCountService;
+    private final DeltaFiPropertiesService deltaFiPropertiesService;
+    private final DiskSpaceService diskSpaceService;
+    private final Clock clock;
 
     @Scheduled(fixedDelay = 1000)
     public void triggerTimedIngressFlows() {
         timedIngressFlowService.refreshCache();
         for (TimedIngressFlow timedIngressFlow : timedIngressFlowService.getRunningFlows()) {
-            if (timedIngressFlow.due(actionEventQueue) &&
+            if (timedIngressFlow.due(actionEventQueue, OffsetDateTime.now(clock)) &&
+                    deltaFiPropertiesService.getDeltaFiProperties().getIngress().isEnabled() &&
+                    !diskSpaceService.isContentStorageDepleted() &&
                     !errorCountService.flowErrorsExceeded(timedIngressFlow.getTargetFlow())) {
                 deltaFilesService.taskTimedIngress(timedIngressFlow);
             }

@@ -28,7 +28,7 @@ type TimedIngressFlowSnapshot {
     running: Boolean!
     testMode: Boolean!
     targetFlow: String!
-    interval: Duration
+    cronSchedule: String
 }
 
 type TransformFlowSnapshot {
@@ -90,7 +90,7 @@ input TimedIngressFlowSnapshotInput {
     running: Boolean!
     testMode: Boolean!
     targetFlow: String!
-    interval: Duration
+    cronSchedule: String
 }
 
 input TransformFlowSnapshotInput {

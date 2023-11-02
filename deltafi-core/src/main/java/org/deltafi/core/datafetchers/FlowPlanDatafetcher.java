@@ -132,7 +132,9 @@ public class FlowPlanDatafetcher {
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
-    public boolean setTimedIngressInterval(@InputArgument String flowName, Duration interval) { return timedIngressFlowService.setInterval(flowName, interval); }
+    public boolean setTimedIngressCronSchedule(@InputArgument String flowName, String cronSchedule) {
+        return timedIngressFlowService.setCronSchedule(flowName, cronSchedule);
+    }
 
     @DgsMutation
     @NeedsPermission.FlowPlanCreate

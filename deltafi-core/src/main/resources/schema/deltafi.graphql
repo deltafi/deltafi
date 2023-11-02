@@ -452,7 +452,7 @@ type Mutation {
   disableNormalizeTestMode(flowName: String!) : Boolean!
   enableEgressTestMode(flowName: String!) : Boolean!
   disableEgressTestMode(flowName: String!) : Boolean!
-  setTimedIngressInterval(flowName: String!, interval: Duration!) : Boolean!
+  setTimedIngressCronSchedule(flowName: String!, cronSchedule: String!) : Boolean!
   enableTimedIngressTestMode(flowName: String!) : Boolean!
   disableTimedIngressTestMode(flowName: String!) : Boolean!
   enableTransformTestMode(flowName: String!) : Boolean!

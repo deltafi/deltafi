@@ -56,7 +56,6 @@ import org.deltafi.core.services.*;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.snapshot.SystemSnapshotDatafetcherTestHelper;
 import org.deltafi.core.snapshot.SystemSnapshotRepo;
-import org.deltafi.core.types.ErrorSummaryFilter;
 import org.deltafi.core.types.FlowAssignmentRule;
 import org.deltafi.core.types.PluginVariables;
 import org.deltafi.core.types.ResumePolicy;
@@ -1611,8 +1610,10 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testGetTimedIngressFlowPlan() {
 		clearForFlowTests();
-		TimedIngressFlowPlan timedIngressFlowPlanA = new TimedIngressFlowPlan("timedIngressPlan", "description", new TimedIngressActionConfiguration("timedIngress", "type"), "flow", Duration.ofSeconds(5));
-		TimedIngressFlowPlan timedIngressFlowPlanB = new TimedIngressFlowPlan("b", "description", new TimedIngressActionConfiguration("timedIngress", "type"), "flow", Duration.ofSeconds(5));
+		TimedIngressFlowPlan timedIngressFlowPlanA = new TimedIngressFlowPlan("timedIngressPlan", FlowType.TIMED_INGRESS,
+				"description", new TimedIngressActionConfiguration("timedIngress", "type"), "flow", "*/5 * * * * *");
+		TimedIngressFlowPlan timedIngressFlowPlanB = new TimedIngressFlowPlan("b", FlowType.TIMED_INGRESS, "description",
+				new TimedIngressActionConfiguration("timedIngress", "type"), "flow", "*/5 * * * * *");
 		timedIngressFlowPlanRepo.saveAll(List.of(timedIngressFlowPlanA, timedIngressFlowPlanB));
 		TimedIngressFlowPlan plan = FlowPlanDatafetcherTestHelper.getTimedIngressFlowPlan(dgsQueryExecutor);
 		assertThat(plan.getName()).isEqualTo("timedIngressPlan");
@@ -1966,7 +1967,8 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testRemoveTimedIngressFlowPlan() {
 		clearForFlowTests();
-		TimedIngressFlowPlan timedIngressFlowPlan = new TimedIngressFlowPlan("flowPlan", null, null);
+		TimedIngressFlowPlan timedIngressFlowPlan = new TimedIngressFlowPlan("flowPlan", FlowType.TIMED_INGRESS, null,
+				null, null, null);
 		timedIngressFlowPlanRepo.save(timedIngressFlowPlan);
 		assertThatThrownBy(() -> FlowPlanDatafetcherTestHelper.removeTimedIngressFlowPlan(dgsQueryExecutor))
 				.isInstanceOf(QueryException.class)

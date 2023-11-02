@@ -15,5 +15,5 @@
     }
   },
   "targetFlow": "smoke",
-  "interval": "PT5S"
+  "cronSchedule": "*/5 * * * * *"
 }

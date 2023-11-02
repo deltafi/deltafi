@@ -508,7 +508,7 @@ public class DeltaFilesService {
         IngressEvent ingressEvent = event.getIngress();
         boolean completedExecution = timedIngressFlowService.completeExecution(timedIngressFlow.getName(),
                 event.getDid(), ingressEvent.getMemo(), ingressEvent.isExecuteImmediate(),
-                ingressEvent.getStatus(), ingressEvent.getStatusMessage());
+                ingressEvent.getStatus(), ingressEvent.getStatusMessage(), timedIngressFlow.getCronSchedule());
         if (!completedExecution) {
             log.warn("Received unexpected ingress event with did " + event.getDid());
             return;
@@ -1922,7 +1922,8 @@ public class DeltaFilesService {
 
         try {
             if (!actionEventQueue.queueHasTaskingForAction(actionInput)) {
-                timedIngressFlowService.setLastRun(timedIngressFlow.getName(), OffsetDateTime.now(), actionInput.getActionContext().getDid());
+                timedIngressFlowService.setLastRun(timedIngressFlow.getName(), OffsetDateTime.now(clock),
+                        actionInput.getActionContext().getDid());
                 actionEventQueue.putActions(List.of(actionInput), false);
             } else {
                 log.warn("Skipping queueing on {} for duplicate timed ingress action event: {}",

@@ -23,8 +23,6 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.deltafi.core.types.TimedIngressFlow;
 
-import java.time.Duration;
-
 @Data
 @NoArgsConstructor
 @ToString(callSuper = true)
@@ -32,7 +30,7 @@ import java.time.Duration;
 public class TimedIngressFlowSnapshot extends FlowSnapshot {
 
     private String targetFlow;
-    private Duration interval = Duration.ofSeconds(30);
+    private String cronSchedule = "*/30 * * * * *";
 
     public TimedIngressFlowSnapshot(String name) {
         super(name);
@@ -43,6 +41,6 @@ public class TimedIngressFlowSnapshot extends FlowSnapshot {
         setRunning(timedIngressFlow.isRunning());
         setTestMode(timedIngressFlow.isTestMode());
         setTargetFlow(timedIngressFlow.getTargetFlow());
-        setInterval(timedIngressFlow.getInterval());
+        setCronSchedule(timedIngressFlow.getCronSchedule());
     }
 }

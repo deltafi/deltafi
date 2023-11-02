@@ -20,13 +20,18 @@ package org.deltafi.core.converters;
 import org.deltafi.common.types.TimedIngressActionConfiguration;
 import org.deltafi.common.types.TimedIngressFlowPlan;
 import org.deltafi.core.types.TimedIngressFlow;
+import org.springframework.scheduling.support.CronExpression;
+
+import java.time.OffsetDateTime;
 
 public class TimedIngressFlowPlanConverter extends FlowPlanConverter<TimedIngressFlowPlan, TimedIngressFlow> {
 
     public void populateFlowSpecificFields(TimedIngressFlowPlan timedIngressFlowPlan, TimedIngressFlow timedIngressFlow, FlowPlanPropertyHelper flowPlanPropertyHelper) {
         timedIngressFlow.setTimedIngressAction(buildTimedIngressAction(timedIngressFlowPlan.getTimedIngressAction(), flowPlanPropertyHelper));
-        timedIngressFlow.setInterval(timedIngressFlowPlan.getInterval());
         timedIngressFlow.setTargetFlow(timedIngressFlowPlan.getTargetFlow());
+        timedIngressFlow.setCronSchedule(timedIngressFlowPlan.getCronSchedule());
+        CronExpression cronExpression = CronExpression.parse(timedIngressFlow.getCronSchedule());
+        timedIngressFlow.setNextRun(cronExpression.next(OffsetDateTime.now()));
     }
 
     /**

@@ -21,7 +21,6 @@ import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.types.*;
 
-import java.time.Duration;
 import java.util.List;
 
 import static org.deltafi.core.util.Constants.*;
@@ -30,13 +29,13 @@ public class FlowBuilders {
     public static TimedIngressFlow buildTimedIngressFlow(FlowState flowState) {
         TimedIngressActionConfiguration tic = new TimedIngressActionConfiguration("SampleTimedIngressAction", "type");
 
-        return buildFlow(TIMED_INGRESS_FLOW_NAME, tic, flowState, false, Duration.ofSeconds(5), NORMALIZE_FLOW_NAME);
+        return buildFlow(TIMED_INGRESS_FLOW_NAME, tic, flowState, false, "*/5 * * * * *", NORMALIZE_FLOW_NAME);
     }
 
     public static TimedIngressFlow buildTimedIngressErrorFlow(FlowState flowState) {
         TimedIngressActionConfiguration tic = new TimedIngressActionConfiguration("SampleTimedIngressErrorAction", "type");
 
-        return buildFlow(TIMED_INGRESS_ERROR_FLOW_NAME, tic, flowState, false, Duration.ofSeconds(5), MISSING_FLOW_NAME);
+        return buildFlow(TIMED_INGRESS_ERROR_FLOW_NAME, tic, flowState, false, "*/5 * * * * *", MISSING_FLOW_NAME);
     }
 
     public static NormalizeFlow buildNormalizeFlow(FlowState flowState) {
@@ -51,13 +50,13 @@ public class FlowBuilders {
         return buildFlow(name, loadActionConfiguration, transforms, FlowState.RUNNING, testMode);
     }
 
-    public static TimedIngressFlow buildFlow(String name, TimedIngressActionConfiguration timedIngressActionConfiguration, FlowState flowState, boolean testMode, Duration interval, String targetFlow) {
+    public static TimedIngressFlow buildFlow(String name, TimedIngressActionConfiguration timedIngressActionConfiguration, FlowState flowState, boolean testMode, String cronSchedule, String targetFlow) {
         TimedIngressFlow timedIngressFlow = new TimedIngressFlow();
         timedIngressFlow.setName(name);
         timedIngressFlow.getFlowStatus().setState(flowState);
         timedIngressFlow.setTimedIngressAction(timedIngressActionConfiguration);
         timedIngressFlow.setTestMode(testMode);
-        timedIngressFlow.setInterval(interval);
+        timedIngressFlow.setCronSchedule(cronSchedule);
         timedIngressFlow.setTargetFlow(targetFlow);
         return timedIngressFlow;
     }

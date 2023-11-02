@@ -69,7 +69,7 @@ type TimedIngressFlowConfiguration implements DeltaFiConfiguration {
     name: String!
     apiVersion: String
     timedIngressAction: String!
-    interval: Duration
+    cronSchedule: String
 }
 
 type TransformFlowConfiguration implements DeltaFiConfiguration {

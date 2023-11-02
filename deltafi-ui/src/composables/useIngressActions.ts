@@ -31,8 +31,9 @@ export default function useIngressActions() {
             state: true
           },
           targetFlow: true,
-          interval: true,
+          cronSchedule: true,
           lastRun: true,
+          nextRun: true,
           memo: true,
           currentDid: true,
           executeImmediate: true,
@@ -78,12 +79,12 @@ export default function useIngressActions() {
     }
   };
 
-  const setTimedIngressInterval = (flowName: string, interval: string) => {
+  const setTimedIngressCronSchedule = (flowName: string, cronSchedule: string) => {
     const query = {
-      setTimedIngressInterval: {
+      setTimedIngressCronSchedule: {
         __args: {
           flowName: flowName,
-          interval: interval,
+          cronSchedule: cronSchedule,
         },
       },
     };
@@ -94,7 +95,7 @@ export default function useIngressActions() {
     getAllTimedIngress,
     startTimedIngressFlowByName,
     stopTimedIngressFlowByName,
-    setTimedIngressInterval,
+    setTimedIngressCronSchedule,
     loaded,
     loading,
     errors,

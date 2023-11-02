@@ -19,21 +19,25 @@ package org.deltafi.core.services;
 
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.IngressStatus;
+import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.TimedIngressFlowPlan;
 import org.deltafi.core.converters.TimedIngressFlowPlanConverter;
 import org.deltafi.core.repo.TimedIngressFlowRepo;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.snapshot.types.TimedIngressFlowSnapshot;
+import org.deltafi.core.types.Flow;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.types.TimedIngressFlow;
 import org.deltafi.core.validation.TimedIngressFlowValidator;
 import org.springframework.boot.info.BuildProperties;
+import org.springframework.scheduling.support.CronExpression;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
+import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -41,17 +45,25 @@ public class TimedIngressFlowService extends FlowService<TimedIngressFlowPlan, T
 
     private static final TimedIngressFlowPlanConverter TIMED_INGRESS_FLOW_PLAN_CONVERTER = new TimedIngressFlowPlanConverter();
 
-    public TimedIngressFlowService(TimedIngressFlowRepo timedIngressFlowRepo, PluginVariableService pluginVariableService, TimedIngressFlowValidator timedIngressFlowValidator, BuildProperties buildProperties) {
-        super("timedIngress", timedIngressFlowRepo, pluginVariableService, TIMED_INGRESS_FLOW_PLAN_CONVERTER, timedIngressFlowValidator, buildProperties);
+    private final Clock clock;
+
+    public TimedIngressFlowService(TimedIngressFlowRepo timedIngressFlowRepo, PluginVariableService pluginVariableService,
+            TimedIngressFlowValidator timedIngressFlowValidator, BuildProperties buildProperties, Clock clock) {
+        super("timedIngress", timedIngressFlowRepo, pluginVariableService, TIMED_INGRESS_FLOW_PLAN_CONVERTER,
+                timedIngressFlowValidator, buildProperties);
+
+        this.clock = clock;
     }
 
     @Override
     void copyFlowSpecificFields(TimedIngressFlow sourceFlow, TimedIngressFlow targetFlow) {
-        targetFlow.setInterval(sourceFlow.getInterval());
         targetFlow.setTargetFlow(sourceFlow.getTargetFlow());
+        targetFlow.setCronSchedule(sourceFlow.getCronSchedule());
+        targetFlow.setLastRun(sourceFlow.getLastRun());
+        targetFlow.setNextRun(sourceFlow.getNextRun());
         targetFlow.setMemo(sourceFlow.getMemo());
-        targetFlow.setExecuteImmediate(sourceFlow.isExecuteImmediate());
         targetFlow.setCurrentDid(sourceFlow.getCurrentDid());
+        targetFlow.setExecuteImmediate(sourceFlow.isExecuteImmediate());
     }
 
     @Override
@@ -66,36 +78,38 @@ public class TimedIngressFlowService extends FlowService<TimedIngressFlowPlan, T
     }
 
     @Override
-    public boolean flowSpecificUpdateFromSnapshot(TimedIngressFlow flow, TimedIngressFlowSnapshot timedIngressFlowSnapshot, Result result) {
-        if (flow.getInterval() != timedIngressFlowSnapshot.getInterval() ||
-                !Objects.equals(flow.getTargetFlow(), timedIngressFlowSnapshot.getTargetFlow())) {
-            flow.setInterval(timedIngressFlowSnapshot.getInterval());
-            flow.setTargetFlow(timedIngressFlowSnapshot.getTargetFlow());
-            return true;
+    public boolean flowSpecificUpdateFromSnapshot(TimedIngressFlow flow, TimedIngressFlowSnapshot snapshot, Result result) {
+        if (flow.getTargetFlow().equals(snapshot.getTargetFlow()) && flow.getCronSchedule().equals(snapshot.getCronSchedule())) {
+            return false;
         }
 
-        return false;
+        flow.setTargetFlow(snapshot.getTargetFlow());
+        flow.setCronSchedule(snapshot.getCronSchedule());
+
+        return true;
     }
 
     /**
-     * Sets the interval for a given flow, identified by its name.
-     * If the interval for the flow is already set to the specified value, the method
+     * Sets the cron schedule for a given flow, identified by its name.
+     * If the cron schedule for the flow is already set to the specified value, the method
      * logs a warning and returns false. If the update is successful, the method refreshes the
      * cache and returns true.
      *
      * @param flowName  The name of the flow to update, represented as a {@code String}.
-     * @param interval The new interval to be set for the specified flow, as a {@code Duration}.
+     * @param cronSchedule The new cron schedule to be set for the specified flow, as a {@code String}.
      * @return A {@code boolean} value indicating whether the update was successful (true) or not (false).
      */
-    public boolean setInterval(String flowName, Duration interval) {
+    public boolean setCronSchedule(String flowName, String cronSchedule) {
         TimedIngressFlow flow = getFlowOrThrow(flowName);
 
-        if (flow.getInterval() == interval) {
-            log.warn("Tried to set interval on timed ingress flow {} to {} when already set", flowName, interval);
+        if (flow.getCronSchedule().equals(cronSchedule)) {
+            log.warn("Tried to set cron schedule on timed ingress flow {} to \"{}\" when already set", flowName, cronSchedule);
             return false;
         }
 
-        if (((TimedIngressFlowRepo) flowRepo).updateInterval(flowName, interval)) {
+        CronExpression cronExpression = CronExpression.parse(cronSchedule);
+        if (((TimedIngressFlowRepo) flowRepo).updateCronSchedule(flowName, cronSchedule,
+                cronExpression.next(OffsetDateTime.now(clock)))) {
             refreshCache();
             return true;
         }
@@ -113,9 +127,10 @@ public class TimedIngressFlowService extends FlowService<TimedIngressFlowPlan, T
     }
 
     public boolean completeExecution(String flowName, String currentDid, String memo, boolean executeImmediate,
-                                     IngressStatus status, String statusMessage) {
+            IngressStatus status, String statusMessage, String cronSchedule) {
+        CronExpression cronExpression = CronExpression.parse(cronSchedule);
         if (((TimedIngressFlowRepo) flowRepo).completeExecution(flowName, currentDid, memo, executeImmediate,
-                status == null ? IngressStatus.HEALTHY : status, statusMessage)) {
+                status == null ? IngressStatus.HEALTHY : status, statusMessage, cronExpression.next(OffsetDateTime.now(clock)))) {
             refreshCache();
             return true;
         }

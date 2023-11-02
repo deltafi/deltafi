@@ -55,7 +55,7 @@ public class FlowPlanDatafetcherTestHelper {
     }
 
     public static TimedIngressFlowPlan getTimedIngressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, GetTimedIngressFlowPlanGraphQLQuery.newRequest().planName("timedIngressPlan").build(), new GetTimedIngressFlowPlanProjectionRoot().name().type().description().timedIngressAction().name().actionType().type().parent().interval().targetFlow(), TimedIngressFlowPlan.class);
+        return executeQuery(dgsQueryExecutor, GetTimedIngressFlowPlanGraphQLQuery.newRequest().planName("timedIngressPlan").build(), new GetTimedIngressFlowPlanProjectionRoot().name().type().description().timedIngressAction().name().actionType().type().parent().targetFlow().cronSchedule(), TimedIngressFlowPlan.class);
     }
 
     public static TransformFlow validateTransformFlow(DgsQueryExecutor dgsQueryExecutor) {
@@ -158,8 +158,8 @@ public class FlowPlanDatafetcherTestHelper {
                 .type("TIMED_INGRESS")
                 .description("description")
                 .timedIngressAction(timedIngress)
-                .interval(Duration.ofSeconds(5))
                 .targetFlow("target")
+                .cronSchedule("*/5 * * * * *")
                 .build();
         return executeQuery(dgsQueryExecutor, SaveTimedIngressFlowPlanGraphQLQuery.newRequest().timedIngressFlowPlan(input).build(), new SaveTimedIngressFlowPlanProjectionRoot().name(), TimedIngressFlow.class);
     }

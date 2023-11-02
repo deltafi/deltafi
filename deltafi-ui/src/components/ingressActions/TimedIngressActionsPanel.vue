@@ -29,7 +29,7 @@
         </Column>
         <Column header="Description" field="description" :sortable="true"></Column>
         <Column header="Target Flow" field="targetFlow" :sortable="true"></Column>
-        <Column header="Interval" field="interval" :sortable="true" class="inline-edit-column">
+        <Column header="Cron Schedule" field="cronSchedule" :sortable="true" class="inline-edit-column">
           <template #body="{ data, field }">
             <span v-if="data[field] === null">-</span>
             <span v-else>{{ data[field] }}</span>
@@ -56,6 +56,9 @@
         <br />
         <span v-if="fieldName == 'lastRun'">
           <Timestamp :timestamp="activeAction.lastRun" />
+        </span>
+        <span v-else-if="fieldName == 'nextRun'">
+          <Timestamp :timestamp="activeAction.nextRun" />
         </span>
         <span v-else-if="fieldName == 'memo'">
           <pre>{{ activeAction.memo }}</pre>
@@ -95,7 +98,7 @@ import useIngressActions from "@/composables/useIngressActions";
 import useNotifications from "@/composables/useNotifications";
 
 const notify = useNotifications();
-const { getAllTimedIngress, setTimedIngressInterval, loaded, loading, errors } = useIngressActions();
+const { getAllTimedIngress, setTimedIngressCronSchedule, loaded, loading, errors } = useIngressActions();
 const showLoading = computed(() => loading.value && !loaded.value);
 const timedIngressActions = ref([]);
 const editing = ref(false);
@@ -104,12 +107,12 @@ const onEditCancel = () => editing.value = false;
 const onEditComplete = async (event) => {
   const { data, newValue, field } = event;
 
-  if (data.interval !== newValue && newValue !== "") {
-    const resetValue = data.interval;
+  if (data.cronSchedule !== newValue && newValue !== "") {
+    const resetValue = data.cronSchedule;
     data[field] = newValue;
-    await setTimedIngressInterval(data.name, newValue)
+    await setTimedIngressCronSchedule(data.name, newValue)
     if (errors.value.length === 0) {
-      notify.success("Interval Set Successfully", `Interval for ${data.name} set to ${newValue}`);
+      notify.success("Cron Schedule Set Successfully", `Cron Schedule for ${data.name} set to ${newValue}`);
     } else {
       data[field] = resetValue;
     }
@@ -136,8 +139,9 @@ const fields = {
   description: "Description",
   ingressStatusMessage: "Status Message",
   targetFlow: "Target Flow",
-  interval: "Interval",
+  cronSchedule: "Cron Schedule",
   lastRun: "Last Run",
+  nextRun: "Next Run",
   memo: "Memo",
   executeImmediate: "Execute Immediate",
 }

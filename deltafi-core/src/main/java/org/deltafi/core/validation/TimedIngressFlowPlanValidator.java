@@ -47,6 +47,11 @@ public class TimedIngressFlowPlanValidator extends FlowPlanValidator<TimedIngres
                     .configName(flowPlan.getName())
                     .message("Cannot add timed ingress flow plan, target flow is missing").build());
         }
+        if (flowPlan.getCronSchedule() == null) {
+            errors.add(FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG)
+                    .configName(flowPlan.getName())
+                    .message("Cannot add timed ingress flow plan, cron schedule is missing").build());
+        }
         return errors;
     }
 }

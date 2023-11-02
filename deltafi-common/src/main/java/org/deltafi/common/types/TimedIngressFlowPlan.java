@@ -20,13 +20,11 @@ package org.deltafi.common.types;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.PersistenceCreator;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,27 +35,21 @@ import java.util.List;
 public class TimedIngressFlowPlan extends FlowPlan {
     private TimedIngressActionConfiguration timedIngressAction;
     private String targetFlow;
-    private Duration interval;
-
-    public TimedIngressFlowPlan(String name, String description) {
-        super(name, FlowType.TIMED_INGRESS, description);
-    }
-
-    public TimedIngressFlowPlan(String name, String description, TimedIngressActionConfiguration timedIngressActionConfiguration,
-                          String targetFlow, Duration interval) {
-        super(name, FlowType.TIMED_INGRESS, description);
-        this.timedIngressAction = timedIngressActionConfiguration;
-        this.targetFlow = targetFlow;
-        this.interval = interval;
-    }
+    private String cronSchedule;
 
     @PersistenceCreator
     @JsonCreator
     @SuppressWarnings("unused")
     public TimedIngressFlowPlan(@JsonProperty(value = "name", required = true) String name,
-                                @JsonProperty(value = "type") FlowType type,
-                                @JsonProperty(value = "description", required = true) String description) {
-        this(name, description);
+            @JsonProperty(value = "type") FlowType type,
+            @JsonProperty(value = "description", required = true) String description,
+            @JsonProperty(value = "timedIngressAction", required = true) TimedIngressActionConfiguration timedIngressAction,
+            @JsonProperty(value = "targetFlow", required = true) String targetFlow,
+            @JsonProperty(value = "cronSchedule", required = true) String cronSchedule) {
+        super(name, FlowType.TIMED_INGRESS, description);
+        this.timedIngressAction = timedIngressAction;
+        this.targetFlow = targetFlow;
+        this.cronSchedule = cronSchedule;
     }
 
     @Override

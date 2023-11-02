@@ -25,7 +25,6 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
-import java.time.Duration;
 import java.time.OffsetDateTime;
 
 @SuppressWarnings("unused")
@@ -36,8 +35,9 @@ public class TimedIngressFlowRepoImpl extends BaseFlowRepoImpl<TimedIngressFlow>
     private static final String EXECUTE_IMMEDIATE = "executeImmediate";
     private static final String INGRESS_STATUS = "ingressStatus";
     private static final String INGRESS_STATUS_MESSAGE = "ingressStatusMessage";
-    private static final String INTERVAL = "interval";
+    private static final String CRON_SCHEDULE = "cronSchedule";
     private static final String LAST_RUN = "lastRun";
+    private static final String NEXT_RUN = "nextRun";
     private static final String MEMO = "memo";
 
     public TimedIngressFlowRepoImpl(MongoTemplate mongoTemplate) {
@@ -45,10 +45,10 @@ public class TimedIngressFlowRepoImpl extends BaseFlowRepoImpl<TimedIngressFlow>
     }
 
     @Override
-    public boolean updateInterval(String flowName, Duration interval) {
-        Query idMatches = Query.query(Criteria.where(ID).is(flowName).and(INTERVAL).ne(interval));
-        Update intervalUpdate = Update.update(INTERVAL, interval);
-        return 1 == mongoTemplate.updateFirst(idMatches, intervalUpdate, TimedIngressFlow.class).getModifiedCount();
+    public boolean updateCronSchedule(String flowName, String cronSchedule, OffsetDateTime nextRun) {
+        Query idMatches = Query.query(Criteria.where(ID).is(flowName).and(CRON_SCHEDULE).ne(cronSchedule));
+        Update cronScheduleUpdate = Update.update(CRON_SCHEDULE, cronSchedule).set(NEXT_RUN, nextRun);
+        return 1 == mongoTemplate.updateFirst(idMatches, cronScheduleUpdate, TimedIngressFlow.class).getModifiedCount();
     }
 
     @Override
@@ -60,10 +60,10 @@ public class TimedIngressFlowRepoImpl extends BaseFlowRepoImpl<TimedIngressFlow>
 
     @Override
     public boolean completeExecution(String flowName, String currentDid, String memo, boolean executeImmediate,
-                                     IngressStatus status, String statusMessage) {
+            IngressStatus status, String statusMessage, OffsetDateTime nextRun) {
         Query idMatches = Query.query(Criteria.where(ID).is(flowName).and(CURRENT_DID).is(currentDid));
         Update update = Update.update(CURRENT_DID, null).set(MEMO, memo).set(EXECUTE_IMMEDIATE, executeImmediate)
-                .set(INGRESS_STATUS, status).set(INGRESS_STATUS_MESSAGE, statusMessage);
+                .set(INGRESS_STATUS, status).set(INGRESS_STATUS_MESSAGE, statusMessage).set(NEXT_RUN, nextRun);
         return 1 == mongoTemplate.updateFirst(idMatches, update, TimedIngressFlow.class).getModifiedCount();
     }
 }
