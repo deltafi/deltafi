@@ -36,7 +36,7 @@ public class HeartbeatService {
 
     @Scheduled(fixedDelay = 10000)
     public void heartbeat() {
-        actionEventQueue.setHeartbeat(identityService.getUniqueId());
+        actionEventQueue.setHeartbeat(DGS_QUEUE + "-" + identityService.getUniqueId());
         actionEventQueue.setHeartbeat(DGS_QUEUE);
     }
 }
