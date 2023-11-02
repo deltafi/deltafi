@@ -46,6 +46,6 @@ public class ConfigurableFixedDelayTrigger implements Trigger {
             return triggerContext.getClock().instant().plusMillis(this.initialDelay);
         }
 
-        return lastExecution.plusMillis(durationFunction.apply(deltaFiPropertiesService.getDeltaFiProperties()).toMillis());
+        return lastCompletion.plusMillis(durationFunction.apply(deltaFiPropertiesService.getDeltaFiProperties()).toMillis());
     }
 }
