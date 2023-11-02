@@ -113,7 +113,7 @@ public class TimedIngressFlow extends Flow {
             return false;
         }
 
-        return nextRun.isBefore(now);
+        return nextRun == null || nextRun.isBefore(now);
     }
 
     /**
