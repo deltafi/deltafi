@@ -21,15 +21,12 @@ import useGraphQL from './useGraphQL';
 export default function useVersion() {
   const { response, queryGraphQL } = useGraphQL();
 
-  const fetchDeltaFileStats = async (inFlightOnly: Boolean = false) => {
+  const fetchDeltaFileStats = async () => {
     const query = {
       deltaFileStats: {
-        __args: {
-          inFlightOnly: inFlightOnly,
-        },
-        count: true,
-        referencedBytes: true,
-        totalBytes: true
+        totalCount: true,
+        inFlightCount: true,
+        inFlightBytes: true
       }
     };
 
@@ -41,17 +38,5 @@ export default function useVersion() {
     }
   }
 
-  const fetchAllDeltaFileStats = async () => {
-    return await Promise.all([
-      fetchDeltaFileStats(false),
-      fetchDeltaFileStats(true)
-    ]).then((values) => {
-      return {
-        all: values[0],
-        inFlight: values[1],
-      }
-    });
-  }
-
-  return { fetchDeltaFileStats, fetchAllDeltaFileStats };
+  return { fetchDeltaFileStats };
 }

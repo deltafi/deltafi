@@ -346,9 +346,9 @@ type Result {
 }
 
 type DeltaFileStats {
-  count: Int!
-  totalBytes: Long!
-  referencedBytes: Long!
+  totalCount: Long!
+  inFlightCount: Long!
+  inFlightBytes: Long!
 }
 
 input ResumeMetadata {
@@ -417,7 +417,7 @@ type Query {
   totalCount: Long
   countUnacknowledgedErrors: Long
 
-  deltaFileStats(inFlightOnly: Boolean, includeDeletedContent: Boolean): DeltaFileStats!
+  deltaFileStats: DeltaFileStats!
 }
 
 type Mutation {

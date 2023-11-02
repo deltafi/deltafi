@@ -152,6 +152,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     private static final String OVER = "over";
     private static final String CUMULATIVE_OVER = "cumulativeOver";
 
+    private static final String IN_FLIGHT_COUNT = "inFlightCount";
+    private static final String IN_FLIGHT_BYTES = "inFlightBytes";
+
     private static final Set<DeltaFileStage> TERMINAL_STAGES = Set.of(DeltaFileStage.COMPLETE, DeltaFileStage.ERROR, DeltaFileStage.CANCELLED);
     private static final Set<DeltaFileStage> ACTIVE_STAGES = Set.of(DeltaFileStage.INGRESS, DeltaFileStage.ENRICH, DeltaFileStage.EGRESS);
 
@@ -1116,31 +1119,19 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
-    public DeltaFileStats deltaFileStats(boolean inFlightOnly, boolean includeDeletedContent) {
+    public DeltaFileStats deltaFileStats() {
         List<AggregationOperation> aggregationOps = new ArrayList<>();
-        List<Criteria> criteriaList = new ArrayList<>();
-        if (inFlightOnly) {
-            criteriaList.add(Criteria.where(STAGE).in(DeltaFileStage.INGRESS,
-                    DeltaFileStage.ENRICH, DeltaFileStage.EGRESS));
-        }
-        if (!includeDeletedContent) {
-            criteriaList.add(Criteria.where(CONTENT_DELETED).isNull());
-        }
-        if (!criteriaList.isEmpty()) {
-            Criteria andCriteria = new Criteria();
-            andCriteria.andOperator(criteriaList);
-            MatchOperation match = Aggregation.match(andCriteria);
-            aggregationOps.add(match);
-        }
+        Criteria inFlightCriteria = Criteria.where(STAGE).in(DeltaFileStage.INGRESS,
+                DeltaFileStage.ENRICH, DeltaFileStage.EGRESS);
+        aggregationOps.add(Aggregation.match(inFlightCriteria));
 
         ProjectionOperation project = Aggregation.project()
                 .andExclude("_id")
-                .andInclude(TOTAL_BYTES, REFERENCED_BYTES);
+                .andInclude(REFERENCED_BYTES);
         aggregationOps.add(project);
 
-        aggregationOps.add(group("null").count().as(COUNT_LOWER_CASE)
-                .sum(TOTAL_BYTES).as(TOTAL_BYTES)
-                .sum(REFERENCED_BYTES).as(REFERENCED_BYTES));
+        aggregationOps.add(group("null").count().as(IN_FLIGHT_COUNT)
+                .sum(REFERENCED_BYTES).as(IN_FLIGHT_BYTES));
 
         Aggregation aggregation = Aggregation.newAggregation(aggregationOps)
                 .withOptions(AggregationOptions.builder().allowDiskUse(true).build());
@@ -1148,11 +1139,15 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         AggregationResults<DeltaFileStats> aggResults = mongoTemplate.aggregate(
                 aggregation, COLLECTION, DeltaFileStats.class);
 
+        long count = mongoTemplate.count(new Query(), COLLECTION);
+
         if (aggResults.getMappedResults().isEmpty()) {
-            return new DeltaFileStats(0, 0L, 0L);
+            return new DeltaFileStats(count, 0L, 0L);
         }
 
-        return aggResults.getMappedResults().get(0);
+        DeltaFileStats deltaFileStats = aggResults.getMappedResults().get(0);
+        deltaFileStats.setTotalCount(count);
+        return deltaFileStats;
     }
 
     @Override

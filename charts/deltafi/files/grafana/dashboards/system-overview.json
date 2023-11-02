@@ -26,7 +26,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 1095,
+  "id": 1380,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -1349,7 +1349,7 @@
           },
           "refCount": 0,
           "refId": "A",
-          "target": "alias(gauge.deltafile.all.count, 'Total DeltaFiles')"
+          "target": "alias(gauge.deltafile.totalCount, 'Total DeltaFiles')"
         }
       ],
       "transparent": true,
@@ -1413,7 +1413,7 @@
           },
           "refCount": 0,
           "refId": "A",
-          "target": "gauge.deltafile.all.count"
+          "target": "gauge.deltafile.totalCount"
         }
       ],
       "transparent": true,
@@ -1482,7 +1482,7 @@
           },
           "refCount": 0,
           "refId": "A",
-          "target": "gauge.deltafile.all.referencedBytes"
+          "target": "gauge.deltafile.totalBytes"
         }
       ],
       "transparent": true,
@@ -1577,7 +1577,7 @@
           },
           "refCount": 0,
           "refId": "A",
-          "target": "alias(gauge.deltafile.all.referencedBytes, 'Total')"
+          "target": "alias(gauge.deltafile.totalBytes, 'Total')"
         }
       ],
       "transparent": true,
@@ -1673,7 +1673,7 @@
           },
           "refCount": 0,
           "refId": "A",
-          "target": "alias(gauge.deltafile.inFlight.count, 'In Flight')"
+          "target": "alias(gauge.deltafile.inFlightCount, 'In Flight')"
         }
       ],
       "transparent": true,
@@ -1739,7 +1739,7 @@
           },
           "refCount": 0,
           "refId": "A",
-          "target": "alias(gauge.deltafile.inFlight.count, 'Files in flight')"
+          "target": "alias(gauge.deltafile.inFlightCount, 'Files in flight')"
         }
       ],
       "transparent": true,
@@ -1807,7 +1807,7 @@
           },
           "refCount": 0,
           "refId": "A",
-          "target": "gauge.deltafile.inFlight.referencedBytes"
+          "target": "gauge.deltafile.inFlightBytes"
         }
       ],
       "transparent": true,
@@ -1903,7 +1903,7 @@
           },
           "refCount": 0,
           "refId": "A",
-          "target": "alias(gauge.deltafile.inFlight.referencedBytes, 'In Flight')"
+          "target": "alias(gauge.deltafile.inFlightBytes, 'In Flight')"
         }
       ],
       "transparent": true,
@@ -1928,7 +1928,7 @@
         "uid": "${datasource}"
       },
       "gridPos": {
-        "h": 22,
+        "h": 31,
         "w": 8,
         "x": 0,
         "y": 50
@@ -2112,9 +2112,9 @@
         "h": 9,
         "w": 16,
         "x": 8,
-        "y": 50
+        "y": 59
       },
-      "id": 5,
+      "id": 84,
       "interval": "10s",
       "maxDataPoints": 99999,
       "options": {
@@ -2207,7 +2207,7 @@
         "h": 13,
         "w": 16,
         "x": 8,
-        "y": 59
+        "y": 68
       },
       "id": 17,
       "interval": "10s",
@@ -2245,7 +2245,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 72
+        "y": 81
       },
       "id": 69,
       "panels": [],
@@ -2317,7 +2317,7 @@
         "h": 11,
         "w": 12,
         "x": 0,
-        "y": 73
+        "y": 82
       },
       "id": 20,
       "options": {
@@ -2394,7 +2394,7 @@
         "h": 11,
         "w": 12,
         "x": 12,
-        "y": 73
+        "y": 82
       },
       "id": 28,
       "options": {
@@ -2534,7 +2534,7 @@
         "h": 11,
         "w": 12,
         "x": 0,
-        "y": 84
+        "y": 93
       },
       "id": 78,
       "options": {
@@ -2662,7 +2662,7 @@
         "h": 11,
         "w": 12,
         "x": 12,
-        "y": 84
+        "y": 93
       },
       "id": 77,
       "options": {
@@ -2763,7 +2763,7 @@
         "h": 11,
         "w": 12,
         "x": 0,
-        "y": 95
+        "y": 104
       },
       "id": 44,
       "options": {
@@ -2859,7 +2859,7 @@
         "h": 11,
         "w": 12,
         "x": 12,
-        "y": 95
+        "y": 104
       },
       "id": 45,
       "options": {
@@ -2938,8 +2938,7 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2979,7 +2978,7 @@
         "h": 11,
         "w": 15,
         "x": 0,
-        "y": 106
+        "y": 115
       },
       "id": 80,
       "interval": "10s",
@@ -3056,7 +3055,7 @@
         "h": 11,
         "w": 9,
         "x": 15,
-        "y": 106
+        "y": 115
       },
       "hideTimeOverride": true,
       "id": 82,
@@ -3154,8 +3153,7 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -3195,7 +3193,7 @@
         "h": 11,
         "w": 15,
         "x": 0,
-        "y": 117
+        "y": 126
       },
       "id": 81,
       "interval": "10s",
@@ -3272,7 +3270,7 @@
         "h": 11,
         "w": 9,
         "x": 15,
-        "y": 117
+        "y": 126
       },
       "hideTimeOverride": true,
       "id": 83,
@@ -3323,7 +3321,7 @@
       "type": "piechart"
     }
   ],
-  "refresh": "5m",
+  "refresh": "10s",
   "revision": 1,
   "schemaVersion": 38,
   "style": "dark",
@@ -3401,6 +3399,6 @@
   "timezone": "",
   "title": "System Overview",
   "uid": "system-overview",
-  "version": 5,
+  "version": 6,
   "weekStart": ""
 }

@@ -249,11 +249,9 @@ public interface DeltaFileRepoCustom {
 
     /**
      * Get count and sizes of deltaFiles in the system
-     * @param inFlightOnly If true, only include deltaFiles in INGRESS, ENRICH, and EGRESS stages
-     * @param includeDeletedContent include deleted content in the stats
      * @return stats
      */
-    DeltaFileStats deltaFileStats(boolean inFlightOnly, boolean includeDeletedContent);
+    DeltaFileStats deltaFileStats();
 
     /**
      * Remove the given flow from pendingAnnotationsForFlows for any DeltaFile

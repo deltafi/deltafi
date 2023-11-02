@@ -28,8 +28,8 @@ module Deltafi
         SSE_REDIS_CHANNEL = [DF::Common::SSE_REDIS_CHANNEL_PREFIX, 'deltaFileStats'].compact.join('.')
         INTERVAL = 5
 
-        def query(in_flight_only:)
-          query = "query { deltaFileStats(inFlightOnly: #{in_flight_only}) { count referencedBytes totalBytes } }"
+        def query
+          query = "query { deltaFileStats { totalCount inFlightCount inFlightBytes } }"
           response = DF.graphql(query)
           parsed_response = JSON.parse(response.body, symbolize_names: true)
           raise StandardError, parsed_response[:errors]&.first&.dig(:message) if parsed_response.key?(:errors)
@@ -39,22 +39,17 @@ module Deltafi
 
         def run
           periodic_timer(INTERVAL) do
-            result = {
-              all: query(in_flight_only: false),
-              inFlight: query(in_flight_only: true)
-            }
+            result = query
 
             @redis.publish(SSE_REDIS_CHANNEL, result.to_json)
 
-            result.each do |mode, metrics|
-              metrics.each do |k, v|
-                DF::Metrics.record_metric(
-                  prefix: "gauge.deltafile.#{mode}",
-                  name: k,
-                  value: v.to_i,
-                  gauge: true
-                )
-              end
+            result.each do |k, v|
+              DF::Metrics.record_metric(
+                prefix: "gauge.deltafile",
+                name: k,
+                value: v.to_i,
+                gauge: true
+              )
             end
           end
         end

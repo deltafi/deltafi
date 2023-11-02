@@ -76,6 +76,9 @@ minio:
     type: NodePort
   nodeSelector:
     node-role.deltafi.org/storage: "true"
+  metrics:
+    serviceMonitor:
+      public: true
 # MongoDB config
 mongodb:
   image:

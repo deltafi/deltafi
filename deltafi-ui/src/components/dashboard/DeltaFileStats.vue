@@ -23,12 +23,12 @@
     </div>
     <div v-else class="list-group list-group-flush">
       <div class="row">
-        <div v-for="label in statLabels" :key="label" class="col-3 text-center">
+        <div v-for="label in statLabels" :key="label" class="col-4 text-center">
           <div class="stat-label">{{ label }}</div>
         </div>
       </div>
       <div class="row">
-        <div v-for="value in statValues" :key="value" class="col-3 text-center">
+        <div v-for="value in statValues" :key="value" class="col-4 text-center">
           <div class="stat-data">{{ value }}</div>
         </div>
       </div>
@@ -45,22 +45,20 @@ import useDeltaFileStats from "@/composables/useDeltaFileStats";
 
 const { formattedBytes } = useUtilFunctions();
 const { serverSentEvents } = useServerSentEvents();
-const { fetchAllDeltaFileStats } = useDeltaFileStats();
+const { fetchDeltaFileStats } = useDeltaFileStats();
 const deltaFileStats = ref(null)
 const statLabels = [
   "Total DeltaFiles",
   "Total DeltaFiles In-flight",
-  "Total Bytes",
   "Total Bytes In-flight"
 ]
 const statValues = computed(() => {
-  if (deltaFileStats.value == null) return [];
+  if (deltaFileStats.value == null) return {};
 
   return [
-    deltaFileStats.value.all.count.toLocaleString("en-US"),
-    deltaFileStats.value.inFlight.count.toLocaleString("en-US"),
-    formattedBytes(deltaFileStats.value.all.totalBytes),
-    formattedBytes(deltaFileStats.value.inFlight.referencedBytes)
+    deltaFileStats.value.totalCount.toLocaleString("en-US"),
+    deltaFileStats.value.inFlightCount.toLocaleString("en-US"),
+    formattedBytes(deltaFileStats.value.inFlightBytes)
   ]
 })
 
@@ -69,7 +67,7 @@ serverSentEvents.addEventListener('deltaFileStats', (event) => {
 });
 
 onMounted(async () => {
-  deltaFileStats.value = await fetchAllDeltaFileStats();
+  deltaFileStats.value = await fetchDeltaFileStats();
 })
 </script>
 

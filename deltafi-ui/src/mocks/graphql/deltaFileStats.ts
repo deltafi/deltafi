@@ -16,24 +16,16 @@
    limitations under the License.
 */
 
-const generateData = (req: any) => {
-  if (req.body.query.includes("inFlightOnly: true")) {
-    return {
-      count: 13,
-      referencedBytes: 2233,
-      totalBytes: 2224
-    }
-  } else {
-    return {
-      count: 245673,
-      referencedBytes: 456789876,
-      totalBytes: 456789876
-    }
+const generateData = () => {
+  return {
+    totalCount: 245673,
+    inFlightCount: 13,
+    inFlightBytes: 2233
   }
 };
 
-export default (req: any) => {
+export default () => {
   return {
-    deltaFileStats: generateData(req)
+    deltaFileStats: generateData()
   }
 }

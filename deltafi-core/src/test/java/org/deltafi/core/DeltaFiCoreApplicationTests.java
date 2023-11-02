@@ -4632,10 +4632,10 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void testDeltaFileStats() {
-		DeltaFileStats none = deltaFilesService.deltaFileStats(false, false);
-		assertEquals(0, none.getCount());
-		assertEquals(0L, none.getTotalBytes());
-		assertEquals(0L, none.getReferencedBytes());
+		DeltaFileStats none = deltaFilesService.deltaFileStats();
+		assertEquals(0, none.getTotalCount());
+		assertEquals(0L, none.getInFlightCount());
+		assertEquals(0L, none.getInFlightBytes());
 
 		DeltaFile deltaFile1 = Util.emptyDeltaFile("1", "flow", List.of());
 		deltaFile1.setTotalBytes(1L);
@@ -4655,20 +4655,10 @@ class DeltaFiCoreApplicationTests {
 
 		deltaFileRepo.saveAll(List.of(deltaFile1, deltaFile2, deltaFile3));
 
-		DeltaFileStats all = deltaFilesService.deltaFileStats(false, true);
-		assertEquals(3, all.getCount());
-		assertEquals(7L, all.getTotalBytes());
-		assertEquals(14L, all.getReferencedBytes());
-
-		DeltaFileStats notDeleted = deltaFilesService.deltaFileStats(false, false);
-		assertEquals(2, notDeleted.getCount());
-		assertEquals(5L, notDeleted.getTotalBytes());
-		assertEquals(10L, notDeleted.getReferencedBytes());
-
-		DeltaFileStats inFlight = deltaFilesService.deltaFileStats(true, true);
-		assertEquals(2, inFlight.getCount());
-		assertEquals(3L, inFlight.getTotalBytes());
-		assertEquals(6L, inFlight.getReferencedBytes());
+		DeltaFileStats all = deltaFilesService.deltaFileStats();
+		assertEquals(3, all.getTotalCount());
+		assertEquals(6L, all.getInFlightBytes());
+		assertEquals(2L, all.getInFlightCount());
 	}
 
 	@Test

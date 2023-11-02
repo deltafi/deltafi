@@ -2000,8 +2000,8 @@ public class DeltaFilesService {
         return deltaFileRepo.estimatedCount();
     }
 
-    public DeltaFileStats deltaFileStats(boolean inFlightOnly, boolean includeDeletedContent) {
-        return deltaFileRepo.deltaFileStats(inFlightOnly, includeDeletedContent);
+    public DeltaFileStats deltaFileStats() {
+        return deltaFileRepo.deltaFileStats();
     }
 
     public Result applyResumePolicies(List<String> policyNames) {
