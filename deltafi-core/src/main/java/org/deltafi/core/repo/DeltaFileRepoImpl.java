@@ -1132,6 +1132,12 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             MatchOperation match = Aggregation.match(andCriteria);
             aggregationOps.add(match);
         }
+
+        ProjectionOperation project = Aggregation.project()
+                .andExclude("_id")
+                .andInclude(TOTAL_BYTES, REFERENCED_BYTES);
+        aggregationOps.add(project);
+
         aggregationOps.add(group("null").count().as(COUNT_LOWER_CASE)
                 .sum(TOTAL_BYTES).as(TOTAL_BYTES)
                 .sum(REFERENCED_BYTES).as(REFERENCED_BYTES));
