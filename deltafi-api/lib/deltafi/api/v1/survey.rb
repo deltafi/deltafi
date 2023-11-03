@@ -46,7 +46,7 @@ module Deltafi
           end
 
           def clickhouse_client
-            @clickhouse_client ||= DF.clickhouse_client
+            @clickhouse_client ||= DF::Clickhouse.client
           end
 
           def add_survey(blob)

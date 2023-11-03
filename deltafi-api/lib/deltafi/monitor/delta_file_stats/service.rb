@@ -29,7 +29,7 @@ module Deltafi
         INTERVAL = 5
 
         def query
-          query = "query { deltaFileStats { totalCount inFlightCount inFlightBytes } }"
+          query = 'query { deltaFileStats { totalCount inFlightCount inFlightBytes } }'
           response = DF.graphql(query)
           parsed_response = JSON.parse(response.body, symbolize_names: true)
           raise StandardError, parsed_response[:errors]&.first&.dig(:message) if parsed_response.key?(:errors)
@@ -45,7 +45,7 @@ module Deltafi
 
             result.each do |k, v|
               DF::Metrics.record_metric(
-                prefix: "gauge.deltafile",
+                prefix: 'gauge.deltafile',
                 name: k,
                 value: v.to_i,
                 gauge: true

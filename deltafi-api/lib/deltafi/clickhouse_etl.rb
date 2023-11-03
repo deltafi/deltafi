@@ -38,7 +38,7 @@ module Deltafi
       @interval = interval.to_i.seconds # Interval in seconds for each ETL sync
       @lag = lag.to_i.seconds           # Maximum number of records to batch from MongoDB to Clickhouse at once
       @limit = limit.to_i               # Number of seconds before now for deltafile query to allow all mongo insertions to settle out
-      @clickhouse = DF.clickhouse_client
+      @clickhouse = DF::Clickhouse.client
       @deltafile_ttl = "timestamp + INTERVAL #{delete_ttl} DELETE"
 
       create_clickhouse_table
