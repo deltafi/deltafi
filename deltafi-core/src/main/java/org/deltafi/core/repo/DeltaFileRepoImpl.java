@@ -188,16 +188,16 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         INDICES.put("completed_before_index", new Index().named("completed_before_index").on(STAGE, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC));
         INDICES.put("created_before_index", new Index().named("created_before_index").on(CREATED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC));
         INDICES.put("modified_before_index", new Index().named("modified_before_index").on(MODIFIED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC));
-        INDICES.put("auto_resume_index", new Index().named("auto_resume_index").on(NEXT_AUTO_RESUME, Sort.Direction.ASC).on(STAGE, Sort.Direction.ASC));
+        INDICES.put("auto_resume_index", new Index().named("auto_resume_index").on(NEXT_AUTO_RESUME, Sort.Direction.ASC).on(STAGE, Sort.Direction.ASC)
+                .partial(PartialIndexFilter.of(Criteria.where(NEXT_AUTO_RESUME).exists(true))));
         INDICES.put("flow_first_index", new Index().named("flow_first_index").on(SOURCE_INFO_FLOW, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
         INDICES.put("metadata_index", new Index().named("metadata_index").on(ANNOTATIONS + ".$**", Sort.Direction.ASC));
         INDICES.put("domain_name_index", new Index().named("domain_name_index").on(DOMAINS_NAME, Sort.Direction.ASC));
         INDICES.put("metadata_keys_index", new Index().named("metadata_keys_index").on(ANNOTATION_KEYS, Sort.Direction.ASC));
-        INDICES.put("disk_space_delete_index", new Index().named("disk_space_delete_index").on(CONTENT_DELETED, Sort.Direction.ASC).on(STAGE, Sort.Direction.ASC).on(CREATED, Sort.Direction.ASC).on(TOTAL_BYTES, Sort.Direction.ASC));
+        INDICES.put("disk_space_delete_index", new Index().named("disk_space_delete_index").on(CONTENT_DELETED, Sort.Direction.ASC).on(STAGE, Sort.Direction.ASC).on(CREATED, Sort.Direction.ASC).on(TOTAL_BYTES, Sort.Direction.ASC)
+                .partial(PartialIndexFilter.of(Criteria.where(CONTENT_DELETED).is(null))));
         INDICES.put("pending_annotations_for_flows_index", new Index().named("pending_annotations_for_flows_index").on(PENDING_ANNOTATIONS_FOR_FLOWS, Sort.Direction.ASC));
         INDICES.put("egress_flow_index", new Index().named("egress_flow_index").on(EGRESS_FLOW, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
-        INDICES.put("processing_type_index", new Index().named("processing_type_index").on(SOURCE_INFO_PROCESSING_TYPE, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
-        INDICES.put("filename_index", new Index().named("filename_index").on(SOURCE_INFO_FILENAME, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
         INDICES.put("normalized_filename_index", new Index().named("normalized_filename_index").on(SOURCE_INFO_NORMALIZED_FILENAME, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
 
         // partial index to support finding DeltaFiles that are pending annotations
@@ -208,6 +208,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         INDICES.put("egressed_index", new Index().named("egressed_index").on(EGRESSED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(EGRESSED).is(false))).on(MODIFIED, Sort.Direction.ASC));
         INDICES.put("test_mode_index", new Index().named("test_mode_index").on(TEST_MODE, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(TEST_MODE).is(true))).on(MODIFIED, Sort.Direction.ASC));
         INDICES.put("filtered_index", new Index().named("filtered_index").on(FILTERED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(FILTERED).is(true))).on(MODIFIED, Sort.Direction.ASC));
+        INDICES.put("unack_error_index", new Index().named("unack_error_index").on(STAGE, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(STAGE).is("ERROR").and(ERROR_ACKNOWLEDGED).is(null))));
     }
 
     private final MongoTemplate mongoTemplate;
