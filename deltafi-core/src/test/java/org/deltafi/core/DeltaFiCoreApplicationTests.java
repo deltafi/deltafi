@@ -4597,7 +4597,7 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void testDeleteCompleteAndAcked() {
+	void testDiskSpaceDeleteCompleteAndAcked() {
 		DeltaFile error = DeltaFile.builder()
 					.did("error")
 					.created(OffsetDateTime.now())
@@ -4628,6 +4628,32 @@ class DeltaFiCoreApplicationTests {
 
 		assertEquals(1, deltaFileRepo.count());
 		assertEquals("error", deltaFileRepo.deltaFiles(null, 1, new DeltaFilesFilter(), null).getDeltaFiles().get(0).getDid());
+	}
+
+	@Test
+	void testTimedDeleteContentAlreadyDeleted() {
+		DeltaFile complete = DeltaFile.builder()
+				.did("complete")
+				.created(OffsetDateTime.now())
+				.totalBytes(1)
+				.stage(DeltaFileStage.COMPLETE)
+				.build();
+
+		DeltaFile contentDeleted = DeltaFile.builder()
+				.did("contentDeleted")
+				.created(OffsetDateTime.now())
+				.totalBytes(2)
+				.stage(DeltaFileStage.COMPLETE)
+				.contentDeleted(OffsetDateTime.now())
+				.build();
+
+		deltaFileRepo.saveAll(List.of(complete, contentDeleted));
+		deltaFilesService.delete(OffsetDateTime.now().plusSeconds(5), null, 0L, null, "policyName", true);
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_FILES, 2).addTag("policy", "policyName"));
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_BYTES, 1).addTag("policy", "policyName"));
+		Mockito.verifyNoMoreInteractions(metricService);
+
+		assertEquals(0, deltaFileRepo.count());
 	}
 
 	@Test

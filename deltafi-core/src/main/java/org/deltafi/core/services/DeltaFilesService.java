@@ -1681,7 +1681,7 @@ public class DeltaFilesService {
         }
 
         log.info("Deleting " + deltaFiles.size() + " deltaFiles for policy " + policy);
-        long totalBytes = deltaFiles.stream().mapToLong(DeltaFile::getTotalBytes).sum();
+        long totalBytes = deltaFiles.stream().filter(d -> d.getContentDeleted() == null).mapToLong(DeltaFile::getTotalBytes).sum();
 
         deleteContent(deltaFiles, policy, deleteMetadata);
         metricService.increment(new Metric(DELETED_FILES, deltaFiles.size()).addTag("policy", policy));
@@ -1935,7 +1935,8 @@ public class DeltaFilesService {
     }
 
     private void deleteContent(List<DeltaFile> deltaFiles, String policy, boolean deleteMetadata) {
-        contentStorageService.deleteAll(deltaFiles.stream()
+        List<DeltaFile> deltaFilesWithContent = deltaFiles.stream().filter(d -> d.getContentDeleted() == null).toList();
+        contentStorageService.deleteAll(deltaFilesWithContent.stream()
                 .map(DeltaFile::storedSegments)
                 .flatMap(Collection::stream)
                 .toList());
@@ -1944,7 +1945,7 @@ public class DeltaFilesService {
             deleteMetadata(deltaFiles);
         } else {
             deltaFileRepo.setContentDeletedByDidIn(
-                    deltaFiles.stream().map(DeltaFile::getDid).distinct().toList(),
+                    deltaFilesWithContent.stream().map(DeltaFile::getDid).distinct().toList(),
                     OffsetDateTime.now(clock),
                     policy);
         }
