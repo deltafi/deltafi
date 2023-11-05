@@ -1708,7 +1708,7 @@ public class DeltaFilesService {
     List<ActionInvocation> requeuedActionInvocations(DeltaFile deltaFile, OffsetDateTime modified) {
         return deltaFile.getActions().stream()
                 .filter(action -> action.getState().equals(ActionState.QUEUED) && action.getModified().toInstant().toEpochMilli() == modified.toInstant().toEpochMilli())
-                .map(action -> toActionInvocation(action, deltaFile))
+                .map(action -> requeueActionInvocation(action, deltaFile))
                 .filter(Objects::nonNull)
                 .toList();
     }
@@ -1729,12 +1729,12 @@ public class DeltaFilesService {
     List<ActionInvocation> requeuedColdQueueActionInvocations(DeltaFile deltaFile, OffsetDateTime modified) {
         return deltaFile.getActions().stream()
                 .filter(a -> a.getState().equals(ActionState.QUEUED) && a.getModified().toInstant().toEpochMilli() == modified.toInstant().toEpochMilli())
-                .map(action -> toActionInvocation(action, deltaFile))
+                .map(action -> requeueActionInvocation(action, deltaFile))
                 .filter(Objects::nonNull)
                 .toList();
     }
 
-    private ActionInvocation toActionInvocation(Action action, DeltaFile deltaFile) {
+    private ActionInvocation requeueActionInvocation(Action action, DeltaFile deltaFile) {
         ActionConfiguration actionConfiguration = actionConfiguration(action.getFlow(), action.getName(),
                 deltaFile.getSourceInfo().getProcessingType(), deltaFile.getStage());
 
@@ -1758,7 +1758,6 @@ public class DeltaFilesService {
                 .flow(action.getFlow())
                 .deltaFile(deltaFile)
                 .egressFlow(egressFlow(action, deltaFile))
-                .returnAddress(identityService.getUniqueId())
                 .actionCreated(action.getCreated())
                 .action(action)
                 .build();
