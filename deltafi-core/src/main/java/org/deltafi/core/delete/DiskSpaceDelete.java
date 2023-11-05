@@ -46,7 +46,7 @@ public class DiskSpaceDelete extends DeletePolicyWorker {
     public void run() {
         DiskMetrics contentMetrics = null;
         try {
-            contentMetrics = diskSpaceService.uncachedContentMetrics();
+            contentMetrics = diskSpaceService.contentMetrics();
         } catch (DeltafiApiException e) {
             log.warn("DeltaFi API is unreachable.  Unable to evaluate deletion criteria.");
         }
@@ -73,8 +73,8 @@ public class DiskSpaceDelete extends DeletePolicyWorker {
 
             if (bytesToDelete > 0) {
                 try {
-                    contentMetrics = diskSpaceService.uncachedContentMetrics();
-                    if (contentMetrics != null && contentMetrics.percentUsed() <= maxPercent) {
+                    contentMetrics = diskSpaceService.contentMetrics();
+                    if (contentMetrics.percentUsed() <= maxPercent) {
                         log.info("Disk space delete batching stopped early due to disk usage below threshold.");
                         break;
                     }

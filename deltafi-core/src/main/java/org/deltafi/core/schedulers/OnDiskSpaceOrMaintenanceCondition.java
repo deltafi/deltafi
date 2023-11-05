@@ -15,20 +15,19 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.schedulers.trigger;
+package org.deltafi.core.schedulers;
 
-import org.deltafi.core.services.DeltaFiPropertiesService;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Service;
+import org.springframework.context.annotation.Condition;
+import org.springframework.context.annotation.ConditionContext;
+import org.springframework.core.env.Environment;
+import org.springframework.core.type.AnnotatedTypeMetadata;
 
-/**
- * Calculates the next execution time based on the delete.frequency in the DeltaFiProperties.
- */
-@ConditionalOnProperty(value = "schedule.maintenance", havingValue = "true", matchIfMissing = true)
-@Service
-public class DeleteTrigger extends ConfigurableFixedDelayTrigger {
-
-    public DeleteTrigger(DeltaFiPropertiesService deltaFiPropertiesService) {
-        super(deltaFiPropertiesService, (props) -> props.getDelete().getFrequency(), 10_000L);
+public class OnDiskSpaceOrMaintenanceCondition implements Condition {
+    @Override
+    public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+        Environment env = context.getEnvironment();
+        boolean diskSpace = env.getProperty("schedule.diskSpace", Boolean.class, true);
+        boolean maintenance = env.getProperty("schedule.maintenance", Boolean.class, true);
+        return diskSpace || maintenance;
     }
 }

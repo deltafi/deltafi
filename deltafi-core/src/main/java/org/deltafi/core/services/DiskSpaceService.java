@@ -55,7 +55,7 @@ public class DiskSpaceService {
             return storageDepleted;
         } catch (DeltafiApiException e) {
             if (diskSpaceAPIReachable) {
-                log.warn("Disk Space API unreachable.  Unable to calculate storage depletion");
+                log.warn("Unable to calculate storage depletion, error communicating with API: {}", e.getMessage());
                 diskSpaceAPIReachable = false;
             }
 
@@ -70,22 +70,8 @@ public class DiskSpaceService {
         try {
             contentStorageMetrics = deltafiApiClient.contentMetrics();
         } catch (DeltafiApiException e) {
-            log.warn("API is unreachable.  Unable to evaluate storage availability criteria");
+            log.warn("Unable to evaluate storage availability criteria, error communicating with API: {}", e.getMessage());
             contentStorageMetrics = null;
-        }
-    }
-
-    /**
-     * Get DiskMetrics for content storage without cache, but will refresh the cache with the new value
-     * @return Disk metrics
-     * @throws DeltafiApiException when API is unavailable
-     */
-    public DiskMetrics uncachedContentMetrics() throws DeltafiApiException {
-        try {
-            return deltafiApiClient.contentMetrics();
-        } catch (DeltafiApiException e) {
-            log.warn("API is unreachable. Unable to evaluate storage availability criteria");
-            throw e;
         }
     }
 
