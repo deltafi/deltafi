@@ -641,7 +641,6 @@ public class DeltaFilesService {
         advanceAndSave(deltaFile);
     }
 
-    @MongoRetryable
     private void error(DeltaFile deltaFile, ActionEvent event) {
         // If the content was deleted by a delete policy mark as CANCELLED instead of ERROR
         if (deltaFile.getContentDeleted() != null) {
@@ -653,7 +652,6 @@ public class DeltaFilesService {
         }
     }
 
-    @MongoRetryable
     public DeltaFile processErrorEvent(DeltaFile deltaFile, ActionEvent event) {
         deltaFile.ensurePendingAction(event.getFlow(), event.getAction());
 
@@ -2163,7 +2161,6 @@ public class DeltaFilesService {
         collectService.delete(collectEntry.getId());
     }
 
-    @MongoRetryable
     public boolean saveFailedCollectAction(CollectEntry collectEntry, String did, String reason) {
         DeltaFile deltaFileToCollect = getDeltaFile(did);
 
