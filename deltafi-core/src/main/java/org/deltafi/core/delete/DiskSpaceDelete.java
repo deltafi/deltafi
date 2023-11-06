@@ -43,19 +43,19 @@ public class DiskSpaceDelete extends DeletePolicyWorker {
         this.flow = policy.getFlow();
     }
 
-    public void run() {
+    public boolean run() {
         DiskMetrics contentMetrics = null;
         try {
             contentMetrics = diskSpaceService.contentMetrics();
         } catch (DeltafiApiException e) {
-            log.warn("DeltaFi API is unreachable.  Unable to evaluate deletion criteria.");
+            log.warn("Unable to evaluate deletion criteria: {}", e.getMessage());
         }
 
         if (contentMetrics == null || contentMetrics.percentUsed() <= maxPercent) {
-            return;
+            return false;
         }
 
-        log.info("Disk delete policy for " + (flow == null ? "all flows" : flow) + " executing: current used = " + contentMetrics.percentUsed() + "%, maximum = " + maxPercent + "%");
+        log.info("Disk delete policy for " + (flow == null ? "all flows" : flow) + " executing: current used = " + String.format("%.2f", contentMetrics.percentUsed()) + "%, maximum = " + maxPercent + "%");
         long bytesToDelete = contentMetrics.bytesOverPercentage(maxPercent);
         log.info("Deleting at least " + bytesToDelete + " bytes");
         while (bytesToDelete > 0) {
@@ -66,7 +66,7 @@ public class DiskSpaceDelete extends DeletePolicyWorker {
 
             if (deleted.isEmpty()) {
                 log.warn("No DeltaFiles deleted -- disk is above threshold despite all content already being deleted.");
-                return;
+                return false;
             }
 
             log.info("Deleted batch of " + deleted.size() + " files, " + bytesDeleted + " bytes. Remaining: " + Math.max(0, bytesToDelete) + " bytes");
@@ -83,5 +83,8 @@ public class DiskSpaceDelete extends DeletePolicyWorker {
                 }
             }
         }
+
+        // disk space delete always runs until no more files should be deleted
+        return false;
     }
 }

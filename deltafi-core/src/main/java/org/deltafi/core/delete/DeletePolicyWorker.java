@@ -27,5 +27,7 @@ public abstract class DeletePolicyWorker {
     protected final DeltaFilesService deltaFilesService;
     protected final String name;
 
-    public abstract void run();
+    /** Run the policy
+     * @return whether more files need to be deleted  */
+    public abstract boolean run();
 }

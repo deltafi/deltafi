@@ -1655,14 +1655,23 @@ public class DeltaFilesService {
         }
     }
 
-    public void delete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, Long minBytes, String flow, String policy, boolean deleteMetadata) {
-        int found;
+    /**
+     * Deletes DeltaFiles that meet the specified criteria.
+     *
+     * @param  createdBefore   the date and time before which the DeltaFiles were created
+     * @param  completedBefore the date and time before which the DeltaFiles were completed
+     * @param  minBytes        the minimum number of bytes for a DeltaFile to be deleted
+     * @param  flow            the flow of the DeltaFiles to be deleted
+     * @param  policy          the policy of the DeltaFiles to be deleted
+     * @param  deleteMetadata  whether to delete the metadata of the DeltaFiles in addition to the content
+     * @return                 true if there are more DeltaFiles to delete, false otherwise
+     */
+    public boolean delete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, Long minBytes, String flow, String policy, boolean deleteMetadata) {
         int batchSize = deltaFiPropertiesService.getDeltaFiProperties().getDelete().getPolicyBatchSize();
-        do {
-            List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(createdBefore, completedBefore, minBytes, flow, policy, deleteMetadata, batchSize);
-            found = deltaFiles.size();
-            delete(deltaFiles, policy, deleteMetadata);
-        } while (found == batchSize);
+        List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(createdBefore, completedBefore, minBytes, flow, policy, deleteMetadata, batchSize);
+        delete(deltaFiles, policy, deleteMetadata);
+
+        return deltaFiles.size() == batchSize;
     }
 
     public List<DeltaFile> delete(long bytesToDelete, String flow, String policy, boolean deleteMetadata) {
@@ -1823,10 +1832,6 @@ public class DeltaFilesService {
             case EGRESS -> egressFlowService.findActionConfig(flow, actionName);
             default -> null;
         };
-    }
-
-    public void processActionEvents() {
-        processActionEvents(null);
     }
 
     public boolean processActionEvents(String uniqueId) {

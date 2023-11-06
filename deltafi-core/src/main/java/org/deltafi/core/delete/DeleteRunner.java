@@ -39,15 +39,26 @@ public class DeleteRunner {
     private final DeletePolicyService deletePolicyService;
 
     public void runDeletes() {
+        // refresh policies places disk delete policies first
+        // disk policies loop and delete files until disk pressure has been relieved
+        // timed policies only run the first batch and return true if there's more to be deleted
+        // instead of running timed policy batches back-to-back, recheck disk policies first
+        // so that timed policies don't loop and block while disk is filling
         List<DeletePolicyWorker> policiesScheduled = refreshPolicies();
-        policiesScheduled.forEach(DeletePolicyWorker::run);
+        boolean rerun = true;
+        while(rerun) {
+            rerun = false;
+            for (DeletePolicyWorker policy : policiesScheduled) {
+                rerun = rerun || policy.run();
+            }
+        }
     }
 
     public List<DeletePolicyWorker> refreshPolicies() {
         List<DeletePolicyWorker> policies = new ArrayList<>();
         for (DeletePolicy policy : deletePolicyService.getEnabledPolicies()) {
             if (policy instanceof DiskSpaceDeletePolicy) {
-                policies.add(new DiskSpaceDelete(deltaFilesService, diskSpaceService, (DiskSpaceDeletePolicy) policy));
+                policies.add(0, new DiskSpaceDelete(deltaFilesService, diskSpaceService, (DiskSpaceDeletePolicy) policy));
             } else if (policy instanceof TimedDeletePolicy) {
                 policies.add(new TimedDelete(deltaFilesService, (TimedDeletePolicy) policy));
             } else {

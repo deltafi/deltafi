@@ -36,7 +36,7 @@ public class ActionEventScheduler {
 
     @Scheduled(fixedDelay = 1000)
     public void processActionEvents() {
-        deltaFilesService.processActionEvents();
+        deltaFilesService.processActionEvents(null);
     }
 
     @Scheduled(fixedDelay = 1000)
