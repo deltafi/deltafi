@@ -5,6 +5,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.1.10] - 2023-11-06
+
+### Fixed
+- Avoid extra calls to minio delete if content has already been deleted. 
+
+### Removed
+- Clickhouse related INFO logging on every write (ETL and API)
+- Core logger sequence numbers
+
+### Tech-Debt/Refactor
+- Have disk space delete policy use cached values for content storage metrics, avoiding repeated calls that can bog down the API
+- Cleaned up rubocop warnings in deltafi-api
+- Refactored clickhouse client to its own module
+- When mongo or the core are busy for long periods of time due to bursts of traffic, timed delete policies can fall behind. Ensure that disk delete policies rerun in between batches of timed deletes.
+- Move the `DeltaFiPropertiesService` initialization from a @PostConstruct method to the constructor.  
+- Remove stray DeltaFilesService @MongoRetryable annotations. OptimisticLockingFailureExceptions are handled in one place in processResult().
+- Spread processing of requeued DeltaFiles to all core workers instead of just the core.
+
 ## [1.1.9] - 2023-11-03
 
 ### Added
@@ -2458,7 +2476,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.9...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.10...main
+[1.1.10]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.9...1.1.10
 [1.1.9]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.8...1.1.9
 [1.1.8]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.7...1.1.8
 [1.1.7]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.6...1.1.7
