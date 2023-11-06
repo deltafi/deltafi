@@ -24,6 +24,7 @@ import org.deltafi.core.configuration.ui.TopBar;
 import org.deltafi.core.configuration.ui.UiProperties;
 import org.deltafi.core.repo.DeltaFiPropertiesRepo;
 import org.deltafi.core.types.PropertyType;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -48,6 +49,11 @@ class DeltaFiPropertiesServiceTest {
 
     @Captor
     ArgumentCaptor<DeltaFiProperties> propsCaptor;
+
+    @BeforeEach
+    public void clearRepo() {
+        Mockito.reset(deltaFiPropertiesRepo);
+    }
 
     @Test
     void testSaveExternalLink() {

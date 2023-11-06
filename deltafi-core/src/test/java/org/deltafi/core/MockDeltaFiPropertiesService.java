@@ -17,22 +17,17 @@
  */
 package org.deltafi.core;
 
-import jakarta.annotation.PostConstruct;
 import org.deltafi.core.configuration.DeltaFiProperties;
+import org.deltafi.core.repo.DeltaFiPropertiesRepo;
 import org.deltafi.core.services.DeltaFiPropertiesService;
+import org.mockito.Mockito;
 
 public class MockDeltaFiPropertiesService extends DeltaFiPropertiesService  {
 
     private final DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
 
     public MockDeltaFiPropertiesService() {
-        super(null);
-    }
-
-    @PostConstruct
-    @Override
-    public void ensurePropertiesExist() {
-
+        super(Mockito.mock(DeltaFiPropertiesRepo.class));
     }
 
     @Override

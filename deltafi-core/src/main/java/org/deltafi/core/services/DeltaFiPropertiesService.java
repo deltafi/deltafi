@@ -32,8 +32,12 @@ import org.deltafi.core.types.PropertyUpdate;
 import org.deltafi.core.types.Result;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.PostConstruct;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -49,10 +53,6 @@ public class DeltaFiPropertiesService implements Snapshotter {
     public DeltaFiPropertiesService(DeltaFiPropertiesRepo deltaFiPropertiesRepo) {
         this.deltaFiPropertiesRepo = deltaFiPropertiesRepo;
         propertyMap = Arrays.stream(PropertyType.values()).collect(Collectors.toMap(PropertyType::getKey, Function.identity()));
-    }
-
-    @PostConstruct
-    public void ensurePropertiesExist() {
         if (!deltaFiPropertiesRepo.existsById(DeltaFiProperties.PROPERTY_ID)) {
             cachedDeltaFiProperties = deltaFiPropertiesRepo.save(new DeltaFiProperties());
         } else {
