@@ -19,6 +19,7 @@ package org.deltafi.common.action;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -42,11 +43,20 @@ import java.util.*;
 @Slf4j
 public class ActionEventQueue {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-            .setSerializationInclusion(JsonInclude.Include.NON_NULL)
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-            .configure(DeserializationFeature.USE_LONG_FOR_INTS, true)
-            .registerModule(new JavaTimeModule());
+    private static final ObjectMapper OBJECT_MAPPER;
+    static {
+        ObjectMapper temp = new ObjectMapper()
+                .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .configure(DeserializationFeature.USE_LONG_FOR_INTS, true)
+                .registerModule(new JavaTimeModule());
+        StreamReadConstraints streamReadConstraints = StreamReadConstraints
+                .builder()
+                .maxStringLength(16 * 1024 * 1024)
+                .build();
+        temp.getFactory().setStreamReadConstraints(streamReadConstraints);
+        OBJECT_MAPPER = temp;
+    }
 
     public static final String DGS_QUEUE = "dgs";
     private static final Duration LONG_RUNNING_HEARTBEAT_THRESHOLD = Duration.ofSeconds(30);
