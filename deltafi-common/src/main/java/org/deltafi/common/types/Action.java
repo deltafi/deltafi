@@ -47,21 +47,36 @@ public class Action {
   private String filteredCause;
   @Builder.Default
   private int attempt = 1;
-  @Builder.Default
-  private List<Content> content = new ArrayList<>();
-  @Builder.Default
-  private Map<String, String> metadata = new HashMap<>();
-  @Builder.Default
-  private List<String> deleteMetadataKeys = new ArrayList<>();
-  @Builder.Default
-  private List<Domain> domains = new ArrayList<>();
-  @Builder.Default
-  private List<Enrichment> enrichments = new ArrayList<>();
+  private List<Content> content;
+  private Map<String, String> metadata;
+  private List<String> deleteMetadataKeys;
+  private List<Domain> domains;
+  private List<Enrichment> enrichments;
 
   private static List<ActionType> DATA_AMENDED_TYPES = List.of(
           ActionType.INGRESS,
           ActionType.TRANSFORM,
           ActionType.LOAD);
+
+  public List<Content> getContent() {
+      return content == null ? Collections.emptyList() : content;
+  }
+
+  public Map<String, String> getMetadata() {
+      return metadata == null ? Collections.emptyMap() : metadata;
+  }
+
+  public List<String> getDeleteMetadataKeys() {
+      return deleteMetadataKeys == null ? Collections.emptyList() : deleteMetadataKeys;
+  }
+
+  public List<Domain> getDomains() {
+      return domains == null ? Collections.emptyList() : domains;
+  }
+
+  public List<Enrichment> getEnrichments() {
+      return enrichments == null ? Collections.emptyList() : enrichments;
+  }
 
   boolean queued() { return state == ActionState.QUEUED || state == ActionState.COLD_QUEUED; }
 
@@ -82,6 +97,9 @@ public class Action {
   }
 
   public void addDomain(@NotNull String domainKey, String domainValue, @NotNull String mediaType) {
+    if (domains == null) {
+      domains = new ArrayList<>();
+    }
     Optional<Domain> domain = getDomains().stream().filter(d -> d.getName().equals(domainKey)).findFirst();
     if (domain.isPresent()) {
       domain.get().setValue(domainValue);
@@ -95,6 +113,9 @@ public class Action {
   }
 
   public void addEnrichment(@NotNull String enrichmentKey, String enrichmentValue, @NotNull String mediaType) {
+    if (enrichments == null) {
+      enrichments = new ArrayList<>();
+    }
     Optional<Enrichment> enrichment = getEnrichments().stream().filter(d -> d.getName().equals(enrichmentKey)).findFirst();
     if (enrichment.isPresent()) {
       enrichment.get().setValue(enrichmentValue);

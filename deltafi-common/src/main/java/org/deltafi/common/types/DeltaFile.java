@@ -25,7 +25,6 @@ import org.deltafi.core.exceptions.MultipleActionException;
 import org.deltafi.core.exceptions.UnexpectedActionException;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.Transient;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -49,18 +48,11 @@ public class DeltaFile {
   private long referencedBytes;
   private long totalBytes;
   private DeltaFileStage stage;
-  @Builder.Default
-  private List<Action> actions = new ArrayList<>();
+  private List<Action> actions;
   private SourceInfo sourceInfo;
-  @Transient
-  @Builder.Default
-  private Map<String, String> metadata = new HashMap<>();
-  // Do not set @Builder.Default, see special handling in the builder
-  private Map<String, String> annotations = new HashMap<>();
-  // Do not set @Builder.Default, see special handling in the builder
-  private Set<String> annotationKeys = new HashSet<>();
-  @Builder.Default
-  private List<Egress> egress = new ArrayList<>();
+  private Map<String, String> annotations;
+  private Set<String> annotationKeys;
+  private List<Egress> egress;
   private OffsetDateTime created;
   private OffsetDateTime modified;
   private OffsetDateTime contentDeleted;
@@ -93,6 +85,18 @@ public class DeltaFile {
   public final static int CURRENT_SCHEMA_VERSION = 7;
   private int schemaVersion;
 
+  public List<Action> getActions() {
+    return actions == null ? Collections.emptyList() : actions;
+  }
+
+  public Map<String, String> getAnnotations() {
+    return annotations == null ? Collections.emptyMap() : annotations;
+  }
+
+  public Set<String> getAnnotationKeys() {
+    return annotationKeys == null ? Collections.emptySet() : annotationKeys;
+  }
+
   /**
    * Get the cumulative metadata from all actions that amend data through the load and enrich actions
    * as well as retried format actions
@@ -104,6 +108,9 @@ public class DeltaFile {
    * @return A Map containing the resulting metadata
    */
   public Map<String, String> getMetadata() {
+    if (actions == null) {
+      return Collections.emptyMap();
+    }
     Map<String, String> metadata = new HashMap<>();
     List<Action> amendedDataActions = new ArrayList<>(actions.stream().filter(Action::amendedData).toList());
     // any metadata on domain or enrich actions will come from retries as these actions do not support creating metadata directly
@@ -178,6 +185,9 @@ public class DeltaFile {
                 .modified(now)
                 .attempt(1 + getLastAttemptNum(name))
                 .build();
+        if (actions == null) {
+            actions = new ArrayList<>();
+        }
         actions.add(action);
         return action;
     }
@@ -394,7 +404,13 @@ public class DeltaFile {
       return;
     }
 
+    if (annotations == null) {
+      annotations = new HashMap<>();
+    }
     this.annotations.putAll(metadata);
+    if (annotationKeys == null) {
+      annotationKeys = new HashSet<>();
+    }
     this.annotationKeys.addAll(metadata.keySet());
   }
 
@@ -403,11 +419,17 @@ public class DeltaFile {
   }
 
   public void addAnnotationIfAbsent(String key, String value) {
-    if (null == key || annotations.containsKey(key)) {
+    if (null == key || (annotations != null && annotations.containsKey(key))) {
       return;
     }
 
+    if (annotations == null) {
+      annotations = new HashMap<>();
+    }
     this.annotations.put(key, value);
+    if (annotationKeys == null) {
+      annotationKeys = new HashSet<>();
+    }
     this.annotationKeys.add(key);
   }
 
@@ -542,7 +564,7 @@ public class DeltaFile {
     // make sure the expectedAnnotations set is modifiable
     expectedAnnotations = expectedAnnotations != null ? new HashSet<>(expectedAnnotations) : new HashSet<>();
 
-    Set<String> indexedKeys = getAnnotations().keySet();
+    Set<String> indexedKeys = getAnnotationKeys();
     indexedKeys.forEach(expectedAnnotations::remove);
 
     return expectedAnnotations;
@@ -652,6 +674,9 @@ public class DeltaFile {
   }
 
   public Set<Segment> referencedSegments() {
+    if (actions == null) {
+      return Collections.emptySet();
+    }
     return actions.stream()
             .flatMap(p -> p.getContent().stream())
             .flatMap(c -> c.getSegments().stream())
@@ -659,6 +684,9 @@ public class DeltaFile {
   }
 
   public Set<Segment> storedSegments() {
+    if (actions == null) {
+      return Collections.emptySet();
+    }
     return actions.stream()
             .flatMap(p -> p.getContent().stream())
             .flatMap(c -> c.getSegments().stream())
@@ -711,21 +739,5 @@ public class DeltaFile {
   public void clearErrorAcknowledged() {
     errorAcknowledged = null;
     errorAcknowledgedReason = null;
-  }
-
-  @SuppressWarnings("unused")
-  public static class DeltaFileBuilder {
-    @SuppressWarnings({"FieldCanBeLocal", "unused"})
-    private Map<String, String> annotations = new HashMap<>();
-
-    @SuppressWarnings({"FieldCanBeLocal", "unused"})
-    private Set<String> annotationKeys = new HashSet<>();
-
-    public DeltaFileBuilder annotations(Map<String, String> annotations) {
-      this.annotations = annotations;
-      this.annotationKeys = annotations.keySet();
-
-      return this;
-    }
   }
 }

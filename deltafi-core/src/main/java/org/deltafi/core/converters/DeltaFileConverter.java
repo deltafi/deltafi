@@ -257,11 +257,7 @@ public class DeltaFileConverter implements AfterConvertCallback<DeltaFile> {
             Action enrichAction = deltaFile.getActions().stream().filter(a -> a.getType() == ActionType.ENRICH).findFirst().orElse(null);
             if (enrichAction != null) {
                 for (Document enrichment : enrichments) {
-                    enrichAction.getEnrichments().add(Enrichment.builder()
-                            .name(enrichment.getString("name"))
-                            .mediaType(enrichment.getString("mediaType"))
-                            .value(enrichment.getString("value"))
-                            .build());
+                    enrichAction.addEnrichment(enrichment.getString("name"), enrichment.getString("value"), enrichment.getString("mediaType"));
                 }
             }
         }
@@ -272,11 +268,7 @@ public class DeltaFileConverter implements AfterConvertCallback<DeltaFile> {
             Action loadAction = deltaFile.getActions().stream().filter(a -> a.getType() == ActionType.LOAD).findFirst().orElse(null);
             if (loadAction != null) {
                 for (Document domain : domains) {
-                    loadAction.getDomains().add(Domain.builder()
-                            .name(domain.getString("name"))
-                            .mediaType(domain.getString("mediaType"))
-                            .value(domain.getString("value"))
-                            .build());
+                    loadAction.addDomain(domain.getString("name"), domain.getString("value"), domain.getString("mediaType"));
                 }
             }
         }

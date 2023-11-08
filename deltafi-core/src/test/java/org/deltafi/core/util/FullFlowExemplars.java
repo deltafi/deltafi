@@ -27,6 +27,7 @@ import java.util.*;
 
 import static org.deltafi.common.constant.DeltaFiConstants.INVALID_ACTION_EVENT_RECEIVED;
 import static org.deltafi.common.types.ActionState.QUEUED;
+import static org.deltafi.common.types.DeltaFile.CURRENT_SCHEMA_VERSION;
 import static org.deltafi.core.util.Constants.*;
 
 public class FullFlowExemplars {
@@ -37,6 +38,7 @@ public class FullFlowExemplars {
         deltaFile.queueAction("sampleNormalize", "Utf8TransformAction", ActionType.TRANSFORM, false);
         deltaFile.setSourceInfo(new SourceInfo("input.txt", NORMALIZE_FLOW_NAME, SOURCE_METADATA, ProcessingType.NORMALIZATION));
         deltaFile.getActions().get(0).setMetadata(SOURCE_METADATA);
+        deltaFile.setSchemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION);
         return deltaFile;
     }
 
@@ -249,6 +251,7 @@ public class FullFlowExemplars {
         deltaFile.setIngressBytes(500L);
         deltaFile.queueAction("sampleTransform", "Utf8TransformAction", ActionType.TRANSFORM, false);
         deltaFile.setSourceInfo(new SourceInfo("input.txt", TRANSFORM_FLOW_NAME, SOURCE_METADATA, ProcessingType.TRANSFORMATION));
+        deltaFile.setSchemaVersion(CURRENT_SCHEMA_VERSION);
         return deltaFile;
     }
 

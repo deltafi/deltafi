@@ -118,6 +118,7 @@ import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.deltafi.common.constant.DeltaFiConstants.USER_HEADER;
 import static org.deltafi.common.test.TestConstants.MONGODB_CONTAINER;
 import static org.deltafi.common.types.ActionState.QUEUED;
+import static org.deltafi.common.types.DeltaFile.CURRENT_SCHEMA_VERSION;
 import static org.deltafi.core.datafetchers.DeletePolicyDatafetcherTestHelper.*;
 import static org.deltafi.core.datafetchers.DeltaFilesDatafetcherTestHelper.*;
 import static org.deltafi.core.datafetchers.FlowAssignmentDatafetcherTestHelper.*;
@@ -4300,10 +4301,12 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.insert(DeltaFile.builder()
 				.actions(List.of(Action.builder().domains(List.of(Domain.builder().name("a").build(), Domain.builder().name("b").build())).build()))
 				.annotations(Map.of("x", "1", "y", "2"))
+				.annotationKeys(Set.of("x", "y"))
 				.build());
 		deltaFileRepo.insert(DeltaFile.builder()
 				.actions(List.of(Action.builder().domains(List.of(Domain.builder().name("b").build(), Domain.builder().name("c").build())).build()))
 				.annotations(Map.of("y", "3", "z", "4"))
+				.annotationKeys(Set.of("y", "z"))
 				.build());
 
 		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(new AnnotationKeysGraphQLQuery());
@@ -4322,10 +4325,12 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.insert(DeltaFile.builder()
 				.actions(List.of(Action.builder().domains(List.of(Domain.builder().name("a").build(), Domain.builder().name("b").build())).build()))
 				.annotations(Map.of("x", "1", "y", "2"))
+				.annotationKeys(Set.of("x", "y"))
 				.build());
 		deltaFileRepo.insert(DeltaFile.builder()
 				.actions(List.of(Action.builder().domains(List.of(Domain.builder().name("b").build(), Domain.builder().name("c").build())).build()))
 				.annotations(Map.of("y", "3", "z", "4"))
+				.annotationKeys(Set.of("y", "z"))
 				.build());
 
 		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(AnnotationKeysGraphQLQuery
@@ -4394,7 +4399,7 @@ class DeltaFiCoreApplicationTests {
 				.build();
 
 		return DeltaFile.builder()
-				.schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
+				.schemaVersion(CURRENT_SCHEMA_VERSION)
 				.did(did)
 				.parentDids(new ArrayList<>())
 				.childDids(new ArrayList<>())
@@ -4636,6 +4641,7 @@ class DeltaFiCoreApplicationTests {
 				.created(OffsetDateTime.now())
 				.totalBytes(1)
 				.stage(DeltaFileStage.COMPLETE)
+				.schemaVersion(CURRENT_SCHEMA_VERSION)
 				.build();
 
 		DeltaFile contentDeleted = DeltaFile.builder()
@@ -4644,6 +4650,7 @@ class DeltaFiCoreApplicationTests {
 				.totalBytes(2)
 				.stage(DeltaFileStage.COMPLETE)
 				.contentDeleted(OffsetDateTime.now())
+				.schemaVersion(CURRENT_SCHEMA_VERSION)
 				.build();
 
 		deltaFileRepo.saveAll(List.of(complete, contentDeleted));
