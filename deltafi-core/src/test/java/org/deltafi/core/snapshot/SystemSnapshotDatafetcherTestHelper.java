@@ -307,7 +307,7 @@ public class SystemSnapshotDatafetcherTestHelper {
                             requeueSeconds: 30
                             autoResumeCheckFrequency: "PT10M"
                             coreServiceThreads: 16
-                            scheduledServiceThreads: 32
+                            scheduledServiceThreads: 8
                             ui: {
                                 useUTC: false
                                 deltaFileLinks: [
