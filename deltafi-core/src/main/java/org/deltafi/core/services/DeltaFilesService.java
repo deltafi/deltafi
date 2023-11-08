@@ -48,7 +48,6 @@ import org.deltafi.core.retry.MongoRetryable;
 import org.deltafi.core.types.ResumePolicy;
 import org.deltafi.core.types.*;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.context.annotation.ConditionContext;
 import org.springframework.core.env.Environment;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
@@ -487,16 +486,13 @@ public class DeltaFilesService {
         if (event.getType() != ActionEventType.UNKNOWN && event.getStart() != null && event.getStop() != null) {
             MetricsUtil.extendTagsForAction(tags, actionClass);
 
-            List<Metric> actionMetrics = new ArrayList<>();
-            actionMetrics.add(Metric.builder()
+            Metric actionMetric = Metric.builder()
                     .name(ACTION_EXECUTION_TIME_MS)
                     .value(Duration.between(event.getStart(), event.getStop()).toMillis())
-                    .build());
+                    .build();
 
-            for (Metric actionMetric : actionMetrics) {
-                actionMetric.addTags(tags);
-                metricService.increment(actionMetric);
-            }
+            actionMetric.addTags(tags);
+            metricService.increment(actionMetric);
         }
     }
 
@@ -857,6 +853,7 @@ public class DeltaFilesService {
         List<DeltaFile> childDeltaFiles = Collections.emptyList();
 
         List<ActionInvocation> actionInvocations = new ArrayList<>();
+        Map<String, Long> pendingActions = new HashMap<>();
 
         String loadActionName = normalizeFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow()).getLoadAction().getName();
         if (!event.getAction().equals(loadActionName)) {
@@ -870,13 +867,13 @@ public class DeltaFilesService {
 
             OffsetDateTime now = OffsetDateTime.now(clock);
             childDeltaFiles = childLoadEvents.stream()
-                    .map(childLoadEvent -> buildLoadManyChildAndEnqueue(deltaFile, event, childLoadEvent, actionInvocations, now))
+                    .map(childLoadEvent -> buildLoadManyChildAndEnqueue(deltaFile, event, childLoadEvent, actionInvocations, now, pendingActions))
                     .toList();
 
             deltaFile.reinjectAction(event);
         }
 
-        advanceOnly(deltaFile, false);
+        advanceOnly(deltaFile, false, pendingActions);
 
         // do this in two shots.  saveAll performs a bulk insert, but only if all the entries are new
         deltaFileCacheService.save(deltaFile);
@@ -889,7 +886,8 @@ public class DeltaFilesService {
     }
 
     private DeltaFile buildLoadManyChildAndEnqueue(DeltaFile parentDeltaFile, ActionEvent actionEvent,
-            ChildLoadEvent childLoadEvent, List<ActionInvocation> actionInvocations, OffsetDateTime now) {
+            ChildLoadEvent childLoadEvent, List<ActionInvocation> actionInvocations, OffsetDateTime now,
+            Map<String, Long> pendingActions) {
         DeltaFile child = createChildDeltaFile(parentDeltaFile, childLoadEvent.getDid());
         child.setModified(now);
 
@@ -914,7 +912,7 @@ public class DeltaFilesService {
 
         child.addAnnotations(childLoadEvent.getAnnotations());
 
-        actionInvocations.addAll(advanceOnly(child, true));
+        actionInvocations.addAll(advanceOnly(child, true, pendingActions));
 
         child.recalculateBytes();
 
@@ -926,6 +924,7 @@ public class DeltaFilesService {
         List<DeltaFile> childDeltaFiles = new ArrayList<>();
         boolean encounteredError = false;
         List<ActionInvocation> actionInvocations = new ArrayList<>();
+        Map<String, Long> pendingQueued = new HashMap<>();
 
         List<String> allowedActions = new ArrayList<>();
         if (normalizeFlowService.hasRunningFlow(deltaFile.getSourceInfo().getFlow())) {
@@ -1017,7 +1016,7 @@ public class DeltaFilesService {
                         .filtered(false)
                         .build();
 
-                actionInvocations.addAll(advanceOnly(child, true));
+                actionInvocations.addAll(advanceOnly(child, true, pendingQueued));
 
                 child.recalculateBytes();
 
@@ -1031,14 +1030,13 @@ public class DeltaFilesService {
             deltaFile.reinjectAction(event);
         }
 
-        advanceOnly(deltaFile, false);
+        advanceOnly(deltaFile, false, pendingQueued);
 
         // do this in two shots.  saveAll performs a bulk insert, but only if all the entries are new
         deltaFileCacheService.save(deltaFile);
         if (!encounteredError) {
             deltaFileRepo.saveAll(childDeltaFiles);
 
-            actionInvocations.addAll(processReadyToCollectActions(deltaFile));
             childDeltaFiles.forEach(childDeltaFile -> actionInvocations.addAll(processReadyToCollectActions(childDeltaFile)));
 
             enqueueActions(actionInvocations);
@@ -1049,6 +1047,7 @@ public class DeltaFilesService {
         List<ChildFormatEvent> childFormatEvents = event.getFormatMany();
         List<DeltaFile> childDeltaFiles = Collections.emptyList();
         List<ActionInvocation> actionInvocations = new ArrayList<>();
+        Map<String, Long> pendingQueued = new HashMap<>();
 
         List<String> formatActions = egressFlowService.getAll().stream().map(ef -> ef.getFormatAction().getName()).toList();
         if (!formatActions.contains(event.getAction())) {
@@ -1071,7 +1070,7 @@ public class DeltaFilesService {
                 formatAction.setContent(List.of(childFormatEvent.getContent()));
                 formatAction.setMetadata(childFormatEvent.getMetadata());
 
-                actionInvocations.addAll(advanceOnly(child, true));
+                actionInvocations.addAll(advanceOnly(child, true, pendingQueued));
 
                 child.recalculateBytes();
 
@@ -1081,7 +1080,7 @@ public class DeltaFilesService {
             deltaFile.reinjectAction(event);
         }
 
-        advanceOnly(deltaFile, false);
+        advanceOnly(deltaFile, false, pendingQueued);
 
         // do this in two shots.  saveAll performs a bulk insert, but only if all the entries are new
         deltaFileCacheService.save(deltaFile);
@@ -1095,6 +1094,7 @@ public class DeltaFilesService {
 
     public void splitForTransformationProcessingEgress(DeltaFile deltaFile) throws MissingEgressFlowException {
         List<ActionInvocation> actionInvocations = new ArrayList<>();
+        Map<String, Long> pendingQueued = new HashMap<>();
 
         if (Objects.isNull(deltaFile.getChildDids())) {
             deltaFile.setChildDids(new ArrayList<>());
@@ -1110,7 +1110,7 @@ public class DeltaFilesService {
             child.lastCompleteDataAmendedAction().setContent(Collections.singletonList(content));
             deltaFile.getChildDids().add(child.getDid());
 
-            actionInvocations.addAll(advanceOnly(child, true));
+            actionInvocations.addAll(advanceOnly(child, true, pendingQueued));
 
             child.recalculateBytes();
 
@@ -1119,7 +1119,7 @@ public class DeltaFilesService {
 
         deltaFile.setLastActionReinjected();
 
-        advanceOnly(deltaFile, false);
+        advanceOnly(deltaFile, false, pendingQueued);
 
         // do this in two shots.  saveAll performs a bulk insert, but only if all the entries are new
         deltaFileCacheService.save(deltaFile);
@@ -1224,6 +1224,7 @@ public class DeltaFilesService {
         List<DeltaFile> parentDeltaFiles = new ArrayList<>();
         List<DeltaFile> childDeltaFiles = new ArrayList<>();
         List<ActionInvocation> actionInvocations = new ArrayList<>();
+        Map<String, Long> pendingQueued = new HashMap<>();
 
         List<RetryResult> results = dids.stream()
                 .map(did -> {
@@ -1275,7 +1276,7 @@ public class DeltaFilesService {
 
                             applyRetryOverrides(child, replaceFilename, replaceFlow, removeSourceMetadata, replaceSourceMetadata);
 
-                            actionInvocations.addAll(advanceOnly(child, true));
+                            actionInvocations.addAll(advanceOnly(child, true, pendingQueued));
 
                             child.recalculateBytes();
                             deltaFile.setReplayed(now);
@@ -1420,15 +1421,17 @@ public class DeltaFilesService {
      * Advance the DeltaFile to the next step using the state machine.
      *
      * @param deltaFile the DeltaFile to advance through the state machine
+     * @param newDeltaFile Whether this is a new DeltaFile. Used to determine whether routing affinity is needed
+     * @param pendingQueued A map of queue names to number of times to be queued so far
      * @return list of next pending action(s)
      * @throws MissingEgressFlowException if state machine would advance DeltaFile into EGRESS stage but no EgressFlow was configured.
      */
-    private List<ActionInvocation> advanceOnly(DeltaFile deltaFile, boolean newDeltaFile) throws MissingEgressFlowException {
+    private List<ActionInvocation> advanceOnly(DeltaFile deltaFile, boolean newDeltaFile, Map<String, Long> pendingQueued) throws MissingEgressFlowException {
         // MissingEgressFlowException is not expected when a DeltaFile is entering the INGRESS stage
         // such as from replay or reinject, since an ingress flow requires at least the Load action to
         // be queued, nor when handling an event for any egress flow action, e.g. format.
 
-        return stateMachine.advance(deltaFile, newDeltaFile);
+        return stateMachine.advance(deltaFile, newDeltaFile, pendingQueued);
     }
 
     /** A version of advanceAndSave specialized for Transformation Processing
@@ -1498,13 +1501,14 @@ public class DeltaFilesService {
     }
 
     private List<ActionInvocation> processReadyToCollectActions(DeltaFile deltaFile) {
+        Map<String, Long> pendingQueued = new HashMap<>();
         return deltaFile.readyToCollectActions().stream()
-                .map(readyToCollectAction -> processReadyToCollectAction(readyToCollectAction, deltaFile))
+                .map(readyToCollectAction -> processReadyToCollectAction(readyToCollectAction, deltaFile, pendingQueued))
                 .filter(Objects::nonNull)
                 .toList();
     }
 
-    private ActionInvocation processReadyToCollectAction(Action action, DeltaFile deltaFile) {
+    private ActionInvocation processReadyToCollectAction(Action action, DeltaFile deltaFile, Map<String, Long> pendingQueued) {
         log.debug("Collecting DeltaFile with id {} for action {} of flow {}", deltaFile.getDid(), action.getName(),
                 action.getFlow());
 
@@ -1548,7 +1552,7 @@ public class DeltaFilesService {
             return null;
         }
 
-        ActionInvocation actionInvocation = buildCollectActionInvocation(collectEntry);
+        ActionInvocation actionInvocation = buildCollectActionInvocation(collectEntry, pendingQueued);
 
         scheduleCollectCheckForSoonestInRepository();
 
@@ -1562,7 +1566,7 @@ public class DeltaFilesService {
         }
     }
 
-    private ActionInvocation buildCollectActionInvocation(CollectEntry collectEntry) {
+    private ActionInvocation buildCollectActionInvocation(CollectEntry collectEntry, Map<String, Long> pendingQueued) {
         List<String> collectedDids = collectService.findCollectedDids(collectEntry.getId());
 
         List<DeltaFile> collectedDeltaFiles;
@@ -1602,9 +1606,10 @@ public class DeltaFilesService {
                 .filtered(false)
                 .build();
 
+        Long newVal = pendingQueued.put(actionConfiguration.getType(), pendingQueued.getOrDefault(actionConfiguration.getType(), 0L) + 1);
         Action action = aggregate.queueNewAction(collectEntry.getCollectDefinition().getFlow(),
                 collectEntry.getCollectDefinition().getAction(), actionConfiguration.getActionType(),
-                queueManagementService.coldQueue(actionConfiguration.getType()));
+                queueManagementService.coldQueue(actionConfiguration.getType(), newVal == null ? 0 : newVal));
         action.setMetadata(collectedDeltaFiles.stream()
                 .map(DeltaFile::getMetadata)
                 .flatMap(m -> m.entrySet().stream())
@@ -2154,7 +2159,7 @@ public class DeltaFilesService {
                         String.format("Collect incomplete: Timed out after receiving %s of %s files",
                                 collectEntry.getCount(), collectEntry.getMinNum()));
             } else {
-                ActionInvocation actionInvocation = buildCollectActionInvocation(collectEntry);
+                ActionInvocation actionInvocation = buildCollectActionInvocation(collectEntry, new HashMap<>());
                 if (actionInvocation != null) {
                     enqueueActions(List.of(actionInvocation));
                 }

@@ -81,8 +81,8 @@ class QueueManagementServiceTest {
         when(deltaFiProperties.getInMemoryQueueSize()).thenReturn(10);
         when(actionEventQueue.size(QUEUE_NAME)).thenReturn(12L);
 
-        queueManagementService.identifyColdQueues();
-        assertTrue(queueManagementService.coldQueue(QUEUE_NAME));
+        queueManagementService.refreshQueues();
+        assertTrue(queueManagementService.coldQueue(QUEUE_NAME, 0L));
     }
 
     @Test
@@ -94,8 +94,8 @@ class QueueManagementServiceTest {
         when(deltaFiProperties.getInMemoryQueueSize()).thenReturn(10);
         when(actionEventQueue.size(QUEUE_NAME)).thenReturn(400L);
 
-        queueManagementService.identifyColdQueues();
-        assertTrue(queueManagementService.coldQueue(QUEUE_NAME));
+        queueManagementService.refreshQueues();
+        assertTrue(queueManagementService.coldQueue(QUEUE_NAME, 0L));
         assertEquals(400L, queueManagementService.getColdQueues().get(QUEUE_NAME));
     }
 
@@ -108,19 +108,30 @@ class QueueManagementServiceTest {
         when(deltaFiProperties.getInMemoryQueueSize()).thenReturn(10);
         when(actionEventQueue.size(QUEUE_NAME)).thenReturn(8L);
 
-        queueManagementService.identifyColdQueues();
-        assertFalse(queueManagementService.coldQueue(QUEUE_NAME));
+        queueManagementService.refreshQueues();
+        assertFalse(queueManagementService.coldQueue(QUEUE_NAME, 0L));
     }
 
     @Test
     void testColdQueueExists() {
         queueManagementService.getColdQueues().put(QUEUE_NAME, 10L);
-        assertTrue(queueManagementService.coldQueue(QUEUE_NAME));
+        assertTrue(queueManagementService.coldQueue(QUEUE_NAME, 0L));
     }
 
     @Test
     void testColdQueueDoesNotExist() {
-        assertFalse(queueManagementService.coldQueue(QUEUE_NAME));
+        when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
+        when(deltaFiProperties.getInMemoryQueueSize()).thenReturn(10);
+        assertFalse(queueManagementService.coldQueue(QUEUE_NAME, 0L));
+    }
+
+    @Test
+    void testPendingExceedsMax() {
+        queueManagementService.getAllQueues().put(QUEUE_NAME, 8L);
+        when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
+        when(deltaFiProperties.getInMemoryQueueSize()).thenReturn(10);
+        assertFalse(queueManagementService.coldQueue(QUEUE_NAME, 0L));
+        assertTrue(queueManagementService.coldQueue(QUEUE_NAME, 2L));
     }
 
     @Test

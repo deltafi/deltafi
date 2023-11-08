@@ -49,7 +49,7 @@ public class StateMachine {
     private final QueueManagementService queueManagementService;
 
     List<ActionInvocation> advance(DeltaFile deltaFile) {
-        return advance(deltaFile, false);
+        return advance(deltaFile, false, new HashMap<>());
     }
 
     /**
@@ -57,11 +57,12 @@ public class StateMachine {
      *
      * @param deltaFile The deltaFile to advance
      * @param newDeltaFile Whether this is a new DeltaFile. Used to determine whether routing affinity is needed
+     * @param pendingQueued A map of queue names to number of times to be queued so far. This object is mutated to include new entries
      * @return a list of actions that should receive this DeltaFile next
      * @throws MissingEgressFlowException when a DeltaFile advances into the EGRESS stage, but does not have an egress
      * flow configured.
      */
-    List<ActionInvocation> advance(DeltaFile deltaFile, boolean newDeltaFile) throws MissingEgressFlowException {
+    List<ActionInvocation> advance(DeltaFile deltaFile, boolean newDeltaFile, Map<String, Long> pendingQueued) throws MissingEgressFlowException {
         if (deltaFile.getStage() == DeltaFileStage.INGRESS && deltaFile.getSourceInfo().getProcessingType() == null) {
             if (transformFlowService.hasRunningFlow(deltaFile.getSourceInfo().getFlow())) {
                 deltaFile.getSourceInfo().setProcessingType(ProcessingType.TRANSFORMATION);
@@ -84,8 +85,8 @@ public class StateMachine {
         }
 
         List<ActionInvocation> enqueueActions = switch (deltaFile.getSourceInfo().getProcessingType()) {
-            case NORMALIZATION -> advanceNormalization(deltaFile, newDeltaFile);
-            case TRANSFORMATION -> advanceTransformation(deltaFile, newDeltaFile);
+            case NORMALIZATION -> advanceNormalization(deltaFile, newDeltaFile, pendingQueued);
+            case TRANSFORMATION -> advanceTransformation(deltaFile, newDeltaFile, pendingQueued);
         };
 
         if (!deltaFile.hasPendingActions()) {
@@ -97,16 +98,16 @@ public class StateMachine {
         return enqueueActions;
     }
 
-    private List<ActionInvocation> advanceNormalization(DeltaFile deltaFile, boolean newDeltaFile) throws MissingEgressFlowException {
+    private List<ActionInvocation> advanceNormalization(DeltaFile deltaFile, boolean newDeltaFile, Map<String, Long> pendingQueued) throws MissingEgressFlowException {
         return switch (deltaFile.getStage()) {
-            case INGRESS -> advanceIngressStage(deltaFile, newDeltaFile);
-            case ENRICH -> advanceEnrichStage(deltaFile, newDeltaFile);
-            case EGRESS -> advanceEgressStage(deltaFile, newDeltaFile);
+            case INGRESS -> advanceIngressStage(deltaFile, newDeltaFile, pendingQueued);
+            case ENRICH -> advanceEnrichStage(deltaFile, newDeltaFile, pendingQueued);
+            case EGRESS -> advanceEgressStage(deltaFile, newDeltaFile, pendingQueued);
             default -> new ArrayList<>();
         };
     }
 
-    private List<ActionInvocation> advanceTransformation(DeltaFile deltaFile, boolean newDeltaFile) {
+    private List<ActionInvocation> advanceTransformation(DeltaFile deltaFile, boolean newDeltaFile, Map<String, Long> pendingQueued) {
         if (deltaFile.hasErroredAction() || deltaFile.hasFilteredAction() || deltaFile.hasReinjectedAction()) {
             return Collections.emptyList();
         }
@@ -127,7 +128,7 @@ public class StateMachine {
                 return Collections.emptyList();
             }
 
-            Action action = deltaFile.queueAction(transformFlow.getName(), nextTransformAction.getName(), ActionType.TRANSFORM, queueManagementService.coldQueue(nextTransformAction.getType()));
+            Action action = deltaFile.queueAction(transformFlow.getName(), nextTransformAction.getName(), ActionType.TRANSFORM, coldQueue(nextTransformAction.getType(), pendingQueued));
             return List.of(buildActionInvocation(transformFlow.getName(), nextTransformAction, deltaFile, null, newDeltaFile, action));
         }
 
@@ -146,12 +147,12 @@ public class StateMachine {
             return Collections.emptyList();
         }
 
-        Action action = deltaFile.queueAction(transformFlow.getName(), egressAction.getName(), ActionType.EGRESS, queueManagementService.coldQueue(egressAction.getType()));
+        Action action = deltaFile.queueAction(transformFlow.getName(), egressAction.getName(), ActionType.EGRESS, coldQueue(egressAction.getType(), pendingQueued));
         deltaFile.addEgressFlow(transformFlow.getName());
         return List.of(buildActionInvocation(transformFlow.getName(), egressAction, deltaFile, transformFlow.getName(), newDeltaFile, action));
     }
 
-    private List<ActionInvocation> advanceIngressStage(DeltaFile deltaFile, boolean newDeltaFile) {
+    private List<ActionInvocation> advanceIngressStage(DeltaFile deltaFile, boolean newDeltaFile, Map<String, Long> pendingQueued) {
         if (deltaFile.hasErroredAction() || deltaFile.hasFilteredAction() || deltaFile.hasReinjectedAction()) {
             return Collections.emptyList();
         }
@@ -172,7 +173,7 @@ public class StateMachine {
                 return Collections.emptyList();
             }
 
-            Action action = deltaFile.queueAction(normalizeFlow.getName(), nextTransformAction.getName(), ActionType.TRANSFORM, queueManagementService.coldQueue(nextTransformAction.getType()));
+            Action action = deltaFile.queueAction(normalizeFlow.getName(), nextTransformAction.getName(), ActionType.TRANSFORM, coldQueue(nextTransformAction.getType(), pendingQueued));
             return List.of(buildActionInvocation(normalizeFlow.getName(), nextTransformAction, deltaFile, null, newDeltaFile, action));
         }
 
@@ -187,13 +188,13 @@ public class StateMachine {
                 return Collections.emptyList();
             }
 
-            Action action = deltaFile.queueAction(normalizeFlow.getName(), loadAction.getName(), ActionType.LOAD, queueManagementService.coldQueue(loadAction.getType()));
+            Action action = deltaFile.queueAction(normalizeFlow.getName(), loadAction.getName(), ActionType.LOAD, coldQueue(loadAction.getType(), pendingQueued));
             return List.of(buildActionInvocation(normalizeFlow.getName(), loadAction, deltaFile, null, newDeltaFile, action));
         }
 
         deltaFile.setStage(DeltaFileStage.ENRICH);
 
-        return advanceEnrichStage(deltaFile, newDeltaFile);
+        return advanceEnrichStage(deltaFile, newDeltaFile, pendingQueued);
     }
 
     private ActionInvocation buildActionInvocation(String flow, ActionConfiguration actionConfiguration, DeltaFile deltaFile,
@@ -212,7 +213,7 @@ public class StateMachine {
                 .build();
     }
 
-    private List<ActionInvocation> advanceEnrichStage(DeltaFile deltaFile, boolean newDeltaFile) {
+    private List<ActionInvocation> advanceEnrichStage(DeltaFile deltaFile, boolean newDeltaFile, Map<String, Long> pendingQueued) {
         if (deltaFile.hasErroredAction()) {
             return Collections.emptyList();
         }
@@ -229,7 +230,7 @@ public class StateMachine {
         if (!domainActionConfigurations.isEmpty()) {
             return domainActionConfigurations.stream()
                     .map(flowConfigPair -> {
-                        Action action = deltaFile.queueNewAction(flowConfigPair.getFirst(), flowConfigPair.getSecond().getName(), ActionType.DOMAIN, queueManagementService.coldQueue(flowConfigPair.getSecond().getType()));
+                        Action action = deltaFile.queueNewAction(flowConfigPair.getFirst(), flowConfigPair.getSecond().getName(), ActionType.DOMAIN, coldQueue(flowConfigPair.getSecond().getType(), pendingQueued));
                         return buildActionInvocation(flowConfigPair.getFirst(), flowConfigPair.getSecond(), deltaFile, null, newDeltaFile, action);
                     }).toList();
         }
@@ -244,14 +245,14 @@ public class StateMachine {
         if (!enrichActionConfigurations.isEmpty()) {
             return enrichActionConfigurations.stream()
                     .map(flowConfigPair -> {
-                        Action action = deltaFile.queueNewAction(flowConfigPair.getFirst(), flowConfigPair.getSecond().getName(), ActionType.ENRICH, queueManagementService.coldQueue(flowConfigPair.getSecond().getType()));
+                        Action action = deltaFile.queueNewAction(flowConfigPair.getFirst(), flowConfigPair.getSecond().getName(), ActionType.ENRICH, coldQueue(flowConfigPair.getSecond().getType(), pendingQueued));
                         return buildActionInvocation(flowConfigPair.getFirst(), flowConfigPair.getSecond(), deltaFile, null, newDeltaFile, action);
                     }).toList();
         }
 
         if (!deltaFile.hasPendingActions() && !deltaFile.hasErroredAction()) {
             deltaFile.setStage(DeltaFileStage.EGRESS);
-            return advanceEgressStage(deltaFile, newDeltaFile);
+            return advanceEgressStage(deltaFile, newDeltaFile, pendingQueued);
         }
 
         return List.of();
@@ -304,7 +305,7 @@ public class StateMachine {
         return requiresMetadata.keySet().stream().allMatch(k -> requiresMetadata.get(k).equals(metadataMap.get(k)));
     }
 
-    private List<ActionInvocation> advanceEgressStage(DeltaFile deltaFile, boolean newDeltaFile) {
+    private List<ActionInvocation> advanceEgressStage(DeltaFile deltaFile, boolean newDeltaFile, Map<String, Long> pendingQueued) {
         // Collecting format actions cannot occur in parallel with other egress flow actions because DeltaFiles could
         // become stale in the cache before the collection is complete. Add the first collecting format action that is
         // ready (if one exists) to the DeltaFile.
@@ -333,7 +334,7 @@ public class StateMachine {
 
         return egressActionConfigurations.stream()
                 .map(flowConfigPair -> {
-                    Action action = deltaFile.queueNewAction(flowConfigPair.getFirst(), flowConfigPair.getSecond().getName(), flowConfigPair.getSecond().getActionType(), queueManagementService.coldQueue(flowConfigPair.getSecond().getType()));
+                    Action action = deltaFile.queueNewAction(flowConfigPair.getFirst(), flowConfigPair.getSecond().getName(), flowConfigPair.getSecond().getActionType(), coldQueue(flowConfigPair.getSecond().getType(), pendingQueued));
                     deltaFile.addEgressFlow(flowConfigPair.getFirst());
                     return buildActionInvocation(flowConfigPair.getFirst(), flowConfigPair.getSecond(), deltaFile, flowConfigPair.getFirst(), newDeltaFile, action);
                 })
@@ -419,5 +420,10 @@ public class StateMachine {
                 !deltaFile.hasTerminalAction(egressFlow.getName(), egressFlow.getEgressAction().getName()) &&
                 !deltaFile.hasTerminalAction(egressFlow.getName(), SYNTHETIC_EGRESS_ACTION_FOR_TEST_EGRESS) &&
                 !deltaFile.hasTerminalAction(egressFlow.getName(), SYNTHETIC_EGRESS_ACTION_FOR_TEST_NORMALIZE);
+    }
+
+    private boolean coldQueue(String queueName, Map<String, Long> pendingQueued) {
+        Long newVal = pendingQueued.put(queueName, pendingQueued.getOrDefault(queueName, 0L) + 1);
+        return queueManagementService.coldQueue(queueName, newVal == null ? 0L : newVal);
     }
 }

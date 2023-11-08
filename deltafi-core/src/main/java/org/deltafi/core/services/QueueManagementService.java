@@ -46,6 +46,9 @@ public class QueueManagementService {
     @Getter
     private final ConcurrentHashMap<String, Long> coldQueues = new ConcurrentHashMap<>();
 
+    @Getter
+    private final ConcurrentHashMap<String, Long> allQueues = new ConcurrentHashMap<>();
+
     ActionDescriptorService actionDescriptorService;
     ActionEventQueue actionEventQueue;
     DeltaFileRepo deltaFileRepo;
@@ -71,15 +74,17 @@ public class QueueManagementService {
     }
 
     @Scheduled(fixedDelay = 2000)
-    void identifyColdQueues() {
+    void refreshQueues() {
         Set<String> keys = actionEventQueue.keys();
         List<String> actionNames = actionDescriptorService.getAll().stream().map(ActionDescriptor::getName).toList();
         int maxQueueSize = maxQueueSize();
 
         coldQueues.keySet().removeIf(q -> !keys.contains(q) || !actionNames.contains(q));
+        allQueues.keySet().removeIf(q -> !keys.contains(q) || !actionNames.contains(q));
 
         keys.stream().filter(actionNames::contains).forEach(k -> {
             long size = actionEventQueue.size(k);
+            allQueues.put(k, size);
             if (coldQueues.containsKey(k)) {
                 if (size <= maxQueueSize * 0.8) {
                     coldQueues.remove(k);
@@ -102,10 +107,11 @@ public class QueueManagementService {
      * Checks if the specified queue name exists in the cold queues map.
      *
      * @param queueName the name of the queue to check
+     * @param numPending the number of pending items that have not yet been added to the queue
      * @return true if the queue exists, false otherwise
      */
-    public boolean coldQueue(String queueName) {
-        return coldQueues.containsKey(queueName);
+    public boolean coldQueue(String queueName, long numPending) {
+        return coldQueues.containsKey(queueName) || allQueues.getOrDefault(queueName, 0L) + numPending >= maxQueueSize();
     }
 
     private int maxQueueSize() {
