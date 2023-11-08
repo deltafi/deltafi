@@ -1678,7 +1678,7 @@ public class DeltaFilesService {
      */
     public boolean delete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, Long minBytes, String flow, String policy, boolean deleteMetadata) {
         int batchSize = deltaFiPropertiesService.getDeltaFiProperties().getDelete().getPolicyBatchSize();
-        List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(createdBefore, completedBefore, minBytes, flow, policy, deleteMetadata, batchSize);
+        List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(createdBefore, completedBefore, minBytes, flow, deleteMetadata, batchSize);
         delete(deltaFiles, policy, deleteMetadata);
 
         return deltaFiles.size() == batchSize;
@@ -1688,7 +1688,7 @@ public class DeltaFilesService {
         int batchSize = deltaFiPropertiesService.getDeltaFiProperties().getDelete().getPolicyBatchSize();
 
         log.info("Searching for batch of up to " + batchSize + " deltaFiles to delete for policy " + policy);
-        return delete(deltaFileRepo.findForDelete(bytesToDelete, flow, policy, batchSize), policy, deleteMetadata);
+        return delete(deltaFileRepo.findForDelete(bytesToDelete, flow, batchSize), policy, deleteMetadata);
     }
 
     public List<DeltaFile> delete(List<DeltaFile> deltaFiles, String policy, boolean deleteMetadata) {

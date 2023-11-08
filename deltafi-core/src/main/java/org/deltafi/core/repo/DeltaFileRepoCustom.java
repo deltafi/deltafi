@@ -128,12 +128,11 @@ public interface DeltaFileRepoCustom {
      * @param completedBefore - if non-null find DeltaFiles in the completed stage that were last modified before this date
      * @param minBytes - only delete deltaFiles greater than or equal to this size
      * @param flow - if non-null the DeltaFiles must have this flow set in the source info
-     * @param policy - policy name to use in any metadata
      * @param deleteMetadata - whether we are finding files to be finally deleted.  if this is false, DeltaFiles that have already had their content deleted will not be selected
      * @param batchSize - maximum number to delete
      * @return the list of DeltaFiles marked for deletion
      */
-    List<DeltaFile> findForDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, long minBytes, String flow, String policy, boolean deleteMetadata, int batchSize);
+    List<DeltaFile> findForDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, long minBytes, String flow, boolean deleteMetadata, int batchSize);
 
     /**
      * Find the oldest DeltaFiles up to bytesToDelete size that match the flow (if given).
@@ -142,11 +141,10 @@ public interface DeltaFileRepoCustom {
      *
      * @param bytesToDelete - the number of bytes that must be deleted
      * @param flow - if non-null the DeltaFiles must have this flow set in the source info
-     * @param policy - policy name to use in any metadata
      * @param batchSize - maximum number to delete
      * @return the list of DeltaFiles marked for deletion
      */
-    List<DeltaFile> findForDelete(long bytesToDelete, String flow, String policy, int batchSize);
+    List<DeltaFile> findForDelete(long bytesToDelete, String flow, int batchSize);
 
     DeltaFiles deltaFiles(Integer offset, int limit, DeltaFilesFilter filter, DeltaFileOrder orderBy);
 

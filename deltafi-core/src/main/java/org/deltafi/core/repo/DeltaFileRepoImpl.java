@@ -24,10 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.bson.BsonValue;
 import org.bson.Document;
 import org.deltafi.common.constant.DeltaFiConstants;
-import org.deltafi.common.types.ActionState;
-import org.deltafi.common.types.ActionType;
-import org.deltafi.common.types.DeltaFile;
-import org.deltafi.common.types.DeltaFileStage;
+import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.types.ColdQueuedActionSummary;
 import org.deltafi.core.types.DeltaFiles;
@@ -53,11 +50,10 @@ import org.springframework.util.StringUtils;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
+import static org.apache.commons.lang3.BooleanUtils.isFalse;
+import static org.apache.commons.lang3.BooleanUtils.isTrue;
+import static org.deltafi.common.types.ActionState.*;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 
 @SuppressWarnings("unused")
@@ -71,6 +67,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String CREATED = "created";
     public static final String STAGE = "stage";
     public static final String STATE = "state";
+    public static final String NAME = "name";
     public static final String ACTIONS_METADATA = "actions.metadata";
     public static final String ACTIONS_DELETE_METADATA_KEYS = "actions.deleteMetadataKeys";
     public static final String DOMAINS_NAME = "actions.domains.name";
@@ -240,7 +237,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     public Duration getTtlExpiration() {
-        if (Objects.isNull(cachedTtlDuration)) {
+        if (cachedTtlDuration == null) {
             cachedTtlDuration = getTtlExpirationFromMongo();
         }
         return cachedTtlDuration;
@@ -297,11 +294,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     private Query buildReadyForAutoResume(OffsetDateTime maxReadyTime) {
-        Criteria inError = Criteria.where(STAGE).is(DeltaFileStage.ERROR);
-        Criteria ready = Criteria.where(NEXT_AUTO_RESUME).lt(maxReadyTime);
-
-        Query requeueQuery = new Query(new Criteria().andOperator(inError, ready));
-        requeueQuery.fields().include(ID, SOURCE_INFO_FLOW);
+        Query requeueQuery = new Query(Criteria.where(STAGE).is(DeltaFileStage.ERROR)
+                .and(NEXT_AUTO_RESUME).lt(maxReadyTime));
+        requeueQuery.fields().include(ID, SOURCE_INFO_FLOW, SCHEMA_VERSION);
 
         return requeueQuery;
     }
@@ -312,19 +307,17 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     private Query buildResumePolicyCanidatesQuery(String flowName) {
-        List<Criteria> andCriteria = new ArrayList<>();
+        Criteria criteria = Criteria.where(STAGE).is(DeltaFileStage.ERROR)
+                .and(NEXT_AUTO_RESUME).isNull()
+                .and(ERROR_ACKNOWLEDGED).isNull()
+                .and(CONTENT_DELETED).isNull();
 
-        andCriteria.add(Criteria.where(STAGE).is(DeltaFileStage.ERROR));
-        andCriteria.add(Criteria.where(NEXT_AUTO_RESUME).isNull());
-        andCriteria.add(Criteria.where(ERROR_ACKNOWLEDGED).isNull());
-        andCriteria.add(Criteria.where(CONTENT_DELETED).isNull());
-
-        if (nonNull(flowName)) {
-            andCriteria.add(Criteria.where(SOURCE_INFO_FLOW).is(flowName));
+        if (flowName != null) {
+            criteria.and(SOURCE_INFO_FLOW).is(flowName);
         }
 
-        Query requeueQuery = new Query(new Criteria().andOperator(andCriteria.toArray(new Criteria[0])));
-        requeueQuery.fields().include(ID, SOURCE_INFO_FLOW, ACTIONS_NAME, ACTIONS_ERROR_CAUSE, ACTIONS_STATE, ACTIONS_TYPE, ACTIONS_ATTEMPT);
+        Query requeueQuery = new Query(criteria);
+        requeueQuery.fields().include(ID, SOURCE_INFO_FLOW, ACTIONS_NAME, ACTIONS_ERROR_CAUSE, ACTIONS_STATE, ACTIONS_TYPE, ACTIONS_ATTEMPT, SCHEMA_VERSION);
 
         return requeueQuery;
     }
@@ -336,23 +329,22 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     public List<DeltaFile> findForDelete(OffsetDateTime createdBeforeDate, OffsetDateTime completedBeforeDate,
-                                         long minBytes, String flowName, String policy, boolean deleteMetadata,
-                                         int batchSize) {
+                                         long minBytes, String flowName, boolean deleteMetadata, int batchSize) {
         // one of these must be set for any matches to occur
-        if (isNull(createdBeforeDate) && isNull(completedBeforeDate)) {
+        if (createdBeforeDate == null && completedBeforeDate == null) {
             return Collections.emptyList();
         }
 
         Query query = new Query(buildReadyForDeleteCriteria(createdBeforeDate, completedBeforeDate, minBytes, flowName, deleteMetadata, false));
         query.limit(batchSize);
         addDeltaFilesOrderBy(query, DeltaFileOrder.newBuilder().field(CREATED).direction(DeltaFileDirection.ASC).build());
-        query.fields().include(ID, TOTAL_BYTES, OLD_PROTOCOL_STACK_SEGMENTS, OLD_PROTOCOL_STACK_SEGMENTS_2, ACTION_SEGMENTS, OLD_FORMATTED_DATA_SEGMENTS, OLD_FORMATTED_DATA_SEGMENTS_2, OLD_PROTOCOL_STACK_ACTION_NAME, OLD_FORMATTED_DATA_ACTION_NAME, ACTIONS_NAME, CONTENT_DELETED);
+        query.fields().include(ID, TOTAL_BYTES, OLD_PROTOCOL_STACK_SEGMENTS, OLD_PROTOCOL_STACK_SEGMENTS_2, ACTION_SEGMENTS, OLD_FORMATTED_DATA_SEGMENTS, OLD_FORMATTED_DATA_SEGMENTS_2, OLD_PROTOCOL_STACK_ACTION_NAME, OLD_FORMATTED_DATA_ACTION_NAME, ACTIONS_NAME, CONTENT_DELETED, SCHEMA_VERSION);
 
         return mongoTemplate.find(query, DeltaFile.class);
     }
 
     @Override
-    public List<DeltaFile> findForDelete(long bytesToDelete, String flow, String policy, int batchSize) {
+    public List<DeltaFile> findForDelete(long bytesToDelete, String flow, int batchSize) {
         if (bytesToDelete < 1) {
             throw new IllegalArgumentException("bytesToDelete (" + bytesToDelete + ") must be positive");
         }
@@ -360,17 +352,15 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         Query query = new Query(buildReadyForDeleteCriteria(null, null, 1, flow, false, true));
         query.limit(batchSize);
         addDeltaFilesOrderBy(query, DeltaFileOrder.newBuilder().field(CREATED).direction(DeltaFileDirection.ASC).build());
-        query.fields().include(ID, TOTAL_BYTES, OLD_PROTOCOL_STACK_SEGMENTS, OLD_PROTOCOL_STACK_SEGMENTS_2, ACTION_SEGMENTS, OLD_FORMATTED_DATA_SEGMENTS, OLD_FORMATTED_DATA_SEGMENTS_2, OLD_PROTOCOL_STACK_ACTION_NAME, OLD_FORMATTED_DATA_ACTION_NAME, ACTIONS_NAME);
+        query.fields().include(ID, TOTAL_BYTES, OLD_PROTOCOL_STACK_SEGMENTS, OLD_PROTOCOL_STACK_SEGMENTS_2, ACTION_SEGMENTS, OLD_FORMATTED_DATA_SEGMENTS, OLD_FORMATTED_DATA_SEGMENTS_2, OLD_PROTOCOL_STACK_ACTION_NAME, OLD_FORMATTED_DATA_ACTION_NAME, ACTIONS_NAME, SCHEMA_VERSION);
 
         List<DeltaFile> deltaFiles = mongoTemplate.find(query, DeltaFile.class);
-        AtomicLong sum = new AtomicLong();
-        AtomicBoolean met = new AtomicBoolean(false);
+        long[] sum = {0};
         return deltaFiles.stream()
-                .takeWhile(d -> {
-                    // hacky inclusive takeWhile because we need n + 1 to go over bytesToDelete
-                    boolean done = sum.addAndGet(d.getTotalBytes()) >= bytesToDelete && met.get();
-                    met.set(sum.get() >= bytesToDelete);
-                    return !done;
+                .filter(d -> {
+                    boolean over = sum[0] <= bytesToDelete;
+                    sum[0] += d.getTotalBytes();
+                    return over;
                 })
                 .toList();
     }
@@ -385,7 +375,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         Criteria filterCriteria = buildDeltaFilesCriteria(filter);
         Query query = new Query(filterCriteria);
 
-        if (nonNull(offset) && offset > 0) {
+        if (offset != null && offset > 0) {
             query.skip(offset);
         } else {
             offset = 0;
@@ -393,7 +383,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         query.limit(limit);
 
-        if (Objects.nonNull(includeFields)) {
+        if (includeFields != null) {
             query.fields().include(SCHEMA_VERSION);
             for (String includeField : includeFields) {
                 query.fields().include(includeField);
@@ -404,13 +394,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         DeltaFiles deltaFiles = new DeltaFiles();
         deltaFiles.setOffset(offset);
-        if (Objects.nonNull(includeFields) && includeFields.isEmpty()) {
+        if (includeFields != null && includeFields.isEmpty()) {
             deltaFiles.setDeltaFiles(Collections.emptyList());
         } else {
             deltaFiles.setDeltaFiles(mongoTemplate.find(query, DeltaFile.class));
         }
         deltaFiles.setCount(deltaFiles.getDeltaFiles().size());
-        if ((Objects.isNull(includeFields) || !includeFields.isEmpty()) && deltaFiles.getCount() < limit) {
+        if ((includeFields == null || !includeFields.isEmpty()) && deltaFiles.getCount() < limit) {
             deltaFiles.setTotalCount(deltaFiles.getOffset() + deltaFiles.getCount());
         } else {
             int total = (int) mongoTemplate.count(new Query(filterCriteria).limit(MAX_COUNT), DeltaFile.class);
@@ -436,12 +426,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         update.set(MODIFIED, modified);
 
-        Criteria queued = Criteria.where(ACTION_STATE).is(ActionState.QUEUED.name());
-
         long epochMs = requeueThreshold(modified, requeueSeconds).toInstant().toEpochMilli();
-        Criteria expired = Criteria.where(ACTION_MODIFIED).lt(new Date(epochMs));
-
-        update.filterArray(new Criteria().andOperator(queued, expired));
+        update.filterArray(Criteria.where(ACTION_STATE).is(ActionState.QUEUED.name())
+                .and(ACTION_MODIFIED).lt(new Date(epochMs)));
 
         return update;
     }
@@ -457,44 +444,32 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         update.set(ACTIONS_UPDATE_QUEUED, modified);
 
         update.set(ACTIONS_UPDATE_STATE, ActionState.QUEUED.name());
-        update.filterArray(Criteria.where("action.state").is(ActionState.COLD_QUEUED.name()));
+        update.filterArray(Criteria.where(ACTION_STATE).is(COLD_QUEUED.name()));
         update.set(MODIFIED, modified);
 
         return update;
     }
 
     private Query buildReadyForRequeueQuery(OffsetDateTime requeueTime, int requeueSeconds, Set<String> skipActions, Set<String> skipDids) {
-        List<Criteria> andCriteria = new ArrayList<>();
-
-        Criteria notComplete = Criteria.where(STAGE).not().in(DeltaFileStage.COMPLETE, DeltaFileStage.ERROR, DeltaFileStage.CANCELLED);
-        andCriteria.add(notComplete);
-
+        Criteria criteria = Criteria.where(STAGE).not().in(DeltaFileStage.COMPLETE.toString(), DeltaFileStage.ERROR.toString(), DeltaFileStage.CANCELLED.toString());
         long epochMs = requeueThreshold(requeueTime, requeueSeconds).toInstant().toEpochMilli();
-        Criteria expired = Criteria.where(MODIFIED).lt(new Date(epochMs));
-        andCriteria.add(expired);
+        criteria.and(MODIFIED).lt(new Date(epochMs));
 
-        if (!skipDids.isEmpty()) {
-            Criteria skipDidsCriteria = Criteria.where(DID).not().in(skipDids);
-            andCriteria.add(skipDidsCriteria);
+        if (skipDids != null && !skipDids.isEmpty()) {
+            criteria.and(DID).not().in(skipDids);
         }
 
-        if (!skipActions.isEmpty()) {
-            // Excludes actions with 'state' of 'QUEUED' and a 'name' in the skipActions list.
-            Criteria skipActionsCriteria = Criteria.where("actions").not().elemMatch(
-                    new Criteria().andOperator(
-                            Criteria.where("state").is("QUEUED"),
-                            Criteria.where("name").in(skipActions)
-                    )
+        if (skipActions != null && !skipActions.isEmpty()) {
+            Criteria actionsCriteria = new Criteria().orOperator(
+                    Criteria.where(STATE).is(QUEUED.toString()).and(NAME).in(skipActions),
+                    Criteria.where(STATE).is(COLD_QUEUED.name())
             );
-            andCriteria.add(skipActionsCriteria);
+            criteria.and(ACTIONS).not().elemMatch(actionsCriteria);
+        } else {
+            criteria.and(ACTIONS).not().elemMatch(Criteria.where(STATE).is(COLD_QUEUED.name()));
         }
 
-        Criteria notColdQueued = Criteria.where("actions").not().elemMatch(
-                Criteria.where("state").is("COLD_QUEUED")
-        );
-        andCriteria.add(notColdQueued);
-
-        Query requeueQuery = new Query(new Criteria().andOperator(andCriteria));
+        Query requeueQuery = new Query(criteria);
         requeueQuery.fields().include(ID);
 
         return requeueQuery;
@@ -504,8 +479,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         Criteria notComplete = Criteria.where("stage").not().in(DeltaFileStage.COMPLETE, DeltaFileStage.ERROR, DeltaFileStage.CANCELLED);
 
         Criteria coldQueuedCriteria = new Criteria().andOperator(
-                Criteria.where("name").in(actionNames),
-                Criteria.where("state").is(ActionState.COLD_QUEUED.name())
+                Criteria.where(NAME).in(actionNames),
+                Criteria.where(STATE).is(COLD_QUEUED.name())
         );
 
         Criteria actionMatch = Criteria.where("actions").elemMatch(coldQueuedCriteria);
@@ -519,266 +494,246 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     private Criteria buildReadyForDeleteCriteria(OffsetDateTime createdBeforeDate, OffsetDateTime completedBeforeDate,
             long minBytes, String flowName, boolean deleteMetadata, boolean completeOnly) {
-        Criteria criteria = new Criteria();
-        List<Criteria> andCriteria = new ArrayList<>();
+        Criteria criteria = Criteria.where(PENDING_ANNOTATIONS_FOR_FLOWS).is(null);
 
         if (createdBeforeDate != null || completedBeforeDate != null) {
-            andCriteria.add(buildDeleteTimeCriteria(createdBeforeDate, completedBeforeDate));
+            criteria.andOperator(buildDeleteTimeCriteria(createdBeforeDate, completedBeforeDate));
         }
 
-        if (nonNull(flowName)) {
-            andCriteria.add(Criteria.where(SOURCE_INFO_FLOW).is(flowName));
+        if (flowName != null) {
+            criteria.and(SOURCE_INFO_FLOW).is(flowName);
         }
 
         if (minBytes > 0L) {
-            andCriteria.add(Criteria.where(TOTAL_BYTES).gte(minBytes));
+            criteria.and(TOTAL_BYTES).gte(minBytes);
         }
 
         if (!deleteMetadata) {
-            andCriteria.add(Criteria.where(CONTENT_DELETED).isNull());
+            criteria.and(CONTENT_DELETED).isNull();
         }
 
         if (completeOnly) {
             Criteria complete = Criteria.where(STAGE).in(DeltaFileStage.COMPLETE, DeltaFileStage.CANCELLED);
             Criteria acknowledged = Criteria.where(STAGE).is(DeltaFileStage.ERROR)
                     .and(ERROR_ACKNOWLEDGED).ne(null);
-            andCriteria.add(new Criteria().orOperator(complete, acknowledged));
-        }
-
-        andCriteria.add(Criteria.where(PENDING_ANNOTATIONS_FOR_FLOWS).is(null));
-
-        if (andCriteria.size() == 1) {
-            criteria = andCriteria.get(0);
-        } else {
-            criteria.andOperator(andCriteria.toArray(new Criteria[0]));
+            criteria.orOperator(complete, acknowledged);
         }
 
         return criteria;
     }
 
     private Criteria buildDeltaFilesCriteria(DeltaFilesFilter filter) {
-        Criteria criteria = new Criteria();
+        final Criteria criteria = new Criteria();
 
-        if (isNull(filter)) {
+        if (filter == null) {
             return criteria;
         }
 
-        List<Criteria> andCriteria = new ArrayList<>();
-
         if (filter.getEgressFlows() != null && !filter.getEgressFlows().isEmpty()) {
-            andCriteria.add(Criteria.where(EGRESS_FLOW).in(filter.getEgressFlows()));
+            criteria.and(EGRESS_FLOW).in(filter.getEgressFlows());
         }
 
-        if (nonNull(filter.getDids()) && !filter.getDids().isEmpty()) {
-            andCriteria.add(Criteria.where(ID).in(filter.getDids()));
+        if (filter.getDids() != null && !filter.getDids().isEmpty()) {
+            criteria.and(ID).in(filter.getDids());
         }
 
-        if (nonNull(filter.getParentDid())) {
-            andCriteria.add(Criteria.where(PARENT_DIDS).in(filter.getParentDid()));
+        if (filter.getParentDid() != null) {
+            criteria.and(PARENT_DIDS).in(filter.getParentDid());
         }
 
-        if (nonNull(filter.getCreatedAfter())) {
-            andCriteria.add(Criteria.where(CREATED).gt(filter.getCreatedAfter()));
+        if (filter.getCreatedAfter() != null && filter.getCreatedBefore() != null) {
+            criteria.and(CREATED).gt(filter.getCreatedAfter()).lt(filter.getCreatedBefore());
+        } else if (filter.getCreatedAfter() != null) {
+            criteria.and(CREATED).gt(filter.getCreatedAfter());
+        } else if (filter.getCreatedBefore() != null) {
+            criteria.and(CREATED).lt(filter.getCreatedBefore());
         }
 
-        if (nonNull(filter.getCreatedBefore())) {
-            andCriteria.add(Criteria.where(CREATED).lt(filter.getCreatedBefore()));
+        if (filter.getDomains() != null && !filter.getDomains().isEmpty()) {
+            criteria.and(DOMAINS_NAME).all(filter.getDomains());
         }
 
-        if (nonNull(filter.getDomains()) && !filter.getDomains().isEmpty()) {
-            andCriteria.add(Criteria.where(DOMAINS_NAME).all(filter.getDomains()));
+        if (filter.getEnrichments() != null && !filter.getEnrichments().isEmpty()) {
+            criteria.and(ENRICHMENTS_NAME).all(filter.getEnrichments());
         }
 
-        if (nonNull(filter.getEnrichments()) && !filter.getEnrichments().isEmpty()) {
-            andCriteria.add(Criteria.where(ENRICHMENTS_NAME).all(filter.getEnrichments()));
+        if (filter.getAnnotations() != null) {
+            filter.getAnnotations()
+                    .forEach(e -> addAnnotationCriteria(e.getKey(), e.getValue(), criteria));
         }
 
-        if (nonNull(filter.getAnnotations())) {
-            List<Criteria> metadataCriteria = filter.getAnnotations().stream()
-                    .map(e -> fromAnnotations(e.getKey(), e.getValue())).filter(Objects::nonNull).toList();
-            andCriteria.addAll(metadataCriteria);
-        }
-
-        if (nonNull(filter.getContentDeleted())) {
+        if (filter.getContentDeleted() != null) {
             if (isTrue(filter.getContentDeleted())) {
-                andCriteria.add(Criteria.where(CONTENT_DELETED).ne(null));
+                criteria.and(CONTENT_DELETED).ne(null);
             } else {
-                andCriteria.add(Criteria.where(CONTENT_DELETED).is(null));
+                criteria.and(CONTENT_DELETED).is(null);
             }
         }
 
-        if (nonNull(filter.getModifiedAfter())) {
-            andCriteria.add(Criteria.where(MODIFIED).gt(filter.getModifiedAfter()));
+        if (filter.getModifiedAfter() != null && filter.getModifiedBefore() != null) {
+            criteria.and(MODIFIED).gt(filter.getModifiedAfter()).lt(filter.getModifiedBefore());
+        } else if (filter.getModifiedAfter() != null) {
+            criteria.and(MODIFIED).gt(filter.getModifiedAfter());
+        } else if (filter.getModifiedBefore() != null) {
+            criteria.and(MODIFIED).lt(filter.getModifiedBefore());
         }
 
-        if (nonNull(filter.getModifiedBefore())) {
-            andCriteria.add(Criteria.where(MODIFIED).lt(filter.getModifiedBefore()));
-        }
-
-        if (nonNull(filter.getStage()) && nonNull(filter.getTerminalStage())) {
+        if (filter.getStage() != null && filter.getTerminalStage() != null) {
             Set<DeltaFileStage> stages = new HashSet<>(isTrue(filter.getTerminalStage()) ? TERMINAL_STAGES : ACTIVE_STAGES);
             stages.add(filter.getStage());
-            andCriteria.add(Criteria.where(STAGE).in(stages));
-        } else if (nonNull(filter.getTerminalStage())) {
-            andCriteria.add(Criteria.where(STAGE).in(isTrue(filter.getTerminalStage()) ? TERMINAL_STAGES : ACTIVE_STAGES));
-        } else if (nonNull(filter.getStage())) {
-            andCriteria.add(Criteria.where(STAGE).is(filter.getStage().name()));
+            criteria.and(STAGE).in(stages);
+        } else if (filter.getTerminalStage() != null) {
+            criteria.and(STAGE).in(isTrue(filter.getTerminalStage()) ? TERMINAL_STAGES : ACTIVE_STAGES);
+        } else if (filter.getStage() != null) {
+            criteria.and(STAGE).is(filter.getStage().name());
         }
 
-        if (nonNull(filter.getSourceInfo())) {
-            if (nonNull(filter.getSourceInfo().getFilename()) && filter.getSourceInfo().getFilenameFilter() == null) {
+        if (filter.getSourceInfo() != null) {
+            if (filter.getSourceInfo().getFilename() != null && filter.getSourceInfo().getFilenameFilter() == null) {
                 // fall back to using the filename if it is set and filenameFilter is null
                 FilenameFilter filenameFilter = new FilenameFilter(".*" + filter.getSourceInfo().getFilename() + ".*", true, false);
                 filter.getSourceInfo().setFilenameFilter(filenameFilter);
             }
 
-            if (nonNull(filter.getSourceInfo().getFilenameFilter())) {
-                andCriteria.add(filenameCriteria(filter.getSourceInfo().getFilenameFilter()));
+            if (filter.getSourceInfo().getFilenameFilter() != null) {
+                addFilenameCriteria(filter.getSourceInfo().getFilenameFilter(), criteria);
             }
 
-            if (nonNull(filter.getSourceInfo().getFlow())) {
-                andCriteria.add(Criteria.where(SOURCE_INFO_FLOW).is(filter.getSourceInfo().getFlow()));
+            if (filter.getSourceInfo().getFlow() != null) {
+                criteria.and(SOURCE_INFO_FLOW).is(filter.getSourceInfo().getFlow());
             }
 
-            if (nonNull(filter.getSourceInfo().getIngressFlows())) {
-                andCriteria.add(Criteria.where(SOURCE_INFO_FLOW).in(filter.getSourceInfo().getIngressFlows()));
+            if (filter.getSourceInfo().getIngressFlows() != null) {
+                criteria.and(SOURCE_INFO_FLOW).in(filter.getSourceInfo().getIngressFlows());
             }
 
-            if (nonNull(filter.getSourceInfo().getMetadata())) {
+            if (filter.getSourceInfo().getMetadata() != null) {
                 filter.getSourceInfo().getMetadata().forEach(keyValue -> {
                     String searchKey = keyValue.getKey();
                     if (searchKey.contains(".")) {
                         searchKey = StringUtils.replace(keyValue.getKey(), ".", DeltaFiConstants.MONGO_MAP_KEY_DOT_REPLACEMENT);
                     }
-                    andCriteria.add(Criteria.where(SOURCE_INFO_METADATA + "." + searchKey).is(keyValue.getValue()));
+                    criteria.and(SOURCE_INFO_METADATA + "." + searchKey).is(keyValue.getValue());
                 });
             }
 
-            if (nonNull(filter.getSourceInfo().getProcessingType())) {
-                andCriteria.add(Criteria.where(SOURCE_INFO_PROCESSING_TYPE).is(filter.getSourceInfo().getProcessingType()));
+            if (filter.getSourceInfo().getProcessingType() != null) {
+                criteria.and(SOURCE_INFO_PROCESSING_TYPE).is(filter.getSourceInfo().getProcessingType());
             }
         }
 
-        if (nonNull(filter.getActions()) && !filter.getActions().isEmpty()) {
-            andCriteria.add(Criteria.where(ACTIONS_NAME).all(filter.getActions()));
+        if (filter.getActions() != null && !filter.getActions().isEmpty()) {
+            criteria.and(ACTIONS_NAME).all(filter.getActions());
         }
 
-        if (nonNull(filter.getErrorCause())) {
-            Criteria actionElemMatch = new Criteria().andOperator(Criteria.where(STATE).is(ActionState.ERROR),
+        if (filter.getErrorCause() != null) {
+            Criteria actionElemMatch = new Criteria().andOperator(Criteria.where(STATE).is(ERROR.name()),
                     Criteria.where(ERROR_CAUSE).regex(filter.getErrorCause()));
-            andCriteria.add(Criteria.where(ACTIONS).elemMatch(actionElemMatch));
+            criteria.and(ACTIONS).elemMatch(actionElemMatch);
         }
 
         if (filter.getFilteredCause() != null) {
             boolean filtered = filter.getFiltered() == null || filter.getFiltered();
-            andCriteria.add(Criteria.where(FILTERED).is(filtered));
-            Criteria actionElemMatch = new Criteria().andOperator(Criteria.where(STATE).is(ActionState.FILTERED),
+            criteria.and(FILTERED).is(filtered);
+            Criteria actionElemMatch = new Criteria().andOperator(Criteria.where(STATE).is(ActionState.FILTERED.name()),
                     Criteria.where(FILTERED_CAUSE).regex(filter.getFilteredCause()));
-            andCriteria.add(Criteria.where(ACTIONS).elemMatch(actionElemMatch));
+            criteria.and(ACTIONS).elemMatch(actionElemMatch);
         }
 
-        if (nonNull(filter.getRequeueCountMin())) {
-            andCriteria.add(Criteria.where(REQUEUE_COUNT).gte(filter.getRequeueCountMin()));
+        if (filter.getRequeueCountMin() != null) {
+            criteria.and(REQUEUE_COUNT).gte(filter.getRequeueCountMin());
         }
 
-        if (nonNull(filter.getIngressBytesMin())) {
-            andCriteria.add(Criteria.where(INGRESS_BYTES).gte(filter.getIngressBytesMin()));
+        if (filter.getIngressBytesMin() != null && filter.getIngressBytesMax() != null) {
+            criteria.and(INGRESS_BYTES).gte(filter.getIngressBytesMin()).lte(filter.getIngressBytesMax());
+        } else if (filter.getIngressBytesMin() != null) {
+            criteria.and(INGRESS_BYTES).gte(filter.getIngressBytesMin());
+        } else if (filter.getIngressBytesMax() != null) {
+            criteria.and(INGRESS_BYTES).lte(filter.getIngressBytesMax());
         }
 
-        if (nonNull(filter.getIngressBytesMax())) {
-            andCriteria.add(Criteria.where(INGRESS_BYTES).lte(filter.getIngressBytesMax()));
+        if (filter.getReferencedBytesMin() != null && filter.getReferencedBytesMax() != null) {
+            criteria.and(REFERENCED_BYTES).gte(filter.getReferencedBytesMin()).lte(filter.getReferencedBytesMax());
+        } else if (filter.getReferencedBytesMin() != null) {
+            criteria.and(REFERENCED_BYTES).gte(filter.getReferencedBytesMin());
+        } else if (filter.getReferencedBytesMax() != null) {
+            criteria.and(REFERENCED_BYTES).lte(filter.getReferencedBytesMax());
         }
 
-        if (nonNull(filter.getReferencedBytesMin())) {
-            andCriteria.add(Criteria.where(REFERENCED_BYTES).gte(filter.getReferencedBytesMin()));
+        if (filter.getTotalBytesMin() != null && filter.getTotalBytesMax() != null) {
+            criteria.and(TOTAL_BYTES).gte(filter.getTotalBytesMin()).lte(filter.getTotalBytesMax());
+        } else if (filter.getTotalBytesMin() != null) {
+            criteria.and(TOTAL_BYTES).gte(filter.getTotalBytesMin());
+        } else if (filter.getTotalBytesMax() != null) {
+            criteria.and(TOTAL_BYTES).lte(filter.getTotalBytesMax());
         }
 
-        if (nonNull(filter.getReferencedBytesMax())) {
-            andCriteria.add(Criteria.where(REFERENCED_BYTES).lte(filter.getReferencedBytesMax()));
-        }
-
-        if (nonNull(filter.getTotalBytesMin())) {
-            andCriteria.add(Criteria.where(TOTAL_BYTES).gte(filter.getTotalBytesMin()));
-        }
-
-        if (nonNull(filter.getTotalBytesMax())) {
-            andCriteria.add(Criteria.where(TOTAL_BYTES).lte(filter.getTotalBytesMax()));
-        }
-
-        if (nonNull(filter.getErrorAcknowledged())) {
+        if (filter.getErrorAcknowledged() != null) {
             if (isTrue(filter.getErrorAcknowledged())) {
-                andCriteria.add(Criteria.where(ERROR_ACKNOWLEDGED).ne(null));
+                criteria.and(ERROR_ACKNOWLEDGED).ne(null);
             } else {
-                andCriteria.add(Criteria.where(ERROR_ACKNOWLEDGED).is(null));
+                criteria.and(ERROR_ACKNOWLEDGED).is(null);
             }
         }
 
-        if (nonNull(filter.getEgressed())) {
-            andCriteria.add(Criteria.where(EGRESSED).is(filter.getEgressed()));
+        if (filter.getEgressed() != null) {
+            criteria.and(EGRESSED).is(filter.getEgressed());
         }
 
-        if (nonNull(filter.getFiltered())) {
-            andCriteria.add(Criteria.where(FILTERED).is(filter.getFiltered()));
+        if (filter.getFiltered() != null) {
+            criteria.and(FILTERED).is(filter.getFiltered());
         }
 
-        if (nonNull(filter.getTestMode())) {
+        if (filter.getTestMode() != null) {
             if (isTrue(filter.getTestMode())) {
-                andCriteria.add(Criteria.where(TEST_MODE).is(true));
+                criteria.and(TEST_MODE).is(true);
             } else {
-                andCriteria.add(Criteria.where(TEST_MODE).ne(true));
+                criteria.and(TEST_MODE).ne(true);
             }
         }
 
-        if (nonNull(filter.getReplayable())) {
+        if (filter.getReplayable() != null) {
             if (isTrue(filter.getReplayable())) {
-                andCriteria.add(Criteria.where(REPLAYED).isNull());
-                andCriteria.add(Criteria.where(CONTENT_DELETED).isNull());
+                criteria.and(REPLAYED).isNull();
+                criteria.and(CONTENT_DELETED).isNull();
             } else {
-                andCriteria.add(new Criteria().orOperator(Criteria.where(REPLAYED).ne(null), Criteria.where(CONTENT_DELETED).ne(null)));
+                criteria.orOperator(Criteria.where(REPLAYED).ne(null), Criteria.where(CONTENT_DELETED).ne(null));
             }
         }
 
-        if (nonNull(filter.getReplayed())) {
+        if (filter.getReplayed() != null) {
             if (isTrue(filter.getReplayed())) {
-                andCriteria.add(Criteria.where(REPLAYED).ne(null));
+                criteria.and(REPLAYED).ne(null);
             } else {
-                andCriteria.add(Criteria.where(REPLAYED).isNull());
+                criteria.and(REPLAYED).isNull();
             }
         }
 
-        if (nonNull(filter.getPendingAnnotations())) {
+        if (filter.getPendingAnnotations() != null) {
             if (isTrue(filter.getPendingAnnotations())) {
-                andCriteria.add(Criteria.where(FIRST_PENDING_ANNOTATIONS_FOR_FLOWS).exists(true));
+                criteria.and(FIRST_PENDING_ANNOTATIONS_FOR_FLOWS).exists(true);
             } else {
-                andCriteria.add(Criteria.where(PENDING_ANNOTATIONS_FOR_FLOWS).is(null));
-            }
-        }
-
-        if (!andCriteria.isEmpty()) {
-            if (andCriteria.size() == 1) {
-                criteria = andCriteria.get(0);
-            } else {
-                criteria.andOperator(andCriteria.toArray(new Criteria[0]));
+                criteria.and(PENDING_ANNOTATIONS_FOR_FLOWS).is(null);
             }
         }
 
         return criteria;
     }
 
-    private Criteria fromAnnotations(String key, String value) {
+    private void addAnnotationCriteria(String key, String value, Criteria criteria) {
         if (null == key || null == value) {
-            return null;
+            return;
         }
 
         if (key.contains(".")) {
             key = StringUtils.replace(key, ".", DeltaFiConstants.MONGO_MAP_KEY_DOT_REPLACEMENT);
         }
 
-        return Criteria.where(ANNOTATIONS + "." + key).is(value);
+        criteria.and(ANNOTATIONS + "." + key).is(value);
     }
 
     private void addDeltaFilesOrderBy(Query query, DeltaFileOrder orderBy) {
-        if (isNull(orderBy)) {
+        if (orderBy == null) {
             orderBy = DeltaFileOrder.newBuilder().field(CREATED).direction(DeltaFileDirection.DESC).build();
         }
 
@@ -786,32 +741,28 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     private Criteria buildDeleteTimeCriteria(OffsetDateTime createdBeforeDate, OffsetDateTime completedBeforeDate) {
-        Criteria createdBeforeCriteria = nonNull(createdBeforeDate) ? createdBeforeCriteria(createdBeforeDate) : null;
-        Criteria completedBeforeCriteria = nonNull(completedBeforeDate) ? completedBeforeCriteria(completedBeforeDate) : null;
+        Criteria criteria = new Criteria();
+        boolean hasCreated = createdBeforeDate != null;
+        boolean hasCompleted = completedBeforeDate != null;
 
-        if (nonNull(createdBeforeCriteria) && isNull(completedBeforeCriteria)) {
-            return createdBeforeCriteria;
+        if (hasCreated && hasCompleted) {
+            return Criteria.where(CREATED).lt(createdBeforeDate)
+                    .orOperator(completedBeforeCriteria(completedBeforeDate));
+        } else if (hasCreated) {
+            return Criteria.where(CREATED).lt(createdBeforeDate);
+        } else if (hasCompleted) {
+            return completedBeforeCriteria(completedBeforeDate);
+        } else {
+            return criteria;
         }
-
-        if (nonNull(completedBeforeCriteria) && isNull(createdBeforeCriteria)) {
-            return completedBeforeCriteria;
-        }
-
-        return new Criteria().orOperator(createdBeforeCriteria, completedBeforeCriteria);
-    }
-
-    private Criteria createdBeforeCriteria(OffsetDateTime createdBeforeDate) {
-        return Criteria.where(CREATED).lt(createdBeforeDate);
     }
 
     private Criteria completedBeforeCriteria(OffsetDateTime completedBeforeDate) {
-        Criteria completed = Criteria.where(STAGE).in(DeltaFileStage.COMPLETE);
-        Criteria acknowledged = new Criteria().andOperator(
-                Criteria.where(STAGE).is(DeltaFileStage.ERROR),
-                Criteria.where(ERROR_ACKNOWLEDGED).ne(null));
-        Criteria completedOrAcknowledged = new Criteria().orOperator(completed, acknowledged);
-        Criteria lastModified = Criteria.where(MODIFIED).lt(completedBeforeDate);
-        return new Criteria().andOperator(completedOrAcknowledged, lastModified);
+        Criteria completed = Criteria.where(STAGE).in(DeltaFileStage.COMPLETE.name());
+        Criteria acknowledged = Criteria.where(STAGE).is(DeltaFileStage.ERROR.name())
+                .and(ERROR_ACKNOWLEDGED).ne(null);
+        return new Criteria().orOperator(completed, acknowledged)
+                .and(MODIFIED).lt(completedBeforeDate);
     }
 
     private OffsetDateTime requeueThreshold(OffsetDateTime requeueTime, int requeueSeconds) {
@@ -845,7 +796,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     private SummaryByFlow getSummaryByFlow(Integer offset, int limit, Criteria filter, DeltaFileOrder orderBy) {
-        long elementsToSkip = (nonNull(offset) && offset > 0) ? offset : 0;
+        long elementsToSkip = (offset != null && offset > 0) ? offset : 0;
 
         MatchOperation matchesErrorStage = Aggregation.match(filter);
 
@@ -889,7 +840,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     public SummaryByFlowAndMessage getErrorSummaryByMessage(Integer offset, int limit, ErrorSummaryFilter filter, DeltaFileOrder orderBy) {
-        return getSummaryByMessage(ACTIONS_ERROR_CAUSE, ActionState.ERROR, offset, limit, buildErrorSummaryCriteria(filter), orderBy);
+        return getSummaryByMessage(ACTIONS_ERROR_CAUSE, ERROR, offset, limit, buildErrorSummaryCriteria(filter), orderBy);
     }
 
     public SummaryByFlowAndMessage getFilteredSummaryByMessage(Integer offset, int limit, FilteredSummaryFilter filter, DeltaFileOrder orderBy) {
@@ -897,7 +848,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     private SummaryByFlowAndMessage getSummaryByMessage(String messageField, ActionState actionState, Integer offset, int limit, Criteria filter, DeltaFileOrder orderBy) {
-        long elementsToSkip = (nonNull(offset) && offset > 0) ? offset : 0;
+        long elementsToSkip = (offset != null && offset > 0) ? offset : 0;
 
         MatchOperation matchesErrorStage = Aggregation.match(filter);
 
@@ -1024,22 +975,18 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     private Criteria buildErrorSummaryCriteria(ErrorSummaryFilter filter) {
         Criteria criteria = Criteria.where(STAGE).is(DeltaFileStage.ERROR);
 
-        if (isNull(filter)) {
+        if (filter == null) {
             return criteria;
         }
 
-        List<Criteria> andCriteria = summaryCriteria(filter);
+        applySummaryCriteria(filter, criteria);
 
-        if (nonNull(filter.getErrorAcknowledged())) {
+        if (filter.getErrorAcknowledged() != null) {
             if (isTrue(filter.getErrorAcknowledged())) {
-                andCriteria.add(Criteria.where(ERROR_ACKNOWLEDGED).ne(null));
+                criteria.and(ERROR_ACKNOWLEDGED).ne(null);
             } else {
-                andCriteria.add(Criteria.where(ERROR_ACKNOWLEDGED).is(null));
+                criteria.and(ERROR_ACKNOWLEDGED).is(null);
             }
-        }
-
-        if (!andCriteria.isEmpty()) {
-            criteria.andOperator(andCriteria.toArray(new Criteria[0]));
         }
 
         return criteria;
@@ -1048,35 +995,27 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     private Criteria buildFilterSummaryCriteria(FilteredSummaryFilter filter) {
         Criteria criteria = Criteria.where(FILTERED).is(true);
 
-        if (isNull(filter)) {
+        if (filter == null) {
             return criteria;
         }
 
-        List<Criteria> andCriteria = summaryCriteria(filter);
-
-        if (!andCriteria.isEmpty()) {
-            criteria.andOperator(andCriteria.toArray(new Criteria[0]));
-        }
+        applySummaryCriteria(filter, criteria);
 
         return criteria;
     }
 
-    private List<Criteria> summaryCriteria(SummaryFilter filter) {
-        List<Criteria> andCriteria = new ArrayList<>();
-
-        if (nonNull(filter.getModifiedAfter())) {
-            andCriteria.add(Criteria.where(MODIFIED).gt(filter.getModifiedAfter()));
+    private void applySummaryCriteria(SummaryFilter filter, Criteria criteria) {
+        if (filter.getModifiedAfter() != null && filter.getModifiedBefore() != null) {
+            criteria.and(MODIFIED).gt(filter.getModifiedAfter()).lt(filter.getModifiedBefore());
+        } else if (filter.getModifiedAfter() != null) {
+            criteria.and(MODIFIED).gt(filter.getModifiedAfter());
+        } else if (filter.getModifiedBefore() != null) {
+            criteria.and(MODIFIED).lt(filter.getModifiedBefore());
         }
 
-        if (nonNull(filter.getModifiedBefore())) {
-            andCriteria.add(Criteria.where(MODIFIED).lt(filter.getModifiedBefore()));
+        if (filter.getFlow() != null) {
+            criteria.and(SOURCE_INFO_FLOW).is(filter.getFlow());
         }
-
-        if (nonNull(filter.getFlow())) {
-            andCriteria.add(Criteria.where(SOURCE_INFO_FLOW).is(filter.getFlow()));
-        }
-
-        return andCriteria;
     }
 
     @Override
@@ -1210,25 +1149,23 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         bulkOps.execute();
     }
 
-    private Criteria filenameCriteria(FilenameFilter filenameFilter) {
+    private void addFilenameCriteria(FilenameFilter filenameFilter, Criteria criteria) {
         String filename = filenameFilter.getFilename();
         Objects.requireNonNull(filename, "The filename must be provided in the FilenameFilter");
 
         String searchField = SOURCE_INFO_NORMALIZED_FILENAME;
 
-        if (!Boolean.TRUE.equals(filenameFilter.getCaseSensitive())) {
+        if (isFalse(filenameFilter.getCaseSensitive())) {
             filename =  filename.toLowerCase();
         } else {
             searchField = SOURCE_INFO_FILENAME;
         }
 
         // use the exact match criteria by default
-        return Boolean.TRUE.equals(filenameFilter.getRegex()) ?
-            Criteria.where(searchField).regex(filename) :
-            Criteria.where(searchField).is(filename);
-    }
-
-    private boolean isTrue(Boolean value) {
-        return Boolean.TRUE.equals(value);
+        if (isTrue(filenameFilter.getRegex())) {
+            criteria.and(searchField).regex(filename);
+        } else {
+            criteria.and(searchField).is(filename);
+        }
     }
 }

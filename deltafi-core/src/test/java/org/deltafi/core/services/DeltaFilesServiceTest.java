@@ -241,7 +241,7 @@ class DeltaFilesServiceTest {
         DeltaFile deltaFile1 = Util.buildDeltaFile("1", List.of(content1));
         Content content2 = new Content("name", "mediaType", new Segment("b", "2"));
         DeltaFile deltaFile2 = Util.buildDeltaFile("2", List.of(content2));
-        when(deltaFileRepo.findForDelete(any(), any(), anyLong(), any(), any(), anyBoolean(), anyInt())).thenReturn(List.of(deltaFile1, deltaFile2));
+        when(deltaFileRepo.findForDelete(any(), any(), anyLong(), any(), anyBoolean(), anyInt())).thenReturn(List.of(deltaFile1, deltaFile2));
 
         deltaFilesService.delete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", false);
 
@@ -257,7 +257,7 @@ class DeltaFilesServiceTest {
         DeltaFile deltaFile1 = Util.buildDeltaFile("1", List.of(content1));
         Content content2 = new Content("name", "mediaType", new Segment("b", "2"));
         DeltaFile deltaFile2 = Util.buildDeltaFile("2", List.of(content2));
-        when(deltaFileRepo.findForDelete(any(), any(), anyLong(), any(), any(), anyBoolean(), anyInt())).thenReturn(List.of(deltaFile1, deltaFile2));
+        when(deltaFileRepo.findForDelete(any(), any(), anyLong(), any(), anyBoolean(), anyInt())).thenReturn(List.of(deltaFile1, deltaFile2));
 
         deltaFilesService.delete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", true);
 
