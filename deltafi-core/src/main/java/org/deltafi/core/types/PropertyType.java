@@ -103,6 +103,18 @@ public enum PropertyType {
             target.setCoreServiceThreads(source.getCoreServiceThreads());
         }
     },
+    CORE_INTERNAL_QUEUE_SIZE("coreInternalQueueSize", "The number of incoming events for core to queue internally for processing",
+            DeltaFiProperties::getCoreInternalQueueSize) {
+        @Override
+        public Object convertValue(String value) {
+            return convertInt(value, 1);
+        }
+
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.setCoreInternalQueueSize(source.getCoreInternalQueueSize());
+        }
+    },
     DELETE_AGE_OFF_DAYS("delete.ageOffDays", "Number of days that a DeltaFile should live, any records older will be removed",
             props -> props.getDelete().getAgeOffDays()) {
         @Override

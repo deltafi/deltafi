@@ -77,6 +77,7 @@ export default function useSystemSnapshots() {
       requeueSeconds: true,
       autoResumeCheckFrequency: true,
       coreServiceThreads: true,
+      coreInternalQueueSize: true,
       scheduledServiceThreads: true,
       ui: {
         useUTC: true,

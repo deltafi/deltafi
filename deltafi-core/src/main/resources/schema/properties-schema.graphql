@@ -179,6 +179,7 @@ type DeltaFiProperties {
     requeueSeconds: Int!
     autoResumeCheckFrequency: String!
     coreServiceThreads: Int!
+    coreInternalQueueSize: Int!
     scheduledServiceThreads: Int!
     delete: DeleteProperties!
     ingress: IngressProperties!
@@ -195,6 +196,7 @@ input DeltaFiPropertiesInput {
     requeueSeconds: Int!
     autoResumeCheckFrequency: String!
     coreServiceThreads: Int!
+    coreInternalQueueSize: Int!
     scheduledServiceThreads: Int!
     delete: DeletePropertiesInput!
     ingress: IngressPropertiesInput!

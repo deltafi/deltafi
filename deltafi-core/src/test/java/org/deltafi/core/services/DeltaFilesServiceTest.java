@@ -40,6 +40,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.env.Environment;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -97,7 +98,8 @@ class DeltaFilesServiceTest {
                           @Mock DeltaFileCacheService deltaFileCacheService,
                           @Mock QueueManagementService queueManagementService,
                           @Mock QueuedAnnotationRepo queuedAnnotationRepo,
-                          @Mock TimedIngressFlowService timedIngressFlowService) {
+                          @Mock TimedIngressFlowService timedIngressFlowService,
+                          @Mock Environment environment) {
         this.normalizeFlowService = normalizeFlowService;
         this.egressFlowService = egressFlowService;
         this.transformFlowService = transformFlowService;
@@ -113,7 +115,7 @@ class DeltaFilesServiceTest {
                 egressFlowService, transformFlowService, mockDeltaFiPropertiesService, stateMachine,
                 deltaFileRepo, actionEventQueue, contentStorageService, resumePolicyService, metricService,
                 coreAuditLogger, collectService, identityService, new DidMutexService(), deltaFileCacheService,
-                timedIngressFlowService, queueManagementService, queuedAnnotationRepo);
+                timedIngressFlowService, queueManagementService, queuedAnnotationRepo, environment);
     }
 
     @Test

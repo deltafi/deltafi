@@ -37,6 +37,7 @@ public class DeltaFiProperties {
     private int requeueSeconds = 30;
     private Duration autoResumeCheckFrequency = Duration.ofMinutes(1);
     private int coreServiceThreads = 16;
+    private int coreInternalQueueSize = 64;
     private int scheduledServiceThreads = 8;
     private MetricsProperties metrics = new MetricsProperties();
     private DeleteProperties delete = new DeleteProperties();

@@ -48,6 +48,8 @@ import org.deltafi.core.retry.MongoRetryable;
 import org.deltafi.core.types.ResumePolicy;
 import org.deltafi.core.types.*;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.context.annotation.ConditionContext;
+import org.springframework.core.env.Environment;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Async;
@@ -120,20 +122,28 @@ public class DeltaFilesService {
     private final TimedIngressFlowService timedIngressFlowService;
     private final QueueManagementService queueManagementService;
     private final QueuedAnnotationRepo queuedAnnotationRepo;
+    private final Environment environment;
 
     private ExecutorService executor;
+    private Semaphore semaphore;
 
     private final ScheduledExecutorService timedOutCollectExecutor = Executors.newSingleThreadScheduledExecutor();
     private ScheduledFuture<?> timedOutCollectFuture;
 
     @PostConstruct
     private void init() {
-        DeltaFiProperties properties = getProperties();
-        int threadCount = properties.getCoreServiceThreads() > 0 ? properties.getCoreServiceThreads() : 16;
-        executor = Executors.newFixedThreadPool(threadCount);
-        log.info("Executors pool size: " + threadCount);
+        String scheduleActionEvents = environment.getProperty("schedule.actionEvents");
+        if (scheduleActionEvents == null || scheduleActionEvents.equals("true")) {
+            DeltaFiProperties properties = getProperties();
+            int threadCount = properties.getCoreServiceThreads() > 0 ? properties.getCoreServiceThreads() : 16;
+            executor = Executors.newFixedThreadPool(threadCount);
+            log.info("Executors pool size: " + threadCount);
+            int internalQueueSize = properties.getCoreInternalQueueSize() > 0 ? properties.getCoreInternalQueueSize() : 64;
+            semaphore = new Semaphore(internalQueueSize);
+            log.info("Internal queue size: " + internalQueueSize);
 
-        scheduleCollectCheckForSoonestInRepository();
+            scheduleCollectCheckForSoonestInRepository();
+        }
     }
 
     public DeltaFile getDeltaFile(String did) {
@@ -1848,27 +1858,38 @@ public class DeltaFilesService {
 
     public void processResult(ActionEvent event) {
         if (event == null) throw new RuntimeException("ActionEventQueue returned null event.  This should NEVER happen");
-        executor.submit(() -> {
-            int count = 0;
-            while (true) {
+
+        try {
+            semaphore.acquire();
+            executor.submit(() -> {
                 try {
-                    count += 1;
-                    handleActionEvent(event);
-                    break;
-                } catch (OptimisticLockingFailureException e) {
-                    if (count > 9) {
-                        throw e;
-                    } else {
-                        log.warn("Retrying after OptimisticLockingFailureException caught processing " + event.getAction() + " for " + event.getDid());
+                    int count = 0;
+                    while (true) {
+                        try {
+                            count += 1;
+                            handleActionEvent(event);
+                            break;
+                        } catch (OptimisticLockingFailureException e) {
+                            if (count > 9) {
+                                throw e;
+                            } else {
+                                log.warn("Retrying after OptimisticLockingFailureException caught processing " + event.getAction() + " for " + event.getDid());
+                            }
+                        } catch (Throwable e) {
+                            StringWriter stackWriter = new StringWriter();
+                            e.printStackTrace(new PrintWriter(stackWriter));
+                            log.error("Exception processing incoming action event: " + "\n" + e.getMessage() + "\n" + stackWriter);
+                            break;
+                        }
                     }
-                } catch (Throwable e) {
-                    StringWriter stackWriter = new StringWriter();
-                    e.printStackTrace(new PrintWriter(stackWriter));
-                    log.error("Exception processing incoming action event: " + "\n" + e.getMessage() + "\n" + stackWriter);
-                    break;
+                } finally {
+                    semaphore.release();
                 }
-            }
-        });
+            });
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt(); // Preserve interrupt status
+            log.error("Thread interrupted while waiting for a permit to process action event: " + e.getMessage());
+        }
     }
 
     private void enqueueActions(List<ActionInvocation> actionInvocations) throws EnqueueActionException {

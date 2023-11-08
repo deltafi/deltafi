@@ -29,7 +29,8 @@ module Deltafi
           systemName
           requeueSeconds
           coreServiceThreads
-              scheduledServiceThreads
+          coreInternalQueueSize
+          scheduledServiceThreads
           delete {
             ageOffDays
             frequency

@@ -73,6 +73,7 @@ ALL_SNAPSHOT_FIELDS="id
               requeueSeconds
               autoResumeCheckFrequency
               coreServiceThreads
+              coreInternalQueueSize
               scheduledServiceThreads
               delete {
                 ageOffDays
