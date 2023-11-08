@@ -26,7 +26,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Data
 @NoArgsConstructor
@@ -74,14 +73,15 @@ public class Metric {
      */
     @JsonIgnore
     public String metricName() {
-        String taglist = tags.entrySet().stream()
-                .map(t -> t.getKey() + "=" + t.getValue())
-                .sorted()
-                .collect(Collectors.joining(";"));
+        if (tags.isEmpty()) return name;
+        StringBuilder taglist = new StringBuilder(name);
+        tags.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> {
+                    taglist.append(";");
+                    taglist.append(entry.getKey()).append("=").append(entry.getValue());
+                });
 
-        if (taglist.isBlank()) return name;
-
-        return String.join(";", name, taglist);
+        return taglist.toString();
     }
-
 }
