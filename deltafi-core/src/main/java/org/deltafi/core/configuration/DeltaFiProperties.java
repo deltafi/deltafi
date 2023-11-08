@@ -34,7 +34,7 @@ public class DeltaFiProperties {
     @Id
     private String id = PROPERTY_ID;
     private String systemName = "DeltaFi";
-    private int requeueSeconds = 30;
+    private int requeueSeconds = 300;
     private Duration autoResumeCheckFrequency = Duration.ofMinutes(1);
     private int coreServiceThreads = 16;
     private int coreInternalQueueSize = 64;

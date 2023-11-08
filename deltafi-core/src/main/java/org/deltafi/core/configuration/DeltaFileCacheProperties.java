@@ -22,5 +22,5 @@ import lombok.Data;
 @Data
 public class DeltaFileCacheProperties {
     private boolean enabled = true;
-    private int syncSeconds = 10;
+    private int syncSeconds = 30;
 }
