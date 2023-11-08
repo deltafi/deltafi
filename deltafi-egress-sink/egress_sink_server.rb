@@ -61,6 +61,8 @@ class EgressSinkServer < Sinatra::Base
       raise "Missing metadata key \"#{key}\"" unless metadata.key?(key)
     end
 
+    sink_file(json, metadata, request.body.read)
+
     return 200
   end
 
