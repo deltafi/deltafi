@@ -29,13 +29,13 @@
         </Column>
         <Column header="Description" field="description" :sortable="true"></Column>
         <Column header="Target Flow" field="targetFlow" :sortable="true"></Column>
-        <Column header="Cron Schedule" field="cronSchedule" :sortable="true" class="inline-edit-column">
+        <Column header="Cron Schedule" field="cronSchedule" :sortable="true" class="inline-edit-column" style="width: 10rem;">
           <template #body="{ data, field }">
             <span v-if="data[field] === null">-</span>
             <span v-else>{{ data[field] }}</span>
           </template>
           <template #editor="{ data, field }">
-            <InputText v-model="data[field]" class="p-inputtext-sm inline-edit-column" style="width: 6rem;" autofocus />
+            <InputText v-model="data[field]" class="p-inputtext-sm inline-edit-column" style="width: 9rem;" autofocus />
           </template>
         </Column>
         <Column header="Status" field="ingressStatus" :sortable="true">
@@ -61,7 +61,7 @@
           <Timestamp :timestamp="activeAction.nextRun" />
         </span>
         <span v-else-if="fieldName == 'memo'">
-          <pre>{{ activeAction.memo }}</pre>
+          <pre>{{ activeAction.memo || '-' }}</pre>
         </span>
         <span v-else-if="['memo', 'executeImmediate', 'currentDid'].includes(fieldName)">
           <span v-if="activeAction[fieldName] === null">-</span>

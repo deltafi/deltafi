@@ -18,7 +18,8 @@
 
 <template>
   <span>
-    <span v-if="showTimeAgo" v-tooltip.top="time">{{ timeAgo }}</span>
+    <span v-if="timestamp === null || timestamp === undefined">-</span>
+    <span v-else-if="showTimeAgo" v-tooltip.top="time">{{ timeAgo }}</span>
     <span v-else v-tooltip.top="timeAgo">{{ time }}</span>
   </span>
 </template>
