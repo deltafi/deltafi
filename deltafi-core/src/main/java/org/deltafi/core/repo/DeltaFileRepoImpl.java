@@ -638,6 +638,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             Criteria actionElemMatch = new Criteria().andOperator(Criteria.where(STATE).is(ActionState.FILTERED.name()),
                     Criteria.where(FILTERED_CAUSE).regex(filter.getFilteredCause()));
             criteria.and(ACTIONS).elemMatch(actionElemMatch);
+        } else if (filter.getFiltered() != null) {
+            criteria.and(FILTERED).is(filter.getFiltered());
         }
 
         if (filter.getRequeueCountMin() != null) {
@@ -678,10 +680,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         if (filter.getEgressed() != null) {
             criteria.and(EGRESSED).is(filter.getEgressed());
-        }
-
-        if (filter.getFiltered() != null) {
-            criteria.and(FILTERED).is(filter.getFiltered());
         }
 
         if (filter.getTestMode() != null) {
