@@ -5,6 +5,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.1.11] - 2023-11-08
+
+### Changed
+- Configured `egress-sink` to use rainbows/unicorn for better performance.
+- Change default `scheduledServiceThreads` from 32 to 8
+- Change default `deltaFileCache.enabled` to true
+- UI: Changed width of Cron Schedule column in Timed Ingress Actions table.
+- Change default `requeueSeconds` from 30 to 300 and `deltaFileCache.syncSeconds` from 10 to 30 to reduce mongo strain and prevent races between the cache and requeue
+
+### Fixed
+- Resolved a bug that was causing slow selection of DeltaFiles on the Search page.
+- Allow strings up to 16 MB to be serialized into ActionInputs in the Java action kit 
+- Ensure reinjected child actions are cold queued if needed 
+- Improve core memory use when too many files are flowing through the system. Introduce a semaphore to limit how many messages will be pulled off the queue, configurable with the `coreInternalQueueSize` property.
+- Do not start unneccessary processing threads in ingress.
+- UI: Timestamp component now renders "-" instead of "Invalid Date" if passed a null/undefined.
+- Fixed bug in egress-sink causing no files to be written to disk.
+- Include `SCHEMA_VERSION` field in all partial DeltaFile queries so that upconversion is not attempted.
+- Fix memory issue: Replace Metric tag string concatentation with StringBuilder 
+
+### Tech-Debt/Refactor
+- Do not create empty arrays and maps when initializing DeltaFile and Action objects, since they will be overwritten upon serialization 
+- Refactor DeltaFileImpl mongo queries using fluent interfaces.  Creates cleaner code and queries sent to the DB.
+- Reduce minio partSize from 100,000,000 to 10,000,000 to reduce memory allocations 
+
 ## [1.1.10] - 2023-11-06
 
 ### Fixed
@@ -2476,7 +2501,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.10...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.11...main
+[1.1.11]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.10...1.1.11
 [1.1.10]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.9...1.1.10
 [1.1.9]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.8...1.1.9
 [1.1.8]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.7...1.1.8
