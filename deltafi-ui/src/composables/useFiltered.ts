@@ -25,7 +25,7 @@ export default function useFiltered() {
   const data = ref(null);
   const allCauses = ref(null)
 
-  const fetchAllFiltered = async ( offSet: Number, perPage: Number, sortBy: string, sortDirection: string, flowName?: string, filteredCause?: string) => {
+  const fetchAllFiltered = async (offSet: Number, perPage: Number, sortBy: string, sortDirection: string, flowName?: string, filteredCause?: string) => {
     const searchParams = {
       deltaFiles: {
         __args: {
@@ -71,11 +71,11 @@ export default function useFiltered() {
         },
       },
     };
-    await queryGraphQL(searchParams, "getErrors");
+    await queryGraphQL(searchParams, "getFiltered");
     data.value = response.value.data;
   };
 
-  const fetchByFlow = async ( offSet: Number, perPage: Number, sortBy: string, sortDirection: string,flow: string) => {
+  const fetchByFlow = async (offSet: Number, perPage: Number, sortBy: string, sortDirection: string, flow: string) => {
     const searchParamsFlow = {
       filteredSummaryByFlow: {
         __args: {
@@ -112,7 +112,7 @@ export default function useFiltered() {
     await queryGraphQL(searchParams, "getFilteredByMessage");
     allCauses.value = response.value.data.filteredSummaryByMessage.countPerMessage;
   };
-  const fetchByMessage = async ( offSet: Number, perPage: Number, sortBy: string, sortDirection: string,flow: string) => {
+  const fetchByMessage = async (offSet: Number, perPage: Number, sortBy: string, sortDirection: string, flow: string) => {
     const searchParams = {
       filteredSummaryByMessage: {
         __args: {
@@ -140,5 +140,5 @@ export default function useFiltered() {
     data.value = response.value.data.filteredSummaryByMessage;
   };
 
-  return { data,allCauses, loading, loaded, fetchAllFiltered ,fetchByFlow,fetchByMessage,fetchAllMessage, errors };
+  return { data, allCauses, loading, loaded, fetchAllFiltered, fetchByFlow, fetchByMessage, fetchAllMessage, errors };
 }

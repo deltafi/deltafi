@@ -88,7 +88,7 @@ export default function useIngressActions() {
         },
       },
     };
-    return sendGraphQLQuery(query, "setTimedIngressInterval", "mutation");
+    return sendGraphQLQuery(query, "setTimedIngressCronSchedule", "mutation");
   };
 
   return {
