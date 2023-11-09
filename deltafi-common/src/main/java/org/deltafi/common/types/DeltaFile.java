@@ -155,7 +155,7 @@ public class DeltaFile {
   }
 
   public List<Action> erroredActions() {
-    return actions.stream().filter(a -> a.getState() == ActionState.ERROR).collect(Collectors.toList());
+    return getActions().stream().filter(a -> a.getState() == ActionState.ERROR).collect(Collectors.toList());
   }
 
   public Action queueAction(String flow, String name, ActionType type, boolean coldQueue) {
@@ -571,7 +571,7 @@ public class DeltaFile {
   }
 
   public Action lastCompleteDataAmendedAction() {
-    return actions.stream()
+    return getActions().stream()
             .filter(action -> action.amendedData() && action.complete())
             .reduce((first, second) -> second)
             .orElse(null);
@@ -587,11 +587,11 @@ public class DeltaFile {
   }
 
   public @NotNull List<Domain> domains() {
-    return actions.stream().map(Action::getDomains).flatMap(Collection::stream).toList();
+    return getActions().stream().map(Action::getDomains).flatMap(Collection::stream).toList();
   }
 
   public @NotNull List<Enrichment> enrichments() {
-    return actions.stream().map(Action::getEnrichments).flatMap(Collection::stream).toList();
+    return getActions().stream().map(Action::getEnrichments).flatMap(Collection::stream).toList();
   }
 
   public @NotNull List<Egress> getEgress() {
@@ -605,13 +605,13 @@ public class DeltaFile {
   }
 
   private List<Action> formatActions(String flow) {
-    return actions.stream()
+    return getActions().stream()
             .filter(action -> action.getType() == ActionType.FORMAT && action.getFlow().equals(flow))
             .toList();
   }
 
   public List<Action> retriedEgressActions(String flow) {
-    return actions.stream()
+    return getActions().stream()
             .filter(action -> action.afterFormat() && action.getFlow().equals(flow) && action.getState() == ActionState.RETRIED)
             .toList();
   }
