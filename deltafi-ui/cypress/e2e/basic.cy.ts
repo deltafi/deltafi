@@ -35,9 +35,9 @@ describe("Delete Policies Page", () => {
 
 describe("DeltaFile Search Page", () => {
   it("loads DeltaFile Search", () => {
-    cy.visit("http://localhost:8080/deltafile/search");
+    cy.visit("http://localhost:8080/deltafile/search?perPage=1000");
     cy.get("span.p-panel-title").contains("Advanced Search Options");
-    cy.get("span.p-paginator-current").contains("1 - 1 of 1");
+    cy.get("span.p-paginator-current").contains("1 - 1000 of 1000");
   });
 });
 

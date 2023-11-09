@@ -16,29 +16,38 @@
    limitations under the License.
 */
 
-const generateData = () => {
+import _ from "lodash";
+import { faker } from "@faker-js/faker";
+
+const generateDeltaFile = () => {
+  return {
+    did: faker.datatype.uuid(),
+    stage: "COMPLETE",
+    totalBytes: 65535,
+    modified: "2022-02-23T15:19:39.549Z",
+    created: "2022-02-23T15:19:39.434Z",
+    sourceInfo: {
+      filename: "fakeData.txt",
+      flow: "smoke",
+    },
+  }
+}
+
+const generateDeltaFiles = (count: number) => {
+  return _.times(count, generateDeltaFile);
+}
+
+const generateData = (count: number) => {
   const data = {
     offset: 0,
-    count: 1,
-    totalCount: 1,
-    deltaFiles: [
-      {
-        did: "27186720-723a-4f82-a5ab-2fff441b2c9b",
-        stage: "ERROR",
-        totalBytes: 65535,
-        modified: "2022-02-23T15:19:39.549Z",
-        created: "2022-02-23T15:19:39.434Z",
-        sourceInfo: {
-          filename: "fakeData.txt",
-          flow: "smoke",
-        },
-      },
-    ],
+    count: count,
+    totalCount: count,
+    deltaFiles: generateDeltaFiles(count),
   };
 
   return data;
 };
 
 export default {
-  deltaFiles: generateData(),
+  deltaFiles: generateData(1000),
 };
