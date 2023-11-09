@@ -28,6 +28,9 @@ spec:
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 9292
+        env:
+        - name: WORKERS
+          value: {{ default "8" .Values.deltafi.egress_sink.workers | quote }}
         {{- include "defaultStartupProbe" . | nindent 8 }}
         {{- include "defaultReadinessProbe" . | nindent 8 }}
         {{- include "defaultLivenessProbe" . | nindent 8 }}
