@@ -141,7 +141,7 @@ initContainers:
 - name: MINIO_URL
   value: http://deltafi-minio:9000
 - name: MINIO_PARTSIZE
-  value: "100000000"
+  value: "10000000"
 - name: REDIS_URL
   value: http://deltafi-redis-master:6379
 - name: REDIS_PASSWORD
