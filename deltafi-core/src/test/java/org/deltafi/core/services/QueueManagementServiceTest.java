@@ -19,7 +19,6 @@ package org.deltafi.core.services;
 
 import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.types.ActionConfiguration;
-import org.deltafi.common.types.ActionDescriptor;
 import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.TransformActionConfiguration;
 import org.deltafi.core.configuration.DeltaFiProperties;
@@ -41,13 +40,9 @@ import static org.mockito.Mockito.*;
 class QueueManagementServiceTest {
 
     private static final String QUEUE_NAME = "queueName";
-    private static final ActionDescriptor ACTION_DESCRIPTOR = new ActionDescriptor(QUEUE_NAME, "", ActionType.TRANSFORM, null, null, null);
     private static final String ACTION_NAME = "actionName";
     private static final ColdQueuedActionSummary COLD_QUEUED_ACTION_SUMMARY = new ColdQueuedActionSummary(ACTION_NAME, ActionType.TRANSFORM, 1);
     private static final ActionConfiguration ACTION_CONFIGURATION = new TransformActionConfiguration(ACTION_NAME, QUEUE_NAME);
-
-    @Mock
-    ActionDescriptorService actionDescriptorService;
 
     @Mock
     ActionEventQueue actionEventQueue;
@@ -76,7 +71,7 @@ class QueueManagementServiceTest {
     @Test
     void testIdentifyColdQueuesAdd() {
         when(actionEventQueue.keys()).thenReturn(Set.of(QUEUE_NAME));
-        when(actionDescriptorService.getAll()).thenReturn(List.of(ACTION_DESCRIPTOR));
+        when(unifiedFlowService.allActionConfigurations()).thenReturn(List.of(ACTION_CONFIGURATION));
         when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
         when(deltaFiProperties.getInMemoryQueueSize()).thenReturn(10);
         when(actionEventQueue.size(QUEUE_NAME)).thenReturn(12L);
@@ -89,7 +84,7 @@ class QueueManagementServiceTest {
     void testIdentifyColdQueuesUpdate() {
         queueManagementService.getColdQueues().put(QUEUE_NAME, 500L);
         when(actionEventQueue.keys()).thenReturn(Set.of(QUEUE_NAME));
-        when(actionDescriptorService.getAll()).thenReturn(List.of(ACTION_DESCRIPTOR));
+        when(unifiedFlowService.allActionConfigurations()).thenReturn(List.of(ACTION_CONFIGURATION));
         when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
         when(deltaFiProperties.getInMemoryQueueSize()).thenReturn(10);
         when(actionEventQueue.size(QUEUE_NAME)).thenReturn(400L);
@@ -103,7 +98,7 @@ class QueueManagementServiceTest {
     void testIdentifyColdQueuesRemove() {
         queueManagementService.getColdQueues().put(QUEUE_NAME, 500L);
         when(actionEventQueue.keys()).thenReturn(Set.of(QUEUE_NAME));
-        when(actionDescriptorService.getAll()).thenReturn(List.of(ACTION_DESCRIPTOR));
+        when(unifiedFlowService.allActionConfigurations()).thenReturn(List.of(ACTION_CONFIGURATION));
         when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
         when(deltaFiProperties.getInMemoryQueueSize()).thenReturn(10);
         when(actionEventQueue.size(QUEUE_NAME)).thenReturn(8L);

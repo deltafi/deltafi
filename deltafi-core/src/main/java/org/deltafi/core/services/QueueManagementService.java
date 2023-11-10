@@ -21,7 +21,6 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.types.ActionConfiguration;
-import org.deltafi.common.types.ActionDescriptor;
 import org.deltafi.common.types.DeltaFiConfiguration;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.types.ColdQueuedActionSummary;
@@ -49,7 +48,6 @@ public class QueueManagementService {
     @Getter
     private final ConcurrentHashMap<String, Long> allQueues = new ConcurrentHashMap<>();
 
-    ActionDescriptorService actionDescriptorService;
     ActionEventQueue actionEventQueue;
     DeltaFileRepo deltaFileRepo;
     UnifiedFlowService unifiedFlowService;
@@ -57,14 +55,12 @@ public class QueueManagementService {
     DeltaFiPropertiesService deltaFiPropertiesService;
     Environment env;
 
-    public QueueManagementService(ActionDescriptorService actionDescriptorService,
-                                  ActionEventQueue actionEventQueue,
+    public QueueManagementService(ActionEventQueue actionEventQueue,
                                   DeltaFileRepo deltaFileRepo,
                                   UnifiedFlowService unifiedFlowService,
                                   @Lazy DeltaFilesService deltaFilesService,
                                   DeltaFiPropertiesService deltaFiPropertiesService,
                                   Environment env) {
-        this.actionDescriptorService = actionDescriptorService;
         this.actionEventQueue = actionEventQueue;
         this.deltaFileRepo = deltaFileRepo;
         this.unifiedFlowService = unifiedFlowService;
@@ -76,7 +72,7 @@ public class QueueManagementService {
     @Scheduled(fixedDelay = 2000)
     void refreshQueues() {
         Set<String> keys = actionEventQueue.keys();
-        List<String> actionNames = actionDescriptorService.getAll().stream().map(ActionDescriptor::getName).toList();
+        Set<String> actionNames = unifiedFlowService.allActionConfigurations().stream().map(ActionConfiguration::getType).collect(Collectors.toSet());
         int maxQueueSize = maxQueueSize();
 
         coldQueues.keySet().removeIf(q -> !keys.contains(q) || !actionNames.contains(q));
