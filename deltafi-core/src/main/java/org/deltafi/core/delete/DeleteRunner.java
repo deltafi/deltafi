@@ -49,7 +49,9 @@ public class DeleteRunner {
         while(rerun) {
             rerun = false;
             for (DeletePolicyWorker policy : policiesScheduled) {
-                rerun = rerun || policy.run();
+                if (policy.run()) {
+                    rerun = true;
+                }
             }
         }
     }
