@@ -337,6 +337,11 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         Query query = new Query(buildReadyForDeleteCriteria(createdBeforeDate, completedBeforeDate, minBytes, flowName, deleteMetadata, false));
         query.limit(batchSize);
+        if (completedBeforeDate != null) {
+            query.with(Sort.by(Sort.Direction.ASC, MODIFIED));
+        } else {
+            query.with(Sort.by(Sort.Direction.ASC, CREATED));
+        }
         addDeltaFilesOrderBy(query, DeltaFileOrder.newBuilder().field(CREATED).direction(DeltaFileDirection.ASC).build());
         query.fields().include(ID, TOTAL_BYTES, OLD_PROTOCOL_STACK_SEGMENTS, OLD_PROTOCOL_STACK_SEGMENTS_2, ACTION_SEGMENTS, OLD_FORMATTED_DATA_SEGMENTS, OLD_FORMATTED_DATA_SEGMENTS_2, OLD_PROTOCOL_STACK_ACTION_NAME, OLD_FORMATTED_DATA_ACTION_NAME, ACTIONS_NAME, CONTENT_DELETED, SCHEMA_VERSION);
 
