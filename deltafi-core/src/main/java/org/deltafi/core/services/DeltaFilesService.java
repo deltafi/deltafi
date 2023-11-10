@@ -1978,9 +1978,7 @@ public class DeltaFilesService {
                     policy);
         }
 
-        for (DeltaFile deltaFile : deltaFiles) {
-            coreAuditLogger.logDelete(policy, deltaFile.getDid(), deleteMetadata);
-        }
+        coreAuditLogger.logDelete(policy, deltaFiles.stream().map(DeltaFile::getDid).toList(), deleteMetadata);
     }
 
     private void deleteMetadata(List<DeltaFile> deltaFiles) {

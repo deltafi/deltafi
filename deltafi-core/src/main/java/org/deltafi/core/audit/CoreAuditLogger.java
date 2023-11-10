@@ -20,7 +20,7 @@ package org.deltafi.core.audit;
 import com.netflix.graphql.dgs.context.DgsContext;
 import com.netflix.graphql.dgs.internal.DgsWebMvcRequestData;
 import graphql.execution.instrumentation.InstrumentationState;
-import graphql.execution.instrumentation.SimpleInstrumentation;
+import graphql.execution.instrumentation.SimplePerformantInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLNonNull;
@@ -39,20 +39,20 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.deltafi.common.constant.DeltaFiConstants.USER_HEADER;
 
 @Component
 @Slf4j(topic = "AUDIT")
-public class CoreAuditLogger extends SimpleInstrumentation {
+public class CoreAuditLogger extends SimplePerformantInstrumentation {
 
     private static final String UNKNOWN_USER = "system";
     private static final String IGNORABLE_PATH = "registerActions";
 
-    private final Map<String, String> permissionMap = new HashMap<>();
+    private final Map<String, String> permissionMap = new ConcurrentHashMap<>();
 
     @Override
     @NotNull
@@ -101,9 +101,11 @@ public class CoreAuditLogger extends SimpleInstrumentation {
         }
     }
 
-    public void logDelete(String policy, String did, boolean metadata) {
+    public void logDelete(String policy, List<String> dids, boolean metadata) {
         try (MDC.MDCCloseable ignored = MDC.putCloseable("user", UNKNOWN_USER)) {
-            log.info("policy {} deleted {} content{}", policy, did, (metadata ? " and metadata" : ""));
+            for (String did : dids) {
+                log.info("policy {} deleted {} content{}", policy, did, (metadata ? " and metadata" : ""));
+            }
         }
     }
 
@@ -157,5 +159,4 @@ public class CoreAuditLogger extends SimpleInstrumentation {
 
         return null;
     }
-
 }
