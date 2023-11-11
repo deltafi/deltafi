@@ -146,3 +146,30 @@
     width: 17vw !important;
   }
 }
+
+.flow-plan-raw-json-dialog {
+  pre {
+    padding: 3px;
+    margin: 3px;
+  }
+
+  .string {
+    color: #e91e63;
+  }
+
+  .number {
+    color: #00bcd4;
+  }
+
+  .boolean {
+    color: #ff00ff;
+  }
+
+  .null {
+    color: #9e9e9e;
+  }
+
+  .key {
+    color: #3753a9;
+  }
+}

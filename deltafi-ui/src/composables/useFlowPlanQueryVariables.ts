@@ -16,6 +16,15 @@ export const variableFields = {
   },
 };
 
+export const collectFields = {
+  collect: {
+    maxAge: true,
+    minNum: true,
+    maxNum: true,
+    metadataKey: true,
+  },
+};
+
 export const flowStatusFields = {
   state: true,
   errors: {
@@ -42,12 +51,7 @@ export const transformFlowFields = {
   maxErrors: true,
   transformActions: {
     ...defaultActionFields,
-    collect: {
-      maxAge: true,
-      minNum: true,
-      maxNum: true,
-      metadataKey: true,
-    }
+    ...collectFields,
   },
   egressAction: {
     ...defaultActionFields,
@@ -62,6 +66,7 @@ export const transformFlowPlanFields = {
   type: true,
   transformActions: {
     ...defaultActionFields,
+    ...collectFields,
   },
   egressAction: {
     ...defaultActionFields,
@@ -78,21 +83,11 @@ export const normalizeFlowFields = {
   maxErrors: true,
   transformActions: {
     ...defaultActionFields,
-    collect: {
-      maxAge: true,
-      minNum: true,
-      maxNum: true,
-      metadataKey: true,
-    }
+    ...collectFields,
   },
   loadAction: {
     ...defaultActionFields,
-    collect: {
-      maxAge: true,
-      minNum: true,
-      maxNum: true,
-      metadataKey: true,
-    }
+    ...collectFields,
   },
   ...variableFields,
 };
@@ -103,9 +98,11 @@ export const normalizeFlowPlanFields = {
   type: true,
   transformActions: {
     ...defaultActionFields,
+    ...collectFields,
   },
   loadAction: {
     ...defaultActionFields,
+    ...collectFields,
   },
 };
 
@@ -161,6 +158,7 @@ export const egressFlowFields = {
   excludeNormalizeFlows: true,
   formatAction: {
     ...defaultActionFields,
+    ...collectFields,
     requiresDomains: true,
     requiresEnrichments: true,
   },
@@ -182,6 +180,7 @@ export const egressFlowPlanFields = {
   excludeNormalizeFlows: true,
   formatAction: {
     ...defaultActionFields,
+    ...collectFields,
     requiresDomains: true,
     requiresEnrichments: true,
   },

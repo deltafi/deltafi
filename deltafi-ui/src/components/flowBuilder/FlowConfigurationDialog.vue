@@ -58,7 +58,7 @@
 <script setup>
 import useFlowPlanQueryBuilder from "@/composables/useFlowPlanQueryBuilder";
 import { useMounted } from "@vueuse/core";
-import { computed, defineEmits, defineProps, onMounted, reactive, ref } from "vue";
+import { computed, defineEmits, defineProps, onMounted, reactive, ref, watch } from "vue";
 
 import Button from "primevue/button";
 import Dropdown from "primevue/dropdown";
@@ -89,9 +89,9 @@ const props = defineProps({
 });
 
 const flowTemplate = {
-  type: null,
   name: null,
   description: null,
+  type: null,
   selectedFlowPlan: null,
 };
 
@@ -117,6 +117,14 @@ const model = computed({
     );
   },
 });
+
+// If the type changes or is removed make sure the selectedFlowPlan is null
+watch(
+  () => model.value.type,
+  () => {
+    model.value.selectedFlowPlan = null;
+  }
+);
 
 onMounted(async () => {
   let response = await getAllFlowPlans();

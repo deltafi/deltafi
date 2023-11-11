@@ -19,45 +19,20 @@
 <template>
   <span :class="containerClass">
     <template v-for="(item, i) of model" :key="i.toString()">
-      <!-- Disabled Button -->
-      <span v-if="!item.isEnabled" v-tooltip.top="disabledLabel(item)" class="button-padding">
-        <!-- Disabled Stacked Icons Button -->
-        <span v-if="!_.isEmpty(item.alternateIcon)">
+      <div v-show="isVisible(item)">
+        <!-- Disabled Button -->
+        <span v-if="!item.isEnabled" v-tooltip.top="disabledLabel(item)" class="button-padding">
+          <!-- Disabled Single Icon Button -->
           <span class="button-padding">
-            <Button type="button" class="p-button p-button-outlined p-button-secondary stacked-icons" :disabled="!item.isEnabled">
-              <span class="fa-stack">
-                <i :class="item.icon"></i>
-                <i :class="item.alternateIcon + ' fa-stack-2x'" style="color: #ed969e"></i>
-              </span>
-            </Button>
+            <Button type="button" :icon="item.icon" :label="item.label" class="p-button p-button-outlined p-button-secondary" :disabled="!item.isEnabled" />
           </span>
         </span>
 
-        <!-- Disabled Single Icon Button -->
+        <!-- Single Icon Button -->
         <span v-else class="button-padding">
-          <Button type="button" :icon="item.icon" :label="item.label" class="p-button p-button-outlined p-button-secondary" :disabled="!item.isEnabled" />
+          <Button v-tooltip.top="item.label" :label="item.label" type="button" :icon="item.icon" class="p-button p-button-primary" @click="itemClick(item)" />
         </span>
-      </span>
-
-      <!-- Stacked Icons Button -->
-      <span v-else-if="!_.isEmpty(item.alternateIcon)">
-        <span v-if="_.isEmpty(item.toggled) && item.toggled" class="button-padding">
-          <Button v-tooltip.top="item.label" type="button" class="p-button p-button-outlined p-button-secondary stacked-icons" @click="itemClick(item)">
-            <span class="fa-stack">
-              <i :class="item.icon"></i>
-              <i :class="item.alternateIcon + ' fa-stack-2x'" style="color: #ed969e"></i>
-            </span>
-          </Button>
-        </span>
-        <span v-else class="button-padding">
-          <Button v-tooltip.top="item.alternateLabel" type="button" :icon="item.icon" class="p-button p-button-outlined p-button-secondary" @click="itemClick(item)" />
-        </span>
-      </span>
-
-      <!-- Single Icon Button -->
-      <span v-else class="button-padding">
-        <Button v-tooltip.top="item.label" :label="item.label" type="button" :icon="item.icon" class="p-button p-button-primary" @click="itemClick(item)" />
-      </span>
+      </div>
     </template>
   </span>
 </template>
@@ -81,8 +56,12 @@ const props = defineProps({
 const { target, model } = toRefs(props);
 
 const containerClass = computed(() => {
-  return ["context-viewer-hover-menu p-link p-component", { "context-viewer-hover-menu-sticky": target.value !== "window" }];
+  return ["hover-save-button p-link p-component", { "hover-save-button-sticky": target.value !== "window" }];
 });
+
+const isVisible = (item) => {
+  return item.visible;
+};
 
 const disabledLabel = (item) => {
   return !_.isEmpty(item.disabledLabel) ? item.disabledLabel : "Disabled " + item.label;
@@ -100,7 +79,7 @@ const itemClick = (event) => {
 </script>
 
 <style lang="scss">
-.context-viewer-hover-menu {
+.hover-save-button {
   position: fixed;
   bottom: 20px;
   right: 20px;
@@ -109,25 +88,16 @@ const itemClick = (event) => {
   justify-content: right;
 }
 
-.context-viewer-hover-menu-sticky {
+.hover-save-button-sticky {
   position: sticky;
 }
 
-.context-viewer-hover-menu-sticky.p-link {
+.hover-save-button-sticky.p-link {
   margin-left: auto;
 }
 
 .button-padding {
   padding-left: 1px !important;
   padding-right: 1px !important;
-}
-
-.stacked-icons {
-  width: 2.357rem;
-  padding: 0.2rem 0;
-}
-
-.transparent-icon {
-  background-color: transparent;
 }
 </style>

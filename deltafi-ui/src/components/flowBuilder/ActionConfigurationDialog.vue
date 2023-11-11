@@ -43,6 +43,24 @@
               <json-forms :data="data" :renderers="renderers" :uischema="uischema" :schema="rowdata['schema']" @change="onChange($event, rowdata)" />
             </div>
           </template>
+          <template v-if="_.isEqual(displayActionInfo, 'collect')">
+            <dt>Max Age</dt>
+            <dd>
+              <InputText v-model="collectData['maxAge']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" required />
+            </dd>
+            <dt>Min Number</dt>
+            <dd>
+              <InputText v-model="collectData['minNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
+            </dd>
+            <dt>Max Number</dt>
+            <dd>
+              <InputText v-model="collectData['maxNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
+            </dd>
+            <dt>Metadata Key</dt>
+            <dd>
+              <InputText v-model="collectData['metadataKey']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
+            </dd>
+          </template>
         </dd>
       </template>
     </div>
@@ -89,11 +107,24 @@ const props = defineProps({
   },
 });
 
+const defaultCollectTemplate = ref({
+  maxAge: null,
+  minNum: null,
+  maxNum: null,
+  metadataKey: null,
+});
+
 const { actionIndexProp: actionIndex, closeDialogCommand } = reactive(props);
 
 const rowdata = reactive(JSON.parse(JSON.stringify(props.rowDataProp)));
-
+console.log("rowdata: ", rowdata);
 const data = ref(_.isEmpty(_.get(rowdata, "parameters", null)) ? {} : rowdata["parameters"]);
+console.log("data: ", data.value);
+
+const collectData = ref(_.isEmpty(_.get(rowdata, "collect", null)) ? defaultCollectTemplate.value : rowdata["collect"]);
+console.log("collectData: ", collectData.value);
+
+const originalCollectData = JSON.parse(JSON.stringify(collectData.value));
 
 const onChange = (event, element) => {
   element["parameters"] = event.data;
@@ -104,19 +135,34 @@ const displayMap = new Map([
   ["type", { header: "Type", type: "string", disableEdit: true }],
   ["displayName", { header: "Display Name", type: "string", disableEdit: true }],
   ["description", { header: "Description", type: "string", disableEdit: true }],
+  ["collect", { header: "Collect", type: "object", disableEdit: false }],
   ["schema", { header: "Parameters", type: "object", disableEdit: false }],
   ["requiresDomains", { header: "Requires Domains", type: "object", disableEdit: false }],
   ["requiresEnrichments", { header: "Requires Enrichments", type: "object", disableEdit: false }],
   ["requiresMetadataKeyValues", { header: "Requires Metadata Key Values", type: "object", disableEdit: false }],
 ]);
 
-const displayKeysList = ["name", "type", "description", "schema", "requiresDomains", "requiresEnrichments", "requiresMetadataKeyValues"];
+const displayKeysList = ["name", "type", "description", "collect", "schema", "requiresDomains", "requiresEnrichments", "requiresMetadataKeyValues"];
 
 const getDisplayValues = (obj) => {
   return _.intersection(Object.keys(obj), displayKeysList);
 };
 
 const submit = async () => {
+  // Remove any value that have not changed from the original originalCollectData value it was set at
+  let changedCollectValues = _.omitBy(collectData.value, function (v, k) {
+    return JSON.stringify(originalCollectData[k]) === JSON.stringify(v);
+  });
+
+  console.log("changedCollectValues: ", changedCollectValues);
+
+  if (!_.isEmpty(changedCollectValues)) {
+    console.log("in here ");
+    collectData.value = _.mapValues(collectData.value, (v) => (v.trim() === "" ? null : v));
+    rowdata["collect"] = JSON.parse(JSON.stringify(collectData.value));
+    console.log("rowdata: ", rowdata);
+  }
+  console.log("rowdata: ", rowdata);
   closeDialogCommand.command();
   emit("updateAction", { actionIndex: actionIndex, updatedAction: rowdata });
 };
