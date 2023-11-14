@@ -18,10 +18,13 @@
 package org.deltafi.core.services;
 
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.types.Rule;
 import org.deltafi.common.types.TransformFlowPlan;
 import org.deltafi.core.converters.TransformFlowPlanConverter;
 import org.deltafi.core.generated.types.IngressFlowErrorState;
 import org.deltafi.core.repo.TransformFlowRepo;
+import org.deltafi.core.services.pubsub.Subscriber;
+import org.deltafi.core.services.pubsub.SubscriberService;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.snapshot.types.TransformFlowSnapshot;
 import org.deltafi.core.types.Flow;
@@ -31,6 +34,8 @@ import org.deltafi.core.validation.TransformFlowValidator;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -39,16 +44,24 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
-public class TransformFlowService extends FlowService<TransformFlowPlan, TransformFlow, TransformFlowSnapshot> {
+public class TransformFlowService extends FlowService<TransformFlowPlan, TransformFlow, TransformFlowSnapshot> implements SubscriberService {
 
     private static final TransformFlowPlanConverter TRANSFORM_FLOW_PLAN_CONVERTER = new TransformFlowPlanConverter();
 
     private final ErrorCountService errorCountService;
 
+    private Map<String, Set<Subscriber>> topicSubscribers;
+
     public TransformFlowService(TransformFlowRepo transformFlowRepo, PluginVariableService pluginVariableService, TransformFlowValidator transformFlowValidator, ErrorCountService errorCountService, BuildProperties buildProperties) {
         super("transform", transformFlowRepo, pluginVariableService, TRANSFORM_FLOW_PLAN_CONVERTER, transformFlowValidator, buildProperties);
-
         this.errorCountService = errorCountService;
+        refreshCache();
+    }
+
+    @Override
+    public synchronized void refreshCache() {
+        super.refreshCache();
+        topicSubscribers = buildSubsriberMap();
     }
 
     @Override
@@ -76,6 +89,11 @@ public class TransformFlowService extends FlowService<TransformFlowPlan, Transfo
         }
 
         return false;
+    }
+
+    @Override
+    public Set<Subscriber> subscriberForTopic(String topicId) {
+        return topicSubscribers.getOrDefault(topicId, Set.of());
     }
 
     /**

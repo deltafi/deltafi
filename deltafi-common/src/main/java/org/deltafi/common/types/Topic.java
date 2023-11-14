@@ -15,11 +15,22 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.services.pubsub;
+package org.deltafi.common.types;
 
-/**
- * Action to take when no subscribers are found for a DeltaFile
- */
-public enum DefaultBehavior {
-    ERROR, FILTER, PUBLISH
+import lombok.Data;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.util.HashSet;
+import java.util.Set;
+
+
+@Data
+@Document
+public class Topic {
+    @Id
+    private String id;
+    private String name;
+    private TopicFilterPolicy filterPolicy = TopicFilterPolicy.DROP;
+    private Set<String> filters = new HashSet<>();
 }

@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.repo;
 
-import org.deltafi.core.services.pubsub.Topic;
+import org.deltafi.common.types.Topic;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 public interface TopicRepo extends MongoRepository<Topic, String> {

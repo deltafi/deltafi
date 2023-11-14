@@ -44,12 +44,12 @@ type DefaultRule {
 }
 
 input RuleInput {
-    topic: String!
+    topics: [String]!
     condition: String
 }
 
 type Rule {
-    topic: String!
+    topics: [String]!
     condition: String
 }
 

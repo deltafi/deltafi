@@ -20,9 +20,11 @@ package org.deltafi.core.services.pubsub;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.types.Topic;
 import org.deltafi.core.repo.TopicRepo;
 import org.springframework.stereotype.Service;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -36,12 +38,12 @@ import java.util.stream.Collectors;
 public class TopicService {
 
     private final TopicRepo topicRepo;
-
+    private final List<SubscriberService> subscriberServices;
     private Map<String, Topic> topicMap = Map.of();
-    private Map<String, Set<Subscriber>> topicToSubscribers = Map.of();
 
-    public TopicService(TopicRepo topicRepo) {
+    public TopicService(TopicRepo topicRepo, List<SubscriberService> subscriberServices) {
         this.topicRepo = topicRepo;
+        this.subscriberServices = subscriberServices;
     }
 
     @PostConstruct
@@ -50,12 +52,15 @@ public class TopicService {
     }
 
     public void refreshCache() {
-        topicMap = topicRepo.findAll().stream().collect(Collectors.toMap(Topic::getId, Function.identity()));
-        // TODO - refresh the topicToSubscriber map
+        topicMap = topicRepo.findAll().stream()
+                .collect(Collectors.toMap(Topic::getId, Function.identity()));
     }
 
     public Set<Subscriber> getSubscribers(String topicId) {
-        return topicToSubscribers.getOrDefault(topicId, Set.of());
+        return subscriberServices.stream()
+                .map(subscriberService -> subscriberService.subscriberForTopic(topicId))
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
     }
 
     public Topic getTopicOrThrow(String topicId) {

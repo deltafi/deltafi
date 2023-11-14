@@ -21,7 +21,14 @@ import org.assertj.core.api.Assertions;
 import org.deltafi.common.test.time.TestClock;
 import org.deltafi.common.types.Action;
 import org.deltafi.common.types.ActionState;
+import org.deltafi.common.types.DefaultBehavior;
+import org.deltafi.common.types.DefaultRule;
 import org.deltafi.common.types.DeltaFile;
+import org.deltafi.common.types.MatchingPolicy;
+import org.deltafi.common.types.PublishRules;
+import org.deltafi.common.types.Rule;
+import org.deltafi.common.types.Topic;
+import org.deltafi.common.types.TopicFilterPolicy;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -31,14 +38,15 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Clock;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
 @ExtendWith(MockitoExtension.class)
-class PubSubServiceTest {
+class PublisherServiceTest {
 
     @InjectMocks
-    PubSubService pubSubService;
+    PublisherService publisherService;
 
     @Spy
     @SuppressWarnings("unused")
@@ -56,18 +64,17 @@ class PubSubServiceTest {
         String condition = "metadata != null";
         Topic topic = new Topic();
         topic.setName("topic");
-        Subscriber subscriber = new TestFlow(null, Set.of(new Rule("topic", condition)));
+        Subscriber subscriber = new TestFlow(null, Set.of(rule("topic", condition)));
 
         Mockito.when(topicService.getTopic("topic")).thenReturn(Optional.of(topic));
         Mockito.when(topicService.getSubscribers("topic")).thenReturn(Set.of(subscriber));
         Mockito.when(ruleEvaluator.evaluateCondition(condition, deltaFile)).thenReturn(true);
 
         PublishRules publishRules = new PublishRules();
-        publishRules.setPublisherName("flow-name");
-        publishRules.setRules(Set.of(new Rule("topic", condition)));
+        publishRules.setRules(Set.of(rule("topic", condition)));
         Publisher publisher = new TestFlow(publishRules, Set.of());
 
-        Set<Subscriber> subscribers = pubSubService.subscribers(publisher, deltaFile);
+        Set<Subscriber> subscribers = publisherService.subscribers(publisher, deltaFile);
 
         Assertions.assertThat(subscribers).isEqualTo(Set.of(subscriber));
     }
@@ -77,10 +84,9 @@ class PubSubServiceTest {
         DeltaFile deltaFile = new DeltaFile();
 
         PublishRules publishRules = new PublishRules();
-        publishRules.setPublisherName("flow");
         Publisher publisher = new TestFlow(publishRules, Set.of());
 
-        Set<Subscriber> subscribers = pubSubService.subscribers(publisher, deltaFile);
+        Set<Subscriber> subscribers = publisherService.subscribers(publisher, deltaFile);
 
         // null publish rules will result no matches
         Assertions.assertThat(subscribers).isEmpty();
@@ -89,7 +95,7 @@ class PubSubServiceTest {
         Action action = deltaFile.getActions().get(0);
         Assertions.assertThat(action.getFlow()).isEqualTo("flow");
         Assertions.assertThat(action.getState()).isEqualTo(ActionState.ERROR);
-        Assertions.assertThat(action.getErrorCause()).isEqualTo("No destinations were found");
+        Assertions.assertThat(action.getErrorCause()).isEqualTo(PublisherService.ActionEventDetails.NO_SUBSCRIBER.cause);
         Assertions.assertThat(action.getErrorContext()).isNotBlank();
         Assertions.assertThat(action.getFilteredCause()).isNull();
     }
@@ -99,11 +105,10 @@ class PubSubServiceTest {
         DeltaFile deltaFile = new DeltaFile();
 
         PublishRules publishRules = new PublishRules();
-        publishRules.setPublisherName("flow");
         publishRules.setDefaultRule(new DefaultRule(DefaultBehavior.FILTER));
         Publisher publisher = new TestFlow(publishRules, Set.of());
 
-        Set<Subscriber> subscribers = pubSubService.subscribers(publisher, deltaFile);
+        Set<Subscriber> subscribers = publisherService.subscribers(publisher, deltaFile);
 
         // null publish rules will result no matches
         Assertions.assertThat(subscribers).isEmpty();
@@ -114,7 +119,7 @@ class PubSubServiceTest {
         Assertions.assertThat(action.getState()).isEqualTo(ActionState.FILTERED);
         Assertions.assertThat(action.getErrorCause()).isNull();
         Assertions.assertThat(action.getErrorContext()).isNull();
-        Assertions.assertThat(action.getFilteredCause()).isEqualTo("No destinations were found");
+        Assertions.assertThat(action.getFilteredCause()).isEqualTo(PublisherService.ActionEventDetails.NO_SUBSCRIBER.cause);
     }
 
     @Test
@@ -122,18 +127,17 @@ class PubSubServiceTest {
         DeltaFile deltaFile = new DeltaFile();
         Topic topic = new Topic();
         topic.setName("default-topic");
-        Subscriber subscriber = new TestFlow(null, Set.of(new Rule("topic", null)));
+        Subscriber subscriber = new TestFlow(null, Set.of(rule("topic", null)));
 
         Mockito.when(topicService.getTopic("default-topic")).thenReturn(Optional.of(topic));
         Mockito.when(topicService.getSubscribers("default-topic")).thenReturn(Set.of(subscriber));
         Mockito.when(ruleEvaluator.evaluateCondition(null, deltaFile)).thenReturn(true);
 
         PublishRules publishRules = new PublishRules();
-        publishRules.setPublisherName("flow");
         publishRules.setDefaultRule(new DefaultRule(DefaultBehavior.PUBLISH, "default-topic"));
         Publisher publisher = new TestFlow(publishRules, Set.of());
 
-        Set<Subscriber> subscribers = pubSubService.subscribers(publisher, deltaFile);
+        Set<Subscriber> subscribers = publisherService.subscribers(publisher, deltaFile);
         Assertions.assertThat(subscribers).containsExactly(subscriber);
     }
 
@@ -148,17 +152,16 @@ class PubSubServiceTest {
         Mockito.when(ruleEvaluator.evaluateCondition("all", deltaFile)).thenReturn(true);
 
         PublishRules publishRules = new PublishRules();
-        publishRules.setPublisherName("flow");
         publishRules.setDefaultRule(new DefaultRule(DefaultBehavior.PUBLISH, "default-topic"));
         Publisher publisher = new TestFlow(publishRules, Set.of());
 
-        Set<Subscriber> subscribers = pubSubService.subscribers(publisher, deltaFile);
+        Set<Subscriber> subscribers = publisherService.subscribers(publisher, deltaFile);
         Assertions.assertThat(subscribers).isEmpty();
         Assertions.assertThat(deltaFile.getActions()).hasSize(1);
         Action action = deltaFile.getActions().get(0);
         Assertions.assertThat(action.getFlow()).isEqualTo("flow");
         Assertions.assertThat(action.getState()).isEqualTo(ActionState.ERROR);
-        Assertions.assertThat(action.getErrorCause()).isEqualTo("No destinations were found");
+        Assertions.assertThat(action.getErrorCause()).isEqualTo(PublisherService.ActionEventDetails.NO_SUBSCRIBER.cause);
         Assertions.assertThat(action.getErrorContext()).isNotBlank();
         Assertions.assertThat(action.getFilteredCause()).isNull();
     }
@@ -171,22 +174,23 @@ class PubSubServiceTest {
         Mockito.when(ruleEvaluator.evaluateCondition("c", deltaFile)).thenReturn(true);
 
         PublishRules publishRules = new PublishRules();
-        publishRules.getRules().add(new Rule("a", "a"));
-        publishRules.getRules().add(new Rule("b", "b"));
-        publishRules.getRules().add(new Rule("c", "c"));
+        publishRules.setRules(new HashSet<>());
+        publishRules.getRules().add(rule("a", "a"));
+        publishRules.getRules().add(rule("b", "b"));
+        publishRules.getRules().add(rule("c", "c"));
 
         // defaults to ALL_MATCHING when the MatchMode is null
-        Assertions.assertThat(pubSubService.getMatchingTopics(publishRules, deltaFile)).isEqualTo(Set.of("b", "c"));
+        Assertions.assertThat(publisherService.getMatchingTopics(publishRules, deltaFile)).isEqualTo(Set.of("b", "c"));
 
         publishRules.setMatchingPolicy(MatchingPolicy.FIRST_MATCHING);
-        Assertions.assertThat(pubSubService.getMatchingTopics(publishRules, deltaFile)).isEqualTo(Set.of("b"));
+        Assertions.assertThat(publisherService.getMatchingTopics(publishRules, deltaFile)).isEqualTo(Set.of("b"));
 
         publishRules.setMatchingPolicy(MatchingPolicy.ALL_MATCHING);
-        Assertions.assertThat(pubSubService.getMatchingTopics(publishRules, deltaFile)).isEqualTo(Set.of("b", "c"));
+        Assertions.assertThat(publisherService.getMatchingTopics(publishRules, deltaFile)).isEqualTo(Set.of("b", "c"));
 
         // null set of rules should always return an empty set of subscribers
         publishRules.setRules(null);
-        Assertions.assertThat(pubSubService.getMatchingTopics(publishRules, deltaFile)).isEmpty();
+        Assertions.assertThat(publisherService.getMatchingTopics(publishRules, deltaFile)).isEmpty();
     }
 
 
@@ -204,12 +208,12 @@ class PubSubServiceTest {
         Mockito.when(topicService.getTopic("topic")).thenReturn(Optional.of(topic));
 
         // by default the filter rules will drop the DeltaFile silently
-        pubSubService.topicAllowsDeltaFile("topic", deltaFile, "flow");
+        publisherService.topicAllowsDeltaFile("topic", deltaFile, "flow");
         Assertions.assertThat(deltaFile.getActions()).isEmpty();
 
         // test adding a filter action to a DeltaFiles that is filtered by the topic
         topic.setFilterPolicy(TopicFilterPolicy.FILTER);
-        pubSubService.topicAllowsDeltaFile("topic", deltaFile, "flow");
+        publisherService.topicAllowsDeltaFile("topic", deltaFile, "flow");
         Assertions.assertThat(deltaFile.getActions()).hasSize(1);
         Action action = deltaFile.getActions().get(0);
         Assertions.assertThat(action.getFlow()).isEqualTo("flow");
@@ -221,7 +225,7 @@ class PubSubServiceTest {
         // test adding an error action to a DeltaFile that is filtered by the topic
         deltaFile.getActions().clear();
         topic.setFilterPolicy(TopicFilterPolicy.ERROR);
-        pubSubService.topicAllowsDeltaFile("topic", deltaFile, "flow");
+        publisherService.topicAllowsDeltaFile("topic", deltaFile, "flow");
         Assertions.assertThat(deltaFile.getActions()).hasSize(1);
         action = deltaFile.getActions().get(0);
         Assertions.assertThat(action.getFlow()).isEqualTo("flow");
@@ -234,15 +238,21 @@ class PubSubServiceTest {
     @Test
     void topicAllowsDeltaFile_missingTopic() {
         DeltaFile deltaFile = new DeltaFile();
-        pubSubService.topicAllowsDeltaFile("topic", deltaFile, "flow");
+        publisherService.topicAllowsDeltaFile("topic", deltaFile, "flow");
         Assertions.assertThat(deltaFile.getActions()).hasSize(1);
         Action action = deltaFile.getActions().get(0);
         Assertions.assertThat(action.getFlow()).isEqualTo("flow");
         Assertions.assertThat(action.getState()).isEqualTo(ActionState.ERROR);
-        Assertions.assertThat(action.getErrorCause()).isEqualTo("Missing topic");
+        Assertions.assertThat(action.getErrorCause()).isEqualTo(PublisherService.ActionEventDetails.MISSING_TOPIC.cause);
         Assertions.assertThat(action.getErrorContext()).isNotBlank();
         Assertions.assertThat(action.getFilteredCause()).isNull();
     }
 
-    public record TestFlow(PublishRules publishRules, Set<Rule> subscriptions) implements Publisher, Subscriber {}
+    private Rule rule(String topic, String condition) {
+        return new Rule(Set.of(topic), condition);
+    }
+
+    public record TestFlow(PublishRules publishRules, Set<Rule> subscriptions) implements Publisher, Subscriber {
+        public String getName() { return "flow";}
+    }
 }

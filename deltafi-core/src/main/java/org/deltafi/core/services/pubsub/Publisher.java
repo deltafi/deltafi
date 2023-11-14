@@ -17,6 +17,8 @@
  */
 package org.deltafi.core.services.pubsub;
 
+import org.deltafi.common.types.PublishRules;
+
 /**
  * Interface for things that publish DeltaFiles to topics
  */
@@ -27,4 +29,6 @@ public interface Publisher {
      * @return the publishRules
      */
     PublishRules publishRules();
+
+    String getName();
 }

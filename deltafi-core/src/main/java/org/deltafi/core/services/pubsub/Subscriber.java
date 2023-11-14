@@ -17,6 +17,8 @@
  */
 package org.deltafi.core.services.pubsub;
 
+import org.deltafi.common.types.Rule;
+
 import java.util.Set;
 
 /**
@@ -24,4 +26,6 @@ import java.util.Set;
  */
 public interface Subscriber {
     Set<Rule> subscriptions();
+
+    String getName();
 }

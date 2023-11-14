@@ -15,28 +15,12 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.services.pubsub;
+package org.deltafi.common.types;
 
-import lombok.Data;
-
-import java.util.HashSet;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-@Data
-public class PublishRules {
-    private String publisherName;
-    private MatchingPolicy matchingPolicy;
-    private DefaultRule defaultRule;
-    private Set<Rule> rules = new HashSet<>();
-
-    @Override
-    public String toString() {
-        return "Publisher Name: " + publisherName +
-                "\nMatching Policy: " + matchingPolicy +
-                "\nDefault Rule: " + defaultRule +
-                "\nRules: [\n" +
-                rules.stream().map(Rule::toString).collect(Collectors.joining(",\n")) +
-                "\n]";
-    }
+/**
+ * FIRST_MATCHING will publish to the first matching topic
+ * ALL_MATCHING will publish to all matching topics
+ */
+public enum MatchingPolicy {
+    ALL_MATCHING, FIRST_MATCHING
 }

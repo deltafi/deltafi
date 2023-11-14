@@ -21,6 +21,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.ActionFamily;
+import org.deltafi.common.types.Rule;
+import org.deltafi.core.services.pubsub.Subscriber;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
@@ -32,11 +34,12 @@ import java.util.Set;
 @Document
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class TransformFlow extends Flow {
+public class TransformFlow extends Flow implements Subscriber {
     private List<TransformActionConfiguration> transformActions = new ArrayList<>();
     private EgressActionConfiguration egressAction;
     private int maxErrors = -1;
     private Set<String> expectedAnnotations;
+    private Set<Rule> subscriptions;
 
     /**
      * Schema versions:
@@ -108,4 +111,10 @@ public class TransformFlow extends Flow {
         }
         return transformFlowConfiguration;
     }
+
+    @Override
+    public Set<Rule> subscriptions() {
+        return subscriptions;
+    }
+
 }

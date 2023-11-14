@@ -117,7 +117,8 @@ type TimedIngressFlowPlan {
   description: String!
   sourcePlugin: PluginCoordinates!
   timedIngressAction: TimedIngressActionConfiguration!
-  targetFlow: String!
+  targetFlow: String
+  publishRules: PublishRules
   cronSchedule: String
 }
 
@@ -126,7 +127,8 @@ input TimedIngressFlowPlanInput {
   type: String!
   description: String!
   timedIngressAction: TimedIngressActionConfigurationInput!
-  targetFlow: String!
+  targetFlow: String
+  publishRules: PublishRulesInput
   cronSchedule: String
 }
 
@@ -135,6 +137,7 @@ type TransformFlowPlan {
   type: String!
   description: String!
   sourcePlugin: PluginCoordinates!
+  subscriptions: [Rule]
   transformActions: [TransformActionConfiguration!]
   egressAction: EgressActionConfiguration!
 }
@@ -143,6 +146,7 @@ input TransformFlowPlanInput {
   name: String!
   type: String!
   description: String!
+  subscriptions: [RuleInput]
   transformActions: [TransformActionConfigurationInput!]
   egressAction: EgressActionConfigurationInput!
 }
@@ -246,7 +250,8 @@ type TimedIngressFlow {
   description: String!
   sourcePlugin: PluginCoordinates!
   flowStatus: FlowStatus!
-  targetFlow: String!
+  targetFlow: String
+  publishRules: PublishRules
   cronSchedule: String
   lastRun: DateTime
   nextRun: DateTime
@@ -263,6 +268,7 @@ type TransformFlow {
   name: String!
   description: String!
   sourcePlugin: PluginCoordinates!
+  subscriptions: [Rule]
   flowStatus: FlowStatus!
   maxErrors: Int!
   expectedAnnotations: [String]

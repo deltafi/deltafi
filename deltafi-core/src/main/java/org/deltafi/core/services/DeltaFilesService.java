@@ -34,6 +34,7 @@ import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.content.ContentUtil;
 import org.deltafi.common.types.*;
+import org.deltafi.common.uuid.UUIDGenerator;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.collect.CollectEntry;
 import org.deltafi.core.collect.CollectingActionInvocation;
@@ -46,6 +47,9 @@ import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.repo.QueuedAnnotationRepo;
 import org.deltafi.core.retry.MongoRetryable;
+import org.deltafi.core.services.pubsub.PublisherService;
+import org.deltafi.core.services.pubsub.Publisher;
+import org.deltafi.core.services.pubsub.Subscriber;
 import org.deltafi.core.types.ResumePolicy;
 import org.deltafi.core.types.*;
 import org.jetbrains.annotations.NotNull;
@@ -109,6 +113,7 @@ public class DeltaFilesService {
     private final NormalizeFlowService normalizeFlowService;
     private final EnrichFlowService enrichFlowService;
     private final EgressFlowService egressFlowService;
+    private final PublisherService publisherService;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
     private final StateMachine stateMachine;
     private final DeltaFileRepo deltaFileRepo;
@@ -124,6 +129,7 @@ public class DeltaFilesService {
     private final QueuedAnnotationRepo queuedAnnotationRepo;
     private final Environment environment;
     private final ScheduledCollectService scheduledCollectService;
+    private final UUIDGenerator uuidGenerator;
 
     private ExecutorService executor;
     private Semaphore semaphore;
@@ -290,7 +296,7 @@ public class DeltaFilesService {
                 .schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
                 .did(ingressEventItem.getDid())
                 .parentDids(parentDids)
-                .childDids(Collections.emptyList())
+                .childDids(new ArrayList<>())
                 .requeueCount(0)
                 .ingressBytes(contentSize)
                 .totalBytes(contentSize)
@@ -315,6 +321,14 @@ public class DeltaFilesService {
         DeltaFile deltaFile = buildIngressDeltaFile(ingressEventItem, parentDids, ingressStartTime, ingressStopTime);
 
         advanceAndSave(deltaFile);
+        return deltaFile;
+    }
+
+    public DeltaFile buildIngressDeltaFile(ActionEvent parentEvent, IngressEventItem ingressEventItem) {
+        DeltaFile deltaFile = buildIngressDeltaFile(ingressEventItem, Collections.emptyList(), parentEvent.getStart(),
+                parentEvent.getStop());
+        deltaFile.lastAction().setName(parentEvent.getAction());
+        deltaFile.lastAction().setFlow(parentEvent.getFlow());
         return deltaFile;
     }
 
@@ -538,13 +552,19 @@ public class DeltaFilesService {
 
         // array of length 1 is used to store the size in bytes
         final long[] bytes = {0L};
-        ingressEvent.getIngressItems().forEach(ingressItem -> {
-            ingressItem.setFlow(timedIngressFlow.getTargetFlow());
-            ingressItem.setProcessingType(null);
-            DeltaFile deltaFile = ingressOrErrorOnMissingFlow(ingressItem, event.getAction(), event.getFlow(),
-                    event.getStart(), event.getStop());
-            bytes[0] += deltaFile.getIngressBytes();
-        });
+        if (timedIngressFlow.publishRules() != null) {
+            ingressEvent.getIngressItems().stream()
+                    .map((item) -> buildIngressDeltaFile(event, item))
+                    .forEach(deltaFile -> publishDeltaFile(timedIngressFlow, deltaFile));
+        } else if (timedIngressFlow.getTargetFlow() != null) {
+            ingressEvent.getIngressItems().forEach(ingressItem -> {
+                ingressItem.setFlow(timedIngressFlow.getTargetFlow());
+                ingressItem.setProcessingType(null);
+                DeltaFile deltaFile = ingressOrErrorOnMissingFlow(ingressItem, event.getAction(), event.getFlow(),
+                        event.getStart(), event.getStop());
+                bytes[0] += deltaFile.getIngressBytes();
+            });
+        }
 
         String actionClass =
                 (timedIngressFlow.findActionConfigByName(event.getAction()) != null)
@@ -555,6 +575,41 @@ public class DeltaFilesService {
         metrics.add(new Metric(DeltaFiConstants.FILES_IN, ingressEvent.getIngressItems().size()));
         metrics.add(new Metric(DeltaFiConstants.BYTES_IN, bytes[0]));
         generateIngressMetrics(metrics, event, timedIngressFlow.getTargetFlow(), actionClass);
+    }
+
+    private void publishDeltaFile(Publisher publisher, DeltaFile deltaFile) {
+        boolean needsSourceFlow = deltaFile.getSourceInfo().getFlow() == null;
+
+        // need a default source flow to handle no matches off an ingress action
+        setSourceFlow(needsSourceFlow, deltaFile, publisher.getName());
+
+        Set<Subscriber> subscribers = publisherService.subscribers(publisher, deltaFile);
+        int count = subscribers.size();
+        if (count == 1) {
+            Subscriber subscriber = subscribers.iterator().next();
+            setSourceFlow(needsSourceFlow, deltaFile, subscriber.getName());
+            advanceAndSave(subscriber, deltaFile, false);
+        } else if (count > 1) {
+            for (Subscriber subscriber : subscribers) {
+                DeltaFile child = createChildDeltaFile(deltaFile, uuidGenerator.generate());
+                setSourceFlow(needsSourceFlow, child, subscriber.getName());
+                // TODO advance only and submit all at once
+                advanceAndSave(subscriber, child, false);
+                deltaFile.getChildDids().add(child.getDid());
+            }
+            deltaFile.setStage(DeltaFileStage.COMPLETE);
+            deltaFile.recalculateBytes();
+            deltaFileCacheService.save(deltaFile);
+        } else {
+            deltaFile.setStage(DeltaFileStage.ERROR);
+            deltaFileRepo.save(deltaFile);
+        }
+    }
+
+    private void setSourceFlow(boolean needsSourceFlow, DeltaFile deltaFile, String sourceFlow) {
+        if (needsSourceFlow) {
+            deltaFile.getSourceInfo().setFlow(sourceFlow);
+        }
     }
 
     public void transform(DeltaFile deltaFile, ActionEvent event) {
@@ -1474,6 +1529,26 @@ public class DeltaFilesService {
         }
 
         enqueueActions(actionInvocations);
+    }
+
+    public void advanceAndSave(Subscriber subscriber, DeltaFile deltaFile, boolean newDeltaFile) {
+        try {
+            List<ActionInvocation> actionInvocations = new ArrayList<>(stateMachine.advanceSubscriber(subscriber, deltaFile, newDeltaFile));
+
+            if (deltaFile.hasCollectingAction()) {
+                deltaFileCacheService.remove(deltaFile.getDid());
+                deltaFileRepo.save(deltaFile);
+            } else {
+                deltaFileCacheService.save(deltaFile);
+            }
+
+            if (!actionInvocations.isEmpty()) {
+                enqueueActions(actionInvocations);
+            }
+        } catch (MissingEgressFlowException e) {
+            handleMissingEgressFlow(deltaFile);
+            deltaFileCacheService.save(deltaFile);
+        }
     }
 
     public void advanceAndSave(DeltaFile deltaFile) {

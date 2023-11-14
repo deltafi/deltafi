@@ -1626,9 +1626,9 @@ class DeltaFiCoreApplicationTests {
 	void testGetTimedIngressFlowPlan() {
 		clearForFlowTests();
 		TimedIngressFlowPlan timedIngressFlowPlanA = new TimedIngressFlowPlan("timedIngressPlan", FlowType.TIMED_INGRESS,
-				"description", new TimedIngressActionConfiguration("timedIngress", "type"), "flow", "*/5 * * * * *");
+				"description", new TimedIngressActionConfiguration("timedIngress", "type"), "flow", null, "*/5 * * * * *");
 		TimedIngressFlowPlan timedIngressFlowPlanB = new TimedIngressFlowPlan("b", FlowType.TIMED_INGRESS, "description",
-				new TimedIngressActionConfiguration("timedIngress", "type"), "flow", "*/5 * * * * *");
+				new TimedIngressActionConfiguration("timedIngress", "type"), "flow", null, "*/5 * * * * *");
 		timedIngressFlowPlanRepo.saveAll(List.of(timedIngressFlowPlanA, timedIngressFlowPlanB));
 		TimedIngressFlowPlan plan = FlowPlanDatafetcherTestHelper.getTimedIngressFlowPlan(dgsQueryExecutor);
 		assertThat(plan.getName()).isEqualTo("timedIngressPlan");
@@ -1983,7 +1983,7 @@ class DeltaFiCoreApplicationTests {
 	void testRemoveTimedIngressFlowPlan() {
 		clearForFlowTests();
 		TimedIngressFlowPlan timedIngressFlowPlan = new TimedIngressFlowPlan("flowPlan", FlowType.TIMED_INGRESS, null,
-				null, null, null);
+				null, null, null, null);
 		timedIngressFlowPlanRepo.save(timedIngressFlowPlan);
 		assertThatThrownBy(() -> FlowPlanDatafetcherTestHelper.removeTimedIngressFlowPlan(dgsQueryExecutor))
 				.isInstanceOf(QueryException.class)

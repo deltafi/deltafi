@@ -20,6 +20,7 @@ package org.deltafi.core.services;
 import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.types.*;
+import org.deltafi.common.uuid.UUIDGenerator;
 import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.collect.CollectEntryService;
@@ -28,6 +29,7 @@ import org.deltafi.core.configuration.ClockConfiguration;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.repo.QueuedAnnotationRepo;
+import org.deltafi.core.services.pubsub.PublisherService;
 import org.deltafi.core.util.Util;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -52,8 +54,8 @@ import java.util.Collections;
 @MockBean({TransformFlowService.class, NormalizeFlowService.class, EnrichFlowService.class, EgressFlowService.class,
         StateMachine.class, DeltaFileRepo.class, ActionEventQueue.class, ContentStorageService.class,
         ResumePolicyService.class, MetricService.class, CoreAuditLogger.class, DeltaFileCacheService.class,
-        TimedIngressFlowService.class, QueueManagementService.class, QueuedAnnotationRepo.class, Environment.class,
-        CollectEntryService.class, ScheduledCollectService.class})
+        TimedIngressFlowService.class, PublisherService.class, QueueManagementService.class, QueuedAnnotationRepo.class, Environment.class,
+        CollectEntryService.class, ScheduledCollectService.class, UUIDGenerator.class})
 @EnableRetry
 class MongoRetryTest {
 

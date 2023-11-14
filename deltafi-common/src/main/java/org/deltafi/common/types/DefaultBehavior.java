@@ -15,12 +15,11 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.services.pubsub;
+package org.deltafi.common.types;
 
 /**
- * FIRST_MATCHING will publish to the first matching topic
- * ALL_MATCHING will publish to all matching topics
+ * Action to take when no subscribers are found for a DeltaFile
  */
-public enum MatchingPolicy {
-    ALL_MATCHING, FIRST_MATCHING
+public enum DefaultBehavior {
+    ERROR, FILTER, PUBLISH
 }

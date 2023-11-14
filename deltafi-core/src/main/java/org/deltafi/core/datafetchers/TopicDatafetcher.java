@@ -21,7 +21,7 @@ import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
 import org.deltafi.core.security.NeedsPermission;
-import org.deltafi.core.services.pubsub.Topic;
+import org.deltafi.common.types.Topic;
 import org.deltafi.core.services.pubsub.TopicService;
 
 import java.util.List;

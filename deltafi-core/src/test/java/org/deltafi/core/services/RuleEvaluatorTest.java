@@ -26,6 +26,7 @@ import org.deltafi.common.types.DeltaFile;
 import org.deltafi.core.services.pubsub.RuleEvaluator;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -36,6 +37,7 @@ class RuleEvaluatorTest {
     @Test
     void testEvaluation() {
         DeltaFile deltaFile = new DeltaFile();
+        deltaFile.setActions(new ArrayList<>());
         Action action = new Action();
         action.setContent(List.of(new Content()));
         action.setMetadata(Map.of("a", "b"));
