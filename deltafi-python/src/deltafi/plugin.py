@@ -167,7 +167,7 @@ class Plugin(object):
             'type': action.action_type.name,
             'requiresDomains': action.requires_domains,
             'requiresEnrichments': action.requires_enrichments,
-            'schema': action.param_class().schema()
+            'schema': action.param_class().model_json_schema()
         }
 
     def registration_json(self):

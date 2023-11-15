@@ -20,10 +20,11 @@ from abc import ABC, abstractmethod
 from typing import Any, List
 
 from deltafi.actiontype import ActionType
+from deltafi.genericmodel import GenericModel
 from deltafi.domain import Context, DeltaFileMessage
 from deltafi.input import DomainInput, EgressInput, EnrichInput, FormatInput, LoadInput, TransformInput, ValidateInput
 from deltafi.result import *
-from pydantic.v1 import BaseModel
+from pydantic import BaseModel
 
 
 class Action(ABC):
@@ -54,17 +55,24 @@ class Action(ABC):
         if event.context.collect is not None:
             result = self.execute(event.context, self.collect([self.build_input(event.context, delta_file_message)
                                                                for delta_file_message in event.delta_file_messages]),
-                                  self.param_class().parse_obj(event.params))
+                                  self.param_class().model_validate(event.params))
         else:
             result = self.execute(event.context, self.build_input(event.context, event.delta_file_messages[0]),
-                                  self.param_class().parse_obj(event.params))
+                                  self.param_class().model_validate(event.params))
 
         self.validate_type(result)
         return result
 
     @staticmethod
-    def param_class():
-        return BaseModel
+    def param_class( ):
+        """Factory method to create and return an empty GenericModel instance.
+
+        Returns
+        -------
+        GenericModel
+            an empty GenericModel instance
+        """
+        return GenericModel
 
     def validate_type(self, result):
         if not isinstance(result, self.valid_result_types):

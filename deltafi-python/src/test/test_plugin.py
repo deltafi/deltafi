@@ -91,7 +91,7 @@ def get_expected_json():
 
                 ],
                 "schema": {
-                    "title": "BaseModel",
+                    "title": "GenericModel",
                     "type": "object",
                     "properties": {
 
