@@ -72,6 +72,7 @@ class DeltaFilesServiceTest {
     private final MetricService metricService;
     private final DeltaFileCacheService deltaFileCacheService;
     private final QueuedAnnotationRepo queuedAnnotationRepo;
+    private final ResumePolicyService resumePolicyService;
 
     private final DeltaFilesService deltaFilesService;
 
@@ -110,6 +111,7 @@ class DeltaFilesServiceTest {
         this.metricService = metricService;
         this.deltaFileCacheService = deltaFileCacheService;
         this.queuedAnnotationRepo = queuedAnnotationRepo;
+        this.resumePolicyService = resumePolicyService;
 
         deltaFilesService = new DeltaFilesService(testClock, normalizeFlowService, enrichFlowService,
                 egressFlowService, transformFlowService, mockDeltaFiPropertiesService, stateMachine,
@@ -693,5 +695,11 @@ class DeltaFilesServiceTest {
         assertEquals(1, enqueuedActions.size());
         assertEquals(List.of("1", "2"), enqueuedActions.get(0).getActionContext().getCollectedDids());
         assertEquals(2, enqueuedActions.get(0).getDeltaFileMessages().size());
+    }
+
+    @Test
+    void applyResumePolicies() {
+        deltaFilesService.applyResumePolicies(List.of("name1"));
+        Mockito.verify(resumePolicyService, times(1)).refreshCache();
     }
 }

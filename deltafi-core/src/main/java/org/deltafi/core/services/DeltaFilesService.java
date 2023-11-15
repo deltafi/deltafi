@@ -2043,6 +2043,7 @@ public class DeltaFilesService {
         }
 
         if (errors.isEmpty()) {
+            resumePolicyService.refreshCache();
             for (String policyName : new LinkedHashSet<>(policyNames)) {
                 Optional<ResumePolicy> policy = resumePolicyService.findByName(policyName);
                 if (policy.isPresent()) {
