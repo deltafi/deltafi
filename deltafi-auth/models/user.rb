@@ -71,7 +71,7 @@ class User < Sequel::Model
   end
 
   def password=(new_password)
-    @password = Password.create(new_password)
+    @password = Password.create(new_password, cost: 8)
     self.password_hash = @password
   end
 
