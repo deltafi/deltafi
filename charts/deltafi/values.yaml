@@ -62,7 +62,13 @@ ingress:
 # MinIO config
 minio:
   environment:
+    # don't let trash files build up
     MINIO_API_DELETE_CLEANUP_INTERVAL: 1s
+    # prioritize reads and writes over lifecycle events
+    MINIO_SCANNER_SPEED: slow
+    MINIO_BROWSER: off
+  image:
+    tag: RELEASE.2023-11-15T20-43-25Z
   mode: standalone
   existingSecret: minio-keys
   resources:
