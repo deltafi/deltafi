@@ -70,10 +70,12 @@ kubectl_top() {
 
 report_app_metrics() {
     TIMESTAMP=$(date +%s)
-    kubectl_top | while read -r name cpu memory; do
-      echo "gauge.app.memory;app=$name $memory $TIMESTAMP" | nc -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
-      echo "gauge.app.cpu;app=$name $cpu $TIMESTAMP" | nc -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
-    done
+    while read -r name cpu memory; do
+        metrics+="gauge.app.memory;app=$name $memory $TIMESTAMP\n"
+        metrics+="gauge.app.cpu;app=$name $cpu $TIMESTAMP\n"
+    done < <(kubectl_top)
+
+    printf "%b" "$metrics" | nc -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
 }
 
 # Report system metrics to graphite roughly every $PERIOD seconds
