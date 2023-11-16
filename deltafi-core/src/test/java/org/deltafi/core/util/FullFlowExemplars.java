@@ -44,7 +44,6 @@ public class FullFlowExemplars {
 
     public static DeltaFile postTransformUtf8DeltaFile(String did) {
         DeltaFile deltaFile = postIngressDeltaFile(did);
-        deltaFile.setStage(DeltaFileStage.INGRESS);
         Content content = new Content("file.json", "application/octet-stream", new Segment("utf8ObjectName", 0, 500, did));
         deltaFile.completeAction(NORMALIZE_FLOW_NAME, "Utf8TransformAction", START_TIME, STOP_TIME, List.of(content), Map.of("deleteMe", "soon"), List.of(), List.of(), List.of());
         deltaFile.queueAction(NORMALIZE_FLOW_NAME, "SampleTransformAction", ActionType.TRANSFORM, false);
@@ -53,7 +52,6 @@ public class FullFlowExemplars {
 
     public static DeltaFile postTransformDeltaFile(String did) {
         DeltaFile deltaFile = postTransformUtf8DeltaFile(did);
-        deltaFile.setStage(DeltaFileStage.INGRESS);
         Content content = new Content("transformed", "application/octet-stream", new Segment("objectName", 0, 500, did));
         deltaFile.completeAction(NORMALIZE_FLOW_NAME, "SampleTransformAction", START_TIME, STOP_TIME, List.of(content), TRANSFORM_METADATA, List.of("deleteMe"), List.of(), List.of());
         deltaFile.queueAction(NORMALIZE_FLOW_NAME, "SampleLoadAction", ActionType.LOAD, false);

@@ -132,7 +132,7 @@ public class Util {
                 .metadata(metadata)
                 .build();
 
-        return DeltaFile.builder()
+        DeltaFile deltaFile = DeltaFile.builder()
                 .schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
                 .did(did)
                 .parentDids(new ArrayList<>())
@@ -146,7 +146,11 @@ public class Util {
                 .egress(new ArrayList<>())
                 .egressed(false)
                 .filtered(false)
+                .totalBytes(1)
                 .build();
+
+        deltaFile.updateFlags();
+        return deltaFile;
     }
 
     public static void assertEqualsIgnoringDates(DeltaFile expected, DeltaFile actual) {

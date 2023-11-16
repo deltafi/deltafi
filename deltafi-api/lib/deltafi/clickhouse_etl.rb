@@ -70,9 +70,7 @@ module Deltafi
 
     def sync
       end_timestamp = Time.now - @lag.seconds
-      results = Deltafile.terminal
-                         .where(:modified.gt => @last_update)
-                         .and(:modified.lt => end_timestamp)
+      results = Deltafile.where(:terminal.eq => true, :modified.gt => @last_update, :modified.lt => end_timestamp)
                          .order(modified: :asc)
                          .batch_size(@limit)
                          .only(:modified, :created, :sourceInfo, :id, :ingressBytes, :totalBytes, :stage, :filtered, :egressed, :annotations)

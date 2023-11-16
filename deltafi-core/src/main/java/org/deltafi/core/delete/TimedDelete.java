@@ -51,6 +51,6 @@ public class TimedDelete extends DeletePolicyWorker {
         OffsetDateTime now = OffsetDateTime.now();
         OffsetDateTime createdBefore = afterCreate == null ? null : now.minus(afterCreate);
         OffsetDateTime completedBefore = afterComplete == null ? null : now.minus(afterComplete);
-        return deltaFilesService.delete(createdBefore, completedBefore, minBytes, flow, name, deleteMetadata);
+        return deltaFilesService.timedDelete(createdBefore, completedBefore, minBytes, flow, name, deleteMetadata);
     }
 }

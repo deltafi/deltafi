@@ -31,9 +31,6 @@ import java.util.stream.Stream;
 
 @Repository
 public interface DeltaFileRepo extends MongoRepository<DeltaFile, String>, DeltaFileRepoCustom {
-
-    void deleteByDidIn(List<String> dids);
-
     Page<DeltaFile> findAllByOrderByCreatedDesc(Pageable pageable);
     Page<DeltaFile> findAllByOrderByModifiedDesc(Pageable pageable);
     Page<DeltaFile> findByStageOrderByModifiedDesc(DeltaFileStage stage, Pageable pageable);

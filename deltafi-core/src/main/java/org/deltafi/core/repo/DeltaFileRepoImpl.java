@@ -149,11 +149,12 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     private static final String OVER = "over";
     private static final String CUMULATIVE_OVER = "cumulativeOver";
 
+    private static final String IN_FLIGHT = "inFlight";
     private static final String IN_FLIGHT_COUNT = "inFlightCount";
     private static final String IN_FLIGHT_BYTES = "inFlightBytes";
 
-    private static final Set<DeltaFileStage> TERMINAL_STAGES = Set.of(DeltaFileStage.COMPLETE, DeltaFileStage.ERROR, DeltaFileStage.CANCELLED);
-    private static final Set<DeltaFileStage> ACTIVE_STAGES = Set.of(DeltaFileStage.INGRESS, DeltaFileStage.ENRICH, DeltaFileStage.EGRESS);
+    private static final String TERMINAL = "terminal";
+    private static final String CONTENT_DELETABLE = "contentDeletable";
 
     public static final int MAX_COUNT = 50_000;
 
@@ -181,19 +182,17 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     private static final Map<String, Index> INDICES;
     static {
         INDICES = new HashMap<>();
-        INDICES.put("queued_loop", new Index().named("queued_loop").on(REQUEUE_COUNT, Sort.Direction.DESC).on(STAGE, Sort.Direction.ASC));
-        INDICES.put("completed_before_index", new Index().named("completed_before_index").on(STAGE, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC));
-        INDICES.put("created_before_index", new Index().named("created_before_index").on(CREATED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC));
         INDICES.put("modified_before_index", new Index().named("modified_before_index").on(MODIFIED, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC));
         INDICES.put("auto_resume_index", new Index().named("auto_resume_index").on(NEXT_AUTO_RESUME, Sort.Direction.ASC).on(STAGE, Sort.Direction.ASC));
-        INDICES.put("flow_first_index", new Index().named("flow_first_index").on(SOURCE_INFO_FLOW, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
+        INDICES.put("flow_first_index", new Index().named("flow_first_index").on(SOURCE_INFO_FLOW, Sort.Direction.ASC).on(SOURCE_INFO_NORMALIZED_FILENAME, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
         INDICES.put("metadata_index", new Index().named("metadata_index").on(ANNOTATIONS + ".$**", Sort.Direction.ASC));
-        INDICES.put("domain_name_index", new Index().named("domain_name_index").on(DOMAINS_NAME, Sort.Direction.ASC));
-        INDICES.put("metadata_keys_index", new Index().named("metadata_keys_index").on(ANNOTATION_KEYS, Sort.Direction.ASC));
-        INDICES.put("disk_space_delete_index", new Index().named("disk_space_delete_index").on(CONTENT_DELETED, Sort.Direction.ASC).on(STAGE, Sort.Direction.ASC).on(CREATED, Sort.Direction.ASC).on(TOTAL_BYTES, Sort.Direction.ASC));
-        INDICES.put("pending_annotations_for_flows_index", new Index().named("pending_annotations_for_flows_index").on(PENDING_ANNOTATIONS_FOR_FLOWS, Sort.Direction.ASC));
+        INDICES.put("domain_name_index", new Index().named("domain_name_index").on(DOMAINS_NAME, Sort.Direction.ASC).sparse());
+        INDICES.put("metadata_keys_index", new Index().named("metadata_keys_index").on(ANNOTATION_KEYS, Sort.Direction.ASC).sparse());
+        INDICES.put("pending_annotations_for_flows_index", new Index().named("pending_annotations_for_flows_index").on(PENDING_ANNOTATIONS_FOR_FLOWS, Sort.Direction.ASC).sparse());
         INDICES.put("egress_flow_index", new Index().named("egress_flow_index").on(EGRESS_FLOW, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
-        INDICES.put("normalized_filename_index", new Index().named("normalized_filename_index").on(SOURCE_INFO_NORMALIZED_FILENAME, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
+        INDICES.put("in_flight_index", new Index().named("in_flight_index").on(IN_FLIGHT, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(IN_FLIGHT).is(true))));
+        INDICES.put("terminal_index", new Index().named("terminal_index").on(TERMINAL, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
+        INDICES.put("content_deletable_index", new Index().named("content_deletable_index").on(CONTENT_DELETABLE, Sort.Direction.ASC).on(SOURCE_INFO_FLOW, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(CONTENT_DELETABLE).is(true))));
 
         // partial index to support finding DeltaFiles that are pending annotations
         INDICES.put("first_pending_annotations_for_flows_index", new Index().named("first_pending_annotations_for_flows_index")
@@ -204,6 +203,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         INDICES.put("test_mode_index", new Index().named("test_mode_index").on(TEST_MODE, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(TEST_MODE).is(true))).on(MODIFIED, Sort.Direction.ASC));
         INDICES.put("filtered_index", new Index().named("filtered_index").on(FILTERED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(FILTERED).is(true))).on(MODIFIED, Sort.Direction.ASC));
         INDICES.put("unack_error_index", new Index().named("unack_error_index").on(STAGE, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(STAGE).is("ERROR").and(ERROR_ACKNOWLEDGED).is(null))));
+
+        INDICES.put("cold_queued_index", new Index().named("cold_queued_index").on(IN_FLIGHT, Sort.Direction.ASC).on(ACTIONS_STATE, Sort.Direction.ASC).on(ACTIONS_NAME, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(IN_FLIGHT).is(true).and(ACTIONS_STATE).is(COLD_QUEUED.name()))));
+        INDICES.put("queued_index", new Index().named("queued_index").on(IN_FLIGHT, Sort.Direction.ASC).on(ACTIONS_STATE, Sort.Direction.ASC).on(ACTIONS_NAME, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(IN_FLIGHT).is(true).and(ACTIONS_STATE).is(QUEUED.name()))));
     }
 
     private final MongoTemplate mongoTemplate;
@@ -251,13 +253,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     @Override
     public List<IndexInfo> getIndexes() {
         return mongoTemplate.indexOps(COLLECTION).getIndexInfo();
-    }
-
-    public List<String> readDidsWithContent() {
-        Criteria criteria = new Criteria(CONTENT_DELETED).isNull();
-        Query query = new Query();
-        query.addCriteria(criteria);
-        return mongoTemplate.findDistinct(query, ID, DeltaFile.class, String.class);
     }
 
     @Override
@@ -328,35 +323,63 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
-    public List<DeltaFile> findForDelete(OffsetDateTime createdBeforeDate, OffsetDateTime completedBeforeDate,
-                                         long minBytes, String flowName, boolean deleteMetadata, int batchSize) {
+    public List<DeltaFile> findForTimedDelete(OffsetDateTime createdBeforeDate, OffsetDateTime completedBeforeDate,
+                                              long minBytes, String flow, boolean deleteMetadata, int batchSize) {
         // one of these must be set for any matches to occur
         if (createdBeforeDate == null && completedBeforeDate == null) {
             return Collections.emptyList();
         }
 
-        Query query = new Query(buildReadyForDeleteCriteria(createdBeforeDate, completedBeforeDate, minBytes, flowName, deleteMetadata, false));
-        query.limit(batchSize);
-        if (completedBeforeDate != null) {
-            query.with(Sort.by(Sort.Direction.ASC, MODIFIED));
+        Criteria criteria;
+
+        if (createdBeforeDate != null) {
+            criteria = Criteria.where(CREATED).lt(createdBeforeDate);
         } else {
-            query.with(Sort.by(Sort.Direction.ASC, CREATED));
+            criteria = Criteria.where(MODIFIED).lt(completedBeforeDate);
+            criteria.and(TERMINAL).is(true);
         }
-        addDeltaFilesOrderBy(query, DeltaFileOrder.newBuilder().field(CREATED).direction(DeltaFileDirection.ASC).build());
+
+        if (flow != null) {
+            criteria.and(SOURCE_INFO_FLOW).is(flow);
+        }
+
+        if (minBytes > 0L) {
+            criteria.and(TOTAL_BYTES).gte(minBytes);
+        }
+
+        if (!deleteMetadata) {
+            criteria.and(CONTENT_DELETABLE).is(true);
+        }
+
+        Query query = new Query(criteria);
+        query.limit(batchSize);
+
+        if (createdBeforeDate != null) {
+            query.with(Sort.by(Sort.Direction.ASC, CREATED));
+        } else {
+            query.with(Sort.by(Sort.Direction.ASC, MODIFIED));
+        }
         query.fields().include(ID, TOTAL_BYTES, OLD_PROTOCOL_STACK_SEGMENTS, OLD_PROTOCOL_STACK_SEGMENTS_2, ACTION_SEGMENTS, OLD_FORMATTED_DATA_SEGMENTS, OLD_FORMATTED_DATA_SEGMENTS_2, OLD_PROTOCOL_STACK_ACTION_NAME, OLD_FORMATTED_DATA_ACTION_NAME, ACTIONS_NAME, CONTENT_DELETED, SCHEMA_VERSION);
+        query.withHint("terminal_index");
 
         return mongoTemplate.find(query, DeltaFile.class);
     }
 
     @Override
-    public List<DeltaFile> findForDelete(long bytesToDelete, String flow, int batchSize) {
+    public List<DeltaFile> findForDiskSpaceDelete(long bytesToDelete, String flow, int batchSize) {
         if (bytesToDelete < 1) {
             throw new IllegalArgumentException("bytesToDelete (" + bytesToDelete + ") must be positive");
         }
 
-        Query query = new Query(buildReadyForDeleteCriteria(null, null, 1, flow, false, true));
+        Criteria criteria = Criteria.where(CONTENT_DELETABLE).is(true);
+
+        if (flow != null) {
+            criteria.and(SOURCE_INFO_FLOW).is(flow);
+        }
+
+        Query query = new Query(criteria);
         query.limit(batchSize);
-        addDeltaFilesOrderBy(query, DeltaFileOrder.newBuilder().field(CREATED).direction(DeltaFileDirection.ASC).build());
+        query.with(Sort.by(Sort.Direction.ASC, MODIFIED));
         query.fields().include(ID, TOTAL_BYTES, OLD_PROTOCOL_STACK_SEGMENTS, OLD_PROTOCOL_STACK_SEGMENTS_2, ACTION_SEGMENTS, OLD_FORMATTED_DATA_SEGMENTS, OLD_FORMATTED_DATA_SEGMENTS_2, OLD_PROTOCOL_STACK_ACTION_NAME, OLD_FORMATTED_DATA_ACTION_NAME, ACTIONS_NAME, SCHEMA_VERSION);
 
         List<DeltaFile> deltaFiles = mongoTemplate.find(query, DeltaFile.class);
@@ -368,11 +391,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                     return over;
                 })
                 .toList();
-    }
-
-    @Override
-    public DeltaFiles deltaFiles(Integer offset, int limit, DeltaFilesFilter filter, DeltaFileOrder orderBy) {
-        return deltaFiles(offset, limit, filter, orderBy, null);
     }
 
     @Override
@@ -395,7 +413,11 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             }
         }
 
-        addDeltaFilesOrderBy(query, orderBy);
+        if (orderBy == null) {
+            orderBy = DeltaFileOrder.newBuilder().field(MODIFIED).direction(DeltaFileDirection.DESC).build();
+        }
+
+        query.with(Sort.by(Sort.Direction.fromString(orderBy.getDirection().name()), orderBy.getField()));
 
         DeltaFiles deltaFiles = new DeltaFiles();
         deltaFiles.setOffset(offset);
@@ -431,7 +453,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         update.set(MODIFIED, modified);
 
-        long epochMs = requeueThreshold(modified, requeueSeconds).toInstant().toEpochMilli();
+        long epochMs = requeueThreshold(modified, requeueSeconds);
         update.filterArray(Criteria.where(ACTION_STATE).is(ActionState.QUEUED.name())
                 .and(ACTION_MODIFIED).lt(new Date(epochMs)));
 
@@ -456,8 +478,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     private Query buildReadyForRequeueQuery(OffsetDateTime requeueTime, int requeueSeconds, Set<String> skipActions, Set<String> skipDids) {
-        Criteria criteria = Criteria.where(STAGE).not().in(DeltaFileStage.COMPLETE.toString(), DeltaFileStage.ERROR.toString(), DeltaFileStage.CANCELLED.toString());
-        long epochMs = requeueThreshold(requeueTime, requeueSeconds).toInstant().toEpochMilli();
+        Criteria criteria = Criteria.where(IN_FLIGHT).is(true);
+        long epochMs = requeueThreshold(requeueTime, requeueSeconds);
         criteria.and(MODIFIED).lt(new Date(epochMs));
 
         if (skipDids != null && !skipDids.isEmpty()) {
@@ -481,50 +503,22 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     private Query buildReadyForColdRequeueQuery(List<String> actionNames, int maxFiles) {
-        Criteria notComplete = Criteria.where("stage").not().in(DeltaFileStage.COMPLETE, DeltaFileStage.ERROR, DeltaFileStage.CANCELLED);
+        Criteria notComplete = Criteria.where(IN_FLIGHT).is(true)
+                .and(ACTIONS_STATE).is(COLD_QUEUED)
+                .and(ACTIONS_NAME).in(actionNames);
 
         Criteria coldQueuedCriteria = new Criteria().andOperator(
                 Criteria.where(NAME).in(actionNames),
                 Criteria.where(STATE).is(COLD_QUEUED.name())
         );
 
-        Criteria actionMatch = Criteria.where("actions").elemMatch(coldQueuedCriteria);
+        Criteria actionMatch = Criteria.where(ACTIONS).elemMatch(coldQueuedCriteria);
 
         Query requeueQuery = new Query(new Criteria().andOperator(notComplete, actionMatch));
         requeueQuery.fields().include(ID);
         requeueQuery.limit(maxFiles);
 
         return requeueQuery;
-    }
-
-    private Criteria buildReadyForDeleteCriteria(OffsetDateTime createdBeforeDate, OffsetDateTime completedBeforeDate,
-            long minBytes, String flowName, boolean deleteMetadata, boolean completeOnly) {
-        Criteria criteria = Criteria.where(PENDING_ANNOTATIONS_FOR_FLOWS).is(null);
-
-        if (createdBeforeDate != null || completedBeforeDate != null) {
-            criteria.andOperator(buildDeleteTimeCriteria(createdBeforeDate, completedBeforeDate));
-        }
-
-        if (flowName != null) {
-            criteria.and(SOURCE_INFO_FLOW).is(flowName);
-        }
-
-        if (minBytes > 0L) {
-            criteria.and(TOTAL_BYTES).gte(minBytes);
-        }
-
-        if (!deleteMetadata) {
-            criteria.and(CONTENT_DELETED).isNull();
-        }
-
-        if (completeOnly) {
-            Criteria complete = Criteria.where(STAGE).in(DeltaFileStage.COMPLETE, DeltaFileStage.CANCELLED);
-            Criteria acknowledged = Criteria.where(STAGE).is(DeltaFileStage.ERROR)
-                    .and(ERROR_ACKNOWLEDGED).ne(null);
-            criteria.orOperator(complete, acknowledged);
-        }
-
-        return criteria;
     }
 
     private Criteria buildDeltaFilesCriteria(DeltaFilesFilter filter) {
@@ -583,13 +577,11 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             criteria.and(MODIFIED).lt(filter.getModifiedBefore());
         }
 
-        if (filter.getStage() != null && filter.getTerminalStage() != null) {
-            Set<DeltaFileStage> stages = new HashSet<>(isTrue(filter.getTerminalStage()) ? TERMINAL_STAGES : ACTIVE_STAGES);
-            stages.add(filter.getStage());
-            criteria.and(STAGE).in(stages);
-        } else if (filter.getTerminalStage() != null) {
-            criteria.and(STAGE).in(isTrue(filter.getTerminalStage()) ? TERMINAL_STAGES : ACTIVE_STAGES);
-        } else if (filter.getStage() != null) {
+        if (filter.getTerminalStage() != null) {
+            criteria.and(TERMINAL).is(isTrue(filter.getTerminalStage()));
+        }
+
+        if (filter.getStage() != null) {
             criteria.and(STAGE).is(filter.getStage().name());
         }
 
@@ -735,41 +727,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         criteria.and(ANNOTATIONS + "." + key).is(value);
     }
 
-    private void addDeltaFilesOrderBy(Query query, DeltaFileOrder orderBy) {
-        if (orderBy == null) {
-            orderBy = DeltaFileOrder.newBuilder().field(CREATED).direction(DeltaFileDirection.DESC).build();
-        }
-
-        query.with(Sort.by(Collections.singletonList(new Sort.Order(Sort.Direction.fromString(orderBy.getDirection().name()), orderBy.getField()))));
-    }
-
-    private Criteria buildDeleteTimeCriteria(OffsetDateTime createdBeforeDate, OffsetDateTime completedBeforeDate) {
-        Criteria criteria = new Criteria();
-        boolean hasCreated = createdBeforeDate != null;
-        boolean hasCompleted = completedBeforeDate != null;
-
-        if (hasCreated && hasCompleted) {
-            return Criteria.where(CREATED).lt(createdBeforeDate)
-                    .orOperator(completedBeforeCriteria(completedBeforeDate));
-        } else if (hasCreated) {
-            return Criteria.where(CREATED).lt(createdBeforeDate);
-        } else if (hasCompleted) {
-            return completedBeforeCriteria(completedBeforeDate);
-        } else {
-            return criteria;
-        }
-    }
-
-    private Criteria completedBeforeCriteria(OffsetDateTime completedBeforeDate) {
-        Criteria completed = Criteria.where(STAGE).in(DeltaFileStage.COMPLETE.name());
-        Criteria acknowledged = Criteria.where(STAGE).is(DeltaFileStage.ERROR.name())
-                .and(ERROR_ACKNOWLEDGED).ne(null);
-        return new Criteria().orOperator(completed, acknowledged)
-                .and(MODIFIED).lt(completedBeforeDate);
-    }
-
-    private OffsetDateTime requeueThreshold(OffsetDateTime requeueTime, int requeueSeconds) {
-        return requeueTime.minusSeconds(requeueSeconds);
+    private long requeueThreshold(OffsetDateTime requeueTime, int requeueSeconds) {
+        return requeueTime.minusSeconds(requeueSeconds).toInstant().toEpochMilli();
     }
 
 
@@ -1051,7 +1010,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     public void setContentDeletedByDidIn(List<String> dids, OffsetDateTime now, String reason) {
-        batchedBulkUpdateByIds(dids, new Update().set(CONTENT_DELETED, now).set(CONTENT_DELETED_REASON, reason));
+        batchedBulkUpdateByIds(dids, new Update().set(CONTENT_DELETED, now)
+                .set(CONTENT_DELETED_REASON, reason)
+                .set(CONTENT_DELETABLE, false));
     }
 
     @Override
@@ -1062,8 +1023,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     @Override
     public DeltaFileStats deltaFileStats() {
         List<AggregationOperation> aggregationOps = new ArrayList<>();
-        Criteria inFlightCriteria = Criteria.where(STAGE).in(DeltaFileStage.INGRESS,
-                DeltaFileStage.ENRICH, DeltaFileStage.EGRESS);
+        Criteria inFlightCriteria = Criteria.where(IN_FLIGHT).is(true);
         aggregationOps.add(Aggregation.match(inFlightCriteria));
 
         ProjectionOperation project = Aggregation.project()
@@ -1097,7 +1057,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     public List<ColdQueuedActionSummary> coldQueuedActionsSummary() {
-        Criteria stageCriteria = Criteria.where("stage").nin("ERROR", "COMPLETE", "CANCELLED");
+        Criteria stageCriteria = Criteria.where(IN_FLIGHT).is(true);
         MatchOperation matchStage = Aggregation.match(stageCriteria);
 
         UnwindOperation unwindActions = Aggregation.unwind("actions");
@@ -1145,12 +1105,28 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         BulkOperations bulkOps = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, DeltaFile.class);
-        for (List<String> batch : Lists.partition(dids, 1000)) {
+        for (List<String> batch : Lists.partition(dids, 500)) {
             Query query = new Query().addCriteria(Criteria.where(ID).in(batch));
             bulkOps.updateMulti(query, update);
         }
         bulkOps.execute();
     }
+
+    public void batchedBulkDeleteByDidIn(List<String> dids) {
+        if (dids == null || dids.isEmpty()) {
+            return;
+        }
+
+        BulkOperations bulkOps = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, DeltaFile.class);
+
+        for (List<String> batch : Lists.partition(dids, 500)) {
+            Query query = new Query().addCriteria(Criteria.where(ID).in(batch));
+            bulkOps.remove(query);
+        }
+
+        bulkOps.execute();
+    }
+
 
     private void addFilenameCriteria(FilenameFilter filenameFilter, Criteria criteria) {
         String filename = filenameFilter.getFilename();

@@ -38,6 +38,9 @@ public class SchemaVersion {
             "referencedBytes" : NumberLong(36),
             "totalBytes" : NumberLong(36),
             "stage" : "COMPLETE",
+            "inFlight" : false,
+            "terminal" : true,
+            "contentDeletable" : true,
             "actions" : [
                 {
                     "name" : "IngressAction",
@@ -202,6 +205,9 @@ public class SchemaVersion {
             "referencedBytes" : NumberLong(36),
             "totalBytes" : NumberLong(36),
             "stage" : "COMPLETE",
+            "inFlight" : false,
+            "terminal" : true,
+            "contentDeletable" : true,
             "actions" : [
                 {
                     "name" : "IngressAction",
@@ -365,6 +371,9 @@ public class SchemaVersion {
             "referencedBytes" : NumberLong(36),
             "totalBytes" : NumberLong(36),
             "stage" : "COMPLETE",
+            "inFlight" : false,
+            "terminal" : true,
+            "contentDeletable" : true,
             "actions" : [
                 {
                     "name" : "IngressAction",
@@ -528,6 +537,9 @@ public class SchemaVersion {
             "referencedBytes" : NumberLong(36),
             "totalBytes" : NumberLong(36),
             "stage" : "COMPLETE",
+            "inFlight" : false,
+            "terminal" : true,
+            "contentDeletable" : true,
             "actions" : [
                 {
                     "name" : "IngressAction",
@@ -696,6 +708,9 @@ public class SchemaVersion {
             "referencedBytes" : NumberLong(36),
             "totalBytes" : NumberLong(36),
             "stage" : "COMPLETE",
+            "inFlight" : false,
+            "terminal" : true,
+            "contentDeletable" : true,
             "actions" : [
                 {
                     "name" : "IngressAction",
@@ -856,6 +871,9 @@ public class SchemaVersion {
             "referencedBytes" : NumberLong(36),
             "totalBytes" : NumberLong(36),
             "stage" : "COMPLETE",
+            "inFlight" : false,
+            "terminal" : true,
+            "contentDeletable" : true,
             "actions" : [
                 {
                     "name" : "IngressAction",
@@ -1016,6 +1034,9 @@ public class SchemaVersion {
             "referencedBytes" : NumberLong(36),
             "totalBytes" : NumberLong(36),
             "stage" : "COMPLETE",
+            "inFlight" : false,
+            "terminal" : true,
+            "contentDeletable" : true,
             "actions" : [
                 {
                     "name" : "IngressAction",
@@ -1206,7 +1227,7 @@ public class SchemaVersion {
 
     public static void assertDeleted(DeltaFileRepo deltaFileRepo, MongoTemplate mongoTemplate, int version) {
         mongoTemplate.insert(deltaFileDocs.get(version), "deltaFile");
-        List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(1, null, 1);
+        List<DeltaFile> deltaFiles = deltaFileRepo.findForDiskSpaceDelete(1, null, 1);
         assertEquals(1, deltaFiles.size());
         assertEquals(3, deltaFiles.get(0).referencedSegments().size());
     }

@@ -35,12 +35,6 @@ import java.util.Set;
 
 public interface DeltaFileRepoCustom {
     /**
-     * Reads the ids for all DeltaFiles in the repository.
-     * @return the list of ids for all DeltaFiles in the repository that still have content
-     */
-    List<String> readDidsWithContent();
-
-    /**
      * Ensure the latest versions of the indices defined in the Repository
      * are created. Ensure the TTL index has the latest expiration value.
      * Remove indices that are not defined in the Repository.
@@ -132,7 +126,7 @@ public interface DeltaFileRepoCustom {
      * @param batchSize - maximum number to delete
      * @return the list of DeltaFiles marked for deletion
      */
-    List<DeltaFile> findForDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, long minBytes, String flow, boolean deleteMetadata, int batchSize);
+    List<DeltaFile> findForTimedDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, long minBytes, String flow, boolean deleteMetadata, int batchSize);
 
     /**
      * Find the oldest DeltaFiles up to bytesToDelete size that match the flow (if given).
@@ -144,9 +138,7 @@ public interface DeltaFileRepoCustom {
      * @param batchSize - maximum number to delete
      * @return the list of DeltaFiles marked for deletion
      */
-    List<DeltaFile> findForDelete(long bytesToDelete, String flow, int batchSize);
-
-    DeltaFiles deltaFiles(Integer offset, int limit, DeltaFilesFilter filter, DeltaFileOrder orderBy);
+    List<DeltaFile> findForDiskSpaceDelete(long bytesToDelete, String flow, int batchSize);
 
     /** Return a list of DeltaFiles matching the given criteria
      *
@@ -264,5 +256,7 @@ public interface DeltaFileRepoCustom {
      *
      * @return A list of ColdQueuedActionSummary objects representing the summary of cold queued actions.
      */
-    public List<ColdQueuedActionSummary> coldQueuedActionsSummary();
+    List<ColdQueuedActionSummary> coldQueuedActionsSummary();
+
+    void batchedBulkDeleteByDidIn(List<String> dids);
 }

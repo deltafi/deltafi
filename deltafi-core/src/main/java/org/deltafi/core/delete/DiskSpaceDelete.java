@@ -57,9 +57,9 @@ public class DiskSpaceDelete extends DeletePolicyWorker {
 
         log.info("Disk delete policy for " + (flow == null ? "all flows" : flow) + " executing: current used = " + String.format("%.2f", contentMetrics.percentUsed()) + "%, maximum = " + maxPercent + "%");
         long bytesToDelete = contentMetrics.bytesOverPercentage(maxPercent);
-        log.info("Deleting at least " + bytesToDelete + " bytes");
+        log.info("Deleting up to " + bytesToDelete + " bytes");
         while (bytesToDelete > 0) {
-            List<DeltaFile> deleted = deltaFilesService.delete(bytesToDelete, flow, name, false);
+            List<DeltaFile> deleted = deltaFilesService.diskSpaceDelete(bytesToDelete, flow, name);
 
             long bytesDeleted = deleted.stream().map(DeltaFile::getTotalBytes).reduce(0L, Long::sum);
             bytesToDelete -= bytesDeleted;

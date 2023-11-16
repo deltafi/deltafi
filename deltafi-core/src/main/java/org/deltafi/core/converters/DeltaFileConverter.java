@@ -90,6 +90,10 @@ public class DeltaFileConverter implements AfterConvertCallback<DeltaFile> {
             updateToV7(deltaFile);
         }
 
+        if (deltaFile.getSchemaVersion() < 8) {
+            updateToV8(deltaFile);
+        }
+
         return deltaFile;
     }
 
@@ -281,6 +285,10 @@ public class DeltaFileConverter implements AfterConvertCallback<DeltaFile> {
                 action.setName(action.getName().substring(dotIndex + 1));
             }
         }
+    }
+
+    private void updateToV8(DeltaFile deltaFile) {
+        deltaFile.updateFlags();
     }
 
     private List<Content> convertDocumentListToContentList(List<Document> documentList) {

@@ -96,7 +96,7 @@ public class TimedDeleteTest {
         TimedDelete timedDelete = new TimedDelete(deltaFilesService, policy);
         timedDelete.run();
 
-        verify(deltaFilesService).delete(ArgumentMatchers.any(), ArgumentMatchers.isNull(), ArgumentMatchers.eq(0L), ArgumentMatchers.isNull(), ArgumentMatchers.eq(POLICY_NAME), ArgumentMatchers.eq(false));
+        verify(deltaFilesService).timedDelete(ArgumentMatchers.any(), ArgumentMatchers.isNull(), ArgumentMatchers.eq(0L), ArgumentMatchers.isNull(), ArgumentMatchers.eq(POLICY_NAME), ArgumentMatchers.eq(false));
     }
 
     @Test
@@ -109,7 +109,7 @@ public class TimedDeleteTest {
         TimedDelete timedDelete = new TimedDelete(deltaFilesService, policy);
         timedDelete.run();
 
-        verify(deltaFilesService).delete(ArgumentMatchers.isNull(), ArgumentMatchers.any(), ArgumentMatchers.eq(0L), ArgumentMatchers.eq(FLOW_NAME), ArgumentMatchers.eq(POLICY_NAME), ArgumentMatchers.eq(false));
+        verify(deltaFilesService).timedDelete(ArgumentMatchers.isNull(), ArgumentMatchers.any(), ArgumentMatchers.eq(0L), ArgumentMatchers.eq(FLOW_NAME), ArgumentMatchers.eq(POLICY_NAME), ArgumentMatchers.eq(false));
     }
 
     @Test
@@ -122,6 +122,6 @@ public class TimedDeleteTest {
         TimedDelete timedDelete = new TimedDelete(deltaFilesService, policy);
         timedDelete.run();
 
-        verify(deltaFilesService).delete(ArgumentMatchers.isNull(), ArgumentMatchers.isNull(), ArgumentMatchers.eq(234L), ArgumentMatchers.isNull(), ArgumentMatchers.eq(POLICY_NAME), ArgumentMatchers.eq(false));
+        verify(deltaFilesService).timedDelete(ArgumentMatchers.isNull(), ArgumentMatchers.isNull(), ArgumentMatchers.eq(234L), ArgumentMatchers.isNull(), ArgumentMatchers.eq(POLICY_NAME), ArgumentMatchers.eq(false));
     }
 }

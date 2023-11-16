@@ -243,9 +243,9 @@ class DeltaFilesServiceTest {
         DeltaFile deltaFile1 = Util.buildDeltaFile("1", List.of(content1));
         Content content2 = new Content("name", "mediaType", new Segment("b", "2"));
         DeltaFile deltaFile2 = Util.buildDeltaFile("2", List.of(content2));
-        when(deltaFileRepo.findForDelete(any(), any(), anyLong(), any(), anyBoolean(), anyInt())).thenReturn(List.of(deltaFile1, deltaFile2));
+        when(deltaFileRepo.findForTimedDelete(any(), any(), anyLong(), any(), anyBoolean(), anyInt())).thenReturn(List.of(deltaFile1, deltaFile2));
 
-        deltaFilesService.delete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", false);
+        deltaFilesService.timedDelete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", false);
 
         verify(contentStorageService).deleteAll(segmentCaptor.capture());
         assertEquals(List.of(content1.getSegments().get(0), content2.getSegments().get(0)), segmentCaptor.getValue());
@@ -259,14 +259,14 @@ class DeltaFilesServiceTest {
         DeltaFile deltaFile1 = Util.buildDeltaFile("1", List.of(content1));
         Content content2 = new Content("name", "mediaType", new Segment("b", "2"));
         DeltaFile deltaFile2 = Util.buildDeltaFile("2", List.of(content2));
-        when(deltaFileRepo.findForDelete(any(), any(), anyLong(), any(), anyBoolean(), anyInt())).thenReturn(List.of(deltaFile1, deltaFile2));
+        when(deltaFileRepo.findForTimedDelete(any(), any(), anyLong(), any(), anyBoolean(), anyInt())).thenReturn(List.of(deltaFile1, deltaFile2));
 
-        deltaFilesService.delete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", true);
+        deltaFilesService.timedDelete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", true);
 
         verify(contentStorageService).deleteAll(segmentCaptor.capture());
         assertEquals(List.of(content1.getSegments().get(0), content2.getSegments().get(0)), segmentCaptor.getValue());
         verify(deltaFileRepo, never()).saveAll(any());
-        verify(deltaFileRepo).deleteByDidIn(stringListCaptor.capture());
+        verify(deltaFileRepo).batchedBulkDeleteByDidIn(stringListCaptor.capture());
         assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), stringListCaptor.getValue());
     }
 

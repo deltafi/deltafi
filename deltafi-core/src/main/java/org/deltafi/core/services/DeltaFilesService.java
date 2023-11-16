@@ -282,6 +282,7 @@ public class DeltaFilesService {
                 .ingressBytes(contentSize)
                 .totalBytes(contentSize)
                 .stage(DeltaFileStage.INGRESS)
+                .inFlight(true)
                 .actions(new ArrayList<>(List.of(ingressAction)))
                 .sourceInfo(SourceInfo.builder()
                         .filename(ingressEventItem.getFilename())
@@ -1003,6 +1004,9 @@ public class DeltaFilesService {
                         .requeueCount(0)
                         .ingressBytes(ContentUtil.computeContentSize(reinject.getContent()))
                         .stage(DeltaFileStage.INGRESS)
+                        .inFlight(true)
+                        .terminal(false)
+                        .contentDeletable(false)
                         .actions(new ArrayList<>(List.of(action)))
                         .sourceInfo(SourceInfo.builder()
                                 .flow(reinject.getFlow())
@@ -1266,6 +1270,9 @@ public class DeltaFilesService {
                                     .requeueCount(0)
                                     .ingressBytes(deltaFile.getIngressBytes())
                                     .stage(DeltaFileStage.INGRESS)
+                                    .inFlight(true)
+                                    .terminal(false)
+                                    .contentDeletable(false)
                                     .actions(new ArrayList<>(List.of(action)))
                                     .sourceInfo(deltaFile.getSourceInfo())
                                     .created(now)
@@ -1599,6 +1606,9 @@ public class DeltaFilesService {
                 .aggregate(true)
                 .childDids(Collections.emptyList())
                 .stage(collectEntry.getCollectDefinition().getStage())
+                .inFlight(true)
+                .terminal(false)
+                .contentDeletable(false)
                 .sourceInfo(buildAggregateSourceInfo(collectedDeltaFiles.get(0).getSourceInfo()))
                 .created(now)
                 .modified(now)
@@ -1681,21 +1691,21 @@ public class DeltaFilesService {
      * @param  deleteMetadata  whether to delete the metadata of the DeltaFiles in addition to the content
      * @return                 true if there are more DeltaFiles to delete, false otherwise
      */
-    public boolean delete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, Long minBytes, String flow, String policy, boolean deleteMetadata) {
+    public boolean timedDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, Long minBytes, String flow, String policy, boolean deleteMetadata) {
         int batchSize = deltaFiPropertiesService.getDeltaFiProperties().getDelete().getPolicyBatchSize();
 
         log.info("Searching for batch of up to " + batchSize + " deltaFiles to delete for policy " + policy);
-        List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(createdBefore, completedBefore, minBytes, flow, deleteMetadata, batchSize);
+        List<DeltaFile> deltaFiles = deltaFileRepo.findForTimedDelete(createdBefore, completedBefore, minBytes, flow, deleteMetadata, batchSize);
         delete(deltaFiles, policy, deleteMetadata);
 
         return deltaFiles.size() == batchSize;
     }
 
-    public List<DeltaFile> delete(long bytesToDelete, String flow, String policy, boolean deleteMetadata) {
+    public List<DeltaFile> diskSpaceDelete(long bytesToDelete, String flow, String policy) {
         int batchSize = deltaFiPropertiesService.getDeltaFiProperties().getDelete().getPolicyBatchSize();
 
         log.info("Searching for batch of up to " + batchSize + " deltaFiles to delete for policy " + policy);
-        return delete(deltaFileRepo.findForDelete(bytesToDelete, flow, batchSize), policy, deleteMetadata);
+        return delete(deltaFileRepo.findForDiskSpaceDelete(bytesToDelete, flow, batchSize), policy, false);
     }
 
     public List<DeltaFile> delete(List<DeltaFile> deltaFiles, String policy, boolean deleteMetadata) {
@@ -1984,7 +1994,7 @@ public class DeltaFilesService {
     }
 
     private void deleteMetadata(List<DeltaFile> deltaFiles) {
-        deltaFileRepo.deleteByDidIn(deltaFiles.stream().map(DeltaFile::getDid).distinct().toList());
+        deltaFileRepo.batchedBulkDeleteByDidIn(deltaFiles.stream().map(DeltaFile::getDid).distinct().toList());
 
     }
 

@@ -2610,18 +2610,6 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void testReadDids() {
-		List<String> dids = List.of("a", "b", "c");
-		List<DeltaFile> deltaFiles = dids.stream().map(Util::buildDeltaFile).toList();
-		deltaFileRepo.saveAll(deltaFiles);
-
-		List<String> didsRead = deltaFileRepo.readDidsWithContent();
-
-		assertEquals(3, didsRead.size());
-		assertTrue(didsRead.containsAll(dids));
-	}
-
-	@Test
 	void testFindReadyForAutoResume() {
 		Action ingress = Action.builder().flow(NORMALIZE_FLOW_NAME).name("ingress").modified(MONGO_NOW).state(ActionState.COMPLETE).build();
 		Action hit = Action.builder().flow(NORMALIZE_FLOW_NAME).name("hit").modified(MONGO_NOW).state(ActionState.ERROR).build();
@@ -2717,13 +2705,13 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void deleteByDidIn() {
+	void batchedBulkDeleteByDidIn() {
 		List<DeltaFile> deltaFiles = Stream.of("a", "b", "c").map(Util::buildDeltaFile).toList();
 		deltaFileRepo.saveAll(deltaFiles);
 
 		assertEquals(3, deltaFileRepo.count());
 
-		deltaFileRepo.deleteByDidIn(Arrays.asList("a", "c"));
+		deltaFileRepo.batchedBulkDeleteByDidIn(Arrays.asList("a", "c"));
 
 		assertEquals(1, deltaFileRepo.count());
 		assertEquals("b", deltaFileRepo.findAll().get(0).getDid());
@@ -2735,14 +2723,16 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile1 = buildDeltaFile("1", null, DeltaFileStage.COMPLETE, OffsetDateTime.now().minusSeconds(1), OffsetDateTime.now());
 		deltaFileRepo.save(deltaFile1);
 		DeltaFile deltaFile2 = buildDeltaFile("2", null, DeltaFileStage.ERROR, OffsetDateTime.now(), OffsetDateTime.now());
+		deltaFile2.acknowledgeError(OffsetDateTime.now(), "reason");
 		deltaFileRepo.save(deltaFile2);
 		DeltaFile deltaFile3 = buildDeltaFile("3", null, DeltaFileStage.INGRESS, OffsetDateTime.now().plusSeconds(2), OffsetDateTime.now().plusSeconds(2));
 		deltaFileRepo.save(deltaFile3);
-		DeltaFile deltaFile4 = buildDeltaFile("2", null, DeltaFileStage.ERROR, OffsetDateTime.now(), OffsetDateTime.now());
+		DeltaFile deltaFile4 = buildDeltaFile("4", null, DeltaFileStage.ERROR, OffsetDateTime.now(), OffsetDateTime.now());
+		deltaFile2.acknowledgeError(OffsetDateTime.now(), "reason");
 		deltaFile4.setContentDeleted(OffsetDateTime.now());
-		deltaFileRepo.save(deltaFile3);
+		deltaFileRepo.save(deltaFile4);
 
-		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(OffsetDateTime.now().plusSeconds(1), null, 0, null, false, 10);
+		List<DeltaFile> deltaFiles = deltaFileRepo.findForTimedDelete(OffsetDateTime.now().plusSeconds(1), null, 0, null, false, 10);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
 		Mockito.verifyNoMoreInteractions(metricService);
 	}
@@ -2755,11 +2745,11 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.save(deltaFile2);
 		DeltaFile deltaFile3 = buildDeltaFile("3", null, DeltaFileStage.INGRESS, OffsetDateTime.now().plusSeconds(2), OffsetDateTime.now().plusSeconds(2));
 		deltaFileRepo.save(deltaFile3);
-		DeltaFile deltaFile4 = buildDeltaFile("2", null, DeltaFileStage.ERROR, OffsetDateTime.now(), OffsetDateTime.now());
+		DeltaFile deltaFile4 = buildDeltaFile("4", null, DeltaFileStage.ERROR, OffsetDateTime.now(), OffsetDateTime.now());
 		deltaFile4.setContentDeleted(OffsetDateTime.now());
-		deltaFileRepo.save(deltaFile3);
+		deltaFileRepo.save(deltaFile4);
 
-		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(OffsetDateTime.now().plusSeconds(1), null, 0, null, false, 1);
+		List<DeltaFile> deltaFiles = deltaFileRepo.findForTimedDelete(OffsetDateTime.now().plusSeconds(1), null, 0, null, false, 1);
 		assertEquals(List.of(deltaFile1.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
 		Mockito.verifyNoMoreInteractions(metricService);
 	}
@@ -2770,7 +2760,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile1.setContentDeleted(OffsetDateTime.now());
 		deltaFileRepo.save(deltaFile1);
 
-		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(OffsetDateTime.now().plusSeconds(1), null, 0, null, true, 10);
+		List<DeltaFile> deltaFiles = deltaFileRepo.findForTimedDelete(OffsetDateTime.now().plusSeconds(1), null, 0, null, true, 10);
 		assertEquals(List.of(deltaFile1.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
 		Mockito.verifyNoMoreInteractions(metricService);
 	}
@@ -2785,12 +2775,14 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.save(deltaFile3);
 		DeltaFile deltaFile4 = buildDeltaFile("4", null, DeltaFileStage.ERROR, OffsetDateTime.now(), OffsetDateTime.now());
 		deltaFile4.acknowledgeError(OffsetDateTime.now(), null);
+		deltaFile4.updateFlags();
 		deltaFileRepo.save(deltaFile4);
 		DeltaFile deltaFile5 = buildDeltaFile("5", null, DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now());
 		deltaFile5.setPendingAnnotationsForFlows(Set.of("a"));
+		deltaFile5.updateFlags();
 		deltaFileRepo.save(deltaFile5);
 
-		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(null, OffsetDateTime.now().plusSeconds(1), 0, null, false, 10);
+		List<DeltaFile> deltaFiles = deltaFileRepo.findForTimedDelete(null, OffsetDateTime.now().plusSeconds(1), 0, null, false, 10);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile4.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
 		Mockito.verifyNoMoreInteractions(metricService);
 	}
@@ -2802,7 +2794,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile2 = buildDeltaFile("2", "b", DeltaFileStage.ERROR, OffsetDateTime.now(), OffsetDateTime.now());
 		deltaFileRepo.save(deltaFile2);
 
-		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(OffsetDateTime.now().plusSeconds(1), null, 0, "a", false, 10);
+		List<DeltaFile> deltaFiles = deltaFileRepo.findForTimedDelete(OffsetDateTime.now().plusSeconds(1), null, 0, "a", false, 10);
 		assertEquals(List.of(deltaFile1.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
 		Mockito.verifyNoMoreInteractions(metricService);
 	}
@@ -2815,24 +2807,24 @@ class DeltaFiCoreApplicationTests {
 		deltaFile1.setContentDeleted(oneSecondAgo);
 		deltaFileRepo.save(deltaFile1);
 
-		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(OffsetDateTime.now(), null, 0, null, false, 10);
+		List<DeltaFile> deltaFiles = deltaFileRepo.findForTimedDelete(OffsetDateTime.now(), null, 0, null, false, 10);
 		assertTrue(deltaFiles.isEmpty());
 		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
 	void testFindForDeleteDiskSpace() {
-		DeltaFile deltaFile1 = buildDeltaFile("1", null, DeltaFileStage.COMPLETE, OffsetDateTime.now().minusSeconds(5), OffsetDateTime.now());
+		DeltaFile deltaFile1 = buildDeltaFile("1", null, DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now().minusSeconds(5));
 		deltaFile1.setTotalBytes(100L);
 		deltaFileRepo.save(deltaFile1);
-		DeltaFile deltaFile2 = buildDeltaFile("2", null, DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now().plusSeconds(2));
+		DeltaFile deltaFile2 = buildDeltaFile("2", null, DeltaFileStage.COMPLETE, OffsetDateTime.now().plusSeconds(2), OffsetDateTime.now());
 		deltaFile2.setTotalBytes(300L);
 		deltaFileRepo.save(deltaFile2);
-		DeltaFile deltaFile3 = buildDeltaFile("3", null, DeltaFileStage.COMPLETE, OffsetDateTime.now().plusSeconds(5), OffsetDateTime.now());
+		DeltaFile deltaFile3 = buildDeltaFile("3", null, DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now().plusSeconds(5));
 		deltaFile3.setTotalBytes(500L);
 		deltaFileRepo.save(deltaFile3);
 
-		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(250L, null, 100);
+		List<DeltaFile> deltaFiles = deltaFileRepo.findForDiskSpaceDelete(250L, null, 100);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
 		Mockito.verifyNoMoreInteractions(metricService);
 	}
@@ -2841,29 +2833,36 @@ class DeltaFiCoreApplicationTests {
 	void testFindForDeleteDiskSpaceAll() {
 		DeltaFile deltaFile1 = buildDeltaFile("1", null, DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now());
 		deltaFile1.setTotalBytes(100L);
+		deltaFile1.updateFlags();
 		deltaFileRepo.save(deltaFile1);
 		DeltaFile deltaFile2 = buildDeltaFile("2", null, DeltaFileStage.COMPLETE, OffsetDateTime.now().plusSeconds(1), OffsetDateTime.now().plusSeconds(2));
 		deltaFile2.setTotalBytes(300L);
+		deltaFile2.updateFlags();
 		deltaFileRepo.save(deltaFile2);
 		DeltaFile deltaFile3 = buildDeltaFile("3", null, DeltaFileStage.COMPLETE, OffsetDateTime.now().plusSeconds(2), OffsetDateTime.now());
 		deltaFile3.setTotalBytes(500L);
+		deltaFile3.updateFlags();
 		deltaFileRepo.save(deltaFile3);
 		DeltaFile deltaFile4 = buildDeltaFile("4", null, DeltaFileStage.COMPLETE, OffsetDateTime.now().plusSeconds(3), OffsetDateTime.now());
 		deltaFile4.setTotalBytes(500L);
 		deltaFile4.setContentDeleted(OffsetDateTime.now());
+		deltaFile4.updateFlags();
 		deltaFileRepo.save(deltaFile4);
 		DeltaFile deltaFile5 = buildDeltaFile("5", null, DeltaFileStage.COMPLETE, OffsetDateTime.now().plusSeconds(4), OffsetDateTime.now());
 		deltaFile5.setTotalBytes(0L);
+		deltaFile5.updateFlags();
 		deltaFileRepo.save(deltaFile5);
 		DeltaFile deltaFile6 = buildDeltaFile("6", null, DeltaFileStage.EGRESS, OffsetDateTime.now().plusSeconds(5), OffsetDateTime.now());
 		deltaFile6.setTotalBytes(50L);
+		deltaFile6.updateFlags();
 		deltaFileRepo.save(deltaFile6);
 		DeltaFile deltaFile7 = buildDeltaFile("7", null, DeltaFileStage.COMPLETE, OffsetDateTime.now().plusSeconds(6), OffsetDateTime.now());
 		deltaFile7.setTotalBytes(1000L);
 		deltaFile7.setPendingAnnotationsForFlows(Set.of("a"));
+		deltaFile7.updateFlags();
 		deltaFileRepo.save(deltaFile7);
 
-		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(2500L, null, 100);
+		List<DeltaFile> deltaFiles = deltaFileRepo.findForDiskSpaceDelete(2500L, null, 100);
 		assertEquals(Stream.of(deltaFile1.getDid(), deltaFile2.getDid(), deltaFile3.getDid()).sorted().toList(), deltaFiles.stream().map(DeltaFile::getDid).sorted().toList());
 		Mockito.verifyNoMoreInteractions(metricService);
 	}
@@ -2873,14 +2872,14 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile1 = buildDeltaFile("1", null, DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now());
 		deltaFile1.setTotalBytes(100L);
 		deltaFileRepo.save(deltaFile1);
-		DeltaFile deltaFile2 = buildDeltaFile("2", null, DeltaFileStage.COMPLETE, OffsetDateTime.now().plusSeconds(1), OffsetDateTime.now().plusSeconds(2));
+		DeltaFile deltaFile2 = buildDeltaFile("2", null, DeltaFileStage.COMPLETE, OffsetDateTime.now().plusSeconds(2), OffsetDateTime.now().plusSeconds(1));
 		deltaFile2.setTotalBytes(300L);
 		deltaFileRepo.save(deltaFile2);
-		DeltaFile deltaFile3 = buildDeltaFile("3", null, DeltaFileStage.COMPLETE, OffsetDateTime.now().plusSeconds(2), OffsetDateTime.now());
+		DeltaFile deltaFile3 = buildDeltaFile("3", null, DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now().plusSeconds(2));
 		deltaFile3.setTotalBytes(500L);
 		deltaFileRepo.save(deltaFile3);
 
-		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(2500L, null, 2);
+		List<DeltaFile> deltaFiles = deltaFileRepo.findForDiskSpaceDelete(2500L, null, 2);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
 		Mockito.verifyNoMoreInteractions(metricService);
 	}
@@ -2897,7 +2896,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile3.setTotalBytes(500L);
 		deltaFileRepo.save(deltaFile3);
 
-		List<DeltaFile> deltaFiles = deltaFileRepo.findForDelete(2500L, "a", 100);
+		List<DeltaFile> deltaFiles = deltaFileRepo.findForDiskSpaceDelete(2500L, "a", 100);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFile::getDid).toList());
 		Mockito.verifyNoMoreInteractions(metricService);
 	}
@@ -2909,7 +2908,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile2 = buildDeltaFile("2", null, DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(2), MONGO_NOW.plusSeconds(2));
 		deltaFileRepo.save(deltaFile2);
 
-		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 50, new DeltaFilesFilter(), null);
+		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 50, new DeltaFilesFilter(), null, null);
 		assertEquals(deltaFiles.getDeltaFiles(), List.of(deltaFile2, deltaFile1));
 		Mockito.verifyNoMoreInteractions(metricService);
 	}
@@ -2921,19 +2920,19 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile2 = buildDeltaFile("2", null, DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(2), MONGO_NOW.plusSeconds(2));
 		deltaFileRepo.save(deltaFile2);
 
-		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 1, new DeltaFilesFilter(), null);
+		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 1, new DeltaFilesFilter(), null, null);
 		assertEquals(1, deltaFiles.getCount());
 		assertEquals(2, deltaFiles.getTotalCount());
 
-		deltaFiles = deltaFileRepo.deltaFiles(null, 2, new DeltaFilesFilter(), null);
+		deltaFiles = deltaFileRepo.deltaFiles(null, 2, new DeltaFilesFilter(), null, null);
 		assertEquals(2, deltaFiles.getCount());
 		assertEquals(2, deltaFiles.getTotalCount());
 
-		deltaFiles = deltaFileRepo.deltaFiles(null, 100, new DeltaFilesFilter(), null);
+		deltaFiles = deltaFileRepo.deltaFiles(null, 100, new DeltaFilesFilter(), null, null);
 		assertEquals(2, deltaFiles.getCount());
 		assertEquals(2, deltaFiles.getTotalCount());
 
-		deltaFiles = deltaFileRepo.deltaFiles(1, 100, new DeltaFilesFilter(), null);
+		deltaFiles = deltaFileRepo.deltaFiles(1, 100, new DeltaFilesFilter(), null, null);
 		assertEquals(1, deltaFiles.getCount());
 		assertEquals(2, deltaFiles.getTotalCount());
 	}
@@ -2945,15 +2944,15 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile2 = buildDeltaFile("2", null, DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(2), MONGO_NOW.minusSeconds(2));
 		deltaFileRepo.save(deltaFile2);
 
-		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(0, 50, new DeltaFilesFilter(), null);
+		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(0, 50, new DeltaFilesFilter(), null, null);
 		assertEquals(0, deltaFiles.getOffset());
-		assertEquals(List.of(deltaFile2, deltaFile1), deltaFiles.getDeltaFiles());
+		assertEquals(List.of(deltaFile1, deltaFile2), deltaFiles.getDeltaFiles());
 
-		deltaFiles = deltaFileRepo.deltaFiles(1, 50, new DeltaFilesFilter(), null);
+		deltaFiles = deltaFileRepo.deltaFiles(1, 50, new DeltaFilesFilter(), null, null);
 		assertEquals(1, deltaFiles.getOffset());
-		assertEquals(List.of(deltaFile1), deltaFiles.getDeltaFiles());
+		assertEquals(List.of(deltaFile2), deltaFiles.getDeltaFiles());
 
-		deltaFiles = deltaFileRepo.deltaFiles(2, 50, new DeltaFilesFilter(), null);
+		deltaFiles = deltaFileRepo.deltaFiles(2, 50, new DeltaFilesFilter(), null, null);
 		assertEquals(2, deltaFiles.getOffset());
 		assertEquals(Collections.emptyList(), deltaFiles.getDeltaFiles());
 	}
@@ -2966,19 +2965,19 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.save(deltaFile2);
 
 		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 50, new DeltaFilesFilter(),
-				DeltaFileOrder.newBuilder().direction(DeltaFileDirection.ASC).field("created").build());
+				DeltaFileOrder.newBuilder().direction(DeltaFileDirection.ASC).field("created").build(), null);
 		assertEquals(List.of(deltaFile1, deltaFile2), deltaFiles.getDeltaFiles());
 
 		deltaFiles = deltaFileRepo.deltaFiles(null, 50, new DeltaFilesFilter(),
-				DeltaFileOrder.newBuilder().direction(DeltaFileDirection.DESC).field("created").build());
+				DeltaFileOrder.newBuilder().direction(DeltaFileDirection.DESC).field("created").build(), null);
 		assertEquals(List.of(deltaFile2, deltaFile1), deltaFiles.getDeltaFiles());
 
 		deltaFiles = deltaFileRepo.deltaFiles(null, 50, new DeltaFilesFilter(),
-				DeltaFileOrder.newBuilder().direction(DeltaFileDirection.ASC).field("modified").build());
+				DeltaFileOrder.newBuilder().direction(DeltaFileDirection.ASC).field("modified").build(), null);
 		assertEquals(List.of(deltaFile2, deltaFile1), deltaFiles.getDeltaFiles());
 
 		deltaFiles = deltaFileRepo.deltaFiles(null, 50, new DeltaFilesFilter(),
-				DeltaFileOrder.newBuilder().direction(DeltaFileDirection.DESC).field("modified").build());
+				DeltaFileOrder.newBuilder().direction(DeltaFileDirection.DESC).field("modified").build(), null);
 		assertEquals(List.of(deltaFile1, deltaFile2), deltaFiles.getDeltaFiles());
 	}
 
@@ -3025,7 +3024,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile2.addEgressFlow("MyEgressFlow2");
 		deltaFileRepo.save(deltaFile2);
 
-		DeltaFile deltaFile3 = buildDeltaFile("3", null, DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(2), MONGO_NOW.minusSeconds(2));
+		DeltaFile deltaFile3 = buildDeltaFile("3", null, DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(3), MONGO_NOW.minusSeconds(3));
 		deltaFile3.setIngressBytes(300L);
 		deltaFile3.setTotalBytes(3000L);
 		deltaFile3.addAnnotations(Map.of("b.2", "first", "common", "value"));
@@ -3049,68 +3048,68 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.save(deltaFile3);
 
 		testFilter(DeltaFilesFilter.newBuilder().testMode(true).build(), deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().testMode(false).build(), deltaFile3, deltaFile2);
-		testFilter(DeltaFilesFilter.newBuilder().createdAfter(MONGO_NOW).build(), deltaFile3, deltaFile2);
+		testFilter(DeltaFilesFilter.newBuilder().testMode(false).build(), deltaFile2, deltaFile3);
+		testFilter(DeltaFilesFilter.newBuilder().createdAfter(MONGO_NOW).build(), deltaFile2, deltaFile3);
 		testFilter(DeltaFilesFilter.newBuilder().createdBefore(MONGO_NOW).build(), deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().domains(Collections.emptyList()).build(), deltaFile3, deltaFile2, deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().domains(List.of("domain1")).build(), deltaFile2, deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().domains(Collections.emptyList()).build(), deltaFile1, deltaFile2, deltaFile3);
+		testFilter(DeltaFilesFilter.newBuilder().domains(List.of("domain1")).build(), deltaFile1, deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().domains(List.of("domain1", "domain2")).build(), deltaFile2);
-		testFilter(DeltaFilesFilter.newBuilder().enrichments(Collections.emptyList()).build(), deltaFile3, deltaFile2, deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().enrichments(List.of("enrichment1")).build(), deltaFile2, deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().enrichments(Collections.emptyList()).build(), deltaFile1, deltaFile2, deltaFile3);
+		testFilter(DeltaFilesFilter.newBuilder().enrichments(List.of("enrichment1")).build(), deltaFile1, deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().enrichments(List.of("enrichment1", "enrichment2")).build(), deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().contentDeleted(true).build(), deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().contentDeleted(false).build(), deltaFile3, deltaFile2);
+		testFilter(DeltaFilesFilter.newBuilder().contentDeleted(false).build(), deltaFile2, deltaFile3);
 		testFilter(DeltaFilesFilter.newBuilder().modifiedAfter(MONGO_NOW).build(), deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().modifiedBefore(MONGO_NOW).build(), deltaFile3, deltaFile2);
+		testFilter(DeltaFilesFilter.newBuilder().modifiedBefore(MONGO_NOW).build(), deltaFile2, deltaFile3);
 		testFilter(DeltaFilesFilter.newBuilder().requeueCountMin(1).build(), deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().requeueCountMin(0).build(), deltaFile3, deltaFile2, deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().ingressBytesMin(50L).build(), deltaFile3, deltaFile2, deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().ingressBytesMin(150L).build(), deltaFile3, deltaFile2);
-		testFilter(DeltaFilesFilter.newBuilder().ingressBytesMax(250L).build(), deltaFile2, deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().requeueCountMin(0).build(), deltaFile1, deltaFile2, deltaFile3);
+		testFilter(DeltaFilesFilter.newBuilder().ingressBytesMin(50L).build(), deltaFile1, deltaFile2, deltaFile3);
+		testFilter(DeltaFilesFilter.newBuilder().ingressBytesMin(150L).build(), deltaFile2, deltaFile3);
+		testFilter(DeltaFilesFilter.newBuilder().ingressBytesMax(250L).build(), deltaFile1, deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().ingressBytesMax(150L).build(), deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().ingressBytesMax(100L).ingressBytesMin(100L).build(), deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().totalBytesMin(500L).build(), deltaFile3, deltaFile2, deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().totalBytesMin(1500L).build(), deltaFile3, deltaFile2);
-		testFilter(DeltaFilesFilter.newBuilder().totalBytesMax(2500L).build(), deltaFile2, deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().totalBytesMin(500L).build(), deltaFile1, deltaFile2, deltaFile3);
+		testFilter(DeltaFilesFilter.newBuilder().totalBytesMin(1500L).build(), deltaFile2, deltaFile3);
+		testFilter(DeltaFilesFilter.newBuilder().totalBytesMax(2500L).build(), deltaFile1, deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().totalBytesMax(1500L).build(), deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().totalBytesMax(1000L).totalBytesMin(1000L).build(), deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().stage(DeltaFileStage.COMPLETE).build(), deltaFile3, deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().stage(DeltaFileStage.COMPLETE).build(), deltaFile1, deltaFile3);
 		testFilter(DeltaFilesFilter.newBuilder().sourceInfo(SourceInfoFilter.newBuilder().filename("filename1").build()).build(), deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().sourceInfo(SourceInfoFilter.newBuilder().filename("FiLeNaMe").build()).build(), deltaFile3, deltaFile2, deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().sourceInfo(SourceInfoFilter.newBuilder().filename("FiLeNaMe").build()).build(), deltaFile1, deltaFile2, deltaFile3);
 		testFilter(DeltaFilesFilter.newBuilder().sourceInfo(SourceInfoFilter.newBuilder().flow("flow2").build()).build(), deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().sourceInfo(SourceInfoFilter.newBuilder().metadata(List.of(new KeyValue("key1", "value1"))).build()).build(), deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().sourceInfo(SourceInfoFilter.newBuilder().metadata(List.of(new KeyValue("key1", "value1"), new KeyValue("key2", "value2"))).build()).build(), deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().sourceInfo(SourceInfoFilter.newBuilder().metadata(List.of(new KeyValue("key1", "value1"), new KeyValue("key2", "value1"))).build()).build());
 		testFilter(DeltaFilesFilter.newBuilder().sourceInfo(SourceInfoFilter.newBuilder().processingType(ProcessingType.TRANSFORMATION).build()).build(), deltaFile3);
-		testFilter(DeltaFilesFilter.newBuilder().actions(Collections.emptyList()).build(), deltaFile3, deltaFile2, deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().actions(List.of("action1")).build(), deltaFile2, deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().actions(Collections.emptyList()).build(), deltaFile1, deltaFile2, deltaFile3);
+		testFilter(DeltaFilesFilter.newBuilder().actions(List.of("action1")).build(), deltaFile1, deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().actions(List.of("action1", "action2")).build(), deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().errorCause("^Cause$").build(), deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().filtered(true).filteredCause("^Coffee$").build(), deltaFile3);
 		testFilter(DeltaFilesFilter.newBuilder().filteredCause("off").build(), deltaFile3);
 		testFilter(DeltaFilesFilter.newBuilder().filteredCause("nope").build());
-		testFilter(DeltaFilesFilter.newBuilder().dids(Collections.emptyList()).build(), deltaFile3, deltaFile2, deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().dids(Collections.emptyList()).build(), deltaFile1, deltaFile2, deltaFile3);
 		testFilter(DeltaFilesFilter.newBuilder().dids(Collections.singletonList("1")).build(), deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().dids(List.of("1", "3")).build(), deltaFile3, deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().dids(List.of("1", "2")).build(), deltaFile2, deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().dids(List.of("1", "3")).build(), deltaFile1, deltaFile3);
+		testFilter(DeltaFilesFilter.newBuilder().dids(List.of("1", "2")).build(), deltaFile1, deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().dids(List.of("5", "4")).build());
 		testFilter(DeltaFilesFilter.newBuilder().errorAcknowledged(true).build(), deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().errorAcknowledged(false).build(), deltaFile3, deltaFile2);
+		testFilter(DeltaFilesFilter.newBuilder().errorAcknowledged(false).build(), deltaFile2, deltaFile3);
 		testFilter(DeltaFilesFilter.newBuilder().egressed(false).build(), deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().egressed(true).build(), deltaFile3, deltaFile2);
+		testFilter(DeltaFilesFilter.newBuilder().egressed(true).build(), deltaFile2, deltaFile3);
 		testFilter(DeltaFilesFilter.newBuilder().filtered(false).build(), deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().filtered(true).build(), deltaFile3, deltaFile2);
-		testFilter(DeltaFilesFilter.newBuilder().annotations(List.of(new KeyValue("common", "value"))).build(), deltaFile3, deltaFile2, deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().filtered(true).build(), deltaFile2, deltaFile3);
+		testFilter(DeltaFilesFilter.newBuilder().annotations(List.of(new KeyValue("common", "value"))).build(), deltaFile1, deltaFile2, deltaFile3);
 		testFilter(DeltaFilesFilter.newBuilder().annotations(List.of(new KeyValue("a.1", "first"))).build(), deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().annotations(List.of(new KeyValue("a.1", "first"), new KeyValue("common", "value"))).build(), deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().annotations(List.of(new KeyValue("a.1", "first"), new KeyValue("common", "value"), new KeyValue("extra", "missing"))).build());
 		testFilter(DeltaFilesFilter.newBuilder().annotations(List.of(new KeyValue("a.1", "first"), new KeyValue("common", "miss"))).build());
 		testFilter(DeltaFilesFilter.newBuilder().egressFlows(List.of("MyEgressFlowz")).build());
-		testFilter(DeltaFilesFilter.newBuilder().egressFlows(List.of("MyEgressFlow")).build(), deltaFile2, deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().egressFlows(List.of("MyEgressFlow")).build(), deltaFile1, deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().egressFlows(List.of("MyEgressFlow2")).build(), deltaFile2);
-		testFilter(DeltaFilesFilter.newBuilder().egressFlows(List.of("MyEgressFlow", "MyEgressFlow2")).build(), deltaFile2, deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().egressFlows(List.of("MyEgressFlow", "MyEgressFlow3")).build(), deltaFile3, deltaFile2, deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().sourceInfo(SourceInfoFilter.newBuilder().ingressFlows(List.of("flow1", "flow2")).build()).build(), deltaFile2, deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().egressFlows(List.of("MyEgressFlow", "MyEgressFlow2")).build(), deltaFile1, deltaFile2);
+		testFilter(DeltaFilesFilter.newBuilder().egressFlows(List.of("MyEgressFlow", "MyEgressFlow3")).build(), deltaFile1, deltaFile2, deltaFile3);
+		testFilter(DeltaFilesFilter.newBuilder().sourceInfo(SourceInfoFilter.newBuilder().ingressFlows(List.of("flow1", "flow2")).build()).build(), deltaFile1, deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().sourceInfo(SourceInfoFilter.newBuilder().ingressFlows(List.of("flow2")).build()).build(), deltaFile2);
 	}
 
@@ -3180,12 +3179,13 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile egress = buildDeltaFile("3", null, DeltaFileStage.EGRESS, MONGO_NOW.plusSeconds(2), MONGO_NOW.minusSeconds(2));
 		DeltaFile complete = buildDeltaFile("4", null, DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(2), MONGO_NOW.minusSeconds(2));
 		DeltaFile error = buildDeltaFile("5", null, DeltaFileStage.ERROR, MONGO_NOW.plusSeconds(2), MONGO_NOW.minusSeconds(2));
+		error.acknowledgeError(MONGO_NOW, "acked");
 		DeltaFile cancelled = buildDeltaFile("6", null, DeltaFileStage.CANCELLED, MONGO_NOW.plusSeconds(2), MONGO_NOW.minusSeconds(2));
 		deltaFileRepo.saveAll(List.of(ingress, enrich, egress, complete, error, cancelled));
 		testFilter(DeltaFilesFilter.newBuilder().terminalStage(true).build(), cancelled, error, complete);
 		testFilter(DeltaFilesFilter.newBuilder().terminalStage(false).build(), egress, enrich, ingress);
-		testFilter(DeltaFilesFilter.newBuilder().stage(DeltaFileStage.CANCELLED).terminalStage(false).build(), cancelled, egress, enrich, ingress);
-		testFilter(DeltaFilesFilter.newBuilder().stage(DeltaFileStage.INGRESS).terminalStage(true).build(), cancelled, error, complete, ingress);
+		testFilter(DeltaFilesFilter.newBuilder().stage(DeltaFileStage.CANCELLED).terminalStage(false).build());
+		testFilter(DeltaFilesFilter.newBuilder().stage(DeltaFileStage.INGRESS).terminalStage(true).build());
 	}
 
 	@Test
@@ -3204,10 +3204,12 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile = new DeltaFile();
 		SourceInfo sourceInfo = SourceInfo.builder().filename("filename").build();
 		deltaFile.setSourceInfo(sourceInfo);
+		deltaFile.setSchemaVersion(CURRENT_SCHEMA_VERSION);
 
 		DeltaFile deltaFile1 = new DeltaFile();
 		SourceInfo sourceInfo1 = SourceInfo.builder().filename("file").build();
 		deltaFile1.setSourceInfo(sourceInfo1);
+		deltaFile1.setSchemaVersion(CURRENT_SCHEMA_VERSION);
 
 		deltaFileRepo.saveAll(List.of(deltaFile1, deltaFile));
 
@@ -3232,7 +3234,7 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	private void testFilter(DeltaFilesFilter filter, DeltaFile... expected) {
-		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 50, filter, null);
+		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 50, filter, null, null);
 		assertEquals(new ArrayList<>(Arrays.asList(expected)), deltaFiles.getDeltaFiles());
 	}
 
@@ -4571,7 +4573,7 @@ class DeltaFiCoreApplicationTests {
 		Collections.shuffle(dids);
 
 		deltaFileRepo.setContentDeletedByDidIn(dids, MONGO_NOW, "MyPolicy");
-		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 50, new DeltaFilesFilter(), null);
+		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 50, new DeltaFilesFilter(), null, null);
 		deltaFile1.setContentDeleted(MONGO_NOW);
 		deltaFile1.setContentDeletedReason("MyPolicy");
 		deltaFile3.setContentDeleted(MONGO_NOW);
@@ -4583,14 +4585,16 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testDeleteMultipleBatches() {
 		for (int i = 0; i < 1500; i++) {
-			deltaFileRepo.save(DeltaFile.builder()
+			DeltaFile deltaFile = DeltaFile.builder()
 					.did("abc" + i)
 					.created(OffsetDateTime.now().minusDays(1))
 					.totalBytes(10)
-					.build());
+					.build();
+			deltaFile.updateFlags();
+			deltaFileRepo.save(deltaFile);
 		}
 		assertEquals(1500, deltaFileRepo.count());
-		boolean moreToDelete = deltaFilesService.delete(OffsetDateTime.now(), null, 0L, null, "policyName", true);
+		boolean moreToDelete = deltaFilesService.timedDelete(OffsetDateTime.now(), null, 0L, null, "policyName", true);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_FILES, 1000).addTag("policy", "policyName"));
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_BYTES, 10000).addTag("policy", "policyName"));
 		Mockito.verifyNoMoreInteractions(metricService);
@@ -4608,6 +4612,7 @@ class DeltaFiCoreApplicationTests {
 					.totalBytes(1)
 					.stage(DeltaFileStage.ERROR)
 					.build();
+		error.updateFlags();
 
 		DeltaFile complete = DeltaFile.builder()
 				.did("complete")
@@ -4615,6 +4620,7 @@ class DeltaFiCoreApplicationTests {
 				.totalBytes(2)
 				.stage(DeltaFileStage.COMPLETE)
 				.build();
+		complete.updateFlags();
 
 		DeltaFile errorAcked = DeltaFile.builder()
 				.did("errorAcked")
@@ -4623,15 +4629,15 @@ class DeltaFiCoreApplicationTests {
 				.stage(DeltaFileStage.ERROR)
 				.errorAcknowledged(OffsetDateTime.now())
 				.build();
+		errorAcked.updateFlags();
 
 		deltaFileRepo.saveAll(List.of(error, complete, errorAcked));
-		deltaFilesService.delete(500, null, "policyName", true);
+		deltaFilesService.diskSpaceDelete(500, null, "policyName");
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_FILES, 2).addTag("policy", "policyName"));
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_BYTES, 6).addTag("policy", "policyName"));
 		Mockito.verifyNoMoreInteractions(metricService);
 
-		assertEquals(1, deltaFileRepo.count());
-		assertEquals("error", deltaFileRepo.deltaFiles(null, 1, new DeltaFilesFilter(), null).getDeltaFiles().get(0).getDid());
+		assertEquals(3, deltaFileRepo.count());
 	}
 
 	@Test
@@ -4643,6 +4649,7 @@ class DeltaFiCoreApplicationTests {
 				.stage(DeltaFileStage.COMPLETE)
 				.schemaVersion(CURRENT_SCHEMA_VERSION)
 				.build();
+		complete.updateFlags();
 
 		DeltaFile contentDeleted = DeltaFile.builder()
 				.did("contentDeleted")
@@ -4652,9 +4659,10 @@ class DeltaFiCoreApplicationTests {
 				.contentDeleted(OffsetDateTime.now())
 				.schemaVersion(CURRENT_SCHEMA_VERSION)
 				.build();
+		contentDeleted.updateFlags();
 
 		deltaFileRepo.saveAll(List.of(complete, contentDeleted));
-		boolean moreToDelete = deltaFilesService.delete(OffsetDateTime.now().plusSeconds(5), null, 0L, null, "policyName", true);
+		boolean moreToDelete = deltaFilesService.timedDelete(OffsetDateTime.now().plusSeconds(5), null, 0L, null, "policyName", true);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_FILES, 2).addTag("policy", "policyName"));
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_BYTES, 1).addTag("policy", "policyName"));
 		Mockito.verifyNoMoreInteractions(metricService);
@@ -4674,17 +4682,20 @@ class DeltaFiCoreApplicationTests {
 		deltaFile1.setTotalBytes(1L);
 		deltaFile1.setReferencedBytes(2L);
 		deltaFile1.setStage(DeltaFileStage.INGRESS);
+		deltaFile1.setInFlight(true);
 
 		DeltaFile deltaFile2 = Util.emptyDeltaFile("2", "flow", List.of());
 		deltaFile2.setTotalBytes(2L);
 		deltaFile2.setReferencedBytes(4L);
 		deltaFile2.setContentDeleted(OffsetDateTime.now());
 		deltaFile2.setStage(DeltaFileStage.EGRESS);
+		deltaFile2.setInFlight(true);
 
 		DeltaFile deltaFile3 = Util.emptyDeltaFile("3", "flow", List.of());
 		deltaFile3.setTotalBytes(4L);
 		deltaFile3.setReferencedBytes(8L);
 		deltaFile3.setStage(DeltaFileStage.COMPLETE);
+		deltaFile3.setInFlight(false);
 
 		deltaFileRepo.saveAll(List.of(deltaFile1, deltaFile2, deltaFile3));
 

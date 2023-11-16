@@ -64,8 +64,8 @@ class Deltafile
   field :modified, type: DateTime
   field :egressed, type: Boolean
   field :filtered, type: Boolean
+  field :terminal, type: Boolean
 
-  scope :terminal, -> { where(:stage.in => %w[COMPLETE ERROR CANCELLED]) }
   scope :errors, -> { where(:stage.in => [ 'ERROR' ]) }
 
   store_in collection: 'deltaFile'

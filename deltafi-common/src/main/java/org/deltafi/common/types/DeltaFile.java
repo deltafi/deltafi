@@ -70,6 +70,12 @@ public class DeltaFile {
   private OffsetDateTime nextAutoResume;
   private String nextAutoResumeReason;
   private Set<String> pendingAnnotationsForFlows;
+  @Builder.Default
+  private boolean inFlight = true;
+  @Builder.Default
+  private boolean terminal = false;
+  @Builder.Default
+  private boolean contentDeletable = false;
 
   @Version
   @Getter
@@ -82,7 +88,7 @@ public class DeltaFile {
   @Setter
   private OffsetDateTime cacheTime = null;
 
-  public final static int CURRENT_SCHEMA_VERSION = 7;
+  public final static int CURRENT_SCHEMA_VERSION = 8;
   private int schemaVersion;
 
   public List<Action> getActions() {
@@ -95,6 +101,23 @@ public class DeltaFile {
 
   public Set<String> getAnnotationKeys() {
     return annotationKeys == null ? Collections.emptySet() : annotationKeys;
+  }
+
+  public void setStage(DeltaFileStage stage) {
+      this.stage = stage;
+      updateFlags();
+  }
+
+  public void updateFlags() {
+    inFlight = stage == DeltaFileStage.INGRESS || stage == DeltaFileStage.ENRICH || stage == DeltaFileStage.EGRESS;
+    terminal = !inFlight && !(stage == DeltaFileStage.ERROR && errorAcknowledged == null) &&
+            (pendingAnnotationsForFlows == null || pendingAnnotationsForFlows.isEmpty());
+    contentDeletable = terminal && contentDeleted == null && totalBytes > 0;
+  }
+
+  public void setContentDeleted(OffsetDateTime contentDeleted) {
+    this.contentDeleted = contentDeleted;
+    updateFlags();
   }
 
   /**
@@ -532,6 +555,7 @@ public class DeltaFile {
     }
 
     this.pendingAnnotationsForFlows.add(flowName);
+    updateFlags();
   }
 
   /**
@@ -553,6 +577,8 @@ public class DeltaFile {
         pendingAnnotationsForFlows = null;
       }
     }
+
+    updateFlags();
   }
 
   /**
@@ -697,6 +723,7 @@ public class DeltaFile {
   public void recalculateBytes() {
     setReferencedBytes(Segment.calculateTotalSize(referencedSegments()));
     setTotalBytes(Segment.calculateTotalSize(storedSegments()));
+    updateFlags();
   }
 
   public void cancelQueuedActions() {
@@ -734,10 +761,12 @@ public class DeltaFile {
     errorAcknowledgedReason = reason;
     setNextAutoResume(null);
     setNextAutoResumeReason(null);
+    updateFlags();
   }
 
   public void clearErrorAcknowledged() {
     errorAcknowledged = null;
     errorAcknowledgedReason = null;
+    updateFlags();
   }
 }
