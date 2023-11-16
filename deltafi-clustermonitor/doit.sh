@@ -70,6 +70,7 @@ kubectl_top() {
 
 report_app_metrics() {
     TIMESTAMP=$(date +%s)
+    metrics=""
     while read -r name cpu memory; do
         metrics+="gauge.app.memory;app=$name $memory $TIMESTAMP\n"
         metrics+="gauge.app.cpu;app=$name $cpu $TIMESTAMP\n"
