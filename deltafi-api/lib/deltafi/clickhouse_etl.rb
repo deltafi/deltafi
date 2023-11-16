@@ -70,12 +70,18 @@ module Deltafi
 
     def sync
       end_timestamp = Time.now - @lag.seconds
-      query = Deltafile.terminal.where(:modified.gt => @last_update).and(:modified.lt => end_timestamp).order(modified: :asc).batch_size(@limit)
+      results = Deltafile.terminal
+                         .where(:modified.gt => @last_update)
+                         .and(:modified.lt => end_timestamp)
+                         .order(modified: :asc)
+                         .batch_size(@limit)
+                         .only(:modified, :created, :sourceInfo, :id, :ingressBytes, :totalBytes, :stage, :filtered, :egressed, :annotations)
+                         .all
 
-      info "Syncing #{query.count} deltafiles since #{precise_last_update}" unless query.empty?
+      info "Syncing #{results.count} deltafiles since #{precise_last_update}" unless results.empty?
       buffer = []
       last_modified = @last_update
-      query.each do |deltafile|
+      results.each do |deltafile|
         buffer << extract_row(deltafile)
         last_modified = deltafile.modified
         if buffer.size >= @limit
