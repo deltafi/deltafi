@@ -23,6 +23,7 @@ import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.common.http.HttpPostException;
+import org.deltafi.common.nifi.FlowFileInputStream;
 import org.deltafi.common.nifi.FlowFileUtil;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.core.parameters.HttpEgressParameters;
@@ -30,18 +31,21 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.ws.rs.core.Response;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.http.HttpResponse;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static org.deltafi.common.nifi.ContentType.APPLICATION_FLOWFILE;
 
 @Component
 @Slf4j
 public class FlowfileEgressAction extends HttpEgressActionBase<HttpEgressParameters> {
+    ExecutorService executorService = Executors.newFixedThreadPool(1);
+
     public FlowfileEgressAction() {
         super(String.format("Egresses content and attributes in a NiFi V1 FlowFile (%s)", APPLICATION_FLOWFILE));
     }
@@ -51,14 +55,17 @@ public class FlowfileEgressAction extends HttpEgressActionBase<HttpEgressParamet
         try (InputStream inputStream = input.content().loadInputStream()) {
             Map<String, String> attributes = buildHeadersMap(context.getDid(), context.getSourceFilename(),
                     input.content().getName(), context.getIngressFlow(), context.getEgressFlow(), input.getMetadata());
-            byte[] flowFile = FlowFileUtil.packageFlowFileV1(attributes, inputStream,
-                    input.content().getSize());
 
             HttpResponse<InputStream> response;
-            try (ByteArrayInputStream flowFileInputStream = new ByteArrayInputStream(flowFile)) {
+            try (FlowFileInputStream flowFileInputStream = FlowFileUtil.packageFlowFileV1(attributes, inputStream,
+                    input.content().getSize(), executorService)) {
                 response = httpPostService.post(params.getUrl(), Map.of(), flowFileInputStream, APPLICATION_FLOWFILE);
+                flowFileInputStream.await();
             } catch (IOException e) {
                 return new ErrorResult(context, "Unable to process flowfile stream", e);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return new ErrorResult(context, "Interrupted while waiting for flowfile processing", e);
             }
 
             Response.Status status = Response.Status.fromStatusCode(response.statusCode());

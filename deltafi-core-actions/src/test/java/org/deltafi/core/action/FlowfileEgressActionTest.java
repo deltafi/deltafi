@@ -27,6 +27,7 @@ import org.deltafi.common.content.Segment;
 import org.deltafi.common.http.HttpService;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.nifi.ContentType;
+import org.deltafi.common.nifi.FlowFileInputStream;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.Content;
@@ -121,7 +122,8 @@ class FlowfileEgressActionTest {
         final List<byte[]> posts = new ArrayList<>();
         when(httpService.post(any(), any(), any(), any())).thenAnswer(
                 (Answer<HttpResponse<InputStream>>) invocation -> {
-                    InputStream is = invocation.getArgument(2);
+                    FlowFileInputStream is = invocation.getArgument(2);
+                    is.await();
                     posts.add(is.readAllBytes());
                     is.close();
                     return new HttpResponse<>() {

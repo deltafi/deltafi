@@ -54,6 +54,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.util.Map;
+import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -168,9 +169,9 @@ class IngressServiceTest {
         Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
         Map<String, String> flowFileAttributes = Map.of("k1", "b", "encodedString", "\uD84E\uDCE7");
         verifyNormalExecution(ingressService.ingress("flow", "filename", ContentType.APPLICATION_FLOWFILE_V_1,
-                "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), new ByteArrayInputStream(FlowFileUtil.packageFlowFileV1(
-                        flowFileAttributes, new ByteArrayInputStream(
-                                "content".getBytes(StandardCharsets.UTF_8)), "content".length())), TIME
+                "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), FlowFileUtil.packageFlowFileV1(
+                        flowFileAttributes, new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)),
+                        "content".length(), Executors.newFixedThreadPool(1)), TIME
         ));
 
         IngressEventItem ingressEventItem = ingressEventCaptor.getValue();
@@ -288,9 +289,9 @@ class IngressServiceTest {
         Map<String, String> headerMetadata = Map.of("k1", "v1", "flow", "flow");
         Map<String, String> flowFileAttributes = Map.of("k1", "b", "encodedString", "\uD84E\uDCE7");
         verifyNormalExecution(ingressService.ingress(null, "filename", ContentType.APPLICATION_FLOWFILE_V_1,
-                "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), new ByteArrayInputStream(FlowFileUtil.packageFlowFileV1(
+                "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), FlowFileUtil.packageFlowFileV1(
                         flowFileAttributes, new ByteArrayInputStream(
-                                "content".getBytes(StandardCharsets.UTF_8)), "content".length())), TIME));
+                                "content".getBytes(StandardCharsets.UTF_8)), "content".length(), Executors.newFixedThreadPool(1)), TIME));
 
         IngressEventItem ingressEventItem = ingressEventCaptor.getValue();
         assertEquals(3, ingressEventItem.getMetadata().size());
@@ -306,9 +307,9 @@ class IngressServiceTest {
         Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
         Map<String, String> flowFileAttributes = Map.of("k1", "b", "flow", "flow");
         verifyNormalExecution(ingressService.ingress(null, "filename", ContentType.APPLICATION_FLOWFILE_V_1,
-                "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), new ByteArrayInputStream(FlowFileUtil.packageFlowFileV1(
-                        flowFileAttributes, new ByteArrayInputStream(
-                                "content".getBytes(StandardCharsets.UTF_8)), "content".length())), TIME));
+                "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), FlowFileUtil.packageFlowFileV1(
+                        flowFileAttributes, new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)),
+                        "content".length(), Executors.newFixedThreadPool(1)), TIME));
 
         IngressEventItem ingressEventItem = ingressEventCaptor.getValue();
         assertEquals(3, ingressEventItem.getMetadata().size());
@@ -325,9 +326,9 @@ class IngressServiceTest {
         Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
         Map<String, String> flowFileAttributes = Map.of("k1", "b", "encodedString", "\uD84E\uDCE7");
         verifyNormalExecution(ingressService.ingress(null, "filename", ContentType.APPLICATION_FLOWFILE_V_1,
-                "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), new ByteArrayInputStream(FlowFileUtil.packageFlowFileV1(
-                        flowFileAttributes, new ByteArrayInputStream(
-                                "content".getBytes(StandardCharsets.UTF_8)), "content".length())), TIME));
+                "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), FlowFileUtil.packageFlowFileV1(
+                        flowFileAttributes, new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)),
+                        "content".length(), Executors.newFixedThreadPool(1)), TIME));
 
         IngressEventItem ingressEventItem = ingressEventCaptor.getValue();
         assertEquals(3, ingressEventItem.getMetadata().size());
@@ -342,9 +343,9 @@ class IngressServiceTest {
         Map<String, String> headerMetadata = Map.of("k1", "v1", "filename", "filename");
         Map<String, String> flowFileAttributes = Map.of("k1", "b", "encodedString", "\uD84E\uDCE7");
         verifyNormalExecution(ingressService.ingress("flow", null, ContentType.APPLICATION_FLOWFILE_V_1,
-                "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), new ByteArrayInputStream(FlowFileUtil.packageFlowFileV1(
-                        flowFileAttributes, new ByteArrayInputStream(
-                                "content".getBytes(StandardCharsets.UTF_8)), "content".length())), TIME));
+                "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), FlowFileUtil.packageFlowFileV1(
+                        flowFileAttributes, new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)),
+                        "content".length(), Executors.newFixedThreadPool(1)), TIME));
 
         IngressEventItem ingressEventItem = ingressEventCaptor.getValue();
         assertEquals(3, ingressEventItem.getMetadata().size());
@@ -360,9 +361,9 @@ class IngressServiceTest {
         Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
         Map<String, String> flowFileAttributes = Map.of("k1", "b", "filename", "filename");
         verifyNormalExecution(ingressService.ingress("flow", null, ContentType.APPLICATION_FLOWFILE_V_1,
-                "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), new ByteArrayInputStream(FlowFileUtil.packageFlowFileV1(
-                        flowFileAttributes, new ByteArrayInputStream(
-                                "content".getBytes(StandardCharsets.UTF_8)), "content".length())), TIME));
+                "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), FlowFileUtil.packageFlowFileV1(
+                        flowFileAttributes, new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)),
+                        "content".length(), Executors.newFixedThreadPool(1)), TIME));
 
         IngressEventItem ingressEventItem = ingressEventCaptor.getValue();
         assertEquals(3, ingressEventItem.getMetadata().size());
@@ -377,9 +378,10 @@ class IngressServiceTest {
         Map<String, String> flowFileAttributes = Map.of("k1", "b", "encodedString", "\uD84E\uDCE7");
         assertThrows(IngressMetadataException.class,
                 () -> ingressService.ingress("flow", null, ContentType.APPLICATION_FLOWFILE_V_1,
-                        "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), new ByteArrayInputStream(
+                        "username", OBJECT_MAPPER.writeValueAsString(headerMetadata),
                                 FlowFileUtil.packageFlowFileV1(flowFileAttributes, new ByteArrayInputStream(
-                                        "content".getBytes(StandardCharsets.UTF_8)), "content".length())), TIME));
+                                        "content".getBytes(StandardCharsets.UTF_8)), "content".length(),
+                                        Executors.newFixedThreadPool(1)), TIME));
 
         Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
                 DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.INGRESS_FLOW, "flow");

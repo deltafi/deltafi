@@ -19,17 +19,29 @@ package org.deltafi.common.nifi;
 
 import org.apache.nifi.util.*;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 
 import static org.deltafi.common.nifi.ContentType.*;
 
 public class FlowFileUtil {
-    public static byte[] packageFlowFileV1(Map<String, String> attributes, InputStream in, long fileSize)
-            throws IOException {
-        return packageFlowFile(new FlowFilePackagerV1(), attributes, in, fileSize);
+    public static FlowFileInputStream packageFlowFileV1(Map<String, String> attributes, InputStream in,
+                                                        long fileSize, ExecutorService executorService) throws IOException {
+        FlowFileInputStream flowFileInputStream = new FlowFileInputStream(128 * 1024, true);
+        PipedOutputStream pipedOutputStream = new PipedOutputStream(flowFileInputStream);
+
+        executorService.submit(() -> {
+            try (pipedOutputStream) {
+                packageFlowFile(new FlowFilePackagerV1(), attributes, in, fileSize, pipedOutputStream);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            } finally {
+                flowFileInputStream.unblock();
+            }
+        });
+
+        return flowFileInputStream;
     }
 
     public static byte[] packageFlowFileV2(Map<String, String> attributes, InputStream in, long fileSize)
@@ -48,6 +60,11 @@ public class FlowFileUtil {
             flowFilePackager.packageFlowFile(in, out, attributes, fileSize);
             return out.toByteArray();
         }
+    }
+
+    private static void packageFlowFile(FlowFilePackager flowFilePackager, Map<String, String> attributes,
+                                        InputStream in, long fileSize, OutputStream out) throws IOException {
+        flowFilePackager.packageFlowFile(in, out, attributes, fileSize);
     }
 
     public static FlowFile unpackageFlowFile(String contentType, InputStream in) throws IOException {
