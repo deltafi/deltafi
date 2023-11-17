@@ -103,8 +103,10 @@
     </div>
     <teleport v-if="!viewAutoResumeRule && isMounted" to="#dialogTemplate">
       <div class="p-dialog-footer">
-        <Button label="Submit" @click="submit()" />
+        <Button label="Save and Run Now" class="p-button-secondary p-button-outlined" @click="confirmApply($event)" />
+        <Button label="Save" class="p-button-primary p-button" @click="submit()" />
       </div>
+      <ConfirmPopup></ConfirmPopup>
     </teleport>
   </div>
 </template>
@@ -117,6 +119,8 @@ import useNotifications from "@/composables/useNotifications";
 import { useMounted } from "@vueuse/core";
 import { defineEmits, defineProps, onMounted, reactive, ref } from "vue";
 
+import ConfirmPopup from "primevue/confirmpopup";
+import { useConfirm } from "primevue/useconfirm";
 import Button from "primevue/button";
 import Divider from "primevue/divider";
 import Dropdown from "primevue/dropdown";
@@ -142,12 +146,27 @@ const props = defineProps({
     default: null,
   },
 });
+const confirm = useConfirm();
+
+const confirmApply = (event) => {
+  confirm.require({
+    target: event.currentTarget,
+    message: "Are you sure you want to save and run this rule now?",
+    acceptLabel: "Save and Run Now",
+    rejectLabel: "Cancel",
+    icon: "pi pi-exclamation-triangle",
+    accept: () => {
+      submitApply();
+    },
+    reject: () => { },
+  });
+};
 
 const rowdata = reactive(JSON.parse(JSON.stringify(props.rowDataProp)));
 const { viewAutoResumeRule, closeDialogCommand } = reactive(props);
-const emit = defineEmits(["reloadResumeRules"]);
+const emit = defineEmits(["reloadResumeRules", "applyChanges"]);
 const { validateAutoResumeFile, validateAutoResumeRule } = useAutoResumeConfiguration();
-const { loadResumePolicies, updateResumePolicy } = useAutoResumeQueryBuilder();
+const { loadResumePolicies, updateResumePolicy, applyResumePolicies } = useAutoResumeQueryBuilder();
 const { ingressFlows: ingressFlowNames, fetchIngressFlowNames } = useFlows();
 const notify = useNotifications();
 const isMounted = ref(useMounted());
@@ -252,7 +271,22 @@ const createNewRule = () => {
     autoResumeRuleUpload.value.push(autoResumeRule);
   }
 };
+const submitApply = async () => {
+  await submit(true);
+  if (selectedRuleName.value != null) {
+    applyResumeSingle(selectedRuleName.value);
+  }
+};
 
+const applyResumeSingle = async (ruleName) => {
+  let response = null;
+  response = await applyResumePolicies([ruleName]);
+  if (response.data.applyResumePolicies.success) {
+    notify.success("Auto Resume Rule Ran Successfully", response.data.applyResumePolicies.info);
+  } else {
+    notify.error("Auto Resume Rule Failed to Run", response.data.applyResumePolicies.errors);
+  }
+};
 const submit = async () => {
   createNewRule();
 

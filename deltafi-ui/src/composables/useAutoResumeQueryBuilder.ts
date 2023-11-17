@@ -112,6 +112,20 @@ export default function useAutoResumeQueryBuilder() {
     return sendGraphQLQuery(query, "updateResumePolicy", "mutation");
   };
 
+  const applyResumePolicies = (policy: Array<string>) => {
+    const query = {
+      applyResumePolicies: {
+        __args: {
+          names: policy,
+        },
+        success: true,
+        info: true,
+        errors: true,
+      },
+    };
+    return sendGraphQLQuery(query, "applyResumePolicies", "mutation");
+  };
+
   const sendGraphQLQuery = async (query: any, operationName: string, queryType?: string, bypass?: boolean) => {
     try {
       await queryGraphQL(query, operationName, queryType, bypass);
@@ -127,6 +141,7 @@ export default function useAutoResumeQueryBuilder() {
     loadResumePolicies,
     removeResumePolicy,
     updateResumePolicy,
+    applyResumePolicies,
     loaded,
     loading,
     errors,

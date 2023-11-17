@@ -27,14 +27,19 @@
         </DialogTemplate>
       </div>
     </PageHeader>
-    <Panel header="Rules" class="auto-resume-panel table-panel">
+    <Panel header="Rules" class="auto-resume-panel table-panel" @contextmenu="onPanelRightClick">
+      <ContextMenu ref="menu" :model="menuItems" />
       <template #icons>
         <span class="p-input-icon-left">
           <i class="pi pi-search" />
           <InputText v-model="filters['global'].value" placeholder="Search" />
         </span>
+        <Button class="p-panel-header-icon p-link p-mr-2" @click="toggleMenu">
+          <span class="fas fa-bars" />
+        </Button>
+        <Menu ref="menu" :model="menuItems" :popup="true" />
       </template>
-      <DataTable v-model:filters="filters" :edit-mode="$hasPermission('ResumePolicyUpdate') ? 'cell' : null" :value="uiAutoResumeRules" :loading="loading && !loaded" data-Key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines auto-resume-table" :global-filter-fields="['flow', 'errorSubstring', 'action', 'actionType']" :row-hover="true" @cell-edit-complete="onCellEditComplete">
+      <DataTable v-model:selection="selectedRules" v-model:filters="filters" :edit-mode="$hasPermission('ResumePolicyUpdate') ? 'cell' : null" :value="uiAutoResumeRules" :loading="loading && !loaded" data-Key="id" selection-mode="multiple" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines auto-resume-table" :global-filter-fields="['flow', 'errorSubstring', 'action', 'actionType']" :row-hover="true" @row-contextmenu="onRowContextMenu" @cell-edit-complete="onCellEditComplete">
         <template #empty> No Auto Resume rules to display </template>
         <Column field="name" header="Name" :sortable="true" :style="{ width: '15%' }">
           <template #body="{ data }">
@@ -79,8 +84,13 @@ import PageHeader from "@/components/PageHeader.vue";
 import useAutoResumeConfiguration from "@/composables/useAutoResumeConfiguration";
 import useAutoResumeQueryBuilder from "@/composables/useAutoResumeQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
-import { nextTick, onMounted, ref } from "vue";
+import { nextTick, onMounted, ref, inject, computed } from "vue";
 import { FilterMatchMode } from "primevue/api";
+import useUtilFunctions from "@/composables/useUtilFunctions";
+import ContextMenu from "primevue/contextmenu";
+import Menu from "primevue/menu";
+
+const hasPermission = inject("hasPermission");
 
 import Button from "primevue/button";
 import Column from "primevue/column";
@@ -91,11 +101,74 @@ import Panel from "primevue/panel";
 
 import _ from "lodash";
 
+const menu = ref();
+const selectedRules = ref([]);
 const autoResumeRules = ref([]);
 const uiAutoResumeRules = ref([]);
+const hasSomePermissions = inject("hasSomePermissions");
 const notify = useNotifications();
 const { validateAutoResumeRule } = useAutoResumeConfiguration();
-const { getAllResumePolicies, updateResumePolicy, loaded, loading } = useAutoResumeQueryBuilder();
+const { getAllResumePolicies, updateResumePolicy, applyResumePolicies, loaded, loading } = useAutoResumeQueryBuilder();
+const { pluralize } = useUtilFunctions();
+
+const menuItems = ref([
+  {
+    label: "Clear Selected",
+    icon: "fas fa-times fa-fw",
+    command: () => {
+      selectedRules.value = [];
+    },
+  },
+  {
+    label: "Select All",
+    icon: "fas fa-check-double fa-fw",
+    command: () => {
+      selectedRules.value = uiAutoResumeRules.value;
+    },
+  },
+  {
+    separator: true,
+    visible: computed(() => hasSomePermissions("DeltaFileAcknowledge", "DeltaFileResume", "ResumePolicyCreate")),
+  },
+  {
+    label: "Run Selected Now",
+    icon: "fas fa-sync fa-fw",
+    command: () => {
+      applyResume();
+    },
+    visible: computed(() => hasPermission("DeltaFileReplay")),
+    disabled: computed(() => selectedRules.value.length == 0),
+  },
+]);
+
+const applyResume = async () => {
+  let response = null;
+  response = await applyResumePolicies(formatSelectedRules.value);
+  let pluralized = pluralize(formatSelectedRules.value.length, "Auto Resume Rule");
+  if (response.data.applyResumePolicies.success) {
+    notify.success(`${pluralized} Ran Successfully`, " - " + response.data.applyResumePolicies.info.join("<br/> - "));
+  } else {
+    notify.error(`${pluralized} Failed to Run`, response.data.applyResumePolicies.errors.join("<br/> - "));
+  }
+};
+
+const onPanelRightClick = (event) => {
+  menu.value.show(event);
+};
+const toggleMenu = (event) => {
+  menu.value.toggle(event);
+};
+const onRowContextMenu = (event) => {
+  if (selectedRules.value.length <= 0) {
+    selectedRules.value = [event.data];
+  }
+};
+
+const formatSelectedRules = computed(() => {
+  return selectedRules.value.map((row) => {
+    return row.name;
+  });
+});
 
 onMounted(async () => {
   fetchAutoResumeRules();
