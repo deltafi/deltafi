@@ -136,7 +136,6 @@ Commands:
   export-transform-plan  export a single transform flow plan by name as JSON
   export-rules           export all ingress-flow assignment rules as JSON
   ingress                ingress one or more files to a flow
-  normalize-flow         start, stop or validate an normalize flow
   install                install/upgrade the DeltaFi core
   install-plugin         install/upgrade a DeltaFi plugin
   list-actions           list the actions registered with deltafi
@@ -151,6 +150,7 @@ Commands:
   mongo-cli              launch the mongo CLI
   mongo-eval             eval a command in mongo
   mongo-migrate          run mongo migrations
+  normalize-flow         start, stop or validate an normalize flow
   performance-test       run performance tests against DeltaFi
   plugin-customization   manage plugin customization configuration
   plugin-image-repo      manage the image repositories that hold plugin images
@@ -170,6 +170,7 @@ Commands:
   status                 show status of system
   system-snapshot        manage system state snapshots
   system-property        manage system properties
+  timed-ingress          start, stop or validate a timed ingress
   trace                  show trace data for a DID
   transform-flow         start, stop or validate a transform flow
   update                 (alias for install)
@@ -246,9 +247,6 @@ case "$1" in
   ingress)
     "$DELTAFICLI_WORKDIR/commands/ingress" "$@"
     ;;
-  normalize-flow)
-    "$DELTAFICLI_WORKDIR/commands/normalize-flow" "$@"
-    ;;
   install|update|upgrade|start)
     "$DELTAFICLI_WORKDIR/commands/install" "$@"
     ;;
@@ -290,6 +288,9 @@ case "$1" in
       ;;
   mongo-migrate)
     "$DELTAFICLI_WORKDIR/commands/mongo-migrate" "$@"
+    ;;
+  normalize-flow)
+    "$DELTAFICLI_WORKDIR/commands/normalize-flow" "$@"
     ;;
   performance-test)
     BUNDLE_GEMFILE=$DELTAFICLI_WORKDIR/Gemfile bundle exec "$DELTAFICLI_WORKDIR/commands/performance-test" "$@"
@@ -350,6 +351,9 @@ case "$1" in
     ;;
   system-snapshot)
     "$DELTAFICLI_WORKDIR/commands/system-snapshot" "$@"
+    ;;
+  timed-ingress)
+    "$DELTAFICLI_WORKDIR/commands/timed-ingress" "$@"
     ;;
   trace)
     "$DELTAFICLI_WORKDIR/commands/trace" "$@"
