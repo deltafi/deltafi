@@ -20,7 +20,7 @@ package org.deltafi.core.services;
 import org.deltafi.common.types.DeltaFile;
 public abstract class DeltaFileCacheService {
 
-    public abstract void clearCache();
+    public abstract void flush();
 
     public abstract DeltaFile get(String did);
 

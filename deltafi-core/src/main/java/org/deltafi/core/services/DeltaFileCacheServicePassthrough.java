@@ -31,7 +31,7 @@ public class DeltaFileCacheServicePassthrough extends DeltaFileCacheService {
         this.deltaFileRepo = deltaFileRepo;
     }
 
-    public void clearCache() {}
+    public void flush() {}
 
     public DeltaFile get(String did) {
         return deltaFileRepo.findById(did.toLowerCase()).orElse(null);

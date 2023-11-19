@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -128,6 +129,7 @@ public class DeltaFilesService {
 
     private final ScheduledExecutorService timedOutCollectExecutor = Executors.newSingleThreadScheduledExecutor();
     private ScheduledFuture<?> timedOutCollectFuture;
+    private boolean processIncomingEvents = true;
 
     @PostConstruct
     private void init() {
@@ -143,6 +145,34 @@ public class DeltaFilesService {
 
             scheduleCollectCheckForSoonestInRepository();
         }
+    }
+
+    @PreDestroy
+    public void onShutdown() throws InterruptedException {
+        log.info("Shutting down DeltaFilesService");
+
+        // stop processing new events
+        processIncomingEvents = false;
+
+        if (timedOutCollectFuture != null) {
+            timedOutCollectFuture.cancel(true);
+        }
+
+        log.info("Waiting for executor threads to finish");
+
+        // give a grace period events to be assigned to executor threads
+        Thread.sleep(100);
+
+        if (executor != null) {
+            executor.shutdown();
+            boolean ignored = executor.awaitTermination(5, TimeUnit.SECONDS);
+        }
+
+        if (deltaFileCacheService != null) {
+            deltaFileCacheService.flush();
+        }
+
+        log.info("Shutdown DeltaFilesService complete");
     }
 
     public DeltaFile getDeltaFile(String did) {
@@ -1863,7 +1893,7 @@ public class DeltaFilesService {
 
     public boolean processActionEvents(String uniqueId) {
         try {
-            while (!Thread.currentThread().isInterrupted()) {
+            while (!Thread.currentThread().isInterrupted() && processIncomingEvents) {
                 processResult(actionEventQueue.takeResult(uniqueId));
             }
         } catch (Throwable e) {

@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.services;
 
+import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.DeltaFile;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -29,6 +30,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
+@Slf4j
 @ConditionalOnProperty(value = "schedule.actionEvents", havingValue = "true", matchIfMissing = true)
 public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
     private final Map<String, DeltaFile> deltaFileCache;
@@ -47,8 +49,11 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
         this.clock = clock;
     }
 
-    public void clearCache() {
-        deltaFileCache.clear();
+    public void flush() {
+        if (!deltaFileCache.isEmpty()) {
+            log.info("Flushing {} files from the DeltaFileCache", deltaFileCache.size());
+            removeOlderThan(0);
+        }
     }
 
     public DeltaFile get(String did) {
