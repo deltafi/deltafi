@@ -5,6 +5,57 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.1.12] - 2023-11-19
+
+### Added
+- Added ability to run Auto Resume rules manually from the UI.
+- Add inFlight, terminal, and contentDeleted properties to DeltaFiles for more efficient indexing
+- Added collect support in Flow Plan Builder.
+- Added validation to flow builder to prevent saving if the flow won't be accepted.
+- Added visual indicators to panels to alert if there is a required action not provided.
+- Added overlay dismisal of the new action popup tree when the maximum number of actions added has been reached.
+- Added raw json view to view flow plan json and schema. Dialog is triggered by pressing "d+e+v". 
+- Add ingressBytes index 
+- Add log message when timed delete starts, mirroring existing disk space delete message 
+- New CLI command `timed-ingress` to start/stop a timed ingress
+
+### Changed
+- Use a lower cost bcrypt hash for passwords in basic auth to improve performance 
+- Disk space delete policies sort by modified date instead of created date
+- Flush DeltaFileCache to disk on core shutdown 
+- Ensure the old core pod is stopped before starting the new one during an upgrade
+
+### Fixed
+- ETL was syncing to the most recent deltafile in the clickhouse database for the timestamp for beginning Mongo deltafile queries.  In the case where surveys were added while the ETL job was down, it woould catch up from the latest survey timestamp instead of the latest regular deltafile timestamp.
+- Fix logic error in delete rerun loop
+- Increment DeltaFile mongo object version on all updates 
+- Only add the `filtered` flag to the search criteria once when `filteredCause` criteria is included  
+- Ensure sort is by modified time when running a complete-time delete policy, sorting correctly and using the index more efficiently 
+- Fixed flow builder configuration pop up saving selected "Clone From" data when "Type" is changed or removed.
+- Refresh the resume policy cache before attempting to apply policies in case they were just updated by another core pod
+- Fix a null pointer exception when building ActionInput for timed ingress actions
+
+### Tech-Debt/Refactor
+- Added missing UI mocks for __Filtered__ and __Ingress Actions__ pages.
+- Cluster monitor sends metrics to graphite in one batch 
+- When possible, only update fields that have changed when updating DeltaFiles
+- Optimize indexes to improve performance of Mongo deltafile delete queries
+- Reduce number of mongo queries from clickhouse ETL job 
+- Cleaned up HoverSaveButton.vue file that the Flow Builder uses. 
+- Reduce FlowfileEgressAction memory usage by streaming data
+- Reduce Flowfile Ingress memory usage by streaming data
+- set Minio scanner speed to slow to prioritize reads and writes over lifecycle events
+- turn Minio browser off
+- Performance improvements for AUDIT logging 
+- Pydantic Python API/interface updated to v2
+- Queue management service was querying the database for action types, use cached data instead 
+
+### Upgrade and Migration
+- If using basic auth, resave your password on the Users screen so that it is stored at the new cost setting. 
+- Ensure ingress is disabled and all files are at rest before beginning upgrade, as the migration is slow and must update all DeltaFiles
+- Minio RELEASE.2023-11-15T20-43-25Z 
+- Python plugins must be updated to use the Python Pydantic v2 API/interface
+
 ## [1.1.11] - 2023-11-08
 
 ### Changed
@@ -2501,7 +2552,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.11...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.12...main
+[1.1.12]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.11...1.1.12
 [1.1.11]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.10...1.1.11
 [1.1.10]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.9...1.1.10
 [1.1.9]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.8...1.1.9
