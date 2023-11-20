@@ -30,4 +30,10 @@ public class Domain {
   private String name;
   private String value;
   private String mediaType;
+
+  public Domain(Domain other) {
+    this.name = other.name;
+    this.value = other.value;
+    this.mediaType = other.mediaType;
+  }
 }

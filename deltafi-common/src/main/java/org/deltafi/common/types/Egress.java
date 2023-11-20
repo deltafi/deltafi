@@ -28,4 +28,8 @@ import lombok.NoArgsConstructor;
 @Builder
 public class Egress {
     private String flow;
+
+    public Egress(Egress other) {
+        this.flow = other.flow;
+    }
 }

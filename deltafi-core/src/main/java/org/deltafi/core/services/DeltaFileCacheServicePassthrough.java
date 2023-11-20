@@ -25,32 +25,31 @@ import org.springframework.stereotype.Service;
 @Service
 @ConditionalOnProperty(value = "schedule.actionEvents", havingValue = "false")
 public class DeltaFileCacheServicePassthrough extends DeltaFileCacheService {
-    final DeltaFileRepo deltaFileRepo;
-
     public DeltaFileCacheServicePassthrough(DeltaFileRepo deltaFileRepo) {
-        this.deltaFileRepo = deltaFileRepo;
+        super(deltaFileRepo);
     }
 
+    @Override
     public void flush() {}
 
+    @Override
     public DeltaFile get(String did) {
-        return deltaFileRepo.findById(did.toLowerCase()).orElse(null);
+        return getFromRepo(did, false);
     }
 
+    @Override
     public boolean isCached(String did) {
         return false;
     }
 
+    @Override
     public void remove(String did) {}
 
+    @Override
     public void removeOlderThan(int seconds) {}
 
+    @Override
     public void save(DeltaFile deltaFile) {
-        // optimize saving new documents by avoiding the upsert check
-        if (deltaFile.getVersion() == 0) {
-            deltaFileRepo.insert(deltaFile);
-        } else {
-            deltaFileRepo.save(deltaFile);
-        }
+        updateRepo(deltaFile, false);
     }
 }

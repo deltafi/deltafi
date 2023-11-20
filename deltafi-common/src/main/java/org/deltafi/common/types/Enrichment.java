@@ -30,4 +30,10 @@ public class Enrichment {
   private String name;
   private String value;
   private String mediaType;
+
+  public Enrichment(Enrichment other) {
+    this.name = other.name;
+    this.value = other.value;
+    this.mediaType = other.mediaType;
+  }
 }

@@ -26,6 +26,7 @@ import org.deltafi.core.types.SummaryByFlow;
 import org.deltafi.core.types.FilteredSummaryFilter;
 import org.deltafi.core.types.SummaryByFlowAndMessage;
 import org.springframework.data.mongodb.core.index.IndexInfo;
+import org.springframework.data.mongodb.core.query.Update;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -257,6 +258,16 @@ public interface DeltaFileRepoCustom {
      * @return A list of ColdQueuedActionSummary objects representing the summary of cold queued actions.
      */
     List<ColdQueuedActionSummary> coldQueuedActionsSummary();
+
+    /**
+     * Updates the specified version of the DeltaFile with the given update
+     *
+     * @param  did the document ID
+     * @param  version the version number of the document to update
+     * @param  update the update to apply to the document
+     * @return true if the update was successful, false otherwise
+     */
+    boolean update(String did, long version, Update update);
 
     void batchedBulkDeleteByDidIn(List<String> dids);
 }

@@ -36,6 +36,14 @@ public class SourceInfo {
     @Setter(AccessLevel.NONE)
     private String normalizedFilename;
 
+    public SourceInfo(SourceInfo other) {
+        this.filename = other.filename;
+        this.flow = other.flow;
+        this.metadata = other.metadata == null ? null : new HashMap<>(other.metadata);
+        this.processingType = other.processingType;
+        this.normalizedFilename = other.normalizedFilename;
+    }
+
     @Builder
     public SourceInfo(String filename, String flow, Map<String, String> metadata, ProcessingType processingType) {
         setFilename(filename);

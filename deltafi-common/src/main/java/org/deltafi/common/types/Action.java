@@ -53,6 +53,27 @@ public class Action {
   private List<Domain> domains;
   private List<Enrichment> enrichments;
 
+  public Action(Action other) {
+    this.name = other.name;
+    this.type = other.type;
+    this.flow = other.flow;
+    this.state = other.state;
+    this.created = other.created;
+    this.queued = other.queued;
+    this.start = other.start;
+    this.stop = other.stop;
+    this.modified = other.modified;
+    this.errorCause = other.errorCause;
+    this.errorContext = other.errorContext;
+    this.filteredCause = other.filteredCause;
+    this.attempt = other.attempt;
+    this.content = other.content == null ? null : other.content.stream().map(Content::new).toList();
+    this.metadata = other.metadata == null ? null : new HashMap<>(other.metadata);
+    this.deleteMetadataKeys = other.deleteMetadataKeys == null ? null : new ArrayList<>(other.deleteMetadataKeys);
+    this.domains = other.domains == null ? null : other.domains.stream().map(Domain::new).toList();
+    this.enrichments = other.enrichments == null ? null : other.enrichments.stream().map(Enrichment::new).toList();
+  }
+
   private static List<ActionType> DATA_AMENDED_TYPES = List.of(
           ActionType.INGRESS,
           ActionType.TRANSFORM,

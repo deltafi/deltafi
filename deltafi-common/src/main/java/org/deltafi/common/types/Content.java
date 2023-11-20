@@ -37,6 +37,12 @@ public class Content {
   private String mediaType;
   private List<Segment> segments = new ArrayList<>();
 
+  public Content(Content other) {
+    this.name = other.name;
+    this.mediaType = other.mediaType;
+    this.segments = other.segments.stream().map(Segment::new).toList();
+  }
+
   /**
    * Create content with no segments
    * @param name name

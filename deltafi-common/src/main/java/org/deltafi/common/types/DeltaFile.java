@@ -25,8 +25,10 @@ import org.deltafi.core.exceptions.MultipleActionException;
 import org.deltafi.core.exceptions.UnexpectedActionException;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.query.Update;
 
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -50,9 +52,9 @@ public class DeltaFile {
   private DeltaFileStage stage;
   private List<Action> actions;
   private SourceInfo sourceInfo;
-  private Map<String, String> annotations;
-  private Set<String> annotationKeys;
-  private List<Egress> egress;
+  private Map<String, String> annotations = new HashMap<>();
+  private Set<String> annotationKeys = new HashSet<>();
+  private List<Egress> egress = new ArrayList<>();
   private OffsetDateTime created;
   private OffsetDateTime modified;
   private OffsetDateTime contentDeleted;
@@ -70,6 +72,7 @@ public class DeltaFile {
   private OffsetDateTime nextAutoResume;
   private String nextAutoResumeReason;
   private Set<String> pendingAnnotationsForFlows;
+
   @Builder.Default
   private boolean inFlight = true;
   @Builder.Default
@@ -88,8 +91,54 @@ public class DeltaFile {
   @Setter
   private OffsetDateTime cacheTime = null;
 
+  @Transient
+  private DeltaFile snapshot = null;
+
   public final static int CURRENT_SCHEMA_VERSION = 8;
   private int schemaVersion;
+
+  public DeltaFile(DeltaFile other) {
+    this.did = other.did;
+    this.parentDids = other.parentDids == null ? null : new ArrayList<>(other.parentDids);
+    this.aggregate = other.aggregate;
+    this.childDids = other.childDids == null ? null : new ArrayList<>(other.childDids);
+    this.requeueCount = other.requeueCount;
+    this.ingressBytes = other.ingressBytes;
+    this.referencedBytes = other.referencedBytes;
+    this.totalBytes = other.totalBytes;
+    this.stage = other.stage;
+    this.actions = other.actions == null ? null : other.actions.stream().map(Action::new).toList();
+    this.sourceInfo = other.sourceInfo == null ? null : new SourceInfo(other.sourceInfo);
+    this.annotations = other.annotations == null ? null : new HashMap<>(other.annotations);
+    this.annotationKeys = other.annotationKeys == null ? null :new HashSet<>(other.annotationKeys);
+    this.egress = other.egress == null ? null : other.egress.stream().map(Egress::new).toList();
+    this.created = other.created;
+    this.modified = other.modified;
+    this.contentDeleted = other.contentDeleted;
+    this.contentDeletedReason = other.contentDeletedReason;
+    this.errorAcknowledged = other.errorAcknowledged;
+    this.errorAcknowledgedReason = other.errorAcknowledgedReason;
+    this.testMode = other.testMode;
+    this.testModeReason = other.testModeReason;
+    this.egressed = other.egressed;
+    this.filtered = other.filtered;
+    this.replayed = other.replayed;
+    this.replayDid = other.replayDid;
+    this.nextAutoResume = other.nextAutoResume;
+    this.nextAutoResumeReason = other.nextAutoResumeReason;
+    this.pendingAnnotationsForFlows = other.pendingAnnotationsForFlows == null ? null : new HashSet<>(other.pendingAnnotationsForFlows);
+    this.inFlight = other.inFlight;
+    this.terminal = other.terminal;
+    this.contentDeletable = other.contentDeletable;
+    this.version = other.version;
+    this.cacheTime = other.cacheTime;
+    this.schemaVersion = other.schemaVersion;
+    this.snapshot = null;
+  }
+
+  public void snapshot() {
+    this.snapshot = new DeltaFile(this);
+  }
 
   public List<Action> getActions() {
     return actions == null ? Collections.emptyList() : actions;
@@ -768,5 +817,116 @@ public class DeltaFile {
     errorAcknowledged = null;
     errorAcknowledgedReason = null;
     updateFlags();
+  }
+
+  public Update generateUpdate() {
+    // only update fields that are modified after creation in Java code
+    Update update = new Update();
+    boolean updated = false;
+    if (!Objects.equals(this.childDids, snapshot.childDids)) {
+      update.set("childDids", this.childDids);
+      updated = true;
+    }
+    if (!Objects.equals(this.referencedBytes, snapshot.referencedBytes)) {
+      update.set("referencedBytes", this.referencedBytes);
+      updated = true;
+    }
+    if (!Objects.equals(this.totalBytes, snapshot.totalBytes)) {
+      update.set("totalBytes", this.totalBytes);
+      updated = true;
+    }
+    if (!Objects.equals(this.stage, snapshot.stage)) {
+      update.set("stage", this.stage);
+      updated = true;
+    }
+    if (!Objects.equals(this.actions, snapshot.actions)) {
+      if (actions.size() == snapshot.actions.size()) {
+        for (int i = 0; i < snapshot.actions.size(); i++) {
+          if (!Objects.equals(this.actions.get(i), snapshot.actions.get(i))) {
+            update.set(String.format("actions.%d", i), this.actions.get(i));
+          }
+        }
+      } else {
+        // mongo does not support both sets and pushes in the same update, so we have to send the whole object
+        update.set("actions", this.actions);
+      }
+      updated = true;
+    }
+    if (!Objects.equals(this.annotations, snapshot.annotations)) {
+      update.set("annotations", this.annotations);
+      updated = true;
+    }
+    if (!Objects.equals(this.annotationKeys, snapshot.annotationKeys)) {
+      update.set("annotationKeys", this.annotationKeys);
+      updated = true;
+    }
+    if (!Objects.equals(this.egress, snapshot.egress)) {
+      update.set("egress", this.egress);
+      updated = true;
+    }
+    if (!Objects.equals(this.modified, snapshot.modified)) {
+      update.set("modified", this.modified);
+      updated = true;
+    }
+    if (!Objects.equals(this.errorAcknowledged, snapshot.errorAcknowledged)) {
+      update.set("errorAcknowledged", this.errorAcknowledged);
+      updated = true;
+    }
+    if (!Objects.equals(this.errorAcknowledgedReason, snapshot.errorAcknowledgedReason)) {
+      update.set("errorAcknowledgedReason", this.errorAcknowledgedReason);
+      updated = true;
+    }
+    if (!Objects.equals(this.testMode, snapshot.testMode)) {
+      update.set("testMode", this.testMode);
+      updated = true;
+    }
+    if (!Objects.equals(this.testModeReason, snapshot.testModeReason)) {
+      update.set("testModeReason", this.testModeReason);
+      updated = true;
+    }
+    if (!Objects.equals(this.egressed, snapshot.egressed)) {
+      update.set("egressed", this.egressed);
+      updated = true;
+    }
+    if (!Objects.equals(this.filtered, snapshot.filtered)) {
+      update.set("filtered", this.filtered);
+      updated = true;
+    }
+    if (!Objects.equals(this.nextAutoResume, snapshot.nextAutoResume)) {
+      update.set("nextAutoResume", this.nextAutoResume);
+      updated = true;
+    }
+    if (!Objects.equals(this.nextAutoResumeReason, snapshot.nextAutoResumeReason)) {
+      update.set("nextAutoResumeReason", this.nextAutoResumeReason);
+      updated = true;
+    }
+    if (!Objects.equals(this.pendingAnnotationsForFlows, snapshot.pendingAnnotationsForFlows)) {
+      update.set("pendingAnnotationsForFlows", this.pendingAnnotationsForFlows);
+      updated = true;
+    }
+    if (!Objects.equals(this.schemaVersion, snapshot.schemaVersion)) {
+      update.set("schemaVersion", this.schemaVersion);
+      updated = true;
+    }
+    if (!Objects.equals(this.inFlight, snapshot.inFlight)) {
+      update.set("inFlight", this.inFlight);
+      updated = true;
+    }
+    if (!Objects.equals(this.terminal, snapshot.terminal)) {
+      update.set("terminal", this.terminal);
+      updated = true;
+    }
+    if (!Objects.equals(this.contentDeletable, snapshot.contentDeletable)) {
+      update.set("contentDeletable", this.contentDeletable);
+      updated = true;
+    }
+
+    if (!updated) {
+      return null;
+    }
+
+    update.set("version", this.version + 1);
+
+    return update;
   }
 }

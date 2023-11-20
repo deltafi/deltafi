@@ -19,6 +19,7 @@ package org.deltafi.core.repo;
 
 import com.google.common.collect.Lists;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.result.UpdateResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.BsonValue;
@@ -458,6 +459,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         update.filterArray(Criteria.where(ACTION_STATE).is(ActionState.QUEUED.name())
                 .and(ACTION_MODIFIED).lt(new Date(epochMs)));
 
+        update.inc(VERSION, 1);
+
         return update;
     }
 
@@ -474,6 +477,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         update.set(ACTIONS_UPDATE_STATE, ActionState.QUEUED.name());
         update.filterArray(Criteria.where(ACTION_STATE).is(COLD_QUEUED.name()));
         update.set(MODIFIED, modified);
+
+        update.inc(VERSION, 1);
 
         return update;
     }
@@ -1090,13 +1095,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     private void pullFlowFromPendingAnnotationsForFlow(String flow) {
         Query query = Query.query(Criteria.where(PENDING_ANNOTATIONS_FOR_FLOWS).is(flow));
-        Update pullOutFlow = new Update().pull(PENDING_ANNOTATIONS_FOR_FLOWS, flow);
+        Update pullOutFlow = new Update().pull(PENDING_ANNOTATIONS_FOR_FLOWS, flow).inc(VERSION, 1);
         mongoTemplate.updateMulti(query, pullOutFlow, DeltaFile.class);
     }
 
     private void unsetEmptyPendingAnnotationsForFlow() {
         Query query = Query.query(Criteria.where(PENDING_ANNOTATIONS_FOR_FLOWS).is(List.of()));
-        Update unsetEmptyList = new Update().unset(PENDING_ANNOTATIONS_FOR_FLOWS);
+        Update unsetEmptyList = new Update().unset(PENDING_ANNOTATIONS_FOR_FLOWS).inc(VERSION, 1);
         mongoTemplate.updateMulti(query, unsetEmptyList, DeltaFile.class);
     }
 
@@ -1147,5 +1152,12 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         } else {
             criteria.and(searchField).is(filename);
         }
+    }
+
+    public boolean update(String did, long version, Update update) {
+        Query query = new Query(Criteria.where(ID).is(did).and(VERSION).is(version));
+        UpdateResult result = mongoTemplate.updateFirst(query, update, DeltaFile.class);
+
+        return result.wasAcknowledged() && result.getMatchedCount() > 0;
     }
 }
