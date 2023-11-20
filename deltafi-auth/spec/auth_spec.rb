@@ -104,7 +104,10 @@ RSpec.describe 'Auth API' do
 
   RSpec.configure do |config|
     config.before(:all) do
+      puts "Creating roles"
+      @admin_role = create_role({ name: 'Admin', permissions: %w[Admin] })
       @test_role = create_role({ name: 'Test', permissions: %w[UIAccess MetricsView] })
+      @temp_role = create_role({ name: 'Temp', permissions: %w[UIAccess MetricsView] })
     end
   end
 
@@ -118,34 +121,34 @@ RSpec.describe 'Auth API' do
 
   describe '/roles' do
     it 'should handle creating roles' do
-      create_role({ name: 'Temp', permissions: %w[UIAccess MetricsView] })
-      expect(last_response.status).to eq(200)
+      expect(@admin_role[:id]).to eq(1)
+      expect(@test_role[:id]).to eq(2)
     end
 
     it 'should handle reading roles' do
-      role = read_role(id: 5)
-      expect(role[:name]).to eq('Temp')
+      role = read_role(id: @test_role[:id])
+      expect(role[:name]).to eq('Test')
       read_role(id: 100)
       expect(last_response.status).to eq(404)
     end
 
     it 'should handle updating roles' do
-      role = read_role(id: 5)
+      role = read_role(id: @test_role[:id])
       expect(last_response.status).to eq(200)
-      expect(role[:name]).to eq('Temp')
+      expect(role[:name]).to eq('Test')
 
-      update_role(id: 5, updates: {
+      update_role(id: @test_role[:id], updates: {
                     name: 'TestRole'
                   })
       expect(last_response.status).to eq(200)
 
-      role = read_role(id: 5)
+      role = read_role(id: @test_role[:id])
       expect(last_response.status).to eq(200)
       expect(role[:name]).to eq('TestRole')
     end
 
     it 'should handle errors when updating roles' do
-      update_role(id: 5, updates: {
+      update_role(id: @test_role[:id], updates: {
                     nane: 'TestRole'
                   })
       expect(last_response.status).to eq(500)
@@ -158,7 +161,7 @@ RSpec.describe 'Auth API' do
     end
 
     it 'should handle deleting roles' do
-      delete_role(id: 5)
+      delete_role(id: @temp_role[:id])
       expect(last_response.status).to eq(200)
       delete_role(id: 100)
       expect(last_response.status).to eq(404)
@@ -179,6 +182,8 @@ RSpec.describe 'Auth API' do
 
   describe '/users' do
     it 'should handle creating users' do
+      create_user({ name: 'Admin', dn: 'CN=Admin, OU=Foo, C=US', role_ids: [@admin_role[:id]] })
+      expect(last_response.status).to eq(200)
       create_user({ name: 'Alice', dn: 'CN=Alice, OU=Foo, C=US', role_ids: [@test_role[:id]] })
       expect(last_response.status).to eq(200)
       create_user({ name: 'Bob', dn: 'CN=Bob, OU=Foo, C=US', role_ids: [@test_role[:id]] })

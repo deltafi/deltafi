@@ -26,7 +26,9 @@ require 'sinatra/base'
 require 'sinatra/streaming'
 require 'sinatra/quiet_logger'
 require 'sinatra/namespace'
+require 'oj'
 
+Oj.mimic_JSON
 $sse_service = DF::API::V1::ServerSentEvents::Service.new unless ENV['RUNNING_IN_CLUSTER'].nil?
 
 class ApiServer < Sinatra::Base
@@ -43,6 +45,10 @@ class ApiServer < Sinatra::Base
   register Sinatra::Namespace
 
   set :show_exceptions, :after_handler
+
+  set :json_encoder do
+    ::Oj
+  end
 
   before do
     content_type 'application/json'

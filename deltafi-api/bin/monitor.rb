@@ -22,5 +22,7 @@
 $LOAD_PATH.unshift File.expand_path(File.join(File.dirname(__FILE__), '../lib'))
 
 require 'deltafi'
+require 'oj'
 
+Oj.mimic_JSON
 DF::Monitor.run

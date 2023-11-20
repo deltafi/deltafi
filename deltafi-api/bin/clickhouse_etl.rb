@@ -22,6 +22,9 @@
 $LOAD_PATH.unshift File.expand_path(File.join(File.dirname(__FILE__), '../lib'))
 
 require 'deltafi'
+require 'oj'
+
+Oj.mimic_JSON
 
 DF::ClickhouseETL.new(
   interval: ENV['ETL_INTERVAL'] || 10.seconds,

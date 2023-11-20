@@ -61,12 +61,12 @@ module Deltafi
         # choose a ruby JSON parser (default one)
         # c.json_parser = ClickHouse::Middleware::ParseJson
         # or Oj parser
-        # c.json_parser = ClickHouse::Middleware::ParseJsonOj
+        c.json_parser = ClickHouse::Middleware::ParseJsonOj
 
         # JSON.dump (default one)
         # c.json_serializer = ClickHouse::Serializer::JsonSerializer
         # or Oj.dump
-        # c.json_serializer = ClickHouse::Serializer::JsonOjSerializer
+        c.json_serializer = ClickHouse::Serializer::JsonOjSerializer
       end
 
       # Connect and create database if it does not exist, then return connection to database

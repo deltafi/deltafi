@@ -19,6 +19,7 @@ GEM
     multi_xml (0.6.0)
     mustermann (3.0.0)
       ruby2_keywords (~> 0.0.1)
+    oj (3.16.1)
     pry (0.14.2)
       coderay (~> 1.1)
       method_source (~> 1.0)
@@ -79,6 +80,7 @@ DEPENDENCIES
   bcrypt
   eventmachine
   httparty
+  oj (~> 3.16.1)
   pry
   rack-test
   rainbows
@@ -91,4 +93,4 @@ DEPENDENCIES
   sqlite3 (~> 1.4.4)
 
 BUNDLED WITH
-   2.4.19
+   2.4.22

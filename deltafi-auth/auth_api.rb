@@ -27,6 +27,9 @@ require 'sequel'
 require 'json'
 require 'openssl'
 require 'yaml'
+require 'oj'
+
+Oj.mimic_JSON
 
 class AuthApi < Sinatra::Application
   DOMAIN = ENV['DOMAIN']
@@ -42,6 +45,9 @@ class AuthApi < Sinatra::Application
 
   set :show_exceptions, :after_handler
   set :protection, except: [:json_csrf]
+  set :json_encoder do
+    ::Oj
+  end
 
   configure :production, :development, :test do
     enable :logging

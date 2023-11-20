@@ -1,4 +1,4 @@
-FROM deltafi/deltafi-ruby:3.2.2-alpine3.18-0
+FROM deltafi/deltafi-ruby:3.2.2-alpine3.18-1
 WORKDIR /app
 COPY ./Gemfile* /app/
 COPY *probe.sh /
