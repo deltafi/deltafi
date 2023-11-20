@@ -1957,13 +1957,17 @@ public class DeltaFilesService {
                     Action action = actionInvocation.getAction();
 
                     if (actionInvocation.getDeltaFiles() != null) {
-                        return config.buildCollectionActionInput(flow, deltaFile, actionInvocation.getDeltaFiles(), systemName, egressFlow, returnAddress, actionCreated, action);
+                        ActionInput input = config.buildCollectionActionInput(flow, deltaFile, actionInvocation.getDeltaFiles(), systemName, egressFlow, returnAddress, actionCreated, action);
+                        input.getActionContext().setName(flow + "." + input.getActionContext().getName());
+                        return input;
                     }
 
                     if (deltaFile.isAggregate() && (config.getCollect() != null)) {
                         try {
                             List<DeltaFile> deltaFiles = findDeltaFiles(deltaFile.getParentDids());
-                            return config.buildCollectionActionInput(flow, deltaFile, deltaFiles, systemName, egressFlow, returnAddress, actionCreated, action);
+                            ActionInput input = config.buildCollectionActionInput(flow, deltaFile, deltaFiles, systemName, egressFlow, returnAddress, actionCreated, action);
+                            input.getActionContext().setName(flow + "." + input.getActionContext().getName());
+                            return input;
                         } catch (MissingDeltaFilesException e) {
                             throw new EnqueueActionException("Failed to queue collecting action", e);
                         }
