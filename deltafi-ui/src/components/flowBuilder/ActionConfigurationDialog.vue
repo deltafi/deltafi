@@ -19,7 +19,7 @@
 <template>
   <div class="action-configuration-dialog">
     <div v-for="displayActionInfo of getDisplayValues(rowdata)" :key="displayActionInfo">
-      <template v-if="(_.isEqual(displayActionInfo, 'requiresDomains') && _.isEmpty(rowdata[displayActionInfo])) || (_.isEqual(displayActionInfo, 'requiresEnrichments') && _.isEmpty(rowdata[displayActionInfo])) || (_.isEqual(displayActionInfo, 'schema') && _.isEmpty(_.get(rowdata, 'schema.properties', null)))"> </template>
+      <template v-if="displayFieldTest(displayActionInfo)"> </template>
       <template v-else>
         <h5 class="font-weight-bold pb-2">{{ displayMap.get(displayActionInfo).header }}:</h5>
         <dd>
@@ -28,7 +28,7 @@
         <dd v-if="_.isEqual(displayMap.get(displayActionInfo).type, 'object')">
           <template v-if="Array.isArray(rowdata[displayActionInfo])">
             <template v-if="rowdata[displayActionInfo].includes('any')">
-              <DialogTemplate component-name="plugin/ListEdit" :model-value="rowdata[displayActionInfo]" :header="`Add New ${_.capitalize(action)}`" dialog-width="25vw">
+              <DialogTemplate component-name="plugin/ListEdit" :model-value="rowdata[displayActionInfo]" :header="`Add New ${displayMap.get(displayActionInfo).header}`" dialog-width="25vw">
                 <div class="p-inputtext p-component">
                   <div v-for="item in rowdata[displayActionInfo]" :key="item" class="list-item">{{ item }}</div>
                 </div>
@@ -44,22 +44,24 @@
             </div>
           </template>
           <template v-if="_.isEqual(displayActionInfo, 'collect')">
-            <dt>Max Age</dt>
-            <dd>
-              <InputText v-model="collectData['maxAge']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" required />
-            </dd>
-            <dt>Min Number</dt>
-            <dd>
-              <InputText v-model="collectData['minNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
-            </dd>
-            <dt>Max Number</dt>
-            <dd>
-              <InputText v-model="collectData['maxNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
-            </dd>
-            <dt>Metadata Key</dt>
-            <dd>
-              <InputText v-model="collectData['metadataKey']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
-            </dd>
+            <fieldset>
+              <legend>Max Age</legend>
+              <dd>
+                <InputText v-model="collectData['maxAge']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" required />
+              </dd>
+              <legend>Min Number</legend>
+              <dd>
+                <InputText v-model="collectData['minNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
+              </dd>
+              <legend>Max Number</legend>
+              <dd>
+                <InputText v-model="collectData['maxNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
+              </dd>
+              <legend>Metadata Key</legend>
+              <dd>
+                <InputText v-model="collectData['metadataKey']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
+              </dd>
+            </fieldset>
           </template>
         </dd>
       </template>
@@ -117,12 +119,8 @@ const defaultCollectTemplate = ref({
 const { actionIndexProp: actionIndex, closeDialogCommand } = reactive(props);
 
 const rowdata = reactive(JSON.parse(JSON.stringify(props.rowDataProp)));
-console.log("rowdata: ", rowdata);
 const data = ref(_.isEmpty(_.get(rowdata, "parameters", null)) ? {} : rowdata["parameters"]);
-console.log("data: ", data.value);
-
 const collectData = ref(_.isEmpty(_.get(rowdata, "collect", null)) ? defaultCollectTemplate.value : rowdata["collect"]);
-console.log("collectData: ", collectData.value);
 
 const originalCollectData = JSON.parse(JSON.stringify(collectData.value));
 
@@ -148,21 +146,21 @@ const getDisplayValues = (obj) => {
   return _.intersection(Object.keys(obj), displayKeysList);
 };
 
+const displayFieldTest = (displayActionInfo) => {
+  let fieldsCheck = ["requiresDomains", "requiresEnrichments", "requiresMetadataKeyValues"];
+  return (fieldsCheck.includes(displayActionInfo) && _.isEmpty(rowdata[displayActionInfo])) || (_.isEqual(displayActionInfo, "schema") && _.isEmpty(_.get(rowdata, "schema.properties", null)));
+};
+
 const submit = async () => {
   // Remove any value that have not changed from the original originalCollectData value it was set at
   let changedCollectValues = _.omitBy(collectData.value, function (v, k) {
     return JSON.stringify(originalCollectData[k]) === JSON.stringify(v);
   });
 
-  console.log("changedCollectValues: ", changedCollectValues);
-
   if (!_.isEmpty(changedCollectValues)) {
-    console.log("in here ");
     collectData.value = _.mapValues(collectData.value, (v) => (v.trim() === "" ? null : v));
     rowdata["collect"] = JSON.parse(JSON.stringify(collectData.value));
-    console.log("rowdata: ", rowdata);
   }
-  console.log("rowdata: ", rowdata);
   closeDialogCommand.command();
   emit("updateAction", { actionIndex: actionIndex, updatedAction: rowdata });
 };

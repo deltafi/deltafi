@@ -20,7 +20,7 @@
   <control-wrapper v-bind="schemaData.controlWrapper" :styles="schemaData.styles" :is-focused="schemaData.isFocused" :applied-options="schemaData.appliedOptions">
     <div class="py-2 align-items-center">
       <div class="field">
-        <legend v-if="!_.isEmpty(schemaData.computedLabel)" :id="schemaData.control.id + '-input-label'">{{ schemaData.control.i18nKeyPrefix.split(".").pop() }}:</legend>
+        <label v-if="!_.isEmpty(schemaData.computedLabel)" :id="schemaData.control.id + '-input-label'">{{ schemaData.control.i18nKeyPrefix.split(".").pop() }}:</label>
       </div>
       <template v-if="suggestions !== undefined">
         <Dropdown :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' inputWidth'" :disabled="!schemaData.control.enabled" :autofocus="schemaData.appliedOptions.focus" :placeholder="schemaData.appliedOptions.placeholder" :options="suggestions" @change="schemaData.onChange(schemaData.control.data)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
@@ -28,7 +28,9 @@
       <template v-else>
         <InputText :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' inputWidth'" :disabled="!schemaData.control.enabled" :autofocus="schemaData.appliedOptions.focus" :placeholder="schemaData.appliedOptions.placeholder" @input="schemaData.onChange(schemaData.control.data)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
       </template>
-      <small :id="schemaData.control.id + '-input-help'">{{ schemaData.control.description }}</small>
+      <div>
+        <small :id="schemaData.control.id + '-input-help'">{{ schemaData.control.description }}</small>
+      </div>
     </div>
   </control-wrapper>
 </template>
@@ -69,6 +71,6 @@ const suggestions = computed(() => {
 }
 
 .inputWidth {
-  width: 90% !important;
+  width: 100% !important;
 }
 </style>

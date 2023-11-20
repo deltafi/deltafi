@@ -21,6 +21,7 @@ import BooleanRenderer from '../components/jsonSchemaRenderers/BooleanRenderer.v
 import IntegerRenderer from '../components/jsonSchemaRenderers/IntegerRenderer.vue';
 import ObjectRenderer from "../components/jsonSchemaRenderers/ObjectRenderer.vue";
 import StringRenderer from '../components/jsonSchemaRenderers/StringRenderer.vue';
+import AdditionalPropertiesStringRenderer from '../components/jsonSchemaRenderers/AdditionalPropertiesStringRenderer.vue';
 import { vanillaRenderers } from "@jsonforms/vue-vanilla";
 import { rankWith, isObjectControl, isBooleanControl, isStringControl, isIntegerControl, schemaTypeIs } from "@jsonforms/core";
 
@@ -31,7 +32,8 @@ export default function usePrimeVueJsonSchemaUIRenderers() {
     { tester: rankWith(3, isStringControl), renderer: StringRenderer },
     { tester: rankWith(3, isIntegerControl), renderer: IntegerRenderer },
     { tester: rankWith(3, isBooleanControl), renderer: BooleanRenderer },
-    { tester: rankWith(3, schemaTypeIs("array")), renderer: ArrayListRenderer}
+    { tester: rankWith(3, schemaTypeIs("array")), renderer: ArrayListRenderer},
+    { tester: rankWith(3, schemaTypeIs("additionalPropertyString")), renderer: AdditionalPropertiesStringRenderer}
   ];
 
   return { rendererList };

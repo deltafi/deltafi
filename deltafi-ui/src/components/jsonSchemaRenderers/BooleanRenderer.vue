@@ -17,13 +17,13 @@
 -->
 
 <template>
-  <control-wrapper v-bind="schemaData.controlWrapper" :styles="schemaData.styles" :is-focused="schemaData.isFocused" :applied-options="schemaData.appliedOptions">
+  <control-wrapper v-bind="schemaData.controlWrapper" :styles="schemaData.styles" :is-focused="schemaData.isFocused" :applied-options="schemaData.appliedOptions" class="pb-2">
     <div>
       <div class="btn-group pb-0">
-        <h5 :for="schemaData.control.id + '-input'" class="pr-1">{{ schemaData.computedLabel }}:</h5>
-        <Checkbox :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input" :binary="true" @change="schemaData.onChange(schemaData.control.data)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
+        <legend :for="schemaData.control.id + '-input'" class="pr-2">{{ schemaData.control.i18nKeyPrefix.split(".").pop() }}:</legend>
+        <Checkbox :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input" :binary="true" class="pt-1" @change="schemaData.onChange(schemaData.control.data)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
       </div>
-      <div class="pt-0">
+      <div>
         <small :id="schemaData.control.id + '-input-help'">{{ schemaData.control.description }}</small>
       </div>
     </div>

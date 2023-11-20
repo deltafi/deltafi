@@ -20,28 +20,21 @@
   <div v-if="jsonSchema.control.visible" class="px-0 pb-2">
     <div class="d-flex w-100 justify-content-between">
       <div class="px-0 py-0">
-        <label class="pt-3"> {{ additionalPropertiesTitle }}</label>
+        <h6 class="pt-3">{{ additionalPropertiesTitle }}</h6>
       </div>
       <div class="btn-group">
         <div class="flex-column additionPropsInputBox">
-          <div>
-            <InputText v-model="newPropertyName" :disabled="!jsonSchema.control.enabled" :placeholder="placeholder" :class="!_.isEmpty(newPropertyErrors) && 'p-invalid'" />
-          </div>
-          <div>
-            <template v-if="!_.isEmpty(newPropertyErrors)">
-              <small v-for="(error, key) in newPropertyErrors" :key="key" class="p-error">
-                <!-- <div v-for="(error, key) in newPropertyErrors" :key="key" class="text-wrap text-break">
-                {{ error }}
-              </div> -->
-                {{ error }}
-              </small>
-            </template>
+          <InputText v-model="newPropertyName" :disabled="!jsonSchema.control.enabled" :placeholder="placeholder" :class="!_.isEmpty(newPropertyErrors) && 'p-invalid'" />
+          <div v-if="!_.isEmpty(newPropertyErrors)">
+            <small v-for="(error, key) in newPropertyErrors" :key="key" class="p-error">
+              {{ error }}
+            </small>
           </div>
         </div>
-
         <Button v-tooltip.bottom="addToLabel" icon="pi pi-plus" small :disabled="addPropertyDisabled" text rounded @click="addProperty" />
       </div>
     </div>
+    <div v-if="noData">No data</div>
     <div v-for="(element, index) in additionalPropertyItems" :key="`${index}`">
       <div>
         <div class="inputField">
@@ -109,9 +102,11 @@ const toAdditionalPropertyType = (propName: string, propValue: any): AdditionalP
       propSchema = jsonSchema.control.schema.patternProperties[matchedPattern];
     }
   }
+
   if (!propSchema && typeof jsonSchema.control.schema.additionalProperties === "object") {
     propSchema = jsonSchema.control.schema.additionalProperties;
   }
+
   if (!propSchema && propValue !== undefined) {
     // can't find the propertySchema so use the schema based on the value
     // this covers case where the data in invalid according to the schema
@@ -123,22 +118,24 @@ const toAdditionalPropertyType = (propName: string, propValue: any): AdditionalP
       }
     ).properties?.prop;
   }
+
   if (propSchema) {
     if (propSchema.type === "object" || propSchema.type === "array") {
       propUiSchema = Generate.uiSchema(propSchema, "Group");
-      (propUiSchema as GroupLayout).label = propSchema.title ?? _.startCase(propName);
+      //(propUiSchema as GroupLayout).label = propSchema.title ?? _.startCase(propName);
+      (propUiSchema as GroupLayout).label = propSchema.title ?? propName;
     } else {
       propUiSchema = createControlElement(jsonSchema.control.path + "/" + encode(propName));
     }
   }
-
   return {
     propertyName: propName,
     path: jsonSchema.control.path,
-    schema: propSchema,
+    schema: { type: "additionalPropertyString" },
     uischema: propUiSchema,
   };
 };
+
 const appliedOptions = useControlAppliedOptions(props.input);
 const additionalPropertyItems = ref<AdditionalPropertyType[]>([]);
 additionalKeys.forEach((propName) => {
@@ -304,6 +301,10 @@ const removeProperty = (propName: string) => {
     jsonSchema.handleChange(jsonSchema.control.path, jsonSchema.control.data);
   }
 };
+
+const noData = computed(() => {
+  return !additionalPropertyItems.value || additionalPropertyItems.value.length === 0;
+});
 </script>
 <style>
 .inputWidth {

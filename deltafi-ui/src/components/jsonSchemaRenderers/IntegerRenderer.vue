@@ -18,13 +18,15 @@
 
 <template>
   <control-wrapper v-bind="schemaData.controlWrapper" :styles="schemaData.styles" :is-focused="schemaData.isFocused" :applied-options="schemaData.appliedOptions">
-    <span>
-      <label :for="schemaData.control.id + '-input'">{{ schemaData.computedLabel }}</label>
+    <div class="py-2">
+      <div class="field">
+        <legend v-if="!_.isEmpty(schemaData.computedLabel)" :id="schemaData.control.id + '-input-label'">{{ schemaData.control.i18nKeyPrefix.split(".").pop() }}:</legend>
+      </div>
       <div>
         <InputNumber :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' inputWidth'" :step="steps" input-id="stacked-buttons" show-buttons @input="schemaData.onChange(schemaData.control.data)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
       </div>
-      <small :id="schemaData.control.id + '-input-help'">{{ schemaData.control.description }}</small>
-    </span>
+      <small v-if="!_.isEmpty(schemaData.control.description)" :id="schemaData.control.id + '-input-help'">{{ schemaData.control.description }}</small>
+    </div>
   </control-wrapper>
 </template>
   
@@ -35,6 +37,8 @@ import { rendererProps, useJsonFormsControl } from "@jsonforms/vue";
 import InputNumber from "primevue/inputnumber";
 import { default as ControlWrapper } from "./ControlWrapper.vue";
 import useSchemaComposition from "@/components/jsonSchemaRenderers/util/useSchemaComposition";
+
+import _ from "lodash";
 
 const { useControl } = useSchemaComposition();
 
@@ -51,6 +55,10 @@ const steps = computed(() => {
 </script>
 
 <style>
+.field * {
+  display: block;
+}
+
 .inputWidth {
   width: 90% !important;
 }

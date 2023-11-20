@@ -140,7 +140,7 @@ import $ from "jquery";
 import _ from "lodash";
 
 const { getPluginActionSchema } = useFlowActions();
-const { getAllFlowPlans, saveTransformFlowPlan, saveNormalizeFlowPlan, saveEgressFlowPlan, saveEnrichFlowPlan } = useFlowPlanQueryBuilder();
+const { saveTransformFlowPlan, saveNormalizeFlowPlan, saveEgressFlowPlan, saveEnrichFlowPlan } = useFlowPlanQueryBuilder();
 const keys = useMagicKeys();
 const devKey = keys["d+e+v"];
 const { copy } = useClipboard();
@@ -333,7 +333,7 @@ const flowActionTemplateMap = new Map([
   ["DOMAIN", { selectTemplate: [domainActionsTemplate], activeContainer: "domainActions", limit: false, requiredActionMin: false }],
   ["ENRICH", { selectTemplate: [enrichActionsTemplate], activeContainer: "enrichActions", limit: false, requiredActionMin: false }],
   ["FORMAT", { selectTemplate: [formatActionTemplate], activeContainer: "formatAction", limit: true, requiredActionMin: true }],
-  ["VALIDATE", { selectTemplate: [validateActionsTemplate], activeContainer: "validateActions", limit: false, requiredActionMin: true }],
+  ["VALIDATE", { selectTemplate: [validateActionsTemplate], activeContainer: "validateActions", limit: false, requiredActionMin: false }],
   ["EGRESS", { selectTemplate: [egressActionTemplate], activeContainer: "egressAction", limit: true, requiredActionMin: true }],
 ]);
 
@@ -353,20 +353,18 @@ onBeforeMount(async () => {
   await fetchData();
 
   if (!_.isEmpty(_.get(linkedFlowPlan.value, "flowPlanParams", null))) {
-    let response = await getAllFlowPlans();
-    let allFlowPlans = response.data.getAllFlowPlans;
     if (linkedFlowPlan.value.flowPlanParams.editExistingFlow) {
       editExistingFlowPlan.value = true;
       let flowInfo = {};
       flowInfo["type"] = _.toUpper(linkedFlowPlan.value.flowPlanParams.type);
       flowInfo["name"] = linkedFlowPlan.value.flowPlanParams.selectedFlowPlanName;
       flowInfo["description"] = linkedFlowPlan.value.flowPlanParams.selectedFlowPlan.description;
-      flowInfo["selectedFlowPlan"] = _.find(allFlowPlans[`${_.toLower(linkedFlowPlan.value.flowPlanParams.type)}Plans`], { name: linkedFlowPlan.value.flowPlanParams.selectedFlowPlanName });
+      flowInfo["selectedFlowPlan"] = linkedFlowPlan.value.flowPlanParams.selectedFlowPlan;
       await createFlowPlan(flowInfo);
       originalFlowPlan.value = rawOutput.value;
     } else {
       model.value.type = _.toUpper(linkedFlowPlan.value.flowPlanParams.type);
-      model.value.selectedFlowPlan = _.find(allFlowPlans[`${_.toLower(model.value.type)}Plans`], { name: linkedFlowPlan.value.flowPlanParams.selectedFlowPlanName });
+      model.value.selectedFlowPlan = linkedFlowPlan.value.flowPlanParams.selectedFlowPlan;
       document.getElementById("CreateFlowPlan").click();
     }
     linkedFlowPlan.value = null;
@@ -435,7 +433,6 @@ const cloneFlow = async (cloneFlow) => {
   for (let flowActionType of flowTypesMap.get(model.value.type).flowActionTypes) {
     let clonedActionsByTypes = [];
     let getClonedActionsByTypes = _.get(cloneFlow.selectedFlowPlan, flowActionTemplateMap.get(flowActionType).activeContainer);
-
     if (_.isEmpty(getClonedActionsByTypes)) {
       getClonedActionsByTypes = [];
       continue;

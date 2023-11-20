@@ -18,15 +18,20 @@
 
 <template>
   <fieldset v-if="schemaData.control.visible" :class="schemaData.styles.arrayList.root" class="mt-1 align-items-center">
-    <legend :class="schemaData.styles.arrayList.legend + ' d-flex'">
-      <Button icon="pi pi-plus" small :class="schemaData.styles.arrayList.addButton + ' align-items-center text-dark'" text rounded @click="addButtonClick" />
-      <div>
-        <label :class="schemaData.styles.arrayList.label">
-          {{ schemaData.control.label }}
-        </label>
+    <div :class="schemaData.styles.arrayList.legend">
+      <div class="btn-group pb-0">
+        <div class="field">
+          <legend :class="schemaData.styles.arrayList.label">
+            {{ schemaData.control.path + ":" }}
+          </legend>
+        </div>
+        <Button icon="pi pi-plus" small :class="schemaData.styles.arrayList.addButton + ' align-items-center text-dark'" text rounded @click="addButtonClick" />
       </div>
-    </legend>
-    <div v-for="(element, index) in schemaData.control.data" :key="`${schemaData.control.path}-${index}`" :class="schemaData.styles.arrayList.itemWrapper">
+      <div>
+        <small :id="schemaData.control.id + '-input-help'">{{ schemaData.control.description }}</small>
+      </div>
+    </div>
+    <div v-for="(element, index) in renderArrayData" :key="`${schemaData.control.path}-${index}`" :class="schemaData.styles.arrayList.itemWrapper">
       <ArrayListElement :move-up="schemaData.moveUp?.(schemaData.control.path, index)" :move-up-enabled="index > 0" :move-down="schemaData.moveDown?.(schemaData.control.path, index)" :move-down-enabled="index < schemaData.control.data.length - 1" :delete="schemaData.removeItems?.(schemaData.control.path, [index])" :label="schemaData.childLabelForIndex(index)" :styles="schemaData.styles">
         <dispatch-renderer :schema="schemaData.control.schema" :uischema="schemaData.childUiSchema" :path="composePaths(schemaData.control.path, `${index}`)" :enabled="schemaData.control.enabled" :renderers="schemaData.control.renderers" :cells="schemaData.control.cells" />
       </ArrayListElement>
@@ -54,7 +59,16 @@ const noData = computed(() => {
   return !schemaData.control.data || schemaData.control.data.length === 0;
 });
 
+const renderArrayData = computed(() => {
+  return schemaData.control.data
+});
+
 const addButtonClick = () => {
   schemaData.addItem(schemaData.control.path, createDefaultValue(schemaData.control.schema))();
 };
 </script>
+<style scoped>
+.field * {
+  display: block;
+}
+</style>
