@@ -23,7 +23,7 @@ import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.common.http.HttpPostException;
-import org.deltafi.common.nifi.FlowFileInputStream;
+import org.deltafi.common.stream.PipelineBlockingInputStream;
 import org.deltafi.common.nifi.FlowFileUtil;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.core.parameters.HttpEgressParameters;
@@ -57,10 +57,10 @@ public class FlowfileEgressAction extends HttpEgressActionBase<HttpEgressParamet
                     input.content().getName(), context.getIngressFlow(), context.getEgressFlow(), input.getMetadata());
 
             HttpResponse<InputStream> response;
-            try (FlowFileInputStream flowFileInputStream = FlowFileUtil.packageFlowFileV1(attributes, inputStream,
+            try (PipelineBlockingInputStream pipelineBlockingInputStream = FlowFileUtil.packageFlowFileV1(attributes, inputStream,
                     input.content().getSize(), executorService)) {
-                response = httpPostService.post(params.getUrl(), Map.of(), flowFileInputStream, APPLICATION_FLOWFILE);
-                flowFileInputStream.await();
+                response = httpPostService.post(params.getUrl(), Map.of(), pipelineBlockingInputStream, APPLICATION_FLOWFILE);
+                pipelineBlockingInputStream.await();
             } catch (IOException e) {
                 return new ErrorResult(context, "Unable to process flowfile stream", e);
             } catch (InterruptedException e) {

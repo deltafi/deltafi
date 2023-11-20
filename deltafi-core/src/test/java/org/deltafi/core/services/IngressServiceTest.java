@@ -18,6 +18,7 @@
 package org.deltafi.core.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.SneakyThrows;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.nifi.ContentType;
@@ -107,8 +108,8 @@ class IngressServiceTest {
     }
 
     @Test
-    void ingressBinaryFile() throws IngressUnavailableException, ObjectStorageException, IngressStorageException,
-            IngressMetadataException, IngressException, IOException {
+    @SneakyThrows
+    void ingressBinaryFile() {
         mockNormalExecution();
 
         Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
@@ -162,8 +163,8 @@ class IngressServiceTest {
     }
 
     @Test
-    void ingressFlowFileV1() throws IngressUnavailableException, ObjectStorageException, IngressStorageException,
-            IngressMetadataException, IngressException, IOException {
+    @SneakyThrows
+    void ingressFlowFileV1() {
         mockNormalExecution();
 
         Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
@@ -181,8 +182,8 @@ class IngressServiceTest {
     }
 
     @Test
-    void ingressFlowFileV2() throws IngressUnavailableException, ObjectStorageException, IngressStorageException,
-            IngressMetadataException, IngressException, IOException {
+    @SneakyThrows
+    void ingressFlowFileV2() {
         mockNormalExecution();
 
         Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
@@ -200,8 +201,8 @@ class IngressServiceTest {
     }
 
     @Test
-    void ingressFlowFileV3() throws IngressUnavailableException, ObjectStorageException, IngressStorageException,
-            IngressMetadataException, IngressException, IOException {
+    @SneakyThrows
+    void ingressFlowFileV3() {
         mockNormalExecution();
 
         Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
@@ -282,8 +283,8 @@ class IngressServiceTest {
     }
 
     @Test
-    void ingressFlowFileV1FlowInHeader() throws IngressUnavailableException, ObjectStorageException,
-            IngressStorageException, IngressMetadataException, IngressException, IOException {
+    @SneakyThrows
+    void ingressFlowFileV1FlowInHeader() {
         mockNormalExecution();
 
         Map<String, String> headerMetadata = Map.of("k1", "v1", "flow", "flow");
@@ -300,8 +301,8 @@ class IngressServiceTest {
     }
 
     @Test
-    void ingressFlowFileV1FlowInAttributes() throws IngressUnavailableException, ObjectStorageException,
-            IngressStorageException, IngressMetadataException, IngressException, IOException {
+    @SneakyThrows
+    void ingressFlowFileV1FlowInAttributes() {
         mockNormalExecution();
 
         Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
@@ -317,8 +318,8 @@ class IngressServiceTest {
     }
 
     @Test
-    void ingressFlowFileV1AutoResolvesFlow() throws IOException, IngressUnavailableException, ObjectStorageException,
-            IngressStorageException, IngressMetadataException, IngressException {
+    @SneakyThrows
+    void ingressFlowFileV1AutoResolvesFlow() {
         mockNormalExecution();
 
         Mockito.when(flowAssignmentService.findFlow(any(), any())).thenReturn("flow");
@@ -336,8 +337,8 @@ class IngressServiceTest {
     }
 
     @Test
-    void ingressFlowFileV1FilenameInHeader() throws IngressUnavailableException, ObjectStorageException,
-            IngressStorageException, IngressMetadataException, IngressException, IOException {
+    @SneakyThrows
+    void ingressFlowFileV1FilenameInHeader() {
         mockNormalExecution();
 
         Map<String, String> headerMetadata = Map.of("k1", "v1", "filename", "filename");
@@ -354,8 +355,8 @@ class IngressServiceTest {
     }
 
     @Test
-    void ingressFlowFileV1FilenameInAttributes() throws IngressUnavailableException, ObjectStorageException,
-            IngressStorageException, IngressMetadataException, IngressException, IOException {
+    @SneakyThrows
+    void ingressFlowFileV1FilenameInAttributes() {
         mockNormalExecution();
 
         Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
@@ -389,8 +390,8 @@ class IngressServiceTest {
     }
 
     @Test
-    void ingressBinaryAutoResolvesFlow() throws IOException, IngressUnavailableException, ObjectStorageException,
-            IngressStorageException, IngressMetadataException, IngressException {
+    @SneakyThrows
+    void ingressBinaryAutoResolvesFlow() {
         mockNormalExecution();
 
         Mockito.when(flowAssignmentService.findFlow(any(), any())).thenReturn("flow");

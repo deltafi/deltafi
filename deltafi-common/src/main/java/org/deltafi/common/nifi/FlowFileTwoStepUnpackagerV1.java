@@ -21,7 +21,6 @@ import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.nifi.util.FlowFilePackagerV1;
-import org.apache.nifi.util.FlowFileUnpackager;
 
 import java.io.*;
 import java.util.HashMap;
@@ -30,21 +29,31 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class FlowFileUnpackagerV1Unicode implements FlowFileUnpackager {
+public class FlowFileTwoStepUnpackagerV1 implements FlowFileTwoStepUnpackager {
     private int flowFilesRead = 0;
+    private TarArchiveInputStream tarIn;
 
     @Override
-    public Map<String, String> unpackageFlowFile(InputStream in, OutputStream out) throws IOException {
+    public Map<String, String> unpackageAttributes(InputStream in) throws IOException {
+        this.tarIn = new TarArchiveInputStream(in);
+        TarArchiveEntry attribEntry = tarIn.getNextTarEntry();
+        if ((attribEntry == null) || !attribEntry.getName().equals(FlowFilePackagerV1.FILENAME_ATTRIBUTES)) {
+            tarIn.close();
+            tarIn = null;
+            throw new IOException("Expected two tar entries: " + FlowFilePackagerV1.FILENAME_CONTENT + " and " +
+                    FlowFilePackagerV1.FILENAME_ATTRIBUTES);
+        }
+        return readAttributes(tarIn);
+    }
+
+    @Override
+    public void unpackageContent(InputStream in, OutputStream out) throws IOException {
+        if (tarIn == null) {
+            throw new IOException("Call unpackageAttributes first");
+        }
+
         flowFilesRead++;
-
-        try (TarArchiveInputStream tarIn = new TarArchiveInputStream(in)) {
-            TarArchiveEntry attribEntry = tarIn.getNextTarEntry();
-            if ((attribEntry == null) || !attribEntry.getName().equals(FlowFilePackagerV1.FILENAME_ATTRIBUTES)) {
-                throw new IOException("Expected two tar entries: " + FlowFilePackagerV1.FILENAME_CONTENT + " and " +
-                        FlowFilePackagerV1.FILENAME_ATTRIBUTES);
-            }
-            Map<String, String> attributes = readAttributes(tarIn);
-
+        try {
             TarArchiveEntry contentEntry = tarIn.getNextTarEntry();
             if ((contentEntry == null) || !contentEntry.getName().equals(FlowFilePackagerV1.FILENAME_CONTENT)) {
                 throw new IOException("Expected two tar entries: " + FlowFilePackagerV1.FILENAME_CONTENT + " and " +
@@ -55,10 +64,10 @@ public class FlowFileUnpackagerV1Unicode implements FlowFileUnpackager {
             int bytesRead;
             while ((bytesRead = tarIn.read(buffer)) != -1) {
                 out.write(buffer, 0, bytesRead);
+                out.flush();
             }
-            out.flush();
-
-            return attributes;
+        } finally {
+            tarIn.close();
         }
     }
 

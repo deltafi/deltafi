@@ -28,6 +28,8 @@ import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.nifi.FlowFile;
 import org.deltafi.common.nifi.FlowFileUtil;
 import org.deltafi.common.storage.s3.ObjectStorageException;
+import org.deltafi.common.stream.BlockingInputStream;
+import org.deltafi.common.stream.PassthroughBlockingInputStream;
 import org.deltafi.common.types.*;
 import org.deltafi.common.uuid.UUIDGenerator;
 import org.deltafi.core.audit.CoreAuditLogger;
@@ -38,7 +40,6 @@ import org.deltafi.core.types.IngressResult;
 import org.springframework.stereotype.Service;
 
 import javax.ws.rs.core.MediaType;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.OffsetDateTime;
@@ -46,6 +47,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
@@ -66,10 +69,12 @@ public class IngressService {
     private final TransformFlowService transformFlowService;
     private final ErrorCountService errorCountService;
     private final UUIDGenerator uuidGenerator;
+    private final ExecutorService executorService = Executors.newCachedThreadPool();
 
     public IngressResult ingress(String flow, String filename, String contentType, String username,
             String headerMetadataString, InputStream dataStream, OffsetDateTime created) throws IngressMetadataException,
-            ObjectStorageException, IngressException, IngressStorageException, IngressUnavailableException {
+            ObjectStorageException, IngressException, IngressStorageException, IngressUnavailableException,
+            InterruptedException {
         if (!deltaFiPropertiesService.getDeltaFiProperties().getIngress().isEnabled()) {
             log.error("Ingress error for flow={} filename={} contentType={} username={}: {}", flow, filename,
                     contentType, username, "Ingress disabled for this instance of DeltaFi");
@@ -131,10 +136,10 @@ public class IngressService {
 
     private IngressResult ingressFlowFile(String flow, String filename, String contentType,
             Map<String, String> headerMetadata, InputStream contentInputStream, OffsetDateTime created)
-            throws ObjectStorageException, IngressException, IngressMetadataException {
+            throws ObjectStorageException, IngressException, IngressMetadataException, InterruptedException {
         FlowFile flowFile;
         try {
-            flowFile = FlowFileUtil.unpackageFlowFile(contentType, contentInputStream);
+            flowFile = FlowFileUtil.unpackageFlowFile(contentType, contentInputStream, executorService);
         } catch (IOException e) {
             throw new IngressException("Unable to unpack FlowFile", e);
         }
@@ -151,12 +156,11 @@ public class IngressService {
         if (filename == null) {
             throw new IngressMetadataException("Filename must be passed in as a header or flowfile attribute");
         }
-        return ingress(flow, filename, MediaType.APPLICATION_OCTET_STREAM, new ByteArrayInputStream(flowFile.content()),
-                combinedMetadata, created);
+        return ingress(flow, filename, MediaType.APPLICATION_OCTET_STREAM, flowFile.content(), combinedMetadata, created);
     }
 
-    private IngressResult ingress(String flow, String filename, String mediaType, InputStream contentInputStream,
-            Map<String, String> metadata, OffsetDateTime created) throws ObjectStorageException, IngressException {
+    private IngressResult ingress(String flow, String filename, String mediaType, BlockingInputStream contentInputStream,
+            Map<String, String> metadata, OffsetDateTime created) throws ObjectStorageException, IngressException, InterruptedException {
         String resolvedFlow = flow;
 
         if (flow == null || flow.equals(DeltaFiConstants.AUTO_RESOLVE_FLOW_NAME)) {
@@ -184,7 +188,8 @@ public class IngressService {
 
         String did = uuidGenerator.generate();
 
-        Content content = contentStorageService.save(did, contentInputStream, filename, mediaType);
+        Content content = contentStorageService.save(did, contentInputStream.getInputStream(), filename, mediaType);
+        contentInputStream.await();
 
         IngressEventItem ingressEventItem = IngressEventItem.builder()
                 .did(did)
@@ -210,11 +215,12 @@ public class IngressService {
 
     private IngressResult ingressBinary(String flow, String filename, String mediaType,
             Map<String, String> headerMetadata, InputStream contentInputStream, OffsetDateTime created)
-            throws IngressMetadataException, IngressException, ObjectStorageException {
+            throws IngressMetadataException, IngressException, ObjectStorageException, InterruptedException {
         if (filename == null) {
             throw new IngressMetadataException("Filename must be passed in as a header");
         }
-        return ingress(flow, filename, mediaType, contentInputStream, headerMetadata, created);
+        PassthroughBlockingInputStream passthroughBlockingInputStream = new PassthroughBlockingInputStream(contentInputStream);
+        return ingress(flow, filename, mediaType, passthroughBlockingInputStream, headerMetadata, created);
     }
 
     private Map<String, String> tagsFor(String ingressFlow) {

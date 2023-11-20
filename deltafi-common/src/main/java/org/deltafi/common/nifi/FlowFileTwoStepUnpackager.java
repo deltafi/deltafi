@@ -17,8 +17,14 @@
  */
 package org.deltafi.common.nifi;
 
-import org.deltafi.common.stream.PipelineBlockingInputStream;
-
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Map;
 
-public record FlowFile(Map<String, String> attributes, PipelineBlockingInputStream content) {}
+public interface FlowFileTwoStepUnpackager {
+    Map<String, String> unpackageAttributes(InputStream in) throws IOException;
+    void unpackageContent(InputStream in, OutputStream out) throws IOException;
+
+    boolean hasMoreData() throws IOException;
+}

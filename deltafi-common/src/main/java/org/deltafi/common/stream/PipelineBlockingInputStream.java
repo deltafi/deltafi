@@ -15,17 +15,23 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.nifi;
+package org.deltafi.common.stream;
 
+import java.io.InputStream;
 import java.io.PipedInputStream;
 import java.util.concurrent.CountDownLatch;
 
-public class FlowFileInputStream extends PipedInputStream {
+public class PipelineBlockingInputStream extends PipedInputStream implements BlockingInputStream {
+    private static final int DEFAULT_BUFFER_SIZE = 512 * 1024;
     CountDownLatch latch;
-    public FlowFileInputStream(int bufferSize, boolean blocking) {
-        super(bufferSize);
 
-        this.latch = new CountDownLatch(blocking ? 1 : 0);
+    public PipelineBlockingInputStream() {
+        this(DEFAULT_BUFFER_SIZE);
+    }
+
+    public PipelineBlockingInputStream(int bufferSize) {
+        super(bufferSize);
+        this.latch = new CountDownLatch(1);
     }
 
     public void unblock() {
@@ -34,7 +40,13 @@ public class FlowFileInputStream extends PipedInputStream {
         }
     }
 
+    @Override
     public void await() throws InterruptedException {
         latch.await();
+    }
+
+    @Override
+    public InputStream getInputStream() {
+        return this;
     }
 }

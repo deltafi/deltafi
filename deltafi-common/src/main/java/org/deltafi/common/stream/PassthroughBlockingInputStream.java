@@ -15,10 +15,21 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.nifi;
+package org.deltafi.common.stream;
 
-import org.deltafi.common.stream.PipelineBlockingInputStream;
+import java.io.InputStream;
 
-import java.util.Map;
+public class PassthroughBlockingInputStream implements BlockingInputStream {
+    final private InputStream inputStream;
+    public PassthroughBlockingInputStream(InputStream inputStream) {
+        this.inputStream = inputStream;
+    }
 
-public record FlowFile(Map<String, String> attributes, PipelineBlockingInputStream content) {}
+    @Override
+    public void await() {}
+
+    @Override
+    public InputStream getInputStream() {
+        return inputStream;
+    }
+}
