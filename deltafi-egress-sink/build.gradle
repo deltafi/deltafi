@@ -21,10 +21,10 @@ docker {
 }
 
 task licenseLocal(type: LicenseCheck) {
-    source = fileTree(dir: ".").include("**/*.sh").include("**/*.rb")
+    source = fileTree(dir: ".").include("**/*.sh").include("**/*.go")
 }
 
 task licenseFormatLocal(type: LicenseFormat) {
-    source = fileTree(dir: ".").include("**/*.sh").include("**/*.rb")
+    source = fileTree(dir: ".").include("**/*.sh").include("**/*.go")
 }
 licenseFormat.dependsOn licenseFormatLocal
