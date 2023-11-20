@@ -1397,12 +1397,11 @@ public class DeltaFilesService {
                         if (Objects.isNull(deltaFile)) {
                             result.setSuccess(false);
                             result.setError("DeltaFile with did " + did + " not found");
-                        } else if (deltaFile.inactiveStage()) {
+                        } else if (!deltaFile.canBeCancelled()) {
                             result.setSuccess(false);
                             result.setError("DeltaFile with did " + did + " is no longer active");
                         } else {
-                            deltaFile.cancelQueuedActions();
-                            deltaFile.setStage(DeltaFileStage.CANCELLED);
+                            deltaFile.cancel();
                             changedDeltaFiles.add(deltaFile);
                         }
                     } catch (Exception e) {

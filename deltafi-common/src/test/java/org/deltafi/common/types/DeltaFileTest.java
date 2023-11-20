@@ -66,6 +66,55 @@ class DeltaFileTest {
     }
 
     @Test
+    void testErrorCanBeCancelled() {
+        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime now2 = OffsetDateTime.now();
+        Action action1 = Action.builder()
+                .name("action1")
+                .state(ActionState.ERROR)
+                .build();
+
+        DeltaFile deltaFile = DeltaFile.builder()
+                .actions(new ArrayList<>(List.of(action1)))
+                .nextAutoResume(now)
+                .nextAutoResumeReason("policy-name")
+                .stage(DeltaFileStage.ERROR)
+                .build();
+
+        assertTrue(deltaFile.canBeCancelled());
+        deltaFile.cancel();
+        assertEquals(deltaFile.getStage(), DeltaFileStage.CANCELLED);
+        assertNull(deltaFile.getNextAutoResume());
+        assertNull(deltaFile.getNextAutoResumeReason());
+        assertFalse(deltaFile.canBeCancelled());
+    }
+
+    @Test
+    void testIngressCanBeCancelled() {
+        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime now2 = OffsetDateTime.now();
+        Action action1 = Action.builder()
+                .name("action1")
+                .state(ActionState.QUEUED)
+                .build();
+
+        DeltaFile deltaFile = DeltaFile.builder()
+                .actions(new ArrayList<>(List.of(action1)))
+                .stage(DeltaFileStage.INGRESS)
+                .build();
+
+        assertTrue(deltaFile.canBeCancelled());
+        assertFalse(deltaFile.queuedActions().isEmpty());
+        deltaFile.cancel();
+        assertTrue(deltaFile.queuedActions().isEmpty());
+
+        assertEquals(deltaFile.getStage(), DeltaFileStage.CANCELLED);
+        assertNull(deltaFile.getNextAutoResume());
+        assertNull(deltaFile.getNextAutoResumeReason());
+        assertFalse(deltaFile.canBeCancelled());
+    }
+
+    @Test
     void testRetryErrors() {
         OffsetDateTime now = OffsetDateTime.now();
         Action action1 = Action.builder()

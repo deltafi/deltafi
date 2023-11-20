@@ -180,7 +180,7 @@ const staticMenuItems = reactive([
   {
     label: "Cancel",
     icon: "fas fa-power-off fa-fw",
-    visible: () => isRunning.value && hasPermission("DeltaFileCancel"),
+    visible: () => canBeCancelled.value && hasPermission("DeltaFileCancel"),
     command: () => {
       onCancelClick();
     },
@@ -333,8 +333,8 @@ const hasMetadata = computed(() => {
   return Object.keys(allMetadata.value).length > 0;
 });
 
-const isRunning = computed(() => {
-  return !["COMPLETE", "ERROR"].includes(deltaFile.stage);
+const canBeCancelled = computed(() => {
+  return deltaFile.nextAutoResume !== null || !["COMPLETE", "ERROR", "CANCELLED"].includes(deltaFile.stage);
 });
 
 const pageHeader = computed(() => {

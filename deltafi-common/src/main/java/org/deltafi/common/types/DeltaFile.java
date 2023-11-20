@@ -775,6 +775,13 @@ public class DeltaFile {
     updateFlags();
   }
 
+  public void cancel() {
+    cancelQueuedActions();
+    setStage(DeltaFileStage.CANCELLED);
+    setNextAutoResume(null);
+    setNextAutoResumeReason(null);
+  }
+
   public void cancelQueuedActions() {
     OffsetDateTime now = OffsetDateTime.now();
     getActions().stream()
@@ -790,6 +797,9 @@ public class DeltaFile {
     ++requeueCount;
   }
 
+  public boolean canBeCancelled() {
+    return !inactiveStage() || nextAutoResume != null;
+  }
   public boolean inactiveStage() {
     return getStage() == DeltaFileStage.COMPLETE || getStage() == DeltaFileStage.ERROR || getStage() == DeltaFileStage.CANCELLED;
   }
