@@ -5,6 +5,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.1.13] - 2023-11-20
+
+### Changed
+- A DeltaFile that has been scheduled for an auto-resume attempt can now be cancelled
+- Restore "created before" mongo index 
+- Rewrite egress sink in go 
+
+### Fixed
+- Fixed Json Schema configuring maps issues
+- Combine flow and action name when queuing collect actions.
+
+### Tech-Debt/Refactor
+- Standardize stylings on all JSON-form renderers used in flow builder
+- Auth, API, Clickhouse ETL, and Monitor: Replaced standard JSON library with Oj optimized JSON library
+
+### Upgrade and Migration
+- Moved API and Auth to new ruby base image: deltafi/deltafi-ruby:3.2.2-alpine3.18-1
+
 ## [1.1.12] - 2023-11-19
 
 ### Added
@@ -2552,7 +2570,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.12...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.13...main
+[1.1.13]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.12...1.1.13
 [1.1.12]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.11...1.1.12
 [1.1.11]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.10...1.1.11
 [1.1.10]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.9...1.1.10
