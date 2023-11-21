@@ -56,6 +56,11 @@ public class TopicService {
                 .collect(Collectors.toMap(Topic::getId, Function.identity()));
     }
 
+    /**
+     * Find all subscribers that have subscriptions for the given topic
+     * @param topicId whose subscribers should be found
+     * @return subscribers that have subscriptions for the given topic
+     */
     public Set<Subscriber> getSubscribers(String topicId) {
         return subscriberServices.stream()
                 .map(subscriberService -> subscriberService.subscriberForTopic(topicId))

@@ -27,8 +27,17 @@ import java.util.Set;
 
 public interface SubscriberService {
 
+    /**
+     * Find the set of subscribers for the given topicId
+     * @param topicId whose subscribers should be found
+     * @return the set of subscribers for the given topicId
+     */
     Set<Subscriber> subscriberForTopic(String topicId);
 
+    /**
+     * Get all running flows
+     * @return list of running flows
+     */
     List<? extends Subscriber> getRunningFlows();
 
     /**

@@ -30,5 +30,9 @@ public interface Publisher {
      */
     PublishRules publishRules();
 
+    /**
+     * Get the name of the publisher
+     * @return the name of the publisher
+     */
     String getName();
 }

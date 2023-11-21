@@ -25,7 +25,16 @@ import java.util.Set;
  * Interface for things that subscribe to topics
  */
 public interface Subscriber {
+
+    /**
+     * Get the set of subscription rules
+     * @return set of subscription rules
+     */
     Set<Rule> subscriptions();
 
+    /**
+     * Get the name of this subscriber
+     * @return the name of this subscriber
+     */
     String getName();
 }
