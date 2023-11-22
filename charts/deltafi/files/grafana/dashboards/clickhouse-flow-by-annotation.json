@@ -27,39 +27,15 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 1021,
   "links": [],
   "liveNow": false,
   "panels": [
     {
       "datasource": {
-        "type": "graphite",
-        "uid": "deltafi-graphite"
-      },
-      "gridPos": {
-        "h": 2,
-        "w": 24,
-        "x": 0,
-        "y": 0
-      },
-      "id": 98,
-      "options": {
-        "code": {
-          "language": "plaintext",
-          "showLineNumbers": false,
-          "showMiniMap": false
-        },
-        "content": "<h1><center>Flows Grouped by <span style='font-family: monospace; color: yellow'>${annotation}</span> Annotation Value</center></h1>",
-        "mode": "html"
-      },
-      "pluginVersion": "10.1.1",
-      "type": "text"
-    },
-    {
-      "datasource": {
         "type": "grafana-clickhouse-datasource",
         "uid": "${clickhouseDatasource}"
       },
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -67,6 +43,7 @@
           },
           "displayName": "Bytes In",
           "mappings": [],
+          "noValue": "0",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -85,25 +62,26 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
-        "w": 5,
+        "h": 5,
+        "w": 6,
         "x": 0,
-        "y": 2
+        "y": 0
       },
       "id": 80,
       "options": {
         "colorMode": "value",
-        "graphMode": "area",
+        "graphMode": "none",
         "justifyMode": "center",
-        "orientation": "auto",
+        "orientation": "vertical",
         "reduceOptions": {
           "calcs": [
-            "lastNotNull"
+            "sum"
           ],
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "text": {},
+        "textMode": "value_and_name"
       },
       "pluginVersion": "10.1.1",
       "targets": [
@@ -203,216 +181,28 @@
     },
     {
       "datasource": {
-        "type": "grafana-clickhouse-datasource",
-        "uid": "${clickhouseDatasource}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "log": 10,
-              "type": "log"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "min": 1,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "decbytes"
-        },
-        "overrides": []
+        "type": "graphite",
+        "uid": "deltafi-graphite"
       },
       "gridPos": {
-        "h": 8,
-        "w": 14,
-        "x": 5,
-        "y": 2
+        "h": 2,
+        "w": 12,
+        "x": 6,
+        "y": 0
       },
-      "id": 89,
-      "interval": "1m",
+      "id": 98,
       "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": false
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
         },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
+        "content": "<h1><center>Flows Grouped by <span style='font-family: monospace; color: yellow'>${annotation}</span> Annotation Value</center></h1>",
+        "mode": "html"
       },
-      "targets": [
-        {
-          "builderOptions": {
-            "database": "deltafi",
-            "fields": [
-              "totalBytes"
-            ],
-            "filters": [
-              {
-                "condition": "AND",
-                "filterType": "custom",
-                "key": "update_timestamp",
-                "operator": "WITH IN DASHBOARD TIME RANGE",
-                "restrictToFields": [
-                  {
-                    "label": "timestamp",
-                    "name": "timestamp",
-                    "picklistValues": [],
-                    "type": "DateTime"
-                  },
-                  {
-                    "label": "update_timestamp",
-                    "name": "update_timestamp",
-                    "picklistValues": [],
-                    "type": "DateTime"
-                  }
-                ],
-                "type": "datetime"
-              }
-            ],
-            "groupBy": [
-              "flow"
-            ],
-            "metrics": [
-              {
-                "aggregation": "sum",
-                "alias": "files",
-                "field": "files"
-              }
-            ],
-            "mode": "trend",
-            "orderBy": [],
-            "table": "deltafiles",
-            "timeField": "update_timestamp",
-            "timeFieldType": "DateTime"
-          },
-          "datasource": {
-            "type": "grafana-clickhouse-datasource",
-            "uid": "${clickhouseDatasource}"
-          },
-          "format": 0,
-          "meta": {
-            "builderOptions": {
-              "database": "deltafi",
-              "fields": [
-                "totalBytes"
-              ],
-              "filters": [
-                {
-                  "condition": "AND",
-                  "filterType": "custom",
-                  "key": "update_timestamp",
-                  "operator": "WITH IN DASHBOARD TIME RANGE",
-                  "restrictToFields": [
-                    {
-                      "label": "timestamp",
-                      "name": "timestamp",
-                      "picklistValues": [],
-                      "type": "DateTime"
-                    },
-                    {
-                      "label": "update_timestamp",
-                      "name": "update_timestamp",
-                      "picklistValues": [],
-                      "type": "DateTime"
-                    }
-                  ],
-                  "type": "datetime"
-                }
-              ],
-              "groupBy": [
-                "flow"
-              ],
-              "metrics": [
-                {
-                  "aggregation": "sum",
-                  "alias": "files",
-                  "field": "files"
-                }
-              ],
-              "mode": "trend",
-              "orderBy": [],
-              "table": "deltafiles",
-              "timeField": "update_timestamp",
-              "timeFieldType": "DateTime"
-            }
-          },
-          "queryType": "sql",
-          "rawSql": "SELECT time, flow || ' ' || subflow AS subflow, bytes \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, flow, annotations['${annotation}'] AS subflow, sum(ingressBytes) AS bytes \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) AND ( subflow IN (${subflow}))\nGROUP BY flow, subflow, time \nORDER BY time ASC WITH FILL STEP $__interval_s)",
-          "refId": "A",
-          "selectedFormat": 0
-        }
-      ],
-      "title": "Bytes In",
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "   ": true,
-              "  -": true,
-              "  1": true
-            },
-            "indexByName": {},
-            "renameByName": {}
-          }
-        },
-        {
-          "id": "convertFieldType",
-          "options": {
-            "conversions": [
-              {
-                "destinationType": "number",
-                "targetField": " "
-              }
-            ],
-            "fields": {}
-          }
-        }
-      ],
-      "type": "timeseries"
+      "pluginVersion": "10.1.1",
+      "transparent": true,
+      "type": "text"
     },
     {
       "datasource": {
@@ -424,8 +214,9 @@
           "color": {
             "mode": "thresholds"
           },
-          "displayName": "DeltaFiles",
+          "displayName": "DeltaFiles In",
           "mappings": [],
+          "noValue": "0",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -439,30 +230,31 @@
               }
             ]
           },
-          "unit": "none"
+          "unit": "locale"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
-        "w": 5,
-        "x": 19,
-        "y": 2
+        "h": 5,
+        "w": 6,
+        "x": 18,
+        "y": 0
       },
-      "id": 83,
+      "id": 102,
       "options": {
         "colorMode": "value",
-        "graphMode": "area",
+        "graphMode": "none",
         "justifyMode": "center",
-        "orientation": "auto",
+        "orientation": "vertical",
         "reduceOptions": {
           "calcs": [
-            "lastNotNull"
+            "sum"
           ],
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "text": {},
+        "textMode": "value_and_name"
       },
       "pluginVersion": "10.1.1",
       "targets": [
@@ -605,23 +397,52 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "log": 10,
+              "type": "log"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "mappings": [],
+          "min": 1,
           "thresholds": {
-            "mode": "percentage",
+            "mode": "absolute",
             "steps": [
               {
-                "color": "blue",
+                "color": "green",
                 "value": null
               },
               {
-                "color": "green",
-                "value": 10
-              },
-              {
-                "color": "orange",
-                "value": 50
+                "color": "red",
+                "value": 80
               }
             ]
           },
@@ -630,17 +451,196 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 12,
-        "w": 5,
+        "h": 8,
+        "w": 12,
+        "x": 6,
+        "y": 2
+      },
+      "id": 89,
+      "interval": "1m",
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "builderOptions": {
+            "database": "deltafi",
+            "fields": [
+              "totalBytes"
+            ],
+            "filters": [
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "key": "update_timestamp",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "restrictToFields": [
+                  {
+                    "label": "timestamp",
+                    "name": "timestamp",
+                    "picklistValues": [],
+                    "type": "DateTime"
+                  },
+                  {
+                    "label": "update_timestamp",
+                    "name": "update_timestamp",
+                    "picklistValues": [],
+                    "type": "DateTime"
+                  }
+                ],
+                "type": "datetime"
+              }
+            ],
+            "groupBy": [
+              "flow"
+            ],
+            "metrics": [
+              {
+                "aggregation": "sum",
+                "alias": "files",
+                "field": "files"
+              }
+            ],
+            "mode": "trend",
+            "orderBy": [],
+            "table": "deltafiles",
+            "timeField": "update_timestamp",
+            "timeFieldType": "DateTime"
+          },
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${clickhouseDatasource}"
+          },
+          "format": 0,
+          "meta": {
+            "builderOptions": {
+              "database": "deltafi",
+              "fields": [
+                "totalBytes"
+              ],
+              "filters": [
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "update_timestamp",
+                  "operator": "WITH IN DASHBOARD TIME RANGE",
+                  "restrictToFields": [
+                    {
+                      "label": "timestamp",
+                      "name": "timestamp",
+                      "picklistValues": [],
+                      "type": "DateTime"
+                    },
+                    {
+                      "label": "update_timestamp",
+                      "name": "update_timestamp",
+                      "picklistValues": [],
+                      "type": "DateTime"
+                    }
+                  ],
+                  "type": "datetime"
+                }
+              ],
+              "groupBy": [
+                "flow"
+              ],
+              "metrics": [
+                {
+                  "aggregation": "sum",
+                  "alias": "files",
+                  "field": "files"
+                }
+              ],
+              "mode": "trend",
+              "orderBy": [],
+              "table": "deltafiles",
+              "timeField": "update_timestamp",
+              "timeFieldType": "DateTime"
+            }
+          },
+          "queryType": "sql",
+          "rawSql": "SELECT time, flow || ' (' || if(empty(subflow),'None',subflow) || ')' AS subflow, bytes \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, flow, annotations['${annotation}'] AS subflow, sum(ingressBytes) AS bytes \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) AND ( subflow IN (${subflow}))\nGROUP BY flow, subflow, time \nORDER BY time ASC WITH FILL STEP $__interval_s)",
+          "refId": "A",
+          "selectedFormat": 0
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "   ": true,
+              "  -": true,
+              "  1": true
+            },
+            "indexByName": {},
+            "renameByName": {}
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "destinationType": "number",
+                "targetField": " "
+              }
+            ],
+            "fields": {}
+          }
+        }
+      ],
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${clickhouseDatasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 6,
         "x": 0,
-        "y": 6
+        "y": 5
       },
       "id": 81,
       "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "horizontal",
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -648,7 +648,10 @@
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
       "pluginVersion": "10.1.1",
       "targets": [
@@ -775,7 +778,7 @@
         }
       ],
       "transparent": true,
-      "type": "stat"
+      "type": "piechart"
     },
     {
       "datasource": {
@@ -785,42 +788,37 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
           },
           "mappings": [],
-          "thresholds": {
-            "mode": "percentage",
-            "steps": [
-              {
-                "color": "blue",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 10
-              },
-              {
-                "color": "orange",
-                "value": 50
-              }
-            ]
-          },
           "unit": "none"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 12,
-        "w": 5,
-        "x": 19,
-        "y": 6
+        "h": 14,
+        "w": 6,
+        "x": 18,
+        "y": 5
       },
       "id": 97,
       "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "horizontal",
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -828,7 +826,10 @@
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
       "pluginVersion": "10.1.1",
       "targets": [
@@ -955,7 +956,7 @@
         }
       ],
       "transparent": true,
-      "type": "stat"
+      "type": "piechart"
     },
     {
       "datasource": {
@@ -1014,14 +1015,14 @@
               }
             ]
           },
-          "unit": "none"
+          "unit": "files"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 14,
-        "x": 5,
+        "h": 9,
+        "w": 12,
+        "x": 6,
         "y": 10
       },
       "id": 92,
@@ -1136,12 +1137,11 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT time, flow || ' ' || subflow AS subflow, values \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, flow, annotations['${annotation}'] AS subflow, sum(files) AS values \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) AND ( subflow IN (${subflow}))\nGROUP BY flow, subflow, time \nORDER BY time ASC WITH FILL STEP $__interval_s)",
+          "rawSql": "SELECT time, flow || ' (' || if(empty(subflow),'None',subflow) || ')' AS subflow, values \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, flow, annotations['${annotation}'] AS subflow, sum(files) AS values \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) AND ( subflow IN (${subflow}))\nGROUP BY flow, subflow, time \nORDER BY time ASC WITH FILL STEP $__interval_s)",
           "refId": "A",
           "selectedFormat": 0
         }
       ],
-      "title": "DeltaFiles",
       "transformations": [
         {
           "id": "organize",
@@ -1168,7 +1168,312 @@
           }
         }
       ],
+      "transparent": true,
       "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "deltafi-graphite"
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 19
+      },
+      "id": 104,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "<hr/>",
+        "mode": "html"
+      },
+      "pluginVersion": "10.1.1",
+      "transparent": true,
+      "type": "text"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Egressed DeltaFiles",
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "dark-red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "locale"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 1,
+        "y": 21
+      },
+      "id": 107,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "vertical",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "10.1.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 99,
+          "refId": "A"
+        }
+      ],
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${clickhouseDatasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "unit": "none"
+        },
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  " ",
+                  "devFlow3 "
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 13,
+        "x": 11,
+        "y": 21
+      },
+      "id": 99,
+      "interval": "1m",
+      "options": {
+        "displayLabels": [],
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "limit": 0,
+          "values": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "builderOptions": {
+            "database": "deltafi",
+            "fields": [
+              "totalBytes"
+            ],
+            "filters": [
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "key": "update_timestamp",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "restrictToFields": [
+                  {
+                    "label": "timestamp",
+                    "name": "timestamp",
+                    "picklistValues": [],
+                    "type": "DateTime"
+                  },
+                  {
+                    "label": "update_timestamp",
+                    "name": "update_timestamp",
+                    "picklistValues": [],
+                    "type": "DateTime"
+                  }
+                ],
+                "type": "datetime"
+              }
+            ],
+            "groupBy": [
+              "flow"
+            ],
+            "metrics": [
+              {
+                "aggregation": "sum",
+                "alias": "files",
+                "field": "files"
+              }
+            ],
+            "mode": "trend",
+            "orderBy": [],
+            "table": "deltafiles",
+            "timeField": "update_timestamp",
+            "timeFieldType": "DateTime"
+          },
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${clickhouseDatasource}"
+          },
+          "format": 0,
+          "meta": {
+            "builderOptions": {
+              "database": "deltafi",
+              "fields": [
+                "totalBytes"
+              ],
+              "filters": [
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "update_timestamp",
+                  "operator": "WITH IN DASHBOARD TIME RANGE",
+                  "restrictToFields": [
+                    {
+                      "label": "timestamp",
+                      "name": "timestamp",
+                      "picklistValues": [],
+                      "type": "DateTime"
+                    },
+                    {
+                      "label": "update_timestamp",
+                      "name": "update_timestamp",
+                      "picklistValues": [],
+                      "type": "DateTime"
+                    }
+                  ],
+                  "type": "datetime"
+                }
+              ],
+              "groupBy": [
+                "flow"
+              ],
+              "metrics": [
+                {
+                  "aggregation": "sum",
+                  "alias": "files",
+                  "field": "files"
+                }
+              ],
+              "mode": "trend",
+              "orderBy": [],
+              "table": "deltafiles",
+              "timeField": "update_timestamp",
+              "timeFieldType": "DateTime"
+            }
+          },
+          "queryType": "sql",
+          "rawSql": "SELECT flow || ' ' || subflow AS subflow, values \" \" FROM\n(SELECT flow, annotations['${annotation}'] AS subflow, sum(egressed) AS values \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) AND ( subflow IN (${subflow})) \nGROUP BY flow, subflow)\nWHERE values > 0",
+          "refId": "A",
+          "selectedFormat": 0
+        }
+      ],
+      "title": "Egressed DeltaFiles",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "   ": true,
+              "  -": true,
+              "  1": true
+            },
+            "indexByName": {},
+            "renameByName": {}
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "destinationType": "number",
+                "targetField": " "
+              }
+            ],
+            "fields": {}
+          }
+        }
+      ],
+      "type": "piechart"
     },
     {
       "datasource": {
@@ -1234,10 +1539,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 8,
+        "h": 5,
+        "w": 11,
         "x": 0,
-        "y": 18
+        "y": 27
       },
       "id": 94,
       "interval": "1m",
@@ -1353,12 +1658,11 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT time, flow || ' ' || subflow AS subflow, values \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, flow, annotations['${annotation}'] AS subflow, sum(egressed) AS values \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) AND ( subflow IN (${subflow})) \nGROUP BY flow, subflow, time \nORDER BY time ASC WITH FILL STEP $__interval_s)",
+          "rawSql": "SELECT time, flow || ' (' || if(empty(subflow),'None',subflow) || ')' AS subflow, values \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, flow, annotations['${annotation}'] AS subflow, sum(egressed) AS values \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) AND ( subflow IN (${subflow})) \nGROUP BY flow, subflow, time \nORDER BY time ASC WITH FILL STEP $__interval_s)",
           "refId": "A",
           "selectedFormat": 0
         }
       ],
-      "title": "Egressed DeltaFiles",
       "transformations": [
         {
           "id": "organize",
@@ -1386,6 +1690,281 @@
         }
       ],
       "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Errored DeltaFiles",
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "dark-red",
+                "value": null
+              }
+            ]
+          },
+          "unit": "locale"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 1,
+        "y": 32
+      },
+      "id": 108,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "vertical",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "10.1.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 100,
+          "refId": "A"
+        }
+      ],
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${clickhouseDatasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "unit": "none"
+        },
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  " ",
+                  "devFlow3 "
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 13,
+        "x": 11,
+        "y": 32
+      },
+      "id": 100,
+      "interval": "1m",
+      "options": {
+        "displayLabels": [],
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "limit": 0,
+          "values": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "builderOptions": {
+            "database": "deltafi",
+            "fields": [
+              "totalBytes"
+            ],
+            "filters": [
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "key": "update_timestamp",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "restrictToFields": [
+                  {
+                    "label": "timestamp",
+                    "name": "timestamp",
+                    "picklistValues": [],
+                    "type": "DateTime"
+                  },
+                  {
+                    "label": "update_timestamp",
+                    "name": "update_timestamp",
+                    "picklistValues": [],
+                    "type": "DateTime"
+                  }
+                ],
+                "type": "datetime"
+              }
+            ],
+            "groupBy": [
+              "flow"
+            ],
+            "metrics": [
+              {
+                "aggregation": "sum",
+                "alias": "files",
+                "field": "files"
+              }
+            ],
+            "mode": "trend",
+            "orderBy": [],
+            "table": "deltafiles",
+            "timeField": "update_timestamp",
+            "timeFieldType": "DateTime"
+          },
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${clickhouseDatasource}"
+          },
+          "format": 0,
+          "meta": {
+            "builderOptions": {
+              "database": "deltafi",
+              "fields": [
+                "totalBytes"
+              ],
+              "filters": [
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "update_timestamp",
+                  "operator": "WITH IN DASHBOARD TIME RANGE",
+                  "restrictToFields": [
+                    {
+                      "label": "timestamp",
+                      "name": "timestamp",
+                      "picklistValues": [],
+                      "type": "DateTime"
+                    },
+                    {
+                      "label": "update_timestamp",
+                      "name": "update_timestamp",
+                      "picklistValues": [],
+                      "type": "DateTime"
+                    }
+                  ],
+                  "type": "datetime"
+                }
+              ],
+              "groupBy": [
+                "flow"
+              ],
+              "metrics": [
+                {
+                  "aggregation": "sum",
+                  "alias": "files",
+                  "field": "files"
+                }
+              ],
+              "mode": "trend",
+              "orderBy": [],
+              "table": "deltafiles",
+              "timeField": "update_timestamp",
+              "timeFieldType": "DateTime"
+            }
+          },
+          "queryType": "sql",
+          "rawSql": "SELECT flow || ' ' || subflow AS subflow, values \" \" FROM\n(SELECT flow, annotations['${annotation}'] AS subflow, sum(errored) AS values \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) AND ( subflow IN (${subflow})) \nGROUP BY flow, subflow)\nWHERE values > 0",
+          "refId": "A",
+          "selectedFormat": 0
+        }
+      ],
+      "title": "Errored DeltaFiles",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "   ": true,
+              "  -": true,
+              "  1": true
+            },
+            "indexByName": {},
+            "renameByName": {}
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "destinationType": "number",
+                "targetField": " "
+              }
+            ],
+            "fields": {}
+          }
+        }
+      ],
+      "type": "piechart"
     },
     {
       "datasource": {
@@ -1450,10 +2029,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 8,
-        "y": 18
+        "h": 5,
+        "w": 11,
+        "x": 0,
+        "y": 38
       },
       "id": 96,
       "interval": "1m",
@@ -1569,12 +2148,11 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT time, flow || ' ' || subflow AS subflow, values \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, flow, annotations['${annotation}'] AS subflow, sum(errored) AS values \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) AND ( subflow IN (${subflow})) \nGROUP BY flow, subflow, time \nORDER BY time ASC WITH FILL STEP $__interval_s)",
+          "rawSql": "SELECT time, flow || ' (' || if(empty(subflow),'None',subflow) || ')' AS subflow, values \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, flow, annotations['${annotation}'] AS subflow, sum(errored) AS values \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) AND ( subflow IN (${subflow})) \nGROUP BY flow, subflow, time \nORDER BY time ASC WITH FILL STEP $__interval_s)",
           "refId": "A",
           "selectedFormat": 0
         }
       ],
-      "title": "Errored DeltaFiles",
       "transformations": [
         {
           "id": "organize",
@@ -1602,6 +2180,281 @@
         }
       ],
       "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Filtered DeltaFiles",
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "orange",
+                "value": null
+              }
+            ]
+          },
+          "unit": "locale"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 1,
+        "y": 43
+      },
+      "id": 109,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "vertical",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "10.1.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 101,
+          "refId": "A"
+        }
+      ],
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "${clickhouseDatasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "unit": "none"
+        },
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  " ",
+                  "devFlow3 "
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 13,
+        "x": 11,
+        "y": 43
+      },
+      "id": 101,
+      "interval": "1m",
+      "options": {
+        "displayLabels": [],
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "limit": 0,
+          "values": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "builderOptions": {
+            "database": "deltafi",
+            "fields": [
+              "totalBytes"
+            ],
+            "filters": [
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "key": "update_timestamp",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "restrictToFields": [
+                  {
+                    "label": "timestamp",
+                    "name": "timestamp",
+                    "picklistValues": [],
+                    "type": "DateTime"
+                  },
+                  {
+                    "label": "update_timestamp",
+                    "name": "update_timestamp",
+                    "picklistValues": [],
+                    "type": "DateTime"
+                  }
+                ],
+                "type": "datetime"
+              }
+            ],
+            "groupBy": [
+              "flow"
+            ],
+            "metrics": [
+              {
+                "aggregation": "sum",
+                "alias": "files",
+                "field": "files"
+              }
+            ],
+            "mode": "trend",
+            "orderBy": [],
+            "table": "deltafiles",
+            "timeField": "update_timestamp",
+            "timeFieldType": "DateTime"
+          },
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "${clickhouseDatasource}"
+          },
+          "format": 0,
+          "meta": {
+            "builderOptions": {
+              "database": "deltafi",
+              "fields": [
+                "totalBytes"
+              ],
+              "filters": [
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "update_timestamp",
+                  "operator": "WITH IN DASHBOARD TIME RANGE",
+                  "restrictToFields": [
+                    {
+                      "label": "timestamp",
+                      "name": "timestamp",
+                      "picklistValues": [],
+                      "type": "DateTime"
+                    },
+                    {
+                      "label": "update_timestamp",
+                      "name": "update_timestamp",
+                      "picklistValues": [],
+                      "type": "DateTime"
+                    }
+                  ],
+                  "type": "datetime"
+                }
+              ],
+              "groupBy": [
+                "flow"
+              ],
+              "metrics": [
+                {
+                  "aggregation": "sum",
+                  "alias": "files",
+                  "field": "files"
+                }
+              ],
+              "mode": "trend",
+              "orderBy": [],
+              "table": "deltafiles",
+              "timeField": "update_timestamp",
+              "timeFieldType": "DateTime"
+            }
+          },
+          "queryType": "sql",
+          "rawSql": "SELECT flow || ' ' || subflow AS subflow, values \" \" FROM\n(SELECT flow, annotations['${annotation}'] AS subflow, sum(filtered) AS values \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) AND ( subflow IN (${subflow})) \nGROUP BY flow, subflow)\nWHERE values > 0",
+          "refId": "A",
+          "selectedFormat": 0
+        }
+      ],
+      "title": "Filtered DeltaFiles",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "   ": true,
+              "  -": true,
+              "  1": true
+            },
+            "indexByName": {},
+            "renameByName": {}
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "destinationType": "number",
+                "targetField": " "
+              }
+            ],
+            "fields": {}
+          }
+        }
+      ],
+      "type": "piechart"
     },
     {
       "datasource": {
@@ -1666,10 +2519,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 16,
-        "y": 18
+        "h": 5,
+        "w": 11,
+        "x": 0,
+        "y": 49
       },
       "id": 95,
       "interval": "1m",
@@ -1785,12 +2638,11 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT time, flow || ' ' || subflow AS subflow, values \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, flow, annotations['${annotation}'] AS subflow, sum(filtered) AS values \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) AND ( subflow IN (${subflow})) \nGROUP BY flow, subflow, time \nORDER BY time ASC WITH FILL STEP $__interval_s)",
+          "rawSql": "SELECT time, flow || ' (' || if(empty(subflow),'None',subflow) || ')' AS subflow, values \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, flow, annotations['${annotation}'] AS subflow, sum(filtered) AS values \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) AND ( subflow IN (${subflow})) \nGROUP BY flow, subflow, time \nORDER BY time ASC WITH FILL STEP $__interval_s)",
           "refId": "A",
           "selectedFormat": 0
         }
       ],
-      "title": "Filtered DeltaFiles",
       "transformations": [
         {
           "id": "organize",
@@ -1821,6 +2673,31 @@
     },
     {
       "datasource": {
+        "type": "graphite",
+        "uid": "deltafi-graphite"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 54
+      },
+      "id": 110,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "",
+        "mode": "markdown"
+      },
+      "pluginVersion": "10.1.1",
+      "transparent": true,
+      "type": "text"
+    },
+    {
+      "datasource": {
         "type": "grafana-clickhouse-datasource",
         "uid": "${clickhouseDatasource}"
       },
@@ -1834,7 +2711,8 @@
             "cellOptions": {
               "type": "auto"
             },
-            "inspect": false
+            "filterable": true,
+            "inspect": true
           },
           "mappings": [],
           "thresholds": {
@@ -1855,10 +2733,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 17,
+        "h": 20,
         "w": 12,
         "x": 0,
-        "y": 26
+        "y": 55
       },
       "id": 91,
       "options": {
@@ -1953,94 +2831,13 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT flow, annotations['${annotation}'] AS ${annotation}, sum(ingressBytes) as values\nFROM \"deltafi\".\"deltafiles\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and (flow IN (${flow})) AND ( ${annotation} IN (${subflow})) \nGROUP BY flow, ${annotation}\nORDER BY values DESC",
+          "rawSql": "SELECT flow, annotations['${annotation}'] AS tag, sum(ingressBytes) as values\nFROM \"deltafi\".\"deltafiles\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and (flow IN (${flow})) AND ( tag IN (${subflow})) \nGROUP BY flow, tag\nORDER BY values DESC",
           "refId": "A",
           "selectedFormat": 4
         }
       ],
       "title": "Bytes",
-      "transformations": [
-        {
-          "disabled": true,
-          "id": "reduce",
-          "options": {
-            "labelsToFields": true,
-            "reducers": [
-              "sum"
-            ]
-          }
-        },
-        {
-          "disabled": true,
-          "id": "groupBy",
-          "options": {
-            "fields": {
-              "Field": {
-                "aggregations": []
-              },
-              "Total": {
-                "aggregations": [
-                  "sum"
-                ],
-                "operation": "groupby"
-              },
-              "name": {
-                "aggregations": []
-              },
-              "surveyDirection": {
-                "aggregations": [],
-                "operation": "groupby"
-              },
-              "surveyFlow": {
-                "aggregations": []
-              },
-              "surveySubflow": {
-                "aggregations": [],
-                "operation": "groupby"
-              }
-            }
-          }
-        },
-        {
-          "disabled": true,
-          "id": "filterByValue",
-          "options": {
-            "filters": [
-              {
-                "config": {
-                  "id": "greater",
-                  "options": {
-                    "value": 0
-                  }
-                },
-                "fieldName": "Total"
-              }
-            ],
-            "match": "any",
-            "type": "include"
-          }
-        },
-        {
-          "disabled": true,
-          "id": "groupingToMatrix",
-          "options": {
-            "columnField": "surveyDirection",
-            "rowField": "surveySubflow",
-            "valueField": "Total"
-          }
-        },
-        {
-          "disabled": true,
-          "id": "organize",
-          "options": {
-            "excludeByName": {},
-            "indexByName": {},
-            "renameByName": {
-              "surveySubflow\\surveyDirection": "Subflow"
-            }
-          }
-        }
-      ],
+      "transformations": [],
       "type": "table"
     },
     {
@@ -2078,10 +2875,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 17,
+        "h": 20,
         "w": 12,
         "x": 12,
-        "y": 26
+        "y": 55
       },
       "id": 90,
       "options": {
@@ -2176,7 +2973,7 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT flow, annotations['${annotation}'] AS ${annotation}, sum(files) as files\nFROM \"deltafi\".\"deltafiles\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND (flow IN (${flow})) AND ( ${annotation} IN (${subflow})) \nGROUP BY flow, ${annotation}\nORDER BY files DESC",
+          "rawSql": "SELECT flow, annotations['${annotation}'] AS tag, sum(files) as files\nFROM \"deltafi\".\"deltafiles\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND (flow IN (${flow})) AND ( tag IN (${subflow})) \nGROUP BY flow, tag\nORDER BY files DESC",
           "refId": "A",
           "selectedFormat": 4
         }
@@ -2267,7 +3064,7 @@
       "type": "table"
     }
   ],
-  "refresh": "5m",
+  "refresh": "1h",
   "revision": 1,
   "schemaVersion": 38,
   "style": "dark",
@@ -2326,9 +3123,10 @@
       },
       {
         "current": {
-          "selected": true,
-          "text": "subflow",
-          "value": "subflow"
+          "isNone": true,
+          "selected": false,
+          "text": "None",
+          "value": ""
         },
         "datasource": {
           "type": "grafana-clickhouse-datasource",
@@ -2395,6 +3193,6 @@
   "timezone": "",
   "title": "Clickhouse Flow by Annotation",
   "uid": "clickhouse-flow-by-annotation",
-  "version": 2,
+  "version": 4,
   "weekStart": ""
 }
