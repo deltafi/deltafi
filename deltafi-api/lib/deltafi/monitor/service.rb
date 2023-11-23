@@ -24,10 +24,6 @@ module Deltafi
     class Service
       include Deltafi::Logger
 
-      def initialize
-        @redis = DF.redis_client
-      end
-
       private
 
       def periodic_timer(seconds)

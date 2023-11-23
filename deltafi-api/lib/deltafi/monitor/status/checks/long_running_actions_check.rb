@@ -30,7 +30,6 @@ module Deltafi
           include Deltafi::Logger
           def initialize
             super('Long Running Actions Check')
-            @redis_client = DF.redis_client
           end
 
           def run
@@ -54,7 +53,7 @@ module Deltafi
           private
 
           def long_running_actions
-            tasks = @redis_client.hgetall(DF::Common::LONG_RUNNING_TASKS_REDIS_KEY)
+            tasks = DF.redis.hgetall(DF::Common::LONG_RUNNING_TASKS_REDIS_KEY)
 
             tasks.each_with_object(Hash.new { |h, k| h[k] = [] }) do |(k, v), result|
               times_array = JSON.parse(v)

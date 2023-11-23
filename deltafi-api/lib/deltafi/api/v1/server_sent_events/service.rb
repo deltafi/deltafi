@@ -19,6 +19,7 @@
 # frozen_string_literal: true
 
 require 'deltafi/logger'
+require 'eventmachine'
 
 module Deltafi
   module API
@@ -32,39 +33,75 @@ module Deltafi
           HEARTBEAT_INTERVAL = 15
 
           def initialize
-            self.subscribers = []
-            @redis = DF.redis_client
+            @subscribers = []
+            @channels = {}
+            @timers_intiialized = false
+          end
 
-            Thread.new do
-              channel_prefix = DF::Common::SSE_REDIS_CHANNEL_PREFIX
-              @redis.psubscribe("#{channel_prefix}.*") do |on|
-                debug "Subscribed to Redis channel(s) #{channel_prefix}.*"
+          def initialize_timers
+            return if @timers_intiialized
 
-                on.pmessage do |_match, channel, message|
-                  debug "Received message from Redis channel #{channel}: #{message}"
+            schedule_sse_task
+            schedule_heartbeat_task
+            @timers_intiialized = true
+          end
 
-                  channel = channel.sub("#{channel_prefix}.", '')
+          def schedule_sse_task
+            @sse_task_running = false
+            EM.add_periodic_timer(1) do
+              if @sse_task_running
+                warn 'Skipping sse task, last execution still running'
+                return
+              end
 
-                  debug "Sending to #{subscribers.size} subscriber(s)" unless subscribers.empty?
-                  subscribers.each do |conn|
-                    conn << "event: #{channel}\n"
-                    conn << "data: #{message}\n\n"
+              @sse_task_running = true
+              begin
+                sse_keys = DF.redis.keys.select { |key| key.start_with?(DF::Common::SSE_REDIS_CHANNEL_PREFIX) }
+                sse_keys.each do |sse_key|
+                  sse_value = DF.redis.get(sse_key)
+                  channel = sse_key[(DF::Common::SSE_REDIS_CHANNEL_PREFIX.size + 1)..-1]
+                  if sse_value != @channels[channel]
+                    @channels[channel] = sse_value
+                    debug "Sending on channel '#{channel}' to #{subscribers.size} subscriber(s)" unless subscribers.empty?
+                    subscribers.each do |conn|
+                      send(conn, channel, sse_value)
+                    end
                   end
+                ensure
+                  @sse_task_running = false
                 end
               end
-            rescue StandardError => e
-              error e.message
-              error e.backtrace.join("\n")
-              retry
             end
+          end
 
-            Thread.new do
-              loop do
+          def schedule_heartbeat_task
+            @heartbeat_task_running = false
+
+            EM.add_periodic_timer(HEARTBEAT_INTERVAL) do
+              if @heartbeat_task_running
+                warn 'Skipping heartbeat task, last execution still running'
+                return
+              end
+
+              @heartbeat_task_running
+              begin
                 debug "Sending heartbeat to #{subscribers.size} subscriber(s)" unless subscribers.empty?
                 subscribers.each(&:send_heartbeat)
-                sleep HEARTBEAT_INTERVAL
+              ensure
+                @heartbeat_task_running = false
               end
             end
+          end
+
+          def send_all(conn)
+            @channels.each_key do |channel, value|
+              send(conn, channel, value)
+            end
+          end
+
+          def send(conn, channel, sse_value)
+            conn << "event: #{channel}\n"
+            conn << "data: #{sse_value}\n\n"
           end
         end
       end

@@ -25,7 +25,7 @@ module Deltafi
         extend self
 
         def status
-          s = DF.redis_client.get(DF::Common::STATUS_REDIS_KEY)
+          s = DF.redis.get(DF::Common::STATUS_REDIS_KEY)
           raise 'Received empty response from Redis' if s.nil?
 
           JSON.parse(s)

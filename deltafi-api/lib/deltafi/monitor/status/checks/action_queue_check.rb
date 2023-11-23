@@ -40,7 +40,6 @@ module Deltafi
             super('Action Queue Check')
             @queues_over_threshold = {}
             @orphan_queues = {}
-            @redis_client = DF.redis_client
           end
 
           def run
@@ -69,21 +68,27 @@ module Deltafi
           private
 
           def recent_queues
-            queues = @redis_client.hgetall(DF::Common::ACTION_HEARTBEAT_REDIS_KEY)
+            queues = DF.redis.hgetall(DF::Common::ACTION_HEARTBEAT_REDIS_KEY)
             queues.select { |_, v| Time.now - Time.parse(v) < DF::Common::ACTION_HEARTBEAT_THRESHOLD }
           end
 
           def check_queue_sizes(queue_names)
             queue_names.each do |queue_name|
-              queue_size = @redis_client.zcount(queue_name, '-inf', '+inf')
+              queue_size = DF.redis.zcount(queue_name, '-inf', '+inf')
               generate_queue_size_metric(queue_name, queue_size)
               @queues_over_threshold[queue_name] = queue_size if queue_size > @threshold
             end
           end
 
           def check_orphan_queues(queue_names)
-            (@redis_client.keys - queue_names - IGNORED_QUEUE_NAMES).each do |queue_name|
-              @orphan_queues[queue_name] = @redis_client.zcount(queue_name, '-inf', '+inf')
+            (DF.redis.keys - queue_names - IGNORED_QUEUE_NAMES).each do |queue_name|
+              next if queue_name.start_with?(DF::Common::SSE_REDIS_CHANNEL_PREFIX)
+
+              @orphan_queues[queue_name] = begin
+                                             DF.redis.zcount(queue_name, '-inf', '+inf')
+                                           rescue StandardError
+                                             0
+                                           end
             end
           end
 

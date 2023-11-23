@@ -32,7 +32,7 @@ Oj.mimic_JSON
 $sse_service = DF::API::V1::ServerSentEvents::Service.new unless ENV['RUNNING_IN_CLUSTER'].nil?
 
 class ApiServer < Sinatra::Base
-  %w[helpers models routes].each { |dir| Dir.glob("./#{dir}/*.rb").sort.each { |x| require(x) } }
+  %w[helpers routes].each { |dir| Dir.glob("./#{dir}/*.rb").sort.each { |x| require(x) } }
 
   helpers Sinatra::Streaming
 
@@ -100,10 +100,11 @@ class ApiServer < Sinatra::Base
 
     get '/sse' do
       authorize! :UIAccess
-
+      $sse_service.initialize_timers
       content_type 'text/event-stream'
       headers 'Access-Control-Allow-Origin' => '*', 'X-Accel-Buffering' => 'no'
       stream(:keep_open) do |conn|
+        $sse_service.send_all(conn)
         $sse_service.subscribers << conn
         conn.callback { $sse_service.subscribers.delete(conn) }
         conn.send_heartbeat

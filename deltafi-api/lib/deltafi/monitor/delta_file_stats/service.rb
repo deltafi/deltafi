@@ -41,7 +41,7 @@ module Deltafi
           periodic_timer(INTERVAL) do
             result = query
 
-            @redis.publish(SSE_REDIS_CHANNEL, result.to_json)
+            DF.redis.set(SSE_REDIS_CHANNEL, result.to_json)
 
             result.each do |k, v|
               DF::Metrics.record_metric(

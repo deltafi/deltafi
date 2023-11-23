@@ -26,7 +26,7 @@ require 'deltafi/logger'
 module Deltafi
   extend Deltafi::Logger
 
-  REDIS_RECONNECT_ATTEMPTS = 1_000_000_000
+  REDIS_RECONNECT_ATTEMPTS = 5
   REDIS_RETRY_COUNT = 30
   BASE_URL = ENV['CORE_URL'] || 'http://deltafi-core-service'
   DELTAFI_MODE = ENV['DELTAFI_MODE'] || 'CLUSTER'
@@ -36,15 +36,35 @@ module Deltafi
     ENV['RUNNING_IN_CLUSTER'].nil? ? K8s::Client.config(K8s::Config.load_file(File.expand_path('~/.kube/config'))) : K8s::Client.in_cluster_config
   end
 
-  def self.mongo_config
-    {
-      host: ENV['MONGO_HOST'] || 'deltafi-mongodb',
-      port: ENV['MONGO_PORT'] || '27017',
-      database: ENV['MONGO_DATABASE'] || 'deltafi',
-      auth_source: ENV['MONGO_AUTH_DATABASE'] || 'deltafi',
-      user: ENV['MONGO_USER'] || 'mongouser',
-      password: ENV.fetch('MONGO_PASSWORD', nil)
-    }
+  def self.configure_mongoid
+    return if defined?(@@mongo_configured) && @@mongo_configured
+
+    host = ENV['MONGO_HOST'] || 'deltafi-mongodb'
+    port = ENV['MONGO_PORT'] || '27017'
+    database = ENV['MONGO_DATABASE'] || 'deltafi'
+    user = ENV['MONGO_USER'] || 'mongouser'
+    password = ENV.fetch('MONGO_PASSWORD', nil)
+    auth_source = ENV['MONGO_AUTH_DATABASE'] || 'deltafi'
+
+    Mongoid.load_configuration(
+      {
+        clients: {
+          default: {
+            hosts: ["#{host}:#{port}"],
+            database: database,
+            options: {
+              user: user,
+              password: password,
+              auth_source: auth_source
+              }
+          }
+        }
+      }
+    )
+
+    Mongoid.raise_not_found_error = false
+
+    @@mongo_configured = true
   end
 
   def self.graphql(query)
@@ -83,28 +103,18 @@ module Deltafi
     JSON.parse(response.body, symbolize_names: true)
   end
 
-  def self.redis_client
+  def self.redis
+    return @@redis if defined?(@@redis) && @@redis
+
     debug "#{__method__} called from #{caller(1..1).first}"
     redis_password = ENV.fetch('REDIS_PASSWORD', nil)
     redis_url = ENV['REDIS_URL']&.gsub(/^http/, 'redis') || 'redis://deltafi-redis-master:6379'
-
-    retries = 0
-    begin
+    @@redis = ConnectionPool::Wrapper.new(size: 10, timeout: 2) do
       Redis.new(
         url: redis_url,
         password: redis_password,
-        reconnect_attempts: REDIS_RECONNECT_ATTEMPTS,
-        reconnect_delay: 1,
-        reconnect_delay_max: 5
+        reconnect_attempts: REDIS_RECONNECT_ATTEMPTS
       )
-    rescue Errno::EALREADY => e
-      raise e if retries >= REDIS_RETRY_COUNT
-
-      error e.message
-      e.backtrace.each { |line| error line }
-      sleep 1
-      retries += 1
-      retry
     end
   end
 

@@ -36,7 +36,7 @@ module Deltafi
             raise StandardError, parsed_response[:errors]&.first&.dig(:message) if parsed_response.key?(:errors)
 
             count = parsed_response.dig(:data, :countUnacknowledgedErrors)
-            @redis.publish(SSE_REDIS_CHANNEL, count) unless count.nil?
+            DF.redis.set(SSE_REDIS_CHANNEL, count || 0)
           end
         end
       end

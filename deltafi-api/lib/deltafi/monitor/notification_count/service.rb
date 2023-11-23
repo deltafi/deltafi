@@ -46,7 +46,7 @@ module Deltafi
               acknowledged: false
             }
             count = Event.where(query).count
-            @redis.publish(SSE_REDIS_CHANNEL, count)
+            DF.redis.set(SSE_REDIS_CHANNEL, count)
           end
         end
       end

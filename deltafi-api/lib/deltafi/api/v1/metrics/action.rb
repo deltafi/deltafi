@@ -57,9 +57,7 @@ module Deltafi
             end
 
             def recent_queues
-              redis_client = DF.redis_client
-              queues = redis_client.hgetall(DF::Common::ACTION_HEARTBEAT_REDIS_KEY)
-              redis_client.close
+              queues = DF.redis.hgetall(DF::Common::ACTION_HEARTBEAT_REDIS_KEY)
               queues.select { |_, v| Time.now - Time.parse(v) < DF::Common::ACTION_HEARTBEAT_THRESHOLD }
             end
 

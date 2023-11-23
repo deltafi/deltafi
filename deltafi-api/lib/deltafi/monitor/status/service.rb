@@ -73,8 +73,8 @@ module Deltafi
             checks: @statuses.values.sort_by { |s| [-s[:code], s[:description]] },
             timestamp: Time.now
           }
-          @redis.publish(SSE_REDIS_CHANNEL, status.to_json)
-          @redis.set(DF::Common::STATUS_REDIS_KEY, status.to_json)
+          DF.redis.set(SSE_REDIS_CHANNEL, status.to_json)
+          DF.redis.set(DF::Common::STATUS_REDIS_KEY, status.to_json)
         end
       end
     end

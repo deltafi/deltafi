@@ -34,7 +34,7 @@ spec:
         {{- include "commonEnvVars" . | nindent 8 }}
         {{- include "mongoEnvVars" . | nindent 8 }}
         - name: WORKERS
-          value: {{ default "8" .Values.deltafi.api.workers | quote }}
+          value: {{ default "4" .Values.deltafi.api.workers | quote }}
         - name: AUTH_MODE
           value: {{ .Values.deltafi.auth.mode | quote }}
         {{- include "defaultStartupProbe" . | nindent 8 }}

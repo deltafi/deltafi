@@ -20,25 +20,7 @@
 
 require 'mongoid'
 
-config = Deltafi.mongo_config
-
-Mongoid.load_configuration(
-  {
-    clients: {
-      default: {
-        hosts: ["#{config[:host]}:#{config[:port]}"],
-        database: config[:database],
-        options: {
-          user: config[:user],
-          password: config[:password],
-          auth_source: config[:auth_source]
-        }
-      }
-    }
-  }
-)
-
-Mongoid.raise_not_found_error = false
+Deltafi.configure_mongoid
 
 module BSON
   class ObjectId
@@ -69,8 +51,4 @@ class Deltafile
   scope :errors, -> { where(:stage.in => [ 'ERROR' ]) }
 
   store_in collection: 'deltaFile'
-
-  # index({ timestamp: 1 })
 end
-
-# Deltafile.create_indexes

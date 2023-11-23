@@ -35,9 +35,7 @@ def redis_client
     Redis.new(
       url: url,
       password: password,
-      reconnect_attempts: REDIS_RETRY_COUNT,
-      reconnect_delay: 1,
-      reconnect_delay_max: 5
+      reconnect_attempts: REDIS_RETRY_COUNT
     )
   rescue Errno::EALREADY => e
     raise e if retries >= REDIS_RETRY_COUNT
