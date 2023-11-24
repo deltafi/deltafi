@@ -43,14 +43,16 @@ module Deltafi
 
             DF.redis.set(SSE_REDIS_CHANNEL, result.to_json)
 
-            result.each do |k, v|
-              DF::Metrics.record_metric(
-                prefix: 'gauge.deltafile',
-                name: k,
-                value: v.to_i,
-                gauge: true
-              )
-            end
+            DF::Metrics.record_metrics(
+              result.map do |k, v|
+                {
+                  prefix: 'gauge.deltafile',
+                  name: k,
+                  value: v.to_i,
+                  gauge: true
+                }
+              end
+            )
           end
         end
       end

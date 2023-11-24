@@ -18,6 +18,10 @@
 
 # frozen_string_literal: true
 
+$LOAD_PATH.unshift File.expand_path(File.join(File.dirname(__FILE__), '../models'))
+
+require 'event'
+
 class ApiServer < Sinatra::Base
   register Sinatra::Namespace
 

@@ -27,12 +27,14 @@ module Deltafi
   extend Deltafi::Logger
 
   REDIS_RECONNECT_ATTEMPTS = 5
-  REDIS_RETRY_COUNT = 30
+  REDIS_PASSWORD = ENV.fetch('REDIS_PASSWORD', nil)
+  REDIS_URL = ENV['REDIS_URL']&.gsub(/^http/, 'redis') || 'redis://deltafi-redis-master:6379'
   BASE_URL = ENV['CORE_URL'] || 'http://deltafi-core-service'
   DELTAFI_MODE = ENV['DELTAFI_MODE'] || 'CLUSTER'
 
   def self.k8s_client
     debug "#{__method__} called from #{caller(1..1).first}"
+
     ENV['RUNNING_IN_CLUSTER'].nil? ? K8s::Client.config(K8s::Config.load_file(File.expand_path('~/.kube/config'))) : K8s::Client.in_cluster_config
   end
 
@@ -107,12 +109,11 @@ module Deltafi
     return @@redis if defined?(@@redis) && @@redis
 
     debug "#{__method__} called from #{caller(1..1).first}"
-    redis_password = ENV.fetch('REDIS_PASSWORD', nil)
-    redis_url = ENV['REDIS_URL']&.gsub(/^http/, 'redis') || 'redis://deltafi-redis-master:6379'
+
     @@redis = ConnectionPool::Wrapper.new(size: 10, timeout: 2) do
       Redis.new(
-        url: redis_url,
-        password: redis_password,
+        url: REDIS_URL,
+        password: REDIS_PASSWORD,
         reconnect_attempts: REDIS_RECONNECT_ATTEMPTS
       )
     end

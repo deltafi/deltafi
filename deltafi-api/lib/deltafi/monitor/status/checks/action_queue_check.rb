@@ -38,13 +38,13 @@ module Deltafi
 
           def initialize
             super('Action Queue Check')
-            @queues_over_threshold = {}
-            @orphan_queues = {}
           end
 
           def run
             @threshold = size_threshold
             recent_queue_names = recent_queues.keys
+            @queues_over_threshold = {}
+            @orphan_queues = {}
 
             check_queue_sizes(recent_queue_names)
             check_orphan_queues(recent_queue_names)
@@ -82,7 +82,7 @@ module Deltafi
 
           def check_orphan_queues(queue_names)
             (DF.redis.keys - queue_names - IGNORED_QUEUE_NAMES).each do |queue_name|
-              next if queue_name.start_with?(DF::Common::SSE_REDIS_CHANNEL_PREFIX)
+              next if queue_name.start_with?(DF::Common::SSE_REDIS_CHANNEL_PREFIX) || queue_name.start_with?('gauge.node')
 
               @orphan_queues[queue_name] = begin
                                              DF.redis.zcount(queue_name, '-inf', '+inf')

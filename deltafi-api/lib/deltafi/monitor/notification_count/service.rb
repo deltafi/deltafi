@@ -22,7 +22,6 @@ $LOAD_PATH.unshift File.expand_path(File.join(File.dirname(__FILE__), '../../../
 
 require 'deltafi/common'
 require 'deltafi/monitor/service'
-require 'event'
 
 module Deltafi
   module Monitor
@@ -33,6 +32,7 @@ module Deltafi
 
         def initialize
           super
+          require 'event'
           Mongoid::Clients.clients.each_value do |client|
             client.reconnect if client.cluster.servers.empty?
           end

@@ -25,88 +25,64 @@ module Deltafi
         module System
           class << self
             REFRESH_APPS_BY_NODE_CACHE_SECONDS = 60
-            # this matches half the refresh rate of the nodemonitor.  We will be at most 9 seconds stale.
-            REFRESH_GRAPHITE_CACHE_SECONDS = 4.5
+            REFRESH_REDIS_CACHE_SECONDS = 2
 
             METRICS_QUERIES = [
               'keepLastValue(removeEmptySeries(seriesByTag(\'name=~gauge.node.*.*\')))'
             ].freeze
 
             @@cached_apps_by_node = nil
-            @@cached_graphite_metrics = nil
-            @@last_graphite_cache_time = Time.now
-
-            def k8s_info
-              {
-                pods_by_node: DF.k8s_client.api('v1').resource('pods', namespace: 'deltafi').list(fieldSelector: { 'status.phase' => 'Running' }).group_by { |p| p.spec.nodeName.intern }
-              }
-            end
+            @@cached_redis_metrics = nil
+            @@last_redis_cache_time = Time.now
 
             def metrics
-              if @@cached_graphite_metrics.nil? || Time.now - @@last_graphite_cache_time > REFRESH_GRAPHITE_CACHE_SECONDS
-                @@last_graphite_cache_time = Time.now
+              return @@cached_redis_metrics if defined?(@@cached_redis_metrics) && @@cached_redis_metrics && Time.now - @@last_redis_cache_time < REFRESH_REDIS_CACHE_SECONDS
 
-                @@cached_graphite_metrics = DF::Metrics.graphite({
-                                                                   target: METRICS_QUERIES,
-                                                                   from: '-1min',
-                                                                   until: 'now',
-                                                                   format: 'json'
-                                                                 })
+              keys = %w[gauge.node.memory.usage gauge.node.memory.limit gauge.node.disk.usage gauge.node.disk.limit gauge.node.cpu.usage gauge.node.cpu.limit]
+
+              results = DF.redis.pipelined do |pipeline|
+                keys.each { |key| pipeline.hgetall(key) }
               end
 
-              @@cached_graphite_metrics
+              @@last_redis_cache_time = Time.now
+              @@cached_redis_metrics = keys.zip(results).each_with_object({}) do |(key, value_hash), obj|
+                resource_str, metric_str = key.split('.')[2..3]
+                resource = resource_str.to_sym
+                metric = metric_str.to_sym
+
+                value_hash.each do |hostname_str, data_str|
+                  hostname = hostname_str.to_sym
+                  data = JSON.parse(data_str)
+
+                  obj[hostname] ||= {name: hostname, resources: {}}
+                  obj[hostname][:resources][resource] ||= {}
+                  obj[hostname][:resources][resource][metric] = data.first
+                end
+              end
             end
 
             def nodes
               apps = apps_by_node
-              metrics = metrics_by_node
-              nodes = (metrics.keys + apps.keys).uniq
+              node_metrics = metrics
+              nodes = (node_metrics.keys + apps.keys).uniq
 
               nodes.map do |node|
                 {
                   name: node,
-                  resources: {
-                    cpu: {
-                      limit: metrics&.dig(node, :cpu, :limit) || 0,
-                      usage: metrics&.dig(node, :cpu, :usage) || 0
-                    },
-                    memory: {
-                      limit: metrics&.dig(node, :memory, :limit) || 0,
-                      usage: metrics&.dig(node, :memory, :usage) || 0
-                    },
-                    disk: {
-                      limit: metrics&.dig(node, :disk, :limit) || 0,
-                      usage: metrics&.dig(node, :disk, :usage) || 0
-                    }
-                  },
+                  resources: node_metrics[node]&.dig(:resources),
                   apps: apps[node] || []
                 }
               end
             end
 
-            def metrics_by_node
-              nodes = {}
-
-              metrics.each do |metric|
-                hostname = metric[:tags][:hostname].intern
-                _, _, resouce, measurement = metric[:tags][:name].split('.').map(&:to_sym)
-                nodes[hostname] ||= {}
-                nodes[hostname][resouce] ||= {}
-                nodes[hostname][resouce][measurement] = metric[:datapoints].reverse.find { |p| p[0].positive? }&.first
-
-                raise "Invalid metric: #{metric}" if nodes[hostname][resouce][measurement].nil?
-              end
-
-              nodes
-            end
-
             def apps_by_node_k8s
-              # In Kubernetes mode
-              pods_by_node = k8s_info[:pods_by_node]
-              pods_by_node.transform_values do |pods|
-                pods.map do |pod|
-                  { name: pod.metadata.name }
-                end
+              running_pods = DF.k8s_client.api('v1').resource('pods', namespace: 'deltafi')
+                  .list(fieldSelector: { 'status.phase' => 'Running' })
+
+              running_pods.each_with_object({}) do |pod, hash|
+                node_name = pod.spec.nodeName.intern
+                hash[node_name] ||= []
+                hash[node_name] << { name: pod.metadata.name }
               end
             end
 
@@ -124,8 +100,8 @@ module Deltafi
             end
 
             def content
-              minio_disk_metrics = nodes.find { |node| node[:apps].any? { |a| a[:name].include? 'minio' } }&.dig(:resources, :disk)
-              raise "Unable to get content storage metrics!\n\n\t#{@@cached_graphite_metrics}" unless minio_disk_metrics&.values&.all?(&:positive?)
+              minio_disk_metrics = nodes.find { |node| node[:apps].any? { |a| a[:name].start_with?('deltafi-minio') } }&.dig(:resources, :disk)
+              raise "Unable to get content storage metrics!\n\n\t#{@@cached_redis_metrics}" unless minio_disk_metrics&.values&.all?(&:positive?)
 
               minio_disk_metrics
             end

@@ -18,8 +18,6 @@
 
 # frozen_string_literal: true
 
-require 'benchmark'
-
 require 'deltafi/monitor/service'
 require 'deltafi/monitor/status/check'
 Dir[File.join(File.dirname(__FILE__), 'checks', '*.rb')].each do |f|
@@ -56,8 +54,9 @@ module Deltafi
         def spawn_check_threads
           @checks.each do |check|
             Thread.new do
+              checker = check.new
               periodic_timer(check::INTERVAL) do
-                @statuses[check.name] = check.new.run_check
+                @statuses[check.name] = checker.run_check
               end
             end
           end

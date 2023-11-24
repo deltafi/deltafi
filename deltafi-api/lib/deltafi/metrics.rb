@@ -49,5 +49,15 @@ module Deltafi
       metric_name = ([ "#{"#{prefix}." if prefix}#{name}" ] + tags.map { |key, val| "#{key}=#{val}" }).join(';')
       @@graphite_client.metrics({ metric_name => value }, Time.now.to_i, gauge ? :replace : :sum)
     end
+
+    def self.record_metrics(metrics, prefix: nil, gauge: false)
+      formatted_metrics = metrics.map do |metric|
+        name, value, tags = metric[:name], metric[:value], metric[:tags] || {}
+        metric_name = ([ "#{"#{prefix}." if prefix}#{name}" ] + tags.map { |key, val| "#{key}=#{val}" }).join(';')
+        [metric_name, value]
+      end.to_h
+
+      @@graphite_client.metrics(formatted_metrics, Time.now.to_i, gauge ? :replace : :sum)
+    end
   end
 end

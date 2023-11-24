@@ -19,6 +19,8 @@
 
 GRAPHITE_HOST=${GRAPHITE_HOST:-deltafi-graphite}
 GRAPHITE_PORT=${GRAPHITE_PORT:-2003}
+REDIS_HOST=${DELTAFI_REDIS_MASTER_SERVICE_HOST}
+REDIS_PORT=${DELTAFI_REDIS_MASTER_SERVICE_PORT}
 PERIOD=${PERIOD:-9}
 
 _log() {
@@ -42,6 +44,7 @@ _info() {
 
 _info "Starting up on ${NODE_NAME}"
 _info "Graphite: ${GRAPHITE_HOST}:${GRAPHITE_PORT}"
+_info "Redis: ${REDIS_HOST}:${REDIS_PORT}"
 _info "Reporting period: ${PERIOD} seconds"
 
 exterminate() {
@@ -50,6 +53,15 @@ exterminate() {
 }
 
 trap exterminate SIGTERM
+
+send_to_redis() {
+    local metric_name="$1"
+    local hostname="$2"
+    local metric_value="$3"
+    local timestamp="$4"
+
+    echo -e "AUTH ${REDIS_PASSWORD}\nHSET ${metric_name} ${hostname} \"[${metric_value}, ${timestamp}]\"" | nc -N "${REDIS_HOST}" "${REDIS_PORT}" >/dev/null
+}
 
 # CPU metrics
 
@@ -83,6 +95,9 @@ report_cpu_metrics() {
     echo "gauge.node.cpu.usage;hostname=$NODE_NAME $DIFF_USAGE_UNITS $TIMESTAMP" | nc -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
     echo "gauge.node.cpu.limit;hostname=$NODE_NAME $TOTAL_CPU_UNITS $TIMESTAMP" | nc -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
 
+    send_to_redis "gauge.node.cpu.usage" "$NODE_NAME" "$DIFF_USAGE_UNITS" "$TIMESTAMP"
+    send_to_redis "gauge.node.cpu.limit" "$NODE_NAME" "$TOTAL_CPU_UNITS" "$TIMESTAMP"
+
     _debug "$NODE_NAME: Using ${DIFF_USAGE_UNITS} of ${TOTAL_CPU_UNITS} CPU units"
 }
 
@@ -92,6 +107,9 @@ report_disk_metrics() {
     TIMESTAMP=$(date +%s)
     echo "gauge.node.disk.usage;hostname=$NODE_NAME $USAGE $TIMESTAMP" | nc -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
     echo "gauge.node.disk.limit;hostname=$NODE_NAME $LIMIT $TIMESTAMP" | nc -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
+
+    send_to_redis "gauge.node.disk.usage" "$NODE_NAME" "$USAGE" "$TIMESTAMP"
+    send_to_redis "gauge.node.disk.limit" "$NODE_NAME" "$LIMIT" "$TIMESTAMP"
 
     _debug "$NODE_NAME: Using $USAGE of $LIMIT bytes on disk (/data)"
 }
@@ -104,6 +122,9 @@ report_memory_metrics() {
     TIMESTAMP=$(date +%s)
     echo "gauge.node.memory.usage;hostname=$NODE_NAME $USAGE $TIMESTAMP" | nc -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
     echo "gauge.node.memory.limit;hostname=$NODE_NAME $LIMIT $TIMESTAMP" | nc -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
+
+    send_to_redis "gauge.node.memory.usage" "$NODE_NAME" "$USAGE" "$TIMESTAMP"
+    send_to_redis "gauge.node.memory.limit" "$NODE_NAME" "$LIMIT" "$TIMESTAMP"
 
     _debug "$NODE_NAME: Using $USAGE of $LIMIT bytes of Memory"
 }

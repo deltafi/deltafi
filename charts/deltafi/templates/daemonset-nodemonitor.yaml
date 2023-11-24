@@ -27,6 +27,7 @@ spec:
         image: {{ .Values.deltafi.nodemonitor.image }}
         env:
         {{- include "defaultEnvVars" . | nindent 12 }}
+        {{- include "commonEnvVars" . | nindent 12 }}
         {{- include "graphiteEnvVars" . | nindent 12 }}
             - name: PERIOD
               value: "{{ .Values.deltafi.nodemonitor.period }}"
