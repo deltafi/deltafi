@@ -21,7 +21,7 @@
     <Tag v-tooltip.bottom="'Click for more info'" class="status-tag" :icon="icon(computedStatus.code)" :severity="tagSeverity(computedStatus.code)" :value="computedStatus.state" @click="openStatusDialog()" />
     <Dialog v-model:visible="showStatusDialog" icon header="System Status Checks" :style="{ width: '50vw' }" :maximizable="true" :modal="true" :dismissable-mask="true" class="status-dialog">
       <DataTable v-model:expandedRows="rowsExpanded" :value="computedStatus.checks" data-key="description" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines status-table" @row-collapse="onRowCollapse" @row-expand="onRowExpand">
-        <Column :expander="true" header-style="width: 3rem" class="expander-col"/>
+        <Column :expander="true" header-style="width: 3rem" class="expander-col" />
         <Column field="code" header="Status" class="severity-col">
           <template #body="slotProps">
             <EventSeverityBadge :severity="messageSeverity(slotProps.data.code)" style="width: 6rem" />
@@ -148,7 +148,11 @@ const timeSinceLastStatusInWords = computed(() => {
 });
 
 serverSentEvents.addEventListener("status", (event) => {
-  status.value = JSON.parse(event.data);
+  try {
+    status.value = JSON.parse(event.data);
+  } catch (error) {
+    console.error(`Failed to parse SSE status data: ${event.data}`)
+  }
   if (showStatusDialog.value) {
     setExpanded();
   }

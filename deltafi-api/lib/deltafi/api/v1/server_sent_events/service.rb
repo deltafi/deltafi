@@ -94,7 +94,7 @@ module Deltafi
           end
 
           def send_all(conn)
-            @channels.each_key do |channel, value|
+            @channels.each do |channel, value|
               send(conn, channel, value)
             end
           end

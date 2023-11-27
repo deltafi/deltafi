@@ -63,7 +63,11 @@ const statValues = computed(() => {
 })
 
 serverSentEvents.addEventListener('deltaFileStats', (event) => {
-  deltaFileStats.value = JSON.parse(event.data);
+  try {
+    deltaFileStats.value = JSON.parse(event.data);
+  } catch (error) {
+    console.error(`Failed to parse SSE deltaFileStats data: ${event.data}`)
+  }
 });
 
 onMounted(async () => {
