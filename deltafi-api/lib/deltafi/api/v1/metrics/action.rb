@@ -29,31 +29,22 @@ module Deltafi
             DGS_QUEUE_NAME = 'dgs'
 
             def queues
-              query = <<-QUERY
-              sortBy(aliasByTags(groupByTags(seriesByTag('name=gauge.action_queue.queue_size'), 'last', 'queue_name'), 'queue_name'), 'max', true)
-              QUERY
+              queue_json = DF.redis.get(DF::Common::ACTION_QUEUE_SIZES_REDIS_KEY)
 
-              results = DF::Metrics.graphite({
-                                               target: query,
-                                               from: '-20sec',
-                                               until: 'now',
-                                               format: 'json'
-                                             })
-
-              queue_names = recent_queues.keys
-              queue_list = []
-
-              results.each do |metric|
-                next unless queue_names.include?(metric[:target])
-
-                queue_list << {
-                  name: metric[:target],
-                  size: metric[:datapoints].filter_map(&:first).last, # Use the oldest non-null datapoint for the gauge value
-                  timestamp: metric[:datapoints].last.last.to_i * 1000
-                }
+              if queue_json.nil?
+                return []
+              else
+                parsed_queues = JSON.parse(queue_json)
               end
 
-              queue_list
+              time = parsed_queues['time']
+              parsed_queues['queues'].map do |k, v|
+                {
+                  name: k,
+                  size: v,
+                  timestamp: time
+                }
+              end
             end
 
             def recent_queues

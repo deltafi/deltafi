@@ -54,6 +54,9 @@ module Deltafi
                   hostname = hostname_str.to_sym
                   data = JSON.parse(data_str)
 
+                  # ignore stale metrics
+                  next if Time.now.to_i - data.last > 60
+
                   obj[hostname] ||= {name: hostname, resources: {}}
                   obj[hostname][:resources][resource] ||= {}
                   obj[hostname][:resources][resource][metric] = data.first

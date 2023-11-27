@@ -33,7 +33,8 @@ module Deltafi
             DF::Common::STATUS_REDIS_KEY,
             DF::Common::ACTION_HEARTBEAT_REDIS_KEY,
             DF::Common::MONITOR_HEARTBEAT_REDIS_KEY,
-            DF::Common::LONG_RUNNING_TASKS_REDIS_KEY
+            DF::Common::LONG_RUNNING_TASKS_REDIS_KEY,
+            DF::Common::ACTION_QUEUE_SIZES_REDIS_KEY
           ].freeze
 
           def initialize
@@ -73,11 +74,14 @@ module Deltafi
           end
 
           def check_queue_sizes(queue_names)
+            queue_sizes = {}
             queue_names.each do |queue_name|
               queue_size = DF.redis.zcount(queue_name, '-inf', '+inf')
+              queue_sizes[queue_name] = queue_size
               generate_queue_size_metric(queue_name, queue_size)
               @queues_over_threshold[queue_name] = queue_size if queue_size > @threshold
             end
+            DF.redis.set(DF::Common::ACTION_QUEUE_SIZES_REDIS_KEY, { time: Time.now, queues: queue_sizes }.to_json)
           end
 
           def check_orphan_queues(queue_names)

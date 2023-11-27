@@ -27,5 +27,6 @@ module Deltafi
     ACTION_HEARTBEAT_THRESHOLD = 60
     MONITOR_HEARTBEAT_REDIS_KEY = 'org.deltafi.monitor.heartbeat'
     LONG_RUNNING_TASKS_REDIS_KEY = 'org.deltafi.action-queue.long-running-tasks'
+    ACTION_QUEUE_SIZES_REDIS_KEY = 'org.deltafi.action-queue.sizes'
   end
 end
