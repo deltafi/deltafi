@@ -11,8 +11,12 @@ Subcommands:
   stop
   validate
   show
+Expert-only Subcommands:
+  clear-memo
+  set-memo
 Usage:
-  timed-ingress [SUBCOMMAND] FLOW_NAME"
+  timed-ingress [SUBCOMMAND] FLOW_NAME [MEMO]
+  Only set-memo uses MEMO argument"
   exit 1
 }
 
@@ -52,9 +56,23 @@ ARGS=($@)
 [[ ${#ARGS[@]} -lt 3 ]] && cli_help_command
 SUBCOMMAND=${ARGS[1]}
 FLOW_NAME=${ARGS[2]}
+MEMO=${ARGS[3]}
 
-VARIABLES="{\"flowName\": \"$FLOW_NAME\" }"
+VARIABLES="{\"flowName\": \"$FLOW_NAME\", \"memo\": \"$MEMO\" }"
 case "$SUBCOMMAND" in
+  clear-memo)
+    echo -e "${yellow}Warning: ${SUBCOMMAND} for exports only${normal}"
+    _are_you_sure
+    EXTRACT_PATH=".data.setTimedIngressMemo"
+    QUERY="mutation(\$flowName: String!) { setTimedIngressMemo(flowName: \$flowName) }"
+    ;;
+  set-memo)
+    [[ -z "$MEMO" ]] && _exit_1 echo "Please specify a value for MEMO"
+    echo -e "${yellow}Warning: ${SUBCOMMAND} for exports only${normal}"
+    _are_you_sure
+    EXTRACT_PATH=".data.setTimedIngressMemo"
+    QUERY="mutation(\$flowName: String!, \$memo: String) { setTimedIngressMemo(flowName: \$flowName, memo: \$memo) }"
+    ;;
   start)
     EXTRACT_PATH=".data.startTimedIngressFlow"
     QUERY="mutation(\$flowName: String!) { startTimedIngressFlow(flowName: \$flowName) }"

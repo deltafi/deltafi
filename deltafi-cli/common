@@ -117,3 +117,15 @@ _pretty_json() {
   fi
 }
 
+_are_you_sure() {
+  local prompt=${1:-"Are you sure?"}
+  read -r -p "         ${yellow}$prompt${normal} [y/N] " response
+  case "$response" in
+    [yY][eE][sS]|[yY])
+      ;;
+    *)
+      exit 0
+      ;;
+  esac
+}
+
