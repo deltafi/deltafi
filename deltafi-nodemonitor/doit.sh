@@ -67,6 +67,7 @@ send_to_redis() {
 
 PREV_CPU_TOTAL=0
 PREV_CPU_IDLE=0
+PREV_CPU_IOWAIT=0
 
 report_cpu_metrics() {
     TOTAL_CPU_UNITS=$(($(nproc)*1000))
@@ -74,6 +75,7 @@ report_cpu_metrics() {
     # Get the total CPU statistics, discarding the 'cpu ' prefix.
     CPU=($(sed -n 's/^cpu\s//p' /proc/stat))
     IDLE=${CPU[3]} # Just the idle CPU time.
+    IOWAIT=${CPU[4]}
 
     # Calculate the total CPU time.
     TOTAL=0
@@ -83,17 +85,21 @@ report_cpu_metrics() {
 
     # Calculate the CPU usage since we last checked.
     DIFF_IDLE=$((IDLE-PREV_CPU_IDLE))
+    DIFF_IOWAIT=$((IOWAIT-PREV_CPU_IOWAIT))
     DIFF_TOTAL=$((TOTAL-PREV_CPU_TOTAL))
     DIFF_USAGE_PERCENT=$((100000*(DIFF_TOTAL-DIFF_IDLE)/DIFF_TOTAL))
     DIFF_USAGE_UNITS=$((DIFF_USAGE_PERCENT*TOTAL_CPU_UNITS/100000))
-
+    DIFF_IOWAIT_PERCENT=$((100000*(DIFF_IOWAIT)/DIFF_TOTAL))
+    DIFF_IOWAIT_UNITS=$((DIFF_IOWAIT_PERCENT*TOTAL_CPU_UNITS/100000))
     # Remember the total and idle CPU times for the next check.
     PREV_CPU_TOTAL="$TOTAL"
     PREV_CPU_IDLE="$IDLE"
+    PREV_CPU_IOWAIT="$IOWAIT"
 
     TIMESTAMP=$(date +%s)
-    echo "gauge.node.cpu.usage;hostname=$NODE_NAME $DIFF_USAGE_UNITS $TIMESTAMP" | nc -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
-    echo "gauge.node.cpu.limit;hostname=$NODE_NAME $TOTAL_CPU_UNITS $TIMESTAMP" | nc -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
+    metrics+="gauge.node.cpu.usage;hostname=$NODE_NAME $DIFF_USAGE_UNITS $TIMESTAMP\n"
+    metrics+="gauge.node.cpu.iowait;hostname=$NODE_NAME $DIFF_IOWAIT_UNITS $TIMESTAMP\n"
+    metrics+="gauge.node.cpu.limit;hostname=$NODE_NAME $TOTAL_CPU_UNITS $TIMESTAMP\n"
 
     send_to_redis "gauge.node.cpu.usage" "$NODE_NAME" "$DIFF_USAGE_UNITS" "$TIMESTAMP"
     send_to_redis "gauge.node.cpu.limit" "$NODE_NAME" "$TOTAL_CPU_UNITS" "$TIMESTAMP"
@@ -105,8 +111,8 @@ report_disk_metrics() {
     LIMIT=$(df /data -P -B 1 | grep /data | xargs echo | cut -d' ' -f2)
     USAGE=$(df /data -P -B 1 | grep /data | xargs echo | cut -d' ' -f3)
     TIMESTAMP=$(date +%s)
-    echo "gauge.node.disk.usage;hostname=$NODE_NAME $USAGE $TIMESTAMP" | nc -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
-    echo "gauge.node.disk.limit;hostname=$NODE_NAME $LIMIT $TIMESTAMP" | nc -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
+    metrics+="gauge.node.disk.usage;hostname=$NODE_NAME $USAGE $TIMESTAMP\n"
+    metrics+="gauge.node.disk.limit;hostname=$NODE_NAME $LIMIT $TIMESTAMP\n"
 
     send_to_redis "gauge.node.disk.usage" "$NODE_NAME" "$USAGE" "$TIMESTAMP"
     send_to_redis "gauge.node.disk.limit" "$NODE_NAME" "$LIMIT" "$TIMESTAMP"
@@ -115,13 +121,13 @@ report_disk_metrics() {
 }
 
 report_memory_metrics() {
-    TOTAL=$(cat /proc/meminfo | grep ^MemTotal: | awk '{print $2}')
-    AVAILABLE=$(cat /proc/meminfo | grep ^MemAvailable: | awk '{print $2}')
-    LIMIT=$(($TOTAL * 1000))
-    USAGE=$((($TOTAL - $AVAILABLE) * 1000))
+    TOTAL=$(grep ^MemTotal: < /proc/meminfo | awk '{print $2}')
+    AVAILABLE=$(grep ^MemAvailable: < /proc/meminfo | awk '{print $2}')
+    LIMIT=$((TOTAL * 1000))
+    USAGE=$(((TOTAL - AVAILABLE) * 1000))
     TIMESTAMP=$(date +%s)
-    echo "gauge.node.memory.usage;hostname=$NODE_NAME $USAGE $TIMESTAMP" | nc -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
-    echo "gauge.node.memory.limit;hostname=$NODE_NAME $LIMIT $TIMESTAMP" | nc -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
+    metrics+="gauge.node.memory.usage;hostname=$NODE_NAME $USAGE $TIMESTAMP\n"
+    metrics+="gauge.node.memory.limit;hostname=$NODE_NAME $LIMIT $TIMESTAMP\n"
 
     send_to_redis "gauge.node.memory.usage" "$NODE_NAME" "$USAGE" "$TIMESTAMP"
     send_to_redis "gauge.node.memory.limit" "$NODE_NAME" "$LIMIT" "$TIMESTAMP"
@@ -131,9 +137,12 @@ report_memory_metrics() {
 
 # Report system metrics to graphite roughly every $PERIOD seconds
 while true; do
+
+    metrics=""
     report_cpu_metrics
     report_disk_metrics
     report_memory_metrics
+    printf "%b" "${metrics}" | nc -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
 
     sleep "$PERIOD"
 done

@@ -52,28 +52,43 @@ exterminate() {
 trap exterminate SIGTERM
 
 kubectl_top() {
-  kubectl top pod --containers=true | awk 'NR>1 {
-      gsub(/m/,"",$3);
-      gsub(/Mi/,"",$4);
-      name=$2;
-      cpu=$3;
-      memory=$4;
+  kubectl top pod -A --containers=true | awk 'NR>1 {
+      gsub(/m/,"",$4);
+      gsub(/Mi/,"",$5);
+      namespace=$1
+      podname=$2
+      name=$3;
+      cpu=$4;
+      memory=$5;
       if (name in counts) {
           counts[name]++;
           name = name"-"counts[name];
       } else {
           counts[name] = 1;
       }
-      print name "  " cpu "  " memory;
+      print namespace "  " name "  " cpu "  " memory "  " podname;
   }'
+}
+
+kubectl_pod_node() {
+    kubectl get pods -A -o wide | sed "s|(.*ago)||" | awk 'NR>1 {
+        name=$2
+        node=$8
+        print name "  " node
+    }'
 }
 
 report_app_metrics() {
     TIMESTAMP=$(date +%s)
+    declare -A nodes
+    while read -r podname node; do
+        nodes["$podname"]=$node
+    done < <(kubectl_pod_node)
+
     metrics=""
-    while read -r name cpu memory; do
-        metrics+="gauge.app.memory;app=$name $memory $TIMESTAMP\n"
-        metrics+="gauge.app.cpu;app=$name $cpu $TIMESTAMP\n"
+    while read -r namespace name cpu memory podname; do
+        metrics+="gauge.app.memory;app=${name};namespace=${namespace};node=${nodes["$podname"]} ${memory} ${TIMESTAMP}\n"
+        metrics+="gauge.app.cpu;app=${name};namespace=${namespace};node=${nodes["$podname"]} ${cpu} ${TIMESTAMP}\n"
     done < <(kubectl_top)
 
     printf "%b" "$metrics" | nc -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
