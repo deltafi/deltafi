@@ -86,8 +86,9 @@ for FILE in "${@:3}"; do
     cli_log "${red}Ingress failed for file ${bold}${BASENAME}${normal}"
     echo -e "${red}${RESPONSE_CODE} Error: $(cat ${TMPFILE})${normal}"
   else
-    DID=$(cat ${TMPFILE})
+    IFS=',' DIDS=($(cat ${TMPFILE}))
     if [[ $TRACE ]]; then
+      DID=${DIDS[${#DIDS[@]} - 1]} # only trace the last (or only) did
       stage="$(get_stage $DID)"
       until [ "$stage" == "COMPLETE" ]; do
         ((tries++)) && ((tries>=20)) && break
@@ -96,16 +97,16 @@ for FILE in "${@:3}"; do
       done
 
       if [ "$stage" != "COMPLETE" ]; then
-        cli_log "${red}Ingress failed for file ${bold}${BASENAME}${normal}${red} with did ${bold}${DID}${normal}"
+        cli_log "${red}Ingress failed for file ${bold}${BASENAME}${normal}${red} with did(s) ${bold}${DIDS}${normal}"
         echo -e "${red}Error: Timeout reached waiting for stage \"COMPLETE\"${normal}"
         deltafi trace $DID
         continue
       else
-        cli_log "Ingress complete for file ${cyan}${BASENAME}${normal} with did ${cyan}${DID}${normal}"
+        cli_log "Ingress complete for file ${cyan}${BASENAME}${normal} with did(s) ${cyan}${DIDS}${normal}"
         deltafi trace $DID
       fi
     else
-      cli_log "Ingress complete for file ${cyan}${BASENAME}${normal} with did ${cyan}${DID}${normal}"
+      cli_log "Ingress complete for file ${cyan}${BASENAME}${normal} with did(s) ${cyan}${DIDS}${normal}"
     fi
   fi
 done

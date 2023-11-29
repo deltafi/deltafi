@@ -15,7 +15,6 @@
                         }
                     </pattern>
                 </pattern>
-                <sequence/>
                 <stackTrace>
                     <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
                         <maxDepthPerThrowable>30</maxDepthPerThrowable>

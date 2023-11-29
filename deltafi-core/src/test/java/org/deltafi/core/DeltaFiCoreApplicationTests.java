@@ -3845,7 +3845,7 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void testGetFilteredSummaryByMessageDatafetcher() throws IOException {
+	void testGetFilteredSummaryByMessageDatafetcher() {
 		OffsetDateTime plusTwo = OffsetDateTime.now().plusMinutes(2);
 		loadFilteredDeltaFiles(plusTwo);
 
@@ -4491,12 +4491,20 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	@SneakyThrows
 	void testIngress() {
+		String did1 = "did1";
+		Content content1 = new Content(FILENAME, MEDIA_TYPE, new Segment(FILENAME, 0, CONTENT_DATA.length(), did1));
+		String did2 = "did2";
+		Content content2 = new Content(FILENAME, MEDIA_TYPE, new Segment(FILENAME, 0, CONTENT_DATA.length(), did2));
+		List<IngressResult> ingressResults = List.of(
+				new IngressResult(FLOW, did1, content1, ProcessingType.NORMALIZATION),
+				new IngressResult(FLOW, did2, content2, ProcessingType.NORMALIZATION));
+
 		Mockito.when(ingressService.ingress(eq(FLOW), eq(FILENAME), eq(MEDIA_TYPE), eq(USERNAME), eq(METADATA), any(), any()))
-				.thenReturn(INGRESS_RESULT);
+				.thenReturn(ingressResults);
 
 		ResponseEntity<String> response = ingress(FILENAME, CONTENT_DATA.getBytes());
 		assertEquals(HttpStatus.OK.value(), response.getStatusCode().value());
-		assertEquals(INGRESS_RESULT.did(), response.getBody());
+		assertEquals(String.join(",", did1, did2), response.getBody());
 	}
 
 	@Test

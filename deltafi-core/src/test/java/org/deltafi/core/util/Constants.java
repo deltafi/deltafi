@@ -19,10 +19,6 @@ package org.deltafi.core.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.deltafi.common.content.Segment;
-import org.deltafi.common.types.Content;
-import org.deltafi.common.types.ProcessingType;
-import org.deltafi.core.types.IngressResult;
 
 import javax.ws.rs.core.MediaType;
 import java.time.OffsetDateTime;
@@ -49,9 +45,6 @@ public class Constants {
     public static final String FLOW = "theFlow";
     public static final String MEDIA_TYPE = MediaType.APPLICATION_OCTET_STREAM;
     public static final String USERNAME = "myname";
-    public static final String DID = "did";
-    public static final Content CONTENT = new Content(FILENAME, MEDIA_TYPE, new Segment(FILENAME, 0, CONTENT_DATA.length(), DID));
-    public static final IngressResult INGRESS_RESULT = new IngressResult(FLOW, DID, CONTENT, ProcessingType.NORMALIZATION);
 
     public final static Map<String, String> SOURCE_METADATA = new HashMap<>(Map.of("AuthorizedBy", "XYZ", "removeMe", "whatever"));
     public final static Map<String, String> TRANSFORM_METADATA = Map.of("sampleType", "sample-type", "sampleVersion", "2.1");

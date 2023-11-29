@@ -44,6 +44,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.deltafi.test.asserters.ActionResultAssertions.*;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 class CompressionFormatActionTest {
@@ -209,10 +210,10 @@ class CompressionFormatActionTest {
      * This is done due to small variations in archived content, such as file
      * modification times, user/group info, etc.
      */
-    boolean contentMatches(ActionContent actionContent, String expectedName, String mediaTupe, String archiveType, List<byte[]> expectedOutput) {
+    boolean contentMatches(ActionContent actionContent, String expectedName, String mediaType, String archiveType, List<byte[]> expectedOutput) {
         ContentAssert.assertThat(actionContent)
                 .hasName(expectedName)
-                .hasMediaType(mediaTupe);
+                .hasMediaType(mediaType);
 
         List<SaveManyContent> decompressedContent = new ArrayList<>();
         String dearchiveType = decompressAutomatic(actionContent.loadInputStream(), decompressedContent);
@@ -220,10 +221,7 @@ class CompressionFormatActionTest {
         assertEquals(archiveType, dearchiveType);
         assertEquals(expectedOutput.size(), decompressedContent.size());
         for (int i = 0; i < expectedOutput.size(); ++i) {
-            assertEquals(expectedOutput.get(i).length, decompressedContent.get(i).content().length);
-            String e = new String(expectedOutput.get(i));
-            String a = new String(decompressedContent.get(i).content());
-            assertEquals(e, a);
+            assertArrayEquals(expectedOutput.get(i), decompressedContent.get(i).content());
         }
 
         return true;

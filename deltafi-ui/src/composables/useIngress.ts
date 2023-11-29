@@ -28,7 +28,7 @@ export default function useIngress() {
 
   const ingressFile = (file: File, metadata: Record<string, string>, flow?: string) => {
     const result = reactive({
-      did: "",
+      dids: [],
       loading: true,
       error: false,
       filename: file.name,
@@ -61,7 +61,7 @@ export default function useIngress() {
         },
       })
       .then((res) => {
-        result.did = res.data.toString();
+        result.dids = res.data.toString().split(',');
         result.loading = false;
         notify.success("Ingress successful", file.name);
       })

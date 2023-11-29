@@ -63,6 +63,9 @@ public class HttpService {
             // TODO: Should exceptions be thrown for 4xx return codes?
             return httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofInputStream());
         } catch (IOException | InterruptedException | IllegalArgumentException | SecurityException e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             throw new HttpPostException(e.getClass().getSimpleName(), e.getMessage());
         }
     }

@@ -23,11 +23,10 @@ import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
+import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.http.HttpService;
-import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.nifi.ContentType;
-import org.deltafi.common.stream.PipelineBlockingInputStream;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.Content;
@@ -55,10 +54,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class FlowfileEgressActionTest {
@@ -120,10 +119,10 @@ class FlowfileEgressActionTest {
     @SuppressWarnings("unchecked")
     private EgressResultType runTest(int statusCode, int numTries) throws IOException {
         final List<byte[]> posts = new ArrayList<>();
+
         when(httpService.post(any(), any(), any(), any())).thenAnswer(
                 (Answer<HttpResponse<InputStream>>) invocation -> {
-                    PipelineBlockingInputStream is = invocation.getArgument(2);
-                    is.await();
+                    InputStream is = invocation.getArgument(2);
                     posts.add(is.readAllBytes());
                     is.close();
                     return new HttpResponse<>() {
@@ -133,11 +132,15 @@ class FlowfileEgressActionTest {
                         @Override public HttpRequest request() {
                             return null;
                         }
-                        @Override public Optional<HttpResponse<InputStream>> previousResponse() { return Optional.empty(); }
+                        @Override public Optional<HttpResponse<InputStream>> previousResponse() {
+                            return Optional.empty();
+                        }
                         @Override public HttpHeaders headers() {
                             return null;
                         }
-                        @Override public InputStream body() { return new ByteArrayInputStream("Hello there.".getBytes()); }
+                        @Override public InputStream body() {
+                            return new ByteArrayInputStream("Hello there.".getBytes());
+                        }
                         @Override public Optional<SSLSession> sslSession() {
                             return Optional.empty();
                         }
@@ -150,6 +153,7 @@ class FlowfileEgressActionTest {
                     };
                 }
         );
+
         EgressResultType result = action.egress(CONTEXT, PARAMS, egressInput());
 
         @SuppressWarnings("unchecked")
@@ -163,8 +167,7 @@ class FlowfileEgressActionTest {
         // Expected metadata + ADDITIONAL_METADATA should be in the flowfile attributes
         assertThat(metadata, equalTo(Stream.of(FlowfileEgressActionTest.METADATA, ADDITIONAL_METADATA).flatMap(m -> m.entrySet().stream())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))));
-        byte[] content = out.toByteArray();
-        assertThat(content, equalTo(DATA));
+        assertThat(out.toByteArray(), equalTo(DATA));
 
         return result;
     }
@@ -183,13 +186,16 @@ class FlowfileEgressActionTest {
     @Test
     public void closingInputStreamThrowsIoException() throws IOException, ObjectStorageException {
         when(contentStorageService.load(eq(CONTENT))).thenAnswer(invocation -> new TestInputStream(DATA));
+
         EgressResultType result = runTest(200, 1);
+
         assertThat(result, instanceOf(EgressResult.class));
     }
 
     @Test
     public void badResponse() throws IOException, ObjectStorageException {
         when(contentStorageService.load(eq(CONTENT))).thenAnswer(invocation -> new ByteArrayInputStream(DATA));
+
         EgressResultType result = runTest(505, 4);
 
         assertThat(result, instanceOf(ErrorResult.class));

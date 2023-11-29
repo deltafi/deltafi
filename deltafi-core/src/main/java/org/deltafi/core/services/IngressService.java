@@ -25,12 +25,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentStorageService;
-import org.deltafi.common.nifi.FlowFile;
-import org.deltafi.common.nifi.FlowFileUtil;
+import org.deltafi.common.io.WriterPipedInputStream;
+import org.deltafi.common.nifi.FlowFileTwoStepUnpackager;
+import org.deltafi.common.nifi.FlowFileTwoStepUnpackagerV1;
+import org.deltafi.common.nifi.FlowFileTwoStepUnpackagerV2;
+import org.deltafi.common.nifi.FlowFileTwoStepUnpackagerV3;
 import org.deltafi.common.storage.s3.ObjectStorageException;
-import org.deltafi.common.stream.BlockingInputStream;
-import org.deltafi.common.stream.PassthroughBlockingInputStream;
-import org.deltafi.common.types.*;
+import org.deltafi.common.types.ActionType;
+import org.deltafi.common.types.Content;
+import org.deltafi.common.types.IngressEventItem;
+import org.deltafi.common.types.ProcessingType;
 import org.deltafi.common.uuid.UUIDGenerator;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.exceptions.*;
@@ -43,10 +47,7 @@ import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.OffsetDateTime;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -69,9 +70,10 @@ public class IngressService {
     private final TransformFlowService transformFlowService;
     private final ErrorCountService errorCountService;
     private final UUIDGenerator uuidGenerator;
+
     private final ExecutorService executorService = Executors.newCachedThreadPool();
 
-    public IngressResult ingress(String flow, String filename, String contentType, String username,
+    public List<IngressResult> ingress(String flow, String filename, String contentType, String username,
             String headerMetadataString, InputStream dataStream, OffsetDateTime created) throws IngressMetadataException,
             ObjectStorageException, IngressException, IngressStorageException, IngressUnavailableException,
             InterruptedException {
@@ -89,15 +91,15 @@ public class IngressService {
 
         log.debug("Ingressing: flow={} filename={} contentType={} username={}", flow, filename, contentType, username);
 
-        IngressResult ingressResult;
+        List<IngressResult> ingressResults;
         try {
             Map<String, String> headerMetadata = parseMetadata(headerMetadataString);
 
-            ingressResult = switch (contentType) {
+            ingressResults = switch (contentType) {
                 case APPLICATION_FLOWFILE, APPLICATION_FLOWFILE_V_1, APPLICATION_FLOWFILE_V_2,
                         APPLICATION_FLOWFILE_V_3 ->
                         ingressFlowFile(flow, filename, contentType, headerMetadata, dataStream, created);
-                default -> ingressBinary(flow, filename, contentType, headerMetadata, dataStream, created);
+                default -> List.of(ingressBinary(flow, filename, contentType, headerMetadata, dataStream, created));
             };
         } catch (IngressMetadataException | ObjectStorageException | IngressException e) {
             log.error("Ingress error for flow={} filename={} contentType={} username={}: {}", flow, filename,
@@ -106,13 +108,15 @@ public class IngressService {
             throw e;
         }
 
-        coreAuditLogger.logIngress(username, ingressResult.content().getName());
+        ingressResults.forEach(ingressResult -> {
+            coreAuditLogger.logIngress(username, ingressResult.content().getName());
 
-        Map<String, String> tags = tagsFor(ingressResult.flow());
-        metricService.increment(DeltaFiConstants.FILES_IN, tags, 1);
-        metricService.increment(DeltaFiConstants.BYTES_IN, tags, ingressResult.content().getSize());
+            Map<String, String> tags = tagsFor(ingressResult.flow());
+            metricService.increment(DeltaFiConstants.FILES_IN, tags, 1);
+            metricService.increment(DeltaFiConstants.BYTES_IN, tags, ingressResult.content().getSize());
+        });
 
-        return ingressResult;
+        return ingressResults;
     }
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -134,33 +138,49 @@ public class IngressService {
         }
     }
 
-    private IngressResult ingressFlowFile(String flow, String filename, String contentType,
+    private List<IngressResult> ingressFlowFile(String flow, String filename, String contentType,
             Map<String, String> headerMetadata, InputStream contentInputStream, OffsetDateTime created)
-            throws ObjectStorageException, IngressException, IngressMetadataException, InterruptedException {
-        FlowFile flowFile;
+            throws ObjectStorageException, IngressException, IngressMetadataException {
+        FlowFileTwoStepUnpackager flowFileTwoStepUnpackager = switch (contentType) {
+            case APPLICATION_FLOWFILE, APPLICATION_FLOWFILE_V_1 -> new FlowFileTwoStepUnpackagerV1();
+            case APPLICATION_FLOWFILE_V_2 -> new FlowFileTwoStepUnpackagerV2();
+            case APPLICATION_FLOWFILE_V_3 -> new FlowFileTwoStepUnpackagerV3();
+            default -> throw new IllegalStateException("Unexpected value: " + contentType);
+        };
+
+        List<IngressResult> ingressResults = new ArrayList<>();
+
         try {
-            flowFile = FlowFileUtil.unpackageFlowFile(contentType, contentInputStream, executorService);
+            while (flowFileTwoStepUnpackager.hasMoreData()) {
+                Map<String, String> combinedMetadata =
+                        new HashMap<>(flowFileTwoStepUnpackager.unpackageAttributes(contentInputStream));
+                combinedMetadata.putAll(headerMetadata); // Metadata from header overrides attributes contained in FlowFile
+                if (flow == null) {
+                    flow = combinedMetadata.get("flow");
+                }
+                if (filename == null) {
+                    filename = combinedMetadata.get("filename");
+                }
+                if (filename == null) {
+                    throw new IngressMetadataException("Filename must be passed in as a header or FlowFile attribute");
+                }
+
+                try (WriterPipedInputStream writerPipedInputStream = new WriterPipedInputStream()) {
+                    writerPipedInputStream.runPipeWriter(outputStream -> flowFileTwoStepUnpackager.unpackageContent(
+                            contentInputStream, outputStream), executorService);
+                    ingressResults.add(ingress(flow, filename, MediaType.APPLICATION_OCTET_STREAM,
+                            writerPipedInputStream, combinedMetadata, created));
+                }
+            }
         } catch (IOException e) {
             throw new IngressException("Unable to unpack FlowFile", e);
         }
 
-        Map<String, String> combinedMetadata = new HashMap<>(flowFile.attributes());
-        combinedMetadata.putAll(headerMetadata); // Metadata from header overrides attributes contained in FlowFile
-
-        if (flow == null) {
-            flow = combinedMetadata.get("flow");
-        }
-        if (filename == null) {
-            filename = combinedMetadata.get("filename");
-        }
-        if (filename == null) {
-            throw new IngressMetadataException("Filename must be passed in as a header or flowfile attribute");
-        }
-        return ingress(flow, filename, MediaType.APPLICATION_OCTET_STREAM, flowFile.content(), combinedMetadata, created);
+        return ingressResults;
     }
 
-    private IngressResult ingress(String flow, String filename, String mediaType, BlockingInputStream contentInputStream,
-            Map<String, String> metadata, OffsetDateTime created) throws ObjectStorageException, IngressException, InterruptedException {
+    private IngressResult ingress(String flow, String filename, String mediaType, InputStream contentInputStream,
+            Map<String, String> metadata, OffsetDateTime created) throws ObjectStorageException, IngressException {
         String resolvedFlow = flow;
 
         if (flow == null || flow.equals(DeltaFiConstants.AUTO_RESOLVE_FLOW_NAME)) {
@@ -188,8 +208,7 @@ public class IngressService {
 
         String did = uuidGenerator.generate();
 
-        Content content = contentStorageService.save(did, contentInputStream.getInputStream(), filename, mediaType);
-        contentInputStream.await();
+        Content content = contentStorageService.save(did, contentInputStream, filename, mediaType);
 
         IngressEventItem ingressEventItem = IngressEventItem.builder()
                 .did(did)
@@ -215,12 +234,11 @@ public class IngressService {
 
     private IngressResult ingressBinary(String flow, String filename, String mediaType,
             Map<String, String> headerMetadata, InputStream contentInputStream, OffsetDateTime created)
-            throws IngressMetadataException, IngressException, ObjectStorageException, InterruptedException {
+            throws IngressMetadataException, IngressException, ObjectStorageException {
         if (filename == null) {
             throw new IngressMetadataException("Filename must be passed in as a header");
         }
-        PassthroughBlockingInputStream passthroughBlockingInputStream = new PassthroughBlockingInputStream(contentInputStream);
-        return ingress(flow, filename, mediaType, passthroughBlockingInputStream, headerMetadata, created);
+        return ingress(flow, filename, mediaType, contentInputStream, headerMetadata, created);
     }
 
     private Map<String, String> tagsFor(String ingressFlow) {

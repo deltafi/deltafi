@@ -37,6 +37,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.ws.rs.core.MediaType;
 import java.io.InputStream;
 import java.time.OffsetDateTime;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -55,10 +56,9 @@ public class IngressRest {
         username = StringUtils.isNotBlank(username) ? username : "system";
 
         try {
-
-            IngressResult ingressResult =
-                    ingressService.ingress(flow, filename, contentType, username, metadata, dataStream, OffsetDateTime.now());
-            return ResponseEntity.ok(ingressResult.did());
+            List<IngressResult> ingressResults = ingressService.ingress(flow, filename, contentType, username, metadata,
+                    dataStream, OffsetDateTime.now());
+            return ResponseEntity.ok(String.join(",", ingressResults.stream().map(IngressResult::did).toList()));
         } catch (IngressUnavailableException e) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(e.getMessage());
         } catch (IngressStorageException e) {

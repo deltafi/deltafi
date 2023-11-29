@@ -15,21 +15,11 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.stream;
+package org.deltafi.common.io;
 
-import java.io.InputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 
-public class PassthroughBlockingInputStream implements BlockingInputStream {
-    final private InputStream inputStream;
-    public PassthroughBlockingInputStream(InputStream inputStream) {
-        this.inputStream = inputStream;
-    }
-
-    @Override
-    public void await() {}
-
-    @Override
-    public InputStream getInputStream() {
-        return inputStream;
-    }
+public interface Writer {
+    void write(OutputStream outputStream) throws IOException;
 }

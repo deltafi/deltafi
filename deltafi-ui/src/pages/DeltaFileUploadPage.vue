@@ -84,13 +84,15 @@
             <Menu id="config_menu" ref="deltaFilesMenu" :model="deltaFilesMenuItems" :popup="true" />
           </template>
           <DataTable responsive-layout="scroll" sort-field="uploadedTimestamp" :sort-order="-1" :value="deltaFiles" striped-rows class="p-datatable-sm p-datatable-gridlines deltafiles" :row-class="uploadsRowClass">
-            <Column field="did" header="DID" class="did-column">
+            <Column field="dids" header="DID(s)" class="did-column">
               <template #body="file">
                 <span v-if="file.data.loading">
                   <ProgressBar :value="file.data.percentComplete" />
                 </span>
                 <span v-else-if="file.data.error"> <i class="fas fa-times" /> Error </span>
-                <DidLink v-else :did="file.data.did" />
+                <span v-else>
+                  <span v-for="(did,index) in file.data.dids" :key="did"><DidLink :did="did" /><br v-if="index != file.data.dids.length - 1" /></span>
+                </span>
               </template>
             </Column>
             <Column field="filename" header="Filename" class="filename-column" />
@@ -248,7 +250,7 @@ watch(
   () => deltaFiles.value,
   () => {
     // If all files are done loading, store in session
-    if (deltaFiles.value.every((file) => !file.loading && file.did)) {
+    if (deltaFiles.value.every((file) => !file.loading && file.dids)) {
       storeDeltaFileUploadSession(deltaFiles.value);
     }
   },
@@ -276,7 +278,7 @@ const storeDeltaFileUploadSession = async (results) => {
   if (_.isEmpty(deltaFilesStorage.value)) {
     deltaFilesStorage.value = results;
   } else {
-    deltaFilesStorage.value = _.uniqBy(_.concat(results, deltaFilesStorage.value), "did");
+    deltaFilesStorage.value = _.uniqBy(_.concat(results, deltaFilesStorage.value), "dids");
   }
 
   // Save off inputed metadata into store.
