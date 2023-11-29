@@ -131,6 +131,12 @@ public class FlowPlanDatafetcher {
     public boolean disableEgressTestMode(@InputArgument String flowName) { return egressFlowService.disableTestMode(flowName); }
 
     @DgsMutation
+    @NeedsPermission.Admin
+    public boolean setTimedIngressMemo(@InputArgument String flowName, String memo) {
+        return timedIngressFlowService.setMemo(flowName, memo);
+    }
+
+    @DgsMutation
     @NeedsPermission.FlowUpdate
     public boolean setTimedIngressCronSchedule(@InputArgument String flowName, String cronSchedule) {
         return timedIngressFlowService.setCronSchedule(flowName, cronSchedule);

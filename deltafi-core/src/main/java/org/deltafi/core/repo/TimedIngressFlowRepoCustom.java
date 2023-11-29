@@ -29,4 +29,6 @@ public interface TimedIngressFlowRepoCustom extends FlowRepoCustom<TimedIngressF
 
     boolean completeExecution(String flowName, String currentDid, String memo, boolean executeImmediate,
             IngressStatus status, String statusMessage, OffsetDateTime nextRun);
+
+    boolean updateMemo(String flowName, String memo);
 }

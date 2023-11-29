@@ -2047,6 +2047,21 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void testSetMemoTimedIngressWhenStopped() {
+		clearForFlowTests();
+		timedIngressFlowRepo.save(buildTimedIngressFlow(FlowState.STOPPED));
+		assertFalse(FlowPlanDatafetcherTestHelper.setTimedIngressMemo(dgsQueryExecutor, null));
+		assertTrue(FlowPlanDatafetcherTestHelper.setTimedIngressMemo(dgsQueryExecutor, "100"));
+	}
+
+	@Test
+	void testSetMemoTimedIngressWhenRunning() {
+		clearForFlowTests();
+		timedIngressFlowRepo.save(buildTimedIngressFlow(FlowState.RUNNING));
+		assertFalse(FlowPlanDatafetcherTestHelper.setTimedIngressMemo(dgsQueryExecutor, "100"));
+	}
+
+	@Test
 	void testSavePluginVariables() {
 		assertTrue(FlowPlanDatafetcherTestHelper.savePluginVariables(dgsQueryExecutor));
 		PluginVariables variables = pluginVariableRepo.findById(systemPluginService.getSystemPluginCoordinates()).orElse(null);

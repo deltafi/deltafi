@@ -22,6 +22,7 @@ import org.deltafi.common.types.IngressStatus;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.TimedIngressFlowPlan;
 import org.deltafi.core.converters.TimedIngressFlowPlanConverter;
+import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.repo.TimedIngressFlowRepo;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.snapshot.types.TimedIngressFlowSnapshot;
@@ -110,6 +111,38 @@ public class TimedIngressFlowService extends FlowService<TimedIngressFlowPlan, T
         CronExpression cronExpression = CronExpression.parse(cronSchedule);
         if (((TimedIngressFlowRepo) flowRepo).updateCronSchedule(flowName, cronSchedule,
                 cronExpression.next(OffsetDateTime.now(clock)))) {
+            refreshCache();
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Sets the memo for a given flow, identified by its name.
+     * If the memo for the flow is already set to the specified value, the method
+     * logs a warning and returns false. If the update is successful, the method refreshes the
+     * cache and returns true.
+     *
+     * @param flowName  The name of the flow to update, represented as a {@code String}.
+     * @param memo The new memo value to be set for the specified flow, as a {@code String}.
+     * @return A {@code boolean} value indicating whether the update was successful (true) or not (false).
+     */
+    public boolean setMemo(String flowName, String memo) {
+        TimedIngressFlow flow = getFlowOrThrow(flowName);
+
+        if ((flow.getMemo() == null && memo == null) ||
+                (flow.getMemo() != null && flow.getMemo().equals(memo))) {
+            log.warn("Tried to set memo on timed ingress flow {} to \"{}\" when already set", flowName, memo);
+            return false;
+        }
+
+        if (FlowState.RUNNING.equals(flow.getFlowStatus().getState())) {
+            log.error("Cannot change memo of timed ingress flow which is running");
+            return false;
+        }
+
+        if (((TimedIngressFlowRepo) flowRepo).updateMemo(flowName, memo)) {
             refreshCache();
             return true;
         }

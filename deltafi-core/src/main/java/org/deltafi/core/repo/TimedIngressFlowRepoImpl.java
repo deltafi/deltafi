@@ -59,6 +59,13 @@ public class TimedIngressFlowRepoImpl extends BaseFlowRepoImpl<TimedIngressFlow>
     }
 
     @Override
+    public boolean updateMemo(String flowName, String memo) {
+        Query idMatches = Query.query(Criteria.where(ID).is(flowName));
+        Update memoUpdate = Update.update(MEMO, memo);
+        return 1 == mongoTemplate.updateFirst(idMatches, memoUpdate, TimedIngressFlow.class).getModifiedCount();
+    }
+
+    @Override
     public boolean completeExecution(String flowName, String currentDid, String memo, boolean executeImmediate,
             IngressStatus status, String statusMessage, OffsetDateTime nextRun) {
         Query idMatches = Query.query(Criteria.where(ID).is(flowName).and(CURRENT_DID).is(currentDid));
