@@ -57,7 +57,7 @@ module Deltafi
                   # ignore stale metrics
                   next if Time.now.to_i - data.last > 60
 
-                  obj[hostname] ||= {name: hostname, resources: {}}
+                  obj[hostname] ||= { name: hostname, resources: {} }
                   obj[hostname][:resources][resource] ||= {}
                   obj[hostname][:resources][resource][metric] = data.first
                 end
@@ -80,7 +80,7 @@ module Deltafi
 
             def apps_by_node_k8s
               running_pods = DF.k8s_client.api('v1').resource('pods', namespace: 'deltafi')
-                  .list(fieldSelector: { 'status.phase' => 'Running' })
+                               .list(fieldSelector: { 'status.phase' => 'Running' })
 
               running_pods.each_with_object({}) do |pod, hash|
                 node_name = pod.spec.nodeName.intern

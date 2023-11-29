@@ -20,7 +20,6 @@
 
 require 'httparty'
 require 'graphite-api'
-require 'json'
 
 module Deltafi
   module Metrics

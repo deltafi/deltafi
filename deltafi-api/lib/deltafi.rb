@@ -58,7 +58,7 @@ module Deltafi
               user: user,
               password: password,
               auth_source: auth_source
-              }
+            }
           }
         }
       }

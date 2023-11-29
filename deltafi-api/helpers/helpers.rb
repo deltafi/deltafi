@@ -46,7 +46,7 @@ class ApiServer < Sinatra::Base
 
     def read_json_body
       request.body.rewind
-      JSON.parse(request.body.read, symbolize_names: true)
+      JSON.load(request.body, symbolize_names: true)
     rescue StandardError => e
       raise "Unable to parse request body as JSON. #{e.message}"
     end
