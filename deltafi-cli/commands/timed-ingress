@@ -61,14 +61,14 @@ MEMO=${ARGS[3]}
 VARIABLES="{\"flowName\": \"$FLOW_NAME\", \"memo\": \"$MEMO\" }"
 case "$SUBCOMMAND" in
   clear-memo)
-    echo -e "${yellow}Warning: ${SUBCOMMAND} for exports only${normal}"
+    echo -e "${yellow}Warning: ${SUBCOMMAND} for experts only${normal}"
     _are_you_sure
     EXTRACT_PATH=".data.setTimedIngressMemo"
     QUERY="mutation(\$flowName: String!) { setTimedIngressMemo(flowName: \$flowName) }"
     ;;
   set-memo)
     [[ -z "$MEMO" ]] && _exit_1 echo "Please specify a value for MEMO"
-    echo -e "${yellow}Warning: ${SUBCOMMAND} for exports only${normal}"
+    echo -e "${yellow}Warning: ${SUBCOMMAND} for experts only${normal}"
     _are_you_sure
     EXTRACT_PATH=".data.setTimedIngressMemo"
     QUERY="mutation(\$flowName: String!, \$memo: String) { setTimedIngressMemo(flowName: \$flowName, memo: \$memo) }"
