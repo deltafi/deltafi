@@ -18,34 +18,24 @@
 
 # frozen_string_literal: true
 
+require 'deltafi/memoist'
+
 module Deltafi
   module API
     module V1
       module Metrics
         module System
           class << self
-            REFRESH_APPS_BY_NODE_CACHE_SECONDS = 60
-            REFRESH_REDIS_CACHE_SECONDS = 2
-
-            METRICS_QUERIES = [
-              'keepLastValue(removeEmptySeries(seriesByTag(\'name=~gauge.node.*.*\')))'
-            ].freeze
-
-            @@cached_apps_by_node = nil
-            @@cached_redis_metrics = nil
-            @@last_redis_cache_time = Time.now
+            extend Memoist
 
             def metrics
-              return @@cached_redis_metrics if defined?(@@cached_redis_metrics) && @@cached_redis_metrics && Time.now - @@last_redis_cache_time < REFRESH_REDIS_CACHE_SECONDS
-
               keys = %w[gauge.node.memory.usage gauge.node.memory.limit gauge.node.disk.usage gauge.node.disk.limit gauge.node.cpu.usage gauge.node.cpu.limit]
 
               results = DF.redis.pipelined do |pipeline|
                 keys.each { |key| pipeline.hgetall(key) }
               end
 
-              @@last_redis_cache_time = Time.now
-              @@cached_redis_metrics = keys.zip(results).each_with_object({}) do |(key, value_hash), obj|
+              keys.zip(results).each_with_object({}) do |(key, value_hash), obj|
                 resource_str, metric_str = key.split('.')[2..3]
                 resource = resource_str.to_sym
                 metric = metric_str.to_sym
@@ -63,6 +53,7 @@ module Deltafi
                 end
               end
             end
+            memoize :metrics, expires_in: 2
 
             def nodes
               apps = apps_by_node
@@ -82,29 +73,42 @@ module Deltafi
               running_pods = DF.k8s_client.api('v1').resource('pods', namespace: 'deltafi')
                                .list(fieldSelector: { 'status.phase' => 'Running' })
 
-              running_pods.each_with_object({}) do |pod, hash|
+              ret = running_pods.each_with_object({}) do |pod, hash|
                 node_name = pod.spec.nodeName.intern
                 hash[node_name] ||= []
                 hash[node_name] << { name: pod.metadata.name }
               end
+              # this kicks the GC into gear
+              running_pods = nil
+              ret
             end
+
+            memoize :apps_by_node_k8s, expires_in: 60
+
+            def minio_node
+              minio_pods = DF.k8s_client.api('v1').resource('pods', namespace: 'deltafi')
+                               .list(labelSelector: { 'app' => 'minio' })
+
+              minio_pods&.first&.spec&.nodeName&.to_s
+            end
+
+            memoize :minio_node, expires_in: 60
 
             def apps_by_node_core
               DF.core_rest_get('appsByNode')
             end
 
-            def apps_by_node
-              if @@cached_apps_by_node.nil? || Time.now - @@last_apps_by_node_cache_time > REFRESH_APPS_BY_NODE_CACHE_SECONDS
-                @@last_apps_by_node_cache_time = Time.now
-                @@cached_apps_by_node = DF.cluster_mode? ? apps_by_node_k8s : apps_by_node_core
-              end
+            memoize :apps_by_node_core, expires_in: 60
 
-              @@cached_apps_by_node
+            def apps_by_node
+              DF.cluster_mode? ? apps_by_node_k8s : apps_by_node_core
             end
 
             def content
-              minio_disk_metrics = nodes.find { |node| node[:apps].any? { |a| a[:name].start_with?('deltafi-minio') } }&.dig(:resources, :disk)
-              raise "Unable to get content storage metrics!\n\n\t#{@@cached_redis_metrics}" unless minio_disk_metrics&.values&.all?(&:positive?)
+              all_metrics = metrics
+              node = minio_node
+              minio_disk_metrics = all_metrics[node.to_sym]&.dig(:resources, :disk)
+              raise "Unable to get content storage metrics, received metrics #{all_metrics}, searching for node #{node}" unless minio_disk_metrics&.values&.all?(&:positive?)
 
               minio_disk_metrics
             end
