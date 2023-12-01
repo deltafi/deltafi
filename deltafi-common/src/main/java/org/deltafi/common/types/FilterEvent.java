@@ -22,11 +22,17 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class FilterEvent {
-  private String message;
-  private String context;
+    private String message;
+    private String context;
+
+    @Builder.Default
+    private Map<String, String> annotations = new HashMap<>();
 }

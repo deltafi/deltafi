@@ -34,7 +34,8 @@ class FilterByFiatTransformActionTest {
     @Test
     void testTransform() {
         assertFilterResult(action.transform(runner.actionContext(), EMPTY, TransformInput.builder().build()))
-                        .hasCause("Filtered by fiat");
+                .annotationsIsEmpty()
+                .hasCause("Filtered by fiat");
     }
 
     @Test

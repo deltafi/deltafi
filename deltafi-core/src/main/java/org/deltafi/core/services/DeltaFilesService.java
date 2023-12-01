@@ -657,6 +657,7 @@ public class DeltaFilesService {
             return;
         }
 
+        deltaFile.addAnnotations(event.getFilter().getAnnotations());
         deltaFile.filterAction(event, event.getFilter().getMessage(), event.getFilter().getContext());
         deltaFile.setFiltered(true);
 
@@ -664,6 +665,8 @@ public class DeltaFilesService {
     }
 
     private void error(DeltaFile deltaFile, ActionEvent event) {
+        deltaFile.addAnnotations(event.getError().getAnnotations());
+
         // If the content was deleted by a delete policy mark as CANCELLED instead of ERROR
         if (deltaFile.getContentDeleted() != null) {
             deltaFile.cancelQueuedActions();

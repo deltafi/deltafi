@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
 /**
  * Assertions for FilterResults
  */
-public class FilterResultAssert extends ResultAssert<FilterResultAssert, FilterResult> {
+public class FilterResultAssert extends AnnotationResultAssert<FilterResultAssert, FilterResult> {
 
     public FilterResultAssert(FilterResult filterResult) {
         super(filterResult, FilterResultAssert.class);

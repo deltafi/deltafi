@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
 /**
  * Assertions for ErrorResults
  */
-public class ErrorResultAssert extends ResultAssert<ErrorResultAssert, ErrorResult> {
+public class ErrorResultAssert extends AnnotationResultAssert<ErrorResultAssert, ErrorResult> {
 
     public ErrorResultAssert(ErrorResult errorResult) {
         super(errorResult, ErrorResultAssert.class);

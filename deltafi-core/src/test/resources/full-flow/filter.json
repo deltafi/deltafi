@@ -6,6 +6,9 @@
     "type": "FILTER",
     "filter": {
         "message": "you got filtered",
-        "context": "here is why: blah"
+        "context": "here is why: blah",
+        "annotations": {
+            "filterKey": "filter metadata"
+        }
     }
 }

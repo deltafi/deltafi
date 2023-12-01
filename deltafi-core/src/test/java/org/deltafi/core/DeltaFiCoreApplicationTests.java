@@ -1125,7 +1125,7 @@ class DeltaFiCoreApplicationTests {
 		verifyCommonMetrics(ActionEventType.VALIDATE, "SampleValidateAction", NORMALIZE_FLOW_NAME, EGRESS_FLOW_NAME, "type");
 	}
 
-	void runErrorWithAutoResume(Integer autoResumeDelay) throws IOException {
+	void runErrorWithAutoResume(Integer autoResumeDelay, boolean withAnnotation) throws IOException {
 		String did = UUID.randomUUID().toString();
 		String policyName = null;
 		DeltaFile original = postValidateDeltaFile(did);
@@ -1146,10 +1146,17 @@ class DeltaFiCoreApplicationTests {
 			assertTrue(result.getErrors().isEmpty());
 		}
 
-		deltaFilesService.handleActionEvent(actionEvent("error", did));
+		if (withAnnotation) {
+			deltaFilesService.handleActionEvent(actionEvent("errorWithAnnotation", did));
+		} else {
+			deltaFilesService.handleActionEvent(actionEvent("error", did));
+		}
 
 		DeltaFile actual = deltaFilesService.getDeltaFile(did);
 		DeltaFile expected = postErrorDeltaFile(did, policyName, autoResumeDelay);
+		if (withAnnotation) {
+			expected.addAnnotations(Map.of("errorKey", "error metadata"));
+		}
 		assertEqualsIgnoringDates(expected, actual);
 
 		Map<String, String> tags = tagsFor(ActionEventType.ERROR, "AuthorityValidateAction", NORMALIZE_FLOW_NAME, EGRESS_FLOW_NAME);
@@ -1163,12 +1170,17 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void testError() throws IOException {
-		runErrorWithAutoResume(null);
+		runErrorWithAutoResume(null, false);
+	}
+
+	@Test
+	void testErrorWithAnnotation() throws IOException {
+		runErrorWithAutoResume(null, true);
 	}
 
 	@Test
 	void testAutoResume() throws IOException {
-		runErrorWithAutoResume(100);
+		runErrorWithAutoResume(100, false);
 	}
 
 	@Test
@@ -1531,6 +1543,7 @@ class DeltaFiCoreApplicationTests {
 			assertTrue(actual.getFiltered());
 			assertEquals("you got filtered", action.getFilteredCause());
 			assertEquals("here is why: blah", action.getFilteredContext());
+      assertEquals("filter metadata", actual.getAnnotations().get("filterKey"));
 
 			Mockito.verify(actionEventQueue, never()).putActions(any(), anyBoolean());
 		} else {

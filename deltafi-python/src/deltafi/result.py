@@ -101,11 +101,17 @@ class ErrorResult(Result):
         super().__init__('error', 'ERROR', context)
         self.error_cause = error_cause
         self.error_context = error_context
+        self.annotations = {}
+
+    def annotate(self, key: str, value: str):
+        self.annotations[key] = value
+        return self
 
     def response(self):
         return {
             'cause': self.error_cause,
-            'context': self.error_context
+            'context': self.error_context,
+            'annotations': self.annotations
         }
 
 
@@ -114,11 +120,17 @@ class FilterResult(Result):
         super().__init__('filter', 'FILTER', context)
         self.filtered_cause = filtered_cause
         self.filtered_context = filtered_context
+        self.annotations = {}
+
+    def annotate(self, key: str, value: str):
+        self.annotations[key] = value
+        return self
 
     def response(self):
         return {
             'message': self.filtered_cause,
-            'context': self.filtered_context
+            'context': self.filtered_context,
+            'annotations': self.annotations
         }
 
 

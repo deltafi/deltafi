@@ -19,7 +19,7 @@ package org.deltafi.actionkit.action.filter;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.AnnotationsResult;
 import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.actionkit.action.format.FormatResultType;
@@ -37,7 +37,7 @@ import org.jetbrains.annotations.NotNull;
  */
 @Getter
 @EqualsAndHashCode(callSuper = true)
-public class FilterResult extends Result<FilterResult> implements EgressResultType, FormatResultType,
+public class FilterResult extends AnnotationsResult<FilterResult> implements EgressResultType, FormatResultType,
         LoadResultType, TransformResultType, ValidateResultType, ResultType {
 
     private final String filteredCause;
@@ -69,7 +69,11 @@ public class FilterResult extends Result<FilterResult> implements EgressResultTy
     @Override
     public final ActionEvent toEvent() {
         ActionEvent event = super.toEvent();
-        event.setFilter(FilterEvent.builder().message(filteredCause).context(filteredContext).build());
+        event.setFilter(FilterEvent.builder()
+                .message(filteredCause)
+                .context(filteredContext)
+                .annotations(annotations)
+                .build());
         return event;
     }
 }

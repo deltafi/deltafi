@@ -96,24 +96,28 @@ def test_enrich_result():
 
 def test_error_result():
     result = ErrorResult(None, "errorCause", "errorContext")
+    result.annotate('a', 'b')
     assert result.result_key == "error"
     assert result.result_type == "ERROR"
     verify_no_metrics(result)
     response = result.response()
-    assert len(response.items()) == 2
+    assert len(response.items()) == 3
     assert response.get('cause') == "errorCause"
     assert response.get('context') == "errorContext"
+    assert response['annotations'] == {'a': 'b'}
 
 
 def test_filter_result():
     result = FilterResult(None, "filteredCause")
+    result.annotate('a', 'b')
     assert result.result_key == "filter"
     assert result.result_type == "FILTER"
     verify_no_metrics(result)
     response = result.response()
-    assert len(response.items()) == 2
+    assert len(response.items()) == 3
     assert response.get('message') == "filteredCause"
     assert response.get('context') == None
+    assert response['annotations'] == {'a': 'b'}
 
 
 def test_filter_result_with_context():
@@ -122,9 +126,10 @@ def test_filter_result_with_context():
     assert result.result_type == "FILTER"
     verify_no_metrics(result)
     response = result.response()
-    assert len(response.items()) == 2
+    assert len(response.items()) == 3
     assert response.get('message') == "theCause"
     assert response.get('context') == "theContext"
+    assert response['annotations'] == {}
 
 
 def verify_all_metadata(item):

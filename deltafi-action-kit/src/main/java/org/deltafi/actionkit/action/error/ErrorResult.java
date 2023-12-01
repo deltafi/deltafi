@@ -19,7 +19,7 @@ package org.deltafi.actionkit.action.error;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import org.deltafi.actionkit.action.Result;
+import org.deltafi.actionkit.action.AnnotationsResult;
 import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.domain.DomainResultType;
 import org.deltafi.actionkit.action.egress.EgressResultType;
@@ -43,7 +43,7 @@ import java.io.StringWriter;
  */
 @Getter
 @EqualsAndHashCode(callSuper = true)
-public class ErrorResult extends Result<ErrorResult> implements DomainResultType, EgressResultType, EnrichResultType,
+public class ErrorResult extends AnnotationsResult<ErrorResult> implements DomainResultType, EgressResultType, EnrichResultType,
         FormatResultType, LoadResultType, TransformResultType, ValidateResultType, ResultType {
     private final String errorCause;
     private final String errorContext;
@@ -125,6 +125,7 @@ public class ErrorResult extends Result<ErrorResult> implements DomainResultType
         event.setError(ErrorEvent.builder()
                 .cause(errorCause)
                 .context(errorContext)
+                .annotations(annotations)
                 .build());
         return event;
     }

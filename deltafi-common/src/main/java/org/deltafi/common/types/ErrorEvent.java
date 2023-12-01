@@ -22,6 +22,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -29,4 +32,7 @@ import lombok.NoArgsConstructor;
 public class ErrorEvent {
   private String cause;
   private String context;
+
+  @Builder.Default
+  private Map<String, String> annotations = new HashMap<>();
 }

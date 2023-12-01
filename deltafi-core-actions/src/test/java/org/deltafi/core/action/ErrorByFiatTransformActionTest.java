@@ -31,6 +31,7 @@ class ErrorByFiatTransformActionTest {
     @Test
     void testTransform() {
         assertErrorResult(action.transform(new ActionContext(), new ActionParameters(), TransformInput.builder().build()))
+                .annotationsIsEmpty()
                 .hasCause("Errored by fiat");
     }
 }
