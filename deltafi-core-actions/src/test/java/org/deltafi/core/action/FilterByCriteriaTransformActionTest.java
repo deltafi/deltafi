@@ -28,7 +28,8 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 
-import static org.deltafi.test.asserters.ActionResultAssertions.*;
+import static org.deltafi.test.asserters.ActionResultAssertions.assertFilterResult;
+import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformResult;
 
 class FilterByCriteriaTransformActionTest {
     private static final ActionContext CONTEXT = new ActionContext();
@@ -44,7 +45,8 @@ class FilterByCriteriaTransformActionTest {
         ResultType result = action.transform(CONTEXT, params, createInput());
 
         assertFilterResult(result)
-            .hasCause("Filtered because at least one of the criteria matched");
+                .hasCause("Filtered because at least one of the criteria matched")
+                .hasContext(null);
     }
 
     @Test
@@ -67,7 +69,8 @@ class FilterByCriteriaTransformActionTest {
         ResultType result = action.transform(CONTEXT, params, createInput());
 
         assertFilterResult(result)
-            .hasCause("Filtered because all of the criteria matched");
+                .hasCause("Filtered because all of the criteria matched")
+                .hasContext(null);
     }
 
     @Test
@@ -90,9 +93,9 @@ class FilterByCriteriaTransformActionTest {
         ResultType result = action.transform(CONTEXT, params, createInput());
 
         assertFilterResult(result)
-            .hasCause("Filtered because none of the criteria matched");
+                .hasCause("Filtered because none of the criteria matched")
+                .hasContext(null);
     }
-
 
 
     @Test

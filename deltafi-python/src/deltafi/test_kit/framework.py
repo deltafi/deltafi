@@ -163,13 +163,15 @@ class TestCaseBase(ABC):
         self.cause_regex = cause
         self.context_regex = context
 
-    def expect_filter_result(self, cause: str):
+    def expect_filter_result(self, cause: str, context: str=None):
         """
         A Sets the expected output of the action to a Filter Result
         :param cause: the expected filter cause (message)
+        :param context: the expected error context (optional)
         """
         self.expected_result_type = FilterResult
         self.cause_regex = cause
+        self.context_regex = context
 
 
 class ActionTest(ABC):

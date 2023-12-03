@@ -672,7 +672,7 @@ public class DeltaFilesService {
             return;
         }
 
-        deltaFile.filterAction(event, event.getFilter().getMessage());
+        deltaFile.filterAction(event, event.getFilter().getMessage(), event.getFilter().getContext());
         deltaFile.setFiltered(true);
 
         advanceAndSave(deltaFile);

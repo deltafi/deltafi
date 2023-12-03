@@ -190,6 +190,10 @@ Sometimes you want to halt a flow but not raise an error. In this case use a Fil
 ```java
 return new FilterResult(context, "Description of why this DeltaFile was filtered");
 ```
+or
+```java
+return new FilterResult(context, "Common summary reason of why this DeltaFile was filtered", "Detailed reason");
+```
 
 ### Collect
 

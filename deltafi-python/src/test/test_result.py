@@ -111,8 +111,20 @@ def test_filter_result():
     assert result.result_type == "FILTER"
     verify_no_metrics(result)
     response = result.response()
-    assert len(response.items()) == 1
+    assert len(response.items()) == 2
     assert response.get('message') == "filteredCause"
+    assert response.get('context') == None
+
+
+def test_filter_result_with_context():
+    result = FilterResult(None, "theCause", "theContext")
+    assert result.result_key == "filter"
+    assert result.result_type == "FILTER"
+    verify_no_metrics(result)
+    response = result.response()
+    assert len(response.items()) == 2
+    assert response.get('message') == "theCause"
+    assert response.get('context') == "theContext"
 
 
 def verify_all_metadata(item):

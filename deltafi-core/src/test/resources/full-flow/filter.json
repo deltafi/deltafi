@@ -5,6 +5,7 @@
     "stop": "2021-07-11T13:44:22.184Z",
     "type": "FILTER",
     "filter": {
-        "message": "you got filtered"
+        "message": "you got filtered",
+        "context": "here is why: blah"
     }
 }

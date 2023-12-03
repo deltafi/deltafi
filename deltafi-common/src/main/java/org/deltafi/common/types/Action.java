@@ -45,6 +45,7 @@ public class Action {
   private String errorCause;
   private String errorContext;
   private String filteredCause;
+  private String filteredContext;
   @Builder.Default
   private int attempt = 1;
   private List<Content> content;
@@ -66,6 +67,7 @@ public class Action {
     this.errorCause = other.errorCause;
     this.errorContext = other.errorContext;
     this.filteredCause = other.filteredCause;
+    this.filteredContext = other.filteredContext;
     this.attempt = other.attempt;
     this.content = other.content == null ? null : other.content.stream().map(Content::new).toList();
     this.metadata = other.metadata == null ? null : new HashMap<>(other.metadata);

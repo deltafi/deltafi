@@ -110,13 +110,15 @@ class ErrorResult(Result):
 
 
 class FilterResult(Result):
-    def __init__(self, context: Context, filtered_cause: str):
+    def __init__(self, context: Context, filtered_cause: str, filtered_context: str=None):
         super().__init__('filter', 'FILTER', context)
         self.filtered_cause = filtered_cause
+        self.filtered_context = filtered_context
 
     def response(self):
         return {
-            'message': self.filtered_cause
+            'message': self.filtered_cause,
+            'context': self.filtered_context
         }
 
 

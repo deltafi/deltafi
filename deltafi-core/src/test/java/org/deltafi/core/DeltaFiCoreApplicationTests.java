@@ -1530,6 +1530,7 @@ class DeltaFiCoreApplicationTests {
 			assertEquals(DeltaFileStage.COMPLETE, actual.getStage());
 			assertTrue(actual.getFiltered());
 			assertEquals("you got filtered", action.getFilteredCause());
+			assertEquals("here is why: blah", action.getFilteredContext());
 
 			Mockito.verify(actionEventQueue, never()).putActions(any(), anyBoolean());
 		} else {

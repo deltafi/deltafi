@@ -28,4 +28,5 @@ import lombok.NoArgsConstructor;
 @Builder
 public class FilterEvent {
   private String message;
+  private String context;
 }

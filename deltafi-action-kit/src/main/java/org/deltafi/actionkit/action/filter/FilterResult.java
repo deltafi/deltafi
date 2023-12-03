@@ -41,21 +41,35 @@ public class FilterResult extends Result<FilterResult> implements EgressResultTy
         LoadResultType, TransformResultType, ValidateResultType, ResultType {
 
     private final String filteredCause;
+    private final String filteredContext;
 
     /**
-     * @param context Execution context of the filtered action
+     * @param context       Execution context of the filtered action
      * @param filteredCause Message explaining the reason for the filtered action
      */
     public FilterResult(@NotNull ActionContext context, @NotNull String filteredCause) {
         super(context, ActionEventType.FILTER);
 
         this.filteredCause = filteredCause;
+        this.filteredContext = null;
+    }
+
+    /**
+     * @param context         Execution context of the filtered action
+     * @param filteredCause   Summary message explaining the reason for the filtered action
+     * @param filteredContext Detailed message explaining the reason for the filtered action
+     */
+    public FilterResult(@NotNull ActionContext context, @NotNull String filteredCause, String filteredContext) {
+        super(context, ActionEventType.FILTER);
+
+        this.filteredCause = filteredCause;
+        this.filteredContext = filteredContext;
     }
 
     @Override
     public final ActionEvent toEvent() {
         ActionEvent event = super.toEvent();
-        event.setFilter(FilterEvent.builder().message(filteredCause).build());
+        event.setFilter(FilterEvent.builder().message(filteredCause).context(filteredContext).build());
         return event;
     }
 }

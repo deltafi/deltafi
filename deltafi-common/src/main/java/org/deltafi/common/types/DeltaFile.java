@@ -357,10 +357,10 @@ public class DeltaFile {
             .forEach(action -> setActionState(action, ActionState.COLLECTED, start, stop));
   }
 
-  public void filterAction(ActionEvent event, String filterMessage) {
+  public void filterAction(ActionEvent event, String filterMessage, String filterContext) {
     getActions().stream()
             .filter(action -> action.getFlow().equals(event.getFlow()) && action.getName().equals(event.getAction()) && !action.terminal())
-            .forEach(action -> setFilteredActionState(action, event.getStart(), event.getStop(), filterMessage));
+            .forEach(action -> setFilteredActionState(action, event.getStart(), event.getStop(), filterMessage, filterContext));
   }
 
   public void reinjectAction(ActionEvent event) {
@@ -434,8 +434,9 @@ public class DeltaFile {
     setActionState(action, actionState, start, stop, null, null, null);
   }
 
-  private void setFilteredActionState(Action action, OffsetDateTime start, OffsetDateTime stop, String filteredCause) {
+  private void setFilteredActionState(Action action, OffsetDateTime start, OffsetDateTime stop, String filteredCause, String filteredContext) {
     action.setFilteredCause(filteredCause);
+    action.setFilteredContext(filteredContext);
     setActionState(action, ActionState.FILTERED, start, stop);
   }
 

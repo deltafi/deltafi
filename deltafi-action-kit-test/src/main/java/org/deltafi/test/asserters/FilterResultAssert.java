@@ -33,6 +33,7 @@ public class FilterResultAssert extends ResultAssert<FilterResultAssert, FilterR
 
     /**
      * Create a new FilterResultAssert with the given result
+     *
      * @param filterResult to validate
      * @return a new FilterResultAssert
      */
@@ -42,6 +43,7 @@ public class FilterResultAssert extends ResultAssert<FilterResultAssert, FilterR
 
     /**
      * Verify the filter cause is equal to the given cause
+     *
      * @param exactMatch expected filter cause
      * @return this
      */
@@ -51,13 +53,37 @@ public class FilterResultAssert extends ResultAssert<FilterResultAssert, FilterR
     }
 
     /**
+     * Verify the filter context is equal to the given context
+     *
+     * @param exactMatch expected filter context
+     * @return this
+     */
+    public FilterResultAssert hasContext(String exactMatch) {
+        Assertions.assertThat(actual.getFilteredContext()).isEqualTo(exactMatch);
+        return this;
+    }
+
+    /**
      * Verify the filter cause matches the given regex pattern
+     *
      * @param regexPattern to match against the filter cause
      * @return this
      */
     public FilterResultAssert hasCauseLike(String regexPattern) {
         Pattern pattern = Pattern.compile(regexPattern);
         Assertions.assertThat(actual.getFilteredCause()).matches(pattern);
+        return this;
+    }
+
+    /**
+     * Verify the filter context matches the given regex pattern
+     *
+     * @param regexPattern to match against the filter context
+     * @return this
+     */
+    public FilterResultAssert hasContextLike(String regexPattern) {
+        Pattern pattern = Pattern.compile(regexPattern);
+        Assertions.assertThat(actual.getFilteredContext()).matches(pattern);
         return this;
     }
 

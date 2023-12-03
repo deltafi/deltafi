@@ -4,6 +4,7 @@
 Usage: deltafi [command]
 
 Commands:
+  clickhouse-cli         launch the clickhouse CLI
   did                    show did for filename
   disable                stop all DeltaFi processes
   egress-flow            start, stop or validate an egress flow
@@ -11,11 +12,10 @@ Commands:
   export-config          export all the loaded flow configurations as yaml
   export-egress-plan     export a single egress flow plan by name as JSON
   export-enrich-plan     export a single enrich flow plan by name as JSON
-  export-ingress-plan    export a single ingress flow plan by name as JSON
+  export-normalize-plan  export a single normalize flow plan by name as JSON
   export-transform-plan  export a single transform flow plan by name as JSON
   export-rules           export all ingress-flow assignment rules as JSON
   ingress                ingress one or more files to a flow
-  ingress-flow           start, stop or validate an ingress flow
   install                install/upgrade the DeltaFi core
   install-plugin         install/upgrade a DeltaFi plugin
   list-actions           list the actions registered with deltafi
@@ -30,6 +30,7 @@ Commands:
   mongo-cli              launch the mongo CLI
   mongo-eval             eval a command in mongo
   mongo-migrate          run mongo migrations
+  normalize-flow         start, stop or validate an normalize flow
   performance-test       run performance tests against DeltaFi
   plugin-customization   manage plugin customization configuration
   plugin-image-repo      manage the image repositories that hold plugin images
@@ -49,6 +50,7 @@ Commands:
   status                 show status of system
   system-snapshot        manage system state snapshots
   system-property        manage system properties
+  timed-ingress          start, stop or validate a timed ingress
   trace                  show trace data for a DID
   transform-flow         start, stop or validate a transform flow
   update                 (alias for install)
