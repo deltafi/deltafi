@@ -37,22 +37,16 @@
           <p>{{ action.state }}</p>
         </div>
       </div>
-      <div v-if="action.errorCause" class="error-row">
+      <div v-if="cause" class="error-row">
         <div class="error-col">
-          <strong>Error Cause</strong>
-          <HighlightedCode :highlight="false" :code="action.errorCause" />
+          <strong>Cause</strong>
+          <HighlightedCode :highlight="false" :code="cause" />
         </div>
       </div>
-      <div v-if="action.filteredCause" class="error-row">
-        <div class="error-col">
-          <strong>Filtered Cause</strong>
-          <HighlightedCode :highlight="false" :code="action.filteredCause" />
-        </div>
-      </div>
-      <div v-if="action.errorContext" class="error-row">
+      <div v-if="context" class="error-row">
         <div class="error-col">
           <strong>Context</strong>
-          <HighlightedCode :highlight="false" :code="action.errorContext" />
+          <HighlightedCode :highlight="false" :code="context" />
         </div>
       </div>
     </div>
@@ -74,9 +68,9 @@ const props = defineProps({
   },
 });
 
-const header = computed(() => {
-  return props.action.name;
-});
+const header = computed(() => props.action.name);
+const cause = computed(() => props.action.state === "ERROR" ? props.action.errorCause : props.action.filteredCause);
+const context = computed(() => props.action.state === "ERROR" ? props.action.errorContext : props.action.filteredContext);
 </script>
 
 <style lang="scss">
