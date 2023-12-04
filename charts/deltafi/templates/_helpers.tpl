@@ -183,7 +183,7 @@ initContainers:
   valueFrom:
     secretKeyRef:
       name: mongodb-passwords
-      key: mongodb-password
+      key: mongodb-passwords
 {{- end -}}
 
 {{- define "clickhouseEnvVars" -}}

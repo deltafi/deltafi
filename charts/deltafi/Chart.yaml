@@ -28,29 +28,29 @@ dependencies:
     # repository: https://bryanalves.github.io/helm-charts
     condition: enable.registry-ui
   - name: minio
-    version: 5.0.7
+    version: 5.0.9
     # repository: https://charts.min.io/
     condition: enable.minio
   - name: mongodb
-    version: 10.28.7
-    # repository: https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami
+    version: 14.4.0
+    # repository: https://charts.bitnami.com/bitnami
     condition: enable.mongo
   - name: redis
-    version: 17.1.2
+    version: 18.4.0
     # repository: https://charts.bitnami.com/bitnami
     condition: enable.redis
   - name: kubernetes-dashboard
-    version: 5.7.0
+    version: 6.0.8
     # repository: https://kubernetes.github.io/dashboard/
     condition: enable.kubernetes-dashboard
   - name: promtail
-    version: 6.10.0
+    version: 6.15.2
     # repository: https://grafana.github.io/helm-charts
     condition: enable.promtail
     tags:
       - logs
   - name: loki
-    version: 2.12.2
+    version: 2.16.0
     # repository: https://grafana.github.io/helm-charts
     condition: enable.loki
     tags:
@@ -62,13 +62,13 @@ dependencies:
     tags:
       - metrics
   - name: grafana
-    version: 6.52.5
+    version: 7.0.11
     # repository: https://grafana.github.io/helm-charts
     condition: enable.grafana
     tags:
       - metrics
       - logs
   - name: clickhouse
-    version: 3.3.5
+    version: 4.1.8
     # repository: https://charts.bitnami.com/bitnami
     condition: enable.clickhouse

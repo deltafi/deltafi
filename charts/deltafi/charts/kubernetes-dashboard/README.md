@@ -1,5 +1,3 @@
-> Forked from kubernetes-dashboard chart version 5.7.0 - repository: https://kubernetes.github.io/dashboard/
-
 # kubernetes-dashboard
 
 [Kubernetes Dashboard](https://github.com/kubernetes/dashboard) is a general purpose, web-based UI for Kubernetes clusters.
@@ -47,9 +45,15 @@ See this [guide](https://github.com/kubernetes/dashboard/blob/master/docs/user/a
 
 It is highly recommended to use RBAC with minimal privileges needed for Dashboard to run.
 
+### NetworkPolicy
+
+You can enable a networkPolicy for this application via the `networkPolicy.enabled` boolean. By default it permits ingress only to the HTTP or HTTPS port (see `protocolHttp` from values.yaml).
+
+If you wish to disable all ingress to this application you may set the `networkPolicy.ingressDenyAll` boolean to `true`. If ingress is disabled you must use direct port-forwarding to access this application.
+
 ## Configuration
 
-Please refer to [values.yaml](https://github.com/kubernetes/dashboard/blob/master/aio/deploy/helm-chart/kubernetes-dashboard/values.yaml)
+Please refer to [values.yaml](https://github.com/kubernetes/dashboard/blob/master/charts/helm-chart/kubernetes-dashboard/values.yaml)
 for valid values and their defaults.
 
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example,
@@ -67,10 +71,24 @@ helm install kubernetes-dashboard/kubernetes-dashboard --name kubernetes-dashboa
 
 > **Tip**: You can use the default [values.yaml](values.yaml), which is used by default, as reference
 
+### Pod security policy and admission
+
+The chart supports enabling ``PodSecurityPolicy`` for kubernetes 1.24 and prior via a flag in `values.yaml`.
+
+Please be aware `PodSecurityPolicy` is now deprecated and removed from kubernetes 1.25+ onwards. An alternative is to enable ``PodSecurityAdmission`` for the namespace that kubernetes dashboard will be deployed in. To do this add [labels to the namespace](https://kubernetes.io/docs/tasks/configure-pod-container/enforce-standards-namespace-labels). Example below:
+
+```console
+kubectl label --overwrite ns kubernetes-dashboard pod-security.kubernetes.io/enforce=baseline
+```
+
 ## Upgrading an existing Release to a new major version
 
 A major chart version change (like v1.2.3 -> v2.0.0) indicates that there is an
 incompatible breaking change needing manual actions.
+
+### Upgrade from 5.x.x to 6.x.x
+
+- Switch `PodDisruptionBudget` from `policy/v1beta1` to `policy/v1`. Requires kubernetes >= 1.21.0 if `podDisruptionBudget.enabled` is set to true (false by default).
 
 ### Upgrade from 4.x.x to 5.x.x
 

@@ -111,7 +111,12 @@ _random_password() {
 _k8s_prerequisites() {
   cli_log "Initializing k8s prerequisites"
   _k8s_add_namespace deltafi
-  _k8s_add_secret mongodb-passwords mongodb-password "$(_random_password 20)" mongodb-root-password "$(_random_password 20)"
+  local mongodb_password="$(_random_password 20)"
+  _k8s_add_secret mongodb-passwords mongodb-password "${mongodb_password}" mongodb-passwords "${mongodb_password}" mongodb-root-password "$(_random_password 20)"
+  if ! ${KUBECTL_BIN} get secrets -n deltafi mongodb-passwords -o yaml | grep "mongodb-passwords:" > /dev/null; then
+    cli_log "Migrating mongodb-passwords secret"
+    ${KUBECTL_BIN} get secrets -n deltafi mongodb-passwords -o yaml | sed -e "s|\(.*\)mongodb-password:\(.*\)|\1mongodb-password:\2\n\1mongodb-passwords:\2|g" | ${KUBECTL_BIN} apply -f -
+  fi
   _k8s_add_secret minio-keys rootUser "deltafi" rootPassword "$(_random_password 40)"
   _k8s_add_secret redis-password redis-password "$(_random_password 16)"
   _k8s_add_secret config-repo-secret config-token "$(_random_password 16)"

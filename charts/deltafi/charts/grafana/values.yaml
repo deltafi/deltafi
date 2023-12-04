@@ -1,4 +1,7 @@
 global:
+  # -- Overrides the Docker registry globally for all images
+  imageRegistry: null
+
   # To help compatibility with other charts which use global.imagePullSecrets.
   # Allow either an array of {name: pullSecret} maps (k8s-style), or an array of strings (more common helm-style).
   # Can be tempalted.
@@ -16,7 +19,8 @@ global:
 rbac:
   create: true
   ## Use an existing ClusterRole/Role (depending on rbac.namespaced false/true)
-  # useExistingRole: name-of-some-(cluster)role
+  # useExistingRole: name-of-some-role
+  # useExistingClusterRole: name-of-some-clusterRole
   pspEnabled: false
   pspUseAppArmor: false
   namespaced: false
@@ -57,6 +61,7 @@ autoscaling:
 ## See `kubectl explain poddisruptionbudget.spec` for more
 ## ref: https://kubernetes.io/docs/tasks/run-application/configure-pdb/
 podDisruptionBudget: {}
+#  apiVersion: ""
 #  minAvailable: 1
 #  maxUnavailable: 1
 
@@ -84,6 +89,9 @@ livenessProbe:
 # schedulerName: "default-scheduler"
 
 image:
+  # -- The Docker registry
+  registry: docker.io
+  # -- Docker image repository
   repository: grafana/grafana
   # Overrides the Grafana image tag whose default is the chart appVersion
   tag: ""
@@ -100,17 +108,27 @@ image:
 
 testFramework:
   enabled: true
-  image: "bats/bats"
-  tag: "v1.4.1"
+  image:
+    # -- The Docker registry
+    registry: docker.io
+    repository: bats/bats
+    tag: "v1.4.1"
   imagePullPolicy: IfNotPresent
   securityContext: {}
 
 securityContext:
+  runAsNonRoot: true
   runAsUser: 472
   runAsGroup: 472
   fsGroup: 472
 
-containerSecurityContext: {}
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  seccompProfile:
+    type: RuntimeDefault
 
 # Enable creating the grafana configmap
 createConfigmap: true
@@ -137,6 +155,8 @@ extraLabels: {}
 # priorityClassName:
 
 downloadDashboardsImage:
+  # -- The Docker registry
+  registry: docker.io
   repository: curlimages/curl
   tag: 7.85.0
   sha: ""
@@ -146,7 +166,13 @@ downloadDashboards:
   env: {}
   envFromSecret: ""
   resources: {}
-  securityContext: {}
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    seccompProfile:
+      type: RuntimeDefault
   envValueFrom: {}
   #  ENV_NAME:
   #    configMapKeyRef:
@@ -189,18 +215,18 @@ serviceMonitor:
   path: /metrics
   #  namespace: monitoring  (defaults to use the namespace this chart is deployed to)
   labels: {}
-  interval: 1m
+  interval: 30s
   scheme: http
   tlsConfig: {}
   scrapeTimeout: 30s
   relabelings: []
+  metricRelabelings: []
   targetLabels: []
 
 extraExposePorts: []
  # - name: keycloak
  #   port: 8080
  #   targetPort: 8080
- #   type: ClusterIP
 
 # overrides pod.spec.hostAliases in the grafana deployment's pods
 hostAliases: []
@@ -346,7 +372,9 @@ initChownData:
   ## initChownData container image
   ##
   image:
-    repository: busybox
+    # -- The Docker registry
+    registry: docker.io
+    repository: library/busybox
     tag: "1.31.1"
     sha: ""
     pullPolicy: IfNotPresent
@@ -364,7 +392,11 @@ initChownData:
   securityContext:
     runAsNonRoot: false
     runAsUser: 0
-
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      add:
+        - CHOWN
 
 # Administrator credentials when not using an existing secret (see below)
 adminUser: admin
@@ -435,7 +467,9 @@ envValueFrom: {}
 envFromSecret: ""
 
 ## Sensible environment variables that will be rendered as new secret object
-## This can be useful for auth tokens, etc
+## This can be useful for auth tokens, etc.
+## If the secret values contains "{{", they'll need to be properly escaped so that they are not interpreted by Helm
+## ref: https://helm.sh/docs/howto/charts_tips_and_tricks/#using-the-tpl-function
 envRenderSecret: {}
 
 ## The names of secrets in the same kubernetes namespace which contain values to be added to the environment
@@ -502,6 +536,7 @@ extraVolumeMounts: []
   #   readOnly: true
   #   hostPath: /usr/shared/
   # - name: grafana-secrets
+  #   mountPath: /mnt/volume2
   #   csi: true
   #   data:
   #     driver: secrets-store.csi.k8s.io
@@ -544,6 +579,8 @@ datasources: {}
 #      jsonData:
 #        authType: default
 #        defaultRegion: us-east-1
+#    deleteDatasources: []
+#    - name: Prometheus
 
 ## Configure grafana alerting (can be templated)
 ## ref: http://docs.grafana.org/administration/provisioning/#alerting
@@ -594,21 +631,22 @@ alerting: {}
   #           labels:
   #             team: sre_team_1
   # contactpoints.yaml:
-  #   apiVersion: 1
-  #   contactPoints:
-  #     - orgId: 1
-  #       name: cp_1
-  #       receivers:
-  #         - uid: first_uid
-  #           type: pagerduty
-  #           settings:
-  #             integrationKey: XXX
-  #             severity: critical
-  #             class: ping failure
-  #             component: Grafana
-  #             group: app-stack
-  #             summary: |
-  #               {{ `{{ include "default.message" . }}` }}
+  #   secret:
+  #     apiVersion: 1
+  #     contactPoints:
+  #       - orgId: 1
+  #         name: cp_1
+  #         receivers:
+  #           - uid: first_uid
+  #             type: pagerduty
+  #             settings:
+  #               integrationKey: XXX
+  #               severity: critical
+  #               class: ping failure
+  #               component: Grafana
+  #               group: app-stack
+  #               summary: |
+  #                 {{ `{{ include "default.message" . }}` }}
 
 ## Configure notifiers
 ## ref: http://docs.grafana.org/administration/provisioning/#alert-notification-channels
@@ -770,8 +808,10 @@ smtp:
 ## Requires at least Grafana 5 to work and can't be used together with parameters dashboardProviders, datasources and dashboards
 sidecar:
   image:
-    repository: quay.io/kiwigrid/k8s-sidecar
-    tag: 1.22.0
+    # -- The Docker registry
+    registry: quay.io
+    repository: kiwigrid/k8s-sidecar
+    tag: 1.25.2
     sha: ""
   imagePullPolicy: IfNotPresent
   resources: {}
@@ -781,7 +821,13 @@ sidecar:
 #   requests:
 #     cpu: 50m
 #     memory: 50Mi
-  securityContext: {}
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    seccompProfile:
+      type: RuntimeDefault
   # skipTlsVerify Set to true to skip tls verification for kube api calls
   # skipTlsVerify: true
   enableUniqueFilenames: false
@@ -824,7 +870,11 @@ sidecar:
     # Absolute path to shell script to execute after a alert got reloaded
     script: null
     skipReload: false
-    # Deploy the alert sidecar as an initContainer in addition to a container.
+    # This is needed if skipReload is true, to load any alerts defined at startup time.
+    # Deploy the alert sidecar as an initContainer.
+    initAlerts: false
+    # Additional alert sidecar volume mounts
+    extraMounts: []
     # Sets the size limit of the alert sidecar emptyDir volume
     sizeLimit: {}
   dashboards:
@@ -1033,6 +1083,8 @@ imageRenderer:
     targetMemory: ""
     behavior: {}
   image:
+    # -- The Docker registry
+    registry: docker.io
     # image-renderer Image repository
     repository: grafana/grafana-image-renderer
     # image-renderer Image tag
@@ -1047,16 +1099,35 @@ imageRenderer:
     # RENDERING_ARGS: --no-sandbox,--disable-gpu,--window-size=1280x758
     # RENDERING_MODE: clustered
     # IGNORE_HTTPS_ERRORS: true
+
+  ## "valueFrom" environment variable references that will be added to deployment pods. Name is templated.
+  ## ref: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#envvarsource-v1-core
+  ## Renders in container spec as:
+  ##   env:
+  ##     ...
+  ##     - name: <key>
+  ##       valueFrom:
+  ##         <value rendered as YAML>
+  envValueFrom: {}
+    #  ENV_NAME:
+    #    configMapKeyRef:
+    #      name: configmap-name
+    #      key: value_key
+
   # image-renderer deployment serviceAccount
   serviceAccountName: ""
   # image-renderer deployment securityContext
   securityContext: {}
   # image-renderer deployment container securityContext
   containerSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
     capabilities:
       drop: ['ALL']
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
+  ## image-renderer pod annotation
+  podAnnotations: {}
   # image-renderer deployment Host Aliases
   hostAliases: []
   # image-renderer deployment priority class
@@ -1170,14 +1241,25 @@ networkPolicy:
     ## created allowing grafana to connect to external data sources from kubernetes cluster.
     enabled: false
     ##
+    ## @param networkPolicy.egress.blockDNSResolution When enabled, DNS resolution will be blocked
+    ## for all pods in the grafana namespace.
+    blockDNSResolution: false
+    ##
     ## @param networkPolicy.egress.ports Add individual ports to be allowed by the egress
     ports: []
     ## Add ports to the egress by specifying - port: <port number>
     ## E.X.
-    ## ports:
-      ## - port: 80
-      ## - port: 443
-  ##
+    ## - port: 80
+    ## - port: 443
+    ##
+    ## @param networkPolicy.egress.to Allow egress traffic to specific destinations
+    to: []
+    ## Add destinations to the egress by specifying - ipBlock: <CIDR>
+    ## E.X.
+    ## to:
+    ##  - namespaceSelector:
+    ##    matchExpressions:
+  ##    - {key: role, operator: In, values: [grafana]}
   ##
   ##
   ##

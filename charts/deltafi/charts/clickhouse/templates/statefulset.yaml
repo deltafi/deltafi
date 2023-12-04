@@ -1,28 +1,26 @@
-{{- if .Values.enabled -}}
+{{- /*
+Copyright VMware, Inc.
+SPDX-License-Identifier: APACHE-2.0
+*/}}
+
 {{- $shards := .Values.shards | int }}
 {{- range $i, $e := until $shards }}
 apiVersion: {{ include "common.capabilities.statefulset.apiVersion" $ }}
 kind: StatefulSet
 metadata:
-  {{- if eq $shards 1 }}
-  name: {{ printf "%s" (include "common.names.fullname" $ ) }}
-  {{- else }}
   name: {{ printf "%s-shard%d" (include "common.names.fullname" $ ) $i }}
-  {{- end }}
   namespace: {{ include "common.names.namespace" $ | quote }}
-  labels: {{- include "common.labels.standard" $ | nindent 4 }}
+  labels: {{- include "common.labels.standard" ( dict "customLabels" $.Values.commonLabels "context" $ ) | nindent 4 }}
     app.kubernetes.io/component: clickhouse
-    {{- if $.Values.commonLabels }}
-    {{- include "common.tplvalues.render" ( dict "value" $.Values.commonLabels "context" $ ) | nindent 4 }}
-    {{- end }}
   {{- if $.Values.commonAnnotations }}
   annotations: {{- include "common.tplvalues.render" ( dict "value" $.Values.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 spec:
   replicas: {{ $.Values.replicaCount }}
   podManagementPolicy: {{ $.Values.podManagementPolicy | quote }}
+  {{- $podLabels := include "common.tplvalues.merge" ( dict "values" ( list $.Values.podLabels $.Values.commonLabels ) "context" $ ) }}
   selector:
-    matchLabels: {{ include "common.labels.matchLabels" $ | nindent 6 }}
+    matchLabels: {{- include "common.labels.matchLabels" ( dict "customLabels" $podLabels "context" $ ) | nindent 6 }}
       app.kubernetes.io/component: clickhouse
   serviceName: {{ printf "%s-headless" (include "common.names.fullname" $) }}
   {{- if $.Values.updateStrategy }}
@@ -33,17 +31,16 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") $ | sha256sum }}
         checksum/config-extra: {{ include (print $.Template.BasePath "/configmap-extra.yaml") $ | sha256sum }}
+        checksum/config-users-extra: {{ include (print $.Template.BasePath "/configmap-users-extra.yaml") $ | sha256sum }}
         {{- if $.Values.podAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" $.Values.podAnnotations "context" $) | nindent 8 }}
         {{- end }}
         {{- if and $.Values.metrics.enabled $.Values.metrics.podAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" $.Values.metrics.podAnnotations "context" $) | nindent 8 }}
         {{- end }}
-      labels: {{- include "common.labels.standard" $ | nindent 8 }}
+      labels: {{- include "common.labels.standard" ( dict "customLabels" $podLabels "context" $ ) | nindent 8 }}
         app.kubernetes.io/component: clickhouse
-        {{- if $.Values.podLabels }}
-        {{- include "common.tplvalues.render" (dict "value" $.Values.podLabels "context" $) | nindent 8 }}
-        {{- end }}
+        shard: {{ $i | quote }}
     spec:
       serviceAccountName: {{ template "clickhouse.serviceAccountName" $ }}
       {{- include "clickhouse.imagePullSecrets" $ | nindent 6 }}
@@ -54,8 +51,8 @@ spec:
       affinity: {{- include "common.tplvalues.render" ( dict "value" $.Values.affinity "context" $) | nindent 8 }}
       {{- else }}
       affinity:
-        podAffinity: {{- include "common.affinities.pods" (dict "type" $.Values.podAffinityPreset "component" "clickhouse" "context" $) | nindent 10 }}
-        podAntiAffinity: {{- include "common.affinities.pods" (dict "type" $.Values.podAntiAffinityPreset "component" "clickhouse" "context" $) | nindent 10 }}
+        podAffinity: {{- include "common.affinities.pods" (dict "type" $.Values.podAffinityPreset "component" "clickhouse" "customLabels" $podLabels "context" $) | nindent 10 }}
+        podAntiAffinity: {{- include "common.affinities.pods" (dict "type" $.Values.podAntiAffinityPreset "component" "clickhouse" "customLabels" $podLabels "extraPodAffinityTerms" (ternary (list (dict "extraMatchLabels" (dict "shard" $i) "topologyKey" "topology.kubernetes.io/zone")) (list) $.Values.distributeReplicasByZone) "context" $) | nindent 10 }}
         nodeAffinity: {{- include "common.affinities.nodes" (dict "type" $.Values.nodeAffinityPreset.type "key" $.Values.nodeAffinityPreset.key "values" $.Values.nodeAffinityPreset.values) | nindent 10 }}
       {{- end }}
       {{- if $.Values.nodeSelector }}
@@ -316,9 +313,17 @@ spec:
             - name: extra-config
               mountPath: /bitnami/clickhouse/etc/conf.d/extra-configmap
           {{- end }}
+          {{- if or $.Values.usersExtraOverridesConfigmap $.Values.usersExtraOverrides }}
+            - name: users-extra-config
+              mountPath: /bitnami/clickhouse/etc/users.d/users-extra-configmap
+          {{- end }}
           {{- if $.Values.extraOverridesSecret }}
             - name: extra-secret
               mountPath: /bitnami/clickhouse/etc/conf.d/extra-secret
+          {{- end }}
+          {{- if $.Values.usersExtraOverridesSecret }}
+            - name: users-extra-secret
+              mountPath: /bitnami/clickhouse/etc/users.d/users-extra-secret
           {{- end }}
           {{- if $.Values.tls.enabled }}
             - name: clickhouse-certificates
@@ -361,10 +366,20 @@ spec:
           configMap:
             name: {{ template "clickhouse.extraConfigmapName" $ }}
         {{- end }}
+        {{- if or $.Values.usersExtraOverridesConfigmap $.Values.usersExtraOverrides }}
+        - name: users-extra-config
+          configMap:
+            name: {{ template "clickhouse.usersExtraConfigmapName" $ }}
+        {{- end }}
         {{- if $.Values.extraOverridesSecret }}
         - name: extra-secret
           secret:
             secretName: {{ $.Values.extraOverridesSecret }}
+        {{- end }}
+        {{- if $.Values.usersExtraOverridesSecret }}
+        - name: users-extra-secret
+          secret:
+            secretName: {{ $.Values.usersExtraOverridesSecret }}
         {{- end }}
         {{- if not $.Values.persistence.enabled }}
         - name: data
@@ -372,7 +387,7 @@ spec:
         {{- else if $.Values.persistence.existingClaim }}
         - name: data
           persistentVolumeClaim:
-            claimName: {{ $.Values.persistence.existingClaim }}
+            claimName: {{ tpl $.Values.persistence.existingClaim $ }}
         {{- end }}
         {{- if  $.Values.tls.enabled }}
         - name: raw-certificates
@@ -388,21 +403,13 @@ spec:
   volumeClaimTemplates:
     - metadata:
         name: data
-        annotations:
-          {{- if $.Values.persistence.annotations }}
-          {{- include "common.tplvalues.render" (dict "value" $.Values.persistence.annotations "context" $) | nindent 10 }}
-          {{- end }}
-          {{- if $.Values.commonAnnotations }}
-          {{- include "common.tplvalues.render" (dict "value" $.Values.commonAnnotations "context" $) | nindent 10 }}
-          {{- end }}
-        labels: {{- include "common.labels.standard" $ | nindent 10 }}
+        {{- if or $.Values.persistence.annotations $.Values.commonAnnotations }}
+        {{- $claimAnnotations := include "common.tplvalues.merge" ( dict "values" ( list $.Values.persistence.annotations $.Values.commonLabels ) "context" $ ) }}
+        annotations: {{- include "common.tplvalues.render" ( dict "value" $claimAnnotations "context" $ ) | nindent 10 }}
+        {{- end }}
+        {{- $claimLabels := include "common.tplvalues.merge" ( dict "values" ( list $.Values.persistence.labels $.Values.commonLabels ) "context" $ ) }}
+        labels: {{- include "common.labels.matchLabels" ( dict "customLabels" $claimLabels "context" $ ) | nindent 10 }}
           app.kubernetes.io/component: clickhouse
-          {{- if $.Values.commonLabels }}
-          {{- include "common.tplvalues.render" (dict "value" $.Values.commonLabels "context" $) | nindent 10 }}
-          {{- end }}
-          {{- if $.Values.persistence.labels }}
-          {{- include "common.tplvalues.render" (dict "value" $.Values.persistence.labels "context" $) | nindent 10 }}
-          {{- end }}
       spec:
         accessModes:
         {{- range $.Values.persistence.accessModes }}
@@ -420,5 +427,4 @@ spec:
         {{- include "common.storage.class" (dict "persistence" $.Values.persistence "global" $.Values.global) | nindent 8 }}
   {{- end }}
 ---
-{{- end }}
 {{- end }}
