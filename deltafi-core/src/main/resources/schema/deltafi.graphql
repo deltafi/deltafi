@@ -174,7 +174,7 @@ type Action {
   errorCause: String
   errorContext: String
   filteredCause: String
-  filterContext: String
+  filteredContext: String
   attempt: Int!
   content: [Content!]!
   metadata: Metadata

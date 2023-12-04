@@ -3050,6 +3050,7 @@ class DeltaFiCoreApplicationTests {
 						.name("action2")
 						.state(ActionState.FILTERED)
 						.filteredCause("Coffee")
+						.filteredContext("and donuts")
 						.build(),
 				Action.builder()
 						.name("action2")

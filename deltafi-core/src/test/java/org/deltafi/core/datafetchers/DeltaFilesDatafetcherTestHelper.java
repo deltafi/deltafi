@@ -73,6 +73,7 @@ public class DeltaFilesDatafetcherTestHelper {
                 .errorCause()
                 .errorContext()
                 .filteredCause()
+                .filteredContext()
                 .state()
                 .parent()
                 .parent()
