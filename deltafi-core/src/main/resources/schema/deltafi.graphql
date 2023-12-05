@@ -157,6 +157,7 @@ enum ActionType {
   FORMAT
   VALIDATE
   EGRESS
+  PUBLISH
   UNKNOWN
 }
 
@@ -460,6 +461,8 @@ type Mutation {
   disableTransformTestMode(flowName: String!) : Boolean!
   setTransformFlowExpectedAnnotations(flowName: String!, expectedAnnotations: [String]) : Boolean!
   setEgressFlowExpectedAnnotations(flowName: String!, expectedAnnotations: [String]) : Boolean!
+
+  taskTimedIngress(name: String!, memo: String) : Boolean!
 
   resume(dids: [String!]!, resumeMetadata: [ResumeMetadata!]) : [RetryResult!]!
   replay(dids: [String!]!, replaceFilename: String, replaceFlow: String, removeSourceMetadata: [String!], replaceSourceMetadata: [KeyValueInput!]) : [RetryResult!]!

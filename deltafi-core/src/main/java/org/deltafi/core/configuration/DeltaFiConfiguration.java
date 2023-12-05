@@ -19,6 +19,8 @@ package org.deltafi.core.configuration;
 
 import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.action.ActionEventQueueProperties;
+import org.deltafi.common.rules.RuleEvaluator;
+import org.deltafi.common.rules.RuleValidator;
 import org.deltafi.common.uuid.RandomUUIDGenerator;
 import org.deltafi.common.uuid.UUIDGenerator;
 import org.deltafi.core.services.DeltaFiPropertiesService;
@@ -48,5 +50,15 @@ public class DeltaFiConfiguration {
     @Bean
     public UUIDGenerator uuidGenerator() {
         return new RandomUUIDGenerator();
+    }
+
+    @Bean
+    public RuleEvaluator ruleEvaluator() {
+        return new RuleEvaluator();
+    }
+
+    @Bean
+    public RuleValidator ruleValidator(RuleEvaluator ruleEvaluator) {
+        return new RuleValidator(ruleEvaluator);
     }
 }

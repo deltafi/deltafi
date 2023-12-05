@@ -15,26 +15,22 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.services.pubsub;
-
-import org.deltafi.common.types.Rule;
-
-import java.util.Set;
+package org.deltafi.common.types;
 
 /**
- * Interface for things that subscribe to topics
+ * Interface for things that publish DeltaFiles to topics
  */
-public interface Subscriber {
+public interface Publisher {
 
     /**
-     * Get the set of subscription rules
-     * @return set of subscription rules
+     * Get the PublishRules
+     * @return the publishRules
      */
-    Set<Rule> subscriptions();
+    PublishRules publishRules();
 
     /**
-     * Get the name of this subscriber
-     * @return the name of this subscriber
+     * Get the name of the publisher
+     * @return the name of the publisher
      */
     String getName();
 }

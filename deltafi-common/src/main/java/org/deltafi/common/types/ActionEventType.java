@@ -30,6 +30,7 @@ public enum ActionEventType {
   EGRESS,
   ERROR,
   FILTER,
+  PUBLISH,
   REINJECT,
   UNKNOWN
 }

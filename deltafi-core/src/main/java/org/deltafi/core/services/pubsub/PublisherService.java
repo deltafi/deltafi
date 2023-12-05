@@ -18,17 +18,21 @@
 package org.deltafi.core.services.pubsub;
 
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.rules.RuleEvaluator;
 import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionEventType;
 import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.DefaultBehavior;
 import org.deltafi.common.types.DefaultRule;
 import org.deltafi.common.types.DeltaFile;
+import org.deltafi.common.types.DeltaFileStage;
 import org.deltafi.common.types.ErrorEvent;
 import org.deltafi.common.types.FilterEvent;
 import org.deltafi.common.types.MatchingPolicy;
 import org.deltafi.common.types.PublishRules;
+import org.deltafi.common.types.Publisher;
 import org.deltafi.common.types.Rule;
+import org.deltafi.common.types.Subscriber;
 import org.deltafi.common.types.Topic;
 import org.deltafi.common.types.TopicFilterPolicy;
 import org.springframework.stereotype.Service;
@@ -62,6 +66,9 @@ public class PublisherService {
 
     /**
      * Find the subscribers that should receive the DeltaFile.
+     * Adds synthetic errors or filter actions based publisher and subscriber rules
+     * that are applied. If there are no matching subscribers and no pending actions
+     * the DeltaFile will be moved to a terminal state.
      * @param publisher publisher used to determine the DeltaFiles subscribers
      * @param deltaFile that will be sent to the matching subscribers
      * @return subscribers that should receive the DeltaFile next
@@ -139,7 +146,7 @@ public class PublisherService {
             TopicFilterPolicy filterPolicy = Objects.requireNonNullElse(topic.getFilterPolicy(), TopicFilterPolicy.DROP);
             switch (filterPolicy) {
                 case ERROR -> errorDeltaFile(deltaFile, ActionEventDetails.ERRORED_BY_TOPIC_FILTER, publisherName, topic.toString());
-                case FILTER -> filterDeltaFile(deltaFile, ActionEventDetails.FILTERED_BY_TOPIC_FILTER, publisherName);
+                case FILTER -> filterDeltaFile(deltaFile, ActionEventDetails.FILTERED_BY_TOPIC_FILTER, publisherName, topic.toString());
                 case DROP -> log.trace("Topic {} ({}) dropped deltaFile {} because of the filter rules", topicId, topic.getName(), deltaFile.getDid());
             }
             return false;
@@ -182,10 +189,15 @@ public class PublisherService {
             defaultBehavior = DefaultBehavior.ERROR;
         }
 
+        String context = "No subscribers found using publisher `" + publisher.getName() + "`\n" + publishRules;
         if (DefaultBehavior.FILTER.equals(defaultBehavior)) {
-            filterDeltaFile(deltaFile, ActionEventDetails.NO_SUBSCRIBER, publisherName);
+            filterDeltaFile(deltaFile, ActionEventDetails.NO_SUBSCRIBER, publisherName, context);
         } else {
-            errorDeltaFile(deltaFile, ActionEventDetails.NO_SUBSCRIBER, publisherName, "No subscribers found using publisher `" + publisher.getName() + "`\n" + publishRules);
+            errorDeltaFile(deltaFile, ActionEventDetails.NO_SUBSCRIBER, publisherName, context);
+        }
+
+        if (!deltaFile.hasPendingActions()) {
+            deltaFile.setStage(deltaFile.hasErroredAction() ? DeltaFileStage.ERROR : DeltaFileStage.COMPLETE);
         }
 
         return Set.of();
@@ -200,18 +212,18 @@ public class PublisherService {
         deltaFile.errorAction(buildErrorEvent(deltaFile, actionEventDetails, publisherName, context));
     }
 
-    private void filterDeltaFile(DeltaFile deltaFile, ActionEventDetails actionEventDetails, String publisherName) {
+    private void filterDeltaFile(DeltaFile deltaFile, ActionEventDetails actionEventDetails, String publisherName, String context) {
         queueSyntheticAction(deltaFile, actionEventDetails, publisherName);
-        deltaFile.filterAction(buildFilterEvent(deltaFile, actionEventDetails, publisherName));
+        deltaFile.filterAction(buildFilterEvent(deltaFile, actionEventDetails, publisherName, context));
     }
 
     private void queueSyntheticAction(DeltaFile deltaFile, ActionEventDetails actionEventDetails, String publisherName) {
-        deltaFile.queueNewAction(publisherName, actionEventDetails.eventName, ActionType.UNKNOWN, false);
+        deltaFile.queueNewAction(publisherName, actionEventDetails.eventName, ActionType.PUBLISH, false);
     }
 
-    private ActionEvent buildFilterEvent(DeltaFile deltaFile, ActionEventDetails actionEventDetails, String publisherName) {
+    private ActionEvent buildFilterEvent(DeltaFile deltaFile, ActionEventDetails actionEventDetails, String publisherName, String context) {
         return buildActionEvent(deltaFile, actionEventDetails, publisherName)
-                .filter(FilterEvent.builder().message(actionEventDetails.cause).build())
+                .filter(FilterEvent.builder().message(actionEventDetails.cause).context(context).build())
                 .build();
     }
 
@@ -229,7 +241,7 @@ public class PublisherService {
                 .action(actionEventDetails.eventName)
                 .start(now)
                 .stop(now)
-                .type(ActionEventType.UNKNOWN);
+                .type(ActionEventType.PUBLISH);
     }
 
     enum ActionEventDetails {

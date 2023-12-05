@@ -18,6 +18,7 @@
 package org.deltafi.core.services.pubsub;
 
 import org.deltafi.common.types.Rule;
+import org.deltafi.common.types.Subscriber;
 
 import java.util.HashMap;
 import java.util.HashSet;

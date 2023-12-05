@@ -30,7 +30,6 @@ import org.deltafi.common.http.client.feign.FeignClientFactory;
 import org.deltafi.common.types.FlowPlan;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.PluginRegistration;
-import org.deltafi.common.types.Variable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.info.BuildProperties;
@@ -90,7 +89,7 @@ public class PluginRegistrar {
 
         Resource flowsDirectory = applicationContext.getResource("classpath:flows");
         if (flowsDirectory.exists()) {
-            pluginRegistrationBuilder.variables(loadVariables()).flowPlans(loadFlowPlans());
+            loadResources(pluginRegistrationBuilder);
         } else {
             log.info("No flows directory exists to load variables or flows");
         }
@@ -102,49 +101,36 @@ public class PluginRegistrar {
         return pluginDependencies == null ? List.of() :
             Arrays.stream(pluginDependencies.split(",\\s?")).map(PluginCoordinates::new).toList();
     }
-
-    private List<Variable> loadVariables() {
-        Resource variablesResource = applicationContext.getResource("classpath:flows/variables.json");
-        if (!variablesResource.exists()) {
-            log.info("No flow variables have been defined");
-            return null;
-        }
-
-        try {
-            String variablesJson = new String(variablesResource.getInputStream().readAllBytes());
-            return OBJECT_MAPPER.readValue(variablesJson, new TypeReference<>() {});
-        } catch (IOException e) {
-            log.warn("Unable to load variables", e);
-            return Collections.emptyList();
-        }
-    }
-
-    private List<FlowPlan> loadFlowPlans() {
+    private void loadResources(PluginRegistration.PluginRegistrationBuilder pluginRegistrationBuilder) {
         Resource[] flowPlanResources;
         try {
             flowPlanResources = applicationContext.getResources("classpath:flows/*");
         } catch (IOException e) {
             log.warn("Unable to load flow plans", e);
-            return Collections.emptyList();
+            return;
         }
 
         if (flowPlanResources.length == 0) {
             log.info("No flow plans exist in the flows directory");
-            return Collections.emptyList();
+            return;
         }
 
         List<FlowPlan> flowPlans = new ArrayList<>();
         for (Resource flowPlanResource : flowPlanResources) {
-            if ("variables.json".equals(flowPlanResource.getFilename())) {
-                continue;
-            }
             try {
-                String flowJson = new String(flowPlanResource.getInputStream().readAllBytes());
-                flowPlans.add(OBJECT_MAPPER.readValue(flowJson, FlowPlan.class));
+                String rawJson = new String(flowPlanResource.getInputStream().readAllBytes());
+                if ("variables.json".equals(flowPlanResource.getFilename())) {
+                    pluginRegistrationBuilder.variables(OBJECT_MAPPER.readValue(rawJson, new TypeReference<>() {}));
+                } else if ("topics.json".equals(flowPlanResource.getFilename())) {
+                    pluginRegistrationBuilder.topics(OBJECT_MAPPER.readValue(rawJson, new TypeReference<>() {}));
+                } else {
+                    flowPlans.add(OBJECT_MAPPER.readValue(rawJson, FlowPlan.class));
+                }
             } catch (IOException e) {
-                log.warn("Unable to load flow plan ({})", flowPlanResource.getFilename(), e);
+                log.warn("Unable to load resource ({})", flowPlanResource.getFilename(), e);
             }
         }
-        return flowPlans;
+
+        pluginRegistrationBuilder.flowPlans(flowPlans);
     }
 }

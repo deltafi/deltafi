@@ -25,7 +25,7 @@ import org.deltafi.common.types.*;
 import org.deltafi.core.collect.*;
 import org.deltafi.core.exceptions.MissingEgressFlowException;
 import org.deltafi.core.exceptions.MissingFlowException;
-import org.deltafi.core.services.pubsub.Subscriber;
+import org.deltafi.common.types.Subscriber;
 import org.deltafi.core.types.*;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
@@ -117,7 +117,14 @@ public class StateMachine {
                 deltaFile.getSourceInfo().setProcessingType(ProcessingType.TRANSFORMATION);
             }
 
-            return advanceTransformation(transformFlow, deltaFile, newDeltaFile, new HashMap<>());
+            List<ActionInvocation> enqueueActions = advanceTransformation(transformFlow, deltaFile, newDeltaFile, new HashMap<>());
+            if (!deltaFile.hasPendingActions()) {
+                deltaFile.setStage(deltaFile.hasErroredAction() ? DeltaFileStage.ERROR : DeltaFileStage.COMPLETE);
+            }
+
+            deltaFile.recalculateBytes();
+
+            return enqueueActions;
         }
 
         throw new IllegalArgumentException("Unexpected subscriber type " + subscriber.getClass().getSimpleName());

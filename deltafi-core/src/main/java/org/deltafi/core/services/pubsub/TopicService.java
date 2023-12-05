@@ -20,7 +20,10 @@ package org.deltafi.core.services.pubsub;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.rules.RuleValidator;
+import org.deltafi.common.types.Subscriber;
 import org.deltafi.common.types.Topic;
+import org.deltafi.core.exceptions.DeltafiConfigurationException;
 import org.deltafi.core.repo.TopicRepo;
 import org.springframework.stereotype.Service;
 
@@ -39,11 +42,13 @@ public class TopicService {
 
     private final TopicRepo topicRepo;
     private final List<SubscriberService> subscriberServices;
+    private final RuleValidator ruleValidator;
     private Map<String, Topic> topicMap = Map.of();
 
-    public TopicService(TopicRepo topicRepo, List<SubscriberService> subscriberServices) {
+    public TopicService(TopicRepo topicRepo, List<SubscriberService> subscriberServices, RuleValidator ruleValidator) {
         this.topicRepo = topicRepo;
         this.subscriberServices = subscriberServices;
+        this.ruleValidator = ruleValidator;
     }
 
     @PostConstruct
@@ -51,7 +56,7 @@ public class TopicService {
         refreshCache();
     }
 
-    public void refreshCache() {
+    public synchronized void refreshCache() {
         topicMap = topicRepo.findAll().stream()
                 .collect(Collectors.toMap(Topic::getId, Function.identity()));
     }
@@ -86,7 +91,21 @@ public class TopicService {
         return topicRepo.findAll();
     }
 
+    public void saveTopics(List<Topic> topics) {
+        if (topics == null || topics.isEmpty()) {
+            return;
+        }
+
+        topicRepo.saveAll(topics);
+        refreshCache();
+    }
+
     public Topic saveTopic(Topic topic) {
+        List<String> errors = validateTopics(List.of(topic));
+        if (!errors.isEmpty()) {
+            throw new DeltafiConfigurationException("Invalid topics filter rules found: " + String.join("; ", errors));
+        }
+
         Topic persisted = topicRepo.save(topic);
         refreshCache();
         return persisted;
@@ -105,5 +124,17 @@ public class TopicService {
 
         log.warn("Attempted to delete a topic {} that does not exist in the repository", topicId);
         return false;
+    }
+
+    /**
+     * Validate the topic filter rules if they are set
+     * @param topics list of topics to validate
+     * @return list of errors if the topics
+     */
+    public List<String> validateTopics(List<Topic> topics) {
+        if (topics == null || topics.isEmpty()) {
+            return List.of();
+        }
+        return topics.stream().map(ruleValidator::validateTopic).flatMap(Collection::stream).toList();
     }
 }

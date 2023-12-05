@@ -18,12 +18,11 @@
 package org.deltafi.core.services;
 
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.types.Rule;
 import org.deltafi.common.types.TransformFlowPlan;
 import org.deltafi.core.converters.TransformFlowPlanConverter;
 import org.deltafi.core.generated.types.IngressFlowErrorState;
 import org.deltafi.core.repo.TransformFlowRepo;
-import org.deltafi.core.services.pubsub.Subscriber;
+import org.deltafi.common.types.Subscriber;
 import org.deltafi.core.services.pubsub.SubscriberService;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.snapshot.types.TransformFlowSnapshot;
@@ -34,8 +33,6 @@ import org.deltafi.core.validation.TransformFlowValidator;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;

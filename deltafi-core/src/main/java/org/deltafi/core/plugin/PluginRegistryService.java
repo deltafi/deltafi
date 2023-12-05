@@ -24,6 +24,7 @@ import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.Flows;
 import org.deltafi.core.security.DeltaFiUserDetailsService;
 import org.deltafi.core.services.*;
+import org.deltafi.core.services.pubsub.TopicService;
 import org.deltafi.core.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.snapshot.Snapshotter;
 import org.deltafi.core.snapshot.SystemSnapshot;
@@ -53,6 +54,7 @@ public class PluginRegistryService implements Snapshotter {
     private final TimedIngressFlowPlanService timedIngressFlowPlanService;
     private final SystemPluginService systemPluginService;
     private final FlowValidationService flowValidationService;
+    private final TopicService topicService;
     private final List<PluginUninstallCheck> pluginUninstallChecks;
     private final List<PluginCleaner> pluginCleaners;
 
@@ -69,7 +71,7 @@ public class PluginRegistryService implements Snapshotter {
         GroupedFlowPlans groupedFlowPlans = groupPlansByFlowType(pluginRegistration);
 
         // Validate everything before persisting changes, the plugin should not be considered installed if validation fails
-        List<String> validationErrors = validate(plugin, groupedFlowPlans, pluginRegistration.getVariables());
+        List<String> validationErrors = validate(plugin, groupedFlowPlans, pluginRegistration.getVariables(), pluginRegistration.getTopics());
         if (!validationErrors.isEmpty()) {
             return Result.builder().success(false).errors(validationErrors).build();
         }
@@ -77,6 +79,7 @@ public class PluginRegistryService implements Snapshotter {
         pluginRepository.deleteOlderVersions(plugin.getPluginCoordinates().getGroupId(), plugin.getPluginCoordinates().getArtifactId());
         pluginRepository.save(plugin);
         actionDescriptorService.registerActions(plugin.getActions());
+        topicService.saveTopics(pluginRegistration.getTopics());
         pluginVariableService.saveVariables(plugin.getPluginCoordinates(), pluginRegistration.getVariables());
         upgradeFlowPlans(plugin.getPluginCoordinates(), groupedFlowPlans);
 
@@ -90,7 +93,7 @@ public class PluginRegistryService implements Snapshotter {
      * prevent the plugin from successfully registering
      * @return the list of errors
      */
-    private List<String> validate(Plugin plugin, GroupedFlowPlans groupedFlowPlans, List<Variable> variables) {
+    private List<String> validate(Plugin plugin, GroupedFlowPlans groupedFlowPlans, List<Variable> variables, List<Topic> topics) {
         List<String> errors = new ArrayList<>();
         errors.addAll(pluginValidator.validate(plugin));
         errors.addAll(normalizeFlowPlanService.validateFlowPlans(groupedFlowPlans.normalizeFlowPlans));
@@ -99,6 +102,7 @@ public class PluginRegistryService implements Snapshotter {
         errors.addAll(enrichFlowPlanService.validateFlowPlans(groupedFlowPlans.enrichFlowPlans));
         errors.addAll(egressFlowPlanService.validateFlowPlans(groupedFlowPlans.egressFlowPlans));
         errors.addAll(pluginVariableService.validateVariables(variables));
+        errors.addAll(topicService.validateTopics(topics));
         return errors;
     }
 

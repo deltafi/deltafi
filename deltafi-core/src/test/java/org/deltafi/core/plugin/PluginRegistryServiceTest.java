@@ -24,6 +24,7 @@ import org.deltafi.common.types.PluginRegistration;
 import org.deltafi.common.types.Variable;
 import org.deltafi.core.security.DeltaFiUserDetailsService;
 import org.deltafi.core.services.*;
+import org.deltafi.core.services.pubsub.TopicService;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.util.Util;
@@ -102,6 +103,9 @@ class PluginRegistryServiceTest {
     @Mock
     FlowValidationService flowValidationService;
 
+    @Mock
+    TopicService topicService;
+
     PluginRegistryService pluginRegistryService;
 
     @BeforeEach
@@ -110,7 +114,7 @@ class PluginRegistryServiceTest {
         List<PluginUninstallCheck> checkers = List.of(normalizeFlowService, enrichFlowService, egressFlowService, transformFlowService, timedIngressFlowService);
         pluginRegistryService = new PluginRegistryService(normalizeFlowService, enrichFlowService, egressFlowService,
                 transformFlowService, timedIngressFlowService, pluginRepository, pluginValidator, actionDescriptorService, pluginVariableService,
-                normalizeFlowPlanService, enrichFlowPlanService, egressFlowPlanService, transformFlowPlanService, timedIngressFlowPlanService, systemPluginService, flowValidationService, checkers, cleaners);
+                normalizeFlowPlanService, enrichFlowPlanService, egressFlowPlanService, transformFlowPlanService, timedIngressFlowPlanService, systemPluginService, flowValidationService, topicService, checkers, cleaners);
     }
 
     @Test

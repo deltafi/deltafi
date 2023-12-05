@@ -34,7 +34,7 @@ import java.util.List;
 @Setter
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 @EqualsAndHashCode(callSuper = true)
-public class TimedIngressFlowPlan extends FlowPlan {
+public class TimedIngressFlowPlan extends FlowPlan implements Publisher {
     private TimedIngressActionConfiguration timedIngressAction;
     private String targetFlow;
     private PublishRules publishRules;
@@ -64,5 +64,10 @@ public class TimedIngressFlowPlan extends FlowPlan {
             actionConfigurations.add(timedIngressAction);
         }
         return actionConfigurations;
+    }
+
+    @Override
+    public PublishRules publishRules() {
+        return this.publishRules;
     }
 }

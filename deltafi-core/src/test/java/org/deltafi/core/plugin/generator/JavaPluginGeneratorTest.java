@@ -137,6 +137,6 @@ class JavaPluginGeneratorTest {
     }
 
     boolean ignoreAction(ActionType actionType) {
-        return actionType != ActionType.TIMED_INGRESS && actionType != ActionType.INGRESS && actionType != ActionType.UNKNOWN;
+        return actionType != ActionType.TIMED_INGRESS && actionType != ActionType.INGRESS && actionType != ActionType.UNKNOWN && actionType != ActionType.PUBLISH;
     }
 }

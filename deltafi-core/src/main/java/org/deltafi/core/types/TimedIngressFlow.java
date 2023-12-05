@@ -23,7 +23,7 @@ import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.ActionFamily;
 import org.deltafi.common.types.PublishRules;
-import org.deltafi.core.services.pubsub.Publisher;
+import org.deltafi.common.types.Publisher;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Duration;

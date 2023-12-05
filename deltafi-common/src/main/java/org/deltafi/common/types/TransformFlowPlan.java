@@ -35,7 +35,7 @@ import java.util.Set;
 @Setter
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 @EqualsAndHashCode(callSuper = true)
-public class TransformFlowPlan extends FlowPlan {
+public class TransformFlowPlan extends FlowPlan implements Subscriber {
     private List<TransformActionConfiguration> transformActions;
     private EgressActionConfiguration egressAction;
     private Set<Rule> subscriptions;
@@ -63,5 +63,10 @@ public class TransformFlowPlan extends FlowPlan {
             actionConfigurations.add(egressAction);
         }
         return actionConfigurations;
+    }
+
+    @Override
+    public Set<Rule> subscriptions() {
+        return this.subscriptions;
     }
 }

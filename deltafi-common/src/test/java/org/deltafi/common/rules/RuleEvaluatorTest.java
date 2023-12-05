@@ -15,7 +15,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.services.pubsub;
+package org.deltafi.common.rules;
 
 import lombok.SneakyThrows;
 import org.assertj.core.api.Assertions;
@@ -61,7 +61,7 @@ class RuleEvaluatorTest {
     @Test
     void testImmutableDeltaFile() {
         DeltaFile originalDeltaFile = testDeltaFile();
-        ImmutableDeltaFile deltaFile = new ImmutableDeltaFile(originalDeltaFile);
+        RuleEvaluator.ImmutableDeltaFile deltaFile = new RuleEvaluator.ImmutableDeltaFile(originalDeltaFile);
         // cannot rewrite value for key 'a'
         Assertions.assertThatThrownBy(() -> ruleEvaluator.doEvaluateCondition("metadata['a'] = 'c'", deltaFile))
                 .isInstanceOf(UnsupportedOperationException.class);

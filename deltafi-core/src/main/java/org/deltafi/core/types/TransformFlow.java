@@ -22,7 +22,7 @@ import lombok.EqualsAndHashCode;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.ActionFamily;
 import org.deltafi.common.types.Rule;
-import org.deltafi.core.services.pubsub.Subscriber;
+import org.deltafi.common.types.Subscriber;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
