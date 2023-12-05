@@ -68,7 +68,7 @@ minio:
     MINIO_SCANNER_SPEED: slow
     MINIO_BROWSER: off
   image:
-    tag: RELEASE.2023-11-15T20-43-25Z
+    tag: RELEASE.2023-12-02T10-51-33Z
   mode: standalone
   existingSecret: minio-keys
   resources:
@@ -89,7 +89,7 @@ minio:
 mongodb:
   image:
     repository: bitnami/mongodb
-    tag: 5.0.17
+    tag: 6.0.5
   architecture: standalone
   useStatefulSet: false
   auth:
@@ -227,7 +227,7 @@ grafana:
           password: deltafi
 promtail:
   image:
-    tag: 2.9.0
+    tag: 2.9.2
   persistence:
     enabled: true
     existingClaim: deltafi-promtail
@@ -359,7 +359,7 @@ promtail:
                   expression: "/healthz"
 loki:
   image:
-    tag: 2.9.0
+    tag: 2.9.2
   persistence:
     enabled: true
     existingClaim: deltafi-loki
@@ -417,7 +417,7 @@ docker-registry:
   enabled: false
   image:
     repository: deltafi/registry
-    tag: 2.8.2-0
+    tag: 2.8.3-0
   persistence:
     enabled: true
     existingClaim: deltafi-docker-registry
@@ -445,7 +445,7 @@ clickhouse:
   enabled: false
   image:
     repository: bitnami/clickhouse
-    tag: 23.8.2-debian-11-r0
+    tag: 23.10.5-debian-11-r0
   shards: 1
   replicaCount: 1
   keeper:

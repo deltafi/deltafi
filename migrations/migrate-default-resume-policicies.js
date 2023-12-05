@@ -1,13 +1,13 @@
 let policyNameExists = function(value) {
-    return db.resumePolicy.count({name: value}) > 0
+    return db.resumePolicy.countDocuments({name: value}) > 0
 }
 
 let actionAlreadyExists = function(value) {
-    return db.resumePolicy.count({flow: null, action: value}) > 0
+    return db.resumePolicy.countDocuments({flow: null, action: value}) > 0
 }
 
 let errorAlreadyExists = function(value) {
-    return db.resumePolicy.count({flow: null, action: null, errorSubstring: value}) > 0
+    return db.resumePolicy.countDocuments({flow: null, action: null, errorSubstring: value}) > 0
 }
 
 let checkNameAndAction = function(name, action) {

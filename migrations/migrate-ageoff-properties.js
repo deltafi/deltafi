@@ -1,9 +1,9 @@
 let oldPropertyCollectionExists = function() {
-    return db.propertySet.count() > 0
+    return db.propertySet.countDocuments() > 0
 }
 
 let alreadyRun = function() {
-    return db.propertySet.count({properties: {$elemMatch: {"key": "deltafi.delete.ageOffDays"}}}) > 0
+    return db.propertySet.countDocuments({properties: {$elemMatch: {"key": "deltafi.delete.ageOffDays"}}}) > 0
 }
 
 let buildAgeOffProperty = function(value) {

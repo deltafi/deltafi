@@ -18,12 +18,12 @@ ARGS=($@)
 [[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
 
 EVAL=${ARGS[1]}
-MONGODB_USERNAME_ENV='$MONGODB_USERNAME'
-MONGODB_PASSWORD_ENV='$MONGODB_PASSWORD'
+MONGODB_USERNAME_ENV='$MONGODB_EXTRA_USERNAMES'
+MONGODB_PASSWORD_ENV='$MONGODB_EXTRA_PASSWORDS'
 
 if _is_standalone; then
-  docker exec -i deltafi-mongodb sh -c "mongo -u ${MONGODB_USERNAME_ENV} --password ${MONGODB_PASSWORD_ENV} --eval '${EVAL}' deltafi"
+  docker exec -i deltafi-mongodb sh -c "mongosh -u ${MONGODB_USERNAME_ENV} --password ${MONGODB_PASSWORD_ENV} --eval '${EVAL}' deltafi"
 else
   POD=$(${KUBECTL_BIN} get pod -l app.kubernetes.io/name=mongodb -o jsonpath="{.items[0].metadata.name}")
-  ${KUBECTL_BIN} exec -i ${POD} --container mongodb -- sh -c "mongo -u ${MONGODB_USERNAME_ENV} --password ${MONGODB_PASSWORD_ENV} --eval '${EVAL}' deltafi"
+  ${KUBECTL_BIN} exec -i ${POD} --container mongodb -- sh -c "mongosh -u ${MONGODB_USERNAME_ENV} --password ${MONGODB_PASSWORD_ENV} --eval '${EVAL}' deltafi"
 fi

@@ -11,7 +11,7 @@ let defaultProperties = {
     },
     "ingress": {
         "enabled": true,
-        "diskSpaceRequirementInMb": NumberLong(1000)
+        "diskSpaceRequirementInMb": NumberLong("1000")
     },
     "plugins": {
         "imageRepositoryBase": "docker.io/deltafi/"
@@ -139,7 +139,7 @@ let migrateSnapshots = function() {
 }
 
 runMigrations = function() {
-    if(db.propertySet.count() > 0 && db.systemSnapshot.count({deltaFiProperties: {$exists: 0}}) > 0) {
+    if(db.propertySet.countDocuments() > 0 && db.systemSnapshot.countDocuments({deltaFiProperties: {$exists: 0}}) > 0) {
         migratePropertySet()
         migrateSnapshots()
     }

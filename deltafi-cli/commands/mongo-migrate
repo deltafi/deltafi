@@ -43,8 +43,8 @@ while [ $# -gt 0 ]; do
 done
 
 
-MONGODB_USERNAME_ENV='$MONGODB_USERNAME'
-MONGODB_PASSWORD_ENV='$MONGODB_PASSWORD'
+MONGODB_USERNAME_ENV='$MONGODB_EXTRA_USERNAMES'
+MONGODB_PASSWORD_ENV='$MONGODB_EXTRA_PASSWORDS'
 
 _k8s_mongo_migrate() {
   POD=$(${KUBECTL_BIN} get pod -l app.kubernetes.io/name=mongodb -o jsonpath="{.items[0].metadata.name}")

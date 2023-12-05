@@ -58,7 +58,7 @@ addUiProps = function() {
 }
 
 runMigrations = function() {
-    if (db.deltaFiProperties.count({ui: {$exists: 1}}) == 0) {
+    if (db.deltaFiProperties.countDocuments({ui: {$exists: 1}}) == 0) {
         addUiProps()
     }
 }
