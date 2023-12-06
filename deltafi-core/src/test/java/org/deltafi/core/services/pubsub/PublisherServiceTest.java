@@ -205,7 +205,7 @@ class PublisherServiceTest {
         topic.setFilters(Set.of("a", "b"));
 
         Mockito.when(ruleEvaluator.evaluateCondition(Mockito.anyString(), Mockito.eq(deltaFile)))
-                        .thenAnswer(a -> a.getArgument(0).equals("b"));
+                .thenAnswer(a -> a.getArgument(0).equals("b"));
 
         Mockito.when(ruleEvaluator.evaluateCondition("b", deltaFile)).thenReturn(true);
         Mockito.when(topicService.getTopic("topic")).thenReturn(Optional.of(topic));
@@ -216,7 +216,8 @@ class PublisherServiceTest {
 
         // test adding a filter action to a DeltaFiles that is filtered by the topic
         topic.setFilterPolicy(TopicFilterPolicy.FILTER);
-        publisherService.topicAllowsDeltaFile("topic", deltaFile, "flow");
+        Assertions.assertThatThrownBy(() -> publisherService.topicAllowsDeltaFile("topic", deltaFile, "flow"))
+                .isInstanceOf(PublisherService.TopicException.class);
         Assertions.assertThat(deltaFile.getActions()).hasSize(1);
         Action action = deltaFile.getActions().get(0);
         Assertions.assertThat(action.getFlow()).isEqualTo("flow");
@@ -228,7 +229,8 @@ class PublisherServiceTest {
         // test adding an error action to a DeltaFile that is filtered by the topic
         deltaFile.getActions().clear();
         topic.setFilterPolicy(TopicFilterPolicy.ERROR);
-        publisherService.topicAllowsDeltaFile("topic", deltaFile, "flow");
+        Assertions.assertThatThrownBy(() -> publisherService.topicAllowsDeltaFile("topic", deltaFile, "flow"))
+                .isInstanceOf(PublisherService.TopicException.class);
         Assertions.assertThat(deltaFile.getActions()).hasSize(1);
         action = deltaFile.getActions().get(0);
         Assertions.assertThat(action.getFlow()).isEqualTo("flow");
