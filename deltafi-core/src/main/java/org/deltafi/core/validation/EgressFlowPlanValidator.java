@@ -17,9 +17,13 @@
  */
 package org.deltafi.core.validation;
 
+import org.deltafi.common.rules.RuleValidator;
 import org.deltafi.common.types.EgressFlowPlan;
 import org.springframework.stereotype.Service;
 
 @Service
 public class EgressFlowPlanValidator extends FlowPlanValidator<EgressFlowPlan> {
+    public EgressFlowPlanValidator(RuleValidator ruleValidator) {
+        super(ruleValidator);
+    }
 }

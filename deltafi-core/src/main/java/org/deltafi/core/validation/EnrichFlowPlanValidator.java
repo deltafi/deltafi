@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.validation;
 
+import org.deltafi.common.rules.RuleValidator;
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.RequiresDomainsActionConfiguration;
 import org.deltafi.core.generated.types.FlowConfigError;
@@ -33,7 +34,8 @@ public class EnrichFlowPlanValidator extends FlowPlanValidator<EnrichFlowPlan> {
 
     private final EnrichFlowPlanService enrichFlowPlanService;
 
-    public EnrichFlowPlanValidator(@Lazy EnrichFlowPlanService enrichFlowPlanService) {
+    public EnrichFlowPlanValidator(@Lazy EnrichFlowPlanService enrichFlowPlanService, RuleValidator ruleValidator) {
+        super(ruleValidator);
         this.enrichFlowPlanService = enrichFlowPlanService;
     }
 

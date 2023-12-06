@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.validation;
 
-import lombok.AllArgsConstructor;
+import org.deltafi.common.rules.RuleValidator;
 import org.deltafi.common.types.TimedIngressFlowPlan;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
@@ -27,9 +27,13 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 
-@AllArgsConstructor
 @Service
 public class TimedIngressFlowPlanValidator extends FlowPlanValidator<TimedIngressFlowPlan> {
+
+    public TimedIngressFlowPlanValidator(RuleValidator ruleValidator) {
+        super(ruleValidator);
+    }
+
     /**
      * Flow plan type specific validation checks
      * @return list of errors
