@@ -42,6 +42,7 @@ import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -78,22 +79,27 @@ public class PublisherService {
         PublishRules publishRules = publisher.publishRules();
         Objects.requireNonNull(publishRules, "The publish rules cannot be null");
 
-        Set<Subscriber> subscribers = subscribers(getMatchingTopics(publishRules, deltaFile), deltaFile, publisher.getName());
+        try {
+            Set<Subscriber> subscribers = subscribers(getMatchingTopics(publishRules, deltaFile), deltaFile, publisher.getName());
 
-        if (subscribers.isEmpty()) {
-            return handleNoMatches(publisher, deltaFile);
+            if (subscribers.isEmpty()) {
+                return handleNoMatches(publisher, deltaFile);
+            }
+
+            return subscribers;
+        } catch (TopicException topicException) {
+            setStage(deltaFile);
+            return Set.of();
         }
-
-        return subscribers;
     }
 
     private Set<Subscriber> subscribers(Set<String> topics, DeltaFile deltaFile, String publisherName) {
         // find all matching topics and map them to the set of subscribers
         Set<Subscriber> potentialSubscribers = topics.stream()
-                .filter(topic -> topicAllowsDeltaFile(topic, deltaFile, publisherName))
-                .map(topicService::getSubscribers)
-                .flatMap(Collection::stream)
-                .collect(Collectors.toSet());
+                    .filter(topic -> topicAllowsDeltaFile(topic, deltaFile, publisherName))
+                    .map(topicService::getSubscribers)
+                    .flatMap(Collection::stream)
+                    .collect(Collectors.toSet());
 
         // check the subscribers rules to determine if DeltaFile should go there
         return potentialSubscribers.stream()
@@ -133,6 +139,7 @@ public class PublisherService {
      * @param topicId id of the topic to attempt to publish to
      * @param deltaFile to evaluate against the topic filter rules
      * @return the Topic if DeltaFile can go there, otherwise null
+     * @throws TopicException when the topic filters or errors the DeltaFile
      */
     boolean topicAllowsDeltaFile(String topicId, DeltaFile deltaFile, String publisherName) {
         Topic topic = topicService.getTopic(topicId).orElse(null);
@@ -145,14 +152,19 @@ public class PublisherService {
         if (topicFiltersDeltaFile(topic, deltaFile)) {
             TopicFilterPolicy filterPolicy = Objects.requireNonNullElse(topic.getFilterPolicy(), TopicFilterPolicy.DROP);
             switch (filterPolicy) {
-                case ERROR -> errorDeltaFile(deltaFile, ActionEventDetails.ERRORED_BY_TOPIC_FILTER, publisherName, topic.toString());
-                case FILTER -> filterDeltaFile(deltaFile, ActionEventDetails.FILTERED_BY_TOPIC_FILTER, publisherName, topic.toString());
+                case ERROR -> updateAndThrow(deltaFile, d -> errorDeltaFile(d, ActionEventDetails.ERRORED_BY_TOPIC_FILTER, publisherName, topic.toString()));
+                case FILTER -> updateAndThrow(deltaFile, d -> filterDeltaFile(d, ActionEventDetails.FILTERED_BY_TOPIC_FILTER, publisherName, topic.toString()));
                 case DROP -> log.trace("Topic {} ({}) dropped deltaFile {} because of the filter rules", topicId, topic.getName(), deltaFile.getDid());
             }
             return false;
         }
 
         return true;
+    }
+
+    void updateAndThrow(DeltaFile deltaFile, Consumer<DeltaFile> updateDeltaFile) {
+        updateDeltaFile.accept(deltaFile);
+        throw new TopicException();
     }
 
     private boolean subscriberMatches(Subscriber subscriber, DeltaFile deltaFile) {
@@ -196,11 +208,15 @@ public class PublisherService {
             errorDeltaFile(deltaFile, ActionEventDetails.NO_SUBSCRIBER, publisherName, context);
         }
 
+        setStage(deltaFile);
+
+        return Set.of();
+    }
+
+    private void setStage(DeltaFile deltaFile) {
         if (!deltaFile.hasPendingActions()) {
             deltaFile.setStage(deltaFile.hasErroredAction() ? DeltaFileStage.ERROR : DeltaFileStage.COMPLETE);
         }
-
-        return Set.of();
     }
 
     private boolean evaluateRule(Rule rule, DeltaFile deltaFile) {
@@ -258,4 +274,6 @@ public class PublisherService {
             this.cause = cause;
         }
     }
+
+    static class TopicException extends RuntimeException {}
 }
