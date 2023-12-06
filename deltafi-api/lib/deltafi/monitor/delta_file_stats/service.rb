@@ -46,12 +46,10 @@ module Deltafi
             DF::Metrics.record_metrics(
               result.map do |k, v|
                 {
-                  prefix: 'gauge.deltafile',
                   name: k,
-                  value: v.to_i,
-                  gauge: true
+                  value: v.to_i
                 }
-              end
+              end, prefix: 'gauge.deltafile', gauge: true
             )
           end
         end
