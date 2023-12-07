@@ -89,7 +89,7 @@ minio:
 mongodb:
   image:
     repository: bitnami/mongodb
-    tag: 6.0.5
+    tag: 5.0.17
   architecture: standalone
   useStatefulSet: false
   auth:
