@@ -15,12 +15,15 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 -->
-
 <template>
   <div class="errors-page">
     <PageHeader heading="Errors">
       <div class="time-range btn-toolbar mb-2 mb-md-0">
-        <Dropdown v-model="ingressFlowNameSelected" placeholder="Select an Ingress Flow" :options="ingressFlowNames" show-clear :editable="false" class="deltafi-input-field ml-3" />
+        <Button v-tooltip.right="{ value: `Clear Filters`, disabled: !filterOptionsSelected }" rounded :class="`ml-2 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${filterOptionsSelected ? 'p-column-filter-menu-button-active' : null}`" :disabled="!filterOptionsSelected" @click="clearOptions()">
+          <i class="pi pi-filter" style="font-size: 1rem"></i>
+        </Button>
+        <Dropdown v-model="ingressFlowNameSelected" placeholder="Select an Ingress Flow" :options="ingressFlowNames" show-clear :editable="false" class="deltafi-input-field ml-3 flow-dropdown" />
+        <AutoComplete v-model="selectedMessageValue" :suggestions="filteredErrorMessages" placeholder="Select Last Error" class="deltafi-input-field ml-3" force-selection @complete="messageSearch" />
         <Button v-model="showAcknowledged" :icon="showAcknowledged ? 'fas fa-eye-slash' : 'fas fa-eye'" :label="showAcknowledged ? 'Hide Acknowledged' : 'Show Acknowledged'" class="p-button p-button-secondary p-button-outlined deltafi-input-field show-acknowledged-toggle ml-3" @click="toggleShowAcknowledged()" />
         <Button v-tooltip.left="refreshButtonTooltip" :icon="refreshButtonIcon" label="Refresh" :class="refreshButtonClass" :badge="refreshButtonBadge" badge-class="p-badge-danger" @click="onRefresh" />
       </div>
@@ -54,7 +57,12 @@ import Button from "primevue/button";
 import TabPanel from "primevue/tabpanel";
 import TabView from "primevue/tabview";
 import { useRoute } from "vue-router";
+import AutoComplete from "primevue/autocomplete";
+import useErrorsSummary from "@/composables/useErrorsSummary";
 
+const messageValues = ref();
+const filteredErrorMessages = ref([]);
+const selectedMessageValue = ref("");
 const refreshInterval = 5000; // 5 seconds
 const isIdle = inject("isIdle");
 const errorSummaryMessagePanel = ref();
@@ -68,13 +76,14 @@ const newErrorsCount = ref(0);
 const lastServerContact = ref(new Date());
 const showAcknowledged = ref(false);
 const ingressFlowNameSelected = ref(null);
-const errorMessageSelected = ref(null);
+const errorMessageSelected = ref("");
 const selectedErrors = ref([]);
 const activeTab = ref(0);
 const params = useUrlSearchParams("history");
 const useURLSearch = ref(false);
 const route = useRoute();
 const errorPanelState = useStorage("error-store", {}, sessionStorage, { serializer: StorageSerializers.object });
+const { data: errorsMessages, fetchAllMessage: getAllErrorsMessage } = useErrorsSummary();
 
 const setPersistedParams = () => {
   // Session Storage
@@ -100,19 +109,48 @@ const getPersistedParams = async () => {
     activeTab.value = params.tab ? parseInt(params.tab) : 0;
     showAcknowledged.value = params.showAck === "true" ? true : false;
     ingressFlowNameSelected.value = params.ingressFlow ? params.ingressFlow : null;
-    errorMessageSelected.value = params.errorMsg ? decodeURIComponent(params.errorMsg) : errorPanelState.value.errorMessageSelected;
+    selectedMessageValue.value = errorMessageSelected.value = params.errorMsg ? decodeURIComponent(params.errorMsg) : errorPanelState.value.errorMessageSelected;
   } else {
     activeTab.value = errorPanelState.value.tabs ? parseInt(errorPanelState.value.tabs) : 0;
     showAcknowledged.value = _.get(errorPanelState.value, "showAcknowledged", false);
     ingressFlowNameSelected.value = _.get(errorPanelState.value, "ingressFlowNameSelected", null);
-    errorMessageSelected.value = _.get(errorPanelState.value, "errorMessageSelected", null);
+    selectedMessageValue.value = errorMessageSelected.value = _.get(errorPanelState.value, "errorMessageSelected", null);
   }
   setPersistedParams();
 };
 
+const messageSearch = (event) => {
+  setTimeout(() => {
+    if (!event.query.trim().length) {
+      filteredErrorMessages.value = [...messageValues.value];
+    } else {
+      filteredErrorMessages.value = messageValues.value.filter((message) => {
+        return message.toLowerCase().includes(event.query.toLowerCase());
+      });
+    }
+  }, 1000);
+};
+const clearOptions = () => {
+  filteredErrorMessages.value = [];
+  selectedMessageValue.value = "";
+  errorMessageSelected.value = "";
+  ingressFlowNameSelected.value = null;
+  setPersistedParams();
+};
+
+const filterOptionsSelected = computed(() => {
+  return _.some([
+    selectedMessageValue.value,
+    ingressFlowNameSelected.value,
+  ], (value) => !(value === "" || value === null || value === undefined))
+});
+
 const setupWatchers = () => {
   watch([activeTab, showAcknowledged, ingressFlowNameSelected, errorMessageSelected], () => {
     setPersistedParams();
+  });
+  watch([selectedMessageValue], () => {
+    errorMessageSelected.value = selectedMessageValue.value;
   });
 };
 
@@ -125,6 +163,7 @@ const refreshButtonIcon = computed(() => {
 const tabChange = (errorMessage, flowSelected) => {
   ingressFlowNameSelected.value = flowSelected;
   errorMessageSelected.value = errorMessage;
+  selectedMessageValue.value = errorMessage;
   activeTab.value = 0;
 };
 
@@ -191,6 +230,14 @@ onMounted(async () => {
   await getPersistedParams();
   await nextTick();
   pollNewErrors();
+  await getAllErrorsMessage();
+  const uniqueMessages = [];
+  for (let i = 0; i < errorsMessages.value.length; i++) {
+    if (!uniqueMessages.includes(errorsMessages.value[i].message)) {
+      uniqueMessages.push(errorsMessages.value[i].message);
+    }
+  }
+  messageValues.value = uniqueMessages;
   autoRefresh = setInterval(() => {
     if (!isIdle.value && !loading.value) {
       pollNewErrors();
@@ -201,5 +248,19 @@ onMounted(async () => {
 </script>
 
 <style lang="scss">
+.errors-page {
+  .p-autocomplete-empty-message {
+    margin-left: 0.5rem;
+  }
+
+  .p-autocomplete-input {
+    width: 16rem;
+  }
+
+  .flow-dropdown {
+    width: 16rem;
+  }
+}
+
 @import "@/styles/pages/errors-page.scss";
 </style>

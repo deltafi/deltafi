@@ -42,7 +42,7 @@
           </template>
         </Column>
         <Column field="sourceInfo.flow" header="Flow" :sortable="true" class="flow-column" />
-        <Column field="last_filter_cause" header="Cause" filter-field="last_filter_cause" :show-filter-menu="true" :show-filter-match-modes="false" :show-apply-button="false" :show-clear-button="false" class="last-filter-column">
+        <Column field="last_filter_cause" header="Cause" filter-field="last_filter_cause" :show-filter-menu="false" :show-filter-match-modes="false" :show-apply-button="false" :show-clear-button="false" class="last-filter-column">
           <template #filter="{ filterModel, filterCallback }">
             <Dropdown v-model="filterModel.value" placeholder="Select a Cause" :options="filteredCauses" :filter="true" option-label="message" show-clear :editable="false" class="p-column-filter deltafi-input-field ml-3" @change="filterCallback()" />
           </template>

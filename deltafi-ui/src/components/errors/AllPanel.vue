@@ -53,7 +53,7 @@
             <Timestamp :timestamp="row.data.modified" />
           </template>
         </Column>
-        <Column field="last_error_cause" header="Last Error" filter-field="last_error_cause" :show-filter-menu="true" :show-filter-match-modes="false" :show-apply-button="false" :show-clear-button="false" class="last-error-column">
+        <Column field="last_error_cause" header="Last Error" filter-field="last_error_cause" :show-filter-menu="false" :show-filter-match-modes="false" :show-apply-button="false" :show-clear-button="false" class="last-error-column">
           <template #body="{ data }">
             <ErrorAcknowledgedBadge v-if="data.errorAcknowledged" :reason="data.errorAcknowledgedReason" :timestamp="data.errorAcknowledged" class="mr-1" />
             <AutoResumeBadge v-if="data.nextAutoResume !== null" :timestamp="data.nextAutoResume" :reason="data.nextAutoResumeReason" />
@@ -233,7 +233,7 @@ const onRefresh = () => {
 
 const { data: response, fetch: getErrors } = useErrors();
 const filters = ref({
-  last_error_cause: { value: null, matchMode: FilterMatchMode.EQUALS },
+  last_error_cause: { value: null, matchMode: FilterMatchMode.CONTAINS },
 });
 
 const fetchErrors = async () => {
