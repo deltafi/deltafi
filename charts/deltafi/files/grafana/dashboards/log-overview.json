@@ -22,7 +22,7 @@
     ]
   },
   "description": "Overview of all system logging",
-  "editable": true,
+  "editable": false,
   "fiscalYearStartMonth": 0,
   "gnetId": 12611,
   "graphTooltip": 1,

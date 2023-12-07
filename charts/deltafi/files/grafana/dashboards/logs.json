@@ -22,7 +22,7 @@
     ]
   },
   "description": "Universal and flexible dashboard for logging",
-  "editable": true,
+  "editable": false,
   "fiscalYearStartMonth": 0,
   "gnetId": 12611,
   "graphTooltip": 0,

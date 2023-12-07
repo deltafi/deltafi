@@ -24,7 +24,7 @@
     ]
   },
   "description": "Summary dashboard for survey metrics",
-  "editable": true,
+  "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
   "id": 24,

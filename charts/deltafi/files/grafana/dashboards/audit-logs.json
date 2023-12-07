@@ -22,7 +22,7 @@
     ]
   },
   "description": "Dashboard for audit logging",
-  "editable": true,
+  "editable": false,
   "fiscalYearStartMonth": 0,
   "gnetId": 12611,
   "graphTooltip": 0,
