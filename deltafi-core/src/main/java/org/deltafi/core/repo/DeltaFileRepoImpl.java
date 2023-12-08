@@ -335,11 +335,14 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         Criteria criteria;
 
+        String indexHint;
         if (createdBeforeDate != null) {
             criteria = Criteria.where(CREATED).lt(createdBeforeDate);
+            indexHint = "created_before_index";
         } else {
             criteria = Criteria.where(MODIFIED).lt(completedBeforeDate);
             criteria.and(TERMINAL).is(true);
+            indexHint = "terminal_index";
         }
 
         if (flow != null) {
@@ -363,7 +366,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             query.with(Sort.by(Sort.Direction.ASC, MODIFIED));
         }
         query.fields().include(ID, TOTAL_BYTES, OLD_PROTOCOL_STACK_SEGMENTS, OLD_PROTOCOL_STACK_SEGMENTS_2, ACTION_SEGMENTS, OLD_FORMATTED_DATA_SEGMENTS, OLD_FORMATTED_DATA_SEGMENTS_2, OLD_PROTOCOL_STACK_ACTION_NAME, OLD_FORMATTED_DATA_ACTION_NAME, ACTIONS_NAME, CONTENT_DELETED, SCHEMA_VERSION);
-        query.withHint("terminal_index");
+        query.withHint(indexHint);
 
         return mongoTemplate.find(query, DeltaFile.class);
     }
