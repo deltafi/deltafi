@@ -28,10 +28,10 @@ plugins {
 dependencies {
     implementation "org.deltafi:deltafi-action-kit:${deltafiVersion}"
 
-    compileOnly "org.projectlombok:lombok:1.18.24"
-    annotationProcessor "org.projectlombok:lombok:1.18.24"
-    testCompileOnly "org.projectlombok:lombok:1.18.24"
-    testAnnotationProcessor "org.projectlombok:lombok:1.18.24"
+    compileOnly "org.projectlombok:lombok:1.18.30"
+    annotationProcessor "org.projectlombok:lombok:1.18.30"
+    testCompileOnly "org.projectlombok:lombok:1.18.30"
+    testAnnotationProcessor "org.projectlombok:lombok:1.18.30"
 
     testImplementation "org.deltafi:deltafi-action-kit-test:${deltafiVersion}"
     testImplementation 'org.hamcrest:hamcrest:2.2'
