@@ -27,7 +27,7 @@ import org.deltafi.common.test.time.TestClock;
 import org.deltafi.common.types.*;
 import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.deltafi.core.audit.CoreAuditLogger;
-import org.deltafi.core.collect.CollectService;
+import org.deltafi.core.collect.ScheduledCollectService;
 import org.deltafi.core.exceptions.MissingEgressFlowException;
 import org.deltafi.core.generated.types.DeltaFilesFilter;
 import org.deltafi.core.metrics.MetricService;
@@ -62,17 +62,18 @@ class DeltaFilesServiceTest {
     private final TestClock testClock = new TestClock();
     private final MockDeltaFiPropertiesService mockDeltaFiPropertiesService = new MockDeltaFiPropertiesService();
 
+    private final TransformFlowService transformFlowService;
     private final NormalizeFlowService normalizeFlowService;
     private final EgressFlowService egressFlowService;
-    private final TransformFlowService transformFlowService;
     private final StateMachine stateMachine;
-    private final ActionEventQueue actionEventQueue;
     private final DeltaFileRepo deltaFileRepo;
+    private final ActionEventQueue actionEventQueue;
     private final ContentStorageService contentStorageService;
+    private final ResumePolicyService resumePolicyService;
     private final MetricService metricService;
     private final DeltaFileCacheService deltaFileCacheService;
+    private final QueueManagementService queueManagementService;
     private final QueuedAnnotationRepo queuedAnnotationRepo;
-    private final ResumePolicyService resumePolicyService;
 
     private final DeltaFilesService deltaFilesService;
 
@@ -84,40 +85,40 @@ class DeltaFilesServiceTest {
 
     @Captor
     ArgumentCaptor<DeltaFile> deltaFileCaptor;
+
     @Captor
     ArgumentCaptor<List<ActionInput>> actionInputListCaptor;
 
     @Captor
     ArgumentCaptor<QueuedAnnotation> queuedAnnotationCaptor;
 
-    DeltaFilesServiceTest(@Mock NormalizeFlowService normalizeFlowService, @Mock EnrichFlowService enrichFlowService,
-                          @Mock EgressFlowService egressFlowService, @Mock TransformFlowService transformFlowService,
-                          @Mock StateMachine stateMachine, @Mock DeltaFileRepo deltaFileRepo,
-                          @Mock ActionEventQueue actionEventQueue, @Mock ResumePolicyService resumePolicyService,
-                          @Mock ContentStorageService contentStorageService, @Mock MetricService metricService,
-                          @Mock CoreAuditLogger coreAuditLogger, @Mock CollectService collectService, @Mock IdentityService identityService,
-                          @Mock DeltaFileCacheService deltaFileCacheService,
-                          @Mock QueueManagementService queueManagementService,
-                          @Mock QueuedAnnotationRepo queuedAnnotationRepo,
-                          @Mock TimedIngressFlowService timedIngressFlowService,
-                          @Mock Environment environment) {
+    DeltaFilesServiceTest(@Mock TransformFlowService transformFlowService,
+            @Mock NormalizeFlowService normalizeFlowService, @Mock EnrichFlowService enrichFlowService,
+            @Mock EgressFlowService egressFlowService, @Mock StateMachine stateMachine,
+            @Mock DeltaFileRepo deltaFileRepo, @Mock ActionEventQueue actionEventQueue,
+            @Mock ContentStorageService contentStorageService, @Mock ResumePolicyService resumePolicyService,
+            @Mock MetricService metricService, @Mock CoreAuditLogger coreAuditLogger,
+            @Mock DeltaFileCacheService deltaFileCacheService, @Mock TimedIngressFlowService timedIngressFlowService,
+            @Mock QueueManagementService queueManagementService, @Mock QueuedAnnotationRepo queuedAnnotationRepo,
+            @Mock Environment environment, @Mock ScheduledCollectService scheduledCollectService) {
+        this.transformFlowService = transformFlowService;
         this.normalizeFlowService = normalizeFlowService;
         this.egressFlowService = egressFlowService;
-        this.transformFlowService = transformFlowService;
         this.stateMachine = stateMachine;
         this.deltaFileRepo = deltaFileRepo;
         this.actionEventQueue = actionEventQueue;
         this.contentStorageService = contentStorageService;
+        this.resumePolicyService = resumePolicyService;
         this.metricService = metricService;
         this.deltaFileCacheService = deltaFileCacheService;
+        this.queueManagementService = queueManagementService;
         this.queuedAnnotationRepo = queuedAnnotationRepo;
-        this.resumePolicyService = resumePolicyService;
 
-        deltaFilesService = new DeltaFilesService(testClock, normalizeFlowService, enrichFlowService,
-                egressFlowService, transformFlowService, mockDeltaFiPropertiesService, stateMachine,
-                deltaFileRepo, actionEventQueue, contentStorageService, resumePolicyService, metricService,
-                coreAuditLogger, collectService, identityService, new DidMutexService(), deltaFileCacheService,
-                timedIngressFlowService, queueManagementService, queuedAnnotationRepo, environment);
+        deltaFilesService = new DeltaFilesService(testClock, transformFlowService, normalizeFlowService,
+                enrichFlowService, egressFlowService, mockDeltaFiPropertiesService, stateMachine, deltaFileRepo,
+                actionEventQueue, contentStorageService, resumePolicyService, metricService,
+                coreAuditLogger, new DidMutexService(), deltaFileCacheService, timedIngressFlowService,
+                queueManagementService, queuedAnnotationRepo, environment, scheduledCollectService);
     }
 
     @Test
@@ -675,10 +676,10 @@ class DeltaFilesServiceTest {
         aggregate.queueAction("test-ingress", "collect-transform", ActionType.TRANSFORM, false);
 
         testClock.setInstant(aggregate.actionNamed("test-ingress", "collect-transform").orElseThrow().getModified().toInstant());
+        when(queueManagementService.coldQueueActions()).thenReturn(Collections.emptySet());
         when(deltaFileRepo.updateForRequeue(eq(OffsetDateTime.now(testClock)),
                 eq(mockDeltaFiPropertiesService.getDeltaFiProperties().getRequeueSeconds()), eq(Collections.emptySet()), eq(Collections.emptySet())))
                 .thenReturn(List.of(aggregate));
-
         when(deltaFileRepo.findAllById(eq(List.of(parent1.getDid(), parent2.getDid()))))
                 .thenReturn(List.of(parent1, parent2));
 

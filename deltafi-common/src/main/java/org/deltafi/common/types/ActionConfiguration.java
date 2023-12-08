@@ -123,13 +123,12 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
      * @param collectedDeltaFiles the DeltaFiles that will be acted upon
      * @param systemName system name to set in context
      * @param egressFlow the egress flow for this action
-     * @param returnAddress the unique address of this core instance
      * @param actionCreated action created datetime
      * @param action the action
      * @return ActionInput containing the ActionConfiguration
      */
-    public ActionInput buildCollectionActionInput(String flow, DeltaFile aggregate, List<DeltaFile> collectedDeltaFiles,
-            String systemName, String egressFlow, String returnAddress, OffsetDateTime actionCreated, Action action) {
+    public ActionInput buildCollectingActionInput(String flow, DeltaFile aggregate, List<DeltaFile> collectedDeltaFiles,
+            String systemName, String egressFlow, OffsetDateTime actionCreated, Action action) {
         if (Objects.isNull(internalParameters)) {
             setInternalParameters(Collections.emptyMap());
         }
@@ -149,7 +148,6 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
                         .build())
                 .actionParams(internalParameters)
                 .deltaFileMessages(collectedDeltaFiles.stream().map(deltaFile -> deltaFile.forQueue(egressFlow)).toList())
-                .returnAddress(returnAddress)
                 .actionCreated(actionCreated)
                 .action(action)
                 .build();

@@ -26,7 +26,6 @@ public enum ActionState {
   FILTERED,
   REINJECTED,
   CANCELLED,
-  READY_TO_COLLECT,
   COLLECTING,
   COLLECTED
 }

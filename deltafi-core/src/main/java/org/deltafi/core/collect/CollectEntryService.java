@@ -19,6 +19,7 @@ package org.deltafi.core.collect;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
@@ -29,7 +30,8 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class CollectService {
+@Slf4j
+public class CollectEntryService {
     private final Clock clock;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
     private final CollectEntryRepo collectEntryRepo;
@@ -43,6 +45,9 @@ public class CollectService {
     public CollectEntry upsertAndLock(CollectDefinition collectDefinition, OffsetDateTime collectDate, Integer minNum,
             Integer maxNum, String did) {
         CollectEntry collectEntry = upsertAndLock(collectDefinition, collectDate, minNum, maxNum);
+        if (collectEntry == null) {
+            return null;
+        }
         collectEntryDidRepo.save(new CollectEntryDid(collectEntry.getId(), did));
         return collectEntry;
     }
@@ -68,24 +73,24 @@ public class CollectService {
         return collectEntryRepo.lockOneBefore(collectDate);
     }
 
-    public void unlock(String id) {
-        collectEntryRepo.unlock(id);
+    public void unlock(String collectEntryId) {
+        collectEntryRepo.unlock(collectEntryId);
     }
 
     public long unlockBefore(OffsetDateTime lockDate) {
         return collectEntryRepo.unlockBefore(lockDate);
     }
 
-    public void delete(String collectEntryId) {
-        collectEntryRepo.deleteById(collectEntryId);
-        collectEntryDidRepo.deleteByCollectEntryId(collectEntryId);
-    }
-
-    public List<CollectEntry> findAllByOrderByCollectDate() {
+    public List<CollectEntry> findCollectEntriesByCollectDate() {
         return collectEntryRepo.findAllByOrderByCollectDate();
     }
 
     public List<String> findCollectedDids(String collectEntryId) {
         return collectEntryDidRepo.findByCollectEntryId(collectEntryId).stream().map(CollectEntryDid::getDid).toList();
+    }
+
+    public void delete(String collectEntryId) {
+        collectEntryRepo.deleteById(collectEntryId);
+        collectEntryDidRepo.deleteByCollectEntryId(collectEntryId);
     }
 }

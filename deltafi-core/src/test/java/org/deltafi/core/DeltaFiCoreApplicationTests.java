@@ -595,9 +595,9 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(enabled, policyList.get(0).isEnabled());
 
 		if (disk) {
-			assertTrue(policyList.get(0) instanceof DiskSpaceDeletePolicy);
+            assertInstanceOf(DiskSpaceDeletePolicy.class, policyList.get(0));
 		} else {
-			assertTrue(policyList.get(0) instanceof TimedDeletePolicy);
+            assertInstanceOf(TimedDeletePolicy.class, policyList.get(0));
 		}
 	}
 
@@ -1569,7 +1569,7 @@ class DeltaFiCoreApplicationTests {
 				"data." + findConfig.getOperationName(),
 				listOfConfigs);
 
-		assertTrue(configs.get(0) instanceof LoadActionConfiguration);
+        assertInstanceOf(LoadActionConfiguration.class, configs.get(0));
 
 		LoadActionConfiguration loadActionConfiguration = (LoadActionConfiguration) configs.get(0);
 		assertEquals(name, loadActionConfiguration.getName());
@@ -5100,11 +5100,11 @@ class DeltaFiCoreApplicationTests {
 
 		DeltaFile parent1 = deltaFileRepo.findById(did1).orElseThrow();
 		Action action = parent1.actionNamed(actionFlow, actionName).orElseThrow();
-		assertEquals(ActionState.COLLECTED, action.getState());
+		assertEquals(ActionState.COLLECTING, action.getState());
 
 		DeltaFile parent2 = deltaFileRepo.findById(did2).orElseThrow();
 		action = parent2.actionNamed(actionFlow, actionName).orElseThrow();
-		assertEquals(ActionState.COLLECTED, action.getState());
+		assertEquals(ActionState.COLLECTING, action.getState());
 
 		ActionInput actionInput = actionInputs.get(0);
 		assertEquals(2, actionInput.getDeltaFileMessages().size());

@@ -15,24 +15,22 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.services;
+package org.deltafi.core.collect;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
-import org.deltafi.common.types.Action;
-import org.deltafi.common.types.ActionConfiguration;
-import org.deltafi.common.types.DeltaFile;
+import org.deltafi.common.types.DeltaFileStage;
+import org.deltafi.common.types.ProcessingType;
+import org.deltafi.core.services.ActionInvocation;
 
-import java.time.OffsetDateTime;
+import java.util.List;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 @SuperBuilder
-public class ActionInvocation {
-    private ActionConfiguration actionConfiguration;
-    private String flow;
-    private DeltaFile deltaFile;
-    private String egressFlow;
-    private String returnAddress;
-    private OffsetDateTime actionCreated;
-    private Action action;
+public class CollectingActionInvocation extends ActionInvocation {
+    private List<String> collectedDids;
+    private ProcessingType processingType;
+    private DeltaFileStage stage;
 }

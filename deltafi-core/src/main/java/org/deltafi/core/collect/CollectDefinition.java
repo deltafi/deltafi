@@ -20,6 +20,7 @@ package org.deltafi.core.collect;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.DeltaFileStage;
 import org.deltafi.common.types.ProcessingType;
 
@@ -30,6 +31,7 @@ public class CollectDefinition {
     private ProcessingType processingType;
     private DeltaFileStage stage;
     private String flow;
+    private ActionType actionType;
     private String action;
     private String collectGroup;
 }

@@ -15,24 +15,10 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.services;
+package org.deltafi.core.collect;
 
-import lombok.Data;
-import lombok.experimental.SuperBuilder;
-import org.deltafi.common.types.Action;
-import org.deltafi.common.types.ActionConfiguration;
-import org.deltafi.common.types.DeltaFile;
-
-import java.time.OffsetDateTime;
-
-@Data
-@SuperBuilder
-public class ActionInvocation {
-    private ActionConfiguration actionConfiguration;
-    private String flow;
-    private DeltaFile deltaFile;
-    private String egressFlow;
-    private String returnAddress;
-    private OffsetDateTime actionCreated;
-    private Action action;
+public class CollectException extends Exception {
+    public CollectException(String message) {
+        super(message);
+    }
 }

@@ -19,22 +19,24 @@ package org.deltafi.core.schedulers;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import org.deltafi.core.collect.ScheduledCollectService;
 import org.deltafi.core.schedulers.trigger.CollectEntryLockCheckTrigger;
-import org.deltafi.core.services.DeltaFilesService;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.stereotype.Service;
 
+@ConditionalOnProperty(value = "schedule.actionEvents", havingValue = "true", matchIfMissing = true)
 @Service
 @EnableScheduling
 @RequiredArgsConstructor
 public class CollectEntryLockCheckScheduler {
-    private final DeltaFilesService deltaFilesService;
     private final TaskScheduler taskScheduler;
+    private final ScheduledCollectService scheduledCollectService;
     private final CollectEntryLockCheckTrigger collectEntryLockCheckTrigger;
 
     @PostConstruct
     public void init() {
-        taskScheduler.schedule(deltaFilesService::unlockTimedOutCollectEntryLocks, collectEntryLockCheckTrigger);
+        taskScheduler.schedule(scheduledCollectService::unlockTimedOutCollectEntryLocks, collectEntryLockCheckTrigger);
     }
 }

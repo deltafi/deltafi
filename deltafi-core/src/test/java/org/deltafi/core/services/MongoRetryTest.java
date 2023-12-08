@@ -22,10 +22,10 @@ import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.types.*;
 import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.deltafi.core.audit.CoreAuditLogger;
-import org.deltafi.core.collect.CollectService;
+import org.deltafi.core.collect.CollectEntryService;
+import org.deltafi.core.collect.ScheduledCollectService;
 import org.deltafi.core.configuration.ClockConfiguration;
 import org.deltafi.core.metrics.MetricService;
-import org.deltafi.core.repo.DeltaFiPropertiesRepo;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.repo.QueuedAnnotationRepo;
 import org.deltafi.core.util.Util;
@@ -38,6 +38,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.env.Environment;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -48,11 +49,11 @@ import java.util.Collections;
 
 @ExtendWith(SpringExtension.class)
 @Import({DeltaFilesService.class, ClockConfiguration.class})
-@MockBean({StateMachine.class, NormalizeFlowService.class, EnrichFlowService.class, EgressFlowService.class,
-        TransformFlowService.class, ActionEventQueue.class, ContentStorageService.class, FlowAssignmentService.class,
-        CoreAuditLogger.class, MetricService.class, DeltaFiPropertiesRepo.class, CollectService.class, ResumePolicyService.class,
-        IdentityService.class, DeltaFileRepo.class, QueueManagementService.class, QueuedAnnotationRepo.class,
-        TimedIngressFlowService.class, })
+@MockBean({TransformFlowService.class, NormalizeFlowService.class, EnrichFlowService.class, EgressFlowService.class,
+        StateMachine.class, DeltaFileRepo.class, ActionEventQueue.class, ContentStorageService.class,
+        ResumePolicyService.class, MetricService.class, CoreAuditLogger.class, DeltaFileCacheService.class,
+        TimedIngressFlowService.class, QueueManagementService.class, QueuedAnnotationRepo.class, Environment.class,
+        CollectEntryService.class, ScheduledCollectService.class})
 @EnableRetry
 class MongoRetryTest {
 
@@ -86,10 +87,10 @@ class MongoRetryTest {
         deltaFile.setStage(DeltaFileStage.COMPLETE);
 
         Mockito.when(deltaFileCacheService.get(did)).thenReturn(deltaFile);
+        Mockito.doThrow(new OptimisticLockingFailureException("failed")).when(deltaFileCacheService).save(Mockito.any());
 
-        Mockito.doThrow(new OptimisticLockingFailureException("failed")).doNothing().when(deltaFileCacheService).save(Mockito.any());
-
-        Assertions.assertDoesNotThrow(() -> deltaFilesService.processResult(ActionEvent.builder().type(ActionEventType.EGRESS).did(did).action(fromAction).start(OffsetDateTime.now()).build()));
+        Assertions.assertDoesNotThrow(() -> deltaFilesService.processResult(ActionEvent.builder()
+                .type(ActionEventType.EGRESS).did(did).action(fromAction).start(OffsetDateTime.now()).build()));
     }
 
 }

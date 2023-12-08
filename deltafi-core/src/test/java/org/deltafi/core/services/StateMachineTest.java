@@ -20,9 +20,12 @@ package org.deltafi.core.services;
 import lombok.Builder;
 import lombok.Singular;
 import org.deltafi.common.content.Segment;
+import org.deltafi.common.test.time.TestClock;
 import org.deltafi.common.types.*;
 import org.deltafi.core.MockDeltaFiPropertiesService;
-import org.deltafi.core.util.Util;
+import org.deltafi.core.collect.CollectEntry;
+import org.deltafi.core.collect.CollectEntryService;
+import org.deltafi.core.collect.ScheduledCollectService;
 import org.deltafi.core.exceptions.MissingEgressFlowException;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
@@ -30,13 +33,12 @@ import org.deltafi.core.types.EgressFlow;
 import org.deltafi.core.types.EnrichFlow;
 import org.deltafi.core.types.NormalizeFlow;
 import org.deltafi.core.types.TransformFlow;
+import org.deltafi.core.util.Util;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 
@@ -47,7 +49,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.deltafi.common.constant.DeltaFiConstants.SYNTHETIC_EGRESS_ACTION_FOR_TEST_EGRESS;
 import static org.deltafi.common.constant.DeltaFiConstants.SYNTHETIC_EGRESS_ACTION_FOR_TEST_NORMALIZE;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 
 @ExtendWith(MockitoExtension.class)
 class StateMachineTest {
@@ -65,31 +68,30 @@ class StateMachineTest {
     private static final String EGRESS_FLOW = "TheEgressFlow";
     private static final String ENRICH_FLOW = "TheEnrichFlow";
 
-    @InjectMocks
-    StateMachine stateMachine;
+    private final TransformFlowService transformFlowService;
+    private final NormalizeFlowService normalizeFlowService;
+    private final EnrichFlowService enrichFlowService;
+    private final EgressFlowService egressFlowService;
+    private final QueueManagementService queueManagementService;
+    private final CollectEntryService collectEntryService;
 
-    @Mock
-    EnrichFlowService enrichFlowService;
+    private final StateMachine stateMachine;
 
-    @Mock
-    EgressFlowService egressFlowService;
+    StateMachineTest(@Mock TransformFlowService transformFlowService, @Mock NormalizeFlowService normalizeFlowService,
+            @Mock EnrichFlowService enrichFlowService, @Mock EgressFlowService egressFlowService,
+            @Mock IdentityService identityService, @Mock QueueManagementService queueManagementService,
+            @Mock CollectEntryService collectEntryService, @Mock ScheduledCollectService scheduledCollectService) {
+        this.transformFlowService = transformFlowService;
+        this.normalizeFlowService = normalizeFlowService;
+        this.enrichFlowService = enrichFlowService;
+        this.egressFlowService = egressFlowService;
+        this.queueManagementService = queueManagementService;
+        this.collectEntryService = collectEntryService;
 
-    @Mock
-    NormalizeFlowService normalizeFlowService;
-
-    @Mock
-    TransformFlowService transformFlowService;
-
-    @Mock
-    @SuppressWarnings("unused")
-    IdentityService identityService;
-
-    @Spy
-    @SuppressWarnings("unused")
-    DeltaFiPropertiesService deltaFiPropertiesService = new MockDeltaFiPropertiesService();
-
-    @Mock
-    QueueManagementService queueManagementService;
+        this.stateMachine = new StateMachine(new TestClock(), transformFlowService, normalizeFlowService, enrichFlowService,
+                egressFlowService, new MockDeltaFiPropertiesService(), identityService, queueManagementService,
+                collectEntryService, scheduledCollectService);
+    }
 
     @BeforeEach
     void setup() {
@@ -682,6 +684,8 @@ class StateMachineTest {
 
     @Test
     public void advancesInTransformationFlowWithCollectingTransformAction() {
+        DeltaFile deltaFile = Util.emptyDeltaFile("did", NORMALIZE_FLOW);
+
         TransformFlow transformFlow = new TransformFlow();
         transformFlow.setName(NORMALIZE_FLOW);
         TransformActionConfiguration transformAction = new TransformActionConfiguration("CollectingTransformAction",
@@ -691,20 +695,28 @@ class StateMachineTest {
         transformFlow.getFlowStatus().setState(FlowState.RUNNING);
         Mockito.when(transformFlowService.getRunningFlowByName(NORMALIZE_FLOW)).thenReturn(transformFlow);
 
-        DeltaFile deltaFile = Util.emptyDeltaFile("did", NORMALIZE_FLOW);
+        CollectEntry collectEntry = new CollectEntry();
+        collectEntry.setCount(2);
+        Mockito.when(collectEntryService.upsertAndLock(Mockito.any(), Mockito.any(), Mockito.isNull(), Mockito.eq(3),
+                Mockito.eq(deltaFile.getDid()))).thenReturn(collectEntry);
+
         deltaFile.getSourceInfo().setProcessingType(ProcessingType.TRANSFORMATION);
         List<ActionInvocation> actionInvocations = stateMachine.advance(deltaFile);
 
         assertTrue(actionInvocations.isEmpty());
-        assertEquals(1, deltaFile.readyToCollectActions().size());
-        Action readyToCollectAction = deltaFile.readyToCollectActions().get(0);
-        assertEquals(NORMALIZE_FLOW, readyToCollectAction.getFlow());
-        assertEquals("CollectingTransformAction", readyToCollectAction.getName());
-        assertEquals(ActionType.TRANSFORM, readyToCollectAction.getType());
+        List<Action> collectingActions = deltaFile.getActions().stream()
+                .filter(action -> action.getState().equals(ActionState.COLLECTING)).toList();
+        assertEquals(1, collectingActions.size());
+        Action collectingAction = collectingActions.get(0);
+        assertEquals(NORMALIZE_FLOW, collectingAction.getFlow());
+        assertEquals("CollectingTransformAction", collectingAction.getName());
+        assertEquals(ActionType.TRANSFORM, collectingAction.getType());
     }
 
     @Test
     public void advancesInNormalizationFlowWithCollectingTransformAction() {
+        DeltaFile deltaFile = Util.emptyDeltaFile("did", NORMALIZE_FLOW);
+
         NormalizeFlow normalizeFlow = new NormalizeFlow();
         normalizeFlow.setName(NORMALIZE_FLOW);
         TransformActionConfiguration transformAction = new TransformActionConfiguration("CollectingTransformAction",
@@ -714,19 +726,27 @@ class StateMachineTest {
         normalizeFlow.getFlowStatus().setState(FlowState.RUNNING);
         Mockito.when(normalizeFlowService.getRunningFlowByName(NORMALIZE_FLOW)).thenReturn(normalizeFlow);
 
-        DeltaFile deltaFile = Util.emptyDeltaFile("did", NORMALIZE_FLOW);
+        CollectEntry collectEntry = new CollectEntry();
+        collectEntry.setCount(2);
+        Mockito.when(collectEntryService.upsertAndLock(Mockito.any(), Mockito.any(), Mockito.isNull(), Mockito.eq(3),
+                Mockito.eq(deltaFile.getDid()))).thenReturn(collectEntry);
+
         List<ActionInvocation> actionInvocations = stateMachine.advance(deltaFile);
 
         assertTrue(actionInvocations.isEmpty());
-        assertEquals(1, deltaFile.readyToCollectActions().size());
-        Action readyToCollectAction = deltaFile.readyToCollectActions().get(0);
-        assertEquals(NORMALIZE_FLOW, readyToCollectAction.getFlow());
-        assertEquals("CollectingTransformAction", readyToCollectAction.getName());
-        assertEquals(ActionType.TRANSFORM, readyToCollectAction.getType());
+        List<Action> collectingActions = deltaFile.getActions().stream()
+                .filter(action -> action.getState().equals(ActionState.COLLECTING)).toList();
+        assertEquals(1, collectingActions.size());
+        Action collectingAction = collectingActions.get(0);
+        assertEquals(NORMALIZE_FLOW, collectingAction.getFlow());
+        assertEquals("CollectingTransformAction", collectingAction.getName());
+        assertEquals(ActionType.TRANSFORM, collectingAction.getType());
     }
 
     @Test
     public void advancesInNormalizationFlowWithCollectingLoadAction() {
+        DeltaFile deltaFile = Util.emptyDeltaFile("did", NORMALIZE_FLOW);
+
         NormalizeFlow normalizeFlow = new NormalizeFlow();
         normalizeFlow.setName(NORMALIZE_FLOW);
         LoadActionConfiguration loadAction = new LoadActionConfiguration("CollectingLoadAction",
@@ -736,19 +756,27 @@ class StateMachineTest {
         normalizeFlow.getFlowStatus().setState(FlowState.RUNNING);
         Mockito.when(normalizeFlowService.getRunningFlowByName(NORMALIZE_FLOW)).thenReturn(normalizeFlow);
 
-        DeltaFile deltaFile = Util.emptyDeltaFile("did", NORMALIZE_FLOW);
+        CollectEntry collectEntry = new CollectEntry();
+        collectEntry.setCount(2);
+        Mockito.when(collectEntryService.upsertAndLock(Mockito.any(), Mockito.any(), Mockito.isNull(), Mockito.eq(3),
+                Mockito.eq(deltaFile.getDid()))).thenReturn(collectEntry);
+
         List<ActionInvocation> actionInvocations = stateMachine.advance(deltaFile);
 
         assertTrue(actionInvocations.isEmpty());
-        assertEquals(1, deltaFile.readyToCollectActions().size());
-        Action readyToCollectAction = deltaFile.readyToCollectActions().get(0);
-        assertEquals(NORMALIZE_FLOW, readyToCollectAction.getFlow());
-        assertEquals("CollectingLoadAction", readyToCollectAction.getName());
-        assertEquals(ActionType.LOAD, readyToCollectAction.getType());
+        List<Action> collectingActions = deltaFile.getActions().stream()
+                .filter(action -> action.getState().equals(ActionState.COLLECTING)).toList();
+        assertEquals(1, collectingActions.size());
+        Action collectingAction = collectingActions.get(0);
+        assertEquals(NORMALIZE_FLOW, collectingAction.getFlow());
+        assertEquals("CollectingLoadAction", collectingAction.getName());
+        assertEquals(ActionType.LOAD, collectingAction.getType());
     }
 
     @Test
     public void advancesInNormalizationFlowsWithCollectingFormatActions() {
+        DeltaFile deltaFile = Util.emptyDeltaFile("did", NORMALIZE_FLOW);
+
         EgressFlow egressFlow1 = new EgressFlow();
         egressFlow1.setName("egress-1");
         FormatActionConfiguration formatAction1 = new FormatActionConfiguration("CollectingFormatAction",
@@ -775,16 +803,22 @@ class StateMachineTest {
         Mockito.when(egressFlowService.getMatchingFlows(NORMALIZE_FLOW)).thenReturn(List.of(egressFlow3, egressFlow1,
                 egressFlow2));
 
-        DeltaFile deltaFile = Util.emptyDeltaFile("did", NORMALIZE_FLOW);
+        CollectEntry collectEntry = new CollectEntry();
+        collectEntry.setCount(2);
+        Mockito.when(collectEntryService.upsertAndLock(Mockito.any(), Mockito.any(), Mockito.isNull(), Mockito.eq(3),
+                Mockito.eq(deltaFile.getDid()))).thenReturn(collectEntry);
+
         deltaFile.setStage(DeltaFileStage.EGRESS);
         List<ActionInvocation> actionInvocations = stateMachine.advance(deltaFile);
 
         assertTrue(actionInvocations.isEmpty());
-        assertEquals(1, deltaFile.readyToCollectActions().size());
-        Action readyToCollectAction = deltaFile.readyToCollectActions().get(0);
-        assertEquals("egress-1", readyToCollectAction.getFlow());
-        assertEquals("CollectingFormatAction", readyToCollectAction.getName());
-        assertEquals(ActionType.FORMAT, readyToCollectAction.getType());
+        List<Action> collectingActions = deltaFile.getActions().stream()
+                .filter(action -> action.getState().equals(ActionState.COLLECTING)).toList();
+        assertEquals(1, collectingActions.size());
+        Action collectingAction = collectingActions.get(0);
+        assertEquals("egress-1", collectingAction.getFlow());
+        assertEquals("CollectingFormatAction", collectingAction.getName());
+        assertEquals(ActionType.FORMAT, collectingAction.getType());
     }
 
     private DeltaFile makeDomainAndEnrichFile() {

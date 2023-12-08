@@ -264,10 +264,6 @@ public class DeltaFile {
         return action;
     }
 
-  public void addReadyToCollectAction(String flow, String name, ActionType type) {
-    addAction(flow, name, type, ActionState.READY_TO_COLLECT);
-  }
-
   private int getLastAttemptNum(String name) {
     Optional<Action> action = getActions().stream()
             .filter(a -> a.getName().equals(name) && retried(a))
@@ -343,12 +339,6 @@ public class DeltaFile {
     }
 
     return action;
-  }
-
-  public void collectingAction(String flow, String name, OffsetDateTime start, OffsetDateTime stop) {
-    getActions().stream()
-            .filter(action -> action.getFlow().equals(flow) && action.getName().equals(name) && !action.terminal())
-            .forEach(action -> setActionState(action, ActionState.COLLECTING, start, stop));
   }
 
   public void collectedAction(String flow, String name, OffsetDateTime start, OffsetDateTime stop) {
@@ -464,10 +454,6 @@ public class DeltaFile {
     return getActions().stream().filter(Action::queued).map(Action::getName).toList();
   }
 
-  public List<Action> readyToCollectActions() {
-    return getActions().stream().filter(action -> action.getState().equals(ActionState.READY_TO_COLLECT)).toList();
-  }
-
   public boolean hasDomains(List<String> domains) {
     return domains.stream().allMatch(domain -> domains().stream().anyMatch(d -> d.getName().equals(domain)));
   }
@@ -531,6 +517,10 @@ public class DeltaFile {
 
   public boolean hasReinjectedAction() {
     return hasActionInState(ActionState.REINJECTED);
+  }
+
+  public boolean hasCollectingAction() {
+    return hasActionInState(ActionState.COLLECTING);
   }
 
   public boolean hasActionInState(ActionState actionState) {
