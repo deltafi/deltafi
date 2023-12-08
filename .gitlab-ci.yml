@@ -17,7 +17,7 @@ image: deltafi/deltafi-build:jdk17-python3-0
   variables:
     GRADLE_USER_HOME: /cache/.gradle
     GRADLE_OPTS: "-Dorg.gradle.daemon=false"
-    GRADLE: "gradle -s --parallel --no-daemon -PgitLabTokenType=Job-Token -PgitLabToken=${CI_JOB_TOKEN}"
+    GRADLE: "./gradlew -s --parallel --no-daemon -PgitLabTokenType=Job-Token -PgitLabToken=${CI_JOB_TOKEN}"
 
 # Main build job (builds all the gradle things)
 gradle:build:
