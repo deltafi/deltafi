@@ -37,14 +37,8 @@ public class TopicDatafetcher {
 
     @DgsQuery
     @NeedsPermission.TopicsRead
-    public Topic getTopic(String topicId) {
-        return topicService.getTopicOrThrow(topicId);
-    }
-
-    @DgsQuery
-    @NeedsPermission.TopicsRead
-    public Topic getTopicByName(String name) {
-        return topicService.findTopicByName(name);
+    public Topic getTopic(String topic) {
+        return topicService.getTopicOrThrow(topic);
     }
 
     @DgsQuery
@@ -61,7 +55,7 @@ public class TopicDatafetcher {
 
     @DgsMutation
     @NeedsPermission.TopicsDelete
-    public boolean deleteTopic(String topicId) {
-        return topicService.deleteTopic(topicId);
+    public boolean deleteTopic(String topic) {
+        return topicService.deleteTopic(topic);
     }
 }

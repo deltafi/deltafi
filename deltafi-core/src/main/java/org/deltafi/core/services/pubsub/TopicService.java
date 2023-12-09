@@ -58,33 +58,27 @@ public class TopicService {
 
     public synchronized void refreshCache() {
         topicMap = topicRepo.findAll().stream()
-                .collect(Collectors.toMap(Topic::getId, Function.identity()));
+                .collect(Collectors.toMap(Topic::getName, Function.identity()));
     }
 
     /**
      * Find all subscribers that have subscriptions for the given topic
-     * @param topicId whose subscribers should be found
+     * @param topicName whose subscribers should be found
      * @return subscribers that have subscriptions for the given topic
      */
-    public Set<Subscriber> getSubscribers(String topicId) {
+    public Set<Subscriber> getSubscribers(String topicName) {
         return subscriberServices.stream()
-                .map(subscriberService -> subscriberService.subscriberForTopic(topicId))
+                .map(subscriberService -> subscriberService.subscriberForTopic(topicName))
                 .flatMap(Collection::stream)
                 .collect(Collectors.toSet());
     }
 
-    public Topic getTopicOrThrow(String topicId) {
-        return getTopic(topicId).orElseThrow(() -> new DgsEntityNotFoundException("No topic with an id of " + topicId + " exists"));
+    public Topic getTopicOrThrow(String topicName) {
+        return getTopic(topicName).orElseThrow(() -> new DgsEntityNotFoundException("No topic with a name of " + topicName + " exists"));
     }
 
-    public Topic findTopicByName(String name) {
-        return topicMap.values().stream()
-                .filter(topic -> Objects.equals(name, topic.getName()))
-                .findFirst().orElseThrow(() -> new DgsEntityNotFoundException("No topic with a name of " + name + " exists"));
-    }
-
-    public Optional<Topic> getTopic(String topicId) {
-        return Optional.ofNullable(topicMap.get(topicId));
+    public Optional<Topic> getTopic(String topicName) {
+        return Optional.ofNullable(topicMap.get(topicName));
     }
 
     public List<Topic> getUncachedTopics() {
@@ -117,12 +111,12 @@ public class TopicService {
             return false;
         }
 
-        if (topicRepo.existsById(topicId)) {
-            topicRepo.deleteById(topicId);
+        if (topicRepo.existsById(topicName)) {
+            topicRepo.deleteById(topicName);
             return true;
         }
 
-        log.warn("Attempted to delete a topic {} that does not exist in the repository", topicId);
+        log.warn("Attempted to delete a topic {} that does not exist in the repository", topicName);
         return false;
     }
 

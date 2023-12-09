@@ -66,26 +66,23 @@ type PublishRules {
 }
 
 input TopicInput {
-    id: String
     name: String!
     filterPolicy: TopicFilterPolicy
     filters: [String]
 }
 
 type Topic {
-    id: String!
     name: String!
     filterPolicy: TopicFilterPolicy!
     filters: [String]
 }
 
 extend type Query {
-    getTopic(topicId: String!): Topic
-    getTopicByName(name: String!): Topic
+    getTopic(topic: String!): Topic
     getTopics: [Topic]!
 }
 
 extend type Mutation {
     saveTopic(topic: TopicInput!): Topic!
-    deleteTopic(topicId: String!): Boolean!
+    deleteTopic(topic: String!): Boolean!
 }

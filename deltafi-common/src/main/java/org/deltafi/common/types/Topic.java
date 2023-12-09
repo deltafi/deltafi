@@ -29,7 +29,6 @@ import java.util.Set;
 @Document
 public class Topic {
     @Id
-    private String id;
     private String name;
     private TopicFilterPolicy filterPolicy = TopicFilterPolicy.DROP;
     private Set<String> filters = new HashSet<>();
