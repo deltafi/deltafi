@@ -3,6 +3,7 @@ Copyright VMware, Inc.
 SPDX-License-Identifier: APACHE-2.0
 */}}
 
+{{- if $.Values.enabled }}
 {{- if and .Values.extraOverrides (not .Values.extraOverridesConfigmap) }}
 apiVersion: v1
 kind: ConfigMap
@@ -17,4 +18,5 @@ metadata:
 data:
   01_extra_overrides.xml: |
     {{- include "common.tplvalues.render" (dict "value" .Values.extraOverrides "context" $) | nindent 4 }}
+{{- end }}
 {{- end }}

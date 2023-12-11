@@ -3,6 +3,7 @@ Copyright VMware, Inc.
 SPDX-License-Identifier: APACHE-2.0
 */}}
 
+{{- if $.Values.enabled }}
 {{- if $.Values.externalAccess.enabled }}
 {{- $shards := $.Values.shards | int }}
 {{- $replicas := $.Values.replicaCount | int }}
@@ -150,6 +151,7 @@ spec:
     app.kubernetes.io/component: clickhouse
     statefulset.kubernetes.io/pod-name: {{ $targetPod }}
 ---
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
