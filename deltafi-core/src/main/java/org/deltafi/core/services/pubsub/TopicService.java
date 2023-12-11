@@ -30,7 +30,6 @@ import org.springframework.stereotype.Service;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -105,9 +104,9 @@ public class TopicService {
         return persisted;
     }
 
-    public boolean deleteTopic(String topicId) {
-        if (!getSubscribers(topicId).isEmpty()) {
-            log.warn("Attempted to delete topic {} while there are subscribers", topicId);
+    public boolean deleteTopic(String topicName) {
+        if (!getSubscribers(topicName).isEmpty()) {
+            log.warn("Attempted to delete topic {} while there are subscribers", topicName);
             return false;
         }
 
