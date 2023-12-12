@@ -30,10 +30,10 @@ public interface SubscriberService {
 
     /**
      * Find the set of subscribers for the given topicId
-     * @param topicId whose subscribers should be found
+     * @param topic whose subscribers should be found
      * @return the set of subscribers for the given topicId
      */
-    Set<Subscriber> subscriberForTopic(String topicId);
+    Set<Subscriber> subscriberForTopic(String topic);
 
     /**
      * Get all running flows

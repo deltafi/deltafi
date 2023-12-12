@@ -33,16 +33,14 @@ import org.deltafi.common.types.PublishRules;
 import org.deltafi.common.types.Publisher;
 import org.deltafi.common.types.Rule;
 import org.deltafi.common.types.Subscriber;
-import org.deltafi.common.types.Topic;
-import org.deltafi.common.types.TopicFilterPolicy;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -54,14 +52,16 @@ import java.util.stream.Collectors;
 public class PublisherService {
 
     private static final DefaultRule ERROR_RULE = new DefaultRule(DefaultBehavior.ERROR);
+    static final String NO_SUBSCRIBERS = "NO_SUBSCRIBERS";
+    static final String NO_SUBSCRIBER_CAUSE = "No matching subscribers were found";
 
     private final RuleEvaluator ruleEvaluator;
-    private final TopicService topicService;
+    private final List<SubscriberService> subscriberServices;
     private final Clock clock;
 
-    public PublisherService(RuleEvaluator ruleEvaluator, TopicService topicService, Clock clock) {
+    public PublisherService(RuleEvaluator ruleEvaluator, List<SubscriberService> subscriberServices, Clock clock) {
         this.ruleEvaluator = ruleEvaluator;
-        this.topicService = topicService;
+        this.subscriberServices = subscriberServices;
         this.clock = clock;
     }
 
@@ -79,25 +79,19 @@ public class PublisherService {
         PublishRules publishRules = publisher.publishRules();
         Objects.requireNonNull(publishRules, "The publish rules cannot be null");
 
-        try {
-            Set<Subscriber> subscribers = subscribers(getMatchingTopics(publishRules, deltaFile), deltaFile, publisher.getName());
+        Set<Subscriber> subscribers = subscribers(getMatchingTopics(publishRules, deltaFile), deltaFile);
 
-            if (subscribers.isEmpty()) {
-                return handleNoMatches(publisher, deltaFile);
-            }
-
-            return subscribers;
-        } catch (TopicException topicException) {
-            setStage(deltaFile);
-            return Set.of();
+        if (subscribers.isEmpty()) {
+            return handleNoMatches(publisher, deltaFile);
         }
+
+        return subscribers;
     }
 
-    private Set<Subscriber> subscribers(Set<String> topics, DeltaFile deltaFile, String publisherName) {
+    private Set<Subscriber> subscribers(Set<String> topics, DeltaFile deltaFile) {
         // find all matching topics and map them to the set of subscribers
         Set<Subscriber> potentialSubscribers = topics.stream()
-                    .filter(topic -> topicAllowsDeltaFile(topic, deltaFile, publisherName))
-                    .map(topicService::getSubscribers)
+                    .map(this::getSubscribers)
                     .flatMap(Collection::stream)
                     .collect(Collectors.toSet());
 
@@ -133,40 +127,6 @@ public class PublisherService {
                 .collect(Collectors.toSet());
     }
 
-    /**
-     * Find the Topic with the given name and evaluate its filter
-     * rules to determine if the DeltaFile can be sent to the topic
-     * @param topicId id of the topic to attempt to publish to
-     * @param deltaFile to evaluate against the topic filter rules
-     * @return the Topic if DeltaFile can go there, otherwise null
-     * @throws TopicException when the topic filters or errors the DeltaFile
-     */
-    boolean topicAllowsDeltaFile(String topicId, DeltaFile deltaFile, String publisherName) {
-        Topic topic = topicService.getTopic(topicId).orElse(null);
-
-        if (topic == null) {
-            errorDeltaFile(deltaFile, ActionEventDetails.MISSING_TOPIC, publisherName, "Missing topic with an id of " + topicId);
-            return false;
-        }
-
-        if (topicFiltersDeltaFile(topic, deltaFile)) {
-            TopicFilterPolicy filterPolicy = Objects.requireNonNullElse(topic.getFilterPolicy(), TopicFilterPolicy.DROP);
-            switch (filterPolicy) {
-                case ERROR -> updateAndThrow(deltaFile, d -> errorDeltaFile(d, ActionEventDetails.ERRORED_BY_TOPIC_FILTER, publisherName, topic.toString()));
-                case FILTER -> updateAndThrow(deltaFile, d -> filterDeltaFile(d, ActionEventDetails.FILTERED_BY_TOPIC_FILTER, publisherName, topic.toString()));
-                case DROP -> log.trace("Topic {} ({}) dropped deltaFile {} because of the filter rules", topicId, topic.getName(), deltaFile.getDid());
-            }
-            return false;
-        }
-
-        return true;
-    }
-
-    void updateAndThrow(DeltaFile deltaFile, Consumer<DeltaFile> updateDeltaFile) {
-        updateDeltaFile.accept(deltaFile);
-        throw new TopicException();
-    }
-
     private boolean subscriberMatches(Subscriber subscriber, DeltaFile deltaFile) {
         if (subscriber.subscriptions() == null) {
             return false;
@@ -176,15 +136,6 @@ public class PublisherService {
                 .anyMatch(rule -> ruleEvaluator.evaluateCondition(rule.getCondition(), deltaFile));
     }
 
-    private boolean topicFiltersDeltaFile(Topic topic, DeltaFile deltaFile) {
-        if (topic.getFilters() == null) {
-            return false;
-        }
-
-        return topic.getFilters().stream()
-                .anyMatch(filter -> ruleEvaluator.evaluateCondition(filter, deltaFile));
-    }
-
     private Set<Subscriber> handleNoMatches(Publisher publisher, DeltaFile deltaFile) {
         PublishRules publishRules = publisher.publishRules();
         String publisherName = publisher.getName();
@@ -192,7 +143,7 @@ public class PublisherService {
         DefaultBehavior defaultBehavior = defaultRule.getDefaultBehavior();
 
         if (DefaultBehavior.PUBLISH.equals(defaultBehavior)) {
-            Set<Subscriber> subscribers = subscribers(Set.of(defaultRule.getTopic()), deltaFile, publisherName);
+            Set<Subscriber> subscribers = subscribers(Set.of(defaultRule.getTopic()), deltaFile);
             if (!subscribers.isEmpty()) {
                 return subscribers;
             }
@@ -203,14 +154,21 @@ public class PublisherService {
 
         String context = "No subscribers found using publisher `" + publisher.getName() + "`\n" + publishRules;
         if (DefaultBehavior.FILTER.equals(defaultBehavior)) {
-            filterDeltaFile(deltaFile, ActionEventDetails.NO_SUBSCRIBER, publisherName, context);
+            filterDeltaFile(deltaFile, publisherName, context);
         } else {
-            errorDeltaFile(deltaFile, ActionEventDetails.NO_SUBSCRIBER, publisherName, context);
+            errorDeltaFile(deltaFile, publisherName, context);
         }
 
         setStage(deltaFile);
 
         return Set.of();
+    }
+
+    private Set<Subscriber> getSubscribers(String topic) {
+        return subscriberServices.stream()
+                .map(subscriberService -> subscriberService.subscriberForTopic(topic))
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
     }
 
     private void setStage(DeltaFile deltaFile) {
@@ -223,57 +181,41 @@ public class PublisherService {
         return ruleEvaluator.evaluateCondition(rule.getCondition(), deltaFile);
     }
 
-    private void errorDeltaFile(DeltaFile deltaFile, ActionEventDetails actionEventDetails, String publisherName, String context) {
-        queueSyntheticAction(deltaFile, actionEventDetails, publisherName);
-        deltaFile.errorAction(buildErrorEvent(deltaFile, actionEventDetails, publisherName, context));
+    private void errorDeltaFile(DeltaFile deltaFile, String publisherName, String context) {
+        queueSyntheticAction(deltaFile, publisherName);
+        deltaFile.errorAction(buildErrorEvent(deltaFile, publisherName, context));
     }
 
-    private void filterDeltaFile(DeltaFile deltaFile, ActionEventDetails actionEventDetails, String publisherName, String context) {
-        queueSyntheticAction(deltaFile, actionEventDetails, publisherName);
-        deltaFile.filterAction(buildFilterEvent(deltaFile, actionEventDetails, publisherName, context));
+    private void filterDeltaFile(DeltaFile deltaFile, String publisherName, String context) {
+        queueSyntheticAction(deltaFile, publisherName);
+        deltaFile.filterAction(buildFilterEvent(deltaFile, publisherName, context));
+        deltaFile.setFiltered(true);
     }
 
-    private void queueSyntheticAction(DeltaFile deltaFile, ActionEventDetails actionEventDetails, String publisherName) {
-        deltaFile.queueNewAction(publisherName, actionEventDetails.eventName, ActionType.PUBLISH, false);
+    private void queueSyntheticAction(DeltaFile deltaFile, String publisherName) {
+        deltaFile.queueNewAction(publisherName, NO_SUBSCRIBERS, ActionType.PUBLISH, false);
     }
 
-    private ActionEvent buildFilterEvent(DeltaFile deltaFile, ActionEventDetails actionEventDetails, String publisherName, String context) {
-        return buildActionEvent(deltaFile, actionEventDetails, publisherName)
-                .filter(FilterEvent.builder().message(actionEventDetails.cause).context(context).build())
+    private ActionEvent buildFilterEvent(DeltaFile deltaFile, String publisherName, String context) {
+        return buildActionEvent(deltaFile, publisherName)
+                .filter(FilterEvent.builder().message(NO_SUBSCRIBER_CAUSE).context(context).build())
                 .build();
     }
 
-    private ActionEvent buildErrorEvent(DeltaFile deltaFile, ActionEventDetails actionEventDetails, String publisherName, String context) {
-        return buildActionEvent(deltaFile, actionEventDetails, publisherName)
-                .error(ErrorEvent.builder().cause(actionEventDetails.cause).context(context).build())
+    private ActionEvent buildErrorEvent(DeltaFile deltaFile, String publisherName, String context) {
+        return buildActionEvent(deltaFile, publisherName)
+                .error(ErrorEvent.builder().cause(NO_SUBSCRIBER_CAUSE).context(context).build())
                 .build();
     }
 
-    private ActionEvent.ActionEventBuilder buildActionEvent(DeltaFile deltaFile, ActionEventDetails actionEventDetails, String publisherName) {
+    private ActionEvent.ActionEventBuilder buildActionEvent(DeltaFile deltaFile, String publisherName) {
         OffsetDateTime now = OffsetDateTime.now(clock);
         return ActionEvent.builder()
                 .did(deltaFile.getDid())
                 .flow(publisherName)
-                .action(actionEventDetails.eventName)
+                .action(NO_SUBSCRIBERS)
                 .start(now)
                 .stop(now)
                 .type(ActionEventType.PUBLISH);
     }
-
-    enum ActionEventDetails {
-        ERRORED_BY_TOPIC_FILTER("ERRORED_BY_TOPIC_FILTER", "Errored by topic filter rules"),
-        FILTERED_BY_TOPIC_FILTER("FILTERED_BY_TOPIC_FILTER", "Filtered by topic filter rules"),
-        MISSING_TOPIC("MISSING_TOPIC", "Attempted to publish to a topic that was not found"),
-        NO_SUBSCRIBER("NO_SUBSCRIBERS", "No matching subscribers were found");
-
-        final String eventName;
-        final String cause;
-
-        ActionEventDetails(String eventName, String cause) {
-            this.eventName = eventName;
-            this.cause = cause;
-        }
-    }
-
-    static class TopicException extends RuntimeException {}
 }

@@ -16,12 +16,6 @@
 #    limitations under the License.
 #
 
-enum TopicFilterPolicy {
-    DROP
-    FILTER
-    ERROR
-}
-
 enum DefaultBehavior {
     ERROR
     FILTER
@@ -63,26 +57,4 @@ type PublishRules {
     matchingPolicy: MatchingPolicy!
     defaultRule: DefaultRule!
     rules: [Rule]!
-}
-
-input TopicInput {
-    name: String!
-    filterPolicy: TopicFilterPolicy
-    filters: [String]
-}
-
-type Topic {
-    name: String!
-    filterPolicy: TopicFilterPolicy!
-    filters: [String]
-}
-
-extend type Query {
-    getTopic(topic: String!): Topic
-    getTopics: [Topic]!
-}
-
-extend type Mutation {
-    saveTopic(topic: TopicInput!): Topic!
-    deleteTopic(topic: String!): Boolean!
 }

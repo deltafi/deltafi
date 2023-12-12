@@ -25,7 +25,6 @@ import org.deltafi.common.rules.RuleValidator;
 import org.deltafi.common.types.FlowPlan;
 import org.deltafi.common.types.Publisher;
 import org.deltafi.common.types.Subscriber;
-import org.deltafi.common.types.Topic;
 import org.deltafi.common.types.Variable;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
@@ -36,8 +35,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -84,43 +81,27 @@ public class PluginPlugin implements org.gradle.api.Plugin<Project> {
                 getLogger().warn("Flows directory ({}) does not exist. No flows will be installed.", flowsDirectory);
             } else {
                 checkVariables(flowsDirectory);
-                checkTopics(flowsDirectory);
                 checkFlowPlans(flowsDirectory);
             }
         }
 
         private void checkVariables(File flowsDirectory) {
-            checkFile(flowsDirectory, "variables", Variable[].class);
-        }
-
-        private void checkTopics(File flowsDirectory) {
-            Topic[] topics = checkFile(flowsDirectory, "topics", Topic[].class);
-            if (topics == null || topics.length == 0) {
+            File variablesFile = new File(flowsDirectory, "variables.json");
+            if (!variablesFile.exists()) {
+                getLogger().info("No flow variables have been defined");
                 return;
             }
 
-            List<String> errors = Arrays.stream(topics).map(ruleValidator::validateTopic).flatMap(Collection::stream).toList();
-            if (!errors.isEmpty()) {
-                throw new GradleException("Invalid topics filter rules found: " + String.join("; ", errors));
-            }
-        }
-
-        private <T> T checkFile(File flowsDirectory, String fileNamePrefix, Class<T> type) {
-            File file = new File(flowsDirectory, fileNamePrefix + ".json");
-            if (!file.exists()) {
-                getLogger().info("No flow {} have been defined", fileNamePrefix);
-                return null;
-            }
-
-            try (FileInputStream fis = new FileInputStream(file)) {
-                return OBJECT_MAPPER.readValue(fis, type);
+            try (FileInputStream fis = new FileInputStream(variablesFile)) {
+                OBJECT_MAPPER.readValue(fis, Variable[].class);
             } catch (IOException e) {
-                throw new GradleException("Unable to load  " + fileNamePrefix + ": " + e.getMessage(), e);
+                throw new GradleException("Unable to load variables: " + e.getMessage(), e);
             }
         }
 
         private void checkFlowPlans(File flowsDirectory) {
-            File[] flowFiles = flowsDirectory.listFiles(this::isFlowFile);
+            File[] flowFiles = flowsDirectory.listFiles(
+                    file -> file.getName().endsWith(".json") && !file.getName().equals("variables.json"));
 
             if (flowFiles == null) {
                 throw new GradleException(flowsDirectory + " is not a directory");
@@ -144,11 +125,6 @@ public class PluginPlugin implements org.gradle.api.Plugin<Project> {
             if (!errors.isEmpty()) {
                 throw new GradleException("Invalid flow plan conditions found:\n" + String.join(";\n", errors));
             }
-        }
-
-        private boolean isFlowFile(File file) {
-            String name = file.getName();
-            return name.endsWith(".json") && !(name.equals("variables.json") || name.equals("topics.json"));
         }
 
         private String validateConditions(FlowPlan flowPlan, String fileName) {

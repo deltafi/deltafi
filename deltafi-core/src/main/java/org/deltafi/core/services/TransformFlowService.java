@@ -89,8 +89,8 @@ public class TransformFlowService extends FlowService<TransformFlowPlan, Transfo
     }
 
     @Override
-    public Set<Subscriber> subscriberForTopic(String topicId) {
-        return topicSubscribers.getOrDefault(topicId, Set.of());
+    public Set<Subscriber> subscriberForTopic(String topic) {
+        return topicSubscribers.getOrDefault(topic, Set.of());
     }
 
     /**

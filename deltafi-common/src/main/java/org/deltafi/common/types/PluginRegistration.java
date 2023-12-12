@@ -33,7 +33,6 @@ public class PluginRegistration {
     private List<ActionDescriptor> actions;
     private List<Variable> variables;
     private List<FlowPlan> flowPlans;
-    private List<Topic> topics;
 
 
     public Plugin toPlugin() {

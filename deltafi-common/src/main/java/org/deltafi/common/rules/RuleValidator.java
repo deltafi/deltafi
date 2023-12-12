@@ -20,7 +20,6 @@ package org.deltafi.common.rules;
 import org.deltafi.common.types.Publisher;
 import org.deltafi.common.types.Rule;
 import org.deltafi.common.types.Subscriber;
-import org.deltafi.common.types.Topic;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,18 +32,6 @@ public class RuleValidator {
 
     public RuleValidator(RuleEvaluator ruleEvaluator) {
         this.ruleEvaluator = ruleEvaluator;
-    }
-
-    /**
-     * Validate all the filter rules can be evaluated
-     * @param topic to validate
-     * @return list of errors
-     */
-    public List<String> validateTopic(Topic topic) {
-        if (topic == null || topic.getFilters() == null) {
-            return List.of();
-        }
-        return validateRules(topic.getFilters());
     }
 
     /**

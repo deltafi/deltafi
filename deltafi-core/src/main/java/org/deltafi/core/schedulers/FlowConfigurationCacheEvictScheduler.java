@@ -18,7 +18,6 @@
 package org.deltafi.core.schedulers;
 
 import org.deltafi.core.services.FlowService;
-import org.deltafi.core.services.pubsub.TopicService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -31,17 +30,14 @@ import java.util.List;
 @EnableScheduling
 public class FlowConfigurationCacheEvictScheduler {
 
-    private final List<FlowService<?, ?, ?>> flowServices;
-    private final TopicService topicService;
+    final List<FlowService<?, ?, ?>> flowServices;
 
-    public FlowConfigurationCacheEvictScheduler(List<FlowService<?, ?, ?>> flowServices, TopicService topicService) {
+    public FlowConfigurationCacheEvictScheduler(List<FlowService<?, ?, ?>> flowServices) {
         this.flowServices = flowServices;
-        this.topicService = topicService;
     }
 
     @Scheduled(fixedDelay = 5000)
     public void cacheEvict() {
         flowServices.forEach(FlowService::refreshCache);
-        topicService.refreshCache();
     }
 }
