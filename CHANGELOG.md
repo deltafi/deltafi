@@ -5,6 +5,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.1.15] - 2023-12-11
+
+### Added
+- ErrorResult and FilterResult now allow annotations
+
+### Fixed
+- Clickhouse enable was not complete in the new helm chart, which resulted in a clickhouse pod being started (and other k8s artifacts) even when `clickhouse.enable` set to `false`
+
+### Upgrade and Migration
+- Java base image upgrade: deltafi-java-jre:17.0.9-0 (Java 17.0.9+9)
+
 ## [1.1.14] - 2023-12-10
 
 ### Added
@@ -2651,7 +2662,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.14...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.15...main
+[1.1.15]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.14...1.1.15
 [1.1.14]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.13...1.1.14
 [1.1.13]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.12...1.1.13
 [1.1.12]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.11...1.1.12
