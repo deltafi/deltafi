@@ -19,8 +19,6 @@ package org.deltafi.core.converters;
 
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.EgressActionConfiguration;
-import org.deltafi.common.types.FormatActionConfiguration;
-import org.deltafi.common.types.ValidateActionConfiguration;
 import org.deltafi.common.types.VariableDataType;
 import org.deltafi.core.types.EgressFlow;
 import org.deltafi.common.types.EgressFlowPlan;
@@ -33,49 +31,7 @@ import java.util.Set;
 public class EgressFlowPlanConverter extends FlowPlanConverter<EgressFlowPlan, EgressFlow> {
 
     public void populateFlowSpecificFields(EgressFlowPlan egressFlowPlan, EgressFlow egressFlow, FlowPlanPropertyHelper flowPlanPropertyHelper) {
-        egressFlow.setFormatAction(buildFormatAction(egressFlowPlan.getFormatAction(), flowPlanPropertyHelper));
-        egressFlow.setValidateActions(buildValidateActions(egressFlowPlan.getValidateActions(), flowPlanPropertyHelper));
         egressFlow.setEgressAction(buildEgressAction(egressFlowPlan.getEgressAction(), flowPlanPropertyHelper));
-
-        egressFlow.setIncludeNormalizeFlows(buildFlowList(egressFlowPlan.getIncludeNormalizeFlows(), flowPlanPropertyHelper, egressFlow.getName()));
-        egressFlow.setExcludeNormalizeFlows(buildFlowList(egressFlowPlan.getExcludeNormalizeFlows(), flowPlanPropertyHelper, egressFlow.getName()));
-    }
-
-    /**
-     * Return a copy of the format action configuration with placeholders resolved where possible.
-     *
-     * @param formatActionTemplate template of the FormatActionConfiguration that should be created
-     * @return FormatActionConfiguration with variable values substituted in
-     */
-    FormatActionConfiguration buildFormatAction(FormatActionConfiguration formatActionTemplate, FlowPlanPropertyHelper flowPlanPropertyHelper) {
-        String replacedName = flowPlanPropertyHelper.getReplacedName(formatActionTemplate);
-        List<String> requiresDomains = flowPlanPropertyHelper.replaceListOfPlaceholders(formatActionTemplate.getRequiresDomains(), replacedName);
-        FormatActionConfiguration formatActionConfiguration = new FormatActionConfiguration(replacedName, formatActionTemplate.getType(), requiresDomains);
-        flowPlanPropertyHelper.replaceCommonActionPlaceholders(formatActionConfiguration, formatActionTemplate);
-
-        List<String> requiresEnrichments = flowPlanPropertyHelper.replaceListOfPlaceholders(formatActionTemplate.getRequiresEnrichments(), formatActionConfiguration.getName());
-        formatActionConfiguration.setRequiresEnrichments(requiresEnrichments);
-
-        return formatActionConfiguration;
-    }
-
-    List<ValidateActionConfiguration> buildValidateActions(List<ValidateActionConfiguration> validateActionTemplates, FlowPlanPropertyHelper flowPlanPropertyHelper) {
-        return null != validateActionTemplates ? validateActionTemplates.stream()
-                .map(validateTemplate -> buildValidateAction(validateTemplate, flowPlanPropertyHelper))
-                .toList() : List.of();
-    }
-
-    /**
-     * Return a copy of the validate action configuration with placeholders resolved where possible.
-     *
-     * @param validateActionTemplate template of the ValidateActionConfiguration that should be created
-     * @return ValidateActionConfiguration with variable values substituted in
-     */
-    ValidateActionConfiguration buildValidateAction(ValidateActionConfiguration validateActionTemplate, FlowPlanPropertyHelper flowPlanPropertyHelper) {
-        ValidateActionConfiguration validateActionConfiguration = new ValidateActionConfiguration(
-                flowPlanPropertyHelper.getReplacedName(validateActionTemplate), validateActionTemplate.getType());
-        flowPlanPropertyHelper.replaceCommonActionPlaceholders(validateActionConfiguration, validateActionTemplate);
-        return validateActionConfiguration;
     }
 
     /**

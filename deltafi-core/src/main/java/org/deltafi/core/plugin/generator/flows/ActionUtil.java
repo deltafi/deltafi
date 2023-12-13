@@ -19,13 +19,8 @@ package org.deltafi.core.plugin.generator.flows;
 
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.ActionConfiguration;
-import org.deltafi.common.types.DomainActionConfiguration;
 import org.deltafi.common.types.EgressActionConfiguration;
-import org.deltafi.common.types.EnrichActionConfiguration;
-import org.deltafi.common.types.FormatActionConfiguration;
-import org.deltafi.common.types.LoadActionConfiguration;
 import org.deltafi.common.types.TransformActionConfiguration;
-import org.deltafi.common.types.ValidateActionConfiguration;
 import org.deltafi.core.plugin.generator.ActionGeneratorInput;
 
 import java.util.List;
@@ -33,7 +28,6 @@ import java.util.Map;
 
 public class ActionUtil {
 
-    public static final List<String> DEFAULT_DOMAINS = List.of("binary");
     public static final String EGRESS_VAR_NAME = "egressUrl";
     public static final String SAMPLE_STRING = "sampleString";
     public static final String SAMPLE_NUMBER = "sampleNumber";
@@ -41,8 +35,6 @@ public class ActionUtil {
     public static final String SAMPLE_LIST = "sampleList";
     public static final String SAMPLE_MAP = "sampleMap";
 
-    static final ActionGeneratorInput DEFAULT_LOAD = new ActionGeneratorInput("LoadAction", "org.deltafi.passthrough.action.RoteLoadAction");
-    static final ActionGeneratorInput DEFAULT_FORMAT = new ActionGeneratorInput("FormatAction", "org.deltafi.passthrough.action.RoteFormatAction");
     static final ActionGeneratorInput DEFAULT_EGRESS = new ActionGeneratorInput("EgressAction", "org.deltafi.core.action.RestPostEgressAction");
     static final Map<String, Object> EGRESS_PARAMS = Map.of("url", "${" + EGRESS_VAR_NAME + "}", "metadataKey", "deltafiMetadata");
 
@@ -64,51 +56,6 @@ public class ActionUtil {
 
     public static TransformActionConfiguration transformActionConfiguration(ActionGeneratorInput actionGeneratorInput) {
         TransformActionConfiguration actionConfig = new TransformActionConfiguration(actionGeneratorInput.getClassName(), actionGeneratorInput.getFullClassName());
-        return addParams(actionConfig, actionGeneratorInput);
-    }
-
-    public static List<LoadActionConfiguration> loadActionConfigurations(List<ActionGeneratorInput> actions) {
-        return useDefaultIfEmpty(actions, DEFAULT_LOAD).stream().map(ActionUtil::loadActionConfiguration).toList();
-    }
-
-    public static LoadActionConfiguration loadActionConfiguration(ActionGeneratorInput actionGeneratorInput) {
-        LoadActionConfiguration actionConfig = new LoadActionConfiguration(actionGeneratorInput.getClassName(), actionGeneratorInput.getFullClassName());
-        return addParams(actionConfig, actionGeneratorInput);
-    }
-
-    public static List<DomainActionConfiguration> domainActionConfigurations(List<ActionGeneratorInput> actions) {
-        return notEmpty(actions) ? actions.stream().map(ActionUtil::domainActionConfiguration).toList() : null;
-    }
-
-    public static DomainActionConfiguration domainActionConfiguration(ActionGeneratorInput actionGeneratorInput) {
-        DomainActionConfiguration actionConfig = new DomainActionConfiguration(actionGeneratorInput.getClassName(), actionGeneratorInput.getFullClassName(), DEFAULT_DOMAINS);
-        return addParams(actionConfig, actionGeneratorInput);
-    }
-
-    public static List<EnrichActionConfiguration> enrichActionConfigurations(List<ActionGeneratorInput> actions) {
-        return notEmpty(actions) ? actions.stream().map(ActionUtil::enrichActionConfiguration).toList() : null;
-    }
-
-    public static EnrichActionConfiguration enrichActionConfiguration(ActionGeneratorInput actionGeneratorInput) {
-        EnrichActionConfiguration actionConfig = new EnrichActionConfiguration(actionGeneratorInput.getClassName(), actionGeneratorInput.getFullClassName(), DEFAULT_DOMAINS);
-        return addParams(actionConfig, actionGeneratorInput);
-    }
-
-    public static List<FormatActionConfiguration> formatActionConfigurations(List<ActionGeneratorInput> actions) {
-        return useDefaultIfEmpty(actions, DEFAULT_FORMAT).stream().map(ActionUtil::formatActionConfiguration).toList();
-    }
-
-    public static FormatActionConfiguration formatActionConfiguration(ActionGeneratorInput actionGeneratorInput) {
-        FormatActionConfiguration actionConfig = new FormatActionConfiguration(actionGeneratorInput.getClassName(), actionGeneratorInput.getFullClassName(), DEFAULT_DOMAINS);
-        return addParams(actionConfig, actionGeneratorInput);
-    }
-
-    public static List<ValidateActionConfiguration> validateActionConfigurations(List<ActionGeneratorInput> actions) {
-        return notEmpty(actions) ? actions.stream().map(ActionUtil::validateActionConfiguration).toList() : null;
-    }
-
-    public static ValidateActionConfiguration validateActionConfiguration(ActionGeneratorInput actionGeneratorInput) {
-        ValidateActionConfiguration actionConfig = new ValidateActionConfiguration(actionGeneratorInput.getClassName(), actionGeneratorInput.getFullClassName());
         return addParams(actionConfig, actionGeneratorInput);
     }
 

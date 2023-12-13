@@ -15,23 +15,32 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.converters;
+package org.deltafi.actionkit.action;
 
-// no conversions needed to start 2.0 -- revive this when needed
-/*
-import org.bson.Document;
-import org.deltafi.common.types.*;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.SuperBuilder;
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.data.mongodb.core.mapping.event.AfterConvertCallback;
-import org.springframework.stereotype.Component;
 
-@Component
-public class DeltaFileConverter implements AfterConvertCallback<DeltaFile> {
+import java.util.ArrayList;
+import java.util.List;
 
-    @NotNull
-    @Override
-    public DeltaFile onAfterConvert(DeltaFile deltaFile, @NotNull Document document, @NotNull String collection) {
-        return deltaFile;
+/**
+ * Action input that may include content or metadata
+ */
+@Data
+@EqualsAndHashCode(callSuper = true)
+@SuperBuilder
+public class SingleContentInput extends MetadataInput {
+    protected ActionContent content;
+
+    /**
+     * Checks if the content list is not empty.
+     * @return {@code false} if the content is empty, {@code true} otherwise.
+     */
+    public boolean hasContent() {
+        return content != null;
     }
 }
-*/

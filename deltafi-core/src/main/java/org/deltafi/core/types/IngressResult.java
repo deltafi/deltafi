@@ -18,6 +18,5 @@
 package org.deltafi.core.types;
 
 import org.deltafi.common.types.Content;
-import org.deltafi.common.types.ProcessingType;
 
-public record IngressResult(String flow, String did, Content content, ProcessingType processingType) {}
+public record IngressResult(String flow, String did, Content content) {}

@@ -18,13 +18,11 @@
 package org.deltafi.core.validation;
 
 import org.deltafi.core.generated.types.FlowConfigError;
-import org.deltafi.core.generated.types.FlowErrorType;
 import org.deltafi.core.types.EgressFlow;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 @Service
 public class EgressFlowValidator extends FlowValidator<EgressFlow> {
@@ -35,25 +33,6 @@ public class EgressFlowValidator extends FlowValidator<EgressFlow> {
 
     @Override
     public List<FlowConfigError> flowSpecificValidation(EgressFlow egressFlow) {
-        return excludedAndIncluded(egressFlow);
-    }
-
-    List<FlowConfigError> excludedAndIncluded(EgressFlow egressFlow) {
-        if (Objects.nonNull(egressFlow.getExcludeNormalizeFlows()) && Objects.nonNull(egressFlow.getIncludeNormalizeFlows())) {
-            return egressFlow.getExcludeNormalizeFlows().stream()
-                    .filter(flowName -> egressFlow.getIncludeNormalizeFlows().contains(flowName))
-                    .map(flowName -> excludedAndIncludedError(egressFlow.getName(), flowName))
-                    .toList();
-        }
-
         return Collections.emptyList();
-    }
-
-    FlowConfigError excludedAndIncludedError(String egressFlow, String normalizeFlow) {
-        FlowConfigError configError = new FlowConfigError();
-        configError.setConfigName(egressFlow);
-        configError.setErrorType(FlowErrorType.INVALID_CONFIG);
-        configError.setMessage("Flow: " + normalizeFlow + " is both included and excluded");
-        return configError;
     }
 }

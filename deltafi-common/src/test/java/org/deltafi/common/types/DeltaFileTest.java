@@ -31,7 +31,7 @@ class DeltaFileTest {
     void testSourceMetadata() {
         DeltaFile deltaFile = DeltaFile.builder()
                 .sourceInfo(new SourceInfo(null, null,
-                        Map.of("key1", "value1", "key2", "value2"), ProcessingType.NORMALIZATION))
+                        Map.of("key1", "value1", "key2", "value2")))
                 .build();
 
         assertEquals("value1", deltaFile.sourceMetadata("key1"));
@@ -68,7 +68,6 @@ class DeltaFileTest {
     @Test
     void testErrorCanBeCancelled() {
         OffsetDateTime now = OffsetDateTime.now();
-        OffsetDateTime now2 = OffsetDateTime.now();
         Action action1 = Action.builder()
                 .name("action1")
                 .state(ActionState.ERROR)
@@ -91,8 +90,6 @@ class DeltaFileTest {
 
     @Test
     void testIngressCanBeCancelled() {
-        OffsetDateTime now = OffsetDateTime.now();
-        OffsetDateTime now2 = OffsetDateTime.now();
         Action action1 = Action.builder()
                 .name("action1")
                 .state(ActionState.QUEUED)
@@ -100,7 +97,7 @@ class DeltaFileTest {
 
         DeltaFile deltaFile = DeltaFile.builder()
                 .actions(new ArrayList<>(List.of(action1)))
-                .stage(DeltaFileStage.INGRESS)
+                .stage(DeltaFileStage.IN_FLIGHT)
                 .build();
 
         assertTrue(deltaFile.canBeCancelled());
@@ -125,13 +122,13 @@ class DeltaFileTest {
                 .build();
         Action action2 = Action.builder()
                 .name("action2")
-                .type(ActionType.LOAD)
+                .type(ActionType.TRANSFORM)
                 .flow("flow2")
                 .state(ActionState.COMPLETE)
                 .build();
         Action action3 = Action.builder()
                 .name("action3")
-                .type(ActionType.LOAD)
+                .type(ActionType.TRANSFORM)
                 .flow("flow3")
                 .state(ActionState.ERROR)
                 .build();

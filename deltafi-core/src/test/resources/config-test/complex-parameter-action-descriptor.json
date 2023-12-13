@@ -28,13 +28,6 @@
         "type" : "boolean",
         "description" : "Turn feature on or off"
       },
-      "enrichments" : {
-        "type" : "object",
-        "additionalProperties" : {
-          "type" : "string"
-        },
-        "description" : "Map of enrichment keys to enrichment values that will be added to the DeltaFile"
-      },
       "someOptionalList" : {
         "description" : "Some optional list parameter",
         "type" : "array",

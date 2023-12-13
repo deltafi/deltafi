@@ -27,8 +27,6 @@ import java.util.List;
 @Data
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = NormalizeFlowPlan.class, names = {"INGRESS", "NORMALIZE"}),
-        @JsonSubTypes.Type(value = EnrichFlowPlan.class, name = "ENRICH"),
         @JsonSubTypes.Type(value = EgressFlowPlan.class, name = "EGRESS"),
         @JsonSubTypes.Type(value = TransformFlowPlan.class, name = "TRANSFORM"),
         @JsonSubTypes.Type(value = TimedIngressFlowPlan.class, name = "TIMED_INGRESS")

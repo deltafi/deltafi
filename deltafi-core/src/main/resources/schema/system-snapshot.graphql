@@ -16,13 +16,6 @@
 #    limitations under the License.
 #
 
-type NormalizeFlowSnapshot {
-    name: String!
-    running: Boolean!
-    testMode: Boolean!
-    maxErrors: Int
-}
-
 type TimedIngressFlowSnapshot {
     name: String!
     running: Boolean!
@@ -36,13 +29,6 @@ type TransformFlowSnapshot {
     running: Boolean!
     testMode: Boolean!
     maxErrors: Int
-    expectedAnnotations: [String]
-}
-
-type EnrichFlowSnapshot {
-    name: String!
-    running: Boolean!
-    testMode: Boolean!
 }
 
 type EgressFlowSnapshot {
@@ -57,32 +43,21 @@ type SystemSnapshot {
     reason: String
     created: DateTime!
     deletePolicies: DeletePolicies!
-    flowAssignmentRules: [FlowAssignmentRule]!
     deltaFiProperties: DeltaFiProperties!
     installedPlugins: [PluginCoordinates]!
     pluginVariables: [PluginVariables]!
     runningTransformFlows: [String]
     runningIngressFlows: [String]
-    runningEnrichFlows: [String]
     runningEgressFlows: [String]
     testTransformFlows: [String]
     testIngressFlows: [String]
     testEgressFlows: [String]
-    normalizeFlows: [NormalizeFlowSnapshot]
     timedIngressFlows: [TimedIngressFlowSnapshot]
     transformFlows: [TransformFlowSnapshot]
-    enrichFlows: [EnrichFlowSnapshot]
     egressFlows: [EgressFlowSnapshot]
     pluginImageRepositories: [PluginImageRepository]!
     pluginCustomizationConfigs: [PluginCustomizationConfig]!
     resumePolicies: [ResumePolicy]!
-}
-
-input NormalizeFlowSnapshotInput {
-    name: String!
-    running: Boolean!
-    testMode: Boolean!
-    maxErrors: Int
 }
 
 input TimedIngressFlowSnapshotInput {
@@ -98,12 +73,6 @@ input TransformFlowSnapshotInput {
     running: Boolean!
     testMode: Boolean!
     maxErrors: Int
-    expectedAnnotations: [String]
-}
-
-input EnrichFlowSnapshotInput {
-    name: String!
-    running: Boolean!
 }
 
 input EgressFlowSnapshotInput {
@@ -118,22 +87,14 @@ input SystemSnapshotInput {
     reason: String
     created: DateTime!
     deletePolicies: DeletePoliciesInput!
-    flowAssignmentRules: [FlowAssignmentRuleInput]!
     deltaFiProperties: DeltaFiPropertiesInput!
     installedPlugins: [PluginCoordinatesInput]!
     pluginVariables: [PluginVariablesInput]!
-    # deprecated - running*Flows, test*Flows now wrapped in flow snapshot objects
-    runningTransformFlows: [String]
-    runningIngressFlows: [String]
-    runningEnrichFlows: [String]
-    runningEgressFlows: [String]
     testTransformFlows: [String]
     testIngressFlows: [String]
     testEgressFlows: [String]
-    normalizeFlows: [NormalizeFlowSnapshotInput]
     timedIngressFlows: [TimedIngressFlowSnapshotInput]
     transformFlows: [TransformFlowSnapshotInput]
-    enrichFlows: [EnrichFlowSnapshotInput]
     egressFlows: [EgressFlowSnapshotInput]
     pluginImageRepositories: [PluginImageRepositoryInput]!
     pluginCustomizationConfigs: [PluginCustomizationConfigInput]!

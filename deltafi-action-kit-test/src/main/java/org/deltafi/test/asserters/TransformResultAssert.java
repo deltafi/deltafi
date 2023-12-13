@@ -38,4 +38,6 @@ public class TransformResultAssert extends ContentResultAssert<TransformResultAs
         return new TransformResultAssert(transformResult);
     }
 
+    // TODO: add checks for children size
+
 }

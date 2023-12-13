@@ -18,9 +18,7 @@
 package org.deltafi.common.types;
 
 public enum DeltaFileStage {
-  INGRESS,
-  ENRICH,
-  EGRESS,
+  IN_FLIGHT,
   COMPLETE,
   ERROR,
   CANCELLED

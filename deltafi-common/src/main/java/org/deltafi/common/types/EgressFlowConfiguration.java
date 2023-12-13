@@ -23,24 +23,16 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.util.List;
-
 @Getter
 @Setter
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class EgressFlowConfiguration extends DeltaFiConfiguration {
-    private List<String> includeIngressFlows;
-    private List<String> excludeIngressFlows;
-
-    private final String formatAction;
-    private List<String> validateActions;
     private final String egressAction;
 
-    public EgressFlowConfiguration(String name, String formatAction, String egressAction) {
+    public EgressFlowConfiguration(String name, String egressAction) {
         super(name);
-        this.formatAction = formatAction;
         this.egressAction = egressAction;
     }
 }

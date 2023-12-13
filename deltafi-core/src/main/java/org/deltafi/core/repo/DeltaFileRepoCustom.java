@@ -209,19 +209,11 @@ public interface DeltaFileRepoCustom {
     Map<String, Integer> errorCountsByFlow(Set<String> flows);
 
     /**
-     * Get a list of all domains that are currently assigned deltaFiles
-     *
-     * @return the Domains
-     */
-    List<String> domains();
-
-    /**
      * Get a list of all annotation keys currently assigned by deltaFiles
      *
-     * @param domain An optional domain to filter by
      * @return the annotation keys
      */
-    List<String> annotationKeys(String domain);
+    List<String> annotationKeys();
 
     /**
      * For each did in the list, update the corresponding DeltaFile contentDeleted to value

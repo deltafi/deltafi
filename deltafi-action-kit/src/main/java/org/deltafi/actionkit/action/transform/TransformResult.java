@@ -26,6 +26,7 @@ import org.deltafi.common.types.ActionEventType;
 import org.deltafi.common.types.TransformEvent;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -47,15 +48,19 @@ public class TransformResult extends ContentResult<TransformResult> implements T
         super(context, ActionEventType.TRANSFORM, content);
     }
 
-    @Override
-    public final ActionEvent toEvent() {
-        ActionEvent event = super.toEvent();
-        event.setTransform(TransformEvent.builder()
+    public final TransformEvent toTransformEvent() {
+        return TransformEvent.builder()
                 .content(ContentConverter.convert(content))
                 .annotations(annotations)
                 .metadata(metadata)
                 .deleteMetadataKeys(deleteMetadataKeys)
-                .build());
+                .build();
+    }
+
+    @Override
+    public final ActionEvent toEvent() {
+        ActionEvent event = super.toEvent();
+        event.setTransform(Collections.singletonList(toTransformEvent()));
         return event;
     }
 }

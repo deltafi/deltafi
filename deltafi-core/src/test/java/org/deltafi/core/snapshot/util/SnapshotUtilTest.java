@@ -19,7 +19,6 @@ package org.deltafi.core.snapshot.util;
 
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.snapshot.types.EgressFlowSnapshot;
-import org.deltafi.core.snapshot.types.NormalizeFlowSnapshot;
 import org.deltafi.core.snapshot.types.TransformFlowSnapshot;
 import org.junit.jupiter.api.Test;
 
@@ -37,10 +36,6 @@ class SnapshotUtilTest {
         TransformFlowSnapshot expectedTransform = new TransformFlowSnapshot("transformFlow");
         expectedTransform.setTestMode(true);
 
-        NormalizeFlowSnapshot expectedNormalize = new NormalizeFlowSnapshot("normalizeFlow");
-        expectedNormalize.setTestMode(true);
-        expectedNormalize.setRunning(true);
-
         SystemSnapshot systemSnapshot = new SystemSnapshot();
         systemSnapshot.setRunningEgressFlows(List.of("egressFlow"));
         systemSnapshot.setRunningIngressFlows(List.of("normalizeFlow"));
@@ -51,7 +46,5 @@ class SnapshotUtilTest {
         SnapshotUtil.upgrade(systemSnapshot);
         assertThat(systemSnapshot.getEgressFlows()).hasSize(1).contains(expectedEgress);
         assertThat(systemSnapshot.getTransformFlows()).hasSize(1).contains(expectedTransform);
-        assertThat(systemSnapshot.getNormalizeFlows()).hasSize(1).contains(expectedNormalize);
-        assertThat(systemSnapshot.getEnrichFlows()).isEmpty();
     }
 }

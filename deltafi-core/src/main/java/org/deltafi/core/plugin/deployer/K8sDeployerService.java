@@ -24,6 +24,7 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentStatus;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientTimeoutException;
 import io.fabric8.kubernetes.client.utils.Serialization;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.plugin.PluginRegistryService;
@@ -59,6 +60,7 @@ public class K8sDeployerService extends BaseDeployerService {
     private final PodService podService;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
 
+    @Setter
     @Value("file:/template/action-deployment.yaml")
     private Resource baseDeployment;
 
@@ -100,10 +102,6 @@ public class K8sDeployerService extends BaseDeployerService {
         return result;
     }
 
-    public void setBaseDeployment(Resource resource) {
-        baseDeployment = resource;
-    }
-
     private DeployResult createOrReplace(Deployment deployment, PluginCoordinates pluginCoordinates) {
         Deployment existingDeployment = k8sClient.apps().deployments().withName(deployment.getMetadata().getName()).get();
 
@@ -113,7 +111,7 @@ public class K8sDeployerService extends BaseDeployerService {
             preserveValues(deployment, existingDeployment);
         }
 
-        Deployment installed = k8sClient.resource(deployment).createOrReplace();
+        Deployment installed = k8sClient.resource(deployment).serverSideApply();
 
         try {
             k8sClient.resource(installed).waitUntilCondition(this::rolloutSuccessful, getTimeoutInMillis(), TimeUnit.MILLISECONDS);
@@ -182,7 +180,7 @@ public class K8sDeployerService extends BaseDeployerService {
     }
 
     void createOrReplaceService(List<Integer> ports, String applicationName) {
-        k8sClient.services().resource(buildService(ports, applicationName)).createOrReplace();
+        k8sClient.services().resource(buildService(ports, applicationName)).serverSideApply();
     }
 
     Service buildService(List<Integer> ports, String applicationName) {
@@ -340,6 +338,7 @@ public class K8sDeployerService extends BaseDeployerService {
         return value != null ? value : defaultValue;
     }
 
+    @SuppressWarnings("SameParameterValue")
     private int valueOrDefault(Integer value, int defaultValue) {
         return value != null ? value : defaultValue;
     }

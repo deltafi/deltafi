@@ -37,8 +37,7 @@ class SourceInfoTest {
 
     @Test
     void getMetadataMap() {
-        SourceInfo sut = new SourceInfo(FILENAME, FLOW, Map.of("foo", "bar", "baz", "bam"),
-                ProcessingType.NORMALIZATION);
+        SourceInfo sut = new SourceInfo(FILENAME, FLOW, Map.of("foo", "bar", "baz", "bam"));
 
         Map<String, String> map = sut.getMetadata();
         assertThat(map, hasEntry("foo", "bar"));
@@ -51,8 +50,7 @@ class SourceInfoTest {
 
     @Test
     void addMetadataMap() {
-        SourceInfo sut = new SourceInfo(FILENAME, FLOW, new HashMap<>(Map.of("foo", "bar", "baz", "bam")),
-                ProcessingType.NORMALIZATION);
+        SourceInfo sut = new SourceInfo(FILENAME, FLOW, new HashMap<>(Map.of("foo", "bar", "baz", "bam")));
 
         Map<String, String> addedMap = Map.of("larry", "1", "moe", "2", "curly", "3");
 
@@ -77,7 +75,7 @@ class SourceInfoTest {
         return Stream.of(
                 Arguments.of(sourceInfo1),
                 Arguments.of(SourceInfo.builder().filename(filename).build()),
-                Arguments.of(new SourceInfo(filename, "flow", Map.of("a", "b"), ProcessingType.NORMALIZATION)),
-                Arguments.of(new SourceInfo(filename, "flow", Map.of("a", "b"), ProcessingType.TRANSFORMATION)));
+                Arguments.of(new SourceInfo(filename, "flow", Map.of("a", "b")),
+                Arguments.of(new SourceInfo(filename, "flow", Map.of("a", "b")))));
     }
 }

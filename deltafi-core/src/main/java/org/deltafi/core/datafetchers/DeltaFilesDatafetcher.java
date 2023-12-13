@@ -268,7 +268,6 @@ public class DeltaFilesDatafetcher {
         String did = c.getSegments().isEmpty() ? UUID.randomUUID().toString() : c.getSegments().get(0).getDid();
         IngressEventItem ingressEventItem = new IngressEventItem(did, "stressTestData", flow,
                 metadata == null ? new HashMap<>() : metadata,
-                transformFlowService.hasRunningFlow(flow) ? ProcessingType.TRANSFORMATION : ProcessingType.NORMALIZATION,
                 List.of(c));
         log.debug("Ingressing metadata for {} ({}/{})", did, i + (numFiles - remainingFiles) + 1, numFiles);
         deltaFilesService.ingress(ingressEventItem, OffsetDateTime.now(), OffsetDateTime.now());
@@ -282,14 +281,8 @@ public class DeltaFilesDatafetcher {
 
   @DgsQuery
   @NeedsPermission.DeltaFileMetadataView
-  public List<String> domains() {
-    return deltaFilesService.domains();
-  }
-
-  @DgsQuery
-  @NeedsPermission.DeltaFileMetadataView
-  public List<String> annotationKeys(@InputArgument String domain) {
-    return deltaFilesService.annotationKeys(domain);
+  public List<String> annotationKeys() {
+    return deltaFilesService.annotationKeys();
   }
 
   @DgsQuery

@@ -35,6 +35,5 @@ public class IngressEventItem {
   private String filename;
   private String flow;
   private Map<String, String> metadata = new HashMap<>();
-  private ProcessingType processingType;
   private List<Content> content;
 }

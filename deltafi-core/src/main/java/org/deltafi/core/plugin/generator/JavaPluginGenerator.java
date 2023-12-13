@@ -28,7 +28,6 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.commons.text.CaseUtils;
 import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.FlowPlan;
-import org.deltafi.common.types.ProcessingType;
 import org.deltafi.core.plugin.generator.flows.FlowPlanGeneratorService;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.ApplicationContext;
@@ -67,7 +66,6 @@ public class JavaPluginGenerator {
     private final String testTemplate;
     private final String mainClassTemplate;
     private final String paramClassTemplate;
-    private final String constantsClassTemplate;
 
     private final ApplicationContext applicationContext;
     private final FlowPlanGeneratorService flowPlanGeneratorService;
@@ -80,7 +78,6 @@ public class JavaPluginGenerator {
         actionTemplateMap = new EnumMap<>(ActionType.class);
         topLevelTemplateMap = new HashMap<>();
         mainClassTemplate = readClassPathResource("plugin-templates/java/classTemplates/main-class.tpl");
-        constantsClassTemplate = readClassPathResource("plugin-templates/java/classTemplates/constant-domains.tpl");
         paramClassTemplate = readClassPathResource("plugin-templates/java/classTemplates/action-parameters.tpl");
         applicationYamlTemplate = readClassPathResource("plugin-templates/java/resourceTemplates/application.yaml.tpl");
         testTemplate = readClassPathResource("plugin-templates/java/classTemplates/action-test.tpl");
@@ -99,7 +96,7 @@ public class JavaPluginGenerator {
         String packageDir = packageName.replace(".", "/") + "/";
 
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        ArchiveOutputStream outputStream = new ZipArchiveOutputStream(byteArrayOutputStream);
+        ArchiveOutputStream<ZipArchiveEntry> outputStream = new ZipArchiveOutputStream(byteArrayOutputStream);
 
         topLevelTemplateMap.forEach((filename, content) -> addTopLevelFile(pluginGeneratorInput, filename, content, appName, packageName, outputStream));
         addGradleWrapper(appName, outputStream);
@@ -111,17 +108,13 @@ public class JavaPluginGenerator {
 
         pluginGeneratorInput.getActions().forEach(actionGeneratorInput -> addActionClasses(appName, packageDir, actionGeneratorInput, outputStream));
 
-        if (ProcessingType.NORMALIZATION.equals(pluginGeneratorInput.getOrInferProcessingType())) {
-            addConstantsClass(appName, packageDir, packageName, outputStream);
-        }
-
         addFlowPlans(pluginGeneratorInput, appName, outputStream);
 
         outputStream.finish();
         return byteArrayOutputStream;
     }
 
-    private void addActionClasses(String rootDirectory, String packageDir, ActionGeneratorInput actionGeneratorInput, ArchiveOutputStream outputStream) {
+    private void addActionClasses(String rootDirectory, String packageDir, ActionGeneratorInput actionGeneratorInput, ArchiveOutputStream<ZipArchiveEntry> outputStream) {
         try {
             Properties props = new Properties();
             props.put("package", actionGeneratorInput.getActionsPackageName());
@@ -148,7 +141,7 @@ public class JavaPluginGenerator {
         }
     }
 
-    void addTopLevelFile(PluginGeneratorInput pluginGeneratorInput, String filename, String content, String appName, String packageName, ArchiveOutputStream archiveOutputStream) {
+    void addTopLevelFile(PluginGeneratorInput pluginGeneratorInput, String filename, String content, String appName, String packageName, ArchiveOutputStream<ZipArchiveEntry> archiveOutputStream) {
         try {
             Properties props = new Properties();
             props.put("packageName", packageName);
@@ -170,7 +163,7 @@ public class JavaPluginGenerator {
         }
     }
 
-    void addMainClass(String appName, String packageName, String packagePath, ArchiveOutputStream archiveOutputStream) throws IOException {
+    void addMainClass(String appName, String packageName, String packagePath, ArchiveOutputStream<ZipArchiveEntry> archiveOutputStream) throws IOException {
         String mainClassName = getMainClassName(appName);
 
         Properties props = new Properties();
@@ -181,25 +174,18 @@ public class JavaPluginGenerator {
         addToArchiveFromTemplate(props, mainClassTemplate, fullPath, archiveOutputStream);
     }
 
-    void addConstantsClass(String rootDirectory, String packageDir, String packageName, ArchiveOutputStream archiveOutputStream) throws IOException {
-        Properties props = new Properties();
-        props.put("package", packageName+".actions");
-        String fullPath = rootDirectory + SRC_MAIN_JAVA + packageDir + "actions/Constants.java";
-        addToArchiveFromTemplate(props, constantsClassTemplate, fullPath, archiveOutputStream);
-    }
-
-    void addApplicationYaml(String appName, ArchiveOutputStream archiveOutputStream) throws IOException {
+    void addApplicationYaml(String appName, ArchiveOutputStream<ZipArchiveEntry> archiveOutputStream) throws IOException {
         Properties props = new Properties();
         props.put("applicationName", appName);
         addToArchiveFromTemplate(props, applicationYamlTemplate, appName + "/src/main/resources/application.yaml", archiveOutputStream);
     }
 
-    void addGradleWrapper(String rootDir, ArchiveOutputStream archiveOutputStream) throws IOException {
+    void addGradleWrapper(String rootDir, ArchiveOutputStream<ZipArchiveEntry> archiveOutputStream) throws IOException {
         addFileToArchive(rootDir + "/gradle/wrapper/gradle-wrapper.jar", readClassPathResourceBytes("plugin-templates/java/gradleWrapper/gradle-wrapper.jar"), archiveOutputStream);
         addFileToArchive(rootDir + "/gradle/wrapper/gradle-wrapper.properties", readClassPathResourceBytes("plugin-templates/java/gradleWrapper/gradle-wrapper.properties"), archiveOutputStream);
     }
 
-    void addFlowPlans(PluginGeneratorInput pluginGeneratorInput, String appName, ArchiveOutputStream archiveOutputStream) throws IOException {
+    void addFlowPlans(PluginGeneratorInput pluginGeneratorInput, String appName, ArchiveOutputStream<ZipArchiveEntry> archiveOutputStream) throws IOException {
         String basePath = appName + "/src/main/resources/flows/";
 
         List<FlowPlan> flowPlans = flowPlanGeneratorService.generateFlowPlans(appName, pluginGeneratorInput);
@@ -213,16 +199,16 @@ public class JavaPluginGenerator {
         addFileToArchive(basePath + "variables.json", variables, archiveOutputStream);
     }
 
-    void addToArchiveFromTemplate(Properties properties, String template, String path, ArchiveOutputStream archiveOutputStream) throws IOException {
+    void addToArchiveFromTemplate(Properties properties, String template, String path, ArchiveOutputStream<ZipArchiveEntry> archiveOutputStream) throws IOException {
         String content = PLACEHOLDER_HELPER.replacePlaceholders(template, properties);
         addFileToArchive(path, content, archiveOutputStream);
     }
 
-    void addFileToArchive(String fullPath, String content, ArchiveOutputStream archiveOutputStream) throws IOException {
+    void addFileToArchive(String fullPath, String content, ArchiveOutputStream<ZipArchiveEntry> archiveOutputStream) throws IOException {
         addFileToArchive(fullPath, content.getBytes(StandardCharsets.UTF_8), archiveOutputStream);
     }
 
-    void addFileToArchive(String fullPath, byte[] content, ArchiveOutputStream archiveOutputStream) throws IOException {
+    void addFileToArchive(String fullPath, byte[] content, ArchiveOutputStream<ZipArchiveEntry> archiveOutputStream) throws IOException {
         ZipArchiveEntry zipArchiveEntry = new ZipArchiveEntry(fullPath);
         zipArchiveEntry.setUnixMode(UnixStat.FILE_FLAG | (fullPath.endsWith("gradlew") ? 0755 : UnixStat.DEFAULT_FILE_PERM));
         archiveOutputStream.putArchiveEntry(zipArchiveEntry);
@@ -254,12 +240,8 @@ public class JavaPluginGenerator {
     }
 
     private void populateClassTemplateMap() {
+        // TODO: timed ingress templates
         actionTemplateMap.put(ActionType.TRANSFORM, readClassPathResource("plugin-templates/java/classTemplates/transform-action.tpl"));
-        actionTemplateMap.put(ActionType.LOAD, readClassPathResource("plugin-templates/java/classTemplates/load-action.tpl"));
-        actionTemplateMap.put(ActionType.DOMAIN, readClassPathResource("plugin-templates/java/classTemplates/domain-action.tpl"));
-        actionTemplateMap.put(ActionType.ENRICH, readClassPathResource("plugin-templates/java/classTemplates/enrich-action.tpl"));
-        actionTemplateMap.put(ActionType.FORMAT, readClassPathResource("plugin-templates/java/classTemplates/format-action.tpl"));
-        actionTemplateMap.put(ActionType.VALIDATE, readClassPathResource("plugin-templates/java/classTemplates/validate-action.tpl"));
         actionTemplateMap.put(ActionType.EGRESS, readClassPathResource("plugin-templates/java/classTemplates/egress-action.tpl"));
     }
 

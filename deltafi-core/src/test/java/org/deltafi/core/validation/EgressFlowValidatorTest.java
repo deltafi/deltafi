@@ -20,8 +20,6 @@ package org.deltafi.core.validation;
 import org.assertj.core.api.Assertions;
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.EgressActionConfiguration;
-import org.deltafi.common.types.FormatActionConfiguration;
-import org.deltafi.common.types.ValidateActionConfiguration;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
 import org.deltafi.core.types.EgressFlow;
@@ -49,11 +47,6 @@ class EgressFlowValidatorTest {
         EgressFlow egressFlow = new EgressFlow();
         egressFlow.setName("egressFlow");
 
-        FormatActionConfiguration format = new FormatActionConfiguration("format", null, null);
-        egressFlow.setFormatAction(format);
-        ValidateActionConfiguration validate1 = new ValidateActionConfiguration("validate1", null);
-        ValidateActionConfiguration validate2 = new ValidateActionConfiguration("validate2", null);
-        egressFlow.setValidateActions(List.of(validate1, validate2));
         EgressActionConfiguration egress = new EgressActionConfiguration("egress", null);
         egressFlow.setEgressAction(egress);
 
@@ -62,10 +55,7 @@ class EgressFlowValidatorTest {
         Mockito.verify(schemaComplianceValidator, Mockito.times(4)).validate(actionConfigCaptor.capture());
 
         List<ActionConfiguration> validatedActions = actionConfigCaptor.getAllValues();
-        Assertions.assertThat(validatedActions).hasSize(4)
-                .contains(format)
-                .contains(validate1)
-                .contains(validate2)
+        Assertions.assertThat(validatedActions).hasSize(1)
                 .contains(egress);
 
         Assertions.assertThat(errors).isEmpty();
@@ -76,8 +66,6 @@ class EgressFlowValidatorTest {
         EgressFlow egressFlow = new EgressFlow();
         egressFlow.setName("egressFlow");
 
-        FormatActionConfiguration format = new FormatActionConfiguration("fail", null, null);
-        egressFlow.setFormatAction(format);
         egressFlow.setEgressAction(new EgressActionConfiguration(null, null));
 
         FlowConfigError expected = expectedError();
@@ -91,32 +79,6 @@ class EgressFlowValidatorTest {
     @Test
     void testValidateActions_null() {
         Assertions.assertThat(egressFlowValidator.validateActions(null)).isEmpty();
-    }
-
-    @Test
-    void testExcludedAndIncluded() {
-        EgressFlow egressFlow = new EgressFlow();
-        egressFlow.setName("egressFlowName");
-        egressFlow.setIncludeNormalizeFlows(List.of("passthrough", "dupe2", "included"));
-        egressFlow.setExcludeNormalizeFlows(List.of("passthrough", "dupe2", "excluded"));
-        List<FlowConfigError> errors = egressFlowValidator.excludedAndIncluded(egressFlow);
-        Assertions.assertThat(errors).hasSize(2);
-
-        Assertions.assertThat(errors.get(0).getErrorType()).isEqualTo(FlowErrorType.INVALID_CONFIG);
-        Assertions.assertThat(errors.get(0).getConfigName()).isEqualTo("egressFlowName");
-        Assertions.assertThat(errors.get(0).getMessage()).isEqualTo("Flow: passthrough is both included and excluded");
-        Assertions.assertThat(errors.get(1).getErrorType()).isEqualTo(FlowErrorType.INVALID_CONFIG);
-        Assertions.assertThat(errors.get(1).getConfigName()).isEqualTo("egressFlowName");
-        Assertions.assertThat(errors.get(1).getMessage()).isEqualTo("Flow: dupe2 is both included and excluded");
-    }
-
-    @Test
-    void testExcludedAndIncluded_null() {
-        EgressFlow egressFlow = new EgressFlow();
-        egressFlow.setName("egressFlowName");
-        egressFlow.setIncludeNormalizeFlows(null);
-        egressFlow.setExcludeNormalizeFlows(List.of("passthrough", "dupe2", "excluded"));
-        Assertions.assertThat(egressFlowValidator.excludedAndIncluded(egressFlow)).isEmpty();
     }
 
     FlowConfigError expectedError() {

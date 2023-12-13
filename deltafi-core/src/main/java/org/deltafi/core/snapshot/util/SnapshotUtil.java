@@ -19,9 +19,8 @@ package org.deltafi.core.snapshot.util;
 
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.snapshot.types.FlowSnapshot;
-import org.deltafi.core.snapshot.types.NormalizeFlowSnapshot;
 import org.deltafi.core.snapshot.types.EgressFlowSnapshot;
-import org.deltafi.core.snapshot.types.EnrichFlowSnapshot;
+import org.deltafi.core.snapshot.types.TimedIngressFlowSnapshot;
 import org.deltafi.core.snapshot.types.TransformFlowSnapshot;
 
 import java.util.ArrayList;
@@ -42,9 +41,8 @@ public class SnapshotUtil {
      * @param systemSnapshot system snapshot that will be modified
      */
     static void migrateFlowValues(SystemSnapshot systemSnapshot) {
-        systemSnapshot.setNormalizeFlows(updateFlowSnapshotList(systemSnapshot.getNormalizeFlows(), systemSnapshot.getRunningIngressFlows(), systemSnapshot.getTestIngressFlows(), NormalizeFlowSnapshot::new));
+        systemSnapshot.setTimedIngressFlows(updateFlowSnapshotList(systemSnapshot.getTimedIngressFlows(), systemSnapshot.getRunningIngressFlows(), systemSnapshot.getTestIngressFlows(), TimedIngressFlowSnapshot::new));
         systemSnapshot.setTransformFlows(updateFlowSnapshotList(systemSnapshot.getTransformFlows(), systemSnapshot.getRunningTransformFlows(), systemSnapshot.getTestTransformFlows(), TransformFlowSnapshot::new));
-        systemSnapshot.setEnrichFlows(updateFlowSnapshotList(systemSnapshot.getEnrichFlows(), systemSnapshot.getRunningEnrichFlows(), null, EnrichFlowSnapshot::new));
         systemSnapshot.setEgressFlows(updateFlowSnapshotList(systemSnapshot.getEgressFlows(), systemSnapshot.getRunningEgressFlows(), systemSnapshot.getTestEgressFlows(), EgressFlowSnapshot::new));
     }
 

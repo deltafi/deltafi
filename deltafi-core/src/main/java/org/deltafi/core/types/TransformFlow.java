@@ -38,7 +38,6 @@ public class TransformFlow extends Flow implements Subscriber {
     private List<TransformActionConfiguration> transformActions = new ArrayList<>();
     private EgressActionConfiguration egressAction;
     private int maxErrors = -1;
-    private Set<String> expectedAnnotations;
     private Set<Rule> subscriptions;
 
     /**

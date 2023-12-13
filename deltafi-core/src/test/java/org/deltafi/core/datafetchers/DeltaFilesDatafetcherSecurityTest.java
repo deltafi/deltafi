@@ -84,7 +84,6 @@ class DeltaFilesDatafetcherSecurityTest {
         List<Callable<?>> callables = new ArrayList<>();
         callables.add(() -> deltaFilesDatafetcher.deltaFile("did"));
         callables.add(() -> deltaFilesDatafetcher.deltaFiles(DataFetchingEnvironmentImpl.newDataFetchingEnvironment().build(), null, null));
-        callables.add(() -> deltaFilesDatafetcher.domains());
         callables.add(() -> deltaFilesDatafetcher.rawDeltaFile("did", true));
         callables.add(() -> deltaFilesDatafetcher.acknowledge(List.of("did"), "reason"));
         callables.add(() -> deltaFilesDatafetcher.cancel(List.of("did")));
@@ -96,7 +95,7 @@ class DeltaFilesDatafetcherSecurityTest {
         callables.add(() -> deltaFilesDatafetcher.lastWithFilename(""));
         callables.add(() -> deltaFilesDatafetcher.errorSummaryByFlow(0, 0, null, null));
         callables.add(() -> deltaFilesDatafetcher.errorSummaryByMessage(0, 0, null, null));
-        callables.add(() -> deltaFilesDatafetcher.annotationKeys(""));
+        callables.add(() -> deltaFilesDatafetcher.annotationKeys());
         callables.add(() -> deltaFilesDatafetcher.stressTest(null, null, null, null, null));
         callables.add(() -> deltaFilesDatafetcher.sourceMetadataUnion(null));
         return callables;

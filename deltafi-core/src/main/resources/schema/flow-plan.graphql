@@ -54,49 +54,11 @@ input PluginVariablesInput {
   variables: [VariableInput]!
 }
 
-type NormalizeFlowPlan {
-  name: String!
-  type: String!
-  description: String!
-  sourcePlugin: PluginCoordinates!
-  transformActions: [TransformActionConfiguration]
-  loadAction: LoadActionConfiguration
-}
-
-input NormalizeFlowPlanInput {
-  name: String!
-  type: String!
-  description: String!
-  transformActions: [TransformActionConfigurationInput]
-  loadAction: LoadActionConfigurationInput
-}
-
-type EnrichFlowPlan {
-  name: String!
-  type: String!
-  description: String!
-  sourcePlugin: PluginCoordinates!
-  domainActions: [DomainActionConfiguration]
-  enrichActions: [EnrichActionConfiguration]
-}
-
-input EnrichFlowPlanInput {
-  name: String!
-  type: String!
-  description: String!
-  domainActions: [DomainActionConfigurationInput]
-  enrichActions: [EnrichActionConfigurationInput]
-}
-
 type EgressFlowPlan {
   name: String!
   type: String!
   description: String!
   sourcePlugin: PluginCoordinates!
-  includeNormalizeFlows: [String]
-  excludeNormalizeFlows: [String]
-  formatAction: FormatActionConfiguration!
-  validateActions: [ValidateActionConfiguration]
   egressAction: EgressActionConfiguration!
 }
 
@@ -104,10 +66,6 @@ input EgressFlowPlanInput {
   name: String!
   type: String!
   description: String!
-  includeNormalizeFlows: [String]
-  excludeNormalizeFlows: [String]
-  formatAction: FormatActionConfigurationInput!
-  validateActions: [ValidateActionConfigurationInput]
   egressAction: EgressActionConfigurationInput!
 }
 
@@ -180,49 +138,21 @@ type FlowStatus {
 type Flows {
   sourcePlugin: PluginCoordinates!
   variables: [Variable]
-  normalizeFlows: [NormalizeFlow]
-  enrichFlows: [EnrichFlow]
   egressFlows: [EgressFlow]
   timedIngressFlows: [TimedIngressFlow]
   transformFlows: [TransformFlow]
 }
 
 type SystemFlows {
-  normalize: [NormalizeFlow]!
-  enrich: [EnrichFlow]!
   egress: [EgressFlow]!
   timedIngress: [TimedIngressFlow]!
   transform: [TransformFlow]!
 }
 
 type SystemFlowPlans {
-  normalizePlans: [NormalizeFlowPlan]!
-  enrichPlans: [EnrichFlowPlan]!
   egressPlans: [EgressFlowPlan]!
   timedIngressPlans: [TimedIngressFlowPlan]!
   transformPlans: [TransformFlowPlan]!
-}
-
-type NormalizeFlow {
-  name: String!
-  description: String!
-  sourcePlugin: PluginCoordinates!
-  flowStatus: FlowStatus!
-  currentErrors: Int!
-  maxErrors: Int!
-  transformActions: [TransformActionConfiguration]
-  loadAction: LoadActionConfiguration
-  variables: [Variable]!
-}
-
-type EnrichFlow {
-  name: String!
-  description: String!
-  sourcePlugin: PluginCoordinates!
-  flowStatus: FlowStatus!
-  domainActions: [DomainActionConfiguration]
-  enrichActions: [EnrichActionConfiguration]
-  variables: [Variable]!
 }
 
 type EgressFlow {
@@ -230,11 +160,7 @@ type EgressFlow {
   description: String!
   sourcePlugin: PluginCoordinates!
   flowStatus: FlowStatus!
-  includeNormalizeFlows: [String]
-  excludeNormalizeFlows: [String]
   expectedAnnotations: [String]
-  formatAction: FormatActionConfiguration!
-  validateActions: [ValidateActionConfiguration]
   egressAction: EgressActionConfiguration!
   variables: [Variable]!
 }
@@ -271,7 +197,6 @@ type TransformFlow {
   subscriptions: [Rule]
   flowStatus: FlowStatus!
   maxErrors: Int!
-  expectedAnnotations: [String]
   transformActions: [TransformActionConfiguration!]
   egressAction: EgressActionConfiguration!
   variables: [Variable]!
@@ -283,8 +208,6 @@ type ActionFamily {
 }
 
 type FlowNames {
-  normalize: [String]!
-  enrich: [String]!
   egress: [String]!
   transform: [String]!
   timedIngress: [String]!

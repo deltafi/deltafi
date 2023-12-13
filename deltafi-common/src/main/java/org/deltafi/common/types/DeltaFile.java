@@ -158,7 +158,7 @@ public class DeltaFile {
   }
 
   public void updateFlags() {
-    inFlight = stage == DeltaFileStage.INGRESS || stage == DeltaFileStage.ENRICH || stage == DeltaFileStage.EGRESS;
+    inFlight = stage == DeltaFileStage.IN_FLIGHT;
     terminal = !inFlight && !(stage == DeltaFileStage.ERROR && errorAcknowledged == null) &&
             (pendingAnnotationsForFlows == null || pendingAnnotationsForFlows.isEmpty());
     contentDeletable = terminal && contentDeleted == null && totalBytes > 0;
@@ -184,12 +184,7 @@ public class DeltaFile {
       return Collections.emptyMap();
     }
     Map<String, String> metadata = new HashMap<>();
-    List<Action> amendedDataActions = new ArrayList<>(actions.stream().filter(Action::amendedData).toList());
-    // any metadata on domain, enrich, or publish actions will come from retries as these actions do not support creating metadata directly
-    amendedDataActions.addAll(actions.stream().filter(action -> action.getType() == ActionType.DOMAIN || action.getType() == ActionType.ENRICH).toList());
-    amendedDataActions.addAll(actions.stream().filter(action -> action.getType() == ActionType.FORMAT && action.getState().equals(ActionState.RETRIED)).toList());
-    amendedDataActions.addAll(actions.stream().filter(action -> action.getType() == ActionType.PUBLISH && action.getState().equals(ActionState.RETRIED)).toList());
-    for (Action action : amendedDataActions) {
+    for (Action action : actions) {
       metadata.putAll(action.getMetadata());
       for (String key : action.getDeleteMetadataKeys()) {
         metadata.remove(key);
@@ -197,34 +192,6 @@ public class DeltaFile {
     }
 
     return metadata;
-  }
-
-  public Map<String, String> metadataWithFormatRetries(String flow) {
-    Map<String, String> metadata = getMetadata();
-    formatActions(flow).stream()
-            .filter(action -> action.getState().equals(ActionState.RETRIED))
-            .forEach(action -> {
-              metadata.putAll(action.getMetadata());
-              for (String key : action.getDeleteMetadataKeys()) {
-                metadata.remove(key);
-              }
-            });
-
-    return metadata;
-  }
-
-  /**
-   * Get metadata, considering whether the given action is post-formatting.
-   * This method checks if the provided action follows a format action. If it does, the method
-   * retrieves formatted metadata for the action's associated egress flow. Otherwise, it retrieves
-   * the current ingress/transform flow metadata.
-   *
-   * @param action The action based on which the decision to format or not is made.
-   * @return A Map containing either the formatted metadata for the action's flow, or the
-   *         current transform/load metadata.
-   */
-  public Map<String, String> getErrorMetadata(Action action) {
-    return action.afterFormat() ? formatMetadata(action.getFlow()) : getMetadata();
   }
 
   public List<Action> erroredActions() {
@@ -289,22 +256,22 @@ public class DeltaFile {
     return actionNamed(flow, name).isEmpty();
   }
 
-  public Action completeAction(ActionEvent event) {
-    return completeAction(event.getFlow(), event.getAction(), event.getStart(), event.getStop(), null, null, null, null, null);
+  public void completeAction(ActionEvent event) {
+    completeAction(event.getFlow(), event.getAction(), event.getStart(), event.getStop(), null, null, null);
   }
 
   public void completeAction(ActionEvent event, List<Content> content, Map<String, String> metadata,
-          List<String> deleteMetadataKeys, List<Domain> domains, List<Enrichment> enrichments) {
+          List<String> deleteMetadataKeys) {
     completeAction(event.getFlow(), event.getAction(), event.getStart(), event.getStop(), content, metadata,
-            deleteMetadataKeys, domains, enrichments);
+            deleteMetadataKeys);
   }
 
   public Action completeAction(String flow, String name, OffsetDateTime start, OffsetDateTime stop) {
-    return completeAction(flow, name, start, stop, null, null, null, null, null);
+    return completeAction(flow, name, start, stop, null, null, null);
   }
 
   public Action completeAction(String flow, String name, OffsetDateTime start, OffsetDateTime stop, List<Content> content,
-          Map<String, String> metadata, List<String> deleteMetadataKeys, List<Domain> domains, List<Enrichment> enrichments) {
+          Map<String, String> metadata, List<String> deleteMetadataKeys) {
     Optional<Action> optionalAction = getActions().stream()
             .filter(action -> action.getFlow().equals(flow) && action.getName().equals(name) && !action.terminal())
             .findFirst();
@@ -325,18 +292,6 @@ public class DeltaFile {
 
     if (deleteMetadataKeys != null) {
       action.setDeleteMetadataKeys(deleteMetadataKeys);
-    }
-
-    if (domains != null) {
-      for (Domain domain : domains) {
-        action.addDomain(domain.getName(), domain.getValue(), domain.getMediaType());
-      }
-    }
-
-    if (enrichments != null) {
-      for (Enrichment enrichment : enrichments) {
-        action.addDomain(enrichment.getName(), enrichment.getValue(), enrichment.getMediaType());
-      }
     }
 
     return action;
@@ -455,10 +410,6 @@ public class DeltaFile {
     return getActions().stream().filter(Action::queued).map(Action::getName).toList();
   }
 
-  public boolean hasDomains(List<String> domains) {
-    return domains.stream().allMatch(domain -> domains().stream().anyMatch(d -> d.getName().equals(domain)));
-  }
-
   public void addAnnotations(Map<String, String> metadata) {
     if (null == metadata) {
       return;
@@ -499,10 +450,6 @@ public class DeltaFile {
     }
   }
 
-  public boolean hasEnrichments(List<String> enrichments) {
-    return enrichments.stream().allMatch(enrichment -> enrichments().stream().anyMatch(e -> e.getName().equals(enrichment)));
-  }
-
   public boolean hasErroredAction() {
     return hasActionInState(ActionState.ERROR);
   }
@@ -535,11 +482,6 @@ public class DeltaFile {
     } else if (actionCount > 1) {
       throw new MultipleActionException(flow, name, did);
     }
-  }
-
-  public Action getPendingAction(String flow, String name) {
-    return getActions().stream().filter(action -> action.getFlow().equals(flow) && action.getName().equals(name) &&
-            !action.terminal()).findFirst().orElseThrow(() -> new UnexpectedActionException(flow, name, did, queuedActions()));
   }
 
   private long countPendingActions(String flow, String name) {
@@ -637,28 +579,20 @@ public class DeltaFile {
     return expectedAnnotations;
   }
 
-  public Action lastCompleteDataAmendedAction() {
+  public Action lastCompleteAction() {
     return getActions().stream()
-            .filter(action -> action.amendedData() && action.complete())
+            .filter(Action::complete)
             .reduce((first, second) -> second)
             .orElse(null);
   }
 
-  public @NotNull List<Content> lastDataAmendedContent() {
-    Action lastDataAmendedAction = lastCompleteDataAmendedAction();
-    if (lastDataAmendedAction == null || lastDataAmendedAction.getContent() == null) {
+  public @NotNull List<Content> lastContent() {
+    Action lastAction = lastAction();
+    if (lastAction == null || lastAction.getContent() == null) {
       return Collections.emptyList();
     }
 
-    return lastDataAmendedAction.getContent();
-  }
-
-  public @NotNull List<Domain> domains() {
-    return getActions().stream().map(Action::getDomains).flatMap(Collection::stream).toList();
-  }
-
-  public @NotNull List<Enrichment> enrichments() {
-    return getActions().stream().map(Action::getEnrichments).flatMap(Collection::stream).toList();
+    return lastAction.getContent();
   }
 
   public @NotNull List<Egress> getEgress() {
@@ -666,78 +600,11 @@ public class DeltaFile {
     return egress;
   }
 
-  public Action lastFormatAction(String flow) {
-    List<Action> formatActions = formatActions(flow);
-    return formatActions.isEmpty() ? null : formatActions.get(formatActions.size() - 1);
-  }
-
-  private List<Action> formatActions(String flow) {
-    return getActions().stream()
-            .filter(action -> action.getType() == ActionType.FORMAT && action.getFlow().equals(flow))
-            .toList();
-  }
-
-  public List<Action> retriedEgressActions(String flow) {
-    return getActions().stream()
-            .filter(action -> action.afterFormat() && action.getFlow().equals(flow) && action.getState() == ActionState.RETRIED)
-            .toList();
-  }
-
-  public boolean formatComplete(String flow) {
-    List<Action> formatActions = formatActions(flow);
-
-    return !formatActions.isEmpty() && formatActions.stream().anyMatch(Action::complete);
-  }
-
-  /**
-   * Assemble formatted metadata based on a given flow.
-   * This method prepares metadata by iterating through the format actions and retried egress actions
-   * associated with the provided flow. The metadata from each format action is
-   * added to a Map. If any metadata key is present in the action's deleteMetadataKeys,
-   * the corresponding entry is removed from the Map.
-   *
-   * @param flow The flow containing the format actions
-   * @return A Map containing the formatted metadata
-   */
-  public Map<String, String> formatMetadata(String flow) {
-    List<Action> metadataActions = new ArrayList<>(formatActions(flow));
-    metadataActions.addAll(retriedEgressActions(flow));
-
-    Map<String, String> formatMetadata = new HashMap<>();
-    for (Action action : metadataActions) {
-      formatMetadata.putAll(action.getMetadata());
-      for (String key : action.getDeleteMetadataKeys()) {
-        formatMetadata.remove(key);
-      }
-    }
-
-    return formatMetadata;
-  }
-
-  public List<Content> formatContent(String flow) {
-    Action formatAction = lastFormatAction(flow);
-
-    if (formatAction == null) {
-      return Collections.emptyList();
-    }
-
-    return formatAction.getContent();
-  }
-
-  public DeltaFileMessage forQueue(String flow) {
-    DeltaFileMessage.DeltaFileMessageBuilder builder = DeltaFileMessage.builder();
-
-    if (formatComplete(flow)) {
-      builder.contentList(formatContent(flow))
-              .metadata(formatMetadata(flow));
-    } else {
-      builder.contentList(lastDataAmendedContent())
-              .metadata(metadataWithFormatRetries(flow))
-              .domains(domains())
-              .enrichments(enrichments());
-    }
-
-    return builder.build();
+  public DeltaFileMessage forQueue() {
+    return DeltaFileMessage.builder()
+            .contentList(lastContent())
+            .metadata(getMetadata())
+            .build();
   }
 
   public Set<Segment> referencedSegments() {
@@ -939,6 +806,6 @@ public class DeltaFile {
 
   @JsonIgnore
   public List<Content> getImmutableContent() {
-    return lastDataAmendedContent().stream().map(Content::copy).toList();
+    return lastContent().stream().map(Content::copy).toList();
   }
 }

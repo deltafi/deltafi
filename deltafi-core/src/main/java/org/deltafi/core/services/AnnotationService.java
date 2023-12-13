@@ -19,7 +19,6 @@ package org.deltafi.core.services;
 
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.types.FlowType;
 import org.deltafi.core.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.snapshot.Snapshotter;
 import org.deltafi.core.snapshot.SystemSnapshot;
@@ -33,12 +32,10 @@ import java.util.Set;
 @Service
 public class AnnotationService implements Snapshotter {
 
-    private final TransformFlowService transformFlowService;
     private final EgressFlowService egressFlowService;
     private final DeltaFilesService deltaFilesService;
 
-    public AnnotationService(TransformFlowService transformFlowService, EgressFlowService egressFlowService, DeltaFilesService deltaFilesService) {
-        this.transformFlowService = transformFlowService;
+    public AnnotationService(EgressFlowService egressFlowService, DeltaFilesService deltaFilesService) {
         this.egressFlowService = egressFlowService;
         this.deltaFilesService = deltaFilesService;
     }
@@ -51,19 +48,12 @@ public class AnnotationService implements Snapshotter {
      * @param expectedAnnotations new set of expected annotations
      * @return true if the set of expected annotations changed
      */
-    public boolean setExpectedAnnotations(FlowType flowType, String flowName, Set<String> expectedAnnotations) {
+    public boolean setExpectedAnnotations(String flowName, Set<String> expectedAnnotations) {
         if (expectedAnnotations != null && expectedAnnotations.isEmpty()) {
             expectedAnnotations = null;
         }
 
-        boolean updated;
-        if (FlowType.TRANSFORM.equals(flowType)) {
-            updated = transformFlowService.setExpectedAnnotations(flowName, expectedAnnotations);
-        } else if (FlowType.EGRESS.equals(flowType)) {
-            updated = egressFlowService.setExpectedAnnotations(flowName, expectedAnnotations);
-        } else {
-            throw new IllegalArgumentException("Invalid flow type " + flowType + " only transform and egress support expected annotations");
-        }
+        boolean updated = egressFlowService.setExpectedAnnotations(flowName, expectedAnnotations);
 
         if (updated) {
             deltaFilesService.asyncUpdatePendingAnnotationsForFlows(flowName, expectedAnnotations);
@@ -92,7 +82,7 @@ public class AnnotationService implements Snapshotter {
 
     public void resetFromSnapshot(HasExpectedAnnotations flowSnapshot, Result result) {
         try {
-            setExpectedAnnotations(flowSnapshot.getFlowType(), flowSnapshot.getName(), flowSnapshot.getExpectedAnnotations());
+            setExpectedAnnotations(flowSnapshot.getName(), flowSnapshot.getExpectedAnnotations());
         } catch (DgsEntityNotFoundException e) {
             result.getErrors().add("Flow " + flowSnapshot.getName() + " is no longer installed");
         }

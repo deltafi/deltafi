@@ -43,73 +43,26 @@ type UniqueKeyValues {
   values: [String]!
 }
 
-type Domain {
-  name: String!
-  value: String
-  mediaType: String!
-}
-
-input DomainInput {
-  name: String!
-  value: String
-  mediaType: String!
-}
-
 type Egress {
   flow: String!
-}
-
-type Enrichment {
-  name: String!
-  value: String
-  mediaType: String!
-}
-
-enum ProcessingType {
-  NORMALIZATION
-  TRANSFORMATION
 }
 
 type SourceInfo {
   filename: String!
   flow: String!
   metadata: Metadata
-  processingType: ProcessingType
 }
 
 input SourceInfoFilter {
-  # deprecated: use filenameFilter
-  filename: String
   filenameFilter: FilenameFilter
-  # deprecated: use ingressFlows
-  flow: String
   ingressFlows: [String!]
   metadata: [KeyValueInput!]
-  processingType: ProcessingType
 }
 
 input FilenameFilter {
   filename: String!
   regex: Boolean
   caseSensitive: Boolean
-}
-
-type FlowAssignmentRule {
-  id: String!
-  name: String!
-  flow: String!
-  priority: Int!
-  filenameRegex: String
-  requiredMetadata: [KeyValue!]
-}
-
-input FlowAssignmentRuleInput {
-  id: String
-  name: String!
-  flow: String!
-  priority: Int
-  filenameRegex: String
-  requiredMetadata: [KeyValueInput!]
 }
 
 type Content {
@@ -128,7 +81,6 @@ type Segment {
 
 enum DeltaFileStage {
   INGRESS
-  ENRICH
   EGRESS
   COMPLETE
   ERROR
@@ -151,11 +103,6 @@ enum ActionState {
 enum ActionType {
   INGRESS
   TRANSFORM
-  LOAD
-  DOMAIN
-  ENRICH
-  FORMAT
-  VALIDATE
   EGRESS
   PUBLISH
   UNKNOWN
@@ -179,8 +126,6 @@ type Action {
   content: [Content!]!
   metadata: Metadata
   deleteMetadataKeys: [String!]!
-  domains: [Domain!]!
-  enrichments: [Enrichment!]!
 }
 
 type DeltaFile {
@@ -300,9 +245,7 @@ input DeltaFilesFilter {
   totalBytesMax: Long
   createdAfter: DateTime
   createdBefore: DateTime
-  domains: [String!]
   annotations: [KeyValueInput!]
-  enrichments: [String!]
   egressFlows: [String!]
   contentDeleted: Boolean
   modifiedAfter: DateTime
@@ -360,19 +303,13 @@ input ResumeMetadata {
 }
 
 type Query {
-  getNormalizeFlowPlan(planName: String!): NormalizeFlowPlan!
   getEgressFlowPlan(planName: String!): EgressFlowPlan!
-  getEnrichFlowPlan(planName: String!): EnrichFlowPlan!
   getTimedIngressFlowPlan(planName: String!): TimedIngressFlowPlan!
   getTransformFlowPlan(planName: String!): TransformFlowPlan!
-  getNormalizeFlow(flowName: String!): NormalizeFlow!
   getEgressFlow(flowName: String!): EgressFlow!
-  getEnrichFlow(flowName: String!): EnrichFlow!
   getTimedIngressFlow(flowName: String!): TimedIngressFlow!
   getTransformFlow(flowName: String!): TransformFlow!
-  validateNormalizeFlow(flowName: String!): NormalizeFlow!
   validateEgressFlow(flowName: String!): EgressFlow!
-  validateEnrichFlow(flowName: String!): EnrichFlow!
   validateTimedIngressFlow(flowName: String!): TimedIngressFlow!
   validateTransformFlow(flowName: String!): TransformFlow!
   getFlowNames(state: FlowState): FlowNames!
@@ -382,9 +319,6 @@ type Query {
   getAllFlowPlans: SystemFlowPlans!
   getActionNamesByFamily: [ActionFamily]!
   ingressFlowErrorsExceeded: [IngressFlowErrorState]!
-
-  getAllFlowAssignmentRules: [FlowAssignmentRule]!
-  getFlowAssignmentRule(id: String!): FlowAssignmentRule
 
   deltaFiles(offset: Int, limit: Int, filter: DeltaFilesFilter, orderBy: DeltaFileOrder): DeltaFiles!
   deltaFile(did: String!): DeltaFile
@@ -411,8 +345,7 @@ type Query {
   plugins: [Plugin!]!
   verifyActionsAreRegistered(pluginCoordinates: PluginCoordinatesInput!) : Boolean
 
-  domains: [String!]!
-  annotationKeys(domain: String): [String!]!
+  annotationKeys: [String!]!
 
   version: String!
   totalCount: Long
@@ -422,35 +355,21 @@ type Query {
 }
 
 type Mutation {
-  loadFlowAssignmentRules(replaceAll: Boolean!, rules: [FlowAssignmentRuleInput!]!): [Result!]!
-  removeFlowAssignmentRule(id: String!): Boolean!
-  updateFlowAssignmentRule(rule: FlowAssignmentRuleInput!): Result!
-
-  saveNormalizeFlowPlan(normalizeFlowPlan: NormalizeFlowPlanInput!) : NormalizeFlow!
-  saveEnrichFlowPlan(enrichFlowPlan: EnrichFlowPlanInput!) : EnrichFlow!
   saveEgressFlowPlan(egressFlowPlan: EgressFlowPlanInput!) : EgressFlow!
   saveTimedIngressFlowPlan(timedIngressFlowPlan: TimedIngressFlowPlanInput!) : TimedIngressFlow!
   saveTransformFlowPlan(transformFlowPlan: TransformFlowPlanInput!) : TransformFlow!
-  removeNormalizeFlowPlan(name: String!) : Boolean!
-  removeEnrichFlowPlan(name: String!) : Boolean!
   removeEgressFlowPlan(name: String!) : Boolean!
   removeTimedIngressFlowPlan(name: String!) : Boolean!
   removeTransformFlowPlan(name: String!) : Boolean!
 
-  startNormalizeFlow(flowName: String!) : Boolean!
-  stopNormalizeFlow(flowName: String!) : Boolean!
   startEgressFlow(flowName: String!) : Boolean!
   startTimedIngressFlow(flowName: String!) : Boolean!
   startTransformFlow(flowName: String!) : Boolean!
   stopEgressFlow(flowName: String!) : Boolean!
-  startEnrichFlow(flowName: String!) : Boolean!
-  stopEnrichFlow(flowName: String!) : Boolean!
   stopTimedIngressFlow(flowName: String!) : Boolean!
   stopTransformFlow(flowName: String!) : Boolean!
 
   setMaxErrors(flowName: String!, maxErrors: Int!) : Boolean!
-  enableNormalizeTestMode(flowName: String!) : Boolean!
-  disableNormalizeTestMode(flowName: String!) : Boolean!
   enableEgressTestMode(flowName: String!) : Boolean!
   disableEgressTestMode(flowName: String!) : Boolean!
   setTimedIngressMemo(flowName: String!, memo: String) : Boolean!
@@ -459,7 +378,6 @@ type Mutation {
   disableTimedIngressTestMode(flowName: String!) : Boolean!
   enableTransformTestMode(flowName: String!) : Boolean!
   disableTransformTestMode(flowName: String!) : Boolean!
-  setTransformFlowExpectedAnnotations(flowName: String!, expectedAnnotations: [String]) : Boolean!
   setEgressFlowExpectedAnnotations(flowName: String!, expectedAnnotations: [String]) : Boolean!
 
   taskTimedIngress(name: String!, memo: String) : Boolean!

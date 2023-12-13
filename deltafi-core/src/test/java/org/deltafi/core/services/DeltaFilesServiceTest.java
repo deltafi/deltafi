@@ -58,16 +58,11 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class DeltaFilesServiceTest {
-
-    private static final String ERRORS_EXCEEDED_TRANSFORM_FLOW = "errorsExceededFlow";
-    private static final String GOOD_NORMALIZE_FLOW = "goodNormalizeFlow";
-
     private final TestClock testClock = new TestClock();
     private final UUIDGenerator uuidGenerator = new TestUUIDGenerator();
     private final MockDeltaFiPropertiesService mockDeltaFiPropertiesService = new MockDeltaFiPropertiesService();
 
     private final TransformFlowService transformFlowService;
-    private final NormalizeFlowService normalizeFlowService;
     private final EgressFlowService egressFlowService;
     private final StateMachine stateMachine;
     private final DeltaFileRepo deltaFileRepo;
@@ -97,7 +92,6 @@ class DeltaFilesServiceTest {
     ArgumentCaptor<QueuedAnnotation> queuedAnnotationCaptor;
 
     DeltaFilesServiceTest(@Mock TransformFlowService transformFlowService,
-            @Mock NormalizeFlowService normalizeFlowService, @Mock EnrichFlowService enrichFlowService,
             @Mock EgressFlowService egressFlowService, @Mock PublisherService publisherService, @Mock StateMachine stateMachine,
             @Mock DeltaFileRepo deltaFileRepo, @Mock ActionEventQueue actionEventQueue,
             @Mock ContentStorageService contentStorageService, @Mock ResumePolicyService resumePolicyService,
@@ -106,7 +100,6 @@ class DeltaFilesServiceTest {
             @Mock QueueManagementService queueManagementService, @Mock QueuedAnnotationRepo queuedAnnotationRepo,
             @Mock Environment environment, @Mock ScheduledCollectService scheduledCollectService) {
         this.transformFlowService = transformFlowService;
-        this.normalizeFlowService = normalizeFlowService;
         this.egressFlowService = egressFlowService;
         this.stateMachine = stateMachine;
         this.deltaFileRepo = deltaFileRepo;
@@ -118,30 +111,30 @@ class DeltaFilesServiceTest {
         this.queueManagementService = queueManagementService;
         this.queuedAnnotationRepo = queuedAnnotationRepo;
 
-        deltaFilesService = new DeltaFilesService(testClock, transformFlowService, normalizeFlowService,
-                enrichFlowService, egressFlowService, publisherService, mockDeltaFiPropertiesService, stateMachine, deltaFileRepo,
-                actionEventQueue, contentStorageService, resumePolicyService, metricService,
-                coreAuditLogger, new DidMutexService(), deltaFileCacheService, timedIngressFlowService,
-                queueManagementService, queuedAnnotationRepo, environment, scheduledCollectService, uuidGenerator);
+        deltaFilesService = new DeltaFilesService(testClock, transformFlowService, egressFlowService, publisherService,
+                mockDeltaFiPropertiesService, stateMachine, deltaFileRepo, actionEventQueue, contentStorageService,
+                resumePolicyService, metricService, coreAuditLogger, new DidMutexService(), deltaFileCacheService,
+                timedIngressFlowService, queueManagementService, queuedAnnotationRepo, environment,
+                scheduledCollectService, uuidGenerator);
     }
 
     @Test
     void setsAndGets() {
-        NormalizeFlow normalizeFlow = new NormalizeFlow();
-        normalizeFlow.setName("theFlow");
-        when(normalizeFlowService.getRunningFlowByName(normalizeFlow.getName())).thenReturn(normalizeFlow);
+        TransformFlow transformFlow = new TransformFlow();
+        transformFlow.setName("theFlow");
+        when(transformFlowService.getRunningFlowByName(transformFlow.getName())).thenReturn(transformFlow);
 
         String did = UUID.randomUUID().toString();
         List<Content> content = Collections.singletonList(new Content("name", "mediaType"));
-        IngressEventItem ingressInputItem = new IngressEventItem(did, "filename", normalizeFlow.getName(),
-                Map.of(), ProcessingType.NORMALIZATION, content);
+        IngressEventItem ingressInputItem = new IngressEventItem(did, "filename", transformFlow.getName(),
+                Map.of(), content);
 
         DeltaFile deltaFile = deltaFilesService.ingress(ingressInputItem, OffsetDateTime.now(), OffsetDateTime.now());
 
         assertNotNull(deltaFile);
-        assertEquals(normalizeFlow.getName(), deltaFile.getSourceInfo().getFlow());
+        assertEquals(transformFlow.getName(), deltaFile.getSourceInfo().getFlow());
         assertEquals(did, deltaFile.getDid());
-        assertNotNull(deltaFile.lastCompleteDataAmendedAction());
+        assertNotNull(deltaFile.lastCompleteAction());
     }
 
     @Test
@@ -279,11 +272,11 @@ class DeltaFilesServiceTest {
     void testRequeue_actionFound() {
         OffsetDateTime modified = OffsetDateTime.now();
         DeltaFile deltaFile = Util.buildDeltaFile("1");
-        deltaFile.setStage(DeltaFileStage.EGRESS);
+        deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
         deltaFile.getActions().add(Action.builder().flow("myFlow").name("action").type(ActionType.EGRESS)
                 .state(ActionState.QUEUED).modified(modified).build());
 
-        ActionConfiguration actionConfiguration = new FormatActionConfiguration(null, null, null);
+        ActionConfiguration actionConfiguration = new TransformActionConfiguration(null, null);
         Mockito.when(egressFlowService.findActionConfig("myFlow", "action")).thenReturn(actionConfiguration);
 
         List<ActionInvocation> actionInvocations = deltaFilesService.requeuedActionInvocations(deltaFile, modified);
@@ -318,8 +311,7 @@ class DeltaFilesServiceTest {
     void testRequeue_transformFlow() {
         OffsetDateTime modified = OffsetDateTime.now();
         DeltaFile deltaFile = Util.buildDeltaFile("1");
-        deltaFile.getSourceInfo().setProcessingType(ProcessingType.TRANSFORMATION);
-        deltaFile.setStage(DeltaFileStage.EGRESS);
+        deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
         deltaFile.getActions().add(Action.builder().flow("myFlow").name("action").type(ActionType.EGRESS)
                 .state(ActionState.QUEUED).modified(modified).build());
 
@@ -331,49 +323,8 @@ class DeltaFilesServiceTest {
         Mockito.verifyNoInteractions(stateMachine);
     }
 
-    @Test
-    void testReinjectNoChildFlow() {
-        NormalizeFlow flow = new NormalizeFlow();
-        LoadActionConfiguration actionConfig = new LoadActionConfiguration("loadAction", null);
-        flow.setName(GOOD_NORMALIZE_FLOW);
-        flow.setLoadAction(actionConfig);
-
-        // "good" flow is running
-        when(normalizeFlowService.hasRunningFlow(GOOD_NORMALIZE_FLOW)).thenReturn(true);
-        when(normalizeFlowService.getRunningFlowByName(GOOD_NORMALIZE_FLOW)).thenReturn(flow);
-        // "bad" flow is not running
-        when(normalizeFlowService.hasRunningFlow("bad")).thenReturn(false);
-
-        DeltaFile deltaFile = DeltaFile.builder()
-                .sourceInfo(SourceInfo.builder().flow(GOOD_NORMALIZE_FLOW).build())
-                .actions(new ArrayList<>(List.of(Action.builder().flow(GOOD_NORMALIZE_FLOW)
-                        .name("loadAction").state(ActionState.QUEUED).build())))
-                .did("00000000-0000-0000-00000-000000000000")
-                .build();
-
-        deltaFilesService.reinject(deltaFile,
-                ActionEvent.builder()
-                        .flow(GOOD_NORMALIZE_FLOW)
-                        .action("loadAction")
-                        .reinject(List.of(
-                                ReinjectEvent.builder()
-                                        .flow(GOOD_NORMALIZE_FLOW)
-                                        .content(List.of(createContent("first")))
-                                        .build(),
-                                ReinjectEvent.builder()
-                                        .flow("bad")
-                                        .content(List.of(createContent("second"))).build()))
-                        .build());
-
-        assertTrue(deltaFile.hasErroredAction());
-        assertEquals(0, deltaFile.getChildDids().size());
-        assertTrue(deltaFile.getActions().stream().filter(a -> a.getState() == ActionState.ERROR).map(Action::getErrorCause)
-                .allMatch(DeltaFilesService.NO_CHILD_INGRESS_CONFIGURED_CAUSE::equals));
-        assertTrue(deltaFile.getActions().stream().filter(a -> a.getState() == ActionState.ERROR).map(Action::getErrorContext)
-                .allMatch(ec -> ec.startsWith(DeltaFilesService.NO_CHILD_INGRESS_CONFIGURED_CONTEXT)));
-    }
-
-    @Test
+    // TODO - test the new split behavior
+    /*@Test
     void testReinjectCorrectChildFlow() {
         NormalizeFlow flow = new NormalizeFlow();
         LoadActionConfiguration actionConfig = new LoadActionConfiguration("loadAction", null);
@@ -408,53 +359,9 @@ class DeltaFilesServiceTest {
         assertTrue(deltaFile.getActions().stream().noneMatch(a -> a.getState() == ActionState.ERROR));
     }
 
-    @Test
-    void testReinjectErrorsExceeded() {
-        NormalizeFlow goodFlow = new NormalizeFlow();
-        LoadActionConfiguration loadActionConfig = new LoadActionConfiguration("loadAction", null);
-        goodFlow.setName(GOOD_NORMALIZE_FLOW);
-        goodFlow.setLoadAction(loadActionConfig);
-
-        TransformFlow errorsFlow = new TransformFlow();
-        TransformActionConfiguration transformActionConfig = new TransformActionConfiguration("transformAction", null);
-        errorsFlow.setName(ERRORS_EXCEEDED_TRANSFORM_FLOW);
-        errorsFlow.setTransformActions(List.of(transformActionConfig));
-
-        when(normalizeFlowService.flowErrorsExceeded()).thenReturn(Set.of("other"));
-        when(transformFlowService.flowErrorsExceeded()).thenReturn(Set.of(ERRORS_EXCEEDED_TRANSFORM_FLOW));
-
-        when(normalizeFlowService.hasRunningFlow(GOOD_NORMALIZE_FLOW)).thenReturn(true);
-        when(normalizeFlowService.hasRunningFlow(ERRORS_EXCEEDED_TRANSFORM_FLOW)).thenReturn(false);
-        when(transformFlowService.hasRunningFlow(ERRORS_EXCEEDED_TRANSFORM_FLOW)).thenReturn(true);
-        when(normalizeFlowService.getRunningFlowByName(GOOD_NORMALIZE_FLOW)).thenReturn(goodFlow);
-
-        DeltaFile deltaFile = DeltaFile.builder()
-                .sourceInfo(SourceInfo.builder().flow(GOOD_NORMALIZE_FLOW).build())
-                .actions(new ArrayList<>(List.of(Action.builder().flow(GOOD_NORMALIZE_FLOW)
-                        .name("loadAction").state(ActionState.QUEUED).build())))
-                .did("00000000-0000-0000-00000-000000000000")
-                .build();
-
-        deltaFilesService.reinject(deltaFile,
-                ActionEvent.builder()
-                        .flow(GOOD_NORMALIZE_FLOW)
-                        .action("loadAction")
-                        .reinject(List.of(
-                                ReinjectEvent.builder()
-                                        .flow(GOOD_NORMALIZE_FLOW)
-                                        .content(List.of(createContent("first"))).build(),
-                                ReinjectEvent.builder()
-                                        .flow(ERRORS_EXCEEDED_TRANSFORM_FLOW)
-                                        .content(List.of(createContent("second"))).build()))
-                        .build());
-
-        assertTrue(deltaFile.hasErroredAction());
-        assertEquals(0, deltaFile.getChildDids().size());
-        assertTrue(deltaFile.getActions().stream().filter(a -> a.getState() == ActionState.ERROR).map(Action::getErrorCause)
-                .allMatch(DeltaFilesService.CHILD_FLOW_INGRESS_DISABLED_CAUSE::equals));
-        assertTrue(deltaFile.getActions().stream().filter(a -> a.getState() == ActionState.ERROR).map(Action::getErrorContext)
-                .allMatch(ec -> ec.startsWith(DeltaFilesService.CHILD_FLOW_INGRESS_DISABLED_CONTEXT)));
-    }
+    private Content createContent(String did) {
+        return new Content("name", APPLICATION_XML, new Segment(UUID.randomUUID().toString(), 0L, 32L, did));
+    }*/
 
     @Test
     void testAnnotationDeltaFile() {
@@ -553,17 +460,16 @@ class DeltaFilesServiceTest {
     @Test
     void testEgress_addPendingAnnotations() {
         Set<String> expectedAnnotations = Set.of("a", "b");
-        TransformFlow transformFlow = new TransformFlow();
-        transformFlow.setExpectedAnnotations(expectedAnnotations);
-        Mockito.when(transformFlowService.hasFlow("flow")).thenReturn(true);
-        Mockito.when(transformFlowService.getRunningFlowByName("flow")).thenReturn(transformFlow);
+        EgressFlow egressFlow = new EgressFlow();
+        egressFlow.setExpectedAnnotations(expectedAnnotations);
+        Mockito.when(egressFlowService.hasFlow("flow")).thenReturn(true);
+        Mockito.when(egressFlowService.getRunningFlowByName("flow")).thenReturn(egressFlow);
 
         ActionEvent actionEvent = new ActionEvent();
         actionEvent.setFlow("flow");
         actionEvent.setAction("transform");
         DeltaFile deltaFile = Util.buildDeltaFile("1");
-        deltaFile.setSourceInfo(SourceInfo.builder().processingType(ProcessingType.TRANSFORMATION).build());
-        deltaFile.queueAction("flow", "transform", ActionType.TRANSFORM, false);
+        deltaFile.queueAction("flow", "egress", ActionType.EGRESS, false);
         deltaFilesService.egress(deltaFile, actionEvent);
 
         Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).hasSize(1).contains("flow");
@@ -587,7 +493,6 @@ class DeltaFilesServiceTest {
     @Test
     void testGetPendingAnnotations() {
         DeltaFile deltaFile = new DeltaFile();
-        deltaFile.setSourceInfo(SourceInfo.builder().processingType(ProcessingType.NORMALIZATION).build());
         deltaFile.setPendingAnnotationsForFlows(Set.of("a", "b", "c"));
         deltaFile.addAnnotations(Map.of("2", "2"));
 
@@ -620,10 +525,6 @@ class DeltaFilesServiceTest {
         Mockito.when(actionEventQueue.takeResult(Mockito.anyString()))
                 .thenThrow(JsonProcessingException.class);
         assertFalse(deltaFilesService.processActionEvents("test"));
-    }
-
-    private Content createContent(String did) {
-        return new Content("name", APPLICATION_XML, new Segment(UUID.randomUUID().toString(), 0L, 32L, did));
     }
 
     @Test
@@ -690,7 +591,7 @@ class DeltaFilesServiceTest {
         TransformActionConfiguration transformActionConfiguration =
                 new TransformActionConfiguration("collect-transform", "org.deltafi.SomeCollectingTransformAction");
         transformActionConfiguration.setCollect(new CollectConfiguration(Duration.parse("PT1H"), null, 3, null));
-        when(normalizeFlowService.findActionConfig(eq("test-ingress"), eq("collect-transform")))
+        when(transformFlowService.findActionConfig(eq("test-ingress"), eq("collect-transform")))
                 .thenReturn(transformActionConfiguration);
 
         deltaFilesService.requeue();

@@ -27,7 +27,6 @@ import org.deltafi.core.converters.DurationScalar;
 import org.deltafi.core.generated.client.*;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.types.EgressFlow;
-import org.deltafi.core.types.NormalizeFlow;
 import org.deltafi.core.types.TimedIngressFlow;
 import org.deltafi.core.types.TransformFlow;
 
@@ -46,12 +45,8 @@ public class FlowPlanDatafetcherTestHelper {
         return executeQuery(dgsQueryExecutor, GetTransformFlowPlanGraphQLQuery.newRequest().planName("transformPlan").build(), new GetTransformFlowPlanProjectionRoot().name().type().description().egressAction().name().actionType().type(), TransformFlowPlan.class);
     }
     
-    public static NormalizeFlowPlan getNormalizeFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, GetNormalizeFlowPlanGraphQLQuery.newRequest().planName("normalizePlan").build(), new GetNormalizeFlowPlanProjectionRoot().name().type().description().loadAction().name().actionType().type(), NormalizeFlowPlan.class);
-    }
-
     public static EgressFlowPlan getEgressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, GetEgressFlowPlanGraphQLQuery.newRequest().planName("egressPlan").build(), new GetEgressFlowPlanProjectionRoot().name().type().description().formatAction().name().actionType().type().requiresDomains().parent().egressAction().name().actionType().type(), EgressFlowPlan.class);
+        return executeQuery(dgsQueryExecutor, GetEgressFlowPlanGraphQLQuery.newRequest().planName("egressPlan").build(), new GetEgressFlowPlanProjectionRoot().name().type().description().egressAction().name().actionType().type(), EgressFlowPlan.class);
     }
 
     public static TimedIngressFlowPlan getTimedIngressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
@@ -62,17 +57,13 @@ public class FlowPlanDatafetcherTestHelper {
         return executeQuery(dgsQueryExecutor, ValidateTransformFlowGraphQLQuery.newRequest().flowName("sampleTransform").build(), new ValidateTransformFlowProjectionRoot().name(), TransformFlow.class);
     }
 
-    public static NormalizeFlow validateNormalizeFlow(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, ValidateNormalizeFlowGraphQLQuery.newRequest().flowName(NORMALIZE_FLOW_NAME).build(), new ValidateNormalizeFlowProjectionRoot().name(), NormalizeFlow.class);
-    }
-
     public static TimedIngressFlow validateTimedIngressFlow(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, ValidateTimedIngressFlowGraphQLQuery.newRequest().flowName(TIMED_INGRESS_FLOW_NAME).build(), new ValidateTimedIngressFlowProjectionRoot().name(), TimedIngressFlow.class);
     }
 
     public static FlowNames getFlowNames(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetFlowNamesGraphQLQuery.newRequest().build(),
-                new GetFlowNamesProjectionRoot().transform().normalize().enrich().egress(), FlowNames.class);
+                new GetFlowNamesProjectionRoot().transform().egress(), FlowNames.class);
     }
 
     public static EgressFlow validateEgressFlow(DgsQueryExecutor dgsQueryExecutor) {
@@ -81,27 +72,22 @@ public class FlowPlanDatafetcherTestHelper {
 
     public static List<Flows> getFlows(DgsQueryExecutor dgsQueryExecutor) {
         TypeRef<List<Flows>> typeRef = new TypeRef<>() {};
-        return executeQuery(dgsQueryExecutor, GetFlowsGraphQLQuery.newRequest().build(), new GetFlowsProjectionRoot().sourcePlugin().artifactId().parent().transformFlows().name().parent().normalizeFlows().name().parent().egressFlows().name().parent().timedIngressFlows().name().root(), typeRef);
+        return executeQuery(dgsQueryExecutor, GetFlowsGraphQLQuery.newRequest().build(), new GetFlowsProjectionRoot().sourcePlugin().artifactId().parent().transformFlows().name().parent().egressFlows().name().parent().timedIngressFlows().name().root(), typeRef);
     }
 
     public static SystemFlows getRunningFlows(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetRunningFlowsGraphQLQuery.newRequest().build(),
-                new GetRunningFlowsProjectionRoot().transform().name().parent().normalize().name().parent().enrich().name().parent().egress().name().root(), SystemFlows.class);
+                new GetRunningFlowsProjectionRoot().transform().name().parent().egress().name().root(), SystemFlows.class);
     }
 
     public static SystemFlows getAllFlows(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetAllFlowsGraphQLQuery.newRequest().build(),
-                new GetAllFlowsProjectionRoot().transform().name().parent().normalize().name().parent().egress().name().root(), SystemFlows.class);
+                new GetAllFlowsProjectionRoot().transform().name().parent().egress().name().root(), SystemFlows.class);
     }
 
     public static TransformFlow getTransformFlow(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetTransformFlowGraphQLQuery.newRequest().flowName("sampleTransform").build(),
                 new GetTransformFlowProjectionRoot().name(), TransformFlow.class);
-    }
-
-    public static NormalizeFlow getNormalizeFlow(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, GetNormalizeFlowGraphQLQuery.newRequest().flowName(NORMALIZE_FLOW_NAME).build(),
-                new GetNormalizeFlowProjectionRoot().name(), NormalizeFlow.class);
     }
 
     public static EgressFlow getEgressFlow(DgsQueryExecutor dgsQueryExecutor) {
@@ -126,26 +112,12 @@ public class FlowPlanDatafetcherTestHelper {
         return executeQuery(dgsQueryExecutor, SaveTransformFlowPlanGraphQLQuery.newRequest().transformFlowPlan(input).build(), new SaveTransformFlowPlanProjectionRoot().name().flowStatus().state().parent().parent(), TransformFlow.class);
     }
 
-    public static NormalizeFlow saveNormalizeFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
-        LoadActionConfigurationInput loadActionConfigurationInput = LoadActionConfigurationInput.newBuilder().name("loader").type("org.deltafi.action.Loader").build();
-        NormalizeFlowPlanInput input = NormalizeFlowPlanInput.newBuilder()
-                .name("flowPlan")
-                .type("INGRESS")
-                .description("description")
-                .loadAction(loadActionConfigurationInput)
-                .build();
-
-        return executeQuery(dgsQueryExecutor, SaveNormalizeFlowPlanGraphQLQuery.newRequest().normalizeFlowPlan(input).build(), new SaveNormalizeFlowPlanProjectionRoot().name().flowStatus().state().parent().parent(), NormalizeFlow.class);
-    }
-
     public static EgressFlow saveEgressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
-        FormatActionConfigurationInput format = FormatActionConfigurationInput.newBuilder().name("format").type("org.deltafi.actions.Formatter").requiresDomains(List.of("domain")).build();
         EgressActionConfigurationInput egress = EgressActionConfigurationInput.newBuilder().name("egress").type("org.deltafi.actions.EgressAction").build();
         EgressFlowPlanInput input = EgressFlowPlanInput.newBuilder()
                 .name("flowPlan")
                 .type("EGRESS")
                 .description("description")
-                .formatAction(format)
                 .egressAction(egress)
                 .build();
         return executeQuery(dgsQueryExecutor, SaveEgressFlowPlanGraphQLQuery.newRequest().egressFlowPlan(input).build(), new SaveEgressFlowPlanProjectionRoot().name(), EgressFlow.class);

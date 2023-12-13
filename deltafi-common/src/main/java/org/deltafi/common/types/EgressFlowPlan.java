@@ -17,7 +17,6 @@
  */
 package org.deltafi.common.types;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -34,28 +33,10 @@ import java.util.List;
 @Setter
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 public class EgressFlowPlan extends FlowPlan {
-
-    @JsonAlias({"includeNormalizeFlows", "includeIngressFlows"})
-    private List<String> includeNormalizeFlows;
-    @JsonAlias({"excludeNormalizeFlows", "excludeIngressFlows"})
-    private List<String> excludeNormalizeFlows;
-
-    private final FormatActionConfiguration formatAction;
-    private List<ValidateActionConfiguration> validateActions;
     private final EgressActionConfiguration egressAction;
 
-    public EgressFlowPlan(String name, String description, FormatActionConfiguration formatAction,
-                          EgressActionConfiguration egressAction) {
+    public EgressFlowPlan(String name, String description, EgressActionConfiguration egressAction) {
         super(name, FlowType.EGRESS, description);
-        this.formatAction = formatAction;
-        this.egressAction = egressAction;
-    }
-
-    public EgressFlowPlan(String name, String description, FormatActionConfiguration formatAction, List<ValidateActionConfiguration> validateActions,
-                          EgressActionConfiguration egressAction) {
-        super(name, FlowType.EGRESS, description);
-        this.formatAction = formatAction;
-        this.validateActions = validateActions;
         this.egressAction = egressAction;
     }
 
@@ -65,21 +46,13 @@ public class EgressFlowPlan extends FlowPlan {
     public EgressFlowPlan(@JsonProperty(value = "name", required = true) String name,
             @JsonProperty(value = "type") FlowType type,
             @JsonProperty(value = "description", required = true) String description,
-            @JsonProperty(value = "formatAction", required = true) FormatActionConfiguration formatAction,
-            @JsonProperty(value = "validateActions") List<ValidateActionConfiguration> validateActions,
             @JsonProperty(value = "egressAction", required = true) EgressActionConfiguration egressAction) {
-        this(name, description, formatAction, validateActions, egressAction);
+        this(name, description, egressAction);
     }
 
     @Override
     public List<ActionConfiguration> allActionConfigurations() {
         List<ActionConfiguration> actionConfigurations = new ArrayList<>();
-        if (formatAction != null) {
-            actionConfigurations.add(formatAction);
-        }
-        if (validateActions != null) {
-            actionConfigurations.addAll(validateActions);
-        }
         if (egressAction != null) {
             actionConfigurations.add(egressAction);
         }

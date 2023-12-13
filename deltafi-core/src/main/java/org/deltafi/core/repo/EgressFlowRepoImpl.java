@@ -36,15 +36,6 @@ public class EgressFlowRepoImpl extends BaseFlowRepoImpl<EgressFlow> implements 
         super(mongoTemplate, EgressFlow.class);
     }
 
-    @PostConstruct
-    public void migrate() {
-        migrateIngressToNormalize();
-    }
-
-    public void migrateIngressToNormalize() {
-        EgressMigrationHelper.migrateIngressToNormalize(mongoTemplate, "egressFlow");
-    }
-
     @Override
     public boolean updateExpectedAnnotations(String flowName, Set<String> expectedAnnotations) {
         // sort before storing so the `ne` can be used in the query

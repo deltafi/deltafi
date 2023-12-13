@@ -57,9 +57,7 @@ public class SystemSnapshot {
     private List<String> testTransformFlows;
 
     private List<TimedIngressFlowSnapshot> timedIngressFlows = new ArrayList<>();
-    private List<NormalizeFlowSnapshot> normalizeFlows = new ArrayList<>();
     private List<TransformFlowSnapshot> transformFlows = new ArrayList<>();
-    private List<EnrichFlowSnapshot> enrichFlows = new ArrayList<>();
     private List<EgressFlowSnapshot> egressFlows = new ArrayList<>();
 
     private Set<PluginCoordinates> installedPlugins;

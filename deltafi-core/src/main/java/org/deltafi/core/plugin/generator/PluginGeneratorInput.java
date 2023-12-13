@@ -20,7 +20,6 @@ package org.deltafi.core.plugin.generator;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.ActionType;
-import org.deltafi.common.types.ProcessingType;
 
 import java.util.EnumMap;
 import java.util.HashSet;
@@ -31,13 +30,10 @@ import java.util.stream.Collectors;
 @Data
 public class PluginGeneratorInput {
 
-    private static final Set<ActionType> NORMALIZATION_FLOW_ACTION = Set.of(ActionType.LOAD, ActionType.ENRICH, ActionType.DOMAIN, ActionType.FORMAT, ActionType.VALIDATE);
-
     private String groupId;
     private String artifactId;
     private String description;
     private PluginLanguage pluginLanguage;
-    private ProcessingType processingType;
     private Set<ActionGeneratorInput> actions = new HashSet<>();
 
     private EnumMap<ActionType, List<ActionGeneratorInput>> actionMap;
@@ -60,48 +56,8 @@ public class PluginGeneratorInput {
         }
     }
 
-    public ProcessingType getOrInferProcessingType() {
-        if (processingType == null) {
-            processingType = determineProcessingType();
-        }
-
-        return processingType;
-    }
-
-    private ProcessingType determineProcessingType() {
-        if (actions.stream().anyMatch(this::isNormalizationFlowAction)) {
-            return ProcessingType.NORMALIZATION;
-        }
-
-        return ProcessingType.TRANSFORMATION;
-    }
-
-    private boolean isNormalizationFlowAction(ActionGeneratorInput actionGeneratorInput) {
-        return NORMALIZATION_FLOW_ACTION.contains(actionGeneratorInput.getActionType());
-    }
-
     public List<ActionGeneratorInput> getTransformActions() {
         return getActions(ActionType.TRANSFORM);
-    }
-
-    public List<ActionGeneratorInput> getLoadActions() {
-        return getActions(ActionType.LOAD);
-    }
-
-    public List<ActionGeneratorInput> getDomainActions() {
-        return getActions(ActionType.DOMAIN);
-    }
-
-    public List<ActionGeneratorInput> getEnrichActions() {
-        return getActions(ActionType.ENRICH);
-    }
-
-    public List<ActionGeneratorInput> getFormatActions() {
-        return getActions(ActionType.FORMAT);
-    }
-
-    public List<ActionGeneratorInput> getValidateActions() {
-        return getActions(ActionType.VALIDATE);
     }
 
     public List<ActionGeneratorInput> getEgressActions() {

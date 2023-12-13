@@ -21,7 +21,7 @@ import org.assertj.core.api.Assertions;
 import org.deltafi.common.rules.RuleValidator;
 import org.deltafi.common.types.*;
 import org.deltafi.core.exceptions.DeltafiConfigurationException;
-import org.deltafi.core.repo.NormalizeFlowPlanRepo;
+import org.deltafi.core.repo.TransformFlowPlanRepo;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -35,7 +35,7 @@ class TransformFlowPlanValidatorTest {
 
     @Mock
     @SuppressWarnings("unused")
-    NormalizeFlowPlanRepo normalizeFlowPlanRepo;
+    TransformFlowPlanRepo transformFlowPlanRepo;
 
     @InjectMocks
     TransformFlowPlanValidator transformFlowPlanValidator;

@@ -13,7 +13,7 @@
   }, {
     "name" : "org.deltafi.test.actions.TestAction2",
     "description": "TestAction2",
-    "type" : "LOAD",
+    "type" : "TRANSFORM",
     "requiresDomains" : [ "test" ]
   } ],
   "dependencies": [

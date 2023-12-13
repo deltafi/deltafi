@@ -48,7 +48,6 @@ import java.util.Map;
  * @param <R> The result type
  */
 @RequiredArgsConstructor
-@Slf4j
 public abstract class Action<I, P extends ActionParameters, R extends ResultType> {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
                     .registerModule(new JavaTimeModule())
@@ -167,7 +166,6 @@ public abstract class Action<I, P extends ActionParameters, R extends ResultType
         if (definition == null) {
             JsonNode schemaJson = ActionParameterSchemaGenerator.generateSchema(paramClass);
             definition = OBJECT_MAPPER.convertValue(schemaJson, new TypeReference<>() {});
-            log.trace("Action schema: {}", schemaJson.toPrettyString());
         }
         return definition;
     }

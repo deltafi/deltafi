@@ -17,16 +17,9 @@
 #
 
 enum ConfigType {
-    NORMALIZE_FLOW
-    ENRICH_FLOW
     EGRESS_FLOW
     TRANSFORM_FLOW
     TRANSFORM_ACTION
-    LOAD_ACTION
-    DOMAIN_ACTION
-    ENRICH_ACTION
-    FORMAT_ACTION
-    VALIDATE_ACTION
     EGRESS_ACTION
 }
 
@@ -41,27 +34,9 @@ input ConfigQueryInput {
     apiVersion: String
 }
 
-type NormalizeFlowConfiguration implements DeltaFiConfiguration {
-    name: String!
-    apiVersion: String
-    transformActions: [String]
-    loadAction: String!
-}
-
-type EnrichFlowConfiguration implements DeltaFiConfiguration {
-    name: String!
-    apiVersion: String
-    domainActions: [String]
-    enrichActions: [String]
-}
-
 type EgressFlowConfiguration implements DeltaFiConfiguration {
     name: String!
     apiVersion: String
-    includeNormalizeFlows: [String]
-    excludeNormalizeFlows: [String]
-    formatAction: String!
-    validateActions: [String]
     egressAction: String!
 }
 

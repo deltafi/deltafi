@@ -46,7 +46,6 @@ public class TransformFlowSnapshot extends FlowSnapshot implements HasExpectedAn
         setRunning(transformFlow.isRunning());
         setTestMode(transformFlow.isTestMode());
         setMaxErrors(transformFlow.getMaxErrors());
-        setExpectedAnnotations(transformFlow.getExpectedAnnotations());
     }
 
     @Override

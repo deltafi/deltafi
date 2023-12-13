@@ -19,6 +19,7 @@ package org.deltafi.actionkit.action.ingress;
 
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.ContentInput;
+import org.deltafi.actionkit.action.transform.TransformResults;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionType;
@@ -52,7 +53,7 @@ public abstract class TimedIngressAction<P extends ActionParameters> extends Act
      * @see IngressResultItem
      * @see org.deltafi.actionkit.action.error.ErrorResult
      * @see org.deltafi.actionkit.action.filter.FilterResult
-     * @see org.deltafi.actionkit.action.ReinjectResult
+     * @see TransformResults
      */
     public abstract IngressResultType ingress(@NotNull ActionContext context, @NotNull P params);
 }

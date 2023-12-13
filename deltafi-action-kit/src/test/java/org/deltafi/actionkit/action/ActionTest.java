@@ -17,10 +17,10 @@
  */
 package org.deltafi.actionkit.action;
 
-import org.deltafi.actionkit.action.load.LoadAction;
-import org.deltafi.actionkit.action.load.LoadInput;
-import org.deltafi.actionkit.action.load.LoadResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.actionkit.action.transform.TransformAction;
+import org.deltafi.actionkit.action.transform.TransformInput;
+import org.deltafi.actionkit.action.transform.TransformResult;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.DeltaFileMessage;
 import org.jetbrains.annotations.NotNull;
@@ -33,18 +33,18 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class ActionTest {
 
-    private static class A extends LoadAction<ActionParameters> {
+    private static class A extends TransformAction<ActionParameters> {
         public A() {
             super("Actual nothing action at all");
         }
 
         @Override
-        protected LoadInput buildInput(@NotNull ActionContext actionContext, @NotNull DeltaFileMessage deltaFileMessage) {
+        protected TransformInput buildInput(@NotNull ActionContext actionContext, @NotNull DeltaFileMessage deltaFileMessage) {
             return null;
         }
 
         @Override
-        public LoadResult load(@NotNull ActionContext context, @NotNull ActionParameters params, @NotNull LoadInput input) {
+        public TransformResult transform(@NotNull ActionContext context, @NotNull ActionParameters params, @NotNull TransformInput input) {
             return null;
         }
     }

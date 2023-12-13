@@ -20,7 +20,6 @@ package org.deltafi.core.services;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.EgressFlowPlan;
 import org.deltafi.core.converters.EgressFlowPlanConverter;
-import org.deltafi.core.exceptions.DeltafiConfigurationException;
 import org.deltafi.core.repo.EgressFlowRepo;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.snapshot.types.EgressFlowSnapshot;
@@ -42,26 +41,6 @@ public class EgressFlowService extends FlowService<EgressFlowPlan, EgressFlow, E
 
     public EgressFlowService(EgressFlowRepo flowRepo, PluginVariableService pluginVariableService, EgressFlowValidator egressFlowValidator, BuildProperties buildProperties) {
         super("egress", flowRepo, pluginVariableService, EGRESS_FLOW_PLAN_CONVERTER, egressFlowValidator, buildProperties);
-    }
-
-    public List<EgressFlow> getMatchingFlows(String egressFlow) {
-        return findMatchingFlows(egressFlow);
-    }
-
-    List<EgressFlow> findMatchingFlows(String egressFlow) {
-        return getRunningFlows().stream()
-                .filter(runningEgressFlow -> runningEgressFlow.flowMatches(egressFlow))
-                .toList();
-    }
-
-    public EgressFlow withFormatActionNamed(String flow, String formatActionName) {
-        EgressFlow egressFlow = getRunningFlowByName(flow);
-
-        if (!formatActionName.equals(egressFlow.getFormatAction().getName())) {
-            throw new DeltafiConfigurationException("Egress flow " + egressFlow + " no longer contains a format action with the name " + formatActionName);
-        }
-
-        return egressFlow;
     }
 
     @Override

@@ -35,7 +35,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -64,7 +63,6 @@ public class TransformFlowService extends FlowService<TransformFlowPlan, Transfo
     @Override
     void copyFlowSpecificFields(TransformFlow sourceFlow, TransformFlow targetFlow) {
         targetFlow.setMaxErrors(sourceFlow.getMaxErrors());
-        targetFlow.setExpectedAnnotations(sourceFlow.getExpectedAnnotations());
     }
 
     @Override
@@ -112,30 +110,6 @@ public class TransformFlowService extends FlowService<TransformFlowPlan, Transfo
         }
 
         if (((TransformFlowRepo) flowRepo).updateMaxErrors(flowName, maxErrors)) {
-            refreshCache();
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * Sets the expected set of annotations for a given flow, identified by its name. If the update is successful,
-     * the method refreshes the cache and returns true.
-     *
-     * @param flowName            The name of the flow to update, represented as a {@code String}.
-     * @param expectedAnnotations The new set of expected annotations to be set for the specified flow, as an {@code set}
-     * @return A {@code boolean} value indicating whether the update was successful (true) or not (false)
-     */
-    public boolean setExpectedAnnotations(String flowName, Set<String> expectedAnnotations) {
-        TransformFlow flow = getFlowOrThrow(flowName);
-
-        if (Objects.equals(expectedAnnotations, flow.getExpectedAnnotations())) {
-            log.warn("Tried to update the expected annotations on transform flow {} to the same set of annotations: {}", flowName, expectedAnnotations);
-            return false;
-        }
-
-        if (((TransformFlowRepo) flowRepo).updateExpectedAnnotations(flowName, expectedAnnotations)) {
             refreshCache();
             return true;
         }

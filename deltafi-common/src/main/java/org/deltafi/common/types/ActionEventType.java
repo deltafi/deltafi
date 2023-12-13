@@ -20,17 +20,9 @@ package org.deltafi.common.types;
 public enum ActionEventType {
   INGRESS,
   TRANSFORM,
-  LOAD,
-  LOAD_MANY,
-  DOMAIN,
-  ENRICH,
-  FORMAT,
-  FORMAT_MANY,
-  VALIDATE,
   EGRESS,
   ERROR,
   FILTER,
   PUBLISH,
-  REINJECT,
   UNKNOWN
 }

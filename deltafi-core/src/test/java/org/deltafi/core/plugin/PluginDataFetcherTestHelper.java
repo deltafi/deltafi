@@ -36,7 +36,7 @@ public class PluginDataFetcherTestHelper {
             .actions()
             .name()
             .description()
-            .requiresDomains().parent()
+            .parent()
             .dependencies()
             .groupId()
             .artifactId()
@@ -50,8 +50,6 @@ public class PluginDataFetcherTestHelper {
             .description()
             .defaultValue()
             .refreshable()
-            .editable()
-            .hidden()
             .value().parent().parent();
 
     public static final UninstallPluginProjectionRoot UNINSTALL_PLUGIN_PROJECTION_ROOT = new UninstallPluginProjectionRoot()

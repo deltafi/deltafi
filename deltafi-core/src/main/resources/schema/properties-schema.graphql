@@ -27,8 +27,6 @@ type Property {
     description: String!            # describe what this property does
     defaultValue: String            # value used if no value is set in git or mongo
     refreshable: Boolean!           # will apps automatically pick up changes to this property
-    editable: Boolean! @deprecated(reason: "all properties will be editable")
-    hidden: Boolean! @deprecated(reason: "all properties will be visible")
     value: String                   # value as set in git/file-system or mongo
     propertySource: PropertySource! # where the property was set (external for git/filesystem or mongo)
 }
@@ -38,8 +36,6 @@ input PropertyInput {
     description: String!            # describe what this property does
     defaultValue: String            # value used if no value is set in git or mongo
     refreshable: Boolean!           # will apps automatically pick up changes to this property
-    editable: Boolean! @deprecated(reason: "all properties will be editable")
-    hidden: Boolean! @deprecated(reason: "all properties will be visible")
     value: String                   # value as set in git/file-system or mongo
     propertySource: PropertySource  # not needed here but allows the Property class to be reused for input
 }

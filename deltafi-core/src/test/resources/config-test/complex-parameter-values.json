@@ -1,7 +1,6 @@
 {
   "egressFlow": "egressFlow",
   "metadataKey": "deltafiMetadata",
-  "enrichments": "${enrichments}",
   "someOptionalList": "${some.optional.list}",
   "someRequiredList": "${some.required.list}",
   "url": "${egressUrl}",

@@ -51,11 +51,11 @@ import java.util.Collections;
 
 @ExtendWith(SpringExtension.class)
 @Import({DeltaFilesService.class, ClockConfiguration.class})
-@MockBean({TransformFlowService.class, NormalizeFlowService.class, EnrichFlowService.class, EgressFlowService.class,
-        StateMachine.class, DeltaFileRepo.class, ActionEventQueue.class, ContentStorageService.class,
-        ResumePolicyService.class, MetricService.class, CoreAuditLogger.class, DeltaFileCacheService.class,
-        TimedIngressFlowService.class, PublisherService.class, QueueManagementService.class, QueuedAnnotationRepo.class, Environment.class,
-        CollectEntryService.class, ScheduledCollectService.class, UUIDGenerator.class})
+@MockBean({TransformFlowService.class, EgressFlowService.class, StateMachine.class, DeltaFileRepo.class,
+        ActionEventQueue.class, ContentStorageService.class, ResumePolicyService.class, MetricService.class,
+        CoreAuditLogger.class, DeltaFileCacheService.class, TimedIngressFlowService.class, PublisherService.class,
+        QueueManagementService.class, QueuedAnnotationRepo.class, Environment.class, CollectEntryService.class,
+        ScheduledCollectService.class, UUIDGenerator.class})
 @EnableRetry
 class MongoRetryTest {
 

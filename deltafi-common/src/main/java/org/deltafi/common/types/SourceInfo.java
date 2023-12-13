@@ -32,7 +32,6 @@ public class SourceInfo {
     private String filename;
     private String flow;
     private Map<String, String> metadata = new HashMap<>();
-    private ProcessingType processingType;
     @Setter(AccessLevel.NONE)
     private String normalizedFilename;
 
@@ -40,16 +39,14 @@ public class SourceInfo {
         this.filename = other.filename;
         this.flow = other.flow;
         this.metadata = other.metadata == null ? null : new HashMap<>(other.metadata);
-        this.processingType = other.processingType;
         this.normalizedFilename = other.normalizedFilename;
     }
 
     @Builder
-    public SourceInfo(String filename, String flow, Map<String, String> metadata, ProcessingType processingType) {
+    public SourceInfo(String filename, String flow, Map<String, String> metadata) {
         setFilename(filename);
         this.flow = flow;
         this.metadata = metadata != null ? metadata : new HashMap<>();
-        this.processingType = processingType;
     }
 
     public void setFilename(String filename) {

@@ -30,13 +30,10 @@ import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.io.IOException;
 import java.net.URISyntaxException;
 import java.time.OffsetDateTime;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -151,31 +148,6 @@ public class ActionEventQueueTest {
             }
             """;
 
-    private static String createLargeString() {
-        char[] chars = new char[16 * 1024 * 1024];
-        Arrays.fill(chars, 'a');
-        return new String(chars);
-    }
-
-    private final static String LARGE_ENRICHMENT_VALUE = createLargeString();
-
-    private final static String GOOD_LARGE_STRING_VALUE = String.format("""
-            {
-                "did": "did",
-                "action": "flowName.ActionName",
-                "start": "2021-07-11T13:44:22.183Z",
-                "stop": "2021-07-11T13:44:22.184Z",
-                "type": "ENRICH",
-                "enrich": {
-                    "enrichments": [ { "name": "sampleEnrichment", "value": "%s", "mediaType": "application/octet-stream" } ],
-                    "annotations": {
-                        "first": "one",
-                        "second": "two"
-                    }
-                }
-            }
-            """, LARGE_ENRICHMENT_VALUE);
-
     @Test
     public void testConvertBasic() throws JsonProcessingException, URISyntaxException {
         try (MockedConstruction<JedisKeyedBlockingQueue> mock =
@@ -187,36 +159,6 @@ public class ActionEventQueueTest {
             assertEquals(1, mock.constructed().size());
             ActionEvent actionEvent = actionEventQueue.takeResult(QUEUE_NAME);
             assertEquals("did", actionEvent.getDid());
-        }
-    }
-
-    @Test
-    public void testConvertLargeSingleValue() throws JsonProcessingException, URISyntaxException {
-        try (MockedConstruction<JedisKeyedBlockingQueue> mock =
-                     Mockito.mockConstruction(JedisKeyedBlockingQueue.class, (mockJedis, context)
-                             -> when(mockJedis.take(DGS_QUEUE_NAME))
-                             .thenReturn(GOOD_LARGE_STRING_VALUE))) {
-
-            ActionEventQueue actionEventQueue = new ActionEventQueue(new ActionEventQueueProperties(), 2);
-            assertEquals(1, mock.constructed().size());
-            ActionEvent actionEvent = actionEventQueue.takeResult(QUEUE_NAME);
-            assertEquals("did", actionEvent.getDid());
-            assertEquals(LARGE_ENRICHMENT_VALUE, actionEvent.getEnrich().getEnrichments().get(0).getValue());
-        }
-    }
-
-    @Test
-    public void testConvertLarge() throws JsonProcessingException, URISyntaxException {
-        try (MockedConstruction<JedisKeyedBlockingQueue> mock =
-                     Mockito.mockConstruction(JedisKeyedBlockingQueue.class, (mockJedis, context)
-                             -> when(mockJedis.take(DGS_QUEUE_NAME))
-                                     .thenReturn(loadFile("largeFile")))) {
-
-            ActionEventQueue actionEventQueue = new ActionEventQueue(new ActionEventQueueProperties(), 2);
-            assertEquals(1, mock.constructed().size());
-            ActionEvent actionEvent = actionEventQueue.takeResult(QUEUE_NAME);
-            assertEquals("did", actionEvent.getDid());
-            assertEquals(20_000, actionEvent.getEnrich().getAnnotations().size());
         }
     }
 
@@ -319,13 +261,6 @@ public class ActionEventQueueTest {
 
     private String getActionEventsArray() {
         return "[" + GOOD_BASIC + GOOD_BASIC + "]";
-    }
-
-    @SuppressWarnings("SameParameterValue")
-    private String loadFile(String filename) throws IOException {
-        return new String(Objects.requireNonNull(
-                ActionEventQueueTest.class.getClassLoader().getResourceAsStream(
-                        "action-events/" + filename + ".json")).readAllBytes());
     }
 
     @Test

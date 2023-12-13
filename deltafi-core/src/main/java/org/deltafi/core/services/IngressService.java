@@ -34,7 +34,6 @@ import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.Content;
 import org.deltafi.common.types.IngressEventItem;
-import org.deltafi.common.types.ProcessingType;
 import org.deltafi.common.uuid.UUIDGenerator;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.exceptions.*;
@@ -66,7 +65,6 @@ public class IngressService {
     private final DeltaFilesService deltaFilesService;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
     private final FlowAssignmentService flowAssignmentService;
-    private final NormalizeFlowService normalizeFlowService;
     private final TransformFlowService transformFlowService;
     private final ErrorCountService errorCountService;
     private final UUIDGenerator uuidGenerator;
@@ -191,13 +189,8 @@ public class IngressService {
             resolvedFlow = lookup;
         }
 
-        ProcessingType processingType;
         // ensure flow is running before accepting ingress
-        if (normalizeFlowService.hasRunningFlow(resolvedFlow)) {
-            processingType = ProcessingType.NORMALIZATION;
-        } else if (transformFlowService.hasRunningFlow(resolvedFlow)) {
-            processingType = ProcessingType.TRANSFORMATION;
-        } else {
+        if (!transformFlowService.hasRunningFlow(resolvedFlow)) {
             throw new IngressException("Flow " + resolvedFlow + " is not running");
         }
 
@@ -215,16 +208,15 @@ public class IngressService {
                 .filename(filename)
                 .flow(resolvedFlow)
                 .metadata(metadata)
-                .processingType(processingType)
                 .content(List.of(content))
                 .build();
 
         try {
             deltaFilesService.ingress(ingressEventItem, created, OffsetDateTime.now());
-            return new IngressResult(resolvedFlow, did, content, processingType);
+            return new IngressResult(resolvedFlow, did, content);
         } catch (EnqueueActionException e) {
             log.warn("DeltaFile {} was ingressed but the next action could not be queued at this time", did);
-            return new IngressResult(resolvedFlow, did, content, processingType);
+            return new IngressResult(resolvedFlow, did, content);
         } catch (Exception e) {
             log.warn("Ingress failed, removing content and metadata for {}", did);
             deltaFilesService.deleteContentAndMetadata(did, content);
