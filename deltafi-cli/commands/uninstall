@@ -38,7 +38,7 @@ _compose_uninstall() {
 
 _drop_mongo_collections() {
   # drop all collections in the deltafi database
-  CMDS=$(deltafi mongo-eval "db.getCollectionNames()" 2>/dev/null | tail -n +5 | jq '.[]' | sed 's/"/db./' | sed 's/"/.drop();/')
+  CMDS=$(deltafi mongo-eval "db.getCollectionNames()" 2>/dev/null | tail -n +8 | sed "s/'/\"/g" | jq '.[]' | sed 's/"/db./' | sed 's/"/.drop();/')
 
   if [ -n "$CMDS" ]; then
     for CMD in $CMDS
