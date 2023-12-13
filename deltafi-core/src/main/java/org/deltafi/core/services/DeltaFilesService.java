@@ -397,6 +397,8 @@ public class DeltaFilesService {
                 return;
             }
 
+            DeltaFileStage eventStage = deltaFile.getStage();
+
             deltaFile.ensurePendingAction(event.getFlow(), event.getAction());
 
             List<Metric> metrics = (event.getMetrics() != null) ? event.getMetrics() : new ArrayList<>();
@@ -460,7 +462,7 @@ public class DeltaFilesService {
                 default -> throw new UnknownTypeException(event.getAction(), deltaFile.getDid(), event.getType());
             }
 
-            completeCollect(event, deltaFile);
+            completeCollect(event, eventStage, deltaFile);
         }
     }
 
@@ -2118,9 +2120,9 @@ public class DeltaFilesService {
         }
     }
 
-    private void completeCollect(ActionEvent event, DeltaFile deltaFile) {
+    private void completeCollect(ActionEvent event, DeltaFileStage eventStage, DeltaFile deltaFile) {
         ActionConfiguration actionConfiguration = actionConfiguration(event.getFlow(), event.getAction(),
-                deltaFile.getSourceInfo().getProcessingType(), deltaFile.getStage());
+                deltaFile.getSourceInfo().getProcessingType(), eventStage);
         if ((actionConfiguration != null) && (actionConfiguration.getCollect() != null)) {
             List<ActionInvocation> actionInvocations = new ArrayList<>();
             List<DeltaFile> parentDeltaFiles = deltaFileRepo.findAllById(deltaFile.getParentDids());
