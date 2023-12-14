@@ -62,7 +62,7 @@ dependencies:
     tags:
       - metrics
   - name: grafana
-    version: 7.0.11
+    version: 7.0.17
     # repository: https://grafana.github.io/helm-charts
     condition: enable.grafana
     tags:
