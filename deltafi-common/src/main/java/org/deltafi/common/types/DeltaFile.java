@@ -185,9 +185,10 @@ public class DeltaFile {
     }
     Map<String, String> metadata = new HashMap<>();
     List<Action> amendedDataActions = new ArrayList<>(actions.stream().filter(Action::amendedData).toList());
-    // any metadata on domain or enrich actions will come from retries as these actions do not support creating metadata directly
+    // any metadata on domain, enrich, or publish actions will come from retries as these actions do not support creating metadata directly
     amendedDataActions.addAll(actions.stream().filter(action -> action.getType() == ActionType.DOMAIN || action.getType() == ActionType.ENRICH).toList());
     amendedDataActions.addAll(actions.stream().filter(action -> action.getType() == ActionType.FORMAT && action.getState().equals(ActionState.RETRIED)).toList());
+    amendedDataActions.addAll(actions.stream().filter(action -> action.getType() == ActionType.PUBLISH && action.getState().equals(ActionState.RETRIED)).toList());
     for (Action action : amendedDataActions) {
       metadata.putAll(action.getMetadata());
       for (String key : action.getDeleteMetadataKeys()) {
@@ -347,10 +348,10 @@ public class DeltaFile {
             .forEach(action -> setActionState(action, ActionState.COLLECTED, start, stop));
   }
 
-  public void filterAction(ActionEvent event, String filterMessage, String filterContext) {
+  public void filterAction(ActionEvent event) {
     getActions().stream()
             .filter(action -> action.getFlow().equals(event.getFlow()) && action.getName().equals(event.getAction()) && !action.terminal())
-            .forEach(action -> setFilteredActionState(action, event.getStart(), event.getStop(), filterMessage, filterContext));
+            .forEach(action -> setFilteredActionState(action, event.getStart(), event.getStop(), event.getFilter().getMessage(), event.getFilter().getContext()));
   }
 
   public void reinjectAction(ActionEvent event) {
@@ -929,5 +930,15 @@ public class DeltaFile {
     update.set("version", this.version + 1);
 
     return update;
+  }
+
+  @JsonIgnore
+  public Map<String, String> getImmutableMetadata() {
+    return Collections.unmodifiableMap(getMetadata());
+  }
+
+  @JsonIgnore
+  public List<Content> getImmutableContent() {
+    return lastDataAmendedContent().stream().map(Content::copy).toList();
   }
 }

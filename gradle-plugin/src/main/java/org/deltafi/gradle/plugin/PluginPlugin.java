@@ -17,11 +17,14 @@
  */
 package org.deltafi.gradle.plugin;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.Setter;
+import org.deltafi.common.rules.RuleEvaluator;
+import org.deltafi.common.rules.RuleValidator;
 import org.deltafi.common.types.FlowPlan;
+import org.deltafi.common.types.Publisher;
+import org.deltafi.common.types.Subscriber;
 import org.deltafi.common.types.Variable;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
@@ -31,6 +34,7 @@ import org.gradle.api.tasks.TaskAction;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -67,6 +71,9 @@ public class PluginPlugin implements org.gradle.api.Plugin<Project> {
         @Setter
         private PluginPlugin.DeltafiPluginExtension deltafiPluginExtension;
 
+        @Setter
+        private RuleValidator ruleValidator = new RuleValidator(new RuleEvaluator());
+
         @TaskAction
         public void check() {
             File flowsDirectory = new File(getProject().getProjectDir(), deltafiPluginExtension.flowsDir);
@@ -86,8 +93,7 @@ public class PluginPlugin implements org.gradle.api.Plugin<Project> {
             }
 
             try (FileInputStream fis = new FileInputStream(variablesFile)) {
-                @SuppressWarnings("unused")
-                List<Variable> variables = OBJECT_MAPPER.readValue(fis, new TypeReference<>() {});
+                OBJECT_MAPPER.readValue(fis, Variable[].class);
             } catch (IOException e) {
                 throw new GradleException("Unable to load variables: " + e.getMessage(), e);
             }
@@ -105,13 +111,31 @@ public class PluginPlugin implements org.gradle.api.Plugin<Project> {
                 getLogger().warn("No flow plans exist in the flows directory ({})", flowsDirectory);
             }
 
+            List<String> errors = new ArrayList<>();
             for (File flowFile : flowFiles) {
                 try (FileInputStream fis = new FileInputStream(flowFile)) {
-                    OBJECT_MAPPER.readValue(fis, FlowPlan.class);
+                    String errorMessage = validateConditions(OBJECT_MAPPER.readValue(fis, FlowPlan.class), flowFile.getName());
+                    if (errorMessage != null) {
+                        errors.add(errorMessage);
+                    }
                 } catch (IOException e) {
                     throw new GradleException("Unable to load flow plan (" + flowFile + "): " + e.getMessage(), e);
                 }
             }
+            if (!errors.isEmpty()) {
+                throw new GradleException("Invalid flow plan conditions found:\n" + String.join(";\n", errors));
+            }
+        }
+
+        private String validateConditions(FlowPlan flowPlan, String fileName) {
+            List<String> errors = null;
+            if (flowPlan instanceof Subscriber subscriber) {
+                errors = ruleValidator.validateSubscriber(subscriber);
+            } else if (flowPlan instanceof Publisher publisher) {
+                errors = ruleValidator.validatePublisher(publisher);
+            }
+
+            return errors != null && !errors.isEmpty() ? "Errors in flow plan named `" + flowPlan.getName() + "` (file: " + fileName + "): " + String.join("; ", errors) : null;
         }
     }
 

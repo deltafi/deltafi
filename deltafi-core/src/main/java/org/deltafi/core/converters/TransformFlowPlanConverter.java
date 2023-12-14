@@ -28,6 +28,7 @@ public class TransformFlowPlanConverter extends FlowPlanConverter<TransformFlowP
     public void populateFlowSpecificFields(TransformFlowPlan transformFlowPlan, TransformFlow transformFlow, FlowPlanPropertyHelper flowPlanPropertyHelper) {
         transformFlow.setTransformActions(buildTransformActions(transformFlowPlan.getTransformActions(), flowPlanPropertyHelper));
         transformFlow.setEgressAction(buildEgressAction(transformFlowPlan.getEgressAction(), flowPlanPropertyHelper));
+        transformFlow.setSubscriptions(transformFlowPlan.getSubscriptions());
     }
 
     /**

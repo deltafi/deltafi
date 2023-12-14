@@ -17,6 +17,20 @@
  */
 package org.deltafi.common.types;
 
-public enum ActionType {
-    INGRESS, TIMED_INGRESS, TRANSFORM, LOAD, DOMAIN, ENRICH, FORMAT, VALIDATE, EGRESS, PUBLISH, UNKNOWN
+/**
+ * Interface for things that publish DeltaFiles to topics
+ */
+public interface Publisher {
+
+    /**
+     * Get the PublishRules
+     * @return the publishRules
+     */
+    PublishRules publishRules();
+
+    /**
+     * Get the name of the publisher
+     * @return the name of the publisher
+     */
+    String getName();
 }

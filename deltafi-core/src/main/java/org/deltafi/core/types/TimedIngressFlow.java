@@ -22,6 +22,8 @@ import lombok.EqualsAndHashCode;
 import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.ActionFamily;
+import org.deltafi.common.types.PublishRules;
+import org.deltafi.common.types.Publisher;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Duration;
@@ -31,7 +33,7 @@ import java.util.*;
 @Document
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class TimedIngressFlow extends Flow {
+public class TimedIngressFlow extends Flow implements Publisher {
     private static final Duration TASKING_TIMEOUT = Duration.ofSeconds(30);
 
     private TimedIngressActionConfiguration timedIngressAction;
@@ -45,6 +47,7 @@ public class TimedIngressFlow extends Flow {
     private boolean executeImmediate = false;
     private IngressStatus ingressStatus = IngressStatus.HEALTHY;
     private String ingressStatusMessage;
+    private PublishRules publishRules;
 
     /**
      * Schema versions:
@@ -127,5 +130,10 @@ public class TimedIngressFlow extends Flow {
                 .sourceInfo(SourceInfo.builder().flow(name).build())
                 .build();
         return timedIngressAction.buildActionInput(name, deltaFile, systemName, null, null, OffsetDateTime.now(), null, memo);
+    }
+
+    @Override
+    public PublishRules publishRules() {
+        return publishRules;
     }
 }

@@ -220,6 +220,13 @@ public class DeltaFilesDatafetcher {
     return deltaFilesService.resumePolicyDryRun(resumePolicy);
   }
 
+  @DgsMutation
+  @NeedsPermission.Admin
+  public boolean taskTimedIngress(@InputArgument String name, @InputArgument String memo, DataFetchingEnvironment dataFetchingEnvironment) {
+    // check if the memo argument was included to differentiate between setting it to null and leaving it out
+    return deltaFilesService.taskTimedIngress(name, memo, dataFetchingEnvironment.containsArgument("memo"));
+  }
+
   @DgsQuery
   @NeedsPermission.DeltaFileMetadataView
   public List<PerActionUniqueKeyValues> errorMetadataUnion(@InputArgument List<String> dids) {

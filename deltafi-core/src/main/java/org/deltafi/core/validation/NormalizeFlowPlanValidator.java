@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.validation;
 
-import lombok.AllArgsConstructor;
+import org.deltafi.common.rules.RuleValidator;
 import org.deltafi.common.types.NormalizeFlowPlan;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
@@ -27,10 +27,14 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 
-@AllArgsConstructor
 @Service
 public class NormalizeFlowPlanValidator extends FlowPlanValidator<NormalizeFlowPlan> {
     private final TransformFlowPlanRepo transformFlowPlanRepo;
+
+    public NormalizeFlowPlanValidator(TransformFlowPlanRepo transformFlowPlanRep, RuleValidator ruleValidator) {
+        super(ruleValidator);
+        this.transformFlowPlanRepo = transformFlowPlanRep;
+    }
 
     /**
      * Flow plan type specific validation checks

@@ -20,6 +20,7 @@ package org.deltafi.common.types;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.PersistenceCreator;
@@ -32,9 +33,11 @@ import java.util.List;
 @Getter
 @Setter
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
-public class TimedIngressFlowPlan extends FlowPlan {
+@EqualsAndHashCode(callSuper = true)
+public class TimedIngressFlowPlan extends FlowPlan implements Publisher {
     private TimedIngressActionConfiguration timedIngressAction;
     private String targetFlow;
+    private PublishRules publishRules;
     private String cronSchedule;
 
     @PersistenceCreator
@@ -44,11 +47,13 @@ public class TimedIngressFlowPlan extends FlowPlan {
             @JsonProperty(value = "type") FlowType type,
             @JsonProperty(value = "description", required = true) String description,
             @JsonProperty(value = "timedIngressAction", required = true) TimedIngressActionConfiguration timedIngressAction,
-            @JsonProperty(value = "targetFlow", required = true) String targetFlow,
+            @JsonProperty(value = "targetFlow") String targetFlow,
+            @JsonProperty(value = "publishRules") PublishRules publishRules,
             @JsonProperty(value = "cronSchedule", required = true) String cronSchedule) {
         super(name, FlowType.TIMED_INGRESS, description);
         this.timedIngressAction = timedIngressAction;
         this.targetFlow = targetFlow;
+        this.publishRules = publishRules;
         this.cronSchedule = cronSchedule;
     }
 
@@ -59,5 +64,10 @@ public class TimedIngressFlowPlan extends FlowPlan {
             actionConfigurations.add(timedIngressAction);
         }
         return actionConfigurations;
+    }
+
+    @Override
+    public PublishRules publishRules() {
+        return this.publishRules;
     }
 }

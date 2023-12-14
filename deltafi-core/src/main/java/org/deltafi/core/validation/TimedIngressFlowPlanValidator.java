@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.validation;
 
-import lombok.AllArgsConstructor;
+import org.deltafi.common.rules.RuleValidator;
 import org.deltafi.common.types.TimedIngressFlowPlan;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
@@ -27,9 +27,13 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 
-@AllArgsConstructor
 @Service
 public class TimedIngressFlowPlanValidator extends FlowPlanValidator<TimedIngressFlowPlan> {
+
+    public TimedIngressFlowPlanValidator(RuleValidator ruleValidator) {
+        super(ruleValidator);
+    }
+
     /**
      * Flow plan type specific validation checks
      * @return list of errors
@@ -42,10 +46,15 @@ public class TimedIngressFlowPlanValidator extends FlowPlanValidator<TimedIngres
                     .configName(flowPlan.getName())
                     .message("Cannot add timed ingress flow plan, timed ingress action is missing").build());
         }
-        if (flowPlan.getTargetFlow() == null) {
+        if (flowPlan.getTargetFlow() == null && flowPlan.getPublishRules() == null) {
             errors.add(FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG)
                     .configName(flowPlan.getName())
-                    .message("Cannot add timed ingress flow plan, target flow is missing").build());
+                    .message("Cannot add timed ingress flow plan, both publish rules and target flow are missing, one must be set").build());
+        }
+        if (flowPlan.getTargetFlow() != null && flowPlan.getPublishRules() != null) {
+            errors.add(FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG)
+                    .configName(flowPlan.getName())
+                    .message("Cannot add timed ingress flow plan, both publish rules and target flow are set, only one should be set").build());
         }
         if (flowPlan.getCronSchedule() == null) {
             errors.add(FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG)

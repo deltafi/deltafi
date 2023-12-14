@@ -338,6 +338,22 @@ public class NeedsPermission {
     @PreAuthorize(value = "hasAnyAuthority('SystemPropertiesUpdate'" + OR_ADMIN)
     public @interface SystemPropertiesUpdate {}
 
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('TopicsDelete'" + OR_ADMIN)
+    public @interface TopicsDelete {}
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('TopicsRead'" + OR_ADMIN)
+    public @interface TopicsRead {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('TopicsWrite'" + OR_ADMIN)
+    public @interface TopicsWrite {}
+
 
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)

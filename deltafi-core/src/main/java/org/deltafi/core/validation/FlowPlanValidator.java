@@ -18,11 +18,14 @@
 package org.deltafi.core.validation;
 
 import org.apache.commons.lang3.StringUtils;
+import org.deltafi.common.rules.RuleValidator;
 import org.deltafi.common.types.ActionConfiguration;
+import org.deltafi.common.types.FlowPlan;
+import org.deltafi.common.types.Publisher;
+import org.deltafi.common.types.Subscriber;
 import org.deltafi.core.exceptions.DeltafiConfigurationException;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
-import org.deltafi.common.types.FlowPlan;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,6 +40,11 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
  */
 public abstract class FlowPlanValidator<T extends FlowPlan> {
 
+    private final RuleValidator ruleValidator;
+
+    protected FlowPlanValidator(RuleValidator ruleValidator) {
+        this.ruleValidator = ruleValidator;
+    }
 
     /**
      * Check the plan for any configuration errors
@@ -45,6 +53,7 @@ public abstract class FlowPlanValidator<T extends FlowPlan> {
     public void validate(T flowPlan) {
         List<FlowConfigError> errors = validateConfigurationNames(flowPlan);
         errors.addAll(flowPlanSpecificValidation(flowPlan));
+        errors.addAll(validateRules(flowPlan));
         throwIfHasErrors(errors);
     }
 
@@ -95,6 +104,27 @@ public abstract class FlowPlanValidator<T extends FlowPlan> {
                 .configName(duplicatedName)
                 .errorType(FlowErrorType.INVALID_CONFIG)
                 .message("The action name: " + duplicatedName + " is duplicated for the following action types: " + String.join(", ", actionTypes))
+                .build();
+    }
+
+    private List<FlowConfigError> validateRules(FlowPlan flowPlan) {
+        if (flowPlan instanceof Subscriber subscriber) {
+            return ruleValidator.validateSubscriber(subscriber)
+                    .stream().map(message -> toFlowconfigError(flowPlan.getName(), message))
+                    .toList();
+        } else if (flowPlan instanceof Publisher publisher) {
+            return ruleValidator.validatePublisher(publisher)
+                    .stream().map(message -> toFlowconfigError(flowPlan.getName(), message))
+                    .toList();
+        }
+        return List.of();
+    }
+
+    private FlowConfigError toFlowconfigError(String name, String message) {
+        return FlowConfigError.newBuilder()
+                .configName(name)
+                .message(message)
+                .errorType(FlowErrorType.INVALID_CONFIG)
                 .build();
     }
 

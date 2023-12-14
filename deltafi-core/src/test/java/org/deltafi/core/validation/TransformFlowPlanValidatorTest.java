@@ -18,6 +18,7 @@
 package org.deltafi.core.validation;
 
 import org.assertj.core.api.Assertions;
+import org.deltafi.common.rules.RuleValidator;
 import org.deltafi.common.types.*;
 import org.deltafi.core.exceptions.DeltafiConfigurationException;
 import org.deltafi.core.repo.NormalizeFlowPlanRepo;
@@ -38,6 +39,9 @@ class TransformFlowPlanValidatorTest {
 
     @InjectMocks
     TransformFlowPlanValidator transformFlowPlanValidator;
+
+    @Mock
+    RuleValidator ruleValidator;
 
     @Test
     void duplicateActionNameErrors() {

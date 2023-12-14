@@ -25,6 +25,7 @@ import org.deltafi.common.types.*;
 import org.deltafi.core.collect.*;
 import org.deltafi.core.exceptions.MissingEgressFlowException;
 import org.deltafi.core.exceptions.MissingFlowException;
+import org.deltafi.common.types.Subscriber;
 import org.deltafi.core.types.*;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
@@ -110,13 +111,47 @@ public class StateMachine {
         };
     }
 
+    public List<ActionInvocation> advanceSubscriber(Subscriber subscriber, DeltaFile deltaFile, boolean newDeltaFile) {
+        if (subscriber instanceof TransformFlow transformFlow) {
+            if (deltaFile.getSourceInfo().getProcessingType() == null) {
+                deltaFile.getSourceInfo().setProcessingType(ProcessingType.TRANSFORMATION);
+            }
+
+            List<ActionInvocation> enqueueActions = advanceTransformation(transformFlow, deltaFile, newDeltaFile, new HashMap<>());
+            if (!deltaFile.hasPendingActions()) {
+                deltaFile.setStage(deltaFile.hasErroredAction() ? DeltaFileStage.ERROR : DeltaFileStage.COMPLETE);
+            }
+
+            deltaFile.recalculateBytes();
+
+            return enqueueActions;
+        }
+
+        throw new IllegalArgumentException("Unexpected subscriber type " + subscriber.getClass().getSimpleName());
+    }
+
+    List<ActionInvocation> advanceTransformation(TransformFlow transformFlow, DeltaFile deltaFile, boolean newDeltaFile, Map<String, Long> pendingQueued) {
+        if (skipTransform(deltaFile)) {
+            return Collections.emptyList();
+        }
+
+        return internalAdvanceTransformation(transformFlow, deltaFile, newDeltaFile, pendingQueued);
+    }
+
     private List<ActionInvocation> advanceTransformation(DeltaFile deltaFile, boolean newDeltaFile, Map<String, Long> pendingQueued) {
-        if (deltaFile.hasErroredAction() || deltaFile.hasFilteredAction() || deltaFile.hasReinjectedAction()) {
+        if (skipTransform(deltaFile)) {
             return Collections.emptyList();
         }
 
         TransformFlow transformFlow = transformFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow());
+        return internalAdvanceTransformation(transformFlow, deltaFile, newDeltaFile, pendingQueued);
+    }
 
+    private boolean skipTransform(DeltaFile deltaFile) {
+        return deltaFile.hasErroredAction() || deltaFile.hasFilteredAction() || deltaFile.hasReinjectedAction();
+    }
+
+    private List<ActionInvocation> internalAdvanceTransformation(TransformFlow transformFlow, DeltaFile deltaFile, boolean newDeltaFile, Map<String, Long> pendingQueued) {
         if (transformFlow.getTransformActions().stream().anyMatch(transformActionConfiguration ->
                 deltaFile.hasCollectedAction(transformFlow.getName(), transformActionConfiguration.getName()))) {
             deltaFile.setStage(DeltaFileStage.COMPLETE);

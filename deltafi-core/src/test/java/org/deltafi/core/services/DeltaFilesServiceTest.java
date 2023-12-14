@@ -24,7 +24,9 @@ import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.test.time.TestClock;
+import org.deltafi.common.test.uuid.TestUUIDGenerator;
 import org.deltafi.common.types.*;
+import org.deltafi.common.uuid.UUIDGenerator;
 import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.collect.ScheduledCollectService;
@@ -34,6 +36,7 @@ import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.repo.QueuedAnnotationRepo;
+import org.deltafi.core.services.pubsub.PublisherService;
 import org.deltafi.core.types.*;
 import org.deltafi.core.util.Util;
 import org.junit.jupiter.api.Test;
@@ -60,6 +63,7 @@ class DeltaFilesServiceTest {
     private static final String GOOD_NORMALIZE_FLOW = "goodNormalizeFlow";
 
     private final TestClock testClock = new TestClock();
+    private final UUIDGenerator uuidGenerator = new TestUUIDGenerator();
     private final MockDeltaFiPropertiesService mockDeltaFiPropertiesService = new MockDeltaFiPropertiesService();
 
     private final TransformFlowService transformFlowService;
@@ -94,7 +98,7 @@ class DeltaFilesServiceTest {
 
     DeltaFilesServiceTest(@Mock TransformFlowService transformFlowService,
             @Mock NormalizeFlowService normalizeFlowService, @Mock EnrichFlowService enrichFlowService,
-            @Mock EgressFlowService egressFlowService, @Mock StateMachine stateMachine,
+            @Mock EgressFlowService egressFlowService, @Mock PublisherService publisherService, @Mock StateMachine stateMachine,
             @Mock DeltaFileRepo deltaFileRepo, @Mock ActionEventQueue actionEventQueue,
             @Mock ContentStorageService contentStorageService, @Mock ResumePolicyService resumePolicyService,
             @Mock MetricService metricService, @Mock CoreAuditLogger coreAuditLogger,
@@ -115,10 +119,10 @@ class DeltaFilesServiceTest {
         this.queuedAnnotationRepo = queuedAnnotationRepo;
 
         deltaFilesService = new DeltaFilesService(testClock, transformFlowService, normalizeFlowService,
-                enrichFlowService, egressFlowService, mockDeltaFiPropertiesService, stateMachine, deltaFileRepo,
+                enrichFlowService, egressFlowService, publisherService, mockDeltaFiPropertiesService, stateMachine, deltaFileRepo,
                 actionEventQueue, contentStorageService, resumePolicyService, metricService,
                 coreAuditLogger, new DidMutexService(), deltaFileCacheService, timedIngressFlowService,
-                queueManagementService, queuedAnnotationRepo, environment, scheduledCollectService);
+                queueManagementService, queuedAnnotationRepo, environment, scheduledCollectService, uuidGenerator);
     }
 
     @Test

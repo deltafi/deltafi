@@ -17,6 +17,9 @@
  */
 package org.deltafi.common.types;
 
-public enum ActionType {
-    INGRESS, TIMED_INGRESS, TRANSFORM, LOAD, DOMAIN, ENRICH, FORMAT, VALIDATE, EGRESS, PUBLISH, UNKNOWN
+/**
+ * Action to take when no subscribers are found for a DeltaFile
+ */
+public enum DefaultBehavior {
+    ERROR, FILTER, PUBLISH
 }

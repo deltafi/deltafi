@@ -17,6 +17,25 @@
  */
 package org.deltafi.common.types;
 
-public enum ActionType {
-    INGRESS, TIMED_INGRESS, TRANSFORM, LOAD, DOMAIN, ENRICH, FORMAT, VALIDATE, EGRESS, PUBLISH, UNKNOWN
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.Set;
+
+@Data
+@NoArgsConstructor
+public class Rule {
+    private Set<String> topics;
+    private String condition;
+
+    /**
+     * A rule consists of condition that will be evaluated against a DeltaFile
+     * and a topic to use if the condition evaluates to true
+     * @param topics to uses if the condition matches
+     * @param condition condition that must be true to use the topic
+     */
+    public Rule(Set<String> topics, String condition) {
+        this.topics = topics;
+        this.condition = condition;
+    }
 }

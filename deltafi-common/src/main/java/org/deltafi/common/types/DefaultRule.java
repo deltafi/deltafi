@@ -17,6 +17,27 @@
  */
 package org.deltafi.common.types;
 
-public enum ActionType {
-    INGRESS, TIMED_INGRESS, TRANSFORM, LOAD, DOMAIN, ENRICH, FORMAT, VALIDATE, EGRESS, PUBLISH, UNKNOWN
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+
+@Data
+@NoArgsConstructor
+public class DefaultRule {
+    private DefaultBehavior defaultBehavior;
+    private String topic;
+
+    /**
+     * Rule used when no subscribers are found for a DeltaFile
+     * @param defaultBehavior that should be used when there are no subscribers found
+     * @param topic to publish to, only relevant to {@link DefaultBehavior#PUBLISH}
+     */
+    public DefaultRule(DefaultBehavior defaultBehavior, String topic) {
+        this.defaultBehavior = defaultBehavior;
+        this.topic = topic;
+    }
+
+    public DefaultRule(DefaultBehavior defaultBehavior) {
+        this(defaultBehavior, null);
+    }
 }

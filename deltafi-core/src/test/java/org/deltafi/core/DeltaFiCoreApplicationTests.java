@@ -1626,9 +1626,9 @@ class DeltaFiCoreApplicationTests {
 	void testGetTimedIngressFlowPlan() {
 		clearForFlowTests();
 		TimedIngressFlowPlan timedIngressFlowPlanA = new TimedIngressFlowPlan("timedIngressPlan", FlowType.TIMED_INGRESS,
-				"description", new TimedIngressActionConfiguration("timedIngress", "type"), "flow", "*/5 * * * * *");
+				"description", new TimedIngressActionConfiguration("timedIngress", "type"), "flow", null, "*/5 * * * * *");
 		TimedIngressFlowPlan timedIngressFlowPlanB = new TimedIngressFlowPlan("b", FlowType.TIMED_INGRESS, "description",
-				new TimedIngressActionConfiguration("timedIngress", "type"), "flow", "*/5 * * * * *");
+				new TimedIngressActionConfiguration("timedIngress", "type"), "flow", null, "*/5 * * * * *");
 		timedIngressFlowPlanRepo.saveAll(List.of(timedIngressFlowPlanA, timedIngressFlowPlanB));
 		TimedIngressFlowPlan plan = FlowPlanDatafetcherTestHelper.getTimedIngressFlowPlan(dgsQueryExecutor);
 		assertThat(plan.getName()).isEqualTo("timedIngressPlan");
@@ -1983,7 +1983,7 @@ class DeltaFiCoreApplicationTests {
 	void testRemoveTimedIngressFlowPlan() {
 		clearForFlowTests();
 		TimedIngressFlowPlan timedIngressFlowPlan = new TimedIngressFlowPlan("flowPlan", FlowType.TIMED_INGRESS, null,
-				null, null, null);
+				null, null, null, null);
 		timedIngressFlowPlanRepo.save(timedIngressFlowPlan);
 		assertThatThrownBy(() -> FlowPlanDatafetcherTestHelper.removeTimedIngressFlowPlan(dgsQueryExecutor))
 				.isInstanceOf(QueryException.class)
@@ -4496,6 +4496,7 @@ class DeltaFiCoreApplicationTests {
 		Map<String, String> tags = tagsFor(ActionEventType.INGRESS, "SampleTimedIngressErrorAction", "missingFlow", null);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.BYTES_IN, 36).addTags(tags));
+		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_ERRORED, 1).addTags(tags));
 
 		extendTagsForAction(tags, "type");
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.ACTION_EXECUTION_TIME_MS, 1).addTags(tags));

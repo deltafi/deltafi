@@ -71,10 +71,10 @@ class TimedIngressFlowServiceTest {
 
         TimedIngressFlowPlan runningFlowPlan = new TimedIngressFlowPlan("running", FlowType.TIMED_INGRESS, "yep",
                 new TimedIngressActionConfiguration("TimedIngressActionConfig", "TimedIngressActionConfigType"),
-                "targetFlow", "0 */10 * * * *");
+                "targetFlow", null, "0 */10 * * * *");
         TimedIngressFlowPlan stoppedFlowPlan = new TimedIngressFlowPlan("stopped", FlowType.TIMED_INGRESS, "naw",
                 new TimedIngressActionConfiguration("TimedIngressActionConfig", "TimedIngressActionConfigType"),
-                "targetFlow", "*/1 * * * * *");
+                "targetFlow", null, "*/1 * * * * *");
 
         TimedIngressFlow runningTimedIngressFlow = timedIngressFlowService.buildFlow(runningFlowPlan, Collections.emptyList());
         TimedIngressFlow stoppedTimedIngressFlow = timedIngressFlowService.buildFlow(stoppedFlowPlan, Collections.emptyList());

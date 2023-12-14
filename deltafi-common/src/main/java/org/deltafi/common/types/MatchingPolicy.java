@@ -17,6 +17,10 @@
  */
 package org.deltafi.common.types;
 
-public enum ActionType {
-    INGRESS, TIMED_INGRESS, TRANSFORM, LOAD, DOMAIN, ENRICH, FORMAT, VALIDATE, EGRESS, PUBLISH, UNKNOWN
+/**
+ * FIRST_MATCHING will publish to the first matching topic
+ * ALL_MATCHING will publish to all matching topics
+ */
+public enum MatchingPolicy {
+    ALL_MATCHING, FIRST_MATCHING
 }

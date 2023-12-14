@@ -105,6 +105,17 @@ case "$SUBCOMMAND" in
                  }
                }
                targetFlow
+               publishRules {
+                 matchingPolicy
+                 defaultRule {
+                   defaultBehavior
+                   topic
+                 }
+                 rules {
+                   topics
+                   condition
+                 }
+               }
                cronSchedule
                ingressStatus
                ingressStatusMessage
