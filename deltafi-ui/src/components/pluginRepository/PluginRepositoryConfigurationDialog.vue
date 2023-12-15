@@ -114,8 +114,8 @@ const model = computed({
 const originalModel = Object.assign({}, model.value);
 
 const pluginImageRepoConfigurationMap = new Map([
-  ["imageRepositoryBase", { header: "Image Repository Base", placeholder: "e.g. docker.io/deltafi/", type: "string", disabled: viewPluginImageRepo }],
-  ["pluginGroupIds", { header: "Plugin Group Ids", placeholder: "e.g. org.deltafi.passthrough", type: "string", disabled: viewPluginImageRepo }],
+  ["imageRepositoryBase", { header: "Image Repository Base*", placeholder: "e.g. docker.io/deltafi/", type: "string", disabled: viewPluginImageRepo }],
+  ["pluginGroupIds", { header: "Plugin Group Ids*", placeholder: "e.g. org.deltafi.passthrough", type: "string", disabled: viewPluginImageRepo }],
   ["imagePullSecret", { header: "Image Pull Secret", placeholder: "e.g. docker-secret", type: "string", disabled: viewPluginImageRepo }],
 ]);
 
@@ -150,9 +150,7 @@ const clearErrors = () => {
 };
 
 const disableSubmit = computed(() => {
-  return _.isEqual(model.value, originalModel) ||
-    _.isEmpty(model.value.imageRepositoryBase) ||
-    _.isEmpty(model.value.pluginGroupIds)
+  return _.isEqual(model.value, originalModel) || _.isEmpty(model.value.imageRepositoryBase) || _.isEmpty(model.value.pluginGroupIds);
 });
 </script>
 

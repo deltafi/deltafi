@@ -59,7 +59,7 @@
         <div v-for="error in errors" :key="error">{{ error }}</div>
       </Message>
       <div class="mb-3">
-        <h5>Name</h5>
+        <h5>Name*</h5>
         <div class="field mb-2">
           <InputText id="name" v-model="user.name" autofocus :class="{ 'p-invalid': submitted && !user.name }" autocomplete="off" placeholder="e.g. Jane Doe" :disabled="isReadOnly" />
         </div>
@@ -69,10 +69,11 @@
         <TabView :active-index="activeTabIndex">
           <TabPanel header="Basic">
             <Message v-if="uiConfig.authMode != 'basic' && !isReadOnly" severity="warn">
-              Authentication mode is currently set to <strong>{{ uiConfig.authMode }}</strong>. This must be set to <strong>basic</strong> before changes to this section will take effect.
+              Authentication mode is currently set to <strong>{{ uiConfig.authMode }}</strong>. 
+              This must be set to <strong>basic</strong> before changes to this section will take effect.
             </Message>
             <div class="field mb-2">
-              <label for="dn">Username</label>
+              <label for="dn">Username*</label>
               <InputText id="username" v-model="user.username" autocomplete="off" placeholder="janedoe" :disabled="isReadOnly" />
             </div>
             <div v-if="!isReadOnly" class="field mb-2">
@@ -82,7 +83,8 @@
           </TabPanel>
           <TabPanel header="Certificate">
             <Message v-if="uiConfig.authMode != 'cert' && !isReadOnly" severity="warn">
-              Authentication mode is currently set to <strong>{{ uiConfig.authMode }}</strong>. This must be set to <strong>cert</strong> before changes to this section will take effect.
+              Authentication mode is currently set to <strong>{{ uiConfig.authMode }}</strong>.
+              This must be set to <strong>cert</strong> before changes to this section will take effect.
             </Message>
             <div class="field mb-2">
               <label for="dn">Distinguished Name (DN)</label>

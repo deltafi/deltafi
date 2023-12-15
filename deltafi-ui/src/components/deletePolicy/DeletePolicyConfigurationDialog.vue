@@ -152,15 +152,15 @@ const newDeletePolicyUpload = ref({});
 const errorsList = ref([]);
 
 const deletePolicyConfigurationMap = new Map([
-  ["name", { header: "Name", placeholder: "e.g. oneHourAfterComplete, over98PerCent", type: "string", disabled: viewDeletePolicy }],
-  ["__typename", { header: "Type", placeholder: "e.g. TimedDeletePolicy, DiskSpaceDeletePolicy", type: "select", disabled: viewDeletePolicy || editDeletePolicy }],
+  ["name", { header: "Name*", placeholder: "e.g. oneHourAfterComplete, over98PerCent", type: "string", disabled: viewDeletePolicy }],
+  ["__typename", { header: "Type*", placeholder: "e.g. TimedDeletePolicy, DiskSpaceDeletePolicy", type: "select", disabled: viewDeletePolicy || editDeletePolicy }],
   ["flow", { header: "Flow", placeholder: "e.g. smoke, passthrough", type: "string", disabled: viewDeletePolicy }],
   ["enabled", { header: "Enabled", type: "boolean", disabled: viewDeletePolicy }],
   ["afterCreate", { header: "After Create", placeholder: "Duration in ISO 1806 notation. e.g. PT1H, P23DT23H, P4Y", type: "string", disabled: viewDeletePolicy }],
   ["afterComplete", { header: "After Complete", placeholder: "Duration in ISO 1806 notation. e.g. PT1H, P23DT23H, P4Y", type: "string", disabled: viewDeletePolicy }],
   ["minBytes", { header: "Min Bytes", placeholder: "e.g. oneHourAfterComplete, over98PerCent", type: "number", min: null, max: null, disabled: viewDeletePolicy }],
   ["deleteMetadata", { header: "Delete Metadata", placeholder: "e.g. oneHourAfterComplete, over98PerCent", type: "boolean", disabled: viewDeletePolicy }],
-  ["maxPercent", { header: "Max Percent", placeholder: "A number between 0 and 100", type: "number", min: 0, max: 100, disabled: viewDeletePolicy }],
+  ["maxPercent", { header: "Max Percent*", placeholder: "A number between 0 and 100", type: "number", min: 0, max: 100, disabled: viewDeletePolicy }],
 ]);
 
 const selectedDeleteId = ref(_.get(rowdata, "id", null));

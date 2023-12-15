@@ -51,13 +51,13 @@
         <div v-for="error in errors" :key="error">{{ error }}</div>
       </Message>
       <div class="mb-3">
-        <h5>Name</h5>
+        <h5>Name*</h5>
         <div class="field mb-2">
           <InputText id="name" v-model="role.name" autofocus :class="{ 'p-invalid': submitted && !role.name }" autocomplete="off" placeholder="Role Name" :disabled="isReadOnly" />
         </div>
       </div>
       <div class="mb-3">
-        <h5>Permissions</h5>
+        <h5>Permissions*</h5>
         <PermissionCheckboxes v-model="role.permissions" :read-only="isReadOnly" />
       </div>
       <template v-if="!isReadOnly" #footer>

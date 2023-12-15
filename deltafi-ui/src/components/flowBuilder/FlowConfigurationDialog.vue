@@ -28,15 +28,15 @@
           </ul>
         </Message>
       </div>
-      <dt>Name:</dt>
+      <dt>Name:*</dt>
       <dd>
         <InputText v-model="model.name" class="inputWidth" />
       </dd>
-      <dt>Description:</dt>
+      <dt>Description:*</dt>
       <dd>
         <Textarea v-model="model.description" rows="4" cols="47" class="inputWidth" />
       </dd>
-      <dt>Type:</dt>
+      <dt>Type:*</dt>
       <dd>
         <Dropdown v-model="model.type" :options="flowTypesDisplay" option-label="header" option-value="field" placeholder="Select Flow Type" :show-clear="!editFlowPlan" :disabled="editFlowPlan" class="inputWidth" />
       </dd>
@@ -54,7 +54,7 @@
     </div>
   </div>
 </template>
-    
+
 <script setup>
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import { useMounted } from "@vueuse/core";
@@ -186,4 +186,3 @@ const submit = async () => {
   }
 }
 </style>
-    
