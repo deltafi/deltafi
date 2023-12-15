@@ -5,6 +5,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.1.16] - 2023-12-15
+
+### Added
+- Added `--quiet` option to mongo-eval CLI
+- Added topics where `DeltaFiles` can be published to and subscribed from
+- Added the option to put publisher rules in `TimedIngressFlows` that control where DeltaFiles are sent
+- Added the option to put subscriber rules in `TransformFlows` that allow the flow to pick up `DeltaFiles` from one or more topics
+- Added a mutation to task a `TimedIngressFlow` on demand with the option to override the `memo` value
+
+### Changed
+-Add better indication of required field throughout web UI. 
+
+### Fixed
+- Fixed a bug when cloning a flow from the flows page the "Clone From: (Optional)" not populated correctly. 
+- Regression in content API endpoint causing issues with missing content.
+- Fixed collected DeltaFiles not completing when aggregate stage changes.
+- Updated the `uninstall` CLI command to properly parse the latest `mongo-eval` output format when attemption to drop collections
+- Spurrious Grafana restarts on helm installs
+
+### Security
+- Eliminated the long standing snakeyaml 1.33 dependency, clearing out all CVEs in core Java
+
+### Upgrade and Migration
+- Grafana helm chart upgrade to 7.0.17
+- Ruby base image and dependency updates
+- DGS upgrade to 8.2.0 (from 7.6.0)
+- Spring Boot upgrade to 3.2.0 (from 3.1.6)
+
 ## [1.1.15] - 2023-12-11
 
 ### Added
@@ -2662,7 +2690,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.15...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.16...main
+[1.1.16]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.15...1.1.16
 [1.1.15]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.14...1.1.15
 [1.1.14]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.13...1.1.14
 [1.1.13]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.12...1.1.13
