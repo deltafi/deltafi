@@ -400,8 +400,6 @@ public enum PropertyType {
         property.setKey(this.key);
         property.setRefreshable(this.refreshable);
         property.setDescription(this.description);
-        property.setHidden(false);
-        property.setEditable(true);
         property.setRefreshable(refreshable);
 
         Object setValue = getProperty(deltaFiProperties);

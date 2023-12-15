@@ -69,8 +69,6 @@ public class PluginDataFetcherTestHelper {
         assertEquals("org.deltafi.test.actions.TestAction1", plugin1.getActions().get(0).getName());
         assertEquals("org.deltafi.test.actions.TestAction2", plugin1.getActions().get(1).getName());
         assertEquals("TestAction2", plugin1.getActions().get(1).getDescription());
-        assertEquals(1, plugin1.getActions().get(1).getRequiresDomains().size());
-        assertEquals("test", plugin1.getActions().get(1).getRequiresDomains().get(0));
 
         assertEquals(2, plugin1.getDependencies().size());
         assertEquals("org.deltafi", plugin1.getDependencies().get(0).getGroupId());
@@ -87,8 +85,6 @@ public class PluginDataFetcherTestHelper {
         assertEquals("A description of property 1", plugin1.getPropertySets().get(0).getProperties().get(0).getDescription());
         assertEquals("property1Default", plugin1.getPropertySets().get(0).getProperties().get(0).getDefaultValue());
         assertTrue(plugin1.getPropertySets().get(0).getProperties().get(0).isRefreshable());
-        assertTrue(plugin1.getPropertySets().get(0).getProperties().get(0).isEditable());
-        assertFalse(plugin1.getPropertySets().get(0).getProperties().get(0).isHidden());
         assertEquals("property1Value", plugin1.getPropertySets().get(0).getProperties().get(0).getValue());
         assertEquals("property4Value", plugin1.getPropertySets().get(1).getProperties().get(1).getValue());
         assertEquals("propertySet2", plugin1.getPropertySets().get(1).getId());
