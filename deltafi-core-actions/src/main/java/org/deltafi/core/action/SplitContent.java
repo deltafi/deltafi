@@ -26,9 +26,9 @@ import org.springframework.stereotype.Component;
 
 @Component
 @SuppressWarnings("unused")
-public class ContentSplitter extends TransformAction<ActionParameters> {
+public class SplitContent extends TransformAction<ActionParameters> {
 
-    public ContentSplitter() {
+    public SplitContent() {
         super("Splits a DeltaFile with multiple pieces of content into multiple DeltaFiles");
     }
 
