@@ -42,7 +42,7 @@
       </dd>
       <dt>Clone From: (Optional)</dt>
       <dd>
-        <Dropdown v-model="model.selectedFlowPlan" :options="_.orderBy(allFlowPlans[`${_.toLower(model.type)}Plans`], [(flow) => flow.name.toLowerCase()], ['asc'])" option-label="name" placeholder="Select Flow" :show-clear="!editFlowPlan" :disabled="editFlowPlan" class="inputWidth" />
+        <Dropdown v-model="model.selectedFlowPlan" :options="_.orderBy(allFlowPlans[`${_.toLower(model.type)}`], [(flow) => flow.name.toLowerCase()], ['asc'])" option-label="name" placeholder="Select Flow" :show-clear="!editFlowPlan" :disabled="editFlowPlan" class="inputWidth" />
       </dd>
       <div class="delete-policy-configuration-dialog">
         <teleport v-if="isMounted" to="#dialogTemplate">
@@ -56,7 +56,7 @@
 </template>
     
 <script setup>
-import useFlowPlanQueryBuilder from "@/composables/useFlowPlanQueryBuilder";
+import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import { useMounted } from "@vueuse/core";
 import { computed, defineEmits, defineProps, onMounted, reactive, ref, watch } from "vue";
 
@@ -67,7 +67,7 @@ import Message from "primevue/message";
 import Textarea from "primevue/textarea";
 import _ from "lodash";
 
-const { getAllFlowPlans } = useFlowPlanQueryBuilder();
+const { getAllFlows } = useFlowQueryBuilder();
 
 const isMounted = ref(useMounted());
 const emit = defineEmits(["createFlowPlan"]);
@@ -127,8 +127,9 @@ watch(
 );
 
 onMounted(async () => {
-  let response = await getAllFlowPlans();
-  allFlowPlans.value = response.data.getAllFlowPlans;
+  let response = await getAllFlows();
+
+  allFlowPlans.value = response.data.getAllFlows;
 });
 
 const flowTypesDisplay = [
@@ -161,7 +162,7 @@ const submit = async () => {
   }
 
   if (!_.isEmpty(model.value.name) && !_.isEmpty(model.value.type)) {
-    let activeSystemFlowNames = _.map(allFlowPlans.value[`${_.toLower(model.value.type)}Plans`], "name");
+    let activeSystemFlowNames = _.map(allFlowPlans.value[`${_.toLower(model.value.type)}`], "name");
     let isflowNamedUsed = _.includes(activeSystemFlowNames, model.value.name.trim());
 
     if (isflowNamedUsed) {

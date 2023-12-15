@@ -120,6 +120,7 @@ import DialogTemplate from "@/components/DialogTemplate.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import useFlowActions from "@/composables/useFlowActions";
 import useFlowPlanQueryBuilder from "@/composables/useFlowPlanQueryBuilder";
+import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
 import { computed, nextTick, onBeforeMount, ref, watch } from "vue";
 import { StorageSerializers, useClipboard, useMagicKeys, useResizeObserver, useStorage } from "@vueuse/core";
@@ -139,6 +140,7 @@ import { jsPlumb } from "jsplumb";
 import $ from "jquery";
 import _ from "lodash";
 
+const { getAllFlows } = useFlowQueryBuilder();
 const { getPluginActionSchema } = useFlowActions();
 const { saveTransformFlowPlan, saveNormalizeFlowPlan, saveEgressFlowPlan, saveEnrichFlowPlan } = useFlowPlanQueryBuilder();
 const keys = useMagicKeys();
@@ -160,6 +162,8 @@ const originalFlowPlan = ref(null);
 
 const schemaVisable = ref(false);
 const displayRawJsonDialog = ref(false);
+
+const allFlowPlanData = ref({});
 
 // The useResizeObserver determins if the sidebar has been collapsed or expanded.
 // If either has occur we redo the connections between all actions.
@@ -352,19 +356,22 @@ const originalFlowActionTemplateObject = JSON.parse(JSON.stringify(flowActionTem
 onBeforeMount(async () => {
   await fetchData();
 
+  let response = await getAllFlows();
+  allFlowPlanData.value = response.data.getAllFlows;
+
   if (!_.isEmpty(_.get(linkedFlowPlan.value, "flowPlanParams", null))) {
     if (linkedFlowPlan.value.flowPlanParams.editExistingFlow) {
       editExistingFlowPlan.value = true;
       let flowInfo = {};
       flowInfo["type"] = _.toUpper(linkedFlowPlan.value.flowPlanParams.type);
       flowInfo["name"] = linkedFlowPlan.value.flowPlanParams.selectedFlowPlanName;
-      flowInfo["description"] = linkedFlowPlan.value.flowPlanParams.selectedFlowPlan.description;
-      flowInfo["selectedFlowPlan"] = linkedFlowPlan.value.flowPlanParams.selectedFlowPlan;
+      flowInfo["selectedFlowPlan"] = _.find(allFlowPlanData.value[`${_.toLower(linkedFlowPlan.value.flowPlanParams.type)}`], { 'name': linkedFlowPlan.value.flowPlanParams.selectedFlowPlanName });
+      flowInfo["description"] = flowInfo["selectedFlowPlan"].description;
       await createFlowPlan(flowInfo);
       originalFlowPlan.value = rawOutput.value;
     } else {
       model.value.type = _.toUpper(linkedFlowPlan.value.flowPlanParams.type);
-      model.value.selectedFlowPlan = linkedFlowPlan.value.flowPlanParams.selectedFlowPlan;
+      model.value.selectedFlowPlan = _.find(allFlowPlanData.value[`${_.toLower(linkedFlowPlan.value.flowPlanParams.type)}`], { 'name': linkedFlowPlan.value.flowPlanParams.selectedFlowPlanName });
       document.getElementById("CreateFlowPlan").click();
     }
     linkedFlowPlan.value = null;
@@ -376,6 +383,7 @@ onBeforeMount(async () => {
 const fetchData = async () => {
   let responseFlowAction = await getPluginActionSchema();
   allActionsData.value = responseFlowAction.data.plugins;
+
   getLoadedActions();
 };
 

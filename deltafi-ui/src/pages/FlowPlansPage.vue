@@ -84,6 +84,7 @@ const pluginNamesList = (allFlowData) => {
   });
   return _.uniqBy(mvnCoordinatesArray, "name");
 };
+
 const formatData = (allFlowData) => {
   let formattedFlowData = JSON.parse(JSON.stringify(allFlowData));
   const flowTypes = ["transform", "normalize", "enrich", "egress"];
