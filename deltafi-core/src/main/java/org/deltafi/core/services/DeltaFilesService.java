@@ -100,12 +100,8 @@ public class DeltaFilesService {
 
     private static final ObjectWriter PRETTY_OBJECT_WRITER = OBJECT_MAPPER.writerWithDefaultPrettyPrinter();
 
-    public static final String CHILD_FLOW_INGRESS_DISABLED_CAUSE = "Child ingress flow disabled";
-    public static final String CHILD_FLOW_INGRESS_DISABLED_CONTEXT = "Child ingress flow disabled due to max errors exceeded: ";
     public static final String NO_EGRESS_CONFIGURED_CAUSE = "No egress flow configured";
     public static final String NO_EGRESS_CONFIGURED_CONTEXT = "This DeltaFile does not match the criteria of any running egress flows";
-    public static final String NO_CHILD_INGRESS_CONFIGURED_CAUSE = "No child ingress flow configured";
-    public static final String NO_CHILD_INGRESS_CONFIGURED_CONTEXT = "This DeltaFile reinject does not match any running ingress flows: ";
 
     private static final int DEFAULT_QUERY_LIMIT = 50;
 
@@ -515,18 +511,20 @@ public class DeltaFilesService {
             return;
         }
 
-        // array of length 1 is used to store the size in bytes
-        final long[] bytes = {0L};
+        final Counter counter = new Counter();
         if (timedIngressFlow.publishRules() != null) {
             ingressEvent.getIngressItems().stream()
                     .map((item) -> buildIngressDeltaFile(event, item))
-                    .forEach(deltaFile -> publishDeltaFile(timedIngressFlow, deltaFile));
+                    .forEach(deltaFile -> publishDeltaFile(timedIngressFlow, deltaFile, counter));
         } else if (timedIngressFlow.getTargetFlow() != null) {
             ingressEvent.getIngressItems().forEach(ingressItem -> {
                 ingressItem.setFlow(timedIngressFlow.getTargetFlow());
                 DeltaFile deltaFile = ingressOrErrorOnMissingFlow(ingressItem, event.getAction(), event.getFlow(),
                         event.getStart(), event.getStop());
-                bytes[0] += deltaFile.getIngressBytes();
+                if (deltaFile.getStage() == DeltaFileStage.ERROR) {
+                    counter.erroredFiles++;
+                }
+                counter.byteCount += deltaFile.getIngressBytes();
             });
         }
 
@@ -537,15 +535,22 @@ public class DeltaFilesService {
 
         List<Metric> metrics = (event.getMetrics() != null) ? event.getMetrics() : new ArrayList<>();
         metrics.add(new Metric(DeltaFiConstants.FILES_IN, ingressEvent.getIngressItems().size()));
-        metrics.add(new Metric(DeltaFiConstants.BYTES_IN, bytes[0]));
+        metrics.add(new Metric(DeltaFiConstants.BYTES_IN, counter.byteCount));
+
+        if (counter.erroredFiles > 0) {
+            metrics.add(new Metric(FILES_ERRORED, counter.erroredFiles));
+        } else if (counter.filteredFiles > 0) {
+            metrics.add(new Metric(FILES_FILTERED, counter.filteredFiles));
+        }
 
         String flowName = timedIngressFlow.getTargetFlow() != null ? timedIngressFlow.getTargetFlow() :  timedIngressFlow.getName();
         generateIngressMetrics(metrics, event, flowName, actionClass);
     }
 
-    private void publishDeltaFile(Publisher publisher, DeltaFile deltaFile) {
+    private void publishDeltaFile(Publisher publisher, DeltaFile deltaFile, Counter counter) {
         // need a default source flow to handle no matches off an ingress action
         deltaFile.getSourceInfo().setFlow(publisher.getName());
+        counter.byteCount += deltaFile.getIngressBytes();
 
         Set<Subscriber> subscribers = publisherService.subscribers(publisher, deltaFile);
         int count = subscribers.size();
@@ -577,6 +582,13 @@ public class DeltaFilesService {
         } else {
             // no subscribers were found, save the DeltaFile with the synthetic actions added by the publisherService
             deltaFileCacheService.save(deltaFile);
+
+            ActionState lastState = deltaFile.lastAction().getState();
+            if (lastState == ActionState.FILTERED) {
+                counter.filteredFiles++;
+            } else if (lastState == ActionState.ERROR) {
+                counter.erroredFiles++;
+            }
         }
     }
 
@@ -1129,7 +1141,7 @@ public class DeltaFilesService {
 
     private void rerunPublish(DeltaFile deltaFile) {
         TimedIngressFlow timedIngressFlow = timedIngressFlowService.getRunningFlowByName(deltaFile.lastAction().getFlow());
-        publishDeltaFile(timedIngressFlow, deltaFile);
+        publishDeltaFile(timedIngressFlow, deltaFile, new Counter());
     }
 
     public List<AcknowledgeResult> acknowledge(List<String> dids, String reason) {
@@ -1947,5 +1959,11 @@ public class DeltaFilesService {
             deltaFileRepo.saveAll(parentDeltaFiles);
             enqueueActions(actionInvocations);
         }
+    }
+
+    private static class Counter {
+        int filteredFiles = 0;
+        int erroredFiles = 0;
+        long byteCount = 0L;
     }
 }

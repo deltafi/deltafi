@@ -127,9 +127,9 @@ const model = computed({
 const isMounted = ref(useMounted());
 
 const linkConfigurationMap = new Map([
-  ["linkType", { header: "Link Type", placeholder: "Custom Link Type", types: ["DeltaFile Link", "External Link"], disabled: viewLink || editLink }],
-  ["url", { header: "Url", placeholder: "Url for linked service", disabled: viewLink }],
-  ["name", { header: "Name", placeholder: "Name of linked Service", disabled: viewLink }],
+  ["linkType", { header: "Link Type*", placeholder: "Custom Link Type", types: ["DeltaFile Link", "External Link"], disabled: viewLink || editLink }],
+  ["url", { header: "Url*", placeholder: "Url for linked service", disabled: viewLink }],
+  ["name", { header: "Name*", placeholder: "Name of linked Service", disabled: viewLink }],
   ["description", { header: "Description", placeholder: "Description of linked service", disabled: viewLink }],
 ]);
 

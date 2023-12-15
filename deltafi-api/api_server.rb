@@ -130,6 +130,9 @@ class ApiServer < Sinatra::Base
   def stream_content(content)
     DF::API::V1::Content.verify_content(content)
 
+    # Perform HEAD operation on each segment to ensure presence and access
+    content[:segments].each { |segment| DF::API::V1::Content.head_segment(segment) }
+
     filename = content[:name] || content[:uuid]
     headers['Content-Disposition'] = "attachment; filename=\"#{filename}\";"
     headers['Content-Transfer-Encoding'] = 'binary'

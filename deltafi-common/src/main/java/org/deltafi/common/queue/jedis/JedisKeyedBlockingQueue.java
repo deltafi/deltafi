@@ -24,9 +24,9 @@ import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.Protocol;
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.params.ZAddParams;
-import redis.clients.jedis.resps.KeyedZSetElement;
 import redis.clients.jedis.resps.ScanResult;
 import redis.clients.jedis.resps.Tuple;
+import redis.clients.jedis.util.KeyValue;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -146,8 +146,8 @@ public class JedisKeyedBlockingQueue {
      */
     public String take(String key) {
         try (Jedis jedis = jedisPool.getResource()) {
-            KeyedZSetElement keyedZSetElement = jedis.bzpopmin(0, key);
-            return keyedZSetElement.getElement();
+            KeyValue<String, Tuple> keyValue = jedis.bzpopmin(0, key);
+            return keyValue.getValue().getElement();
         }
     }
 

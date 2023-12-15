@@ -7,9 +7,12 @@ cli_help_command() {
 Command: mongo-eval
 
 Usage:
-  mongo-eval COMMAND
+  mongo-eval [OPTIONS] COMMAND
 
-The COMMAND should be quoted and not contain any single quotes"
+The COMMAND should be quoted and not contain any single quotes
+
+Options:
+  --quiet  Suppress connection and version messages"
   exit 1
 }
 
@@ -17,13 +20,22 @@ ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
 [[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
 
+QUIET=""
+
 EVAL=${ARGS[1]}
+if [[ " ${EVAL} " =~ " --quiet " ]];
+then
+  [[ ${#ARGS[@]} -lt 3 ]] && cli_help_command
+  QUIET="--quiet"
+  EVAL=${ARGS[2]}
+fi
+
 MONGODB_USERNAME_ENV='$MONGODB_EXTRA_USERNAMES'
 MONGODB_PASSWORD_ENV='$MONGODB_EXTRA_PASSWORDS'
 
 if _is_standalone; then
-  docker exec -i deltafi-mongodb sh -c "mongosh -u ${MONGODB_USERNAME_ENV} --password ${MONGODB_PASSWORD_ENV} --eval '${EVAL}' deltafi"
+  docker exec -i deltafi-mongodb sh -c "mongosh -u ${MONGODB_USERNAME_ENV} --password ${MONGODB_PASSWORD_ENV} ${QUIET} --eval '${EVAL}' deltafi"
 else
   POD=$(${KUBECTL_BIN} get pod -l app.kubernetes.io/name=mongodb -o jsonpath="{.items[0].metadata.name}")
-  ${KUBECTL_BIN} exec -i ${POD} --container mongodb -- sh -c "mongosh -u ${MONGODB_USERNAME_ENV} --password ${MONGODB_PASSWORD_ENV} --eval '${EVAL}' deltafi"
+  ${KUBECTL_BIN} exec -i ${POD} --container mongodb -- sh -c "mongosh -u ${MONGODB_USERNAME_ENV} --password ${MONGODB_PASSWORD_ENV} ${QUIET} --eval '${EVAL}' deltafi"
 fi

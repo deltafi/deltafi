@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 @Service
 public class RuleEvaluator {
-    private static final ImmutableDeltaFile DELTA_FILE = new ImmutableDeltaFile(Map.of("a", "b"), List.of(new Content("", "")));
+    private static final ImmutableDeltaFile EXAMPLE_DELTA_FILE = new ImmutableDeltaFile(Map.of("a", "b"), List.of(new Content("", "")));
 
     private final Map<String, Expression> expressionCache = new ConcurrentHashMap<>();
 
@@ -45,7 +45,7 @@ public class RuleEvaluator {
      */
     public void validateCondition(String condition) throws IllegalArgumentException {
         try {
-            doEvaluateCondition(condition, DELTA_FILE);
+            doEvaluateCondition(condition, EXAMPLE_DELTA_FILE);
         } catch (Exception e) {
             String exceptionMessage = e.getMessage();
             String message = exceptionMessage != null ? "invalid condition `" + condition + "`: " + exceptionMessage :

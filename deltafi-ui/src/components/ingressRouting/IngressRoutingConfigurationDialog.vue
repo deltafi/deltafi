@@ -122,8 +122,8 @@ const newIngressRouteRuleUpload = ref({});
 const errorsList = ref([]);
 
 const ingressRouteConfigurationMap = new Map([
-  ["name", { header: "Name", placeholder: "e.g. fileNameRegex, fileNameRequiredMetadata ", type: "string", disabled: viewIngressRouteRule }],
-  ["flow", { header: "Flow", placeholder: "e.g. smoke, passthrough", type: "string", disabled: viewIngressRouteRule }],
+  ["name", { header: "Name*", placeholder: "e.g. fileNameRegex, fileNameRequiredMetadata ", type: "string", disabled: viewIngressRouteRule }],
+  ["flow", { header: "Flow*", placeholder: "e.g. smoke, passthrough", type: "string", disabled: viewIngressRouteRule }],
   ["priority", { header: "Priority", placeholder: "A number greater than 0", type: "number", min: 0, max: null, disabled: viewIngressRouteRule }],
   ["filenameRegex", { header: "Filename Regex", placeholder: "e.g. ^abc.*, [Dd]eltafi", type: "string", disabled: viewIngressRouteRule }],
   ["requiredMetadata", { header: "Required Metadata", placeholder: "Format strings key:value", type: "string", disabled: viewIngressRouteRule }],

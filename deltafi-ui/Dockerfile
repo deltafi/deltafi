@@ -5,7 +5,7 @@ RUN npm install
 COPY ./ .
 RUN npm run build
 
-FROM nginx:1.25.2-alpine3.18 as production-stage
+FROM nginx:1.25.3-alpine3.18 as production-stage
 RUN mkdir /app
 COPY --from=deltafi-ui-build-stage /app/dist /app
 COPY --from=deltafi-ui-build-stage /app/graphiql/build /app/graphiql

@@ -39,7 +39,7 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Clock;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -70,7 +70,7 @@ class PublisherServiceTest {
         Mockito.when(ruleEvaluator.evaluateCondition(condition, deltaFile)).thenReturn(true);
 
         PublishRules publishRules = new PublishRules();
-        publishRules.setRules(Set.of(rule("topic", condition)));
+        publishRules.setRules(List.of(rule("topic", condition)));
         Publisher publisher = new TestFlow(publishRules, Set.of());
 
         Set<Subscriber> subscribers = publisherService.subscribers(publisher, deltaFile);
@@ -163,7 +163,7 @@ class PublisherServiceTest {
         Mockito.when(ruleEvaluator.evaluateCondition("c", deltaFile)).thenReturn(true);
 
         PublishRules publishRules = new PublishRules();
-        publishRules.setRules(new HashSet<>());
+        publishRules.setRules(new ArrayList<>());
         publishRules.getRules().add(rule("a", "a"));
         publishRules.getRules().add(rule("b", "b"));
         publishRules.getRules().add(rule("c", "c"));

@@ -109,9 +109,9 @@ const model = computed({
 const originalModel = Object.assign({}, model.value);
 
 const pluginConfigurationMap = new Map([
-  ["groupId", { header: "Group Id", placeholder: "e.g. org.deltafi.passthrough" }],
-  ["artifactId", { header: "Artifact Id", placeholder: "e.g. passthrough" }],
-  ["version", { header: "Version", placeholder: "e.g. 1.0.1, <commit hash>" }],
+  ["groupId", { header: "Group Id*", placeholder: "e.g. org.deltafi.passthrough" }],
+  ["artifactId", { header: "Artifact Id*", placeholder: "e.g. passthrough" }],
+  ["version", { header: "Version*", placeholder: "e.g. 1.0.1, <commit hash>" }],
 ]);
 
 const clearErrors = () => {

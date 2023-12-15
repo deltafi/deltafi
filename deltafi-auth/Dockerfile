@@ -1,8 +1,8 @@
-FROM deltafi/deltafi-ruby:3.2.2-alpine3.18-1
+FROM deltafi/deltafi-ruby:3.2.2-alpine3.19-0
 WORKDIR /app
+RUN apk add --no-cache sqlite-libs
 COPY . /app
 COPY probe.sh /
-RUN apk add --no-cache sqlite-libs && \
-    bundle install
+RUN bundle install
 EXPOSE 9292
 CMD ./run.sh

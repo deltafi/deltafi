@@ -64,7 +64,6 @@ class DeltaFilesServiceTest {
     private final ActionEventQueue actionEventQueue;
     private final ContentStorageService contentStorageService;
     private final ResumePolicyService resumePolicyService;
-    private final MetricService metricService;
     private final DeltaFileCacheService deltaFileCacheService;
     private final QueueManagementService queueManagementService;
     private final QueuedAnnotationRepo queuedAnnotationRepo;
@@ -101,7 +100,6 @@ class DeltaFilesServiceTest {
         this.actionEventQueue = actionEventQueue;
         this.contentStorageService = contentStorageService;
         this.resumePolicyService = resumePolicyService;
-        this.metricService = metricService;
         this.deltaFileCacheService = deltaFileCacheService;
         this.queueManagementService = queueManagementService;
         this.queuedAnnotationRepo = queuedAnnotationRepo;

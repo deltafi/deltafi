@@ -24,9 +24,9 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.Data;
 
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 @Data
 public class PublishRules {
@@ -37,7 +37,7 @@ public class PublishRules {
 
     private MatchingPolicy matchingPolicy;
     private DefaultRule defaultRule;
-    private Set<Rule> rules;
+    private List<Rule> rules;
 
     public void setMatchingPolicy(MatchingPolicy matchingPolicy) {
         this.matchingPolicy = Objects.requireNonNullElse(matchingPolicy, MatchingPolicy.ALL_MATCHING);
@@ -47,8 +47,8 @@ public class PublishRules {
         this.defaultRule = Objects.requireNonNullElse(defaultRule, ERROR_RULE);
     }
 
-    public void setRules(Set<Rule> rules) {
-        this.rules = Objects.requireNonNullElseGet(rules, HashSet::new);
+    public void setRules(List<Rule> rules) {
+        this.rules = Objects.requireNonNullElseGet(rules, ArrayList::new);
     }
 
     @Override

@@ -10,29 +10,29 @@ deltafi:
     trustStoreName: trustStore.jks
     trustStoreType: JKS
   core_actions:
-    image: deltafi/deltafi-core-actions:1.1.15
+    image: deltafi/deltafi-core-actions:1.1.16
   passthrough:
-    image: deltafi/deltafi-passthrough:1.1.15
+    image: deltafi/deltafi-passthrough:1.1.16
     enabled: true
   core:
-    image: deltafi/deltafi-core:1.1.15
+    image: deltafi/deltafi-core:1.1.16
     mongo_host: deltafi-mongodb
   docs:
-    image: deltafi/deltafi-docs:1.1.15
+    image: deltafi/deltafi-docs:1.1.16
     enabled: true
   ingress:
     envVar:
       HTTP_MAX_BODY_SIZE: 5G
   auth:
-    image: deltafi/deltafi-auth:1.1.15
+    image: deltafi/deltafi-auth:1.1.16
     mode: basic # basic, cert, or disabled
     secret: auth-secret
     entityResolver:
       enabled: false
-      image: deltafi/deltafi-entity-resolver:1.1.15
+      image: deltafi/deltafi-entity-resolver:1.1.16
       url: http://127.0.0.1:8080/
   api:
-    image: deltafi/deltafi-api:1.1.15
+    image: deltafi/deltafi-api:1.1.16
   clickhouse_etl:
     enabled: false
     interval: 10          # Period (seconds) between sync jobs
@@ -40,16 +40,16 @@ deltafi:
     batch: 2000           # Maximum count of deltafiles to transfer at a time
     delete_ttl: "1 MONTH" # Clickhouse Deltafiles DELETE TTL (i.e. 1 MONTH, 14 DAY, 12 HOUR, etc.)
   ui:
-    image: deltafi/deltafi-ui:1.1.15
+    image: deltafi/deltafi-ui:1.1.16
   egress_sink:
     enabled: true
-    image: deltafi/deltafi-egress-sink:1.1.15
+    image: deltafi/deltafi-egress-sink:1.1.16
   nodemonitor:
-    image: deltafi/deltafi-nodemonitor:1.1.15
+    image: deltafi/deltafi-nodemonitor:1.1.16
     period: 9
   clustermonitor:
     enabled: true
-    image: deltafi/deltafi-clustermonitor:1.1.15
+    image: deltafi/deltafi-clustermonitor:1.1.16
     period: 9
 
 # Kubernetes ingress config

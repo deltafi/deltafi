@@ -43,9 +43,17 @@ The output should show the current time.
 
 There are some packages that are required by the steps in this guide. They only need to be installed on the node where the installation steps are being executed. Install them using the following `yum` commands:
 
+### RHEL7 Environment
 ```bash
 sudo yum install -y epel-release
 sudo yum install -y git python3 ansible-python3
 sudo ln -s /usr/bin/ansible-playbook-3 /usr/bin/ansible-playbook
 sudo ln -s /usr/bin/ansible-galaxy-3 /usr/bin/ansible-galaxy
+```
+
+### RHEL 8 Environment 
+```bash
+sudo subscription-manager repos --enable codeready-builder-for-rhel-8-$(arch)-rpms
+sudo dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+sudo yum install -y git python3 ansible
 ```
