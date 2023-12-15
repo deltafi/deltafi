@@ -64,7 +64,6 @@ public class IngressService {
     private final ContentStorageService contentStorageService;
     private final DeltaFilesService deltaFilesService;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
-    private final FlowAssignmentService flowAssignmentService;
     private final TransformFlowService transformFlowService;
     private final ErrorCountService errorCountService;
     private final UUIDGenerator uuidGenerator;
@@ -179,22 +178,12 @@ public class IngressService {
 
     private IngressResult ingress(String flow, String filename, String mediaType, InputStream contentInputStream,
             Map<String, String> metadata, OffsetDateTime created) throws ObjectStorageException, IngressException {
-        String resolvedFlow = flow;
-
-        if (flow == null || flow.equals(DeltaFiConstants.AUTO_RESOLVE_FLOW_NAME)) {
-            String lookup = flowAssignmentService.findFlow(filename, metadata);
-            if (lookup == null) {
-                throw new IngressException("Unable to resolve flow based on current flow assignment rules");
-            }
-            resolvedFlow = lookup;
-        }
-
         // ensure flow is running before accepting ingress
-        if (!transformFlowService.hasRunningFlow(resolvedFlow)) {
-            throw new IngressException("Flow " + resolvedFlow + " is not running");
+        if (!transformFlowService.hasRunningFlow(flow)) {
+            throw new IngressException("Flow " + flow + " is not running");
         }
 
-        String error = errorCountService.generateErrorMessage(resolvedFlow);
+        String error = errorCountService.generateErrorMessage(flow);
         if (error != null) {
             throw new IngressException(error);
         }
@@ -206,17 +195,17 @@ public class IngressService {
         IngressEventItem ingressEventItem = IngressEventItem.builder()
                 .did(did)
                 .filename(filename)
-                .flow(resolvedFlow)
+                .flow(flow)
                 .metadata(metadata)
                 .content(List.of(content))
                 .build();
 
         try {
             deltaFilesService.ingress(ingressEventItem, created, OffsetDateTime.now());
-            return new IngressResult(resolvedFlow, did, content);
+            return new IngressResult(flow, did, content);
         } catch (EnqueueActionException e) {
             log.warn("DeltaFile {} was ingressed but the next action could not be queued at this time", did);
-            return new IngressResult(resolvedFlow, did, content);
+            return new IngressResult(flow, did, content);
         } catch (Exception e) {
             log.warn("Ingress failed, removing content and metadata for {}", did);
             deltaFilesService.deleteContentAndMetadata(did, content);

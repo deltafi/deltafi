@@ -47,18 +47,19 @@ public class ActionEventQueueTest {
     private final static String DGS_QUEUE_NAME = "dgs-" + QUEUE_NAME;
     private final static String GOOD_BASIC = """
             {
-                "did": "did",
-                "action": "flowName.ActionName",
-                "start": "2021-07-11T13:44:22.183Z",
-                "stop": "2021-07-11T13:44:22.184Z",
-                "type": "ENRICH",
-                "enrich": {
-                    "enrichments": [ { "name": "sampleEnrichment", "value": "enrichmentData", "mediaType": "application/octet-stream" } ],
-                    "annotations": {
-                        "first": "one",
-                        "second": "two"
-                    }
+              "did": "did",
+              "action": "flowName.ActionName",
+              "start": "2021-07-11T13:44:22.183Z",
+              "stop": "2021-07-11T13:44:22.184Z",
+              "type": "TRANSFORM",
+              "transform": [
+                {
+                  "annotations": {
+                    "first": "one",
+                    "second": "two"
+                  }
                 }
+              ]
             }
             """;
     private final static String GOOD_UNICODE = """
@@ -67,26 +68,24 @@ public class ActionEventQueueTest {
                 "action": "āȂ.̃Є",
                 "start": "2021-07-11T13:44:22.183Z",
                 "stop": "2021-07-11T13:44:22.184Z",
-                "type": "ENRICH",
-                "enrich": {
-                    "enrichments": [ { "name": "sampleEnrichment", "value": "enrichmentData", "mediaType": "application/octet-stream" } ],
+                "type": "TRANSFORM",
+                "transform": [{
                     "annotations": {
                         "first": "one",
                         "second": "two"
                     }
-                }
+                }]
             }
             """;
     private final static String EXTRA_FIELDS_IGNORED = """
             {
                 "did": "did",
                 "extra": "field",
-                "action": "sampleEnrich.SampleEnrichAction",
+                "action": "sampleTransform.SampleTransformAction",
                 "start": "2021-07-11T13:44:22.183Z",
                 "stop": "2021-07-11T13:44:22.184Z",
-                "type": "ENRICH",
+                "type": "TRANSFORM",
                 "somethingElse": {
-                    "enrichments": [ { "name": "sampleEnrichment", "value": "enrichmentData", "mediaType": "application/octet-stream" } ],
                     "annotations": {
                         "first": "one",
                         "second": "two"
@@ -100,9 +99,8 @@ public class ActionEventQueueTest {
                 "action": "\u0000\u0001醑Ȃ",
                 "start": "2021-07-11T13:44:22.183Z",
                 "stop": "2021-07-11T13:44:22.184Z",
-                "type": "ENRICH",
-                "enrich": {
-                    "enrichments": [ { "name": "sampleEnrichment", "value": "enrichmentData", "mediaType": "application/octet-stream" } ],
+                "type": "TRANSFORM",
+                "transform": {
                     "annotations": {
                         "first": "one",
                         "second": "two"
@@ -113,12 +111,11 @@ public class ActionEventQueueTest {
     private final static String INVALID_DATE = """
             {
                 "did": "did",
-                "action": "sampleEnrich.SampleEnrichAction",
+                "action": "sampleTransform.SampleTransformAction",
                 "start": "NOTADATETIME",
                 "stop": "2021-07-11T13:44:22.184Z",
-                "type": "ENRICH",
-                "enrich": {
-                    "enrichments": [ { "name": "sampleEnrichment", "value": "enrichmentData", "mediaType": "application/octet-stream" } ],
+                "type": "TRANSFORM",
+                "transform": {
                     "annotations": {
                         "first": "one",
                         "second": "two"
@@ -129,17 +126,16 @@ public class ActionEventQueueTest {
     private final static String METRICS_OVERFLOW = """
             {
                 "did": "did",
-                "action": "sampleEnrich.SampleEnrichAction",
+                "action": "sampleTransform.SampleTransformAction",
                 "start": "2021-07-11T13:44:22.183Z",
                 "stop": "2021-07-11T13:44:22.184Z",
-                "type": "ENRICH",
+                "type": "TRANSFORM",
                 "metrics": [
                     {
                         "name": "my-metric", "value": 12345678901234567890, "tags": { "this": "that" }
                      }
                 ],
-                "enrich": {
-                    "enrichments": [ { "name": "sampleEnrichment", "value": "enrichmentData", "mediaType": "application/octet-stream" } ],
+                "transform": {
                     "annotations": {
                         "first": "one",
                         "second": "two"

@@ -31,15 +31,18 @@ import java.util.Map;
 @SuperBuilder
 public class TransformEvent {
     // optional name, used to rename children when splitting
-    private String name;
+    @Builder.Default
+    private String name = "";
 
-    private List<Content> content;
+    @Builder.Default
+    private List<Content> content = new ArrayList<>();
 
     @Builder.Default
     private Map<String, String> annotations = new HashMap<>();
 
     @Builder.Default
     private Map<String, String> metadata = new HashMap<>();
+
     @Builder.Default
     private List<String> deleteMetadataKeys = new ArrayList<>();
 }

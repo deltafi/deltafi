@@ -92,7 +92,7 @@ class SchemaComplianceValidatorTest {
         FlowConfigError error = errors.get(0);
         assertThat(error.getConfigName()).isEqualTo("egressAction");
         assertThat(error.getErrorType()).isEqualTo(FlowErrorType.INVALID_CONFIG);
-        assertThat(error.getMessage()).isEqualTo("Action: org.deltafi.passthrough.action.RoteFormatAction is not registered as an action of type EGRESS");
+        assertThat(error.getMessage()).isEqualTo("Action: org.deltafi.core.action.RestPostEgressAction is not registered as an action of type EGRESS");
     }
 
     @Test

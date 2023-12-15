@@ -54,7 +54,6 @@ import org.deltafi.core.services.*;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.snapshot.SystemSnapshotDatafetcherTestHelper;
 import org.deltafi.core.snapshot.SystemSnapshotRepo;
-import org.deltafi.core.types.FlowAssignmentRule;
 import org.deltafi.core.types.PluginVariables;
 import org.deltafi.core.types.ResumePolicy;
 import org.deltafi.core.types.*;
@@ -117,7 +116,6 @@ import static org.deltafi.common.types.ActionState.QUEUED;
 import static org.deltafi.common.types.DeltaFile.CURRENT_SCHEMA_VERSION;
 import static org.deltafi.core.datafetchers.DeletePolicyDatafetcherTestHelper.*;
 import static org.deltafi.core.datafetchers.DeltaFilesDatafetcherTestHelper.*;
-import static org.deltafi.core.datafetchers.FlowAssignmentDatafetcherTestHelper.*;
 import static org.deltafi.core.metrics.MetricsUtil.extendTagsForAction;
 import static org.deltafi.core.metrics.MetricsUtil.tagsFor;
 import static org.deltafi.core.plugin.PluginDataFetcherTestHelper.*;
@@ -172,9 +170,6 @@ class DeltaFiCoreApplicationTests {
 
 	@Autowired
 	DeletePolicyRepo deletePolicyRepo;
-
-	@Autowired
-	FlowAssignmentRuleRepo flowAssignmentRuleRepo;
 
 	@Autowired
 	PluginRepository pluginRepository;
@@ -286,7 +281,6 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.deleteAll();
 		deltaFiPropertiesRepo.save(new DeltaFiProperties());
 		deltaFileRepo.deleteAll();
-		flowAssignmentRuleRepo.deleteAll();
 		resumePolicyRepo.deleteAll();
 		resumePolicyService.refreshCache();
 		loadConfig();
@@ -1589,142 +1583,6 @@ class DeltaFiCoreApplicationTests {
 		variables.setVariables(List.of(Variable.builder().name("key").value("test").description("description").dataType(VariableDataType.STRING).build()));
 		pluginVariableRepo.save(variables);
 		assertTrue(FlowPlanDatafetcherTestHelper.setPluginVariableValues(dgsQueryExecutor));
-	}
-
-	@Test
-	void testLoadFlowAssignmentRules() {
-		Result result = saveFirstRule(dgsQueryExecutor);
-		assertTrue(result.isSuccess());
-		assertTrue(result.getErrors().isEmpty());
-		assertEquals(1, flowAssignmentRuleRepo.count());
-
-		Result badResult = saveBadRule(dgsQueryExecutor, false);
-		assertFalse(badResult.isSuccess());
-		assertEquals("missing rule name", badResult.getErrors().get(0));
-
-		// Verify firstRule still present since replaceAll was false
-		assertEquals(1, flowAssignmentRuleRepo.count());
-
-		// Verify firstRule removed present since replaceAll was true
-		saveBadRule(dgsQueryExecutor, true);
-		assertEquals(0, flowAssignmentRuleRepo.count());
-	}
-
-	@Test
-	void testGetAllFlowAssignmentRules() {
-		List<Result> results = saveAllRules(dgsQueryExecutor);
-		// Verify saved 4, and 5th was invalid
-		assertEquals(4, flowAssignmentRuleRepo.count());
-		assertFalse(results.get(4).isSuccess());
-		List<FlowAssignmentRule> assignmentList = getAllFlowAssignmentRules(dgsQueryExecutor);
-		// Verify ordered by priority, then flow
-		assertEquals(4, assignmentList.size());
-		assertEquals(RULE_NAME4, assignmentList.get(0).getName());
-		assertEquals(RULE_NAME2, assignmentList.get(1).getName());
-		assertEquals(RULE_NAME1, assignmentList.get(2).getName());
-		assertEquals(RULE_NAME3, assignmentList.get(3).getName());
-
-		// Verify generates a unique id for each rule
-		Set<String> ids = new HashSet<>();
-		for (FlowAssignmentRule rule : assignmentList) {
-			ids.add(rule.getId());
-		}
-		assertEquals(4, ids.size());
-
-	}
-
-	private String getIdByRuleName(String name) {
-		for (FlowAssignmentRule rule : getAllFlowAssignmentRules(dgsQueryExecutor)) {
-			if (rule.getName().equals(name)) {
-				return rule.getId();
-			}
-		}
-		return null;
-	}
-
-	@Test
-	void testRemoveFlowAssignmentRules() {
-		saveFirstRule(dgsQueryExecutor);
-		saveSecondRuleSet(dgsQueryExecutor);
-		assertEquals(2, flowAssignmentRuleRepo.count());
-
-		String id = getIdByRuleName(RULE_NAME1);
-		assertTrue(removeFlowAssignment(dgsQueryExecutor, id));
-		assertEquals(1, flowAssignmentRuleRepo.count());
-		assertFalse(removeFlowAssignment(dgsQueryExecutor, "not-found"));
-		assertEquals(1, flowAssignmentRuleRepo.count());
-	}
-
-	@Test
-	void testGetFlowAssignment() {
-		saveFirstRule(dgsQueryExecutor);
-		saveSecondRuleSet(dgsQueryExecutor);
-
-		FlowAssignmentRule first =
-				getFlowAssignment(dgsQueryExecutor, getIdByRuleName(RULE_NAME1));
-		FlowAssignmentRule second =
-				getFlowAssignment(dgsQueryExecutor, getIdByRuleName(RULE_NAME2));
-		FlowAssignmentRule notFound =
-				getFlowAssignment(dgsQueryExecutor, "notfound");
-
-		assertEquals(RULE_NAME1, first.getName());
-		assertEquals(FLOW_NAME1, first.getFlow());
-		assertEquals(FILENAME_REGEX, first.getFilenameRegex());
-
-		assertEquals(RULE_NAME2, second.getName());
-		assertEquals(FLOW_NAME2, second.getFlow());
-		assertEquals(META_KEY, second.getRequiredMetadata().get(0).getKey());
-		assertEquals(META_VALUE, second.getRequiredMetadata().get(0).getValue());
-
-		assertNull(notFound);
-	}
-
-	@Test
-	void testFlowAssignmentDuplicateName() {
-		List<Result> results = loadRulesWithDuplicates(dgsQueryExecutor);
-		assertTrue(results.get(0).isSuccess());
-		assertFalse(results.get(1).isSuccess());
-	}
-
-	@Test
-	void testUpdateFlowAssignmentRule() {
-		saveFirstRule(dgsQueryExecutor);
-		saveSecondRuleSet(dgsQueryExecutor);
-
-		FlowAssignmentRule first =
-				getFlowAssignment(dgsQueryExecutor, getIdByRuleName(RULE_NAME1));
-		FlowAssignmentRule second =
-				getFlowAssignment(dgsQueryExecutor, getIdByRuleName(RULE_NAME2));
-
-		Result result = updateFlowAssignmentRule(dgsQueryExecutor,
-				first.getId(), second.getName(), 100);
-		assertFalse(result.isSuccess());
-		assertTrue(result.getErrors().contains("duplicate rule name"));
-
-		result = updateFlowAssignmentRule(dgsQueryExecutor,
-				first.getId(), "new-name", -1);
-		assertFalse(result.isSuccess());
-		assertTrue(result.getErrors().contains("invalid priority"));
-
-		result = updateFlowAssignmentRule(dgsQueryExecutor,
-				null, "new-name", 100);
-		assertFalse(result.isSuccess());
-		assertTrue(result.getErrors().contains("id is missing"));
-
-		result = updateFlowAssignmentRule(dgsQueryExecutor,
-				"notFound", "new-name", 100);
-		assertFalse(result.isSuccess());
-		assertTrue(result.getErrors().contains("rule not found"));
-
-		result = updateFlowAssignmentRule(dgsQueryExecutor,
-				first.getId(), "new-name", 100);
-		assertTrue(result.isSuccess());
-
-		FlowAssignmentRule updated =
-				getFlowAssignment(dgsQueryExecutor, first.getId());
-
-		assertEquals("new-name", updated.getName());
-		assertEquals(100, updated.getPriority());
 	}
 
 	@Test

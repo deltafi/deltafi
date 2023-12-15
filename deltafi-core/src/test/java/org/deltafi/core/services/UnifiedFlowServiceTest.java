@@ -42,14 +42,14 @@ class UnifiedFlowServiceTest {
 
     @Test
     void testRunningTransformActions() {
-        TransformActionConfiguration transformFlowAction = mock(TransformActionConfiguration.class);
         TransformFlow transformFlow = mock(TransformFlow.class);
-        when(transformFlow.getTransformActions()).thenReturn(List.of(transformFlowAction));
-        TransformActionConfiguration normalizeFlowAction = mock(TransformActionConfiguration.class);
+        TransformActionConfiguration transformFlowAction = mock(TransformActionConfiguration.class);
+        TransformActionConfiguration transformFlowAction2 = mock(TransformActionConfiguration.class);
+        when(transformFlow.getTransformActions()).thenReturn(List.of(transformFlowAction, transformFlowAction2));
 
         when(transformFlowService.getRunningFlows()).thenReturn(List.of(transformFlow));
 
-        assertEquals(List.of(transformFlowAction, normalizeFlowAction), unifiedFlowService.runningTransformActions());
+        assertEquals(List.of(transformFlowAction, transformFlowAction2), unifiedFlowService.runningTransformActions());
     }
 
     @Test
@@ -57,13 +57,13 @@ class UnifiedFlowServiceTest {
         TransformActionConfiguration transformFlowAction = mock(TransformActionConfiguration.class);
         when(transformFlowAction.getName()).thenReturn("anotherAction");
         TransformFlow transformFlow = mock(TransformFlow.class);
-        when(transformFlow.getTransformActions()).thenReturn(List.of(transformFlowAction));
-        TransformActionConfiguration normalizeFlowAction = mock(TransformActionConfiguration.class);
-        when(normalizeFlowAction.getName()).thenReturn("testAction");
+        TransformActionConfiguration transformFlowAction2 = mock(TransformActionConfiguration.class);
+        when(transformFlowAction2.getName()).thenReturn("testAction");
+        when(transformFlow.getTransformActions()).thenReturn(List.of(transformFlowAction, transformFlowAction2));
 
         when(transformFlowService.getRunningFlows()).thenReturn(List.of(transformFlow));
 
-        assertEquals(normalizeFlowAction, unifiedFlowService.runningAction("testAction", ActionType.TRANSFORM));
+        assertEquals(transformFlowAction2, unifiedFlowService.runningAction("testAction", ActionType.TRANSFORM));
     }
 
     @Test
@@ -86,8 +86,6 @@ class UnifiedFlowServiceTest {
     @Test
     void testAllActionConfigurations() {
         ActionConfiguration transformAction = mock(ActionConfiguration.class);
-        ActionConfiguration normalizeAction = mock(ActionConfiguration.class);
-        ActionConfiguration enrichAction = mock(ActionConfiguration.class);
         ActionConfiguration egressAction = mock(ActionConfiguration.class);
 
         TransformFlow transformFlow = mock(TransformFlow.class);
@@ -99,7 +97,7 @@ class UnifiedFlowServiceTest {
         when(transformFlowService.getAll()).thenReturn(List.of(transformFlow));
         when(egressFlowService.getAll()).thenReturn(List.of(egressFlow));
 
-        assertEquals(List.of(transformAction, normalizeAction, enrichAction, egressAction),
+        assertEquals(List.of(transformAction, egressAction),
                 unifiedFlowService.allActionConfigurations());
     }
 }

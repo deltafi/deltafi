@@ -1,28 +1,30 @@
 {
     "did": "%1$s",
-  "action": "sampleNormalize.SampleTransformAction",
+    "action": "sampleNormalize.SampleTransformAction",
     "start": "2021-07-11T13:44:22.183Z",
     "stop": "2021-07-11T13:44:22.184Z",
     "type": "TRANSFORM",
-    "transform": {
-      "content": [
-          {
-              "name": "transformed",
-              "segments": [{
-                  "uuid": "objectName",
-                  "offset": 0,
-                  "size": 500,
-                  "did": "%1$s" }],
-              "mediaType": "application/octet-stream"
-          }
-        ],
-        "metadata": {
-            "sampleType": "sample-type",
-            "sampleVersion": "2.1"
-        },
-        "annotations": {
-            "transformKey": "transformValue"
-        },
-        "deleteMetadataKeys": ["deleteMe"]
-    }
+    "transform": [
+      {
+        "content": [
+            {
+                "name": "transformed",
+                "segments": [{
+                    "uuid": "objectName",
+                    "offset": 0,
+                    "size": 500,
+                    "did": "%1$s" }],
+                "mediaType": "application/octet-stream"
+            }
+          ],
+          "metadata": {
+              "sampleType": "sample-type",
+              "sampleVersion": "2.1"
+          },
+          "annotations": {
+              "transformKey": "transformValue"
+          },
+          "deleteMetadataKeys": ["deleteMe"]
+      }
+    ]
 }

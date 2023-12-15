@@ -19,7 +19,6 @@ package org.deltafi.core.services;
 
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.snapshot.types.EgressFlowSnapshot;
-import org.deltafi.core.snapshot.types.TransformFlowSnapshot;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -37,7 +36,6 @@ class AnnotationServiceTest {
 
     private static final Set<String> ANNOTATION_KEYS = Set.of("a", "b");
     public static final String FLOW = "flow";
-
 
     @InjectMocks
     AnnotationService annotationService;
@@ -76,13 +74,9 @@ class AnnotationServiceTest {
     @Test
     void resetFromSnapshot() {
         SystemSnapshot systemSnapshot = new SystemSnapshot();
-        systemSnapshot.setTransformFlows(List.of(transformFlowSnapshot("transformNoChange", ANNOTATION_KEYS),
-                transformFlowSnapshot("transformChanged", ANNOTATION_KEYS), transformFlowSnapshot("emptyset", Set.of())));
-
         systemSnapshot.setEgressFlows(List.of(egressFlowSnapshot("egressNoChange", ANNOTATION_KEYS),
                 egressFlowSnapshot("egressChanged", ANNOTATION_KEYS), egressFlowSnapshot("nullset", null)));
 
-        Mockito.when(egressFlowService.setExpectedAnnotations("egressNoChange", ANNOTATION_KEYS)).thenReturn(false);
         Mockito.when(egressFlowService.setExpectedAnnotations("egressChanged", ANNOTATION_KEYS)).thenReturn(true);
         Mockito.when(egressFlowService.setExpectedAnnotations("nullset", null)).thenReturn(true);
 
@@ -90,14 +84,7 @@ class AnnotationServiceTest {
 
         Mockito.verify(egressFlowService, Mockito.times(3)).setExpectedAnnotations(Mockito.any(), Mockito.any());
         Mockito.verify(deltaFilesService, Mockito.times(2)).asyncUpdatePendingAnnotationsForFlows(Mockito.any(), Mockito.anySet());
-        Mockito.verify(deltaFilesService).asyncUpdatePendingAnnotationsForFlows("transformChanged", ANNOTATION_KEYS);
         Mockito.verify(deltaFilesService).asyncUpdatePendingAnnotationsForFlows("egressChanged", ANNOTATION_KEYS);
-    }
-
-    TransformFlowSnapshot transformFlowSnapshot(String name, Set<String> expectedAnnotations) {
-        TransformFlowSnapshot flowSnapshot = new TransformFlowSnapshot(name);
-        flowSnapshot.setExpectedAnnotations(expectedAnnotations);
-        return flowSnapshot;
     }
 
     EgressFlowSnapshot egressFlowSnapshot(String name, Set<String> expectedAnnotations) {
