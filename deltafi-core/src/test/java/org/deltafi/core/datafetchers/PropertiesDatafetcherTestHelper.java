@@ -34,7 +34,7 @@ public class PropertiesDatafetcherTestHelper {
     private static final String ADD_DELTA_FILE_LINK = "mutation($link: LinkInput!) {saveDeltaFileLink(link: $link)}";
 
     public static List<PropertySet> getPropertySets(DgsQueryExecutor dgsQueryExecutor) {
-        String query = "query {getPropertySets {id displayName description properties {key value hidden editable refreshable}}}";
+        String query = "query {getPropertySets {id displayName description properties {key value refreshable}}}";
         return dgsQueryExecutor.executeAndExtractJsonPath(query, "data.getPropertySets");
     }
 

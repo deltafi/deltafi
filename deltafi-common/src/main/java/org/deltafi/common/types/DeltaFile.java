@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 @Builder
 @Document
 public class DeltaFile {
+  // TODO - change the name of the collection and create a shard key, remove the old collection or migrate over?
   @Id
   private String did;
   private List<String> parentDids;

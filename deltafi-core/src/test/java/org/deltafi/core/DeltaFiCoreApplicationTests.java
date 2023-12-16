@@ -1360,7 +1360,7 @@ class DeltaFiCoreApplicationTests {
 
 		SystemFlows flows = FlowPlanDatafetcherTestHelper.getAllFlows(dgsQueryExecutor);
 		assertThat(flows.getTransform()).hasSize(1).matches(transformFlows -> TRANSFORM_FLOW_NAME.equals(transformFlows.get(0).getName()));
-		assertThat(flows.getTimedIngress()).hasSize(1).matches(normalizeFlows -> NORMALIZE_FLOW_NAME.equals(normalizeFlows.get(0).getName()));
+		assertThat(flows.getTimedIngress()).hasSize(1).matches(timedIngressFlows -> TIMED_INGRESS_FLOW_NAME.equals(timedIngressFlows.get(0).getName()));
 		assertThat(flows.getEgress()).hasSize(1).matches(egressFlows -> EGRESS_FLOW_NAME.equals(egressFlows.get(0).getName()));
 	}
 

@@ -82,7 +82,7 @@ public class FlowPlanDatafetcherTestHelper {
 
     public static SystemFlows getAllFlows(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetAllFlowsGraphQLQuery.newRequest().build(),
-                new GetAllFlowsProjectionRoot().transform().name().parent().egress().name().root(), SystemFlows.class);
+                new GetAllFlowsProjectionRoot().timedIngress().name().parent().transform().name().parent().egress().name().root(), SystemFlows.class);
     }
 
     public static TransformFlow getTransformFlow(DgsQueryExecutor dgsQueryExecutor) {

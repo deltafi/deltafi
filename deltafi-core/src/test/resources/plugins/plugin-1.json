@@ -37,16 +37,12 @@
           "description": "A description of property 1",
           "defaultValue": "property1Default",
           "refreshable": true,
-          "editable": true,
-          "hidden": false,
           "value": "property1Value"
         },{
           "key": "property2",
           "description": "A description of property 2",
           "defaultValue": "property2Default",
           "refreshable": false,
-          "editable": false,
-          "hidden": true,
           "value": "property2Value"
         }
       ]
@@ -60,16 +56,12 @@
           "description": "A description of property 3",
           "defaultValue": "property3Default",
           "refreshable": true,
-          "editable": true,
-          "hidden": false,
           "value": "property3Value"
         },{
           "key": "property4",
           "description": "A description of property 4",
           "defaultValue": "property4Default",
           "refreshable": false,
-          "editable": false,
-          "hidden": true,
           "value": "property4Value"
         }
       ]
