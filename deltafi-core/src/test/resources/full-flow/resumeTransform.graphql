@@ -21,7 +21,7 @@ mutation {
         dids: ["%1$s"],
         resumeMetadata: [
             {
-                flow: "sampleNormalize"
+                flow: "sampleTransform"
                 action: "SampleTransformAction"
                 metadata: [
                     { key: "AuthorizedBy", value: "ABC"},

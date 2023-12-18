@@ -34,7 +34,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
-import static org.deltafi.core.util.Constants.NORMALIZE_FLOW_NAME;
 import static org.deltafi.core.util.Constants.TIMED_INGRESS_FLOW_NAME;
 
 public class FlowPlanDatafetcherTestHelper {
@@ -63,7 +62,7 @@ public class FlowPlanDatafetcherTestHelper {
 
     public static FlowNames getFlowNames(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetFlowNamesGraphQLQuery.newRequest().build(),
-                new GetFlowNamesProjectionRoot().transform().egress(), FlowNames.class);
+                new GetFlowNamesProjectionRoot().transform().egress().timedIngress(), FlowNames.class);
     }
 
     public static EgressFlow validateEgressFlow(DgsQueryExecutor dgsQueryExecutor) {
@@ -140,10 +139,6 @@ public class FlowPlanDatafetcherTestHelper {
         return executeQuery(dgsQueryExecutor, RemoveTransformFlowPlanGraphQLQuery.newRequest().name("flowPlan").build());
     }
 
-    public static boolean removeNormalizeFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, RemoveNormalizeFlowPlanGraphQLQuery.newRequest().name("flowPlan").build());
-    }
-
     public static boolean removeEgressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, RemoveEgressFlowPlanGraphQLQuery.newRequest().name("flowPlan").build());
     }
@@ -158,14 +153,6 @@ public class FlowPlanDatafetcherTestHelper {
 
     public static boolean stopTransformFlow(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, StopTransformFlowGraphQLQuery.newRequest().flowName("sampleTransform").build());
-    }
-
-    public static boolean startNormalizeFlow(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, StartNormalizeFlowGraphQLQuery.newRequest().flowName(NORMALIZE_FLOW_NAME).build());
-    }
-
-    public static boolean stopNormalizeFlow(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, StopNormalizeFlowGraphQLQuery.newRequest().flowName(NORMALIZE_FLOW_NAME).build());
     }
 
     public static boolean startEgressFlow(DgsQueryExecutor dgsQueryExecutor) {

@@ -34,7 +34,6 @@ public class Constants {
 
     public static final String TIMED_INGRESS_FLOW_NAME = "sampleTimedIngress";
     public static final String TIMED_INGRESS_ERROR_FLOW_NAME = "sampleTimedIngressError";
-    public static final String NORMALIZE_FLOW_NAME = "sampleNormalize";
     public static final String EGRESS_FLOW_NAME = "sampleEgress";
     public static final String TRANSFORM_FLOW_NAME = "sampleTransform";
     public static final String MISSING_FLOW_NAME = "missingFlow";
@@ -48,6 +47,4 @@ public class Constants {
 
     public final static Map<String, String> SOURCE_METADATA = new HashMap<>(Map.of("AuthorizedBy", "XYZ", "removeMe", "whatever"));
     public final static Map<String, String> TRANSFORM_METADATA = Map.of("sampleType", "sample-type", "sampleVersion", "2.1");
-    public final static Map<String, String> LOAD_METADATA = Map.of("loadSampleType", "load-sample-type", "loadSampleVersion", "2.2");
-    public final static Map<String, String> LOAD_WRONG_METADATA = Map.of("loadSampleType", "wrong-sample-type", "loadSampleVersion", "2.2");
 }

@@ -29,7 +29,7 @@ public class FlowBuilders {
     public static TimedIngressFlow buildTimedIngressFlow(FlowState flowState) {
         TimedIngressActionConfiguration tic = new TimedIngressActionConfiguration("SampleTimedIngressAction", "type");
 
-        return buildFlow(TIMED_INGRESS_FLOW_NAME, tic, flowState, false, "*/5 * * * * *", NORMALIZE_FLOW_NAME);
+        return buildFlow(TIMED_INGRESS_FLOW_NAME, tic, flowState, false, "*/5 * * * * *", TRANSFORM_FLOW_NAME);
     }
 
     public static TimedIngressFlow buildTimedIngressErrorFlow(FlowState flowState) {

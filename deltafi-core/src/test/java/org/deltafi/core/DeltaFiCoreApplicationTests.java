@@ -579,17 +579,6 @@ class DeltaFiCoreApplicationTests {
 		deleteRunner.runDeletes();
 	}
 
-	@Test
-	void testTransformUtf8() throws IOException {
-		String did = UUID.randomUUID().toString();
-		deltaFileRepo.save(postIngressDeltaFile(did));
-
-		deltaFilesService.handleActionEvent(actionEvent("transformUtf8", did));
-
-		verifyActionEventResults(postTransformUtf8DeltaFile(did), ActionContext.builder().flow(NORMALIZE_FLOW_NAME).name("sampleNormalize.SampleTransformAction").build());
-		verifyCommonMetrics(ActionEventType.TRANSFORM, "Utf8TransformAction", NORMALIZE_FLOW_NAME, null, "type");
-	}
-
 	@SuppressWarnings("SameParameterValue")
 	private void verifyCommonMetrics(ActionEventType actionEventType,
 									 String actionName,
@@ -601,24 +590,6 @@ class DeltaFiCoreApplicationTests {
 		extendTagsForAction(tags, className);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.ACTION_EXECUTION_TIME_MS, 1).addTags(tags));
 		Mockito.verifyNoMoreInteractions(metricService);
-	}
-
-	@Test
-	void testTransform() throws IOException {
-		String did = UUID.randomUUID().toString();
-		deltaFileRepo.save(postTransformUtf8DeltaFile(did));
-
-		deltaFilesService.handleActionEvent(actionEvent("transform", did));
-
-		verifyActionEventResults(postTransformDeltaFile(did), ActionContext.builder().flow(NORMALIZE_FLOW_NAME).name("sampleNormalize.SampleLoadAction").build());
-
-		DeltaFile deltaFile = deltaFileRepo.findById(did).orElseThrow();
-		// check that the deleted metadata key worked
-		Map<String, String> expectedMetadata = new HashMap<>(SOURCE_METADATA);
-		expectedMetadata.putAll(TRANSFORM_METADATA);
-		assertEquals(expectedMetadata, deltaFile.getMetadata());
-
-		verifyCommonMetrics(ActionEventType.TRANSFORM, "SampleTransformAction", NORMALIZE_FLOW_NAME, null, "type");
 	}
 
 	@Test
@@ -636,10 +607,10 @@ class DeltaFiCoreApplicationTests {
 		assertTrue(retryResults.get(0).getSuccess());
 
 		DeltaFile expected = postResumeTransformDeltaFile(did);
-		verifyActionEventResults(expected, ActionContext.builder().flow(NORMALIZE_FLOW_NAME).name("sampleNormalize.SampleTransformAction").build());
+		verifyActionEventResults(expected, ActionContext.builder().flow(TRANSFORM_FLOW_NAME).name("sampleTransform.SampleTransformAction").build());
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
-		deltaFile.errorAction(NORMALIZE_FLOW_NAME, "SampleTransformAction", OffsetDateTime.now(), OffsetDateTime.now(), "cause", "context");
+		deltaFile.errorAction(TRANSFORM_FLOW_NAME, "SampleTransformAction", OffsetDateTime.now(), OffsetDateTime.now(), "cause", "context");
 		deltaFileRepo.save(deltaFile);
 
 		List<PerActionUniqueKeyValues> errorMetadataUnion = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
@@ -649,7 +620,7 @@ class DeltaFiCoreApplicationTests {
 
 		assertEquals(1, errorMetadataUnion.size());
 		assertEquals("SampleTransformAction", errorMetadataUnion.get(0).getAction());
-		assertEquals(List.of("AuthorizedBy", "anotherKey", "deleteMe"), errorMetadataUnion.get(0).getKeyVals().stream().map(UniqueKeyValues::getKey).sorted().toList());
+		assertEquals(List.of("AuthorizedBy", "anotherKey"), errorMetadataUnion.get(0).getKeyVals().stream().map(UniqueKeyValues::getKey).sorted().toList());
 
 		Mockito.verifyNoInteractions(metricService);
 	}
@@ -695,13 +666,13 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testColdRequeue() {
 		String did = UUID.randomUUID().toString();
-		DeltaFile postTransform = postTransformDeltaFile(did);
+		DeltaFile postTransform = transformFlowPostTransformDeltaFile(did);
 		postTransform.getActions().get(postTransform.getActions().size() - 1).setState(ActionState.COLD_QUEUED);
 		deltaFileRepo.save(postTransform);
 
 		queueManagementService.coldToWarm();
 
-		verifyActionEventResults(postTransformDeltaFile(did), ActionContext.builder().flow(NORMALIZE_FLOW_NAME).name("sampleNormalize.SampleLoadAction").build());
+		verifyActionEventResults(transformFlowPostTransformDeltaFile(did), ActionContext.builder().flow(TRANSFORM_FLOW_NAME).name("sampleTransform.SampleEgressAction").build());
 	}
 
 	// TODO - turn this into testing a split from a transform
@@ -816,7 +787,7 @@ class DeltaFiCoreApplicationTests {
 	void runErrorWithAutoResume(Integer autoResumeDelay, boolean withAnnotation) throws IOException {
 		String did = UUID.randomUUID().toString();
 		String policyName = null;
-		DeltaFile original = postTransformDeltaFile(did);
+		DeltaFile original = transformFlowPostTransformDeltaFile(did);
 		deltaFileRepo.save(original);
 
 		if (autoResumeDelay != null) {
@@ -847,7 +818,7 @@ class DeltaFiCoreApplicationTests {
 		}
 		assertEqualsIgnoringDates(expected, actual);
 
-		Map<String, String> tags = tagsFor(ActionEventType.ERROR, "AuthorityValidateAction", NORMALIZE_FLOW_NAME, EGRESS_FLOW_NAME);
+		Map<String, String> tags = tagsFor(ActionEventType.ERROR, "AuthorityValidateAction", TRANSFORM_FLOW_NAME, EGRESS_FLOW_NAME);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_ERRORED, 1).addTags(tags));
 
@@ -934,7 +905,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testCancel() throws IOException {
 		String did = UUID.randomUUID().toString();
-		DeltaFile deltaFile = postTransformUtf8DeltaFile(did);
+		DeltaFile deltaFile = transformFlowPostTransformUtf8DeltaFile(did);
 		deltaFileRepo.save(deltaFile);
 
 		List<CancelResult> cancelResults = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
@@ -971,52 +942,11 @@ class DeltaFiCoreApplicationTests {
 	private ArgumentCaptor<Metric> metricCaptor;
 
 	@Test
-	void testEgress() throws IOException {
-		String did = UUID.randomUUID().toString();
-		deltaFileRepo.save(postTransformDeltaFile(did));
-
-		deltaFilesService.handleActionEvent(actionEvent("egress", did));
-
-		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
-		assertEqualsIgnoringDates(postEgressDeltaFile(did), deltaFile);
-
-		Mockito.verify(actionEventQueue, never()).putActions(any(), anyBoolean());
-		Map<String, String> tags = tagsFor(ActionEventType.EGRESS, "SampleEgressAction", NORMALIZE_FLOW_NAME, EGRESS_FLOW_NAME);
-		Map<String, String> classTags = tagsFor(ActionEventType.EGRESS, "SampleEgressAction", NORMALIZE_FLOW_NAME, EGRESS_FLOW_NAME);
-		classTags.put(DeltaFiConstants.CLASS, "type");
-
-		Mockito.verify(metricService, Mockito.atLeast(5)).increment(metricCaptor.capture());
-		List<Metric> metrics = metricCaptor.getAllValues();
-		MatcherAssert.assertThat(
-				metrics.stream().map(Metric::getName).collect(Collectors.toList()),
-				Matchers.containsInAnyOrder(
-						DeltaFiConstants.FILES_IN,
-						DeltaFiConstants.FILES_OUT,
-						DeltaFiConstants.BYTES_OUT,
-						DeltaFiConstants.EXECUTION_TIME_MS,
-						DeltaFiConstants.ACTION_EXECUTION_TIME_MS
-				));
-		for (Metric metric : metrics) {
-			switch (metric.getName()) {
-				case DeltaFiConstants.FILES_IN -> assertEquals(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags), metric);
-				case DeltaFiConstants.FILES_OUT -> assertEquals(new Metric(DeltaFiConstants.FILES_OUT, 1).addTag("destination", "final").addTags(tags), metric);
-				case DeltaFiConstants.BYTES_OUT -> assertEquals(new Metric(DeltaFiConstants.BYTES_OUT, 42).addTag("destination", "final").addTags(tags), metric);
-				case DeltaFiConstants.EXECUTION_TIME_MS ->
-					// Dont care about value...
-						assertEquals(new Metric(DeltaFiConstants.EXECUTION_TIME_MS, metric.getValue()).addTags(tags), metric);
-				case DeltaFiConstants.ACTION_EXECUTION_TIME_MS ->
-					// Dont care about value...
-						assertEquals(new Metric(DeltaFiConstants.ACTION_EXECUTION_TIME_MS, metric.getValue()).addTags(classTags), metric);
-			}
-		}
-	}
-
-	@Test
 	void testToEgressWithTestModeEgress() throws IOException {
 		configureTestEgress();
 
 		String did = UUID.randomUUID().toString();
-		deltaFileRepo.save(postTransformDeltaFile(did));
+		deltaFileRepo.save(transformFlowPostEgressDeltaFile(did));
 
 		deltaFilesService.handleActionEvent(actionEvent("validateAuthority", did));
 
@@ -1028,13 +958,13 @@ class DeltaFiCoreApplicationTests {
 		);
 		MatcherAssert.assertThat(deltaFile.getTestModeReason(), containsString(EGRESS_FLOW_NAME));
 		Mockito.verify(actionEventQueue, never()).putActions(any(), anyBoolean());
-		verifyCommonMetrics(ActionEventType.TRANSFORM, "SampleTransformAction", NORMALIZE_FLOW_NAME, EGRESS_FLOW_NAME, "type");
+		verifyCommonMetrics(ActionEventType.TRANSFORM, "SampleTransformAction", TRANSFORM_FLOW_NAME, EGRESS_FLOW_NAME, "type");
 	}
 
 	@Test
 	void testReplay() throws IOException {
 		String did = UUID.randomUUID().toString();
-		deltaFileRepo.save(postEgressDeltaFile(did));
+		deltaFileRepo.save(transformFlowPostEgressDeltaFile(did));
 
 		List<RetryResult> results = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("replay"), did),
@@ -1050,16 +980,16 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(results.get(0).getDid(), parent.getReplayDid());
 		assertNotNull(parent.getReplayed());
 
-		DeltaFile expected = postIngressDeltaFile(did);
+		DeltaFile expected = transformFlowPostIngressDeltaFile(did);
 		expected.setDid(parent.getChildDids().get(0));
 		expected.setParentDids(List.of(did));
-		expected.getActions().get(0).setMetadata(Map.of("AuthorizedBy", "ABC", "sourceInfo.filename.original", "input.txt", "sourceInfo.flow.original", NORMALIZE_FLOW_NAME, "removeMe.original", "whatever", "AuthorizedBy.original", "XYZ", "anotherKey", "anotherValue"));
-		expected.getActions().get(1).setFlow("theFlow");
-		expected.getActions().get(1).setName("SampleLoadAction");
+		expected.getActions().get(0).setMetadata(Map.of("AuthorizedBy", "ABC", "sourceInfo.filename.original", "input.txt", "sourceInfo.flow.original", TRANSFORM_FLOW_NAME, "removeMe.original", "whatever", "AuthorizedBy.original", "XYZ", "anotherKey", "anotherValue"));
+		expected.getActions().get(1).setFlow("sampleTransform");
+		expected.getActions().get(1).setName("Utf8TransformAction");
 		expected.getSourceInfo().setFilename("newFilename");
-		expected.getSourceInfo().setFlow("theFlow");
-		expected.getSourceInfo().setMetadata(Map.of("AuthorizedBy", "ABC", "sourceInfo.filename.original", "input.txt", "sourceInfo.flow.original", NORMALIZE_FLOW_NAME, "removeMe.original", "whatever", "AuthorizedBy.original", "XYZ", "anotherKey", "anotherValue"));
-		verifyActionEventResults(expected, ActionContext.builder().flow("theFlow").name("theFlow.SampleLoadAction").build());
+		expected.getSourceInfo().setFlow("sampleTransform");
+		expected.getSourceInfo().setMetadata(Map.of("AuthorizedBy", "ABC", "sourceInfo.filename.original", "input.txt", "sourceInfo.flow.original", TRANSFORM_FLOW_NAME, "removeMe.original", "whatever", "AuthorizedBy.original", "XYZ", "anotherKey", "anotherValue"));
+		verifyActionEventResults(expected, ActionContext.builder().flow("sampleTransform").name("sampleTransform.Utf8TransformAction").build());
 
 		List<RetryResult> secondResults = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
 				String.format(graphQL("replay"), did),
@@ -1074,7 +1004,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testReplayContentDeleted() throws IOException {
 		String did = UUID.randomUUID().toString();
-		DeltaFile contentDeletedDeltaFile = postEgressDeltaFile(did);
+		DeltaFile contentDeletedDeltaFile = transformFlowPostEgressDeltaFile(did);
 		contentDeletedDeltaFile.setContentDeleted(OffsetDateTime.now());
 		contentDeletedDeltaFile.setContentDeletedReason("aged off");
 		deltaFileRepo.save(contentDeletedDeltaFile);
@@ -1115,13 +1045,13 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testFilterTransform() throws IOException {
 		String did = UUID.randomUUID().toString();
-		verifyFiltered(postIngressDeltaFile(did), TRANSFORM_FLOW_NAME, "Utf8TransformAction", true);
+		verifyFiltered(transformFlowPostIngressDeltaFile(did), TRANSFORM_FLOW_NAME, "Utf8TransformAction", true);
 	}
 
 	@Test
 	void testFilterEgress() throws IOException {
 		String did = UUID.randomUUID().toString();
-		verifyFiltered(postTransformDeltaFile(did), "sampleEgress", "SampleEgressAction", true);
+		verifyFiltered(transformFlowPostTransformDeltaFile(did), "sampleEgress", "SampleEgressAction", true);
 	}
 
 	@SuppressWarnings("SameParameterValue")
@@ -1397,7 +1327,7 @@ class DeltaFiCoreApplicationTests {
 		refreshFlowCaches();
 
 		List<ActionFamily> actionFamilies = FlowPlanDatafetcherTestHelper.getActionFamilies(dgsQueryExecutor);
-		assertThat(actionFamilies).hasSize(9);
+		assertThat(actionFamilies).hasSize(4);
 
 		assertThat(getActionNames(actionFamilies, "INGRESS")).hasSize(1).contains(INGRESS_ACTION);
 		assertThat(getActionNames(actionFamilies, "TRANSFORM")).hasSize(2).contains("Utf8TransformAction", "SampleTransformAction");
@@ -1666,11 +1596,11 @@ class DeltaFiCoreApplicationTests {
 		String did1 = UUID.randomUUID().toString();
 		String did2 = UUID.randomUUID().toString();
 		String did3 = UUID.randomUUID().toString();
-		DeltaFile before1 = postTransformDeltaFile(did1);
+		DeltaFile before1 = transformFlowPostTransformDeltaFile(did1);
 		deltaFileRepo.save(before1);
-		DeltaFile before2 = postTransformDeltaFile(did2);
+		DeltaFile before2 = transformFlowPostTransformDeltaFile(did2);
 		deltaFileRepo.save(before2);
-		DeltaFile before3 = postTransformDeltaFile(did3);
+		DeltaFile before3 = transformFlowPostTransformDeltaFile(did3);
 		before3.getSourceInfo().setFlow("flow3");
 		deltaFileRepo.save(before3);
 
@@ -1997,38 +1927,38 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void testFindReadyForAutoResume() {
-		Action ingress = Action.builder().flow(NORMALIZE_FLOW_NAME).name("ingress").modified(MONGO_NOW).state(ActionState.COMPLETE).build();
-		Action hit = Action.builder().flow(NORMALIZE_FLOW_NAME).name("hit").modified(MONGO_NOW).state(ActionState.ERROR).build();
-		Action miss = Action.builder().flow(NORMALIZE_FLOW_NAME).name("miss").modified(MONGO_NOW).state(ActionState.ERROR).build();
-		Action notSet = Action.builder().flow(NORMALIZE_FLOW_NAME).name("notSet").modified(MONGO_NOW).state(ActionState.ERROR).build();
-		Action other = Action.builder().flow(NORMALIZE_FLOW_NAME).name("other").modified(MONGO_NOW).state(ActionState.COMPLETE).build();
+		Action ingress = Action.builder().flow(TRANSFORM_FLOW_NAME).name("ingress").modified(MONGO_NOW).state(ActionState.COMPLETE).build();
+		Action hit = Action.builder().flow(TRANSFORM_FLOW_NAME).name("hit").modified(MONGO_NOW).state(ActionState.ERROR).build();
+		Action miss = Action.builder().flow(TRANSFORM_FLOW_NAME).name("miss").modified(MONGO_NOW).state(ActionState.ERROR).build();
+		Action notSet = Action.builder().flow(TRANSFORM_FLOW_NAME).name("notSet").modified(MONGO_NOW).state(ActionState.ERROR).build();
+		Action other = Action.builder().flow(TRANSFORM_FLOW_NAME).name("other").modified(MONGO_NOW).state(ActionState.COMPLETE).build();
 
-		DeltaFile shouldResume = buildDeltaFile("did", NORMALIZE_FLOW_NAME, DeltaFileStage.ERROR, MONGO_NOW, MONGO_NOW);
+		DeltaFile shouldResume = buildDeltaFile("did", TRANSFORM_FLOW_NAME, DeltaFileStage.ERROR, MONGO_NOW, MONGO_NOW);
 		shouldResume.setNextAutoResume(MONGO_NOW.minusSeconds(1000));
 		shouldResume.setActions(Arrays.asList(ingress, hit, other));
 		deltaFileRepo.save(shouldResume);
 
-		DeltaFile shouldNotResume = buildDeltaFile("did2", NORMALIZE_FLOW_NAME, DeltaFileStage.ERROR, MONGO_NOW, MONGO_NOW);
+		DeltaFile shouldNotResume = buildDeltaFile("did2", TRANSFORM_FLOW_NAME, DeltaFileStage.ERROR, MONGO_NOW, MONGO_NOW);
 		shouldNotResume.setNextAutoResume(MONGO_NOW.plusSeconds(1000));
 		shouldNotResume.setActions(Arrays.asList(ingress, miss));
 		deltaFileRepo.save(shouldNotResume);
 
-		DeltaFile notResumable = buildDeltaFile("did3", NORMALIZE_FLOW_NAME, DeltaFileStage.ERROR, MONGO_NOW, MONGO_NOW);
+		DeltaFile notResumable = buildDeltaFile("did3", TRANSFORM_FLOW_NAME, DeltaFileStage.ERROR, MONGO_NOW, MONGO_NOW);
 		notResumable.setActions(Arrays.asList(ingress, notSet));
 		deltaFileRepo.save(notResumable);
 
-		DeltaFile cancelled = buildDeltaFile("did4", NORMALIZE_FLOW_NAME, DeltaFileStage.CANCELLED, MONGO_NOW, MONGO_NOW);
+		DeltaFile cancelled = buildDeltaFile("did4", TRANSFORM_FLOW_NAME, DeltaFileStage.CANCELLED, MONGO_NOW, MONGO_NOW);
 		cancelled.setNextAutoResume(MONGO_NOW.minusSeconds(1000));
 		cancelled.setActions(Arrays.asList(ingress, hit, other));
 		deltaFileRepo.save(cancelled);
 
-		DeltaFile contentDeleted = buildDeltaFile("did5", NORMALIZE_FLOW_NAME, DeltaFileStage.ERROR, MONGO_NOW, MONGO_NOW);
+		DeltaFile contentDeleted = buildDeltaFile("did5", TRANSFORM_FLOW_NAME, DeltaFileStage.ERROR, MONGO_NOW, MONGO_NOW);
 		contentDeleted.setNextAutoResume(MONGO_NOW.minusSeconds(1000));
 		contentDeleted.setActions(Arrays.asList(ingress, hit, other));
 		contentDeleted.setContentDeleted(MONGO_NOW);
 		deltaFileRepo.save(contentDeleted);
 
-		DeltaFile shouldAlsoResume = buildDeltaFile("did6", NORMALIZE_FLOW_NAME, DeltaFileStage.ERROR, MONGO_NOW, MONGO_NOW);
+		DeltaFile shouldAlsoResume = buildDeltaFile("did6", TRANSFORM_FLOW_NAME, DeltaFileStage.ERROR, MONGO_NOW, MONGO_NOW);
 		shouldAlsoResume.setNextAutoResume(MONGO_NOW.minusSeconds(1000));
 		shouldAlsoResume.setActions(Arrays.asList(ingress, hit, other));
 		deltaFileRepo.save(shouldAlsoResume);
@@ -2043,7 +1973,7 @@ class DeltaFiCoreApplicationTests {
 
 		Mockito.verify(metricService).increment
 				(new Metric(DeltaFiConstants.FILES_AUTO_RESUMED, 2)
-						.addTag(DeltaFiConstants.INGRESS_FLOW, NORMALIZE_FLOW_NAME));
+						.addTag(DeltaFiConstants.INGRESS_FLOW, TRANSFORM_FLOW_NAME));
 		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
@@ -3146,7 +3076,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(1, actual.countPerFlow().size());
 		List<String> expectedDids = List.of("did");
 		CountPerFlow message0 = actual.countPerFlow().get(0);
-		assertThat(message0.getFlow()).isEqualTo(NORMALIZE_FLOW_NAME);
+		assertThat(message0.getFlow()).isEqualTo(TRANSFORM_FLOW_NAME);
 		assertThat(message0.getDids()).isEqualTo(expectedDids);
 	}
 
@@ -3186,18 +3116,18 @@ class DeltaFiCoreApplicationTests {
 	private void loadFilteredDeltaFiles(OffsetDateTime plusTwo) {
 		deltaFileRepo.deleteAll();
 
-		DeltaFile deltaFile = postTransformDeltaFile("did");
+		DeltaFile deltaFile = transformFlowPostTransformDeltaFile("did");
 		deltaFile.setFiltered(true);
 		deltaFile.getActions().add(filteredAction("filtered one"));
 		deltaFile.getActions().add(filteredAction("filtered two"));
 
-		DeltaFile tooNew = postTransformDeltaFile("did2");
+		DeltaFile tooNew = transformFlowPostTransformDeltaFile("did2");
 		tooNew.setFiltered(true);
 		tooNew.getSourceInfo().setFlow("other");
 		tooNew.setModified(plusTwo);
 		tooNew.getActions().add(filteredAction("another message"));
 
-		DeltaFile notMarkedFiltered = postTransformDeltaFile("did3");
+		DeltaFile notMarkedFiltered = transformFlowPostTransformDeltaFile("did3");
 		notMarkedFiltered.setFiltered(null);
 		notMarkedFiltered.getSourceInfo().setFlow("other");
 		notMarkedFiltered.setModified(plusTwo);
@@ -3209,7 +3139,7 @@ class DeltaFiCoreApplicationTests {
 	private Action filteredAction(String message) {
 		Action action = new Action();
 		action.setName("someAction");
-		action.setFlow(NORMALIZE_FLOW_NAME);
+		action.setFlow(TRANSFORM_FLOW_NAME);
 		action.setFilteredCause(message);
 		action.setState(ActionState.FILTERED);
 		return action;
@@ -3647,7 +3577,7 @@ class DeltaFiCoreApplicationTests {
 				.parentDids(new ArrayList<>())
 				.childDids(new ArrayList<>())
 				.ingressBytes(36L)
-				.sourceInfo(new SourceInfo("filename", NORMALIZE_FLOW_NAME, metadata))
+				.sourceInfo(new SourceInfo("filename", TRANSFORM_FLOW_NAME, metadata))
 				.stage(DeltaFileStage.IN_FLIGHT)
 				.created(OffsetDateTime.now())
 				.modified(OffsetDateTime.now())
@@ -3669,7 +3599,7 @@ class DeltaFiCoreApplicationTests {
 		verifyActionEventResults(ingressedFromAction(did, TIMED_INGRESS_FLOW_NAME),
 				ActionContext.builder().flow("sampleNormalize").name("sampleNormalize.Utf8TransformAction").build());
 
-		Map<String, String> tags = tagsFor(ActionEventType.INGRESS, "SampleTimedIngressAction", NORMALIZE_FLOW_NAME, null);
+		Map<String, String> tags = tagsFor(ActionEventType.INGRESS, "SampleTimedIngressAction", TRANSFORM_FLOW_NAME, null);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.BYTES_IN, 36).addTags(tags));
 
