@@ -31,7 +31,7 @@ import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.*;
 
-import static org.deltafi.common.constant.DeltaFiConstants.SYNTHETIC_EGRESS_ACTION_FOR_TEST_EGRESS;
+import static org.deltafi.common.constant.DeltaFiConstants.SYNTHETIC_EGRESS_ACTION_FOR_TEST;
 
 @Service
 @AllArgsConstructor
@@ -45,6 +45,8 @@ public class StateMachine {
     private final QueueManagementService queueManagementService;
     private final CollectEntryService collectEntryService;
     private final ScheduledCollectService scheduledCollectService;
+
+    // TODO: detect flows that don't have a followon flow
 
     List<ActionInvocation> advance(DeltaFile deltaFile) {
         return advance(deltaFile, false, new HashMap<>());
@@ -131,8 +133,8 @@ public class StateMachine {
         }
 
         if (transformFlow.isTestMode()) {
-            deltaFile.queueAction(transformFlow.getName(), SYNTHETIC_EGRESS_ACTION_FOR_TEST_EGRESS, ActionType.EGRESS, false);
-            deltaFile.completeAction(transformFlow.getName(), SYNTHETIC_EGRESS_ACTION_FOR_TEST_EGRESS, OffsetDateTime.now(), OffsetDateTime.now());
+            deltaFile.queueAction(transformFlow.getName(), SYNTHETIC_EGRESS_ACTION_FOR_TEST, ActionType.EGRESS, false);
+            deltaFile.completeAction(transformFlow.getName(), SYNTHETIC_EGRESS_ACTION_FOR_TEST, OffsetDateTime.now(), OffsetDateTime.now());
             deltaFile.addEgressFlow(transformFlow.getName());
             deltaFile.setTestModeReason("Transform flow '" + transformFlow.getName() + "' in test mode");
             return Collections.emptyList();
@@ -165,8 +167,8 @@ public class StateMachine {
                                                                                    DeltaFile deltaFile) {
         if (egressFlow.isTestMode()) {
             // TODO: test mode should be passed from flow to flow in the DeltaFile
-            deltaFile.queueAction(egressFlow.getName(), SYNTHETIC_EGRESS_ACTION_FOR_TEST_EGRESS, ActionType.EGRESS, false);
-            deltaFile.completeAction(egressFlow.getName(), SYNTHETIC_EGRESS_ACTION_FOR_TEST_EGRESS, OffsetDateTime.now(), OffsetDateTime.now());
+            deltaFile.queueAction(egressFlow.getName(), SYNTHETIC_EGRESS_ACTION_FOR_TEST, ActionType.EGRESS, false);
+            deltaFile.completeAction(egressFlow.getName(), SYNTHETIC_EGRESS_ACTION_FOR_TEST, OffsetDateTime.now(), OffsetDateTime.now());
             deltaFile.addEgressFlow(egressFlow.getName());
             deltaFile.setTestModeReason("Egress flow '" + egressFlow.getName() + "' in test mode");
         } else {

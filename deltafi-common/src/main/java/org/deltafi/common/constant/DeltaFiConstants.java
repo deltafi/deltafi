@@ -22,14 +22,12 @@ public class DeltaFiConstants {
     private DeltaFiConstants(){}
 
     public static final String ADMIN_PERMISSION = "Admin";
-    public static final String AUTO_RESOLVE_FLOW_NAME = "auto-resolve";
     public static final String INGRESS_ACTION = "IngressAction";
     public static final String INVALID_ACTION_EVENT_RECEIVED = "Invalid action event received";
     public static final String MONGO_MAP_KEY_DOT_REPLACEMENT = ";;";
     public static final String NO_EGRESS_FLOW_CONFIGURED_ACTION = "NoEgressFlowConfiguredAction";
     public static final String PERMISSIONS_HEADER = "X-User-Permissions";
-    public static final String SYNTHETIC_EGRESS_ACTION_FOR_TEST_NORMALIZE = "SyntheticEgressActionForTestNormalize";
-    public static final String SYNTHETIC_EGRESS_ACTION_FOR_TEST_EGRESS = "SyntheticEgressActionForTestEgress";
+    public static final String SYNTHETIC_EGRESS_ACTION_FOR_TEST = "SyntheticEgressActionForTestEgress";
     public static final String USER_HEADER = "X-User-Name";
 
     // Metric names
