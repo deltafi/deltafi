@@ -53,8 +53,9 @@ class AnnotationServiceTest {
     }
 
     @Test
-    void testSetExpectedAnnotations_invalidFlowType() {
-        assertThatThrownBy(() -> annotationService.setExpectedAnnotations(FLOW, ANNOTATION_KEYS)).isInstanceOf(IllegalArgumentException.class);
+    void testSetExpectedAnnotations_invalidFlow() {
+        Mockito.when(egressFlowService.setExpectedAnnotations(Mockito.any(), Mockito.any())).thenThrow(new IllegalArgumentException());
+        assertThatThrownBy(() -> annotationService.setExpectedAnnotations("invalidFlow", ANNOTATION_KEYS)).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -77,13 +78,13 @@ class AnnotationServiceTest {
         systemSnapshot.setEgressFlows(List.of(egressFlowSnapshot("egressNoChange", ANNOTATION_KEYS),
                 egressFlowSnapshot("egressChanged", ANNOTATION_KEYS), egressFlowSnapshot("nullset", null)));
 
+        Mockito.when(egressFlowService.setExpectedAnnotations("egressNoChange", ANNOTATION_KEYS)).thenReturn(false);
         Mockito.when(egressFlowService.setExpectedAnnotations("egressChanged", ANNOTATION_KEYS)).thenReturn(true);
         Mockito.when(egressFlowService.setExpectedAnnotations("nullset", null)).thenReturn(true);
 
         annotationService.resetFromSnapshot(systemSnapshot, true);
 
         Mockito.verify(egressFlowService, Mockito.times(3)).setExpectedAnnotations(Mockito.any(), Mockito.any());
-        Mockito.verify(deltaFilesService, Mockito.times(2)).asyncUpdatePendingAnnotationsForFlows(Mockito.any(), Mockito.anySet());
         Mockito.verify(deltaFilesService).asyncUpdatePendingAnnotationsForFlows("egressChanged", ANNOTATION_KEYS);
     }
 

@@ -266,7 +266,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
      */
     public FlowT getFlowOrThrow(String flowName) {
         return flowRepo.findById(flowName)
-                .orElseThrow(() -> new DgsEntityNotFoundException("No " + flowType + " flow exists with the name: " + flowName));
+                .orElseThrow(() -> new IllegalArgumentException("No " + flowType + " flow exists with the name: " + flowName));
     }
 
     /**
