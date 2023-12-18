@@ -31,8 +31,7 @@ import java.util.Map;
 @SuperBuilder
 public class TransformEvent {
     // optional name, used to rename children when splitting
-    @Builder.Default
-    private String name = "";
+    private String name;
 
     @Builder.Default
     private List<Content> content = new ArrayList<>();

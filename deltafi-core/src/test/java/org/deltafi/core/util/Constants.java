@@ -41,7 +41,6 @@ public class Constants {
     public static final String CONTENT_DATA = "STARLORD was here";
     public static final String METADATA = "{\"key\": \"value\"}";
     public static final String FILENAME = "incoming.txt";
-    public static final String FLOW = "theFlow";
     public static final String MEDIA_TYPE = MediaType.APPLICATION_OCTET_STREAM;
     public static final String USERNAME = "myname";
 

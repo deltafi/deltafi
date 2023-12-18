@@ -4,30 +4,32 @@
     "start": "2021-07-11T13:44:22.183Z",
     "stop": "2021-07-11T13:44:22.184Z",
     "type": "TRANSFORM",
-    "transform": {
-        "content": [
-            {
-                "name": "transformed1",
-                "segments": [{
-                    "uuid": "objectName1",
-                    "offset": 0,
-                    "size": 250,
-                    "did": "%1$s" }],
-                "mediaType": "application/octet-stream"
-            },
-            {
-                "name": "transformed2",
-                "segments": [{
-                    "uuid": "objectName2",
-                    "offset": 250,
-                    "size": 250,
-                    "did": "%1$s" }],
-                "mediaType": "application/octet-stream"
+    "transform": [
+        {
+            "content": [
+                {
+                    "name": "transformed1",
+                    "segments": [{
+                        "uuid": "objectName1",
+                        "offset": 0,
+                        "size": 250,
+                        "did": "%1$s" }],
+                    "mediaType": "application/octet-stream"
+                },
+                {
+                    "name": "transformed2",
+                    "segments": [{
+                        "uuid": "objectName2",
+                        "offset": 250,
+                        "size": 250,
+                        "did": "%1$s" }],
+                    "mediaType": "application/octet-stream"
+                }
+            ],
+            "metadata": {
+                "sampleType": "sample-type",
+                "sampleVersion": "2.1"
             }
-        ],
-        "metadata": {
-            "sampleType": "sample-type",
-            "sampleVersion": "2.1"
         }
-    }
+    ]
 }

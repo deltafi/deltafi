@@ -118,7 +118,7 @@ public class FullFlowExemplars {
         OffsetDateTime nextAutoResume = autoRetryDelay == null ? null : STOP_TIME.plusSeconds(autoRetryDelay);
         DeltaFile deltaFile = transformFlowPostTransformDeltaFile(did);
         deltaFile.setStage(DeltaFileStage.ERROR);
-        deltaFile.errorAction("sampleEgress", "AuthorityValidateAction", START_TIME, STOP_TIME,
+        deltaFile.errorAction("sampleTransform", "SampleEgressAction", START_TIME, STOP_TIME,
                 "Authority XYZ not recognized", "Dead beef feed face cafe", nextAutoResume);
         if (policyName != null) {
             deltaFile.setNextAutoResumeReason(policyName);
@@ -128,7 +128,7 @@ public class FullFlowExemplars {
 
     public static DeltaFile postResumeDeltaFile(String did, String flow, String retryAction, ActionType actionType) {
         DeltaFile deltaFile = postErrorDeltaFile(did);
-        deltaFile.retryErrors(List.of(new ResumeMetadata("sampleEgress", "AuthorityValidateAction", Map.of("a", "b"), Collections.emptyList())));
+        deltaFile.retryErrors(List.of(new ResumeMetadata("sampleTransform", "SampleEgressAction", Map.of("a", "b"), Collections.emptyList())));
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
         deltaFile.getActions().add(Action.builder().flow(flow).name(retryAction).type(actionType).state(QUEUED).attempt(2).build());
         return deltaFile;

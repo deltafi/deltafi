@@ -818,7 +818,7 @@ class DeltaFiCoreApplicationTests {
 		}
 		assertEqualsIgnoringDates(expected, actual);
 
-		Map<String, String> tags = tagsFor(ActionEventType.ERROR, "AuthorityValidateAction", TRANSFORM_FLOW_NAME, EGRESS_FLOW_NAME);
+		Map<String, String> tags = tagsFor(ActionEventType.ERROR, "SampleEgressAction", TRANSFORM_FLOW_NAME, TRANSFORM_FLOW_NAME);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_ERRORED, 1).addTags(tags));
 
@@ -857,8 +857,8 @@ class DeltaFiCoreApplicationTests {
 		assertTrue(retryResults.get(0).getSuccess());
 		assertFalse(retryResults.get(1).getSuccess());
 
-		verifyActionEventResults(postResumeDeltaFile(did, "sampleEgress", "AuthorityValidateAction", ActionType.TRANSFORM),
-				ActionContext.builder().flow("sampleEgress").name("sampleEgress.AuthorityValidateAction").build());
+		verifyActionEventResults(postResumeDeltaFile(did, "sampleTransform", "SampleEgressAction", ActionType.TRANSFORM),
+				ActionContext.builder().flow("sampleTransform").name("sampleTransform.SampleEgressAction").build());
 
 		Mockito.verifyNoInteractions(metricService);
 	}
@@ -1051,7 +1051,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testFilterEgress() throws IOException {
 		String did = UUID.randomUUID().toString();
-		verifyFiltered(transformFlowPostTransformDeltaFile(did), "sampleEgress", "SampleEgressAction", true);
+		verifyFiltered(transformFlowPostTransformDeltaFile(did), "sampleTransform", "SampleEgressAction", true);
 	}
 
 	@SuppressWarnings("SameParameterValue")
@@ -1331,7 +1331,7 @@ class DeltaFiCoreApplicationTests {
 
 		assertThat(getActionNames(actionFamilies, "INGRESS")).hasSize(1).contains(INGRESS_ACTION);
 		assertThat(getActionNames(actionFamilies, "TRANSFORM")).hasSize(2).contains("Utf8TransformAction", "SampleTransformAction");
-		assertThat(getActionNames(actionFamilies, "EGRESS")).hasSize(1).contains("SampleEgressAction");
+		assertThat(getActionNames(actionFamilies, "EGRESS")).hasSize(2).contains("SampleEgressAction", "SampleEgressAction");
 		assertThat(getActionNames(actionFamilies, "TIMED_INGRESS")).hasSize(1).contains("SampleTimedIngressAction");
 	}
 
@@ -1736,7 +1736,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile second = deltaFilesService.ingress(INGRESS_INPUT_2, OffsetDateTime.now(), OffsetDateTime.now());
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(input.getDid());
-		deltaFile.errorAction(FLOW, "SampleLoadAction", START_TIME, STOP_TIME, "blah", "blah");
+		deltaFile.errorAction(TRANSFORM_FLOW_NAME, "Utf8TransformAction", START_TIME, STOP_TIME, "blah", "blah");
 		deltaFilesService.advanceAndSave(deltaFile);
 
 		DeltaFile erroredFile = deltaFilesService.getDeltaFile(input.getDid());
@@ -3538,7 +3538,7 @@ class DeltaFiCoreApplicationTests {
 		if (filename != null) {
 			headers.add("Filename", filename);
 		}
-		headers.add("Flow", FLOW);
+		headers.add("Flow", TRANSFORM_FLOW_NAME);
 		headers.add("Metadata", METADATA);
 		headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM);
 		headers.add(USER_HEADER, USERNAME);
@@ -3652,10 +3652,10 @@ class DeltaFiCoreApplicationTests {
 		String did2 = "did2";
 		Content content2 = new Content(FILENAME, MEDIA_TYPE, new Segment(FILENAME, 0, CONTENT_DATA.length(), did2));
 		List<IngressResult> ingressResults = List.of(
-				new IngressResult(FLOW, did1, content1),
-				new IngressResult(FLOW, did2, content2));
+				new IngressResult(TRANSFORM_FLOW_NAME, did1, content1),
+				new IngressResult(TRANSFORM_FLOW_NAME, did2, content2));
 
-		Mockito.when(ingressService.ingress(eq(FLOW), eq(FILENAME), eq(MEDIA_TYPE), eq(USERNAME), eq(METADATA), any(), any()))
+		Mockito.when(ingressService.ingress(eq(TRANSFORM_FLOW_NAME), eq(FILENAME), eq(MEDIA_TYPE), eq(USERNAME), eq(METADATA), any(), any()))
 				.thenReturn(ingressResults);
 
 		ResponseEntity<String> response = ingress(FILENAME, CONTENT_DATA.getBytes());
@@ -3666,7 +3666,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	@SneakyThrows
 	void testIngress_missingFilename() {
-		Mockito.when(ingressService.ingress(eq(FLOW), isNull(), eq(MEDIA_TYPE), eq(USERNAME), eq(METADATA), any(), any()))
+		Mockito.when(ingressService.ingress(eq(TRANSFORM_FLOW_NAME), isNull(), eq(MEDIA_TYPE), eq(USERNAME), eq(METADATA), any(), any()))
 				.thenThrow(new IngressMetadataException(""));
 
 		ResponseEntity<String> response = ingress(null, CONTENT_DATA.getBytes());
@@ -3676,7 +3676,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	@SneakyThrows
 	void testIngress_disabled() {
-		Mockito.when(ingressService.ingress(eq(FLOW), eq(FILENAME), eq(MEDIA_TYPE), eq(USERNAME), eq(METADATA), any(), any()))
+		Mockito.when(ingressService.ingress(eq(TRANSFORM_FLOW_NAME), eq(FILENAME), eq(MEDIA_TYPE), eq(USERNAME), eq(METADATA), any(), any()))
 				.thenThrow(new IngressUnavailableException(""));
 
 		ResponseEntity<String> response = ingress(FILENAME, CONTENT_DATA.getBytes());
@@ -3686,7 +3686,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	@SneakyThrows
 	void testIngress_storageLimit() {
-		Mockito.when(ingressService.ingress(eq(FLOW), eq(FILENAME), eq(MEDIA_TYPE), eq(USERNAME), eq(METADATA), any(), any()))
+		Mockito.when(ingressService.ingress(eq(TRANSFORM_FLOW_NAME), eq(FILENAME), eq(MEDIA_TYPE), eq(USERNAME), eq(METADATA), any(), any()))
 				.thenThrow(new IngressStorageException(""));
 
 		ResponseEntity<String> response = ingress(FILENAME, CONTENT_DATA.getBytes());
@@ -3696,7 +3696,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	@SneakyThrows
 	void testIngress_internalServerError() {
-		Mockito.when(ingressService.ingress(eq(FLOW), eq(FILENAME), eq(MEDIA_TYPE), eq(USERNAME), eq(METADATA), any(), any()))
+		Mockito.when(ingressService.ingress(eq(TRANSFORM_FLOW_NAME), eq(FILENAME), eq(MEDIA_TYPE), eq(USERNAME), eq(METADATA), any(), any()))
 				.thenThrow(new RuntimeException());
 
 		ResponseEntity<String> response = ingress(FILENAME, CONTENT_DATA.getBytes());

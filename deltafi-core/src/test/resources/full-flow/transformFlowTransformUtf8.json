@@ -4,17 +4,19 @@
     "start": "2021-07-11T13:44:22.183Z",
     "stop": "2021-07-11T13:44:22.184Z",
     "type": "TRANSFORM",
-    "transform": {
-        "content": [
-            {
-                "name": "file.json",
-                "segments": [{
-                    "uuid": "utf8ObjectName",
-                    "offset": 0,
-                    "size": 500,
-                    "did": "%1$s" }],
-                "mediaType": "application/octet-stream"
-            }
-        ]
-    }
+    "transform": [
+        {
+            "content": [
+                {
+                    "name": "file.json",
+                    "segments": [{
+                        "uuid": "utf8ObjectName",
+                        "offset": 0,
+                        "size": 500,
+                        "did": "%1$s" }],
+                    "mediaType": "application/octet-stream"
+                }
+            ]
+        }
+    ]
 }
