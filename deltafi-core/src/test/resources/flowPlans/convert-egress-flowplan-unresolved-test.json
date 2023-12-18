@@ -8,7 +8,7 @@
     "version": "0.17.0"
   },
   "egressAction": {
-    "name": "PassthroughEgressAction",
+    "name": "${missing.placeholder:defaultignored}",
     "type": "org.deltafi.core.action.RestPostEgressAction",
     "parameters": {
       "egressFlow": "egressFlow",
