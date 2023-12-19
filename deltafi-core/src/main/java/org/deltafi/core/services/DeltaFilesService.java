@@ -77,6 +77,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.deltafi.common.constant.DeltaFiConstants.*;
+import static org.deltafi.common.types.ActionType.EGRESS;
 import static org.deltafi.core.repo.DeltaFileRepoImpl.*;
 
 @Service
@@ -489,11 +490,11 @@ public class DeltaFilesService {
 
     private String egressFlow(String flow, String actionName, DeltaFile deltaFile) {
         Optional<Action> action = deltaFile.actionNamed(flow, actionName);
-        return action.map(value -> egressFlow(value, deltaFile)).orElse(null);
+        return action.map(this::egressFlow).orElse(null);
     }
 
-    private String egressFlow(Action action, DeltaFile deltaFile) {
-        return deltaFile.getEgressed() ? action.getFlow() : null;
+    private String egressFlow(Action action) {
+        return action.getType() == EGRESS ? action.getFlow() : null;
     }
 
     public void ingressFromAction(ActionEvent event) {
@@ -1462,8 +1463,7 @@ public class DeltaFilesService {
                     .actionConfiguration(actionConfiguration)
                     .flow(action.getFlow())
                     .deltaFile(deltaFile)
-                    // TODO: figure this out
-                    //.egressFlow(deltaFile.getStage() == EGRESS ? action.getFlow() : null)
+                    .egressFlow(action.getType() == EGRESS ? action.getFlow() : null)
                     .actionCreated(action.getCreated())
                     .action(action)
                     .collectedDids(deltaFile.getParentDids())
@@ -1475,7 +1475,7 @@ public class DeltaFilesService {
                 .actionConfiguration(actionConfiguration)
                 .flow(action.getFlow())
                 .deltaFile(deltaFile)
-                .egressFlow(egressFlow(action, deltaFile))
+                .egressFlow(egressFlow(action))
                 .actionCreated(action.getCreated())
                 .action(action)
                 .build();
@@ -1902,9 +1902,7 @@ public class DeltaFilesService {
         CollectingActionInvocation collectingActionInvocation = CollectingActionInvocation.builder()
                 .actionConfiguration(actionConfiguration)
                 .flow(collectEntry.getCollectDefinition().getFlow())
-                // TODO: figure this out
-                /*.egressFlow(collectEntry.getCollectDefinition().getStage() == EGRESS ?
-                        collectEntry.getCollectDefinition().getFlow() : null)*/
+                .egressFlow(action.getType() == EGRESS ? action.getFlow() : null)
                 .actionCreated(now)
                 .action(action)
                 .collectedDids(collectedDids)

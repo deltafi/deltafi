@@ -324,15 +324,6 @@ class DeltaFiCoreApplicationTests {
 		refreshFlowCaches();
 	}
 
-	void configureTestEgress() {
-		EgressActionConfiguration sampleEgress = new EgressActionConfiguration("SampleEgressAction", "type");
-
-		EgressFlow sampleEgressFlow = buildRunningFlow(EGRESS_FLOW_NAME, sampleEgress, true);
-
-		egressFlowRepo.save(sampleEgressFlow);
-		egressFlowService.refreshCache();
-	}
-
 	void loadEgressConfig() {
 		egressFlowRepo.deleteAll();
 
@@ -943,22 +934,22 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void testToEgressWithTestModeEgress() throws IOException {
-		configureTestEgress();
+		transformFlowService.getRunningFlowByName(TRANSFORM_FLOW_NAME).setTestMode(true);
 
 		String did = UUID.randomUUID().toString();
-		deltaFileRepo.save(transformFlowPostEgressDeltaFile(did));
+		deltaFileRepo.save(transformFlowPostTransformUtf8DeltaFile(did));
 
-		deltaFilesService.handleActionEvent(actionEvent("validateAuthority", did));
+		deltaFilesService.handleActionEvent(actionEvent("transformFlowTransform", did));
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 
 		assertEqualsIgnoringDates(
-				postTransformDeltaFileInTestMode(did, "sampleEgress", "SyntheticEgressActionForTestEgress"),
+				postTransformDeltaFileInTestMode(did, TRANSFORM_FLOW_NAME, "SyntheticEgressActionForTestEgress"),
 				deltaFile
 		);
-		MatcherAssert.assertThat(deltaFile.getTestModeReason(), containsString(EGRESS_FLOW_NAME));
+		MatcherAssert.assertThat(deltaFile.getTestModeReason(), containsString(TRANSFORM_FLOW_NAME));
 		Mockito.verify(actionEventQueue, never()).putActions(any(), anyBoolean());
-		verifyCommonMetrics(ActionEventType.TRANSFORM, "SampleTransformAction", TRANSFORM_FLOW_NAME, EGRESS_FLOW_NAME, "type");
+		verifyCommonMetrics(ActionEventType.TRANSFORM, "SampleTransformAction", TRANSFORM_FLOW_NAME, null, "type");
 	}
 
 	@Test
@@ -3401,8 +3392,7 @@ class DeltaFiCoreApplicationTests {
 		systemSnapshotRepo.save(SystemSnapshotDatafetcherTestHelper.expectedSnapshot());
 		Result result = SystemSnapshotDatafetcherTestHelper.restoreSnapshot(dgsQueryExecutor);
 
-		// this is not successful b/c it is trying to start flows and put flows in test mode that no longer exist
-		assertThat(result.isSuccess()).isFalse();
+		assertThat(result.isSuccess()).isTrue();
 	}
 
 	@Test
@@ -3597,7 +3587,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFilesService.handleActionEvent(actionEvent("ingress", did));
 
 		verifyActionEventResults(ingressedFromAction(did, TIMED_INGRESS_FLOW_NAME),
-				ActionContext.builder().flow("sampleNormalize").name("sampleNormalize.Utf8TransformAction").build());
+				ActionContext.builder().flow("sampleTransform").name("sampleTransform.Utf8TransformAction").build());
 
 		Map<String, String> tags = tagsFor(ActionEventType.INGRESS, "SampleTimedIngressAction", TRANSFORM_FLOW_NAME, null);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));

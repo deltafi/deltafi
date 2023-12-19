@@ -135,13 +135,15 @@ public class FullFlowExemplars {
     }
 
     public static DeltaFile postTransformDeltaFileInTestMode(String did, String flow, String expectedEgressActionName) {
-        DeltaFile deltaFile = transformFlowPostTransformDeltaFile(did);
+        DeltaFile deltaFile = transformFlowPostTransformUtf8DeltaFile(did);
         deltaFile.setStage(DeltaFileStage.COMPLETE);
+        Content content = new Content("transformed", "application/octet-stream", new Segment("objectName", 0, 500, did));
+        deltaFile.completeAction(flow, "SampleTransformAction", START_TIME, STOP_TIME, List.of(content), TRANSFORM_METADATA, List.of());
         deltaFile.queueAction(flow, expectedEgressActionName, ActionType.EGRESS, false);
         deltaFile.completeAction(flow, expectedEgressActionName, START_TIME, STOP_TIME);
-        deltaFile.completeAction(flow, "SampleTransformAction", START_TIME, STOP_TIME);
         deltaFile.setTestModeReason(expectedEgressActionName);
         deltaFile.setEgressed(false);
+        deltaFile.getEgress().add(new Egress(TRANSFORM_FLOW_NAME));
         return deltaFile;
     }
 
