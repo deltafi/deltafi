@@ -328,11 +328,11 @@ public class DeltaFile {
   }
 
   public Action lastAction() {
-    return getActions().get(getActions().size() - 1);
-  }
+    if (actions == null || actions.isEmpty()) {
+      return null;
+    }
 
-  public void removeLastAction() {
-    getActions().remove(lastAction());
+    return actions.get(actions.size() - 1);
   }
 
   public void errorAction(ActionEvent event) {
@@ -585,13 +585,13 @@ public class DeltaFile {
 
   public Action lastCompleteAction() {
     return getActions().stream()
-            .filter(Action::complete)
+            .filter(Action::completeOrRetried)
             .reduce((first, second) -> second)
             .orElse(null);
   }
 
   public @NotNull List<Content> lastContent() {
-    Action lastAction = lastAction();
+    Action lastAction = lastCompleteAction();
     if (lastAction == null || lastAction.getContent() == null) {
       return Collections.emptyList();
     }

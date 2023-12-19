@@ -1,6 +1,6 @@
 {
-  "name": "smoke",
-  "type": "INGRESS",
+  "name": "smoke-test",
+  "type": "TRANSFORM",
   "description": "Test flow that passes data through unchanged",
   "transformActions": [{
     "name": "SmokeTransformAction",
@@ -10,15 +10,12 @@
       "maxRoteDelayMS": "${maxRoteDelayMS}"
     }
   }],
-  "loadAction": {
-    "name": "SmokeLoadAction",
-    "type": "org.deltafi.passthrough.action.RoteLoadAction",
+  "egressAction": {
+    "name": "SmokeEgressAction",
+    "type": "org.deltafi.core.action.RestPostEgressAction",
     "parameters": {
-      "domains": [
-        "binary"
-      ],
-      "minRoteDelayMS": "${minRoteDelayMS}",
-      "maxRoteDelayMS": "${maxRoteDelayMS}"
+      "metadataKey": "deltafiMetadata",
+      "url": "${smokeEgressUrl}"
     }
   }
 }

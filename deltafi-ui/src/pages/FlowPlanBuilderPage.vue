@@ -252,12 +252,6 @@ const transformActionsTemplate = {
   collect: {},
 };
 
-const loadActionTemplate = {
-  flowActionType: "LOAD",
-  ...defaultActionKeys,
-  collect: {},
-};
-
 const egressActionTemplate = {
   flowActionType: "EGRESS",
   ...defaultActionKeys,

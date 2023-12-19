@@ -9,6 +9,6 @@
       "metadata": { "smoke":  "test" }
     }
   },
-  "targetFlow": "smoke",
+  "targetFlow": "smoke-test",
   "cronSchedule": "*/5 * * * * *"
 }

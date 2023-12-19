@@ -39,7 +39,6 @@ export default function useDeltaFiles() {
           filename: true,
           flow: true,
           metadata: true,
-          processingType: true,
         },
         stage: true,
         testMode: true,

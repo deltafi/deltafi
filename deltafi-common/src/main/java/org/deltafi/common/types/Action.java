@@ -88,7 +88,7 @@ public class Action {
     return !queued() && (state != ActionState.COLLECTING);
   }
 
-  boolean complete() {
-    return state == ActionState.COMPLETE;
+  boolean completeOrRetried() {
+    return state == ActionState.COMPLETE || state == ActionState.RETRIED;
   }
 }

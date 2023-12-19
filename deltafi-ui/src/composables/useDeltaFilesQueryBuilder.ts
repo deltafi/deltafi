@@ -39,7 +39,6 @@ export default function useDeltaFilesQueryBuilder() {
     filteredCause?: string | null;
     requeueMin?: string | null;
     stage?: string | null;
-    processingType?: string | null;
     egressed?: string | null;
     filtered?: string | null;
     testMode?: string | null;
@@ -69,7 +68,6 @@ export default function useDeltaFilesQueryBuilder() {
             sourceInfo: {
               ingressFlows: queryParams.ingressFlows,
               filename: queryParams.fileName,
-              processingType: queryParams.processingType ? new EnumType(queryParams.processingType) : null,
             },
             egressFlows: queryParams.egressFlows,
             stage: queryParams.stage ? new EnumType(queryParams.stage) : null,

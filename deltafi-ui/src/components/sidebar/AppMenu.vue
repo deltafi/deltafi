@@ -195,12 +195,6 @@ const staticMenuItems = ref([
         visible: computed(() => hasPermission("FlowView")),
       },
       {
-        name: "Ingress Routing",
-        icon: "fas fa-route fa-fw",
-        path: "/config/ingress-routing",
-        visible: computed(() => hasPermission("IngressRoutingRuleRead")),
-      },
-      {
         name: "Auto Resume",
         icon: "fas fa-clock-rotate-left fa-flip-horizontal fa-fw",
         path: "/config/auto-resume",
