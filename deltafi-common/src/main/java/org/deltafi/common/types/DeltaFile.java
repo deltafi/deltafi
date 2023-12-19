@@ -298,6 +298,23 @@ public class DeltaFile {
     return action;
   }
 
+  public Action split(ActionEvent event, List<String> childDids) {
+    Optional<Action> optionalAction = getActions().stream()
+            .filter(action -> action.getFlow().equals(event.getFlow()) && action.getName().equals(event.getAction()) && !action.terminal())
+            .findFirst();
+    if (optionalAction.isEmpty()) {
+      throw new UnexpectedActionException(event.getFlow(), event.getAction(), did, queuedActions());
+    }
+
+    Action action = optionalAction.get();
+    setActionState(action, ActionState.SPLIT, event.getStart(), event.getStop());
+
+    this.childDids = childDids;
+    this.stage = DeltaFileStage.COMPLETE;
+
+    return action;
+  }
+
   public void collectedAction(String flow, String name, OffsetDateTime start, OffsetDateTime stop) {
     getActions().stream()
             .filter(action -> action.getFlow().equals(flow) && action.getName().equals(name) && !action.terminal())
@@ -310,18 +327,8 @@ public class DeltaFile {
             .forEach(action -> setFilteredActionState(action, event.getStart(), event.getStop(), event.getFilter().getMessage(), event.getFilter().getContext()));
   }
 
-  public void reinjectAction(ActionEvent event) {
-    getActions().stream()
-            .filter(action -> action.getFlow().equals(event.getFlow()) && action.getName().equals(event.getAction()) && !action.terminal())
-            .forEach(action -> setActionState(action, ActionState.REINJECTED, event.getStart(), event.getStop()));
-  }
-
   public Action lastAction() {
     return getActions().get(getActions().size() - 1);
-  }
-
-  public void setLastActionReinjected() {
-    lastAction().setState(ActionState.REINJECTED);
   }
 
   public void removeLastAction() {
@@ -462,10 +469,6 @@ public class DeltaFile {
 
   public boolean hasFilteredAction() {
     return hasActionInState(ActionState.FILTERED);
-  }
-
-  public boolean hasReinjectedAction() {
-    return hasActionInState(ActionState.REINJECTED);
   }
 
   public boolean hasCollectingAction() {

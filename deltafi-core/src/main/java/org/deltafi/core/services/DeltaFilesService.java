@@ -617,15 +617,38 @@ public class DeltaFilesService {
             deltaFile.addAnnotations(transformEvent.getAnnotations());
             advanceAndSave(deltaFile);
         } else {
-            // TODO: create children
+            List<String> childDids = createChildren(deltaFile, event);
+            deltaFile.split(event, childDids);
+            deltaFileCacheService.save(deltaFile);
         }
     }
 
-    public void egress(DeltaFile deltaFile, ActionEvent event) {
-        // replicate the message that was sent to this action so we can republish the content and metadata that was processed
-        DeltaFileMessage sentMessage = deltaFile.forQueue();
+    public List<String> createChildren(DeltaFile deltaFile, ActionEvent event) {
+        List<ActionInvocation> actionInvocations = new ArrayList<>();
+        Map<String, Long> pendingQueued = new HashMap<>();
+        List<String> childDids = new ArrayList<>();
 
-        deltaFile.completeAction(event, sentMessage.getContentList(), sentMessage.getMetadata(), Collections.emptyList());
+        List<DeltaFile> childDeltaFiles = event.getTransform().stream().map(transformEvent -> {
+            String childDid = UUID.randomUUID().toString();
+            childDids.add(childDid);
+            DeltaFile child = createChildDeltaFile(deltaFile, childDid);
+            child.completeAction(event, transformEvent.getContent(), transformEvent.getMetadata(),
+                    transformEvent.getDeleteMetadataKeys());
+            child.addAnnotations(transformEvent.getAnnotations());
+            actionInvocations.addAll(advanceOnly(child, true, pendingQueued));
+            child.recalculateBytes();
+
+            return child;
+        }).toList();
+
+        deltaFileRepo.saveAll(childDeltaFiles);
+        enqueueActions(actionInvocations);
+
+        return childDids;
+    }
+
+    public void egress(DeltaFile deltaFile, ActionEvent event) {
+        deltaFile.completeAction(event, deltaFile.lastCompleteAction().getContent(), deltaFile.getMetadata(), Collections.emptyList());
         deltaFile.setEgressed(true);
 
         Set<String> expectedAnnotations = getPendingAnnotationsForFlow(event.getFlow());
@@ -811,151 +834,6 @@ public class DeltaFilesService {
                         .build())
                 .type(ActionEventType.UNKNOWN)
                 .build();
-    }
-
-    /*public void reinject(DeltaFile deltaFile, ActionEvent event) throws MissingEgressFlowException {
-        List<ReinjectEvent> reinjects = event.getReinject();
-        List<DeltaFile> childDeltaFiles = new ArrayList<>();
-        boolean encounteredError = false;
-        List<ActionInvocation> actionInvocations = new ArrayList<>();
-        Map<String, Long> pendingQueued = new HashMap<>();
-
-        List<String> allowedActions = new ArrayList<>();
-        if (transformFlowService.hasRunningFlow(deltaFile.getSourceInfo().getFlow())) {
-            TransformFlow transformFlow = transformFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow());
-            allowedActions.addAll(transformFlow.getTransformActions().stream().map(TransformActionConfiguration::getName).toList());
-        }
-
-        if (!allowedActions.contains(event.getAction())) {
-            deltaFile.errorAction(event, "Attempted to reinject from an Action that is not a TransformAction or LoadAction: " + event.getAction(), "");
-        } else if (reinjects.isEmpty()) {
-            deltaFile.errorAction(event, "Attempted to reinject DeltaFile into 0 children", "");
-        } else {
-            if (deltaFile.getChildDids() == null) {
-                deltaFile.setChildDids(new ArrayList<>());
-            }
-
-            OffsetDateTime now = OffsetDateTime.now(clock);
-
-            Set<String> transformationFlowsDisabled = transformFlowService.flowErrorsExceeded();
-            Map<String, ProcessingType> evaluatedFlows = new HashMap<>();
-
-            for (ReinjectEvent reinject : reinjects) {
-                // Before we build a DeltaFile, make sure the reinject makes sense to do--i.e. the flow is enabled and valid
-                ProcessingType processingType;
-                if (evaluatedFlows.containsKey(reinject.getFlow())) {
-                    processingType = evaluatedFlows.get(reinject.getFlow());
-                } else if (transformFlowService.hasRunningFlow(reinject.getFlow())) {
-                    if (transformationFlowsDisabled.contains(reinject.getFlow())) {
-                        deltaFile.errorAction(buildFlowIngressDisabledErrorEvent(deltaFile, event.getFlow(),
-                                event.getAction(), reinject.getFlow(), now));
-                        encounteredError = true;
-                        break;
-                    } else {
-                        processingType = ProcessingType.TRANSFORMATION;
-                        evaluatedFlows.put(reinject.getFlow(), processingType);
-                    }
-                } else {
-                    deltaFile.errorAction(buildNoChildFlowErrorEvent(deltaFile, event.getFlow(), event.getAction(),
-                            reinject.getFlow(), now));
-                    encounteredError = true;
-                    break;
-                }
-
-                Action action = Action.builder()
-                        .name(INGRESS_ACTION)
-                        .type(ActionType.INGRESS)
-                        .flow(reinject.getFlow())
-                        .state(ActionState.COMPLETE)
-                        .created(now)
-                        .modified(now)
-                        .content(reinject.getContent())
-                        .metadata(reinject.getMetadata())
-                        .build();
-
-                DeltaFile child = DeltaFile.builder()
-                        .schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
-                        .did(UUID.randomUUID().toString())
-                        .parentDids(List.of(deltaFile.getDid()))
-                        .childDids(Collections.emptyList())
-                        .requeueCount(0)
-                        .ingressBytes(ContentUtil.computeContentSize(reinject.getContent()))
-                        .stage(DeltaFileStage.INGRESS)
-                        .inFlight(true)
-                        .terminal(false)
-                        .contentDeletable(false)
-                        .actions(new ArrayList<>(List.of(action)))
-                        .sourceInfo(SourceInfo.builder()
-                                .flow(reinject.getFlow())
-                                .filename(reinject.getFilename())
-                                .metadata(reinject.getMetadata())
-                                .processingType(processingType)
-                                .build())
-                        .created(now)
-                        .modified(now)
-                        .egressed(false)
-                        .filtered(false)
-                        .build();
-
-                actionInvocations.addAll(advanceOnly(child, true, pendingQueued));
-
-                child.recalculateBytes();
-
-                childDeltaFiles.add(child);
-            }
-
-            if (!encounteredError) {
-                deltaFile.setChildDids(childDeltaFiles.stream().map(DeltaFile::getDid).toList());
-            }
-
-            deltaFile.reinjectAction(event);
-        }
-
-        advanceOnly(deltaFile, false, pendingQueued);
-
-        // do this in two shots.  saveAll performs a bulk insert, but only if all the entries are new
-        deltaFileCacheService.save(deltaFile);
-        if (!encounteredError) {
-            deltaFileRepo.saveAll(childDeltaFiles);
-
-            enqueueActions(actionInvocations);
-        }
-    }*/
-
-    public void splitForTransformationProcessingEgress(DeltaFile deltaFile) throws MissingEgressFlowException {
-        List<ActionInvocation> actionInvocations = new ArrayList<>();
-        Map<String, Long> pendingQueued = new HashMap<>();
-
-        if (Objects.isNull(deltaFile.getChildDids())) {
-            deltaFile.setChildDids(new ArrayList<>());
-        }
-
-        // remove the egress action, since we want the last transform to show SPLIT
-        deltaFile.removeLastAction();
-
-        List<Content> contentList = deltaFile.lastCompleteAction().getContent();
-
-        List<DeltaFile> childDeltaFiles = contentList.stream().map(content -> {
-            DeltaFile child = createChildDeltaFile(deltaFile, UUID.randomUUID().toString());
-            child.lastCompleteAction().setContent(Collections.singletonList(content));
-            deltaFile.getChildDids().add(child.getDid());
-
-            actionInvocations.addAll(advanceOnly(child, true, pendingQueued));
-
-            child.recalculateBytes();
-
-            return child;
-        }).toList();
-
-        deltaFile.setLastActionReinjected();
-
-        advanceOnly(deltaFile, false, pendingQueued);
-
-        // do this in two shots.  saveAll performs a bulk insert, but only if all the entries are new
-        deltaFileCacheService.save(deltaFile);
-        deltaFileRepo.saveAll(childDeltaFiles);
-
-        enqueueActions(actionInvocations);
     }
 
     private static DeltaFile createChildDeltaFile(DeltaFile deltaFile, String childDid) {

@@ -115,7 +115,7 @@ public class StateMachine {
     }
 
     private boolean skipTransform(DeltaFile deltaFile) {
-        return deltaFile.hasErroredAction() || deltaFile.hasFilteredAction() || deltaFile.hasReinjectedAction();
+        return deltaFile.hasErroredAction() || deltaFile.hasFilteredAction();
     }
 
     private List<ActionInvocation> internalAdvanceTransformation(TransformFlow transformFlow, DeltaFile deltaFile, boolean newDeltaFile, Map<String, Long> pendingQueued) {
@@ -134,7 +134,7 @@ public class StateMachine {
 
         if (transformFlow.isTestMode()) {
             deltaFile.queueAction(transformFlow.getName(), SYNTHETIC_EGRESS_ACTION_FOR_TEST, ActionType.EGRESS, false);
-            deltaFile.completeAction(transformFlow.getName(), SYNTHETIC_EGRESS_ACTION_FOR_TEST, OffsetDateTime.now(), OffsetDateTime.now());
+            deltaFile.completeAction(transformFlow.getName(), SYNTHETIC_EGRESS_ACTION_FOR_TEST, OffsetDateTime.now(), OffsetDateTime.now(), deltaFile.lastCompleteAction().getContent(), deltaFile.getMetadata(), List.of());
             deltaFile.addEgressFlow(transformFlow.getName());
             deltaFile.setTestModeReason("Transform flow '" + transformFlow.getName() + "' in test mode");
             return Collections.emptyList();
