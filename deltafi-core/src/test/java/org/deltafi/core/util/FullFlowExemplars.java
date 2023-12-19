@@ -28,13 +28,14 @@ import static org.deltafi.common.types.DeltaFile.CURRENT_SCHEMA_VERSION;
 import static org.deltafi.core.util.Constants.*;
 
 public class FullFlowExemplars {
-/*
-    public static DeltaFile postEnrichDeltaFileWithUnicodeAnnotation(String did) {
-        DeltaFile deltaFile = postEnrichDeltaFile(did);
+    public static DeltaFile postTransformDeltaFileWithUnicodeAnnotation(String did) {
+        DeltaFile deltaFile = postTransformDeltaFile(did);
+        deltaFile.addAnnotationIfAbsent("first", "one");
+        deltaFile.addAnnotationIfAbsent("second", "two");
         deltaFile.addAnnotationIfAbsent("āȂ", "̃Є");
         return deltaFile;
     }
-
+/*
     public static DeltaFile postEnrichInvalidDeltaFile(String did) {
         DeltaFile deltaFile = postDomainDeltaFile(did);
         deltaFile.setStage(DeltaFileStage.ERROR);
@@ -58,7 +59,7 @@ public class FullFlowExemplars {
         return deltaFile;
     }*/
 
-    public static DeltaFile transformFlowPostIngressDeltaFile(String did) {
+    public static DeltaFile postIngressDeltaFile(String did) {
         Content content = new Content("name", "application/octet-stream", new Segment("objectName", 0, 500, did));
         DeltaFile deltaFile = Util.emptyDeltaFile(did, "flow", List.of(content));
         deltaFile.setIngressBytes(500L);
@@ -68,8 +69,8 @@ public class FullFlowExemplars {
         return deltaFile;
     }
 
-    public static DeltaFile transformFlowPostTransformUtf8DeltaFile(String did) {
-        DeltaFile deltaFile = transformFlowPostIngressDeltaFile(did);
+    public static DeltaFile postTransformUtf8DeltaFile(String did) {
+        DeltaFile deltaFile = postIngressDeltaFile(did);
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
         Content content = new Content("file.json", "application/octet-stream", new Segment("utf8ObjectName", 0, 500, did));
         deltaFile.completeAction(TRANSFORM_FLOW_NAME, "Utf8TransformAction", START_TIME, STOP_TIME, List.of(content), Map.of(), List.of());
@@ -78,14 +79,14 @@ public class FullFlowExemplars {
     }
 
     public static DeltaFile postCancelDeltaFile(String did) {
-        DeltaFile deltaFile = transformFlowPostTransformUtf8DeltaFile(did);
+        DeltaFile deltaFile = postTransformUtf8DeltaFile(did);
         deltaFile.setStage(DeltaFileStage.CANCELLED);
         deltaFile.cancelQueuedActions();
         return deltaFile;
     }
 
     public static DeltaFile postTransformHadErrorDeltaFile(String did) {
-        DeltaFile deltaFile = transformFlowPostTransformUtf8DeltaFile(did);
+        DeltaFile deltaFile = postTransformUtf8DeltaFile(did);
         deltaFile.setStage(DeltaFileStage.ERROR);
         deltaFile.errorAction(TRANSFORM_FLOW_NAME, "SampleTransformAction", START_TIME, STOP_TIME, "transform failed", "message");
         return deltaFile;
@@ -100,8 +101,8 @@ public class FullFlowExemplars {
         return deltaFile;
     }
 
-    public static DeltaFile transformFlowPostTransformDeltaFile(String did) {
-        DeltaFile deltaFile = transformFlowPostTransformUtf8DeltaFile(did);
+    public static DeltaFile postTransformDeltaFile(String did) {
+        DeltaFile deltaFile = postTransformUtf8DeltaFile(did);
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
         Content content = new Content("transformed", "application/octet-stream", new Segment("objectName", 0, 500, did));
         deltaFile.completeAction(TRANSFORM_FLOW_NAME, "SampleTransformAction", START_TIME, STOP_TIME, List.of(content), TRANSFORM_METADATA, List.of());
@@ -116,7 +117,7 @@ public class FullFlowExemplars {
 
     public static DeltaFile postErrorDeltaFile(String did, String policyName, Integer autoRetryDelay) {
         OffsetDateTime nextAutoResume = autoRetryDelay == null ? null : STOP_TIME.plusSeconds(autoRetryDelay);
-        DeltaFile deltaFile = transformFlowPostTransformDeltaFile(did);
+        DeltaFile deltaFile = postTransformDeltaFile(did);
         deltaFile.setStage(DeltaFileStage.ERROR);
         deltaFile.errorAction(TRANSFORM_FLOW_NAME, "SampleEgressAction", START_TIME, STOP_TIME,
                 "Authority XYZ not recognized", "Dead beef feed face cafe", nextAutoResume);
@@ -135,7 +136,7 @@ public class FullFlowExemplars {
     }
 
     public static DeltaFile postTransformDeltaFileInTestMode(String did, String flow, String expectedEgressActionName) {
-        DeltaFile deltaFile = transformFlowPostTransformUtf8DeltaFile(did);
+        DeltaFile deltaFile = postTransformUtf8DeltaFile(did);
         deltaFile.setStage(DeltaFileStage.COMPLETE);
         Content content = new Content("transformed", "application/octet-stream", new Segment("objectName", 0, 500, did));
         deltaFile.completeAction(flow, "SampleTransformAction", START_TIME, STOP_TIME, List.of(content), TRANSFORM_METADATA, List.of());
@@ -148,7 +149,7 @@ public class FullFlowExemplars {
     }
 
     public static DeltaFile transformFlowPostEgressDeltaFile(String did) {
-        DeltaFile deltaFile = transformFlowPostTransformDeltaFile(did);
+        DeltaFile deltaFile = postTransformDeltaFile(did);
         deltaFile.setStage(DeltaFileStage.COMPLETE);
         deltaFile.setEgressed(true);
         Content content = new Content("transformed", "application/octet-stream", new Segment("objectName", 0, 500, did));

@@ -38,6 +38,7 @@ import org.deltafi.core.delete.DeleteRunner;
 import org.deltafi.core.exceptions.IngressMetadataException;
 import org.deltafi.core.exceptions.IngressStorageException;
 import org.deltafi.core.exceptions.IngressUnavailableException;
+import org.deltafi.core.exceptions.InvalidActionEventException;
 import org.deltafi.core.generated.DgsConstants;
 import org.deltafi.core.generated.client.*;
 import org.deltafi.core.generated.types.ConfigType;
@@ -657,13 +658,13 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testColdRequeue() {
 		String did = UUID.randomUUID().toString();
-		DeltaFile postTransform = transformFlowPostTransformDeltaFile(did);
+		DeltaFile postTransform = postTransformDeltaFile(did);
 		postTransform.getActions().get(postTransform.getActions().size() - 1).setState(ActionState.COLD_QUEUED);
 		deltaFileRepo.save(postTransform);
 
 		queueManagementService.coldToWarm();
 
-		verifyActionEventResults(transformFlowPostTransformDeltaFile(did), ActionContext.builder().flow(TRANSFORM_FLOW_NAME).name("sampleTransform.SampleEgressAction").build());
+		verifyActionEventResults(postTransformDeltaFile(did), ActionContext.builder().flow(TRANSFORM_FLOW_NAME).name("sampleTransform.SampleEgressAction").build());
 	}
 
 	// TODO - turn this into testing a split from a transform
@@ -707,18 +708,31 @@ class DeltaFiCoreApplicationTests {
 		verifyCommonMetrics(ActionEventType.REINJECT, "SampleLoadAction", NORMALIZE_FLOW_NAME, null, "type");
 	}*/
 
+	@Test
+	void testTransformDidNotFound() {
+		String did = UUID.randomUUID().toString();
+		deltaFileRepo.save(postTransformUtf8DeltaFile(did));
+
+		org.assertj.core.api.Assertions.assertThatThrownBy(
+						() -> deltaFilesService.handleActionEvent(actionEvent("transformDidNotFound", did)))
+				.isInstanceOf(InvalidActionEventException.class)
+				.hasMessageContaining("Invalid ActionEvent: DeltaFile xxx");
+	}
+
+	@Test
+	void testTransformWithUnicodeAnnotation() throws IOException {
+		String did = UUID.randomUUID().toString();
+		deltaFileRepo.save(postTransformUtf8DeltaFile(did));
+
+		deltaFilesService.handleActionEvent(actionEvent("transformUnicode", did));
+
+		verifyActionEventResults(postTransformDeltaFileWithUnicodeAnnotation(did), ActionContext.builder().flow("sampleTransform").name("sampleTransform.SampleEgressAction").build());
+		verifyCommonMetrics(ActionEventType.TRANSFORM, "SampleTransformAction", TRANSFORM_FLOW_NAME, null, "type");
+	}
+
 	// TODO - rewrite these with a transform action
 	/*
-	@Test
-	void testEnrichWithUnicodeAnnotation() throws IOException {
-		String did = UUID.randomUUID().toString();
-		deltaFileRepo.save(postDomainDeltaFile(did));
 
-		deltaFilesService.handleActionEvent(actionEvent("enrichUnicode", did));
-
-		verifyActionEventResults(postEnrichDeltaFileWithUnicodeAnnotation(did), ActionContext.builder().flow("sampleEgress").name("sampleEgress.SampleFormatAction").build());
-		verifyCommonMetrics(ActionEventType.ENRICH, "SampleEnrichAction", NORMALIZE_FLOW_NAME, null, "type");
-	}
 
 	@Test
 	void testEnrichDidHasUnicode() {
@@ -729,17 +743,6 @@ class DeltaFiCoreApplicationTests {
 						() -> deltaFilesService.handleActionEvent(actionEvent("enrichUnicodeDid")))
 				.isInstanceOf(InvalidActionEventException.class)
 				.hasMessageContaining("Invalid ActionEvent: DeltaFile ĂȂȃЄ not found");
-	}
-
-	@Test
-	void testEnrichDidNotFound() {
-		String did = UUID.randomUUID().toString();
-		deltaFileRepo.save(postDomainDeltaFile(did));
-
-		org.assertj.core.api.Assertions.assertThatThrownBy(
-						() -> deltaFilesService.handleActionEvent(actionEvent("enrichDidNotFound", did)))
-				.isInstanceOf(InvalidActionEventException.class)
-				.hasMessageContaining("Invalid ActionEvent: DeltaFile xxx");
 	}
 
 	@Test
@@ -778,7 +781,7 @@ class DeltaFiCoreApplicationTests {
 	void runErrorWithAutoResume(Integer autoResumeDelay, boolean withAnnotation) throws IOException {
 		String did = UUID.randomUUID().toString();
 		String policyName = null;
-		DeltaFile original = transformFlowPostTransformDeltaFile(did);
+		DeltaFile original = postTransformDeltaFile(did);
 		deltaFileRepo.save(original);
 
 		if (autoResumeDelay != null) {
@@ -896,7 +899,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testCancel() throws IOException {
 		String did = UUID.randomUUID().toString();
-		DeltaFile deltaFile = transformFlowPostTransformUtf8DeltaFile(did);
+		DeltaFile deltaFile = postTransformUtf8DeltaFile(did);
 		deltaFileRepo.save(deltaFile);
 
 		List<CancelResult> cancelResults = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
@@ -937,9 +940,9 @@ class DeltaFiCoreApplicationTests {
 		transformFlowService.getRunningFlowByName(TRANSFORM_FLOW_NAME).setTestMode(true);
 
 		String did = UUID.randomUUID().toString();
-		deltaFileRepo.save(transformFlowPostTransformUtf8DeltaFile(did));
+		deltaFileRepo.save(postTransformUtf8DeltaFile(did));
 
-		deltaFilesService.handleActionEvent(actionEvent("transformFlowTransform", did));
+		deltaFilesService.handleActionEvent(actionEvent("transform", did));
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 
@@ -971,7 +974,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(results.get(0).getDid(), parent.getReplayDid());
 		assertNotNull(parent.getReplayed());
 
-		DeltaFile expected = transformFlowPostIngressDeltaFile(did);
+		DeltaFile expected = postIngressDeltaFile(did);
 		expected.setDid(parent.getChildDids().get(0));
 		expected.setParentDids(List.of(did));
 		expected.getActions().get(0).setMetadata(Map.of("AuthorizedBy", "ABC", "sourceInfo.filename.original", "input.txt", "sourceInfo.flow.original", TRANSFORM_FLOW_NAME, "removeMe.original", "whatever", "AuthorizedBy.original", "XYZ", "anotherKey", "anotherValue"));
@@ -1036,13 +1039,13 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testFilterTransform() throws IOException {
 		String did = UUID.randomUUID().toString();
-		verifyFiltered(transformFlowPostIngressDeltaFile(did), TRANSFORM_FLOW_NAME, "Utf8TransformAction", true);
+		verifyFiltered(postIngressDeltaFile(did), TRANSFORM_FLOW_NAME, "Utf8TransformAction", true);
 	}
 
 	@Test
 	void testFilterEgress() throws IOException {
 		String did = UUID.randomUUID().toString();
-		verifyFiltered(transformFlowPostTransformDeltaFile(did), "sampleTransform", "SampleEgressAction", true);
+		verifyFiltered(postTransformDeltaFile(did), "sampleTransform", "SampleEgressAction", true);
 	}
 
 	@SuppressWarnings("SameParameterValue")
@@ -1587,11 +1590,11 @@ class DeltaFiCoreApplicationTests {
 		String did1 = UUID.randomUUID().toString();
 		String did2 = UUID.randomUUID().toString();
 		String did3 = UUID.randomUUID().toString();
-		DeltaFile before1 = transformFlowPostTransformDeltaFile(did1);
+		DeltaFile before1 = postTransformDeltaFile(did1);
 		deltaFileRepo.save(before1);
-		DeltaFile before2 = transformFlowPostTransformDeltaFile(did2);
+		DeltaFile before2 = postTransformDeltaFile(did2);
 		deltaFileRepo.save(before2);
-		DeltaFile before3 = transformFlowPostTransformDeltaFile(did3);
+		DeltaFile before3 = postTransformDeltaFile(did3);
 		before3.getSourceInfo().setFlow("flow3");
 		deltaFileRepo.save(before3);
 
@@ -3107,18 +3110,18 @@ class DeltaFiCoreApplicationTests {
 	private void loadFilteredDeltaFiles(OffsetDateTime plusTwo) {
 		deltaFileRepo.deleteAll();
 
-		DeltaFile deltaFile = transformFlowPostTransformDeltaFile("did");
+		DeltaFile deltaFile = postTransformDeltaFile("did");
 		deltaFile.setFiltered(true);
 		deltaFile.getActions().add(filteredAction("filtered one"));
 		deltaFile.getActions().add(filteredAction("filtered two"));
 
-		DeltaFile tooNew = transformFlowPostTransformDeltaFile("did2");
+		DeltaFile tooNew = postTransformDeltaFile("did2");
 		tooNew.setFiltered(true);
 		tooNew.getSourceInfo().setFlow("other");
 		tooNew.setModified(plusTwo);
 		tooNew.getActions().add(filteredAction("another message"));
 
-		DeltaFile notMarkedFiltered = transformFlowPostTransformDeltaFile("did3");
+		DeltaFile notMarkedFiltered = postTransformDeltaFile("did3");
 		notMarkedFiltered.setFiltered(null);
 		notMarkedFiltered.getSourceInfo().setFlow("other");
 		notMarkedFiltered.setModified(plusTwo);
@@ -3875,26 +3878,26 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void testTransformFlowTransformUtf8() throws IOException {
+	void testTransformUtf8() throws IOException {
 		String did = UUID.randomUUID().toString();
-		deltaFileRepo.save(transformFlowPostIngressDeltaFile(did));
+		deltaFileRepo.save(postIngressDeltaFile(did));
 
-		deltaFilesService.handleActionEvent(actionEvent("transformFlowTransformUtf8", did));
+		deltaFilesService.handleActionEvent(actionEvent("transformUtf8", did));
 
-		verifyActionEventResults(transformFlowPostTransformUtf8DeltaFile(did),
+		verifyActionEventResults(postTransformUtf8DeltaFile(did),
 				ActionContext.builder().flow("sampleTransform").name("sampleTransform.SampleTransformAction").build());
 
 		verifyCommonMetrics(ActionEventType.TRANSFORM, "Utf8TransformAction", TRANSFORM_FLOW_NAME, null, "type");
 	}
 
 	@Test
-	void testTransformFlowTransform() throws IOException {
+	void testTransform() throws IOException {
 		String did = UUID.randomUUID().toString();
-		deltaFileRepo.save(transformFlowPostTransformUtf8DeltaFile(did));
+		deltaFileRepo.save(postTransformUtf8DeltaFile(did));
 
-		deltaFilesService.handleActionEvent(actionEvent("transformFlowTransform", did));
+		deltaFilesService.handleActionEvent(actionEvent("transform", did));
 
-		verifyActionEventResults(transformFlowPostTransformDeltaFile(did),
+		verifyActionEventResults(postTransformDeltaFile(did),
 				ActionContext.builder().flow("sampleTransform").name("sampleTransform.SampleEgressAction").build());
 
 		verifyCommonMetrics(ActionEventType.TRANSFORM, "SampleTransformAction", TRANSFORM_FLOW_NAME, null, "type");
@@ -3903,7 +3906,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testTransformFlowEgress() throws IOException {
 		String did = UUID.randomUUID().toString();
-		deltaFileRepo.save(transformFlowPostTransformDeltaFile(did));
+		deltaFileRepo.save(postTransformDeltaFile(did));
 
 		deltaFilesService.handleActionEvent(actionEvent("transformFlowEgress", did));
 
