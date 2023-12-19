@@ -41,43 +41,6 @@ const generateData = () => {
         },
         "stix1_x.Stix1_xTo2_1TransformAction": {},
       },
-      load: {
-        "decompress-passthrough.DecompressPassthroughLoadAction": {},
-        "passthrough.PassthroughLoadAction": {},
-        "smoke.SmokeLoadAction": {
-          files_completed: 284,
-          files_in: 284,
-        },
-        "stix1_x.Stix2_1LoadAction": {},
-        "stix2_1.Stix2_1LoadAction": {},
-      },
-      enrich: {
-        "stix2_1.Stix2_1DomainAction": {
-          files_completed: 284,
-          files_in: 284,
-        },
-        "artificial-enrichment.BinaryEnrichAction": {
-          files_completed: 284,
-          files_in: 284,
-        },
-      },
-      format: {
-        "error.ErrorFormatAction": {},
-        "passthrough.PassthroughFormatAction": {},
-        "smoke.SmokeFormatAction": {
-          files_completed: 284,
-          files_in: 284,
-        },
-        "stix1_x.Stix1_xFormatAction": {},
-        "stix2_1.Stix2_1FormatAction": {},
-      },
-      validate: {
-        "passthrough.PassthroughValidateAction": {},
-        "smoke.SmokeValidateAction": {
-          files_completed: 284,
-          files_in: 284,
-        },
-      },
       egress: {
         "error.ErrorEgressAction": {},
         "passthrough.PassthroughEgressAction": {},

@@ -30,28 +30,18 @@ const generateData = () => {
       actions: [
         {
           name: "org.deltafi.goofy.RubberStampValidateAction",
-          requiresDomains: null,
-          requiresEnrichments: [],
         },
         {
           name: "org.deltafi.stix.actions.Stix1_XFormatAction",
-          requiresDomains: null,
-          requiresEnrichments: [],
         },
         {
           name: "org.deltafi.stix.actions.Stix234_1FormatAction",
-          requiresDomains: null,
-          requiresEnrichments: [],
         },
         {
           name: "org.deltafi.stix.actions.StixLoadAction",
-          requiresDomains: null,
-          requiresEnrichments: [],
         },
         {
           name: "org.deltafi.stix.actions.StixTransformAction",
-          requiresDomains: null,
-          requiresEnrichments: [],
         },
       ],
       variables: [
@@ -77,28 +67,18 @@ const generateData = () => {
       actions: [
         {
           name: "org.RubberStampValidateAction",
-          requiresDomains: ["rules-validation"],
-          requiresEnrichments: ["jsonRulesValidationReport"],
         },
         {
           name: "org.deltafi.stix.actions.Stix1_XFormatAction",
-          requiresDomains: null,
-          requiresEnrichments: [],
         },
         {
           name: "org.deltafi.stix.actions.Stix2_1FormatAction",
-          requiresDomains: ["rules-validation"],
-          requiresEnrichments: ["jsonRulesValidationReport"],
         },
         {
           name: "org.deltafi.stix.actions.StixLoadAction",
-          requiresDomains: ["rules-validation"],
-          requiresEnrichments: ["jsonRulesValidationReport"],
         },
         {
           name: "org.deltafi.stix.actions.StixTransformAction",
-          requiresDomains: null,
-          requiresEnrichments: [],
         },
       ],
       variables: [
@@ -152,28 +132,18 @@ const generateData = () => {
       actions: [
         {
           name: "org.deltafi.stix.actions.RubberStampValidateAction",
-          requiresDomains: ["rules-validation"],
-          requiresEnrichments: ["jsonRulesValidationReport"],
         },
         {
           name: "org.deltafi.stix.actions.Stix1_XFormatAction",
-          requiresDomains: ["rules-validation"],
-          requiresEnrichments: ["jsonRulesValidationReport"],
         },
         {
           name: "org.deltafi.stix.actions.Stix2_1FormatAction",
-          requiresDomains: null,
-          requiresEnrichments: [],
         },
         {
           name: "org.deltafi.stix.actions.StixLoadAction",
-          requiresDomains: null,
-          requiresEnrichments: null,
         },
         {
           name: "org.deltafi.stix.actions.StixTransformAction",
-          requiresDomains: ["any"],
-          requiresEnrichments: ["any"],
         },
       ],
       variables: [
@@ -227,23 +197,15 @@ const generateData = () => {
       actions: [
         {
           name: "org.deltafi.stix.actions.RubberStampValidateAction",
-          requiresDomains: null,
-          requiresEnrichments: null,
         },
         {
           name: "org.deltafi.stix.actions.Stix2_1FormatAction",
-          requiresDomains: ["any"],
-          requiresEnrichments: ["any"],
         },
         {
           name: "org.deltafi.stix.actions.StixLoadAction",
-          requiresDomains: null,
-          requiresEnrichments: null,
         },
         {
           name: "org.deltafi.stix.actions.StixTransformAction",
-          requiresDomains: ["any"],
-          requiresEnrichments: ["any"],
         },
       ],
       variables: [

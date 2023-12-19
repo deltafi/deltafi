@@ -31,7 +31,6 @@ import ExternalLinksPage from "@/pages/ExternalLinksPage.vue";
 import FlowPlanBuilderPage from "@/pages/FlowPlanBuilderPage.vue";
 import FlowPlansPage from "@/pages/FlowPlansPage.vue";
 import IngressActionsPage from "@/pages/IngressActionsPage.vue";
-import IngressRoutingPage from "@/pages/IngressRoutingPage.vue";
 import PageNotFound from "@/pages/PageNotFound.vue";
 import PluginRepositoryPage from "@/pages/PluginRepositoryPage.vue";
 import PluginsPage from "@/pages/PluginsPage.vue";
@@ -138,14 +137,6 @@ const routes: Array<RouteRecordRaw> = [
     component: DeletePoliciesPage,
     meta: {
       permission: "DeletePolicyRead",
-    },
-  },
-  {
-    path: "/config/ingress-routing",
-    name: "Ingress Routing",
-    component: IngressRoutingPage,
-    meta: {
-      permission: "IngressRoutingRuleRead",
     },
   },
   {

@@ -18,7 +18,7 @@
 
 const generateData = () => {
   const data = {
-    normalize: [
+    transform: [
       {
         name: "mock_stix1_x",
       },

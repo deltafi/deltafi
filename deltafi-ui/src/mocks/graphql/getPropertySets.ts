@@ -26,8 +26,6 @@ const generateData = () => {
         {
           key: "mock.app.url",
           value: "http://mock_url",
-          hidden: false,
-          editable: true,
           refreshable: false,
           description: "URL to send spans to.",
           propertySource: "DEFAULT",
@@ -35,8 +33,6 @@ const generateData = () => {
         {
           key: "mock.app.log.level",
           value: "INFO",
-          hidden: true,
-          editable: false,
           refreshable: false,
           description: "The log level for app.",
           propertySource: "DEFAULT",
@@ -44,8 +40,6 @@ const generateData = () => {
         {
           key: "mock.app.password",
           value: "${APP_PASSWORD}",
-          hidden: false,
-          editable: false,
           refreshable: false,
           description: "The password used to access app",
           propertySource: "DEFAULT",
@@ -53,8 +47,6 @@ const generateData = () => {
         {
           key: "mock.db.password",
           value: "${DB_PASSWORD}",
-          hidden: false,
-          editable: false,
           refreshable: false,
           description: "Login password of the db server. Cannot be set with URI.",
           propertySource: "DEFAULT",
@@ -69,8 +61,6 @@ const generateData = () => {
         {
           key: "mock.actions.mock-action-registration-initial-delay-ms",
           value: "1000",
-          hidden: false,
-          editable: false,
           refreshable: false,
           description: "Mock initial delay in milliseconds before actions attempt to register.",
           propertySource: "DEFAULT",
@@ -78,8 +68,6 @@ const generateData = () => {
         {
           key: "mock.actions.hostname",
           value: null,
-          hidden: false,
-          editable: false,
           refreshable: false,
           description: "Mock hostname of the server running the action.",
           propertySource: "DEFAULT",

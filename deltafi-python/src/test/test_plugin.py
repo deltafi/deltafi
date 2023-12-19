@@ -80,34 +80,9 @@ def get_expected_json():
         ],
         "actions": [
             {
-                "name": "plugin-group.SampleDomainAction",
-                "description": "Domain action description",
-                "type": "DOMAIN",
-                "requiresDomains": [
-                    "domain1",
-                    "domain2"
-                ],
-                "requiresEnrichments": [
-
-                ],
-                "schema": {
-                    "title": "GenericModel",
-                    "type": "object",
-                    "properties": {
-
-                    }
-                }
-            },
-            {
                 "name": "plugin-group.SampleLoadAction",
                 "description": "Domain action description",
                 "type": "LOAD",
-                "requiresDomains": [
-
-                ],
-                "requiresEnrichments": [
-
-                ],
                 "schema": {
                     "title": "SampleLoadParameters",
                     "type": "object",

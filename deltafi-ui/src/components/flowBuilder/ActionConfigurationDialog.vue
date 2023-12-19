@@ -19,8 +19,7 @@
 <template>
   <div class="action-configuration-dialog">
     <div v-for="displayActionInfo of getDisplayValues(rowdata)" :key="displayActionInfo">
-      <template v-if="displayFieldTest(displayActionInfo)"> </template>
-      <template v-else>
+      <template>
         <h5 class="font-weight-bold pb-2">{{ displayMap.get(displayActionInfo).header }}:</h5>
         <dd>
           <InputText v-if="_.isEqual(displayMap.get(displayActionInfo).type, 'string')" v-model="rowdata[displayActionInfo]" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
@@ -135,20 +134,12 @@ const displayMap = new Map([
   ["description", { header: "Description", type: "string", disableEdit: true }],
   ["collect", { header: "Collect", type: "object", disableEdit: false }],
   ["schema", { header: "Parameters", type: "object", disableEdit: false }],
-  ["requiresDomains", { header: "Requires Domains", type: "object", disableEdit: false }],
-  ["requiresEnrichments", { header: "Requires Enrichments", type: "object", disableEdit: false }],
-  ["requiresMetadataKeyValues", { header: "Requires Metadata Key Values", type: "object", disableEdit: false }],
 ]);
 
-const displayKeysList = ["name", "type", "description", "collect", "schema", "requiresDomains", "requiresEnrichments", "requiresMetadataKeyValues"];
+const displayKeysList = ["name", "type", "description", "collect", "schema"];
 
 const getDisplayValues = (obj) => {
   return _.intersection(Object.keys(obj), displayKeysList);
-};
-
-const displayFieldTest = (displayActionInfo) => {
-  let fieldsCheck = ["requiresDomains", "requiresEnrichments", "requiresMetadataKeyValues"];
-  return (fieldsCheck.includes(displayActionInfo) && _.isEmpty(rowdata[displayActionInfo])) || (_.isEqual(displayActionInfo, "schema") && _.isEmpty(_.get(rowdata, "schema.properties", null)));
 };
 
 const submit = async () => {

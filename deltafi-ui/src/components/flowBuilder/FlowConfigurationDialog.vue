@@ -134,8 +134,6 @@ onMounted(async () => {
 
 const flowTypesDisplay = [
   { header: "Transform", field: "TRANSFORM" },
-  { header: "Normalize", field: "NORMALIZE" },
-  { header: "Enrich", field: "ENRICH" },
   { header: "Egress", field: "EGRESS" },
 ];
 

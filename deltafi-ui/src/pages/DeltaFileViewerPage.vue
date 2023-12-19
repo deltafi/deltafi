@@ -98,7 +98,6 @@
 import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
 import AnnotateDialog from "@/components/AnnotateDialog.vue";
 import DeltaFileActionsPanel from "@/components/DeltaFileActionsPanel.vue";
-import DeltaFileDomainsPanel from "@/components/DeltaFileDomainsPanel.vue";
 import DeltaFileEnrichmentPanel from "@/components/DeltaFileEnrichmentPanel.vue";
 import DeltaFileAnnotationsPanel from "@/components/DeltaFileAnnotationsPanel.vue";
 import DeltaFileInfoPanel from "@/components/DeltaFileInfoPanel.vue";

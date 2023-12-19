@@ -73,16 +73,6 @@ export default function useDeltaFiles() {
             mediaType: true,
           },
           deleteMetadataKeys: true,
-          domains: {
-            name: true,
-            value: true,
-            mediaType: true,
-          },
-          enrichments: {
-            name: true,
-            value: true,
-            mediaType: true,
-          },
         },
         annotations: true,
         egressed: true,

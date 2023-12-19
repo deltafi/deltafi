@@ -17,7 +17,7 @@
 */
 
 import useGraphQL from "./useGraphQL";
-import { transformFlow, transformFlowPlan, normalizeFlow, normalizeFlowPlan, enrichFlow, enrichFlowPlan, egressFlow, egressFlowPlan } from "./useFlowPlanQueryVariables";
+import { transformFlow, transformFlowPlan, egressFlow, egressFlowPlan } from "./useFlowPlanQueryVariables";
 
 export default function useFlowQueryBuilder() {
   const { response, queryGraphQL } = useGraphQL();
@@ -28,12 +28,6 @@ export default function useFlowQueryBuilder() {
       getAllFlowPlans: {
         transformPlans: {
           ...transformFlowPlan,
-        },
-        normalizePlans: {
-          ...normalizeFlowPlan,
-        },
-        enrichPlans: {
-          ...enrichFlowPlan,
         },
         egressPlans: {
           ...egressFlowPlan,
@@ -66,56 +60,6 @@ export default function useFlowQueryBuilder() {
       },
     };
     return sendGraphQLQuery(query, "removeTransformFlowPlanByName", "mutation");
-  };
-
-  // Save an NormalizeFlowPlan
-  const saveNormalizeFlowPlan = (flowPlan: Object) => {
-    const query = {
-      saveNormalizeFlowPlan: {
-        __args: {
-          normalizeFlowPlan: flowPlan,
-        },
-        ...normalizeFlow,
-      },
-    };
-    return sendGraphQLQuery(query, "saveNormalizeFlowPlan", "mutation", true);
-  };
-
-  // Remove an NormalizeFlowPlan
-  const removeNormalizeFlowPlanByName = (flowPlanName: string) => {
-    const query = {
-      removeNormalizeFlowPlan: {
-        __args: {
-          name: flowPlanName,
-        },
-      },
-    };
-    return sendGraphQLQuery(query, "removeNormalizeFlowPlanByName", "mutation");
-  };
-
-  // Save a EnrichFlowPlan
-  const saveEnrichFlowPlan = (flowPlan: Object) => {
-    const query = {
-      saveEnrichFlowPlan: {
-        __args: {
-          enrichFlowPlan: flowPlan,
-        },
-        ...enrichFlow,
-      },
-    };
-    return sendGraphQLQuery(query, "saveEnrichFlowPlan", "mutation", true);
-  };
-
-  // Remove an EnrichFlowPlan
-  const removeEnrichFlowPlan = (flowPlanName: string) => {
-    const query = {
-      removeEnrichFlowPlan: {
-        __args: {
-          name: flowPlanName,
-        },
-      },
-    };
-    return sendGraphQLQuery(query, "removeEnrichFlowPlanByName", "mutation");
   };
 
   // Save an EgressFlowPlan
@@ -156,11 +100,7 @@ export default function useFlowQueryBuilder() {
     getAllFlowPlans,
     saveTransformFlowPlan,
     removeTransformFlowPlanByName,
-    saveNormalizeFlowPlan,
-    removeNormalizeFlowPlanByName,
     saveEgressFlowPlan,
     removeEgressFlowPlanByName,
-    saveEnrichFlowPlan,
-    removeEnrichFlowPlan,
   };
 }

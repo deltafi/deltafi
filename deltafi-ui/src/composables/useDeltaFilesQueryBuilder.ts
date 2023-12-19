@@ -45,7 +45,6 @@ export default function useDeltaFilesQueryBuilder() {
     testMode?: string | null;
     terminalStage?: string | null;
     replayable?: string | null;
-    domains?: string | null;
     sizeMin?: string | null;
     sizeMax?: string | null;
     sizeType?: object;
@@ -76,7 +75,6 @@ export default function useDeltaFilesQueryBuilder() {
             stage: queryParams.stage ? new EnumType(queryParams.stage) : null,
             modifiedAfter: startDateISOString,
             modifiedBefore: endDateISOString,
-            domains: queryParams.domains ? [queryParams.domains] : [],
             annotations: queryParams.annotations,
             ingressBytesMin: queryParams.ingressBytesMin,
             ingressBytesMax: queryParams.ingressBytesMax,

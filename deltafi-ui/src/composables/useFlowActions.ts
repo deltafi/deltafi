@@ -34,8 +34,6 @@ export default function useFlowActions() {
           name: true,
           type: true,
           description: true,
-          requiresDomains: true,
-          requiresEnrichments: true,
           schema: true,
         },
         actionKitVersion: true,

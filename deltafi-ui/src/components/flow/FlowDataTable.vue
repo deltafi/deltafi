@@ -59,7 +59,7 @@
           <span v-else>{{ data[field] }}</span>
         </template>
       </Column>
-      <Column v-if="FlowTypeTitle === 'Normalize' || FlowTypeTitle === 'Transform'" header="Max Errors" field="maxErrors" class="max-error-column">
+      <Column v-if="FlowTypeTitle === 'Transform'" header="Max Errors" field="maxErrors" class="max-error-column">
         <template #body="{ data, field }">
           <span v-if="data[field] === null">-</span>
           <span v-else>{{ data[field] }}</span>
@@ -115,7 +115,7 @@ import _ from "lodash";
 const { setMaxErrors, errors } = useFlowQueryBuilder();
 const notify = useNotifications();
 const confirm = useConfirm();
-const { removeTransformFlowPlanByName, removeNormalizeFlowPlanByName, removeEgressFlowPlanByName, removeEnrichFlowPlan } = useFlowPlanQueryBuilder();
+const { removeTransformFlowPlanByName, removeEgressFlowPlanByName } = useFlowPlanQueryBuilder();
 
 const refreshInterval = 5000; // 5 seconds
 let autoRefresh = null;
@@ -187,10 +187,6 @@ const deleteFlow = async (data) => {
   let response = false;
   if (data.flowType === "transform") {
     response = await removeTransformFlowPlanByName(data.name);
-  } else if (data.flowType === "normalize") {
-    response = await removeNormalizeFlowPlanByName(data.name);
-  } else if (data.flowType === "enrich") {
-    response = await removeEnrichFlowPlan(data.name);
   } else if (data.flowType === "egress") {
     response = await removeEgressFlowPlanByName(data.name);
   }
@@ -230,7 +226,7 @@ const flowDataByType = computed(() => {
 
 const formatBitRate = async () => {
   if (!isIdle.value) {
-    if (_.isEqual(props.flowTypeProp, "normalize") || _.isEqual(props.flowTypeProp, "transform")) {
+    if (_.isEqual(props.flowTypeProp, "transform")) {
       await fetchIngressFlowsByteRate();
     } else if (_.isEqual(props.flowTypeProp, "egress")) {
       await fetchEgressFlowsByteRate();

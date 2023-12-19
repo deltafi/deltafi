@@ -18,7 +18,6 @@
 package org.deltafi.core.services;
 
 import lombok.Builder;
-import lombok.Singular;
 import org.deltafi.common.test.time.TestClock;
 import org.deltafi.common.types.*;
 import org.deltafi.core.MockDeltaFiPropertiesService;
@@ -150,10 +149,6 @@ class StateMachineTest {
 
     @Builder
     private static class EgressFlowMaker {
-        @Singular
-        List<String> formatRequiresDomains;
-        @Singular("formatRequiresEnrichment")
-        List<String> formatRequiresEnrichment;
         @Builder.Default
         final String egressActionName = EGRESS_ACTION;
         @Builder.Default

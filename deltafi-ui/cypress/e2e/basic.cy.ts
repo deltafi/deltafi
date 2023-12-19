@@ -54,9 +54,7 @@ describe("DeltaFile Viewer Page", () => {
       cy.visit("http://localhost:8080/deltafile/viewer/27186720-723a-4f82-a5ab-2fff441b2c9b");
       cy.get("span.p-panel-title").contains("Parent DeltaFiles");
       cy.get("span.p-panel-title").contains("Child DeltaFiles");
-      cy.get("span.p-panel-title").contains("Domains");
       cy.get("span.p-panel-title").contains("Annotations");
-      cy.get("span.p-panel-title").contains("Enrichments");
       cy.get("span.p-panel-title").contains("Actions");
       cy.get("span.p-panel-title").contains("Trace");
       cy.get("strong").contains("xml").click();
@@ -106,8 +104,6 @@ describe("Flows Page", () => {
   it("loads Flows", () => {
     cy.visit("http://localhost:8080/config/flows");
     cy.get("span.p-panel-title").contains("Transform");
-    cy.get("span.p-panel-title").contains("Normalize");
-    cy.get("span.p-panel-title").contains("Enrich");
     cy.get("span.p-panel-title").contains("Egress");
   });
 });
