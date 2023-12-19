@@ -23,6 +23,7 @@ import org.deltafi.common.types.*;
 import java.time.OffsetDateTime;
 import java.util.*;
 
+import static org.deltafi.common.constant.DeltaFiConstants.INVALID_ACTION_EVENT_RECEIVED;
 import static org.deltafi.common.types.ActionState.QUEUED;
 import static org.deltafi.common.types.DeltaFile.CURRENT_SCHEMA_VERSION;
 import static org.deltafi.core.util.Constants.*;
@@ -35,29 +36,14 @@ public class FullFlowExemplars {
         deltaFile.addAnnotationIfAbsent("āȂ", "̃Є");
         return deltaFile;
     }
-/*
-    public static DeltaFile postEnrichInvalidDeltaFile(String did) {
-        DeltaFile deltaFile = postDomainDeltaFile(did);
+
+    public static DeltaFile postTransformInvalidDeltaFile(String did) {
+        DeltaFile deltaFile = postTransformUtf8DeltaFile(did);
         deltaFile.setStage(DeltaFileStage.ERROR);
-        deltaFile.errorAction("sampleEnrich", "SampleEnrichAction", START_TIME, STOP_TIME,
+        deltaFile.errorAction("sampleTransform", "SampleTransformAction", START_TIME, STOP_TIME,
                 INVALID_ACTION_EVENT_RECEIVED, "STARTS:Action event type does not match the populated object");
         return deltaFile;
-    }*/
-
-    /*public static DeltaFile postFormatHadErrorDeltaFile(String did) {
-        DeltaFile deltaFile = postEnrichDeltaFile(did);
-        deltaFile.setStage(DeltaFileStage.ERROR);
-        deltaFile.errorAction("sampleEgress", "SampleFormatAction", START_TIME, STOP_TIME, "format failed", "message");
-        return deltaFile;
     }
-
-    public static DeltaFile postResumeFormatDeltaFile(String did) {
-        DeltaFile deltaFile = postFormatHadErrorDeltaFile(did);
-        deltaFile.retryErrors(List.of(new ResumeMetadata("sampleEgress", "SampleFormatAction", Map.of("a", "b"), List.of("loadSampleVersion"))));
-        deltaFile.setStage(DeltaFileStage.EGRESS);
-        deltaFile.getActions().add(Action.builder().flow("sampleEgress").name("SampleFormatAction").state(QUEUED).attempt(2).build());
-        return deltaFile;
-    }*/
 
     public static DeltaFile postIngressDeltaFile(String did) {
         Content content = new Content("name", "application/octet-stream", new Segment("objectName", 0, 500, did));

@@ -17,11 +17,11 @@
  */
 package org.deltafi.core.services;
 
-import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.*;
 import org.deltafi.core.converters.FlowPlanConverter;
+import org.deltafi.core.exceptions.MissingFlowException;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.plugin.PluginUninstallCheck;
 import org.deltafi.core.repo.FlowRepo;
@@ -250,7 +250,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     public FlowT getRunningFlowByName(String flowName) {
         FlowT flow = flowCache.get(flowName);
         if (flow == null || !flow.isRunning()) {
-            throw new DgsEntityNotFoundException("Flow of type " + flowType + " named " + flowName + " is not running");
+            throw new MissingFlowException("Flow of type " + flowType + " named " + flowName + " is not running");
         }
 
         return flow;

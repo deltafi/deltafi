@@ -554,14 +554,14 @@ public class DeltaFilesService {
         if (count == 1) {
             Subscriber subscriber = subscribers.iterator().next();
             deltaFile.getSourceInfo().setFlow(subscriber.getName());
-            advanceAndSave(subscriber, deltaFile, false);
+            advanceAndSave(subscriber, deltaFile);
         } else if (count > 1) {
             List<DeltaFile> childDeltaFiles = new ArrayList<>();
             List<ActionInvocation> actionInvocations = new ArrayList<>();
             for (Subscriber subscriber : subscribers) {
                 DeltaFile child = createChildDeltaFile(deltaFile, uuidGenerator.generate());
                 child.getSourceInfo().setFlow(subscriber.getName());
-                actionInvocations.addAll(advanceOnly(subscriber, child, false));
+                actionInvocations.addAll(advanceOnly(subscriber, child));
                 deltaFile.getChildDids().add(child.getDid());
                 childDeltaFiles.add(child);
             }
@@ -607,9 +607,7 @@ public class DeltaFilesService {
 
     public void transform(DeltaFile deltaFile, ActionEvent event) {
         List<TransformEvent> transformEvents = event.getTransform();
-        if (transformEvents.isEmpty()) {
-            // TODO: error -- is this already handled in the event validation?
-        } else if (transformEvents.size() == 1 && transformEvents.get(0).getName() == null) {
+        if (transformEvents.size() == 1 && transformEvents.get(0).getName() == null) {
             TransformEvent transformEvent = transformEvents.get(0);
             deltaFile.completeAction(event, transformEvent.getContent(), transformEvent.getMetadata(),
                     transformEvent.getDeleteMetadataKeys());
@@ -1151,8 +1149,8 @@ public class DeltaFilesService {
         return actionInvocations;
     }
 
-    private List<ActionInvocation> advanceOnly(Subscriber subscriber, DeltaFile deltaFile, boolean newDeltaFile) {
-        List<ActionInvocation> actionInvocations = new ArrayList<>(stateMachine.advanceSubscriber(subscriber, deltaFile, newDeltaFile));
+    private List<ActionInvocation> advanceOnly(Subscriber subscriber, DeltaFile deltaFile) {
+        List<ActionInvocation> actionInvocations = new ArrayList<>(stateMachine.advanceSubscriber(subscriber, deltaFile, false));
 
         if (deltaFile.hasCollectingAction()) {
             deltaFileCacheService.remove(deltaFile.getDid());
@@ -1161,8 +1159,8 @@ public class DeltaFilesService {
         return actionInvocations;
     }
 
-    private void advanceAndSave(Subscriber subscriber, DeltaFile deltaFile, boolean newDeltaFile) {
-        List<ActionInvocation> actionInvocations = new ArrayList<>(stateMachine.advanceSubscriber(subscriber, deltaFile, newDeltaFile));
+    private void advanceAndSave(Subscriber subscriber, DeltaFile deltaFile) {
+        List<ActionInvocation> actionInvocations = new ArrayList<>(stateMachine.advanceSubscriber(subscriber, deltaFile, false));
 
         if (deltaFile.hasCollectingAction()) {
             deltaFileCacheService.remove(deltaFile.getDid());

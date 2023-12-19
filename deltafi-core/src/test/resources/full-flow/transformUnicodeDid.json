@@ -1,0 +1,16 @@
+{
+    "did": "ĂȂȃЄ",
+    "action": "sampleTransform.SampleTransformAction",
+    "start": "2021-07-11T13:44:22.183Z",
+    "stop": "2021-07-11T13:44:22.184Z",
+    "type": "TRANSFORM",
+    "transform": [
+        {
+            "annotations": {
+                "first": "one",
+                "second": "two",
+                "\u0101\u0202": "\u0303\u0404"
+            }
+        }
+    ]
+}

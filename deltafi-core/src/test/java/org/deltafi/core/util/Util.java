@@ -60,11 +60,6 @@ public class Util {
         return buildDeltaFile(did, flow, DeltaFileStage.IN_FLIGHT, now, now, content);
     }
 
-    public static DeltaFile emptyDeltaFile(String did, String flow, List<Content> content, Map<String, String> metadata) {
-        OffsetDateTime now = OffsetDateTime.now();
-        return buildDeltaFile(did, flow, DeltaFileStage.IN_FLIGHT, now, now, content, metadata);
-    }
-
     public static DeltaFile buildDeltaFile(String did, String flow, DeltaFileStage stage, OffsetDateTime created,
                                            OffsetDateTime modified) {
         return buildDeltaFile(did, flow, stage, created, modified, new ArrayList<>(), new HashMap<>());

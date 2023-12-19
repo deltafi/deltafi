@@ -730,53 +730,49 @@ class DeltaFiCoreApplicationTests {
 		verifyCommonMetrics(ActionEventType.TRANSFORM, "SampleTransformAction", TRANSFORM_FLOW_NAME, null, "type");
 	}
 
-	// TODO - rewrite these with a transform action
-	/*
-
-
 	@Test
-	void testEnrichDidHasUnicode() {
+	void testTransformDidHasUnicode() {
 		String did = "ĂȂȃЄ";
-		deltaFileRepo.save(postDomainDeltaFile(did));
+		deltaFileRepo.save(postTransformUtf8DeltaFile(did));
 
 		org.assertj.core.api.Assertions.assertThatThrownBy(
-						() -> deltaFilesService.handleActionEvent(actionEvent("enrichUnicodeDid")))
+						() -> deltaFilesService.handleActionEvent(actionEvent("transformUnicodeDid")))
 				.isInstanceOf(InvalidActionEventException.class)
 				.hasMessageContaining("Invalid ActionEvent: DeltaFile ĂȂȃЄ not found");
 	}
 
 	@Test
-	void testEnrichMissingAction() {
+	void testTransformMissingAction() {
 		String did = UUID.randomUUID().toString();
-		deltaFileRepo.save(postDomainDeltaFile(did));
+		deltaFileRepo.save(postTransformUtf8DeltaFile(did));
 
 		org.assertj.core.api.Assertions.assertThatThrownBy(
-						() -> deltaFilesService.handleActionEvent(actionEvent("enrichMissingAction", did)))
+						() -> deltaFilesService.handleActionEvent(actionEvent("transformMissingAction", did)))
 				.isInstanceOf(InvalidActionEventException.class)
 				.hasMessageContaining("Invalid ActionEvent: Missing action:");
 	}
 
 	@Test
-	void testEnrichMissingDid() {
+	void testTransformMissingDid() {
 		String did = UUID.randomUUID().toString();
-		deltaFileRepo.save(postDomainDeltaFile(did));
+		deltaFileRepo.save(postTransformUtf8DeltaFile(did));
 
 		org.assertj.core.api.Assertions.assertThatThrownBy(
-						() -> deltaFilesService.handleActionEvent(actionEvent("enrichMissingDid", did)))
+						() -> deltaFilesService.handleActionEvent(actionEvent("transformMissingDid", did)))
 				.isInstanceOf(InvalidActionEventException.class)
 				.hasMessageContaining("Invalid ActionEvent: Missing did:");
 	}
 
 	@Test
-	void testEnrichWrongElement() throws IOException {
+	void testTransformWrongElement() throws IOException {
 		String did = UUID.randomUUID().toString();
-		deltaFileRepo.save(postDomainDeltaFile(did));
+		deltaFileRepo.save(postTransformUtf8DeltaFile(did));
 
-		deltaFilesService.handleActionEvent(actionEvent("enrichWrongElement", did));
+		deltaFilesService.handleActionEvent(actionEvent("transformWrongElement", did));
 
 		DeltaFile afterMutation = deltaFilesService.getDeltaFile(did);
-		assertEqualsIgnoringDates(postEnrichInvalidDeltaFile(did), afterMutation);
-	}*/
+		assertEqualsIgnoringDates(postTransformInvalidDeltaFile(did), afterMutation);
+	}
 
 	void runErrorWithAutoResume(Integer autoResumeDelay, boolean withAnnotation) throws IOException {
 		String did = UUID.randomUUID().toString();
@@ -3608,7 +3604,7 @@ class DeltaFiCoreApplicationTests {
 		Action action = deltaFile.getActions().get(0);
 		action.setState(ActionState.ERROR);
 		action.setName("SampleTimedIngressErrorAction");
-		action.setErrorCause("Flow is not installed: missingFlow");
+		action.setErrorCause("Flow of type transform named missingFlow is not running");
 		deltaFile.setStage(DeltaFileStage.ERROR);
 		deltaFile.getSourceInfo().setFlow("missingFlow");
 		return deltaFile;
