@@ -29,7 +29,6 @@ import org.deltafi.core.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.snapshot.Snapshotter;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.snapshot.types.FlowSnapshot;
-import org.deltafi.core.snapshot.util.SnapshotUtil;
 import org.deltafi.core.types.ConfigType;
 import org.deltafi.core.types.Flow;
 import org.deltafi.core.types.Result;
@@ -316,7 +315,6 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     @Override
     public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
         refreshCache();
-        SnapshotUtil.upgrade(systemSnapshot);
 
         if (hardReset) {
             getRunningFlowNames().forEach(this::stopFlow);

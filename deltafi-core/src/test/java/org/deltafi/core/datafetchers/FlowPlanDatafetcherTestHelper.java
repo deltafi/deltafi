@@ -66,7 +66,7 @@ public class FlowPlanDatafetcherTestHelper {
     }
 
     public static EgressFlow validateEgressFlow(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, ValidateEgressFlowGraphQLQuery.newRequest().flowName("sampleEgress").build(), new ValidateNormalizeFlowProjectionRoot().name(), EgressFlow.class);
+        return executeQuery(dgsQueryExecutor, ValidateEgressFlowGraphQLQuery.newRequest().flowName("sampleEgress").build(), new ValidateEgressFlowProjectionRoot().name(), EgressFlow.class);
     }
 
     public static List<Flows> getFlows(DgsQueryExecutor dgsQueryExecutor) {

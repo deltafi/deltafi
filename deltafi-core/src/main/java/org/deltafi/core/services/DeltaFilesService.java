@@ -493,11 +493,7 @@ public class DeltaFilesService {
     }
 
     private String egressFlow(Action action, DeltaFile deltaFile) {
-        if (deltaFile.getStage().equals(DeltaFileStage.IN_FLIGHT) || (deltaFile.getStage().equals(DeltaFileStage.COMPLETE) && deltaFile.getEgressed())) {
-            return action.getFlow();
-        }
-
-        return null;
+        return deltaFile.getEgressed() ? action.getFlow() : null;
     }
 
     public void ingressFromAction(ActionEvent event) {

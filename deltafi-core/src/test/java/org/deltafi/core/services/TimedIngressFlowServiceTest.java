@@ -119,9 +119,6 @@ class TimedIngressFlowServiceTest {
         assertThat(cFlowSnapshot.isTestMode()).isTrue();
         assertThat(cFlowSnapshot.getTargetFlow()).isEqualTo("targetC");
         assertThat(cFlowSnapshot.getCronSchedule()).isEqualTo("0 */3 * * * *");
-
-        assertThat(systemSnapshot.getRunningIngressFlows()).isNull();
-        assertThat(systemSnapshot.getTestIngressFlows()).isNull();
     }
 
     @Test

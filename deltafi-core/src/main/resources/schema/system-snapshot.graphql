@@ -46,12 +46,6 @@ type SystemSnapshot {
     deltaFiProperties: DeltaFiProperties!
     installedPlugins: [PluginCoordinates]!
     pluginVariables: [PluginVariables]!
-    runningTransformFlows: [String]
-    runningIngressFlows: [String]
-    runningEgressFlows: [String]
-    testTransformFlows: [String]
-    testIngressFlows: [String]
-    testEgressFlows: [String]
     timedIngressFlows: [TimedIngressFlowSnapshot]
     transformFlows: [TransformFlowSnapshot]
     egressFlows: [EgressFlowSnapshot]
