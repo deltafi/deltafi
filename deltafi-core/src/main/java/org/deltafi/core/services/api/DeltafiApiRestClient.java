@@ -37,18 +37,23 @@ import java.net.http.HttpResponse;
 @Service
 public class DeltafiApiRestClient implements DeltafiApiClient {
 
-    private final String url;
-    private final HttpClient httpClient;
+    private final static int MAX_STARTUP_FAILURES = 5;
+    private final static int MAX_FAILURES_BEFORE_ERROR_REPEAT = 180; // ~15 minutes
     private final static String CONTENT_METRICS_ENDPOINT = "/api/v1/metrics/system/content";
     private final static String EVENTS_ENDPOINT = "/api/v1/events";
     private final static String METRIC_VIEW_PERMISSION = "MetricsView";
+    private final String url;
+    private final HttpClient httpClient;
+    private ConnectionState connectionState = ConnectionState.STARTUP;
+    private int failedAttempts = 0;
 
     public DeltafiApiRestClient(@Value("${API_URL:http://deltafi-api-service}") String url) {
         this.url = url;
         this.httpClient = HttpClient.newHttpClient();
     }
 
-    /** Return metrics about the node hosting storage, or null if anything goes wrong contacting the API
+    /**
+     * Return metrics about the node hosting storage, or null if anything goes wrong contacting the API
      *
      * @return A DiskMetrics object containing the disk limit and usage
      */
@@ -64,23 +69,65 @@ public class DeltafiApiRestClient implements DeltafiApiClient {
                 log.error(error);
                 throw new IOException(error);
             }
+
+            if (connectionState == ConnectionState.STARTUP) {
+                log.info("Established initial connection to DeltaFi API");
+            } else if (connectionState == ConnectionState.LOST) {
+                log.info("Re-established connection to DeltaFi API");
+            }
+
+            connectionState = ConnectionState.ESTABLISHED;
+            failedAttempts = 0;
+
             JSONObject jsonObject = new JSONObject(response.body());
             JSONObject content = jsonObject.getJSONObject("content");
 
             long limit = content.getLong("limit");
             long usage = content.getLong("usage");
             if (limit == 0 || usage == 0) {
-                log.error("Received invalid disk metrics from API");
+                log.error("Received invalid disk metrics from DeltaFi API");
                 throw new DeltafiApiException("Received invalid disk metrics from API");
             }
 
             return new DiskMetrics(limit, usage);
         } catch (ConnectException e) {
-            log.error("Unable to connect to DeltaFi API");
+            trackConnectionChanges("Unable to connect to DeltaFi API");
             throw new DeltafiApiException("Unable to connect to API", e);
         } catch (Exception e) {
-            log.error("DeltaFi API communication error", e);
+            trackConnectionChanges("DeltaFi API communication error " + e.getMessage());
             throw new DeltafiApiException("Unable to communicate with API", e);
+        }
+    }
+
+    private void trackConnectionChanges(String message) {
+        ++failedAttempts;
+
+        switch (connectionState) {
+            case ESTABLISHED: {
+                // lost the connection
+                log.error(message);
+                connectionState = ConnectionState.LOST;
+                failedAttempts = 0;
+                break;
+            }
+            case STARTUP: {
+                if (failedAttempts > MAX_STARTUP_FAILURES) {
+                    // grace period at startup
+                    log.error(message);
+                    connectionState = ConnectionState.LOST;
+                    failedAttempts = 0;
+                }
+                break;
+            }
+
+            case LOST: {
+                if (failedAttempts > MAX_FAILURES_BEFORE_ERROR_REPEAT) {
+                    // it's been a while, log the error again
+                    log.error(message);
+                    failedAttempts = 0;
+                }
+                break;
+            }
         }
     }
 
@@ -96,8 +143,12 @@ public class DeltafiApiRestClient implements DeltafiApiClient {
             }
             return response.body();
         } catch (Throwable e) {
-            log.error("Unable to post a new event",e);
+            log.error("Unable to post a new event", e);
         }
         return null;
+    }
+
+    enum ConnectionState {
+        STARTUP, ESTABLISHED, LOST
     }
 }

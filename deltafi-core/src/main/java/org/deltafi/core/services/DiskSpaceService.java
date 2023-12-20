@@ -70,7 +70,6 @@ public class DiskSpaceService {
         try {
             contentStorageMetrics = deltafiApiClient.contentMetrics();
         } catch (DeltafiApiException e) {
-            log.warn("Unable to evaluate storage availability criteria, error communicating with API: {}", e.getMessage());
             contentStorageMetrics = null;
         }
     }

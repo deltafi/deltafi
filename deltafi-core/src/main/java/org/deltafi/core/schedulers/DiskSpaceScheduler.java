@@ -40,6 +40,6 @@ public class DiskSpaceScheduler {
 
     @PostConstruct
     public void schedule() {
-        taskScheduler.scheduleAtFixedRate(diskSpaceService::getContentStorageDiskMetrics, Instant.now().plusSeconds(5), Duration.ofSeconds(5));
+        taskScheduler.scheduleAtFixedRate(diskSpaceService::getContentStorageDiskMetrics, Instant.now().plusSeconds(15), Duration.ofSeconds(5));
     }
 }
