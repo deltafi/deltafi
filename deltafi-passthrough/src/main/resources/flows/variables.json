@@ -91,5 +91,43 @@
     "dataType": "STRING",
     "required": true,
     "defaultValue": "tar.gz"
+  },
+  {
+    "name": "passthrough.sftp.ingress.host",
+    "description": "The host for the passthrough SFTP ingress",
+    "dataType": "STRING",
+    "required": true
+  },
+  {
+    "name": "passthrough.sftp.ingress.port",
+    "description": "The port for the passthrough SFTP ingress",
+    "dataType": "NUMBER",
+    "required": true,
+    "defaultValue": "22"
+  },
+  {
+    "name": "passthrough.sftp.ingress.username",
+    "description": "The username for the passthrough SFTP ingress",
+    "dataType": "STRING",
+    "required": true
+  },
+  {
+    "name": "passthrough.sftp.ingress.password",
+    "description": "The password for the passthrough SFTP ingress. If not set, key-based authentication will be used.",
+    "dataType": "STRING",
+    "masked": true
+  },
+  {
+    "name": "passthrough.sftp.ingress.directory",
+    "description": "The directory to poll for the passthrough SFTP ingress",
+    "dataType": "STRING",
+    "required": true
+  },
+  {
+    "name": "passthrough.sftp.ingress.fileRegex",
+    "description": "A regular expression that files must match for the passthrough SFTP ingress",
+    "dataType": "STRING",
+    "required": true,
+    "defaultValue": ".*"
   }
 ]
