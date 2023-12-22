@@ -17,7 +17,6 @@
  */
 package org.deltafi.common.nifi;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apache.nifi.util.FlowFilePackager;
 import org.apache.nifi.util.FlowFilePackagerV1;
 import org.deltafi.common.io.WriterPipedInputStream;
@@ -27,7 +26,6 @@ import java.io.InputStream;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
-@Slf4j
 public class FlowFileInputStream extends WriterPipedInputStream {
     private final FlowFilePackager flowFilePackager;
 

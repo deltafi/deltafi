@@ -22,7 +22,6 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.*;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 
-
 @Data
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
@@ -33,7 +32,7 @@ public class CompressionFormatParameters extends ActionParameters {
     @JsonPropertyDescription("Compression type: ar, gz, tar, tar.gz, tar.xz, xz, and zip")
     public ArchiveType archiveType;
 
-    @JsonProperty(required = false)
+    @JsonProperty
     @JsonPropertyDescription("Sets the media type of the new content to the specified value. Otherwise, will be based on archiveType")
     public String mediaType;
 

@@ -23,6 +23,7 @@ import org.deltafi.actionkit.action.format.FormatInput;
 import org.deltafi.actionkit.action.format.FormatResult;
 import org.deltafi.actionkit.action.format.FormatResultType;
 import org.deltafi.common.constant.DeltaFiConstants;
+import org.deltafi.common.io.WriterPipedInputStream;
 import org.deltafi.common.types.ActionContext;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
@@ -30,10 +31,14 @@ import org.springframework.stereotype.Component;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Component
 public class MergeContentFormatAction extends FormatAction<MergeContentParameters> {
     private static final String MERGED_FILE_NAME = "merged";
+
+    private final ExecutorService executorService = Executors.newFixedThreadPool(1);
 
     public MergeContentFormatAction() {
         super("Merges a list of content to a single content using binary concatenation, TAR, ZIP, AR, TAR.GZ, or TAR.XZ");
@@ -52,9 +57,10 @@ public class MergeContentFormatAction extends FormatAction<MergeContentParameter
         String mediaType = params.getArchiveType() == null ?
                 MediaType.APPLICATION_OCTET_STREAM : params.getArchiveType().getMediaType();
 
-        try (MergeContentInputStream mergeContentInputStream = new MergeContentInputStream(input.getContent(),
-                params.getArchiveType())) {
-            FormatResult formatResult = new FormatResult(context, mergeContentInputStream, fileName, mediaType);
+        try (WriterPipedInputStream writerPipedInputStream = new WriterPipedInputStream()) {
+            writerPipedInputStream.runPipeWriter(new MergeContentWriter(input.getContent(), params.getArchiveType()),
+                    executorService);
+            FormatResult formatResult = new FormatResult(context, writerPipedInputStream, fileName, mediaType);
             formatResult.addMetadata(input.getMetadata());
             return formatResult;
         } catch (IOException e) {
