@@ -133,6 +133,10 @@
           <FlowExpectedAnnotationsViewer :key="Math.random()" :header="header" :expected-annotations="expectedAnnotations" :flow-name="flowName" :flow-type="flowType" @reload-flow-viewer="fetchFlows(flowName, flowType)"></FlowExpectedAnnotationsViewer>
         </TabPanel>
       </template>
+      <TabPanel header="Subscriptions">
+        <FlowSubscriptionsViewer v-if="!_.isEmpty(flowData?.subscriptions)" :key="Math.random()" :header="header" :subscriptions="flowData?.subscriptions"></FlowSubscriptionsViewer>
+        <a v-else>No Flow Subscriptions</a>
+      </TabPanel>
     </TabView>
   </div>
 </template>
@@ -142,6 +146,7 @@ import ActionMetricsTable from "@/components/ActionMetricsTable.vue";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import FlowExpectedAnnotationsViewer from "@/components/flow/FlowExpectedAnnotationsViewer.vue";
 import FlowVariableViewer from "@/components/flow/FlowVariableViewer.vue";
+import FlowSubscriptionsViewer from "./FlowSubscriptionsViewer.vue";
 import useActionMetrics from "@/composables/useActionMetrics";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import { computed, defineProps, inject, onBeforeMount, onUnmounted, reactive, ref } from "vue";

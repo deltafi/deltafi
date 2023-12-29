@@ -99,11 +99,16 @@ const generateFlows = () => {
     transform: [
       {
         name: "keyword-extraction",
+        subscriptions: [{
+          condition: "Run At Night",
+          topics: ["json", "HTML"],
+        }],
         description: "Extract keywords from text",
         type: "text/plain",
         flowStatus: {
           state: "STOPPED",
           errors: [],
+          testMode: false,
         },
         sourcePlugin: {
           artifactId: "keyword-actions",
@@ -118,6 +123,8 @@ const generateFlows = () => {
             parameters: {
               resultType: "text/plain",
             },
+            apiVersion: null,
+            collect: null,
           },
         ],
         egressAction: {
@@ -127,8 +134,10 @@ const generateFlows = () => {
             metadataKey: "deltafiMetadata",
             url: "http://deltafi-egress-sink-service",
           },
+          apiVersion: null,
         },
         variables: [],
+        expectedAnnotations: null,
       }
     ],
     normalize: [
