@@ -523,7 +523,7 @@ kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
 - role: control-plane
-  image: deltafi/deltafi-kind-node:1.24.15
+  image: deltafi/deltafi-kind-node:1.29.0-0
   kubeadmConfigPatches:
   - |
     kind: InitConfiguration
@@ -684,7 +684,7 @@ install() {
   # Detect ARM processor and load arm64 overrides
   local EXTRA=
   _is_arm && EXTRA="-f deltafi/charts/deltafi/values-arm64.yaml"
-  _conditional "DeltaFi core installed" _annotated_subshell -h "Install DeltaFi core" -v "deprecated" -v "admin.conf" _kind_deltafi install "$@" -f deltafi/charts/deltafi/values-kind.yaml "$EXTRA"
+  _conditional "DeltaFi core installed" _annotated_subshell -h "Install DeltaFi core" -v "admin.conf" _kind_deltafi install "$@" -f deltafi/charts/deltafi/values-kind.yaml "$EXTRA"
   _annotated_subshell -h "Set admin password" _kind_deltafi set-admin-password password
   _info -e "If basic_auth is enabled user is 'admin', password is 'password'"
   _info "Open the UI at http://local.deltafi.org"
