@@ -17,9 +17,7 @@
 #
 
 from deltafi.domain import *
-from deltafi.exception import MissingMetadataException, ExpectedContentException, MissingDomainException, \
-    MissingEnrichmentException
-
+from deltafi.exception import MissingMetadataException, ExpectedContentException
 
 class EgressInput(NamedTuple):
     content: Content
@@ -52,8 +50,3 @@ class TransformInput(NamedTuple):
             return self.metadata[key]
         else:
             return default
-
-
-class ValidateInput(NamedTuple):
-    content: Content
-    metadata: dict

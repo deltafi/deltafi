@@ -17,54 +17,44 @@
 #
 
 from abc import abstractmethod
-from deltafi.action import DomainAction, LoadAction
+from deltafi.action import TransformAction
 from deltafi.domain import Context, Content
-from deltafi.input import DomainInput, LoadInput
-from deltafi.result import DomainResult, LoadResult
+from deltafi.input import TransformInput
+from deltafi.result import TransformResult
 from deltafi.storage import ContentService
 from mockito import when, mock, unstub, verifyStubbedInvocationsAreUsed
 from pydantic import BaseModel, Field
 
 
-class SampleDomainAction(DomainAction):
+class SampleTransformParameters(BaseModel):
+    thing: str = Field(description="Sample transform parameter")
+
+
+class SampleTransformAction(TransformAction):
     def __init__(self):
-        super().__init__('Domain action description', ['domain1', 'domain2'])
-
-    def domain(self, context: Context, params: BaseModel, domain_input: DomainInput):
-        return DomainResult(context).annotate('theIndexMetaKey', 'theIndexMetaValue')
-
-
-class SampleLoadParameters(BaseModel):
-    domain: str = Field(description="The domain used by the load action")
-
-
-class SampleLoadAction(LoadAction):
-    def __init__(self):
-        super().__init__('Domain action description')
+        super().__init__('Transform action description')
 
     def param_class(self):
-        return SampleLoadParameters
+        return SampleTransformParameters
 
-    def load(self, context: Context, params: SampleLoadParameters, load_input: LoadInput):
-        return LoadResult(context).add_metadata('loadKey', 'loadValue') \
-            .add_domain(params.domain, 'Python domain!', 'text/plain') \
-            .add_content(Content(name='loaded content', segments=[], media_type='text/plain',
+    def transform(self, context: Context, params: SampleTransformParameters, transform_input: TransformInput):
+        return TransformResult(context).add_metadata('transformKey', 'transformValue') \
+            .add_content(Content(name='transformed content', segments=[], media_type='text/plain',
                                  content_service=mock(ContentService)))
 
 
-class SampleAbstractLoadAction(LoadAction):
+class SampleAbstractTransformAction(TransformAction):
     def __init__(self):
-        super().__init__('Domain action description - ignored due to the abstract method')
+        super().__init__('Transform action description - ignored due to the abstract method')
 
     def param_class(self):
-        return SampleLoadParameters
+        return SampleTransformParameters
 
     @abstractmethod
     def extra_abstract_method(self):
         pass
 
-    def load(self, context: Context, params: SampleLoadParameters, load_input: LoadInput):
-        return LoadResult(context).add_metadata('loadKey', 'loadValue') \
-            .add_domain(params.domain, 'Python domain!', 'text/plain') \
-            .add_content(Content(name='loaded content', segments=[], media_type='text/plain',
+    def transform(self, context: Context, params: SampleTransformParameters, transform_input: TransformInput):
+        return TransformResult(context).add_metadata('transformKey', 'transformValue') \
+            .add_content(Content(name='transformed content', segments=[], media_type='text/plain',
                                  content_service=mock(ContentService)))

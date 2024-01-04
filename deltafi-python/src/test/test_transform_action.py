@@ -17,11 +17,11 @@
 #
 
 import pytest
-from deltafi.action import LoadAction
+from deltafi.action import TransformAction
 from deltafi.actiontype import ActionType
 from deltafi.domain import Event
-from deltafi.input import LoadInput
-from deltafi.result import LoadResult, EnrichResult
+from deltafi.input import TransformInput
+from deltafi.result import TransformResult, EgressResult
 from deltafi.storage import ContentService
 from mockito import mock, unstub
 from pydantic import BaseModel, Field
@@ -29,29 +29,28 @@ from pydantic import BaseModel, Field
 from .helperutils import *
 
 
-class SampleLoadParameters(BaseModel):
-    domain: str = Field(description="The domain used by the load action")
+class SampleTransformParameters(BaseModel):
+    thing: str = Field(description="An action parameter")
 
 
-class SampleLoadAction(LoadAction):
+class SampleTransformAction(TransformAction):
     def __init__(self):
-        super().__init__('A sample load action')
+        super().__init__('A sample transform action')
 
     def param_class(self):
-        return SampleLoadParameters
+        return SampleTransformParameters
 
-    def load(self, context: Context, params: SampleLoadParameters, load_input: LoadInput):
-        return LoadResult(context).add_metadata('loadKey', 'loadValue') \
-            .add_domain(params.domain, 'the domain value!', 'text/plain') \
-            .annotate('loadAnnotate', 'loadAnnotateValue')
+    def transform(self, context: Context, params: SampleTransformParameters, transform_input: TransformInput):
+        return TransformResult(context).add_metadata('transformKey', 'transformValue') \
+            .annotate('transformAnnotate', 'transformAnnotateValue')
 
 
-class InvalidResult(LoadAction):
+class InvalidResult(TransformAction):
     def __init__(self):
-        super().__init__('A sample load action')
+        super().__init__('A sample transform action')
 
-    def load(self, context: Context, params: SampleLoadParameters, load_input: LoadInput):
-        return EnrichResult(context)
+    def transform(self, context: Context, params: SampleTransformParameters, transform_input: TransformInput):
+        return EgressResult(context, 'destination', 42)
 
 
 def make_event(content_service):
@@ -60,36 +59,29 @@ def make_event(content_service):
         'deltaFileMessages': [make_delta_file_message_dict()],
         'actionContext': make_context_dict(),
         'actionParams': {
-            "domain": "theDomainName"
+            "thing": "theThing"
         }
     },
         "HOSTNAME", content_service, logger)
     return event
 
 
-def test_load_action():
+def test_transform_action():
     unstub()
     mock_content_service = mock(ContentService)
 
-    action = SampleLoadAction()
-    assert action.action_type.value == ActionType.LOAD.value
+    action = SampleTransformAction()
+    assert action.action_type.value == ActionType.TRANSFORM.value
     result = action.execute_action(make_event(mock_content_service))
-    assert type(result) == LoadResult
+    assert type(result) == TransformResult
 
     expected_response = {
-        'domains': [
-            {
-                'mediaType': 'text/plain',
-                'name': 'theDomainName',
-                'value': 'the domain value!'
-            }
-        ],
         'content': [],
         'metadata': {
-            'loadKey': 'loadValue'
+            'transformKey': 'transformValue'
         },
         'annotations': {
-            'loadAnnotate': 'loadAnnotateValue'
+            'transformAnnotate': 'transformAnnotateValue'
         },
         'deleteMetadataKeys': []
     }

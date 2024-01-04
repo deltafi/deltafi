@@ -80,7 +80,7 @@ class Action(ABC):
 
 class EgressAction(Action, ABC):
     def __init__(self, description: str):
-        super().__init__(ActionType.EGRESS, description, [], [], (EgressResult, ErrorResult, FilterResult))
+        super().__init__(ActionType.EGRESS, description, (EgressResult, ErrorResult, FilterResult))
 
     def build_input(self, context: Context, delta_file_message: DeltaFileMessage):
         return EgressInput(content=delta_file_message.content_list[0], metadata=delta_file_message.metadata)
@@ -95,7 +95,7 @@ class EgressAction(Action, ABC):
 
 class TimedIngressAction(Action, ABC):
     def __init__(self, description: str):
-        super().__init__(ActionType.TIMED_INGRESS, description, [], [], (IngressResult, ErrorResult))
+        super().__init__(ActionType.TIMED_INGRESS, description, (IngressResult, ErrorResult))
 
     def build_input(self, context: Context, delta_file_message: DeltaFileMessage):
         return None
@@ -110,7 +110,7 @@ class TimedIngressAction(Action, ABC):
 
 class TransformAction(Action, ABC):
     def __init__(self, description: str):
-        super().__init__(ActionType.TRANSFORM, description, [], [], (TransformResult, ErrorResult, FilterResult, ReinjectResult))
+        super().__init__(ActionType.TRANSFORM, description, (TransformResult, ErrorResult, FilterResult))
 
     def build_input(self, context: Context, delta_file_message: DeltaFileMessage):
         return TransformInput(content=delta_file_message.content_list, metadata=delta_file_message.metadata)
@@ -129,18 +129,3 @@ class TransformAction(Action, ABC):
 
     def execute(self, context: Context, transform_input: TransformInput, params: BaseModel):
         return self.transform(context, params, transform_input)
-
-
-class ValidateAction(Action, ABC):
-    def __init__(self, description: str):
-        super().__init__(ActionType.VALIDATE, description, [], [], (ValidateResult, ErrorResult, FilterResult))
-
-    def build_input(self, context: Context, delta_file_message: DeltaFileMessage):
-        return ValidateInput(content=delta_file_message.content_list[0], metadata=delta_file_message.metadata)
-
-    @abstractmethod
-    def validate(self, context: Context, params: BaseModel, validate_input: ValidateInput):
-        pass
-
-    def execute(self, context: Context, validate_input: ValidateInput, params: BaseModel):
-        return self.validate(context, params, validate_input)
