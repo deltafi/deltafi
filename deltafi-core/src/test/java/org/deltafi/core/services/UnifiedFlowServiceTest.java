@@ -68,16 +68,10 @@ class UnifiedFlowServiceTest {
 
     @Test
     void testRunningActionForEgressType() {
-        EgressActionConfiguration transformFlowEgressAction = mock(EgressActionConfiguration.class);
-        when(transformFlowEgressAction.getName()).thenReturn("anotherAction");
-        TransformFlow transformFlow = mock(TransformFlow.class);
-        when(transformFlow.getEgressAction()).thenReturn(transformFlowEgressAction);
         EgressActionConfiguration egressFlowEgressAction = mock(EgressActionConfiguration.class);
         when(egressFlowEgressAction.getName()).thenReturn("testAction");
         EgressFlow egressFlow = mock(EgressFlow.class);
         when(egressFlow.getEgressAction()).thenReturn(egressFlowEgressAction);
-
-        when(transformFlowService.getRunningFlows()).thenReturn(List.of(transformFlow));
         when(egressFlowService.getRunningFlows()).thenReturn(List.of(egressFlow));
 
         assertEquals(egressFlowEgressAction, unifiedFlowService.runningAction("testAction", ActionType.EGRESS));

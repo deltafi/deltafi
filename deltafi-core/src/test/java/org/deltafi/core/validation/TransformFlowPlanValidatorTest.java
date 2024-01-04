@@ -41,22 +41,20 @@ class TransformFlowPlanValidatorTest {
     TransformFlowPlanValidator transformFlowPlanValidator;
 
     @Mock
+    @SuppressWarnings("unused")
     RuleValidator ruleValidator;
 
     @Test
     void duplicateActionNameErrors() {
-        EgressActionConfiguration egress = new EgressActionConfiguration("action", "org.deltafi.load.Action");
-
         TransformActionConfiguration transform1 = new TransformActionConfiguration("action", "org.deltafi.transform.Action1");
         TransformActionConfiguration transform2 = new TransformActionConfiguration("transform", "org.deltafi.transform.Action2");
         TransformActionConfiguration transform3 = new TransformActionConfiguration("transform",  "org.deltafi.transform.Action3");
 
         TransformFlowPlan transformFlow = new TransformFlowPlan("flow", null);
-        transformFlow.setEgressAction(egress);
         transformFlow.setTransformActions(List.of(transform1, transform2, transform3));
 
         Assertions.assertThatThrownBy(() -> transformFlowPlanValidator.validate(transformFlow))
                 .isInstanceOf(DeltafiConfigurationException.class)
-                .hasMessage("Config named: transform had the following error: The action name: transform is duplicated for the following action types: org.deltafi.transform.Action2, org.deltafi.transform.Action3; Config named: action had the following error: The action name: action is duplicated for the following action types: org.deltafi.transform.Action1, org.deltafi.load.Action");
+                .hasMessage("Config named: transform had the following error: The action name: transform is duplicated for the following action types: org.deltafi.transform.Action2, org.deltafi.transform.Action3");
     }
 }

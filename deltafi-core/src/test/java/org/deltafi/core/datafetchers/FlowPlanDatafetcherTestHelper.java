@@ -33,6 +33,7 @@ import org.deltafi.core.types.TransformFlow;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.deltafi.core.util.Constants.TIMED_INGRESS_FLOW_NAME;
 
@@ -41,7 +42,7 @@ public class FlowPlanDatafetcherTestHelper {
     public static final PluginCoordinates PLUGIN_COORDINATES = PluginCoordinates.builder().artifactId("test-plugin").groupId("org.deltafi").version("1.0.0").build();
 
     public static TransformFlowPlan getTransformFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, GetTransformFlowPlanGraphQLQuery.newRequest().planName("transformPlan").build(), new GetTransformFlowPlanProjectionRoot().name().type().description().egressAction().name().actionType().type(), TransformFlowPlan.class);
+        return executeQuery(dgsQueryExecutor, GetTransformFlowPlanGraphQLQuery.newRequest().planName("transformPlan").build(), new GetTransformFlowPlanProjectionRoot().name().type().description().type(), TransformFlowPlan.class);
     }
     
     public static EgressFlowPlan getEgressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
@@ -49,7 +50,9 @@ public class FlowPlanDatafetcherTestHelper {
     }
 
     public static TimedIngressFlowPlan getTimedIngressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, GetTimedIngressFlowPlanGraphQLQuery.newRequest().planName("timedIngressPlan").build(), new GetTimedIngressFlowPlanProjectionRoot().name().type().description().timedIngressAction().name().actionType().type().parent().targetFlow().cronSchedule(), TimedIngressFlowPlan.class);
+        return executeQuery(dgsQueryExecutor, GetTimedIngressFlowPlanGraphQLQuery.newRequest().planName("timedIngressPlan").build(), new GetTimedIngressFlowPlanProjectionRoot().name().type().description()
+                .timedIngressAction().name().actionType().type().parent().cronSchedule()
+                .publishRules().defaultRule().defaultBehavior().parent(), TimedIngressFlowPlan.class);
     }
 
     public static TransformFlow validateTransformFlow(DgsQueryExecutor dgsQueryExecutor) {
@@ -100,12 +103,10 @@ public class FlowPlanDatafetcherTestHelper {
     }
 
     public static TransformFlow saveTransformFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
-        EgressActionConfigurationInput egressActionConfigurationInput = EgressActionConfigurationInput.newBuilder().name("egress").type("org.deltafi.action.Egress").build();
         TransformFlowPlanInput input = TransformFlowPlanInput.newBuilder()
                 .name("flowPlan")
                 .type("TRANSFORM")
                 .description("description")
-                .egressAction(egressActionConfigurationInput)
                 .build();
 
         return executeQuery(dgsQueryExecutor, SaveTransformFlowPlanGraphQLQuery.newRequest().transformFlowPlan(input).build(), new SaveTransformFlowPlanProjectionRoot().name().flowStatus().state().parent().parent(), TransformFlow.class);
@@ -124,13 +125,15 @@ public class FlowPlanDatafetcherTestHelper {
 
     public static TimedIngressFlow saveTimedIngressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
         TimedIngressActionConfigurationInput timedIngress = TimedIngressActionConfigurationInput.newBuilder().name("timedIngress").type("org.deltafi.actions.TimedIngress").build();
+        PublishRules publishRules = new PublishRules();
+        publishRules.setRules(List.of(new Rule(Set.of("topic"), "metadata['a']=='b'")));
         TimedIngressFlowPlanInput input = TimedIngressFlowPlanInput.newBuilder()
                 .name("flowPlan")
                 .type("TIMED_INGRESS")
                 .description("description")
                 .timedIngressAction(timedIngress)
-                .targetFlow("target")
                 .cronSchedule("*/5 * * * * *")
+                .publishRules(publishRules)
                 .build();
         return executeQuery(dgsQueryExecutor, SaveTimedIngressFlowPlanGraphQLQuery.newRequest().timedIngressFlowPlan(input).build(), new SaveTimedIngressFlowPlanProjectionRoot().name(), TimedIngressFlow.class);
     }

@@ -39,7 +39,7 @@ export default function useFlows() {
 
   const fetchIngressFlowNames = async (state?: string) => {
     await queryGraphQL(buildQuery(false, true, state), "getIngressFlowNames");
-    ingressFlows.value = response.value.data.getFlowNames.normalize.concat(response.value.data.getFlowNames.transform).sort();
+    ingressFlows.value = response.value.data.getFlowNames.transform.sort();
   }
 
   const fetchEgressFlowNames = async (state?: string) => {

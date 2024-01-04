@@ -32,6 +32,7 @@ public class EgressFlowPlanConverter extends FlowPlanConverter<EgressFlowPlan, E
 
     public void populateFlowSpecificFields(EgressFlowPlan egressFlowPlan, EgressFlow egressFlow, FlowPlanPropertyHelper flowPlanPropertyHelper) {
         egressFlow.setEgressAction(buildEgressAction(egressFlowPlan.getEgressAction(), flowPlanPropertyHelper));
+        egressFlow.setSubscriptions(egressFlowPlan.getSubscriptions());
     }
 
     /**

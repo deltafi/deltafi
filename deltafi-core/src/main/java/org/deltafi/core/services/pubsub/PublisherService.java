@@ -22,6 +22,7 @@ import org.deltafi.common.rules.RuleEvaluator;
 import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionEventType;
 import org.deltafi.common.types.ActionType;
+import org.deltafi.common.types.Content;
 import org.deltafi.common.types.DefaultBehavior;
 import org.deltafi.common.types.DefaultRule;
 import org.deltafi.common.types.DeltaFile;
@@ -182,8 +183,11 @@ public class PublisherService {
     }
 
     private void errorDeltaFile(DeltaFile deltaFile, String publisherName, String context) {
+        // grab the last content list to copy into the synthetic error action to make it available for retry
+        List<Content> toCopy = deltaFile.lastContent();
         queueSyntheticAction(deltaFile, publisherName);
         deltaFile.errorAction(buildErrorEvent(deltaFile, publisherName, context));
+        deltaFile.lastAction().setContent(toCopy);
     }
 
     private void filterDeltaFile(DeltaFile deltaFile, String publisherName, String context) {

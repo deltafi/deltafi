@@ -9,6 +9,12 @@
       "metadata": { "smoke":  "test" }
     }
   },
-  "targetFlow": "smoke-test",
+  "publishRules": {
+    "matchingPolicy": "FIRST_MATCHING",
+    "defaultRule": {"defaultBehavior": "FILTER"},
+    "rules": [
+      {"topics": ["smoke-transform"]}
+    ]
+  },
   "cronSchedule": "*/5 * * * * *"
 }

@@ -21,7 +21,7 @@ mutation {
         dids: ["%1$s", "fakedid"],
         resumeMetadata: [
             {
-                flow: "sampleTransform"
+                flow: "sampleEgress"
                 action: "SampleEgressAction"
                 metadata: [ { key: "a" value: "b" } ]
             }

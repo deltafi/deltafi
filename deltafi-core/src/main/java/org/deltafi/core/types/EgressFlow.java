@@ -29,9 +29,10 @@ import java.util.*;
 @Document
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class EgressFlow extends Flow {
+public class EgressFlow extends Flow implements Subscriber {
     private EgressActionConfiguration egressAction;
     private Set<String> expectedAnnotations;
+    private Set<Rule> subscriptions;
 
     /**
      * Schema versions:
@@ -85,5 +86,9 @@ public class EgressFlow extends Flow {
     @Override
     public DeltaFiConfiguration asFlowConfiguration() {
         return new EgressFlowConfiguration(name, egressAction.getName());
+    }
+
+    public Set<Rule> subscriptions() {
+        return subscriptions;
     }
 }

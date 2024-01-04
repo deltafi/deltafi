@@ -22,6 +22,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.resource.Resource;
+import org.deltafi.common.types.DefaultBehavior;
+import org.deltafi.common.types.DefaultRule;
+import org.deltafi.common.types.MatchingPolicy;
+import org.deltafi.common.types.PublishRules;
+import org.deltafi.common.types.Rule;
 import org.deltafi.common.types.TimedIngressActionConfiguration;
 import org.deltafi.common.types.TimedIngressFlowPlan;
 import org.deltafi.core.generated.types.FlowConfigError;
@@ -32,7 +37,9 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -48,12 +55,16 @@ class TimedIngressFlowPlanConverterTest {
         TimedIngressFlowPlan flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-timedIngress-flowplan-test.json"), TimedIngressFlowPlan.class);
         TimedIngressFlow timedIngressFlow = timedIngressFlowPlanConverter.convert(flowPlan, Collections.emptyList());
 
+        PublishRules publishRules = new PublishRules();
+        publishRules.setMatchingPolicy(MatchingPolicy.FIRST_MATCHING);
+        publishRules.setDefaultRule(new DefaultRule(DefaultBehavior.PUBLISH, "test"));
+        publishRules.setRules(List.of(new Rule(Set.of("passthrough", "second"), "metadata['a'] == '1'")));
         assertThat(timedIngressFlow.getName()).isEqualTo("smoke-test-ingress");
         assertThat(timedIngressFlow.getTimedIngressAction()).isEqualTo(expectedTimedIngressAction());
-        assertThat(timedIngressFlow.getTargetFlow()).isEqualTo("smoke");
         assertThat(timedIngressFlow.getCronSchedule()).isEqualTo("*/5 * * * * *");
         assertThat(timedIngressFlow.getFlowStatus().getState()).isEqualTo(FlowState.STOPPED);
         assertThat(timedIngressFlow.getFlowStatus().getTestMode()).isFalse();
+        assertThat(timedIngressFlow.getPublishRules()).isEqualTo(publishRules);
     }
 
     @Test

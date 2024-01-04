@@ -27,21 +27,8 @@ public class TransformFlowPlanConverter extends FlowPlanConverter<TransformFlowP
 
     public void populateFlowSpecificFields(TransformFlowPlan transformFlowPlan, TransformFlow transformFlow, FlowPlanPropertyHelper flowPlanPropertyHelper) {
         transformFlow.setTransformActions(buildTransformActions(transformFlowPlan.getTransformActions(), flowPlanPropertyHelper));
-        transformFlow.setEgressAction(buildEgressAction(transformFlowPlan.getEgressAction(), flowPlanPropertyHelper));
         transformFlow.setSubscriptions(transformFlowPlan.getSubscriptions());
-    }
-
-    /**
-     * Return a copy of the egress action configuration with placeholders resolved where possible.
-     *
-     * @param egressActionTemplate template of the EgressActionConfiguration that should be created
-     * @return EgressActionConfiguration with variable values substituted in
-     */
-    EgressActionConfiguration buildEgressAction(EgressActionConfiguration egressActionTemplate, FlowPlanPropertyHelper flowPlanPropertyHelper) {
-        EgressActionConfiguration egressActionConfiguration = new EgressActionConfiguration(
-                flowPlanPropertyHelper.getReplacedName(egressActionTemplate), egressActionTemplate.getType());
-        flowPlanPropertyHelper.replaceCommonActionPlaceholders(egressActionConfiguration, egressActionTemplate);
-        return egressActionConfiguration;
+        transformFlow.setPublishRules(transformFlowPlan.publishRules());
     }
 
     List<TransformActionConfiguration> buildTransformActions(List<TransformActionConfiguration> transformActionTemplates, FlowPlanPropertyHelper flowPlanPropertyHelper) {

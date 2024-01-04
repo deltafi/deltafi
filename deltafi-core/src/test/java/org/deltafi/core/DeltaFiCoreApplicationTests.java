@@ -142,6 +142,7 @@ class DeltaFiCoreApplicationTests {
 
 	@Container
 	public final static MongoDBContainer MONGO_DB_CONTAINER = new MongoDBContainer(MONGODB_CONTAINER);
+	public static final String SAMPLE_EGRESS_SAMPLE_EGRESS_ACTION = "sampleEgress.SampleEgressAction";
 
 	@DynamicPropertySource
 	static void setProperties(DynamicPropertyRegistry registry) {
@@ -313,13 +314,14 @@ class DeltaFiCoreApplicationTests {
 	void loadTransformConfig() {
 		transformFlowRepo.deleteAll();
 
-		EgressActionConfiguration ec = new EgressActionConfiguration("SampleEgressAction", "type");
 		TransformActionConfiguration tc = new TransformActionConfiguration("Utf8TransformAction", "type");
 		TransformActionConfiguration tc2 = new TransformActionConfiguration("SampleTransformAction", "type");
 
-		TransformFlow sampleTransformFlow = buildRunningFlow(TRANSFORM_FLOW_NAME, ec, List.of(tc, tc2), false);
-		TransformFlow retryFlow = buildRunningFlow("theTransformFlow", ec, null, false);
-		TransformFlow childFlow = buildRunningFlow("transformChildFlow", ec, List.of(tc2), false);
+		TransformFlow sampleTransformFlow = buildRunningTransformFlow(TRANSFORM_FLOW_NAME, List.of(tc, tc2), false);
+		sampleTransformFlow.setSubscriptions(Set.of(new Rule(Set.of(TRANSFORM_TOPIC))));
+		sampleTransformFlow.setPublishRules(publishRules(EGRESS_TOPIC));
+		TransformFlow retryFlow = buildRunningTransformFlow("theTransformFlow", null, false);
+		TransformFlow childFlow = buildRunningTransformFlow("transformChildFlow", List.of(tc2), false);
 
 		transformFlowRepo.saveAll(List.of(sampleTransformFlow, retryFlow, childFlow));
 		refreshFlowCaches();
@@ -330,10 +332,11 @@ class DeltaFiCoreApplicationTests {
 
 		EgressActionConfiguration sampleEgress = new EgressActionConfiguration("SampleEgressAction", "type");
 
-		EgressFlow sampleEgressFlow = buildRunningFlow(EGRESS_FLOW_NAME, sampleEgress, false);
+		EgressFlow sampleEgressFlow = buildRunningEgressFlow(EGRESS_FLOW_NAME, sampleEgress, false);
+		sampleEgressFlow.setSubscriptions(Set.of(new Rule(Set.of(EGRESS_TOPIC))));
 
 		EgressActionConfiguration errorEgress = new EgressActionConfiguration("ErrorEgressAction", "type");
-		EgressFlow errorFlow = buildRunningFlow("error", errorEgress, false);
+		EgressFlow errorFlow = buildRunningEgressFlow("error", errorEgress, false);
 
 		egressFlowRepo.saveAll(List.of(sampleEgressFlow, errorFlow));
 		egressFlowService.refreshCache();
@@ -664,7 +667,7 @@ class DeltaFiCoreApplicationTests {
 
 		queueManagementService.coldToWarm();
 
-		verifyActionEventResults(postTransformDeltaFile(did), ActionContext.builder().flow(TRANSFORM_FLOW_NAME).name("sampleTransform.SampleEgressAction").build());
+		verifyActionEventResults(postTransformDeltaFile(did), ActionContext.builder().flow(EGRESS_FLOW_NAME).name(SAMPLE_EGRESS_SAMPLE_EGRESS_ACTION).build());
 	}
 
 	// TODO - turn this into testing a split from a transform
@@ -726,7 +729,7 @@ class DeltaFiCoreApplicationTests {
 
 		deltaFilesService.handleActionEvent(actionEvent("transformUnicode", did));
 
-		verifyActionEventResults(postTransformDeltaFileWithUnicodeAnnotation(did), ActionContext.builder().flow("sampleTransform").name("sampleTransform.SampleEgressAction").build());
+		verifyActionEventResults(postTransformDeltaFileWithUnicodeAnnotation(did), ActionContext.builder().flow(EGRESS_FLOW_NAME).name(SAMPLE_EGRESS_SAMPLE_EGRESS_ACTION).build());
 		verifyCommonMetrics(ActionEventType.TRANSFORM, "SampleTransformAction", TRANSFORM_FLOW_NAME, null, "type");
 	}
 
@@ -808,7 +811,7 @@ class DeltaFiCoreApplicationTests {
 		}
 		assertEqualsIgnoringDates(expected, actual);
 
-		Map<String, String> tags = tagsFor(ActionEventType.ERROR, "SampleEgressAction", TRANSFORM_FLOW_NAME, TRANSFORM_FLOW_NAME);
+		Map<String, String> tags = tagsFor(ActionEventType.ERROR, "SampleEgressAction", TRANSFORM_FLOW_NAME, EGRESS_FLOW_NAME);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_ERRORED, 1).addTags(tags));
 
@@ -847,8 +850,8 @@ class DeltaFiCoreApplicationTests {
 		assertTrue(retryResults.get(0).getSuccess());
 		assertFalse(retryResults.get(1).getSuccess());
 
-		verifyActionEventResults(postResumeDeltaFile(did, "sampleTransform", "SampleEgressAction", ActionType.TRANSFORM),
-				ActionContext.builder().flow("sampleTransform").name("sampleTransform.SampleEgressAction").build());
+		verifyActionEventResults(postResumeDeltaFile(did, EGRESS_FLOW_NAME, "SampleEgressAction", ActionType.TRANSFORM),
+				ActionContext.builder().flow(EGRESS_FLOW_NAME).name(SAMPLE_EGRESS_SAMPLE_EGRESS_ACTION).build());
 
 		Mockito.verifyNoInteractions(metricService);
 	}
@@ -1041,7 +1044,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testFilterEgress() throws IOException {
 		String did = UUID.randomUUID().toString();
-		verifyFiltered(postTransformDeltaFile(did), "sampleTransform", "SampleEgressAction", true);
+		verifyFiltered(postTransformDeltaFile(did), EGRESS_FLOW_NAME, "SampleEgressAction", true);
 	}
 
 	@SuppressWarnings("SameParameterValue")
@@ -1109,9 +1112,7 @@ class DeltaFiCoreApplicationTests {
 	void testGetTransformFlowPlan() {
 		clearForFlowTests();
 		TransformFlowPlan transformFlowPlanA = new TransformFlowPlan("transformPlan", "description");
-		transformFlowPlanA.setEgressAction(new EgressActionConfiguration("egress", "type"));
 		TransformFlowPlan transformFlowPlanB = new TransformFlowPlan("b", "description");
-		transformFlowPlanB.setEgressAction(new EgressActionConfiguration("egress", "type"));
 		transformFlowPlanRepo.saveAll(List.of(transformFlowPlanA, transformFlowPlanB));
 		TransformFlowPlan plan = FlowPlanDatafetcherTestHelper.getTransformFlowPlan(dgsQueryExecutor);
 		assertThat(plan.getName()).isEqualTo("transformPlan");
@@ -1130,10 +1131,13 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testGetTimedIngressFlowPlan() {
 		clearForFlowTests();
+		PublishRules publishRules = new PublishRules();
+		publishRules.setMatchingPolicy(MatchingPolicy.FIRST_MATCHING);
+		publishRules.setDefaultRule(new DefaultRule(DefaultBehavior.ERROR));
 		TimedIngressFlowPlan timedIngressFlowPlanA = new TimedIngressFlowPlan("timedIngressPlan", FlowType.TIMED_INGRESS,
-				"description", new TimedIngressActionConfiguration("timedIngress", "type"), "flow", null, "*/5 * * * * *");
+				"description", new TimedIngressActionConfiguration("timedIngress", "type"),  publishRules, "*/5 * * * * *");
 		TimedIngressFlowPlan timedIngressFlowPlanB = new TimedIngressFlowPlan("b", FlowType.TIMED_INGRESS, "description",
-				new TimedIngressActionConfiguration("timedIngress", "type"), "flow", null, "*/5 * * * * *");
+				new TimedIngressActionConfiguration("timedIngress", "type"), publishRules, "*/5 * * * * *");
 		timedIngressFlowPlanRepo.saveAll(List.of(timedIngressFlowPlanA, timedIngressFlowPlanB));
 		TimedIngressFlowPlan plan = FlowPlanDatafetcherTestHelper.getTimedIngressFlowPlan(dgsQueryExecutor);
 		assertThat(plan.getName()).isEqualTo("timedIngressPlan");
@@ -1321,7 +1325,7 @@ class DeltaFiCoreApplicationTests {
 
 		assertThat(getActionNames(actionFamilies, "INGRESS")).hasSize(1).contains(INGRESS_ACTION);
 		assertThat(getActionNames(actionFamilies, "TRANSFORM")).hasSize(2).contains("Utf8TransformAction", "SampleTransformAction");
-		assertThat(getActionNames(actionFamilies, "EGRESS")).hasSize(2).contains("SampleEgressAction", "SampleEgressAction");
+		assertThat(getActionNames(actionFamilies, "EGRESS")).hasSize(1).contains("SampleEgressAction");
 		assertThat(getActionNames(actionFamilies, "TIMED_INGRESS")).hasSize(1).contains("SampleTimedIngressAction");
 	}
 
@@ -1410,7 +1414,7 @@ class DeltaFiCoreApplicationTests {
 	void testRemoveTimedIngressFlowPlan() {
 		clearForFlowTests();
 		TimedIngressFlowPlan timedIngressFlowPlan = new TimedIngressFlowPlan("flowPlan", FlowType.TIMED_INGRESS, null,
-				null, null, null, null);
+				null, null, null);
 		timedIngressFlowPlanRepo.save(timedIngressFlowPlan);
 		assertThatThrownBy(() -> FlowPlanDatafetcherTestHelper.removeTimedIngressFlowPlan(dgsQueryExecutor))
 				.isInstanceOf(QueryException.class)
@@ -3588,7 +3592,7 @@ class DeltaFiCoreApplicationTests {
 		verifyActionEventResults(ingressedFromAction(did, TIMED_INGRESS_FLOW_NAME),
 				ActionContext.builder().flow("sampleTransform").name("sampleTransform.Utf8TransformAction").build());
 
-		Map<String, String> tags = tagsFor(ActionEventType.INGRESS, "SampleTimedIngressAction", TRANSFORM_FLOW_NAME, null);
+		Map<String, String> tags = tagsFor(ActionEventType.INGRESS, "SampleTimedIngressAction", TIMED_INGRESS_FLOW_NAME, null);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.BYTES_IN, 36).addTags(tags));
 
@@ -3600,13 +3604,21 @@ class DeltaFiCoreApplicationTests {
 
 	DeltaFile ingressedFromActionWithError(String did) {
 		DeltaFile deltaFile = ingressedFromAction(did, TIMED_INGRESS_ERROR_FLOW_NAME);
+		deltaFile.getSourceInfo().setFlow(TIMED_INGRESS_ERROR_FLOW_NAME);
 		deltaFile.getActions().remove(1);
-		Action action = deltaFile.getActions().get(0);
+		deltaFile.getActions().get(0).setName("SampleTimedIngressErrorAction");
+		Action action = new Action();
+		action.setType(ActionType.PUBLISH);
 		action.setState(ActionState.ERROR);
-		action.setName("SampleTimedIngressErrorAction");
-		action.setErrorCause("Flow of type transform named missingFlow is not running");
+		action.setFlow("sampleTimedIngressError");
+		action.setName("NO_SUBSCRIBERS");
+		action.setErrorCause("No matching subscribers were found");
+		action.setErrorContext("No subscribers found using publisher `sampleTimedIngressError`\n" + publishRules("missingFlow"));
+		action.setContent(deltaFile.getActions().get(0).getContent());
+		deltaFile.getActions().add(action);
+
 		deltaFile.setStage(DeltaFileStage.ERROR);
-		deltaFile.getSourceInfo().setFlow("missingFlow");
+
 		return deltaFile;
 	}
 
@@ -3622,7 +3634,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile expected = ingressedFromActionWithError(did);
 		assertEqualsIgnoringDates(expected, actual);
 
-		Map<String, String> tags = tagsFor(ActionEventType.INGRESS, "SampleTimedIngressErrorAction", "missingFlow", null);
+		Map<String, String> tags = tagsFor(ActionEventType.INGRESS, "SampleTimedIngressErrorAction", TIMED_INGRESS_ERROR_FLOW_NAME, null);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.BYTES_IN, 36).addTags(tags));
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_ERRORED, 1).addTags(tags));
@@ -3894,24 +3906,24 @@ class DeltaFiCoreApplicationTests {
 		deltaFilesService.handleActionEvent(actionEvent("transform", did));
 
 		verifyActionEventResults(postTransformDeltaFile(did),
-				ActionContext.builder().flow("sampleTransform").name("sampleTransform.SampleEgressAction").build());
+				ActionContext.builder().flow(EGRESS_FLOW_NAME).name(SAMPLE_EGRESS_SAMPLE_EGRESS_ACTION).build());
 
 		verifyCommonMetrics(ActionEventType.TRANSFORM, "SampleTransformAction", TRANSFORM_FLOW_NAME, null, "type");
 	}
 
 	@Test
-	void testTransformFlowEgress() throws IOException {
+	void testEgressFlowAfterTransform() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postTransformDeltaFile(did));
 
-		deltaFilesService.handleActionEvent(actionEvent("transformFlowEgress", did));
+		deltaFilesService.handleActionEvent(actionEvent("egressFlowEgress", did));
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		assertEqualsIgnoringDates(transformFlowPostEgressDeltaFile(did), deltaFile);
 
 		Mockito.verify(actionEventQueue, never()).putActions(any(), anyBoolean());
-		Map<String, String> tags = tagsFor(ActionEventType.EGRESS, "SampleEgressAction", TRANSFORM_FLOW_NAME, TRANSFORM_FLOW_NAME);
-		Map<String, String> classTags = tagsFor(ActionEventType.EGRESS, "SampleEgressAction", TRANSFORM_FLOW_NAME, TRANSFORM_FLOW_NAME);
+		Map<String, String> tags = tagsFor(ActionEventType.EGRESS, "SampleEgressAction", TRANSFORM_FLOW_NAME, EGRESS_FLOW_NAME);
+		Map<String, String> classTags = tagsFor(ActionEventType.EGRESS, "SampleEgressAction", TRANSFORM_FLOW_NAME, EGRESS_FLOW_NAME);
 		classTags.put(DeltaFiConstants.CLASS, "type");
 
 		Mockito.verify(metricService, Mockito.atLeast(5)).increment(metricCaptor.capture());

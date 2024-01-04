@@ -28,7 +28,6 @@ public class TimedIngressFlowPlanConverter extends FlowPlanConverter<TimedIngres
 
     public void populateFlowSpecificFields(TimedIngressFlowPlan timedIngressFlowPlan, TimedIngressFlow timedIngressFlow, FlowPlanPropertyHelper flowPlanPropertyHelper) {
         timedIngressFlow.setTimedIngressAction(buildTimedIngressAction(timedIngressFlowPlan.getTimedIngressAction(), flowPlanPropertyHelper));
-        timedIngressFlow.setTargetFlow(timedIngressFlowPlan.getTargetFlow());
         timedIngressFlow.setCronSchedule(timedIngressFlowPlan.getCronSchedule());
         CronExpression cronExpression = CronExpression.parse(timedIngressFlow.getCronSchedule());
         timedIngressFlow.setNextRun(cronExpression.next(OffsetDateTime.now()));

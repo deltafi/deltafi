@@ -37,7 +37,6 @@ public class TimedIngressFlow extends Flow implements Publisher {
     private static final Duration TASKING_TIMEOUT = Duration.ofSeconds(30);
 
     private TimedIngressActionConfiguration timedIngressAction;
-    private String targetFlow;
     private String cronSchedule;
 
     private OffsetDateTime lastRun;

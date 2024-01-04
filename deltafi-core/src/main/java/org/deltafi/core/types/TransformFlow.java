@@ -34,11 +34,11 @@ import java.util.Set;
 @Document
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class TransformFlow extends Flow implements Subscriber {
+public class TransformFlow extends Flow implements Subscriber, Publisher {
     private List<TransformActionConfiguration> transformActions = new ArrayList<>();
-    private EgressActionConfiguration egressAction;
     private int maxErrors = -1;
     private Set<Rule> subscriptions;
+    private PublishRules publishRules;
 
     /**
      * Schema versions:
@@ -53,7 +53,6 @@ public class TransformFlow extends Flow implements Subscriber {
     public boolean migrate() {
         if (schemaVersion < 2) {
             transformActions.forEach(this::migrateAction);
-            migrateAction(egressAction);
         }
 
         if (schemaVersion < CURRENT_SCHEMA_VERSION) {
@@ -66,21 +65,12 @@ public class TransformFlow extends Flow implements Subscriber {
 
     @Override
     public ActionConfiguration findActionConfigByName(String actionNamed) {
-        ActionConfiguration transformActionConfiguration = actionNamed(transformActions, actionNamed);
-        if (transformActionConfiguration != null) {
-            return transformActionConfiguration;
-        }
-
-        return ((egressAction != null) && nameMatches(egressAction, actionNamed)) ? egressAction : null;
+        return actionNamed(transformActions, actionNamed);
     }
 
     @Override
     public List<ActionConfiguration> allActionConfigurations() {
-        List<ActionConfiguration> actionConfigurations = new ArrayList<>(transformActions);
-        if (egressAction != null) {
-            actionConfigurations.add(egressAction);
-        }
-        return actionConfigurations;
+        return new ArrayList<>(transformActions);
     }
 
     @Override
@@ -88,7 +78,6 @@ public class TransformFlow extends Flow implements Subscriber {
         return switch (configType) {
             case TRANSFORM_FLOW -> List.of(asFlowConfiguration());
             case TRANSFORM_ACTION -> transformActions != null ? new ArrayList<>(transformActions) : Collections.emptyList();
-            case EGRESS_ACTION -> egressAction != null ? List.of(egressAction) : Collections.emptyList();
             default -> Collections.emptyList();
         };
     }
@@ -96,18 +85,12 @@ public class TransformFlow extends Flow implements Subscriber {
     @Override
     public void updateActionNamesByFamily(EnumMap<ActionType, ActionFamily> actionFamilyMap) {
         updateActionNamesByFamily(actionFamilyMap, ActionType.TRANSFORM, actionNames(transformActions));
-        if (egressAction != null) {
-            updateActionNamesByFamily(actionFamilyMap, ActionType.EGRESS, egressAction.getName());
-        }
     }
 
     @Override
     public DeltaFiConfiguration asFlowConfiguration() {
         TransformFlowConfiguration transformFlowConfiguration = new TransformFlowConfiguration(name);
         transformFlowConfiguration.setTransformActions(transformActions.stream().map(ActionConfiguration::getName).toList());
-        if (egressAction != null) {
-            transformFlowConfiguration.setEgressAction(egressAction.getName());
-        }
         return transformFlowConfiguration;
     }
 
@@ -116,4 +99,8 @@ public class TransformFlow extends Flow implements Subscriber {
         return subscriptions;
     }
 
+    @Override
+    public PublishRules publishRules() {
+        return publishRules;
+    }
 }

@@ -28,7 +28,6 @@ import java.util.List;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 public class TransformFlowConfiguration extends DeltaFiConfiguration {
     private List<String> transformActions;
-    private String egressAction;
 
     public TransformFlowConfiguration(String name) {
         super(name);

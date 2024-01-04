@@ -49,8 +49,7 @@ public class TimedIngressScheduler {
         for (TimedIngressFlow timedIngressFlow : timedIngressFlowService.getRunningFlows()) {
             if (timedIngressFlow.due(actionEventQueue, OffsetDateTime.now(clock)) &&
                     deltaFiPropertiesService.getDeltaFiProperties().getIngress().isEnabled() &&
-                    !diskSpaceService.isContentStorageDepleted() &&
-                    !errorCountService.flowErrorsExceeded(timedIngressFlow.getTargetFlow())) {
+                    !diskSpaceService.isContentStorageDepleted()) {
                 deltaFilesService.taskTimedIngress(timedIngressFlow);
             }
         }

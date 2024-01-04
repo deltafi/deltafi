@@ -14,6 +14,18 @@
       "metadata": { "smoke":  "test" }
     }
   },
-  "targetFlow": "smoke",
+  "publishRules": {
+    "matchingPolicy": "FIRST_MATCHING",
+    "defaultRule": {
+      "defaultBehavior": "PUBLISH",
+      "topic": "test"
+    },
+    "rules": [
+      {
+        "topics": ["passthrough", "second"],
+        "condition": "metadata['a'] == '1'"
+      }
+    ]
+  },
   "cronSchedule": "*/5 * * * * *"
 }

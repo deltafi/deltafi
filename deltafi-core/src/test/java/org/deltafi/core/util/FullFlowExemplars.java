@@ -92,8 +92,8 @@ public class FullFlowExemplars {
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
         Content content = new Content("transformed", "application/octet-stream", new Segment("objectName", 0, 500, did));
         deltaFile.completeAction(TRANSFORM_FLOW_NAME, "SampleTransformAction", START_TIME, STOP_TIME, List.of(content), TRANSFORM_METADATA, List.of());
-        deltaFile.queueAction(TRANSFORM_FLOW_NAME, "SampleEgressAction", ActionType.EGRESS, false);
-        deltaFile.addEgressFlow(TRANSFORM_FLOW_NAME);
+        deltaFile.queueAction(EGRESS_FLOW_NAME, "SampleEgressAction", ActionType.EGRESS, false);
+        deltaFile.addEgressFlow(EGRESS_FLOW_NAME);
         return deltaFile;
     }
 
@@ -105,7 +105,7 @@ public class FullFlowExemplars {
         OffsetDateTime nextAutoResume = autoRetryDelay == null ? null : STOP_TIME.plusSeconds(autoRetryDelay);
         DeltaFile deltaFile = postTransformDeltaFile(did);
         deltaFile.setStage(DeltaFileStage.ERROR);
-        deltaFile.errorAction(TRANSFORM_FLOW_NAME, "SampleEgressAction", START_TIME, STOP_TIME,
+        deltaFile.errorAction(EGRESS_FLOW_NAME, "SampleEgressAction", START_TIME, STOP_TIME,
                 "Authority XYZ not recognized", "Dead beef feed face cafe", nextAutoResume);
         if (policyName != null) {
             deltaFile.setNextAutoResumeReason(policyName);
@@ -115,7 +115,7 @@ public class FullFlowExemplars {
 
     public static DeltaFile postResumeDeltaFile(String did, String flow, String retryAction, ActionType actionType) {
         DeltaFile deltaFile = postErrorDeltaFile(did);
-        deltaFile.retryErrors(List.of(new ResumeMetadata(TRANSFORM_FLOW_NAME, "SampleEgressAction", Map.of("a", "b"), Collections.emptyList())));
+        deltaFile.retryErrors(List.of(new ResumeMetadata(EGRESS_FLOW_NAME, "SampleEgressAction", Map.of("a", "b"), Collections.emptyList())));
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
         deltaFile.getActions().add(Action.builder().flow(flow).name(retryAction).type(actionType).state(QUEUED).attempt(2).build());
         return deltaFile;
@@ -139,7 +139,7 @@ public class FullFlowExemplars {
         deltaFile.setStage(DeltaFileStage.COMPLETE);
         deltaFile.setEgressed(true);
         Content content = new Content("transformed", "application/octet-stream", new Segment("objectName", 0, 500, did));
-        deltaFile.completeAction(TRANSFORM_FLOW_NAME, "SampleEgressAction", START_TIME, STOP_TIME, List.of(content), deltaFile.getMetadata(), List.of());
+        deltaFile.completeAction(EGRESS_FLOW_NAME, "SampleEgressAction", START_TIME, STOP_TIME, List.of(content), deltaFile.getMetadata(), List.of());
         return deltaFile;
     }
 }

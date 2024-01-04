@@ -17,7 +17,6 @@
  */
 package org.deltafi.core.services;
 
-import org.deltafi.common.types.EgressActionConfiguration;
 import org.deltafi.common.types.TransformFlowPlan;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
@@ -78,9 +77,7 @@ class TransformFlowServiceTest {
         Mockito.when(flowValidator.validate(Mockito.any())).thenReturn(Collections.emptyList());
 
         TransformFlowPlan runningFlowPlan = new TransformFlowPlan("running", "yep");
-        runningFlowPlan.setEgressAction(new EgressActionConfiguration("EgressActionConfig", "EgressActionConfigType"));
         TransformFlowPlan stoppedFlowPlan = new TransformFlowPlan("stopped", "naw");
-        stoppedFlowPlan.setEgressAction(new EgressActionConfiguration("EgressActionConfig", "EgressActionConfigType"));
 
         TransformFlow runningTransformFlow = transformFlowService.buildFlow(runningFlowPlan, Collections.emptyList());
         TransformFlow stoppedTransformFlow = transformFlowService.buildFlow(stoppedFlowPlan, Collections.emptyList());

@@ -27,13 +27,15 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Document
 @Getter
 @Setter
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
-public class EgressFlowPlan extends FlowPlan {
+public class EgressFlowPlan extends FlowPlan implements Subscriber {
     private final EgressActionConfiguration egressAction;
+    private Set<Rule> subscriptions;
 
     public EgressFlowPlan(String name, String description, EgressActionConfiguration egressAction) {
         super(name, FlowType.EGRESS, description);
@@ -57,5 +59,10 @@ public class EgressFlowPlan extends FlowPlan {
             actionConfigurations.add(egressAction);
         }
         return actionConfigurations;
+    }
+
+    @Override
+    public Set<Rule> subscriptions() {
+        return subscriptions;
     }
 }

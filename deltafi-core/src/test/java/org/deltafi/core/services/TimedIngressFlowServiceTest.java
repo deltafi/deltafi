@@ -63,18 +63,18 @@ class TimedIngressFlowServiceTest {
 
     @Test
     void buildFlow() {
-        TimedIngressFlow running = timedIngressFlow("running", FlowState.RUNNING, true, "target", "0 */10 * * * *");
-        TimedIngressFlow stopped = timedIngressFlow("stopped", FlowState.STOPPED, false, "another", "*/1 * * * * *");
+        TimedIngressFlow running = timedIngressFlow("running", FlowState.RUNNING, true,"0 */10 * * * *");
+        TimedIngressFlow stopped = timedIngressFlow("stopped", FlowState.STOPPED, false, "*/1 * * * * *");
         Mockito.when(timedIngressFlowRepo.findById("running")).thenReturn(Optional.of(running));
         Mockito.when(timedIngressFlowRepo.findById("stopped")).thenReturn(Optional.of(stopped));
         Mockito.when(flowValidator.validate(Mockito.any())).thenReturn(Collections.emptyList());
 
         TimedIngressFlowPlan runningFlowPlan = new TimedIngressFlowPlan("running", FlowType.TIMED_INGRESS, "yep",
                 new TimedIngressActionConfiguration("TimedIngressActionConfig", "TimedIngressActionConfigType"),
-                "targetFlow", null, "0 */10 * * * *");
+                null, "0 */10 * * * *");
         TimedIngressFlowPlan stoppedFlowPlan = new TimedIngressFlowPlan("stopped", FlowType.TIMED_INGRESS, "naw",
                 new TimedIngressActionConfiguration("TimedIngressActionConfig", "TimedIngressActionConfigType"),
-                "targetFlow", null, "*/1 * * * * *");
+                null, "*/1 * * * * *");
 
         TimedIngressFlow runningTimedIngressFlow = timedIngressFlowService.buildFlow(runningFlowPlan, Collections.emptyList());
         TimedIngressFlow stoppedTimedIngressFlow = timedIngressFlowService.buildFlow(stoppedFlowPlan, Collections.emptyList());
@@ -89,9 +89,9 @@ class TimedIngressFlowServiceTest {
     @Test
     void updateSnapshot() {
         List<TimedIngressFlow> flows = new ArrayList<>();
-        flows.add(timedIngressFlow("a", FlowState.RUNNING, false, "targetA", "0 */1 * * * *"));
-        flows.add(timedIngressFlow("b", FlowState.STOPPED, false, "targetB", "0 */2 * * * *"));
-        flows.add(timedIngressFlow("c", FlowState.INVALID, true, "targetC", "0 */3 * * * *"));
+        flows.add(timedIngressFlow("a", FlowState.RUNNING, false, "0 */1 * * * *"));
+        flows.add(timedIngressFlow("b", FlowState.STOPPED, false, "0 */2 * * * *"));
+        flows.add(timedIngressFlow("c", FlowState.INVALID, true, "0 */3 * * * *"));
         Mockito.when(timedIngressFlowRepo.findAll()).thenReturn(flows);
 
         SystemSnapshot systemSnapshot = new SystemSnapshot();
@@ -105,38 +105,35 @@ class TimedIngressFlowServiceTest {
         TimedIngressFlowSnapshot aFlowSnapshot = timedIngressFlowSnapshotMap.get("a");
         assertThat(aFlowSnapshot.isRunning()).isTrue();
         assertThat(aFlowSnapshot.isTestMode()).isFalse();
-        assertThat(aFlowSnapshot.getTargetFlow()).isEqualTo("targetA");
         assertThat(aFlowSnapshot.getCronSchedule()).isEqualTo("0 */1 * * * *");
 
         TimedIngressFlowSnapshot bFlowSnapshot = timedIngressFlowSnapshotMap.get("b");
         assertThat(bFlowSnapshot.isRunning()).isFalse();
         assertThat(bFlowSnapshot.isTestMode()).isFalse();
-        assertThat(bFlowSnapshot.getTargetFlow()).isEqualTo("targetB");
         assertThat(bFlowSnapshot.getCronSchedule()).isEqualTo("0 */2 * * * *");
 
         TimedIngressFlowSnapshot cFlowSnapshot = timedIngressFlowSnapshotMap.get("c");
         assertThat(cFlowSnapshot.isRunning()).isFalse();
         assertThat(cFlowSnapshot.isTestMode()).isTrue();
-        assertThat(cFlowSnapshot.getTargetFlow()).isEqualTo("targetC");
         assertThat(cFlowSnapshot.getCronSchedule()).isEqualTo("0 */3 * * * *");
     }
 
     @Test
     void testResetFromSnapshot() {
-        TimedIngressFlow running = timedIngressFlow("running", FlowState.RUNNING, true, "targetA", "0 */1 * * * *");
-        TimedIngressFlow stopped = timedIngressFlow("stopped", FlowState.STOPPED, false, "targetB", "0 */2 * * * *");
-        TimedIngressFlow invalid = timedIngressFlow("invalid", FlowState.INVALID, false, "targetC", "0 */3 * * * *");
-        TimedIngressFlow changed = timedIngressFlow("changed", FlowState.STOPPED, false, "changeMe", "0 0 0 */7 * *");
+        TimedIngressFlow running = timedIngressFlow("running", FlowState.RUNNING, true, "0 */1 * * * *");
+        TimedIngressFlow stopped = timedIngressFlow("stopped", FlowState.STOPPED, false, "0 */2 * * * *");
+        TimedIngressFlow invalid = timedIngressFlow("invalid", FlowState.INVALID, false, "0 */3 * * * *");
+        TimedIngressFlow changed = timedIngressFlow("changed", FlowState.STOPPED, false, "0 0 0 */7 * *");
 
         SystemSnapshot systemSnapshot = new SystemSnapshot();
 
         // create snapshot objects
         List<TimedIngressFlowSnapshot> snapshots = new ArrayList<>();
-        snapshots.add(snapshot("running", true, false, "targetA", "0 */1 * * * *"));
-        snapshots.add(snapshot("stopped", true, true, "targetB", "0 */2 * * * *"));
-        snapshots.add(snapshot("invalid", true, false, "targetC", "0 */3 * * * *"));
-        snapshots.add(snapshot("changed", false, true, "targetD", "0 */4 * * * *"));
-        snapshots.add(snapshot("missing", false, true, "missing", "*/1 * * * * *"));
+        snapshots.add(snapshot("running", true, false, "0 */1 * * * *"));
+        snapshots.add(snapshot("stopped", true, true, "0 */2 * * * *"));
+        snapshots.add(snapshot("invalid", true, false, "0 */3 * * * *"));
+        snapshots.add(snapshot("changed", false, true, "0 */4 * * * *"));
+        snapshots.add(snapshot("missing", false, true, "*/1 * * * * *"));
         systemSnapshot.setTimedIngressFlows(snapshots);
 
         Mockito.when(timedIngressFlowRepo.findAll()).thenReturn(List.of(running, stopped, invalid, changed));
@@ -155,14 +152,12 @@ class TimedIngressFlowServiceTest {
         Map<String, TimedIngressFlow> updatedFlows = flowCaptor.getValue().stream()
                 .collect(Collectors.toMap(Flow::getName, Function.identity()));
 
-        assertThat(updatedFlows.size()).isEqualTo(2);
+        assertThat(updatedFlows).hasSize(2);
         // stopped flow should be restarted since it was marked as running in the snapshot, it should also be in test mode
         assertThat(updatedFlows.get("stopped").isRunning()).isTrue();
         assertThat(updatedFlows.get("stopped").isTestMode()).isTrue();
-        assertThat(updatedFlows.get("stopped").getTargetFlow()).isEqualTo("targetB");
         assertThat(updatedFlows.get("stopped").getCronSchedule()).isEqualTo("0 */2 * * * *");
 
-        assertThat(updatedFlows.get("changed").getTargetFlow()).isEqualTo("targetD");
         assertThat(updatedFlows.get("changed").getCronSchedule()).isEqualTo("0 */4 * * * *");
 
         assertThat(result.isSuccess()).isFalse();
@@ -172,7 +167,7 @@ class TimedIngressFlowServiceTest {
                 .contains("Flow: invalid is invalid and cannot be started");
     }
 
-    TimedIngressFlow timedIngressFlow(String name, FlowState flowState, boolean testMode, String targetFlow, String cronSchedule) {
+    TimedIngressFlow timedIngressFlow(String name, FlowState flowState, boolean testMode, String cronSchedule) {
         TimedIngressFlow timedIngressFlow = new TimedIngressFlow();
         timedIngressFlow.setName(name);
         FlowStatus flowStatus = new FlowStatus();
@@ -180,16 +175,14 @@ class TimedIngressFlowServiceTest {
         flowStatus.setTestMode(testMode);
         timedIngressFlow.setFlowStatus(flowStatus);
         timedIngressFlow.setSchemaVersion(TimedIngressFlow.CURRENT_SCHEMA_VERSION);
-        timedIngressFlow.setTargetFlow(targetFlow);
         timedIngressFlow.setCronSchedule(cronSchedule);
         return timedIngressFlow;
     }
 
-    TimedIngressFlowSnapshot snapshot(String name, boolean running, boolean testMode, String targetFlow, String cronSchedule) {
+    TimedIngressFlowSnapshot snapshot(String name, boolean running, boolean testMode, String cronSchedule) {
         TimedIngressFlowSnapshot snapshot = new TimedIngressFlowSnapshot(name);
         snapshot.setRunning(running);
         snapshot.setTestMode(testMode);
-        snapshot.setTargetFlow(targetFlow);
         snapshot.setCronSchedule(cronSchedule);
         return snapshot;
     }

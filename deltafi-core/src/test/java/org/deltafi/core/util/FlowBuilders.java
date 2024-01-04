@@ -22,14 +22,17 @@ import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.types.*;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.deltafi.core.util.Constants.*;
 
 public class FlowBuilders {
+    public static final String TRANSFORM_TOPIC = "transform-topic";
+    public static final String EGRESS_TOPIC = "egress-topic";
     public static TimedIngressFlow buildTimedIngressFlow(FlowState flowState) {
         TimedIngressActionConfiguration tic = new TimedIngressActionConfiguration("SampleTimedIngressAction", "type");
 
-        return buildFlow(TIMED_INGRESS_FLOW_NAME, tic, flowState, false, "*/5 * * * * *", TRANSFORM_FLOW_NAME);
+        return buildFlow(TIMED_INGRESS_FLOW_NAME, tic, flowState, false, "*/5 * * * * *", TRANSFORM_TOPIC);
     }
 
     public static TimedIngressFlow buildTimedIngressErrorFlow(FlowState flowState) {
@@ -45,8 +48,14 @@ public class FlowBuilders {
         timedIngressFlow.setTimedIngressAction(timedIngressActionConfiguration);
         timedIngressFlow.setTestMode(testMode);
         timedIngressFlow.setCronSchedule(cronSchedule);
-        timedIngressFlow.setTargetFlow(targetFlow);
+        timedIngressFlow.setPublishRules(publishRules(targetFlow));
         return timedIngressFlow;
+    }
+
+    public static PublishRules publishRules(String topic) {
+        PublishRules publishRules = new PublishRules();
+        publishRules.setRules(List.of(new Rule(Set.of(topic))));
+        return publishRules;
     }
 
     public static EgressFlow buildEgressFlow(FlowState flowState) {
@@ -64,30 +73,28 @@ public class FlowBuilders {
         return egressFlow;
     }
 
-    public static EgressFlow buildRunningFlow(String name, EgressActionConfiguration egressAction, boolean testMode) {
+    public static EgressFlow buildRunningEgressFlow(String name, EgressActionConfiguration egressAction, boolean testMode) {
         return buildFlow(name, egressAction, FlowState.RUNNING, testMode);
     }
 
     public static TransformFlow buildTransformFlow(FlowState flowState) {
-        EgressActionConfiguration lc = new EgressActionConfiguration("sampleTransform.SampleEgressAction", "type");
         TransformActionConfiguration tc = new TransformActionConfiguration("sampleTransform.Utf8TransformAction", "type");
         TransformActionConfiguration tc2 = new TransformActionConfiguration("sampleTransform.SampleTransformAction", "type");
 
-        return buildFlow(TRANSFORM_FLOW_NAME, lc, List.of(tc, tc2), flowState, false);
+        return buildFlow(TRANSFORM_FLOW_NAME, List.of(tc, tc2), flowState, false);
     }
 
-    public static TransformFlow buildFlow(String name, EgressActionConfiguration egressActionConfiguration, List<TransformActionConfiguration> transforms, FlowState flowState, boolean testMode) {
+    public static TransformFlow buildFlow(String name, List<TransformActionConfiguration> transforms, FlowState flowState, boolean testMode) {
         TransformFlow transformFlow = new TransformFlow();
         transformFlow.setName(name);
         transformFlow.getFlowStatus().setState(flowState);
-        transformFlow.setEgressAction(egressActionConfiguration);
         transformFlow.setTransformActions(transforms);
         transformFlow.setTestMode(testMode);
         return transformFlow;
     }
 
-    public static TransformFlow buildRunningFlow(String name, EgressActionConfiguration egressActionConfiguration, List<TransformActionConfiguration> transforms, boolean testMode) {
-        return buildFlow(name, egressActionConfiguration, transforms, FlowState.RUNNING, testMode);
+    public static TransformFlow buildRunningTransformFlow(String name, List<TransformActionConfiguration> transforms, boolean testMode) {
+        return buildFlow(name, transforms, FlowState.RUNNING, testMode);
     }
 
     public static TransformFlow buildTransformFlow(String name, String groupId, String artifactId, String version) {

@@ -36,7 +36,6 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 public class TimedIngressFlowPlan extends FlowPlan implements Publisher {
     private TimedIngressActionConfiguration timedIngressAction;
-    private String targetFlow;
     private PublishRules publishRules;
     private String cronSchedule;
 
@@ -47,12 +46,10 @@ public class TimedIngressFlowPlan extends FlowPlan implements Publisher {
             @JsonProperty(value = "type") FlowType type,
             @JsonProperty(value = "description", required = true) String description,
             @JsonProperty(value = "timedIngressAction", required = true) TimedIngressActionConfiguration timedIngressAction,
-            @JsonProperty(value = "targetFlow") String targetFlow,
-            @JsonProperty(value = "publishRules") PublishRules publishRules,
+            @JsonProperty(value = "publishRules", required = true) PublishRules publishRules,
             @JsonProperty(value = "cronSchedule", required = true) String cronSchedule) {
         super(name, FlowType.TIMED_INGRESS, description);
         this.timedIngressAction = timedIngressAction;
-        this.targetFlow = targetFlow;
         this.publishRules = publishRules;
         this.cronSchedule = cronSchedule;
     }

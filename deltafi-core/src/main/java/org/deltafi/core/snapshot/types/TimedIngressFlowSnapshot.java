@@ -28,8 +28,6 @@ import org.deltafi.core.types.TimedIngressFlow;
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 public class TimedIngressFlowSnapshot extends FlowSnapshot {
-
-    private String targetFlow;
     private String cronSchedule = "*/30 * * * * *";
 
     public TimedIngressFlowSnapshot(String name) {
@@ -40,7 +38,6 @@ public class TimedIngressFlowSnapshot extends FlowSnapshot {
         this(timedIngressFlow.getName());
         setRunning(timedIngressFlow.isRunning());
         setTestMode(timedIngressFlow.isTestMode());
-        setTargetFlow(timedIngressFlow.getTargetFlow());
         setCronSchedule(timedIngressFlow.getCronSchedule());
     }
 }

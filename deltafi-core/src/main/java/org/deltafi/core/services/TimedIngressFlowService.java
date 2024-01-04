@@ -19,14 +19,12 @@ package org.deltafi.core.services;
 
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.IngressStatus;
-import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.TimedIngressFlowPlan;
 import org.deltafi.core.converters.TimedIngressFlowPlanConverter;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.repo.TimedIngressFlowRepo;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.snapshot.types.TimedIngressFlowSnapshot;
-import org.deltafi.core.types.Flow;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.types.TimedIngressFlow;
 import org.deltafi.core.validation.TimedIngressFlowValidator;
@@ -37,8 +35,6 @@ import org.springframework.stereotype.Service;
 import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -58,7 +54,6 @@ public class TimedIngressFlowService extends FlowService<TimedIngressFlowPlan, T
 
     @Override
     void copyFlowSpecificFields(TimedIngressFlow sourceFlow, TimedIngressFlow targetFlow) {
-        targetFlow.setTargetFlow(sourceFlow.getTargetFlow());
         targetFlow.setCronSchedule(sourceFlow.getCronSchedule());
         targetFlow.setLastRun(sourceFlow.getLastRun());
         targetFlow.setNextRun(sourceFlow.getNextRun());
@@ -80,13 +75,11 @@ public class TimedIngressFlowService extends FlowService<TimedIngressFlowPlan, T
 
     @Override
     public boolean flowSpecificUpdateFromSnapshot(TimedIngressFlow flow, TimedIngressFlowSnapshot snapshot, Result result) {
-        if (flow.getTargetFlow().equals(snapshot.getTargetFlow()) && flow.getCronSchedule().equals(snapshot.getCronSchedule())) {
+        if (flow.getCronSchedule().equals(snapshot.getCronSchedule())) {
             return false;
         }
 
-        flow.setTargetFlow(snapshot.getTargetFlow());
         flow.setCronSchedule(snapshot.getCronSchedule());
-
         return true;
     }
 

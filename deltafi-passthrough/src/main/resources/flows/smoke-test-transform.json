@@ -1,7 +1,10 @@
 {
-  "name": "smoke-test",
+  "name": "smoke-transform-test",
   "type": "TRANSFORM",
   "description": "Test flow that passes data through unchanged",
+  "subscriptions": [
+    {"topics": ["smoke-transform"]}
+  ],
   "transformActions": [{
     "name": "SmokeTransformAction",
     "type": "org.deltafi.passthrough.action.RoteTransformAction",
@@ -10,12 +13,11 @@
       "maxRoteDelayMS": "${maxRoteDelayMS}"
     }
   }],
-  "egressAction": {
-    "name": "SmokeEgressAction",
-    "type": "org.deltafi.core.action.RestPostEgressAction",
-    "parameters": {
-      "metadataKey": "deltafiMetadata",
-      "url": "${smokeEgressUrl}"
-    }
+  "publishRules": {
+    "matchingPolicy": "FIRST_MATCHING",
+    "defaultRule": {"defaultBehavior": "ERROR"},
+    "rules": [
+      {"topics": ["smoke-egress"]}
+    ]
   }
 }
