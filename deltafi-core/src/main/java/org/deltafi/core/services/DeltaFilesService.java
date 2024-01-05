@@ -673,13 +673,12 @@ public class DeltaFilesService {
         deltaFile.completeAction(event, deltaFile.lastCompleteAction().getContent(), deltaFile.getMetadata(), Collections.emptyList());
         deltaFile.setEgressed(true);
 
-        // TODO - put this back when we're back to running egress flows
         // TODO - wrap this in an exception and handle it so we don't get stuck with a deltafile that has all complete actions but is still in flight
-        /* Set<String> expectedAnnotations = getPendingAnnotationsForFlow(event.getFlow());
+        Set<String> expectedAnnotations = getPendingAnnotationsForFlow(event.getFlow());
 
         if (expectedAnnotations != null && !expectedAnnotations.isEmpty()) {
             deltaFile.addPendingAnnotationsForFlow(event.getFlow());
-        }*/
+        }
 
         // egress is always the last step, no need to advance through the state machine
         if (!deltaFile.hasPendingActions()) {
