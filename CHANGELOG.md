@@ -5,6 +5,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.1.17] - 2024-01-08
+
+### Added
+- Added Subscriptions to Transform Flow view
+- Added Tranftorm Flow Mocks
+- Added a SftpTimedIngressAction class to poll a STFP server for files to ingest.
+
+### Changed
+- Redis no longer uses zcube for arm64 images, since bitnami/redis is now published with an arm64 image
+
+### Fixed
+- During startup, failures by core to query api get a small grace period before generating an error, and repeated errors for the same error are no longer logged continuously
+
+### Tech-Debt/Refactor
+- Updated MergeContentFormatAction to use WriterPipedInputStream and added missing unit tests.
+
+### Upgrade and Migration
+- Subproject upgrades
+  - redis (bitnami/redis:7.0.14)
+  - promtail (bitnami/promtail:2.9.3)
+  - loki (bitnami/loki:2.9.3)
+  - clickhouse (bitnami/clickhouse:23.12.1-debian-11-r0)
+  - minio (minio/minio:2024-01-01T16-36-33Z)
+
 ## [1.1.16] - 2023-12-15
 
 ### Added
@@ -2690,7 +2714,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.16...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.17...main
+[1.1.17]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.16...1.1.17
 [1.1.16]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.15...1.1.16
 [1.1.15]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.14...1.1.15
 [1.1.14]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.13...1.1.14
