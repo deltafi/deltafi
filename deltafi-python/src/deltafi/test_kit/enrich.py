@@ -16,60 +16,55 @@
 #    limitations under the License.
 #
 
-from typing import List
-
-from deltafi.result import TransformResult
+from deltafi.result import EnrichResult
 
 from .assertions import *
 from .framework import TestCaseBase, ActionTest
 
 
-class TransformTestCase(TestCaseBase):
+class EnrichTestCase(TestCaseBase):
     def __init__(self, fields: Dict):
         super().__init__(fields)
-        self.metadata = {}
-        self.delete_metadata_keys = []
+        self.enrichments = []
         self.annotations = {}
 
-    def expect_transform_result(self, metadata: Dict, delete_metadata_keys: List[str], annotations: Dict):
-        self.expected_result_type = TransformResult
-        self.metadata = metadata
-        self.delete_metadata_keys = delete_metadata_keys
+    def expect_enrich_result(self, annotations: Dict):
+        self.expected_result_type = EnrichResult
         self.annotations = annotations
 
+    def add_enrichment(self, name: str, value: str, media_type: str):
+        self.enrichments.append({'name': name, 'value': value, 'mediaType': media_type})
 
-class TransformActionTest(ActionTest):
+
+class EnrichActionTest(ActionTest):
     def __init__(self, package_name: str):
         """
-        Provides structure for testing DeltaFi Transform action
+        Provides structure for testing DeltaFi Enrich action
         Args:
             package_name: name of the actions package for finding resources
         """
         super().__init__(package_name)
 
-    def transform(self, test_case: TransformTestCase):
-        if test_case.expected_result_type == TransformResult:
-            self.expect_transform_result(test_case)
+    def enrich(self, test_case: EnrichTestCase):
+        if test_case.expected_result_type == EnrichResult:
+            self.expect_enrich_result(test_case)
         else:
             super().execute(test_case)
 
-    def expect_transform_result(self, test_case: TransformTestCase):
-        result = super().run_and_check_result_type(test_case, TransformResult)
-        self.assert_transform_result(test_case, result)
+    def expect_enrich_result(self, test_case: EnrichTestCase):
+        result = super().run_and_check_result_type(test_case, EnrichResult)
+        self.assert_enrich_result(test_case, result)
 
-    def assert_transform_result(self, test_case: TransformTestCase, result: TransformResult):
+    def assert_enrich_result(self, test_case: EnrichTestCase, result: EnrichResult):
         # Check metrics
         self.compare_metrics(test_case.expected_metrics, result.metrics)
 
-        # Check output
-        self.compare_all_output(test_case.compare_tool, result.content)
-
-        # Check metadata
-        assert_keys_and_values(test_case.metadata, result.metadata)
-
-        # Check deleted metadata
-        for key in test_case.delete_metadata_keys:
-            assert_key_in(key, result.delete_metadata_keys)
-
         # Check annotations
         assert_keys_and_values(test_case.annotations, result.annotations)
+
+        # Check enrichments
+        assert_equal_len(test_case.enrichments, result.enrichments)
+        if len(test_case.enrichments) > 0:
+            for index, expected in enumerate(test_case.enrichments):
+                actual = result.enrichments[index]
+                assert_equal(expected, actual)

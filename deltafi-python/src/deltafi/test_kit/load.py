@@ -83,6 +83,9 @@ class LoadActionTest(ActionTest):
         self.assert_reinject_result(test_case, result)
 
     def assert_load_result(self, test_case: LoadTestCase, result: LoadResult):
+        # Check metrics
+        self.compare_metrics(test_case.expected_metrics, result.metrics)
+
         # Check output
         self.compare_all_output(test_case.compare_tool, result.content)
 
@@ -100,6 +103,10 @@ class LoadActionTest(ActionTest):
         self.compare_domains(test_case.domain_cmp_tool, test_case.domains, result.domains)
 
     def assert_reinject_result(self, test_case: LoadTestCase, actual: ReinjectResult):
+        # Check metrics
+        self.compare_metrics(test_case.expected_metrics, actual.metrics)
+
+        # Check reinject
         assert_equal_len(test_case.children, actual.children)
         for index, expected in enumerate(test_case.children):
             reinject_child = actual.children[index]
@@ -118,5 +125,4 @@ class LoadActionTest(ActionTest):
                 expected_data = self.load_file(expected_value)
                 test_case.domain_cmp_tool.compare(expected_data, actual_content, f"RI_child[{index}]")
             else:
-                raise ValueError(
-                    f"unknown expected_value type: {type(expected_value)}")
+                raise ValueError(f"unknown expected_value type: {type(expected_value)}")

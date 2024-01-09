@@ -72,6 +72,9 @@ class FormatActionTest(ActionTest):
         self.assert_format_many_result(test_case, result)
 
     def assert_format_result(self, test_case: FormatTestCase, result: FormatResult):
+        # Check metrics
+        self.compare_metrics(test_case.expected_metrics, result.metrics)
+
         # Check output
         if result.content is None:
             self.compare_all_output(test_case.compare_tool, [])
@@ -86,15 +89,17 @@ class FormatActionTest(ActionTest):
             assert_key_in(key, result.delete_metadata_keys)
 
     def assert_format_many_result(self, test_case: FormatTestCase, actual: FormatManyResult):
+        # Check metrics
+        self.compare_metrics(test_case.expected_metrics, actual.metrics)
+
         assert_equal_len(test_case.expected_format_many_result, actual.format_results)
         for index, expected_child_result in enumerate(test_case.expected_format_many_result):
             actual_child = actual.format_results[index]
-            self.compare_one_content(test_case.compare_tool,
-                                     self.expected_outputs[index],
-                                     actual_child.format_result.content,
-                                     index)
+            self.compare_one_content(
+                test_case.compare_tool,
+                self.expected_outputs[index],
+                actual_child.format_result.content, index)
 
-            assert_keys_and_values(expected_child_result['metadata'],
-                                   actual_child.format_result.metadata)
+            assert_keys_and_values(expected_child_result['metadata'], actual_child.format_result.metadata)
             for key in expected_child_result['delete_metadata_keys']:
                 assert_key_in(key, actual_child.format_result.delete_metadata_keys)
