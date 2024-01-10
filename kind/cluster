@@ -325,10 +325,11 @@ _create_proxy() {
   local PROXY_REMOTE=$2
   local PROXY_PORT=$3
   # Create volume if not present
-  if ! docker volume inspect "$PROXY_NAME" > /dev/null; then
-    docker volume create "$PROXY_NAME"
+  if ! docker volume inspect "$PROXY_NAME" > /dev/null 2>/dev/null; then
+    docker volume create "$PROXY_NAME" > /dev/null
+    _ok "Created docker volume for $PROXY_NAME"
   fi
-  running="$(docker inspect -f '{{.State.Running}}' "${PROXY_NAME}" 2>/dev/null || true)"
+  running="$(docker container inspect -f '{{.State.Running}}' "${PROXY_NAME}" 2>/dev/null || true > /dev/null)"
   if [ "${running}" != 'true' ]; then
       docker run \
             -d --name "${PROXY_NAME}" \
@@ -336,8 +337,26 @@ _create_proxy() {
             --mount source="${PROXY_NAME}",destination=/var/lib/registry \
             -e REGISTRY_PROXY_REMOTEURL="${PROXY_REMOTE}" \
             -p "127.0.0.1:${PROXY_PORT}:5000" \
-            registry:2
-      _ok "Local container proxy: $PROXY_NAME"
+            registry:2 > /dev/null
+      _ok "Created registry proxy container: $PROXY_NAME"
+  fi
+}
+
+_destroy_proxy() {
+  local PROXY_NAME=$1
+  _attention "Destroying $PROXY_NAME proxy"
+  if docker container inspect "$PROXY_NAME" > /dev/null 2>/dev/null; then
+    if [ "$(docker container inspect -f '{{.State.Running}}' ${PROXY_NAME})" == 'true' ]; then
+
+      _info "Stopping $PROXY_NAME"
+      docker stop "$PROXY_NAME" > /dev/null
+    fi
+    _info "Removing $PROXY_NAME container"
+    docker rm "$PROXY_NAME" > /dev/null
+  fi
+  if docker volume inspect "$PROXY_NAME" > /dev/null 2>/dev/null; then
+    _info "Removing $PROXY_NAME volume"
+    docker volume rm "$PROXY_NAME" > /dev/null
   fi
 }
 
@@ -345,8 +364,9 @@ _create_registry() {
   local REGISTRY_NAME=$1
   local REGISTRY_PORT=$2
   # Create volume if not present
-  if ! docker volume inspect "$REGISTRY_NAME" > /dev/null; then
-    docker volume create "$REGISTRY_NAME"
+  if ! docker volume inspect "$REGISTRY_NAME" 2>/dev/null > /dev/null; then
+    docker volume create "$REGISTRY_NAME" > /dev/null
+    _ok "Created volume for KinD docker registry: $REGISTRY_NAME"
   fi
   running="$(docker inspect -f '{{.State.Running}}' "${REGISTRY_NAME}" 2>/dev/null || true)"
   if [ "${running}" != 'true' ]; then
@@ -355,8 +375,8 @@ _create_registry() {
             --restart=always --net=kind \
             --mount source="${REGISTRY_NAME}",destination=/var/lib/registry \
             -p "127.0.0.1:${REGISTRY_PORT}:5000" \
-            registry:2
-      _ok "Docker registry: $REGISTRY_NAME"
+            registry:2 > /dev/null
+      _ok "Created KinD docker registry: $REGISTRY_NAME"
   fi
 }
 
@@ -458,6 +478,17 @@ prerequisites() {
   _check_java
 }
 
+describe destroy_registries "Scorched earth clean up of all KinD registries"
+destroy_registries() {
+  [[ $# -gt 0 && "$1" == '-f' ]] || _are_you_sure "Do you want to delete all KinD docker registry proxies?"
+  _warn "Destroying KinD docker registry proxies"
+  _destroy_proxy kind-registry
+  _destroy_proxy dockerio-proxy
+  _destroy_proxy k8s-proxy
+  _destroy_proxy ghcr-proxy
+  _destroy_proxy quay-proxy
+  _destroy_proxy k8s-registry-proxy
+}
 
 describe up "Turn up a KinD cluster (or re-apply cluster settings)"
 up() {
@@ -700,11 +731,20 @@ describe destroy "Shut down the KinD cluster and remove persistent volume data"
 destroy() {
   down "$@"
   [[ $# -gt 0 && "$1" == '-f' ]] || _are_you_sure "Do you want to delete all local persistent volume data?"
+
+  _warn "Destroying persistent volume data"
   if _is_linux; then
     ${SUDO} rm -rf "$PV_DIR"
   else
     rm -rf "$PV_DIR"
   fi
+
+  destroy_registries "$@"
+
+  local images=$(docker images | grep ^localhost:5000 | awk '{print $3}')
+  _annotated_subshell -h "Pruning localhost:5000 images" docker rmi ${images} || true
+  _ok_annotated "Pruned localhost:5000 images"
+
   _down "KinD cluster destroyed"
 }
 
@@ -731,7 +771,7 @@ EOF
     if [[ " ${filtered[@]} " =~ $match ]]; then
       continue
     fi
-    printf "  %-13s %s\n" "$cmd" "$(describe --get "$cmd")"
+    printf "  %-18s %s\n" "$cmd" "$(describe --get "$cmd")"
   done
 }
 
