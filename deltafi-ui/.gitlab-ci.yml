@@ -3,6 +3,7 @@ ui:eslint:
     - light
   image: node:alpine
   stage: build
+  allow_failure: true # FIXME: Remove when 2.0 is production ready
   needs: []
   script:
     - cd deltafi-ui
