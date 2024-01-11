@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.0-alpha1] - 2024-01-11
+
+### Added
+- Added topics where `DeltaFiles` can be published to and subscribed from
+- Added the option to put publisher rules in `TimedIngressFlows` that control where DeltaFiles are sent
+- Added the option to put subscriber rules in `TransformFlows` that allow the flow to pick up `DeltaFiles` from one or more topics
+- Added a mutation to task a `TimedIngressFlow` on demand with the option to override the `memo` value
+
 ## [1.1.16] - 2023-12-15
 
 ### Added
@@ -2690,7 +2698,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.16...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.0-alpha1...main
+[2.0-alpha1]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.16...2.0-alpha1
 [1.1.16]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.15...1.1.16
 [1.1.15]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.14...1.1.15
 [1.1.14]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.13...1.1.14
