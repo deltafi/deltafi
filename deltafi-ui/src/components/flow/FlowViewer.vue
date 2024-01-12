@@ -63,16 +63,6 @@
                           </div>
                         </template>
                       </div>
-                      <div class="row mx-0 pt-2">
-                        <div class="col-12">
-                          <dl>
-                            <dt>Metrics</dt>
-                            <dd>
-                              <ActionMetricsTable :actions="actionMetricsUngrouped" :loading="!loaded" class="px-0 pt-1" :filter-type="null" :filter-by="flowActionListValue.name" :hidden-column="true" />
-                            </dd>
-                          </dl>
-                        </div>
-                      </div>
                       <template v-if="_.findIndex(flowAction, flowActionListValue) + 1 < Object.keys(flowAction).length">
                         <Divider />
                       </template>
@@ -100,16 +90,6 @@
                           </dl>
                         </div>
                       </template>
-                    </div>
-                    <div class="row mx-0 pt-2">
-                      <div class="col-12">
-                        <dl>
-                          <dt>Metrics</dt>
-                          <dd>
-                            <ActionMetricsTable :actions="actionMetricsUngrouped" :loading="!loaded" class="px-0 pt-1" :filter-type="null" :filter-by="flowAction.name" :hidden-column="true" />
-                          </dd>
-                        </dl>
-                      </div>
                     </div>
                   </template>
                 </div>
@@ -142,14 +122,12 @@
 </template>
 
 <script setup>
-import ActionMetricsTable from "@/components/ActionMetricsTable.vue";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import FlowExpectedAnnotationsViewer from "@/components/flow/FlowExpectedAnnotationsViewer.vue";
 import FlowVariableViewer from "@/components/flow/FlowVariableViewer.vue";
 import FlowSubscriptionsViewer from "./FlowSubscriptionsViewer.vue";
-import useActionMetrics from "@/composables/useActionMetrics";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
-import { computed, defineProps, inject, onBeforeMount, onUnmounted, reactive, ref } from "vue";
+import { computed, defineProps, inject, onBeforeMount, reactive, ref } from "vue";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 
 import Divider from "primevue/divider";
@@ -160,10 +138,7 @@ import TabView from "primevue/tabview";
 import _ from "lodash";
 
 const hasPermission = inject("hasPermission");
-const isIdle = inject("isIdle");
 const { buildURL } = useUtilFunctions();
-
-const { fetch: getActionMetrics, loaded, loading, actionMetricsUngrouped } = useActionMetrics();
 
 const { getEgressFlowByName, getEnrichFlowByName, getNormalizeFlowByName, getTransformFlowByName } = useFlowQueryBuilder();
 
@@ -183,34 +158,12 @@ const props = defineProps({
 });
 
 const { header, flowName, flowType } = reactive(props);
-
 const actionsList = ["transformActions", "loadAction", "deleteActions", "domainActions", "enrichActions", "formatAction", "validateActions", "egressAction"];
-
-const refreshInterval = 5000; // 5 seconds
 const flowData = ref("");
-const ingressFlowNameSelected = ref(null);
-
-let autoRefresh = null;
-
-onUnmounted(() => {
-  clearInterval(autoRefresh);
-});
 
 onBeforeMount(async () => {
   await fetchFlows(flowName, flowType);
-  await fetchActionMetrics();
-  autoRefresh = setInterval(fetchActionMetrics, refreshInterval);
 });
-
-const fetchActionMetrics = async () => {
-  if (!isIdle.value && !loading.value) {
-    let actionMetricsParams = { last: "5m" };
-    if (ingressFlowNameSelected.value) {
-      actionMetricsParams["flowName"] = ingressFlowNameSelected.value;
-    }
-    await getActionMetrics(actionMetricsParams);
-  }
-};
 
 const fetchFlows = async (paramFlowName, paramFlowType) => {
   let response = "";

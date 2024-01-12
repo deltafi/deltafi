@@ -83,31 +83,6 @@ const externalLinks = computed(() => {
 const staticMenuItems = ref([
   { name: "Dashboard", icon: "fas fa-desktop fa-fw", path: "/", visible: computed(() => hasPermission("DashboardView")) },
   {
-    name: "Metrics",
-    expand: true,
-    visible: computed(() => hasPermission("MetricsView")),
-    children: [
-      {
-        name: "System Metrics",
-        icon: "far fa-chart-bar fa-fw",
-        path: "/metrics/system",
-        visible: computed(() => hasPermission("MetricsView")),
-      },
-      {
-        name: "Action Metrics",
-        icon: "fas fa-chart-line fa-fw",
-        path: "/metrics/action",
-        visible: computed(() => hasPermission("MetricsView")),
-      },
-      {
-        name: "Grafana Dashboards",
-        icon: "icomoon grafana",
-        url: computed(() => buildURL("metrics", "/dashboards")),
-        visible: computed(() => hasPermission("MetricsView")),
-      },
-    ],
-  },
-  {
     name: "DeltaFiles",
     expand: true,
     visible: computed(() => hasSomePermissions("DeltaFileMetadataView", "DeltaFileIngress")),
@@ -144,6 +119,25 @@ const staticMenuItems = ref([
         icon: "fas fa-upload fa-fw",
         path: "/deltafile/upload/",
         visible: computed(() => hasPermission("DeltaFileIngress")),
+      },
+    ],
+  },
+  {
+    name: "Metrics",
+    expand: true,
+    visible: computed(() => hasPermission("MetricsView")),
+    children: [
+      {
+        name: "System Metrics",
+        icon: "far fa-chart-bar fa-fw",
+        path: "/metrics/system",
+        visible: computed(() => hasPermission("MetricsView")),
+      },
+      {
+        name: "Grafana Dashboards",
+        icon: "icomoon grafana",
+        url: computed(() => buildURL("metrics", "/dashboards")),
+        visible: computed(() => hasPermission("MetricsView")),
       },
     ],
   },

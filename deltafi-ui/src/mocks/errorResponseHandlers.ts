@@ -40,16 +40,6 @@ export default [
     )
   }),
 
-  rest.get("/api/v1/metrics/action", (req, res, ctx) => {
-    return res(
-      ctx.delay(1500),
-      ctx.status(500, 'Mocked status'),
-      ctx.json({
-        error: 'Error fetching Action Metrics.',
-      })
-    )
-  }),
-
   rest.get("/api/v1/metrics/queues", (req, res, ctx) => {
     return res(
       ctx.delay(1500),

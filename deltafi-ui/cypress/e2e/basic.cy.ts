@@ -1,11 +1,3 @@
-describe("Action Metrics Page", () => {
-  it("loads Action Metrics", () => {
-    cy.visit("http://localhost:8080/metrics/action");
-    cy.get("span.p-panel-title").contains("Actions");
-    cy.get("span.p-panel-title").contains("Queues");
-  });
-});
-
 describe("Auto Resume Page", () => {
   it("loads Auto Resume rules", () => {
     cy.visit("http://localhost:8080/config/auto-resume");

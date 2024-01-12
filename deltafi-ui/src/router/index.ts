@@ -17,7 +17,6 @@
 */
 
 import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
-import ActionMetricsPage from "@/pages/ActionMetricsPage.vue";
 import AutoResumePage from "@/pages/AutoResumePage.vue";
 import DashboardPage from "@/pages/DashboardPage.vue";
 import DeletePoliciesPage from "@/pages/DeletePoliciesPage.vue";
@@ -74,14 +73,6 @@ const routes: Array<RouteRecordRaw> = [
     component: DeltaFileUploadPage,
     meta: {
       permission: "DeltaFileIngress",
-    },
-  },
-  {
-    path: "/metrics/action",
-    name: "Action Metrics",
-    component: ActionMetricsPage,
-    meta: {
-      permission: "MetricsView",
     },
   },
   {
