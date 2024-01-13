@@ -5,6 +5,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.1.18] - 2024-01-13
+
+### Changed
+- UI: Rearranged sidebar menu by moving DeltaFiles above Metrics for improved navigation. 
+- `cluster destroy` command will optionally destroy all docker registry contaners and volumes associated with the cluster
+
+### Fixed
+- Addressed the following missing features in the python test kit:
+  - added DOMAIN, ENRICH, EGRESS, and VALIATE actions
+  - added support to check metrics
+  - allow DID to be specified by test case
+  - Updated Error and Filter result processing to optionally check `context` and `annotations`
+  - Fixed bug when checking for a Filter result
+
+### Removed
+- UI: Action Metrics page
+- UI: Action Metrics from Flows page
+
 ## [1.1.17] - 2024-01-08
 
 ### Added
@@ -2714,7 +2732,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.17...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.18...main
+[1.1.18]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.17...1.1.18
 [1.1.17]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.16...1.1.17
 [1.1.16]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.15...1.1.16
 [1.1.15]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.14...1.1.15
