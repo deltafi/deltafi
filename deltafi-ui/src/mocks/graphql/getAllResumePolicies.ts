@@ -21,22 +21,22 @@ faker.seed(321);
 const generateData = (count: number) => {
   return Array.from(Array(count)).map(() => {
     return {
-      id: faker.datatype.uuid(),
+      id: faker.string.uuid(),
       name: faker.lorem.sentence(5),
       errorSubstring: faker.lorem.sentence(5),
       flow: "mock " + faker.lorem.word(),
       action: "mocksmoke.SmokeEgressAction",
       actionType: null,
-      maxAttempts: faker.datatype.number({
+      maxAttempts: faker.number.int({
         min: 2,
         max: 5,
       }),
-      priority: faker.datatype.number({
+      priority: faker.number.int({
         min: 250,
         max: 500,
       }),
       backOff: {
-        delay: faker.datatype.number({
+        delay: faker.number.int({
           min: 250,
           max: 500,
         }),

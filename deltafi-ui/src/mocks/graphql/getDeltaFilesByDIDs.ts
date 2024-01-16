@@ -22,7 +22,7 @@ faker.seed(123);
 const generateData = (count: number) => {
   return Array.from(Array(count)).map(() => {
     return {
-      did: faker.datatype.uuid(),
+      did: faker.string.uuid(),
       stage: "ERROR",
       created: "2022-03-03T19:23:20.823Z",
       modified: "2022-03-03T19:23:20.888Z",

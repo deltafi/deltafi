@@ -23,7 +23,7 @@ const generateData = () => {
   const data = {
     getAllFlowAssignmentRules: [
       {
-        id: faker.datatype.uuid(),
+        id: faker.string.uuid(),
         name: "mock-foobar",
         flow: "smoke",
         priority: 122,
@@ -36,7 +36,7 @@ const generateData = () => {
         ],
       },
       {
-        id: faker.datatype.uuid(),
+        id: faker.string.uuid(),
         name: "mock-requiredMetadata136",
         flow: "mock_smoke",
         priority: 400,
@@ -57,7 +57,7 @@ const generateData = () => {
         ],
       },
       {
-        id: faker.datatype.uuid(),
+        id: faker.string.uuid(),
         name: "mock-filenameRegex936",
         flow: "mock_stix1_1",
         priority: 400,
@@ -65,7 +65,7 @@ const generateData = () => {
         requiredMetadata: null,
       },
       {
-        id: faker.datatype.uuid(),
+        id: faker.string.uuid(),
         name: "mock-rule136",
         flow: "mock_passthrough",
         priority: 500,
@@ -78,7 +78,7 @@ const generateData = () => {
         ],
       },
       {
-        id: faker.datatype.uuid(),
+        id: faker.string.uuid(),
         name: "mock-filenameRegex136",
         flow: "mock_smoke",
         priority: 500,
@@ -99,7 +99,7 @@ const generateData = () => {
         ],
       },
       {
-        id: faker.datatype.uuid(),
+        id: faker.string.uuid(),
         name: "mock-requiredMetadata369",
         flow: "mock_smoke",
         priority: 500,
@@ -120,7 +120,7 @@ const generateData = () => {
         ],
       },
       {
-        id: faker.datatype.uuid(),
+        id: faker.string.uuid(),
         name: "mock-filenameRegex873",
         flow: "mock_stix1_x",
         priority: 500,
@@ -145,7 +145,7 @@ const generateData = () => {
         ],
       },
       {
-        id: faker.datatype.uuid(),
+        id: faker.string.uuid(),
         name: "mock-filenameRegex562",
         flow: "mock_passthrough",
         priority: 600,

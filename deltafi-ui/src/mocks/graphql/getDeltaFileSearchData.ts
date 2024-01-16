@@ -21,7 +21,7 @@ import { faker } from "@faker-js/faker";
 
 const generateDeltaFile = () => {
   return {
-    did: faker.datatype.uuid(),
+    did: faker.string.uuid(),
     stage: "COMPLETE",
     totalBytes: 65535,
     modified: "2022-02-23T15:19:39.549Z",
