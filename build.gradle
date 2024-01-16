@@ -27,7 +27,7 @@ subprojects {
 
     java {
         toolchain {
-            languageVersion = JavaLanguageVersion.of(17)
+            languageVersion = JavaLanguageVersion.of(21)
         }
     }
 
@@ -40,8 +40,15 @@ subprojects {
         options.encoding = 'UTF-8'
     }
 
+
+
     test {
         useJUnitPlatform()
+
+        // ByteBuddy does not yet support Java 21, which is used by Mockito.  Recommendation to use experimental mode with VM property "net.bytebuddy.experimental=true" until full support is available.
+            // https://github.com/raphw/byte-buddy/issues/1396
+        systemProperties = System.getProperties()
+        systemProperties['net.bytebuddy.experimental'] = 'true'
     }
 
     apply plugin: 'jacoco'

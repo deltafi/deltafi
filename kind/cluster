@@ -295,12 +295,12 @@ _check_docker() {
 }
 
 _check_java() {
-  type -p java 2>/dev/null 1>/dev/null || _exit_1 echo "You must install Java OpenJDK 17 first"
+  type -p java 2>/dev/null 1>/dev/null || _exit_1 echo "You must install Java JDK 21 first"
   local javaversion
   javaversion=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}')
   # shellcheck disable=SC2072
-  if [[ "$javaversion" > "17.999" || "$javaversion" < "17" ]]; then
-    _exit_1 echo "JDK 17 required, you have $javaversion"
+  if [[ "$javaversion" > "21.999" || "$javaversion" < "21" ]]; then
+    _exit_1 echo "Java JDK 21 required, you have $javaversion"
   fi
   _ok "Java JDK: $javaversion"
 }
