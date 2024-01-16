@@ -22,7 +22,7 @@ faker.seed(321);
 const generateDeltaFiles = () => {
   return [
     {
-      id: faker.datatype.uuid(),
+      id: faker.string.uuid(),
       name:  "mockOneHourAfterComplete",
       flow: null,
       __typename: "TimedDeletePolicy",
@@ -33,7 +33,7 @@ const generateDeltaFiles = () => {
       deleteMetadata: true,
     },
     {
-      id: faker.datatype.uuid(),
+      id: faker.string.uuid(),
       name: "mockTwoHourAfterComplete",
       flow: "passthrough",
       __typename: "TimedDeletePolicy",
@@ -44,7 +44,7 @@ const generateDeltaFiles = () => {
       deleteMetadata: true,
     },
     {
-      id: faker.datatype.uuid(),
+      id: faker.string.uuid(),
       name: "mockThreeHourAfterComplete",
       flow: null,
       __typename: "TimedDeletePolicy",
@@ -55,7 +55,7 @@ const generateDeltaFiles = () => {
       deleteMetadata: true,
     },
     {
-      id: faker.datatype.uuid(),
+      id: faker.string.uuid(),
       name: "mockFourHourAfterComplete",
       flow: "smoke",
       __typename: "TimedDeletePolicy",
@@ -66,7 +66,7 @@ const generateDeltaFiles = () => {
       deleteMetadata: true,
     },
     {
-      id: faker.datatype.uuid(),
+      id: faker.string.uuid(),
       name: "mockOver98PerCent",
       flow: "passthrough",
       __typename: "DiskSpaceDeletePolicy",
@@ -74,7 +74,7 @@ const generateDeltaFiles = () => {
       maxPercent: 98,
     },
     {
-      id: faker.datatype.uuid(),
+      id: faker.string.uuid(),
       name: "mockOver60PerCent",
       flow: null,
       __typename: "DiskSpaceDeletePolicy",
@@ -82,7 +82,7 @@ const generateDeltaFiles = () => {
       maxPercent: 60,
     },
     {
-      id: faker.datatype.uuid(),
+      id: faker.string.uuid(),
       name: "mockOver20PerCent",
       flow: "smoke",
       __typename: "DiskSpaceDeletePolicy",

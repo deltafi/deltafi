@@ -26,15 +26,15 @@ const generateData = () => {
         resources: {
           cpu: {
             limit: 4000,
-            usage: faker.datatype.number({ min: 2000, max: 3000 })
+            usage: faker.number.int({ min: 2000, max: 3000 })
           },
           memory: {
             limit: 8232894464,
-            usage: faker.datatype.number({ min: 4116447232, max: 6174670848 })
+            usage: faker.number.int({ min: 4116447232, max: 6174670848 })
           },
           disk: {
             limit: 107374182400,
-            usage: faker.datatype.number({ min: 85899345920, max: 88046829568 })
+            usage: faker.number.int({ min: 85899345920, max: 88046829568 })
           }
         },
         apps: [
@@ -66,15 +66,15 @@ const generateData = () => {
         resources: {
           cpu: {
             limit: 4000,
-            usage: faker.datatype.number({ min: 2000, max: 3000 })
+            usage: faker.number.int({ min: 2000, max: 3000 })
           },
           memory: {
             limit: 8232894464,
-            usage: faker.datatype.number({ min: 4116447232, max: 6174670848 })
+            usage: faker.number.int({ min: 4116447232, max: 6174670848 })
           },
           disk: {
             limit: 107374182400,
-            usage: faker.datatype.number({ min: 85899345920, max: 88046829568 })
+            usage: faker.number.int({ min: 85899345920, max: 88046829568 })
           }
         },
         apps: [
@@ -107,15 +107,15 @@ const generateData = () => {
         resources: {
           cpu: {
             limit: 4000,
-            usage: faker.datatype.number({ min: 2000, max: 3000 })
+            usage: faker.number.int({ min: 2000, max: 3000 })
           },
           memory: {
             limit: 8232894464,
-            usage: faker.datatype.number({ min: 4116447232, max: 6174670848 })
+            usage: faker.number.int({ min: 4116447232, max: 6174670848 })
           },
           disk: {
             limit: 107374182400,
-            usage: faker.datatype.number({ min: 85899345920, max: 88046829568 })
+            usage: faker.number.int({ min: 85899345920, max: 88046829568 })
           }
         },
         apps: [

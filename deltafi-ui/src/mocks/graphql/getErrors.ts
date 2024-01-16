@@ -20,7 +20,7 @@ faker.seed(123);
 
 const generateDeltaFiles = (count: number) => {
   return Array.from(Array(count)).map(() => {
-    const uuid = faker.datatype.uuid();
+    const uuid = faker.string.uuid();
     const date = new Date();
     return {
       did: uuid,
