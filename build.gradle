@@ -1,8 +1,8 @@
 import java.util.regex.Matcher
 
 plugins {
+  id 'org.deltafi.git-version' version '0.1.0'
   id 'org.deltafi.test-summary' version '1.0'
-  id 'org.deltafi.version-reckoning' version '1.0'
   id 'io.github.gradle-nexus.publish-plugin' version '1.1.0'
 }
 
@@ -27,7 +27,7 @@ subprojects {
 
     java {
         toolchain {
-            languageVersion = JavaLanguageVersion.of(17)
+            languageVersion = JavaLanguageVersion.of(21)
         }
     }
 
@@ -40,8 +40,19 @@ subprojects {
         options.encoding = 'UTF-8'
     }
 
+
+
     test {
         useJUnitPlatform()
+
+        // ByteBuddy does not yet support Java 21, which is used by Mockito.  Recommendation to use experimental mode with VM property "net.bytebuddy.experimental=true" until full support is available.
+            // https://github.com/raphw/byte-buddy/issues/1396
+        systemProperties = System.getProperties()
+        systemProperties['net.bytebuddy.experimental'] = 'true'
+    }
+
+    tasks.withType(Test).configureEach {
+        maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
     }
 
     apply plugin: 'jacoco'

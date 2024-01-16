@@ -16,7 +16,7 @@
  *    limitations under the License.
  */
 plugins {
-    id 'org.deltafi.version-reckoning'
+    id 'org.deltafi.git-version'
     id 'org.deltafi.plugin'
     id 'java'
     id 'jacoco'
@@ -43,7 +43,7 @@ dependencies {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
+        languageVersion = JavaLanguageVersion.of(21)
     }
 }
 

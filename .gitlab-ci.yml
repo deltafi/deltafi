@@ -10,10 +10,10 @@ stages:
 default:
   timeout: 45m
 
-image: deltafi/deltafi-build:jdk17-python3-0
+image: deltafi/deltafi-build:jdk21-python3-0
 
 .gradle:
-  image: deltafi/deltafi-build:jdk17-python3-0
+  image: deltafi/deltafi-build:jdk21-python3-0
   variables:
     GRADLE_USER_HOME: /cache/.gradle
     GRADLE_OPTS: "-Dorg.gradle.daemon=false"
@@ -132,6 +132,7 @@ publish:gitlab:
       - tags
       - dev
       - main
+      - "1.2"
   script:
     - cat ${GPG_SIGNING_KEY} | base64 -d > ${GPG_SIGNING_KEY}.signing.gpg
     - ${GRADLE} -PprojectMavenRepo="https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/packages/maven" -Psigning.keyId="${GPG_SIGNING_KEY_ID}" -Psigning.password="${GPG_SIGNING_PASSWORD}" -Psigning.secretKeyRingFile="${GPG_SIGNING_KEY}.signing.gpg" publishAllPublicationsToGitlabRepository
@@ -156,7 +157,8 @@ publish:docs:
       - tags
       - dev
       - main
-  image: deltafi/deltafi-build:jdk17-python3-0
+      - "1.2"
+  image: deltafi/deltafi-build:jdk21-python3-0
   before_script:
     - apt update
     - apt-get install -y python3-pip
@@ -172,7 +174,7 @@ publish:docs:
     - .publish
   rules:
     - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE != 'deltafi'
-  image: deltafi/deltafi-build:jdk17-python3-0
+  image: deltafi/deltafi-build:jdk21-python3-0
   before_script:
     - apt update
     - apt-get install -y python3-pip
@@ -206,6 +208,7 @@ trigger:plugins:
       - dev
       - main
       - release/*
+      - "1.2"
       - tags
   trigger:
     project: $CI_PROJECT_NAMESPACE/ci-plugin-triggers
