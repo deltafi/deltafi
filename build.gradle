@@ -51,6 +51,10 @@ subprojects {
         systemProperties['net.bytebuddy.experimental'] = 'true'
     }
 
+    tasks.withType(Test).configureEach {
+        maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
+    }
+
     apply plugin: 'jacoco'
 
     jacocoTestReport {
