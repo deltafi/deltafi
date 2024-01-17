@@ -13,6 +13,16 @@ allprojects { project ->
         isReleaseVersion = !version.endsWith("SNAPSHOT")
         isSignable = project.hasProperty("signing.keyId") && project.hasProperty("signing.password") && project.hasProperty("signing.secretKeyRingFile")
     }
+
+    task resolveDeps {
+        doLast {
+            configurations.each { conf ->
+                if (conf.isCanBeResolved()) {
+                    conf.resolve()
+                }
+            }
+        }
+    }
 }
 
 subprojects {
@@ -214,6 +224,20 @@ class TimingsListener implements TaskExecutionListener, BuildListener {
 
     @Override
     void settingsEvaluated(Settings settings) {}
+}
+
+// Cache all dependencies to maven local directory
+task cacheToMavenLocal(type: Copy) {
+    duplicatesStrategy DuplicatesStrategy.EXCLUDE
+    from new File(gradle.gradleUserHomeDir, 'caches/modules-2/files-2.1')
+        into repositories.mavenLocal().url
+        eachFile {
+            List<String> parts = it.path.split('/')
+                it.path = parts[0].replace('.','/') + '/' + parts[1] + '/' + parts[2] + '/' + parts[4]
+        }
+    includeEmptyDirs false
+    subprojects.each { dependsOn("${it.name}:resolveDeps") }
+    dependsOn tasks.resolveDeps
 }
 
 gradle.addListener new TimingsListener()
