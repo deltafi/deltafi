@@ -98,6 +98,7 @@ gradle:build:
     - job: "gradle:build"
 
 publish:nexus:
+  allow_failure: true
   tags:
     - heavy
   extends:
