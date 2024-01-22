@@ -35,10 +35,10 @@ import java.util.Set;
 @Setter
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 @EqualsAndHashCode(callSuper = true)
-public class TransformFlowPlan extends FlowPlan implements Subscriber {
+public class TransformFlowPlan extends FlowPlan implements Publisher, Subscriber {
     private List<TransformActionConfiguration> transformActions;
-    private EgressActionConfiguration egressAction;
     private Set<Rule> subscriptions;
+    private PublishRules publishRules;
 
     public TransformFlowPlan(String name, String description) {
         super(name, FlowType.TRANSFORM, description);
@@ -59,14 +59,16 @@ public class TransformFlowPlan extends FlowPlan implements Subscriber {
         if (transformActions != null) {
             actionConfigurations.addAll(transformActions);
         }
-        if (egressAction != null) {
-            actionConfigurations.add(egressAction);
-        }
         return actionConfigurations;
     }
 
     @Override
     public Set<Rule> subscriptions() {
         return this.subscriptions;
+    }
+
+    @Override
+    public PublishRules publishRules() {
+        return this.publishRules;
     }
 }

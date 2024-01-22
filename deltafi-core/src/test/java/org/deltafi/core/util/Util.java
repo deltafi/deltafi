@@ -47,22 +47,17 @@ public class Util {
 
     public static DeltaFile buildDeltaFile(String did, List<Content> content, Map<String, String> metadata) {
         OffsetDateTime now = OffsetDateTime.now();
-        return buildDeltaFile(did, null, DeltaFileStage.INGRESS, now, now, content, metadata);
+        return buildDeltaFile(did, null, DeltaFileStage.IN_FLIGHT, now, now, content, metadata);
     }
 
     public static DeltaFile emptyDeltaFile(String did, String flow) {
         OffsetDateTime now = OffsetDateTime.now();
-        return buildDeltaFile(did, flow, DeltaFileStage.INGRESS, now, now, new ArrayList<>());
+        return buildDeltaFile(did, flow, DeltaFileStage.IN_FLIGHT, now, now, new ArrayList<>());
     }
 
     public static DeltaFile emptyDeltaFile(String did, String flow, List<Content> content) {
         OffsetDateTime now = OffsetDateTime.now();
-        return buildDeltaFile(did, flow, DeltaFileStage.INGRESS, now, now, content);
-    }
-
-    public static DeltaFile emptyDeltaFile(String did, String flow, List<Content> content, Map<String, String> metadata) {
-        OffsetDateTime now = OffsetDateTime.now();
-        return buildDeltaFile(did, flow, DeltaFileStage.INGRESS, now, now, content, metadata);
+        return buildDeltaFile(did, flow, DeltaFileStage.IN_FLIGHT, now, now, content);
     }
 
     public static DeltaFile buildDeltaFile(String did, String flow, DeltaFileStage stage, OffsetDateTime created,
@@ -138,7 +133,7 @@ public class Util {
                 .parentDids(new ArrayList<>())
                 .childDids(new ArrayList<>())
                 .ingressBytes(0L)
-                .sourceInfo(new SourceInfo("filename", flow, metadata, ProcessingType.NORMALIZATION))
+                .sourceInfo(new SourceInfo("filename", flow, metadata))
                 .stage(stage)
                 .created(created)
                 .modified(modified)
@@ -161,10 +156,8 @@ public class Util {
         Assertions.assertThat(actual.getIngressBytes()).isEqualTo(expected.getIngressBytes());
         assertActionsEqualIgnoringDates(expected.getActions(), actual.getActions());
         Assertions.assertThat(actual.getSourceInfo()).isEqualTo(expected.getSourceInfo());
-        Assertions.assertThat(actual.domains()).isEqualTo(expected.domains());
         Assertions.assertThat(actual.getAnnotations()).isEqualTo(expected.getAnnotations());
         Assertions.assertThat(actual.getAnnotationKeys()).isEqualTo(expected.getAnnotationKeys());
-        Assertions.assertThat(actual.enrichments()).isEqualTo(expected.enrichments());
         Assertions.assertThat(actual.getEgressed()).isEqualTo(expected.getEgressed());
         Assertions.assertThat(actual.getFiltered()).isEqualTo(expected.getFiltered());
         Assertions.assertThat(actual.getEgress()).isEqualTo(expected.getEgress());

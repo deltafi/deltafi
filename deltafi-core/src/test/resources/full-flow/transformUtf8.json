@@ -1,21 +1,22 @@
 {
     "did": "%1$s",
-    "action": "sampleNormalize.Utf8TransformAction",
+    "action": "sampleTransform.Utf8TransformAction",
     "start": "2021-07-11T13:44:22.183Z",
     "stop": "2021-07-11T13:44:22.184Z",
     "type": "TRANSFORM",
-    "transform": {
-        "content": [
-            {
-                "name": "file.json",
-                "segments": [{
-                    "uuid": "utf8ObjectName",
-                    "offset": 0,
-                    "size": 500,
-                    "did": "%1$s" }],
-                "mediaType": "application/octet-stream"
-            }
-        ],
-        "metadata": { "deleteMe":  "soon" }
-    }
+    "transform": [
+        {
+            "content": [
+                {
+                    "name": "file.json",
+                    "segments": [{
+                        "uuid": "utf8ObjectName",
+                        "offset": 0,
+                        "size": 500,
+                        "did": "%1$s" }],
+                    "mediaType": "application/octet-stream"
+                }
+            ]
+        }
+    ]
 }

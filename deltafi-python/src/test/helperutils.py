@@ -54,16 +54,7 @@ def make_delta_file_message_dict():
     return {
         'ingressFlow': "FLOW",
         'contentList': [make_content_dict("CONTENT_NAME")],
-        'metadata': {'plKey1': 'valueA', 'plKey2': 'valueB'},
-        'domains': [
-            {'name': "DOMAIN1", 'value': "VALUE1", 'mediaType': "MEDIA_TYPE1"},
-            {'name': "DOMAIN2", 'value': "VALUE2", 'mediaType': "MEDIA_TYPE2"}
-        ],
-        'enrichments': [
-            {'name': "ENRICH1", 'value': "VALUE1", 'mediaType': "MEDIA_TYPE1"},
-            {'name': "ENRICH2", 'value': "VALUE2", 'mediaType': "MEDIA_TYPE2"},
-            {'name': "ENRICH3", 'value': "VALUE3", 'mediaType': "MEDIA_TYPE3"}
-        ]
+        'metadata': {'plKey1': 'valueA', 'plKey2': 'valueB'}
     }
 
 

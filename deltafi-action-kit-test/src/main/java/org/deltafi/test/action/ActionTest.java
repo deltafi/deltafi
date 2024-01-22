@@ -104,8 +104,6 @@ public abstract class ActionTest {
         return DeltaFileMessage.builder()
                 .metadata(metadata == null ? new HashMap<>() : metadata)
                 .contentList(content.stream().map(ContentConverter::convert).toList())
-                .domains(new ArrayList<>())
-                .enrichments(new ArrayList<>())
                 .build();
     }
 
@@ -183,17 +181,7 @@ public abstract class ActionTest {
     protected ActionEvent normalizeEvent(ActionEvent actionEvent) {
         actionEvent.setStop(OffsetDateTime.MAX);
         if (actionEvent.getTransform() != null) {
-            actionEvent.getTransform().getContent().forEach(this::normalizeContent);
-        } else if (actionEvent.getLoad() != null) {
-            actionEvent.getLoad().getContent().forEach(this::normalizeContent);
-        } else if (actionEvent.getFormat() != null) {
-            normalizeContent(actionEvent.getFormat().getContent());
-        } else if (actionEvent.getFormatMany() != null) {
-            actionEvent.getFormatMany().forEach(child -> normalizeContent(child.getContent()));
-        } else if (actionEvent.getLoadMany() != null) {
-            actionEvent.getLoadMany().forEach(child -> child.getContent().forEach(this::normalizeContent));
-        } else if (actionEvent.getReinject() != null) {
-            actionEvent.getReinject().forEach(child -> child.getContent().forEach(this::normalizeContent));
+            actionEvent.getTransform().forEach(child -> child.getContent().forEach(this::normalizeContent));
         }
 
         return actionEvent;

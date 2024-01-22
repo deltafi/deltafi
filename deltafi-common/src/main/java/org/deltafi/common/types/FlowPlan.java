@@ -27,11 +27,10 @@ import java.util.List;
 @Data
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = NormalizeFlowPlan.class, names = {"INGRESS", "NORMALIZE"}),
-        @JsonSubTypes.Type(value = EnrichFlowPlan.class, name = "ENRICH"),
         @JsonSubTypes.Type(value = EgressFlowPlan.class, name = "EGRESS"),
         @JsonSubTypes.Type(value = TransformFlowPlan.class, name = "TRANSFORM"),
-        @JsonSubTypes.Type(value = TimedIngressFlowPlan.class, name = "TIMED_INGRESS")
+        @JsonSubTypes.Type(value = TimedDataSourcePlan.class, name = "TIMED_DATA_SOURCE"),
+        @JsonSubTypes.Type(value = RestDataSourcePlan.class, name = "REST_DATA_SOURCE")
 })
 public abstract class FlowPlan {
     @Id

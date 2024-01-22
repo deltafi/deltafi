@@ -33,8 +33,6 @@ public class Property {
     private String defaultValue;
     private PropertySource propertySource;
     private boolean refreshable;
-    private boolean editable;
-    private boolean hidden;
 
     public boolean hasValue() {
         return null != value;

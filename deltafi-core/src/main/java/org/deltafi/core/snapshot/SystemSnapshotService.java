@@ -20,7 +20,6 @@ package org.deltafi.core.snapshot;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.Variable;
-import org.deltafi.core.snapshot.util.SnapshotUtil;
 import org.deltafi.core.types.PluginVariables;
 import org.deltafi.core.types.Result;
 import org.springframework.stereotype.Service;
@@ -55,7 +54,6 @@ public class SystemSnapshotService {
 
     void maskAndUpgradeSnapshots(SystemSnapshot systemSnapshot) {
         applyMaskToVariables(systemSnapshot);
-        SnapshotUtil.upgrade(systemSnapshot);
     }
 
     void applyMaskToVariables(SystemSnapshot systemSnapshot) {
@@ -79,7 +77,6 @@ public class SystemSnapshotService {
 
     public Result resetFromSnapshot(String snapshotId, boolean hardReset) {
         SystemSnapshot systemSnapshot = getById(snapshotId);
-        SnapshotUtil.upgrade(systemSnapshot);
         return resetFromSnapshot(systemSnapshot, hardReset);
     }
 
@@ -92,7 +89,6 @@ public class SystemSnapshotService {
             return null;
         }
 
-        SnapshotUtil.upgrade(systemSnapshot);
         removeMaskedVariables(systemSnapshot);
         return saveSnapshot(systemSnapshot);
     }

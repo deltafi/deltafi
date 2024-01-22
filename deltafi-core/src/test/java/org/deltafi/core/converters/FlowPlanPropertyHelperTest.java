@@ -17,14 +17,8 @@
  */
 package org.deltafi.core.converters;
 
-import org.deltafi.common.types.ActionDescriptor;
-import org.deltafi.common.types.ActionType;
-import org.deltafi.common.types.LoadActionConfiguration;
-import org.deltafi.common.types.Variable;
-import org.deltafi.common.types.VariableDataType;
+import org.deltafi.common.types.*;
 import org.deltafi.core.util.Util;
-import org.deltafi.common.types.ActionConfiguration;
-import org.deltafi.common.types.EgressActionConfiguration;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.validation.SchemaComplianceValidator;
 import org.junit.jupiter.api.Test;
@@ -276,8 +270,8 @@ class FlowPlanPropertyHelperTest {
         masked.setMasked(true);
         List<Variable> variables = List.of(notMasked, masked);
         FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(variables);
-        ActionConfiguration toPopulate = new LoadActionConfiguration("", ActionType.LOAD.name());
-        ActionConfiguration template = new LoadActionConfiguration("Loader", ActionType.LOAD.name());
+        ActionConfiguration toPopulate = new TransformActionConfiguration("", ActionType.TRANSFORM.name());
+        ActionConfiguration template = new TransformActionConfiguration("Loader", ActionType.TRANSFORM.name());
         template.setParameters(Map.of("notMasked", "${notMasked}", "masked", "${masked}"));
         flowPlanPropertyHelper.replaceCommonActionPlaceholders(toPopulate, template);
 

@@ -51,14 +51,14 @@ public class FlowfileEgressAction extends HttpEgressActionBase<HttpEgressParamet
 
     protected EgressResultType doEgress(@NotNull ActionContext context, @NotNull HttpEgressParameters params,
             @NotNull EgressInput input) {
-        try (InputStream inputStream = input.content().loadInputStream()) {
+        try (InputStream inputStream = input.getContent().loadInputStream()) {
             Map<String, String> attributes = buildHeadersMap(context.getDid(), context.getSourceFilename(),
-                    input.content().getName(), context.getIngressFlow(), context.getEgressFlow(), input.getMetadata());
+                    input.getContent().getName(), context.getIngressFlow(), context.getEgressFlow(), input.getMetadata());
 
             HttpResponse<InputStream> response;
 
             try (FlowFileInputStream flowFileInputStream = new FlowFileInputStream()) {
-                flowFileInputStream.runPipeWriter(inputStream, attributes, input.content().getSize(), executorService);
+                flowFileInputStream.runPipeWriter(inputStream, attributes, input.getContent().getSize(), executorService);
                 response = httpPostService.post(params.getUrl(), Map.of(), flowFileInputStream, APPLICATION_FLOWFILE);
             } catch (IOException e) {
                 return new ErrorResult(context, "Unable to process flowfile stream", e);
@@ -77,6 +77,6 @@ public class FlowfileEgressAction extends HttpEgressActionBase<HttpEgressParamet
             return new ErrorResult(context, "Service post failure", e);
         }
 
-        return new EgressResult(context, params.getUrl(), input.content().getSize());
+        return new EgressResult(context, params.getUrl(), input.getContent().getSize());
     }
 }

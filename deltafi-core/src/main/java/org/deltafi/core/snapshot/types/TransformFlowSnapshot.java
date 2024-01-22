@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.snapshot.types;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -41,12 +42,15 @@ public class TransformFlowSnapshot extends FlowSnapshot implements HasExpectedAn
         super(name);
     }
 
+    public TransformFlowSnapshot(String name, boolean running, boolean testMode) {
+        super(name, running, testMode);
+    }
+
     public TransformFlowSnapshot(TransformFlow transformFlow) {
         this(transformFlow.getName());
         setRunning(transformFlow.isRunning());
         setTestMode(transformFlow.isTestMode());
         setMaxErrors(transformFlow.getMaxErrors());
-        setExpectedAnnotations(transformFlow.getExpectedAnnotations());
     }
 
     @Override

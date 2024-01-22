@@ -25,7 +25,6 @@ import org.deltafi.core.plugin.deployer.customization.PluginCustomizationConfig;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.snapshot.types.*;
 import org.deltafi.core.types.DeletePolicies;
-import org.deltafi.core.types.FlowAssignmentRule;
 import org.deltafi.core.types.PluginVariables;
 import org.deltafi.core.types.ResumePolicy;
 import org.springframework.data.annotation.Id;
@@ -47,19 +46,10 @@ public class SystemSnapshot {
     private List<PluginVariables> pluginVariables;
     private DeletePolicies deletePolicies;
     private DeltaFiProperties deltaFiProperties;
-    private List<FlowAssignmentRule> flowAssignmentRules;
-    private List<String> runningIngressFlows;
-    private List<String> testIngressFlows;
-    private List<String> runningEnrichFlows;
-    private List<String> runningEgressFlows;
-    private List<String> testEgressFlows;
-    private List<String> runningTransformFlows;
-    private List<String> testTransformFlows;
 
-    private List<TimedIngressFlowSnapshot> timedIngressFlows = new ArrayList<>();
-    private List<NormalizeFlowSnapshot> normalizeFlows = new ArrayList<>();
+    private List<RestDataSourceSnapshot> restDataSources = new ArrayList<>();
+    private List<TimedDataSourceSnapshot> timedDataSources = new ArrayList<>();
     private List<TransformFlowSnapshot> transformFlows = new ArrayList<>();
-    private List<EnrichFlowSnapshot> enrichFlows = new ArrayList<>();
     private List<EgressFlowSnapshot> egressFlows = new ArrayList<>();
 
     private Set<PluginCoordinates> installedPlugins;

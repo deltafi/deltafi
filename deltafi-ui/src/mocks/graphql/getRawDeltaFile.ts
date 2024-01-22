@@ -173,17 +173,9 @@ const generateData = () => {
                 "flow": "stix1_x",
                 "metadata": {}
             },
-            "domains": [
-                {
-                    "name": "stix",
-                    "value": "{\n    \"id\": \"bundle--0196d980-60d9-4717-b7c5-bf7bc27a35d4\",\n    \"objects\": [\n        {\n            \"created\": \"2014-05-08T09:00:00.000Z\",\n            \"description\": \"\\n\\nSOURCE:\\n\\tMITRE\\n\\nDISCOVERED_DATETIME:\\n\\t2013-09-18T06:06:47.000000Z\",\n            \"external_references\": [\n                {\n                    \"external_id\": \"CVE-2013-3893\",\n                    \"source_name\": \"cve\"\n                },\n                {\n                    \"source_name\": \"internet_resource\",\n                    \"url\": \"https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2018-4878\"\n                }\n            ],\n            \"id\": \"vulnerability--3d81b9f9-56b5-4974-af38-9a5cc46b60f6\",\n            \"modified\": \"2014-05-08T09:00:00.000Z\",\n            \"name\": \"Javascript vulnerability in MSIE 6-11\",\n            \"spec_version\": \"2.1\",\n            \"type\": \"vulnerability\"\n        }\n    ],\n    \"type\": \"bundle\"\n}",
-                    "mediaType": "application/json"
-                }
-            ],
             "annotations": {
                 "stixTypes": "vulnerability"
             },
-            "enrichments": [],
             "created": "2022-09-29T17:52:03.046Z",
             "modified": "2022-09-29T17:52:03.630Z",
             "contentDeleted": null,

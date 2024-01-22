@@ -8,13 +8,9 @@ Commands:
   did                    show did for filename
   disable                stop all DeltaFi processes
   egress-flow            start, stop or validate an egress flow
-  enrich-flow            start, stop or validate an enrich flow
   export-config          export all the loaded flow configurations as yaml
   export-egress-plan     export a single egress flow plan by name as JSON
-  export-enrich-plan     export a single enrich flow plan by name as JSON
-  export-normalize-plan  export a single normalize flow plan by name as JSON
   export-transform-plan  export a single transform flow plan by name as JSON
-  export-rules           export all ingress-flow assignment rules as JSON
   ingress                ingress one or more files to a flow
   install                install/upgrade the DeltaFi core
   install-plugin         install/upgrade a DeltaFi plugin
@@ -25,12 +21,10 @@ Commands:
   list-policies          list delete policies
   load-plans             load the flow plans and variables for the given plugin
   load-policies          load delete policies from a JSON file
-  load-rules             load ingress flow assignment rules from a JSON file
   minio-cli              launch the minio CLI
   mongo-cli              launch the mongo CLI
   mongo-eval             eval a command in mongo
   mongo-migrate          run mongo migrations
-  normalize-flow         start, stop or validate an normalize flow
   performance-test       run performance tests against DeltaFi
   plugin-customization   manage plugin customization configuration
   plugin-image-repo      manage the image repositories that hold plugin images

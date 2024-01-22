@@ -77,8 +77,6 @@ fields below.
 ```java
 List<ActionContent> contentList;
 Map<String, String> metadata;
-Map<String, Domain> domains;
-Map<String, Enrichment> enrichments;
 ```
 
 ### Parameters
@@ -166,7 +164,7 @@ Or in Python save content to a Result:
 ### Results
 
 Each `Action` returns a specific `Result` class from its execution method. The `Result` contains some combination of
-content, metadata, domains, and enrichments produced by the execution of that Action.
+content, metadata, and annotations produced by the execution of that Action.
 
 Actions may return an `ErrorResult` if something goes wrong. Errors terminate the flow and raise the error cause
 to an operator's attention for possible retry.
@@ -210,7 +208,7 @@ collected. The collect configuration may include the following fields:
 
 By default, Transform and Load actions configured to collect will combine content and metadata from all collected
 DeltaFiles into the `Input` passed to the execution method. Format actions configured to collect will default to
-combining content, metadata, domains, and enrichments from all collected DeltaFiles into the `Input` passed to the
+combining content, metadata, and annotations from all collected DeltaFiles into the `Input` passed to the
 execution method.
 
 The `collect` method may be defined by an action to override the default behavior:
@@ -238,17 +236,6 @@ The `collect` method may be defined by an action to override the default behavio
 
 ## Transform Flow Actions
 - [Transform Action](/actions/transform)
-- [Egress Action](/actions/egress)
-
-## Normalize Flow Actions
-- [Transform Action](/actions/transform)
-- [Load Action](/actions/load)
-
-## Enrichment Flow Actions
-- [Domain Action](/actions/domain)
-- [Enrich Action](/actions/enrich)
 
 ## Egress Flow Actions
-- [Format Action](/actions/format)
-- [Validate Action](/actions/validate)
 - [Egress Action](/actions/egress)

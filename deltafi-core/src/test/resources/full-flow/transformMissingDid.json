@@ -1,0 +1,15 @@
+{
+    "action": "sampleTransform.SampleTransformAction",
+    "start": "2021-07-11T13:44:22.183Z",
+    "stop": "2021-07-11T13:44:22.184Z",
+    "type": "TRANSFORM",
+    "transform": [
+        {
+            "annotations": {
+                "did": "%1$s",
+                "first": "one",
+                "second": "two"
+            }
+        }
+    ]
+}

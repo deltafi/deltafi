@@ -38,4 +38,8 @@ public class Rule {
         this.topics = topics;
         this.condition = condition;
     }
+
+    public Rule(Set<String> topics) {
+        this(topics, null);
+    }
 }

@@ -22,16 +22,6 @@
       <template #empty>No actions included</template>
       <Column field="name" header="Name"></Column>
       <Column field="description" header="Description"></Column>
-      <Column field="requiresDomains" header="Requires Domains">
-        <template #body="{ data }">
-          <span v-if="data.requiresDomains !== null">{{ data.requiresDomains.join(', ') }}</span>
-        </template>
-      </Column>
-      <Column field="requiresEnrichments" header="Requires Enrichments">
-        <template #body="{ data }">
-          <span v-if="data.requiresEnrichments !== null">{{ data.requiresEnrichments.join(', ') }}</span>
-        </template>
-      </Column>
     </DataTable>
   </CollapsiblePanel>
 </template>

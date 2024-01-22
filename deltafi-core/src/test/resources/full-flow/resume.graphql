@@ -22,7 +22,7 @@ mutation {
         resumeMetadata: [
             {
                 flow: "sampleEgress"
-                action: "AuthorityValidateAction"
+                action: "SampleEgressAction"
                 metadata: [ { key: "a" value: "b" } ]
             }
         ]

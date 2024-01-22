@@ -24,7 +24,6 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.deltafi.common.constant.DeltaFiConstants;
 import org.springframework.data.annotation.Transient;
 
 import java.time.OffsetDateTime;
@@ -34,12 +33,8 @@ import java.util.*;
 @Setter
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "__typename")
 @JsonSubTypes({
+        @JsonSubTypes.Type(value = TimedIngressActionConfiguration.class, name = "TimedIngressActionConfiguration"),
         @JsonSubTypes.Type(value = TransformActionConfiguration.class, name = "TransformActionConfiguration"),
-        @JsonSubTypes.Type(value = LoadActionConfiguration.class, name = "LoadActionConfiguration"),
-        @JsonSubTypes.Type(value = DomainActionConfiguration.class, name = "DomainActionConfiguration"),
-        @JsonSubTypes.Type(value = EnrichActionConfiguration.class, name = "EnrichActionConfiguration"),
-        @JsonSubTypes.Type(value = FormatActionConfiguration.class, name = "FormatActionConfiguration"),
-        @JsonSubTypes.Type(value = ValidateActionConfiguration.class, name = "ValidateActionConfiguration"),
         @JsonSubTypes.Type(value = EgressActionConfiguration.class, name = "EgressActionConfiguration")
 })
 @EqualsAndHashCode(callSuper = true)
@@ -60,21 +55,6 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
         super(name);
         this.actionType = actionType;
         this.type = type;
-    }
-
-    static boolean equalOrAny(List<String> schemaList, List<String> configList) {
-        List<String> expected = Objects.isNull(schemaList) ? Collections.emptyList() : schemaList;
-        List<String> actual = Objects.isNull(configList) ? Collections.emptyList() : configList;
-
-        if (expected.contains(DeltaFiConstants.MATCHES_ANY)) {
-            return true;
-        }
-
-        if (expected.isEmpty()) {
-            return actual.isEmpty();
-        }
-
-        return expected.stream().allMatch(item -> actual.stream().anyMatch(i -> i.equals(item)));
     }
 
     /**
@@ -109,7 +89,7 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
                         .memo(memo)
                         .build())
                 .actionParams(internalParameters)
-                .deltaFileMessages(List.of(deltaFile.forQueue(egressFlow)))
+                .deltaFileMessages(List.of(deltaFile.forQueue()))
                 .returnAddress(returnAddress)
                 .actionCreated(actionCreated)
                 .action(action)
@@ -147,7 +127,7 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
                         .collectedDids(collectedDeltaFiles.stream().map(DeltaFile::getDid).toList())
                         .build())
                 .actionParams(internalParameters)
-                .deltaFileMessages(collectedDeltaFiles.stream().map(deltaFile -> deltaFile.forQueue(egressFlow)).toList())
+                .deltaFileMessages(collectedDeltaFiles.stream().map(DeltaFile::forQueue).toList())
                 .actionCreated(actionCreated)
                 .action(action)
                 .build();

@@ -21,9 +21,6 @@ package org.deltafi.core.schedulers;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.core.services.DeltaFilesService;
-import org.deltafi.core.services.ErrorCountService;
-import org.deltafi.core.services.NormalizeFlowService;
-import org.deltafi.core.services.TransformFlowService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -31,8 +28,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.HashSet;
-import java.util.Set;
 
 @ConditionalOnProperty(value = "schedule.maintenance", havingValue = "true", matchIfMissing = true)
 @Service

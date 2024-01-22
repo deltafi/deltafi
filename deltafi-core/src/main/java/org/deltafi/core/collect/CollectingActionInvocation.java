@@ -21,7 +21,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
 import org.deltafi.common.types.DeltaFileStage;
-import org.deltafi.common.types.ProcessingType;
 import org.deltafi.core.services.ActionInvocation;
 
 import java.util.List;
@@ -31,6 +30,5 @@ import java.util.List;
 @SuperBuilder
 public class CollectingActionInvocation extends ActionInvocation {
     private List<String> collectedDids;
-    private ProcessingType processingType;
     private DeltaFileStage stage;
 }

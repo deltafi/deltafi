@@ -296,41 +296,17 @@ class Content:
                        content_service=content_service)
 
 
-class Domain(NamedTuple):
-    name: str
-    value: str
-    media_type: str
-
-    @classmethod
-    def from_dict(cls, domain: dict):
-        name = domain['name']
-        if 'value' in domain:
-            value = domain['value']
-        else:
-            value = None
-        media_type = domain['mediaType']
-        return Domain(name=name,
-                      value=value,
-                      media_type=media_type)
-
-
 class DeltaFileMessage(NamedTuple):
     metadata: Dict[str, str]
     content_list: List[Content]
-    domains: List[Domain]
-    enrichments: List[Domain]
 
     @classmethod
     def from_dict(cls, delta_file_message: dict, content_service: ContentService):
         metadata = delta_file_message['metadata']
         content_list = [Content.from_dict(content, content_service) for content in delta_file_message['contentList']]
-        domains = [Domain.from_dict(domain) for domain in delta_file_message['domains']] if 'domains' in delta_file_message else []
-        enrichments = [Domain.from_dict(domain) for domain in delta_file_message['enrichments']] if 'enrichments' in delta_file_message else []
 
         return DeltaFileMessage(metadata=metadata,
-                                content_list=content_list,
-                                domains=domains,
-                                enrichments=enrichments)
+                                content_list=content_list)
 
 
 class Event(NamedTuple):

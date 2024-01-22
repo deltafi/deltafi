@@ -31,8 +31,6 @@ export default function usePropertySets() {
       properties: {
         key: true,
         value: true,
-        hidden: true,
-        editable: true,
         refreshable: true,
         description: true,
         propertySource: true

@@ -55,24 +55,6 @@ const generateData = () => {
       version: "0.95.4",
     },
     flowStatus: flowStatusMap.get(flowStatus[Math.floor(Math.random() * flowStatus.length)]),
-    includeNormalizeFlows: ["passthrough"],
-    excludeNormalizeFlows: [],
-    formatAction: {
-      name: "passthrough.PassthroughFormatAction",
-      parameters: null,
-      apiVersion: null,
-      requiresDomains: ["binary"],
-      requiresEnrichments: [],
-      type: "org.deltafi.passthrough.action.RoteFormatAction",
-    },
-    validateActions: [
-      {
-        name: "passthrough.PassthroughValidateAction",
-        apiVersion: null,
-        parameters: null,
-        type: "org.deltafi.passthrough.action.RubberStampValidateAction",
-      },
-    ],
     egressAction: {
       apiVersion: null,
       name: "passthrough.PassthroughEgressAction",

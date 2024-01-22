@@ -22,11 +22,5 @@ from enum import Enum
 class ActionType(Enum):
     TIMED_INGRESS = "TIMED_INGRESS"
     TRANSFORM = "TRANSFORM"
-    LOAD = "LOAD"
-    DOMAIN = "DOMAIN"
-    ENRICH = "ENRICH"
-    FORMAT = "FORMAT"
-    VALIDATE = "VALIDATE"
     EGRESS = "EGRESS"
-    DELETE = "DELETE"
     UNKNOWN = "UNKNOWN"

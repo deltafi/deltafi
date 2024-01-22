@@ -20,6 +20,7 @@ package org.deltafi.common.types;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.springframework.data.annotation.PersistenceCreator;
@@ -27,6 +28,7 @@ import org.springframework.data.annotation.PersistenceCreator;
 import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -39,5 +41,11 @@ public class TimedIngressActionConfiguration extends ActionConfiguration {
     public TimedIngressActionConfiguration(@JsonProperty(value = "name", required = true) String name,
                                            @JsonProperty(value = "type", required = true) String type) {
         super(name, ActionType.TIMED_INGRESS, type);
+    }
+
+    @Builder
+    public TimedIngressActionConfiguration(String name, String type, Map<String, Object> parameters) {
+        super(name, ActionType.TIMED_INGRESS, type);
+        setParameters(parameters);
     }
 }

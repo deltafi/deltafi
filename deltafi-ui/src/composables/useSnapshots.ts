@@ -156,17 +156,6 @@ export default function useSystemSnapshots() {
       running: true,
       testMode: true,
       maxErrors: true,
-      expectedAnnotations: true
-    },
-    normalizeFlows: {
-      name: true,
-      running: true,
-      testMode: true,
-      maxErrors: true
-    },
-    enrichFlows: {
-      name: true,
-      running: true,
     },
     egressFlows: {
       name: true,

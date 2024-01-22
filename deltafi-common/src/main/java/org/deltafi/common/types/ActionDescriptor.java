@@ -36,6 +36,4 @@ public class ActionDescriptor {
   private String description;
   private ActionType type;
   private Map<String, Object> schema;
-  private List<String> requiresDomains;
-  private List<String> requiresEnrichments;
 }

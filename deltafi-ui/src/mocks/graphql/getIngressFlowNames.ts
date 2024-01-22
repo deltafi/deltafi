@@ -19,18 +19,6 @@
 const generateData = () => {
   const data = {
     getFlowNames: {
-      normalize: [
-        "decompress-and-merge",
-        "decompress-passthrough",
-        "passthrough",
-        "smoke",
-        "hello-python",
-        "hello-load-many-python",
-        "stix-attack-domain",
-        "stix-attack-passthrough",
-        "stix1_x",
-        "stix2_1"
-      ],
       transform: [
         "devFlow1",
         "devFlow2",

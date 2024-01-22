@@ -17,7 +17,6 @@
  */
 package org.deltafi.core.validation;
 
-import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.types.*;
 import org.deltafi.core.util.Util;
 import org.deltafi.core.generated.types.FlowConfigError;
@@ -39,11 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class SchemaComplianceValidatorTest {
 
     public static final String EGRESS_ACTION = "org.deltafi.core.action.RestPostEgressAction";
-    public static final String ENRICH_ACTION = "org.deltafi.passthrough.action.RoteEnrichAction";
-    public static final String FORMAT_ACTION = "org.deltafi.passthrough.action.RoteFormatAction";
     public static final String TRANSFORM_ACTION = "org.deltafi.passthrough.action.RoteTransformAction";
-    public static final String DOMAIN_VALUE = "domainValue";
-    public static final String ENRICHMENT_VALUE = "enrichmentValue";
 
     @InjectMocks
     SchemaComplianceValidator schemaComplianceValidator;
@@ -89,15 +84,15 @@ class SchemaComplianceValidatorTest {
 
     @Test
     void validateAgainstSchema_wrongInstanceType() {
-        EgressActionConfiguration config = egressConfig("egressAction", FORMAT_ACTION, getRequiredEgressParams());
+        EgressActionConfiguration config = egressConfig("egressAction", getRequiredEgressParams());
 
         List<FlowConfigError> errors = schemaComplianceValidator.validateAgainstSchema(
-                ActionDescriptor.builder().type(ActionType.FORMAT).build(), config);
+                ActionDescriptor.builder().type(ActionType.INGRESS).build(), config);
 
         FlowConfigError error = errors.get(0);
         assertThat(error.getConfigName()).isEqualTo("egressAction");
         assertThat(error.getErrorType()).isEqualTo(FlowErrorType.INVALID_CONFIG);
-        assertThat(error.getMessage()).isEqualTo("Action: org.deltafi.passthrough.action.RoteFormatAction is not registered as an action of type EGRESS");
+        assertThat(error.getMessage()).isEqualTo("Action: org.deltafi.core.action.RestPostEgressAction is not registered as an action of type EGRESS");
     }
 
     @Test
@@ -114,31 +109,6 @@ class SchemaComplianceValidatorTest {
     @Test
     void validateAgainstSchema_goodTransform() {
         assertThat(schemaComplianceValidator.validateAgainstSchema(transformActionDescriptor(), transformConfig())).isEmpty();
-    }
-
-    @Test
-    void validateAgainstSchema_goodEnrich() {
-        assertThat(schemaComplianceValidator.validateAgainstSchema(enrichActionDescriptor(), enrichConfig())).isEmpty();
-    }
-
-    @Test
-    void validateAgainstSchema_invalidEnrich() {
-        List<FlowConfigError> errors = schemaComplianceValidator.validateAgainstSchema(enrichActionDescriptor(), invalidEnrich());
-
-        assertThat(errors).hasSize(2)
-                .contains(FlowConfigError.newBuilder().configName("MyEnrich").errorType(FlowErrorType.INVALID_CONFIG).message("The action configuration requiresDomains value must be: [domainValue]").build())
-                .contains(FlowConfigError.newBuilder().configName("MyEnrich").errorType(FlowErrorType.INVALID_CONFIG).message("The action configuration requiresEnrichments value must be: []").build());
-    }
-
-    @Test
-    void validateAgainstSchema_goodFormat() {
-        assertThat(schemaComplianceValidator.validateAgainstSchema(formatActionDescriptor(), formatConfig())).isEmpty();
-    }
-
-    @Test
-    void validateAgainstSchema_invalidFormat() {
-        List<FlowConfigError> errors = schemaComplianceValidator.validateAgainstSchema(formatActionDescriptor(), invalidFormat());
-        assertThat(errors).hasSize(1).contains(FlowConfigError.newBuilder().configName("MyFormat").errorType(FlowErrorType.INVALID_CONFIG).message("The action configuration requiresDomains value must be: [domainValue]").build());
     }
 
     @Test
@@ -209,54 +179,6 @@ class SchemaComplianceValidatorTest {
         params.put("name", "RestEgress");
         params.put("egressFlow", "out");
         return params;
-    }
-
-    ActionDescriptor enrichActionDescriptor() {
-        return ActionDescriptor.builder()
-                .name(ENRICH_ACTION)
-                .type(ActionType.ENRICH)
-                .requiresDomains(Collections.singletonList(DOMAIN_VALUE))
-                .requiresEnrichments(Collections.emptyList())
-                .build();
-    }
-
-    private EnrichActionConfiguration enrichConfig() {
-        EnrichActionConfiguration config = new EnrichActionConfiguration("MyEnrich", ENRICH_ACTION, Collections.singletonList(DOMAIN_VALUE));
-        config.setApiVersion("0.19.0");
-        return config;
-    }
-
-    private EnrichActionConfiguration invalidEnrich() {
-        // missing: requiresDomains
-        EnrichActionConfiguration config = new EnrichActionConfiguration("MyEnrich", ENRICH_ACTION, null);
-        config.setApiVersion("0.19.0");
-        // config has requiresEnrichments, but schema has an empty list.
-        config.setRequiresEnrichments(Collections.singletonList(ENRICHMENT_VALUE));
-        return config;
-    }
-
-    ActionDescriptor formatActionDescriptor() {
-        return ActionDescriptor.builder()
-                .name(FORMAT_ACTION)
-                .type(ActionType.FORMAT)
-                .requiresDomains(Collections.singletonList(DOMAIN_VALUE))
-                .requiresEnrichments(Collections.singletonList(DeltaFiConstants.MATCHES_ANY))
-                .build();
-    }
-
-    private FormatActionConfiguration formatConfig() {
-        FormatActionConfiguration config = new FormatActionConfiguration("MyFormat", FORMAT_ACTION, Collections.singletonList(DOMAIN_VALUE));
-        config.setApiVersion("0.19.0");
-        config.setRequiresEnrichments(Collections.singletonList(ENRICHMENT_VALUE));
-        return config;
-    }
-
-    private FormatActionConfiguration invalidFormat() {
-        // wrong requiresDomains value:
-        FormatActionConfiguration config = new FormatActionConfiguration("MyFormat", FORMAT_ACTION, Collections.singletonList("bogusDomain"));
-        config.setApiVersion("0.19.0");
-        // no requiresEnrichments here is ok because schema is ANY
-        return config;
     }
 
     ActionDescriptor transformActionDescriptor() {

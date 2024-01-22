@@ -165,17 +165,6 @@ ALL_SNAPSHOT_FIELDS="id
                 masked
               }
             }
-            flowAssignmentRules {
-              id
-              name
-              flow
-              priority
-              filenameRegex
-              requiredMetadata {
-                key
-                value
-              }
-            }
             resumePolicies {
               id
               name

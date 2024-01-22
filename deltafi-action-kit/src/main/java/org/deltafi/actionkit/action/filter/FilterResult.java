@@ -22,10 +22,7 @@ import lombok.Getter;
 import org.deltafi.actionkit.action.AnnotationsResult;
 import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.egress.EgressResultType;
-import org.deltafi.actionkit.action.format.FormatResultType;
-import org.deltafi.actionkit.action.load.LoadResultType;
 import org.deltafi.actionkit.action.transform.TransformResultType;
-import org.deltafi.actionkit.action.validate.ValidateResultType;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionEventType;
@@ -37,8 +34,8 @@ import org.jetbrains.annotations.NotNull;
  */
 @Getter
 @EqualsAndHashCode(callSuper = true)
-public class FilterResult extends AnnotationsResult<FilterResult> implements EgressResultType, FormatResultType,
-        LoadResultType, TransformResultType, ValidateResultType, ResultType {
+public class FilterResult extends AnnotationsResult<FilterResult> implements EgressResultType, TransformResultType,
+        ResultType {
 
     private final String filteredCause;
     private final String filteredContext;

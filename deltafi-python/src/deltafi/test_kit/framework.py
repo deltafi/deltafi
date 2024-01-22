@@ -117,8 +117,6 @@ class TestCaseBase(ABC):
         - inputs: (optional) List[IOContent]: input content to action
         - parameters: (optional) Dict: map of action input parameters
         - in_meta: (optional) Dict: map of metadata as input to action
-        - in_domains: (optional) List[Domain]: list of domains as input to action
-        - in_enrichments: (optional) List[Domain]: list of enrichments as input to action
         - did: (optional): str: overrides random DID
         """
         if "action" in data:
@@ -138,11 +136,8 @@ class TestCaseBase(ABC):
 
         self.inputs = data["inputs"] if "inputs" in data else []
         self.file_name = data["file_name"] if "file_name" in data else "filename"
-        self.outputs = data["outputs"] if "outputs" in data else []
         self.parameters = data["parameters"] if "parameters" in data else {}
         self.in_meta = data["in_meta"] if "in_meta" in data else {}
-        self.in_domains = data["in_domains"] if "in_domains" in data else []
-        self.in_enrichments = data["in_enrichments"] if "in_enrichments" in data else []
         self.use_did = data["did"] if "did" in data else None
         self.expected_result_type = None
         self.err_or_filt_cause = None
@@ -187,18 +182,27 @@ class ActionTest(ABC):
         """
         self.content_service = InternalContentService()
         self.did = ""
-        self.expected_outputs = []
         self.loaded_inputs = []
         self.package_name = package_name
         self.res_path = ""
 
     def __reset__(self, did: str):
         self.content_service = InternalContentService()
+<<<<<<< HEAD
         if did is None:
             self.did = str(uuid.uuid4())
         else:
             self.did = did
         self.expected_outputs = []
+||||||| parent of 831733c7 (2.0 Refactor)
+        self.did = str(uuid.uuid4())
+        self.expected_outputs = []
+=======
+        if did is None:
+            self.did = str(uuid.uuid4())
+        else:
+            self.did = did
+>>>>>>> 831733c7 (2.0 Refactor)
         self.loaded_inputs = []
         self.res_path = ""
 
@@ -219,13 +223,6 @@ class ActionTest(ABC):
             else:
                 self.loaded_inputs.append(LoadedContent(self.did, input_ioc, None))
 
-        # Load expected outputs
-        for output_ioc in test_case.outputs:
-            if len(output_ioc.content_bytes) == 0:
-                self.expected_outputs.append(LoadedContent(self.did, output_ioc, self.load_file(output_ioc)))
-            else:
-                self.expected_outputs.append(LoadedContent(self.did, output_ioc, None))
-
     def make_content_list(self, test_case: TestCaseBase):
         content_list = []
         for loaded_input in self.loaded_inputs:
@@ -240,11 +237,21 @@ class ActionTest(ABC):
         content_list = self.make_content_list(test_case)
         self.content_service.load(self.loaded_inputs)
 
+<<<<<<< HEAD
         return DeltaFileMessage(
             metadata=test_case.in_meta,
             content_list=content_list,
             domains=test_case.in_domains,
             enrichments=test_case.in_enrichments)
+||||||| parent of 831733c7 (2.0 Refactor)
+        return DeltaFileMessage(metadata=test_case.in_meta,
+                                content_list=content_list,
+                                domains=test_case.in_domains,
+                                enrichments=test_case.in_enrichments)
+=======
+        return DeltaFileMessage(metadata=test_case.in_meta,
+                                content_list=content_list)
+>>>>>>> 831733c7 (2.0 Refactor)
 
     def make_context(self, test_case: TestCaseBase):
         action_name = INGRESS_FLOW + "." + test_case.action.__class__.__name__
@@ -314,17 +321,19 @@ class ActionTest(ABC):
         seg_id = actual.segments[0].uuid
         comparitor.compare(expected.data, self.content_service.get_output(seg_id), f"Content[{index}]")
 
-    def compare_all_output(self, comparitor: CompareHelper, content: List):
-        assert_equal_len(self.expected_outputs, content)
-        for index, expected in enumerate(self.expected_outputs):
+    def compare_content_list(self, comparitor: CompareHelper, expected_outputs: List[IOContent], content: List):
+        assert_equal_len(expected_outputs, content)
+        for index, expected_ioc in enumerate(expected_outputs):
+            if len(expected_ioc.content_bytes) == 0:
+                expected = LoadedContent(self.did, expected_ioc, self.load_file(output_ioc))
+            else:
+                expected = LoadedContent(self.did, expected_ioc, None)
             self.compare_one_content(comparitor, expected, content[index], index)
 
-    def compare_domains(self, comparitor: CompareHelper, expected_items: List[Dict], results: List[Dict]):
-        assert_equal_len(expected_items, results)
-        for index, expected in enumerate(expected_items):
-            actual = results[index]
-            assert_equal(expected['name'], actual['name'])
-            assert_equal(expected['mediaType'], actual['mediaType'])
+    def compare_one_metric(self, expected: Metric, result: Metric):
+        assert expected.name == result.name
+        assert_equal_with_label(expected.value, result.value, expected.name)
+        assert_keys_and_values(expected.tags, result.tags)
 
             expected_value = expected['value']
             if type(expected_value) == str:

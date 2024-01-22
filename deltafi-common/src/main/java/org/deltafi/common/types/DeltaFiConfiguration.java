@@ -26,16 +26,9 @@ import lombok.ToString;
 @Data
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "__typename")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = NormalizeFlowConfiguration.class, name = "NormalizeFlowConfiguration"),
-        @JsonSubTypes.Type(value = EnrichFlowConfiguration.class, name = "EnrichFlowConfiguration"),
         @JsonSubTypes.Type(value = EgressFlowConfiguration.class, name = "EgressFlowConfiguration"),
         @JsonSubTypes.Type(value = TimedIngressActionConfiguration.class, name = "TimedIngressActionConfiguration"),
         @JsonSubTypes.Type(value = TransformActionConfiguration.class, name = "TransformActionConfiguration"),
-        @JsonSubTypes.Type(value = LoadActionConfiguration.class, name = "LoadActionConfiguration"),
-        @JsonSubTypes.Type(value = DomainActionConfiguration.class, name = "DomainActionConfiguration"),
-        @JsonSubTypes.Type(value = EnrichActionConfiguration.class, name = "EnrichActionConfiguration"),
-        @JsonSubTypes.Type(value = FormatActionConfiguration.class, name = "FormatActionConfiguration"),
-        @JsonSubTypes.Type(value = ValidateActionConfiguration.class, name = "ValidateActionConfiguration"),
         @JsonSubTypes.Type(value = EgressActionConfiguration.class, name = "EgressActionConfiguration")
 })
 @ToString

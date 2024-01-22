@@ -17,9 +17,9 @@
 #
 
 import abc
-from enum import Enum
 import uuid
-from typing import Dict, List
+from enum import Enum
+from typing import NamedTuple
 
 from deltafi.domain import Content, Context
 from deltafi.metric import Metric
@@ -44,21 +44,7 @@ class Result:
 
     def add_metric(self, metric: Metric):
         self.metrics.append(metric)
-
-
-class DomainResult(Result):
-    def __init__(self, context: Context):
-        super().__init__('domain', 'DOMAIN', context)
-        self.annotations = {}
-
-    def annotate(self, key: str, value: str):
-        self.annotations[key] = value
         return self
-
-    def response(self):
-        return {
-            'annotations': self.annotations
-        }
 
 
 class EgressResult(Result):
@@ -69,31 +55,6 @@ class EgressResult(Result):
 
     def response(self):
         return None
-
-
-class EnrichResult(Result):
-    def __init__(self, context: Context):
-        super().__init__('enrich', 'ENRICH', context)
-        self.enrichments = []
-        self.annotations = {}
-
-    def enrich(self, name: str, value: str, media_type: str):
-        self.enrichments.append({
-            'name': name,
-            'value': value,
-            'mediaType': media_type
-        })
-        return self
-
-    def annotate(self, key: str, value: str):
-        self.annotations[key] = value
-        return self
-
-    def response(self):
-        return {
-            'enrichments': self.enrichments,
-            'annotations': self.annotations
-        }
 
 
 class ErrorResult(Result):
@@ -116,7 +77,7 @@ class ErrorResult(Result):
 
 
 class FilterResult(Result):
-    def __init__(self, context: Context, filtered_cause: str, filtered_context: str=None):
+    def __init__(self, context: Context, filtered_cause: str, filtered_context: str = None):
         super().__init__('filter', 'FILTER', context)
         self.filtered_cause = filtered_cause
         self.filtered_context = filtered_context
@@ -132,80 +93,6 @@ class FilterResult(Result):
             'context': self.filtered_context,
             'annotations': self.annotations
         }
-
-
-class FormatResult(Result):
-    def __init__(self, context: Context):
-        super().__init__('format', 'FORMAT', context)
-        self.content = None
-        self.delete_metadata_keys = []
-        self.metadata = {}
-
-    def set_metadata(self, metadata: dict):
-        self.metadata = metadata
-        return self
-
-    def add_metadata(self, key: str, value: str):
-        self.metadata[key] = value
-        return self
-
-    def delete_metadata_key(self, key: str):
-        self.delete_metadata_keys.append(key)
-        return self
-
-    def set_content(self, content: Content):
-        self.content = content
-        return self
-
-    def save_string_content(self, string_data: str, name: str, media_type: str):
-        segment = self.context.content_service.put_str(self.context.did, string_data)
-        self.content = Content(name=name, segments=[segment], media_type=media_type,
-                               content_service=self.context.content_service)
-        return self
-
-    def save_byte_content(self, byte_data: bytes, name: str, media_type: str):
-        segment = self.context.content_service.put_bytes(self.context.did, byte_data)
-        self.content = Content(name=name, segments=[segment], media_type=media_type,
-                               content_service=self.context.content_service)
-        return self
-
-    def response(self):
-        return {
-            'content': self.content.json(),
-            'metadata': self.metadata,
-            'deleteMetadataKeys': self.delete_metadata_keys
-        }
-
-
-class ChildFormatResult:
-    def __init__(self, format_result: FormatResult = None):
-        self._did = str(uuid.uuid4())
-        self.format_result = format_result
-
-    @property
-    def did(self):
-        return self._did
-
-    def response(self):
-        res = self.format_result.response()
-        res["did"] = self._did
-        return res
-
-
-class FormatManyResult(Result):
-    def __init__(self, context: Context):
-        super().__init__('formatMany', 'FORMAT_MANY', context)
-        self.format_results = []
-
-    def add_format_result(self, format_result):
-        if isinstance(format_result, ChildFormatResult):
-            self.format_results.append(format_result)
-        else:
-            self.format_results.append(ChildFormatResult(format_result))
-        return self
-
-    def response(self):
-        return [format_result.response() for format_result in self.format_results]
 
 
 class IngressResultItem:
@@ -288,135 +175,12 @@ class IngressResult(Result):
         }
 
 
-class LoadResult(Result):
-    def __init__(self, context: Context):
-        super().__init__('load', 'LOAD', context)
-        self.content = []
-        self.metadata = {}
-        self.domains = []
-        self.annotations = {}
-        self.delete_metadata_keys = []
-
-    # content can be a single Content or a List[Content]
-    def add_content(self, content):
-        if content:
-            if type(content) == list:
-                self.content.extend(content)
-            else:
-                self.content.append(content)
-
-        return self
-
-    def save_string_content(self, string_data: str, name: str, media_type: str):
-        segment = self.context.content_service.put_str(self.context.did, string_data)
-        self.content.append(
-            Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service))
-        return self
-
-    def save_byte_content(self, byte_data: bytes, name: str, media_type: str):
-        segment = self.context.content_service.put_bytes(self.context.did, byte_data)
-        self.content.append(
-            Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service))
-        return self
-
-    def set_metadata(self, metadata: dict):
-        self.metadata = metadata
-        return self
-
-    def add_metadata(self, key: str, value: str):
-        self.metadata[key] = value
-        return self
-
-    def add_domain(self, name: str, value: str, media_type: str):
-        self.domains.append({
-            'name': name,
-            'value': value,
-            'mediaType': media_type})
-        return self
-
-    def annotate(self, key: str, value: str):
-        self.annotations[key] = value
-        return self
-
-    def delete_metadata_key(self, key: str):
-        self.delete_metadata_keys.append(key)
-        return self
-
-    def response(self):
-        return {
-            'domains': self.domains,
-            'content': [content.json() for content in self.content],
-            'metadata': self.metadata,
-            'annotations': self.annotations,
-            'deleteMetadataKeys': self.delete_metadata_keys
-        }
-
-
-class ChildLoadResult:
-    def __init__(self, load_result: LoadResult = None):
-        self._did = str(uuid.uuid4())
-        self.load_result = load_result
-
-    @property
-    def did(self):
-        return self._did
-
-    def response(self):
-        res = self.load_result.response()
-        res["did"] = self._did
-        return res
-
-
-class LoadManyResult(Result):
-    def __init__(self, context: Context):
-        super().__init__('loadMany', 'LOAD_MANY', context)
-        self.load_results = []
-
-    def add_load_result(self, load_result):
-        if isinstance(load_result, ChildLoadResult):
-            self.load_results.append(load_result)
-        else:
-            self.load_results.append(ChildLoadResult(load_result))
-        return self
-
-    def response(self):
-        return [load_result.response() for load_result in self.load_results]
-
-
-class ReinjectResult(Result):
-    class ReinjectChild:
-        def __init__(self, filename: str, flow: str, content: List[Content], metadata: Dict[str, str]):
-            self.filename = filename
-            self.flow = flow
-            self.content = content
-            self.metadata = metadata
-
-        def json(self):
-            return {
-                'filename': self.filename,
-                'flow': self.flow,
-                'metadata': self.metadata,
-                'content': [content.json() for content in self.content]
-            }
-
-    def __init__(self, context: Context):
-        super().__init__('reinject', 'REINJECT', context)
-        self.children = []
-
-    def add_child(self, filename: str, flow: str, content: List[Content], metadata: Dict[str, str]):
-        child = ReinjectResult.ReinjectChild(filename, flow, content, metadata)
-        self.children.append(child)
-
-    def response(self):
-        return [child.json() for child in self.children]
-
-
 class TransformResult(Result):
     def __init__(self, context: Context):
         super().__init__('transform', 'TRANSFORM', context)
         self.content = []
-        self.metadata = {}
         self.annotations = {}
+        self.metadata = {}
         self.delete_metadata_keys = []
 
     # content can be a single Content or a List[Content]
@@ -457,18 +221,41 @@ class TransformResult(Result):
         self.delete_metadata_keys.append(key)
         return self
 
-    def response(self):
+    def json(self):
         return {
             'content': [content.json() for content in self.content],
-            'metadata': self.metadata,
             'annotations': self.annotations,
+            'metadata': self.metadata,
             'deleteMetadataKeys': self.delete_metadata_keys
         }
 
+    def response(self):
+        return [self.json()]
 
-class ValidateResult(Result):
+
+class NamedTransformResult(NamedTuple):
+    result: TransformResult
+    name: str
+
+    def json(self):
+        j = self.result.json()
+        if self.name is not None:
+            j['name'] = self.name
+        return j
+
+
+class TransformResults(Result):
     def __init__(self, context: Context):
-        super().__init__(None, 'VALIDATE', context)
+        super().__init__('transform', 'TRANSFORM', context)
+        self.named_results = []
+
+    def add_result(self, result: TransformResult, name: str = None):
+        self.named_results.append(NamedTransformResult(result, name))
+        return self
 
     def response(self):
-        return None
+        transform_events = []
+        for named_result in self.named_results:
+            json_dict = named_result.json()
+            transform_events.append(json_dict)
+        return transform_events

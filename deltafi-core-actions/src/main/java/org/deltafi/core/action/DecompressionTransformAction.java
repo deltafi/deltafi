@@ -54,8 +54,8 @@ import java.util.*;
 @Component
 @Slf4j
 public class DecompressionTransformAction extends TransformAction<DecompressionTransformParameters> {
-    final private int BATCH_FILES = 500;
-    final private int BATCH_BYTES = 100 * 1024 * 1024;
+    private final int BATCH_FILES = 500;
+    private final int BATCH_BYTES = 100 * 1024 * 1024;
 
     public DecompressionTransformAction() {
         super("Decompresses .tgz, .tar.Z, .tar.xz, .zip, .tar, .ar, .gz, .xz, .Z");
@@ -111,7 +111,7 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
                 try (BufferedInputStream decompressed = new BufferedInputStream(new CompressorStreamFactory().createCompressorInputStream(buffer))) {
                     try {
                         String archiveType = ArchiveStreamFactory.detect(decompressed);
-                        try (ArchiveInputStream dearchived = new ArchiveStreamFactory().createArchiveInputStream(new BufferedInputStream(decompressed))) {
+                        try (ArchiveInputStream<? extends ArchiveEntry> dearchived = new ArchiveStreamFactory().createArchiveInputStream(new BufferedInputStream(decompressed))) {
                             unarchive(dearchived, result);
                         } catch (IOException e) {
                             throw new DecompressionTransformException("Unable to unarchive content", e);
@@ -129,7 +129,7 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
                         inPlaceUnarchiveTar(new BufferedInputStream(buffer), result, content);
                         decompressionType = archiveType;
                     } else {
-                        try (ArchiveInputStream dearchived = new ArchiveStreamFactory().createArchiveInputStream(new BufferedInputStream(buffer))) {
+                        try (ArchiveInputStream<? extends ArchiveEntry> dearchived = new ArchiveStreamFactory().createArchiveInputStream(new BufferedInputStream(buffer))) {
                             unarchive(dearchived, result);
                             decompressionType = archiveType;
                         } catch (IOException e) {
@@ -197,7 +197,7 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
         }
     }
 
-    void unarchive(ArchiveInputStream archive, @NotNull TransformResult result) throws IOException {
+    void unarchive(ArchiveInputStream<? extends ArchiveEntry> archive, @NotNull TransformResult result) throws IOException {
         ArchiveEntry entry;
         List<SaveManyContent> saveManyContentList = new ArrayList<>();
         int currentBatchSize = 0;
@@ -256,7 +256,7 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
 
     void unarchiveTarOffsets(TarArchiveInputStream archive, @NotNull TransformResult result, @NotNull ActionContent content) throws IOException {
         TarArchiveEntry entry;
-        while ((entry = archive.getNextTarEntry()) != null) {
+        while ((entry = archive.getNextEntry()) != null) {
             if (entry.isDirectory()) continue;
             result.addContent(content.subcontent(archive.getBytesRead(), entry.getSize(), entry.getName(),
                     MediaType.APPLICATION_OCTET_STREAM));

@@ -23,8 +23,6 @@ import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.EgressActionConfiguration;
 import org.deltafi.common.types.TransformActionConfiguration;
 import org.deltafi.core.types.EgressFlow;
-import org.deltafi.core.types.EnrichFlow;
-import org.deltafi.core.types.NormalizeFlow;
 import org.deltafi.core.types.TransformFlow;
 import org.springframework.stereotype.Service;
 
@@ -33,29 +31,19 @@ import java.util.*;
 @AllArgsConstructor
 @Service
 public class UnifiedFlowService {
-    NormalizeFlowService normalizeFlowService;
-    EnrichFlowService enrichFlowService;
     EgressFlowService egressFlowService;
     TransformFlowService transformFlowService;
 
     public List<TransformActionConfiguration> runningTransformActions() {
-        List<TransformActionConfiguration> configs = new ArrayList<>(transformFlowService.getRunningFlows().stream()
+        return new ArrayList<>(transformFlowService.getRunningFlows().stream()
                 .map(TransformFlow::getTransformActions)
                 .flatMap(Collection::stream).toList());
-        configs.addAll(normalizeFlowService.getRunningFlows().stream()
-                .map(NormalizeFlow::getTransformActions)
-                .flatMap(Collection::stream).toList());
-        return configs;
     }
 
     public List<EgressActionConfiguration> runningEgressActions() {
-        List<EgressActionConfiguration> configs = new ArrayList<>(transformFlowService.getRunningFlows().stream()
-                .map(TransformFlow::getEgressAction)
-                .toList());
-        configs.addAll(egressFlowService.getRunningFlows().stream()
+        return new ArrayList<>(egressFlowService.getRunningFlows().stream()
                 .map(EgressFlow::getEgressAction)
                 .toList());
-        return configs;
     }
 
     public ActionConfiguration runningAction(String actionName, ActionType actionType) {
@@ -67,39 +55,6 @@ public class UnifiedFlowService {
             case TRANSFORM:
                 yield runningTransformActions().stream()
                         .filter(action -> Objects.equals(action.getName(), actionName))
-                        .findFirst()
-                        .orElse(null);
-            case LOAD:
-                yield normalizeFlowService.getRunningFlows().stream()
-                        .map(NormalizeFlow::getLoadAction)
-                        .filter(action -> action.getName().equals(actionName))
-                        .findFirst()
-                        .orElse(null);
-            case DOMAIN:
-                yield enrichFlowService.getRunningFlows().stream()
-                        .map(EnrichFlow::getDomainActions)
-                        .flatMap(Collection::stream)
-                        .filter(action -> action.getName().equals(actionName))
-                        .findFirst()
-                        .orElse(null);
-            case ENRICH:
-                yield enrichFlowService.getRunningFlows().stream()
-                        .map(EnrichFlow::getEnrichActions)
-                        .flatMap(Collection::stream)
-                        .filter(action -> action.getName().equals(actionName))
-                        .findFirst()
-                        .orElse(null);
-            case FORMAT:
-                yield egressFlowService.getRunningFlows().stream()
-                        .map(EgressFlow::getFormatAction)
-                        .filter(action -> action.getName().equals(actionName))
-                        .findFirst()
-                        .orElse(null);
-            case VALIDATE:
-                yield egressFlowService.getRunningFlows().stream()
-                        .map(EgressFlow::getValidateActions)
-                        .flatMap(Collection::stream)
-                        .filter(action -> action.getName().equals(actionName))
                         .findFirst()
                         .orElse(null);
             case EGRESS:
@@ -115,16 +70,6 @@ public class UnifiedFlowService {
     public List<ActionConfiguration> allActionConfigurations() {
         List<ActionConfiguration> configs = new ArrayList<>(transformFlowService.getAll().stream()
                 .map(TransformFlow::allActionConfigurations)
-                .flatMap(Collection::stream)
-                .toList());
-
-        configs.addAll(normalizeFlowService.getAll().stream()
-                .map(NormalizeFlow::allActionConfigurations)
-                .flatMap(Collection::stream)
-                .toList());
-
-        configs.addAll(enrichFlowService.getAll().stream()
-                .map(EnrichFlow::allActionConfigurations)
                 .flatMap(Collection::stream)
                 .toList());
 

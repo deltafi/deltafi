@@ -49,8 +49,8 @@ public class DeltaFiEgressAction extends HttpEgressActionBase<DeltaFiEgressParam
     }
 
     protected EgressResultType doEgress(@NotNull ActionContext context, @NotNull DeltaFiEgressParameters params, @NotNull EgressInput input) {
-        try (InputStream inputStream = input.content().loadInputStream()) {
-            HttpResponse<InputStream> response = httpPostService.post(params.getUrl(), buildHeaders(input.content().getName(), params.getFlow(), input.getMetadata(), context), inputStream, input.content().getMediaType());
+        try (InputStream inputStream = input.getContent().loadInputStream()) {
+            HttpResponse<InputStream> response = httpPostService.post(params.getUrl(), buildHeaders(input.getContent().getName(), params.getFlow(), input.getMetadata(), context), inputStream, input.getContent().getMediaType());
             Response.Status status = Response.Status.fromStatusCode(response.statusCode());
             if (Objects.isNull(status) || status.getFamily() != Response.Status.Family.SUCCESSFUL) {
                 try (InputStream body = response.body()) {
@@ -65,7 +65,7 @@ public class DeltaFiEgressAction extends HttpEgressActionBase<DeltaFiEgressParam
             return new ErrorResult(context, "Service post failure", e);
         }
 
-        return new EgressResult(context, params.getUrl(), input.content().getSize());
+        return new EgressResult(context, params.getUrl(), input.getContent().getSize());
     }
 
     private Map<String, String> buildHeaders(@NotNull String filename, String flow, Map<String, String> metadata, ActionContext context) throws JsonProcessingException {

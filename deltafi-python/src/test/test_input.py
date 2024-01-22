@@ -19,7 +19,7 @@
 import pytest
 from deltafi.domain import Event
 from deltafi.exception import MissingMetadataException
-from deltafi.input import DomainInput
+from deltafi.input import TransformInput
 from deltafi.storage import ContentService
 from mockito import mock, unstub
 
@@ -37,14 +37,13 @@ def make_event(content_service):
     return event
 
 
-def test_domain_input():
+def test_transform_input():
     unstub()
     mock_content_service = mock(ContentService)
     event = make_event(mock_content_service)
 
-    input = DomainInput(content=event.delta_file_messages[0].content_list,
-                        metadata=event.delta_file_messages[0].metadata,
-                        domains=event.delta_file_messages[0].domains)
+    input = TransformInput(content=event.delta_file_messages[0].content_list,
+                           metadata=event.delta_file_messages[0].metadata)
 
     assert input.get_metadata("plKey1") == "valueA"
     assert input.get_metadata_or_else("plkeyX", "not-found") == "not-found"

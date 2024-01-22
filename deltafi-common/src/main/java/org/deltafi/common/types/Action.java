@@ -21,9 +21,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.jetbrains.annotations.NotNull;
 
-import javax.ws.rs.core.MediaType;
 import java.time.OffsetDateTime;
 import java.util.*;
 
@@ -51,8 +49,6 @@ public class Action {
   private List<Content> content;
   private Map<String, String> metadata;
   private List<String> deleteMetadataKeys;
-  private List<Domain> domains;
-  private List<Enrichment> enrichments;
 
   public Action(Action other) {
     this.name = other.name;
@@ -72,14 +68,7 @@ public class Action {
     this.content = other.content == null ? null : other.content.stream().map(Content::new).toList();
     this.metadata = other.metadata == null ? null : new HashMap<>(other.metadata);
     this.deleteMetadataKeys = other.deleteMetadataKeys == null ? null : new ArrayList<>(other.deleteMetadataKeys);
-    this.domains = other.domains == null ? null : other.domains.stream().map(Domain::new).toList();
-    this.enrichments = other.enrichments == null ? null : other.enrichments.stream().map(Enrichment::new).toList();
   }
-
-  private static List<ActionType> DATA_AMENDED_TYPES = List.of(
-          ActionType.INGRESS,
-          ActionType.TRANSFORM,
-          ActionType.LOAD);
 
   public List<Content> getContent() {
       return content == null ? Collections.emptyList() : content;
@@ -93,57 +82,13 @@ public class Action {
       return deleteMetadataKeys == null ? Collections.emptyList() : deleteMetadataKeys;
   }
 
-  public List<Domain> getDomains() {
-      return domains == null ? Collections.emptyList() : domains;
-  }
-
-  public List<Enrichment> getEnrichments() {
-      return enrichments == null ? Collections.emptyList() : enrichments;
-  }
-
   boolean queued() { return state == ActionState.QUEUED || state == ActionState.COLD_QUEUED; }
 
   boolean terminal() {
     return !queued() && (state != ActionState.COLLECTING);
   }
 
-  boolean complete() {
-    return state == ActionState.COMPLETE;
-  }
-
-  public boolean amendedData() {
-    return (state == ActionState.COMPLETE || state == ActionState.RETRIED) && DATA_AMENDED_TYPES.contains(type);
-  }
-
-  public boolean afterFormat() {
-    return type == ActionType.VALIDATE || type == ActionType.EGRESS;
-  }
-
-  public void addDomain(@NotNull String domainKey, String domainValue, @NotNull String mediaType) {
-    if (domains == null) {
-      domains = new ArrayList<>();
-    }
-    Optional<Domain> domain = getDomains().stream().filter(d -> d.getName().equals(domainKey)).findFirst();
-    if (domain.isPresent()) {
-      domain.get().setValue(domainValue);
-    } else {
-      getDomains().add(new Domain(domainKey, domainValue, mediaType));
-    }
-  }
-
-  public void addEnrichment(@NotNull String enrichmentKey, String enrichmentValue) {
-    addEnrichment(enrichmentKey, enrichmentValue, MediaType.APPLICATION_OCTET_STREAM);
-  }
-
-  public void addEnrichment(@NotNull String enrichmentKey, String enrichmentValue, @NotNull String mediaType) {
-    if (enrichments == null) {
-      enrichments = new ArrayList<>();
-    }
-    Optional<Enrichment> enrichment = getEnrichments().stream().filter(d -> d.getName().equals(enrichmentKey)).findFirst();
-    if (enrichment.isPresent()) {
-      enrichment.get().setValue(enrichmentValue);
-    } else {
-      getEnrichments().add(new Enrichment(enrichmentKey, enrichmentValue, mediaType));
-    }
+  boolean completeOrRetried() {
+    return state == ActionState.COMPLETE || state == ActionState.RETRIED;
   }
 }

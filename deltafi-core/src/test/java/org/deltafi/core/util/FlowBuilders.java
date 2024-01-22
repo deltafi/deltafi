@@ -20,141 +20,114 @@ package org.deltafi.core.util;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.types.*;
+import org.deltafi.core.types.DataSource;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.deltafi.core.util.Constants.*;
 
 public class FlowBuilders {
-    public static TimedIngressFlow buildTimedIngressFlow(FlowState flowState) {
+    public static final String TRANSFORM_TOPIC = "transform-topic";
+    public static final String EGRESS_TOPIC = "egress-topic";
+    public static DataSource buildTimedIngressFlow(FlowState flowState) {
         TimedIngressActionConfiguration tic = new TimedIngressActionConfiguration("SampleTimedIngressAction", "type");
 
-        return buildFlow(TIMED_INGRESS_FLOW_NAME, tic, flowState, false, "*/5 * * * * *", NORMALIZE_FLOW_NAME);
+        return buildFlow(TIMED_INGRESS_FLOW_NAME, tic, flowState, false, "*/5 * * * * *", TRANSFORM_TOPIC);
     }
 
-    public static TimedIngressFlow buildTimedIngressErrorFlow(FlowState flowState) {
+    public static DataSource buildTimedIngressErrorFlow(FlowState flowState) {
         TimedIngressActionConfiguration tic = new TimedIngressActionConfiguration("SampleTimedIngressErrorAction", "type");
 
         return buildFlow(TIMED_INGRESS_ERROR_FLOW_NAME, tic, flowState, false, "*/5 * * * * *", MISSING_FLOW_NAME);
     }
 
-    public static NormalizeFlow buildNormalizeFlow(FlowState flowState) {
-        LoadActionConfiguration lc = new LoadActionConfiguration("SampleLoadAction", "type");
-        TransformActionConfiguration tc = new TransformActionConfiguration("Utf8TransformAction", "type");
-        TransformActionConfiguration tc2 = new TransformActionConfiguration("SampleTransformAction", "type");
-
-        return buildFlow(NORMALIZE_FLOW_NAME, lc, List.of(tc, tc2), flowState, false);
+    public static RestDataSource buildFlow(String topic) {
+        RestDataSource restDataSource = new RestDataSource();
+        restDataSource.setName("RestDataSource");
+        restDataSource.setTopic(topic);
+        return restDataSource;
     }
 
-    public static NormalizeFlow buildRunningFlow(String name, LoadActionConfiguration loadActionConfiguration, List<TransformActionConfiguration> transforms, boolean testMode) {
-        return buildFlow(name, loadActionConfiguration, transforms, FlowState.RUNNING, testMode);
+    public static TimedDataSource buildFlow(String name, TimedIngressActionConfiguration timedIngressActionConfiguration, FlowState flowState, boolean testMode, String cronSchedule, String targetFlow) {
+        TimedDataSource dataSource = new TimedDataSource();
+        dataSource.setName(name);
+        dataSource.getFlowStatus().setState(flowState);
+        dataSource.setTimedIngressAction(timedIngressActionConfiguration);
+        dataSource.setTestMode(testMode);
+        dataSource.setCronSchedule(cronSchedule);
+        dataSource.setTopic(targetFlow);
+        return dataSource;
     }
 
-    public static TimedIngressFlow buildFlow(String name, TimedIngressActionConfiguration timedIngressActionConfiguration, FlowState flowState, boolean testMode, String cronSchedule, String targetFlow) {
-        TimedIngressFlow timedIngressFlow = new TimedIngressFlow();
-        timedIngressFlow.setName(name);
-        timedIngressFlow.getFlowStatus().setState(flowState);
-        timedIngressFlow.setTimedIngressAction(timedIngressActionConfiguration);
-        timedIngressFlow.setTestMode(testMode);
-        timedIngressFlow.setCronSchedule(cronSchedule);
-        timedIngressFlow.setTargetFlow(targetFlow);
-        return timedIngressFlow;
-    }
-
-    public static NormalizeFlow buildFlow(String name, LoadActionConfiguration loadActionConfiguration, List<TransformActionConfiguration> transforms, FlowState flowState, boolean testMode) {
-        NormalizeFlow normalizeFlow = new NormalizeFlow();
-        normalizeFlow.setName(name);
-        normalizeFlow.getFlowStatus().setState(flowState);
-        normalizeFlow.setLoadAction(loadActionConfiguration);
-        normalizeFlow.setTransformActions(transforms);
-        normalizeFlow.setTestMode(testMode);
-        return normalizeFlow;
+    public static PublishRules publishRules(String topic) {
+        PublishRules publishRules = new PublishRules();
+        publishRules.setRules(List.of(new Rule(Set.of(topic))));
+        return publishRules;
     }
 
     public static EgressFlow buildEgressFlow(FlowState flowState) {
-        FormatActionConfiguration sampleFormat = new FormatActionConfiguration("SampleFormatAction", "type", List.of("sampleDomain"));
-        sampleFormat.setRequiresEnrichments(List.of("sampleEnrichment"));
-
         EgressActionConfiguration sampleEgress = new EgressActionConfiguration("SampleEgressAction", "type");
 
-        return buildFlow(EGRESS_FLOW_NAME, sampleFormat, sampleEgress, flowState, false);
+        return buildFlow(EGRESS_FLOW_NAME, sampleEgress, flowState, false);
     }
 
-    public static EnrichFlow buildEnrichFlow(FlowState flowState) {
-        EnrichFlow enrichFlow = new EnrichFlow();
-        enrichFlow.setName("sampleEnrich");
-
-        DomainActionConfiguration sampleDomain = new DomainActionConfiguration("SampleDomainAction", "SampleDomainType", List.of("sampleDomain"));
-
-        EnrichActionConfiguration sampleEnrich = new EnrichActionConfiguration("SampleEnrichAction", "type", List.of("sampleDomain"));
-        sampleEnrich.setRequiresMetadataKeyValues(List.of(new KeyValue("loadSampleType", "load-sample-type")));
-
-        enrichFlow.setDomainActions(List.of(sampleDomain));
-        enrichFlow.setEnrichActions(List.of(sampleEnrich));
-        enrichFlow.getFlowStatus().setState(flowState);
-        return enrichFlow;
-    }
-
-    public static EgressFlow buildRunningFlow(String name, FormatActionConfiguration formatAction, EgressActionConfiguration egressAction, boolean testMode) {
-        return buildFlow(name, formatAction, egressAction, FlowState.RUNNING, testMode);
-    }
-
-    public static EgressFlow buildFlow(String name, FormatActionConfiguration formatAction, EgressActionConfiguration egressAction, FlowState flowState, boolean testMode) {
+    public static EgressFlow buildFlow(String name, EgressActionConfiguration egressAction, FlowState flowState, boolean testMode) {
         EgressFlow egressFlow = new EgressFlow();
         egressFlow.setName(name);
-        egressFlow.setFormatAction(formatAction);
         egressFlow.setEgressAction(egressAction);
-        egressFlow.setIncludeNormalizeFlows(null);
         egressFlow.getFlowStatus().setState(flowState);
         egressFlow.setTestMode(testMode);
         return egressFlow;
     }
 
+    public static EgressFlow buildRunningEgressFlow(String name, EgressActionConfiguration egressAction, boolean testMode) {
+        return buildFlow(name, egressAction, FlowState.RUNNING, testMode);
+    }
+
     public static TransformFlow buildTransformFlow(FlowState flowState) {
-        EgressActionConfiguration lc = new EgressActionConfiguration("sampleTransform.SampleEgressAction", "type");
         TransformActionConfiguration tc = new TransformActionConfiguration("sampleTransform.Utf8TransformAction", "type");
         TransformActionConfiguration tc2 = new TransformActionConfiguration("sampleTransform.SampleTransformAction", "type");
 
-        return buildFlow(TRANSFORM_FLOW_NAME, lc, List.of(tc, tc2), flowState, false);
+        return buildFlow(TRANSFORM_FLOW_NAME, List.of(tc, tc2), flowState, false);
     }
 
-    public static TransformFlow buildFlow(String name, EgressActionConfiguration egressActionConfiguration, List<TransformActionConfiguration> transforms, FlowState flowState, boolean testMode) {
+    public static TransformFlow buildFlow(String name, List<TransformActionConfiguration> transforms, FlowState flowState, boolean testMode) {
         TransformFlow transformFlow = new TransformFlow();
         transformFlow.setName(name);
         transformFlow.getFlowStatus().setState(flowState);
-        transformFlow.setEgressAction(egressActionConfiguration);
         transformFlow.setTransformActions(transforms);
         transformFlow.setTestMode(testMode);
         return transformFlow;
     }
 
-    public static TransformFlow buildRunningFlow(String name, EgressActionConfiguration egressActionConfiguration, List<TransformActionConfiguration> transforms, boolean testMode) {
-        return buildFlow(name, egressActionConfiguration, transforms, FlowState.RUNNING, testMode);
+    public static TransformFlow buildRunningTransformFlow(String name, List<TransformActionConfiguration> transforms, boolean testMode) {
+        return buildFlow(name, transforms, FlowState.RUNNING, testMode);
     }
 
-    public static NormalizeFlow buildNormalizeFlow(String name, String groupId, String artifactId, String version) {
+    public static TransformFlow buildTransformFlow(String name, String groupId, String artifactId, String version) {
         PluginCoordinates pluginCoordinates = PluginCoordinates.builder()
                 .groupId(groupId).artifactId(artifactId).version(version).build();
-        return buildNormalizeFlow(name, pluginCoordinates);
+        return buildTransformFlow(name, pluginCoordinates);
     }
 
-    public static NormalizeFlow buildNormalizeFlow(String name, PluginCoordinates pluginCoordinates) {
-        NormalizeFlow normalizeFlow = new NormalizeFlow();
-        normalizeFlow.setName(name);
-        normalizeFlow.setSourcePlugin(pluginCoordinates);
-        normalizeFlow.migrate();
-        return normalizeFlow;
+    public static TransformFlow buildTransformFlow(String name, PluginCoordinates pluginCoordinates) {
+        TransformFlow transformFlow = new TransformFlow();
+        transformFlow.setName(name);
+        transformFlow.setSourcePlugin(pluginCoordinates);
+        transformFlow.migrate();
+        return transformFlow;
     }
 
-    public static NormalizeFlowPlan buildNormalizeFlowPlan(String name, String groupId, String artifactId, String version) {
+    public static TransformFlowPlan buildTransformFlowPlan(String name, String groupId, String artifactId, String version) {
         PluginCoordinates pluginCoordinates = PluginCoordinates.builder()
                 .groupId(groupId).artifactId(artifactId).version(version).build();
-        return buildNormalizeFlowPlan(name, pluginCoordinates);
+        return buildTransformFlowPlan(name, pluginCoordinates);
     }
 
-    public static NormalizeFlowPlan buildNormalizeFlowPlan(String name, PluginCoordinates pluginCoordinates) {
-        NormalizeFlowPlan normalizeFlowPlan = new NormalizeFlowPlan(name, FlowType.NORMALIZE, "desc");
-        normalizeFlowPlan.setSourcePlugin(pluginCoordinates);
-        return normalizeFlowPlan;
+    public static TransformFlowPlan buildTransformFlowPlan(String name, PluginCoordinates pluginCoordinates) {
+        TransformFlowPlan transformFlowPlan = new TransformFlowPlan(name, FlowType.TRANSFORM, "desc");
+        transformFlowPlan.setSourcePlugin(pluginCoordinates);
+        return transformFlowPlan;
     }
 }

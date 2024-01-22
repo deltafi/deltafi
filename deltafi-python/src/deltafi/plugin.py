@@ -34,8 +34,7 @@ from importlib import metadata
 import requests
 from deltafi.actioneventqueue import ActionEventQueue
 from deltafi.domain import Event, ActionExecution
-from deltafi.exception import ExpectedContentException, MissingDomainException, MissingEnrichmentException, \
-    MissingMetadataException
+from deltafi.exception import ExpectedContentException, MissingMetadataException
 from deltafi.logger import get_logger
 from deltafi.result import ErrorResult
 from deltafi.storage import ContentService
@@ -165,8 +164,6 @@ class Plugin(object):
             'name': self.action_name(action),
             'description': action.description,
             'type': action.action_type.name,
-            'requiresDomains': action.requires_domains,
-            'requiresEnrichments': action.requires_enrichments,
             'schema': action.param_class().model_json_schema()
         }
 
@@ -276,14 +273,6 @@ class Plugin(object):
                     result = ErrorResult(event.context,
                                          f"Action attempted to look up element {e.index + 1} (index {e.index}) from "
                                          f"content list of size {e.size}",
-                                         f"{str(e)}\n{traceback.format_exc()}")
-                except MissingDomainException as e:
-                    result = ErrorResult(event.context,
-                                         f"Action attempted to access domain {e.name}, which does not exist",
-                                         f"{str(e)}\n{traceback.format_exc()}")
-                except MissingEnrichmentException as e:
-                    result = ErrorResult(event.context,
-                                         f"Action attempted to access enrichment {e.name}, which does not exist",
                                          f"{str(e)}\n{traceback.format_exc()}")
                 except MissingMetadataException as e:
                     result = ErrorResult(event.context,

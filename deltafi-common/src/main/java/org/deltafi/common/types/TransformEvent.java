@@ -20,9 +20,28 @@ package org.deltafi.common.types;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 @Data
 @NoArgsConstructor
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode
 @SuperBuilder
-public class TransformEvent extends ContentChangeEvent {
+public class TransformEvent {
+    // optional name, used to rename children when splitting
+    private String name;
+
+    @Builder.Default
+    private List<Content> content = new ArrayList<>();
+
+    @Builder.Default
+    private Map<String, String> annotations = new HashMap<>();
+
+    @Builder.Default
+    private Map<String, String> metadata = new HashMap<>();
+
+    @Builder.Default
+    private List<String> deleteMetadataKeys = new ArrayList<>();
 }

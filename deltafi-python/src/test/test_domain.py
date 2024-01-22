@@ -16,7 +16,7 @@
 #    limitations under the License.
 #
 
-from deltafi.domain import Content, Context, Domain, Event
+from deltafi.domain import Content, Context, Event
 from deltafi.storage import ContentService, Segment
 from mockito import mock, unstub
 
@@ -130,16 +130,6 @@ def test_context_json():
     assert context.collected_dids is None
     assert context.memo == 'note to self'
     assert context.logger is None
-
-
-def test_domain():
-    domain = Domain.from_dict({
-        'name': "NAME",
-        'value': "VALUE",
-        'mediaType': "MEDIA_TYPE"})
-    assert domain.name == "NAME"
-    assert domain.value == "VALUE"
-    assert domain.media_type == "MEDIA_TYPE"
 
 
 def test_event():

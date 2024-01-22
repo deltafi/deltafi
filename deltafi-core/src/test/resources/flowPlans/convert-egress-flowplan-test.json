@@ -7,28 +7,6 @@
     "artifactId": "deltafi-passthrough",
     "version": "0.17.0"
   },
-  "includeIngressFlows": [
-    "${passthrough.includeIngressFlows}"
-  ],
-  "excludeIngressFlows": [
-    "${passthrough.excludeIngressFlows}"
-  ],
-  "formatAction": {
-    "name": "PassthroughFormatAction",
-    "type": "org.deltafi.passthrough.action.RoteFormatAction",
-    "requiresDomains": [
-      "${domain.type}"
-    ],
-    "requiresEnrichments": [
-      "${domain.type}"
-    ]
-  },
-  "validateActions": [
-    {
-      "name": "PassthroughValidateAction",
-      "type": "org.deltafi.passthrough.action.RubberStampValidateAction"
-    }
-  ],
   "egressAction": {
     "name": "PassthroughEgressAction",
     "type": "org.deltafi.core.action.RestPostEgressAction",

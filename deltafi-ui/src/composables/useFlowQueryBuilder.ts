@@ -17,7 +17,7 @@
 */
 
 import useGraphQL from "./useGraphQL";
-import { transformFlow, normalizeFlow, enrichFlow, egressFlow, flowStatusFields } from "./useFlowPlanQueryVariables";
+import { transformFlow, egressFlow, flowStatusFields } from "./useFlowPlanQueryVariables";
 
 export default function useFlowQueryBuilder() {
   const { response, errors, queryGraphQL, loaded, loading } = useGraphQL();
@@ -28,12 +28,6 @@ export default function useFlowQueryBuilder() {
       getAllFlows: {
         transform: {
           ...transformFlow,
-        },
-        normalize: {
-          ...normalizeFlow,
-        },
-        enrich: {
-          ...enrichFlow,
         },
         egress: {
           ...egressFlow,
@@ -54,32 +48,6 @@ export default function useFlowQueryBuilder() {
       },
     };
     return sendGraphQLQuery(query, "getTransformFlowByName");
-  };
-
-  // Get a Normalize Flow - (if you want to grab a single flow, return type is NormalizeFlow)
-  const getNormalizeFlowByName = (flowName: string) => {
-    const query = {
-      getNormalizeFlow: {
-        __args: {
-          flowName: flowName,
-        },
-        ...normalizeFlow,
-      },
-    };
-    return sendGraphQLQuery(query, "getNormalizeFlowByName");
-  };
-
-  // Get an Enrich Flow - (if you want to grab a single flow, return type is EnrichFlow)
-  const getEnrichFlowByName = (flowName: string) => {
-    const query = {
-      getEnrichFlow: {
-        __args: {
-          flowName: flowName,
-        },
-        ...enrichFlow,
-      },
-    };
-    return sendGraphQLQuery(query, "getEnrichFlowByName");
   };
 
   // Get an Egress Flow - (if you want to grab a single flow, return type is EgressFlow)
@@ -109,37 +77,6 @@ export default function useFlowQueryBuilder() {
       },
     };
     return sendGraphQLQuery(query, "validateTransformFlow");
-  };
-
-  // Validate a normalize flow - return type is NormalizeFlow
-  const validateNormalizeFlow = (flowName: string) => {
-    const query = {
-      validateNormalizeFlow: {
-        __args: {
-          flowName: flowName,
-        },
-        flowStatus: {
-          ...flowStatusFields,
-          testMode: true,
-        },
-      },
-    };
-    return sendGraphQLQuery(query, "validateNormalizeFlow");
-  };
-
-  // Validate an Enrich flow - return type is EnrichFlow
-  const validateEnrichFlow = (flowName: string) => {
-    const query = {
-      validateEnrichFlow: {
-        __args: {
-          flowName: flowName,
-        },
-        flowStatus: {
-          ...flowStatusFields,
-        },
-      },
-    };
-    return sendGraphQLQuery(query, "validateEnrichFlow");
   };
 
   // Validate an egress flow - return type is EgressFlow
@@ -194,54 +131,6 @@ export default function useFlowQueryBuilder() {
     return sendGraphQLQuery(query, "stopTransformFlowByName", "mutation");
   };
 
-  // Starts an normalize flow
-  const startNormalizeFlowByName = (flowName: string) => {
-    const query = {
-      startNormalizeFlow: {
-        __args: {
-          flowName: flowName,
-        },
-      },
-    };
-    return sendGraphQLQuery(query, "startNormalizeFlowByName", "mutation");
-  };
-
-  // Stops an normalize flow
-  const stopNormalizeFlowByName = (flowName: string) => {
-    const query = {
-      stopNormalizeFlow: {
-        __args: {
-          flowName: flowName,
-        },
-      },
-    };
-    return sendGraphQLQuery(query, "stopNormalizeFlowByName", "mutation");
-  };
-
-  // Starts an enrich flow
-  const startEnrichFlowByName = (flowName: string) => {
-    const query = {
-      startEnrichFlow: {
-        __args: {
-          flowName: flowName,
-        },
-      },
-    };
-    return sendGraphQLQuery(query, "startEnrichFlowByName", "mutation");
-  };
-
-  // Stops an enrich flow
-  const stopEnrichFlowByName = (flowName: string) => {
-    const query = {
-      stopEnrichFlow: {
-        __args: {
-          flowName: flowName,
-        },
-      },
-    };
-    return sendGraphQLQuery(query, "stopEnrichFlowByName", "mutation");
-  };
-
   // Starts an egress flow
   const startEgressFlowByName = (flowName: string) => {
     const query = {
@@ -290,30 +179,6 @@ export default function useFlowQueryBuilder() {
     return sendGraphQLQuery(query, "disableTransformTestModeFlowByName", "mutation");
   };
 
-  // sets an normalize flow to test mode
-  const enableTestNormalizeFlowByName = (flowName: string) => {
-    const query = {
-      enableNormalizeTestMode: {
-        __args: {
-          flowName: flowName,
-        },
-      },
-    };
-    return sendGraphQLQuery(query, "enableNormalizeTestModeFlowByName", "mutation");
-  };
-
-  // sets an normalize flow to test mode
-  const disableTestNormalizeFlowByName = (flowName: string) => {
-    const query = {
-      disableNormalizeTestMode: {
-        __args: {
-          flowName: flowName,
-        },
-      },
-    };
-    return sendGraphQLQuery(query, "disableNormalizeTestModeFlowByName", "mutation");
-  };
-
   // sets an egress flow to test mode
   const enableTestEgressFlowByName = (flowName: string) => {
     const query = {
@@ -338,7 +203,7 @@ export default function useFlowQueryBuilder() {
     return sendGraphQLQuery(query, "disableEgressTestModeFlowByName", "mutation");
   };
 
-  // sets max errors for a normalize or transform flow
+  // sets max errors for a transform flow
   const setMaxErrors = (flowName: string, maxErrors: number) => {
     const query = {
       setMaxErrors: {
@@ -349,19 +214,6 @@ export default function useFlowQueryBuilder() {
       },
     };
     return sendGraphQLQuery(query, "setMaxErrors", "mutation");
-  };
-
-  // sets expected annotations for an transform flow
-  const setTransformFlowExpectedAnnotations = (flowName: string, expectedAnnotations: Array<string>) => {
-    const query = {
-      setTransformFlowExpectedAnnotations: {
-        __args: {
-          flowName: flowName,
-          expectedAnnotations: expectedAnnotations,
-        },
-      },
-    };
-    return sendGraphQLQuery(query, "setTransformFlowExpectedAnnotations", "mutation");
   };
 
   // sets expected annotations for an egress flow
@@ -390,30 +242,19 @@ export default function useFlowQueryBuilder() {
   return {
     getAllFlows,
     getTransformFlowByName,
-    getNormalizeFlowByName,
-    getEnrichFlowByName,
     getEgressFlowByName,
     validateTransformFlow,
-    validateNormalizeFlow,
-    validateEnrichFlow,
     validateEgressFlow,
     setPluginVariables,
     startTransformFlowByName,
     stopTransformFlowByName,
-    startNormalizeFlowByName,
-    stopNormalizeFlowByName,
-    startEnrichFlowByName,
-    stopEnrichFlowByName,
     startEgressFlowByName,
     stopEgressFlowByName,
     enableTestTransformFlowByName,
     disableTestTransformFlowByName,
-    enableTestNormalizeFlowByName,
-    disableTestNormalizeFlowByName,
     enableTestEgressFlowByName,
     disableTestEgressFlowByName,
     setMaxErrors,
-    setTransformFlowExpectedAnnotations,
     setEgressFlowExpectedAnnotations,
     loaded,
     loading,

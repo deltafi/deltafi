@@ -44,13 +44,4 @@ public class TransformFlowRepoImpl extends BaseFlowRepoImpl<TransformFlow> imple
         Update maxErrorsUpdate = Update.update(MAX_ERRORS, maxErrors);
         return 1 == mongoTemplate.updateFirst(idMatches, maxErrorsUpdate, TransformFlow.class).getModifiedCount();
     }
-
-    @Override
-    public boolean updateExpectedAnnotations(String flowName, Set<String> expectedAnnotations) {
-        // sort before storing so the `ne` can be used in the query
-        TreeSet<String> sortedAnnotations = expectedAnnotations != null ? new TreeSet<>(expectedAnnotations) : null;
-        Query idMatches = Query.query(Criteria.where(ID).is(flowName).and(EXPECTED_ANNOTATIONS).ne(sortedAnnotations));
-        Update expectedAnnotationsUpdate = Update.update(EXPECTED_ANNOTATIONS, sortedAnnotations);
-        return 1 == mongoTemplate.updateFirst(idMatches, expectedAnnotationsUpdate, TransformFlow.class).getModifiedCount();
-    }
 }

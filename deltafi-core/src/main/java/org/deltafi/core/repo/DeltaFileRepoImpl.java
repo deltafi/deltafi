@@ -71,8 +71,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String NAME = "name";
     public static final String ACTIONS_METADATA = "actions.metadata";
     public static final String ACTIONS_DELETE_METADATA_KEYS = "actions.deleteMetadataKeys";
-    public static final String DOMAINS_NAME = "actions.domains.name";
-    public static final String ENRICHMENTS_NAME = "actions.enrichments.name";
     public static final String CONTENT_DELETED = "contentDeleted";
     public static final String CONTENT_DELETED_REASON = "contentDeletedReason";
     public static final String KEY = "key";
@@ -97,7 +95,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String SOURCE_INFO_NORMALIZED_FILENAME = "sourceInfo.normalizedFilename";
     public static final String SOURCE_INFO_FLOW = "sourceInfo.flow";
     public static final String SOURCE_INFO_METADATA = "sourceInfo.metadata";
-    public static final String SOURCE_INFO_PROCESSING_TYPE = "sourceInfo.processingType";
     public static final String FORMATTED_DATA_FILENAME = "formattedData.content.name";
     public static final String FORMATTED_DATA_FORMAT_ACTION = "formattedData.formatAction";
     public static final String FORMATTED_DATA_METADATA = "formattedData.metadata";
@@ -188,7 +185,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         INDICES.put("auto_resume_index", new Index().named("auto_resume_index").on(NEXT_AUTO_RESUME, Sort.Direction.ASC).on(STAGE, Sort.Direction.ASC));
         INDICES.put("flow_first_index", new Index().named("flow_first_index").on(SOURCE_INFO_FLOW, Sort.Direction.ASC).on(SOURCE_INFO_NORMALIZED_FILENAME, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
         INDICES.put("metadata_index", new Index().named("metadata_index").on(ANNOTATIONS + ".$**", Sort.Direction.ASC));
-        INDICES.put("domain_name_index", new Index().named("domain_name_index").on(DOMAINS_NAME, Sort.Direction.ASC).sparse());
         INDICES.put("metadata_keys_index", new Index().named("metadata_keys_index").on(ANNOTATION_KEYS, Sort.Direction.ASC).sparse());
         INDICES.put("pending_annotations_for_flows_index", new Index().named("pending_annotations_for_flows_index").on(PENDING_ANNOTATIONS_FOR_FLOWS, Sort.Direction.ASC).sparse());
         INDICES.put("egress_flow_index", new Index().named("egress_flow_index").on(EGRESS_FLOW, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
@@ -558,14 +554,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             criteria.and(CREATED).lt(filter.getCreatedBefore());
         }
 
-        if (filter.getDomains() != null && !filter.getDomains().isEmpty()) {
-            criteria.and(DOMAINS_NAME).all(filter.getDomains());
-        }
-
-        if (filter.getEnrichments() != null && !filter.getEnrichments().isEmpty()) {
-            criteria.and(ENRICHMENTS_NAME).all(filter.getEnrichments());
-        }
-
         if (filter.getAnnotations() != null) {
             filter.getAnnotations()
                     .forEach(e -> addAnnotationCriteria(e.getKey(), e.getValue(), criteria));
@@ -596,19 +584,14 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (filter.getSourceInfo() != null) {
-            if (filter.getSourceInfo().getFilename() != null && filter.getSourceInfo().getFilenameFilter() == null) {
-                // fall back to using the filename if it is set and filenameFilter is null
-                FilenameFilter filenameFilter = new FilenameFilter(".*" + filter.getSourceInfo().getFilename() + ".*", true, false);
-                filter.getSourceInfo().setFilenameFilter(filenameFilter);
-            }
-
             if (filter.getSourceInfo().getFilenameFilter() != null) {
                 addFilenameCriteria(filter.getSourceInfo().getFilenameFilter(), criteria);
             }
 
-            if (filter.getSourceInfo().getFlow() != null) {
+            // TODO: replace this with something indicating how it was ingressed?
+            /*if (filter.getSourceInfo().getFlow() != null) {
                 criteria.and(SOURCE_INFO_FLOW).is(filter.getSourceInfo().getFlow());
-            }
+            }*/
 
             if (filter.getSourceInfo().getIngressFlows() != null) {
                 criteria.and(SOURCE_INFO_FLOW).in(filter.getSourceInfo().getIngressFlows());
@@ -622,10 +605,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                     }
                     criteria.and(SOURCE_INFO_METADATA + "." + searchKey).is(keyValue.getValue());
                 });
-            }
-
-            if (filter.getSourceInfo().getProcessingType() != null) {
-                criteria.and(SOURCE_INFO_PROCESSING_TYPE).is(filter.getSourceInfo().getProcessingType());
             }
         }
 
@@ -991,20 +970,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
-    public List<String> domains() {
-        return mongoTemplate.findDistinct(new Query(), DOMAINS_NAME, DeltaFile.class, String.class).stream()
-                .filter(Objects::nonNull)
-                .toList();
-    }
-
-    @Override
-    public List<String> annotationKeys(String domain) {
-        Query query = new Query();
-        if (domain != null && !domain.isEmpty()) {
-            query.addCriteria(Criteria.where(DOMAINS_NAME).is(domain));
-        }
-
-        return mongoTemplate.findDistinct(query, ANNOTATION_KEYS, DeltaFile.class, BsonValue.class).stream()
+    public List<String> annotationKeys() {
+        return mongoTemplate.findDistinct(new Query(), ANNOTATION_KEYS, DeltaFile.class, BsonValue.class).stream()
                 .filter(this::filterStrings)
                 .map(this::bsonValueAsString)
                 .toList();

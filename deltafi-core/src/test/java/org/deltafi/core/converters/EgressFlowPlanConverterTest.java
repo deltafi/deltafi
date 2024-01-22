@@ -25,8 +25,6 @@ import org.deltafi.common.resource.Resource;
 import org.deltafi.common.types.Variable;
 import org.deltafi.common.types.VariableDataType;
 import org.deltafi.common.types.EgressActionConfiguration;
-import org.deltafi.common.types.FormatActionConfiguration;
-import org.deltafi.common.types.ValidateActionConfiguration;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
 import org.deltafi.core.generated.types.FlowState;
@@ -55,10 +53,6 @@ class EgressFlowPlanConverterTest {
 
         assertThat(egressFlow.getName()).isEqualTo("passthrough");
         assertThat(egressFlow.getEgressAction()).isEqualTo(expectedEgressAction());
-        assertThat(egressFlow.getFormatAction()).isEqualTo(expectedFormatAction());
-        assertThat(egressFlow.getValidateActions()).hasSize(1).contains(expectedValidateAction());
-        assertThat(egressFlow.getIncludeNormalizeFlows()).isNull();
-        assertThat(egressFlow.getExcludeNormalizeFlows()).hasSize(3).contains("a", "b", "c");
         assertThat(egressFlow.getFlowStatus().getState()).isEqualTo(FlowState.STOPPED);
         assertThat(egressFlow.getFlowStatus().getTestMode()).isFalse();
     }
@@ -103,16 +97,6 @@ class EgressFlowPlanConverterTest {
         FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(variables());
         List<String> output = egressFlowPlanConverter.buildFlowList(null, flowPlanPropertyHelper, "plan");
         assertThat(output).isNull();
-    }
-
-    FormatActionConfiguration expectedFormatAction() {
-        FormatActionConfiguration formatActionConfiguration = new FormatActionConfiguration("PassthroughFormatAction", "org.deltafi.passthrough.action.RoteFormatAction", List.of("binary"));
-        formatActionConfiguration.setRequiresEnrichments(List.of("binary"));
-        return formatActionConfiguration;
-    }
-
-    ValidateActionConfiguration expectedValidateAction() {
-        return new ValidateActionConfiguration("PassthroughValidateAction", "org.deltafi.passthrough.action.RubberStampValidateAction");
     }
 
     EgressActionConfiguration expectedEgressAction() {

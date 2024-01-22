@@ -29,22 +29,12 @@ import java.util.List;
 public class ActionDescriptorDatafetcherTestHelper {
 
     public static final String EGRESS_ACTION = "org.deltafi.EgressAction";
-    public static final String DOMAIN_ACTION = "org.deltafi.DomainAction";
-    public static final String ENRICH_ACTION = "org.deltafi.EnrichAction";
-    public static final String FORMAT_ACTION = "org.deltafi.FormatAction";
-    public static final String LOAD_ACTION = "org.deltafi.LoadAction";
     public static final String TRANSFORM_ACTION = "org.deltafi.TransformAction";
-    public static final String VALIDATE_ACTION = "org.deltafi.ValidatreAction";
-    public static final String PARAM_CLASS = "paramClass";
-    public static final String DOMAIN = "domain";
 
     public static List<ActionDescriptor> getActionDescriptors(DgsQueryExecutor dgsQueryExecutor) {
         ActionDescriptorsProjectionRoot projection = new ActionDescriptorsProjectionRoot()
                 .name()
-                .paramClass()
-                .schema()
-                .requiresDomains()
-                .requiresEnrichments();
+                .schema();
 
         ActionDescriptorsGraphQLQuery actionDescriptorsGraphQLQuery = ActionDescriptorsGraphQLQuery.newRequest().build();
 

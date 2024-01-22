@@ -21,6 +21,6 @@ import org.deltafi.common.types.EgressFlowPlan;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface EgressFlowPlanRepo extends FlowPlanRepo<EgressFlowPlan>, EgressFlowPlanRepoCustom {
+public interface EgressFlowPlanRepo extends FlowPlanRepo<EgressFlowPlan> {
 
 }

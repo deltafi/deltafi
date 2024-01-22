@@ -18,7 +18,6 @@
 package org.deltafi.core.schedulers;
 
 import org.deltafi.core.services.ErrorCountService;
-import org.deltafi.core.services.NormalizeFlowService;
 import org.deltafi.core.services.TransformFlowService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,8 +36,6 @@ class ErrorCountSchedulerTest {
     private ErrorCountScheduler errorCountScheduler;
 
     @Mock
-    private NormalizeFlowService normalizeFlowService;
-    @Mock
     private TransformFlowService transformFlowService;
 
     @Mock
@@ -46,8 +43,7 @@ class ErrorCountSchedulerTest {
 
     @Test
     void populateErrorCounts() {
-        Mockito.when(normalizeFlowService.maxErrorsPerFlow()).thenReturn(Map.of("a", 1));
-        Mockito.when(transformFlowService.maxErrorsPerFlow()).thenReturn(Map.of("b", 1));
+        Mockito.when(transformFlowService.maxErrorsPerFlow()).thenReturn(Map.of("a", 1, "b", 1));
         errorCountScheduler.populateErrorCounts();
         Mockito.verify(errorCountService).populateErrorCounts(Set.of("a", "b"));
     }

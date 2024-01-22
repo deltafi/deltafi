@@ -40,6 +40,8 @@ public class EgressFlowSnapshot extends FlowSnapshot implements HasExpectedAnnot
         super(name);
     }
 
+    public EgressFlowSnapshot(String name, boolean running, boolean testMode) { super(name, running, testMode); }
+
     public EgressFlowSnapshot(EgressFlow egressFlow) {
         this(egressFlow.getName());
         setRunning(egressFlow.isRunning());

@@ -71,7 +71,7 @@ class RuleEvaluatorTest {
 
         //
         ruleEvaluator.doEvaluateCondition("content[0].setName('c')", deltaFile);
-        Assertions.assertThat(originalDeltaFile.lastDataAmendedContent().get(0).getName()).isEqualTo("test.txt");
+        Assertions.assertThat(originalDeltaFile.lastContent().get(0).getName()).isEqualTo("test.txt");
         Assertions.assertThat(deltaFile.content().get(0).getName()).isEqualTo("c");
     }
 

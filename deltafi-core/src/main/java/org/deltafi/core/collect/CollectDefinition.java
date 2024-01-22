@@ -22,13 +22,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.DeltaFileStage;
-import org.deltafi.common.types.ProcessingType;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class CollectDefinition {
-    private ProcessingType processingType;
     private DeltaFileStage stage;
     private String flow;
     private ActionType actionType;

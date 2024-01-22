@@ -74,22 +74,14 @@ type ActionDescriptor {
     name: String!
     description: String
     type: String!
-    # deprecated
-    paramClass: String
     schema: JSON
-    requiresDomains: [String]
-    requiresEnrichments: [String]
 }
 
 input ActionDescriptorInput {
     name: String!
     description: String
     type: String!
-    # deprecated
-    paramClass: String
     schema: JSON
-    requiresDomains: [String]
-    requiresEnrichments: [String]
 }
 
 type PluginImageRepository {

@@ -19,9 +19,10 @@ package org.deltafi.core.services;
 
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.EgressFlowPlan;
+import org.deltafi.common.types.Subscriber;
 import org.deltafi.core.converters.EgressFlowPlanConverter;
-import org.deltafi.core.exceptions.DeltafiConfigurationException;
 import org.deltafi.core.repo.EgressFlowRepo;
+import org.deltafi.core.services.pubsub.SubscriberService;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.snapshot.types.EgressFlowSnapshot;
 import org.deltafi.core.types.EgressFlow;
@@ -31,37 +32,27 @@ import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
 @Slf4j
 @Service
-public class EgressFlowService extends FlowService<EgressFlowPlan, EgressFlow, EgressFlowSnapshot> {
+public class EgressFlowService extends FlowService<EgressFlowPlan, EgressFlow, EgressFlowSnapshot> implements SubscriberService {
 
     private static final EgressFlowPlanConverter EGRESS_FLOW_PLAN_CONVERTER = new EgressFlowPlanConverter();
 
+    private Map<String, Set<Subscriber>> topicSubscribers;
+
     public EgressFlowService(EgressFlowRepo flowRepo, PluginVariableService pluginVariableService, EgressFlowValidator egressFlowValidator, BuildProperties buildProperties) {
         super("egress", flowRepo, pluginVariableService, EGRESS_FLOW_PLAN_CONVERTER, egressFlowValidator, buildProperties);
+        refreshCache();
     }
 
-    public List<EgressFlow> getMatchingFlows(String egressFlow) {
-        return findMatchingFlows(egressFlow);
-    }
-
-    List<EgressFlow> findMatchingFlows(String egressFlow) {
-        return getRunningFlows().stream()
-                .filter(runningEgressFlow -> runningEgressFlow.flowMatches(egressFlow))
-                .toList();
-    }
-
-    public EgressFlow withFormatActionNamed(String flow, String formatActionName) {
-        EgressFlow egressFlow = getRunningFlowByName(flow);
-
-        if (!formatActionName.equals(egressFlow.getFormatAction().getName())) {
-            throw new DeltafiConfigurationException("Egress flow " + egressFlow + " no longer contains a format action with the name " + formatActionName);
-        }
-
-        return egressFlow;
+    @Override
+    public synchronized void refreshCache() {
+        super.refreshCache();
+        topicSubscribers = buildSubsriberMap();
     }
 
     @Override
@@ -102,5 +93,10 @@ public class EgressFlowService extends FlowService<EgressFlowPlan, EgressFlow, E
     @Override
     public List<EgressFlowSnapshot> getFlowSnapshots(SystemSnapshot systemSnapshot) {
         return systemSnapshot.getEgressFlows();
+    }
+
+    @Override
+    public Set<Subscriber> subscriberForTopic(String topic) {
+        return topicSubscribers.getOrDefault(topic, Set.of());
     }
 }

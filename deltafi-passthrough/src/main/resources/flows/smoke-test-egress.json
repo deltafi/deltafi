@@ -1,0 +1,16 @@
+{
+  "name": "smoke-test-egress",
+  "type": "EGRESS",
+  "description": "Test flow that passes data through unchanged",
+  "subscriptions": [
+    {"topics": ["smoke-egress"]}
+  ],
+  "egressAction": {
+    "name": "SmokeEgressAction",
+    "type": "org.deltafi.core.action.RestPostEgressAction",
+    "parameters": {
+      "metadataKey": "deltafiMetadata",
+      "url": "${smokeEgressUrl}"
+    }
+  }
+}

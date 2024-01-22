@@ -32,14 +32,16 @@ import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.converters.KeyValueConverter;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.*;
+import org.deltafi.core.exceptions.IngressException;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.security.NeedsPermission;
+import org.deltafi.core.services.DataSourceService;
 import org.deltafi.core.services.DeltaFilesService;
-import org.deltafi.core.services.TransformFlowService;
 import org.deltafi.core.types.DeltaFiles;
 import org.deltafi.core.types.ErrorSummaryFilter;
 import org.deltafi.core.types.FilteredSummaryFilter;
 import org.deltafi.core.types.PerActionUniqueKeyValues;
+import org.deltafi.core.types.RestDataSource;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.types.ResumePolicy;
 import org.deltafi.core.types.SummaryByFlow;
@@ -55,14 +57,14 @@ import java.util.stream.Collectors;
 public class DeltaFilesDatafetcher {
   final DeltaFilesService deltaFilesService;
   final ContentStorageService contentStorageService;
-  final TransformFlowService transformFlowService;
+  final DataSourceService dataSourceService;
 
   static final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
-  DeltaFilesDatafetcher(DeltaFilesService deltaFilesService, ContentStorageService contentStorageService, TransformFlowService transformFlowService) {
+  DeltaFilesDatafetcher(DeltaFilesService deltaFilesService, ContentStorageService contentStorageService, DataSourceService dataSourceService) {
     this.deltaFilesService = deltaFilesService;
     this.contentStorageService = contentStorageService;
-    this.transformFlowService = transformFlowService;
+    this.dataSourceService = dataSourceService;
   }
 
   @DgsQuery
@@ -240,7 +242,14 @@ public class DeltaFilesDatafetcher {
   }
   @DgsMutation
   @NeedsPermission.StressTest
-  public int stressTest(@InputArgument String flow, @InputArgument Integer contentSize, @InputArgument Integer numFiles, @InputArgument Map<String, String> metadata, @InputArgument Integer batchSize) throws ObjectStorageException {
+  public int stressTest(@InputArgument String flow, @InputArgument Integer contentSize, @InputArgument Integer numFiles, @InputArgument Map<String, String> metadata, @InputArgument Integer batchSize) throws ObjectStorageException, IngressException {
+    RestDataSource restDataSource;
+    try {
+      restDataSource = dataSourceService.getRestDataSource(flow);
+    } catch (Exception e) {
+      throw new IngressException(e.getMessage());
+    }
+
     Random random = new Random();
 
     // batches let us test quick bursts of ingress traffic, deferring ingress until after content is stored for the batch
@@ -268,10 +277,9 @@ public class DeltaFilesDatafetcher {
         String did = c.getSegments().isEmpty() ? UUID.randomUUID().toString() : c.getSegments().get(0).getDid();
         IngressEventItem ingressEventItem = new IngressEventItem(did, "stressTestData", flow,
                 metadata == null ? new HashMap<>() : metadata,
-                transformFlowService.hasRunningFlow(flow) ? ProcessingType.TRANSFORMATION : ProcessingType.NORMALIZATION,
                 List.of(c));
         log.debug("Ingressing metadata for {} ({}/{})", did, i + (numFiles - remainingFiles) + 1, numFiles);
-        deltaFilesService.ingress(ingressEventItem, OffsetDateTime.now(), OffsetDateTime.now());
+        deltaFilesService.ingress(restDataSource, ingressEventItem, OffsetDateTime.now(), OffsetDateTime.now());
       }
 
       remainingFiles -= batchSize;
@@ -282,14 +290,8 @@ public class DeltaFilesDatafetcher {
 
   @DgsQuery
   @NeedsPermission.DeltaFileMetadataView
-  public List<String> domains() {
-    return deltaFilesService.domains();
-  }
-
-  @DgsQuery
-  @NeedsPermission.DeltaFileMetadataView
-  public List<String> annotationKeys(@InputArgument String domain) {
-    return deltaFilesService.annotationKeys(domain);
+  public List<String> annotationKeys() {
+    return deltaFilesService.annotationKeys();
   }
 
   @DgsQuery

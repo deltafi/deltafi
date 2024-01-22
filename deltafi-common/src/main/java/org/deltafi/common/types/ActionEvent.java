@@ -42,17 +42,9 @@ public class ActionEvent {
   private OffsetDateTime stop;
   private ActionEventType type;
 
-  private TransformEvent transform;
-  private LoadEvent load;
-  private List<ChildLoadEvent> loadMany;
-  private DomainEvent domain;
-  private EnrichEvent enrich;
-  private FormatEvent format;
-  private List<ChildFormatEvent> formatMany;
+  private List<TransformEvent> transform;
   private ErrorEvent error;
   private FilterEvent filter;
-  private List<ReinjectEvent> reinject;
-
   private List<Metric> metrics;
   private IngressEvent ingress;
 
@@ -84,17 +76,10 @@ public class ActionEvent {
 
   private boolean typeValid() {
     return switch (type) {
-      case TRANSFORM -> transform != null;
-      case LOAD -> load != null;
-      case LOAD_MANY -> loadMany != null;
-      case DOMAIN -> domain != null;
-      case ENRICH -> enrich != null;
-      case FORMAT -> format != null;
-      case FORMAT_MANY -> formatMany != null;
+      case TRANSFORM -> transform != null && !transform.isEmpty();
       case ERROR -> error != null;
       case FILTER -> filter != null;
-      case REINJECT -> reinject != null && !reinject.isEmpty();
-      case VALIDATE, EGRESS -> true;
+      case EGRESS -> true;
       case INGRESS -> ingress != null && ingress.getIngressItems() != null;
       default -> false;
     };

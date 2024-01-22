@@ -42,7 +42,7 @@ class ResumePolicyServiceTest {
     private static final String ERROR = "error";
     private static final String FLOW = "flow";
     private static final String ACTION = "action";
-    private static final String LOAD_ACTION_TYPE = ActionType.LOAD.name();
+    private static final String TRANSFORM_ACTION_TYPE = ActionType.TRANSFORM.name();
     private static final String NOT_FOUND = "notFound";
     private static final int MAX_ATTEMPTS = 3;
 
@@ -101,7 +101,7 @@ class ResumePolicyServiceTest {
     void testFind() {
         when(resumePolicyRepo.findByOrderByPriorityDesc()).thenReturn(getTestList());
         resumePolicyService.refreshCache();
-        Optional<ResumePolicy> policy = resumePolicyService.find(1, ERROR, "2" + FLOW, "2" + ACTION, LOAD_ACTION_TYPE);
+        Optional<ResumePolicy> policy = resumePolicyService.find(1, ERROR, "2" + FLOW, "2" + ACTION, TRANSFORM_ACTION_TYPE);
         assertFalse(policy.isEmpty());
         assertEquals("name2", policy.get().getName());
     }
@@ -118,7 +118,7 @@ class ResumePolicyServiceTest {
                         .action("1" + ACTION)
                         .error(ErrorEvent.builder().cause(ERROR).build())
                         .build(),
-                LOAD_ACTION_TYPE);
+                TRANSFORM_ACTION_TYPE);
         assertFalse(resumeDetails.isEmpty());
         assertEquals(100, resumeDetails.get().delay());
         assertEquals("name1", resumeDetails.get().name());
@@ -130,7 +130,7 @@ class ResumePolicyServiceTest {
                         .action("1" + ACTION)
                         .error(ErrorEvent.builder().cause(ERROR).build())
                         .build(),
-                LOAD_ACTION_TYPE);
+                TRANSFORM_ACTION_TYPE);
         assertFalse(rollToNextPolicy.isEmpty());
         assertEquals(100, rollToNextPolicy.get().delay());
         assertEquals("name4", rollToNextPolicy.get().name());
@@ -142,7 +142,7 @@ class ResumePolicyServiceTest {
                         .action("1" + ACTION)
                         .error(ErrorEvent.builder().cause(ERROR).build())
                         .build(),
-                LOAD_ACTION_TYPE);
+                TRANSFORM_ACTION_TYPE);
         assertTrue(tooManyAttempts.isEmpty());
 
         Optional<ResumePolicyService.ResumeDetails> wrongError = resumePolicyService.getAutoResumeDelay(
@@ -152,7 +152,7 @@ class ResumePolicyServiceTest {
                         .action("1" + ACTION)
                         .error(ErrorEvent.builder().cause("not-a-match").build())
                         .build(),
-                LOAD_ACTION_TYPE);
+                TRANSFORM_ACTION_TYPE);
         assertTrue(wrongError.isEmpty());
     }
 
@@ -217,6 +217,7 @@ class ResumePolicyServiceTest {
         resumePolicyService.refreshCache();
 
         // DeltaFile matches policy: name1
+        assertTrue(resumePolicyService.findByName("name1").isPresent());
         assertTrue(resumePolicyService.matchesActionError(
                 resumePolicyService.findByName("name1").get(),
                 getDeltaFile("1", true)));
@@ -231,6 +232,7 @@ class ResumePolicyServiceTest {
                 resumePolicyService.findByName("name1").get(),
                 getDeltaFile("2", true)));
 
+        assertTrue(resumePolicyService.findByName("name2").isPresent());
         // DeltaFile/action doesn't match policy values (reversed)
         assertFalse(resumePolicyService.matchesActionError(
                 resumePolicyService.findByName("name2").get(),
@@ -255,10 +257,12 @@ class ResumePolicyServiceTest {
                 getDeltaFile("15", true));
         Set<String> excludes = Set.of("2", "15", "16");
 
+        assertTrue(resumePolicyService.findByName("name1").isPresent());
         List<String> dids = resumePolicyService.canBeApplied(
                 resumePolicyService.findByName("name1").get(), deltaFiles, excludes);
         assertEquals(List.of("1", "14"), dids);
 
+        assertTrue(resumePolicyService.findByName("name3").isPresent());
         List<String> noMatchese = resumePolicyService.canBeApplied(
                 resumePolicyService.findByName("name3").get(), deltaFiles, excludes);
         assertTrue(noMatchese.isEmpty());
@@ -266,7 +270,6 @@ class ResumePolicyServiceTest {
 
     private DeltaFile getDeltaFile(String did, boolean withErrorAction) {
         String prefix = did.substring(0, 1);
-        OffsetDateTime now = OffsetDateTime.now();
         Action action1 = Action.builder()
                 .name(prefix + ACTION)
                 .type(ActionType.TRANSFORM)
@@ -278,7 +281,7 @@ class ResumePolicyServiceTest {
         if (withErrorAction) {
             action2 = Action.builder()
                     .name(prefix + ACTION)
-                    .type(ActionType.LOAD)
+                    .type(ActionType.TRANSFORM)
                     .state(ActionState.ERROR)
                     .attempt(1)
                     .errorCause(ERROR)
@@ -287,21 +290,19 @@ class ResumePolicyServiceTest {
         } else {
             action2 = Action.builder()
                     .name(prefix + ACTION)
-                    .type(ActionType.LOAD)
+                    .type(ActionType.TRANSFORM)
                     .state(ActionState.COMPLETE)
                     .attempt(1)
                     .build();
         }
 
-        DeltaFile deltaFile = DeltaFile.builder()
+        return DeltaFile.builder()
                 .did(did)
                 .sourceInfo(
                         SourceInfo.builder().flow(prefix + FLOW).build()
                 )
                 .actions(new ArrayList<>(List.of(action1, action2)))
                 .build();
-
-        return deltaFile;
     }
 
     private ResumePolicy getDefault() {
@@ -321,7 +322,7 @@ class ResumePolicyServiceTest {
     }
 
     private ResumePolicy getCustom(String name, String prefix, int maxAttempts) {
-        ResumePolicy policy = buildPolicy(name, ERROR, prefix + FLOW, prefix + ACTION, LOAD_ACTION_TYPE, maxAttempts);
+        ResumePolicy policy = buildPolicy(name, ERROR, prefix + FLOW, prefix + ACTION, TRANSFORM_ACTION_TYPE, maxAttempts);
         policy.setBackOff(BackOff.newBuilder().delay(100).build());
         return policy;
     }
@@ -356,7 +357,7 @@ class ResumePolicyServiceTest {
         return DeltaFile.builder()
                 .did(UUID.randomUUID().toString())
                 .requeueCount(0)
-                .stage(DeltaFileStage.INGRESS)
+                .stage(DeltaFileStage.IN_FLIGHT)
                 .actions(new ArrayList<>(List.of(action)))
                 .sourceInfo(SourceInfo.builder()
                         .flow("1" + FLOW)

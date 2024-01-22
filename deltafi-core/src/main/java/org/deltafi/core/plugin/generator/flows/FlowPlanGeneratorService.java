@@ -18,7 +18,6 @@
 package org.deltafi.core.plugin.generator.flows;
 
 import org.deltafi.common.types.FlowPlan;
-import org.deltafi.common.types.ProcessingType;
 import org.deltafi.common.types.Variable;
 import org.deltafi.common.types.VariableDataType;
 import org.deltafi.core.plugin.generator.PluginGeneratorInput;
@@ -73,17 +72,13 @@ public class FlowPlanGeneratorService {
             .defaultValue("http://deltafi-egress-sink-service")
             .build();
 
-    private final List<Variable> SAMPLE_VARS = List.of(SAMPLE_STRING_VAR, SAMPLE_NUMBER_VAR, SAMPLE_BOOLEAN_VAR, SAMPLE_LIST_VAR, SAMPLE_MAP_VAR);
+    private static final List<Variable> SAMPLE_VARS = List.of(SAMPLE_STRING_VAR, SAMPLE_NUMBER_VAR, SAMPLE_BOOLEAN_VAR, SAMPLE_LIST_VAR, SAMPLE_MAP_VAR);
 
     private final TransformFlowPlanGenerator transformFlowPlanGenerator;
-    private final NormalizeFlowPlanGenerator normalizeFlowPlanGenerator;
-    private final EnrichFlowPlanGenerator enrichFlowPlanGenerator;
     private final EgressFlowPlanGenerator egressFlowPlanGenerator;
 
-    public FlowPlanGeneratorService(TransformFlowPlanGenerator transformFlowPlanGenerator, NormalizeFlowPlanGenerator normalizeFlowPlanGenerator, EnrichFlowPlanGenerator enrichFlowPlanGenerator, EgressFlowPlanGenerator egressFlowPlanGenerator) {
+    public FlowPlanGeneratorService(TransformFlowPlanGenerator transformFlowPlanGenerator, EgressFlowPlanGenerator egressFlowPlanGenerator) {
         this.transformFlowPlanGenerator = transformFlowPlanGenerator;
-        this.normalizeFlowPlanGenerator = normalizeFlowPlanGenerator;
-        this.enrichFlowPlanGenerator = enrichFlowPlanGenerator;
         this.egressFlowPlanGenerator = egressFlowPlanGenerator;
     }
 
@@ -98,15 +93,10 @@ public class FlowPlanGeneratorService {
      */
     public List<FlowPlan> generateFlowPlans(String baseFlowName, PluginGeneratorInput pluginGeneratorInput) {
         List<FlowPlan> flowPlans = new ArrayList<>();
-        ProcessingType processingType = pluginGeneratorInput.getOrInferProcessingType();
 
-        if (ProcessingType.TRANSFORMATION.equals(processingType)) {
-            flowPlans.addAll(transformFlowPlanGenerator.generateTransformFlows(baseFlowName, pluginGeneratorInput.getTransformActions(), pluginGeneratorInput.getEgressActions()));
-        } else {
-            flowPlans.addAll(normalizeFlowPlanGenerator.generateNormalizeFlowPlans(baseFlowName, pluginGeneratorInput.getTransformActions(), pluginGeneratorInput.getLoadActions()));
-            flowPlans.addAll(enrichFlowPlanGenerator.generateEnrichFlowPlan(baseFlowName, pluginGeneratorInput.getDomainActions(), pluginGeneratorInput.getEnrichActions()));
-            flowPlans.addAll(egressFlowPlanGenerator.generateEgressFlowPlans(baseFlowName, pluginGeneratorInput.getFormatActions(), pluginGeneratorInput.getValidateActions(), pluginGeneratorInput.getEgressActions()));
-        }
+        // TODO: timed ingress
+        flowPlans.addAll(transformFlowPlanGenerator.generateTransformFlows(baseFlowName, pluginGeneratorInput.getTransformActions()));
+        flowPlans.addAll(egressFlowPlanGenerator.generateEgressFlowPlans(baseFlowName, pluginGeneratorInput.getEgressActions()));
 
         return flowPlans;
     }

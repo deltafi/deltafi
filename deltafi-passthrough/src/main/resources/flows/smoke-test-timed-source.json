@@ -1,0 +1,16 @@
+{
+  "name": "smoke-timed-data-source",
+  "type": "TIMED_DATA_SOURCE",
+  "description": "Create smoke DeltaFiles",
+  "topic": "smoke-transform",
+  "cronSchedule": "*/5 * * * * *",
+  "timedIngressAction": {
+    "name": "SmokeTestIngressAction",
+    "type": "org.deltafi.core.action.SmokeTestIngressAction",
+    "parameters": {
+      "metadata": {
+        "smoke": "test"
+      }
+    }
+  }
+}

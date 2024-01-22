@@ -20,7 +20,6 @@ package org.deltafi.core.datafetchers;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.Content;
 import org.deltafi.common.types.IngressEventItem;
-import org.deltafi.common.types.ProcessingType;
 import org.deltafi.core.generated.client.DeltaFileProjectionRoot;
 import org.deltafi.core.generated.client.DeltaFilesProjectionRoot;
 import org.deltafi.core.generated.client.ErrorSummaryByFlowProjectionRoot;
@@ -30,10 +29,11 @@ import org.deltafi.core.generated.client.FilteredSummaryByMessageProjectionRoot;
 
 import java.util.*;
 
+import static org.deltafi.core.util.Constants.TRANSFORM_FLOW_NAME;
+
 public class DeltaFilesDatafetcherTestHelper {
 
     static final String FILENAME = "theFilename";
-    static final String FLOW = "theFlow";
     static final Long SIZE = 500L;
     static final String OBJECT_UUID = "theUuid";
     static final String OBJECT_UUID_2 = "theUuid2";
@@ -43,8 +43,8 @@ public class DeltaFilesDatafetcherTestHelper {
     static final String MEDIA_TYPE = "plain/text";
     static final List<Content> CONTENT = Collections.singletonList(new Content(FILENAME, MEDIA_TYPE, new Segment(OBJECT_UUID, 0, SIZE, DID)));
     static final List<Content> CONTENT_2 = Collections.singletonList(new Content(FILENAME, MEDIA_TYPE, new Segment(OBJECT_UUID_2, 0, SIZE, DID)));
-    public static final IngressEventItem INGRESS_INPUT = new IngressEventItem(DID, FILENAME, FLOW, METADATA, ProcessingType.NORMALIZATION, CONTENT);
-    public static final IngressEventItem INGRESS_INPUT_2 = new IngressEventItem(DID_2, FILENAME, FLOW, METADATA, ProcessingType.NORMALIZATION, CONTENT_2);
+    public static final IngressEventItem INGRESS_INPUT = new IngressEventItem(DID, FILENAME, TRANSFORM_FLOW_NAME, METADATA, CONTENT);
+    public static final IngressEventItem INGRESS_INPUT_2 = new IngressEventItem(DID_2, FILENAME, TRANSFORM_FLOW_NAME, METADATA, CONTENT_2);
 
     public static final DeltaFilesProjectionRoot DELTA_FILES_PROJECTION_ROOT = new DeltaFilesProjectionRoot()
             .deltaFiles()
@@ -81,8 +81,6 @@ public class DeltaFilesDatafetcherTestHelper {
                 .filename()
                 .flow()
                 .metadata()
-                .processingType()
-                .parent()
                 .parent()
                 .contentDeleted()
                 .contentDeletedReason()
@@ -129,23 +127,11 @@ public class DeltaFilesDatafetcherTestHelper {
                         .parent()
                     .parent()
                 .metadata()
-                .enrichments()
-                    .name()
-                    .value()
-                    .mediaType()
-                    .parent()
-                .domains()
-                    .name()
-                    .value()
-                    .mediaType()
-                    .parent()
                 .parent()
             .sourceInfo()
               .filename()
               .flow()
               .metadata()
-              .processingType()
-              .parent()
               .parent()
             .egressed()
             .filtered();

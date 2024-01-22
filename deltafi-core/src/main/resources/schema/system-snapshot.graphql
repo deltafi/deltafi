@@ -16,19 +16,19 @@
 #    limitations under the License.
 #
 
-type NormalizeFlowSnapshot {
+type TimedDataSourceSnapshot {
     name: String!
+    topic: String!
     running: Boolean!
     testMode: Boolean!
-    maxErrors: Int
+    cronSchedule: String
 }
 
-type TimedIngressFlowSnapshot {
+type RestDataSourceSnapshot {
     name: String!
+    topic: String!
     running: Boolean!
     testMode: Boolean!
-    targetFlow: String!
-    cronSchedule: String
 }
 
 type TransformFlowSnapshot {
@@ -36,13 +36,6 @@ type TransformFlowSnapshot {
     running: Boolean!
     testMode: Boolean!
     maxErrors: Int
-    expectedAnnotations: [String]
-}
-
-type EnrichFlowSnapshot {
-    name: String!
-    running: Boolean!
-    testMode: Boolean!
 }
 
 type EgressFlowSnapshot {
@@ -57,40 +50,31 @@ type SystemSnapshot {
     reason: String
     created: DateTime!
     deletePolicies: DeletePolicies!
-    flowAssignmentRules: [FlowAssignmentRule]!
     deltaFiProperties: DeltaFiProperties!
     installedPlugins: [PluginCoordinates]!
     pluginVariables: [PluginVariables]!
-    runningTransformFlows: [String]
-    runningIngressFlows: [String]
-    runningEnrichFlows: [String]
-    runningEgressFlows: [String]
-    testTransformFlows: [String]
-    testIngressFlows: [String]
-    testEgressFlows: [String]
-    normalizeFlows: [NormalizeFlowSnapshot]
-    timedIngressFlows: [TimedIngressFlowSnapshot]
+    restDataSources: [RestDataSourceSnapshot]
+    timedDataSources: [TimedDataSourceSnapshot]
     transformFlows: [TransformFlowSnapshot]
-    enrichFlows: [EnrichFlowSnapshot]
     egressFlows: [EgressFlowSnapshot]
     pluginImageRepositories: [PluginImageRepository]!
     pluginCustomizationConfigs: [PluginCustomizationConfig]!
     resumePolicies: [ResumePolicy]!
 }
 
-input NormalizeFlowSnapshotInput {
+input TimedDataSourceSnapshotInput {
     name: String!
+    topic: String!
     running: Boolean!
     testMode: Boolean!
-    maxErrors: Int
+    cronSchedule: String
 }
 
-input TimedIngressFlowSnapshotInput {
+input RestDataSourceSnapshotInput {
     name: String!
+    topic: String!
     running: Boolean!
     testMode: Boolean!
-    targetFlow: String!
-    cronSchedule: String
 }
 
 input TransformFlowSnapshotInput {
@@ -98,12 +82,6 @@ input TransformFlowSnapshotInput {
     running: Boolean!
     testMode: Boolean!
     maxErrors: Int
-    expectedAnnotations: [String]
-}
-
-input EnrichFlowSnapshotInput {
-    name: String!
-    running: Boolean!
 }
 
 input EgressFlowSnapshotInput {
@@ -118,22 +96,15 @@ input SystemSnapshotInput {
     reason: String
     created: DateTime!
     deletePolicies: DeletePoliciesInput!
-    flowAssignmentRules: [FlowAssignmentRuleInput]!
     deltaFiProperties: DeltaFiPropertiesInput!
     installedPlugins: [PluginCoordinatesInput]!
     pluginVariables: [PluginVariablesInput]!
-    # deprecated - running*Flows, test*Flows now wrapped in flow snapshot objects
-    runningTransformFlows: [String]
-    runningIngressFlows: [String]
-    runningEnrichFlows: [String]
-    runningEgressFlows: [String]
     testTransformFlows: [String]
     testIngressFlows: [String]
     testEgressFlows: [String]
-    normalizeFlows: [NormalizeFlowSnapshotInput]
-    timedIngressFlows: [TimedIngressFlowSnapshotInput]
+    restDataSources: [RestDataSourceSnapshotInput]
+    timedDataSources: [TimedDataSourceSnapshotInput]
     transformFlows: [TransformFlowSnapshotInput]
-    enrichFlows: [EnrichFlowSnapshotInput]
     egressFlows: [EgressFlowSnapshotInput]
     pluginImageRepositories: [PluginImageRepositoryInput]!
     pluginCustomizationConfigs: [PluginCustomizationConfigInput]!
