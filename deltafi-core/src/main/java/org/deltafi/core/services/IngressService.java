@@ -40,6 +40,7 @@ import org.deltafi.core.exceptions.*;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.core.types.IngressResult;
+import org.deltafi.core.types.RestDataSource;
 import org.springframework.stereotype.Service;
 
 import javax.ws.rs.core.MediaType;
@@ -58,13 +59,14 @@ import static org.deltafi.common.nifi.ContentType.*;
 @RequiredArgsConstructor
 @Slf4j
 public class IngressService {
+    public static final String INGRESS_ERROR_FOR_FLOW_FILENAME_CONTENT_TYPE_USERNAME = "Ingress error for flow={} filename={} contentType={} username={}: {}";
     private final MetricService metricService;
     private final CoreAuditLogger coreAuditLogger;
     private final DiskSpaceService diskSpaceService;
     private final ContentStorageService contentStorageService;
     private final DeltaFilesService deltaFilesService;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
-    private final TransformFlowService transformFlowService;
+    private final DataSourceService dataSourceService;
     private final ErrorCountService errorCountService;
     private final UUIDGenerator uuidGenerator;
 
@@ -75,13 +77,14 @@ public class IngressService {
             ObjectStorageException, IngressException, IngressStorageException, IngressUnavailableException,
             InterruptedException {
         if (!deltaFiPropertiesService.getDeltaFiProperties().getIngress().isEnabled()) {
-            log.error("Ingress error for flow={} filename={} contentType={} username={}: {}", flow, filename,
-                    contentType, username, "Ingress disabled for this instance of DeltaFi");
+            log.error(INGRESS_ERROR_FOR_FLOW_FILENAME_CONTENT_TYPE_USERNAME, flow, filename,
+                    contentType, username, "Ingress disabled for this instance of DeltaFi")
+            ;
             throw new IngressUnavailableException("Ingress disabled for this instance of DeltaFi");
         }
 
         if (diskSpaceService.isContentStorageDepleted()) {
-            log.error("Ingress error for flow={} filename={} contentType={} username={}: {}", flow, filename,
+            log.error(INGRESS_ERROR_FOR_FLOW_FILENAME_CONTENT_TYPE_USERNAME, flow, filename,
                     contentType, username, "Ingress temporarily disabled due to storage limits");
             throw new IngressStorageException("Ingress temporarily disabled due to storage limits");
         }
@@ -99,7 +102,7 @@ public class IngressService {
                 default -> List.of(ingressBinary(flow, filename, contentType, headerMetadata, dataStream, created));
             };
         } catch (IngressMetadataException | ObjectStorageException | IngressException e) {
-            log.error("Ingress error for flow={} filename={} contentType={} username={}: {}", flow, filename,
+            log.error(INGRESS_ERROR_FOR_FLOW_FILENAME_CONTENT_TYPE_USERNAME, flow, filename,
                     contentType, username, e.getMessage());
             metricService.increment(DeltaFiConstants.FILES_DROPPED, tagsFor(flow), 1);
             throw e;
@@ -178,9 +181,11 @@ public class IngressService {
 
     private IngressResult ingress(String flow, String filename, String mediaType, InputStream contentInputStream,
             Map<String, String> metadata, OffsetDateTime created) throws ObjectStorageException, IngressException {
-        // ensure flow is running before accepting ingress
-        if (!transformFlowService.hasRunningFlow(flow)) {
-            throw new IngressException("Flow " + flow + " is not running");
+        RestDataSource restDataSource;
+        try {
+            restDataSource = dataSourceService.getRunningRestDataSource(flow);
+        } catch (MissingFlowException e) {
+            throw new IngressException(e.getMessage());
         }
 
         String error = errorCountService.generateErrorMessage(flow);
@@ -201,7 +206,7 @@ public class IngressService {
                 .build();
 
         try {
-            deltaFilesService.ingress(ingressEventItem, created, OffsetDateTime.now());
+            deltaFilesService.ingress(restDataSource, ingressEventItem, created, OffsetDateTime.now());
             return new IngressResult(flow, did, content);
         } catch (EnqueueActionException e) {
             log.warn("DeltaFile {} was ingressed but the next action could not be queued at this time", did);

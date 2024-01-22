@@ -13,6 +13,6 @@
   }, {
     "name" : "org.deltafi.test.actions.TestAction2",
     "description": "TestAction2",
-    "type" : "TRANSFORM",
+    "type" : "TRANSFORM"
   } ]
 }

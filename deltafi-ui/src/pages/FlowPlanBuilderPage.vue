@@ -142,7 +142,7 @@ import _ from "lodash";
 
 const { getAllFlows } = useFlowQueryBuilder();
 const { getPluginActionSchema } = useFlowActions();
-const { saveTransformFlowPlan, saveNormalizeFlowPlan, saveEgressFlowPlan, saveEnrichFlowPlan } = useFlowPlanQueryBuilder();
+const { saveTransformFlowPlan, saveEgressFlowPlan } = useFlowPlanQueryBuilder();
 const keys = useMagicKeys();
 const devKey = keys["d+e+v"];
 const { copy } = useClipboard();
@@ -252,39 +252,6 @@ const transformActionsTemplate = {
   collect: {},
 };
 
-const loadActionTemplate = {
-  flowActionType: "LOAD",
-  ...defaultActionKeys,
-  collect: {},
-};
-
-const domainActionsTemplate = {
-  flowActionType: "DOMAIN",
-  ...defaultActionKeys,
-  requiresDomains: [],
-};
-
-const enrichActionsTemplate = {
-  flowActionType: "ENRICH",
-  ...defaultActionKeys,
-  requiresDomains: [],
-  requiresEnrichments: [],
-  requiresMetadataKeyValues: [],
-};
-
-const formatActionTemplate = {
-  flowActionType: "FORMAT",
-  ...defaultActionKeys,
-  collect: {},
-  requiresDomains: [],
-  requiresEnrichments: [],
-};
-
-const validateActionsTemplate = {
-  flowActionType: "VALIDATE",
-  ...defaultActionKeys,
-};
-
 const egressActionTemplate = {
   flowActionType: "EGRESS",
   ...defaultActionKeys,
@@ -303,24 +270,6 @@ const flowTypesMap = new Map([
     },
   ],
   [
-    "NORMALIZE",
-    {
-      flowActionTypes: ["TRANSFORM", "LOAD"],
-      activeContainerList: function () {
-        return this.flowActionTypes.flatMap((v) => [flowActionTemplateMap.get(v).activeContainer]);
-      },
-    },
-  ],
-  [
-    "ENRICH",
-    {
-      flowActionTypes: ["DOMAIN", "ENRICH"],
-      activeContainerList: function () {
-        return this.flowActionTypes.flatMap((v) => [flowActionTemplateMap.get(v).activeContainer]);
-      },
-    },
-  ],
-  [
     "EGRESS",
     {
       flowActionTypes: ["FORMAT", "VALIDATE", "EGRESS"],
@@ -333,21 +282,11 @@ const flowTypesMap = new Map([
 
 const flowActionTemplateMap = new Map([
   ["TRANSFORM", { selectTemplate: [transformActionsTemplate], activeContainer: "transformActions", limit: false, requiredActionMin: false }],
-  ["LOAD", { selectTemplate: [loadActionTemplate], activeContainer: "loadAction", limit: true, requiredActionMin: true }],
-  ["DOMAIN", { selectTemplate: [domainActionsTemplate], activeContainer: "domainActions", limit: false, requiredActionMin: false }],
-  ["ENRICH", { selectTemplate: [enrichActionsTemplate], activeContainer: "enrichActions", limit: false, requiredActionMin: false }],
-  ["FORMAT", { selectTemplate: [formatActionTemplate], activeContainer: "formatAction", limit: true, requiredActionMin: true }],
-  ["VALIDATE", { selectTemplate: [validateActionsTemplate], activeContainer: "validateActions", limit: false, requiredActionMin: false }],
   ["EGRESS", { selectTemplate: [egressActionTemplate], activeContainer: "egressAction", limit: true, requiredActionMin: true }],
 ]);
 
 const flowActionTemplateObject = ref({
   transformActions: [],
-  loadAction: [],
-  domainActions: [],
-  enrichActions: [],
-  formatAction: [],
-  validateActions: [],
   egressAction: [],
 });
 
@@ -461,10 +400,6 @@ const save = async (rawFlow) => {
   let response = null;
   if (model.value.type === "TRANSFORM") {
     response = await saveTransformFlowPlan(rawFlow);
-  } else if (model.value.type === "NORMALIZE") {
-    response = await saveNormalizeFlowPlan(rawFlow);
-  } else if (model.value.type === "ENRICH") {
-    response = await saveEnrichFlowPlan(rawFlow);
   } else if (model.value.type === "EGRESS") {
     response = await saveEgressFlowPlan(rawFlow);
   }
@@ -486,13 +421,7 @@ const removeFlow = () => {
 // Checks if there is a minimum number of actions required in the actionFlowType if there is and its not been met
 // return the css classes to turn background red
 const requiresActionCheck = (flowActionType) => {
-  if (_.isEqual(flowActionType, "DOMAIN") || _.isEqual(flowActionType, "ENRICH")) {
-    if (Object.values(_.pick(flowActionTemplateObject.value, flowTypesMap.get(model.value.type).activeContainerList())).every((x) => _.isEmpty(x))) {
-      return "bg-danger text-white";
-    }
-  }
-
-  if (flowActionTemplateObject.value[flowActionTemplateMap.get(flowActionType).activeContainer].length == 0 && flowActionTemplateMap.get(flowActionType).requiredActionMin) {
+  if (flowActionTemplateObject.value[flowActionTemplateMap.get(flowActionType).activeContainer].length === 0 && flowActionTemplateMap.get(flowActionType).requiredActionMin) {
     return "bg-danger text-white";
   }
 

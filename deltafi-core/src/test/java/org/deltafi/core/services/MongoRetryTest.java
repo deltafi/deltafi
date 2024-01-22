@@ -53,7 +53,7 @@ import java.util.Collections;
 @Import({DeltaFilesService.class, ClockConfiguration.class})
 @MockBean({TransformFlowService.class, EgressFlowService.class, StateMachine.class, DeltaFileRepo.class,
         ActionEventQueue.class, ContentStorageService.class, ResumePolicyService.class, MetricService.class,
-        CoreAuditLogger.class, DeltaFileCacheService.class, TimedIngressFlowService.class, PublisherService.class,
+        CoreAuditLogger.class, DeltaFileCacheService.class, DataSourceService.class, PublisherService.class,
         QueueManagementService.class, QueuedAnnotationRepo.class, Environment.class, CollectEntryService.class,
         ScheduledCollectService.class, UUIDGenerator.class})
 @EnableRetry

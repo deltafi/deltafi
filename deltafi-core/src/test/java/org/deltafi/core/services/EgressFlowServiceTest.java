@@ -34,7 +34,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.boot.info.BuildProperties;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,9 +53,6 @@ class EgressFlowServiceTest {
 
     @Mock
     EgressFlowRepo egressFlowRepo;
-
-    @Mock
-    BuildProperties buildProperties;
 
     @Captor
     ArgumentCaptor<List<EgressFlow>> flowCaptor;
@@ -92,9 +88,6 @@ class EgressFlowServiceTest {
         assertThat(cFlowSnapshot.isRunning()).isFalse();
         assertThat(cFlowSnapshot.isTestMode()).isTrue();
         assertThat(cFlowSnapshot.getExpectedAnnotations()).isEmpty();
-
-        assertThat(systemSnapshot.getRunningEgressFlows()).isNull();
-        assertThat(systemSnapshot.getTestEgressFlows()).isNull();
     }
 
     @Test
@@ -104,8 +97,11 @@ class EgressFlowServiceTest {
         EgressFlow invalid = egressFlow("invalid", FlowState.INVALID, false, Set.of());
 
         SystemSnapshot systemSnapshot = new SystemSnapshot();
-        systemSnapshot.setRunningEgressFlows(List.of("running", "stopped", "invalid", "missing"));
-        systemSnapshot.setTestEgressFlows(List.of("stopped", "missing"));
+        systemSnapshot.setEgressFlows(List.of(
+                new EgressFlowSnapshot("running", true, false),
+                new EgressFlowSnapshot("stopped", true, true),
+                new EgressFlowSnapshot("invalid", true, false),
+                new EgressFlowSnapshot("missing", true, true)));
 
         Mockito.when(egressFlowRepo.findAll()).thenReturn(List.of(running, stopped, invalid));
         Mockito.when(egressFlowRepo.findById("running")).thenReturn(Optional.of(running));

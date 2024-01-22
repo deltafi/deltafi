@@ -30,8 +30,12 @@ import java.util.Set;
 
 public class EgressFlowPlanConverter extends FlowPlanConverter<EgressFlowPlan, EgressFlow> {
 
-    public void populateFlowSpecificFields(EgressFlowPlan egressFlowPlan, EgressFlow egressFlow, FlowPlanPropertyHelper flowPlanPropertyHelper) {
+    @Override
+    public EgressFlow createFlow(EgressFlowPlan egressFlowPlan, FlowPlanPropertyHelper flowPlanPropertyHelper) {
+        EgressFlow egressFlow = new EgressFlow();
         egressFlow.setEgressAction(buildEgressAction(egressFlowPlan.getEgressAction(), flowPlanPropertyHelper));
+        egressFlow.setSubscriptions(egressFlowPlan.getSubscriptions());
+        return egressFlow;
     }
 
     /**
@@ -99,10 +103,4 @@ public class EgressFlowPlanConverter extends FlowPlanConverter<EgressFlowPlan, E
     private static boolean isArrayString(String value) {
         return value.startsWith("[") && value.endsWith("]");
     }
-
-    @Override
-    EgressFlow getFlowInstance() {
-        return new EgressFlow();
-    }
-
 }

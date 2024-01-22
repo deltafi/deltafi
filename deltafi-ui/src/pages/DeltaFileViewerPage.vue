@@ -46,22 +46,14 @@
         </div>
       </div>
       <div class="row mb-3">
-        <div class="col-6">
+        <div class="col-4">
           <DeltaFileParentChildPanel :delta-file-data="deltaFile" field="parentDids" />
         </div>
-        <div class="col-6">
-          <DeltaFileParentChildPanel :delta-file-data="deltaFile" field="childDids" />
-        </div>
-      </div>
-      <div class="row mb-3">
         <div class="col-4">
-          <DeltaFileDomainsPanel :delta-file-data="deltaFile" />
+          <DeltaFileParentChildPanel :delta-file-data="deltaFile" field="childDids" />
         </div>
         <div class="col-4">
           <DeltaFileAnnotationsPanel :delta-file-data="deltaFile" />
-        </div>
-        <div class="col-4">
-          <DeltaFileEnrichmentPanel :delta-file-data="deltaFile" />
         </div>
       </div>
       <div class="row mb-3">
@@ -98,8 +90,6 @@
 import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
 import AnnotateDialog from "@/components/AnnotateDialog.vue";
 import DeltaFileActionsPanel from "@/components/DeltaFileActionsPanel.vue";
-import DeltaFileDomainsPanel from "@/components/DeltaFileDomainsPanel.vue";
-import DeltaFileEnrichmentPanel from "@/components/DeltaFileEnrichmentPanel.vue";
 import DeltaFileAnnotationsPanel from "@/components/DeltaFileAnnotationsPanel.vue";
 import DeltaFileInfoPanel from "@/components/DeltaFileInfoPanel.vue";
 import DeltaFileParentChildPanel from "@/components/DeltaFileParentChildPanel.vue";

@@ -128,7 +128,7 @@
           <FlowVariableViewer :header="header" :variables="flowData?.variables"></FlowVariableViewer>
         </TabPanel>
       </template>
-      <template v-if="['transform', 'egress'].includes(flowType)">
+      <template v-if="['egress'].includes(flowType)">
         <TabPanel header="Read Receipts">
           <FlowExpectedAnnotationsViewer :key="Math.random()" :header="header" :expected-annotations="expectedAnnotations" :flow-name="flowName" :flow-type="flowType" @reload-flow-viewer="fetchFlows(flowName, flowType)"></FlowExpectedAnnotationsViewer>
         </TabPanel>
@@ -160,7 +160,7 @@ const { buildURL } = useUtilFunctions();
 
 const { fetch: getActionMetrics, loaded, loading, actionMetricsUngrouped } = useActionMetrics();
 
-const { getEgressFlowByName, getEnrichFlowByName, getNormalizeFlowByName, getTransformFlowByName } = useFlowQueryBuilder();
+const { getEgressFlowByName, getTransformFlowByName } = useFlowQueryBuilder();
 
 const props = defineProps({
   header: {
@@ -179,7 +179,7 @@ const props = defineProps({
 
 const { header, flowName, flowType } = reactive(props);
 
-const actionsList = ["transformActions", "loadAction", "deleteActions", "domainActions", "enrichActions", "formatAction", "validateActions", "egressAction"];
+const actionsList = ["transformActions", "egressAction"];
 
 const refreshInterval = 5000; // 5 seconds
 const flowData = ref("");
@@ -212,12 +212,6 @@ const fetchFlows = async (paramFlowName, paramFlowType) => {
   if (_.isEqual(paramFlowType, "transform")) {
     response = await getTransformFlowByName(paramFlowName);
     flowData.value = response.data.getTransformFlow;
-  } else if (_.isEqual(paramFlowType, "normalize")) {
-    response = await getNormalizeFlowByName(paramFlowName);
-    flowData.value = response.data.getNormalizeFlow;
-  } else if (_.isEqual(paramFlowType, "enrich")) {
-    response = await getEnrichFlowByName(paramFlowName);
-    flowData.value = response.data.getEnrichFlow;
   } else if (_.isEqual(paramFlowType, "egress")) {
     response = await getEgressFlowByName(paramFlowName);
     flowData.value = response.data.getEgressFlow;

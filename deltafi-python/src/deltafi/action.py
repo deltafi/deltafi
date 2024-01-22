@@ -22,18 +22,15 @@ from typing import Any, List
 from deltafi.actiontype import ActionType
 from deltafi.genericmodel import GenericModel
 from deltafi.domain import Context, DeltaFileMessage
-from deltafi.input import DomainInput, EgressInput, EnrichInput, FormatInput, LoadInput, TransformInput, ValidateInput
+from deltafi.input import EgressInput, TransformInput
 from deltafi.result import *
 from pydantic import BaseModel
 
 
 class Action(ABC):
-    def __init__(self, action_type: ActionType, description: str, requires_domains: List[str],
-                 requires_enrichments: List[str], valid_result_types: tuple):
+    def __init__(self, action_type: ActionType, description: str, valid_result_types: tuple):
         self.action_type = action_type
         self.description = description
-        self.requires_domains = requires_domains
-        self.requires_enrichments = requires_enrichments
         self.valid_result_types = valid_result_types
         self.action_execution = None
 
@@ -81,25 +78,9 @@ class Action(ABC):
                              f"but a {result.__class__.__name__} was returned")
 
 
-class DomainAction(Action, ABC):
-    def __init__(self, description: str, requires_domains: List[str]):
-        super().__init__(ActionType.DOMAIN, description, requires_domains, [], (DomainResult, ErrorResult))
-
-    def build_input(self, context: Context, delta_file_message: DeltaFileMessage):
-        return DomainInput(content=delta_file_message.content_list, metadata=delta_file_message.metadata,
-                           domains={domain.name: domain for domain in delta_file_message.domains})
-
-    @abstractmethod
-    def domain(self, context: Context, params: BaseModel, domain_input: DomainInput):
-        pass
-
-    def execute(self, context: Context, domain_input: DomainInput, params: BaseModel):
-        return self.domain(context, params, domain_input)
-
-
 class EgressAction(Action, ABC):
     def __init__(self, description: str):
-        super().__init__(ActionType.EGRESS, description, [], [], (EgressResult, ErrorResult, FilterResult))
+        super().__init__(ActionType.EGRESS, description, (EgressResult, ErrorResult, FilterResult))
 
     def build_input(self, context: Context, delta_file_message: DeltaFileMessage):
         return EgressInput(content=delta_file_message.content_list[0], metadata=delta_file_message.metadata)
@@ -112,81 +93,9 @@ class EgressAction(Action, ABC):
         return self.egress(context, params, egress_input)
 
 
-class EnrichAction(Action, ABC):
-    def __init__(self, description: str, requires_domains: List[str], requires_enrichments: List[str]):
-        super().__init__(ActionType.ENRICH, description, requires_domains, requires_enrichments,
-                         (EnrichResult, ErrorResult))
-
-    def build_input(self, context: Context, delta_file_message: DeltaFileMessage):
-        return EnrichInput(content=delta_file_message.content_list, metadata=delta_file_message.metadata,
-                           domains={domain.name: domain for domain in delta_file_message.domains},
-                           enrichments={domain.name: domain for domain in delta_file_message.enrichments})
-
-    @abstractmethod
-    def enrich(self, context: Context, params: BaseModel, enrich_input: EnrichInput):
-        pass
-
-    def execute(self, context: Context, enrich_input: EnrichInput, params: BaseModel):
-        return self.enrich(context, params, enrich_input)
-
-
-class FormatAction(Action, ABC):
-    def __init__(self, description: str, requires_domains: List[str], requires_enrichments: List[str]):
-        super().__init__(ActionType.FORMAT, description, requires_domains, requires_enrichments,
-                         (FormatResult, FormatManyResult, ErrorResult, FilterResult))
-
-    def build_input(self, context: Context, delta_file_message: DeltaFileMessage):
-        return FormatInput(content=delta_file_message.content_list, metadata=delta_file_message.metadata,
-                           domains={domain.name: domain for domain in delta_file_message.domains},
-                           enrichments={domain.name: domain for domain in delta_file_message.enrichments})
-
-    def collect(self, format_inputs: List[FormatInput]):
-        all_content = []
-        all_metadata = {}
-        all_domains = {}
-        all_enrichments = {}
-        for format_input in format_inputs:
-            all_content += format_input.content
-            all_metadata.update(format_input.metadata)
-            all_domains.update(format_input.domains)
-            all_enrichments.update(format_input.enrichments)
-        return FormatInput(content=all_content, metadata=all_metadata, domains=all_domains, enrichments=all_enrichments)
-
-    @abstractmethod
-    def format(self, context: Context, params: BaseModel, format_input: FormatInput):
-        pass
-
-    def execute(self, context: Context, format_input: FormatInput, params: BaseModel):
-        return self.format(context, params, format_input)
-
-
-class LoadAction(Action, ABC):
-    def __init__(self, description: str):
-        super().__init__(ActionType.LOAD, description, [], [],
-                         (LoadResult, LoadManyResult, ErrorResult, FilterResult, ReinjectResult))
-
-    def build_input(self, context: Context, delta_file_message: DeltaFileMessage):
-        return LoadInput(content=delta_file_message.content_list, metadata=delta_file_message.metadata)
-
-    def collect(self, load_inputs: List[LoadInput]):
-        all_content = []
-        all_metadata = {}
-        for load_input in load_inputs:
-            all_content += load_input.content
-            all_metadata.update(load_input.metadata)
-        return LoadInput(content=all_content, metadata=all_metadata)
-
-    @abstractmethod
-    def load(self, context: Context, params: BaseModel, load_input: LoadInput):
-        pass
-
-    def execute(self, context: Context, load_input: LoadInput, params: BaseModel):
-        return self.load(context, params, load_input)
-
-
 class TimedIngressAction(Action, ABC):
     def __init__(self, description: str):
-        super().__init__(ActionType.TIMED_INGRESS, description, [], [], (IngressResult, ErrorResult))
+        super().__init__(ActionType.TIMED_INGRESS, description, (IngressResult, ErrorResult))
 
     def build_input(self, context: Context, delta_file_message: DeltaFileMessage):
         return None
@@ -201,7 +110,7 @@ class TimedIngressAction(Action, ABC):
 
 class TransformAction(Action, ABC):
     def __init__(self, description: str):
-        super().__init__(ActionType.TRANSFORM, description, [], [], (TransformResult, ErrorResult, FilterResult, ReinjectResult))
+        super().__init__(ActionType.TRANSFORM, description, (TransformResult, TransformResults, ErrorResult, FilterResult))
 
     def build_input(self, context: Context, delta_file_message: DeltaFileMessage):
         return TransformInput(content=delta_file_message.content_list, metadata=delta_file_message.metadata)
@@ -220,18 +129,3 @@ class TransformAction(Action, ABC):
 
     def execute(self, context: Context, transform_input: TransformInput, params: BaseModel):
         return self.transform(context, params, transform_input)
-
-
-class ValidateAction(Action, ABC):
-    def __init__(self, description: str):
-        super().__init__(ActionType.VALIDATE, description, [], [], (ValidateResult, ErrorResult, FilterResult))
-
-    def build_input(self, context: Context, delta_file_message: DeltaFileMessage):
-        return ValidateInput(content=delta_file_message.content_list[0], metadata=delta_file_message.metadata)
-
-    @abstractmethod
-    def validate(self, context: Context, params: BaseModel, validate_input: ValidateInput):
-        pass
-
-    def execute(self, context: Context, validate_input: ValidateInput, params: BaseModel):
-        return self.validate(context, params, validate_input)

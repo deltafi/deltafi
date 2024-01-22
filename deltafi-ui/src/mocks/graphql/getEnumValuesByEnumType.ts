@@ -26,25 +26,10 @@ const generateData = () => {
         name: "EGRESS_FLOW",
       },
       {
-        name: "ENRICH_ACTION",
-      },
-      {
-        name: "FORMAT_ACTION",
-      },
-      {
-        name: "NORMALIZE_FLOW",
-      },
-      {
-        name: "LOAD_ACTION",
-      },
-      {
         name: "TRANSFORM_ACTION",
       },
       {
         name: "TRANSFORM_FLOW",
-      },
-      {
-        name: "VALIDATE_ACTION",
       },
     ],
   };

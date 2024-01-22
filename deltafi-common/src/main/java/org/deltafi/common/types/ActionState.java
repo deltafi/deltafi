@@ -24,7 +24,7 @@ public enum ActionState {
   ERROR,
   RETRIED,
   FILTERED,
-  REINJECTED,
+  SPLIT,
   CANCELLED,
   COLLECTING,
   COLLECTED

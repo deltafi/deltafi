@@ -1,0 +1,23 @@
+{
+  "name": "smoke-transform-test",
+  "type": "TRANSFORM",
+  "description": "Test flow that passes data through unchanged",
+  "subscriptions": [
+    {"topics": ["smoke-transform"]}
+  ],
+  "transformActions": [{
+    "name": "SmokeTransformAction",
+    "type": "org.deltafi.passthrough.action.RoteTransformAction",
+    "parameters": {
+      "minRoteDelayMS": "${minRoteDelayMS}",
+      "maxRoteDelayMS": "${maxRoteDelayMS}"
+    }
+  }],
+  "publishRules": {
+    "matchingPolicy": "FIRST_MATCHING",
+    "defaultRule": {"defaultBehavior": "ERROR"},
+    "rules": [
+      {"topics": ["smoke-egress"]}
+    ]
+  }
+}

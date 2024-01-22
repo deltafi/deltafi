@@ -30,8 +30,6 @@ module Deltafi
           query {
             getAllFlows {
               transform { sourcePlugin { artifactId groupId version } name flowStatus { state errors { message } } }
-              normalize { sourcePlugin { artifactId groupId version } name flowStatus { state errors { message } } }
-              enrich { sourcePlugin { artifactId groupId version } name flowStatus { state errors { message } } }
               egress { sourcePlugin { artifactId groupId version } name flowStatus { state errors { message } } }
             }
           }

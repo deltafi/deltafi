@@ -41,7 +41,15 @@ public class EgressFlowPlanGenerator {
         String planName = baseFlowName + "-egress";
         List<FlowPlan> egressFlowPlans = new ArrayList<>();
 
-        egressFlowPlans.add(generateEgressFlow(planName, egressActionConfigs.get(0)));
+        if (egressActionConfigs.size() == 1) {
+            egressFlowPlans.add(generateEgressFlow(planName, egressActionConfigs.get(0)));
+        } else {
+            for (int i = 0; i < egressActionConfigs.size(); i++) {
+                EgressActionConfiguration egressActionConfiguration = egressActionConfigs.get(i);
+                int planNum = i + 1;
+                egressFlowPlans.add(generateEgressFlow(planName + "-" + planNum, egressActionConfiguration));
+            }
+        }
         return egressFlowPlans;
     }
 

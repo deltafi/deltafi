@@ -17,11 +17,11 @@
  */
 package org.deltafi.core.services;
 
-import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.*;
 import org.deltafi.core.converters.FlowPlanConverter;
+import org.deltafi.core.exceptions.MissingFlowException;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.plugin.PluginUninstallCheck;
 import org.deltafi.core.repo.FlowRepo;
@@ -29,7 +29,6 @@ import org.deltafi.core.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.snapshot.Snapshotter;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.snapshot.types.FlowSnapshot;
-import org.deltafi.core.snapshot.util.SnapshotUtil;
 import org.deltafi.core.types.ConfigType;
 import org.deltafi.core.types.Flow;
 import org.deltafi.core.types.Result;
@@ -250,8 +249,10 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
      */
     public FlowT getRunningFlowByName(String flowName) {
         FlowT flow = flowCache.get(flowName);
-        if (flow == null || !flow.isRunning()) {
-            throw new DgsEntityNotFoundException("Flow of type " + flowType + " named " + flowName + " is not running");
+        if (flow == null) {
+            throw new MissingFlowException("Flow of type " + flowType + " named " + flowName + " is not installed");
+        } else if (!flow.isRunning()){
+            throw new MissingFlowException("Flow of type " + flowType + " named " + flowName + " is not running");
         }
 
         return flow;
@@ -266,7 +267,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
      */
     public FlowT getFlowOrThrow(String flowName) {
         return flowRepo.findById(flowName)
-                .orElseThrow(() -> new DgsEntityNotFoundException("No " + flowType + " flow exists with the name: " + flowName));
+                .orElseThrow(() -> new IllegalArgumentException("No " + flowType + " flow exists with the name: " + flowName));
     }
 
     /**
@@ -316,7 +317,6 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     @Override
     public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
         refreshCache();
-        SnapshotUtil.upgrade(systemSnapshot);
 
         if (hardReset) {
             getRunningFlowNames().forEach(this::stopFlow);

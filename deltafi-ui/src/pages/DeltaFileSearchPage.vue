@@ -146,7 +146,6 @@ import PageHeader from "@/components/PageHeader.vue";
 import RetryResumeDialog from "@/components/MetadataDialogReplay.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useDeltaFilesQueryBuilder from "@/composables/useDeltaFilesQueryBuilder";
-import useDomains from "@/composables/useDomains";
 import useFlows from "@/composables/useFlows";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import { computed, inject, nextTick, onBeforeMount, ref, watch } from "vue";
@@ -176,7 +175,6 @@ const hasPermission = inject("hasPermission");
 const params = useUrlSearchParams("history");
 const { getDeltaFileSearchData, getEnumValuesByEnumType } = useDeltaFilesQueryBuilder();
 const { duration, shortTimezone } = useUtilFunctions();
-const { domains: domainOptions, getDomains, getAnnotationKeys } = useDomains();
 const { ingressFlows: ingressFlowOptions, fetchIngressFlowNames, egressFlows: egressFlowOptions, fetchEgressFlowNames } = useFlows();
 const route = useRoute();
 const useURLSearch = ref(false);
@@ -212,15 +210,6 @@ const setupWatchers = () => {
     () => [model.value.startTimeDate, model.value.endTimeDate],
     () => {
       fetchDeltaFilesData();
-    }
-  );
-
-  watch(
-    () => model.value.domains,
-    async (value) => {
-      fetchDeltaFilesData();
-      await fetchAnnotationKeys(value);
-      validatedAnnotationsArray();
     }
   );
 
@@ -296,7 +285,7 @@ onBeforeMount(async () => {
   getPersistedParams();
   fetchDropdownOptions();
   await nextTick();
-  if (model.value.domains == null) fetchAnnotationKeys();
+  fetchAnnotationKeys();
   await fetchDeltaFilesDataNoDebounce();
   setupWatchers();
   updateHelperButtons();
@@ -304,7 +293,6 @@ onBeforeMount(async () => {
 
 // Fetches all the options used in the dropdown
 const fetchDropdownOptions = async () => {
-  getDomains();
   fetchIngressFlowNames();
   fetchEgressFlowNames();
   fetchStages();
@@ -432,7 +420,6 @@ const defaultQueryParamsTemplate = {
   testMode: null,
   terminalStage: null,
   replayable: null,
-  domains: null,
   sizeMin: null,
   sizeMax: null,
   sizeType: sizeTypesOptions.value[0],
@@ -486,7 +473,6 @@ const advanceOptionsPanelInfo = computed(() => {
     // 3nd Column fields
     { field: "requeueMin", column: 3, order: 1, componentType: "InputNumber", label: "Requeue Count:", placeholder: "Min", class: "p-inputnumber input-area-height" },
     { field: "stage", column: 3, order: 2, componentType: "Dropdown", label: "Stage:", placeholder: "Select a Stage", options: stageOptions.value, formatOptions: false, class: "deltafi-input-field min-width" },
-    { field: "domains", column: 3, order: 3, componentType: "Dropdown", label: "Domain:", placeholder: "Select a Domain", options: domainOptions.value, formatOptions: false, class: "deltafi-input-field min-width" },
     { field: "pendingAnnotations", column: 3, order: 4, componentType: "Dropdown", label: "Pending Annotations:", placeholder: "Select if Pending Annotations", options: booleanOptions.value, formatOptions: true, class: "deltafi-input-field min-width" },
     { field: "annotations", column: 3, order: 5, componentType: "Annotations", label: "Annotations:" },
   ];
@@ -545,13 +531,13 @@ const validatedAnnotationsArray = () => {
 };
 
 const invalidAnnotationTooltip = (key) => {
-  if (model.value.domains) {
+  /*if (model.value.domains) {
     return `${key} is not a valid annotation key for the ${model.value.domains} domain.`;
-  }
+  }*/
 };
 
-const fetchAnnotationKeys = async (domain) => {
-  const keys = await getAnnotationKeys(domain);
+const fetchAnnotationKeys = async () => {
+  const keys = await getAnnotationKeys();
   annotationsKeysOptions.value = keys.map((key) => {
     return { key: key };
   });
@@ -608,7 +594,7 @@ const onPage = (event) => {
   fetchDeltaFilesDataNoDebounce();
 };
 
-const openPanel = ["fileName", "filteredCause", "requeueMin", "stage", "ingressFlows", "egressFlows", "egressed", "filtered", "testMode", "replayable", "terminalStage", "domains", "sizeMin", "sizeMax", "validatedAnnotations", "pendingAnnotations", "annotations", "sizeUnit", "sizeType"];
+const openPanel = ["fileName", "filteredCause", "requeueMin", "stage", "ingressFlows", "egressFlows", "egressed", "filtered", "testMode", "replayable", "terminalStage", "sizeMin", "sizeMax", "validatedAnnotations", "pendingAnnotations", "annotations", "sizeUnit", "sizeType"];
 
 const decodePersistedParams = (obj) =>
   _.transform(obj, (r, v, k) => {

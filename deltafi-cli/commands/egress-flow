@@ -87,21 +87,7 @@ case "$SUBCOMMAND" in
                    message
                  }
                }
-               includeNormalizeFlows
-               excludeNormalizeFlows
                expectedAnnotations
-               formatAction {
-                 name
-                 type
-                 requiresDomains
-                 requiresEnrichments
-                 parameters
-               }
-               validateActions {
-                 name
-                 type
-                 parameters
-               }
                egressAction {
                  name
                  type

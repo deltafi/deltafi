@@ -17,7 +17,6 @@
  */
 package org.deltafi.core.plugin.generator.flows;
 
-import org.deltafi.common.types.EgressActionConfiguration;
 import org.deltafi.common.types.FlowPlan;
 import org.deltafi.common.types.TransformActionConfiguration;
 import org.deltafi.common.types.TransformFlowPlan;
@@ -35,34 +34,22 @@ public class TransformFlowPlanGenerator {
      * Create a list of transform flow plans using the given action input
      * @param baseFlowName prefix for the flow plan name
      * @param transformActions list of transform actions to use in the flow plans
-     * @param egressActions list of egress actions to use in the flow plans, a default egress action will be used if this is null or empty
      * @return list of transform flow plans
      */
-    public List<FlowPlan> generateTransformFlows(String baseFlowName, List<ActionGeneratorInput> transformActions, List<ActionGeneratorInput> egressActions) {
+    public List<FlowPlan> generateTransformFlows(String baseFlowName, List<ActionGeneratorInput> transformActions) {
         List<TransformActionConfiguration> transformActionConfigs = ActionUtil.transformActionConfigurations(transformActions);
-        List<EgressActionConfiguration> egressActionConfigs = ActionUtil.egressActionConfigurations(egressActions);
 
         List<FlowPlan> flowPlans = new ArrayList<>();
 
         String planName = baseFlowName + "-transform";
-
-        if (egressActionConfigs.size() == 1) {
-            flowPlans.add(generateTransformFlowPlan(planName, transformActionConfigs, egressActionConfigs.get(0)));
-        } else {
-            int i = 1;
-            for (EgressActionConfiguration egressAction : egressActionConfigs) {
-                flowPlans.add(generateTransformFlowPlan(planName+"-" + i++, transformActionConfigs, egressAction));
-            }
-        }
+        flowPlans.add(generateTransformFlowPlan(planName, transformActionConfigs));
 
         return flowPlans;
     }
 
-    private FlowPlan generateTransformFlowPlan(String planName, List<TransformActionConfiguration> transformActions, EgressActionConfiguration egressAction) {
+    private FlowPlan generateTransformFlowPlan(String planName, List<TransformActionConfiguration> transformActions) {
         TransformFlowPlan transformFlowPlan = new TransformFlowPlan(planName, "Sample transform flow");
-
         transformFlowPlan.setTransformActions(transformActions);
-        transformFlowPlan.setEgressAction(egressAction);
         return transformFlowPlan;
     }
 }

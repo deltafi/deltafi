@@ -40,11 +40,18 @@ type EgressFlowConfiguration implements DeltaFiConfiguration {
     egressAction: String!
 }
 
-type TimedIngressFlowConfiguration implements DeltaFiConfiguration {
+type TimedDataSourceConfiguration implements DeltaFiConfiguration {
     name: String!
     apiVersion: String
+    topic: String!
     timedIngressAction: String!
     cronSchedule: String
+}
+
+type RestDataSourceConfiguration implements DeltaFiConfiguration {
+    name: String!
+    apiVersion: String
+    topic: String!
 }
 
 type TransformFlowConfiguration implements DeltaFiConfiguration {

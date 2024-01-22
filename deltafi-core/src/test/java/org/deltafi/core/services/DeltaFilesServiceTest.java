@@ -36,6 +36,7 @@ import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.repo.QueuedAnnotationRepo;
 import org.deltafi.core.services.pubsub.PublisherService;
 import org.deltafi.core.types.*;
+import org.deltafi.core.util.FlowBuilders;
 import org.deltafi.core.util.Util;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -58,6 +59,7 @@ class DeltaFilesServiceTest {
     private final MockDeltaFiPropertiesService mockDeltaFiPropertiesService = new MockDeltaFiPropertiesService();
 
     private final TransformFlowService transformFlowService;
+    private final DataSourceService dataSourceService;
     private final EgressFlowService egressFlowService;
     private final StateMachine stateMachine;
     private final DeltaFileRepo deltaFileRepo;
@@ -90,7 +92,7 @@ class DeltaFilesServiceTest {
             @Mock DeltaFileRepo deltaFileRepo, @Mock ActionEventQueue actionEventQueue,
             @Mock ContentStorageService contentStorageService, @Mock ResumePolicyService resumePolicyService,
             @Mock MetricService metricService, @Mock CoreAuditLogger coreAuditLogger,
-            @Mock DeltaFileCacheService deltaFileCacheService, @Mock TimedIngressFlowService timedIngressFlowService,
+            @Mock DeltaFileCacheService deltaFileCacheService, @Mock DataSourceService dataSourceService,
             @Mock QueueManagementService queueManagementService, @Mock QueuedAnnotationRepo queuedAnnotationRepo,
             @Mock Environment environment, @Mock ScheduledCollectService scheduledCollectService) {
         this.transformFlowService = transformFlowService;
@@ -103,30 +105,30 @@ class DeltaFilesServiceTest {
         this.deltaFileCacheService = deltaFileCacheService;
         this.queueManagementService = queueManagementService;
         this.queuedAnnotationRepo = queuedAnnotationRepo;
+        this.dataSourceService = dataSourceService;
 
         UUIDGenerator uuidGenerator = new TestUUIDGenerator();
         deltaFilesService = new DeltaFilesService(testClock, transformFlowService, egressFlowService, publisherService,
                 mockDeltaFiPropertiesService, stateMachine, deltaFileRepo, actionEventQueue, contentStorageService,
                 resumePolicyService, metricService, coreAuditLogger, new DidMutexService(), deltaFileCacheService,
-                timedIngressFlowService, queueManagementService, queuedAnnotationRepo, environment,
+                dataSourceService, queueManagementService, queuedAnnotationRepo, environment,
                 scheduledCollectService, uuidGenerator);
     }
 
     @Test
     void setsAndGets() {
-        TransformFlow transformFlow = new TransformFlow();
-        transformFlow.setName("theFlow");
-        when(transformFlowService.getRunningFlowByName(transformFlow.getName())).thenReturn(transformFlow);
+        RestDataSource dataSource = FlowBuilders.buildFlow("theFlow");
+        when(dataSourceService.getRunningRestDataSource(dataSource.getName())).thenReturn(dataSource);
 
         String did = UUID.randomUUID().toString();
         List<Content> content = Collections.singletonList(new Content("name", "mediaType"));
-        IngressEventItem ingressInputItem = new IngressEventItem(did, "filename", transformFlow.getName(),
+        IngressEventItem ingressInputItem = new IngressEventItem(did, "filename", dataSource.getName(),
                 Map.of(), content);
 
-        DeltaFile deltaFile = deltaFilesService.ingress(ingressInputItem, OffsetDateTime.now(), OffsetDateTime.now());
+        DeltaFile deltaFile = deltaFilesService.ingress(dataSource, ingressInputItem, OffsetDateTime.now(), OffsetDateTime.now());
 
         assertNotNull(deltaFile);
-        assertEquals(transformFlow.getName(), deltaFile.getSourceInfo().getFlow());
+        assertEquals(dataSource.getName(), deltaFile.getSourceInfo().getFlow());
         assertEquals(did, deltaFile.getDid());
         assertNotNull(deltaFile.lastCompleteAction());
     }

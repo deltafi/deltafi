@@ -19,7 +19,6 @@ package org.deltafi.core.snapshot;
 
 import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
-import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.Variable;
 import org.deltafi.common.types.VariableDataType;
@@ -69,12 +68,10 @@ public class SystemSnapshotDatafetcherTestHelper {
         systemSnapshot.setCreated(OffsetDateTime.parse("2023-02-28T21:27:03.407Z"));
         setResumePolicies(systemSnapshot);
         setDeletePolicies(systemSnapshot);
-        setFlowAssignmentRules(systemSnapshot);
         setDeltaFiProperties(systemSnapshot);
         setPluginVariables(systemSnapshot);
         setPluginImageRepositories(systemSnapshot);
         setInstalledPlugins(systemSnapshot);
-        setFlowInfo(systemSnapshot);
         return systemSnapshot;
     }
 
@@ -109,24 +106,6 @@ public class SystemSnapshotDatafetcherTestHelper {
         deletePolicies.setDiskSpacePolicies(List.of(diskSpaceDeletePolicy));
 
         systemSnapshot.setDeletePolicies(deletePolicies);
-    }
-
-    private static void setFlowAssignmentRules(SystemSnapshot systemSnapshot) {
-        FlowAssignmentRule smokey = new FlowAssignmentRule();
-        smokey.setId("0d6b8146-53e8-43cc-b56d-f8812cb64252");
-        smokey.setName("smokey");
-        smokey.setFlow("smoke");
-        smokey.setPriority(500);
-        smokey.setRequiredMetadata(List.of(new KeyValue("smoke", "true")));
-
-        FlowAssignmentRule testytest = new FlowAssignmentRule();
-        testytest.setId("49361ab6-96bb-46cf-9f21-61826de2e013");
-        testytest.setName("testytest");
-        testytest.setFlow("decompress-and-merge");
-        testytest.setPriority(500);
-        testytest.setRequiredMetadata(List.of(new KeyValue("test", "test"), new KeyValue("test2", "test2")));
-
-        systemSnapshot.setFlowAssignmentRules(List.of(smokey, testytest));
     }
 
     private static void setDeltaFiProperties(SystemSnapshot systemSnapshot) {
@@ -204,16 +183,6 @@ public class SystemSnapshotDatafetcherTestHelper {
         ));
     }
 
-    private static void setFlowInfo(SystemSnapshot systemSnapshot) {
-        systemSnapshot.setRunningTransformFlows(List.of("transform-flow1", "transform-flow2"));
-        systemSnapshot.setRunningIngressFlows(List.of("passthrough", "smoke", "decompress-and-merge", "decompress-passthrough", "stix_attack", "stix1_x", "stix2_1", "hello-python"));
-        systemSnapshot.setRunningEnrichFlows(List.of("artificial-enrichment", "stix2_1", "hello-python"));
-        systemSnapshot.setRunningEgressFlows(List.of("smoke", "passthrough", "stix2_1", "stix1_x", "hello-python"));
-        systemSnapshot.setTestTransformFlows(List.of("transform-flow1"));
-        systemSnapshot.setTestIngressFlows(List.of());
-        systemSnapshot.setTestEgressFlows(List.of("passthrough"));
-    }
-
     private static final String IMPORT_SNAPSHOT = """
             mutation {
                 importSnapshot(
@@ -279,27 +248,6 @@ public class SystemSnapshotDatafetcherTestHelper {
                                         maxDelay: 120
                                         random: true
                                     }
-                            }
-                        ]
-                        flowAssignmentRules: [
-                            {
-                                id: "0d6b8146-53e8-43cc-b56d-f8812cb64252"
-                                name: "smokey"
-                                flow: "smoke"
-                                priority: 500
-                                filenameRegex: null
-                                requiredMetadata: [{ key: "smoke", value: "true" }]
-                            }
-                            {
-                                id: "49361ab6-96bb-46cf-9f21-61826de2e013"
-                                name: "testytest"
-                                flow: "decompress-and-merge"
-                                priority: 500
-                                filenameRegex: null
-                                requiredMetadata: [
-                                    { key: "test", value: "test" }
-                                    { key: "test2", value: "test2" }
-                                ]
                             }
                         ]
                         deltaFiProperties: {
@@ -420,31 +368,6 @@ public class SystemSnapshotDatafetcherTestHelper {
                                 ]
                             }
                         ]
-                        runningTransformFlows: [
-                            "transform-flow1"
-                            "transform-flow2"
-                        ]
-                        runningIngressFlows: [
-                            "passthrough"
-                            "smoke"
-                            "decompress-and-merge"
-                            "decompress-passthrough"
-                            "stix_attack"
-                            "stix1_x"
-                            "stix2_1"
-                            "hello-python"
-                        ]
-                        runningEnrichFlows: ["artificial-enrichment", "stix2_1", "hello-python"]
-                        runningEgressFlows: [
-                            "smoke"
-                            "passthrough"
-                            "stix2_1"
-                            "stix1_x"
-                            "hello-python"
-                        ]
-                        testTransformFlows: ["transform-flow1"]
-                        testIngressFlows: []
-                        testEgressFlows: ["passthrough"]
                         pluginCustomizationConfigs: []
                     }
                 ) {
@@ -568,24 +491,6 @@ public class SystemSnapshotDatafetcherTestHelper {
                 random
               }
             }
-            flowAssignmentRules {
-              id
-              name
-              flow
-              priority
-              filenameRegex
-              requiredMetadata {
-                key
-                value
-              }
-            }
-            testTransformFlows
-            testIngressFlows
-            testEgressFlows
-            runningTransformFlows
-            runningIngressFlows
-            runningEnrichFlows
-            runningEgressFlows
             pluginCustomizationConfigs {
               groupId
               artifactId

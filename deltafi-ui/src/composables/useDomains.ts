@@ -24,19 +24,10 @@ export default function useDomains() {
   const loaded = ref(false);
   const domains = ref([]);
 
-  const getDomains = async () => {
-    await queryGraphQL("domains", "getDomains");
-    loaded.value = true;
-    domains.value = response.value.data.domains;
-    return response.value.data.domains;
-  };
-
-  const getAnnotationKeys = async (domain: String) => {
+  const getAnnotationKeys = async () => {
     const query = {
       annotationKeys: {
-        __args: {
-          domain: domain === undefined ? null : domain,
-        },
+        __args: {},
       },
     };
     await queryGraphQL(query, "getAnnotationKeys", "query", true);
@@ -44,5 +35,5 @@ export default function useDomains() {
     return response.value.data.annotationKeys;
   };
 
-  return { loading, loaded, domains, getDomains, getAnnotationKeys: getAnnotationKeys, errors };
+  return { loading, loaded, getAnnotationKeys: getAnnotationKeys, errors };
 }

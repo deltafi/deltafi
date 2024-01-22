@@ -16,12 +16,19 @@
 #    limitations under the License.
 #
 
-type TimedIngressFlowSnapshot {
+type TimedDataSourceSnapshot {
     name: String!
+    topic: String!
     running: Boolean!
     testMode: Boolean!
-    targetFlow: String!
     cronSchedule: String
+}
+
+type RestDataSourceSnapshot {
+    name: String!
+    topic: String!
+    running: Boolean!
+    testMode: Boolean!
 }
 
 type TransformFlowSnapshot {
@@ -46,13 +53,8 @@ type SystemSnapshot {
     deltaFiProperties: DeltaFiProperties!
     installedPlugins: [PluginCoordinates]!
     pluginVariables: [PluginVariables]!
-    runningTransformFlows: [String]
-    runningIngressFlows: [String]
-    runningEgressFlows: [String]
-    testTransformFlows: [String]
-    testIngressFlows: [String]
-    testEgressFlows: [String]
-    timedIngressFlows: [TimedIngressFlowSnapshot]
+    restDataSources: [RestDataSourceSnapshot]
+    timedDataSources: [TimedDataSourceSnapshot]
     transformFlows: [TransformFlowSnapshot]
     egressFlows: [EgressFlowSnapshot]
     pluginImageRepositories: [PluginImageRepository]!
@@ -60,12 +62,19 @@ type SystemSnapshot {
     resumePolicies: [ResumePolicy]!
 }
 
-input TimedIngressFlowSnapshotInput {
+input TimedDataSourceSnapshotInput {
     name: String!
+    topic: String!
     running: Boolean!
     testMode: Boolean!
-    targetFlow: String!
     cronSchedule: String
+}
+
+input RestDataSourceSnapshotInput {
+    name: String!
+    topic: String!
+    running: Boolean!
+    testMode: Boolean!
 }
 
 input TransformFlowSnapshotInput {
@@ -93,7 +102,8 @@ input SystemSnapshotInput {
     testTransformFlows: [String]
     testIngressFlows: [String]
     testEgressFlows: [String]
-    timedIngressFlows: [TimedIngressFlowSnapshotInput]
+    restDataSources: [RestDataSourceSnapshotInput]
+    timedDataSources: [TimedDataSourceSnapshotInput]
     transformFlows: [TransformFlowSnapshotInput]
     egressFlows: [EgressFlowSnapshotInput]
     pluginImageRepositories: [PluginImageRepositoryInput]!

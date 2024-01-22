@@ -31,13 +31,11 @@ public abstract class FlowPlanConverter<FlowPlanT extends FlowPlan, FlowT extend
     public FlowT convert(FlowPlanT flowPlan, List<Variable> variables) {
         FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(variables);
 
-        FlowT flow = getFlowInstance();
+        FlowT flow = createFlow(flowPlan, flowPlanPropertyHelper);
 
         flow.setDescription(flowPlan.getDescription());
         flow.setName(flowPlan.getName());
         flow.setSourcePlugin(flowPlan.getSourcePlugin());
-
-        populateFlowSpecificFields(flowPlan, flow, flowPlanPropertyHelper);
 
         List<FlowConfigError> configErrors = new ArrayList<>(flowPlanPropertyHelper.getErrors());
 
@@ -53,15 +51,8 @@ public abstract class FlowPlanConverter<FlowPlanT extends FlowPlan, FlowT extend
      * Convert the given FlowPlan to a Flow using the given variables
      * to resolve any placeholders in the plan.
      * @param flowPlanT template that will be used to create the flow
-     * @param flow that will have the resolved fields populated
      * @param flowPlanPropertyHelper holds the variables used to resolve templated fields
      */
-    public abstract void populateFlowSpecificFields(FlowPlanT flowPlanT, FlowT flow, FlowPlanPropertyHelper flowPlanPropertyHelper);
-
-    /**
-     * Get a new instance of a flow
-     * @return a new instance of a flow
-     */
-    abstract FlowT getFlowInstance();
+    public abstract FlowT createFlow(FlowPlanT flowPlanT, FlowPlanPropertyHelper flowPlanPropertyHelper);
 
 }

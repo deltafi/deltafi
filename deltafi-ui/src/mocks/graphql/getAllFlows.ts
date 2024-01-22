@@ -52,32 +52,6 @@ const getEnrichedData = () => {
         state: "RUNNING",
         errors: errors,
       },
-      enrichActions: [
-        {
-          name: "smoke.SmokeEnrichAction",
-          type: "org.deltafi.passthrough.action.RoteEnrichAction",
-          requiresDomains: ["binary"],
-          requiresEnrichments: [],
-          requiresMetadataKeyValues: [],
-          parameters: {
-            enrichments: {
-              smokeEnrichment: "smoke enrichment value",
-            },
-          },
-        },
-      ],
-      domainActions: [
-        {
-          name: "stix2_1.Stix2_1DomainAction",
-          type: "org.deltafi.stix.actions.Stix2_1DomainAction",
-          requiresDomains: ["stix"],
-          parameters: {
-            domains: {
-              stixDomain: "stix domain value",
-            },
-          },
-        },
-      ],
       variables: [
         {
           name: "smoke-enrich-url",
@@ -131,155 +105,6 @@ const generateFlows = () => {
         variables: [],
       }
     ],
-    normalize: [
-      {
-        name: "smoke",
-        description: "Test flow that passes data through unchanged",
-        type: "binary",
-        flowStatus: {
-          state: "STOPPED",
-          errors: [],
-        },
-        sourcePlugin: {
-          artifactId: "smoke",
-          groupId: "org.deltafi",
-          version: "0.17.0",
-        },
-        maxErrors: 3,
-        transformActions: [
-          {
-            name: "smoke.SmokeTransformAction",
-            type: "org.deltafi.passthrough.action.RoteTransformAction",
-            parameters: {
-              resultType: "binary",
-            },
-          },
-        ],
-        loadAction: {
-          name: "smoke.SmokeLoadAction",
-          type: "org.deltafi.passthrough.action.RoteLoadAction",
-          parameters: {
-            domains: ["binary"],
-          },
-        },
-        variables: [],
-      },
-      {
-        name: "decompress-passthrough",
-        description: "Flow that passes data through unchanged",
-        type: "compressedBinary",
-        flowStatus: {
-          state: "STOPPED",
-          errors: [],
-        },
-        sourcePlugin: {
-          artifactId: "decompress-passthrough",
-          groupId: "org.deltafi",
-          version: "0.17.0",
-        },
-        maxErrors: 2,
-        transformActions: [
-          {
-            name: "decompress-passthrough.DecompressPassthroughTransformAction",
-            type: "org.deltafi.core.action.DecompressionTransformAction",
-            parameters: {
-              decompressionType: "auto",
-            },
-          },
-        ],
-        loadAction: {
-          name: "decompress-passthrough.DecompressPassthroughLoadAction",
-          type: "org.deltafi.core.action.SplitterLoadAction",
-          parameters: {
-            reinjectFlow: "passthrough",
-          },
-        },
-        variables: [],
-      },
-      {
-        name: "passthrough",
-        description: "Flow that passes data through unchanged",
-        type: "binary",
-        flowStatus: {
-          state: "RUNNING",
-          errors: errors,
-        },
-        sourcePlugin: {
-          artifactId: "passthrough",
-          groupId: "org.deltafi",
-          version: "0.17.0",
-        },
-        maxErrors: 2,
-        transformActions: [
-          {
-            name: "passthrough.PassthroughTransformAction",
-            type: "org.deltafi.passthrough.action.RoteTransformAction",
-            parameters: {
-              resultType: "binary",
-            },
-          },
-        ],
-        loadAction: {
-          name: "passthrough.PassthroughLoadAction",
-          type: "org.deltafi.passthrough.action.RoteLoadAction",
-          parameters: {
-            domains: ["binary"],
-          },
-        },
-        variables: [],
-      },
-      {
-        name: "stix1_x",
-        description: "Defines stix1_x normalize flow that transforms stix 1.x to stix 2.1 domain objects.",
-        type: "stix1_x",
-        flowStatus: {
-          state: "RUNNING",
-          errors: [],
-        },
-        sourcePlugin: {
-          artifactId: "stix",
-          groupId: "org.deltafi",
-          version: "0.17.0",
-        },
-        maxErrors: 1,
-        transformActions: [
-          {
-            name: "stix1_x.Stix1_xTo2_1TransformAction",
-            type: "org.deltafi.stix.actions.StixTransformAction",
-            parameters: null,
-          },
-        ],
-        loadAction: {
-          name: "stix1_x.Stix2_1LoadAction",
-          type: "org.deltafi.stix.actions.StixLoadAction",
-          parameters: null,
-        },
-        variables: [],
-      },
-      {
-        name: "stix2_1",
-        description: "Defines stix2_1 normalize flow.",
-        type: "stix2_1",
-        flowStatus: {
-          state: "STOPPED",
-          errors: [],
-        },
-        sourcePlugin: {
-          artifactId: "stix",
-          groupId: "org.deltafi",
-          version: "0.17.0",
-        },
-        maxErrors: 1,
-        transformActions: [],
-        loadAction: {
-          name: "stix2_1.Stix2_1LoadAction",
-          type: "org.deltafi.stix.actions.StixLoadAction",
-          parameters: null,
-        },
-        variables: [],
-      },
-    ],
-    enrich: enrichData[Math.floor(Math.random() * enrichData.length)],
     egress: [
       {
         name: "error",
@@ -293,17 +118,6 @@ const generateFlows = () => {
           groupId: "org.deltafi",
           version: "0.17.0",
         },
-        includeNormalizeFlows: [],
-        excludeNormalizeFlows: [],
-        enrichActions: [],
-        formatAction: {
-          name: "error.ErrorFormatAction",
-          type: "org.deltafi.core.action.SimpleErrorFormatAction",
-          requiresDomains: ["error"],
-          requiresEnrichments: [],
-          parameters: null,
-        },
-        validateActions: [],
         egressAction: {
           name: "error.ErrorEgressAction",
           type: "org.deltafi.core.action.RestPostEgressAction",
@@ -327,23 +141,6 @@ const generateFlows = () => {
           groupId: "org.deltafi",
           version: "0.17.0",
         },
-        includeNormalizeFlows: ["passthrough"],
-        excludeNormalizeFlows: [],
-        enrichActions: [],
-        formatAction: {
-          name: "passthrough.PassthroughFormatAction",
-          type: "org.deltafi.passthrough.action.RoteFormatAction",
-          requiresDomains: ["binary"],
-          requiresEnrichments: [],
-          parameters: null,
-        },
-        validateActions: [
-          {
-            name: "passthrough.PassthroughValidateAction",
-            type: "org.deltafi.passthrough.action.RubberStampValidateAction",
-            parameters: null,
-          },
-        ],
         egressAction: {
           name: "passthrough.PassthroughEgressAction",
           type: "org.deltafi.core.action.RestPostEgressAction",
@@ -382,36 +179,6 @@ const generateFlows = () => {
           groupId: "org.deltafi",
           version: "0.17.0",
         },
-        includeNormalizeFlows: ["smoke"],
-        excludeNormalizeFlows: [],
-        enrichActions: [
-          {
-            name: "smoke.SmokeEnrichAction",
-            type: "org.deltafi.passthrough.action.RoteEnrichAction",
-            requiresDomains: ["binary"],
-            requiresEnrichments: [],
-            requiresMetadataKeyValues: [],
-            parameters: {
-              enrichments: {
-                smokeEnrichment: "smoke enrichment value",
-              },
-            },
-          },
-        ],
-        formatAction: {
-          name: "smoke.SmokeFormatAction",
-          type: "org.deltafi.passthrough.action.RoteFormatAction",
-          requiresDomains: ["binary"],
-          requiresEnrichments: ["smokeEnrichment"],
-          parameters: null,
-        },
-        validateActions: [
-          {
-            name: "smoke.SmokeValidateAction",
-            type: "org.deltafi.passthrough.action.RubberStampValidateAction",
-            parameters: null,
-          },
-        ],
         egressAction: {
           name: "smoke.SmokeEgressAction",
           type: "org.deltafi.core.action.RestPostEgressAction",
@@ -443,17 +210,6 @@ const generateFlows = () => {
           groupId: "org.deltafi",
           version: "0.17.0",
         },
-        includeNormalizeFlows: [],
-        excludeNormalizeFlows: [],
-        enrichActions: [],
-        formatAction: {
-          name: "stix1_x.Stix1_xFormatAction",
-          type: "org.deltafi.stix.actions.Stix1_XFormatAction",
-          requiresDomains: ["stix"],
-          requiresEnrichments: [],
-          parameters: null,
-        },
-        validateActions: [],
         egressAction: {
           name: "stix1_x.Stix1_xEgressAction",
           type: "org.deltafi.core.action.RestPostEgressAction",
@@ -485,17 +241,6 @@ const generateFlows = () => {
           groupId: "org.deltafi",
           version: "0.17.0",
         },
-        includeNormalizeFlows: [],
-        excludeNormalizeFlows: [],
-        enrichActions: [],
-        formatAction: {
-          name: "stix2_1.Stix2_1FormatAction",
-          type: "org.deltafi.stix.actions.Stix2_1FormatAction",
-          requiresDomains: ["stix"],
-          requiresEnrichments: [],
-          parameters: null,
-        },
-        validateActions: [],
         egressAction: {
           name: "stix2_1.Stix2_1EgressAction",
           type: "org.deltafi.core.action.RestPostEgressAction",

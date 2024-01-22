@@ -23,16 +23,6 @@ class ExpectedContentException(RuntimeError):
         self.size = size
 
 
-class MissingDomainException(RuntimeError):
-    def __init__(self, name):
-        self.name = name
-
-
-class MissingEnrichmentException(RuntimeError):
-    def __init__(self, name):
-        self.name = name
-
-
 class MissingMetadataException(RuntimeError):
     def __init__(self, key):
         self.key = key

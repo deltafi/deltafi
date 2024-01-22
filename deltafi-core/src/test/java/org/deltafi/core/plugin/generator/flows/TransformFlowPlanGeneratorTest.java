@@ -31,30 +31,29 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class TransformFlowPlanGeneratorTest {
 
+    public static final String MY_PLUGIN_TRANSFORM = "my-plugin-transform";
     TransformFlowPlanGenerator transformFlowPlanGenerator = new TransformFlowPlanGenerator();
 
     @Test
     void testDefaults() {
-        List<FlowPlan> flowPlans = transformFlowPlanGenerator.generateTransformFlows("my-plugin", null, null);
+        List<FlowPlan> flowPlans = transformFlowPlanGenerator.generateTransformFlows("my-plugin", null);
         assertThat(flowPlans).hasSize(1);
-        matches(flowPlans.get(0), "my-plugin-transform", null, ActionConfigMatchers.DEFAULT_EGRESS_MATCHER);
+        matches(flowPlans.get(0), null);
     }
 
     @Test
     void testMultipleEgressActions() {
         List<ActionGeneratorInput> transforms = List.of(new ActionGeneratorInput("t1", "org.t1"), new ActionGeneratorInput("t2", "org.t2"));
-        List<ActionGeneratorInput> egressActions = List.of(new ActionGeneratorInput("e1", "org.e1"), new ActionGeneratorInput("e2", "org.e2"));
-        List<FlowPlan> flowPlans = transformFlowPlanGenerator.generateTransformFlows("my-plugin", transforms, egressActions);
+        List<FlowPlan> flowPlans = transformFlowPlanGenerator.generateTransformFlows("my-plugin", transforms);
 
-        assertThat(flowPlans).hasSize(2);
+        assertThat(flowPlans).hasSize(1);
         List<ActionConfigMatcher> transformMatchers = List.of(new ActionConfigMatcher("t1", "org.t1"), new ActionConfigMatcher("t2", "org.t2"));
-        matches(flowPlans.get(0), "my-plugin-transform-1", transformMatchers, new ActionConfigMatcher("e1", "org.e1"));
-        matches(flowPlans.get(1), "my-plugin-transform-2", transformMatchers, new ActionConfigMatcher("e2", "org.e2"));
+        matches(flowPlans.get(0), transformMatchers);
     }
 
-    void matches(FlowPlan flowPlan, String name, List<ActionConfigMatcher> transformActionMatchers, ActionConfigMatcher egressActionMatcher) {
+    void matches(FlowPlan flowPlan, List<ActionConfigMatcher> transformActionMatchers) {
         if (flowPlan instanceof TransformFlowPlan transformFlowPlan) {
-            assertThat(transformFlowPlan.getName()).isEqualTo(name);
+            assertThat(transformFlowPlan.getName()).isEqualTo(MY_PLUGIN_TRANSFORM);
             assertThat(transformFlowPlan.getDescription()).isEqualTo("Sample transform flow");
             List<TransformActionConfiguration> transformActions = transformFlowPlan.getTransformActions();
             if (transformActionMatchers == null) {
@@ -63,7 +62,6 @@ class TransformFlowPlanGeneratorTest {
                 assertThat(transformActions).hasSize(transformActionMatchers.size());
                 transformActionMatchers.forEach(matcher -> assertThat(transformActions).anyMatch(matcher));
             }
-            assertThat(transformFlowPlan.getEgressAction()).matches(egressActionMatcher);
         } else {
             Assertions.fail("invalid flow type returned");
         }

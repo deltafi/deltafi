@@ -41,13 +41,9 @@ public class UnifiedFlowService {
     }
 
     public List<EgressActionConfiguration> runningEgressActions() {
-        List<EgressActionConfiguration> configs = new ArrayList<>(transformFlowService.getRunningFlows().stream()
-                .map(TransformFlow::getEgressAction)
-                .toList());
-        configs.addAll(egressFlowService.getRunningFlows().stream()
+        return new ArrayList<>(egressFlowService.getRunningFlows().stream()
                 .map(EgressFlow::getEgressAction)
                 .toList());
-        return configs;
     }
 
     public ActionConfiguration runningAction(String actionName, ActionType actionType) {

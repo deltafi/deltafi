@@ -17,7 +17,6 @@
  */
 package org.deltafi.core.services;
 
-import org.deltafi.common.types.EgressActionConfiguration;
 import org.deltafi.common.types.TransformFlowPlan;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
@@ -38,7 +37,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.boot.info.BuildProperties;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -64,9 +62,6 @@ class TransformFlowServiceTest {
     @Mock
     ErrorCountService errorCountService;
 
-    @Mock
-    BuildProperties buildProperties;
-
     @InjectMocks
     TransformFlowService transformFlowService;
 
@@ -82,9 +77,7 @@ class TransformFlowServiceTest {
         Mockito.when(flowValidator.validate(Mockito.any())).thenReturn(Collections.emptyList());
 
         TransformFlowPlan runningFlowPlan = new TransformFlowPlan("running", "yep");
-        runningFlowPlan.setEgressAction(new EgressActionConfiguration("EgressActionConfig", "EgressActionConfigType"));
         TransformFlowPlan stoppedFlowPlan = new TransformFlowPlan("stopped", "naw");
-        stoppedFlowPlan.setEgressAction(new EgressActionConfiguration("EgressActionConfig", "EgressActionConfigType"));
 
         TransformFlow runningTransformFlow = transformFlowService.buildFlow(runningFlowPlan, Collections.emptyList());
         TransformFlow stoppedTransformFlow = transformFlowService.buildFlow(stoppedFlowPlan, Collections.emptyList());
@@ -127,9 +120,6 @@ class TransformFlowServiceTest {
         assertThat(cFlowSnapshot.isRunning()).isFalse();
         assertThat(cFlowSnapshot.isTestMode()).isTrue();
         assertThat(cFlowSnapshot.getMaxErrors()).isEqualTo(1);
-
-        assertThat(systemSnapshot.getRunningTransformFlows()).isNull();
-        assertThat(systemSnapshot.getTestTransformFlows()).isNull();
     }
 
     @Test
@@ -139,8 +129,11 @@ class TransformFlowServiceTest {
         TransformFlow invalid = transformFlow("invalid", FlowState.INVALID, false, 2);
 
         SystemSnapshot systemSnapshot = new SystemSnapshot();
-        systemSnapshot.setRunningTransformFlows(List.of("running", "stopped", "invalid", "missing"));
-        systemSnapshot.setTestTransformFlows(List.of("stopped", "missing"));
+        systemSnapshot.setTransformFlows(List.of(
+                new TransformFlowSnapshot("running", true, false),
+                new TransformFlowSnapshot("stopped", true, true),
+                new TransformFlowSnapshot("invalid", true, false),
+                new TransformFlowSnapshot("missing", true, true)));
 
         Mockito.when(transformFlowRepo.findAll()).thenReturn(List.of(running, stopped, invalid));
         Mockito.when(transformFlowRepo.findById("running")).thenReturn(Optional.of(running));

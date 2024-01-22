@@ -44,11 +44,10 @@ class EgressFlowPlanGeneratorTest {
         List<ActionGeneratorInput> egress = List.of(new ActionGeneratorInput("e1", "org.e1"), new ActionGeneratorInput("e2", "org.e2"));
 
         List<FlowPlan> flowPlans = egressFlowPlanGenerator.generateEgressFlowPlans("base", egress);
-        assertThat(flowPlans).hasSize(3);
+        assertThat(flowPlans).hasSize(2);
 
         matches(flowPlans.get(0), "base-egress-1", new ActionConfigMatcher("e1", "org.e1"));
         matches(flowPlans.get(1), "base-egress-2", new ActionConfigMatcher("e2", "org.e2"));
-        matches(flowPlans.get(2), "base-egress-3", new ActionConfigMatcher("e1", "org.e1"));
     }
 
     @Test

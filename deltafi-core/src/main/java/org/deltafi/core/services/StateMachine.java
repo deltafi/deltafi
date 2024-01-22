@@ -31,7 +31,7 @@ import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.*;
 
-import static org.deltafi.common.constant.DeltaFiConstants.SYNTHETIC_EGRESS_ACTION_FOR_TEST_EGRESS;
+import static org.deltafi.common.constant.DeltaFiConstants.SYNTHETIC_EGRESS_ACTION_FOR_TEST;
 
 @Service
 @AllArgsConstructor
@@ -45,6 +45,8 @@ public class StateMachine {
     private final QueueManagementService queueManagementService;
     private final CollectEntryService collectEntryService;
     private final ScheduledCollectService scheduledCollectService;
+
+    // TODO: detect flows that don't have a followon flow
 
     List<ActionInvocation> advance(DeltaFile deltaFile) {
         return advance(deltaFile, false, new HashMap<>());
@@ -69,7 +71,14 @@ public class StateMachine {
             toComplete.setState(ActionState.COMPLETE);
         }
 
-        List<ActionInvocation> actionInvocations = advanceTransformation(deltaFile, newDeltaFile, pendingQueued);
+        List<ActionInvocation> actionInvocations = new ArrayList<>();
+        if (!deltaFile.getEgress().isEmpty()) {
+            deltaFile.getEgress().stream()
+                    .map(egress -> advanceEgress(egress, deltaFile, newDeltaFile, pendingQueued))
+                    .forEach(actionInvocations::addAll);
+        } else {
+            actionInvocations.addAll(advanceTransformation(deltaFile, newDeltaFile, pendingQueued));
+        }
 
         if (!deltaFile.hasPendingActions()) {
             deltaFile.setStage(deltaFile.hasErroredAction() ? DeltaFileStage.ERROR : DeltaFileStage.COMPLETE);
@@ -80,19 +89,28 @@ public class StateMachine {
         return actionInvocations;
     }
 
+    List<ActionInvocation> advanceEgress(Egress egress, DeltaFile deltaFile, boolean newDeltaFile, Map<String, Long> pendingQueued) {
+        EgressFlow egressFlow = egressFlowService.getRunningFlowByName(egress.getFlow());
+        return advanceEgressFlow(egressFlow, deltaFile, newDeltaFile, pendingQueued);
+    }
+
     public List<ActionInvocation> advanceSubscriber(Subscriber subscriber, DeltaFile deltaFile, boolean newDeltaFile) {
+        List<ActionInvocation> enqueueActions;
         if (subscriber instanceof TransformFlow transformFlow) {
-            List<ActionInvocation> enqueueActions = advanceTransformation(transformFlow, deltaFile, newDeltaFile, new HashMap<>());
-            if (!deltaFile.hasPendingActions()) {
-                deltaFile.setStage(deltaFile.hasErroredAction() ? DeltaFileStage.ERROR : DeltaFileStage.COMPLETE);
-            }
-
-            deltaFile.recalculateBytes();
-
-            return enqueueActions;
+            enqueueActions = advanceTransformation(transformFlow, deltaFile, newDeltaFile, new HashMap<>());
+        } else if (subscriber instanceof EgressFlow egressFlow) {
+            enqueueActions = advanceEgressFlow(egressFlow, deltaFile, newDeltaFile,  new HashMap<>());
+        } else {
+            throw new IllegalArgumentException("Unexpected subscriber type " + subscriber.getClass().getSimpleName());
         }
 
-        throw new IllegalArgumentException("Unexpected subscriber type " + subscriber.getClass().getSimpleName());
+        if (!deltaFile.hasPendingActions()) {
+            deltaFile.setStage(deltaFile.hasErroredAction() ? DeltaFileStage.ERROR : DeltaFileStage.COMPLETE);
+        }
+
+        deltaFile.recalculateBytes();
+
+        return enqueueActions;
     }
 
     List<ActionInvocation> advanceTransformation(TransformFlow transformFlow, DeltaFile deltaFile, boolean newDeltaFile, Map<String, Long> pendingQueued) {
@@ -100,7 +118,7 @@ public class StateMachine {
             return Collections.emptyList();
         }
 
-        return internalAdvanceTransformation(transformFlow, deltaFile, newDeltaFile, pendingQueued);
+        return advanceTransformFlow(transformFlow, deltaFile, newDeltaFile, pendingQueued);
     }
 
     private List<ActionInvocation> advanceTransformation(DeltaFile deltaFile, boolean newDeltaFile, Map<String, Long> pendingQueued) {
@@ -109,14 +127,14 @@ public class StateMachine {
         }
 
         TransformFlow transformFlow = transformFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow());
-        return internalAdvanceTransformation(transformFlow, deltaFile, newDeltaFile, pendingQueued);
+        return advanceTransformFlow(transformFlow, deltaFile, newDeltaFile, pendingQueued);
     }
 
     private boolean skipTransform(DeltaFile deltaFile) {
-        return deltaFile.hasErroredAction() || deltaFile.hasFilteredAction() || deltaFile.hasReinjectedAction();
+        return deltaFile.hasErroredAction() || deltaFile.hasFilteredAction();
     }
 
-    private List<ActionInvocation> internalAdvanceTransformation(TransformFlow transformFlow, DeltaFile deltaFile, boolean newDeltaFile, Map<String, Long> pendingQueued) {
+    public List<ActionInvocation> advanceTransformFlow(TransformFlow transformFlow, DeltaFile deltaFile, boolean newDeltaFile, Map<String, Long> pendingQueued) {
         if (transformFlow.getTransformActions().stream().anyMatch(transformActionConfiguration ->
                 deltaFile.hasCollectedAction(transformFlow.getName(), transformActionConfiguration.getName()))) {
             deltaFile.setStage(DeltaFileStage.COMPLETE);
@@ -131,22 +149,26 @@ public class StateMachine {
         }
 
         if (transformFlow.isTestMode()) {
-            deltaFile.queueAction(transformFlow.getName(), SYNTHETIC_EGRESS_ACTION_FOR_TEST_EGRESS, ActionType.EGRESS, false);
-            deltaFile.completeAction(transformFlow.getName(), SYNTHETIC_EGRESS_ACTION_FOR_TEST_EGRESS, OffsetDateTime.now(), OffsetDateTime.now());
+            deltaFile.queueAction(transformFlow.getName(), SYNTHETIC_EGRESS_ACTION_FOR_TEST, ActionType.EGRESS, false);
+            deltaFile.completeAction(transformFlow.getName(), SYNTHETIC_EGRESS_ACTION_FOR_TEST, OffsetDateTime.now(), OffsetDateTime.now(), deltaFile.lastCompleteAction().getContent(), deltaFile.getMetadata(), List.of());
             deltaFile.addEgressFlow(transformFlow.getName());
             deltaFile.setTestModeReason("Transform flow '" + transformFlow.getName() + "' in test mode");
+        }
+
+        return Collections.emptyList();
+    }
+
+    List<ActionInvocation> advanceEgressFlow(EgressFlow egressFlow, DeltaFile deltaFile, boolean newDeltaFile, Map<String, Long> pendingQueued) {
+        String flowName = egressFlow.getName();
+        EgressActionConfiguration egressAction = egressFlow.getEgressAction();
+        if (egressAction == null || deltaFile.hasTerminalAction(flowName, egressAction.getName())) {
             return Collections.emptyList();
         }
 
-        EgressActionConfiguration egressAction = transformFlow.getEgressAction();
-        if (deltaFile.hasTerminalAction(transformFlow.getName(), egressAction.getName())) {
-            return Collections.emptyList();
-        }
-
-        Action action = deltaFile.queueAction(transformFlow.getName(), egressAction.getName(), ActionType.EGRESS,
+        Action action = deltaFile.queueAction(flowName, egressAction.getName(), ActionType.EGRESS,
                 coldQueue(egressAction.getType(), pendingQueued));
-        deltaFile.addEgressFlow(transformFlow.getName());
-        return buildActionInvocation(transformFlow.getName(), egressAction, deltaFile, transformFlow.getName(), newDeltaFile, action)
+        deltaFile.addEgressFlow(flowName);
+        return buildActionInvocation(flowName, egressAction, deltaFile, flowName, newDeltaFile, action)
                 .map(List::of).orElse(Collections.emptyList());
     }
 
@@ -165,8 +187,8 @@ public class StateMachine {
                                                                                    DeltaFile deltaFile) {
         if (egressFlow.isTestMode()) {
             // TODO: test mode should be passed from flow to flow in the DeltaFile
-            deltaFile.queueAction(egressFlow.getName(), SYNTHETIC_EGRESS_ACTION_FOR_TEST_EGRESS, ActionType.EGRESS, false);
-            deltaFile.completeAction(egressFlow.getName(), SYNTHETIC_EGRESS_ACTION_FOR_TEST_EGRESS, OffsetDateTime.now(), OffsetDateTime.now());
+            deltaFile.queueAction(egressFlow.getName(), SYNTHETIC_EGRESS_ACTION_FOR_TEST, ActionType.EGRESS, false);
+            deltaFile.completeAction(egressFlow.getName(), SYNTHETIC_EGRESS_ACTION_FOR_TEST, OffsetDateTime.now(), OffsetDateTime.now());
             deltaFile.addEgressFlow(egressFlow.getName());
             deltaFile.setTestModeReason("Egress flow '" + egressFlow.getName() + "' in test mode");
         } else {

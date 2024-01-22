@@ -22,6 +22,7 @@ import org.deltafi.common.rules.RuleEvaluator;
 import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionEventType;
 import org.deltafi.common.types.ActionType;
+import org.deltafi.common.types.Content;
 import org.deltafi.common.types.DefaultBehavior;
 import org.deltafi.common.types.DefaultRule;
 import org.deltafi.common.types.DeltaFile;
@@ -33,6 +34,7 @@ import org.deltafi.common.types.PublishRules;
 import org.deltafi.common.types.Publisher;
 import org.deltafi.common.types.Rule;
 import org.deltafi.common.types.Subscriber;
+import org.deltafi.core.types.DataSource;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
@@ -83,6 +85,18 @@ public class PublisherService {
 
         if (subscribers.isEmpty()) {
             return handleNoMatches(publisher, deltaFile);
+        }
+
+        return subscribers;
+    }
+
+    public Set<Subscriber> subscribers(DataSource dataSource, DeltaFile deltaFile) {
+        Objects.requireNonNull(dataSource, "The data source cannot be null");
+
+        Set<Subscriber> subscribers = subscribers(Set.of(dataSource.getTopic()), deltaFile);
+
+        if (subscribers.isEmpty()) {
+            handleNoMatches(dataSource, deltaFile);
         }
 
         return subscribers;
@@ -164,6 +178,11 @@ public class PublisherService {
         return Set.of();
     }
 
+    private void handleNoMatches(DataSource dataSource, DeltaFile deltaFile) {
+        errorDeltaFile(deltaFile, dataSource.getName(), "No subscribers found for data source `" + dataSource.getName() + "`");
+        setStage(deltaFile);
+    }
+
     private Set<Subscriber> getSubscribers(String topic) {
         return subscriberServices.stream()
                 .map(subscriberService -> subscriberService.subscriberForTopic(topic))
@@ -182,8 +201,11 @@ public class PublisherService {
     }
 
     private void errorDeltaFile(DeltaFile deltaFile, String publisherName, String context) {
+        // grab the last content list to copy into the synthetic error action to make it available for retry
+        List<Content> toCopy = deltaFile.lastContent();
         queueSyntheticAction(deltaFile, publisherName);
         deltaFile.errorAction(buildErrorEvent(deltaFile, publisherName, context));
+        deltaFile.lastAction().setContent(toCopy);
     }
 
     private void filterDeltaFile(DeltaFile deltaFile, String publisherName, String context) {

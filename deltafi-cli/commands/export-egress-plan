@@ -34,16 +34,6 @@ QUERY="fragment ActionFields on ActionConfiguration {
               artifactId
               version
             }
-            includeNormalizeFlows
-            excludeNormalizeFlows
-            formatAction {
-              ... ActionFields
-              requiresDomains
-              requiresEnrichments
-            }
-            validateActions {
-              ... ActionFields
-            }
             egressAction {
               ... ActionFields
             }

@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 @Builder
 @Document
 public class DeltaFile {
+  // TODO - change the name of the collection and create a shard key, remove the old collection or migrate over?
   @Id
   private String did;
   private List<String> parentDids;
@@ -297,6 +298,23 @@ public class DeltaFile {
     return action;
   }
 
+  public Action split(ActionEvent event, List<String> childDids) {
+    Optional<Action> optionalAction = getActions().stream()
+            .filter(action -> action.getFlow().equals(event.getFlow()) && action.getName().equals(event.getAction()) && !action.terminal())
+            .findFirst();
+    if (optionalAction.isEmpty()) {
+      throw new UnexpectedActionException(event.getFlow(), event.getAction(), did, queuedActions());
+    }
+
+    Action action = optionalAction.get();
+    setActionState(action, ActionState.SPLIT, event.getStart(), event.getStop());
+
+    this.childDids = childDids;
+    this.stage = DeltaFileStage.COMPLETE;
+
+    return action;
+  }
+
   public void collectedAction(String flow, String name, OffsetDateTime start, OffsetDateTime stop) {
     getActions().stream()
             .filter(action -> action.getFlow().equals(flow) && action.getName().equals(name) && !action.terminal())
@@ -309,22 +327,12 @@ public class DeltaFile {
             .forEach(action -> setFilteredActionState(action, event.getStart(), event.getStop(), event.getFilter().getMessage(), event.getFilter().getContext()));
   }
 
-  public void reinjectAction(ActionEvent event) {
-    getActions().stream()
-            .filter(action -> action.getFlow().equals(event.getFlow()) && action.getName().equals(event.getAction()) && !action.terminal())
-            .forEach(action -> setActionState(action, ActionState.REINJECTED, event.getStart(), event.getStop()));
-  }
-
   public Action lastAction() {
-    return getActions().get(getActions().size() - 1);
-  }
+    if (actions == null || actions.isEmpty()) {
+      return null;
+    }
 
-  public void setLastActionReinjected() {
-    lastAction().setState(ActionState.REINJECTED);
-  }
-
-  public void removeLastAction() {
-    getActions().remove(lastAction());
+    return actions.get(actions.size() - 1);
   }
 
   public void errorAction(ActionEvent event) {
@@ -463,10 +471,6 @@ public class DeltaFile {
     return hasActionInState(ActionState.FILTERED);
   }
 
-  public boolean hasReinjectedAction() {
-    return hasActionInState(ActionState.REINJECTED);
-  }
-
   public boolean hasCollectingAction() {
     return hasActionInState(ActionState.COLLECTING);
   }
@@ -581,13 +585,13 @@ public class DeltaFile {
 
   public Action lastCompleteAction() {
     return getActions().stream()
-            .filter(Action::complete)
+            .filter(Action::completeOrRetried)
             .reduce((first, second) -> second)
             .orElse(null);
   }
 
   public @NotNull List<Content> lastContent() {
-    Action lastAction = lastAction();
+    Action lastAction = lastCompleteAction();
     if (lastAction == null || lastAction.getContent() == null) {
       return Collections.emptyList();
     }

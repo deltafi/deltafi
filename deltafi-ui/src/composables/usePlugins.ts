@@ -36,8 +36,6 @@ export default function usePlugins() {
         actions: {
           name: true,
           description: true,
-          requiresDomains: true,
-          requiresEnrichments: true,
         },
         variables: {
           name: true,
@@ -54,8 +52,6 @@ export default function usePlugins() {
             value: true,
             defaultValue: true,
             description: true,
-            editable: true,
-            hidden: true,
             refreshable: true,
           },
         },

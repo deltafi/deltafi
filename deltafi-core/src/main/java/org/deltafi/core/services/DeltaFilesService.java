@@ -48,10 +48,10 @@ import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.repo.QueuedAnnotationRepo;
 import org.deltafi.core.retry.MongoRetryable;
 import org.deltafi.core.services.pubsub.PublisherService;
-import org.deltafi.common.types.Publisher;
 import org.deltafi.common.types.Subscriber;
 import org.deltafi.core.types.ResumePolicy;
 import org.deltafi.core.types.*;
+import org.deltafi.core.types.DataSource;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.env.Environment;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -77,6 +77,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.deltafi.common.constant.DeltaFiConstants.*;
+import static org.deltafi.common.types.ActionType.EGRESS;
 import static org.deltafi.core.repo.DeltaFileRepoImpl.*;
 
 @Service
@@ -102,6 +103,7 @@ public class DeltaFilesService {
 
     public static final String NO_EGRESS_CONFIGURED_CAUSE = "No egress flow configured";
     public static final String NO_EGRESS_CONFIGURED_CONTEXT = "This DeltaFile does not match the criteria of any running egress flows";
+    public static final String MISSING_FLOW_CAUSE = "The flow is no longer installed or running";
 
     private static final int DEFAULT_QUERY_LIMIT = 50;
 
@@ -119,7 +121,7 @@ public class DeltaFilesService {
     private final CoreAuditLogger coreAuditLogger;
     private final DidMutexService didMutexService;
     private final DeltaFileCacheService deltaFileCacheService;
-    private final TimedIngressFlowService timedIngressFlowService;
+    private final DataSourceService dataSourceService;
     private final QueueManagementService queueManagementService;
     private final QueuedAnnotationRepo queuedAnnotationRepo;
     private final Environment environment;
@@ -262,9 +264,18 @@ public class DeltaFilesService {
         return deltaFileRepo.countByStageAndErrorAcknowledgedIsNull(DeltaFileStage.ERROR);
     }
 
-    public DeltaFile ingress(IngressEventItem ingressEventItem, OffsetDateTime ingressStartTime,
+    public DeltaFile ingress(RestDataSource dataSource, IngressEventItem ingressEventItem, OffsetDateTime ingressStartTime,
             OffsetDateTime ingressStopTime) {
-        return ingress(ingressEventItem, Collections.emptyList(), ingressStartTime, ingressStopTime);
+        return ingress(dataSource, ingressEventItem, Collections.emptyList(), ingressStartTime, ingressStopTime);
+    }
+
+    private DeltaFile buildIngressDeltaFile(ActionEvent parentEvent, IngressEventItem ingressEventItem) {
+        ingressEventItem.setFlow(parentEvent.getFlow());
+        DeltaFile deltaFile = buildIngressDeltaFile(ingressEventItem, Collections.emptyList(), parentEvent.getStart(),
+                parentEvent.getStop());
+        deltaFile.lastAction().setName(parentEvent.getAction());
+        deltaFile.lastAction().setFlow(parentEvent.getFlow());
+        return deltaFile;
     }
 
     private DeltaFile buildIngressDeltaFile(IngressEventItem ingressEventItem, List<String> parentDids,
@@ -310,39 +321,10 @@ public class DeltaFilesService {
                 .build();
     }
 
-    public DeltaFile ingress(IngressEventItem ingressEventItem, List<String> parentDids, OffsetDateTime ingressStartTime,
+    public DeltaFile ingress(RestDataSource dataSource, IngressEventItem ingressEventItem, List<String> parentDids, OffsetDateTime ingressStartTime,
             OffsetDateTime ingressStopTime) {
         DeltaFile deltaFile = buildIngressDeltaFile(ingressEventItem, parentDids, ingressStartTime, ingressStopTime);
-
-        advanceAndSave(deltaFile);
-        return deltaFile;
-    }
-
-    public DeltaFile buildIngressDeltaFile(ActionEvent parentEvent, IngressEventItem ingressEventItem) {
-        DeltaFile deltaFile = buildIngressDeltaFile(ingressEventItem, Collections.emptyList(), parentEvent.getStart(),
-                parentEvent.getStop());
-        deltaFile.lastAction().setName(parentEvent.getAction());
-        deltaFile.lastAction().setFlow(parentEvent.getFlow());
-        return deltaFile;
-    }
-
-    public DeltaFile ingressOrErrorOnMissingFlow(IngressEventItem ingressEventItem, String ingressActionName,
-            String ingressFlow, OffsetDateTime ingressStartTime,
-            OffsetDateTime ingressStopTime) {
-        DeltaFile deltaFile = buildIngressDeltaFile(ingressEventItem, Collections.emptyList(), ingressStartTime,
-                ingressStopTime);
-        deltaFile.lastAction().setName(ingressActionName);
-        deltaFile.lastAction().setFlow(ingressFlow);
-
-        try {
-            advanceAndSave(deltaFile);
-        } catch (MissingFlowException e) {
-            Action ingressAction = deltaFile.getActions().get(0);
-            ingressAction.setState(ActionState.ERROR);
-            ingressAction.setErrorCause(e.getMessage());
-            deltaFile.setStage(DeltaFileStage.ERROR);
-            deltaFileRepo.save(deltaFile);
-        }
+        publishDeltaFile(dataSource, deltaFile, new Counter()); // Should metrics be handled here?
         return deltaFile;
     }
 
@@ -488,49 +470,33 @@ public class DeltaFilesService {
     }
 
     private String egressFlow(String flow, String actionName, DeltaFile deltaFile) {
-        Optional<Action> action = deltaFile.actionNamed(flow, actionName);
-        return action.map(value -> egressFlow(value, deltaFile)).orElse(null);
+        return deltaFile.actionNamed(flow, actionName)
+                .map(this::egressFlow).orElse(null);
     }
 
-    private String egressFlow(Action action, DeltaFile deltaFile) {
-        if (deltaFile.getStage().equals(DeltaFileStage.IN_FLIGHT) || (deltaFile.getStage().equals(DeltaFileStage.COMPLETE) && deltaFile.getEgressed())) {
-            return action.getFlow();
-        }
-
-        return null;
+    private String egressFlow(Action action) {
+        return action.getType() == EGRESS ? action.getFlow() : null;
     }
 
     public void ingressFromAction(ActionEvent event) {
-        TimedIngressFlow timedIngressFlow = timedIngressFlowService.getRunningFlowByName(event.getFlow());
+        TimedDataSource dataSource = dataSourceService.getRunningTimedDataSource(event.getFlow());
         IngressEvent ingressEvent = event.getIngress();
-        boolean completedExecution = timedIngressFlowService.completeExecution(timedIngressFlow.getName(),
+        boolean completedExecution = dataSourceService.completeExecution(dataSource.getName(),
                 event.getDid(), ingressEvent.getMemo(), ingressEvent.isExecuteImmediate(),
-                ingressEvent.getStatus(), ingressEvent.getStatusMessage(), timedIngressFlow.getCronSchedule());
+                ingressEvent.getStatus(), ingressEvent.getStatusMessage(), dataSource.getCronSchedule());
         if (!completedExecution) {
             log.warn("Received unexpected ingress event with did " + event.getDid());
             return;
         }
 
         final Counter counter = new Counter();
-        if (timedIngressFlow.publishRules() != null) {
-            ingressEvent.getIngressItems().stream()
-                    .map((item) -> buildIngressDeltaFile(event, item))
-                    .forEach(deltaFile -> publishDeltaFile(timedIngressFlow, deltaFile, counter));
-        } else if (timedIngressFlow.getTargetFlow() != null) {
-            ingressEvent.getIngressItems().forEach(ingressItem -> {
-                ingressItem.setFlow(timedIngressFlow.getTargetFlow());
-                DeltaFile deltaFile = ingressOrErrorOnMissingFlow(ingressItem, event.getAction(), event.getFlow(),
-                        event.getStart(), event.getStop());
-                if (deltaFile.getStage() == DeltaFileStage.ERROR) {
-                    counter.erroredFiles++;
-                }
-                counter.byteCount += deltaFile.getIngressBytes();
-            });
-        }
+        ingressEvent.getIngressItems().stream()
+                .map((item) -> buildIngressDeltaFile(event, item))
+                .forEach(deltaFile -> publishDeltaFile(dataSource, deltaFile, counter));
 
         String actionClass =
-                (timedIngressFlow.findActionConfigByName(event.getAction()) != null)
-                        ? timedIngressFlow.findActionConfigByName(event.getAction()).getType()
+                (dataSource.findActionConfigByName(event.getAction()) != null)
+                        ? dataSource.findActionConfigByName(event.getAction()).getType()
                         : null;
 
         List<Metric> metrics = (event.getMetrics() != null) ? event.getMetrics() : new ArrayList<>();
@@ -543,34 +509,44 @@ public class DeltaFilesService {
             metrics.add(new Metric(FILES_FILTERED, counter.filteredFiles));
         }
 
-        String flowName = timedIngressFlow.getTargetFlow() != null ? timedIngressFlow.getTargetFlow() :  timedIngressFlow.getName();
-        generateIngressMetrics(metrics, event, flowName, actionClass);
+        generateIngressMetrics(metrics, event, dataSource.getName(), actionClass);
     }
 
-    private void publishDeltaFile(Publisher publisher, DeltaFile deltaFile, Counter counter) {
-        // need a default source flow to handle no matches off an ingress action
-        deltaFile.getSourceInfo().setFlow(publisher.getName());
+    private void publishDeltaFile(Flow flow, DeltaFile deltaFile, Counter counter) {
+        Set<Subscriber> subscribers;
+        boolean updateSourceInfo = false;
+        if (flow instanceof DataSource ds) {
+            subscribers = publisherService.subscribers(ds, deltaFile);
+            updateSourceInfo = true;
+        } else if (flow instanceof TransformFlow tf) {
+            subscribers = publisherService.subscribers(tf, deltaFile);
+        } else {
+            throw new IllegalArgumentException("Unexpected flow type " + flow.getClass().getName());
+        }
         counter.byteCount += deltaFile.getIngressBytes();
 
-        Set<Subscriber> subscribers = publisherService.subscribers(publisher, deltaFile);
         int count = subscribers.size();
         if (count == 1) {
             Subscriber subscriber = subscribers.iterator().next();
-            deltaFile.getSourceInfo().setFlow(subscriber.getName());
-            advanceAndSave(subscriber, deltaFile, false);
+            if (updateSourceInfo) {
+                deltaFile.getSourceInfo().setFlow(subscriber.getName());
+            }
+            advanceAndSave(subscriber, deltaFile);
         } else if (count > 1) {
             List<DeltaFile> childDeltaFiles = new ArrayList<>();
             List<ActionInvocation> actionInvocations = new ArrayList<>();
             for (Subscriber subscriber : subscribers) {
                 DeltaFile child = createChildDeltaFile(deltaFile, uuidGenerator.generate());
-                child.getSourceInfo().setFlow(subscriber.getName());
-                actionInvocations.addAll(advanceOnly(subscriber, child, false));
+                if (updateSourceInfo) {
+                    child.getSourceInfo().setFlow(subscriber.getName());
+                }
+                actionInvocations.addAll(advanceOnly(subscriber, child));
                 deltaFile.getChildDids().add(child.getDid());
                 childDeltaFiles.add(child);
             }
 
             // mark the parent as published, so it can be replayed properly
-            completeSyntheticPublishAction(deltaFile, publisher.getName());
+            completeSyntheticPublishAction(deltaFile, flow.getName());
             deltaFile.setStage(DeltaFileStage.COMPLETE);
             deltaFile.recalculateBytes();
             deltaFileCacheService.save(deltaFile);
@@ -610,34 +586,93 @@ public class DeltaFilesService {
 
     public void transform(DeltaFile deltaFile, ActionEvent event) {
         List<TransformEvent> transformEvents = event.getTransform();
-        if (transformEvents.isEmpty()) {
-            // TODO: error -- is this already handled in the event validation?
-        } else if (transformEvents.size() == 1 && transformEvents.get(0).getName() == null) {
+        TransformFlow transformFlow;
+        try {
+            transformFlow = transformFlowService.getRunningFlowByName(event.getFlow());
+        } catch (MissingFlowException missingFlowException) {
+            handleMissingFlow(deltaFile, missingFlowException.getMessage());
+            return;
+        }
+
+        if (transformEvents.size() == 1 && transformEvents.get(0).getName() == null) {
             TransformEvent transformEvent = transformEvents.get(0);
             deltaFile.completeAction(event, transformEvent.getContent(), transformEvent.getMetadata(),
                     transformEvent.getDeleteMetadataKeys());
 
             deltaFile.addAnnotations(transformEvent.getAnnotations());
-            advanceAndSave(deltaFile);
+
+            if (transformFlow.getPublishRules() != null && !transformFlow.isTestMode()) {
+                // find any actions left to run prior to publishing
+                List<ActionInvocation> actionInvocations = stateMachine.advanceTransformation(transformFlow, deltaFile, false, new HashMap<>());
+                if (actionInvocations.isEmpty()) {
+                    publishDeltaFile(transformFlow, deltaFile, new Counter());
+                } else {
+                    saveAndEnqueue(deltaFile, actionInvocations);
+                }
+            } else {
+                advanceAndSave(deltaFile);
+            }
         } else {
-            // TODO: create children
+            List<String> childDids = createChildren(transformFlow, deltaFile, event);
+            deltaFile.split(event, childDids);
+            deltaFileCacheService.save(deltaFile);
         }
     }
 
-    public void egress(DeltaFile deltaFile, ActionEvent event) {
-        // replicate the message that was sent to this action so we can republish the content and metadata that was processed
-        DeltaFileMessage sentMessage = deltaFile.forQueue();
+    public List<String> createChildren(TransformFlow transformFlow, DeltaFile deltaFile, ActionEvent event) {
+        List<ActionInvocation> actionInvocations = new ArrayList<>();
+        Map<String, Long> pendingQueued = new HashMap<>();
+        List<String> childDids = new ArrayList<>();
 
-        deltaFile.completeAction(event, sentMessage.getContentList(), sentMessage.getMetadata(), Collections.emptyList());
+        List<DeltaFile> childDeltaFiles = event.getTransform().stream().map(transformEvent -> {
+            String childDid = UUID.randomUUID().toString();
+            childDids.add(childDid);
+            DeltaFile child = createChildDeltaFile(deltaFile, childDid);
+            child.completeAction(event, transformEvent.getContent(), transformEvent.getMetadata(),
+                    transformEvent.getDeleteMetadataKeys());
+            child.addAnnotations(transformEvent.getAnnotations());
+
+            if (transformFlow.getPublishRules() != null && !transformFlow.isTestMode()) {
+                List<ActionInvocation> childActions = stateMachine.advanceTransformation(transformFlow, deltaFile, true, pendingQueued);
+                if (actionInvocations.isEmpty()) {
+                    publishDeltaFile(transformFlow, deltaFile, new Counter());
+                    // child is persisted as part of the publishFromTransform method no need to add it to the list to save
+                    return null;
+                } else {
+                    actionInvocations.addAll(childActions);
+                }
+            } else {
+                actionInvocations.addAll(advanceOnly(deltaFile, true, pendingQueued));
+            }
+
+            child.recalculateBytes();
+
+            return child;
+        }).filter(Objects::nonNull).toList();
+
+        deltaFileRepo.saveAll(childDeltaFiles);
+        enqueueActions(actionInvocations);
+
+        return childDids;
+    }
+
+    public void egress(DeltaFile deltaFile, ActionEvent event) {
+        deltaFile.completeAction(event, deltaFile.lastCompleteAction().getContent(), deltaFile.getMetadata(), Collections.emptyList());
         deltaFile.setEgressed(true);
 
+        // TODO - wrap this in an exception and handle it so we don't get stuck with a deltafile that has all complete actions but is still in flight
         Set<String> expectedAnnotations = getPendingAnnotationsForFlow(event.getFlow());
 
         if (expectedAnnotations != null && !expectedAnnotations.isEmpty()) {
             deltaFile.addPendingAnnotationsForFlow(event.getFlow());
         }
 
-        advanceAndSave(deltaFile);
+        // egress is always the last step, no need to advance through the state machine
+        if (!deltaFile.hasPendingActions()) {
+            deltaFile.setStage(deltaFile.hasErroredAction() ? DeltaFileStage.ERROR : DeltaFileStage.COMPLETE);
+        }
+
+        deltaFileCacheService.save(deltaFile);
     }
 
     public void filter(DeltaFile deltaFile, ActionEvent event) {
@@ -668,7 +703,7 @@ public class DeltaFilesService {
         ActionConfiguration actionConfiguration = actionConfiguration(event.getFlow(), event.getAction());
         if (actionConfiguration != null) {
             resumeDetails = resumePolicyService.getAutoResumeDelay(deltaFile, event, actionConfiguration.getActionType().name());
-        } else if (event.getAction().equals(NO_EGRESS_FLOW_CONFIGURED_ACTION)) {
+        } else if (event.getAction().equals(NO_EGRESS_FLOW_CONFIGURED_ACTION) || event.getAction().equals(MISSING_FLOW_ACTION)) {
             resumeDetails = resumePolicyService.getAutoResumeDelay(deltaFile, event, ActionEventType.UNKNOWN.name());
         }
         resumeDetails.ifPresentOrElse(
@@ -816,149 +851,19 @@ public class DeltaFilesService {
                 .build();
     }
 
-    /*public void reinject(DeltaFile deltaFile, ActionEvent event) throws MissingEgressFlowException {
-        List<ReinjectEvent> reinjects = event.getReinject();
-        List<DeltaFile> childDeltaFiles = new ArrayList<>();
-        boolean encounteredError = false;
-        List<ActionInvocation> actionInvocations = new ArrayList<>();
-        Map<String, Long> pendingQueued = new HashMap<>();
-
-        List<String> allowedActions = new ArrayList<>();
-        if (transformFlowService.hasRunningFlow(deltaFile.getSourceInfo().getFlow())) {
-            TransformFlow transformFlow = transformFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow());
-            allowedActions.addAll(transformFlow.getTransformActions().stream().map(TransformActionConfiguration::getName).toList());
-        }
-
-        if (!allowedActions.contains(event.getAction())) {
-            deltaFile.errorAction(event, "Attempted to reinject from an Action that is not a TransformAction or LoadAction: " + event.getAction(), "");
-        } else if (reinjects.isEmpty()) {
-            deltaFile.errorAction(event, "Attempted to reinject DeltaFile into 0 children", "");
-        } else {
-            if (deltaFile.getChildDids() == null) {
-                deltaFile.setChildDids(new ArrayList<>());
-            }
-
-            OffsetDateTime now = OffsetDateTime.now(clock);
-
-            Set<String> transformationFlowsDisabled = transformFlowService.flowErrorsExceeded();
-            Map<String, ProcessingType> evaluatedFlows = new HashMap<>();
-
-            for (ReinjectEvent reinject : reinjects) {
-                // Before we build a DeltaFile, make sure the reinject makes sense to do--i.e. the flow is enabled and valid
-                ProcessingType processingType;
-                if (evaluatedFlows.containsKey(reinject.getFlow())) {
-                    processingType = evaluatedFlows.get(reinject.getFlow());
-                } else if (transformFlowService.hasRunningFlow(reinject.getFlow())) {
-                    if (transformationFlowsDisabled.contains(reinject.getFlow())) {
-                        deltaFile.errorAction(buildFlowIngressDisabledErrorEvent(deltaFile, event.getFlow(),
-                                event.getAction(), reinject.getFlow(), now));
-                        encounteredError = true;
-                        break;
-                    } else {
-                        processingType = ProcessingType.TRANSFORMATION;
-                        evaluatedFlows.put(reinject.getFlow(), processingType);
-                    }
-                } else {
-                    deltaFile.errorAction(buildNoChildFlowErrorEvent(deltaFile, event.getFlow(), event.getAction(),
-                            reinject.getFlow(), now));
-                    encounteredError = true;
-                    break;
-                }
-
-                Action action = Action.builder()
-                        .name(INGRESS_ACTION)
-                        .type(ActionType.INGRESS)
-                        .flow(reinject.getFlow())
-                        .state(ActionState.COMPLETE)
-                        .created(now)
-                        .modified(now)
-                        .content(reinject.getContent())
-                        .metadata(reinject.getMetadata())
-                        .build();
-
-                DeltaFile child = DeltaFile.builder()
-                        .schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
-                        .did(UUID.randomUUID().toString())
-                        .parentDids(List.of(deltaFile.getDid()))
-                        .childDids(Collections.emptyList())
-                        .requeueCount(0)
-                        .ingressBytes(ContentUtil.computeContentSize(reinject.getContent()))
-                        .stage(DeltaFileStage.INGRESS)
-                        .inFlight(true)
-                        .terminal(false)
-                        .contentDeletable(false)
-                        .actions(new ArrayList<>(List.of(action)))
-                        .sourceInfo(SourceInfo.builder()
-                                .flow(reinject.getFlow())
-                                .filename(reinject.getFilename())
-                                .metadata(reinject.getMetadata())
-                                .processingType(processingType)
-                                .build())
-                        .created(now)
-                        .modified(now)
-                        .egressed(false)
-                        .filtered(false)
-                        .build();
-
-                actionInvocations.addAll(advanceOnly(child, true, pendingQueued));
-
-                child.recalculateBytes();
-
-                childDeltaFiles.add(child);
-            }
-
-            if (!encounteredError) {
-                deltaFile.setChildDids(childDeltaFiles.stream().map(DeltaFile::getDid).toList());
-            }
-
-            deltaFile.reinjectAction(event);
-        }
-
-        advanceOnly(deltaFile, false, pendingQueued);
-
-        // do this in two shots.  saveAll performs a bulk insert, but only if all the entries are new
-        deltaFileCacheService.save(deltaFile);
-        if (!encounteredError) {
-            deltaFileRepo.saveAll(childDeltaFiles);
-
-            enqueueActions(actionInvocations);
-        }
-    }*/
-
-    public void splitForTransformationProcessingEgress(DeltaFile deltaFile) throws MissingEgressFlowException {
-        List<ActionInvocation> actionInvocations = new ArrayList<>();
-        Map<String, Long> pendingQueued = new HashMap<>();
-
-        if (Objects.isNull(deltaFile.getChildDids())) {
-            deltaFile.setChildDids(new ArrayList<>());
-        }
-
-        // remove the egress action, since we want the last transform to show SPLIT
-        deltaFile.removeLastAction();
-
-        List<Content> contentList = deltaFile.lastCompleteAction().getContent();
-
-        List<DeltaFile> childDeltaFiles = contentList.stream().map(content -> {
-            DeltaFile child = createChildDeltaFile(deltaFile, UUID.randomUUID().toString());
-            child.lastCompleteAction().setContent(Collections.singletonList(content));
-            deltaFile.getChildDids().add(child.getDid());
-
-            actionInvocations.addAll(advanceOnly(child, true, pendingQueued));
-
-            child.recalculateBytes();
-
-            return child;
-        }).toList();
-
-        deltaFile.setLastActionReinjected();
-
-        advanceOnly(deltaFile, false, pendingQueued);
-
-        // do this in two shots.  saveAll performs a bulk insert, but only if all the entries are new
-        deltaFileCacheService.save(deltaFile);
-        deltaFileRepo.saveAll(childDeltaFiles);
-
-        enqueueActions(actionInvocations);
+    public static ActionEvent buildMissingFlowErrorEvent(DeltaFile deltaFile, OffsetDateTime time, String errorContext) {
+        return ActionEvent.builder()
+                .did(deltaFile.getDid())
+                .flow("MISSING")
+                .action(MISSING_FLOW_ACTION)
+                .start(time)
+                .stop(time)
+                .error(ErrorEvent.builder()
+                        .cause(MISSING_FLOW_CAUSE)
+                        .context(errorContext)
+                        .build())
+                .type(ActionEventType.UNKNOWN)
+                .build();
     }
 
     private static DeltaFile createChildDeltaFile(DeltaFile deltaFile, String childDid) {
@@ -1106,7 +1011,8 @@ public class DeltaFilesService {
 
                             applyRetryOverrides(child, replaceFilename, replaceFlow, removeSourceMetadata, replaceSourceMetadata);
 
-                            if (deltaFile.lastAction().getType() == ActionType.PUBLISH) {
+                            String sourceFlow = deltaFile.getSourceInfo().getFlow();
+                            if (deltaFile.lastAction().getType() == ActionType.PUBLISH && dataSourceService.hasFlow(sourceFlow)) {
                                 rerunPublish(child);
                             } else {
                                 actionInvocations.addAll(advanceOnly(child, true, pendingQueued));
@@ -1140,8 +1046,14 @@ public class DeltaFilesService {
     }
 
     private void rerunPublish(DeltaFile deltaFile) {
-        TimedIngressFlow timedIngressFlow = timedIngressFlowService.getRunningFlowByName(deltaFile.lastAction().getFlow());
-        publishDeltaFile(timedIngressFlow, deltaFile, new Counter());
+        String publisherName = deltaFile.lastAction().getFlow();
+        if (dataSourceService.hasRunningFlow(publisherName)) {
+            publishDeltaFile(dataSourceService.getRunningFlowByName(publisherName), deltaFile, new Counter());
+        } else if (transformFlowService.hasRunningFlow(publisherName)) {
+            publishDeltaFile(transformFlowService.getRunningFlowByName(publisherName), deltaFile, new Counter());
+        } else {
+            throw new IllegalStateException("Unable to re-run the publish action because no running flow was found with the name of " + publisherName);
+        }
     }
 
     public List<AcknowledgeResult> acknowledge(List<String> dids, String reason) {
@@ -1276,8 +1188,8 @@ public class DeltaFilesService {
         return actionInvocations;
     }
 
-    private List<ActionInvocation> advanceOnly(Subscriber subscriber, DeltaFile deltaFile, boolean newDeltaFile) {
-        List<ActionInvocation> actionInvocations = new ArrayList<>(stateMachine.advanceSubscriber(subscriber, deltaFile, newDeltaFile));
+    private List<ActionInvocation> advanceOnly(Subscriber subscriber, DeltaFile deltaFile) {
+        List<ActionInvocation> actionInvocations = new ArrayList<>(stateMachine.advanceSubscriber(subscriber, deltaFile, false));
 
         if (deltaFile.hasCollectingAction()) {
             deltaFileCacheService.remove(deltaFile.getDid());
@@ -1286,8 +1198,8 @@ public class DeltaFilesService {
         return actionInvocations;
     }
 
-    private void advanceAndSave(Subscriber subscriber, DeltaFile deltaFile, boolean newDeltaFile) {
-        List<ActionInvocation> actionInvocations = new ArrayList<>(stateMachine.advanceSubscriber(subscriber, deltaFile, newDeltaFile));
+    private void advanceAndSave(Subscriber subscriber, DeltaFile deltaFile) {
+        List<ActionInvocation> actionInvocations = new ArrayList<>(stateMachine.advanceSubscriber(subscriber, deltaFile, false));
 
         if (deltaFile.hasCollectingAction()) {
             deltaFileCacheService.remove(deltaFile.getDid());
@@ -1303,20 +1215,22 @@ public class DeltaFilesService {
 
     public void advanceAndSave(DeltaFile deltaFile) {
         try {
-            List<ActionInvocation> actionInvocations = new ArrayList<>(stateMachine.advance(deltaFile));
-
-            if (deltaFile.hasCollectingAction()) {
-                deltaFileCacheService.remove(deltaFile.getDid());
-                deltaFileRepo.save(deltaFile);
-            } else {
-                deltaFileCacheService.save(deltaFile);
-            }
-
-            enqueueActions(actionInvocations);
+            saveAndEnqueue(deltaFile, new ArrayList<>(stateMachine.advance(deltaFile)));
         } catch (MissingEgressFlowException e) {
             handleMissingEgressFlow(deltaFile);
             deltaFileCacheService.save(deltaFile);
         }
+    }
+
+    private void saveAndEnqueue(DeltaFile deltaFile, List<ActionInvocation> actionInvocations) {
+        if (deltaFile.hasCollectingAction()) {
+            deltaFileCacheService.remove(deltaFile.getDid());
+            deltaFileRepo.save(deltaFile);
+        } else {
+            deltaFileCacheService.save(deltaFile);
+        }
+
+        enqueueActions(actionInvocations);
     }
 
     private void advanceAndSave(List<DeltaFile> deltaFiles) {
@@ -1346,6 +1260,12 @@ public class DeltaFilesService {
     private void handleMissingEgressFlow(DeltaFile deltaFile) {
         deltaFile.queueNewAction("MISSING", DeltaFiConstants.NO_EGRESS_FLOW_CONFIGURED_ACTION, ActionType.UNKNOWN, false);
         processErrorEvent(deltaFile, buildNoEgressConfiguredErrorEvent(deltaFile, OffsetDateTime.now(clock)));
+        deltaFile.setStage(DeltaFileStage.ERROR);
+    }
+
+    private void handleMissingFlow(DeltaFile deltaFile, String errorContext) {
+        deltaFile.queueNewAction("MISSING", MISSING_FLOW_ACTION, ActionType.UNKNOWN, false);
+        processErrorEvent(deltaFile, buildMissingFlowErrorEvent(deltaFile, OffsetDateTime.now(clock), errorContext));
         deltaFile.setStage(DeltaFileStage.ERROR);
     }
 
@@ -1466,8 +1386,7 @@ public class DeltaFilesService {
                     .actionConfiguration(actionConfiguration)
                     .flow(action.getFlow())
                     .deltaFile(deltaFile)
-                    // TODO: figure this out
-                    //.egressFlow(deltaFile.getStage() == EGRESS ? action.getFlow() : null)
+                    .egressFlow(action.getType() == EGRESS ? action.getFlow() : null)
                     .actionCreated(action.getCreated())
                     .action(action)
                     .collectedDids(deltaFile.getParentDids())
@@ -1479,7 +1398,7 @@ public class DeltaFilesService {
                 .actionConfiguration(actionConfiguration)
                 .flow(action.getFlow())
                 .deltaFile(deltaFile)
-                .egressFlow(egressFlow(action, deltaFile))
+                .egressFlow(egressFlow(action))
                 .actionCreated(action.getCreated())
                 .action(action)
                 .build();
@@ -1627,30 +1546,30 @@ public class DeltaFilesService {
     }
 
     public boolean taskTimedIngress(String flowName, String memo, boolean overrideMemo) throws EnqueueActionException {
-        TimedIngressFlow timedIngressFlow;
+        TimedDataSource dataSource;
         if (overrideMemo) {
             // use the stored value so the cached memo value is not overwritten
-            timedIngressFlow = timedIngressFlowService.getFlowOrThrow(flowName);
-            if (!timedIngressFlow.isRunning()) {
-                throw new IllegalStateException("Timed ingress flow '" + flowName + "' cannot be tasked while in a state of " + timedIngressFlow.getFlowStatus().getState());
+            dataSource = dataSourceService.getTimedDataSource(flowName);
+            if (!dataSource.isRunning()) {
+                throw new IllegalStateException("Timed ingress flow '" + flowName + "' cannot be tasked while in a state of " + dataSource.getFlowStatus().getState());
             }
-            timedIngressFlow.setMemo(memo);
+            dataSource.setMemo(memo);
         } else {
-            timedIngressFlow = timedIngressFlowService.getRunningFlowByName(flowName);
+            dataSource = dataSourceService.getRunningTimedDataSource(flowName);
         }
 
-        return taskTimedIngress(timedIngressFlow);
+        return taskTimedIngress(dataSource);
     }
 
-    public boolean taskTimedIngress(TimedIngressFlow timedIngressFlow) throws EnqueueActionException {
-        ActionInput actionInput = timedIngressFlow.buildActionInput(getProperties().getSystemName());
+    public boolean taskTimedIngress(TimedDataSource dataSource) throws EnqueueActionException {
+        ActionInput actionInput = dataSource.buildActionInput(getProperties().getSystemName());
         // Maintain compatibility with legacy actions by combining flow and name
         actionInput.getActionContext().setName(actionInput.getActionContext().getFlow() + "." +
                 actionInput.getActionContext().getName());
 
         try {
             if (!actionEventQueue.queueHasTaskingForAction(actionInput)) {
-                timedIngressFlowService.setLastRun(timedIngressFlow.getName(), OffsetDateTime.now(clock),
+                dataSourceService.setLastRun(dataSource.getName(), OffsetDateTime.now(clock),
                         actionInput.getActionContext().getDid());
                 actionEventQueue.putActions(List.of(actionInput), false);
                 return true;
@@ -1906,9 +1825,7 @@ public class DeltaFilesService {
         CollectingActionInvocation collectingActionInvocation = CollectingActionInvocation.builder()
                 .actionConfiguration(actionConfiguration)
                 .flow(collectEntry.getCollectDefinition().getFlow())
-                // TODO: figure this out
-                /*.egressFlow(collectEntry.getCollectDefinition().getStage() == EGRESS ?
-                        collectEntry.getCollectDefinition().getFlow() : null)*/
+                .egressFlow(action.getType() == EGRESS ? action.getFlow() : null)
                 .actionCreated(now)
                 .action(action)
                 .collectedDids(collectedDids)
