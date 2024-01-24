@@ -23,6 +23,8 @@ java {
 dependencies {
     implementation project(':deltafi-common')
 
+    implementation "org.deltafi.git-version:git-version:2.0.0"
+
     implementation "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}"
     implementation "com.palantir.gradle.docker:gradle-docker:${palantirDockerVersion}"
 }
