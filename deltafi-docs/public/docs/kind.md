@@ -18,7 +18,7 @@ and all core components.  The KinD cluster has been extensively tested in the en
 
 ## Prerequisites
 
-To start up a demo DeltaFi or to set up a DeltaFi development environment, your setup will need to meet the following requirements for hardware, OS, and packages with configurations.  Note that the installation process requires the installation of 3rd party software on the target system (like KinD, OpenJDK 17, etc.) as well as starting up a containerized Kubernetes cluster.  This process is highly automated.
+To start up a demo DeltaFi or to set up a DeltaFi development environment, your setup will need to meet the following requirements for hardware, OS, and packages with configurations.  Note that the installation process requires the installation of 3rd party software on the target system (like KinD, OpenJDK 21, etc.) as well as starting up a containerized Kubernetes cluster.  This process is highly automated.
 
 ### Hardware
 

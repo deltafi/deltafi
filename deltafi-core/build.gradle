@@ -193,7 +193,7 @@ dockerPrepare {
 docker {
     name "${project.name}:${project.version}"
     tag "local", "${localDockerRegistry}/${project.name}:latest"
-	copySpec.from(bootJar.archiveFile).into("build/libs/")
+  	copySpec.from(bootJar.archiveFile).into("build/libs/")
 }
 
 springBoot {

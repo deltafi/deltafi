@@ -19,7 +19,7 @@ task copyTemplate(type: Copy) {
 task poetryVersion(type: Exec) {
     dependsOn copyTemplate, setupPoetry
     workingDir 'src'
-    String pythonVersion = version.replaceAll('-SNAPSHOT', "rc${new Date().getTime()}")
+    String pythonVersion = version.replaceAll('-.*', "rc${new Date().getTime()}")
     commandLine 'poetry', 'version', "${pythonVersion}"
 }
 
