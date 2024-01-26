@@ -5,6 +5,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.1.20] - 2024-01-26
+
+### Changed
+- Switched from version-reckoning to git-version plugin for generating the Gradle application version based on git tags
+
+### Upgrade and Migration
+- UI library update
+- git-version plugin 2.0.1 that is fully compatable with Java 17 and 21
+- Upgraded KinD to run on Kubernetes 1.29.0 by default
+
 ## [1.1.18] - 2024-01-13
 
 ### Changed
@@ -2732,7 +2742,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.18...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.20...main
+[1.1.20]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.18...1.1.20
 [1.1.18]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.17...1.1.18
 [1.1.17]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.16...1.1.17
 [1.1.16]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.15...1.1.16
