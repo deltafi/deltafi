@@ -1,5 +1,5 @@
 # Scab kubectl from this bitnami image...
-FROM bitnami/kubectl:1.28 as kubectl
+FROM bitnami/kubectl:1.29.1 as kubectl
 
 FROM ubuntu:jammy
 RUN apt-get -y update && apt-get -y install bash netcat && apt-get clean && rm -rf /var/lib/apt/lists/*
