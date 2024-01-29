@@ -18,24 +18,35 @@
 
 <template>
   <div>
-    <PageHeader heading="Ingress Actions" />
-    <TimedIngressActionsPanel ref="timedIngressActionsPanel" />
+    <PageHeader heading="Ingress Actions">
+      <div class="mb-2">
+          <DialogTemplate component-name="ingressActions/IngressActionConfigurationDialog" header="Add New Ingress Action" dialog-width="50vw" @reload-ingress-action="refresh">
+            <Button v-has-permission:DeletePolicyCreate label="Add Action" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
+          </DialogTemplate>
+      </div>
+    </PageHeader>
+    <TimedIngressActionsPanel ref="timedIngressActionsPanel" @ingress-actions-list="exportableIngressActions"/>
   </div>
 </template>
 
 <script setup>
-import { ref, inject, onMounted, onUnmounted } from "vue";
+import DialogTemplate from "@/components/DialogTemplate.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import TimedIngressActionsPanel from "@/components/ingressActions/TimedIngressActionsPanel.vue";
+import { ref, inject, onMounted, provide, onUnmounted } from "vue";
+
+import Button from "primevue/button";
 
 const refreshInterval = 5000; // 5 seconds
 const isIdle = inject("isIdle");
-const timedIngressActionsPanel = ref(null)
+const timedIngressActionsPanel = ref(null);
+const editing = ref(false);
+provide("isEditing", editing );
 let autoRefresh;
 
 const refresh = async () => {
   timedIngressActionsPanel.value.refresh();
-}
+};
 
 onMounted(() => {
   autoRefresh = setInterval(() => {
@@ -48,4 +59,10 @@ onMounted(() => {
 onUnmounted(() => {
   clearInterval(autoRefresh);
 });
+
+const ingressActionsList = ref(null);
+
+const exportableIngressActions = (value) => {
+  ingressActionsList.value = value;
+};
 </script>

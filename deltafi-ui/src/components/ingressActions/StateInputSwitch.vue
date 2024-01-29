@@ -31,7 +31,7 @@
     </ConfirmPopup>
     <InputSwitch v-tooltip.top="rowData.flowStatus.state" :model-value="rowData.flowStatus.state" false-value="STOPPED" true-value="RUNNING" class="p-button-sm" @click="confirmationPopup($event, rowData.name, rowData.flowStatus.state)" />
   </span>
-  <span v-else>
+  <span v-else class="pt-1">
     <Tag class="ml-2" :value="rowData.flowStatus.state" severity="info" icon="pi pi-info-circle" :rounded="true" />
   </span>
 </template>
@@ -59,11 +59,16 @@ const props = defineProps({
   },
   ingressActionType: {
     type: String,
-    required: true
-  }
+    required: true,
+  },
+  configureIngressActionDialog: {
+    type: Boolean,
+    required: false,
+    defalut: false,
+  },
 });
 
-const { rowDataProp: rowData, ingressActionType } = toRefs(props);
+const { rowDataProp: rowData, ingressActionType, configureIngressActionDialog } = toRefs(props);
 
 const confirmationPopup = async (event, name, state) => {
   if (_.isEqual(state, "RUNNING")) {
@@ -77,23 +82,24 @@ const confirmationPopup = async (event, name, state) => {
       accept: async () => {
         notify.info("Stopping Ingress Action", `Stopping ${name} ingress action.`, 3000);
         await toggleFlowState(name, state);
-        emit("change")
       },
-      reject: () => { },
+      reject: () => {},
     });
   } else {
     await toggleFlowState(name, state);
-    emit("change")
   }
 };
 
 const toggleFlowState = async (flowName, newflowState) => {
-  if (_.isEqual(ingressActionType.value, "timedIngress")) {
-    if (_.isEqual(newflowState, "STOPPED")) {
-      await startTimedIngressFlowByName(flowName);
-    } else {
-      await stopTimedIngressFlowByName(flowName);
+  if (!configureIngressActionDialog.value) {
+    if (_.isEqual(ingressActionType.value, "timedIngress")) {
+      if (_.isEqual(newflowState, "STOPPED")) {
+        await startTimedIngressFlowByName(flowName);
+      } else {
+        await stopTimedIngressFlowByName(flowName);
+      }
     }
+    emit("change");
   }
   rowData.value.flowStatus.state = _.isEqual(rowData.value.flowStatus.state, "RUNNING") ? "STOPPED" : "RUNNING";
 };

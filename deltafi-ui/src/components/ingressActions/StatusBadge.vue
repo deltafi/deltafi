@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <Tag v-tooltip.left="message" :value="tagText" :severity="tagSeverity" :icon="tagIcon" :rounded="true" />
+  <Tag v-tooltip.left="message" class="m-0" :value="tagText" :severity="tagSeverity" :icon="tagIcon" :rounded="true" />
 </template>
 
 <script setup>
@@ -59,4 +59,6 @@ const tagText = computed(() => {
 });
 </script>
 
-<style lang="scss"></style>
+<style lang="scss">
+
+</style>
