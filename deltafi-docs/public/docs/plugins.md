@@ -97,7 +97,6 @@ correct hooks to register your Plugin with DeltaFi. A local Dockerfile is not ne
 
 ```groovy
 plugins {
-    id 'org.deltafi.version-reckoning' version "1.0"
     id "org.deltafi.plugin-convention" version "${deltafiVersion}"
 }
 
@@ -132,7 +131,7 @@ properties, the group variable, and poetry commands.
 
 ```groovy
 plugins {
-  id 'org.deltafi.version-reckoning' version "${deltafiVersion}"
+  id 'org.deltafi.git-version' version "2.0.1"
   id "com.palantir.docker" version "${palantirDockerVersion}"
 }
 

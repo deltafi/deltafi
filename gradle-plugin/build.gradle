@@ -14,11 +14,16 @@ license {
     mapping('java', 'SLASHSTAR_STYLE')
 }
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
 dependencies {
     implementation project(':deltafi-common')
 
-    implementation "org.deltafi.gradle-plugin:gradle-version-reckoning:1.0"
-
+    implementation "org.deltafi.git-version:git-version:2.0.1"
     implementation "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}"
     implementation "com.palantir.gradle.docker:gradle-docker:${palantirDockerVersion}"
 }

@@ -5,6 +5,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.2.0] - 2024-01-27
+
+### Added
+- Added automatic Java 21 toolchain selection using `jenv`
+- Added `resolveDeps` tasks to gradle subprojects
+
+### Changed
+- Java toolchain is now 21.x
+
+### Tech-Debt/Refactor
+- Added parallel JUnit test execution to improve build performance when running unit tests
+- ByteBuddy dependency is running in "experimental" mode for Java 21 compatability
+
+### Upgrade and Migration
+- Upgrade Gradle to 8.5
+- Migrate core projects to use Java 21
+    NOTE: Plugins running against the new Java action kit must be recompiled with Java 21 toolchain
+- Update CI build image to JDK 21.0.1
+- Update base image for Java applications to deltafi/deltafi-java-jre:21.0.1-alpine-0
+
+## [1.1.20] - 2024-01-26
+
+### Changed
+- Switched from version-reckoning to git-version plugin for generating the Gradle application version based on git tags
+
+### Upgrade and Migration
+- UI library update
+- git-version plugin 2.0.1 that is fully compatable with Java 17 and 21
+- Upgraded KinD to run on Kubernetes 1.29.0 by default
+
 ## [1.1.18] - 2024-01-13
 
 ### Changed
@@ -2732,7 +2762,9 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.18...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.0...main
+[1.2.0]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.20...1.2.0
+[1.1.20]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.18...1.1.20
 [1.1.18]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.17...1.1.18
 [1.1.17]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.16...1.1.17
 [1.1.16]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.15...1.1.16

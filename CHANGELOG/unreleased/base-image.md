@@ -1,4 +1,4 @@
-# Changes on branch `kind-1.28`
+# Changes on branch `base-image`
 Document any changes on this branch here.
 ### Added
 - 
@@ -22,4 +22,5 @@ Document any changes on this branch here.
 - 
 
 ### Upgrade and Migration
-- Upgraded KinD to run on Kubernetes 1.29.0 by default
+- Upgrade clustermonitor to kubectl 1.29.1
+- Update nodemonitor to alpine:3.19.1 base image

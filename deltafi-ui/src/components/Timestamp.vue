@@ -34,7 +34,7 @@ const uiConfig = inject('uiConfig');
 
 const props = defineProps({
   timestamp: {
-    type: [Date, String, Number],
+    type: [Date, String, Number, null],
     required: true,
   },
   format: {

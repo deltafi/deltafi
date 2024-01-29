@@ -28,7 +28,7 @@ export default function useIngressActions() {
           name: true,
           description: true,
           flowStatus: {
-            state: true
+            state: true,
           },
           targetFlow: true,
           cronSchedule: true,
@@ -38,7 +38,30 @@ export default function useIngressActions() {
           currentDid: true,
           executeImmediate: true,
           ingressStatus: true,
-          ingressStatusMessage: true
+          ingressStatusMessage: true,
+          timedIngressAction: {
+            name: true,
+            apiVersion: true,
+            actionType: true,
+            type: true,
+            parameters: true,
+          },
+          publishRules: {
+            matchingPolicy: true,
+            defaultRule: {
+              defaultBehavior: true,
+              topic: true,
+            },
+            rules: {
+              topics: true,
+              condition: true,
+            },
+          },
+          sourcePlugin: {
+            groupId: true,
+            artifactId: true,
+            version: true,
+          },
         },
       },
     };
@@ -69,16 +92,6 @@ export default function useIngressActions() {
     return sendGraphQLQuery(query, "stopTimedIngressFlowByName", "mutation");
   };
 
-  const sendGraphQLQuery = async (query: any, operationName: string, queryType?: string) => {
-    try {
-      await queryGraphQL(query, operationName, queryType);
-      return response.value;
-    } catch (e: any) {
-      return e.value;
-      // Continue regardless of error
-    }
-  };
-
   const setTimedIngressCronSchedule = (flowName: string, cronSchedule: string) => {
     const query = {
       setTimedIngressCronSchedule: {
@@ -91,11 +104,46 @@ export default function useIngressActions() {
     return sendGraphQLQuery(query, "setTimedIngressCronSchedule", "mutation");
   };
 
+  const saveTimedIngressFlowPlan = (timedIngressFlowPlan: Object) => {
+    const query = {
+      saveTimedIngressFlowPlan: {
+        __args: {
+          timedIngressFlowPlan: timedIngressFlowPlan,
+        },
+        name: true,
+      },
+    };
+    return sendGraphQLQuery(query, "saveTimedIngressFlowPlan", "mutation");
+  };
+
+  const removeTimedIngressFlowPlan = (flowName: string) => {
+    const query = {
+      removeTimedIngressFlowPlan: {
+        __args: {
+          name: flowName,
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "removeTimedIngressFlowPlan", "mutation");
+  };
+
+  const sendGraphQLQuery = async (query: any, operationName: string, queryType?: string) => {
+    try {
+      await queryGraphQL(query, operationName, queryType);
+      return response.value;
+    } catch (e: any) {
+      return e.value;
+      // Continue regardless of error
+    }
+  };
+
   return {
     getAllTimedIngress,
     startTimedIngressFlowByName,
     stopTimedIngressFlowByName,
     setTimedIngressCronSchedule,
+    saveTimedIngressFlowPlan,
+    removeTimedIngressFlowPlan,
     loaded,
     loading,
     errors,

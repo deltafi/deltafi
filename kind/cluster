@@ -295,12 +295,12 @@ _check_docker() {
 }
 
 _check_java() {
-  type -p java 2>/dev/null 1>/dev/null || _exit_1 echo "You must install Java OpenJDK 17 first"
+  type -p java 2>/dev/null 1>/dev/null || _exit_1 echo "You must install Java JDK 21 first"
   local javaversion
   javaversion=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}')
   # shellcheck disable=SC2072
-  if [[ "$javaversion" > "17.999" || "$javaversion" < "17" ]]; then
-    _exit_1 echo "JDK 17 required, you have $javaversion"
+  if [[ "$javaversion" > "21.999" || "$javaversion" < "21" ]]; then
+    _exit_1 echo "Java JDK 21 required, you have $javaversion"
   fi
   _ok "Java JDK: $javaversion"
 }
@@ -444,9 +444,9 @@ prerequisites() {
 
   if _is_linux; then
     if _tool_exists yum; then
-      $SUDO yum install -y curl wget java-17-openjdk java-17-openjdk-devel python3 python3-pip kubectl
+      $SUDO yum install -y curl wget java-21-openjdk java-21-openjdk-devel python3 python3-pip kubectl
     elif _tool_exists apt; then
-      $SUDO apt-get install -y curl uidmap dbus-user-session fuse-overlayfs slirp4netns snapd openjdk-17-jdk python3 python3-pip
+      $SUDO apt-get install -y curl uidmap dbus-user-session fuse-overlayfs slirp4netns snapd openjdk-21-jdk python3 python3-pip
       if ! _tool_exists kubectl; then
         $SUDO snap install --classic kubectl
         mkdir -p ~/.kube/kubens
@@ -469,11 +469,11 @@ prerequisites() {
     _ok "Homebrew"
     brew bundle install --file "$BASE_PATH"/Brewfile
     _attention "Setting up JDK (may require your system password)"
-    sudo ln -sfn /opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-17.jdk
-    _ok "OpenJDK 17"
-    _warn "In order to use JDK 17, you may need to update your path like this:"
-    echo "    echo 'export PATH=\"/opt/homebrew/opt/openjdk@17/bin:\$PATH\"' >> ~/.zshrc"
-    echo "    echo 'export PATH=\"/opt/homebrew/opt/openjdk@17/bin:\$PATH\"' >> ~/.bashrc"
+    sudo ln -sfn /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-21.jdk
+    _ok "OpenJDK 21"
+    _warn "In order to use JDK 21, you may need to update your path like this:"
+    echo "    echo 'export PATH=\"/opt/homebrew/opt/openjdk@21/bin:\$PATH\"' >> ~/.zshrc"
+    echo "    echo 'export PATH=\"/opt/homebrew/opt/openjdk@21/bin:\$PATH\"' >> ~/.bashrc"
   fi
   _check_java
 }
