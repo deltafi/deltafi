@@ -4880,6 +4880,16 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void testConvertDeltaFileV6() {
+		assertConverted(deltaFileRepo, mongoTemplate, 6);
+	}
+
+	@Test
+	void testConvertDeltaFileV7() {
+		assertConverted(deltaFileRepo, mongoTemplate, 7);
+	}
+
+	@Test
 	void testDeletesV0() {
 		assertDeleted(deltaFileRepo, mongoTemplate, 0);
 	}
@@ -4907,6 +4917,21 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testDeletesV5() {
 		assertDeleted(deltaFileRepo, mongoTemplate, 5);
+	}
+
+	@Test
+	void testDeletesV6() {
+		assertDeleted(deltaFileRepo, mongoTemplate, 6);
+	}
+
+	@Test
+	void testDeletesV7() {
+		assertDeleted(deltaFileRepo, mongoTemplate, 7);
+	}
+
+	@Test
+	void testDeletesV8() {
+		assertDeleted(deltaFileRepo, mongoTemplate, 8);
 	}
 
 	@Test
