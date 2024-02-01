@@ -52,16 +52,15 @@ const schemaData = reactive(useControl(useJsonFormsControl(props), (newValue: an
 const booleanDecider = (boolVal: any) => {
   // Checks to see if the value passed in is an empty string, object, collection, map, or set and also checks if the value is not a boolean.
   if (_.isEmpty(boolVal) && !_.isBoolean(boolVal)) {
-    return false
+    return false;
   }
 
   if (_.isString(boolVal)) {
-    return String(boolVal).toLowerCase() === 'true'
+    return String(boolVal).toLowerCase() === "true";
   }
 
   return boolVal;
 };
-
 </script>
 <style>
 .field * {
