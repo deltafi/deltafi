@@ -17,16 +17,15 @@
 -->
 
 <template>
-  <Panel :header="header" class="chart-panel pb-3">
+  <div>
+    <h5>{{ header }}</h5>
     <GrafanaChart :panel-id="panelId" :from="from" :to="to" />
-  </Panel>
+  </div>
 </template>
 
 <script setup>
-import Panel from "primevue/panel";
 import GrafanaChart from "@/components/GrafanaChart.vue";
 import { computed, onMounted, onUnmounted, ref, toRefs } from "vue";
-
 const props = defineProps({
   header: {
     type: String,
@@ -39,23 +38,39 @@ const props = defineProps({
   refreshMinutes: {
     type: Number,
     required: false,
-    default: 5,
+    default: 1,
   },
   timeframeMinutes: {
     type: Number,
     required: false,
     default: 60,
-  }
-})
+  },
+  from: {
+    type: Number,
+    required: false,
+    default: null,
+  },
+  to: {
+    type: Number,
+    required: false,
+    default: null,
+  },
+});
 
 const { header, panelId, refreshMinutes, timeframeMinutes } = toRefs(props);
 
 let autoRefresh = null;
 const refreshInterval = computed(() => refreshMinutes.value * 60 * 1000);
 const last = computed(() => timeframeMinutes.value * 60 * 1000);
-const now = ref(new Date())
-const from = computed(() => new Date(now.value - last.value).getTime())
-const to = computed(() => now.value.getTime())
+const now = ref(new Date());
+const from = computed(() => {
+  if (props.from) return props.from;
+  return new Date(now.value - last.value).getTime();
+});
+const to = computed(() => {
+  if (props.to) return props.to;
+  return now.value.getTime();
+});
 
 onMounted(() => {
   now.value = new Date();

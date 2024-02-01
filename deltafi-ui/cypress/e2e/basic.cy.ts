@@ -9,10 +9,7 @@ describe("Dashboard Page", () => {
   it("loads the Dashboard", () => {
     cy.visit("http://localhost:8080");
     cy.get("span.p-panel-title").contains("DeltaFile Stats");
-    cy.get("span.p-panel-title").contains("Ingress Flows");
-    cy.get("span.p-panel-title").contains("Content Storage");
-    cy.get("span.p-panel-title").contains("Egress Flows");
-    cy.get("span.p-panel-title").contains("Delete Policy Activity");
+    cy.get("span.p-panel-title").contains("Metrics");
     cy.get("span.p-panel-title").contains("Installed Plugins");
     cy.get("span.p-panel-title").contains("External Links");
   });

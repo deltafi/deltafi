@@ -27,6 +27,11 @@
       </div>
     </div>
     <div class="row">
+      <div class="col-12">
+        <MetricsPanel :key="refreshKey" />
+      </div>
+    </div>
+    <div class="row">
       <div v-for="(components, column) in columns" :key="column" :class="`col-6 ${column}`">
         <div v-for="component of components" :key="component">
           <Component :is="loadComponent(component)" :key="refreshKey" />
@@ -38,26 +43,18 @@
 
 <script setup>
 import PageHeader from "@/components/PageHeader.vue";
+import MetricsPanel from "@/components/dashboard/MetricsPanel.vue";
 import { defineAsyncComponent, reactive, ref } from "vue";
 import DeltaFileStats from "@/components/dashboard/DeltaFileStats.vue";
-
 import Button from "primevue/button";
 
-const refreshKey = ref(0)
-const refreshDashboard = () => refreshKey.value += 1;
+const refreshKey = ref(0);
+const refreshDashboard = () => (refreshKey.value += 1);
 
 const columns = reactive({
-  one: [
-    "IngressFlows",
-    "EgressFlows",
-    "InstalledPlugins"
-  ],
-  two: [
-    "ContentStorage",
-    "DeletePolicyActivity",
-    "ExternalLinks"
-  ]
-})
+  one: ["InstalledPlugins"],
+  two: ["ExternalLinks"],
+});
 
 const loadComponent = (element) => {
   return defineAsyncComponent(() => import(`@/components/dashboard/${element}.vue`));
