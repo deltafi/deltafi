@@ -1,4 +1,5 @@
 const DELTAFI_DOMAIN = process.env.DELTAFI_DOMAIN || "dev.deltafi.org";
+const execSync = require('child_process').execSync;
 
 module.exports = {
   devServer: {
@@ -7,6 +8,13 @@ module.exports = {
     proxy: {
       "^/api": {
         target: `https://${DELTAFI_DOMAIN}`,
+        bypass: (req, res) => {
+          if (req.originalUrl === '/api/v1/local-git-branch') {
+            const branch = execSync('git rev-parse --abbrev-ref HEAD').slice(0, -1).toString()
+            res.json({ branch: branch })
+            return null;
+          }
+        },
       },
       "^/graphql": {
         target: `https://${DELTAFI_DOMAIN}`,
