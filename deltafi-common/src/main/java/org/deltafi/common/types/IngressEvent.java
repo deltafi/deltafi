@@ -31,8 +31,11 @@ import java.util.List;
 @Builder
 public class IngressEvent {
   private String memo;
+  @Builder.Default
   boolean executeImmediate = false;
+  @Builder.Default
   private List<IngressEventItem> ingressItems = new ArrayList<>();
+  @Builder.Default
   private IngressStatus status = IngressStatus.HEALTHY;
   private String statusMessage;
 }

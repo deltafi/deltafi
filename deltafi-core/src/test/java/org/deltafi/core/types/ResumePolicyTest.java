@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.types;
 
+import org.deltafi.common.types.ActionType;
 import org.deltafi.core.generated.types.BackOff;
 import org.junit.jupiter.api.Test;
 
@@ -82,47 +83,47 @@ class ResumePolicyTest {
 
     @Test
     void testMatch() {
-        assertTrue(policy("error", "flow", "flow.action", "type")
-                .isMatch(1, "the error message", "flow", "flow.action", "type"));
-        assertTrue(policy("error", "flow", null, "type")
-                .isMatch(1, "the error message", "flow", "fow.action", "type"));
+        assertTrue(policy("error", "flow", "flow.action", ActionType.TRANSFORM)
+                .isMatch(1, "the error message", "flow", "flow.action", ActionType.TRANSFORM));
+        assertTrue(policy("error", "flow", null, ActionType.TRANSFORM)
+                .isMatch(1, "the error message", "flow", "fow.action", ActionType.TRANSFORM));
         assertTrue(policy("error", "flow", null, null)
-                .isMatch(1, "the error message", "flow", "flow.action", "type"));
+                .isMatch(1, "the error message", "flow", "flow.action", ActionType.TRANSFORM));
         assertTrue(policy("error", null, null, null)
-                .isMatch(1, "the error message", "flow", "flow.action", "type"));
+                .isMatch(1, "the error message", "flow", "flow.action", ActionType.TRANSFORM));
 
         assertTrue(policy(null, "flow", "flow.action", null)
-                .isMatch(1, "the error message", "flow", "flow.action", "type"));
-        assertTrue(policy(null, "flow", null, "type")
-                .isMatch(1, "the error message", "flow", "flow.action", "type"));
-        assertTrue(policy(null, "flow", "flow.action", "type")
-                .isMatch(1, "the error message", "flow", "flow.action", "type"));
-        assertTrue(policy(null, null, "flow.action", "type")
-                .isMatch(1, "the error message", "flow", "flow.action", "type"));
+                .isMatch(1, "the error message", "flow", "flow.action", ActionType.TRANSFORM));
+        assertTrue(policy(null, "flow", null, ActionType.TRANSFORM)
+                .isMatch(1, "the error message", "flow", "flow.action", ActionType.TRANSFORM));
+        assertTrue(policy(null, "flow", "flow.action", ActionType.TRANSFORM)
+                .isMatch(1, "the error message", "flow", "flow.action", ActionType.TRANSFORM));
+        assertTrue(policy(null, null, "flow.action", ActionType.TRANSFORM)
+                .isMatch(1, "the error message", "flow", "flow.action", ActionType.TRANSFORM));
     }
 
     @Test
     void testNoMatch() {
-        assertFalse(policy("error", "flow", "flow.action", "type")
-                .isMatch(2, "the error message", "flow", "flow.action", "type"));
-        assertFalse(policy("error", "flow", "flow.action", "type")
-                .isMatch(3, "the error message", "flow", "flow.action", "type"));
+        assertFalse(policy("error", "flow", "flow.action", ActionType.TRANSFORM)
+                .isMatch(2, "the error message", "flow", "flow.action", ActionType.TRANSFORM));
+        assertFalse(policy("error", "flow", "flow.action", ActionType.TRANSFORM)
+                .isMatch(3, "the error message", "flow", "flow.action", ActionType.TRANSFORM));
 
-        assertFalse(policy("error", "flow", "flow.action", "type")
-                .isMatch(1, "the Error message", "flow", "flow.action", "type"));
-        assertFalse(policy("error", "flow", null, "type")
-                .isMatch(1, "the err message", "flow", "flow.action", "type"));
+        assertFalse(policy("error", "flow", "flow.action", ActionType.TRANSFORM)
+                .isMatch(1, "the Error message", "flow", "flow.action", ActionType.TRANSFORM));
+        assertFalse(policy("error", "flow", null, ActionType.TRANSFORM)
+                .isMatch(1, "the err message", "flow", "flow.action", ActionType.TRANSFORM));
         assertFalse(policy("error", "flow", null, null)
-                .isMatch(1, "", "flow", "flow.action", "type"));
+                .isMatch(1, "", "flow", "flow.action", ActionType.TRANSFORM));
 
         assertFalse(policy(null, "flow", "flow.action", null)
-                .isMatch(1, "the error message", "one", "two", "type"));
-        assertFalse(policy(null, "flow", null, "type")
-                .isMatch(1, "the error message", "flow", "flow.action", "other"));
-        assertFalse(policy(null, "flow", "flow.action", "type")
-                .isMatch(1, "the error message", "other", "flow.action", "type"));
-        assertFalse(policy(null, null, "flow.action", "type")
-                .isMatch(1, "the error message", "flow", "flow.other", "type"));
+                .isMatch(1, "the error message", "one", "two", ActionType.TRANSFORM));
+        assertFalse(policy(null, "flow", null, ActionType.TRANSFORM)
+                .isMatch(1, "the error message", "flow", "flow.action", ActionType.UNKNOWN));
+        assertFalse(policy(null, "flow", "flow.action", ActionType.TRANSFORM)
+                .isMatch(1, "the error message", "other", "flow.action", ActionType.TRANSFORM));
+        assertFalse(policy(null, null, "flow.action", ActionType.TRANSFORM)
+                .isMatch(1, "the error message", "flow", "flow.other", ActionType.TRANSFORM));
     }
 
     @Test
@@ -131,19 +132,19 @@ class ResumePolicyTest {
         shortErrorAndFlow.validate();
         assertEquals(100, shortErrorAndFlow.getPriority());
 
-        ResumePolicy actionTypeOnly = policy(null, null, null, "EGRESS");
+        ResumePolicy actionTypeOnly = policy(null, null, null, ActionType.EGRESS);
         actionTypeOnly.validate();
         assertEquals(50, actionTypeOnly.getPriority());
 
-        ResumePolicy allCriteria = policy("aLongErrorMessage", "flow", "flow.action", "EGRESS");
+        ResumePolicy allCriteria = policy("aLongErrorMessage", "flow", "flow.action", ActionType.EGRESS);
         allCriteria.validate();
         assertEquals(250, allCriteria.getPriority());
 
-        ResumePolicy withoutAction = policy("aLongErrorMessage", "flow", null, "EGRESS");
+        ResumePolicy withoutAction = policy("aLongErrorMessage", "flow", null, ActionType.EGRESS);
         withoutAction.validate();
         assertEquals(200, withoutAction.getPriority());
 
-        ResumePolicy presetPriority = policy("aLongErrorMessage", "flow", null, "EGRESS");
+        ResumePolicy presetPriority = policy("aLongErrorMessage", "flow", null, ActionType.EGRESS);
         presetPriority.setPriority(123);
         presetPriority.validate();
         assertEquals(123, presetPriority.getPriority());
@@ -153,7 +154,7 @@ class ResumePolicyTest {
         ResumePolicy policy = new ResumePolicy();
         policy.setId("id");
         policy.setName("name");
-        policy.setFlow("flow");
+        policy.setDataSource("flow");
         policy.setMaxAttempts(2);
 
         BackOff backoff = new BackOff();
@@ -164,14 +165,14 @@ class ResumePolicyTest {
         return policy;
     }
 
-    private ResumePolicy policy(String error, String flow, String action, String actionType) {
+    private ResumePolicy policy(String error, String flow, String action, ActionType actionType) {
         ResumePolicy policy = new ResumePolicy();
         policy.setId("id");
         policy.setName("name");
         policy.setMaxAttempts(2);
 
         if (null != error) policy.setErrorSubstring(error);
-        if (null != flow) policy.setFlow(flow);
+        if (null != flow) policy.setDataSource(flow);
         if (null != action) policy.setAction(action);
         if (null != actionType) policy.setActionType(actionType);
 

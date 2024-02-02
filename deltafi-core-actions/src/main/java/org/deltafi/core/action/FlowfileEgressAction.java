@@ -52,8 +52,8 @@ public class FlowfileEgressAction extends HttpEgressActionBase<HttpEgressParamet
     protected EgressResultType doEgress(@NotNull ActionContext context, @NotNull HttpEgressParameters params,
             @NotNull EgressInput input) {
         try (InputStream inputStream = input.getContent().loadInputStream()) {
-            Map<String, String> attributes = buildHeadersMap(context.getDid(), context.getSourceFilename(),
-                    input.getContent().getName(), context.getIngressFlow(), context.getEgressFlow(), input.getMetadata());
+            Map<String, String> attributes = buildHeadersMap(context.getDid(), context.getDeltaFileName(),
+                    input.getContent().getName(), context.getDataSource(), context.getFlowName(), input.getMetadata());
 
             HttpResponse<InputStream> response;
 

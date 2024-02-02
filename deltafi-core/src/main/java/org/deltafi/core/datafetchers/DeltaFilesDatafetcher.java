@@ -134,8 +134,8 @@ public class DeltaFilesDatafetcher {
 
   @DgsQuery
   @NeedsPermission.DeltaFileMetadataView
-  public DeltaFile lastWithFilename(@InputArgument String filename) {
-    return deltaFilesService.getLastWithFilename(filename);
+  public DeltaFile lastWithName(@InputArgument String name) {
+    return deltaFilesService.getLastWithName(name);
   }
 
   @DgsQuery
@@ -186,8 +186,8 @@ public class DeltaFilesDatafetcher {
 
   @DgsMutation
   @NeedsPermission.DeltaFileReplay
-  public List<RetryResult> replay(@InputArgument List<String> dids, String replaceFilename, String replaceFlow, @InputArgument List<String> removeSourceMetadata, @InputArgument List<KeyValue> replaceSourceMetadata) {
-    return deltaFilesService.replay(dids, replaceFilename, replaceFlow, (removeSourceMetadata == null) ? Collections.emptyList() : removeSourceMetadata, (replaceSourceMetadata == null) ? Collections.emptyList() : replaceSourceMetadata);
+  public List<RetryResult> replay(@InputArgument List<String> dids, @InputArgument List<String> removeSourceMetadata, @InputArgument List<KeyValue> replaceSourceMetadata) {
+    return deltaFilesService.replay(dids, (removeSourceMetadata == null) ? Collections.emptyList() : removeSourceMetadata, (replaceSourceMetadata == null) ? Collections.emptyList() : replaceSourceMetadata);
   }
 
   @DgsMutation

@@ -28,22 +28,12 @@ json='{"pluginLanguage": "JAVA"}'
 
 declare -a actions
 actions["1"]="TRANSFORM"
-actions["2"]="LOAD"
-actions["3"]="DOMAIN"
-actions["4"]="ENRICH"
-actions["5"]="FORMAT"
-actions["6"]="VALIDATE"
-actions["7"]="EGRESS"
+actions["2"]="EGRESS"
 
 action_type_prompt="Select the action type
    1: transform action
-   2: load action
-   3: domain action
-   4: enrich action
-   5: format action
-   6: validate action
-   7: egress action
-Enter selection [1..7] "
+   2: egress action
+Enter selection [1..2] "
 
 declare -a languages
 languages["1"]="JAVA"

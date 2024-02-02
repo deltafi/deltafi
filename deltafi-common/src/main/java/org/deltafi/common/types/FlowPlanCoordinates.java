@@ -22,14 +22,20 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+@AllArgsConstructor
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 @Builder
-public class ErrorDomain {
-  private DeltaFile originator;
-  private String originatorDid;
-  private String fromAction;
-  private String cause;
-  private String context;
+public class FlowPlanCoordinates {
+    String name;
+    String plugin;
+    String pluginVersion;
+
+    public FlowPlanCoordinates(FlowPlanCoordinates other) {
+        if (other != null) {
+            this.name = other.name;
+            this.plugin = other.plugin;
+            this.pluginVersion = other.pluginVersion;
+        }
+    }
 }

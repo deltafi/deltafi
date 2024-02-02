@@ -17,6 +17,6 @@ ARGS=($@)
 FILENAME=${ARGS[@]:1}
 [[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
 
-QUERY="query { lastWithFilename(filename: \"$FILENAME\") { did } }"
+QUERY="query { lastWithName(name: \"$FILENAME\") { did } }"
 
-deltafi query "$QUERY" | jq -r '.data.lastWithFilename.did'
+deltafi query "$QUERY" | jq -r '.data.lastWithName.did'

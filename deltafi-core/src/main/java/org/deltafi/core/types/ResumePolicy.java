@@ -18,6 +18,7 @@
 package org.deltafi.core.types;
 
 import org.apache.commons.lang3.StringUtils;
+import org.deltafi.common.types.ActionType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,9 +55,9 @@ public class ResumePolicy extends org.deltafi.core.generated.types.ResumePolicy 
         }
 
         if (StringUtils.isBlank(getErrorSubstring()) &&
-                StringUtils.isBlank(getFlow()) &&
+                StringUtils.isBlank(getDataSource()) &&
                 StringUtils.isBlank(getAction()) &&
-                StringUtils.isBlank(getActionType())) {
+                getActionType() == null) {
             errors.add(MISSING_CRITERIA);
         }
 
@@ -85,12 +86,12 @@ public class ResumePolicy extends org.deltafi.core.generated.types.ResumePolicy 
         if (StringUtils.isNotBlank(getAction())) {
             tempPriority += 100;
         } else {
-            if (StringUtils.isNotBlank(getActionType())) {
+            if (getActionType() != null) {
                 tempPriority += 50;
             }
         }
 
-        if (StringUtils.isNotBlank(getFlow())) {
+        if (StringUtils.isNotBlank(getDataSource())) {
             tempPriority += 50;
         }
         return tempPriority;
@@ -135,12 +136,12 @@ public class ResumePolicy extends org.deltafi.core.generated.types.ResumePolicy 
      * @param actionType the action type
      * @return true if a match; otherwise false
      */
-    public boolean isMatch(int attempt, String error, String flow, String action, String actionType) {
+    public boolean isMatch(int attempt, String error, String flow, String action, ActionType actionType) {
         return attempt < getMaxAttempts() &&
                 errorMatch(error) &&
-                canMatch(getFlow(), flow) &&
+                canMatch(getDataSource(), flow) &&
                 canMatch(getAction(), action) &&
-                canMatch(getActionType(), actionType);
+                actionTypeMatches(actionType);
     }
 
     private boolean errorMatch(String error) {
@@ -150,5 +151,9 @@ public class ResumePolicy extends org.deltafi.core.generated.types.ResumePolicy 
 
     private boolean canMatch(String objectValue, String searchValue) {
         return StringUtils.isBlank(objectValue) || objectValue.equals(searchValue);
+    }
+
+    private boolean actionTypeMatches(ActionType actionType) {
+        return this.getActionType() == null || this.getActionType() == actionType;
     }
 }

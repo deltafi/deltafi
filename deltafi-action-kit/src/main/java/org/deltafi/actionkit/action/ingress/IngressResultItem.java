@@ -32,10 +32,10 @@ import java.util.UUID;
 @Getter
 @Setter
 public class IngressResultItem extends ContentResult<IngressResultItem> {
-    String filename;
-    public IngressResultItem(@NotNull ActionContext context, @NotNull String filename) {
+    String deltaFileName;
+    public IngressResultItem(@NotNull ActionContext context, @NotNull String deltaFileName) {
         super(context.copy(UUID.randomUUID().toString()), ActionEventType.INGRESS);
-        this.filename = filename;
+        this.deltaFileName = deltaFileName;
     }
 
     public final IngressEventItem toIngressEventItem() {
@@ -44,7 +44,7 @@ public class IngressResultItem extends ContentResult<IngressResultItem> {
                 .did(context.getDid())
                 .content(ContentConverter.convert(content))
                 .metadata(metadata)
-                .filename(filename)
+                .deltaFileName(deltaFileName)
                 .build();
     }
 }

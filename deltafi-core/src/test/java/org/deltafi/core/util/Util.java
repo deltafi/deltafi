@@ -30,6 +30,7 @@ import java.time.OffsetDateTime;
 import java.util.*;
 
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
+import static org.deltafi.core.util.FlowBuilders.TRANSFORM_TOPIC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -72,52 +73,37 @@ public class Util {
 
     public static DeltaFile buildErrorDeltaFile(
             String did, String flow, String cause, String context, OffsetDateTime created) {
-        return buildErrorDeltaFile(did, flow, cause, context, created, created, true, true, null, List.of());
+        return buildErrorDeltaFile(did, flow, cause, context, created, created, null, List.of());
     }
 
     public static DeltaFile buildErrorDeltaFile(String did, String flow, String cause, String context,
-                                                OffsetDateTime created, OffsetDateTime modified, boolean extraAction,
-                                                boolean errorIsLast, String extraError) {
-        return buildErrorDeltaFile(did, flow, cause, context, created, modified, extraAction, errorIsLast, extraError, new ArrayList<>());
+                                                OffsetDateTime created, OffsetDateTime modified, String extraError) {
+        return buildErrorDeltaFile(did, flow, cause, context, created, modified, extraError, new ArrayList<>());
     }
 
     public static DeltaFile buildErrorDeltaFile(String did, String flow, String cause, String context, OffsetDateTime created,
-                                                OffsetDateTime modified, boolean extraAction, boolean errorIsLast,
-                                                String extraError, List<Content> content) {
+                                                OffsetDateTime modified, String extraError, List<Content> content) {
 
         DeltaFile deltaFile = Util.buildDeltaFile(did, flow, DeltaFileStage.ERROR, created, modified, content);
-        if (extraAction) {
-            if (!errorIsLast) {
-                deltaFile.queueNewAction(flow, "ErrorAction", ActionType.UNKNOWN, false);
-                deltaFile.errorAction(flow, "ErrorAction", modified, modified, cause, context);
-            }
-            deltaFile.queueNewAction(flow, "OtherAction", ActionType.UNKNOWN, false);
-            deltaFile.completeAction(ActionEvent.builder()
-                    .flow(flow)
-                    .action("OtherAction")
-                    .start(modified)
-                    .stop(modified)
-                    .build());
-        }
-
-        if (errorIsLast || !extraAction) {
-            deltaFile.queueNewAction(flow, "ErrorAction", ActionType.UNKNOWN, false);
-            deltaFile.errorAction(flow, "ErrorAction", modified, modified, cause, context);
-        }
+        DeltaFileFlow firstFlow = deltaFile.addFlow("firstFlow", FlowType.TRANSFORM, deltaFile.getFlows().get(0), created);
+        Action errorAction = firstFlow.queueNewAction("ErrorAction", ActionType.TRANSFORM, false, created);
+        errorAction.error(modified, modified, modified, cause, context);
+        firstFlow.updateState(modified);
 
         if (extraError != null) {
-            deltaFile.queueNewAction(flow, "AnotherErrorAction", ActionType.UNKNOWN, false);
-            deltaFile.errorAction(flow, "AnotherErrorAction", modified, modified, extraError, context);
+            DeltaFileFlow secondFlow = deltaFile.addFlow("firstFlow", FlowType.TRANSFORM, deltaFile.getFlows().get(0), created);
+            Action anotherErrorAction = secondFlow.queueNewAction("AnotherErrorAction", ActionType.TRANSFORM, false, created);
+            anotherErrorAction.error(modified, modified, modified, extraError, context);
+            secondFlow.updateState(modified);
         }
-        deltaFile.setModified(modified);
+        deltaFile.updateState(modified);
 
         return deltaFile;
     }
 
-    public static DeltaFile buildDeltaFile(String did, String flow, DeltaFileStage stage, OffsetDateTime created,
+    public static DeltaFile buildDeltaFile(String did, String flowName, DeltaFileStage stage, OffsetDateTime created,
                                            OffsetDateTime modified, List<Content> content, Map<String, String> metadata) {
         Action ingressAction = Action.builder()
-                .flow(flow)
                 .name(INGRESS_ACTION)
                 .type(ActionType.INGRESS)
                 .state(ActionState.COMPLETE)
@@ -127,18 +113,34 @@ public class Util {
                 .metadata(metadata)
                 .build();
 
+        DeltaFileFlow flow = DeltaFileFlow.builder()
+                .name(flowName)
+                .type(FlowType.TIMED_DATA_SOURCE)
+                .state(DeltaFileFlowState.COMPLETE)
+                .created(created)
+                .modified(modified)
+                .input(DeltaFileFlowInput.builder()
+                        .content(content)
+                        .metadata(metadata)
+                        .build())
+                .publishTopics(List.of(TRANSFORM_TOPIC))
+                .actions(new ArrayList<>(List.of(ingressAction)))
+                .build();
+
         DeltaFile deltaFile = DeltaFile.builder()
                 .schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
                 .did(did)
                 .parentDids(new ArrayList<>())
                 .childDids(new ArrayList<>())
                 .ingressBytes(0L)
-                .sourceInfo(new SourceInfo("filename", flow, metadata))
+                .name("filename")
+                .normalizedName("filename")
+                .dataSource(flowName)
                 .stage(stage)
                 .created(created)
                 .modified(modified)
-                .actions(new ArrayList<>(List.of(ingressAction)))
-                .egress(new ArrayList<>())
+                .flows(new ArrayList<>(List.of(flow)))
+                .egressFlows(new ArrayList<>())
                 .egressed(false)
                 .filtered(false)
                 .totalBytes(1)
@@ -154,20 +156,51 @@ public class Util {
         Assertions.assertThat(actual.getChildDids()).isEqualTo(expected.getChildDids());
         Assertions.assertThat(actual.getParentDids()).isEqualTo(expected.getParentDids());
         Assertions.assertThat(actual.getIngressBytes()).isEqualTo(expected.getIngressBytes());
-        assertActionsEqualIgnoringDates(expected.getActions(), actual.getActions());
-        Assertions.assertThat(actual.getSourceInfo()).isEqualTo(expected.getSourceInfo());
+        assertFlowsEqualIgnoringDates(expected.getFlows(), actual.getFlows());
+        Assertions.assertThat(actual.getDataSource()).isEqualTo(expected.getDataSource());
+        Assertions.assertThat(actual.getName()).isEqualTo(expected.getName());
+        Assertions.assertThat(actual.getNormalizedName()).isEqualTo(expected.getNormalizedName());
         Assertions.assertThat(actual.getAnnotations()).isEqualTo(expected.getAnnotations());
         Assertions.assertThat(actual.getAnnotationKeys()).isEqualTo(expected.getAnnotationKeys());
         Assertions.assertThat(actual.getEgressed()).isEqualTo(expected.getEgressed());
         Assertions.assertThat(actual.getFiltered()).isEqualTo(expected.getFiltered());
-        Assertions.assertThat(actual.getEgress()).isEqualTo(expected.getEgress());
-        Assertions.assertThat(actual.getTestMode()).isEqualTo(expected.getTestMode());
+        Assertions.assertThat(actual.getEgressFlows()).isEqualTo(expected.getEgressFlows());
         Assertions.assertThat(actual.getContentDeleted() == null).isEqualTo(expected.getContentDeleted() == null);
         Assertions.assertThat(actual.getContentDeletedReason()).isEqualTo(expected.getContentDeletedReason());
-        Assertions.assertThat(actual.getErrorAcknowledged() == null).isEqualTo(expected.getErrorAcknowledged() == null);
-        Assertions.assertThat(actual.getErrorAcknowledgedReason()).isEqualTo(expected.getErrorAcknowledgedReason());
-        Assertions.assertThat(actual.getNextAutoResume() == null).isEqualTo(expected.getNextAutoResume() == null);
-        Assertions.assertThat(actual.getNextAutoResumeReason()).isEqualTo(expected.getNextAutoResumeReason());
+    }
+
+    public static void assertFlowsEqualIgnoringDates(List<DeltaFileFlow> expected, List<DeltaFileFlow> actual) {
+        if (expected == null || actual == null) {
+            Assertions.assertThat(actual).isEqualTo(expected);
+            return;
+        }
+
+        Assertions.assertThat(actual).hasSize(expected.size());
+        for (int i = 0; i < expected.size(); i++) {
+            assertFlowEqualIgnoringDates(expected.get(i), actual.get(i));
+        }
+    }
+
+    public static void assertFlowEqualIgnoringDates(DeltaFileFlow expected, DeltaFileFlow actual) {
+        if (expected == null || actual == null) {
+            Assertions.assertThat(actual).isEqualTo(expected);
+        } else {
+            Assertions.assertThat(actual.getName()).isEqualTo(expected.getName());
+            Assertions.assertThat(actual.getId()).isEqualTo(expected.getId());
+            Assertions.assertThat(actual.getType()).isEqualTo(expected.getType());
+            Assertions.assertThat(actual.getState()).isEqualTo(expected.getState());
+            Assertions.assertThat(actual.getFlowPlan()).isEqualTo(expected.getFlowPlan());
+            Assertions.assertThat(actual.getInput().getTopics()).isEqualTo(expected.getInput().getTopics());
+            Assertions.assertThat(actual.getInput().getMetadata()).isEqualTo(expected.getInput().getMetadata());
+            Assertions.assertThat(actual.getInput().getContent()).isEqualTo(expected.getInput().getContent());
+            Assertions.assertThat(actual.getInput().getAncestorIds()).isEqualTo(expected.getInput().getAncestorIds());
+            assertActionsEqualIgnoringDates(expected.getActions(), actual.getActions());
+            Assertions.assertThat(actual.getPublishTopics()).isEqualTo(expected.getPublishTopics());
+            Assertions.assertThat(actual.getDepth()).isEqualTo(expected.getDepth());
+            Assertions.assertThat(actual.hasPendingAnnotations()).isEqualTo(expected.hasPendingAnnotations());
+            Assertions.assertThat(actual.isTestMode()).isEqualTo(expected.isTestMode());
+            Assertions.assertThat(actual.getTestModeReason()).isEqualTo(expected.getTestModeReason());
+        }
     }
 
     public static void assertActionsEqualIgnoringDates(List<Action> expected, List<Action> actual) {
@@ -187,6 +220,8 @@ public class Util {
             Assertions.assertThat(actual).isEqualTo(expected);
         } else {
             Assertions.assertThat(actual.getName()).isEqualTo(expected.getName());
+            Assertions.assertThat(actual.getId()).isEqualTo(expected.getId());
+            Assertions.assertThat(actual.getType()).isEqualTo(expected.getType());
             Assertions.assertThat(actual.getState()).isEqualTo(expected.getState());
             Assertions.assertThat(actual.getErrorCause()).isEqualTo(expected.getErrorCause());
             if (expected.getErrorContext() != null
@@ -196,6 +231,10 @@ public class Util {
             } else {
                 Assertions.assertThat(actual.getErrorContext()).isEqualTo(expected.getErrorContext());
             }
+            Assertions.assertThat(actual.getErrorAcknowledgedReason()).isEqualTo(expected.getErrorAcknowledgedReason());
+            Assertions.assertThat(actual.getNextAutoResumeReason()).isEqualTo(expected.getNextAutoResumeReason());
+            Assertions.assertThat(actual.getFilteredCause()).isEqualTo(expected.getFilteredCause());
+            Assertions.assertThat(actual.getFilteredContext()).isEqualTo(expected.getFilteredContext());
             Assertions.assertThat(actual.getAttempt()).isEqualTo(expected.getAttempt());
             Assertions.assertThat(actual.getContent()).isEqualTo(expected.getContent());
             Assertions.assertThat(actual.getMetadata()).isEqualTo(expected.getMetadata());
@@ -230,8 +269,8 @@ public class Util {
         return ActionEventQueue.convertEvent(json);
     }
 
-    public static ActionEvent filterActionEvent(String did, String flow, String filteredAction) throws IOException {
-        String json = String.format(new String(Objects.requireNonNull(Util.class.getClassLoader().getResourceAsStream("full-flow/filter.json")).readAllBytes()), did, flow, filteredAction);
+    public static ActionEvent filterActionEvent(String did, String flow, int flowId, String filteredAction, int actionId) throws IOException {
+        String json = String.format(new String(Objects.requireNonNull(Util.class.getClassLoader().getResourceAsStream("full-flow/filter.json")).readAllBytes()), did, flow, flowId, filteredAction, actionId);
         return ActionEventQueue.convertEvent(json);
     }
 

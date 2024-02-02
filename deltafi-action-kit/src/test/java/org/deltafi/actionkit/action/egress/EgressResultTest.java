@@ -17,10 +17,13 @@
  */
 package org.deltafi.actionkit.action.egress;
 
+import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.CollectConfiguration;
 import org.deltafi.common.types.Metric;
 import org.junit.jupiter.api.Test;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -30,8 +33,9 @@ public class EgressResultTest {
 
     final String DESTINATION = "overThere";
     final long BYTES_EGRESSED = 42;
-    final ActionContext actionContext = new ActionContext("myDid", "myFlow", "myName", "mySourceFilename",
-            "myIngressFlow", "myEgressFlow", "myHostName", "myActionVersion", null, null, null, null, null, null);
+
+    final ActionContext actionContext = new ActionContext("myDid", "mySourceFilename", "dataSource", "myFlow", 0, "myName", 0,
+            "myHostName", "myActionVersion", null, null, null, null, null, null);
     final EgressResult sut = new EgressResult(actionContext, DESTINATION, BYTES_EGRESSED);
     
     @Test

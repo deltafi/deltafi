@@ -80,13 +80,13 @@ class FlowfileEgressActionTest {
     private static final Map<String, String> ADDITIONAL_METADATA = Map.of(
             "did", DID,
             "flow", EGRESS_FLOW,
-            "ingressFlow", FLOW,
+            "dataSource", FLOW,
             "originalFilename", ORIG_FILENAME,
             "filename", POST_FILENAME
     );
 
     private static final Content CONTENT = new Content(POST_FILENAME, CONTENT_TYPE, new Segment(UUID.randomUUID().toString(), 0, DATA.length, DID));
-    private static final ActionContext CONTEXT = ActionContext.builder().did(DID).flow(EGRESS_FLOW).name(ACTION).sourceFilename(ORIG_FILENAME).ingressFlow(FLOW).egressFlow(EGRESS_FLOW).build();
+    private static final ActionContext CONTEXT = ActionContext.builder().did(DID).flowName(EGRESS_FLOW).actionName(ACTION).deltaFileName(ORIG_FILENAME).dataSource(FLOW).build();
 
     final static Integer NUM_TRIES = 3;
     final static Integer RETRY_WAIT = 10;
@@ -113,7 +113,8 @@ class FlowfileEgressActionTest {
 
         assertThat(result, instanceOf(EgressResult.class));
         assertThat(result.toEvent().getDid(), equalTo(DID));
-        assertThat(result.toEvent().getAction(), equalTo(EGRESS_FLOW + "." + ACTION));
+        assertThat(result.toEvent().getActionName(), equalTo(ACTION));
+        assertThat(result.toEvent().getFlowName(), equalTo(EGRESS_FLOW));
     }
 
     @SuppressWarnings("unchecked")

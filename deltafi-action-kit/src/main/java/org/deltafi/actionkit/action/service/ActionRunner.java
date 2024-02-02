@@ -106,11 +106,6 @@ public class ActionRunner {
             while (!Thread.currentThread().isInterrupted()) {
                 log.trace("{} listening", action.getClassCanonicalName());
                 ActionInput actionInput = actionEventQueue.takeAction(action.getClassCanonicalName());
-                // To maintain compatibility with legacy actions, flow and name were combined in the name field of the
-                // ActionContext sent to the action in the ActionInput. Put them in their own fields.
-                String[] actionNameParts = actionInput.getActionContext().getName().split("\\.");
-                actionInput.getActionContext().setFlow(actionNameParts[0]);
-                actionInput.getActionContext().setName(actionNameParts[1]);
                 actionInput.getActionContext().setActionVersion(buildProperties.getVersion());
                 actionInput.getActionContext().setHostname(hostnameService.getHostname());
                 actionInput.getActionContext().setStartTime(OffsetDateTime.now());
@@ -128,11 +123,11 @@ public class ActionRunner {
         ActionContext context = actionInput.getActionContext();
         log.trace("Running action {} with input {}", action.getClassCanonicalName(), actionInput);
         ResultType result;
-        try (MDC.MDCCloseable ignored = MDC.putCloseable("action", context.getName())) {
+        try (MDC.MDCCloseable ignored = MDC.putCloseable("action", context.getActionName())) {
             result = action.executeAction(actionInput);
 
             if (result == null) {
-                throw new RuntimeException("Action " + context.getName() + " returned null Result for did " + context.getDid());
+                throw new RuntimeException("Action " + context.getActionName() + " returned null Result for did " + context.getDid());
             }
         } catch (ExpectedContentException e) {
             result = new ErrorResult(context, "Action received no content", e).logErrorTo(log);

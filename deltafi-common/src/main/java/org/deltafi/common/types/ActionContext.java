@@ -32,13 +32,14 @@ import java.util.List;
 @NoArgsConstructor
 public class ActionContext {
     private String did;
-    private String flow;
-    private String name;
-    private String sourceFilename;
-    private String ingressFlow;
-    private String egressFlow;
-    private String hostname;
+    private String deltaFileName;
+    private String dataSource;
+    private String flowName;
+    private int flowId;
+    private String actionName;
+    private int actionId;
     private String actionVersion;
+    private String hostname;
     private OffsetDateTime startTime;
     private String systemName;
     private ContentStorageService contentStorageService;
@@ -52,7 +53,7 @@ public class ActionContext {
      * @param newDid the new DID
      * */
     public ActionContext copy(String newDid) {
-        return new ActionContext(newDid, flow, name, sourceFilename, ingressFlow, egressFlow, hostname, actionVersion,
-                startTime, systemName, contentStorageService, collect, collectedDids, memo);
+        return new ActionContext(newDid, deltaFileName, dataSource, flowName, flowId, actionName, actionId, hostname,
+                actionVersion, startTime, systemName, contentStorageService, collect, collectedDids, memo);
     }
 }

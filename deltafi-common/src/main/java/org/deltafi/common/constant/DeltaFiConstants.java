@@ -26,7 +26,6 @@ public class DeltaFiConstants {
     public static final String INVALID_ACTION_EVENT_RECEIVED = "Invalid action event received";
     public static final String MISSING_FLOW_ACTION = "MissingRunningFlow";
     public static final String MONGO_MAP_KEY_DOT_REPLACEMENT = ";;";
-    public static final String NO_EGRESS_FLOW_CONFIGURED_ACTION = "NoEgressFlowConfiguredAction";
     public static final String PERMISSIONS_HEADER = "X-User-Permissions";
     public static final String SYNTHETIC_EGRESS_ACTION_FOR_TEST = "SyntheticEgressActionForTestEgress";
     public static final String USER_HEADER = "X-User-Name";
@@ -52,7 +51,7 @@ public class DeltaFiConstants {
     // Tag names
     public static final String ACTION = "action";
     public static final String EGRESS_FLOW = "egressFlow";
-    public static final String INGRESS_FLOW = "ingressFlow";
+    public static final String DATA_SOURCE = "dataSource";
     public static final String SOURCE = "source";
     public static final String CLASS = "class";
 }

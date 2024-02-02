@@ -22,7 +22,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.Action;
-import org.deltafi.common.types.ActionEvent;
+import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.DeltaFile;
 import org.deltafi.core.generated.types.BackOff;
 import org.deltafi.core.repo.ResumePolicyRepo;
@@ -59,14 +59,14 @@ public class ResumePolicyService implements Snapshotter {
      *
      * @param attempt    number of times action attempted
      * @param errorCause error cause text.
-     * @param flow       the sourceInfo flow.
-     * @param action     name of action with error.
+     * @param flowName       the sourceInfo flow.
+     * @param actionName     name of action with error.
      * @param actionType type of action with error.
      * @return Optional ResumePolicy if found, else empty.
      */
-    Optional<ResumePolicy> find(int attempt, String errorCause, String flow, String action, String actionType) {
+    Optional<ResumePolicy> find(int attempt, String errorCause, String flowName, String actionName, ActionType actionType) {
         for (ResumePolicy policy : policiesCache) {
-            if (policy.isMatch(attempt, errorCause, flow, action, actionType)) {
+            if (policy.isMatch(attempt, errorCause, flowName, actionName, actionType)) {
                 return Optional.of(policy);
             }
         }
@@ -88,15 +88,12 @@ public class ResumePolicyService implements Snapshotter {
      * @return true if a match; otherwise false
      */
     boolean matchesActionError(ResumePolicy policy, DeltaFile deltaFile) {
-        Optional<Action> action = deltaFile.firstActionError();
-        if (action.isPresent()) {
-            return policy.isMatch(action.get().getAttempt(),
-                    action.get().getErrorCause(),
-                    deltaFile.getSourceInfo().getFlow(),
-                    action.get().getName(),
-                    action.get().getType().name());
-        }
-        return false;
+        return deltaFile.erroredFlows().stream()
+                .anyMatch(f -> {
+                    Action action = f.lastAction();
+                    return policy.isMatch(action.getAttempt(), action.getErrorCause(), deltaFile.getDataSource(),
+                            action.getName(), action.getType());
+                });
     }
 
     /**
@@ -120,27 +117,20 @@ public class ResumePolicyService implements Snapshotter {
      * Search for a resume policy matching the action error, and apply resume policy if found and appropriate.
      *
      * @param deltaFile  - The DeltaFile being acted upon
-     * @param event      - The error event
-     * @param actionType - The action's type
+     * @param action     - The errored action
+     * @param errorCause - The error cause
      * @return An Optional of the delay details for the next execution
      */
-    public Optional<ResumeDetails> getAutoResumeDelay(DeltaFile deltaFile, ActionEvent event, String actionType) {
-        Optional<Action> action = deltaFile.actionNamed(event.getFlow(), event.getAction());
-        if (action.isPresent()) {
-            Optional<ResumePolicy> policy = find(
-                    action.get().getAttempt(),
-                    event.getError().getCause(),
-                    deltaFile.getSourceInfo().getFlow(),
-                    event.getAction(),
-                    actionType);
+    public Optional<ResumeDetails> getAutoResumeDelay(DeltaFile deltaFile, Action action, String errorCause) {
+        Optional<ResumePolicy> policy = find(
+                action.getAttempt(),
+                errorCause,
+                deltaFile.getDataSource(),
+                action.getName(),
+                action.getType());
 
-            if (policy.isPresent()) {
-                return Optional.of(new ResumeDetails(policy.get().getName(),
-                        computeDelay(policy.get().getBackOff(), action.get().getAttempt())));
-            }
-        }
-
-        return Optional.empty();
+        return policy.map(resumePolicy -> new ResumeDetails(resumePolicy.getName(),
+                computeDelay(resumePolicy.getBackOff(), action.getAttempt())));
     }
 
     int computeDelay(BackOff backOff, int attempt) {

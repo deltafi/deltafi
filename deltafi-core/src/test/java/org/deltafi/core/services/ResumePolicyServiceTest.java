@@ -40,9 +40,8 @@ class ResumePolicyServiceTest {
 
     private static final String DEFAULT_ID = "1";
     private static final String ERROR = "error";
-    private static final String FLOW = "flow";
+    private static final String DATA_SOURCE = "dataSource";
     private static final String ACTION = "action";
-    private static final String TRANSFORM_ACTION_TYPE = ActionType.TRANSFORM.name();
     private static final String NOT_FOUND = "notFound";
     private static final int MAX_ATTEMPTS = 3;
 
@@ -101,7 +100,7 @@ class ResumePolicyServiceTest {
     void testFind() {
         when(resumePolicyRepo.findByOrderByPriorityDesc()).thenReturn(getTestList());
         resumePolicyService.refreshCache();
-        Optional<ResumePolicy> policy = resumePolicyService.find(1, ERROR, "2" + FLOW, "2" + ACTION, TRANSFORM_ACTION_TYPE);
+        Optional<ResumePolicy> policy = resumePolicyService.find(1, ERROR, "2" + DATA_SOURCE, "2" + ACTION, ActionType.TRANSFORM);
         assertFalse(policy.isEmpty());
         assertEquals("name2", policy.get().getName());
     }
@@ -111,49 +110,31 @@ class ResumePolicyServiceTest {
         when(resumePolicyRepo.findByOrderByPriorityDesc()).thenReturn(getTestList());
         resumePolicyService.refreshCache();
 
+        Action errored = Action.builder().name("1action").type(ActionType.TRANSFORM).attempt(MAX_ATTEMPTS - 1).build();
+
         Optional<ResumePolicyService.ResumeDetails> resumeDetails = resumePolicyService.getAutoResumeDelay(
-                getDeltaFile(MAX_ATTEMPTS - 1),
-                ActionEvent.builder()
-                        .flow("1" + FLOW)
-                        .action("1" + ACTION)
-                        .error(ErrorEvent.builder().cause(ERROR).build())
-                        .build(),
-                TRANSFORM_ACTION_TYPE);
+                getDeltaFile(MAX_ATTEMPTS - 1), errored, ERROR);
         assertFalse(resumeDetails.isEmpty());
         assertEquals(100, resumeDetails.get().delay());
         assertEquals("name1", resumeDetails.get().name());
 
+        errored.setAttempt(MAX_ATTEMPTS + 1); // too many attempts for policy name1, roll to name4
         Optional<ResumePolicyService.ResumeDetails> rollToNextPolicy = resumePolicyService.getAutoResumeDelay(
-                getDeltaFile(MAX_ATTEMPTS + 1),
-                ActionEvent.builder()
-                        .flow("1" + FLOW)
-                        .action("1" + ACTION)
-                        .error(ErrorEvent.builder().cause(ERROR).build())
-                        .build(),
-                TRANSFORM_ACTION_TYPE);
+                getDeltaFile(MAX_ATTEMPTS + 1), errored, ERROR);
+
         assertFalse(rollToNextPolicy.isEmpty());
         assertEquals(100, rollToNextPolicy.get().delay());
         assertEquals("name4", rollToNextPolicy.get().name());
 
-        Optional<ResumePolicyService.ResumeDetails> tooManyAttempts = resumePolicyService.getAutoResumeDelay(
-                getDeltaFile(MAX_ATTEMPTS * 2),
-                ActionEvent.builder()
-                        .flow("1" + FLOW)
-                        .action("1" + ACTION)
-                        .error(ErrorEvent.builder().cause(ERROR).build())
-                        .build(),
-                TRANSFORM_ACTION_TYPE);
-        assertTrue(tooManyAttempts.isEmpty());
-
+        // errorCause does not match any policies
         Optional<ResumePolicyService.ResumeDetails> wrongError = resumePolicyService.getAutoResumeDelay(
-                getDeltaFile(1),
-                ActionEvent.builder()
-                        .flow("1" + FLOW)
-                        .action("1" + ACTION)
-                        .error(ErrorEvent.builder().cause("not-a-match").build())
-                        .build(),
-                TRANSFORM_ACTION_TYPE);
+                getDeltaFile(1), errored, "not-a-match");
         assertTrue(wrongError.isEmpty());
+
+        errored.setAttempt(MAX_ATTEMPTS * 2);
+        Optional<ResumePolicyService.ResumeDetails> tooManyAttempts = resumePolicyService.getAutoResumeDelay(
+                getDeltaFile(MAX_ATTEMPTS * 2), errored, ERROR);
+        assertTrue(tooManyAttempts.isEmpty());
     }
 
     @Test
@@ -205,7 +186,7 @@ class ResumePolicyServiceTest {
 
         Optional<ResumePolicy> found = resumePolicyService.findByName("name2");
         assertTrue(found.isPresent());
-        assertEquals("2" + FLOW, found.get().getFlow());
+        assertEquals("2" + DATA_SOURCE, found.get().getDataSource());
 
         Optional<ResumePolicy> notFound = resumePolicyService.findByName("name999");
         assertTrue(notFound.isEmpty());
@@ -277,7 +258,7 @@ class ResumePolicyServiceTest {
                 .attempt(1)
                 .build();
 
-        Action action2 = null;
+        Action action2;
         if (withErrorAction) {
             action2 = Action.builder()
                     .name(prefix + ACTION)
@@ -296,12 +277,15 @@ class ResumePolicyServiceTest {
                     .build();
         }
 
+        String dataSource = prefix + DATA_SOURCE;
+        DeltaFileFlow flow = DeltaFileFlow.builder()
+                .state(withErrorAction ? DeltaFileFlowState.ERROR : DeltaFileFlowState.COMPLETE)
+                .name(dataSource)
+                .actions(new ArrayList<>(List.of(action1, action2))).build();
         return DeltaFile.builder()
                 .did(did)
-                .sourceInfo(
-                        SourceInfo.builder().flow(prefix + FLOW).build()
-                )
-                .actions(new ArrayList<>(List.of(action1, action2)))
+                .dataSource(dataSource)
+                .flows(List.of(flow))
                 .build();
     }
 
@@ -322,13 +306,13 @@ class ResumePolicyServiceTest {
     }
 
     private ResumePolicy getCustom(String name, String prefix, int maxAttempts) {
-        ResumePolicy policy = buildPolicy(name, ERROR, prefix + FLOW, prefix + ACTION, TRANSFORM_ACTION_TYPE, maxAttempts);
+        ResumePolicy policy = buildPolicy(name, ERROR, prefix + DATA_SOURCE, prefix + ACTION, ActionType.TRANSFORM, maxAttempts);
         policy.setBackOff(BackOff.newBuilder().delay(100).build());
         return policy;
     }
 
     @SuppressWarnings("SameParameterValue")
-    private ResumePolicy buildPolicy(String name, String error, String flow, String action, String actionType, int maxAttempts) {
+    private ResumePolicy buildPolicy(String name, String error, String dataSource, String action, ActionType actionType, int maxAttempts) {
         ResumePolicy policy = new ResumePolicy();
         policy.setId(DEFAULT_ID);
         policy.setName(name);
@@ -336,7 +320,7 @@ class ResumePolicyServiceTest {
         policy.setMaxAttempts(maxAttempts);
 
         if (null != error) policy.setErrorSubstring(error);
-        if (null != flow) policy.setFlow(flow);
+        if (null != dataSource) policy.setDataSource(dataSource);
         if (null != action) policy.setAction(action);
         if (null != actionType) policy.setActionType(actionType);
 
@@ -345,23 +329,28 @@ class ResumePolicyServiceTest {
 
     private DeltaFile getDeltaFile(int attempt) {
         OffsetDateTime now = OffsetDateTime.now();
+
         Action action = Action.builder()
-                .flow("1" + FLOW)
                 .name("1" + ACTION)
                 .state(ActionState.QUEUED)
+                .type(ActionType.TRANSFORM)
                 .created(now)
                 .modified(now)
                 .attempt(attempt)
                 .build();
 
+        String dataSource = 1 + DATA_SOURCE;
+        DeltaFileFlow flow = DeltaFileFlow.builder()
+                .name(dataSource)
+                .actions(new ArrayList<>(List.of(action))).build();
+
         return DeltaFile.builder()
                 .did(UUID.randomUUID().toString())
+                .dataSource(dataSource)
                 .requeueCount(0)
                 .stage(DeltaFileStage.IN_FLIGHT)
-                .actions(new ArrayList<>(List.of(action)))
-                .sourceInfo(SourceInfo.builder()
-                        .flow("1" + FLOW)
-                        .filename("filename").build())
+                .flows(new ArrayList<>(List.of(flow)))
+                .name("filename")
                 .created(now)
                 .modified(now)
                 .egressed(false)

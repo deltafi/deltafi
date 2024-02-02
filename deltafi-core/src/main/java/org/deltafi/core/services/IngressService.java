@@ -199,8 +199,8 @@ public class IngressService {
 
         IngressEventItem ingressEventItem = IngressEventItem.builder()
                 .did(did)
-                .filename(filename)
-                .flow(flow)
+                .deltaFileName(filename)
+                .flowName(flow)
                 .metadata(metadata)
                 .content(List.of(content))
                 .build();

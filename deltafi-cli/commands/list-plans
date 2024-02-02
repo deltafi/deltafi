@@ -33,9 +33,5 @@ if [[ "$DGS_ERRORS" != "" ]]; then
 else
   print_plans "transform"
   echo
-  print_plans "normalize"
-  echo
-  print_plans "enrich"
-  echo
   print_plans "egress"
 fi

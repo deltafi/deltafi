@@ -1,6 +1,9 @@
 {
     "did": "%1$s",
-    "action": "%2$s.%3$s",
+    "flowName": "%2$s",
+    "flowId": "%3$d",
+    "actionName": "%4$s",
+    "actionId": "%5$d",
     "start": "2021-07-11T13:44:22.183Z",
     "stop": "2021-07-11T13:44:22.184Z",
     "type": "FILTER",

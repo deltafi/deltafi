@@ -100,6 +100,11 @@ public class TransformFlow extends Flow implements Subscriber, Publisher {
     }
 
     @Override
+    public FlowType flowType() {
+        return FlowType.TRANSFORM;
+    }
+
+    @Override
     public PublishRules publishRules() {
         return publishRules;
     }

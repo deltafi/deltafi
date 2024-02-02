@@ -36,8 +36,10 @@ import java.util.List;
 @Builder
 public class ActionEvent {
   private String did;
-  private String flow;
-  private String action;
+  private String flowName;
+  private Integer flowId;
+  private String actionName;
+  private Integer actionId;
   private OffsetDateTime start;
   private OffsetDateTime stop;
   private ActionEventType type;
@@ -52,16 +54,27 @@ public class ActionEvent {
           .registerModule(new JavaTimeModule())
           .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
-  public String validate() {
+  public String validateHeader() {
     if (StringUtils.isEmpty(did)) {
       return "Missing did";
     }
-    if (StringUtils.isEmpty(flow)) {
-      return "Missing flow";
+    if (StringUtils.isEmpty(flowName)) {
+      return "Missing flowName";
     }
-    if (StringUtils.isEmpty(action)) {
-      return "Missing action";
+    if (flowId == null) {
+      return "Missing flowId";
     }
+    if (StringUtils.isEmpty(actionName)) {
+      return "Missing actionName";
+    }
+    if (actionId == null) {
+      return "Missing actionId";
+    }
+
+    return null;
+  }
+
+  public String validatePayload() {
     if (start == null) {
       return "Missing start";
     }

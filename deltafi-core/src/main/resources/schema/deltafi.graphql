@@ -47,20 +47,8 @@ type Egress {
   flow: String!
 }
 
-type SourceInfo {
-  filename: String!
-  flow: String!
-  metadata: Metadata
-}
-
-input SourceInfoFilter {
-  filenameFilter: FilenameFilter
-  ingressFlows: [String!]
-  metadata: [KeyValueInput!]
-}
-
-input FilenameFilter {
-  filename: String!
+input NameFilter {
+  name: String!
   regex: Boolean
   caseSensitive: Boolean
 }
@@ -109,8 +97,8 @@ enum ActionType {
 
 type Action {
   name: String!
+  id: Int!
   type: ActionType!
-  flow: String!
   state: ActionState!
   created: DateTime!
   queued: DateTime
@@ -119,6 +107,10 @@ type Action {
   modified: DateTime!
   errorCause: String
   errorContext: String
+  errorAcknowledged: DateTime
+  errorAcknowledgedReason: String
+  nextAutoResume: DateTime
+  nextAutoResumeReason: String
   filteredCause: String
   filteredContext: String
   attempt: Int!
@@ -127,36 +119,78 @@ type Action {
   deleteMetadataKeys: [String!]!
 }
 
+type FlowPlanCoordinates {
+  name: String
+  plugin: String
+  pluginVersion: String
+}
+
+type DeltaFileFlowInput {
+  metadata: Metadata!
+  content: [Content!]!
+  topics: [String]
+  ancestorIds: [Int!]!
+}
+
+enum DeltaFileFlowState {
+  IN_FLIGHT
+  COMPLETE
+  PENDING_ANNOTATIONS
+  ERROR
+  CANCELLED
+}
+
+enum FlowType {
+  TIMED_DATA_SOURCE
+  REST_DATA_SOURCE
+  FLOW
+  TRANSFORM # TODO should this be replaced with FLOW
+  EGRESS
+}
+
+type DeltaFileFlow {
+  name: String!
+  # unique uuid produced for this deltaFile instantiation, used to reconstruct the DAG
+  id: Int!
+  type: FlowType!
+  state: DeltaFileFlowState!
+  created: DateTime!
+  modified: DateTime!
+  flowPlan: FlowPlanCoordinates!
+  input: DeltaFileFlowInput!
+  actions: [Action!]!
+  publishTopics: [String!]!
+  # +1 from the last flow
+  depth: Int!
+  pendingAnnotations: [String]
+  testMode: Boolean!
+  testModeReason: String
+}
+
 type DeltaFile {
   schemaVersion: Int!
   did: String!
+  # optional name assigned by the data source
+  name: String
+  dataSource: String!
   parentDids: [String!]!
   childDids: [String!]!
+  flows: [DeltaFileFlow!]!
   requeueCount: Int!
   ingressBytes: Long!
   referencedBytes: Long!
   totalBytes: Long!
   stage: DeltaFileStage!
-  actions: [Action!]!
-  sourceInfo: SourceInfo!
-  metadata: Metadata!
   annotations: Metadata
-  egress: [Egress!]!
+  egressFlows: [String!]!
   created: DateTime!
   modified: DateTime!
   contentDeleted: DateTime
   contentDeletedReason: String
-  errorAcknowledged: DateTime
-  errorAcknowledgedReason: String
-  testMode: Boolean
-  testModeReason: String
   egressed: Boolean
   filtered: Boolean
   replayed: DateTime
   replayDid: String
-  nextAutoResume: DateTime
-  nextAutoResumeReason: String
-  pendingAnnotationsForFlows: [String]
 }
 
 type DeltaFiles {
@@ -234,6 +268,7 @@ type FilteredByMessage {
 
 input DeltaFilesFilter {
   dids: [String!]
+  nameFilter: NameFilter
   parentDid: String
   requeueCountMin: Int
   ingressBytesMin: Long
@@ -249,7 +284,6 @@ input DeltaFilesFilter {
   contentDeleted: Boolean
   modifiedAfter: DateTime
   modifiedBefore: DateTime
-  sourceInfo: SourceInfoFilter
   stage: DeltaFileStage
   actions: [String!]
   errorCause: String
@@ -326,7 +360,7 @@ type Query {
   lastCreated(last: Int) : [DeltaFile]!
   lastModified(last: Int) : [DeltaFile]!
   lastErrored(last: Int) : [DeltaFile]!
-  lastWithFilename(filename: String!) : DeltaFile
+  lastWithName(name: String!) : DeltaFile
 
   errorSummaryByFlow(offset: Int, limit: Int, filter: ErrorSummaryFilter, orderBy: DeltaFileOrder): ErrorsByFlow!
   errorSummaryByMessage(offset: Int, limit: Int, filter: ErrorSummaryFilter, orderBy: DeltaFileOrder): ErrorsByMessage!
@@ -381,9 +415,8 @@ type Mutation {
   setEgressFlowExpectedAnnotations(flowName: String!, expectedAnnotations: [String]) : Boolean!
 
   taskTimedIngress(name: String!, memo: String) : Boolean!
-
-  resume(dids: [String!]!, resumeMetadata: [ResumeMetadata!]) : [RetryResult!]!
-  replay(dids: [String!]!, replaceFilename: String, replaceFlow: String, removeSourceMetadata: [String!], replaceSourceMetadata: [KeyValueInput!]) : [RetryResult!]!
+  resume(action: String, dids: [String!]!, resumeMetadata: [ResumeMetadata!]) : [RetryResult!]!
+  replay(dids: [String!]!, replaceDeltaFileName: String, replaceDataSource: String, removeSourceMetadata: [String!], replaceSourceMetadata: [KeyValueInput!]) : [RetryResult!]!
   acknowledge(dids: [String!]!, reason: String) : [AcknowledgeResult!]!
   cancel(dids: [String!]!) : [CancelResult!]!
 

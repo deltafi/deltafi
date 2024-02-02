@@ -65,4 +65,9 @@ public class EgressFlowPlan extends FlowPlan implements Subscriber {
     public Set<Rule> subscriptions() {
         return subscriptions;
     }
+
+    @Override
+    public FlowType flowType() {
+        return FlowType.EGRESS;
+    }
 }

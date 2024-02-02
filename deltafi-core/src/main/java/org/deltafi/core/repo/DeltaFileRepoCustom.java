@@ -237,14 +237,6 @@ public interface DeltaFileRepoCustom {
     DeltaFileStats deltaFileStats();
 
     /**
-     * Remove the given flow from pendingAnnotationsForFlows for any DeltaFile
-     * that currently has the flow in the set.
-     * Unset any pendingAnnotationsForFlows that are empty after removing the flow
-     * @param flow that should be removed from pendingAnnotationsForFlows
-     */
-    void removePendingAnnotationsForFlow(String flow);
-
-    /**
      * Retrieves a summary of all cold queued actions.
      *
      * @return A list of ColdQueuedActionSummary objects representing the summary of cold queued actions.

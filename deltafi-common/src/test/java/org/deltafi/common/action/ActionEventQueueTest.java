@@ -48,7 +48,7 @@ public class ActionEventQueueTest {
     private final static String GOOD_BASIC = """
             {
               "did": "did",
-              "action": "flowName.ActionName",
+              "actionName": "flowName.ActionName",
               "start": "2021-07-11T13:44:22.183Z",
               "stop": "2021-07-11T13:44:22.184Z",
               "type": "TRANSFORM",
@@ -65,7 +65,7 @@ public class ActionEventQueueTest {
     private final static String GOOD_UNICODE = """
             {
                 "did": "did",
-                "action": "āȂ.̃Є",
+                "actionName": "āȂ.̃Є",
                 "start": "2021-07-11T13:44:22.183Z",
                 "stop": "2021-07-11T13:44:22.184Z",
                 "type": "TRANSFORM",
@@ -81,7 +81,7 @@ public class ActionEventQueueTest {
             {
                 "did": "did",
                 "extra": "field",
-                "action": "sampleTransform.SampleTransformAction",
+                "actionName": "sampleTransform.SampleTransformAction",
                 "start": "2021-07-11T13:44:22.183Z",
                 "stop": "2021-07-11T13:44:22.184Z",
                 "type": "TRANSFORM",
@@ -96,7 +96,7 @@ public class ActionEventQueueTest {
     private final static String ILLEGAL_CONTROL_CHARS = """
             {
                 "did": "did",
-                "action": "\u0000\u0001醑Ȃ",
+                "actionName": "\u0000\u0001醑Ȃ",
                 "start": "2021-07-11T13:44:22.183Z",
                 "stop": "2021-07-11T13:44:22.184Z",
                 "type": "TRANSFORM",
@@ -111,7 +111,7 @@ public class ActionEventQueueTest {
     private final static String INVALID_DATE = """
             {
                 "did": "did",
-                "action": "sampleTransform.SampleTransformAction",
+                "actionName": "sampleTransform.SampleTransformAction",
                 "start": "NOTADATETIME",
                 "stop": "2021-07-11T13:44:22.184Z",
                 "type": "TRANSFORM",
@@ -126,7 +126,7 @@ public class ActionEventQueueTest {
     private final static String METRICS_OVERFLOW = """
             {
                 "did": "did",
-                "action": "sampleTransform.SampleTransformAction",
+                "actionName": "sampleTransform.SampleTransformAction",
                 "start": "2021-07-11T13:44:22.183Z",
                 "stop": "2021-07-11T13:44:22.184Z",
                 "type": "TRANSFORM",
@@ -168,7 +168,7 @@ public class ActionEventQueueTest {
             ActionEventQueue actionEventQueue = new ActionEventQueue(new ActionEventQueueProperties(), 2);
             assertEquals(1, mock.constructed().size());
             ActionEvent actionEvent = actionEventQueue.takeResult(QUEUE_NAME);
-            assertEquals("āȂ.̃Є", actionEvent.getAction());
+            assertEquals("āȂ.̃Є", actionEvent.getActionName());
         }
     }
 

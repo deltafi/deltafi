@@ -108,7 +108,7 @@ string `JsonException`. The action will be attempted up to 4 times, with a rando
   "id": "a2b08968-866a-4080-bc28-1d7e7c81ada8",
   "name": "resume-json-errors",
   "errorSubstring": "JsonException",
-  "actionType": "ENRICH",
+  "actionType": "TRANSFORM",
   "maxAttempts": 4,
   "priority": 150,
   "backOff": {

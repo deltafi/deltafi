@@ -88,11 +88,11 @@ class DeltaFilesDatafetcherSecurityTest {
         callables.add(() -> deltaFilesDatafetcher.acknowledge(List.of("did"), "reason"));
         callables.add(() -> deltaFilesDatafetcher.cancel(List.of("did")));
         callables.add(() -> deltaFilesDatafetcher.resume(List.of("did"), null));
-        callables.add(() -> deltaFilesDatafetcher.replay(List.of("did"), null, null, null, null));
+        callables.add(() -> deltaFilesDatafetcher.replay(List.of("did"), null, null));
         callables.add(() -> deltaFilesDatafetcher.lastCreated(1));
         callables.add(() -> deltaFilesDatafetcher.lastModified(1));
         callables.add(() -> deltaFilesDatafetcher.lastErrored(1));
-        callables.add(() -> deltaFilesDatafetcher.lastWithFilename(""));
+        callables.add(() -> deltaFilesDatafetcher.lastWithName(""));
         callables.add(() -> deltaFilesDatafetcher.errorSummaryByFlow(0, 0, null, null));
         callables.add(() -> deltaFilesDatafetcher.errorSummaryByMessage(0, 0, null, null));
         callables.add(() -> deltaFilesDatafetcher.annotationKeys());

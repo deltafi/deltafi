@@ -84,7 +84,7 @@ class MongoRetryTest {
         String fromAction = "egressAction";
 
         DeltaFile deltaFile = Util.emptyDeltaFile(did, "flow");
-        deltaFile.setActions(new ArrayList<>(Collections.singletonList(Action.builder().name(fromAction).state(ActionState.QUEUED).build())));
+        deltaFile.getFlows().get(0).setActions(new ArrayList<>(Collections.singletonList(Action.builder().name(fromAction).state(ActionState.QUEUED).build())));
         // contrived, but it won't try to save if it's not complete, and the state machine flows aren't populated
         deltaFile.setStage(DeltaFileStage.COMPLETE);
 
@@ -92,7 +92,7 @@ class MongoRetryTest {
         Mockito.doThrow(new OptimisticLockingFailureException("failed")).when(deltaFileCacheService).save(Mockito.any());
 
         Assertions.assertDoesNotThrow(() -> deltaFilesService.processResult(ActionEvent.builder()
-                .type(ActionEventType.EGRESS).did(did).action(fromAction).start(OffsetDateTime.now()).build()));
+                .type(ActionEventType.EGRESS).did(did).flowName("flow").actionName(fromAction).start(OffsetDateTime.now()).build()));
     }
 
 }

@@ -71,4 +71,9 @@ public class TransformFlowPlan extends FlowPlan implements Publisher, Subscriber
     public PublishRules publishRules() {
         return this.publishRules;
     }
+
+    @Override
+    public FlowType flowType() {
+        return FlowType.TRANSFORM;
+    }
 }

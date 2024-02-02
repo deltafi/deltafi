@@ -1,6 +1,9 @@
 {
     "did": "%1$s",
-    "action": "sampleEgress.SampleEgressAction",
+    "flowName": "sampleEgress",
+    "flowId": 2,
+    "actionName": "SampleEgressAction",
+    "actionId": 0,
     "start": "2021-07-11T13:44:22.183Z",
     "stop": "2021-07-11T13:44:22.184Z",
     "type": "EGRESS",

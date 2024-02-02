@@ -3,9 +3,8 @@
   "action": "flowName.ActionName",
   "start": "2021-07-11T13:44:22.183Z",
   "stop": "2021-07-11T13:44:22.184Z",
-  "type": "ENRICH",
-  "enrich": {
-    "enrichments": [ { "name": "sampleEnrichment", "value": "enrichmentData", "mediaType": "application/octet-stream" } ],
+  "type": "TRANSFORM",
+  "transform": {
     "annotations": {
       "count": "20,000",
       "511b9d4a-597b-4b85-b1aa-d879f4a09463": "75c78a81-8e96-482f-9423-e7e1c7ac4ad6",

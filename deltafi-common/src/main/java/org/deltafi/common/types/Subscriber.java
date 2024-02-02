@@ -35,4 +35,18 @@ public interface Subscriber {
      * @return the name of this subscriber
      */
     String getName();
+
+    /**
+     * Get the FlowType of the subscriber
+     * @return the FlowType
+     */
+    FlowType flowType();
+
+    /**
+     *
+     * @return
+     */
+    default boolean isTestMode() {
+        return false;
+    }
 }

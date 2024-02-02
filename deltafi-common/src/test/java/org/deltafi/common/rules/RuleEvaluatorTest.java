@@ -21,15 +21,10 @@ import lombok.SneakyThrows;
 import org.assertj.core.api.Assertions;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.test.storage.s3.InMemoryObjectStorageService;
-import org.deltafi.common.types.Action;
-import org.deltafi.common.types.ActionState;
-import org.deltafi.common.types.ActionType;
-import org.deltafi.common.types.Content;
-import org.deltafi.common.types.DeltaFile;
+import org.deltafi.common.types.*;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -40,28 +35,28 @@ class RuleEvaluatorTest {
 
     @Test
     void testEvaluation_metadataChecks() {
-        DeltaFile deltaFile = testDeltaFile();
-        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata.containsKey('a')", deltaFile)).isTrue();
-        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata['a'] == 'b'", deltaFile)).isTrue();
-        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata.containsKey('b')", deltaFile)).isFalse();
-        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata['a'] == 'c'", deltaFile)).isFalse();
+        DeltaFileFlow flow = testDeltaFileFlow();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata.containsKey('a')", flow)).isTrue();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata['a'] == 'b'", flow)).isTrue();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata.containsKey('b')", flow)).isFalse();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata['a'] == 'c'", flow)).isFalse();
     }
 
     @Test
     void testEvaluation_contentChecks() {
-        DeltaFile deltaFile = testDeltaFile();
-        Assertions.assertThat(ruleEvaluator.evaluateCondition("hasMediaType('plain/text')", deltaFile)).isTrue();
-        Assertions.assertThat(ruleEvaluator.evaluateCondition("hasMediaType('application/json')", deltaFile)).isFalse();
-        Assertions.assertThat(ruleEvaluator.evaluateCondition("content.?[getSize() > 2].isEmpty()", deltaFile)).isFalse();
-        Assertions.assertThat(ruleEvaluator.evaluateCondition("content.?[getSize() > 10].isEmpty()", deltaFile)).isTrue();
-        Assertions.assertThat(ruleEvaluator.evaluateCondition("content.?[getName() == 'test.txt'].isEmpty()", deltaFile)).isFalse();
-        Assertions.assertThat(ruleEvaluator.evaluateCondition("content.?[getName() == 'test2.txt'].isEmpty()", deltaFile)).isTrue();
+        DeltaFileFlow flow = testDeltaFileFlow();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("hasMediaType('plain/text')", flow)).isTrue();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("hasMediaType('application/json')", flow)).isFalse();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("content.?[getSize() > 2].isEmpty()", flow)).isFalse();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("content.?[getSize() > 10].isEmpty()", flow)).isTrue();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("content.?[getName() == 'test.txt'].isEmpty()", flow)).isFalse();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("content.?[getName() == 'test2.txt'].isEmpty()", flow)).isTrue();
     }
 
     @Test
     void testImmutableDeltaFile() {
-        DeltaFile originalDeltaFile = testDeltaFile();
-        RuleEvaluator.ImmutableDeltaFile deltaFile = new RuleEvaluator.ImmutableDeltaFile(originalDeltaFile);
+        DeltaFileFlow originalDeltaFileFlow = testDeltaFileFlow();
+        RuleEvaluator.ImmutableDeltaFileFlow deltaFile = new RuleEvaluator.ImmutableDeltaFileFlow(originalDeltaFileFlow);
         // cannot rewrite value for key 'a'
         Assertions.assertThatThrownBy(() -> ruleEvaluator.doEvaluateCondition("metadata['a'] = 'c'", deltaFile))
                 .isInstanceOf(UnsupportedOperationException.class);
@@ -71,21 +66,20 @@ class RuleEvaluatorTest {
 
         //
         ruleEvaluator.doEvaluateCondition("content[0].setName('c')", deltaFile);
-        Assertions.assertThat(originalDeltaFile.lastContent().get(0).getName()).isEqualTo("test.txt");
+        Assertions.assertThat(originalDeltaFileFlow.lastContent().get(0).getName()).isEqualTo("test.txt");
         Assertions.assertThat(deltaFile.content().get(0).getName()).isEqualTo("c");
     }
 
     @SneakyThrows
-    private DeltaFile testDeltaFile() {
-        DeltaFile deltaFile = new DeltaFile();
-        deltaFile.setActions(new ArrayList<>());
+    private DeltaFileFlow testDeltaFileFlow() {
         Content content = contentStorageService.save("did", "test input".getBytes(StandardCharsets.UTF_8), "test.txt", "plain/text");
         Action action = new Action();
         action.setContent(List.of(content));
         action.setMetadata(Map.of("a", "b"));
         action.setType(ActionType.TRANSFORM);
         action.setState(ActionState.COMPLETE);
-        deltaFile.getActions().add(action);
-        return deltaFile;
+        DeltaFileFlow flow = new DeltaFileFlow();
+        flow.getActions().add(action);
+        return flow;
     }
 }

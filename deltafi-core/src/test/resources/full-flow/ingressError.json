@@ -1,6 +1,9 @@
 {
     "did": "taskedDid",
-    "action": "sampleTimedIngressError.SampleTimedIngressErrorAction",
+    "flowName": "sampleTimedDataSourceError",
+    "flowId": 0,
+    "actionName": "SampleTimedIngressErrorAction",
+    "actionId": 0,
     "start": "2021-07-11T13:44:22.183Z",
     "stop": "2021-07-11T13:44:22.184Z",
     "type": "INGRESS",
@@ -8,19 +11,25 @@
         "ingressItems": [
             {
                 "did": "%1$s",
-                "filename":"filename",
+                "deltaFileName": "filename",
                 "metadata": {
-                    "smoke":"test"
+                    "smoke": "test"
                 },
-                "content": [ {
-                    "name": "filename",
-                    "mediaType": "application/text",
-                    "segments": [ {
-                        "uuid": "uuid",
-                        "offset": 0,
-                        "size": 36,
-                        "did": "%1$s" } ],
-                    "size": 36 } ],
+                "content": [
+                    {
+                        "name": "filename",
+                        "mediaType": "application/text",
+                        "segments": [
+                            {
+                                "uuid": "uuid",
+                                "offset": 0,
+                                "size": 36,
+                                "did": "%1$s"
+                            }
+                        ],
+                        "size": 36
+                    }
+                ],
                 "created": 1695396455.461844721
             }
         ]

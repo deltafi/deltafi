@@ -19,6 +19,7 @@ package org.deltafi.core.snapshot;
 
 import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
+import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.Variable;
 import org.deltafi.common.types.VariableDataType;
@@ -79,7 +80,7 @@ public class SystemSnapshotDatafetcherTestHelper {
         ResumePolicy first = new ResumePolicy();
         first.setId("88bc7429-7adf-4bb1-b23f-3922993e0a1a");
         first.setName("auto-resume-passthrough");
-        first.setFlow("passthrough");
+        first.setDataSource("passthrough");
         first.setMaxAttempts(10);
         first.setBackOff(BackOff.newBuilder().delay(100).maxDelay(200).multiplier(1).build());
 
@@ -87,7 +88,7 @@ public class SystemSnapshotDatafetcherTestHelper {
         second.setId("a2b08968-866a-4080-bc28-1d7e7c81ada8");
         second.setName("resume-json-errors");
         second.setErrorSubstring("JsonException");
-        second.setActionType("ENRICH");
+        second.setActionType(ActionType.TRANSFORM);
         second.setMaxAttempts(4);
         second.setBackOff(BackOff.newBuilder().delay(60).maxDelay(120).random(true).build());
 
@@ -227,7 +228,7 @@ public class SystemSnapshotDatafetcherTestHelper {
                             {
                                 id: "88bc7429-7adf-4bb1-b23f-3922993e0a1a"
                                 name: "auto-resume-passthrough"
-                                flow: "passthrough"
+                                dataSource: "passthrough"
                                 maxAttempts: 10
                                 backOff:
                                     {
@@ -240,7 +241,7 @@ public class SystemSnapshotDatafetcherTestHelper {
                                 id: "a2b08968-866a-4080-bc28-1d7e7c81ada8"
                                 name: "resume-json-errors"
                                 errorSubstring: "JsonException"
-                                actionType: "ENRICH"
+                                actionType: TRANSFORM
                                 maxAttempts: 4
                                 backOff:
                                     {
@@ -479,7 +480,7 @@ public class SystemSnapshotDatafetcherTestHelper {
             resumePolicies {
               id
               name
-              flow
+              dataSource
               errorSubstring
               action
               actionType

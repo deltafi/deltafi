@@ -50,8 +50,8 @@ public class RestPostEgressAction extends HttpEgressActionBase<RestPostEgressPar
     protected EgressResultType doEgress(@NotNull ActionContext context, @NotNull RestPostEgressParameters params, @NotNull EgressInput input) {
         try (InputStream inputStream = input.getContent().loadInputStream()) {
             HttpResponse<InputStream> response = httpPostService.post(params.getUrl(), Map.of(params.getMetadataKey(),
-                    buildHeadersMapString(context.getDid(), context.getSourceFilename(), input.getContent().getName(), context.getIngressFlow(),
-                            context.getEgressFlow(), input.getMetadata())), inputStream, input.getContent().getMediaType());
+                    buildHeadersMapString(context.getDid(), context.getDeltaFileName(), input.getContent().getName(), context.getDataSource(),
+                            context.getFlowName(), input.getMetadata())), inputStream, input.getContent().getMediaType());
             Response.Status status = Response.Status.fromStatusCode(response.statusCode());
             if (Objects.isNull(status) || status.getFamily() != Response.Status.Family.SUCCESSFUL) {
                 try (InputStream body = response.body()) {
@@ -70,8 +70,8 @@ public class RestPostEgressAction extends HttpEgressActionBase<RestPostEgressPar
         return new EgressResult(context, params.getUrl(), input.getContent().getSize());
     }
 
-    private String buildHeadersMapString(String did, String sourceFilename, String filename, String ingressFlow, String egressFlow, Map<String, String> metadata)
+    private String buildHeadersMapString(String did, String deltaFileName, String filename, String ingressFlow, String egressFlow, Map<String, String> metadata)
             throws JsonProcessingException {
-        return OBJECT_MAPPER.writeValueAsString(buildHeadersMap(did, sourceFilename, filename, ingressFlow, egressFlow, metadata));
+        return OBJECT_MAPPER.writeValueAsString(buildHeadersMap(did, deltaFileName, filename, ingressFlow, egressFlow, metadata));
     }
 }

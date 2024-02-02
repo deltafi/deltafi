@@ -19,7 +19,7 @@ package org.deltafi.common.rules;
 
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.Content;
-import org.deltafi.common.types.DeltaFile;
+import org.deltafi.common.types.DeltaFileFlow;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 @Service
 public class RuleEvaluator {
-    private static final ImmutableDeltaFile EXAMPLE_DELTA_FILE = new ImmutableDeltaFile(Map.of("a", "b"), List.of(new Content("", "")));
+    private static final ImmutableDeltaFileFlow EXAMPLE_DELTA_FILE = new ImmutableDeltaFileFlow(Map.of("a", "b"), List.of(new Content("", "")));
 
     private final Map<String, Expression> expressionCache = new ConcurrentHashMap<>();
 
@@ -58,25 +58,25 @@ public class RuleEvaluator {
      * Evaluate the condition against the given DeltaFile. A null condition
      * will result in true. An invalid condition results in false.
      * @param condition SPeL expression to evaluate
-     * @param deltaFile used in the evaluation
+     * @param deltaFileFlow used in the evaluation
      * @return the result of evaluating the condition
      */
-    public boolean evaluateCondition(String condition, DeltaFile deltaFile) {
+    public boolean evaluateCondition(String condition, DeltaFileFlow deltaFileFlow) {
         try {
-            return doEvaluateCondition(condition, new ImmutableDeltaFile(deltaFile));
+            return doEvaluateCondition(condition, new ImmutableDeltaFileFlow(deltaFileFlow));
         } catch (Exception e) {
             log.error("Failed to evaluate condition", e);
             return false;
         }
     }
 
-    boolean doEvaluateCondition(String condition, ImmutableDeltaFile deltaFile) {
+    boolean doEvaluateCondition(String condition, ImmutableDeltaFileFlow deltaFileFlow) {
         if (condition == null) {
             return true;
         }
 
         EvaluationContext spelContext = SimpleEvaluationContext.forReadOnlyDataBinding()
-                .withRootObject(deltaFile)
+                .withRootObject(deltaFileFlow)
                 .withInstanceMethods()
                 .build();
 
@@ -92,14 +92,14 @@ public class RuleEvaluator {
     }
 
     /**
-     * Holds a copy of the DeltaFile metadata and content list to prevent
+     * Holds a copy of the DeltaFileFlow metadata and content list to prevent
      * SpEL expressions from modifying the original DeltaFile
      * @param metadata to use when evaluating conditions
      * @param content to use when evaluating conditions
      */
-    public record ImmutableDeltaFile(Map<String, String> metadata, List<Content> content) {
-        public ImmutableDeltaFile(DeltaFile deltaFile) {
-            this(deltaFile.getImmutableMetadata(), deltaFile.getImmutableContent());
+    public record ImmutableDeltaFileFlow(Map<String, String> metadata, List<Content> content) {
+        public ImmutableDeltaFileFlow(DeltaFileFlow deltaFileFlow) {
+            this(deltaFileFlow.getImmutableMetadata(), deltaFileFlow.getImmutableContent());
         }
 
         /**

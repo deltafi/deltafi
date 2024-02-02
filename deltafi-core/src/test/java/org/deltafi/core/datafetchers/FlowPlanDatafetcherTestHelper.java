@@ -35,7 +35,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
-import static org.deltafi.core.util.Constants.TIMED_INGRESS_FLOW_NAME;
+import static org.deltafi.core.util.Constants.TIMED_DATA_SOURCE_NAME;
 
 public class FlowPlanDatafetcherTestHelper {
 
@@ -59,7 +59,7 @@ public class FlowPlanDatafetcherTestHelper {
     }
 
     public static DataSource validateTimedIngressFlow(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, ValidateDataSourceGraphQLQuery.newRequest().name(TIMED_INGRESS_FLOW_NAME).build(), new ValidateDataSourceProjectionRoot().name().type(), TimedDataSource.class);
+        return executeQuery(dgsQueryExecutor, ValidateDataSourceGraphQLQuery.newRequest().name(TIMED_DATA_SOURCE_NAME).build(), new ValidateDataSourceProjectionRoot().name().type(), TimedDataSource.class);
     }
 
     public static FlowNames getFlowNames(DgsQueryExecutor dgsQueryExecutor) {
@@ -165,15 +165,15 @@ public class FlowPlanDatafetcherTestHelper {
     }
 
     public static boolean startTimedIngressFlow(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, StartDataSourceGraphQLQuery.newRequest().name("sampleTimedIngress").build());
+        return executeQuery(dgsQueryExecutor, StartDataSourceGraphQLQuery.newRequest().name(TIMED_DATA_SOURCE_NAME).build());
     }
 
     public static boolean stopTimedIngressFlow(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, StopDataSourceGraphQLQuery.newRequest().name("sampleTimedIngress").build());
+        return executeQuery(dgsQueryExecutor, StopDataSourceGraphQLQuery.newRequest().name(TIMED_DATA_SOURCE_NAME).build());
     }
 
     public static boolean setTimedIngressMemo(DgsQueryExecutor dgsQueryExecutor, String memo) {
-        return executeQuery(dgsQueryExecutor, SetTimedIngressMemoGraphQLQuery.newRequest().name("sampleTimedIngress").memo(memo).build());
+        return executeQuery(dgsQueryExecutor, SetTimedIngressMemoGraphQLQuery.newRequest().name(TIMED_DATA_SOURCE_NAME).memo(memo).build());
     }
 
     public static boolean savePluginVariables(DgsQueryExecutor dgsQueryExecutor) {

@@ -18,6 +18,7 @@
 package org.deltafi.core.repo;
 
 import org.deltafi.common.types.DeltaFile;
+import org.deltafi.common.types.DeltaFileFlowState;
 import org.deltafi.common.types.DeltaFileStage;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -34,16 +35,16 @@ public interface DeltaFileRepo extends MongoRepository<DeltaFile, String>, Delta
     Page<DeltaFile> findAllByOrderByCreatedDesc(Pageable pageable);
     Page<DeltaFile> findAllByOrderByModifiedDesc(Pageable pageable);
     Page<DeltaFile> findByStageOrderByModifiedDesc(DeltaFileStage stage, Pageable pageable);
-    Page<DeltaFile> findBySourceInfoFilenameOrderByCreatedDesc(String filename, Pageable pageable);
+    Page<DeltaFile> findByNameOrderByCreatedDesc(String filename, Pageable pageable);
 
     /**
      * Find the DeltaFiles that include the given flowName in their pendingAnnotationsForFlows set
      * @param flowName name of flow to search for
      * @return stream of matching DeltaFiles
      */
-    Stream<DeltaFile> findByPendingAnnotationsForFlows(String flowName);
+    Stream<DeltaFile> findByTerminalAndFlowsNameAndFlowsState(boolean isTerminal, String flowName, DeltaFileFlowState state);
 
-    @CountQuery("{'stage': ?0, 'errorAcknowledged': null}")
+    @CountQuery("{'stage': ?0, 'flows.actions.errorAcknowledged': null}")
     long countByStageAndErrorAcknowledgedIsNull(DeltaFileStage stage);
 
     Optional<DeltaFile> findByDidAndStageIn(String did, List<DeltaFileStage> stages);

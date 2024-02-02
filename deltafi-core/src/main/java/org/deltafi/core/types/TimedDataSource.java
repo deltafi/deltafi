@@ -20,16 +20,9 @@ package org.deltafi.core.types;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.deltafi.common.action.ActionEventQueue;
-import org.deltafi.common.types.ActionConfiguration;
-import org.deltafi.common.types.ActionInput;
-import org.deltafi.common.types.ActionType;
-import org.deltafi.common.types.DeltaFiConfiguration;
-import org.deltafi.common.types.DeltaFile;
-import org.deltafi.common.types.IngressStatus;
-import org.deltafi.common.types.SourceInfo;
-import org.deltafi.common.types.TimedDataSourceConfiguration;
-import org.deltafi.common.types.TimedIngressActionConfiguration;
+import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.ActionFamily;
 import org.springframework.data.annotation.PersistenceCreator;
 
@@ -42,6 +35,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 public class TimedDataSource extends DataSource {
     private static final Duration TASKING_TIMEOUT = Duration.ofSeconds(30);
@@ -155,11 +149,21 @@ public class TimedDataSource extends DataSource {
      * @param systemName system name to set in context
      * @return ActionInput containing the ActionConfiguration
      */
-    public ActionInput buildActionInput(String systemName) {
+    public ActionInput buildActionInput(String systemName, OffsetDateTime now) {
         DeltaFile deltaFile = DeltaFile.builder()
                 .did(UUID.randomUUID().toString())
-                .sourceInfo(SourceInfo.builder().flow(name).build())
+                .dataSource(name)
                 .build();
-        return timedIngressAction.buildActionInput(name, deltaFile, systemName, null, null, OffsetDateTime.now(), null, memo);
+        DeltaFileFlow flow = DeltaFileFlow.builder()
+                .name(name)
+                .id(0)
+                .build();
+        Action action = Action.builder()
+                .name(timedIngressAction.getName())
+                .id(0)
+                .created(now)
+                .state(ActionState.QUEUED)
+                .build();
+        return timedIngressAction.buildActionInput(deltaFile, flow, action, systemName, null, memo);
     }
 }

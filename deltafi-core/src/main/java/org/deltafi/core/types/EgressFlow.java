@@ -91,4 +91,9 @@ public class EgressFlow extends Flow implements Subscriber {
     public Set<Rule> subscriptions() {
         return subscriptions;
     }
+
+    @Override
+    public FlowType flowType() {
+        return FlowType.EGRESS;
+    }
 }

@@ -51,7 +51,7 @@ public class SmokeTestIngressAction extends TimedIngressAction<SmokeTestParamete
         }
         boolean executeImmediate = !sleepyTime && random.nextInt(10) == 0;
 
-        String filename = context.getFlow() + "-" + index + (executeImmediate ? " (trigger immediate)" : "") + (sleepyTime ? " (sleepy)" : "");
+        String filename = context.getFlowName() + "-" + index + (executeImmediate ? " (trigger immediate)" : "") + (sleepyTime ? " (sleepy)" : "");
 
         IngressResultItem resultItem = new IngressResultItem(context, filename);
 

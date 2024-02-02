@@ -21,6 +21,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.deltafi.common.converters.KeyValueConverter;
+import org.jetbrains.annotations.NotNull;
 
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -31,9 +33,9 @@ import java.util.*;
 @Builder
 public class Action {
   private String name;
+  private int id;
   @Builder.Default
   private ActionType type = ActionType.UNKNOWN;
-  private String flow;
   private ActionState state;
   private OffsetDateTime created;
   private OffsetDateTime queued;
@@ -42,6 +44,10 @@ public class Action {
   private OffsetDateTime modified;
   private String errorCause;
   private String errorContext;
+  private OffsetDateTime errorAcknowledged;
+  private String errorAcknowledgedReason;
+  private OffsetDateTime nextAutoResume;
+  private String nextAutoResumeReason;
   private String filteredCause;
   private String filteredContext;
   @Builder.Default
@@ -52,8 +58,8 @@ public class Action {
 
   public Action(Action other) {
     this.name = other.name;
+    this.id = other.id;
     this.type = other.type;
-    this.flow = other.flow;
     this.state = other.state;
     this.created = other.created;
     this.queued = other.queued;
@@ -62,6 +68,10 @@ public class Action {
     this.modified = other.modified;
     this.errorCause = other.errorCause;
     this.errorContext = other.errorContext;
+    this.errorAcknowledged = other.errorAcknowledged;
+    this.errorAcknowledgedReason = other.errorAcknowledgedReason;
+    this.nextAutoResume = other.nextAutoResume;
+    this.nextAutoResumeReason = other.nextAutoResumeReason;
     this.filteredCause = other.filteredCause;
     this.filteredContext = other.filteredContext;
     this.attempt = other.attempt;
@@ -85,10 +95,116 @@ public class Action {
   boolean queued() { return state == ActionState.QUEUED || state == ActionState.COLD_QUEUED; }
 
   boolean terminal() {
-    return !queued() && (state != ActionState.COLLECTING);
+    return !queued() && state != ActionState.COLLECTING;
   }
 
   boolean completeOrRetried() {
     return state == ActionState.COMPLETE || state == ActionState.RETRIED;
+  }
+
+  public void cancel(OffsetDateTime time) {
+    if (terminal() && state != ActionState.ERROR) {
+        return;
+    }
+    nextAutoResume = null;
+    nextAutoResumeReason = null;
+    state = ActionState.CANCELLED;
+    modified = time;
+  }
+
+  public void changeState(ActionState actionState, OffsetDateTime start, OffsetDateTime stop, OffsetDateTime now) {
+    changeState(actionState, start, stop, now, null, null, null);
+  }
+
+  public void setFilteredActionState(OffsetDateTime start, OffsetDateTime stop, OffsetDateTime now, String filteredCause, String filteredContext) {
+    this.filteredCause = filteredCause;
+    this.filteredContext = filteredContext;
+    changeState(ActionState.FILTERED, start, stop, now);
+  }
+
+  private void changeState(ActionState actionState, OffsetDateTime start, OffsetDateTime now, OffsetDateTime stop, String errorCause, String errorContext, OffsetDateTime nextAutoResume) {
+    setState(actionState);
+    if (created == null) {
+      created = now;
+    }
+    this.start = start;
+    this.stop = stop;
+    modified = now;
+    this.errorCause = errorCause;
+    this.errorContext = errorContext;
+    this.nextAutoResume = nextAutoResume;
+    setNextAutoResume(nextAutoResume);
+  }
+
+  public void complete(OffsetDateTime start, OffsetDateTime stop, List<Content> content, Map<String, String> metadata,
+                               List<String> deleteMetadataKeys, OffsetDateTime now) {
+    changeState(ActionState.COMPLETE, start, stop, now);
+
+    if (content != null) {
+      setContent(content);
+    }
+
+    if (metadata != null) {
+      setMetadata(metadata);
+    }
+
+    if (deleteMetadataKeys != null) {
+      setDeleteMetadataKeys(deleteMetadataKeys);
+    }
+  }
+
+  public void retry(@NotNull List<ResumeMetadata> resumeMetadata, OffsetDateTime now) {
+    state = ActionState.RETRIED;
+    modified = now;
+    nextAutoResume = null;
+    nextAutoResumeReason = null;
+    errorAcknowledged = null;
+    errorAcknowledgedReason = null;
+    resumeMetadata
+            .stream()
+            .filter(this::metadataActionMatches)
+            .forEach(this::updateResumeMetadata);
+  }
+
+  private void updateResumeMetadata(ResumeMetadata resumeMetadata) {
+    if (resumeMetadata.getMetadata() != null) {
+      setMetadata(KeyValueConverter.convertKeyValues(resumeMetadata.getMetadata()));
+    }
+    if (resumeMetadata.getDeleteMetadataKeys() != null) {
+      setDeleteMetadataKeys(resumeMetadata.getDeleteMetadataKeys());
+    }
+  }
+
+  private boolean metadataActionMatches(ResumeMetadata resumeMetadata) {
+    return  resumeMetadata.getAction().equals(name);
+  }
+
+  public boolean acknowledgeError(OffsetDateTime now, String reason) {
+    if (state == ActionState.ERROR) {
+      modified = now;
+      errorAcknowledged = now;
+      errorAcknowledgedReason = reason;
+      nextAutoResume = null;
+      nextAutoResumeReason = null;
+      return true;
+    }
+    return false;
+  }
+
+  public void error(OffsetDateTime start, OffsetDateTime stop, OffsetDateTime now, String cause, String context) {
+    changeState(ActionState.ERROR, start, stop, now);
+    setErrorCause(cause);
+    setErrorContext(context);
+  }
+
+
+  public boolean clearErrorAcknowledged(OffsetDateTime now) {
+    if (state == ActionState.ERROR && errorAcknowledged != null) {
+      modified = now;
+      errorAcknowledged = null;
+      errorAcknowledgedReason = null;
+      return true;
+    }
+    return false;
   }
 }

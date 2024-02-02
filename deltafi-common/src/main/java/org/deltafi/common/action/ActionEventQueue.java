@@ -78,8 +78,8 @@ public class ActionEventQueue {
      * @return true if a tasking for the action exists in the queue, false otherwise
      */
     public boolean queueHasTaskingForAction(ActionInput actionInput) {
-        return jedisKeyedBlockingQueue.exists(actionInput.getQueueName(), "*\"name\":\"" +
-                actionInput.getActionContext().getName() + "\"*");
+        return jedisKeyedBlockingQueue.exists(actionInput.getQueueName(), "*\"actionName\":\"" +
+                actionInput.getActionContext().getActionName() + "\"*");
     }
 
     /**
@@ -100,7 +100,7 @@ public class ActionEventQueue {
     public void putActions(List<ActionInput> actionInputs, boolean checkUnique) {
         List<SortedSetEntry> actions = new ArrayList<>();
         for (ActionInput actionInput : actionInputs) {
-            if (actionInput.getAction() != null && actionInput.getAction().getState() == ActionState.COLD_QUEUED) {
+            if (actionInput.isColdQueued()) {
                 continue;
             }
 

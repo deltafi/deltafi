@@ -34,9 +34,9 @@ type ResumePolicy {
     id: String!
     name: String!
     errorSubstring: String
-    flow: String
+    dataSource: String
     action: String
-    actionType: String
+    actionType: ActionType
     maxAttempts: Int!
     priority: Int
     backOff: BackOff!
@@ -46,9 +46,9 @@ input ResumePolicyInput {
     id: String
     name: String!
     errorSubstring: String
-    flow: String
+    dataSource: String
     action: String
-    actionType: String
+    actionType: ActionType
     maxAttempts: Int!
     priority: Int
     backOff: BackOffInput!

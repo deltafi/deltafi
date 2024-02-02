@@ -22,6 +22,8 @@ import org.deltafi.common.types.DeltaFile;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.springframework.data.mongodb.core.query.Update;
 
+import java.util.List;
+
 @RequiredArgsConstructor
 public abstract class DeltaFileCacheService {
 
@@ -38,6 +40,12 @@ public abstract class DeltaFileCacheService {
     public abstract void removeOlderThan(int seconds);
 
     public abstract void save(DeltaFile deltaFile);
+
+    public void saveAll(List<DeltaFile> deltaFiles) {
+        for (DeltaFile deltaFile : deltaFiles) {
+            save(deltaFile);
+        }
+    }
 
     protected DeltaFile getFromRepo(String did, boolean updateSnapshot) {
         DeltaFile deltaFile = deltaFileRepo.findById(did.toLowerCase()).orElse(null);

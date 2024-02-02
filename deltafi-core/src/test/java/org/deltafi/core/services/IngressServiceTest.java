@@ -27,8 +27,8 @@ import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.test.storage.s3.InMemoryObjectStorageService;
 import org.deltafi.common.test.uuid.TestUUIDGenerator;
 import org.deltafi.common.types.DeltaFile;
+import org.deltafi.common.types.DeltaFileFlow;
 import org.deltafi.common.types.IngressEventItem;
-import org.deltafi.common.types.SourceInfo;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.configuration.IngressProperties;
@@ -87,7 +87,7 @@ class IngressServiceTest {
     private final ExecutorService executorService = Executors.newCachedThreadPool();
 
     private static final OffsetDateTime TIME = OffsetDateTime.MAX;
-    private static final RestDataSource REST_DATA_SOURCE = FlowBuilders.buildFlow("rest-data-source");
+    private static final RestDataSource REST_DATA_SOURCE = FlowBuilders.buildDataSource("rest-data-source");
 
     @Captor
     ArgumentCaptor<IngressEventItem> ingressEventCaptor;
@@ -140,7 +140,8 @@ class IngressServiceTest {
             Mockito.when(dataSourceService.getRunningRestDataSource(any())).thenThrow(new MissingFlowException("Flow flow is not running"));
         }
         Mockito.when(errorCountService.generateErrorMessage("flow")).thenReturn(null);
-        DeltaFile deltaFile = DeltaFile.builder().sourceInfo(SourceInfo.builder().flow("flow").build()).build();
+        DeltaFileFlow flow = DeltaFileFlow.builder().name("flow").build();
+        DeltaFile deltaFile = DeltaFile.builder().flows(List.of(flow)).build();
         Mockito.when(deltaFilesService.ingress(any(), ingressEventCaptor.capture(), any(), any())).thenReturn(deltaFile);
 
         UUID_GENERATOR.setUuid("TEST-UUID");
@@ -150,7 +151,7 @@ class IngressServiceTest {
         Mockito.verify(coreAuditLogger).logIngress("username", "filename");
 
         Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress",
-                DeltaFiConstants.SOURCE, DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.INGRESS_FLOW, "flow");
+                DeltaFiConstants.SOURCE, DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.DATA_SOURCE, "flow");
         Mockito.verify(metricService).increment(DeltaFiConstants.FILES_IN, metricTags, 1);
         Mockito.verify(metricService).increment(DeltaFiConstants.BYTES_IN, metricTags, "content".length());
 
@@ -259,7 +260,7 @@ class IngressServiceTest {
                         new ByteArrayInputStream("binary content".getBytes(StandardCharsets.UTF_8)), TIME));
 
         Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
-                DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.INGRESS_FLOW, "flow");
+                DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.DATA_SOURCE, "flow");
         Mockito.verify(metricService).increment(DeltaFiConstants.FILES_DROPPED, metricTags, 1);
     }
 
@@ -274,7 +275,7 @@ class IngressServiceTest {
                         new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)), TIME));
 
         Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
-                DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.INGRESS_FLOW, "flow");
+                DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.DATA_SOURCE, "flow");
         Mockito.verify(metricService).increment(DeltaFiConstants.FILES_DROPPED, metricTags, 1);
     }
 
@@ -373,7 +374,7 @@ class IngressServiceTest {
                 });
 
         Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
-                DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.INGRESS_FLOW, "flow");
+                DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.DATA_SOURCE, "flow");
         Mockito.verify(metricService).increment(DeltaFiConstants.FILES_DROPPED, metricTags, 1);
     }
 
@@ -390,7 +391,7 @@ class IngressServiceTest {
         assertEquals("Flow flow is not running", ingressException.getMessage());
 
         Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
-                DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.INGRESS_FLOW, "flow");
+                DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.DATA_SOURCE, "flow");
         Mockito.verify(metricService).increment(DeltaFiConstants.FILES_DROPPED, metricTags, 1);
     }
 
@@ -409,7 +410,7 @@ class IngressServiceTest {
         assertEquals("errors exceeded", ingressException.getMessage());
 
         Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
-                DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.INGRESS_FLOW, "flow");
+                DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.DATA_SOURCE, "flow");
         Mockito.verify(metricService).increment(DeltaFiConstants.FILES_DROPPED, metricTags, 1);
     }
 
@@ -428,7 +429,7 @@ class IngressServiceTest {
         assertEquals("errors exceeded", ingressException.getMessage());
 
         Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
-                DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.INGRESS_FLOW, "flow");
+                DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.DATA_SOURCE, "flow");
         Mockito.verify(metricService).increment(DeltaFiConstants.FILES_DROPPED, metricTags, 1);
     }
 
@@ -447,7 +448,7 @@ class IngressServiceTest {
         Mockito.verify(deltaFilesService).deleteContentAndMetadata(any(), any());
 
         Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress", DeltaFiConstants.SOURCE,
-                DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.INGRESS_FLOW, "flow");
+                DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.DATA_SOURCE, "flow");
         Mockito.verify(metricService).increment(DeltaFiConstants.FILES_DROPPED, metricTags, 1);
     }
 

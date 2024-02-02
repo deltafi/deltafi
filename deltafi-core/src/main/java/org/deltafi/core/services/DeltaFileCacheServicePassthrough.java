@@ -22,6 +22,8 @@ import org.deltafi.core.repo.DeltaFileRepo;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @ConditionalOnProperty(value = "schedule.actionEvents", havingValue = "false")
 public class DeltaFileCacheServicePassthrough extends DeltaFileCacheService {

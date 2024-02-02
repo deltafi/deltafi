@@ -61,7 +61,7 @@ class RestPostEgressActionTest {
 
     private static final String DID = UUID.randomUUID().toString();
     private static final String ORIG_FILENAME = "origFilename";
-    private static final String FLOW = "theFlow";
+    private static final String DATA_SOURCE = "theFlow";
     private static final String POST_FILENAME = "postFilename";
 
     private static final String ACTION = "MyRestEgressAction";
@@ -73,7 +73,7 @@ class RestPostEgressActionTest {
     private static final String CONTENT_TYPE = "application/json";
 
     private static final Segment SEGMENT = new Segment(UUID.randomUUID().toString(), 0, DATA.length, DID);
-    private static final ActionContext CONTEXT = ActionContext.builder().did(DID).flow(EGRESS_FLOW).name(ACTION).sourceFilename(ORIG_FILENAME).ingressFlow(FLOW).egressFlow(EGRESS_FLOW).build();
+    private static final ActionContext CONTEXT = ActionContext.builder().did(DID).flowName(EGRESS_FLOW).actionName(ACTION).deltaFileName(ORIG_FILENAME).dataSource(DATA_SOURCE).build();
     private static final Content CONTENT = new Content(POST_FILENAME, CONTENT_TYPE, List.of(SEGMENT));
     static final Integer NUM_TRIES = 3;
     static final Integer RETRY_WAIT = 10;
@@ -100,7 +100,8 @@ class RestPostEgressActionTest {
 
         assertTrue(result instanceof EgressResult);
         assertEquals(DID, result.toEvent().getDid());
-        assertEquals(EGRESS_FLOW + "." + ACTION, result.toEvent().getAction());
+        assertEquals(ACTION, result.toEvent().getActionName());
+        assertEquals(EGRESS_FLOW, result.toEvent().getFlowName());
     }
 
     @SuppressWarnings("unchecked")
@@ -163,7 +164,7 @@ class RestPostEgressActionTest {
         Map<String, String> metadata = OBJECT_MAPPER.readValue(actual.get(METADATA_KEY), new TypeReference<>() {
         });
         assertEquals(DID, metadata.get("did"));
-        assertEquals(FLOW, metadata.get("ingressFlow"));
+        assertEquals(DATA_SOURCE, metadata.get("dataSource"));
         assertEquals(EGRESS_FLOW, metadata.get("flow"));
         assertEquals(POST_FILENAME, metadata.get("filename"));
         assertEquals(ORIG_FILENAME, metadata.get("originalFilename"));

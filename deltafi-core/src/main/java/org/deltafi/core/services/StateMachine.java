@@ -21,10 +21,8 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.*;
 import org.deltafi.core.collect.*;
-import org.deltafi.core.exceptions.MissingEgressFlowException;
-import org.deltafi.common.types.Subscriber;
+import org.deltafi.core.services.pubsub.PublisherService;
 import org.deltafi.core.types.*;
-import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
@@ -38,6 +36,7 @@ import static org.deltafi.common.constant.DeltaFiConstants.SYNTHETIC_EGRESS_ACTI
 @Slf4j
 public class StateMachine {
     private final Clock clock;
+    private final DataSourceService dataSourceService;
     private final TransformFlowService transformFlowService;
     private final EgressFlowService egressFlowService;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
@@ -45,214 +44,141 @@ public class StateMachine {
     private final QueueManagementService queueManagementService;
     private final CollectEntryService collectEntryService;
     private final ScheduledCollectService scheduledCollectService;
-
-    // TODO: detect flows that don't have a followon flow
-
-    List<ActionInvocation> advance(DeltaFile deltaFile) {
-        return advance(deltaFile, false, new HashMap<>());
-    }
+    private final PublisherService publisherService;
 
     /**
-     * Advance the state of the given DeltaFile
+     * Advance a set of DeltaFiles to the next step using the state machine. Call if advancing multiple deltaFiles
+     * to ensure that
      *
-     * @param deltaFile The deltaFile to advance
-     * @param newDeltaFile Whether this is a new DeltaFile. Used to determine whether routing affinity is needed
-     * @param pendingQueued A map of queue names to number of times to be queued so far. This object is mutated to include new entries
-     * @return a list of actions that should receive this DeltaFile next
-     * @throws MissingEgressFlowException when a DeltaFile advances into the EGRESS stage, but does not have an egress
+     * @param inputs List of StateMachine input objects
+     * @return the list of action invocations to be performed
      * flow configured.
      */
-    List<ActionInvocation> advance(DeltaFile deltaFile, boolean newDeltaFile, Map<String, Long> pendingQueued) throws MissingEgressFlowException {
-        Action lastAction = deltaFile.lastAction();
-        if (lastAction.getState() == ActionState.RETRIED && lastAction.getType() == ActionType.INGRESS) {
-            Action toComplete = deltaFile.queueAction(lastAction.getFlow(), lastAction.getName(), ActionType.INGRESS, false);
-            toComplete.setContent(lastAction.getContent());
-            toComplete.setMetadata(lastAction.getMetadata());
-            toComplete.setState(ActionState.COMPLETE);
+    public List<ActionInput> advance(List<StateMachineInput> inputs) {
+        Map<String, Long> pendingQueued = new HashMap<>();
+        List<ActionInput> actionInputs = new ArrayList<>();
+        for (StateMachineInput input : inputs) {
+            actionInputs.addAll(advance(input, pendingQueued));
         }
-
-        List<ActionInvocation> actionInvocations = new ArrayList<>();
-        if (!deltaFile.getEgress().isEmpty()) {
-            deltaFile.getEgress().stream()
-                    .map(egress -> advanceEgress(egress, deltaFile, newDeltaFile, pendingQueued))
-                    .forEach(actionInvocations::addAll);
-        } else {
-            actionInvocations.addAll(advanceTransformation(deltaFile, newDeltaFile, pendingQueued));
-        }
-
-        if (!deltaFile.hasPendingActions()) {
-            deltaFile.setStage(deltaFile.hasErroredAction() ? DeltaFileStage.ERROR : DeltaFileStage.COMPLETE);
-        }
-
-        deltaFile.recalculateBytes();
-
-        return actionInvocations;
+        return actionInputs;
     }
 
-    List<ActionInvocation> advanceEgress(Egress egress, DeltaFile deltaFile, boolean newDeltaFile, Map<String, Long> pendingQueued) {
-        EgressFlow egressFlow = egressFlowService.getRunningFlowByName(egress.getFlow());
-        return advanceEgressFlow(egressFlow, deltaFile, newDeltaFile, pendingQueued);
+    private List<ActionInput> advance(StateMachineInput input, Map<String, Long> pendingQueued) {
+        List<ActionInput> actionInputs = updateCurrentFlow(input, pendingQueued);
+        if (actionInputs.isEmpty() && input.flow().getState() == DeltaFileFlowState.COMPLETE) {
+            actionInputs.addAll(publishToNewFlows(input, pendingQueued));
+        }
+        input.deltaFile().updateState(OffsetDateTime.now(clock));
+
+        return actionInputs;
     }
 
-    public List<ActionInvocation> advanceSubscriber(Subscriber subscriber, DeltaFile deltaFile, boolean newDeltaFile) {
-        List<ActionInvocation> enqueueActions;
-        if (subscriber instanceof TransformFlow transformFlow) {
-            enqueueActions = advanceTransformation(transformFlow, deltaFile, newDeltaFile, new HashMap<>());
-        } else if (subscriber instanceof EgressFlow egressFlow) {
-            enqueueActions = advanceEgressFlow(egressFlow, deltaFile, newDeltaFile,  new HashMap<>());
-        } else {
-            throw new IllegalArgumentException("Unexpected subscriber type " + subscriber.getClass().getSimpleName());
-        }
+    private List<ActionInput> updateCurrentFlow(StateMachineInput input, Map<String, Long> pendingQueued) {
+        List<ActionInput> actionInputs = new ArrayList<>();
 
-        if (!deltaFile.hasPendingActions()) {
-            deltaFile.setStage(deltaFile.hasErroredAction() ? DeltaFileStage.ERROR : DeltaFileStage.COMPLETE);
-        }
-
-        deltaFile.recalculateBytes();
-
-        return enqueueActions;
-    }
-
-    List<ActionInvocation> advanceTransformation(TransformFlow transformFlow, DeltaFile deltaFile, boolean newDeltaFile, Map<String, Long> pendingQueued) {
-        if (skipTransform(deltaFile)) {
-            return Collections.emptyList();
-        }
-
-        return advanceTransformFlow(transformFlow, deltaFile, newDeltaFile, pendingQueued);
-    }
-
-    private List<ActionInvocation> advanceTransformation(DeltaFile deltaFile, boolean newDeltaFile, Map<String, Long> pendingQueued) {
-        if (skipTransform(deltaFile)) {
-            return Collections.emptyList();
-        }
-
-        TransformFlow transformFlow = transformFlowService.getRunningFlowByName(deltaFile.getSourceInfo().getFlow());
-        return advanceTransformFlow(transformFlow, deltaFile, newDeltaFile, pendingQueued);
-    }
-
-    private boolean skipTransform(DeltaFile deltaFile) {
-        return deltaFile.hasErroredAction() || deltaFile.hasFilteredAction();
-    }
-
-    public List<ActionInvocation> advanceTransformFlow(TransformFlow transformFlow, DeltaFile deltaFile, boolean newDeltaFile, Map<String, Long> pendingQueued) {
-        if (transformFlow.getTransformActions().stream().anyMatch(transformActionConfiguration ->
-                deltaFile.hasCollectedAction(transformFlow.getName(), transformActionConfiguration.getName()))) {
-            deltaFile.setStage(DeltaFileStage.COMPLETE);
-            return Collections.emptyList();
-        }
-        TransformActionConfiguration nextTransformAction = transformFlow.getTransformActions().stream()
-                .filter(transformAction -> !deltaFile.hasTerminalAction(transformFlow.getName(), transformAction.getName()))
-                .findFirst().orElse(null);
-        if (nextTransformAction != null) {
-            return buildActionInvocation(transformFlow, nextTransformAction, deltaFile, newDeltaFile, pendingQueued)
-                    .map(List::of).orElse(Collections.emptyList());
-        }
-
-        if (transformFlow.isTestMode()) {
-            deltaFile.queueAction(transformFlow.getName(), SYNTHETIC_EGRESS_ACTION_FOR_TEST, ActionType.EGRESS, false);
-            deltaFile.completeAction(transformFlow.getName(), SYNTHETIC_EGRESS_ACTION_FOR_TEST, OffsetDateTime.now(), OffsetDateTime.now(), deltaFile.lastCompleteAction().getContent(), deltaFile.getMetadata(), List.of());
-            deltaFile.addEgressFlow(transformFlow.getName());
-            deltaFile.setTestModeReason("Transform flow '" + transformFlow.getName() + "' in test mode");
-        }
-
-        return Collections.emptyList();
-    }
-
-    List<ActionInvocation> advanceEgressFlow(EgressFlow egressFlow, DeltaFile deltaFile, boolean newDeltaFile, Map<String, Long> pendingQueued) {
-        String flowName = egressFlow.getName();
-        EgressActionConfiguration egressAction = egressFlow.getEgressAction();
-        if (egressAction == null || deltaFile.hasTerminalAction(flowName, egressAction.getName())) {
-            return Collections.emptyList();
-        }
-
-        Action action = deltaFile.queueAction(flowName, egressAction.getName(), ActionType.EGRESS,
-                coldQueue(egressAction.getType(), pendingQueued));
-        deltaFile.addEgressFlow(flowName);
-        return buildActionInvocation(flowName, egressAction, deltaFile, flowName, newDeltaFile, action)
-                .map(List::of).orElse(Collections.emptyList());
-    }
-
-    List<Pair<String, ? extends ActionConfiguration>> nextEgressFlowActions(EgressFlow egressFlow, DeltaFile deltaFile) {
-        List<Pair<String, ? extends ActionConfiguration>> egressActions = new ArrayList<>();
-        for (ActionConfiguration actionConfiguration : nextEgressFlowActionConfigurations(egressFlow, deltaFile)) {
-            if (!deltaFile.isNewAction(egressFlow.getName(), actionConfiguration.getName())) {
-                continue;
+        Action lastAction =  input.flow().lastAction();
+        // lastAction can be null if we are entering a new flow via a subscription
+        if (lastAction == null || lastAction.getState() == ActionState.COMPLETE || lastAction.getState() == ActionState.RETRIED) {
+            if (input.flow().getType() == FlowType.TRANSFORM) {
+                actionInputs.addAll(advanceTransform(input, pendingQueued));
+            } else if (input.flow().getType() == FlowType.EGRESS) {
+                actionInputs.addAll(advanceEgress(input, pendingQueued));
             }
-            egressActions.add(Pair.of(egressFlow.getName(), actionConfiguration));
         }
-        return egressActions;
+
+        input.flow().updateState(OffsetDateTime.now(clock));
+
+        return actionInputs;
     }
 
-    private List<? extends ActionConfiguration> nextEgressFlowActionConfigurations(EgressFlow egressFlow,
-                                                                                   DeltaFile deltaFile) {
-        if (egressFlow.isTestMode()) {
-            // TODO: test mode should be passed from flow to flow in the DeltaFile
-            deltaFile.queueAction(egressFlow.getName(), SYNTHETIC_EGRESS_ACTION_FOR_TEST, ActionType.EGRESS, false);
-            deltaFile.completeAction(egressFlow.getName(), SYNTHETIC_EGRESS_ACTION_FOR_TEST, OffsetDateTime.now(), OffsetDateTime.now());
-            deltaFile.addEgressFlow(egressFlow.getName());
-            deltaFile.setTestModeReason("Egress flow '" + egressFlow.getName() + "' in test mode");
-        } else {
-            return List.of(egressFlow.getEgressAction());
+    private List<ActionInput> advanceTransform(StateMachineInput input, Map<String, Long> pendingQueued) {
+        TransformFlow transformFlow = transformFlowService.getRunningFlowByName(input.flow().getName());
+
+        TransformActionConfiguration nextTransformAction = transformFlow.getTransformActions().stream()
+                .filter(transformAction -> !input.flow().hasFinalAction(transformAction.getName()))
+                .findFirst().orElse(null);
+
+        return nextTransformAction != null ? addNextAction(input, nextTransformAction, pendingQueued) :  new ArrayList<>();
+    }
+
+    private List<ActionInput> advanceEgress(StateMachineInput input, Map<String, Long> pendingQueued) {
+        EgressFlow egressFlow = egressFlowService.getRunningFlowByName(input.flow().getName());
+
+        EgressActionConfiguration nextEgressAction = egressFlow.getEgressAction();
+        if (input.flow().hasFinalAction(nextEgressAction.getName())) {
+            Set<String> expectedAnnotations = egressFlow.getExpectedAnnotations();
+            if (expectedAnnotations != null && !expectedAnnotations.isEmpty()) {
+                Set<String> pendingAnnotations = input.deltaFile().getPendingAnnotations(expectedAnnotations);
+                input.flow().setPendingAnnotations(pendingAnnotations);
+            }
+            return new ArrayList<>();
         }
 
+        return input.flow().isTestMode() ?
+                syntheticEgress(input) : addNextAction(input, nextEgressAction, pendingQueued);
+    }
+
+    private List<ActionInput> syntheticEgress(StateMachineInput input) {
+        input.flow().addAction(SYNTHETIC_EGRESS_ACTION_FOR_TEST, ActionType.EGRESS, ActionState.FILTERED,
+                OffsetDateTime.now(clock));
         return Collections.emptyList();
     }
 
-
-    private Optional<ActionInvocation> buildActionInvocation(Flow flow, ActionConfiguration actionConfiguration,
-            DeltaFile deltaFile, boolean newDeltaFile, Map<String, Long> pendingQueued) {
-        if (actionConfiguration.getCollect() == null) {
-            Action action = deltaFile.queueAction(flow.getName(), actionConfiguration.getName(),
-                    actionConfiguration.getActionType(), coldQueue(actionConfiguration.getType(), pendingQueued));
-            return buildActionInvocation(flow.getName(), actionConfiguration, deltaFile, null, newDeltaFile, action);
+    private List<ActionInput> addNextAction(StateMachineInput input, ActionConfiguration nextAction, Map<String, Long> pendingQueued) {
+        Action lastAction = input.flow().lastAction();
+        ActionState actionState = queueState(nextAction.getName(), pendingQueued);
+        Action newAction = input.flow().addAction(nextAction.getName(), nextAction.getActionType(),
+                actionState, OffsetDateTime.now(clock));
+        if (lastAction != null && lastAction.getState() == ActionState.RETRIED &&
+                lastAction.getName().equals(newAction.getName())) {
+            newAction.setAttempt(lastAction.getAttempt() + 1);
         }
-
-        if (deltaFile.isAggregate()) {
-            // Resuming a failed collect action in an aggregate
-            Action action = deltaFile.queueAction(flow.getName(), actionConfiguration.getName(),
-                    actionConfiguration.getActionType(), coldQueue(actionConfiguration.getType(), pendingQueued));
-            return Optional.of(CollectingActionInvocation.builder()
-                    .actionConfiguration(actionConfiguration)
-                    .flow(flow.getName())
-                    .deltaFile(deltaFile)
-                    // TODO: figure out what to do with the egress flow list after we have proper egress again
-                    //.egressFlow(deltaFile.getStage() == DeltaFileStage.EGRESS ? flow.getName() : null)
-                    .actionCreated(action.getCreated())
-                    .action(action)
-                    .collectedDids(deltaFile.getParentDids())
-                    .stage(deltaFile.getStage())
-                    .build());
-        }
-
-        try {
-            Optional<ActionInvocation> actionInvocation = collect(flow.getName(), actionConfiguration, deltaFile,
-                    coldQueue(actionConfiguration.getType(), pendingQueued) ? ActionState.COLD_QUEUED : ActionState.QUEUED);
-            deltaFile.addAction(flow.getName(), actionConfiguration.getName(), actionConfiguration.getActionType(),
-                    ActionState.COLLECTING);
-            return actionInvocation;
-        } catch (CollectException e) {
-            deltaFile.setStage(DeltaFileStage.ERROR);
-            return Optional.empty();
-        }
+        return List.of(buildActionInput(nextAction, input.deltaFile(), input.flow(), newAction));
     }
 
-    private Optional<ActionInvocation> buildActionInvocation(String flow, ActionConfiguration actionConfiguration,
-            DeltaFile deltaFile, String egressFlow, boolean newDeltaFile, Action action) {
-        String returnAddress = !newDeltaFile &&
+    private List<ActionInput> publishToNewFlows(StateMachineInput input, Map<String, Long> pendingQueued) {
+        List<ActionInput> actionInputs = new ArrayList<>();
+
+        if (input.flow().getType() == FlowType.EGRESS || input.flow().lastAction().getState() != ActionState.COMPLETE) {
+            return Collections.emptyList();
+        }
+
+        Set<DeltaFileFlow> subscriberFlows = publisherService.subscribers(getFlow(input.flow()), input.deltaFile(), input.flow());
+
+        for (DeltaFileFlow newFlow : subscriberFlows) {
+            StateMachineInput newInput = new StateMachineInput(input.deltaFile(), newFlow);
+            actionInputs.addAll(advance(newInput, pendingQueued));
+        }
+
+        return actionInputs;
+    }
+
+    private Flow getFlow(DeltaFileFlow flow) {
+        return switch (flow.getType()) {
+            case REST_DATA_SOURCE, TIMED_DATA_SOURCE -> dataSourceService.getRunningFlowByName(flow.getName());
+            case TRANSFORM -> transformFlowService.getRunningFlowByName(flow.getName());
+            default -> throw new IllegalArgumentException("Unexpected value: " + flow.getType());
+        };
+    }
+
+    private ActionInput buildActionInput(ActionConfiguration actionConfiguration, DeltaFile deltaFile,
+                                         DeltaFileFlow flow, Action action) {
+        String systemName = deltaFiPropertiesService.getDeltaFiProperties().getSystemName();
+        String returnAddress = deltaFile.getVersion() > 0 &&
                 deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().isEnabled() ?
                 identityService.getUniqueId() : null;
-        return Optional.of(ActionInvocation.builder()
-                .actionConfiguration(actionConfiguration)
-                .flow(flow)
-                .deltaFile(deltaFile)
-                .egressFlow(egressFlow)
-                .returnAddress(returnAddress)
-                .actionCreated(OffsetDateTime.now())
-                .action(action)
-                .build());
+        return actionConfiguration.buildActionInput(deltaFile, flow, action, systemName, returnAddress, null);
     }
 
-    private Optional<ActionInvocation> collect(String flow, ActionConfiguration actionConfiguration, DeltaFile deltaFile,
+    private ActionState queueState(String queueName, Map<String, Long> pendingQueued) {
+        Long newVal = pendingQueued.put(queueName, pendingQueued.getOrDefault(queueName, 0L) + 1);
+        boolean coldQueued = queueManagementService.coldQueue(queueName, newVal == null ? 0L : newVal);
+        return coldQueued ? ActionState.COLD_QUEUED : ActionState.QUEUED;
+    }
+
+    //TODO: put collect stuff back
+/*
+    private Optional<ActionInput> collect(String flow, ActionConfiguration actionConfiguration, DeltaFile deltaFile,
             ActionState actionState) throws CollectException {
         String collectGroup = actionConfiguration.getCollect().metadataKey() == null ? "DEFAULT" :
                 deltaFile.getMetadata().getOrDefault(actionConfiguration.getCollect().metadataKey(), "DEFAULT");
@@ -276,16 +202,16 @@ public class StateMachine {
             return Optional.empty();
         }
 
-        ActionInvocation actionInvocation = buildCollectingActionInvocation(collectEntry,
+        ActionInput ActionInput = buildCollectingActionInput(collectEntry,
                 collectEntryService.findCollectedDids(collectEntry.getId()), actionConfiguration, actionState);
 
         collectEntryService.delete(collectEntry.getId());
         scheduledCollectService.scheduleNextCollectCheck();
 
-        return Optional.of(actionInvocation);
+        return Optional.of(ActionInput);
     }
 
-    private CollectingActionInvocation buildCollectingActionInvocation(CollectEntry collectEntry,
+    private CollectingActionInput buildCollectingActionInput(CollectEntry collectEntry,
             List<String> collectedDids, ActionConfiguration actionConfiguration, ActionState actionState) {
         OffsetDateTime now = OffsetDateTime.now(clock);
 
@@ -299,7 +225,7 @@ public class StateMachine {
                 .modified(now)
                 .build();
 
-        return CollectingActionInvocation.builder()
+        return CollectingActionInput.builder()
                 .actionConfiguration(actionConfiguration)
                 .flow(collectEntry.getCollectDefinition().getFlow())
                 // TODO: figure out what to do with the egress flow list after we have proper egress again
@@ -310,10 +236,5 @@ public class StateMachine {
                 .collectedDids(collectedDids)
                 .stage(collectEntry.getCollectDefinition().getStage())
                 .build();
-    }
-
-    private boolean coldQueue(String queueName, Map<String, Long> pendingQueued) {
-        Long newVal = pendingQueued.put(queueName, pendingQueued.getOrDefault(queueName, 0L) + 1);
-        return queueManagementService.coldQueue(queueName, newVal == null ? 0L : newVal);
-    }
+    }*/
 }

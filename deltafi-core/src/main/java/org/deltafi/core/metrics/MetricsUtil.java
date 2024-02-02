@@ -30,30 +30,30 @@ public class MetricsUtil {
      *
      * @param actionType lowercased, becomes "action" tagged
      * @param actionName becomes "source" tagged
-     * @param ingressFlow "ingressFlow" tagged
+     * @param dataSource "dataSource" tagged
      * @param egressFlow "egressFlow" tagged
      * @return the map
      */
-    static public @NotNull Map<String, String> tagsFor(@NotNull ActionEventType actionType, @NotNull String actionName, String ingressFlow, String egressFlow) {
-        return tagsFor(actionType.name(), actionName, ingressFlow, egressFlow);
+    static public @NotNull Map<String, String> tagsFor(@NotNull ActionEventType actionType, @NotNull String actionName, String dataSource, String egressFlow) {
+        return tagsFor(actionType.name(), actionName, dataSource, egressFlow);
     }
 
     /** Helper for generating a default tag list for metrics
      *
      * @param actionType lowercased, becomes "action" tagged
      * @param actionName becomes "source" tagged
-     * @param ingressFlow "ingressFlow" tagged
+     * @param dataSource "dataSource" tagged
      * @param egressFlow "egressFlow" tagged
      * @return the map
      */
-    static public @NotNull Map<String, String> tagsFor(@NotNull String actionType, @NotNull String actionName, String ingressFlow, String egressFlow) {
+    static public @NotNull Map<String, String> tagsFor(@NotNull String actionType, @NotNull String actionName, String dataSource, String egressFlow) {
         Map<String, String> tags = new HashMap<>();
 
         tags.put(DeltaFiConstants.ACTION, actionType.toLowerCase());
         tags.put(DeltaFiConstants.SOURCE, actionName);
 
-        if (ingressFlow != null) {
-            tags.put(DeltaFiConstants.INGRESS_FLOW, ingressFlow);
+        if (dataSource != null) {
+            tags.put(DeltaFiConstants.DATA_SOURCE, dataSource);
         }
 
         if (egressFlow != null) {

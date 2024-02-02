@@ -1,6 +1,9 @@
 {
     "did": "taskedDid",
-    "action": "sampleTimedIngress.SampleTimedIngressAction",
+    "flowName": "sampleTimedDataSource",
+    "flowId": 0,
+    "actionName": "SampleTimedIngressAction",
+    "actionId": 0,
     "start": "2021-07-11T13:44:22.183Z",
     "stop": "2021-07-11T13:44:22.184Z",
     "type": "INGRESS",
@@ -8,7 +11,7 @@
         "ingressItems": [
             {
                 "did": "%1$s",
-                "filename": "filename",
+                "deltaFileName": "filename",
                 "metadata": {
                     "smoke": "test"
                 },

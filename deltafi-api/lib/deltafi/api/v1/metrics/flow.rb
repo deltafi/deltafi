@@ -34,10 +34,10 @@ module Deltafi
               egress_filter = params[:egressFlows] ? ", 'egressFlow=~(#{params[:egressFlows].join('|')})'" : ''
 
               ingress = <<-QUERY
-              summarize(groupByTags(seriesByTag('name=~stats_counts.(bytes_in|files_in)', 'action=ingress'), "sum", "name", "ingressFlow"), '5y', 'sum')
+              summarize(groupByTags(seriesByTag('name=~stats_counts.(bytes_in|files_in)', 'action=ingress'), "sum", "name", "dataSource"), '5y', 'sum')
               QUERY
               egress = <<-QUERY
-              summarize(groupByTags(seriesByTag('name=~stats_counts.(bytes_out|files_out|files_errored|files_filtered)'#{egress_filter}), "sum", "name", "ingressFlow"), '5y', 'sum')
+              summarize(groupByTags(seriesByTag('name=~stats_counts.(bytes_out|files_out|files_errored|files_filtered)'#{egress_filter}), "sum", "name", "dataSource"), '5y', 'sum')
               QUERY
 
               # Offset now to prevent ragged edge of metrics

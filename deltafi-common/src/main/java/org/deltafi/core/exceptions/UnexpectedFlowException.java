@@ -15,20 +15,10 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.collect;
+package org.deltafi.core.exceptions;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.experimental.SuperBuilder;
-import org.deltafi.common.types.DeltaFileStage;
-import org.deltafi.core.services.ActionInvocation;
-
-import java.util.List;
-
-@Data
-@EqualsAndHashCode(callSuper = true)
-@SuperBuilder
-public class CollectingActionInvocation extends ActionInvocation {
-    private List<String> collectedDids;
-    private DeltaFileStage stage;
+public class UnexpectedFlowException extends RuntimeException {
+    public UnexpectedFlowException(String flowName, int flowId, String did) {
+        super("Action for unexpected flow " + flowName + " id " + flowId + " performed on DeltaFile " + did + ". ");
+    }
 }

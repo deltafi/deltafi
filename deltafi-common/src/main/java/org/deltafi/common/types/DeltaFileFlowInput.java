@@ -22,19 +22,31 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class IngressEventItem {
-  private String did;
-  private String deltaFileName;
-  private String flowName;
-  @Builder.Default
-  private Map<String, String> metadata = new HashMap<>();
-  private List<Content> content;
+public class DeltaFileFlowInput {
+    @Builder.Default
+    Map<String, String> metadata = new HashMap<>();
+    @Builder.Default
+    List<Content> content = new ArrayList<>();
+    @Builder.Default
+    Set<String> topics = new LinkedHashSet<>();
+    @Builder.Default
+    List<Integer> ancestorIds = new ArrayList<>();
+
+    public DeltaFileFlowInput(DeltaFileFlowInput other) {
+        this.metadata = new HashMap<>(other.metadata);
+        this.content = other.content == null ? null : other.content.stream().map(Content::new).toList();
+        this.topics = other.topics;
+        this.ancestorIds = new ArrayList<>(other.ancestorIds);
+    }
 }

@@ -28,41 +28,29 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class DeltaFileTest {
     @Test
-    void testSourceMetadata() {
-        DeltaFile deltaFile = DeltaFile.builder()
-                .sourceInfo(new SourceInfo(null, null,
-                        Map.of("key1", "value1", "key2", "value2")))
-                .build();
-
-        assertEquals("value1", deltaFile.sourceMetadata("key1"));
-        assertEquals("value1", deltaFile.sourceMetadata("key1", "default"));
-        assertEquals("value2", deltaFile.sourceMetadata("key2"));
-        assertEquals("value2", deltaFile.sourceMetadata("key2", "default"));
-        assertNull(deltaFile.sourceMetadata("key3"));
-        assertEquals("default", deltaFile.sourceMetadata("key3", "default"));
-    }
-
-    @Test
     void testAcknowledgeClearsAutoResume() {
         OffsetDateTime now = OffsetDateTime.now();
         OffsetDateTime now2 = OffsetDateTime.now();
         Action action1 = Action.builder()
                 .name("action1")
                 .state(ActionState.ERROR)
-                .build();
-
-        DeltaFile deltaFile = DeltaFile.builder()
-                .actions(new ArrayList<>(List.of(action1)))
                 .nextAutoResume(now)
                 .nextAutoResumeReason("policy-name")
                 .build();
+        DeltaFileFlow flow = DeltaFileFlow.builder()
+                .actions(List.of(action1))
+                .build();
 
-        deltaFile.acknowledgeError(now2, "reason");
+        DeltaFile deltaFile = DeltaFile.builder()
+                .flows(new ArrayList<>(List.of(flow)))
+                .build();
 
-        assertNull(deltaFile.getNextAutoResumeReason());
-        assertNull(deltaFile.getNextAutoResume());
-        assertEquals("reason", deltaFile.getErrorAcknowledgedReason());
-        assertEquals(now2, deltaFile.getErrorAcknowledged());
+        deltaFile.acknowledgeErrors(now2, "reason");
+
+        assertNull(action1.getNextAutoResumeReason());
+        assertNull(action1.getNextAutoResume());
+        assertEquals("reason", action1.getErrorAcknowledgedReason());
+        assertEquals(now2, action1.getErrorAcknowledged());
     }
 
     @Test
@@ -71,20 +59,23 @@ class DeltaFileTest {
         Action action1 = Action.builder()
                 .name("action1")
                 .state(ActionState.ERROR)
+                .nextAutoResume(now)
+                .nextAutoResumeReason("policy-name")
+                .build();
+        DeltaFileFlow flow = DeltaFileFlow.builder()
+                .actions(List.of(action1))
                 .build();
 
         DeltaFile deltaFile = DeltaFile.builder()
-                .actions(new ArrayList<>(List.of(action1)))
-                .nextAutoResume(now)
-                .nextAutoResumeReason("policy-name")
+                .flows(new ArrayList<>(List.of(flow)))
                 .stage(DeltaFileStage.ERROR)
                 .build();
 
         assertTrue(deltaFile.canBeCancelled());
-        deltaFile.cancel();
+        deltaFile.cancel(OffsetDateTime.now());
         assertEquals(deltaFile.getStage(), DeltaFileStage.CANCELLED);
-        assertNull(deltaFile.getNextAutoResume());
-        assertNull(deltaFile.getNextAutoResumeReason());
+        assertNull(action1.getNextAutoResume());
+        assertNull(action1.getNextAutoResumeReason());
         assertFalse(deltaFile.canBeCancelled());
     }
 
@@ -94,20 +85,23 @@ class DeltaFileTest {
                 .name("action1")
                 .state(ActionState.QUEUED)
                 .build();
+        DeltaFileFlow flow = DeltaFileFlow.builder()
+                .actions(List.of(action1))
+                .build();
 
         DeltaFile deltaFile = DeltaFile.builder()
-                .actions(new ArrayList<>(List.of(action1)))
+                .flows(new ArrayList<>(List.of(flow)))
                 .stage(DeltaFileStage.IN_FLIGHT)
                 .build();
 
         assertTrue(deltaFile.canBeCancelled());
-        assertFalse(deltaFile.queuedActions().isEmpty());
-        deltaFile.cancel();
-        assertTrue(deltaFile.queuedActions().isEmpty());
+        assertFalse(flow.queuedActions().isEmpty());
+        deltaFile.cancel(OffsetDateTime.now());
+        assertTrue(flow.queuedActions().isEmpty());
 
         assertEquals(deltaFile.getStage(), DeltaFileStage.CANCELLED);
-        assertNull(deltaFile.getNextAutoResume());
-        assertNull(deltaFile.getNextAutoResumeReason());
+        assertNull(action1.getNextAutoResume());
+        assertNull(action1.getNextAutoResumeReason());
         assertFalse(deltaFile.canBeCancelled());
     }
 
@@ -117,73 +111,59 @@ class DeltaFileTest {
         Action action1 = Action.builder()
                 .name("action1")
                 .type(ActionType.TRANSFORM)
-                .flow("flow1")
                 .state(ActionState.ERROR)
-                .build();
-        Action action2 = Action.builder()
-                .name("action2")
-                .type(ActionType.TRANSFORM)
-                .flow("flow2")
-                .state(ActionState.COMPLETE)
-                .build();
-        Action action3 = Action.builder()
-                .name("action3")
-                .type(ActionType.TRANSFORM)
-                .flow("flow3")
-                .state(ActionState.ERROR)
-                .build();
-
-        DeltaFile deltaFile = DeltaFile.builder()
-                .actions(new ArrayList<>(List.of(action1, action2, action3)))
                 .nextAutoResume(now)
                 .nextAutoResumeReason("policy-name")
                 .build();
-
-        List<String> retried = deltaFile.retryErrors(List.of(
-                new ResumeMetadata("flow1", "action1", Map.of("a", "b"), List.of("c", "d")),
-                new ResumeMetadata("flow3", "action3", Map.of("x", "y"), List.of("z"))));
-        assertNull(deltaFile.getNextAutoResume());
-        assertEquals("policy-name", deltaFile.getNextAutoResumeReason());
-        assertEquals(List.of("action1", "action3"), retried);
-
-        assertEquals(3, deltaFile.getActions().size());
-        assertEquals(ActionState.RETRIED, deltaFile.getActions().get(0).getState());
-        assertEquals(Map.of("a", "b"), deltaFile.getActions().get(0).getMetadata());
-        assertEquals(List.of("c", "d"), deltaFile.getActions().get(0).getDeleteMetadataKeys());
-        assertEquals(ActionState.COMPLETE, deltaFile.getActions().get(1).getState());
-        assertEquals(ActionState.RETRIED, deltaFile.getActions().get(2).getState());
-        assertEquals(Map.of("x", "y"), deltaFile.getActions().get(2).getMetadata());
-        assertEquals(List.of("z"), deltaFile.getActions().get(2).getDeleteMetadataKeys());
-    }
-
-    @Test
-    void testFirstActionError() {
-        Action action1 = Action.builder()
-                .name("action1")
-                .state(ActionState.ERROR)
+        DeltaFileFlow flow1 = DeltaFileFlow.builder()
+                .name("flow1")
+                .actions(new ArrayList<>(List.of(action1)))
                 .build();
         Action action2 = Action.builder()
                 .name("action2")
+                .type(ActionType.TRANSFORM)
                 .state(ActionState.COMPLETE)
+                .nextAutoResume(now)
+                .nextAutoResumeReason("policy-name")
+                .build();
+        DeltaFileFlow flow2 = DeltaFileFlow.builder()
+                .name("flow2")
+                .actions(new ArrayList<>(List.of(action2)))
                 .build();
         Action action3 = Action.builder()
                 .name("action3")
+                .type(ActionType.TRANSFORM)
                 .state(ActionState.ERROR)
+                .nextAutoResume(now)
+                .nextAutoResumeReason("policy-name")
+                .build();
+        DeltaFileFlow flow3 = DeltaFileFlow.builder()
+                .name("flow3")
+                .actions(new ArrayList<>(List.of(action3)))
                 .build();
 
         DeltaFile deltaFile = DeltaFile.builder()
-                .actions(new ArrayList<>(List.of(action1, action2, action3)))
+                .flows(new ArrayList<>(List.of(flow1, flow2, flow3)))
                 .build();
 
-        Optional<Action> firstActionError = deltaFile.firstActionError();
-        assertTrue(firstActionError.isPresent());
-        assertEquals("action1", firstActionError.get().getName());
+        List<DeltaFileFlow> retried = deltaFile.resumeErrors(List.of(
+                new ResumeMetadata("flow1", "action1", Map.of("a", "b"), List.of("c", "d")),
+                new ResumeMetadata("flow3", "action3", Map.of("x", "y"), List.of("z"))), now);
+        assertNull(action1.getNextAutoResume());
+        assertNotNull(action2.getNextAutoResume());
+        assertNull(action3.getNextAutoResume());
+        assertNull(action1.getNextAutoResumeReason());
+        assertEquals("policy-name", action2.getNextAutoResumeReason());
+        assertNull(action3.getNextAutoResumeReason());
+        assertEquals(2, retried.size());
 
-        DeltaFile deltaFile2 = DeltaFile.builder()
-                .actions(new ArrayList<>(List.of( action2)))
-                .build();
-
-        assertFalse(deltaFile2.firstActionError().isPresent());
+        assertEquals(ActionState.RETRIED, action1.getState());
+        assertEquals(Map.of("a", "b"), action1.getMetadata());
+        assertEquals(List.of("c", "d"), action1.getDeleteMetadataKeys());
+        assertEquals(ActionState.COMPLETE, action2.getState());
+        assertEquals(ActionState.RETRIED, action3.getState());
+        assertEquals(Map.of("x", "y"), action3.getMetadata());
+        assertEquals(List.of("z"), action3.getDeleteMetadataKeys());
     }
 
     @Test
@@ -195,64 +175,18 @@ class DeltaFileTest {
         Content content5 = new Content("content1", "*/*", List.of(new Segment("uuid3", 5, 200, "did2")));
 
         DeltaFile deltaFile = DeltaFile.builder()
-                .actions(List.of(
+                .flows(List.of(DeltaFileFlow.builder().actions(List.of(
                         Action.builder().content(List.of(content1, content2)).build(),
                         Action.builder().content(List.of(content3)).build(),
                         Action.builder().content(List.of(content4)).build(),
-                        Action.builder().content(List.of(content5)).build()
-                ))
+                        Action.builder().content(List.of(content5)).build())
+                ).build()))
                 .did("did1")
                 .build();
 
         deltaFile.recalculateBytes();
         assertEquals(1000, deltaFile.getReferencedBytes());
         assertEquals(800, deltaFile.getTotalBytes());
-    }
-
-    @Test
-    void addPendingAnnotations() {
-        DeltaFile deltaFile = new DeltaFile();
-        Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).isNull();
-
-        // nothing should happen when an empty string is passed in
-        deltaFile.addPendingAnnotationsForFlow("  ");
-        Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).isNull();
-
-        deltaFile.addPendingAnnotationsForFlow("flow");
-        Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).hasSize(1).contains("flow");
-
-        // nothing should happen when a null set is passed in
-        deltaFile.addPendingAnnotationsForFlow(null);
-        Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).hasSize(1).contains("flow");
-
-        // values should be appended into the set
-        deltaFile.addPendingAnnotationsForFlow("flow2");
-        Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).hasSize(2).containsAll(List.of("flow", "flow2"));
-    }
-
-    @Test
-    void updatePendingAnnotations() {
-        DeltaFile deltaFile = new DeltaFile();
-        deltaFile.setAnnotations(new HashMap<>(Map.of("a", "1", "b", "2", "d", "4")));
-
-        deltaFile.updatePendingAnnotationsForFlows("flow", Set.of("c"));
-        // no flows in pendingAnnotationsForFlow yet, it should remain null regardless of the set of keys passed in
-        Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).isNull();
-
-        deltaFile.setPendingAnnotationsForFlows(new HashSet<>(Set.of("flow")));
-        deltaFile.updatePendingAnnotationsForFlows("flow", Set.of("c"));
-        // no key of c exists yet, pendingAnnotationsForFlow should keep flow in the set
-        Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).hasSize(1).contains("flow");
-
-        deltaFile.addAnnotations(Map.of("c", "3"));
-        deltaFile.updatePendingAnnotationsForFlows("flow", Set.of("c"));
-        // key of c is added, the flow should be removed from pendingAnnotationForFlows, empty set is nulled out
-        Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).isNull();
-
-        deltaFile.setPendingAnnotationsForFlows(new HashSet<>(Set.of("flow", "flow2")));
-        deltaFile.updatePendingAnnotationsForFlows("flow", Set.of("c"));
-        // key of c is added, the flow should be removed from pendingAnnotationForFlows
-        Assertions.assertThat(deltaFile.getPendingAnnotationsForFlows()).hasSize(1).contains("flow2");
     }
 
     @Test

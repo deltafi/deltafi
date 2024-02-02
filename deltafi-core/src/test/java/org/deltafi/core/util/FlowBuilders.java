@@ -18,6 +18,7 @@
 package org.deltafi.core.util;
 
 import org.deltafi.common.types.*;
+import org.deltafi.core.datafetchers.FlowPlanDatafetcherTestHelper;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.types.*;
 import org.deltafi.core.types.DataSource;
@@ -25,31 +26,42 @@ import org.deltafi.core.types.DataSource;
 import java.util.List;
 import java.util.Set;
 
+import static org.deltafi.core.datafetchers.FlowPlanDatafetcherTestHelper.PLUGIN_COORDINATES;
 import static org.deltafi.core.util.Constants.*;
 
 public class FlowBuilders {
     public static final String TRANSFORM_TOPIC = "transform-topic";
     public static final String EGRESS_TOPIC = "egress-topic";
-    public static DataSource buildTimedIngressFlow(FlowState flowState) {
+    public static DataSource buildRestDataSource(FlowState flowState) {
+        RestDataSource dataSource = new RestDataSource();
+        dataSource.setName(REST_DATA_SOURCE_NAME);
+        dataSource.getFlowStatus().setState(flowState);
+        dataSource.setTestMode(false);
+        dataSource.setTopic(TRANSFORM_TOPIC);
+        return dataSource;
+    }
+
+    public static DataSource buildTimedDataSource(FlowState flowState) {
         TimedIngressActionConfiguration tic = new TimedIngressActionConfiguration("SampleTimedIngressAction", "type");
 
-        return buildFlow(TIMED_INGRESS_FLOW_NAME, tic, flowState, false, "*/5 * * * * *", TRANSFORM_TOPIC);
+        return buildDataSource(TIMED_DATA_SOURCE_NAME, tic, flowState, false, "*/5 * * * * *", TRANSFORM_TOPIC);
     }
 
-    public static DataSource buildTimedIngressErrorFlow(FlowState flowState) {
+    public static DataSource buildTimedDataSourceError(FlowState flowState) {
         TimedIngressActionConfiguration tic = new TimedIngressActionConfiguration("SampleTimedIngressErrorAction", "type");
 
-        return buildFlow(TIMED_INGRESS_ERROR_FLOW_NAME, tic, flowState, false, "*/5 * * * * *", MISSING_FLOW_NAME);
+        return buildDataSource(TIMED_DATA_SOURCE_ERROR_NAME, tic, flowState, false, "*/5 * * * * *", MISSING_PUBLISH_TOPIC);
     }
 
-    public static RestDataSource buildFlow(String topic) {
+    public static RestDataSource buildDataSource(String topic) {
         RestDataSource restDataSource = new RestDataSource();
         restDataSource.setName("RestDataSource");
         restDataSource.setTopic(topic);
+        restDataSource.setSourcePlugin(PLUGIN_COORDINATES);
         return restDataSource;
     }
 
-    public static TimedDataSource buildFlow(String name, TimedIngressActionConfiguration timedIngressActionConfiguration, FlowState flowState, boolean testMode, String cronSchedule, String targetFlow) {
+    public static TimedDataSource buildDataSource(String name, TimedIngressActionConfiguration timedIngressActionConfiguration, FlowState flowState, boolean testMode, String cronSchedule, String targetFlow) {
         TimedDataSource dataSource = new TimedDataSource();
         dataSource.setName(name);
         dataSource.getFlowStatus().setState(flowState);
@@ -57,6 +69,7 @@ public class FlowBuilders {
         dataSource.setTestMode(testMode);
         dataSource.setCronSchedule(cronSchedule);
         dataSource.setTopic(targetFlow);
+        dataSource.setSourcePlugin(PLUGIN_COORDINATES);
         return dataSource;
     }
 

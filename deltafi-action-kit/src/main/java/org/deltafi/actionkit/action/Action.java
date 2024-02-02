@@ -126,7 +126,7 @@ public abstract class Action<I, P extends ActionParameters, R extends ResultType
                     actionInput.getActionContext().getDid());
         }
 
-        actionExecution = new ActionExecution(getClassCanonicalName(), actionInput.getActionContext().getName(), actionInput.getActionContext().getDid(), OffsetDateTime.now());
+        actionExecution = new ActionExecution(getClassCanonicalName(), actionInput.getActionContext().getActionName(), actionInput.getActionContext().getDid(), OffsetDateTime.now());
 
         if (actionInput.getActionContext().getCollect() != null) {
             return execute(actionInput.getActionContext(), collect(actionInput.getDeltaFileMessages().stream()

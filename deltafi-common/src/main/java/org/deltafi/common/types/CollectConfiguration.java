@@ -25,13 +25,13 @@ public record CollectConfiguration(Duration maxAge, Integer minNum, Integer maxN
     public List<String> validate() {
         List<String> errors = new ArrayList<>();
 
-        if ((minNum != null) && (minNum < 1)) {
+        if (minNum != null && minNum < 1) {
             errors.add("Collect: minNum (" + minNum + ") is not positive");
         }
         if (maxNum != null) {
             if (maxNum < 1) {
                 errors.add("Collect: maxNum (" + maxNum + ") is not positive");
-            } else if ((minNum != null) && (maxNum < minNum)) {
+            } else if (minNum != null && maxNum < minNum) {
                 errors.add("Collect: maxNum (" + maxNum + ") is < minNum (" + minNum + ")");
             }
         }

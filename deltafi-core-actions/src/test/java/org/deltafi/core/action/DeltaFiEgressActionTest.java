@@ -70,7 +70,7 @@ class DeltaFiEgressActionTest {
     private static final String CONTENT_TYPE = "application/json";
     private static final Map<String, String> METADATA = Map.of("Foo", "Bar");
     private static final Segment SEGMENT = new Segment(UUID.randomUUID().toString(), 0, DATA.length, DID);
-    private static final ActionContext CONTEXT = ActionContext.builder().did(DID).flow(EGRESS_FLOW).name(ACTION).sourceFilename(ORIG_FILENAME).ingressFlow(FLOW).egressFlow(EGRESS_FLOW).systemName(SYSTEM_NAME).build();
+    private static final ActionContext CONTEXT = ActionContext.builder().did(DID).flowName(EGRESS_FLOW).actionName(ACTION).deltaFileName(ORIG_FILENAME).dataSource(FLOW).systemName(SYSTEM_NAME).build();
     private static final Content CONTENT = new Content(POST_FILENAME, CONTENT_TYPE, List.of(SEGMENT));
     static final Integer NUM_TRIES = 3;
     static final Integer RETRY_WAIT = 10;
@@ -97,7 +97,8 @@ class DeltaFiEgressActionTest {
 
         assertTrue(result instanceof EgressResult);
         assertEquals(DID, result.toEvent().getDid());
-        assertEquals(EGRESS_FLOW + "." + ACTION, result.toEvent().getAction());
+        assertEquals(ACTION, result.toEvent().getActionName());
+        assertEquals(EGRESS_FLOW, result.toEvent().getFlowName());
     }
 
     @SuppressWarnings("unchecked")

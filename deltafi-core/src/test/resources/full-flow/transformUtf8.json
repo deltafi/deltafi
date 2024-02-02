@@ -1,6 +1,9 @@
 {
     "did": "%1$s",
-    "action": "sampleTransform.Utf8TransformAction",
+    "flowName": "sampleTransform",
+    "flowId": 1,
+    "actionName": "Utf8TransformAction",
+    "actionId": 0,
     "start": "2021-07-11T13:44:22.183Z",
     "stop": "2021-07-11T13:44:22.184Z",
     "type": "TRANSFORM",

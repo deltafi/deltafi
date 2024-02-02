@@ -15,21 +15,14 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.types;
+package org.deltafi.core.types;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.deltafi.common.types.DeltaFile;
+import org.deltafi.common.types.DeltaFileFlow;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class Egress {
-    private String flow;
-
-    public Egress(Egress other) {
-        this.flow = other.flow;
-    }
-}
+/**
+ * the deltaFile, flow, and action that were most recently processed and require next steps
+ * @param deltaFile the deltaFile for which an event was received
+ * @param flow the flow for which the event was received
+ */
+public record StateMachineInput(DeltaFile deltaFile, DeltaFileFlow flow) {}

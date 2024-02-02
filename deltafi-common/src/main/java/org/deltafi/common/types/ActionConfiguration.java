@@ -62,15 +62,13 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
      * @param flow the flow on which the Action is specified
      * @param deltaFile DeltaFile that will be acted upon
      * @param systemName system name to set in context
-     * @param egressFlow the egress flow for this action
      * @param returnAddress the unique address of this core instance
-     * @param actionCreated action created datetime
      * @param action the action
      * @param memo memo to set in the context
      * @return ActionInput containing the ActionConfiguration
      */
-    public ActionInput buildActionInput(String flow, DeltaFile deltaFile, String systemName, String egressFlow,
-            String returnAddress, OffsetDateTime actionCreated, Action action, String memo) {
+    public ActionInput buildActionInput(DeltaFile deltaFile, DeltaFileFlow flow, Action action, String systemName,
+                                        String returnAddress, String memo) {
         if (Objects.isNull(internalParameters)) {
             // fall back to using parameters if internalParameters do not exist yet
             setInternalParameters(Objects.requireNonNullElse(parameters, Collections.emptyMap()));
@@ -79,20 +77,21 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
         return ActionInput.builder()
                 .queueName(type)
                 .actionContext(ActionContext.builder()
-                        .flow(flow)
-                        .name(name)
+                        .flowName(flow.getName())
+                        .dataSource(deltaFile.getDataSource())
+                        .flowId(flow.getId())
+                        .actionName(action.getName())
+                        .actionId(action.getId())
                         .did(deltaFile.getDid())
-                        .sourceFilename(deltaFile.getSourceInfo().getFilename())
-                        .ingressFlow(deltaFile.getSourceInfo().getFlow())
-                        .egressFlow(egressFlow)
+                        .deltaFileName(deltaFile.getName())
                         .systemName(systemName)
                         .memo(memo)
                         .build())
                 .actionParams(internalParameters)
-                .deltaFileMessages(List.of(deltaFile.forQueue()))
+                .deltaFileMessages(List.of(new DeltaFileMessage(flow.getMetadata(), flow.lastContent())))
                 .returnAddress(returnAddress)
-                .actionCreated(actionCreated)
-                .action(action)
+                .actionCreated(action.getCreated())
+                .coldQueued(action.getState() == ActionState.COLD_QUEUED)
                 .build();
     }
 
@@ -102,13 +101,13 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
      * @param aggregate the aggregate DeltaFile
      * @param collectedDeltaFiles the DeltaFiles that will be acted upon
      * @param systemName system name to set in context
-     * @param egressFlow the egress flow for this action
      * @param actionCreated action created datetime
      * @param action the action
      * @return ActionInput containing the ActionConfiguration
      */
-    public ActionInput buildCollectingActionInput(String flow, DeltaFile aggregate, List<DeltaFile> collectedDeltaFiles,
-            String systemName, String egressFlow, OffsetDateTime actionCreated, Action action) {
+    public ActionInput buildCollectingActionInput(DeltaFileFlow flow, DeltaFile aggregate,
+                                                  List<DeltaFile> collectedDeltaFiles, String systemName,
+                                                  OffsetDateTime actionCreated, Action action) {
         if (Objects.isNull(internalParameters)) {
             setInternalParameters(Collections.emptyMap());
         }
@@ -116,20 +115,23 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
         return ActionInput.builder()
                 .queueName(type)
                 .actionContext(ActionContext.builder()
-                        .flow(flow)
-                        .name(name)
+                        .flowName(flow.getName())
+                        .dataSource(aggregate.getDataSource())
+                        .flowId(flow.getId())
+                        .actionName(action.getName())
+                        .actionId(action.getId())
                         .did(aggregate.getDid())
-                        .sourceFilename(aggregate.getSourceInfo().getFilename())
-                        .ingressFlow(aggregate.getSourceInfo().getFlow())
-                        .egressFlow(egressFlow)
+                        .deltaFileName(aggregate.getName())
                         .systemName(systemName)
                         .collect(collect)
                         .collectedDids(collectedDeltaFiles.stream().map(DeltaFile::getDid).toList())
                         .build())
                 .actionParams(internalParameters)
-                .deltaFileMessages(collectedDeltaFiles.stream().map(DeltaFile::forQueue).toList())
+                // TODO: Fix collect. how do we know what flow it's collecting on?
+                //.deltaFileMessages(collectedDeltaFiles.stream().map(DeltaFile::forQueue).toList())
                 .actionCreated(actionCreated)
-                .action(action)
+                // TODO: ?
+                //.coldQueued(false)
                 .build();
     }
 

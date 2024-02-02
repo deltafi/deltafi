@@ -160,10 +160,8 @@ public class DeltaFiTestRunner {
     public ActionContext actionContext() {
         return ActionContext.builder()
                 .did(DID)
-                .name("name")
-                .sourceFilename("filename")
-                .ingressFlow(null)
-                .egressFlow(null)
+                .actionName("name")
+                .deltaFileName("filename")
                 .hostname(HOSTNAME)
                 .systemName("systemName")
                 .actionVersion("1.0")

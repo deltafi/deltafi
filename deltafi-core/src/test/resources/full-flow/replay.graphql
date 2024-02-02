@@ -20,8 +20,6 @@ mutation {
     replay(
         dids: ["%1$s"],
         removeSourceMetadata: [ "removeMe" ]
-        replaceFilename: "newFilename"
-        replaceFlow: "sampleTransform"
         replaceSourceMetadata: [
             { key: "AuthorizedBy", value: "ABC"},
             { key: "anotherKey", value: "anotherValue" }
