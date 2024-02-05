@@ -19,6 +19,15 @@
 <template>
   <div class="action-configuration-dialog">
     <div class="action-configuration-panel">
+      <div v-if="hasErrors" class="pt-2">
+        <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="clearErrors()">
+          <ul>
+            <div v-for="(error, key) in errors" :key="key">
+              <li class="text-wrap text-break">{{ error }}</li>
+            </div>
+          </ul>
+        </Message>
+      </div>
       <dl>
         <template v-for="displayActionInfo of getDisplayValues(rowdata)" :key="displayActionInfo">
           <template v-if="displayFieldTest(displayActionInfo)"> </template>
@@ -50,19 +59,19 @@
               <template v-if="_.isEqual(displayActionInfo, 'collect')">
                 <div class="deltafi-fieldset">
                   <div class="px-2 pt-3">
-                    <dt>Max Age</dt>
+                    <dt>maxAge</dt>
                     <dd>
-                      <InputText v-model="collectData['maxAge']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" required />
+                      <InputText v-model="collectData['maxAge']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
                     </dd>
-                    <dt>Min Number</dt>
+                    <dt>minNum</dt>
                     <dd>
-                      <InputText v-model="collectData['minNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
+                      <InputNumber v-model="collectData['minNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" :min="0" show-buttons />
                     </dd>
-                    <dt>Max Number</dt>
+                    <dt>maxNumber</dt>
                     <dd>
-                      <InputText v-model="collectData['maxNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
+                      <InputNumber v-model="collectData['maxNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" :min="0" show-buttons />
                     </dd>
-                    <dt>Metadata Key</dt>
+                    <dt>metadataKey</dt>
                     <dd>
                       <InputText v-model="collectData['metadataKey']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
                     </dd>
@@ -85,13 +94,15 @@
 <script setup>
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import { useMounted } from "@vueuse/core";
-import { provide, defineEmits, defineProps, reactive, ref } from "vue";
+import { computed, defineEmits, defineProps, provide, reactive, ref } from "vue";
 
 import usePrimeVueJsonSchemaUIRenderers from "@/composables/usePrimeVueJsonSchemaUIRenderers";
 import { JsonForms } from "@jsonforms/vue";
 
 import Button from "primevue/button";
+import InputNumber from "primevue/inputnumber";
 import InputText from "primevue/inputtext";
+import Message from "primevue/message";
 import _ from "lodash";
 
 const { rendererList, myStyles } = usePrimeVueJsonSchemaUIRenderers();
@@ -121,6 +132,8 @@ const defaultCollectTemplate = ref({
   maxNum: null,
   metadataKey: null,
 });
+
+const errors = ref([]);
 
 const { actionIndexProp: actionIndex, closeDialogCommand } = reactive(props);
 
@@ -157,16 +170,61 @@ const displayFieldTest = (displayActionInfo) => {
   return (fieldsCheck.includes(displayActionInfo) && _.isEmpty(rowdata[displayActionInfo])) || (_.isEqual(displayActionInfo, "schema") && _.isEmpty(_.get(rowdata, "schema.properties", null)));
 };
 
+const hasErrors = computed(() => {
+  return errors.value.length > 0;
+});
+
+const clearErrors = () => {
+  errors.value = [];
+};
+
 const submit = async () => {
+  clearErrors();
   // Remove any value that have not changed from the original originalCollectData value it was set at
   let changedCollectValues = _.omitBy(collectData.value, function (v, k) {
     return JSON.stringify(originalCollectData[k]) === JSON.stringify(v);
   });
 
+  let newCollect = {};
   if (!_.isEmpty(changedCollectValues)) {
-    collectData.value = _.mapValues(collectData.value, (v) => (v.trim() === "" ? null : v));
-    rowdata["collect"] = JSON.parse(JSON.stringify(collectData.value));
+    if (!_.isEmpty(collectData.value["maxAge"])) {
+      const regexPattern = new RegExp("^P([0-9]+(?:[,.][0-9]+)?Y)?([0-9]+(?:[,.][0-9]+)?M)?([0-9]+(?:[,.][0-9]+)?D)?(?:T([0-9]+(?:[,.][0-9]+)?H)?([0-9]+(?:[,.][0-9]+)?M)?([0-9]+(?:[,.][0-9]+)?S)?)?$");
+      let match = regexPattern.test(collectData.value["maxAge"]);
+
+      if (!match) {
+        errors.value.push("maxAge is not a valid ISO8601 Duration");
+      } else {
+        newCollect["maxAge"] = collectData.value["maxAge"];
+      }
+    }
+
+    if (_.isNumber(collectData.value["minNum"])) {
+      newCollect["minNum"] = collectData.value["minNum"];
+    }
+
+    if (_.isNumber(collectData.value["maxNum"])) {
+      newCollect["maxNum"] = collectData.value["maxNum"];
+    }
+
+    if (_.isNumber(collectData.value["minNum"]) && _.isNumber(collectData.value["maxNum"])) {
+      if (!_.lt(collectData.value["minNum"], collectData.value["maxNum"])) {
+        errors.value.push("minNum cannot be greater than maxNum");
+      }
+    }
+
+    if (!_.isEmpty(collectData.value["metadataKey"])) {
+      newCollect["metadataKey"] = collectData.value["metadataKey"];
+    }
   }
+
+  if (!_.isEmpty(errors.value)) {
+    return;
+  }
+
+  if (!_.isEmpty(newCollect)) {
+    rowdata["collect"] = newCollect;
+  }
+
   closeDialogCommand.command();
   emit("updateAction", { actionIndex: actionIndex, updatedAction: rowdata });
 };
