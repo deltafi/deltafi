@@ -17,19 +17,20 @@
 -->
 
 <template>
-  <fieldset v-if="schemaData.control.visible" :class="schemaData.styles.arrayList.root" class="mt-1 align-items-center">
+  <div v-if="schemaData.control.visible" :class="schemaData.styles.arrayList.root" class="mt-1 align-items-center">
     <div :class="schemaData.styles.arrayList.legend">
-      <div class="btn-group pb-0">
-        <div class="field">
-          <legend :class="schemaData.styles.arrayList.label">
-            {{ schemaData.control.path + ":" }}
-          </legend>
+      <dl>
+        <div class="btn-group pb-0 align-items-center">
+          <dt :class="schemaData.styles.arrayList.label">
+            {{ schemaData.control.path }}
+          </dt>
+          <Button icon="pi pi-plus" small :class="schemaData.styles.arrayList.addButton + ' align-items-center text-dark'" text rounded @click="addButtonClick" />
         </div>
-        <Button icon="pi pi-plus" small :class="schemaData.styles.arrayList.addButton + ' align-items-center text-dark'" text rounded @click="addButtonClick" />
-      </div>
-      <div>
-        <small :id="schemaData.control.id + '-input-help'">{{ schemaData.control.description }}</small>
-      </div>
+
+        <div class="mt-n2">
+          <small :id="schemaData.control.id + '-input-help'">{{ schemaData.control.description }}</small>
+        </div>
+      </dl>
     </div>
     <div v-for="(element, index) in renderArrayData" :key="`${schemaData.control.path}-${index}`" :class="schemaData.styles.arrayList.itemWrapper">
       <ArrayListElement :move-up="schemaData.moveUp?.(schemaData.control.path, index)" :move-up-enabled="index > 0" :move-down="schemaData.moveDown?.(schemaData.control.path, index)" :move-down-enabled="index < schemaData.control.data.length - 1" :delete="schemaData.removeItems?.(schemaData.control.path, [index])" :label="schemaData.childLabelForIndex(index)" :styles="schemaData.styles">
@@ -37,9 +38,9 @@
       </ArrayListElement>
     </div>
     <div v-if="noData" :class="schemaData.styles.arrayList.noData">No data</div>
-  </fieldset>
+  </div>
 </template>
-  
+
 <script setup lang="ts">
 import ArrayListElement from "@/components/jsonSchemaRenderers/arrayRender/ArrayListElement.vue";
 import { computed, reactive } from "vue";
@@ -60,15 +61,11 @@ const noData = computed(() => {
 });
 
 const renderArrayData = computed(() => {
-  return schemaData.control.data
+  return schemaData.control.data;
 });
 
 const addButtonClick = () => {
   schemaData.addItem(schemaData.control.path, createDefaultValue(schemaData.control.schema))();
 };
 </script>
-<style scoped>
-.field * {
-  display: block;
-}
-</style>
+<style scoped></style>

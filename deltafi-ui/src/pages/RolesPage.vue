@@ -46,19 +46,25 @@
         </Column>
       </DataTable>
     </Panel>
-    <Dialog v-model:visible="roleDialog" :style="{ width: '60vw' }" header="Role Details" :modal="true" class="p-fluid role-dialog" :dismissable-mask="false">
+    <Dialog v-model:visible="roleDialog" :style="{ width: '60vw' }" header="Role Details" :modal="true" class="p-fluid roles-dialog" :dismissable-mask="false">
       <Message v-if="errors.length" severity="error">
         <div v-for="error in errors" :key="error">{{ error }}</div>
       </Message>
-      <div class="mb-3">
-        <h5>Name*</h5>
-        <div class="field mb-2">
-          <InputText id="name" v-model="role.name" autofocus :class="{ 'p-invalid': submitted && !role.name }" autocomplete="off" placeholder="Role Name" :disabled="isReadOnly" />
-        </div>
-      </div>
-      <div class="mb-3">
-        <h5>Permissions*</h5>
-        <PermissionCheckboxes v-model="role.permissions" :read-only="isReadOnly" />
+      <div>
+        <dl>
+          <dt>Name*</dt>
+          <dd>
+            <InputText id="name" v-model="role.name" autofocus :class="{ 'p-invalid': submitted && !role.name }" autocomplete="off" placeholder="Role Name" :disabled="isReadOnly" />
+          </dd>
+          <dt>Permissions*</dt>
+          <dd>
+            <div class="deltafi-fieldset">
+              <div class="px-2">
+                <PermissionCheckboxes v-model="role.permissions" :read-only="isReadOnly" />
+              </div>
+            </div>
+          </dd>
+        </dl>
       </div>
       <template v-if="!isReadOnly" #footer>
         <Button label="Cancel" icon="pi pi-times" class="p-button-text" @click="hideDialog" />

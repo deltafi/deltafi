@@ -18,18 +18,20 @@
 
 <template>
   <control-wrapper v-bind="schemaData.controlWrapper" :styles="schemaData.styles" :is-focused="schemaData.isFocused" :applied-options="schemaData.appliedOptions" class="pb-2">
-    <div>
-      <div class="btn-group pb-0">
-        <legend :for="schemaData.control.id + '-input'" class="pr-2">{{ schemaData.control.i18nKeyPrefix.split(".").pop() }}:</legend>
-        <Checkbox :id="schemaData.control.id + '-input'" :model-value="booleanDecider(schemaData.control.data)" :class="schemaData.styles.control.input" :binary="true" class="pt-1" @update:model-value="schemaData.onChange($event)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
-      </div>
-      <div>
+    <dl>
+      <span class="btn-group align-items-center">
+        <dt class="pr-2">{{ schemaData.control.i18nKeyPrefix.split(".").pop() }}</dt>
+        <dd>
+          <Checkbox :id="schemaData.control.id + '-input'" :model-value="booleanDecider(schemaData.control.data)" :class="schemaData.styles.control.input" :binary="true" class="pt-1" @update:model-value="schemaData.onChange($event)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
+        </dd>
+      </span>
+      <div class="mt-n1">
         <small :id="schemaData.control.id + '-input-help'">{{ schemaData.control.description }}</small>
       </div>
-    </div>
+    </dl>
   </control-wrapper>
 </template>
-  
+
 <script setup lang="ts">
 import useSchemaComposition from "@/components/jsonSchemaRenderers/util/useSchemaComposition";
 import { default as ControlWrapper } from "./ControlWrapper.vue";

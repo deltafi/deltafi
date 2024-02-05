@@ -104,5 +104,5 @@ const setOverlayPanelPosition = (event) => {
 </script>
 
 <style lang="scss">
-@import "@/styles/components/ingress-routing-import-file.scss";
+@import "@/styles/components/ingressRouting/ingress-routing-import-file.scss";
 </style>

@@ -47,7 +47,7 @@
     </div>
   </div>
 </template>
-  
+
 <script setup lang="ts">
 import useSchemaComposition from "@/components/jsonSchemaRenderers/util/useSchemaComposition";
 import { computed, PropType, ref, reactive, watch } from "vue";
@@ -208,8 +208,8 @@ const newPropertyErrors = computed(() => {
   if (newPropertyName.value) {
     const messages = propertyNameValidator
       ? (validate(propertyNameValidator, newPropertyName.value)
-          .map((error) => error.message)
-          .filter((message) => message) as string[])
+        .map((error) => error.message)
+        .filter((message) => message) as string[])
       : [];
     if (reservedPropertyNames.value.includes(newPropertyName.value) || additionalPropertyItems.value.find((ap) => ap.propertyName === newPropertyName.value) !== undefined) {
       // already defined

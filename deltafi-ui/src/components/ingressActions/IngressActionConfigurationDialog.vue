@@ -49,11 +49,16 @@
           </dd>
         </dl>
         <template v-if="!_.isEmpty(model['timedIngressActionOption'])">
-          <dd v-if="schemaProvided(model['timedIngressActionOption']['schema'])">
-            <div class="px-2">
-              <json-forms :data="model['timedIngressActionOption']['parameters']" :renderers="renderers" :uischema="uischema" :schema="model['timedIngressActionOption']['schema']" @change="onChange($event, model)" />
-            </div>
-          </dd>
+          <template v-if="schemaProvided(model['timedIngressActionOption']['schema'])">
+            <dt>Ingress Action Variables</dt>
+            <dd>
+              <div class="deltafi-fieldset">
+                <div class="px-2 pt-3">
+                  <json-forms :data="model['timedIngressActionOption']['parameters']" :renderers="renderers" :uischema="uischema" :schema="model['timedIngressActionOption']['schema']" @change="onChange($event, model)" />
+                </div>
+              </div>
+            </dd>
+          </template>
           <dd v-else>
             <div class="px-2">
               <Message severity="info" :closable="false">No Ingress Action variables available</Message>
@@ -182,8 +187,8 @@ const getTimedIngressActions = async () => {
 
 const ingressActionConfigurationMap = new Map([
   ["name", { header: "Name*", placeholder: "Ingress action name.", type: "InputText", disabled: editIngressAction }],
-  ["description", { header: "Description*", placeholder: "Ingress action description.", type: "TextArea", }],
-  ["targetFlow", { header: "Target Flow", placeholder: "Select a flow", type: "Dropdown", }],
+  ["description", { header: "Description*", placeholder: "Ingress action description.", type: "TextArea" }],
+  ["targetFlow", { header: "Target Flow", placeholder: "Select a flow", type: "Dropdown" }],
   ["cronSchedule", { header: "Duration", placeholder: "e.g.	*/5 * * * * *", type: "InputText" }],
   ["flowStatus", { header: "Enabled", type: "StateInputSwitch" }],
   ["timedIngressActionOption", { header: "Ingress Action*", placeholder: "Select a flow", type: "Dropdown2" }],
@@ -198,10 +203,10 @@ onBeforeMount(async () => {
 
   flattenedActionsTypes.value = await getTimedIngressActions();
 
-  if (!_.isEmpty(model.value['timedIngressAction']['name'])) {
-    model.value['timedIngressActionOption'] = _.find(flattenedActionsTypes.value, { 'name': model.value['timedIngressAction']['name'], 'type': model.value['timedIngressAction']['type'] });
-    if (!_.isEmpty(model.value['timedIngressAction']['parameters'])) {
-      model.value['timedIngressActionOption']['parameters'] = model.value['timedIngressAction']['parameters'];
+  if (!_.isEmpty(model.value["timedIngressAction"]["name"])) {
+    model.value["timedIngressActionOption"] = _.find(flattenedActionsTypes.value, { name: model.value["timedIngressAction"]["name"], type: model.value["timedIngressAction"]["type"] });
+    if (!_.isEmpty(model.value["timedIngressAction"]["parameters"])) {
+      model.value["timedIngressActionOption"]["parameters"] = model.value["timedIngressAction"]["parameters"];
     }
   }
 });
@@ -218,29 +223,27 @@ const onChange = (event, element) => {
   element["timedIngressActionOption"]["parameters"] = event.data;
 };
 
-
 const schemaProvided = (schema) => {
-  return !_.isEmpty(_.get(schema, 'properties', null))
+  return !_.isEmpty(_.get(schema, "properties", null));
 };
 
 const formatData = (formattingData) => {
   formattingData = _.pick(formattingData, Object.keys(ingressActionTemplate));
   formattingData = _.merge(ingressActionTemplate, formattingData);
   if (!_.isEmpty(model.value.timedIngressActionOption?.name)) {
-    formattingData['timedIngressAction']['name'] = formattingData["timedIngressActionOption"]["name"]
-    formattingData['timedIngressAction']['type'] = formattingData["timedIngressActionOption"]["type"]
+    formattingData["timedIngressAction"]["name"] = formattingData["timedIngressActionOption"]["name"];
+    formattingData["timedIngressAction"]["type"] = formattingData["timedIngressActionOption"]["type"];
   }
   if (!_.isEmpty(model.value.timedIngressActionOption?.parameters)) {
-    formattingData['timedIngressAction']['parameters'] = formattingData["timedIngressActionOption"]["parameters"]
+    formattingData["timedIngressAction"]["parameters"] = formattingData["timedIngressActionOption"]["parameters"];
   }
   formattingData = _.omit(formattingData, ["flowStatus", "timedIngressActionOption", "timedIngressAction.actionType"]);
-  return formattingData
-}
-
+  return formattingData;
+};
 
 const submit = async () => {
   let timedIngressActionObject = _.cloneDeepWith(model.value);
-  timedIngressActionObject = formatData(timedIngressActionObject)
+  timedIngressActionObject = formatData(timedIngressActionObject);
 
   errorsList.value = [];
   if (_.isEmpty(timedIngressActionObject["name"])) {
@@ -271,8 +274,4 @@ const clearErrors = () => {
 
 <style lang="scss">
 @import "@/styles/components/ingressAction/ingress-action-configuration-dialog.scss";
-
-.action-configuration-dialog {
-  width: 98%;
-}
 </style>

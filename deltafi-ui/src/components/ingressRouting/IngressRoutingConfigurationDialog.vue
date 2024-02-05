@@ -18,7 +18,7 @@
 
 <template>
   <div class="ingress-routing-body">
-    <div class="information-panel">
+    <div class="ingress-routing-panel">
       <div class="pb-0">
         <div v-if="!_.isEmpty(errorsList)" class="pt-2">
           <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="clearErrors()">
@@ -250,5 +250,5 @@ const submit = async () => {
 </script>
 
 <style lang="scss">
-@import "@/styles/components/ingress-routing-configuration-dialog.scss";
+@import "@/styles/components/ingressRouting/ingress-routing-configuration-dialog.scss";
 </style>

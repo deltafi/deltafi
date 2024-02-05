@@ -58,49 +58,58 @@
       <Message v-if="errors.length" severity="error">
         <div v-for="error in errors" :key="error">{{ error }}</div>
       </Message>
-      <div class="mb-3">
-        <h5>Name*</h5>
-        <div class="field mb-2">
-          <InputText id="name" v-model="user.name" autofocus :class="{ 'p-invalid': submitted && !user.name }" autocomplete="off" placeholder="e.g. Jane Doe" :disabled="isReadOnly" />
-        </div>
-      </div>
-      <div class="mb-3">
-        <h5>Authentication</h5>
-        <TabView :active-index="activeTabIndex">
-          <TabPanel header="Basic">
-            <Message v-if="uiConfig.authMode != 'basic' && !isReadOnly" severity="warn">
-              Authentication mode is currently set to <strong>{{ uiConfig.authMode }}</strong>. 
-              This must be set to <strong>basic</strong> before changes to this section will take effect.
-            </Message>
-            <div class="field mb-2">
-              <label for="dn">Username*</label>
-              <InputText id="username" v-model="user.username" autocomplete="off" placeholder="janedoe" :disabled="isReadOnly" />
+      <div>
+        <dl>
+          <dt>Name*</dt>
+          <dd>
+            <InputText id="name" v-model="user.name" autofocus :class="{ 'p-invalid': submitted && !user.name }" autocomplete="off" placeholder="e.g. Jane Doe" :disabled="isReadOnly" />
+          </dd>
+
+          <dt>Authentication</dt>
+          <dd>
+            <div class="deltafi-fieldset">
+              <div class="px-2 pt-3">
+                <TabView :active-index="activeTabIndex">
+                  <TabPanel header="Basic">
+                    <Message v-if="uiConfig.authMode != 'basic' && !isReadOnly" severity="warn">
+                      Authentication mode is currently set to <strong>{{ uiConfig.authMode }}</strong>. This must be set to <strong>basic</strong> before changes to this section will take effect.
+                    </Message>
+                    <div class="field mb-2">
+                      <label for="dn">Username*</label>
+                      <InputText id="username" v-model="user.username" autocomplete="off" placeholder="janedoe" :disabled="isReadOnly" />
+                    </div>
+                    <div v-if="!isReadOnly" class="field mb-2">
+                      <label for="dn">Password</label>
+                      <Password v-model="user.password" autocomplete="off" toggle-mask></Password>
+                    </div>
+                  </TabPanel>
+                  <TabPanel header="Certificate">
+                    <Message v-if="uiConfig.authMode != 'cert' && !isReadOnly" severity="warn">
+                      Authentication mode is currently set to <strong>{{ uiConfig.authMode }}</strong>. This must be set to <strong>cert</strong> before changes to this section will take effect.
+                    </Message>
+                    <div class="field mb-2">
+                      <label for="dn">Distinguished Name (DN)</label>
+                      <InputText id="DN" v-model="user.dn" autocomplete="off" placeholder="e.g. CN=Jane Doe, OU=Sales, O=Acme Corporation, C=US" :disabled="isReadOnly" />
+                    </div>
+                  </TabPanel>
+                </TabView>
+              </div>
             </div>
-            <div v-if="!isReadOnly" class="field mb-2">
-              <label for="dn">Password</label>
-              <Password v-model="user.password" autocomplete="off" toggle-mask></Password>
+          </dd>
+          <dt>Roles</dt>
+          <dd>
+            <div class="deltafi-fieldset">
+              <div class="px-2 pt-3">
+                <div v-for="role in roles" :key="role.id" class="field-checkbox">
+                  <Checkbox v-model="user.role_ids" :input-id="role.name" name="role" :value="role.id" :disabled="isReadOnly" />
+                  <label :for="role.name">
+                    <RolePill :role="role" :enabled="user.role_ids.includes(role.id)" />
+                  </label>
+                </div>
+              </div>
             </div>
-          </TabPanel>
-          <TabPanel header="Certificate">
-            <Message v-if="uiConfig.authMode != 'cert' && !isReadOnly" severity="warn">
-              Authentication mode is currently set to <strong>{{ uiConfig.authMode }}</strong>.
-              This must be set to <strong>cert</strong> before changes to this section will take effect.
-            </Message>
-            <div class="field mb-2">
-              <label for="dn">Distinguished Name (DN)</label>
-              <InputText id="DN" v-model="user.dn" autocomplete="off" placeholder="e.g. CN=Jane Doe, OU=Sales, O=Acme Corporation, C=US" :disabled="isReadOnly" />
-            </div>
-          </TabPanel>
-        </TabView>
-      </div>
-      <div class="mb-3">
-        <h5>Roles</h5>
-        <div v-for="role in roles" :key="role.id" class="field-checkbox">
-          <Checkbox v-model="user.role_ids" :input-id="role.name" name="role" :value="role.id" :disabled="isReadOnly" />
-          <label :for="role.name">
-            <RolePill :role="role" :enabled="user.role_ids.includes(role.id)" />
-          </label>
-        </div>
+          </dd>
+        </dl>
       </div>
       <div v-if="isReadOnly" class="mb-3">
         <h5>Permissions</h5>

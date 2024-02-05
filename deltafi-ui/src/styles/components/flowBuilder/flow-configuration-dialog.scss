@@ -15,10 +15,11 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 */
-.external-link-body {
+
+.flow-configuration-dialog {
   width: 98%;
 
-  .external-link-panel {
+  .flow-configuration-panel {
     dt {
       margin-bottom: 0rem;
     }
@@ -30,9 +31,13 @@
     dl {
       margin-bottom: 1rem;
     }
+
+    .p-panel-content {
+      padding-bottom: 0.25rem !important;
+    }
   }
 
   .inputWidth {
-    width: 90% !important;
+    width: 97% !important;
   }
 }

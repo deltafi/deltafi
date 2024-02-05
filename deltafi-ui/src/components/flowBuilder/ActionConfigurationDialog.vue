@@ -18,65 +18,71 @@
 
 <template>
   <div class="action-configuration-dialog">
-    <div v-for="displayActionInfo of getDisplayValues(rowdata)" :key="displayActionInfo">
-      <template v-if="displayFieldTest(displayActionInfo)"> </template>
-      <template v-else>
-        <h5 class="font-weight-bold pb-2">{{ displayMap.get(displayActionInfo).header }}:</h5>
-        <dd>
-          <InputText v-if="_.isEqual(displayMap.get(displayActionInfo).type, 'string')" v-model="rowdata[displayActionInfo]" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
-        </dd>
-        <dd v-if="_.isEqual(displayMap.get(displayActionInfo).type, 'object')">
-          <template v-if="Array.isArray(rowdata[displayActionInfo])">
-            <template v-if="rowdata[displayActionInfo].includes('any')">
-              <DialogTemplate component-name="plugin/ListEdit" :model-value="rowdata[displayActionInfo]" :header="`Add New ${displayMap.get(displayActionInfo).header}`" dialog-width="25vw">
-                <div class="p-inputtext p-component">
+    <div class="action-configuration-panel">
+      <dl>
+        <template v-for="displayActionInfo of getDisplayValues(rowdata)" :key="displayActionInfo">
+          <template v-if="displayFieldTest(displayActionInfo)"> </template>
+          <template v-else>
+            <dt>{{ displayMap.get(displayActionInfo).header }}</dt>
+            <dd v-if="_.isEqual(displayMap.get(displayActionInfo).type, 'string')">
+              <InputText v-model="rowdata[displayActionInfo]" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
+            </dd>
+            <dd v-else-if="_.isEqual(displayMap.get(displayActionInfo).type, 'object')">
+              <template v-if="Array.isArray(rowdata[displayActionInfo])">
+                <template v-if="rowdata[displayActionInfo].includes('any')">
+                  <DialogTemplate component-name="plugin/ListEdit" :model-value="rowdata[displayActionInfo]" :header="`Add New ${displayMap.get(displayActionInfo).header}`" dialog-width="25vw">
+                    <div class="p-inputtext p-component">
+                      <div v-for="item in rowdata[displayActionInfo]" :key="item" class="list-item">{{ item }}</div>
+                    </div>
+                  </DialogTemplate>
+                </template>
+                <template v-else>
                   <div v-for="item in rowdata[displayActionInfo]" :key="item" class="list-item">{{ item }}</div>
+                </template>
+              </template>
+              <template v-if="_.isEqual(displayActionInfo, 'schema')">
+                <div class="deltafi-fieldset">
+                  <div class="px-2 pt-3">
+                    <json-forms :data="data" :renderers="renderers" :uischema="uischema" :schema="rowdata['schema']" @change="onChange($event, rowdata)" />
+                  </div>
                 </div>
-              </DialogTemplate>
-            </template>
-            <template v-else>
-              <div v-for="item in rowdata[displayActionInfo]" :key="item" class="list-item">{{ item }}</div>
-            </template>
+              </template>
+              <template v-if="_.isEqual(displayActionInfo, 'collect')">
+                <div class="deltafi-fieldset">
+                  <div class="px-2 pt-3">
+                    <dt>Max Age</dt>
+                    <dd>
+                      <InputText v-model="collectData['maxAge']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" required />
+                    </dd>
+                    <dt>Min Number</dt>
+                    <dd>
+                      <InputText v-model="collectData['minNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
+                    </dd>
+                    <dt>Max Number</dt>
+                    <dd>
+                      <InputText v-model="collectData['maxNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
+                    </dd>
+                    <dt>Metadata Key</dt>
+                    <dd>
+                      <InputText v-model="collectData['metadataKey']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
+                    </dd>
+                  </div>
+                </div>
+              </template>
+            </dd>
           </template>
-          <template v-if="_.isEqual(displayActionInfo, 'schema')">
-            <div class="px-2">
-              <json-forms :data="data" :renderers="renderers" :uischema="uischema" :schema="rowdata['schema']" @change="onChange($event, rowdata)" />
-            </div>
-          </template>
-          <template v-if="_.isEqual(displayActionInfo, 'collect')">
-            <fieldset>
-              <legend>Max Age</legend>
-              <dd>
-                <InputText v-model="collectData['maxAge']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" required />
-              </dd>
-              <legend>Min Number</legend>
-              <dd>
-                <InputText v-model="collectData['minNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
-              </dd>
-              <legend>Max Number</legend>
-              <dd>
-                <InputText v-model="collectData['maxNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
-              </dd>
-              <legend>Metadata Key</legend>
-              <dd>
-                <InputText v-model="collectData['metadataKey']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
-              </dd>
-            </fieldset>
-          </template>
-        </dd>
-      </template>
+        </template>
+      </dl>
     </div>
-    <div class="action-configuration-dialog">
-      <teleport v-if="isMounted" to="#dialogTemplate">
-        <div class="p-dialog-footer">
-          <Button label="Submit" @click="submit()" />
-        </div>
-      </teleport>
-    </div>
+    <teleport v-if="isMounted" to="#dialogTemplate">
+      <div class="p-dialog-footer">
+        <Button label="Submit" @click="submit()" />
+      </div>
+    </teleport>
   </div>
 </template>
-  
-  <script setup>
+
+<script setup>
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import { useMounted } from "@vueuse/core";
 import { provide, defineEmits, defineProps, reactive, ref } from "vue";
@@ -165,10 +171,7 @@ const submit = async () => {
   emit("updateAction", { actionIndex: actionIndex, updatedAction: rowdata });
 };
 </script>
-  
+
 <style lang="scss">
-.action-configuration-dialog {
-  width: 98%;
-}
+@import "@/styles/components/flowBuilder/action-configuration-dialog.scss";
 </style>
-  

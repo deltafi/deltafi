@@ -17,11 +17,11 @@
 -->
 
 <template>
-  <fieldset v-if="schemaData.control.visible" class="pb-2">
+  <div v-if="schemaData.control.visible" class="pb-2">
     <dispatch-renderer :visible="schemaData.control.visible" :enabled="schemaData.control.enabled" :schema="schemaData.control.schema" :uischema="detailUiSchema" :path="schemaData.control.path" :renderers="schemaData.control.renderers" :cells="schemaData.control.cells" />
     <small :id="schemaData.control.id + '-input-help'">{{ schemaData.control.description }}</small>
     <AdditionalPropertiesRenderer v-if="hasAdditionalProperties && showAdditionalProperties" :input="input"></AdditionalPropertiesRenderer>
-  </fieldset>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -49,7 +49,7 @@ const detailUiSchema = computed(() => {
     if (_.isEmpty(schemaData.control.path)) {
       uiSchema.type = "VerticalLayout";
     } else {
-      (uiSchema as GroupLayout).label = schemaData.control.i18nKeyPrefix.split(".").pop() + ":";
+      (uiSchema as GroupLayout).label = schemaData.control.i18nKeyPrefix.split(".").pop();
     }
     return uiSchema;
   };

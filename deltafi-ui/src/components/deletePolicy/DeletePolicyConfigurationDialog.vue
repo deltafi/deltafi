@@ -46,48 +46,50 @@
           <dd>
             <InputSwitch v-model="selectedEnabledBoolean" :disabled="deletePolicyConfigurationMap.get('enabled').disabled" />
           </dd>
-          <div v-if="selectedDeleteType">
+          <template v-if="selectedDeleteType">
             <template v-if="_.isEqual(selectedDeleteType, 'TimedDeletePolicy')">
-              <Divider align="left">
-                <div class="inline-flex align-items-center">
-                  <i class="far fa-clock text-muted ml-1"></i>
-                  <b> Time Delete Policy Options</b>
+              <dt>Time Delete Policy Options</dt>
+              <dd>
+                <div class="deltafi-fieldset">
+                  <div class="px-2 pt-3">
+                    <template v-if="_.isEmpty(selectedAfterComplete)">
+                      <dt>{{ deletePolicyConfigurationMap.get("afterCreate").header }}</dt>
+                      <dd>
+                        <InputText v-model="selectedAfterCreate" :placeholder="deletePolicyConfigurationMap.get('afterCreate').placeholder" :disabled="deletePolicyConfigurationMap.get('afterCreate').disabled" class="inputWidth capitalizeText" />
+                      </dd>
+                    </template>
+                    <template v-if="_.isEmpty(selectedAfterCreate)">
+                      <dt>{{ deletePolicyConfigurationMap.get("afterComplete").header }}</dt>
+                      <dd>
+                        <InputText v-model="selectedAfterComplete" :placeholder="deletePolicyConfigurationMap.get('afterComplete').placeholder" :disabled="deletePolicyConfigurationMap.get('afterComplete').disabled" class="inputWidth capitalizeText" />
+                      </dd>
+                    </template>
+                    <dt>{{ deletePolicyConfigurationMap.get("minBytes").header }}</dt>
+                    <dd>
+                      <InputNumber v-model="selectedMinBytes" show-buttons :min="deletePolicyConfigurationMap.get('minBytes').min" :max="deletePolicyConfigurationMap.get('minBytes').max" decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="deletePolicyConfigurationMap.get('minBytes').disabled" />
+                    </dd>
+                    <dt>{{ deletePolicyConfigurationMap.get("deleteMetadata").header }}</dt>
+                    <dd>
+                      <InputSwitch v-model="selectedDeleteMetadata" :disabled="deletePolicyConfigurationMap.get('deleteMetadata').disabled" />
+                    </dd>
+                  </div>
                 </div>
-              </Divider>
-              <template v-if="_.isEmpty(selectedAfterComplete)">
-                <dt>{{ deletePolicyConfigurationMap.get("afterCreate").header }}</dt>
-                <dd>
-                  <InputText v-model="selectedAfterCreate" :placeholder="deletePolicyConfigurationMap.get('afterCreate').placeholder" :disabled="deletePolicyConfigurationMap.get('afterCreate').disabled" class="inputWidth capitalizeText" />
-                </dd>
-              </template>
-              <template v-if="_.isEmpty(selectedAfterCreate)">
-                <dt>{{ deletePolicyConfigurationMap.get("afterComplete").header }}</dt>
-                <dd>
-                  <InputText v-model="selectedAfterComplete" :placeholder="deletePolicyConfigurationMap.get('afterComplete').placeholder" :disabled="deletePolicyConfigurationMap.get('afterComplete').disabled" class="inputWidth capitalizeText" />
-                </dd>
-              </template>
-              <dt>{{ deletePolicyConfigurationMap.get("minBytes").header }}</dt>
-              <dd>
-                <InputNumber v-model="selectedMinBytes" show-buttons :min="deletePolicyConfigurationMap.get('minBytes').min" :max="deletePolicyConfigurationMap.get('minBytes').max" decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="deletePolicyConfigurationMap.get('minBytes').disabled" />
-              </dd>
-              <dt>{{ deletePolicyConfigurationMap.get("deleteMetadata").header }}</dt>
-              <dd>
-                <InputSwitch v-model="selectedDeleteMetadata" :disabled="deletePolicyConfigurationMap.get('deleteMetadata').disabled" />
               </dd>
             </template>
             <template v-else>
-              <Divider align="left">
-                <div class="inline-flex align-items-center">
-                  <i class="fas fa-hdd text-muted ml-1"></i>
-                  <b> Disk Space Delete Policy Options</b>
-                </div>
-              </Divider>
-              <dt>{{ deletePolicyConfigurationMap.get("maxPercent").header }}</dt>
+              <dt>Disk Space Delete Policy Options</dt>
               <dd>
-                <InputNumber v-model="selectedMaxPercent" show-buttons :min="deletePolicyConfigurationMap.get('maxPercent').min" :max="deletePolicyConfigurationMap.get('maxPercent').max" decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="deletePolicyConfigurationMap.get('maxPercent').disabled" />
+                <div class="deltafi-fieldset">
+                  <div class="px-2 pt-3">
+                    <dt>{{ deletePolicyConfigurationMap.get("maxPercent").header }}</dt>
+                    <dd>
+                      <InputNumber v-model="selectedMaxPercent" show-buttons :min="deletePolicyConfigurationMap.get('maxPercent').min" :max="deletePolicyConfigurationMap.get('maxPercent').max" decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="deletePolicyConfigurationMap.get('maxPercent').disabled" />
+                    </dd>
+                  </div>
+                </div>
               </dd>
             </template>
-          </div>
+          </template>
         </dl>
       </div>
     </div>
@@ -108,7 +110,6 @@ import { useMounted } from "@vueuse/core";
 import { defineEmits, defineProps, onMounted, reactive, ref } from "vue";
 
 import Button from "primevue/button";
-import Divider from "primevue/divider";
 import Dropdown from "primevue/dropdown";
 import InputNumber from "primevue/inputnumber";
 import InputSwitch from "primevue/inputswitch";

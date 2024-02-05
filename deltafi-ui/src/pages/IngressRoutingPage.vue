@@ -27,7 +27,7 @@
         </DialogTemplate>
       </div>
     </PageHeader>
-    <Panel header="Rules" class="ingress-routing-panel table-panel">
+    <Panel header="Rules" class="table-panel">
       <template #icons>
         <span class="p-input-icon-left">
           <i class="pi pi-search" />
