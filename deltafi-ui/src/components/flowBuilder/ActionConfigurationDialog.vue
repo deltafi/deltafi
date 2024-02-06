@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <div class="action-configuration-dialog">
+  <div id="error-message" class="action-configuration-dialog">
     <div class="action-configuration-panel">
       <div v-if="hasErrors" class="pt-2">
         <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="clearErrors()">
@@ -94,7 +94,7 @@
 <script setup>
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import { useMounted } from "@vueuse/core";
-import { computed, defineEmits, defineProps, provide, reactive, ref } from "vue";
+import { computed, defineEmits, defineProps, nextTick, provide, reactive, ref } from "vue";
 
 import usePrimeVueJsonSchemaUIRenderers from "@/composables/usePrimeVueJsonSchemaUIRenderers";
 import { JsonForms } from "@jsonforms/vue";
@@ -218,6 +218,9 @@ const submit = async () => {
   }
 
   if (!_.isEmpty(errors.value)) {
+    const errorMessages = document.getElementById("error-message");
+    await nextTick();
+    errorMessages.scrollIntoView();
     return;
   }
 
