@@ -69,8 +69,8 @@ const props = defineProps({
 });
 
 const header = computed(() => props.action.name);
-const cause = computed(() => props.action.state === "ERROR" ? props.action.errorCause : props.action.filteredCause);
-const context = computed(() => props.action.state === "ERROR" ? props.action.errorContext : props.action.filteredContext);
+const cause = computed(() => ["ERROR", "RETRIED"].includes(props.action.state) ? props.action.errorCause : props.action.filteredCause);
+const context = computed(() => ["ERROR", "RETRIED"].includes(props.action.state) ? props.action.errorContext : props.action.filteredContext);
 </script>
 
 <style lang="scss">
