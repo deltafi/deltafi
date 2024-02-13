@@ -32,7 +32,7 @@
         <dl>
           <dt>Name*</dt>
           <dd>
-            <InputText v-model="model.name" class="inputWidth" />
+            <InputText v-model="model.name" class="inputWidth" :disabled="editFlowPlan" />
           </dd>
           <dt>Description*</dt>
           <dd>
@@ -167,7 +167,7 @@ const submit = async () => {
     let activeSystemFlowNames = _.map(allFlowPlans.value[`${_.toLower(model.value.type)}`], "name");
     let isflowNamedUsed = _.includes(activeSystemFlowNames, model.value.name.trim());
 
-    if (isflowNamedUsed) {
+    if (isflowNamedUsed && !editFlowPlan) {
       errors.value.push("Name already exists in the system. Choose a different Name.");
     }
   }

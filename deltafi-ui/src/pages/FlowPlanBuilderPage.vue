@@ -23,8 +23,8 @@
         <div class="align-items-center btn-group">
           <h2 class="mb-0">{{ flowPlanHeader }}</h2>
           <div v-if="model.active" class="btn-group">
-            <DialogTemplate component-name="flowBuilder/FlowConfigurationDialog" :header="`Edit ${model.name}`" dialog-width="25vw" model-position="center" :data-prop="model" edit-flow-plan @create-flow-plan="setFlowValues">
-              <Button v-if="!editExistingFlowPlan" v-tooltip.top="`Edit Name and Description`" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary ml-2" />
+            <DialogTemplate component-name="flowBuilder/FlowConfigurationDialog" :header="`Edit ${model.name}`" dialog-width="25vw" model-position="center" :data-prop="model" :edit-flow-plan="editExistingFlowPlan" @create-flow-plan="setFlowValues">
+              <Button v-tooltip.top="`Edit Name and Description`" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary ml-2" />
             </DialogTemplate>
           </div>
         </div>
