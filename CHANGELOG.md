@@ -5,6 +5,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.2.1] - 2024-02-23
+
+### Added
+- Added the ability to add and update Ingress Actions to UI. 
+- Added scrollToTop on the actionConfigurationDialog when there are errors 
+- UI: Clicking on an action in a `RETRIED` state on the DeltaFile Viewer now shows the error cause and context.
+- UI: Display local git branch in UI when running in development mode.
+
+### Changed
+- Consolidated metrics chart panels on the dashboard into a single Metrics panel and incorporated a timeframe dropdown.
+- Changed default chart refresh interval from 5 minutes to 1 minute.
+- Description is now an editable field for existing flows in the flow plan builder 
+- UI: Content Viewer now detects JSON and XML content regardless of `mediaType`.
+- Replaced "Show Acknowledged" button on Errors page with a dropdown of Errors, Acknowledged, and All.
+
+### Fixed
+- Fixed bugs with Flow Plan Builder collect fields 
+- Fixed headers on all dialogs and in the Flow Plan Builder 
+- Fixed issue when you have a property that uses the boolean json schema renderer the initial value put into the renderer is held on even if you try to change it. 
+- Fixed issue where our Integer Json Renderer wasnt able to support string forms of numbers. 
+- Fixed a bug on the search page that was causing the back button to not behave as expected.
+
+### Tech-Debt/Refactor
+- Moved Calendar into a component.
+
+### Upgrade and Migration
+- Upgrade clustermonitor to kubectl 1.29.1
+- Update nodemonitor to alpine:3.19.1 base image
+
 ## [1.2.0] - 2024-01-27
 
 ### Added
@@ -2762,7 +2791,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.0...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.1...main
+[1.2.1]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.0...1.2.1
 [1.2.0]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.20...1.2.0
 [1.1.20]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.18...1.1.20
 [1.1.18]: https://gitlab.com/deltafi/deltafi/-/compare/1.1.17...1.1.18
