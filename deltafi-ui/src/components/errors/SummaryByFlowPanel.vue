@@ -90,7 +90,7 @@ const props = defineProps({
     default: undefined,
   },
   acknowledged: {
-    type: Boolean,
+    type: [Boolean, null],
     required: true,
   },
 });
@@ -167,9 +167,8 @@ const { data: response, fetchByFlow: getErrorsByFlow } = useErrorsSummary();
 const fetchErrorsFlow = async () => {
   getPersistedParams();
   let ingressFlowName = props.ingressFlowName != null ? props.ingressFlowName : null;
-  let showAcknowledged = props.acknowledged ? null : false;
   loading.value = true;
-  await getErrorsByFlow(showAcknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, ingressFlowName);
+  await getErrorsByFlow(props.acknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, ingressFlowName);
   errorsFlow.value = response.value.countPerFlow;
   totalErrorsFlow.value = response.value.totalCount;
   loading.value = false;
