@@ -102,6 +102,16 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
+  name: ui-charts-by-node
+  labels:
+    grafana_dashboard: "1"
+data:
+  ui-charts-by-node.json: |-
+{{ .Files.Get "files/grafana/dashboards/ui-charts-by-node.json" | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
   name: dashboard-survey-metrics
   labels:
     grafana_dashboard: "1"

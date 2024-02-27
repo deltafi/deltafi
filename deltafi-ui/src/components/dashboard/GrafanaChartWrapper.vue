@@ -19,7 +19,7 @@
 <template>
   <div>
     <h5>{{ header }}</h5>
-    <GrafanaChart :panel-id="panelId" :from="from" :to="to" />
+    <GrafanaChart :panel-id="panelId" :from="from" :to="to" :key-pairs="props.keyPairs" :dashboard-id="props.dashboardId" />
   </div>
 </template>
 
@@ -54,6 +54,16 @@ const props = defineProps({
     type: Number,
     required: false,
     default: null,
+  },
+  keyPairs: {
+    type: Object,
+    required: false,
+    default: null,
+  },
+  dashboardId: {
+    type: String,
+    required: false,
+    default: "ui-charts",
   },
 });
 
