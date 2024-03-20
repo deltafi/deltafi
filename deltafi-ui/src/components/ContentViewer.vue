@@ -210,15 +210,20 @@ onMounted(() => {
 });
 
 watch(
-  () => content.value,
+  () => renderFormats.value,
   () => {
-    loadContent();
     if (renderFormats.value.find((f) => f.id == selectedRenderFormat.value.id)) {
       selectedRenderFormat.value = renderFormats.value.find((f) => f.id === selectedRenderFormat.value.id);
     } else {
       selectedRenderFormat.value = renderFormats.value.find((f) => f.id === "utf8");
     }
   }
+);
+
+
+watch(
+  () => content.value,
+  () => loadContent()
 );
 
 const partialContent = computed(() => content.value.size > maxPreviewSize);
