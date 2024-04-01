@@ -10,10 +10,9 @@ stages:
 default:
   timeout: 45m
 
-image: deltafi/deltafi-build:jdk21-python3-0
+image: deltafi/deltafi-build:jdk21.0.2-python3.11-0
 
 .gradle:
-  image: deltafi/deltafi-build:jdk21-python3-0
   variables:
     GRADLE_USER_HOME: /cache/.gradle
     GRADLE_OPTS: "-Dorg.gradle.daemon=false"
@@ -67,7 +66,7 @@ gradle:build:
 .docker:
   stage: docker
   image:
-    name: gcr.io/kaniko-project/executor:v1.9.0-debug
+    name: gcr.io/kaniko-project/executor:v1.22.0-debug
     entrypoint: [""]
   tags:
     - light
@@ -159,7 +158,6 @@ publish:docs:
       - dev
       - main
       - "1.2"
-  image: deltafi/deltafi-build:jdk21-python3-0
   before_script:
     - apt update
     - apt-get install -y python3-pip
@@ -175,7 +173,6 @@ publish:docs:
     - .publish
   rules:
     - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE != 'deltafi'
-  image: deltafi/deltafi-build:jdk21-python3-0
   before_script:
     - apt update
     - apt-get install -y python3-pip
@@ -188,7 +185,7 @@ publish:docs:
 
 hub_docker_quota_check:
   stage: build
-  image: alpine:3.16
+  image: alpine:3.19
   tags:
     - light
   before_script:

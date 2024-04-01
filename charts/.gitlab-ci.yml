@@ -5,7 +5,7 @@ update-helmchart:
   only:
     refs:
       - dev
-  image: alpine:3.14
+  image: alpine:3.19
   # Make sure that jobs committing to the helm chart don't collide in git commits.  This is a mutex on the git repo.
   resource_group: ci-helmchart
   environment:
