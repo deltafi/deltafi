@@ -10,7 +10,7 @@ stages:
 default:
   timeout: 45m
 
-image: deltafi/deltafi-build:jdk21-python3-0
+image: deltafi/deltafi-build:jdk21.0.2-python3.12-0
 
 .gradle:
   image: deltafi/deltafi-build:jdk21-python3-0
@@ -159,32 +159,24 @@ publish:docs:
       - dev
       - main
       - "1.2"
-  image: deltafi/deltafi-build:jdk21-python3-0
-  before_script:
-    - apt update
-    - apt-get install -y python3-pip
-    - python3 -m pip install --upgrade twine
   script:
     - ./gradlew $PROJECT_NAME:build
     - export TWINE_PASSWORD=${CI_JOB_TOKEN}
     - export TWINE_USERNAME=gitlab-ci-token
-    - python3 -m twine upload --skip-existing --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi $PROJECT_NAME/src/dist/*
+    - $PROJECT_NAME/src/venv/bin/pip install twine
+    - $PROJECT_NAME/src/venv/bin/python -m twine upload --skip-existing --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi $PROJECT_NAME/src/dist/*
 
 .publish-python-pypi:
   extends:
     - .publish
   rules:
     - if: $CI_COMMIT_TAG && $CI_PROJECT_NAMESPACE != 'deltafi'
-  image: deltafi/deltafi-build:jdk21-python3-0
-  before_script:
-    - apt update
-    - apt-get install -y python3-pip
-    - python3 -m pip install --upgrade twine
   script:
     - ./gradlew $PROJECT_NAME:build
     - export TWINE_PASSWORD=${PYTHON_PYPI_PUBLISH_PASSWORD}
     - export TWINE_USERNAME="__token__"
-    - python3 -m twine upload $PROJECT_NAME/src/dist/*
+    - $PROJECT_NAME/src/venv/bin/pip install twine
+    - $PROJECT_NAME/src/venv/bin/python -m twine upload $PROJECT_NAME/src/dist/*
 
 hub_docker_quota_check:
   stage: build

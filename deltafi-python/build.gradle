@@ -6,8 +6,15 @@ plugins {
     id "com.github.hierynomus.license" version "${hierynomusLicenseVersion}"
 }
 
+task setupVirtualEnvironment(type: Exec) {
+    workingDir 'src'
+    commandLine '../bin/native_python', '-m', 'venv', 'venv'
+}
+
 task setupPoetry(type: Exec) {
-    commandLine 'pip3', '-q', 'install', 'poetry'
+    dependsOn setupVirtualEnvironment
+    workingDir 'src'
+    commandLine 'venv/bin/pip', '-q', 'install', 'poetry'
 }
 
 task copyTemplate(type: Copy) {
@@ -20,7 +27,7 @@ task poetryVersion(type: Exec) {
     dependsOn copyTemplate, setupPoetry
     workingDir 'src'
     String pythonVersion = version.replaceAll('-.*', "rc${new Date().getTime()}")
-    commandLine 'poetry', 'version', "${pythonVersion}"
+    commandLine 'venv/bin/poetry', 'version', "${pythonVersion}"
 }
 
 task cleanDist(type: Delete) {
@@ -28,31 +35,37 @@ task cleanDist(type: Delete) {
     delete 'src/poetry.lock'
 }
 
+task cleanVirtualEnvironment(type: Delete) {
+    delete 'src/venv'
+}
+
 task poetryInstall(type: Exec) {
     dependsOn poetryVersion
     workingDir 'src'
-    commandLine 'poetry', 'install', '--with', 'test'
+    commandLine 'venv/bin/poetry', 'install', '--with', 'test'
 }
 
 task poetryBuild(type: Exec) {
     dependsOn cleanDist, poetryInstall
     workingDir 'src'
-    commandLine 'poetry', 'build'
+    commandLine 'venv/bin/poetry', 'build'
 }
 
 task testPython(type: Exec) {
     dependsOn poetryBuild
     workingDir 'src'
-    commandLine 'poetry', 'run', 'pytest', '--junit-xml=../build/test-results/test/TEST-results.xml'
+    commandLine 'venv/bin/poetry', 'run', 'pytest', '--junit-xml=../build/test-results/test/TEST-results.xml'
 }
 
 task publishToMavenLocal(type: Exec) {
     dependsOn poetryBuild
     workingDir 'src'
-    commandLine 'pip3', 'install', '.'
+    commandLine 'venv/bin/pip', 'install', '.'
 }
 
 clean.dependsOn cleanDist
+clean.dependsOn cleanVirtualEnvironment
+
 assemble.dependsOn poetryBuild
 
 test {

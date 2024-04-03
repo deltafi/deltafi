@@ -32,7 +32,7 @@ subprojects {
         excludeFromLicense = ["**/*.xml", "**/generated/**/*.java", "**/*.MockMaker", "**/*.jks", "**/*.p12",
                               "**/*.yaml", "**/*.yml", "**/*.properties", "**/*.tar", "**/*.gz", "**/*.Z", "**/*.zip", "**/*.xz", "**/*.ar",
                               "**/*.txt", "**/*.xml", "**/*.html", "**/*.json", "**/test/resources/**",
-                              "**/plugin-templates/**", "**/node_modules/**", "**/minio-mc-init.sh"]
+                              "**/plugin-templates/**", "**/node_modules/**", "**/minio-mc-init.sh", "**/venv/**"]
     }
 
     java {
