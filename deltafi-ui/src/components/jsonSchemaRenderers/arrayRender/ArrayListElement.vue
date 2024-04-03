@@ -17,8 +17,8 @@
 -->
 
 <template>
-  <div :class="styles.arrayList.item + ' d-flex btn-group align-items-center'">
-    <div :class="styles.arrayList.itemLabel + 'pr-1'">{{ label }}</div>
+  <div :class="styles.arrayList.item + ' d-flex btn-group align-items-start'">
+    <!-- <div :class="styles.arrayList.itemLabel + 'pr-1'">{{ label.split(".").pop()  }}</div> -->
     <div class="input-width ml-2">
       <slot></slot>
     </div>

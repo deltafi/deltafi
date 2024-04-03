@@ -32,14 +32,14 @@
     <InputSwitch v-tooltip.top="rowData.flowStatus.state" :model-value="rowData.flowStatus.state" false-value="STOPPED" true-value="RUNNING" class="p-button-sm" @click="confirmationPopup($event, rowData.name, rowData.flowStatus.state)" />
   </span>
   <span v-else class="pt-1">
-    <Tag class="ml-2" :value="rowData.flowStatus.state" severity="info" icon="pi pi-info-circle" :rounded="true" />
+    <Tag v-tooltip.left="tooltip" class="ml-2" :value="rowData.flowStatus.state" severity="info" icon="pi pi-info-circle" :rounded="true" />
   </span>
 </template>
 
 <script setup>
 import useIngressActions from "@/composables/useIngressActions";
 import useNotifications from "@/composables/useNotifications";
-import { defineProps, toRefs } from "vue";
+import { computed, defineProps, toRefs } from "vue";
 
 import Tag from "primevue/tag";
 import ConfirmPopup from "primevue/confirmpopup";
@@ -64,7 +64,7 @@ const props = defineProps({
   configureIngressActionDialog: {
     type: Boolean,
     required: false,
-    defalut: false,
+    default: false,
   },
 });
 
@@ -90,10 +90,20 @@ const confirmationPopup = async (event, name, state) => {
   }
 };
 
-const toggleFlowState = async (flowName, newflowState) => {
+const tooltip = computed(() => {
+  let errorsList = _.map(rowData.value.flowStatus.errors, "message");
+
+  if (errorsList.toString().includes(";")) {
+    errorsList = errorsList.toString().split(";");
+  }
+
+  return ` Errors:\n •${errorsList.join("\n•")}`;
+});
+
+const toggleFlowState = async (flowName, newFlowState) => {
   if (!configureIngressActionDialog.value) {
     if (_.isEqual(ingressActionType.value, "timedIngress")) {
-      if (_.isEqual(newflowState, "STOPPED")) {
+      if (_.isEqual(newFlowState, "STOPPED")) {
         await startTimedIngressFlowByName(flowName);
       } else {
         await stopTimedIngressFlowByName(flowName);

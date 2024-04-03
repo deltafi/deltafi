@@ -17,6 +17,8 @@
 */
 
 import useGraphQL from "./useGraphQL";
+import { EnumType } from "json-to-graphql-query";
+import _ from "lodash";
 
 export default function useIngressActions() {
   const { response, errors, queryGraphQL, loaded, loading } = useGraphQL();
@@ -29,6 +31,11 @@ export default function useIngressActions() {
           description: true,
           flowStatus: {
             state: true,
+            errors: {
+              configName: true,
+              errorType: true,
+              message: true,
+            },
           },
           targetFlow: true,
           cronSchedule: true,
@@ -105,10 +112,36 @@ export default function useIngressActions() {
   };
 
   const saveTimedIngressFlowPlan = (timedIngressFlowPlan: Object) => {
+    let newObject: any = null;
+    const enumKeysToKey = ["matchingPolicy", "defaultBehavior"];
+    // Function to convert certain keys values to enums
+    function graphqlQueryObjectConverter(queryObject: any) {
+      for (const [key, value] of Object.entries(queryObject)) {
+        if (_.isArray(value)) {
+          continue;
+        }
+
+        if (_.isObject(value)) {
+          graphqlQueryObjectConverter(value);
+        }
+
+        if (enumKeysToKey.includes(key)) {
+          queryObject[key] = new EnumType(value as any);
+        } else {
+          continue;
+        }
+      }
+      newObject = queryObject;
+    }
+
+    graphqlQueryObjectConverter(timedIngressFlowPlan);
+
+    const formattedQuery = newObject;
+
     const query = {
       saveTimedIngressFlowPlan: {
         __args: {
-          timedIngressFlowPlan: timedIngressFlowPlan,
+          timedIngressFlowPlan: formattedQuery,
         },
         name: true,
       },
