@@ -22,7 +22,7 @@
       <PageHeader heading="DeltaFile Search">
         <div class="time-range btn-toolbar mb-2 mb-md-0">
           <Button class="p-button-text p-button-sm p-button-secondary" disabled>{{ shortTimezone() }}</Button>
-          <date-picker :key="Math.random()" ref="datePickerRef" :date-input="dateInput" :calendar-date-input="calendarDateInput" switch-button-label="All Day" :format="timestampFormat" :same-date-format="sameDateFormat" :initial-dates="[model.startTimeDate, model.endTimeDate]" :show-helper-buttons="true" :helper-buttons="helperButtons" @date-applied="updateInputDateTime" @on-reset="resetDateTime" @datepicker-opened="updateHelperButtons" />
+          <CustomCalendar :start-time-date="model.startTimeDate" :end-time-date="model.endTimeDate" :reset-default="resetDefaultTimeDate" @update:start-time-date:end-time-date="updateInputDateTime"></CustomCalendar>
           <Button class="p-button p-button-outlined deltafi-input-field ml-3" icon="fa fa-sync-alt" :loading="loading" label="Refresh" @click="fetchDeltaFilesData()" />
         </div>
       </PageHeader>
@@ -137,7 +137,7 @@
 </template>
 
 <script setup>
-import DatePicker from "vue-time-date-range-picker/src/Components/DatePicker";
+import CustomCalendar from "@/components/CustomCalendar.vue";
 import AnnotateDialog from "@/components/AnnotateDialog.vue";
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import DidLink from "@/components/DidLink.vue";
@@ -288,7 +288,6 @@ onBeforeMount(async () => {
   fetchAnnotationKeys();
   await fetchDeltaFilesDataNoDebounce();
   setupWatchers();
-  updateHelperButtons();
 });
 
 // Fetches all the options used in the dropdown
@@ -303,58 +302,6 @@ const fetchStages = async () => {
   stageOptions.value = _.uniq(_.map(enumsStageTypes.data.__type.enumValues, "name"));
 };
 
-// Dates/Time Variables
-const helperButtons = ref([]);
-const updateHelperButtons = () => {
-  let now = new Date();
-  // If running in UTC mode, set dates in the future because the DatePicker does not have a UTC mode.
-  if (uiConfig.useUTC)
-    now = now.getTime() + now.getTimezoneOffset() * 60000;
-  const buttons = [
-    {
-      name: "Last Hour",
-      from: new Date(now - 1 * 3600000),
-      to: new Date(now),
-    },
-    {
-      name: "Last 4 Hours",
-      from: new Date(now - 4 * 3600000),
-      to: new Date(now),
-    },
-    {
-      name: "Last 8 Hours",
-      from: new Date(now - 8 * 3600000),
-      to: new Date(now),
-    },
-    {
-      name: "Last 12 Hours",
-      from: new Date(now - 12 * 3600000),
-      to: new Date(now),
-    },
-    {
-      name: "Last 24 Hours",
-      from: new Date(now - 24 * 3600000),
-      to: new Date(now),
-    },
-    {
-      name: "Last 3 Days",
-      from: new Date(now - 3 * 24 * 3600000),
-      to: new Date(now),
-    },
-    {
-      name: "Last 7 Days",
-      from: new Date(now - 7 * 24 * 3600000),
-      to: new Date(now),
-    },
-    {
-      name: "Last 14 Days",
-      from: new Date(now - 14 * 24 * 3600000),
-      to: new Date(now),
-    },
-  ];
-  helperButtons.value.length = 0;
-  buttons.forEach((button) => helperButtons.value.push(button));
-};
 const timestampFormat = "YYYY-MM-DD HH:mm:ss";
 const defaultStartTimeDate = computed(() => {
   const date = dayjs().utc();
@@ -365,27 +312,13 @@ const defaultEndTimeDate = computed(() => {
   return (uiConfig.useUTC ? date : date.local()).endOf("day");
 });
 
-const datePickerRef = ref(null);
-const sameDateFormat = {
-  from: timestampFormat,
-  to: timestampFormat,
-};
-const calendarDateInput = {
-  labelStarts: "Start",
-  labelEnds: "End",
-  inputClass: null,
-  format: "YYYY-MM-DD",
-};
-const dateInput = {
-  placeholder: "Select Date",
-  inputClass: "p-inputtext p-component deltafi-input-field input-area-width",
-};
+const resetDefaultTimeDate = computed(() => {
+  return [new Date(defaultStartTimeDate.value.format(timestampFormat)), new Date(defaultEndTimeDate.value.format(timestampFormat))];
+});
+
 const updateInputDateTime = async (startDate, endDate) => {
   model.value.startTimeDate = startDate;
   model.value.endTimeDate = endDate;
-};
-const resetDateTime = async () => {
-  datePickerRef.value.onApply(new Date(defaultStartTimeDate.value.format(timestampFormat)), new Date(defaultEndTimeDate.value.format(timestampFormat)));
 };
 
 const dateToISOString = (dateData) => {

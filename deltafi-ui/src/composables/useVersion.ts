@@ -18,6 +18,7 @@
 
 import { ref, Ref } from 'vue'
 import useGraphQL from './useGraphQL';
+import useApi from './useApi';
 
 const version: Ref = ref("");
 
@@ -32,6 +33,14 @@ export default function useVersion() {
     try {
       await queryGraphQL(query, "version", "query");
       version.value = response.value.data.version;
+
+      // For development only
+      if (process.env.NODE_ENV === "development") {
+        const { response: apiResponse, get } = useApi();
+        await get('local-git-branch');
+        const branch = apiResponse.value.branch;
+        if (branch) version.value += ` (${branch})`
+      }
     } catch {
       // Continue regardless of error
     }

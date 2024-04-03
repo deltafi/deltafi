@@ -23,7 +23,7 @@
         <legend v-if="!_.isEmpty(schemaData.computedLabel)" :id="schemaData.control.id + '-input-label'">{{ schemaData.control.i18nKeyPrefix.split(".").pop() }}:</legend>
       </div>
       <div>
-        <InputNumber :id="schemaData.control.id + '-input'" v-model="schemaData.control.data" :class="schemaData.styles.control.input + ' inputWidth'" :step="steps" input-id="stacked-buttons" show-buttons @input="schemaData.onChange(schemaData.control.data)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
+        <InputNumber :id="schemaData.control.id + '-input'" :model-value="integerDecider(schemaData.control.data)" :class="schemaData.styles.control.input + ' inputWidth'" :step="steps" input-id="stacked-buttons" show-buttons @input="schemaData.onChange($event.value)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
       </div>
       <small v-if="!_.isEmpty(schemaData.control.description)" :id="schemaData.control.id + '-input-help'">{{ schemaData.control.description }}</small>
     </div>
@@ -47,6 +47,25 @@ const props = defineProps({
 });
 
 const schemaData = reactive(useControl(useJsonFormsControl(props), (value) => parseInt(value, 10) || undefined));
+
+const integerDecider = (intVal: any) => {
+  // If its empty and not an integer, return null
+  if (_.isEmpty(intVal) && !_.isInteger(intVal)) {
+    return null;
+  }
+
+  // Trys to convert the value to a number and checks to see if it is an integer.
+  if (_.isInteger(Number(intVal))) {
+    return Number(intVal);
+  }
+
+  // If its not an integer, return null
+  if (Number.isNaN(intVal)) {
+    return null;
+  }
+
+  return intVal;
+};
 
 const steps = computed(() => {
   const options: any = schemaData.appliedOptions;
