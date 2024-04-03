@@ -11,7 +11,36 @@
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [
+            "DeltaFi"
+          ],
+          "type": "dashboard"
+        },
         "type": "dashboard"
+      },
+      {
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "hide": false,
+        "iconColor": "orange",
+        "name": "Global events",
+        "target": {
+          "fromAnnotations": true,
+          "limit": 200,
+          "matchAny": true,
+          "queryType": "annotations",
+          "tags": [
+            "Global",
+            "DeltaFi"
+          ],
+          "type": "tags"
+        }
       }
     ]
   },

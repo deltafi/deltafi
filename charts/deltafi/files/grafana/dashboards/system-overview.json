@@ -20,13 +20,34 @@
           "type": "dashboard"
         },
         "type": "dashboard"
+      },
+      {
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "hide": false,
+        "iconColor": "orange",
+        "name": "Global events",
+        "target": {
+          "fromAnnotations": true,
+          "limit": 200,
+          "matchAny": true,
+          "queryType": "annotations",
+          "tags": [
+            "Global",
+            "DeltaFi"
+          ],
+          "type": "tags"
+        }
       }
     ]
   },
   "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 12033,
+  "id": 332,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -89,10 +110,11 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "10.2.2",
+      "pluginVersion": "10.4.1",
       "targets": [
         {
           "datasource": {
@@ -251,10 +273,11 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "10.2.2",
+      "pluginVersion": "10.4.1",
       "targets": [
         {
           "datasource": {
@@ -336,7 +359,6 @@
           "target": "maximumAbove(sortByTotal(aliasByTags(groupByTags(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=ingress', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false), 'sum', 'ingressFlow'), 'ingressFlow')), 0)"
         }
       ],
-      "transformations": [],
       "transparent": true,
       "type": "piechart"
     },
@@ -635,10 +657,11 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "10.2.2",
+      "pluginVersion": "10.4.1",
       "targets": [
         {
           "datasource": {
@@ -1431,10 +1454,11 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "10.2.2",
+      "pluginVersion": "10.4.1",
       "targets": [
         {
           "datasource": {
@@ -1500,11 +1524,12 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "10.2.2",
+      "pluginVersion": "10.4.1",
       "targets": [
         {
           "datasource": {
@@ -1762,10 +1787,11 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "10.2.2",
+      "pluginVersion": "10.4.1",
       "targets": [
         {
           "datasource": {
@@ -1831,10 +1857,11 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "10.2.2",
+      "pluginVersion": "10.4.1",
       "targets": [
         {
           "datasource": {
@@ -1965,7 +1992,7 @@
         "uid": "${datasource}"
       },
       "gridPos": {
-        "h": 31,
+        "h": 9,
         "w": 8,
         "x": 0,
         "y": 50
@@ -2086,6 +2113,33 @@
       ],
       "title": "Action Execution Count",
       "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "graphite",
+        "uid": "${datasource}"
+      },
+      "description": "",
+      "gridPos": {
+        "h": 22,
+        "w": 8,
+        "x": 0,
+        "y": 59
+      },
+      "id": 85,
+      "options": {
+        "limit": 164,
+        "navigateAfter": "1h",
+        "navigateBefore": "1h",
+        "navigateToPanel": false,
+        "onlyFromThisDashboard": false,
+        "onlyInTimeRange": true,
+        "showTags": true,
+        "showTime": true,
+        "showUser": true
+      },
+      "title": "Global Events",
+      "type": "annolist"
     },
     {
       "datasource": {
@@ -2341,8 +2395,7 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2406,8 +2459,7 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "dark-green",
@@ -2440,6 +2492,7 @@
       "id": 28,
       "options": {
         "displayMode": "gradient",
+        "maxVizHeight": 300,
         "minVizHeight": 10,
         "minVizWidth": 0,
         "namePlacement": "auto",
@@ -2452,9 +2505,10 @@
           "values": true
         },
         "showUnfilled": true,
+        "sizing": "auto",
         "valueMode": "color"
       },
-      "pluginVersion": "10.2.2",
+      "pluginVersion": "10.4.1",
       "targets": [
         {
           "datasource": {
@@ -2536,8 +2590,7 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2666,8 +2719,7 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2796,8 +2848,7 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -2889,8 +2940,7 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2940,7 +2990,7 @@
   ],
   "refresh": "5m",
   "revision": 1,
-  "schemaVersion": 38,
+  "schemaVersion": 39,
   "tags": [
     "DeltaFi"
   ],
@@ -3015,6 +3065,6 @@
   "timezone": "",
   "title": "System Overview",
   "uid": "system-overview",
-  "version": 4,
+  "version": 5,
   "weekStart": ""
 }
