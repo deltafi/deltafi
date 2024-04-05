@@ -1,4 +1,4 @@
-FROM deltafi/deltafi-ui-base:1.0 as deltafi-ui-build-stage
+FROM deltafi/deltafi-ui-base:1.2.2 as deltafi-ui-build-stage
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
