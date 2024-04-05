@@ -165,8 +165,8 @@ const displayRawJsonDialog = ref(false);
 
 const allFlowPlanData = ref({});
 
-// The useResizeObserver determine if the sidebar has been collapsed or expanded.
-// If either has occur we redo the connections between all actions.
+// The useResizeObserver determines if the sidebar has been collapsed or expanded.
+// If either has occurred we redo the connections between all actions.
 useResizeObserver(flowPlanBuilderPage, (entries) => {
   const [entry] = entries;
   const { width } = entry.contentRect;
@@ -223,7 +223,7 @@ const linkedFlowPlan = useStorage("linked-flow-plan-persisted-params", {}, sessi
 // The viewActionTreeMenu function is triggered by clicking on the add button on each flowActionType panel.
 const viewActionTreeMenu = (event, flowActionType) => {
   // The flowActionTypeGroup is the value used to dynamically set the group variable in the draggable component
-  // for linking the draggable actions to their repsentative flowActionType.
+  // for linking the draggable actions to their respective flowActionType.
   flowActionTypeGroup.value = flowActionType;
   // The actionsTree is the value used to dynamically provide the array of actions for each flowActionType.
   actionsTree.value = actionTypesTree.value[flowActionType];
@@ -757,7 +757,15 @@ const getLoadedActions = () => {
       let coordinateGrouping = action.name.split(".").slice(0, -1).join(".");
       action["coordinateGrouping"] = coordinateGrouping;
       action["name"] = "";
+
       action["parameters"] = {};
+      if (!_.isEmpty(action.schema.properties)) {
+        for (const [key, value] of Object.entries(action.schema.properties)) {
+          if (!_.isEmpty(value.default)) {
+              action["parameters"][key] = value.default;
+          }
+        }
+      }
 
       // Adding an flowActionType key to the actionTypesTree. Each root flowActionType key will hold the tree structure for that actionType.
       if (!Object.prototype.hasOwnProperty.call(actionTypesTree.value, action["flowActionType"])) {

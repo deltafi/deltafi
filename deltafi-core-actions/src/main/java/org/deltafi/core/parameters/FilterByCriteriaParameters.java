@@ -36,6 +36,7 @@ public class FilterByCriteriaParameters extends ActionParameters {
     @JsonProperty(required = true)
     private List<String> filterExpressions;
 
+    @JsonProperty(defaultValue = "ANY")
     @JsonPropertyDescription("Specifies the filter behavior. 'ANY' will filter if any expression matches. 'ALL' will filter if all expressions match. 'NONE' will filter if no expression matches. Defaults to ANY.")
     private FilterBehavior filterBehavior = ANY;
 }

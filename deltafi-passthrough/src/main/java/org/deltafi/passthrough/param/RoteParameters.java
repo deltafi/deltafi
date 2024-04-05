@@ -17,6 +17,8 @@
  */
 package org.deltafi.passthrough.param;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
@@ -24,6 +26,11 @@ import org.deltafi.actionkit.action.parameters.ActionParameters;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class RoteParameters extends ActionParameters {
+    @JsonProperty(defaultValue = "0")
+    @JsonPropertyDescription("Minimum time to delay processing in ms")
     private int minRoteDelayMS = 0;
+
+    @JsonProperty(defaultValue = "0")
+    @JsonPropertyDescription("Maximum time to delay processing in ms")
     private int maxRoteDelayMS = 0;
 }

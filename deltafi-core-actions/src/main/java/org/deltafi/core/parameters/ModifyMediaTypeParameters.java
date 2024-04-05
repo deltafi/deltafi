@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.parameters;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.*;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
@@ -36,6 +37,7 @@ public class ModifyMediaTypeParameters extends ActionParameters {
     @JsonPropertyDescription("A map of indexes to media types. Used to update the media type of specific content by index.")
     Map<Integer, String> indexMediaTypeMap = new HashMap<>();
 
+    @JsonProperty(defaultValue = "false")
     @JsonPropertyDescription("If true, throw an exception if a content is missing an index specified in indexMediaTypeMap")
     public boolean errorOnMissingIndex = false;
 }

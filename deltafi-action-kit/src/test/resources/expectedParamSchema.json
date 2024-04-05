@@ -6,9 +6,19 @@
       "additionalProperties" : false,
       "description" : "complex type should not allow additional properties"
     },
+    "listParameter" : {
+      "description" : "my great list",
+      "default" : [ "abc", "123" ],
+      "type" : "array",
+      "items" : {
+        "type" : "string",
+        "default" : [ "abc", "123" ]
+      }
+    },
     "parameter" : {
       "type" : "string",
-      "description" : "my great property"
+      "description" : "my great property",
+      "default" : "defaultString"
     }
   },
   "additionalProperties" : false

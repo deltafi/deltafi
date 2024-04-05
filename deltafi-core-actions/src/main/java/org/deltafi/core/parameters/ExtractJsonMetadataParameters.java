@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.parameters;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.*;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
@@ -43,12 +44,14 @@ public class ExtractJsonMetadataParameters extends ActionParameters {
     @JsonPropertyDescription("How to handle multiple occurrences of a key. Can be 'FIRST', 'LAST', 'DISTINCT', or 'ALL'. Defaults to ALL, which writes a delimited list.")
     public HandleMultipleKeysType handleMultipleKeys = HandleMultipleKeysType.ALL;
 
+    @JsonProperty(defaultValue = ",")
     @JsonPropertyDescription("The delimiter to use if handleMultipleKeys is set to DISTINCT or ALL")
     public String allKeysDelimiter = ",";
 
     @JsonPropertyDescription("List of content indexes to consider. If empty, all content is considered.")
     public List<Integer> contentIndexes;
 
+    @JsonProperty(defaultValue = "false")
     @JsonPropertyDescription("Whether to return an error if a key is not found. Defaults to false.")
     public boolean errorOnKeyNotFound = false;
 }

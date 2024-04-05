@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.parameters;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -35,12 +36,14 @@ public class SmokeTestParameters extends ActionParameters {
     @JsonPropertyDescription("Metadata to add to each smoke-generated DeltaFile")
     public Map<String, String> metadata = new HashMap<>();
 
+    @JsonProperty(defaultValue = "application/text")
     @JsonPropertyDescription("The content's mediaType. If null, the default is application/text.")
     public String mediaType = "application/text";
 
     @JsonPropertyDescription("The content to attach to the DeltaFile. If null, random data of size contentSize will be added to the deltaFile")
     public String content;
 
+    @JsonProperty(defaultValue = "500")
     @JsonPropertyDescription("The size in bytes of the random content to attach to the DeltaFile. Ignored if content is set")
     public int contentSize = 500;
 }

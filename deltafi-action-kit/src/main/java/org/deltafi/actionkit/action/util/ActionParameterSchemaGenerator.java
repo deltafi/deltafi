@@ -17,12 +17,19 @@
  */
 package org.deltafi.actionkit.action.util;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.victools.jsonschema.generator.*;
 import com.github.victools.jsonschema.module.jackson.JacksonModule;
 import com.github.victools.jsonschema.module.jackson.JacksonOption;
+import graphql.schema.idl.errors.TypeRedefinitionError;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -32,15 +39,29 @@ import java.util.Map;
  * @see ActionParameters
  */
 public class ActionParameterSchemaGenerator {
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private static final SchemaGenerator SCHEMA_GENERATOR;
 
     static {
-        SchemaGeneratorConfigBuilder configBuilder = new SchemaGeneratorConfigBuilder(SchemaVersion.DRAFT_2019_09, OptionPreset.PLAIN_JSON)
+        SchemaGeneratorConfigBuilder configBuilder = new SchemaGeneratorConfigBuilder(SchemaVersion.DRAFT_2020_12, OptionPreset.PLAIN_JSON)
                 .without(Option.SCHEMA_VERSION_INDICATOR)
                 .with(Option.FORBIDDEN_ADDITIONAL_PROPERTIES_BY_DEFAULT)
                 .with(Option.INLINE_ALL_SCHEMAS)
                 .with(new JacksonModule(JacksonOption.RESPECT_JSONPROPERTY_REQUIRED, JacksonOption.IGNORE_TYPE_INFO_TRANSFORM, JacksonOption.FLATTENED_ENUMS_FROM_JSONPROPERTY));
+
+        configBuilder.forFields()
+                .withDefaultResolver(fieldScope -> {
+                    JsonProperty jsonProperty = fieldScope.getAnnotationConsideringFieldAndGetter(JsonProperty.class);
+                    if ((jsonProperty == null) || jsonProperty.defaultValue().isEmpty()) {
+                        return null;
+                    }
+                    try {
+                        return OBJECT_MAPPER.readValue(jsonProperty.defaultValue(), new TypeReference<>() {});
+                    } catch (JsonProcessingException e) {
+                        return jsonProperty.defaultValue();
+                    }
+                });
 
         configBuilder.forTypesInGeneral()
                 .withAdditionalPropertiesResolver(scope -> {
@@ -54,7 +75,6 @@ public class ActionParameterSchemaGenerator {
     }
 
     private ActionParameterSchemaGenerator() {
-
     }
 
     public static JsonNode generateSchema(Class<?> clazz) {

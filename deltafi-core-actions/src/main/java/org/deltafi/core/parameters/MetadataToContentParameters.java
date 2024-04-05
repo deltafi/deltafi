@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.parameters;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.*;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
@@ -29,12 +30,14 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class MetadataToContentParameters extends ActionParameters {
+    @JsonProperty(defaultValue = "metadata.json")
     @JsonPropertyDescription("Filename for the new content containing the metadata.")
     private String filename = "metadata.json";
 
     @JsonPropertyDescription("List of regex patterns to filter the metadata to include. If empty, all metadata is included.")
     private List<String> metadataPatterns;
 
+    @JsonProperty(defaultValue = "false")
     @JsonPropertyDescription("Boolean indicating whether the existing content should remain or be replaced by the new content.")
     private boolean replaceExistingContent = false;
 }

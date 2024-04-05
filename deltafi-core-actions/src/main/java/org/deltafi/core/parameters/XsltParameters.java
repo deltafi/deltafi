@@ -31,8 +31,8 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class XsltParameters extends ActionParameters {
-    @JsonPropertyDescription("XSLT transformation specification provided as a string.")
     @JsonProperty(required = true)
+    @JsonPropertyDescription("XSLT transformation specification provided as a string.")
     public String xslt;
 
     @JsonPropertyDescription("List of allowed media types. Supports wildcards (*) and defaults to 'application/xml' if empty.")
