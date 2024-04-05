@@ -8,4 +8,6 @@
     <root level="WARN">
         <appender-ref ref="STDOUT"/>
     </root>
+    <logger name="org.springframework" level="OFF"/>
+    <logger name="org.deltafi" level="OFF"/>
 </configuration>

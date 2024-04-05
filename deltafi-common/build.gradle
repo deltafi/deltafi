@@ -15,6 +15,8 @@ license {
 
 javadoc {
     options.tags = ["ParametersAreNonnullByDefault"]
+    exclude 'org/deltafi/common/types/**'
+    exclude 'org/deltafi/common/constant/**'
 }
 
 compileJava.dependsOn(processResources)
@@ -25,15 +27,15 @@ dependencies {
     api(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:${dgsVersion}"))
     api 'com.netflix.graphql.dgs:graphql-dgs-client'
     api "com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-client-core:${dgsCodegenClientVersion}"
-    api 'commons-io:commons-io:2.15.1'
-    api(platform('io.github.openfeign:feign-bom:13.0'))
+    api 'commons-io:commons-io:2.16.0'
+    api(platform('io.github.openfeign:feign-bom:13.2.1'))
     api 'io.github.openfeign:feign-core'
     api 'io.github.openfeign:feign-jackson'
     api 'io.github.openfeign:feign-slf4j'
     api "io.minio:minio:${minioVersion}"
     api 'javax.ws.rs:javax.ws.rs-api:2.1.1'
     api 'org.apache.commons:commons-lang3:3.14.0'
-    api 'org.json:json:20231013'
+    api 'org.json:json:20240303'
     api(platform("org.springframework.boot:spring-boot-dependencies:${springBootVersion}"))
     api 'org.springframework.boot:spring-boot-starter-aop'
     api 'org.springframework.boot:spring-boot-starter-logging'
@@ -41,8 +43,8 @@ dependencies {
     api 'org.springframework.data:spring-data-mongodb'
     api "org.springframework.retry:spring-retry"
     api "redis.clients:jedis"
-    api 'org.apache.nifi:nifi-flowfile-packager:1.24.0'
-    api 'org.apache.httpcomponents.client5:httpclient5:5.3'
+    api 'org.apache.nifi:nifi-flowfile-packager:1.25.0'
+    api 'org.apache.httpcomponents.client5:httpclient5:5.3.1'
 
     implementation 'org.apache.commons:commons-text'
     constraints {
@@ -57,13 +59,13 @@ dependencies {
     testImplementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
 
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-    implementation 'ch.qos.logback:logback-classic:1.4.14'
+    implementation 'ch.qos.logback:logback-classic:1.5.3'
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
     implementation 'net.logstash.logback:logstash-logback-encoder:7.4'
     implementation 'org.apache.maven:maven-artifact:3.9.6'
 
     testImplementation project(':deltafi-common-test')
-    testImplementation 'org.assertj:assertj-core:3.24.2'
+    testImplementation 'org.assertj:assertj-core:3.25.3'
     testImplementation "org.junit.jupiter:junit-jupiter-api:${jupiterVersion}"
     testImplementation "org.junit.jupiter:junit-jupiter-params:${jupiterVersion}"
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -71,5 +73,5 @@ dependencies {
     testImplementation "org.mockito:mockito-junit-jupiter:${mockitoJupiterVersion}"
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
-    testImplementation 'org.wiremock:wiremock-standalone:3.3.1'
+    testImplementation 'org.wiremock:wiremock-standalone:3.5.2'
 }
