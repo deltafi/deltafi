@@ -39,7 +39,7 @@
 <script setup>
 import { computed, ref, defineProps, reactive, nextTick, watch } from "vue";
 import Dialog from "primevue/dialog";
-import Listbox from 'primevue/listbox';
+import Listbox from "primevue/listbox";
 
 import ContentViewer from "@/components/ContentViewer.vue";
 
@@ -51,7 +51,7 @@ const props = defineProps({
   action: {
     type: String,
     required: false,
-    default: null
+    default: null,
   },
 });
 
@@ -67,16 +67,16 @@ const listboxItems = computed(() => {
   return content.map((content, index) => {
     return {
       index: index,
-      name: `${index} : ${content.name}`
+      name: `${index} : ${content.name}`,
     };
   });
 });
 
-const selectedItem = ref(listboxItems.value[0])
-const selectedContent = computed(() => content[selectedItem.value.index])
+const selectedItem = ref(listboxItems.value[0]);
+const selectedContent = computed(() => content[selectedItem.value.index]);
 
 watch(selectedItem, (newItem, oldValue) => {
-  if (newItem === null) selectedItem.value = oldValue
+  if (newItem === null) selectedItem.value = oldValue;
 });
 
 const dialogContainer = ref();
@@ -88,7 +88,7 @@ const onResize = async () => {
 
 const filename = computed(() => {
   return selectedContent.value.name || `${selectedContent.value.did}-${action}`;
-})
+});
 </script>
 
 <style lang="scss">

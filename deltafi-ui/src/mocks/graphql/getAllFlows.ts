@@ -38,35 +38,36 @@ const errors = [
     message: "Action: org.deltafi.passthrough.action.RoteLoadAction is not registered as a TransformAction",
   },
 ];
-const getEnrichedData = () => {
-  const data = [
-    {
-      name: "smoke",
-      description: "Test flow that passes data through enrich flow unchanged",
-      sourcePlugin: {
-        artifactId: "smoke",
-        groupId: "org.deltafi",
-        version: "0.17.0",
-      },
-      flowStatus: {
-        state: "RUNNING",
-        errors: errors,
-      },
-      variables: [
-        {
-          name: "smoke-enrich-url",
-          value: "smoke-value",
-          description: "The URL to post the DeltaFile to",
-          defaultValue: "http://deltafi-enrich-sink-service",
-          dataType: "STRING",
-        },
-      ],
-    },
-  ];
-  return data;
-};
-
-const enrichData = [[], getEnrichedData()];
+// TODO: Review for 2.0
+// const getEnrichedData = () => {
+//   const data = [
+//     {
+//       name: "smoke",
+//       description: "Test flow that passes data through enrich flow unchanged",
+//       sourcePlugin: {
+//         artifactId: "smoke",
+//         groupId: "org.deltafi",
+//         version: "0.17.0",
+//       },
+//       flowStatus: {
+//         state: "RUNNING",
+//         errors: errors,
+//       },
+//       variables: [
+//         {
+//           name: "smoke-enrich-url",
+//           value: "smoke-value",
+//           description: "The URL to post the DeltaFile to",
+//           defaultValue: "http://deltafi-enrich-sink-service",
+//           dataType: "STRING",
+//         },
+//       ],
+//     },
+//   ];
+//   return data;
+// };
+// TODO: Review for 2.0
+//const enrichData = [[], getEnrichedData()];
 
 const generateFlows = () => {
   return {

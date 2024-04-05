@@ -22,7 +22,8 @@
         <Button v-tooltip.right="{ value: `Clear Filters`, disabled: !filterOptionsSelected }" rounded :class="`ml-2 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${filterOptionsSelected ? 'p-column-filter-menu-button-active' : null}`" :disabled="!filterOptionsSelected" @click="clearOptions()">
           <i class="pi pi-filter" style="font-size: 1rem"></i>
         </Button>
-        <Dropdown v-model="ingressFlowNameSelected" placeholder="Select an Ingress Flow" :options="ingressFlowNames" show-clear :editable="false" class="deltafi-input-field ml-3 flow-dropdown" />
+        <!-- TODO: Review for 2.0 -->
+        <!-- <Dropdown v-model="ingressFlowNameSelected" placeholder="Select an Ingress Flow" :options="ingressFlowNames" show-clear :editable="false" class="deltafi-input-field ml-3 flow-dropdown" /> -->
         <AutoComplete v-model="selectedMessageValue" :suggestions="filteredErrorMessages" placeholder="Select Last Error" class="deltafi-input-field ml-3" force-selection @complete="messageSearch" />
         <Button v-model="showAcknowledged" :icon="showAcknowledged ? 'fas fa-eye-slash' : 'fas fa-eye'" :label="showAcknowledged ? 'Hide Acknowledged' : 'Show Acknowledged'" class="p-button p-button-secondary p-button-outlined deltafi-input-field show-acknowledged-toggle ml-3" @click="toggleShowAcknowledged()" />
         <Button v-tooltip.left="refreshButtonTooltip" :icon="refreshButtonIcon" label="Refresh" :class="refreshButtonClass" :badge="refreshButtonBadge" badge-class="p-badge-danger" @click="onRefresh" />
@@ -52,7 +53,6 @@ import useFlows from "@/composables/useFlows";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import { ref, computed, onUnmounted, onMounted, inject, watch, onBeforeMount, nextTick } from "vue";
 import { useStorage, StorageSerializers, useUrlSearchParams } from "@vueuse/core";
-import Dropdown from "primevue/dropdown";
 import Button from "primevue/button";
 import TabPanel from "primevue/tabpanel";
 import TabView from "primevue/tabview";
@@ -68,7 +68,7 @@ const isIdle = inject("isIdle");
 const errorSummaryMessagePanel = ref();
 const errorSummaryFlowPanel = ref();
 const errorsSummaryPanel = ref();
-const { ingressFlows: ingressFlowNames, fetchIngressFlowNames } = useFlows();
+const { fetchIngressFlowNames } = useFlows();
 const { pluralize } = useUtilFunctions();
 const { fetchErrorCountSince } = useErrorCount();
 const loading = ref(false);
@@ -139,10 +139,7 @@ const clearOptions = () => {
 };
 
 const filterOptionsSelected = computed(() => {
-  return _.some([
-    selectedMessageValue.value,
-    ingressFlowNameSelected.value,
-  ], (value) => !(value === "" || value === null || value === undefined))
+  return _.some([selectedMessageValue.value, ingressFlowNameSelected.value], (value) => !(value === "" || value === null || value === undefined));
 });
 
 const setupWatchers = () => {

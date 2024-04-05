@@ -36,13 +36,12 @@
             <DidLink :did="data.did" />
           </template>
         </Column>
-        <Column field="sourceInfo.filename" header="Filename" :sortable="true" class="filename-column">
+        <Column field="name" header="Filename" :sortable="true" class="filename-column">
           <template #body="{ data }">
-            <div v-if="data.sourceInfo.filename.length > 28" v-tooltip.top="data.sourceInfo.filename" class="truncate">{{ data.sourceInfo.filename }}</div>
-            <div v-else>{{ data.sourceInfo.filename }}</div>
+            <div v-if="data.name > 28" v-tooltip.top="data.name" class="truncate">{{ data.name }}</div>
+            <div v-else>{{ data.name }}</div>
           </template>
         </Column>
-        <Column field="sourceInfo.flow" header="Flow" :sortable="true" class="flow-column" />
         <Column field="created" header="Created" :sortable="true" class="timestamp-column">
           <template #body="row">
             <Timestamp :timestamp="row.data.created" />
@@ -53,7 +52,8 @@
             <Timestamp :timestamp="row.data.modified" />
           </template>
         </Column>
-        <Column field="last_error_cause" header="Last Error" filter-field="last_error_cause" :show-filter-menu="false" :show-filter-match-modes="false" :show-apply-button="false" :show-clear-button="false" class="last-error-column">
+        <!-- TODO: Review for 2.0 -->
+        <!-- <Column field="last_error_cause" header="Last Error" filter-field="last_error_cause" :show-filter-menu="false" :show-filter-match-modes="false" :show-apply-button="false" :show-clear-button="false" class="last-error-column">
           <template #body="{ data }">
             <ErrorAcknowledgedBadge v-if="data.errorAcknowledged" :reason="data.errorAcknowledgedReason" :timestamp="data.errorAcknowledged" class="mr-1" />
             <AutoResumeBadge v-if="data.nextAutoResume !== null" :timestamp="data.nextAutoResume" :reason="data.nextAutoResumeReason" />
@@ -62,11 +62,12 @@
           <template #filter="{ filterModel, filterCallback }">
             <Dropdown v-model="filterModel.value" placeholder="Select an Error Message" :options="errorsMessages" :filter="true" option-label="message" show-clear :editable="false" class="p-column-filter deltafi-input-field ml-3" @change="filterCallback()" />
           </template>
-        </Column>
+        </Column> -->
         <template #expansion="error">
           <div class="errors-Subtable">
-            <DataTable responsive-layout="scroll" :value="error.data.actions" :row-hover="false" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-class="actionRowClass" @row-click="actionRowClick">
-              <Column field="name" header="Action" />
+            <DataTable v-model:expandedRows="expandedRows" responsive-layout="scroll" :value="error.data.flows" :row-hover="false" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-class="actionRowClass">
+              <Column class="expander-column" :expander="true" />
+              <Column field="name" header="Name" />
               <Column field="state" header="State" />
               <Column field="created" header="Created">
                 <template #body="row">
@@ -78,12 +79,25 @@
                   <Timestamp :timestamp="row.data.modified" />
                 </template>
               </Column>
-              <Column field="errorCause" header="Error Cause">
-                <template #body="action">
-                  <span v-if="['ERROR', 'RETRIED'].includes(action.data.state) && action.data.errorCause !== null">{{ action.data.errorCause }}</span>
-                  <span v-else>-</span>
-                </template>
-              </Column>
+              <template #expansion="actions">
+                <div class="errors-Subtable">
+                  <DataTable responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="actions.data.actions" :row-class="actionRowClass" @row-click="actionRowClick">
+                    <Column field="name" header="Action" :sortable="true" />
+                    <Column field="state" header="State" class="state-column" :sortable="true" />
+                    <Column field="created" header="Created" class="timestamp-column" :sortable="true">
+                      <template #body="row">
+                        <Timestamp :timestamp="row.data.created" />
+                      </template>
+                    </Column>
+                    <Column field="modified" header="Modified" class="timestamp-column" :sortable="true">
+                      <template #body="row">
+                        <Timestamp :timestamp="row.data.modified" />
+                      </template>
+                    </Column>
+                    <Column field="errorCause" header="Error Cause" :sortable="true" />
+                  </DataTable>
+                </div>
+              </template>
             </DataTable>
           </div>
         </template>
@@ -93,15 +107,15 @@
     <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="ackErrorsDialog.dids" @acknowledged="onAcknowledged" />
     <AnnotateDialog ref="annotateDialog" :dids="filterSelectedDids" @refresh-page="onRefresh()" />
     <MetadataDialogResume ref="metadataDialogResume" :did="filterSelectedDids" />
-    <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="autoResumeSelected">
+    <!-- TODO: Review for 2.0 -->
+    <!-- <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="autoResumeSelected">
       <span id="allPanelAutoResumeDialog" />
-    </DialogTemplate>
+    </DialogTemplate> -->
   </div>
 </template>
 
 <script setup>
 import Column from "primevue/column";
-import Dropdown from "primevue/dropdown";
 import DataTable from "primevue/datatable";
 import Button from "primevue/button";
 import Panel from "primevue/panel";
@@ -109,8 +123,6 @@ import Menu from "primevue/menu";
 import ContextMenu from "primevue/contextmenu";
 import ErrorViewerDialog from "@/components/errors/ErrorViewerDialog.vue";
 import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
-import ErrorAcknowledgedBadge from "@/components/errors/AcknowledgedBadge.vue";
-import DialogTemplate from "@/components/DialogTemplate.vue";
 import Paginator from "primevue/paginator";
 import DidLink from "@/components/DidLink.vue";
 import Timestamp from "@/components/Timestamp.vue";
@@ -124,13 +136,11 @@ import useErrorsSummary from "@/composables/useErrorsSummary";
 import { computed, defineEmits, defineExpose, defineProps, inject, nextTick, onMounted, ref, watch } from "vue";
 import { useStorage, StorageSerializers } from "@vueuse/core";
 import AnnotateDialog from "@/components/AnnotateDialog.vue";
-import AutoResumeBadge from "@/components/errors/AutoResumeBadge.vue";
-import _ from "lodash";
 
 const hasPermission = inject("hasPermission");
 const hasSomePermissions = inject("hasSomePermissions");
 const metadataDialogResume = ref();
-const { data: errorsMessages, fetchAllMessage: getAllErrorsMessage } = useErrorsSummary();
+const { fetchAllMessage: getAllErrorsMessage } = useErrorsSummary();
 const { pluralize } = useUtilFunctions();
 const { fetchErrorCount } = useErrorCount();
 const emit = defineEmits(["refreshErrors", "errorMessageChanged:errorMessage"]);
@@ -278,20 +288,20 @@ const onAcknowledged = (dids, reason) => {
   fetchErrorCount();
   emit("refreshErrors");
 };
-
-const autoResumeSelected = computed(() => {
-  let newResumeRule = {};
-  if (!_.isEmpty(selectedErrors.value)) {
-    let rowInfo = JSON.parse(JSON.stringify(selectedErrors.value[0]));
-    let errorInfo = _.find(selectedErrors.value[0]["actions"], ["state", "ERROR"]);
-    newResumeRule["flow"] = rowInfo.sourceInfo.flow;
-    newResumeRule["action"] = errorInfo.name;
-    newResumeRule["errorSubstring"] = errorInfo.errorCause;
-    return newResumeRule;
-  } else {
-    return selectedErrors.value;
-  }
-});
+// TODO: Review for 2.0
+// const autoResumeSelected = computed(() => {
+//   let newResumeRule = {};
+//   if (!_.isEmpty(selectedErrors.value)) {
+//     let rowInfo = JSON.parse(JSON.stringify(selectedErrors.value[0]));
+//     let errorInfo = _.find(selectedErrors.value[0]["actions"], ["state", "ERROR"]);
+//     newResumeRule["flow"] = rowInfo.sourceInfo.flow;
+//     newResumeRule["action"] = errorInfo.name;
+//     newResumeRule["errorSubstring"] = errorInfo.errorCause;
+//     return newResumeRule;
+//   } else {
+//     return selectedErrors.value;
+//   }
+// });
 
 const filterSelectedDids = computed(() => {
   let dids = selectedErrors.value.map((selectedError) => {
@@ -300,15 +310,17 @@ const filterSelectedDids = computed(() => {
   return dids;
 });
 
-const filterErrors = (actions) => {
-  return actions.filter((action) => {
-    return action.state === "ERROR";
-  });
-};
+// TODO: Review for 2.0
+// const filterErrors = (actions) => {
+//   return actions.filter((action) => {
+//     return action.state === "ERROR";
+//   });
+// };
 
-const latestError = (actions) => {
-  return filterErrors(actions).sort((a, b) => (a.modified < b.modified ? 1 : -1))[0];
-};
+// TODO: Review for 2.0
+// const latestError = (actions) => {
+//   return filterErrors(actions).sort((a, b) => (a.modified < b.modified ? 1 : -1))[0];
+// };
 
 const actionRowClass = (action) => {
   if (action.state === "ERROR") return "table-danger action-error";

@@ -51,6 +51,7 @@ export default function useFiltered() {
           stage: true,
           modified: true,
           created: true,
+          flows: {
           actions: {
             name: true,
             created: true,
@@ -59,15 +60,12 @@ export default function useFiltered() {
             errorCause: true,
             errorContext: true,
             state: true,
+            errorAcknowledged: true,
+            errorAcknowledgedReason: true,
+            nextAutoResume: true,
+            nextAutoResumeReason: true,
           },
-          sourceInfo: {
-            filename: true,
-            flow: true,
-          },
-          errorAcknowledged: true,
-          errorAcknowledgedReason: true,
-          nextAutoResume: true,
-          nextAutoResumeReason: true,
+        },
         },
       },
     };

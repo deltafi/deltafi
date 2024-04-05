@@ -52,26 +52,30 @@ export default function useErrors() {
           stage: true,
           modified: true,
           created: true,
-          actions: {
+          name: true,
+          flows: {
             name: true,
             created: true,
             modified: true,
-            filteredCause: true,
-            errorCause: true,
-            errorContext: true,
             state: true,
-          },
-          sourceInfo: {
-            filename: true,
-            flow: true,
-          },
-          errorAcknowledged: true,
-          errorAcknowledgedReason: true,
-          nextAutoResume: true,
-          nextAutoResumeReason: true,
+            actions: {
+              name: true,
+              created: true,
+              modified: true,
+              filteredCause: true,
+              errorCause: true,
+              errorContext: true,
+              state: true,
+              errorAcknowledged: true,
+              errorAcknowledgedReason: true,
+              nextAutoResume: true,
+              nextAutoResumeReason: true,
+            }
+            },
+          }
         },
-      },
-    };
+      };
+
     await queryGraphQL(searchParams, "getErrors");
     data.value = response.value.data;
   };

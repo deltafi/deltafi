@@ -58,12 +58,12 @@
       </div>
       <div class="row mb-3">
         <div class="col-12">
-          <DeltaFileActionsPanel :delta-file-data="deltaFile" />
+          <DeltaFileFlowsPanel :delta-file-data="deltaFile" />
         </div>
       </div>
       <div class="row mb-3">
         <div class="col-12">
-          <DeltaFileTracePanel :delta-file-data="deltaFile" />
+          <!-- <DeltaFileTracePanel :delta-file-data="deltaFile" /> -->
         </div>
       </div>
     </div>
@@ -76,25 +76,24 @@
     <AcknowledgeErrorsDialog v-model:visible="ackErrorsDialog.visible" :dids="[did]" @acknowledged="onAcknowledged" />
     <MetadataDialog ref="metadataDialog" :did="[did]" @update="loadDeltaFileData" />
     <MetadataDialogResume ref="metadataDialogResume" :did="[did]" @update="loadDeltaFileData" />
-    <DialogTemplate component-name="MetadataViewer" header="Metadata" :flow-name="deltaFile.sourceInfo?.flow" :metadata="{ ['All Metadata']: allMetadata }" :deleted-metadata="deletedMetadata" :dismissable-mask="true">
+    <!-- <DialogTemplate component-name="MetadataViewer" header="Metadata" :flow-name="deltaFile.sourceInfo?.flow" :metadata="{ ['All Metadata']: allMetadata }" :deleted-metadata="deletedMetadata" :dismissable-mask="true">
       <span id="cumulativeMetadataDialog" />
-    </DialogTemplate>
+    </DialogTemplate> -->
     <AnnotateDialog ref="annotateDialog" :dids="[did]" @refresh-page="loadDeltaFileData" />
-    <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="autoResumeSelected">
+    <!-- <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="autoResumeSelected">
       <span id="autoResumeDialog" />
-    </DialogTemplate>
+    </DialogTemplate> -->
   </div>
 </template>
 
 <script setup>
 import AcknowledgeErrorsDialog from "@/components/AcknowledgeErrorsDialog.vue";
 import AnnotateDialog from "@/components/AnnotateDialog.vue";
-import DeltaFileActionsPanel from "@/components/DeltaFileActionsPanel.vue";
+import DeltaFileFlowsPanel from "@/components/DeltaFileViewer/DeltaFileFlowsPanel.vue";
 import DeltaFileAnnotationsPanel from "@/components/DeltaFileAnnotationsPanel.vue";
 import DeltaFileInfoPanel from "@/components/DeltaFileInfoPanel.vue";
-import DeltaFileParentChildPanel from "@/components/DeltaFileParentChildPanel.vue";
-import DeltaFileTracePanel from "@/components/DeltaFileTracePanel.vue";
-import DialogTemplate from "@/components/DialogTemplate.vue";
+import DeltaFileParentChildPanel from "@/components/DeltaFileViewer/DeltaFileParentChildPanel.vue";
+// import DeltaFileTracePanel from "@/components/DeltaFileTracePanel.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
 import HighlightedCode from "@/components/HighlightedCode.vue";
@@ -106,7 +105,6 @@ import useErrorCount from "@/composables/useErrorCount";
 import useNotifications from "@/composables/useNotifications";
 import { computed, inject, onMounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import _ from "lodash";
 
 import Button from "primevue/button";
 import ConfirmDialog from "primevue/confirmdialog";
@@ -151,14 +149,15 @@ const staticMenuItems = reactive([
       viewRawJSON();
     },
   },
-  {
-    label: "View All Metadata",
-    icon: "fas fa-database fa-fw",
-    visible: () => hasMetadata.value,
-    command: () => {
-      document.getElementById("cumulativeMetadataDialog").click();
-    },
-  },
+  // TODO: Review for 2.0
+  // {
+  //   label: "View All Metadata",
+  //   icon: "fas fa-database fa-fw",
+  //   visible: () => hasMetadata.value,
+  //   command: () => {
+  //     document.getElementById("cumulativeMetadataDialog").click();
+  //   },
+  // },
   {
     label: "Replay",
     icon: "fas fa-sync fa-fw",
@@ -287,21 +286,21 @@ const menuItems = computed(() => {
   }
   return items.concat(customLinks);
 });
+// TODO: Review for 2.0
+// const allMetadata = computed(() => {
+//   if (!loaded.value) return {};
+//   return Object.entries(deltaFile.metadata).map(([key, value]) => ({ key, value }));
+// });
 
-const allMetadata = computed(() => {
-  if (!loaded.value) return {};
-  return Object.entries(deltaFile.metadata).map(([key, value]) => ({ key, value }));
-});
+// const deletedMetadata = computed(() => {
+//   if (!loaded.value) return {};
+//   let deletedMetadataList = _.filter(deltaFile.actions, function (o) {
+//     return o.deleteMetadataKeys.length > 0;
+//   });
 
-const deletedMetadata = computed(() => {
-  if (!loaded.value) return {};
-  let deletedMetadataList = _.filter(deltaFile.actions, function (o) {
-    return o.deleteMetadataKeys.length > 0;
-  });
-
-  if (_.isEmpty(deletedMetadataList)) return null;
-  return deletedMetadataList;
-});
+//   if (_.isEmpty(deletedMetadataList)) return null;
+//   return deletedMetadataList;
+// });
 
 const validDID = computed(() => {
   return uuidRegex.test(did.value);
@@ -318,10 +317,10 @@ const beenReplayed = computed(() => {
 const beenDeleted = computed(() => {
   return deltaFile.contentDeleted !== null;
 });
-
-const hasMetadata = computed(() => {
-  return Object.keys(allMetadata.value).length > 0;
-});
+// TODO: Review for 2.0
+// const hasMetadata = computed(() => {
+//   return Object.keys(allMetadata.value).length > 0;
+// });
 
 const canBeCancelled = computed(() => {
   return deltaFile.nextAutoResume !== null || !["COMPLETE", "ERROR", "CANCELLED"].includes(deltaFile.stage);
@@ -429,19 +428,20 @@ const onCancel = async () => {
   }
 };
 
-const autoResumeSelected = computed(() => {
-  let newResumeRule = {};
-  if (!_.isEmpty(deltaFile) && isError.value) {
-    let rowInfo = JSON.parse(JSON.stringify(deltaFile));
-    let errorInfo = _.find(deltaFile["actions"], ["state", "ERROR"]);
-    newResumeRule["flow"] = rowInfo.sourceInfo.flow;
-    newResumeRule["action"] = errorInfo.name;
-    newResumeRule["errorSubstring"] = errorInfo.errorCause;
-    return newResumeRule;
-  } else {
-    return {};
-  }
-});
+// TODO: Review for 2.0
+// const autoResumeSelected = computed(() => {
+//   let newResumeRule = {};
+//   if (!_.isEmpty(deltaFile) && isError.value) {
+//     let rowInfo = JSON.parse(JSON.stringify(deltaFile));
+//     let errorInfo = _.find(deltaFile["actions"], ["state", "ERROR"]);
+//     newResumeRule["flow"] = rowInfo.flows;
+//     newResumeRule["action"] = errorInfo.name;
+//     newResumeRule["errorSubstring"] = errorInfo.errorCause;
+//     return newResumeRule;
+//   } else {
+//     return {};
+//   }
+// });
 </script>
 
 <style lang="scss">

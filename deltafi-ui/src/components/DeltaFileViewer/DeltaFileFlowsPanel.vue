@@ -18,10 +18,11 @@
 
 <template>
   <div>
-    <CollapsiblePanel header="Actions" class="actions-panel table-panel">
-      <DataTable responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="actions" :row-class="rowClass" @row-click="rowClick">
-        <Column field="name" header="Action" :sortable="true" />
-        <Column field="flow" header="Flow" :sortable="true" />
+    <CollapsiblePanel header="Flows" class="actions-panel table-panel">
+      <DataTable v-model:expandedRows="expandedRows" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="flows" :row-class="rowClass" @row-click="rowClick">
+        <Column class="expander-column" :expander="true" />
+        <Column field="name" header="Name" :sortable="true" />
+        <Column field="type" header="Type" :sortable="true" />
         <Column field="state" header="State" class="state-column" :sortable="true" />
         <Column field="created" header="Created" class="timestamp-column" :sortable="true">
           <template #body="row">
@@ -33,27 +34,34 @@
             <Timestamp :timestamp="row.data.modified" />
           </template>
         </Column>
-        <Column field="elapsed" header="Elapsed" class="elapsed-column" :sortable="true">
-          <template #body="action">{{ action.data.elapsed }}</template>
-        </Column>
-        <Column v-if="!contentDeleted && hasPermission('DeltaFileContentView')" header="Content" class="content-column">
-          <template #body="{ data: action }">
-            <span v-if="action.hasOwnProperty('content') && action.content.length > 0">
-              <ContentDialog :content="action.content" :action="action.name">
-                <Button icon="far fa-window-maximize" label="View" class="content-button p-button-link" />
-              </ContentDialog>
-            </span>
-          </template>
-        </Column>
         <Column header="Metadata" class="metadata-column">
-          <template #body="{ data: action }">
-            <span v-if="(action.hasOwnProperty('metadata') && Object.keys(action.metadata).length > 0) || action.deleteMetadataKeys.length > 0">
-              <DialogTemplate component-name="MetadataViewer" header="Metadata" :metadata="{ [action.name]: metadataAsArray(action.metadata) }" :deleted-metadata="deletedMetadata(action.name, action.deleteMetadataKeys)" :dismissable-mask="true">
+          <template #body="{ data: flow }">
+            <span v-if="flow.input.hasOwnProperty('metadata') && Object.keys(flow.input.metadata).length > 0">
+              <DialogTemplate component-name="MetadataViewer" header="Metadata" :metadata="{ [flow.name]: metadataAsArray(flow.input.metadata) }" :dismissable-mask="true">
                 <Button icon="fas fa-table" label="View" class="content-button p-button-link" />
               </DialogTemplate>
             </span>
           </template>
         </Column>
+        <Column v-if="!contentDeleted && hasPermission('DeltaFileContentView')" header="Input" class="content-column">
+          <template #body="{ data: flow }">
+            <span v-if="flow.input.hasOwnProperty('content') && flow.input.content.length > 0">
+              <ContentDialog :content="flow.input.content" :action="flow.input.content.name">
+                <Button icon="far fa-window-maximize" label="View" class="content-button p-button-link" />
+              </ContentDialog>
+            </span>
+          </template>
+        </Column>
+        <Column field="last_action_content" header="Output" class="content-column">
+          <template #body="{ data }">
+            <ContentDialog :content="lastActionContent(data.actions)" :action="lastActionContent(data.actions).name">
+              <Button icon="far fa-window-maximize" label="View" class="content-button p-button-link" />
+            </ContentDialog>
+          </template>
+        </Column>
+        <template #expansion="actions">
+          <DeltaFileActionsTable :delta-file-data="actions.data" :content-deleted="contentDeleted" />
+        </template>
       </DataTable>
     </CollapsiblePanel>
     <ErrorViewerDialog v-model:visible="errorViewer.visible" :action="errorViewer.action" />
@@ -63,17 +71,19 @@
 <script setup>
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import ContentDialog from "@/components/ContentDialog.vue";
-import DialogTemplate from "@/components/DialogTemplate.vue";
-import ErrorViewerDialog from "@/components/errors/ErrorViewerDialog.vue";
-import Timestamp from "@/components/Timestamp.vue";
-import useUtilFunctions from "@/composables/useUtilFunctions";
-import { computed, reactive, defineProps, inject } from "vue";
-
 import Button from "primevue/button";
+import DeltaFileActionsTable from "@/components/DeltaFileViewer/DeltaFileActionsTable.vue";
+import Timestamp from "@/components/Timestamp.vue";
+import DialogTemplate from "@/components/DialogTemplate.vue";
+import useUtilFunctions from "@/composables/useUtilFunctions";
+import ErrorViewerDialog from "@/components/errors/ErrorViewerDialog.vue";
+
+import { computed, reactive, defineProps, ref, inject } from "vue";
+
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
-
 const hasPermission = inject("hasPermission");
+const expandedRows = ref([]);
 
 const props = defineProps({
   deltaFileData: {
@@ -82,42 +92,33 @@ const props = defineProps({
   },
 });
 
+const lastActionContent = (action) => {
+  return action[action.length - 1].content;
+};
+
 const { duration } = useUtilFunctions();
 const deltaFile = reactive(props.deltaFileData);
 const errorViewer = reactive({
   visible: false,
   action: {},
 });
-
-const contentDeleted = computed(() => {
-  return deltaFile.contentDeleted !== null;
-});
-
-const actions = computed(() => {
-  return deltaFile.actions.map((action) => {
-    const timeElapsed = new Date(action.modified) - new Date(action.created);
-    action.created = new Date(action.created).toISOString();
-    action.modified = new Date(action.modified).toISOString();
+const metadataAsArray = (metadataObject) => {
+  return Object.entries(metadataObject).map(([key, value]) => ({ key, value }));
+};
+const flows = computed(() => {
+  return deltaFile.flows.map((flow) => {
+    const timeElapsed = new Date(flow.modified) - new Date(flow.created);
+    flow.created = new Date(flow.created).toISOString();
+    flow.modified = new Date(flow.modified).toISOString();
     return {
-      ...action,
+      ...flow,
       elapsed: duration(timeElapsed),
     };
   });
 });
-
-const metadataAsArray = (metadataObject) => {
-  return Object.entries(metadataObject).map(([key, value]) => ({ key, value }));
-};
-
-const deletedMetadata = (deletedMetadataActionName, deletedMetadataActionDeletedKeys) => {
-  if (_.isEmpty(deletedMetadataActionDeletedKeys)) return null;
-  let deletedMetadataList = [];
-  let deletedMetadataObject = {};
-  deletedMetadataObject["name"] = deletedMetadataActionName;
-  deletedMetadataObject["deleteMetadataKeys"] = deletedMetadataActionDeletedKeys;
-  deletedMetadataList.push(deletedMetadataObject);
-  return deletedMetadataList;
-};
+const contentDeleted = computed(() => {
+  return deltaFile.contentDeleted !== null ? deltaFile.contentDeleted : false;
+});
 
 const rowClass = (action) => {
   if (action.state === "ERROR") return "table-danger action-error";

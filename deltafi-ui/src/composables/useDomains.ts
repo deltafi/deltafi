@@ -22,7 +22,8 @@ import useGraphQL from "./useGraphQL";
 export default function useDomains() {
   const { response, queryGraphQL, loading, errors } = useGraphQL();
   const loaded = ref(false);
-  const domains = ref([]);
+  // TODO: Review for 2.0
+  //const domains = ref([]);
 
   const getAnnotationKeys = async () => {
     const query = {

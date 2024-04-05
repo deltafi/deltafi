@@ -107,8 +107,8 @@
             <DidLink :did="data.did" />
           </template>
         </Column>
-        <Column field="sourceInfo.filename" header="Filename" :sortable="true" class="filename-column" />
-        <Column field="sourceInfo.flow" header="Ingress Flow" :sortable="true" />
+        <Column field="name" header="Filename" :sortable="true" class="filename-column" />
+        <Column field="dataSource" header="Data Source" :sortable="true" />
         <Column field="stage" header="Stage" :sortable="true" />
         <Column field="created" header="Created" :sortable="true">
           <template #body="row">
@@ -285,7 +285,7 @@ onBeforeMount(async () => {
   getPersistedParams();
   fetchDropdownOptions();
   await nextTick();
-  fetchAnnotationKeys();
+  // fetchAnnotationKeys();
   await fetchDeltaFilesDataNoDebounce();
   setupWatchers();
 });
@@ -455,26 +455,26 @@ const addAnnotationItemEvent = () => {
   }
 };
 
-const validatedAnnotationsArray = () => {
-  const validKeys = annotationsKeysOptions.value.map((i) => i.key);
-  for (const index of model.value.validatedAnnotations.keys()) {
-    const key = model.value.validatedAnnotations[index].key;
-    model.value.validatedAnnotations[index].valid = validKeys.includes(key);
-  }
-};
-
-const invalidAnnotationTooltip = (key) => {
-  /*if (model.value.domains) {
+// TODO: Review for 2.0
+// const validatedAnnotationsArray = () => {
+//   const validKeys = annotationsKeysOptions.value.map((i) => i.key);
+//   for (const index of model.value.validatedAnnotations.keys()) {
+//     const key = model.value.validatedAnnotations[index].key;
+//     model.value.validatedAnnotations[index].valid = validKeys.includes(key);
+//   }
+// };
+// TODO: Review for 2.0
+//const invalidAnnotationTooltip = (key) => {
+/*if (model.value.domains) {
     return `${key} is not a valid annotation key for the ${model.value.domains} domain.`;
   }*/
-};
-
-const fetchAnnotationKeys = async () => {
-  const keys = await getAnnotationKeys();
-  annotationsKeysOptions.value = keys.map((key) => {
-    return { key: key };
-  });
-};
+//};
+// TODO: Review for 2.0
+// const fetchAnnotationKeys = async () => {
+//   annotationsKeysOptions.value = keys.map((key) => {
+//     return { key: key };
+//   });
+// };
 
 const fetchDeltaFilesDataNoDebounce = async () => {
   model.value = _.merge(model.value, calculatedAggregateParams.value);

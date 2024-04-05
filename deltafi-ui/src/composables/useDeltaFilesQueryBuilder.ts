@@ -62,13 +62,13 @@ export default function useDeltaFilesQueryBuilder() {
           offset: queryParams.offset,
           limit: queryParams.perPage,
           filter: {
+            nameFilter: queryParams.fileName ? {
+              regex: true,
+              name: queryParams.fileName
+            } : null,
             egressed: queryParams.egressed,
             filtered: queryParams.filtered,
             testMode: queryParams.testMode,
-            sourceInfo: {
-              ingressFlows: queryParams.ingressFlows,
-              filename: queryParams.fileName,
-            },
             egressFlows: queryParams.egressFlows,
             stage: queryParams.stage ? new EnumType(queryParams.stage) : null,
             modifiedAfter: startDateISOString,
@@ -93,15 +93,13 @@ export default function useDeltaFilesQueryBuilder() {
         count: true,
         totalCount: true,
         deltaFiles: {
+          dataSource: true,
           did: true,
           stage: true,
           modified: true,
           created: true,
-          sourceInfo: {
-            filename: true,
-            flow: true,
-          },
           totalBytes: true,
+          name: true
         },
       },
     };
@@ -139,14 +137,11 @@ export default function useDeltaFilesQueryBuilder() {
           stage: true,
           modified: true,
           created: true,
-          sourceInfo: {
-            filename: true,
-            flow: true,
-          },
+          name: true,
+          dataSource: true,
         },
       },
     };
-
     return sendGraphQLQuery(query, "getDeltaFilesByDIDs");
   };
 

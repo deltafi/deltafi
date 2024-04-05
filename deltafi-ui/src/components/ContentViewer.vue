@@ -70,8 +70,7 @@ import ScrollTop from "primevue/scrolltop";
 
 import hexy from "hexy";
 import _ from "lodash";
-import { Buffer } from 'buffer';
-
+import { Buffer } from "buffer";
 
 const props = defineProps({
   content: {
@@ -224,14 +223,13 @@ const onToggleHiglightCodeClick = () => {
   highlightCode.value = !highlightCode.value;
 };
 
-
 const download = () => {
   if (embededContent.value) {
     downloadEmbededContent();
   } else {
     let url = downloadURL({
       ...content.value,
-      ...content.value.name.value
+      ...content.value.name.value,
     });
     window.open(url);
   }
