@@ -13,7 +13,6 @@ default:
 image: deltafi/deltafi-build:jdk21.0.2-python3.12-0
 
 .gradle:
-  image: deltafi/deltafi-build:jdk21-python3-0
   variables:
     GRADLE_USER_HOME: /cache/.gradle
     GRADLE_OPTS: "-Dorg.gradle.daemon=false"
