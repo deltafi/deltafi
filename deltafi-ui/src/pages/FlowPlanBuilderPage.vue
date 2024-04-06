@@ -31,9 +31,24 @@
       </template>
     </PageHeader>
     <div v-if="model.active">
-      <div class="row p-2">
-        <div v-for="action of flowTypesMap.get(model.type).flowActionTypes" :key="action" :class="getColSize(action)">
-          <div>
+      <template v-if="_.isEqual(model.type, 'TRANSFORM')">
+        <div class="row p-2">
+          <div class="col pl-2 pr-1">
+            <Panel header="Subscriptions" :pt="{ content: { class: 'p-1' } }">
+              <div class="px-0">
+                <dd>
+                  <div class="deltafi-fieldset">
+                    <div class="px-2">
+                      <json-forms :data="model['subscriptions']" :renderers="renderers" :uischema="subscriptionsUISchema" :schema="subscriptionsSchema" @change="onSubscriptionsChange" />
+                    </div>
+                  </div>
+                </dd>
+              </div>
+            </Panel>
+          </div>
+        </div>
+        <div v-for="action of flowTypesMap.get(model.type).flowActionTypes" :key="action" class="row p-2">
+          <div :class="getColSize(action)">
             <Panel :header="_.startCase(flowActionTemplateMap.get(action).activeContainer)" class="table-panel">
               <template #icons>
                 <button class="p-panel-header-icon p-link" @click="viewActionTreeMenu($event, action)">
@@ -71,7 +86,50 @@
             </Panel>
           </div>
         </div>
-      </div>
+      </template>
+      <template v-else>
+        <div class="row p-2">
+          <div v-for="action of flowTypesMap.get(model.type).flowActionTypes" :key="action" :class="getColSize(action)">
+            <div>
+              <Panel :header="_.startCase(flowActionTemplateMap.get(action).activeContainer)" class="table-panel">
+                <template #icons>
+                  <button class="p-panel-header-icon p-link" @click="viewActionTreeMenu($event, action)">
+                    <span class="pi pi-plus-circle"></span>
+                  </button>
+                </template>
+                <div :class="`action-panel-content p-2 ${requiresActionCheck(action)}`">
+                  <template v-if="flowActionTemplateObject[flowActionTemplateMap.get(action).activeContainer].length == 0">
+                    <div v-if="flowActionTemplateMap.get(action).requiredActionMin" :class="`empty-action pt-2 mb-n3 ${requiresActionCheck(action)}`">{{ _.startCase(flowActionTemplateMap.get(action).activeContainer) }} Required</div>
+                    <div v-else class="empty-action pt-2 mb-n3">No {{ _.startCase(flowActionTemplateMap.get(action).activeContainer) }}</div>
+                  </template>
+                  <draggable :id="action" v-model="flowActionTemplateObject[flowActionTemplateMap.get(action).activeContainer]" item-key="id" :sort="true" :group="action" ghost-class="action-transition-layout" drag-class="action-transition-layout" class="dragArea panel-horizontal-wrap pb-2 pt-3" @change="validateNewAction" @move="actionOrderChanged">
+                    <template #item="{ element, index }">
+                      <div :id="element.id" class="action-layout border border-dark rounded mx-2 my-4 p-overlay-badge">
+                        <Badge v-if="!_.isEmpty(validateAction(element))" v-tooltip.left="{ value: `${validateAction(element)}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-exclamation-triangle pt-1'" severity="danger"></Badge>
+                        <div class="d-flex align-items-center justify-content-between">
+                          <span class="one-line">
+                            <InputText v-model="element.name" :class="'inputtext-border-remove pl-0 text-truncate'" placeholder="Action Name Required" />
+                          </span>
+                          <div class="pl-2 btn-group">
+                            <DialogTemplate component-name="flowBuilder/ActionConfigurationDialog" :header="`Edit ${displayActionName(element)}`" :row-data-prop="element" :action-index-prop="index" dialog-width="75vw" @update-action="updateAction">
+                              <Button v-tooltip.top="{ value: `Edit ${displayActionName(element)}`, class: 'tooltip-width', showDelay: 300 }" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary" />
+                            </DialogTemplate>
+                            <Button v-tooltip.top="{ value: `Remove ${displayActionName(element)}`, class: 'tooltip-width', showDelay: 300 }" icon="pi pi-trash" class="p-button-text p-button-sm p-button-rounded p-button-danger" @click="removeAction(element, index)" />
+                          </div>
+                        </div>
+                        <Divider class="my-0" />
+                        <dd>
+                          <span v-tooltip.bottom="{ value: `${element.type}`, class: 'tooltip-width', showDelay: 300 }">{{ element.displayName }}</span>
+                        </dd>
+                      </div>
+                    </template>
+                  </draggable>
+                </div>
+              </Panel>
+            </div>
+          </div>
+        </div>
+      </template>
     </div>
     <HoverSaveButton v-if="model.active" target="window" :model="items" />
     <OverlayPanel ref="actionsOverlayPanel" class="flow-plan-builder-page-overlay" append-to="body" dismissable show-close-icon :style="{ width: '22%' }">
@@ -93,7 +151,7 @@
         </template>
       </Tree>
     </OverlayPanel>
-    <DialogTemplate component-name="flowBuilder/FlowConfigurationDialog" header="Create New Flow Plan" dialog-width="25vw" model-position="center" :closable="false" :disable-model="true" :data-prop="{}" @create-flow-plan="createFlowPlan">
+    <DialogTemplate component-name="flowBuilder/FlowConfigurationDialog" header="Create New Flow Plan" dialog-width="25vw" model-position="center" :closable="false" :disable-model="true" :data-prop="model" @create-flow-plan="createFlowPlan">
       <span id="CreateFlowPlan" />
     </DialogTemplate>
     <LeavePageConfirmationDialog header="Leaving Flow Plan Builder" message="There is a flow plan in progress with unsaved changes. Leaving the page will erase those changes. Are you sure you want to leave this page?" :match-condition="flowPlanInProgress()" />
@@ -122,9 +180,12 @@ import useFlowActions from "@/composables/useFlowActions";
 import useFlowPlanQueryBuilder from "@/composables/useFlowPlanQueryBuilder";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
-import { computed, nextTick, onBeforeMount, ref, watch } from "vue";
+import { computed, nextTick, onBeforeMount, provide, ref, watch } from "vue";
 import { StorageSerializers, useClipboard, useMagicKeys, useResizeObserver, useStorage } from "@vueuse/core";
 import { useRouter } from "vue-router";
+
+import usePrimeVueJsonSchemaUIRenderers from "@/composables/usePrimeVueJsonSchemaUIRenderers";
+import { JsonForms } from "@jsonforms/vue";
 
 import Badge from "primevue/badge";
 import Button from "primevue/button";
@@ -150,6 +211,11 @@ const notify = useNotifications();
 const router = useRouter();
 const actionsOverlayPanel = ref();
 const actionsTreeRef = ref(null);
+
+const { rendererList, myStyles } = usePrimeVueJsonSchemaUIRenderers();
+provide("style", myStyles);
+const renderers = ref(Object.freeze(rendererList));
+const subscriptionsUISchema = ref(undefined);
 
 const allActionsData = ref({});
 
@@ -235,6 +301,7 @@ const flowTemplate = {
   active: false,
   name: null,
   description: null,
+  subscriptions: [],
 };
 
 const defaultActionKeys = {
@@ -365,13 +432,16 @@ onBeforeMount(async () => {
       let flowInfo = {};
       flowInfo["type"] = _.toUpper(linkedFlowPlan.value.flowPlanParams.type);
       flowInfo["name"] = linkedFlowPlan.value.flowPlanParams.selectedFlowPlanName;
-      flowInfo["selectedFlowPlan"] = _.find(allFlowPlanData.value[`${_.toLower(linkedFlowPlan.value.flowPlanParams.type)}`], { 'name': linkedFlowPlan.value.flowPlanParams.selectedFlowPlanName });
+      flowInfo["selectedFlowPlan"] = _.find(allFlowPlanData.value[`${_.toLower(linkedFlowPlan.value.flowPlanParams.type)}`], { name: linkedFlowPlan.value.flowPlanParams.selectedFlowPlanName });
       flowInfo["description"] = flowInfo["selectedFlowPlan"].description;
+      if (_.has(linkedFlowPlan.value.flowPlanParams.selectedFlowPlan, "subscriptions")) {
+        flowInfo["subscriptions"] = linkedFlowPlan.value.flowPlanParams.selectedFlowPlan.subscriptions;
+      }
       await createFlowPlan(flowInfo);
       originalFlowPlan.value = rawOutput.value;
     } else {
       model.value.type = _.toUpper(linkedFlowPlan.value.flowPlanParams.type);
-      model.value.selectedFlowPlan = _.find(allFlowPlanData.value[`${_.toLower(linkedFlowPlan.value.flowPlanParams.type)}`], { 'name': linkedFlowPlan.value.flowPlanParams.selectedFlowPlanName });
+      model.value.selectedFlowPlan = _.find(allFlowPlanData.value[`${_.toLower(linkedFlowPlan.value.flowPlanParams.type)}`], { name: linkedFlowPlan.value.flowPlanParams.selectedFlowPlanName });
       document.getElementById("CreateFlowPlan").click();
     }
     linkedFlowPlan.value = null;
@@ -414,7 +484,7 @@ const flowPlanHeader = computed(() => {
 });
 
 const getColSize = (flowActionType) => {
-  if (flowTypesMap.get(model.value.type).flowActionTypes.length <= 2) {
+  if (flowTypesMap.get(model.value.type).flowActionTypes.length <= 2 && !_.isEqual(model.value.type, "TRANSFORM")) {
     return !flowActionTemplateMap.get(flowActionType).limit ? "col pl-2 pr-1" : "col-4 pl-2 pr-1";
   }
   return "col pl-2 pr-1";
@@ -434,6 +504,10 @@ const setFlowValues = async (flowInfo) => {
   model.value.name = flowInfo["name"];
   model.value.description = flowInfo["description"];
   model.value.selectedFlowPlan = flowInfo["selectedFlowPlan"];
+
+  if (_.has(flowInfo["selectedFlowPlan"], "subscriptions")) {
+    model.value["subscriptions"] = flowInfo["selectedFlowPlan"].subscriptions;
+  }
   model.value.active = true;
 };
 
@@ -456,9 +530,48 @@ const cloneFlow = async (cloneFlow) => {
     }
   }
 };
+const removeEmptyKeyValues = (queryObj) => {
+  const newObj = {};
+  Object.entries(queryObj).forEach(([k, v]) => {
+    if (v instanceof Array) {
+      newObj[k] = queryObj[k];
+    } else if (v === Object(v)) {
+      newObj[k] = removeEmptyKeyValues(v);
+    } else if (v != null) {
+      newObj[k] = queryObj[k];
+    }
+  });
+  return newObj;
+};
+
+const clearEmptyObjects = (queryObj) => {
+  for (const objKey in queryObj) {
+    if (_.isArray(queryObj[objKey])) {
+      if (Object.keys(queryObj[objKey]).length === 0) {
+        delete queryObj[objKey];
+      } else {
+        if (!_.every(queryObj[objKey], _.isString)) {
+          queryObj[objKey].forEach(function (item, index) {
+            queryObj[objKey][index] = removeEmptyKeyValues(item);
+          });
+        }
+      }
+    }
+
+    if (_.isObject(queryObj[objKey])) {
+      clearEmptyObjects(queryObj[objKey]);
+    }
+
+    if (_.isEmpty(queryObj[objKey])) {
+      delete queryObj[objKey];
+    }
+  }
+  return queryObj;
+};
 
 const save = async (rawFlow) => {
   let response = null;
+  rawFlow = clearEmptyObjects(rawFlow);
   if (model.value.type === "TRANSFORM") {
     response = await saveTransformFlowPlan(rawFlow);
   } else if (model.value.type === "NORMALIZE") {
@@ -878,6 +991,28 @@ const prettyPrint = (json) => {
   }
 
   return "";
+};
+
+const onSubscriptionsChange = (event) => {
+  model.value["subscriptions"] = event.data;
+};
+
+const subscriptionsSchema = {
+  type: "array",
+  items: {
+    type: "object",
+    properties: {
+      condition: {
+        type: "string",
+      },
+      topics: {
+        type: "array",
+        items: {
+          type: "string",
+        },
+      },
+    },
+  },
 };
 </script>
 

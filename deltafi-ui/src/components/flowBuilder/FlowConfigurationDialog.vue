@@ -165,9 +165,9 @@ const submit = async () => {
 
   if (!_.isEmpty(model.value.name) && !_.isEmpty(model.value.type)) {
     let activeSystemFlowNames = _.map(allFlowPlans.value[`${_.toLower(model.value.type)}`], "name");
-    let isflowNamedUsed = _.includes(activeSystemFlowNames, model.value.name.trim());
+    let isFlowNameUsed = _.includes(activeSystemFlowNames, model.value.name.trim());
 
-    if (isflowNamedUsed && !editFlowPlan) {
+    if (isFlowNameUsed && !editFlowPlan) {
       errors.value.push("Name already exists in the system. Choose a different Name.");
     }
   }

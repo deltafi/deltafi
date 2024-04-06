@@ -59,6 +59,18 @@
           <span v-else>{{ data[field] }}</span>
         </template>
       </Column>
+      <Column v-if="FlowTypeTitle === 'Transform'" header="Subscriptions" field="subscriptions" :style="{ width: '7%' }">
+        <template #body="{ data, field }">
+          <template v-if="!_.isEmpty(data[field])">
+            <div>
+              <i class="ml-1 text-muted fa-solid fa-right-to-bracket fa-fw" @mouseover="toggle($event, data, field)" @mouseleave="toggle($event, data, field)" />
+            </div>
+            <OverlayPanel ref="op">
+              <SubscriptionsCell :data-prop="overlayData" :field-prop="overlayField"></SubscriptionsCell>
+            </OverlayPanel>
+          </template>
+        </template>
+      </Column>
       <Column v-if="FlowTypeTitle === 'Normalize' || FlowTypeTitle === 'Transform'" header="Max Errors" field="maxErrors" class="max-error-column">
         <template #body="{ data, field }">
           <span v-if="data[field] === null">-</span>
@@ -94,6 +106,7 @@ import DialogTemplate from "@/components/DialogTemplate.vue";
 import FlowStateInputSwitch from "@/components/flow/FlowStateInputSwitch.vue";
 import FlowStateValidationButton from "@/components/flow/FlowStateValidationButton.vue";
 import FlowTestModeInputSwitch from "@/components/flow/FlowTestModeInputSwitch.vue";
+import SubscriptionsCell from "@/components/flow/SubscriptionsCell.vue";
 import PermissionedRouterLink from "@/components/PermissionedRouterLink";
 import useGraphiteQueryBuilder from "@/composables/useGraphiteQueryBuilder";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
@@ -109,6 +122,7 @@ import { FilterMatchMode } from "primevue/api";
 import { filesize } from "filesize";
 import InputNumber from "primevue/inputnumber";
 import { useConfirm } from "primevue/useconfirm";
+import OverlayPanel from "primevue/overlaypanel";
 
 import _ from "lodash";
 
@@ -123,6 +137,9 @@ const isIdle = inject("isIdle");
 const { data: metricsData, fetchIngressFlowsByteRate, fetchEgressFlowsByteRate } = useGraphiteQueryBuilder();
 const emit = defineEmits(["updateFlows"]);
 const flowData = ref({});
+
+const overlayData = ref({});
+const overlayField = ref(null);
 
 const linkedFlowPlan = useStorage("linked-flow-plan-persisted-params", {}, sessionStorage, { serializer: StorageSerializers.object });
 
@@ -259,7 +276,7 @@ const confirmationPopup = (event, data) => {
     accept: () => {
       deleteFlow(data);
     },
-    reject: () => { },
+    reject: () => {},
   });
 };
 
@@ -306,6 +323,14 @@ const onCellEditComplete = async (event) => {
       data[field] = resetValue;
     }
   }
+};
+
+const op = ref();
+
+const toggle = (event, data, field) => {
+  overlayData.value = data;
+  overlayField.value = field;
+  op.value.toggle(event);
 };
 
 const setFlowPlanParams = (data, editExistingFlow) => {
