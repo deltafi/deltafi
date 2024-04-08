@@ -17,16 +17,27 @@
  */
 package org.deltafi.common.resource;
 
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.Objects;
+import org.junit.jupiter.api.Test;
 
-public class Resource {
-    public static String read(String path) throws IOException {
-        return new String(Objects.requireNonNull(Resource.class.getResourceAsStream(path)).readAllBytes());
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class ResourceTest {
+    @Test
+    public void readsResource() throws IOException {
+        assertEquals("This is the content", Resource.read("/resource/resource.txt"));
     }
 
-    public static String read(String path, Charset charset) throws IOException {
-        return new String(Objects.requireNonNull(Resource.class.getResourceAsStream(path)).readAllBytes(), charset);
+    @Test
+    public void readsResourceUtf8() throws IOException {
+        assertEquals("This is the content €", Resource.read("/resource/resource-utf-8.txt", StandardCharsets.UTF_8));
+    }
+
+    @Test
+    public void badEncoding() throws IOException {
+        assertEquals("This is the content â\u0082¬", Resource.read("/resource/resource-utf-8.txt",
+                StandardCharsets.ISO_8859_1));
     }
 }
