@@ -58,8 +58,6 @@ public class TimedIngressFlowService extends FlowService<TimedIngressFlowPlan, T
 
     @Override
     void copyFlowSpecificFields(TimedIngressFlow sourceFlow, TimedIngressFlow targetFlow) {
-        targetFlow.setTargetFlow(sourceFlow.getTargetFlow());
-        targetFlow.setCronSchedule(sourceFlow.getCronSchedule());
         targetFlow.setLastRun(sourceFlow.getLastRun());
         targetFlow.setNextRun(sourceFlow.getNextRun());
         targetFlow.setMemo(sourceFlow.getMemo());
