@@ -377,7 +377,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             throw new IllegalArgumentException("bytesToDelete (" + bytesToDelete + ") must be positive");
         }
 
-        Criteria criteria = new Criteria().orOperator(Criteria.where(CONTENT_DELETABLE).isNull(), Criteria.where(CONTENT_DELETABLE).is(true));
+        Criteria criteria = Criteria.where(CONTENT_DELETABLE).is(true);
 
         if (flow != null) {
             criteria.and(SOURCE_INFO_FLOW).is(flow);
