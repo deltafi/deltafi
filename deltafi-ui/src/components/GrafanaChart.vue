@@ -42,37 +42,58 @@ const props = defineProps({
   width: {
     type: String,
     required: false,
-    default: "100%"
+    default: "100%",
   },
   height: {
     type: String,
     required: false,
-    default: "200px"
+    default: "200px",
   },
   orgId: {
     type: Number,
     required: false,
-    default: 1
+    default: 1,
   },
   theme: {
     type: String,
     required: false,
-    default: "light"
+    default: "light",
   },
   refresh: {
     type: String,
     required: false,
-    default: "5m"
+    default: "5m",
   },
   dashboardId: {
     type: String,
     required: false,
-    default: "ui-charts"
-  }
+    default: "ui-charts",
+  },
+  keyPairs: {
+    type: Object,
+    required: false,
+    default: null,
+  },
 });
 
+const getKeys = () => {
+  const keyPairs = props.keyPairs;
+  let expendedProps = {
+    ...keyPairs,
+    ...props,
+  };
+  expendedProps.keyPairs = null;
+  return expendedProps;
+};
+
 const src = computed(() => {
-  const params = new URLSearchParams(props);
+  let params = null;
+  if (props.keyPairs) {
+    let expandedParms = getKeys();
+    params = new URLSearchParams(expandedParms);
+  } else {
+    params = new URLSearchParams(props);
+  }
   return buildURL("metrics", `/d-solo/${props.dashboardId}?${params}`);
-})
+});
 </script>

@@ -523,7 +523,7 @@ kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
 - role: control-plane
-  image: deltafi/deltafi-kind-node:1.29.0-0
+  image: deltafi/deltafi-kind-node:1.29.2-1
   kubeadmConfigPatches:
   - |
     kind: InitConfiguration
@@ -963,7 +963,7 @@ _has_makefile() {
 _plugin_clean() {
   _attention "Cleaning $plugin build environment"
   if _has_gradle; then
-    ./gradlew clean
+    ./gradlew clean || _exit_1 echo "Command 'gradlew clean' failed"
   elif _has_makefile; then
     make clean
   else
@@ -974,7 +974,7 @@ _plugin_clean() {
 _do_plugin_build() {
   _attention "Building $plugin"
   if _has_gradle; then
-    ./gradlew "${BUILD_TARGETS[@]}" -x test docker dockerPushLocal
+    ./gradlew "${BUILD_TARGETS[@]}" -x test docker dockerPushLocal || _exit_1 echo "Command 'gradlew \"${BUILD_TARGETS[@]}\" -x test docker dockerPushLocal' failed"
   elif _has_makefile; then
     make dockerPushLocal
   else
@@ -993,12 +993,12 @@ _local_build() {
   _annotated_subshell git pull || _warn "Cannot pull latest"
   if [[ $# -gt 0 && $1 == "clean" ]]; then
     _attention "Cleaning deltafi build environment"
-    ./gradlew clean
+    ./gradlew clean || _exit_1 echo "Command 'gradlew clean' failed"
   fi
 
   if [[ -z "$NOCORE" ]]; then
     _attention "Building deltafi"
-    ./gradlew "${BUILD_TARGETS[@]}" -x test publishToMavenLocal docker dockerPushLocal
+    ./gradlew "${BUILD_TARGETS[@]}" -x test publishToMavenLocal docker dockerPushLocal || _exit_1 echo "Command 'gradlew \"${BUILD_TARGETS[@]}\" -x test publishToMavenLocal docker dockerPushLocal' failed"
 
     if [[ -z "$NOUI" ]]; then
       _attention "Building deltafi-ui"
@@ -1055,7 +1055,7 @@ _plugin_run() {
   expose
   _setup_plugin_env
   if _has_gradle; then
-    ./gradlew bootRun
+    ./gradlew bootRun || _exit_1 echo "Command 'gradlew bootRun' failed"
   elif _has_makefile; then
     make run
   else

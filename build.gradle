@@ -32,6 +32,8 @@ subprojects {
         excludeFromLicense = ["**/*.xml", "**/generated/**/*.java", "**/*.MockMaker", "**/*.jks", "**/*.p12",
                               "**/*.yaml", "**/*.yml", "**/*.properties", "**/*.tar", "**/*.gz", "**/*.Z", "**/*.zip", "**/*.xz", "**/*.ar",
                               "**/*.txt", "**/*.xml", "**/*.html", "**/*.json", "**/test/resources/**",
+                              "**/*.md", "**/*.png", "**/*.ico", "**/*.jar", "**/*.MF", "**/.gitkeep", "**/Dockerfile",
+                              "**/*.drawio", "**/.dockerignore",
                               "**/plugin-templates/**", "**/node_modules/**", "**/minio-mc-init.sh", "**/venv/**"]
     }
 
@@ -50,19 +52,13 @@ subprojects {
         options.encoding = 'UTF-8'
     }
 
-
-
     test {
         useJUnitPlatform()
-
-        // ByteBuddy does not yet support Java 21, which is used by Mockito.  Recommendation to use experimental mode with VM property "net.bytebuddy.experimental=true" until full support is available.
-            // https://github.com/raphw/byte-buddy/issues/1396
-        systemProperties = System.getProperties()
-        systemProperties['net.bytebuddy.experimental'] = 'true'
     }
 
     tasks.withType(Test).configureEach {
         maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
+        jvmArgs("-XX:+EnableDynamicAgentLoading")
     }
 
     apply plugin: 'jacoco'

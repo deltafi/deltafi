@@ -41,6 +41,7 @@ public class RouteByCriteriaParameters extends ActionParameters {
     @JsonProperty(required = true)
     private Map<String, String> routingExpressions = new HashMap<>();
 
+    @JsonProperty(defaultValue = "ERROR")
     @JsonPropertyDescription("Defines the behavior when no routing expressions match. Can be one of 'ERROR', 'FILTER', or 'PASSTHROUGH'.")
     private NoMatchBehavior noMatchBehavior = ERROR;
 }

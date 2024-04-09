@@ -18,7 +18,7 @@
 
 <template>
   <div class="auto-resume-body">
-    <div class="information-panel">
+    <div class="auto-resume-panel">
       <div class="pb-0">
         <div v-if="!_.isEmpty(errorsList)" class="pt-2">
           <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="clearErrors()">
@@ -64,39 +64,40 @@
           <dd>
             <small id="priorityId-help">Set the priority for the rule.</small>
           </dd>
-          <Divider align="left">
-            <div class="inline-flex align-items-center">
-              <i class="fas fa-hdd text-muted ml-1"></i>
-              <b> BackOff</b>
+          <dt>BackOff</dt>
+          <dd>
+            <div class="deltafi-fieldset">
+              <div class="px-2 pt-3">
+                <dt>{{ autoResumeConfigurationMap.get("delay").header }}</dt>
+                <dd class="mb-0">
+                  <InputNumber id="delayId" v-model="selectedRuleDelay" show-buttons :min="autoResumeConfigurationMap.get('delay').min" :max="autoResumeConfigurationMap.get('delay').max" decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="autoResumeConfigurationMap.get('delay').disabled" />
+                </dd>
+                <dd>
+                  <small id="delayId-help">Delay (in seconds) is a required property and must be set to a non-negative number.</small>
+                </dd>
+                <dt>{{ autoResumeConfigurationMap.get("maxDelay").header }}</dt>
+                <dd class="mb-0">
+                  <InputNumber id="maxDelayId" v-model="selectedRuleMaxDelay" show-buttons :min="autoResumeConfigurationMap.get('maxDelay').min" :max="autoResumeConfigurationMap.get('maxDelay').max" decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="autoResumeConfigurationMap.get('maxDelay').disabled" />
+                </dd>
+                <dd>
+                  <small id="maxDelayId-help">Sets the Max Delay (in second) when using Multiplier or Random.</small>
+                </dd>
+                <dt>{{ autoResumeConfigurationMap.get("multiplier").header }}</dt>
+                <dd class="mb-0">
+                  <InputNumber id="multiplierId" v-model="selectedRuleMultiplier" show-buttons :min="autoResumeConfigurationMap.get('multiplier').min" :max="autoResumeConfigurationMap.get('multiplier').max" decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="autoResumeConfigurationMap.get('multiplier').disabled" />
+                </dd>
+                <dd>
+                  <small id="multiplierId-help">Setting Multiplier calculates the delay by multiplying Delay, Multiplier, and the number of attempts for that action.</small>
+                </dd>
+                <dt>{{ autoResumeConfigurationMap.get("random").header }}</dt>
+                <dd class="mb-0">
+                  <InputSwitch id="randomId" v-model="selectedRuleRandom" :disabled="autoResumeConfigurationMap.get('random').disabled" />
+                </dd>
+                <dd>
+                  <small id="randomId-help">Setting Random calculates the delay by using a random value between the Delay and Max Delay. If Random is true, Max Delay must also be set.</small>
+                </dd>
+              </div>
             </div>
-          </Divider>
-          <dt>{{ autoResumeConfigurationMap.get("delay").header }}</dt>
-          <dd class="mb-0">
-            <InputNumber id="delayId" v-model="selectedRuleDelay" show-buttons :min="autoResumeConfigurationMap.get('delay').min" :max="autoResumeConfigurationMap.get('delay').max" decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="autoResumeConfigurationMap.get('delay').disabled" />
-          </dd>
-          <dd>
-            <small id="delayId-help">Delay (in seconds) is a required property and must be set to a non-negative number.</small>
-          </dd>
-          <dt>{{ autoResumeConfigurationMap.get("maxDelay").header }}</dt>
-          <dd class="mb-0">
-            <InputNumber id="maxDelayId" v-model="selectedRuleMaxDelay" show-buttons :min="autoResumeConfigurationMap.get('maxDelay').min" :max="autoResumeConfigurationMap.get('maxDelay').max" decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="autoResumeConfigurationMap.get('maxDelay').disabled" />
-          </dd>
-          <dd>
-            <small id="maxDelayId-help">Sets the Max Delay (in second) when using Multiplier or Random.</small>
-          </dd>
-          <dt>{{ autoResumeConfigurationMap.get("multiplier").header }}</dt>
-          <dd class="mb-0">
-            <InputNumber id="multiplierId" v-model="selectedRuleMultiplier" show-buttons :min="autoResumeConfigurationMap.get('multiplier').min" :max="autoResumeConfigurationMap.get('multiplier').max" decrement-button-class="p-button-secondary" increment-button-class="p-button-secondary" increment-button-icon="pi pi-plus" decrement-button-icon="pi pi-minus" :disabled="autoResumeConfigurationMap.get('multiplier').disabled" />
-          </dd>
-          <dd>
-            <small id="multiplierId-help">Setting Multiplier calculates the delay by multiplying Delay, Multiplier, and the number of attempts for that action.</small>
-          </dd>
-          <dt>{{ autoResumeConfigurationMap.get("random").header }}</dt>
-          <dd class="mb-0">
-            <InputSwitch id="randomId" v-model="selectedRuleRandom" :disabled="autoResumeConfigurationMap.get('random').disabled" />
-          </dd>
-          <dd>
-            <small id="randomId-help">Setting Random calculates the delay by using a random value between the Delay and Max Delay. If Random is true, Max Delay must also be set.</small>
           </dd>
         </dl>
       </div>
@@ -122,7 +123,6 @@ import { defineEmits, defineProps, onMounted, reactive, ref } from "vue";
 import ConfirmPopup from "primevue/confirmpopup";
 import { useConfirm } from "primevue/useconfirm";
 import Button from "primevue/button";
-import Divider from "primevue/divider";
 import Dropdown from "primevue/dropdown";
 import InputNumber from "primevue/inputnumber";
 import InputText from "primevue/inputtext";
@@ -327,5 +327,5 @@ const submit = async () => {
 </script>
 
 <style lang="scss">
-@import "@/styles/components/auto-resume-configuration-dialog.scss";
+@import "@/styles/components/autoResume/auto-resume-configuration-dialog.scss";
 </style>

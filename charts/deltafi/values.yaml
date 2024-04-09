@@ -151,7 +151,7 @@ kubernetes-dashboard:
 grafana:
   image:
     repository: deltafi/grafana
-    tag: 10.2.2-0
+    tag: 10.4.1-0
   persistence:
     enabled: true
     existingClaim: deltafi-grafana
@@ -189,6 +189,8 @@ grafana:
       enabled: false
     security:
       allow_embedding: true
+    feature_toggles:
+      enable: "newVizTooltips pdfTables returnToPrevious groupToNestedTableTransformation extraThemes regressionTransformation addFieldFromCalculationStatFunctions formatString"
   sidecar:
     dashboards:
       enabled: true

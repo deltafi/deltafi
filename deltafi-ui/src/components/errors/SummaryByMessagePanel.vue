@@ -29,9 +29,9 @@
     <DataTable id="errorsSummaryTable" v-model:selection="selectedErrors" responsive-layout="scroll" selection-mode="multiple" data-key="dids" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="errorsMessage" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalErrorsMessage" :row-hover="true" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
       <template #empty>No results to display.</template>
       <template #loading>Loading. Please wait...</template>
-      <Column field="flow" header="Flow" :sortable="true" class="filename-column"> </Column>
-      <Column field="count" header="Count" :sortable="true" />
-      <Column field="message" header="Message" :sortable="true">
+      <Column field="flow" header="Flow" sortable class="filename-column" />
+      <Column field="count" header="Count" sortable />
+      <Column field="message" header="Message" sortable>
         <template #body="msg">
           <a class="monospace" @click="showAll(msg.data.message, msg.data.flow)">{{ msg.data.message }}</a>
         </template>
@@ -75,9 +75,9 @@ const errorsMessage = ref([]);
 const totalErrorsMessage = ref(0);
 const offset = ref(0);
 const perPage = ref();
-const sortField = ref("modified");
 const metadataDialogResume = ref();
-const sortDirection = ref("DESC");
+const sortDirection = ref("ASC");
+const sortField = ref("flow");
 const selectedErrors = ref([]);
 const emit = defineEmits(["refreshErrors", "changeTab:errorMessage:flowSelected"]);
 const notify = useNotifications();
@@ -95,7 +95,7 @@ const props = defineProps({
     default: undefined,
   },
   acknowledged: {
-    type: Boolean,
+    type: [Boolean, null],
     required: true,
   },
 });
@@ -185,9 +185,8 @@ const filterSelectedDids = computed(() => {
 const fetchErrorsMessages = async () => {
   getPersistedParams();
   let ingressFlowName = props.ingressFlowName != null ? props.ingressFlowName : null;
-  let showAcknowledged = props.acknowledged ? null : false;
   loading.value = true;
-  await getErrorsByMessage(showAcknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, ingressFlowName);
+  await getErrorsByMessage(props.acknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, ingressFlowName);
   errorsMessage.value = response.value.countPerMessage;
   totalErrorsMessage.value = response.value.totalCount;
   loading.value = false;

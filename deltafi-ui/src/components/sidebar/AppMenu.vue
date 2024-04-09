@@ -48,8 +48,15 @@
                   </span>
                 </router-link>
                 <a v-else-if="child.url" :href="child.url" target="_blank" :class="menuItemClass(child, true)">
-                  <i :class="child.icon" />
-                  {{ child.name }}
+                  <span class="d-flex justify-content-between">
+                    <span>
+                      <i :class="child.icon" />
+                      {{ child.name }}
+                    </span>
+                    <span>
+                      <i class="fas fa-external-link-alt" />
+                    </span>
+                  </span>
                 </a>
               </li>
             </div>

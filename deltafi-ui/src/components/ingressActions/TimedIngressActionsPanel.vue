@@ -28,16 +28,16 @@
               <span class="cursor-pointer" @click="showAction(data.name)">{{ data.name }}</span>
               <span>
                 <span class="d-flex align-items-center">
-                <IngressActionRemoveButton v-if="data.sourcePlugin.artifactId === 'system-plugin'" :disabled="!$hasPermission('FlowUpdate')" :row-data-prop="data" @reload-ingress-actions="refresh" />
-                <DialogTemplate ref="updateIngressDialog" component-name="ingressActions/IngressActionConfigurationDialog" header="Edit Ingress Action" dialog-width="50vw" :row-data-prop="data" edit-ingress-action @reload-ingress-actions="refresh">
-                  <Button v-if="data.sourcePlugin.artifactId === 'system-plugin'" v-tooltip.top="`Edit`" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary mx-n2" :disabled="!$hasPermission('FlowUpdate')" />
-                </DialogTemplate>
-                <DialogTemplate ref="updateIngressDialog" component-name="ingressActions/IngressActionConfigurationDialog" header="Create Ingress Action" dialog-width="50vw" :row-data-prop="cloneIngressAction(data)" @reload-ingress-actions="refresh">
-                  <Button v-if="_.isEmpty(data.publishRules)" v-tooltip.top="`Clone`" icon="pi pi-clone" class="p-button-text p-button-sm p-button-rounded p-button-secondary mx-n2" :disabled="!$hasPermission('FlowUpdate')" />
-                </DialogTemplate>
-                <PermissionedRouterLink :disabled="!$hasPermission('PluginsView')" :to="{ path: 'plugins/' + concatMvnCoordinates(data.sourcePlugin) }">
-                  <i v-tooltip.top="concatMvnCoordinates(data.sourcePlugin)" class="ml-1 text-muted fas fa-plug fa-rotate-90 fa-fw align-items-center" />
-                </PermissionedRouterLink>
+                  <IngressActionRemoveButton v-if="data.sourcePlugin.artifactId === 'system-plugin'" :disabled="!$hasPermission('FlowUpdate')" :row-data-prop="data" @reload-ingress-actions="refresh" />
+                  <DialogTemplate ref="updateIngressDialog" component-name="ingressActions/IngressActionConfigurationDialog" header="Edit Ingress Action" dialog-width="50vw" :row-data-prop="data" edit-ingress-action @reload-ingress-actions="refresh">
+                    <Button v-if="data.sourcePlugin.artifactId === 'system-plugin'" v-tooltip.top="`Edit`" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary mx-n2" :disabled="!$hasPermission('FlowUpdate')" />
+                  </DialogTemplate>
+                  <DialogTemplate ref="updateIngressDialog" component-name="ingressActions/IngressActionConfigurationDialog" header="Create Ingress Action" dialog-width="50vw" :row-data-prop="cloneIngressAction(data)" @reload-ingress-actions="refresh">
+                    <Button v-tooltip.top="`Clone`" icon="pi pi-clone" class="p-button-text p-button-sm p-button-rounded p-button-secondary mx-n2" :disabled="!$hasPermission('FlowUpdate')" />
+                  </DialogTemplate>
+                  <PermissionedRouterLink :disabled="!$hasPermission('PluginsView')" :to="{ path: 'plugins/' + concatMvnCoordinates(data.sourcePlugin) }">
+                    <i v-tooltip.top="concatMvnCoordinates(data.sourcePlugin)" class="ml-1 text-muted fas fa-plug fa-rotate-90 fa-fw align-items-center" />
+                  </PermissionedRouterLink>
                 </span>
               </span>
             </div>
@@ -45,13 +45,21 @@
         </Column>
         <Column header="Description" field="description" :sortable="true"></Column>
         <Column header="Target Flow" field="targetFlow" :sortable="true"></Column>
+        <Column header="Publish Rules" field="publishRules" :sortable="true">
+          <template #body="{ data, field }">
+            <template v-if="!_.isEmpty(data[field])">
+              <div>
+                <i class="ml-1 text-muted fa-solid fa-right-to-bracket fa-fw" @mouseover="toggle($event, data, field)" @mouseleave="toggle($event, data, field)" />
+              </div>
+              <OverlayPanel ref="op">
+                <PublishRulesCell :data-prop="overlayData" :field-prop="overlayField"></PublishRulesCell>
+              </OverlayPanel>
+            </template>
+          </template>
+        </Column>
         <Column header="Cron Schedule" field="cronSchedule" :sortable="true" class="inline-edit-column" style="width: 10rem">
           <template #body="{ data, field }">
-            <span v-if="data[field] === null">-</span>
-            <span v-else>{{ data[field] }}</span>
-          </template>
-          <template #editor="{ data, field }">
-            <InputText v-model="data[field]" class="p-inputtext-sm inline-edit-column" style="width: 9rem" autofocus />
+            <span v-tooltip.top="cronString.toString(data[field], { verbose: false })">{{ data[field] }} </span>
           </template>
         </Column>
         <Column header="Status" field="ingressStatus" :sortable="true">
@@ -61,7 +69,7 @@
         </Column>
         <Column :style="{ width: '7%' }" class="ingress-action-state-column">
           <template #body="{ data }">
-              <StateInputSwitch :row-data-prop="data" ingress-action-type="timedIngress" @change="refresh" />
+            <StateInputSwitch :row-data-prop="data" ingress-action-type="timedIngress" @change="refresh" />
           </template>
         </Column>
       </DataTable>
@@ -82,6 +90,14 @@
         <span v-else-if="['memo', 'executeImmediate', 'currentDid'].includes(fieldName)">
           <span v-if="activeAction[fieldName] === null">-</span>
           <pre>{{ activeAction[fieldName] }}</pre>
+        </span>
+        <span v-else-if="fieldName == 'publishRules'">
+          <template v-if="_.isEmpty(activeAction[fieldName])"> - </template>
+          <template v-else>
+            <div class="ml-2">
+              <PublishRulesCell :data-prop="activeAction" :field-prop="fieldName"></PublishRulesCell>
+            </div>
+          </template>
         </span>
         <span v-else>{{ activeAction[fieldName] || "-" }}</span>
       </div>
@@ -106,18 +122,20 @@ import IngressActionRemoveButton from "@/components/ingressActions/IngressAction
 import StatusBadge from "@/components/ingressActions/StatusBadge.vue";
 import StateInputSwitch from "@/components/ingressActions/StateInputSwitch.vue";
 import PermissionedRouterLink from "@/components/PermissionedRouterLink";
+import PublishRulesCell from "@/components/ingressActions/PublishRulesCell.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useIngressActions from "@/composables/useIngressActions";
 import useNotifications from "@/composables/useNotifications";
 import { computed, defineEmits, onMounted, inject, ref } from "vue";
 
+const cronString = require("cronstrue");
 import _ from "lodash";
 
 import Button from "primevue/button";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import Dialog from "primevue/dialog";
-import InputText from "primevue/inputtext";
+import OverlayPanel from "primevue/overlaypanel";
 
 const emit = defineEmits(["ingressActionsList"]);
 const editing = inject("isEditing");
@@ -128,6 +146,10 @@ const timedIngressActions = ref([]);
 const onEditInit = () => (editing.value = true);
 const onEditCancel = () => (editing.value = false);
 const updateIngressDialog = ref(null);
+
+const overlayData = ref({});
+const overlayField = ref(null);
+
 const onEditComplete = async (event) => {
   const { data, newValue, field } = event;
 
@@ -168,6 +190,7 @@ const fields = {
   nextRun: "Next Run",
   memo: "Memo",
   executeImmediate: "Execute Immediate",
+  publishRules: "Publish Rules",
 };
 
 const showAction = (actionName) => {
@@ -178,13 +201,13 @@ const showAction = (actionName) => {
 
 const cloneIngressAction = (data) => {
   let clonedIngressActionObject = _.cloneDeepWith(data);
-  clonedIngressActionObject["name"] = ""
+  clonedIngressActionObject["name"] = "";
   return clonedIngressActionObject;
-}
+};
 
 const concatMvnCoordinates = (sourcePlugin) => {
-  return sourcePlugin.groupId + ":" + sourcePlugin.artifactId + ":" + sourcePlugin.version
-}
+  return sourcePlugin.groupId + ":" + sourcePlugin.artifactId + ":" + sourcePlugin.version;
+};
 
 const refresh = async () => {
   // Do not refresh data while editing.
@@ -193,6 +216,14 @@ const refresh = async () => {
   const response = await getAllTimedIngress();
   timedIngressActions.value = response.data.getAllFlows.timedIngress;
   emit("ingressActionsList", timedIngressActions.value);
+};
+
+const op = ref();
+
+const toggle = (event, data, field) => {
+  overlayData.value = data;
+  overlayField.value = field;
+  op.value.toggle(event);
 };
 
 onMounted(() => {

@@ -66,7 +66,7 @@ gradle:build:
 .docker:
   stage: docker
   image:
-    name: gcr.io/kaniko-project/executor:v1.9.0-debug
+    name: gcr.io/kaniko-project/executor:v1.22.0-debug
     entrypoint: [""]
   tags:
     - light
@@ -179,7 +179,7 @@ publish:docs:
 
 hub_docker_quota_check:
   stage: build
-  image: alpine:3.16
+  image: alpine:3.19
   tags:
     - light
   before_script:

@@ -1,4 +1,4 @@
-# Changes on branch `221-integer-json-schema-renderer-not-handling-string-forms-of-numbers`
+# Changes on branch `clustermonitor-regression`
 Document any changes on this branch here.
 ### Added
 - 
@@ -7,7 +7,7 @@ Document any changes on this branch here.
 - 
 
 ### Fixed
-- Fixed issue where our Integer Json Renderer wasnt able to support string forms of numbers. 
+- Clustermonitor: Broken app level performance metrics (regression in upgrades)
 
 ### Removed
 - 

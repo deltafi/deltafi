@@ -578,7 +578,7 @@ const encodePersistedParams = (obj) =>
     }
   });
 
-const setPersistedParams = () => {
+const setPersistedParams = async () => {
   let persistedQueryState = _.cloneDeep(model.value);
   // Remove any value that have not changed from the original defaultQueryParamsTemplate value it was set at
   persistedQueryState = _.omitBy(persistedQueryState, function (v, k) {
@@ -589,12 +589,16 @@ const setPersistedParams = () => {
   persistedQueryState = _.cloneDeepWith(persistedQueryState, encodePersistedParams);
   queryState.value = persistedQueryState;
 
-  //Set url search params
+  // Set url search params
   //null out param keys before setting new ones
   Object.keys(params).forEach((i) => (params[i] = null));
   for (var key in persistedQueryState) {
     params[key] = persistedQueryState[key];
   }
+
+  // Set the browser history to make the back button work
+  await nextTick();
+  window.history.state.current = `/deltafile/search${window.location.search}`;
 };
 
 const getAnnotationsString = (arrayData) => {

@@ -139,7 +139,7 @@ const items = ref([
     disabledLabel: "Highlighting Disabled",
     toggled: false,
     command: () => {
-      onToggleHiglightCodeClick();
+      onToggleHighlightCodeClick();
     },
   },
   {
@@ -164,11 +164,25 @@ const items = ref([
 ]);
 
 const language = computed(() => {
+  let lang;
   try {
-    return content.value.mediaType.split("/")[1];
+    lang = content.value.mediaType.split("/")[1];
   } catch {
-    return null;
+    lang = null;
   }
+
+  if (prettyPrintFormats.includes(lang)) return lang;
+
+  if (contentAs.utf8 && contentAs.utf8.slice(0, 5) === "<?xml") return "xml";
+
+  try {
+    JSON.parse(contentAs.utf8);
+    return "json";
+  } catch {
+    // Not JSON. Do nothing.
+  }
+
+  return lang;
 });
 
 const renderFormats = computed(() => {
@@ -195,15 +209,20 @@ onMounted(() => {
 });
 
 watch(
-  () => content.value,
+  () => renderFormats.value,
   () => {
-    loadContent();
     if (renderFormats.value.find((f) => f.id == selectedRenderFormat.value.id)) {
       selectedRenderFormat.value = renderFormats.value.find((f) => f.id === selectedRenderFormat.value.id);
     } else {
       selectedRenderFormat.value = renderFormats.value.find((f) => f.id === "utf8");
     }
   }
+);
+
+
+watch(
+  () => content.value,
+  () => loadContent()
 );
 
 const partialContent = computed(() => content.value.size > maxPreviewSize);
@@ -219,7 +238,7 @@ const warnings = computed(() => {
   return warnings;
 });
 
-const onToggleHiglightCodeClick = () => {
+const onToggleHighlightCodeClick = () => {
   highlightCode.value = !highlightCode.value;
 };
 

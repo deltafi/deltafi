@@ -124,7 +124,7 @@ describe("Roles Page", () => {
     cy.visit("http://localhost:8080/admin/roles");
     cy.get("span.p-panel-title").contains("Roles");
     cy.get("span.p-button-label").contains("Add Role").click();
-    cy.get("h5").contains("Name");
+    cy.get("dt").contains("Name");
     cy.get("button.p-dialog-header-icon.p-dialog-header-close.p-link").click();
   });
 });

@@ -1,15 +1,16 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    concurrent-ruby (1.1.10)
+    concurrent-ruby (1.2.3)
     httparty (0.21.0)
       mini_mime (>= 1.0.0)
       multi_xml (>= 0.5.2)
-    mini_mime (1.1.2)
+    mini_mime (1.1.5)
     multi_xml (0.6.0)
 
 PLATFORMS
   arm64-darwin-21
+  arm64-darwin-23
   x86_64-darwin-20
   x86_64-linux
 
@@ -18,4 +19,4 @@ DEPENDENCIES
   httparty
 
 BUNDLED WITH
-   2.3.26
+   2.5.7

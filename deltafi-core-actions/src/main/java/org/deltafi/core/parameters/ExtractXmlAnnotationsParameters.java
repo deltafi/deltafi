@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.parameters;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.*;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
@@ -34,18 +35,22 @@ public class ExtractXmlAnnotationsParameters extends ActionParameters {
     @JsonPropertyDescription("A map of XPath expressions to metadata keys. Values will be extracted using XPath and added to the corresponding metadata keys.")
     public Map<String, String> xpathToMetadataKeysMap = new HashMap<>();
 
+    @JsonProperty(defaultValue = "[\"application/xml\"]")
     @JsonPropertyDescription("List of allowed media types. Supports wildcards (*) and defaults to application/xml if empty.")
     public List<String> mediaTypes = List.of("application/xml");
 
+    @JsonProperty(defaultValue = "ALL")
     @JsonPropertyDescription("How to handle multiple occurrences of a key. Can be 'FIRST', 'LAST', 'DISTINCT', or 'ALL'. Defaults to ALL, which writes a delimited list.")
     public HandleMultipleKeysType handleMultipleKeys = HandleMultipleKeysType.ALL;
 
+    @JsonProperty(defaultValue = ",")
     @JsonPropertyDescription("The delimiter to use if handleMultipleKeys is set to DISTINCT or ALL")
     public String allKeysDelimiter = ",";
 
     @JsonPropertyDescription("List of domain names to consider. If empty, all domains considered.")
     public List<String> domains;
 
+    @JsonProperty(defaultValue = "false")
     @JsonPropertyDescription("Whether to return an error if a key is not found. Defaults to false.")
     public boolean errorOnKeyNotFound = false;
 }

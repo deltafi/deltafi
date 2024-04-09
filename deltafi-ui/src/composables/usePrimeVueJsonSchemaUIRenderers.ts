@@ -33,7 +33,7 @@ export default function usePrimeVueJsonSchemaUIRenderers() {
     { tester: rankWith(3, isIntegerControl), renderer: IntegerRenderer },
     { tester: rankWith(3, isBooleanControl), renderer: BooleanRenderer },
     { tester: rankWith(3, schemaTypeIs("array")), renderer: ArrayListRenderer},
-    { tester: rankWith(3, schemaTypeIs("additionalPropertyString")), renderer: AdditionalPropertiesStringRenderer}
+    { tester: rankWith(3, schemaTypeIs("additionalPropertyString")), renderer: AdditionalPropertiesStringRenderer},
   ];
 
   return { rendererList };

@@ -17,16 +17,19 @@
 -->
 
 <template>
-  <fieldset v-if="schemaData.control.visible" class="pb-2">
-    <dispatch-renderer :visible="schemaData.control.visible" :enabled="schemaData.control.enabled" :schema="schemaData.control.schema" :uischema="detailUiSchema" :path="schemaData.control.path" :renderers="schemaData.control.renderers" :cells="schemaData.control.cells" />
-    <small :id="schemaData.control.id + '-input-help'">{{ schemaData.control.description }}</small>
-    <AdditionalPropertiesRenderer v-if="hasAdditionalProperties && showAdditionalProperties" :input="input"></AdditionalPropertiesRenderer>
-  </fieldset>
+  <div v-if="schemaData.control.visible" class="pb-2">
+    <dt>{{ schemaData.control.i18nKeyPrefix.split(".").pop() }}</dt>
+    <div class="deltafi-fieldset">
+      <dispatch-renderer :visible="schemaData.control.visible" :enabled="schemaData.control.enabled" :schema="schemaData.control.schema" :uischema="detailUiSchema" :path="schemaData.control.path" :renderers="schemaData.control.renderers" :cells="schemaData.control.cells" />
+      <small :id="schemaData.control.id + '-input-help'">{{ schemaData.control.description }}</small>
+      <AdditionalPropertiesRenderer v-if="hasAdditionalProperties && showAdditionalProperties" :input="input"></AdditionalPropertiesRenderer>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import useSchemaComposition from "@/components/jsonSchemaRenderers/util/useSchemaComposition";
-import { ControlElement, findUISchema, Generate, GroupLayout } from "@jsonforms/core";
+import { ControlElement, findUISchema, Generate } from "@jsonforms/core";
 import { computed, reactive } from "vue";
 import { DispatchRenderer, rendererProps, useJsonFormsControlWithDetail } from "@jsonforms/vue";
 import AdditionalPropertiesRenderer from "./AdditionalPropertiesRenderer.vue";
@@ -48,9 +51,8 @@ const detailUiSchema = computed(() => {
     const uiSchema = Generate.uiSchema(schemaData.control.schema, "Group");
     if (_.isEmpty(schemaData.control.path)) {
       uiSchema.type = "VerticalLayout";
-    } else {
-      (uiSchema as GroupLayout).label = schemaData.control.i18nKeyPrefix.split(".").pop() + ":";
     }
+
     return uiSchema;
   };
   let result = findUISchema(schemaData.control.uischemas, schemaData.control.schema, schemaData.control.uischema.scope, schemaData.control.path, uiSchemaGenerator, schemaData.control.uischema, schemaData.control.rootSchema);
@@ -76,3 +78,22 @@ const showAdditionalProperties = computed(() => {
   return showAdditionalProperties === undefined || showAdditionalProperties === true;
 });
 </script>
+
+<style scoped>
+.deltafi-fieldset {
+  display: block;
+  margin-inline-start: 2px;
+  margin-inline-end: 2px;
+  padding-block-start: 0.35em;
+  padding-inline-start: 0.75em;
+  padding-inline-end: 0.75em;
+  padding-block-end: 0.625em;
+  min-inline-size: min-content;
+  border-radius: 4px;
+  border: 1px solid #ced4da;
+  border-width: 1px;
+  border-style: groove;
+  border-color: rgb(225, 225, 225);
+  border-image: initial;
+}
+</style>

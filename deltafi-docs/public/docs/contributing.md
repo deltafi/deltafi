@@ -19,7 +19,7 @@ The markdown `CHANGELOG.md` file at the root of the repository holds all the cha
 for past releases of DeltaFi.  Unreleased changes have a markdown file located at `CHANGELOG/unreleased/`.
 The changelog files in `CHANGELOG/unreleased` are compiled at release time into the resulting `CHANGELOG.md`.
 
-The `changelog` script located at `utils/changelog` is a tool for automating the creation of changelog files
+The `changelog` script located at `bin/changelog` is a tool for automating the creation of changelog files
 for individual changes, as well as compiling unreleased changes into the main `CHANGELOG.md`.  The script can
 be utilized in several different ways based on developer preference:
 - Use the script by directly invoking it in the core repo

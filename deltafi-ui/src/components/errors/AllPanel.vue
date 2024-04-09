@@ -167,7 +167,7 @@ const props = defineProps({
     default: undefined,
   },
   acknowledged: {
-    type: Boolean,
+    type: [Boolean, null],
     required: true,
   },
   errorsMessageSelected: {
@@ -250,9 +250,8 @@ const fetchErrors = async () => {
   await getPersistedParams();
   let ingressFlowName = props.ingressFlowName != null ? props.ingressFlowName : null;
   let errorMessage = filters.value.last_error_cause.value != null ? filters.value.last_error_cause.value.message : null;
-  let showAcknowledged = props.acknowledged ? null : false;
   loading.value = true;
-  await getErrors(showAcknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, ingressFlowName, errorMessage);
+  await getErrors(props.acknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, ingressFlowName, errorMessage);
   errors.value = response.value.deltaFiles.deltaFiles;
   totalErrors.value = response.value.deltaFiles.totalCount;
   loading.value = false;

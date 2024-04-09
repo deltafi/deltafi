@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.parameters;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.*;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
@@ -35,6 +36,7 @@ public class ConvertContentParameters extends ActionParameters {
     @JsonPropertyDescription("Format of the output content. Supported formats are JSON, XML, and CSV.")
     private ConversionFormat outputFormat;
 
+    @JsonProperty(defaultValue = "false")
     @JsonPropertyDescription("Boolean indicating whether the existing content should be retained or replaced by the new content. Default is false.")
     private boolean retainExistingContent = false;
 
@@ -47,12 +49,15 @@ public class ConvertContentParameters extends ActionParameters {
     @JsonPropertyDescription("List of content indexes to consider. If empty, all content is considered.")
     private List<Integer> contentIndexes;
 
+    @JsonProperty(defaultValue = "xml")
     @JsonPropertyDescription("Name of the root XML tag to use when converting to XML. Defaults to xml.")
     private String xmlRootTag = "xml";
 
+    @JsonProperty(defaultValue = "listEntry")
     @JsonPropertyDescription("Name of the XML tag to use for list entries when converting to XML. Defaults to listEntry.")
     private String xmlListEntryTag = "listEntry";
 
+    @JsonProperty(defaultValue = "true")
     @JsonPropertyDescription("Whether to write a header row when converting to CSV. Defaults to true.")
     private boolean csvWriteHeader = true;
 }

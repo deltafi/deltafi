@@ -20,15 +20,35 @@
   width: 98%;
 
   .delete-policy-panel {
-    dt {
-      margin-bottom: 0.5rem;
+    .deltafi-fieldset {
+      display: block;
+      margin-inline-start: 2px;
+      margin-inline-end: 2px;
+      padding-block-start: 0.35em;
+      padding-inline-start: 0.75em;
+      padding-inline-end: 0.75em;
+      padding-block-end: 0.625em;
+      min-inline-size: min-content;
+      border-radius: 4px;
+      border: 1px solid #ced4da;
+      border-width: 1px;
+      border-style: groove;
+      border-color: rgb(225, 225, 225);
+      border-image: initial;
     }
+
+    dt {
+      margin-bottom: 0rem;
+    }
+
     dd {
       margin-bottom: 1.2rem;
     }
+
     dl {
       margin-bottom: 1rem;
     }
+
     .p-panel-content {
       padding-bottom: 0.25rem !important;
     }

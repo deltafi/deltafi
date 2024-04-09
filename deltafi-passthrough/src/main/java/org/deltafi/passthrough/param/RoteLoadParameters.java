@@ -17,6 +17,7 @@
  */
 package org.deltafi.passthrough.param;
 
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -25,5 +26,6 @@ import java.util.List;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class RoteLoadParameters extends RoteParameters {
+    @JsonPropertyDescription("Optional domains to add")
     private List<String> domains;
 }

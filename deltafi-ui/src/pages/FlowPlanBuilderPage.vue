@@ -23,17 +23,32 @@
         <div class="align-items-center btn-group">
           <h2 class="mb-0">{{ flowPlanHeader }}</h2>
           <div v-if="model.active" class="btn-group">
-            <DialogTemplate component-name="flowBuilder/FlowConfigurationDialog" :header="`Edit ${model.name}`" dialog-width="25vw" model-position="center" :data-prop="model" edit-flow-plan @create-flow-plan="setFlowValues">
-              <Button v-if="!editExistingFlowPlan" v-tooltip.top="`Edit Name and Description`" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary ml-2" />
+            <DialogTemplate component-name="flowBuilder/FlowConfigurationDialog" :header="`Edit ${model.name}`" dialog-width="25vw" model-position="center" :data-prop="model" :edit-flow-plan="editExistingFlowPlan" @create-flow-plan="setFlowValues">
+              <Button v-tooltip.top="`Edit Name and Description`" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary ml-2" />
             </DialogTemplate>
           </div>
         </div>
       </template>
     </PageHeader>
     <div v-if="model.active">
-      <div class="row p-2">
-        <div v-for="action of flowTypesMap.get(model.type).flowActionTypes" :key="action" :class="getColSize(action)">
-          <div>
+      <template v-if="_.isEqual(model.type, 'TRANSFORM')">
+        <div class="row p-2">
+          <div class="col pl-2 pr-1">
+            <Panel header="Subscriptions" :pt="{ content: { class: 'p-1' } }">
+              <div class="px-0">
+                <dd>
+                  <div class="deltafi-fieldset">
+                    <div class="px-2">
+                      <json-forms :data="model['subscriptions']" :renderers="renderers" :uischema="subscriptionsUISchema" :schema="subscriptionsSchema" @change="onSubscriptionsChange" />
+                    </div>
+                  </div>
+                </dd>
+              </div>
+            </Panel>
+          </div>
+        </div>
+        <div v-for="action of flowTypesMap.get(model.type).flowActionTypes" :key="action" class="row p-2">
+          <div :class="getColSize(action)">
             <Panel :header="_.startCase(flowActionTemplateMap.get(action).activeContainer)" class="table-panel">
               <template #icons>
                 <button class="p-panel-header-icon p-link" @click="viewActionTreeMenu($event, action)">
@@ -71,7 +86,50 @@
             </Panel>
           </div>
         </div>
-      </div>
+      </template>
+      <template v-else>
+        <div class="row p-2">
+          <div v-for="action of flowTypesMap.get(model.type).flowActionTypes" :key="action" :class="getColSize(action)">
+            <div>
+              <Panel :header="_.startCase(flowActionTemplateMap.get(action).activeContainer)" class="table-panel">
+                <template #icons>
+                  <button class="p-panel-header-icon p-link" @click="viewActionTreeMenu($event, action)">
+                    <span class="pi pi-plus-circle"></span>
+                  </button>
+                </template>
+                <div :class="`action-panel-content p-2 ${requiresActionCheck(action)}`">
+                  <template v-if="flowActionTemplateObject[flowActionTemplateMap.get(action).activeContainer].length == 0">
+                    <div v-if="flowActionTemplateMap.get(action).requiredActionMin" :class="`empty-action pt-2 mb-n3 ${requiresActionCheck(action)}`">{{ _.startCase(flowActionTemplateMap.get(action).activeContainer) }} Required</div>
+                    <div v-else class="empty-action pt-2 mb-n3">No {{ _.startCase(flowActionTemplateMap.get(action).activeContainer) }}</div>
+                  </template>
+                  <draggable :id="action" v-model="flowActionTemplateObject[flowActionTemplateMap.get(action).activeContainer]" item-key="id" :sort="true" :group="action" ghost-class="action-transition-layout" drag-class="action-transition-layout" class="dragArea panel-horizontal-wrap pb-2 pt-3" @change="validateNewAction" @move="actionOrderChanged">
+                    <template #item="{ element, index }">
+                      <div :id="element.id" class="action-layout border border-dark rounded mx-2 my-4 p-overlay-badge">
+                        <Badge v-if="!_.isEmpty(validateAction(element))" v-tooltip.left="{ value: `${validateAction(element)}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-exclamation-triangle pt-1'" severity="danger"></Badge>
+                        <div class="d-flex align-items-center justify-content-between">
+                          <span class="one-line">
+                            <InputText v-model="element.name" :class="'inputtext-border-remove pl-0 text-truncate'" placeholder="Action Name Required" />
+                          </span>
+                          <div class="pl-2 btn-group">
+                            <DialogTemplate component-name="flowBuilder/ActionConfigurationDialog" :header="`Edit ${displayActionName(element)}`" :row-data-prop="element" :action-index-prop="index" dialog-width="75vw" @update-action="updateAction">
+                              <Button v-tooltip.top="{ value: `Edit ${displayActionName(element)}`, class: 'tooltip-width', showDelay: 300 }" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary" />
+                            </DialogTemplate>
+                            <Button v-tooltip.top="{ value: `Remove ${displayActionName(element)}`, class: 'tooltip-width', showDelay: 300 }" icon="pi pi-trash" class="p-button-text p-button-sm p-button-rounded p-button-danger" @click="removeAction(element, index)" />
+                          </div>
+                        </div>
+                        <Divider class="my-0" />
+                        <dd>
+                          <span v-tooltip.bottom="{ value: `${element.type}`, class: 'tooltip-width', showDelay: 300 }">{{ element.displayName }}</span>
+                        </dd>
+                      </div>
+                    </template>
+                  </draggable>
+                </div>
+              </Panel>
+            </div>
+          </div>
+        </div>
+      </template>
     </div>
     <HoverSaveButton v-if="model.active" target="window" :model="items" />
     <OverlayPanel ref="actionsOverlayPanel" class="flow-plan-builder-page-overlay" append-to="body" dismissable show-close-icon :style="{ width: '22%' }">
@@ -100,7 +158,7 @@
     <Dialog v-model:visible="displayRawJsonDialog" :style="{ width: '90vw' }" modal maximizable close-on-escape dismissable-mask :draggable="false" header="Flows Plan Raw Json" class="flow-plan-raw-json-dialog" @hide="flowPlanRawJsonDialogHide">
       <Panel header="Output">
         <template #icons>
-          <Button v-tooltip.left="'Show Schema'" class="p-panel-header-icon p-link p-me-2" @click="showSchma()">
+          <Button v-tooltip.left="'Show Schema'" class="p-panel-header-icon p-link p-me-2" @click="showSchema()">
             <span class="fa-solid fa-file-invoice" />
           </Button>
           <Button v-tooltip.left="'Copy to Clipboard'" class="p-panel-header-icon p-link p-me-2" @click="copy(rawOutput)">
@@ -122,9 +180,12 @@ import useFlowActions from "@/composables/useFlowActions";
 import useFlowPlanQueryBuilder from "@/composables/useFlowPlanQueryBuilder";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
-import { computed, nextTick, onBeforeMount, ref, watch } from "vue";
+import { computed, nextTick, onBeforeMount, provide, ref, watch } from "vue";
 import { StorageSerializers, useClipboard, useMagicKeys, useResizeObserver, useStorage } from "@vueuse/core";
 import { useRouter } from "vue-router";
+
+import usePrimeVueJsonSchemaUIRenderers from "@/composables/usePrimeVueJsonSchemaUIRenderers";
+import { JsonForms } from "@jsonforms/vue";
 
 import Badge from "primevue/badge";
 import Button from "primevue/button";
@@ -151,6 +212,11 @@ const router = useRouter();
 const actionsOverlayPanel = ref();
 const actionsTreeRef = ref(null);
 
+const { rendererList, myStyles } = usePrimeVueJsonSchemaUIRenderers();
+provide("style", myStyles);
+const renderers = ref(Object.freeze(rendererList));
+const subscriptionsUISchema = ref(undefined);
+
 const allActionsData = ref({});
 
 const expandedKeys = ref({});
@@ -160,13 +226,13 @@ const pageWidthResizeObserver = ref(null);
 const editExistingFlowPlan = ref(false);
 const originalFlowPlan = ref(null);
 
-const schemaVisable = ref(false);
+const schemaVisible = ref(false);
 const displayRawJsonDialog = ref(false);
 
 const allFlowPlanData = ref({});
 
-// The useResizeObserver determins if the sidebar has been collapsed or expanded.
-// If either has occur we redo the connections between all actions.
+// The useResizeObserver determines if the sidebar has been collapsed or expanded.
+// If either has occurred we redo the connections between all actions.
 useResizeObserver(flowPlanBuilderPage, (entries) => {
   const [entry] = entries;
   const { width } = entry.contentRect;
@@ -198,7 +264,7 @@ watch(devKey, (v) => {
 watch(
   () => actionsTreeRef.value?.filterValue,
   (data) => {
-    // The tree components filteredValue is a very tempermental computed value.
+    // The tree components filteredValue is a very temperamental computed value.
     // Making sure its not empty then making sure its not a string with just spaces
     if (!_.isEmpty(data)) {
       if (!_.isEmpty(data.trim())) {
@@ -223,7 +289,7 @@ const linkedFlowPlan = useStorage("linked-flow-plan-persisted-params", {}, sessi
 // The viewActionTreeMenu function is triggered by clicking on the add button on each flowActionType panel.
 const viewActionTreeMenu = (event, flowActionType) => {
   // The flowActionTypeGroup is the value used to dynamically set the group variable in the draggable component
-  // for linking the draggable actions to their repsentative flowActionType.
+  // for linking the draggable actions to their respective flowActionType.
   flowActionTypeGroup.value = flowActionType;
   // The actionsTree is the value used to dynamically provide the array of actions for each flowActionType.
   actionsTree.value = actionTypesTree.value[flowActionType];
@@ -235,6 +301,7 @@ const flowTemplate = {
   active: false,
   name: null,
   description: null,
+  subscriptions: [],
 };
 
 const defaultActionKeys = {
@@ -304,13 +371,16 @@ onBeforeMount(async () => {
       let flowInfo = {};
       flowInfo["type"] = _.toUpper(linkedFlowPlan.value.flowPlanParams.type);
       flowInfo["name"] = linkedFlowPlan.value.flowPlanParams.selectedFlowPlanName;
-      flowInfo["selectedFlowPlan"] = _.find(allFlowPlanData.value[`${_.toLower(linkedFlowPlan.value.flowPlanParams.type)}`], { 'name': linkedFlowPlan.value.flowPlanParams.selectedFlowPlanName });
+      flowInfo["selectedFlowPlan"] = _.find(allFlowPlanData.value[`${_.toLower(linkedFlowPlan.value.flowPlanParams.type)}`], { name: linkedFlowPlan.value.flowPlanParams.selectedFlowPlanName });
       flowInfo["description"] = flowInfo["selectedFlowPlan"].description;
+      if (_.has(linkedFlowPlan.value.flowPlanParams.selectedFlowPlan, "subscriptions")) {
+        flowInfo["subscriptions"] = linkedFlowPlan.value.flowPlanParams.selectedFlowPlan.subscriptions;
+      }
       await createFlowPlan(flowInfo);
       originalFlowPlan.value = rawOutput.value;
     } else {
       model.value.type = _.toUpper(linkedFlowPlan.value.flowPlanParams.type);
-      model.value.selectedFlowPlan = _.find(allFlowPlanData.value[`${_.toLower(linkedFlowPlan.value.flowPlanParams.type)}`], { 'name': linkedFlowPlan.value.flowPlanParams.selectedFlowPlanName });
+      model.value.selectedFlowPlan = _.find(allFlowPlanData.value[`${_.toLower(linkedFlowPlan.value.flowPlanParams.type)}`], { name: linkedFlowPlan.value.flowPlanParams.selectedFlowPlanName });
       document.getElementById("CreateFlowPlan").click();
     }
     linkedFlowPlan.value = null;
@@ -353,7 +423,7 @@ const flowPlanHeader = computed(() => {
 });
 
 const getColSize = (flowActionType) => {
-  if (flowTypesMap.get(model.value.type).flowActionTypes.length <= 2) {
+  if (flowTypesMap.get(model.value.type).flowActionTypes.length <= 2 && !_.isEqual(model.value.type, "TRANSFORM")) {
     return !flowActionTemplateMap.get(flowActionType).limit ? "col pl-2 pr-1" : "col-4 pl-2 pr-1";
   }
   return "col pl-2 pr-1";
@@ -373,6 +443,10 @@ const setFlowValues = async (flowInfo) => {
   model.value.name = flowInfo["name"];
   model.value.description = flowInfo["description"];
   model.value.selectedFlowPlan = flowInfo["selectedFlowPlan"];
+
+  if (_.has(flowInfo["selectedFlowPlan"], "subscriptions")) {
+    model.value["subscriptions"] = flowInfo["selectedFlowPlan"].subscriptions;
+  }
   model.value.active = true;
 };
 
@@ -395,9 +469,48 @@ const cloneFlow = async (cloneFlow) => {
     }
   }
 };
+const removeEmptyKeyValues = (queryObj) => {
+  const newObj = {};
+  Object.entries(queryObj).forEach(([k, v]) => {
+    if (v instanceof Array) {
+      newObj[k] = queryObj[k];
+    } else if (v === Object(v)) {
+      newObj[k] = removeEmptyKeyValues(v);
+    } else if (v != null) {
+      newObj[k] = queryObj[k];
+    }
+  });
+  return newObj;
+};
+
+const clearEmptyObjects = (queryObj) => {
+  for (const objKey in queryObj) {
+    if (_.isArray(queryObj[objKey])) {
+      if (Object.keys(queryObj[objKey]).length === 0) {
+        delete queryObj[objKey];
+      } else {
+        if (!_.every(queryObj[objKey], _.isString)) {
+          queryObj[objKey].forEach(function (item, index) {
+            queryObj[objKey][index] = removeEmptyKeyValues(item);
+          });
+        }
+      }
+    }
+
+    if (_.isObject(queryObj[objKey])) {
+      clearEmptyObjects(queryObj[objKey]);
+    }
+
+    if (_.isEmpty(queryObj[objKey])) {
+      delete queryObj[objKey];
+    }
+  }
+  return queryObj;
+};
 
 const save = async (rawFlow) => {
   let response = null;
+  rawFlow = clearEmptyObjects(rawFlow);
   if (model.value.type === "TRANSFORM") {
     response = await saveTransformFlowPlan(rawFlow);
   } else if (model.value.type === "EGRESS") {
@@ -432,7 +545,7 @@ const connectActions = async (flowActionType) => {
   await nextTick();
 
   // An instance of jsPlumb is created for each flowActionType and stored in an object if one is not already
-  // present for that flowActionType. This allows for resetting of that specific jsPlumb instance everytime we
+  // present for that flowActionType. This allows for resetting of that specific jsPlumb instance every time we
   // need to redraw the connection.
   if (!_.get(flowActionSpecificJsPlumbInstance.value, flowActionType, null)) {
     flowActionSpecificJsPlumbInstance.value[flowActionType] = jsPlumb.getInstance();
@@ -441,7 +554,7 @@ const connectActions = async (flowActionType) => {
   let plumbIns = flowActionSpecificJsPlumbInstance.value[flowActionType];
 
   plumbIns.ready(function () {
-    // Reset the action connects so we can rewdraw them.
+    // Reset the action connects so we can redraw them.
     plumbIns.deleteEveryConnection();
     plumbIns.deleteEveryEndpoint();
     plumbIns.reset();
@@ -454,7 +567,7 @@ const connectActions = async (flowActionType) => {
     .each(function () {
       actionsInPanel.push(this);
     });
-  // Remove all the actions that dont have an id.
+  // Remove all the actions that don't have an id.
   _.remove(actionsInPanel, { id: "" });
 
   // Connect all the actions in the panel
@@ -463,7 +576,7 @@ const connectActions = async (flowActionType) => {
     const next = actionsInPanel[i + 1];
 
     let anchorType = [];
-    // If the offesetTop of both the current and next are the same that the action hasnt wrapped to a new
+    // If the offsetTop of both the current and next are the same that the action hasn't wrapped to a new
     // line. Make the arrow come from the left of the first action to the right of the next action. If it has
     // wrapped make the arrow come from the bottom of the first action to the top of the next action.
     if (_.isEqual(current.offsetTop, next.offsetTop)) {
@@ -512,11 +625,11 @@ const addAction = async (flowActionType, action) => {
 // Validates all parts of the Flow Plan. If invalid it disables the save button.
 const isValidFlow = computed(() => {
   // If the Flow Plans Raw Dialog or the Schema is visible disable the save
-  if (schemaVisable.value || displayRawJsonDialog.value) {
+  if (schemaVisible.value || displayRawJsonDialog.value) {
     return false;
   }
 
-  // If we are editing an existing flow and we havent made any changes disable the save
+  // If we are editing an existing flow and we haven't made any changes disable the save
   if (!_.isEmpty(originalFlowPlan.value)) {
     // Remove any value that have not changed from the original defaultQueryParamsTemplate value it was set at
     let changedFlowValues = _.omitBy(rawOutput.value, function (v, k) {
@@ -528,7 +641,7 @@ const isValidFlow = computed(() => {
     }
   }
 
-  // If the flow plan isnt active disable the save
+  // If the flow plan isn't active disable the save
   if (!model.value.active) {
     return false;
   }
@@ -598,7 +711,7 @@ const validateAction = (action) => {
     missingFieldsInAction.push("name");
   }
 
-  // Check if there are required schema fields, if so get the list of incompleted fields by comparing the required schema fields
+  // Check if there are required schema fields, if so get the list of incomplete fields by comparing the required schema fields
   // with the keys of the user completed fields and add those to the list of missing required fields.
   missingFieldsInAction = _.concat(missingFieldsInAction, _.difference(requiredSchemaFields, completedFields));
 
@@ -683,10 +796,18 @@ const getLoadedActions = () => {
       action["type"] = action["name"];
       let displayName = action.name.split(".").pop();
       action["displayName"] = displayName;
-      let corrdinateGrouping = action.name.split(".").slice(0, -1).join(".");
-      action["corrdinateGrouping"] = corrdinateGrouping;
+      let coordinateGrouping = action.name.split(".").slice(0, -1).join(".");
+      action["coordinateGrouping"] = coordinateGrouping;
       action["name"] = "";
+
       action["parameters"] = {};
+      if (!_.isEmpty(action.schema.properties)) {
+        for (const [key, value] of Object.entries(action.schema.properties)) {
+          if (!_.isEmpty(value.default)) {
+              action["parameters"][key] = value.default;
+          }
+        }
+      }
 
       // Adding an flowActionType key to the actionTypesTree. Each root flowActionType key will hold the tree structure for that actionType.
       if (!Object.prototype.hasOwnProperty.call(actionTypesTree.value, action["flowActionType"])) {
@@ -697,33 +818,33 @@ const getLoadedActions = () => {
       flattenedActionsTypes.value[action["flowActionType"]].push(action);
 
       // We next group all the actions into their respective plugins. We search in the actionTypesTree to see if the plugin
-      // corridinateGrouping is already in the tree. If not we add it.
-      let mavenCorrdinateKey = actionTypesTree.value[action["flowActionType"]].find((x) => x.key === action["corrdinateGrouping"]);
-      // If no plugin corrdinateGrouping is found we create it and go ahead and add the action to it.
-      if (!mavenCorrdinateKey) {
-        let rootCorrdinateGrouping = {};
-        rootCorrdinateGrouping["key"] = action["corrdinateGrouping"];
-        rootCorrdinateGrouping["label"] = action["corrdinateGrouping"];
-        rootCorrdinateGrouping["children"] = [];
+      // coordinateGrouping is already in the tree. If not we add it.
+      let mavenCoordinateKey = actionTypesTree.value[action["flowActionType"]].find((x) => x.key === action["coordinateGrouping"]);
+      // If no plugin coordinateGrouping is found we create it and go ahead and add the action to it.
+      if (!mavenCoordinateKey) {
+        let rootCoordinateGrouping = {};
+        rootCoordinateGrouping["key"] = action["coordinateGrouping"];
+        rootCoordinateGrouping["label"] = action["coordinateGrouping"];
+        rootCoordinateGrouping["children"] = [];
         let pluginName = {};
         pluginName["key"] = action["displayName"];
         pluginName["label"] = action["displayName"];
         pluginName["filterField"] = action["displayName"];
         pluginName["data"] = [action];
         pluginName["type"] = "actions";
-        rootCorrdinateGrouping["children"].push(pluginName);
-        actionTypesTree.value[action["flowActionType"]].push(rootCorrdinateGrouping);
+        rootCoordinateGrouping["children"].push(pluginName);
+        actionTypesTree.value[action["flowActionType"]].push(rootCoordinateGrouping);
         actionTypesTree.value[action["flowActionType"]] = _.sortBy(actionTypesTree.value[action["flowActionType"]], "label");
       } else {
-        // If plugin corrdinateGrouping is found we add the action to it.
+        // If plugin coordinateGrouping is found we add the action to it.
         let pluginName = {};
         pluginName["key"] = action["displayName"];
         pluginName["label"] = action["displayName"];
         pluginName["filterField"] = action["displayName"];
         pluginName["data"] = [action];
         pluginName["type"] = "actions";
-        mavenCorrdinateKey.children.push(pluginName);
-        mavenCorrdinateKey.children = _.sortBy(mavenCorrdinateKey.children, "label");
+        mavenCoordinateKey.children.push(pluginName);
+        mavenCoordinateKey.children = _.sortBy(mavenCoordinateKey.children, "label");
       }
     }
   }
@@ -738,7 +859,7 @@ const rawOutput = computed(() => {
   for (const flowActionType of flowTypesMap.get(model.value.type).flowActionTypes) {
     if (!_.isEmpty(flowActionTemplateObject.value[flowActionTemplateMap.get(flowActionType).activeContainer])) {
       displayOutput[flowActionTemplateMap.get(flowActionType).activeContainer] = JSON.parse(JSON.stringify(flowActionTemplateObject.value[flowActionTemplateMap.get(flowActionType).activeContainer]));
-      if (schemaVisable.value) {
+      if (schemaVisible.value) {
         displayOutput[flowActionTemplateMap.get(flowActionType).activeContainer] = displayOutput[flowActionTemplateMap.get(flowActionType).activeContainer].map(({ description, flowActionType, disableEdit, ...keepAttrs }) => keepAttrs); // eslint-disable-line @typescript-eslint/no-unused-vars
       } else {
         displayOutput[flowActionTemplateMap.get(flowActionType).activeContainer] = displayOutput[flowActionTemplateMap.get(flowActionType).activeContainer].map(({ ...attrs }) => _.pick(attrs, Object.keys(flowActionTemplateMap.get(flowActionType).selectTemplate[0])));
@@ -761,13 +882,13 @@ const actionTemplateClass = (element) => {
   return ["pi pi-plus-circle", "pr-2", "pt-1", { "added-action-color": !(_.findIndex(flowActionTemplateObject.value[flowActionTemplateMap.get(element.flowActionType).activeContainer], element) == -1) }];
 };
 
-const showSchma = () => {
-  schemaVisable.value = !schemaVisable.value;
+const showSchema = () => {
+  schemaVisible.value = !schemaVisible.value;
 };
 
 const flowPlanRawJsonDialogHide = () => {
-  if (schemaVisable.value) {
-    schemaVisable.value = !schemaVisable.value;
+  if (schemaVisible.value) {
+    schemaVisible.value = !schemaVisible.value;
   }
 };
 
@@ -799,6 +920,28 @@ const prettyPrint = (json) => {
   }
 
   return "";
+};
+
+const onSubscriptionsChange = (event) => {
+  model.value["subscriptions"] = event.data;
+};
+
+const subscriptionsSchema = {
+  type: "array",
+  items: {
+    type: "object",
+    properties: {
+      condition: {
+        type: "string",
+      },
+      topics: {
+        type: "array",
+        items: {
+          type: "string",
+        },
+      },
+    },
+  },
 };
 </script>
 

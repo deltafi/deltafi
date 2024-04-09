@@ -18,18 +18,18 @@
 
 <template>
   <control-wrapper v-bind="schemaData.controlWrapper" :styles="schemaData.styles" :is-focused="schemaData.isFocused" :applied-options="schemaData.appliedOptions">
-    <div class="py-2">
-      <div class="field">
-        <legend v-if="!_.isEmpty(schemaData.computedLabel)" :id="schemaData.control.id + '-input-label'">{{ schemaData.control.i18nKeyPrefix.split(".").pop() }}:</legend>
-      </div>
-      <div>
+    <dl>
+      <dt v-if="!_.isEmpty(schemaData.computedLabel)" :id="schemaData.control.id + '-input-label'">{{ schemaData.control.i18nKeyPrefix.split(".").pop() }}</dt>
+      <dd class="align-items-center">
         <InputNumber :id="schemaData.control.id + '-input'" :model-value="integerDecider(schemaData.control.data)" :class="schemaData.styles.control.input + ' inputWidth'" :step="steps" input-id="stacked-buttons" show-buttons @input="schemaData.onChange($event.value)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
-      </div>
-      <small v-if="!_.isEmpty(schemaData.control.description)" :id="schemaData.control.id + '-input-help'">{{ schemaData.control.description }}</small>
-    </div>
+        <div>
+          <small v-if="!_.isEmpty(schemaData.control.description)" :id="schemaData.control.id + '-input-help'">{{ schemaData.control.description }}</small>
+        </div>
+      </dd>
+    </dl>
   </control-wrapper>
 </template>
-  
+
 <script setup lang="ts">
 import { ControlElement } from "@jsonforms/core";
 import { defineProps, computed, reactive } from "vue";
@@ -46,7 +46,7 @@ const props = defineProps({
   ...rendererProps<ControlElement>(),
 });
 
-const schemaData = reactive(useControl(useJsonFormsControl(props), (value) => parseInt(value, 10) || undefined));
+const schemaData = reactive(useControl(useJsonFormsControl(props), (value) => value));
 
 const integerDecider = (intVal: any) => {
   // If its empty and not an integer, return null

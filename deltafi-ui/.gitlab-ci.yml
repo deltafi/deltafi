@@ -5,6 +5,7 @@ ui:eslint:
   stage: build
   allow_failure: true # FIXME: Remove when 2.0 is production ready
   needs: []
+  retry: 2
   script:
     - cd deltafi-ui
     # Install ui dependencies
@@ -46,6 +47,7 @@ ui:docker-multiarch:
   allow_failure: true # FIXME: Remove when 2.0 is production ready
   needs:
     - job: "ui:eslint"
+  retry: 2
   script:
     - cd deltafi-ui
     # link node_modules from base image

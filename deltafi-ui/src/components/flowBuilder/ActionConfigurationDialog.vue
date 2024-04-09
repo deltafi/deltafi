@@ -17,74 +17,92 @@
 -->
 
 <template>
-  <div class="action-configuration-dialog">
-    <div v-for="displayActionInfo of getDisplayValues(rowdata)" :key="displayActionInfo">
-      <template>
-        <h5 class="font-weight-bold pb-2">{{ displayMap.get(displayActionInfo).header }}:</h5>
-        <dd>
-          <InputText v-if="_.isEqual(displayMap.get(displayActionInfo).type, 'string')" v-model="rowdata[displayActionInfo]" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
-        </dd>
-        <dd v-if="_.isEqual(displayMap.get(displayActionInfo).type, 'object')">
-          <template v-if="Array.isArray(rowdata[displayActionInfo])">
-            <template v-if="rowdata[displayActionInfo].includes('any')">
-              <DialogTemplate component-name="plugin/ListEdit" :model-value="rowdata[displayActionInfo]" :header="`Add New ${displayMap.get(displayActionInfo).header}`" dialog-width="25vw">
-                <div class="p-inputtext p-component">
-                  <div v-for="item in rowdata[displayActionInfo]" :key="item" class="list-item">{{ item }}</div>
-                </div>
-              </DialogTemplate>
-            </template>
-            <template v-else>
-              <div v-for="item in rowdata[displayActionInfo]" :key="item" class="list-item">{{ item }}</div>
-            </template>
-          </template>
-          <template v-if="_.isEqual(displayActionInfo, 'schema')">
-            <div class="px-2">
-              <json-forms :data="data" :renderers="renderers" :uischema="uischema" :schema="rowdata['schema']" @change="onChange($event, rowdata)" />
+  <div id="error-message" class="action-configuration-dialog">
+    <div class="action-configuration-panel">
+      <div v-if="hasErrors" class="pt-2">
+        <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="clearErrors()">
+          <ul>
+            <div v-for="(error, key) in errors" :key="key">
+              <li class="text-wrap text-break">{{ error }}</li>
             </div>
+          </ul>
+        </Message>
+      </div>
+      <dl>
+        <template v-for="displayActionInfo of getDisplayValues(rowdata)" :key="displayActionInfo">
+          <template v-if="displayFieldTest(displayActionInfo)"> </template>
+          <template v-else>
+            <dt>{{ displayMap.get(displayActionInfo).header }}</dt>
+            <dd v-if="_.isEqual(displayMap.get(displayActionInfo).type, 'string')">
+              <InputText v-model="rowdata[displayActionInfo]" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
+            </dd>
+            <dd v-else-if="_.isEqual(displayMap.get(displayActionInfo).type, 'object')">
+              <template v-if="Array.isArray(rowdata[displayActionInfo])">
+                <template v-if="rowdata[displayActionInfo].includes('any')">
+                  <DialogTemplate component-name="plugin/ListEdit" :model-value="rowdata[displayActionInfo]" :header="`Add New ${displayMap.get(displayActionInfo).header}`" dialog-width="25vw">
+                    <div class="p-inputtext p-component">
+                      <div v-for="item in rowdata[displayActionInfo]" :key="item" class="list-item">{{ item }}</div>
+                    </div>
+                  </DialogTemplate>
+                </template>
+                <template v-else>
+                  <div v-for="item in rowdata[displayActionInfo]" :key="item" class="list-item">{{ item }}</div>
+                </template>
+              </template>
+              <template v-if="_.isEqual(displayActionInfo, 'schema')">
+                <div class="deltafi-fieldset">
+                  <div class="px-2 pt-3">
+                    <json-forms :data="data" :renderers="renderers" :uischema="uischema" :schema="rowdata['schema']" @change="onChange($event, rowdata)" />
+                  </div>
+                </div>
+              </template>
+              <template v-if="_.isEqual(displayActionInfo, 'collect')">
+                <div class="deltafi-fieldset">
+                  <div class="px-2 pt-3">
+                    <dt>maxAge</dt>
+                    <dd>
+                      <InputText v-model="collectData['maxAge']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
+                    </dd>
+                    <dt>minNum</dt>
+                    <dd>
+                      <InputNumber v-model="collectData['minNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" :min="0" show-buttons />
+                    </dd>
+                    <dt>maxNumber</dt>
+                    <dd>
+                      <InputNumber v-model="collectData['maxNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" :min="0" show-buttons />
+                    </dd>
+                    <dt>metadataKey</dt>
+                    <dd>
+                      <InputText v-model="collectData['metadataKey']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
+                    </dd>
+                  </div>
+                </div>
+              </template>
+            </dd>
           </template>
-          <template v-if="_.isEqual(displayActionInfo, 'collect')">
-            <fieldset>
-              <legend>Max Age</legend>
-              <dd>
-                <InputText v-model="collectData['maxAge']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" required />
-              </dd>
-              <legend>Min Number</legend>
-              <dd>
-                <InputText v-model="collectData['minNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
-              </dd>
-              <legend>Max Number</legend>
-              <dd>
-                <InputText v-model="collectData['maxNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
-              </dd>
-              <legend>Metadata Key</legend>
-              <dd>
-                <InputText v-model="collectData['metadataKey']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
-              </dd>
-            </fieldset>
-          </template>
-        </dd>
-      </template>
+        </template>
+      </dl>
     </div>
-    <div class="action-configuration-dialog">
-      <teleport v-if="isMounted" to="#dialogTemplate">
-        <div class="p-dialog-footer">
-          <Button label="Submit" @click="submit()" />
-        </div>
-      </teleport>
-    </div>
+    <teleport v-if="isMounted" to="#dialogTemplate">
+      <div class="p-dialog-footer">
+        <Button label="Submit" @click="submit()" />
+      </div>
+    </teleport>
   </div>
 </template>
-  
-  <script setup>
+
+<script setup>
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import { useMounted } from "@vueuse/core";
-import { provide, defineEmits, defineProps, reactive, ref } from "vue";
+import { computed, defineEmits, defineProps, nextTick, provide, reactive, ref } from "vue";
 
 import usePrimeVueJsonSchemaUIRenderers from "@/composables/usePrimeVueJsonSchemaUIRenderers";
 import { JsonForms } from "@jsonforms/vue";
 
 import Button from "primevue/button";
+import InputNumber from "primevue/inputnumber";
 import InputText from "primevue/inputtext";
+import Message from "primevue/message";
 import _ from "lodash";
 
 const { rendererList, myStyles } = usePrimeVueJsonSchemaUIRenderers();
@@ -115,6 +133,8 @@ const defaultCollectTemplate = ref({
   metadataKey: null,
 });
 
+const errors = ref([]);
+
 const { actionIndexProp: actionIndex, closeDialogCommand } = reactive(props);
 
 const rowdata = reactive(JSON.parse(JSON.stringify(props.rowDataProp)));
@@ -142,24 +162,74 @@ const getDisplayValues = (obj) => {
   return _.intersection(Object.keys(obj), displayKeysList);
 };
 
+const displayFieldTest = (displayActionInfo) => {
+  let fieldsCheck = ["requiresDomains", "requiresEnrichments", "requiresMetadataKeyValues"];
+  return (fieldsCheck.includes(displayActionInfo) && _.isEmpty(rowdata[displayActionInfo])) || (_.isEqual(displayActionInfo, "schema") && _.isEmpty(_.get(rowdata, "schema.properties", null)));
+};
+
+const hasErrors = computed(() => {
+  return errors.value.length > 0;
+});
+
+const clearErrors = () => {
+  errors.value = [];
+};
+
 const submit = async () => {
+  clearErrors();
   // Remove any value that have not changed from the original originalCollectData value it was set at
   let changedCollectValues = _.omitBy(collectData.value, function (v, k) {
     return JSON.stringify(originalCollectData[k]) === JSON.stringify(v);
   });
 
+  let newCollect = {};
   if (!_.isEmpty(changedCollectValues)) {
-    collectData.value = _.mapValues(collectData.value, (v) => (v.trim() === "" ? null : v));
-    rowdata["collect"] = JSON.parse(JSON.stringify(collectData.value));
+    if (!_.isEmpty(collectData.value["maxAge"])) {
+      const regexPattern = new RegExp("^P([0-9]+(?:[,.][0-9]+)?Y)?([0-9]+(?:[,.][0-9]+)?M)?([0-9]+(?:[,.][0-9]+)?D)?(?:T([0-9]+(?:[,.][0-9]+)?H)?([0-9]+(?:[,.][0-9]+)?M)?([0-9]+(?:[,.][0-9]+)?S)?)?$");
+      let match = regexPattern.test(collectData.value["maxAge"]);
+
+      if (!match) {
+        errors.value.push("maxAge is not a valid ISO8601 Duration");
+      } else {
+        newCollect["maxAge"] = collectData.value["maxAge"];
+      }
+    }
+
+    if (_.isNumber(collectData.value["minNum"])) {
+      newCollect["minNum"] = collectData.value["minNum"];
+    }
+
+    if (_.isNumber(collectData.value["maxNum"])) {
+      newCollect["maxNum"] = collectData.value["maxNum"];
+    }
+
+    if (_.isNumber(collectData.value["minNum"]) && _.isNumber(collectData.value["maxNum"])) {
+      if (!_.lt(collectData.value["minNum"], collectData.value["maxNum"])) {
+        errors.value.push("minNum cannot be greater than maxNum");
+      }
+    }
+
+    if (!_.isEmpty(collectData.value["metadataKey"])) {
+      newCollect["metadataKey"] = collectData.value["metadataKey"];
+    }
   }
+
+  if (!_.isEmpty(errors.value)) {
+    const errorMessages = document.getElementById("error-message");
+    await nextTick();
+    errorMessages.scrollIntoView();
+    return;
+  }
+
+  if (!_.isEmpty(newCollect)) {
+    rowdata["collect"] = newCollect;
+  }
+
   closeDialogCommand.command();
   emit("updateAction", { actionIndex: actionIndex, updatedAction: rowdata });
 };
 </script>
-  
+
 <style lang="scss">
-.action-configuration-dialog {
-  width: 98%;
-}
+@import "@/styles/components/flowBuilder/action-configuration-dialog.scss";
 </style>
-  

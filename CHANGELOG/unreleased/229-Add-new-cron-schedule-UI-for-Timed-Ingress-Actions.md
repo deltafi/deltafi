@@ -1,7 +1,7 @@
-# Changes on branch `213-ability-to-update-ingress-actions-from-ui`
+# Changes on branch `229-Add-new-cron-schedule-UI-for-Timed-Ingress-Actions`
 Document any changes on this branch here.
 ### Added
-- Added the ability to add and update Ingress Actions to UI. 
+- Added a new cron schedule UI for Timed Ingress Actions. 
 
 ### Changed
 - 

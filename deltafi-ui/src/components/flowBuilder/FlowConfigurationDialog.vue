@@ -18,40 +18,42 @@
 
 <template>
   <div class="flow-configuration-dialog">
-    <div>
-      <div v-if="hasErrors" class="pt-2">
-        <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="clearErrors()">
-          <ul>
-            <div v-for="(error, key) in errors" :key="key">
-              <li class="text-wrap text-break">{{ error }}</li>
-            </div>
-          </ul>
-        </Message>
-      </div>
-      <dt>Name:*</dt>
-      <dd>
-        <InputText v-model="model.name" class="inputWidth" />
-      </dd>
-      <dt>Description:*</dt>
-      <dd>
-        <Textarea v-model="model.description" rows="4" cols="47" class="inputWidth" />
-      </dd>
-      <dt>Type:*</dt>
-      <dd>
-        <Dropdown v-model="model.type" :options="flowTypesDisplay" option-label="header" option-value="field" placeholder="Select Flow Type" :show-clear="!editFlowPlan" :disabled="editFlowPlan" class="inputWidth" />
-      </dd>
-      <dt>Clone From: (Optional)</dt>
-      <dd>
-        <Dropdown v-model="model.selectedFlowPlan" :options="_.orderBy(allFlowPlans[`${_.toLower(model.type)}`], [(flow) => flow.name.toLowerCase()], ['asc'])" option-label="name" placeholder="Select Flow" :show-clear="!editFlowPlan" :disabled="editFlowPlan" class="inputWidth" />
-      </dd>
-      <div class="delete-policy-configuration-dialog">
-        <teleport v-if="isMounted" to="#dialogTemplate">
-          <div class="p-dialog-footer">
-            <Button label="Submit" @click="submit()" />
-          </div>
-        </teleport>
+    <div class="flow-configuration-panel">
+      <div class="pb-0">
+        <div v-if="hasErrors" class="pt-2">
+          <Message severity="error" :sticky="true" class="mb-2 mt-0" @close="clearErrors()">
+            <ul>
+              <div v-for="(error, key) in errors" :key="key">
+                <li class="text-wrap text-break">{{ error }}</li>
+              </div>
+            </ul>
+          </Message>
+        </div>
+        <dl>
+          <dt>Name*</dt>
+          <dd>
+            <InputText v-model="model.name" class="inputWidth" :disabled="editFlowPlan" />
+          </dd>
+          <dt>Description*</dt>
+          <dd>
+            <Textarea v-model="model.description" rows="4" cols="47" class="inputWidth" />
+          </dd>
+          <dt>Type*</dt>
+          <dd>
+            <Dropdown v-model="model.type" :options="flowTypesDisplay" option-label="header" option-value="field" placeholder="Select Flow Type" :show-clear="!editFlowPlan" :disabled="editFlowPlan" class="inputWidth" />
+          </dd>
+          <dt>Clone From <small class="text-muted">- Optional</small></dt>
+          <dd>
+            <Dropdown v-model="model.selectedFlowPlan" :options="_.orderBy(allFlowPlans[`${_.toLower(model.type)}`], [(flow) => flow.name.toLowerCase()], ['asc'])" option-label="name" placeholder="Select Flow" :show-clear="!editFlowPlan" :disabled="editFlowPlan" class="inputWidth" />
+          </dd>
+        </dl>
       </div>
     </div>
+    <teleport v-if="isMounted" to="#dialogTemplate">
+      <div class="p-dialog-footer">
+        <Button label="Submit" @click="submit()" />
+      </div>
+    </teleport>
   </div>
 </template>
 
@@ -161,9 +163,9 @@ const submit = async () => {
 
   if (!_.isEmpty(model.value.name) && !_.isEmpty(model.value.type)) {
     let activeSystemFlowNames = _.map(allFlowPlans.value[`${_.toLower(model.value.type)}`], "name");
-    let isflowNamedUsed = _.includes(activeSystemFlowNames, model.value.name.trim());
+    let isFlowNameUsed = _.includes(activeSystemFlowNames, model.value.name.trim());
 
-    if (isflowNamedUsed) {
+    if (isFlowNameUsed && !editFlowPlan) {
       errors.value.push("Name already exists in the system. Choose a different Name.");
     }
   }
@@ -178,9 +180,5 @@ const submit = async () => {
 </script>
 
 <style lang="scss">
-.flow-configuration-dialog {
-  .inputWidth {
-    width: 97% !important;
-  }
-}
+@import "@/styles/components/flowBuilder/flow-configuration-dialog.scss";
 </style>

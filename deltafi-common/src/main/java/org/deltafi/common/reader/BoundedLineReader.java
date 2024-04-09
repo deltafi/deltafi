@@ -17,6 +17,8 @@
  */
 package org.deltafi.common.reader;
 
+import lombok.Getter;
+
 import java.io.*;
 
 /**
@@ -24,15 +26,15 @@ import java.io.*;
  * readLine method by the maxLineSize setting to limit the characters
  * read into memory.
  */
+@SuppressWarnings("unused")
 public class BoundedLineReader extends BufferedReader {
 
     static final String LINE_OVERFLOW = "The current line will not fit within the max size limit";
 
-    private static final int UNSET = -2;
     /** Maximum bytes to read when looking for a line of text */
     private long maxLineSize;
+    @Getter
     private long bytesRead = 0;
-    private int nextChar = UNSET;
 
     public BoundedLineReader(Reader in, long maxLineSize) {
         super(in);
@@ -74,14 +76,6 @@ public class BoundedLineReader extends BufferedReader {
     }
 
     /**
-     * Get the total bytes that have been read by this reader
-     * @return number of bytes read
-     */
-    public long getBytesRead() {
-        return bytesRead;
-    }
-
-    /**
      * Set the maxLineSize to a new value
      * @param maxLineSize new maxLineSize to use
      */
@@ -99,8 +93,7 @@ public class BoundedLineReader extends BufferedReader {
     would be returned.
      */
     private long doReadLine(StringBuilder[] stringBuilder) throws IOException {
-        // if the nextChar is already set from '\n' look ahead, use it
-        int curChar = nextChar != UNSET ? nextChar : super.read();
+        int curChar = super.read();
 
         // the EOF was reached
         if (curChar == -1) {
@@ -123,26 +116,28 @@ public class BoundedLineReader extends BufferedReader {
             if (curChar == '\n') {
                 return currentLineSize;
             } else if (curChar == '\r') {
-                // check if the next character is '\n' if so it should be considered part of the current line
-                // otherwise the nextChar will be used on the next doReadLine call instead of reading from the buffer
-                nextChar = super.read();
-                if (nextChar == '\n') {
-                    // include this \n in the bytesRead for the current line and UNSET the nextChar so the next doReadLine reads from the buffer
-                    checkSize(++currentLineSize);
-                    bytesRead++;
-                    nextChar = UNSET;
+                char nextChar = peek();
+                // if the next char is not a lf consider the cr the end of line
+                if (nextChar != '\n') {
+                    return currentLineSize;
                 }
-                return currentLineSize;
-            } else {
-                curChar = super.read();
+            }
 
-                if (stringBuilder != null) {
-                    stringBuilder[0].append((char) curChar);
-                }
+            curChar = super.read();
+
+            if (stringBuilder != null && curChar != -1) {
+                stringBuilder[0].append((char) curChar);
             }
         }
 
         return currentLineSize;
+    }
+
+    private char peek() throws IOException {
+        this.mark(1);
+        int next = this.read();
+        this.reset();
+        return (char) next;
     }
 
     private void checkSize(long currentLineSize) throws IOException {

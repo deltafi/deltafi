@@ -30,25 +30,19 @@
         </Column>
         <Column header="CPU" field="resources.cpu.usage" :sortable="true" class="resource-column">
           <template #body="node">
-            <span v-if="node.data.resources.cpu.usage == 0 || node.data.resources.cpu.limit == 0">
-              Metrics unavailable
-            </span>
+            <span v-if="node.data.resources.cpu.usage == 0 || node.data.resources.cpu.limit == 0"> Metrics unavailable </span>
             <ProgressBar v-else v-tooltip.top="node.data.resources.cpu.usage + 'm / ' + node.data.resources.cpu.limit + 'm'" :value="calculatePercent(node.data.resources.cpu.usage, node.data.resources.cpu.limit)" />
           </template>
         </Column>
-        <Column header="Memory" field="resources.memory.usage" :sortable="true" class="resource-column">
+        <Column header="RAM" field="resources.memory.usage" :sortable="true" class="resource-column">
           <template #body="node">
-            <span v-if="node.data.resources.memory.usage == 0 || node.data.resources.memory.limit == 0">
-              Metrics unavailable
-            </span>
+            <span v-if="node.data.resources.memory.usage == 0 || node.data.resources.memory.limit == 0"> Metrics unavailable </span>
             <ProgressBar v-else v-tooltip.top="formattedBytes(node.data.resources.memory.usage) + ' / ' + formattedBytes(node.data.resources.memory.limit)" :value="calculatePercent(node.data.resources.memory.usage, node.data.resources.memory.limit)">{{ formattedBytes(node.data.resources.memory.usage) }} ({{ calculatePercent(node.data.resources.memory.usage, node.data.resources.memory.limit) }}%)</ProgressBar>
           </template>
         </Column>
         <Column header="Disk" field="resources.disk.usage" :sortable="true" class="resource-column">
           <template #body="node">
-            <span v-if="node.data.resources.disk.usage == 0 || node.data.resources.disk.limit == 0">
-              Metrics unavailable
-            </span>
+            <span v-if="node.data.resources.disk.usage == 0 || node.data.resources.disk.limit == 0"> Metrics unavailable </span>
             <ProgressBar v-else v-tooltip.top="formattedBytes(node.data.resources.disk.usage) + ' / ' + formattedBytes(node.data.resources.disk.limit)" :value="calculatePercent(node.data.resources.disk.usage, node.data.resources.disk.limit)">{{ formattedBytes(node.data.resources.disk.usage) }} ({{ calculatePercent(node.data.resources.disk.usage, node.data.resources.disk.limit) }}%)</ProgressBar>
           </template>
         </Column>
@@ -61,6 +55,7 @@
         </template>
       </DataTable>
     </Panel>
+    <SystemMetricsPanel class="mt-3" />
   </div>
 </template>
 
@@ -70,6 +65,7 @@ import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
 import useSystemMetrics from "@/composables/useSystemMetrics";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import { computed, inject, onMounted, onUnmounted, ref } from "vue";
+import SystemMetricsPanel from "@/components/SystemMetricsPanel.vue";
 
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
@@ -83,8 +79,8 @@ const showLoading = computed(() => !loaded.value && loading.value);
 const isIdle = inject("isIdle");
 let autoRefresh = null;
 
-onMounted(() => {
-  fetchSystemMetrics();
+onMounted(async () => {
+  await fetchSystemMetrics();
   autoRefresh = setInterval(() => {
     if (!isIdle.value && !loading.value) {
       fetchSystemMetrics();
@@ -99,7 +95,6 @@ onUnmounted(() => {
 const calculatePercent = (numerator, denominator) => {
   return Math.round((numerator / denominator) * 100);
 };
-
 </script>
 
 <style lang="scss">

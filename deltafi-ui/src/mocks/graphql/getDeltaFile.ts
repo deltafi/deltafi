@@ -112,6 +112,19 @@ const generateData = () => {
             mediaType: "application/json",
           },
           {
+            name: "TestFile.nosj",
+            segments: [
+              {
+                uuid: "19a12f6f-3b63-4c20-8f69-8fcd464d390d",
+                offset: 0,
+                size: 36,
+                did: "b558ef37-4d20-4082-84d6-31e6d62e6f4a",
+              },
+            ],
+            size: 488,
+            mediaType: "application/nosj",
+          },
+          {
             name: "TestFile.xml",
             segments: [
               {
@@ -123,6 +136,19 @@ const generateData = () => {
             ],
             size: 718,
             mediaType: "application/xml",
+          },
+          {
+            name: "TestFile.lmx",
+            segments: [
+              {
+                uuid: "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
+                offset: 0,
+                size: 36,
+                did: "b558ef37-4d20-4082-84d6-31e6d62e6f4a",
+              },
+            ],
+            size: 718,
+            mediaType: "application/lmx",
           },
           {
             name: "TestFile.bin",

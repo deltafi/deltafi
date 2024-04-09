@@ -17,12 +17,15 @@
  */
 package org.deltafi.actionkit.action.util;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.databind.JsonNode;
+import lombok.Getter;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -45,14 +48,17 @@ class ActionParameterSchemaGeneratorTest {
         String secondField;
     }
 
+    @Getter
     private static class TestActionParameters extends ActionParameters {
-        @lombok.Getter
+        @JsonProperty(defaultValue = "defaultString")
         @JsonPropertyDescription("my great property")
-        String parameter;
+        String parameter = "defaultString";
 
-        @lombok.Getter
+        @JsonProperty(defaultValue = "[\"abc\",\"123\"]")
+        @JsonPropertyDescription("my great list")
+        List<String> listParameter = List.of("abc", "123");
+
         @JsonPropertyDescription("complex type should not allow additional properties")
         ActionParameterSchemaGeneratorTest.ComplexParam complexParam;
     }
-
 }

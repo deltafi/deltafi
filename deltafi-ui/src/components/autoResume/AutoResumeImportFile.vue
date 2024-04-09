@@ -105,5 +105,5 @@ const setOverlayPanelPosition = (event) => {
 </script>
 
 <style lang="scss">
-@import "@/styles/components/auto-resume-import-file.scss";
+@import "@/styles/components/autoResume/auto-resume-import-file.scss";
 </style>

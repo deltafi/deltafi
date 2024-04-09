@@ -29,8 +29,8 @@
     <DataTable id="errorsSummaryTable" v-model:selection="selectedErrors" responsive-layout="scroll" selection-mode="multiple" data-key="flow" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="errorsFlow" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalErrorsFlow" :row-hover="true" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
       <template #empty>No results to display.</template>
       <template #loading>Loading. Please wait...</template>
-      <Column field="flow" header="Flow" :sortable="true" class="filename-column" />
-      <Column field="count" header="Count" :sortable="true" />
+      <Column field="flow" header="Flow" sortable class="filename-column" />
+      <Column field="count" header="Count" sortable />
     </DataTable>
   </Panel>
   <MetadataDialogResume ref="metadataDialogResume" :did="filterSelectedDids" @update="onRefresh" />
@@ -70,9 +70,9 @@ const errorsFlow = ref([]);
 const totalErrorsFlow = ref(0);
 const offset = ref(0);
 const perPage = ref();
-const sortField = ref("modified");
 const metadataDialogResume = ref();
-const sortDirection = ref("DESC");
+const sortDirection = ref("ASC");
+const sortField = ref("flow");
 const selectedErrors = ref([]);
 const notify = useNotifications();
 const emit = defineEmits(["refreshErrors"]);
@@ -90,7 +90,7 @@ const props = defineProps({
     default: undefined,
   },
   acknowledged: {
-    type: Boolean,
+    type: [Boolean, null],
     required: true,
   },
 });
@@ -167,9 +167,8 @@ const { data: response, fetchByFlow: getErrorsByFlow } = useErrorsSummary();
 const fetchErrorsFlow = async () => {
   getPersistedParams();
   let ingressFlowName = props.ingressFlowName != null ? props.ingressFlowName : null;
-  let showAcknowledged = props.acknowledged ? null : false;
   loading.value = true;
-  await getErrorsByFlow(showAcknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, ingressFlowName);
+  await getErrorsByFlow(props.acknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, ingressFlowName);
   errorsFlow.value = response.value.countPerFlow;
   totalErrorsFlow.value = response.value.totalCount;
   loading.value = false;

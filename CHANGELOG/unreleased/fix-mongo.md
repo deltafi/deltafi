@@ -1,4 +1,4 @@
-# Changes on branch `base-image`
+# Changes on branch `fix-mongo`
 Document any changes on this branch here.
 ### Added
 - 
@@ -7,7 +7,7 @@ Document any changes on this branch here.
 - 
 
 ### Fixed
-- 
+- Bad change for testing purposes resulted in malicious MongoDB delete queries
 
 ### Removed
 - 
@@ -22,5 +22,4 @@ Document any changes on this branch here.
 - 
 
 ### Upgrade and Migration
-- Upgrade clustermonitor to kubectl 1.29.1
-- Update nodemonitor to alpine:3.19.1 base image
+- 
