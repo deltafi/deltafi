@@ -42,9 +42,10 @@
           <dd>
             <Dropdown v-model="model['targetFlow']" :options="ingressFlowNames" placeholder="Select a flow" show-clear class="inputWidth" />
           </dd>
-          <dt>Duration*</dt>
+          <dt>Cron Schedule*</dt>
           <dd>
-            <InputText v-model="model['cronSchedule']" placeholder="e.g.	*/5 * * * * *" class="inputWidth" />
+            <CronLight v-model="model['cronSchedule']" format="quartz" @error="errors.push($event)"></CronLight>
+            <InputText v-model="model['cronSchedule']" placeholder="e.g.	*/5 * * * * *" style="margin-top: 0.5rem" class="inputWidth" />
           </dd>
           <dt>Enabled</dt>
           <dd>
@@ -119,6 +120,9 @@ import InputText from "primevue/inputtext";
 import Message from "primevue/message";
 import TextArea from "primevue/textarea";
 import _ from "lodash";
+
+import "@vue-js-cron/light/dist/light.css";
+import { CronLight } from "@vue-js-cron/light";
 
 const editing = inject("isEditing");
 

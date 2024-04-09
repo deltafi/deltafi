@@ -59,11 +59,7 @@
         </Column>
         <Column header="Cron Schedule" field="cronSchedule" :sortable="true" class="inline-edit-column" style="width: 10rem">
           <template #body="{ data, field }">
-            <span v-if="data[field] === null">-</span>
-            <span v-else>{{ data[field] }}</span>
-          </template>
-          <template #editor="{ data, field }">
-            <InputText v-model="data[field]" class="p-inputtext-sm inline-edit-column" style="width: 9rem" autofocus />
+            <span v-tooltip.top="cronString.toString(data[field], { verbose: false })">{{ data[field] }} </span>
           </template>
         </Column>
         <Column header="Status" field="ingressStatus" :sortable="true">
@@ -132,13 +128,13 @@ import useIngressActions from "@/composables/useIngressActions";
 import useNotifications from "@/composables/useNotifications";
 import { computed, defineEmits, onMounted, inject, ref } from "vue";
 
+const cronString = require("cronstrue");
 import _ from "lodash";
 
 import Button from "primevue/button";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import Dialog from "primevue/dialog";
-import InputText from "primevue/inputtext";
 import OverlayPanel from "primevue/overlaypanel";
 
 const emit = defineEmits(["ingressActionsList"]);
