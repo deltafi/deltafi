@@ -2716,7 +2716,7 @@ class DeltaFiCoreApplicationTests {
 		excludedByAction.setActions(Arrays.asList(excludedRequeue, shouldStay));
 		deltaFileRepo.save(excludedByAction);
 
-		List<DeltaFile> hits = deltaFileRepo.updateForRequeue(MONGO_NOW, 30, Set.of("excluded", "anotherAction"), Set.of("did4", "did500"));
+		List<DeltaFile> hits = deltaFileRepo.updateForRequeue(MONGO_NOW, Duration.ofSeconds(30), Set.of("excluded", "anotherAction"), Set.of("did4", "did500"));
 
 		assertEquals(1, hits.size());
 		assertEquals(hit.getDid(), hits.get(0).getDid());

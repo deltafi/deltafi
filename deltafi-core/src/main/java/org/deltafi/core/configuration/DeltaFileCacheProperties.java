@@ -19,8 +19,10 @@ package org.deltafi.core.configuration;
 
 import lombok.Data;
 
+import java.time.Duration;
+
 @Data
 public class DeltaFileCacheProperties {
     private boolean enabled = true;
-    private int syncSeconds = 30;
+    private Duration syncDuration = Duration.ofSeconds(30);
 }

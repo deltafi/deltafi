@@ -682,7 +682,7 @@ class DeltaFilesServiceTest {
         testClock.setInstant(aggregate.actionNamed("test-ingress", "collect-transform").orElseThrow().getModified().toInstant());
         when(queueManagementService.coldQueueActions()).thenReturn(Collections.emptySet());
         when(deltaFileRepo.updateForRequeue(eq(OffsetDateTime.now(testClock)),
-                eq(mockDeltaFiPropertiesService.getDeltaFiProperties().getRequeueSeconds()), eq(Collections.emptySet()), eq(Collections.emptySet())))
+                eq(mockDeltaFiPropertiesService.getDeltaFiProperties().getRequeueDuration()), eq(Collections.emptySet()), eq(Collections.emptySet())))
                 .thenReturn(List.of(aggregate));
         when(deltaFileRepo.findAllById(eq(List.of(parent1.getDid(), parent2.getDid()))))
                 .thenReturn(List.of(parent1, parent2));

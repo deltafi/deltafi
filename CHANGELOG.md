@@ -118,7 +118,7 @@ All [Unreleased] changes can be viewed in GitLab.
 
 ### Tech-Debt/Refactor
 - Added parallel JUnit test execution to improve build performance when running unit tests
-- ByteBuddy dependency is running in "experimental" mode for Java 21 compatability
+- ByteBuddy dependency is running in "experimental" mode for Java 21 compatibility
 
 ### Upgrade and Migration
 - Upgrade Gradle to 8.5
@@ -134,18 +134,18 @@ All [Unreleased] changes can be viewed in GitLab.
 
 ### Upgrade and Migration
 - UI library update
-- git-version plugin 2.0.1 that is fully compatable with Java 17 and 21
+- git-version plugin 2.0.1 that is fully compatible with Java 17 and 21
 - Upgraded KinD to run on Kubernetes 1.29.0 by default
 
 ## [1.1.18] - 2024-01-13
 
 ### Changed
 - UI: Rearranged sidebar menu by moving DeltaFiles above Metrics for improved navigation. 
-- `cluster destroy` command will optionally destroy all docker registry contaners and volumes associated with the cluster
+- `cluster destroy` command will optionally destroy all docker registry containers and volumes associated with the cluster
 
 ### Fixed
 - Addressed the following missing features in the python test kit:
-  - added DOMAIN, ENRICH, EGRESS, and VALIATE actions
+  - added DOMAIN, ENRICH, EGRESS, and VALIDATE actions
   - added support to check metrics
   - allow DID to be specified by test case
   - Updated Error and Filter result processing to optionally check `context` and `annotations`
@@ -159,7 +159,7 @@ All [Unreleased] changes can be viewed in GitLab.
 
 ### Added
 - Added Subscriptions to Transform Flow view
-- Added Tranftorm Flow Mocks
+- Added Transform Flow Mocks
 - Added a SftpTimedIngressAction class to poll a STFP server for files to ingest.
 
 ### Changed
@@ -195,11 +195,11 @@ All [Unreleased] changes can be viewed in GitLab.
 - Fixed a bug when cloning a flow from the flows page the "Clone From: (Optional)" not populated correctly. 
 - Regression in content API endpoint causing issues with missing content.
 - Fixed collected DeltaFiles not completing when aggregate stage changes.
-- Updated the `uninstall` CLI command to properly parse the latest `mongo-eval` output format when attemption to drop collections
-- Spurrious Grafana restarts on helm installs
+- Updated the `uninstall` CLI command to properly parse the latest `mongo-eval` output format when attempting to drop collections
+- Spurious Grafana restarts on helm installs
 
 ### Security
-- Eliminated the long standing snakeyaml 1.33 dependency, clearing out all CVEs in core Java
+- Eliminated the long-standing snakeyaml 1.33 dependency, clearing out all CVEs in core Java
 
 ### Upgrade and Migration
 - Grafana helm chart upgrade to 7.0.17
@@ -222,7 +222,7 @@ All [Unreleased] changes can be viewed in GitLab.
 
 ### Added
 - Show `filteredContext` in UI for Actions in a `FILTERED` state.
-- Allow separation of geneeral and detailed DeltaFile filtering reasons by adding optional (nullable) `filteredContext`to FilterResult
+- Allow separation of general and detailed DeltaFile filtering reasons by adding optional (nullable) `filteredContext`to FilterResult
 - New `namespace` and `node` tags for `gauge.app.memory` and `gauge.app.cpu` metrics
 - New metric: `gauge.node.cpu.iowait` to track iowait pressure on nodes
 - New dashboard: `DeltaFi > System Performance`
@@ -325,7 +325,7 @@ kubectl scale deploy deltafi-mongodb --replicas=1
 - Added collect support in Flow Plan Builder.
 - Added validation to flow builder to prevent saving if the flow won't be accepted.
 - Added visual indicators to panels to alert if there is a required action not provided.
-- Added overlay dismisal of the new action popup tree when the maximum number of actions added has been reached.
+- Added overlay dismissal of the new action popup tree when the maximum number of actions added has been reached.
 - Added raw json view to view flow plan json and schema. Dialog is triggered by pressing "d+e+v". 
 - Add ingressBytes index 
 - Add log message when timed delete starts, mirroring existing disk space delete message 
@@ -382,11 +382,11 @@ kubectl scale deploy deltafi-mongodb --replicas=1
 - Allow strings up to 16 MB to be serialized into ActionInputs in the Java action kit 
 - Ensure reinjected child actions are cold queued if needed 
 - Improve core memory use when too many files are flowing through the system. Introduce a semaphore to limit how many messages will be pulled off the queue, configurable with the `coreInternalQueueSize` property.
-- Do not start unneccessary processing threads in ingress.
+- Do not start unnecessary processing threads in ingress.
 - UI: Timestamp component now renders "-" instead of "Invalid Date" if passed a null/undefined.
 - Fixed bug in egress-sink causing no files to be written to disk.
-- Include `SCHEMA_VERSION` field in all partial DeltaFile queries so that upconversion is not attempted.
-- Fix memory issue: Replace Metric tag string concatentation with StringBuilder 
+- Include `SCHEMA_VERSION` field in all partial DeltaFile queries so that up conversion is not attempted.
+- Fix memory issue: Replace Metric tag string concatenation with StringBuilder 
 
 ### Tech-Debt/Refactor
 - Do not create empty arrays and maps when initializing DeltaFile and Action objects, since they will be overwritten upon serialization 
@@ -455,7 +455,7 @@ kubectl scale deploy deltafi-mongodb --replicas=1
 ### Added
 - Added new Filtered page similar to Errors page. 
 - Added the ability to import existing flow plans into the flow builder. 
-- Added the ability to edit existing system plugun flow plans in the flow builder.
+- Added the ability to edit existing system plugin flow plans in the flow builder.
 - Added Ingress Actions page.
 - Added validation to make sure new flow plans being created dont have name that match names of existing flow plans within our system 
 - New metric `action_execution_time_ms` tracks action execution time in millisecond per action, and includes class name tag
@@ -487,7 +487,7 @@ kubectl scale deploy deltafi-mongodb --replicas=1
 - Added a `system-plugin` where flows and variables can be added and removed without a full plugin install
 - Added a mutation, `removePluginVariables`, to remove variables from the system-plugin
 - Implemented new Flow Plan Builder 
-- Added new core action, `DeltaFiEgressAction`, for egressing data directly to another DeltaFi instace.
+- Added new core action, `DeltaFiEgressAction`, for egressing data directly to another DeltaFi instance.
 - Added a query, `filteredSummaryByFlow`, to get a summary of filtered DeltaFiles grouped by flow
   ```graphql
     query {
@@ -533,7 +533,7 @@ kubectl scale deploy deltafi-mongodb --replicas=1
   - `Pod CPU Utilization Over Time`
   - `Pod CPU Utilization` pie chart
 - New GraphQL query endpoint `resumePolicyDryRun` allows a preview of how many DeltaFile errors might be auto-resumed by a new resume policy
-- New user role `ResumePolicyDryRun` in the `Resume Policies` group grants permisson to execute the `resumePolicyDryRun` query
+- New user role `ResumePolicyDryRun` in the `Resume Policies` group grants permission to execute the `resumePolicyDryRun` query
 
 ### Changed
 - Limit flow plan mutations to the system plugin. Attempting to add or remove flow plans to a plugin other than the system plugin will result in an error
@@ -596,9 +596,9 @@ kubectl scale deploy deltafi-mongodb --replicas=1
 - Gradle version updated to version 8.4 (From previous 7.6).  It is recommended that plugins are upgraded to the same version.
 - It is recommended in most circumstances that you set your requeueSeconds System Property to 30 if it was previously set to something higher.
 - Updated Python dependencies to match those in deltafi/python:3.10.13-0
-  - Python pedanitc was upgraded from 1.x to 2.x
+  - Python pedantic was upgraded from 1.x to 2.x
     - See migration guide: https://docs.pydantic.dev/2.4/migration/
-    - Change imports from `pydantic` to `pydantic.v1` to preserve compatiblity
+    - Change imports from `pydantic` to `pydantic.v1` to preserve compatibility
 - Subsystem upgrades:
   - Grafana: 10.1.1 (deltafi/grafana:10.1.1-0)
   - Promtail: 2.9.0 (grafana/promtail:2.9.0)
@@ -906,8 +906,8 @@ curl -X POST --data-binary @passthrough.tar http://local.deltafi.org/api/v1/regi
 
 ### Fixed
 - Fixed Deltafile Viewer blocking resume / replay for Deltafiles with deleted content 
-- Add schema version to deltaFiles query to prevent spurious upconversions
-- Fix possible NPEs in schema upconversion
+- Add schema version to deltaFiles query to prevent spurious up conversions
+- Fix possible NPEs in schema up conversion
 
 ### Tech-Debt/Refactor
 - Move domains and enrichments from the top level of the DeltaFile to the actions that added them
@@ -931,10 +931,10 @@ curl -X POST --data-binary @passthrough.tar http://local.deltafi.org/api/v1/regi
 - Added a query to get the set of annotations that are expected on a DeltaFile but not present 
 - Added the `pendingAnnotationsForFlows` field to the `DeltaFile` graphql schema
 - New mutation `applyResumePolicies` allows recently added auto resume policies to be retroactively applied to any oustanding DeltaFiles in the ERROR stage (whicn are still resumable)
-- New user role `ResumePolicyApply` in the `Resume Policies` group grants permisson to execute the `applyResumePolicies` mutation
+- New user role `ResumePolicyApply` in the `Resume Policies` group grants permission to execute the `applyResumePolicies` mutation
 
 ### Changed
-- Clarified documentration that the `flow` in an auto resume policy refers to the DeltaFile's sourceInfo flow. I.e., the ingress or transformation flow name
+- Clarified documentation that the `flow` in an auto resume policy refers to the DeltaFile's sourceInfo flow. I.e., the ingress or transformation flow name
 
 ### Fixed
 - Nodemonitor used RAM calculation fixed
@@ -1094,7 +1094,7 @@ curl -X POST --data-binary @passthrough.tar http://local.deltafi.org/api/v1/regi
    ```
 - Serialized Errors Page State
 - Transform and Load actions can delete metadata
-- Allow Tranform and Load Actions to create annotations (formerly known as indexed metadata)
+- Allow Transform and Load Actions to create annotations (formerly known as indexed metadata)
 - Add stricter validation for events received by core from actions
 
 ### Changed
@@ -1163,12 +1163,12 @@ curl -X POST --data-binary @passthrough.tar http://local.deltafi.org/api/v1/regi
 ### Tech-Debt/Refactor
 - Flatten content object by removing content references and adding segments and mediaType directly to content
 - Introduce DeltaFile schema versioning for backward compatibility
-- Remove unneccessary ProtocolLayer from load and transform response wire protocols
+- Remove unnecessary ProtocolLayer from load and transform response wire protocols
 - Remove sourceInfo from the wire protocol
 - Update versions of Python package dependencies
 
 ### Documentation
-- Update 'Getting Started' tutoral to reflect recent changes
+- Update 'Getting Started' tutorial to reflect recent changes
 
 ## [0.109.0] - 2023-05-11
 

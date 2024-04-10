@@ -1717,20 +1717,23 @@ public class DeltaFilesService {
     public void requeue() {
         OffsetDateTime modified = OffsetDateTime.now(clock);
         Set<String> longRunningDids = actionEventQueue.getLongRunningTasks().stream().map(ActionExecution::did).collect(Collectors.toSet());
-        List<DeltaFile> requeuedDeltaFiles = deltaFileRepo.updateForRequeue(modified, getProperties().getRequeueSeconds(), queueManagementService.coldQueueActions(), longRunningDids);
+        List<DeltaFile> requeuedDeltaFiles = deltaFileRepo.updateForRequeue(modified,
+                getProperties().getRequeueDuration(), queueManagementService.coldQueueActions(), longRunningDids);
         List<ActionInvocation> actionInvocations = requeuedDeltaFiles.stream()
                 .map(deltaFile -> requeuedActionInvocations(deltaFile, modified))
                 .flatMap(Collection::stream)
                 .toList();
         if (!actionInvocations.isEmpty()) {
-            log.warn(actionInvocations.size() + " actions exceeded requeue threshold of " + getProperties().getRequeueSeconds() + " seconds, requeuing now");
+            log.warn(actionInvocations.size() + " actions exceeded requeue threshold of " + getProperties().getRequeueDuration() +
+                    " seconds, requeuing now");
             enqueueActions(actionInvocations, true);
         }
     }
 
     List<ActionInvocation> requeuedActionInvocations(DeltaFile deltaFile, OffsetDateTime modified) {
         return deltaFile.getActions().stream()
-                .filter(action -> action.getState().equals(ActionState.QUEUED) && action.getModified().toInstant().toEpochMilli() == modified.toInstant().toEpochMilli())
+                .filter(action -> action.getState().equals(ActionState.QUEUED) &&
+                        action.getModified().toInstant().toEpochMilli() == modified.toInstant().toEpochMilli())
                 .map(action -> requeueActionInvocation(action, deltaFile))
                 .filter(Objects::nonNull)
                 .toList();

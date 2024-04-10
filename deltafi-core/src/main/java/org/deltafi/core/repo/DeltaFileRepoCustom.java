@@ -69,13 +69,13 @@ public interface DeltaFileRepoCustom {
     /**
      * Find stale deltaFiles that may need to be requeued, and update the last modified time of the QUEUED action.
      *
-     * @param requeueTime    age for searching for expired actions to requeue
-     * @param requeueSeconds timestamp for searching and updating actions
+     * @param requeueTime age for searching for expired actions to requeue
+     * @param requeueDuration duration to wait for an action to finish before requeuing
      * @param skipActions Set of actions to not requeue
      * @param skipDids Set of dids to not requeue
      * @return the list of the DeltaFiles to be requeued
      */
-    List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, int requeueSeconds, Set<String> skipActions, Set<String> skipDids);
+    List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, Duration requeueDuration, Set<String> skipActions, Set<String> skipDids);
 
     /**
      * Requeue up to maxFiles COLD_QUEUED DeltaFiles with the given action names

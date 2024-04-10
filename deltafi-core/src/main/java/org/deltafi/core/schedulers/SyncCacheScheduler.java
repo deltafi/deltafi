@@ -40,6 +40,6 @@ public class SyncCacheScheduler {
 
     @Scheduled(fixedDelay = 2000)
     public void syncCache() {
-        deltaFileCacheService.removeOlderThan(deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().getSyncSeconds());
+        deltaFileCacheService.removeOlderThan(deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().getSyncDuration());
     }
 }
