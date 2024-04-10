@@ -31,6 +31,8 @@ if [[ "$DGS_ERRORS" != "" ]]; then
   cli_log "${red}${BASENAME}: Failed to get the list of flow plans${normal}"
   echo -e "${red}Error: ${DGS_ERRORS}${normal}"
 else
+  print_flows "dataSource"
+  echo
   print_flows "transform"
   echo
   print_flows "egress"

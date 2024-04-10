@@ -1125,7 +1125,7 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void testGetTimedIngressFlowPlan() {
+	void testGetTimedIngressDataSource() {
 		clearForFlowTests();
 		DataSourcePlan dataSourcePlanA = new TimedDataSourcePlan("timedIngressPlan", FlowType.TIMED_DATA_SOURCE,
 				"description", "topic", new TimedIngressActionConfiguration("timedIngress", "type"),  "*/5 * * * * *");
@@ -1474,15 +1474,15 @@ class DeltaFiCoreApplicationTests {
 	void testSetMemoTimedIngressWhenStopped() {
 		clearForFlowTests();
 		dataSourceRepo.save(buildTimedDataSource(FlowState.STOPPED));
-		assertFalse(FlowPlanDatafetcherTestHelper.setTimedIngressMemo(dgsQueryExecutor, null));
-		assertTrue(FlowPlanDatafetcherTestHelper.setTimedIngressMemo(dgsQueryExecutor, "100"));
+		assertFalse(FlowPlanDatafetcherTestHelper.setTimedDataSourceMemo(dgsQueryExecutor, null));
+		assertTrue(FlowPlanDatafetcherTestHelper.setTimedDataSourceMemo(dgsQueryExecutor, "100"));
 	}
 
 	@Test
 	void testSetMemoTimedIngressWhenRunning() {
 		clearForFlowTests();
 		dataSourceRepo.save(buildTimedDataSource(FlowState.RUNNING));
-		assertFalse(FlowPlanDatafetcherTestHelper.setTimedIngressMemo(dgsQueryExecutor, "100"));
+		assertFalse(FlowPlanDatafetcherTestHelper.setTimedDataSourceMemo(dgsQueryExecutor, "100"));
 	}
 
 	@Test

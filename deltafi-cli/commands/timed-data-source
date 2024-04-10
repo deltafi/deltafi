@@ -4,7 +4,7 @@
 
 cli_help_command() {
   echo "
-Command: timed-ingress
+Command: timed-data-source
 
 Subcommands:
   start
@@ -15,12 +15,12 @@ Expert-only Subcommands:
   clear-memo
   set-memo
 Usage:
-  timed-ingress [SUBCOMMAND] FLOW_NAME [MEMO]
+  timed-data-source [SUBCOMMAND] FLOW_NAME [MEMO]
   Only set-memo uses MEMO argument"
   exit 1
 }
 
-TMPFILE="/tmp/.deltafi-timed-ingress.$$"
+TMPFILE="/tmp/.deltafi-timed-data-source.$$"
 
 cleanup() {
   rm -f $TMPFILE
@@ -58,82 +58,36 @@ SUBCOMMAND=${ARGS[1]}
 FLOW_NAME=${ARGS[2]}
 MEMO=${ARGS[3]}
 
-VARIABLES="{\"flowName\": \"$FLOW_NAME\", \"memo\": \"$MEMO\" }"
+VARIABLES="{\"name\": \"$FLOW_NAME\", \"memo\": \"$MEMO\" }"
 case "$SUBCOMMAND" in
   clear-memo)
     echo -e "${yellow}Warning: ${SUBCOMMAND} for experts only${normal}"
     _are_you_sure
-    EXTRACT_PATH=".data.setTimedIngressMemo"
-    QUERY="mutation(\$flowName: String!) { setTimedIngressMemo(flowName: \$flowName) }"
+    EXTRACT_PATH=".data.setTimedDataSourceMemo"
+    QUERY="mutation(\$name: String!) { setTimedDataSourceMemo(name: \$name) }"
     ;;
   set-memo)
     [[ -z "$MEMO" ]] && _exit_1 echo "Please specify a value for MEMO"
     echo -e "${yellow}Warning: ${SUBCOMMAND} for experts only${normal}"
     _are_you_sure
-    EXTRACT_PATH=".data.setTimedIngressMemo"
-    QUERY="mutation(\$flowName: String!, \$memo: String) { setTimedIngressMemo(flowName: \$flowName, memo: \$memo) }"
+    EXTRACT_PATH=".data.setTimedDataSourceMemo"
+    QUERY="mutation(\$name: String!, \$memo: String) { setTimedDataSourceMemo(name: \$name, memo: \$memo) }"
     ;;
   start)
-    EXTRACT_PATH=".data.startTimedIngressFlow"
-    QUERY="mutation(\$flowName: String!) { startTimedIngressFlow(flowName: \$flowName) }"
+    deltafi data-source start "$FLOW_NAME"
+    exit 0
     ;;
   stop)
-    EXTRACT_PATH=".data.stopTimedIngressFlow"
-    QUERY="mutation(\$flowName: String!) { stopTimedIngressFlow(flowName: \$flowName) }"
+    deltafi data-source stop "$FLOW_NAME"
+    exit 0
     ;;
   validate)
-    EXTRACT_PATH=".data.validateTimedIngressFlow"
-    QUERY="query(\$flowName: String!) {validateTimedIngressFlow(flowName: \$flowName) { flowStatus { state errors { configName errorType message } } } }"
+    deltafi data-source validate "$FLOW_NAME"
+    exit 0
     ;;
   show)
-    EXTRACT_PATH=".data.getTimedIngressFlow"
-    QUERY="query(\$flowName: String!) {
-             getTimedIngressFlow(flowName: \$flowName) {
-               name
-               description
-               sourcePlugin {
-                 artifactId
-                 groupId
-                 version
-               }
-               flowStatus {
-                 state
-                 errors {
-                   errorType
-                   configName
-                   message
-                 }
-               }
-               targetFlow
-               publishRules {
-                 matchingPolicy
-                 defaultRule {
-                   defaultBehavior
-                   topic
-                 }
-                 rules {
-                   topics
-                   condition
-                 }
-               }
-               cronSchedule
-               ingressStatus
-               ingressStatusMessage
-               timedIngressAction {
-                   name
-                   actionType
-                   apiVersion
-                   parameters
-               }
-               variables {
-                 name
-                 value
-                 description
-                 defaultValue
-                 dataType
-               }
-             }
-           }"
+    deltafi data-source show "$FLOW_NAME"
+    exit 0
     ;;
   *)
     cli_help_command
@@ -157,6 +111,7 @@ else
   elif  [[ "$SUBCOMMAND" == "validate" || "$SUBCOMMAND" == "show" ]]; then
     cat ${TMPFILE} | jq -r "${EXTRACT_PATH}"
   else
+    cat ${TMPFILE}
     STARTED=$(cat ${TMPFILE} | jq -r "${EXTRACT_PATH}")
     if [[ $STARTED == "true" ]]; then
       cli_log "Successfully executed ${SUBCOMMAND} for flow ${cyan}${FLOW_NAME}${normal}"

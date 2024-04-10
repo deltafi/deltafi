@@ -46,26 +46,26 @@ import java.util.Objects;
 @Slf4j
 public class DataSourceService extends FlowService<DataSourcePlan, DataSource, DataSourceSnapshot> {
 
-    private static final DataSourcePlanConverter TIMED_INGRESS_FLOW_PLAN_CONVERTER = new DataSourcePlanConverter();
+    private static final DataSourcePlanConverter TIMED_DATA_SOURCE_FLOW_PLAN_CONVERTER = new DataSourcePlanConverter();
 
     private final Clock clock;
 
     public DataSourceService(DataSourceRepo dataSourceRepo, PluginVariableService pluginVariableService,
                              DataSourceValidator dataSourceValidator, BuildProperties buildProperties, Clock clock) {
-        super("timedIngress", dataSourceRepo, pluginVariableService, TIMED_INGRESS_FLOW_PLAN_CONVERTER,
+        super("timedDataSource", dataSourceRepo, pluginVariableService, TIMED_DATA_SOURCE_FLOW_PLAN_CONVERTER,
                 dataSourceValidator, buildProperties);
 
         this.clock = clock;
     }
 
-    public List<TimedDataSource> getRunningTimedIngresses() {
+    public List<TimedDataSource> getRunningTimedDataSources() {
         return getAll().stream()
                 .map(this::toTimedDataSource)
                 .filter(Objects::nonNull)
                 .toList();
     }
 
-    // if this is running and a timed ingress return it, otherwise return null
+    // if this is running and a timed data source return it, otherwise return null
     private TimedDataSource toTimedDataSource(DataSource dataSource) {
         if (dataSource.isRunning() && dataSource instanceof TimedDataSource timedDataSource) {
             return timedDataSource;
@@ -176,7 +176,7 @@ public class DataSourceService extends FlowService<DataSourcePlan, DataSource, D
         TimedDataSource flow = getTimedDataSource(flowName);
 
         if (flow.getCronSchedule().equals(cronSchedule)) {
-            log.warn("Tried to set cron schedule on timed ingress flow {} to \"{}\" when already set", flowName, cronSchedule);
+            log.warn("Tried to set cron schedule on timed data source {} to \"{}\" when already set", flowName, cronSchedule);
             return false;
         }
 
@@ -205,12 +205,12 @@ public class DataSourceService extends FlowService<DataSourcePlan, DataSource, D
 
         if ((flow.getMemo() == null && memo == null) ||
                 (flow.getMemo() != null && flow.getMemo().equals(memo))) {
-            log.warn("Tried to set memo on timed ingress flow {} to \"{}\" when already set", flowName, memo);
+            log.warn("Tried to set memo on timed data source {} to \"{}\" when already set", flowName, memo);
             return false;
         }
 
         if (FlowState.RUNNING.equals(flow.getFlowStatus().getState())) {
-            log.error("Cannot change memo of timed ingress flow which is running");
+            log.error("Cannot change memo of timed data source which is running");
             return false;
         }
 

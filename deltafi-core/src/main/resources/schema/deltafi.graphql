@@ -406,15 +406,15 @@ type Mutation {
   setMaxErrors(flowName: String!, maxErrors: Int!) : Boolean!
   enableEgressTestMode(flowName: String!) : Boolean!
   disableEgressTestMode(flowName: String!) : Boolean!
-  setTimedIngressMemo(name: String!, memo: String) : Boolean!
-  setTimedIngressCronSchedule(name: String!, cronSchedule: String!) : Boolean!
+  setTimedDataSourceMemo(name: String!, memo: String) : Boolean!
+  setTimedDataSourceCronSchedule(name: String!, cronSchedule: String!) : Boolean!
   enableDataSourceTestMode(name: String!) : Boolean!
   disableDataSourceTestMode(name: String!) : Boolean!
   enableTransformTestMode(flowName: String!) : Boolean!
   disableTransformTestMode(flowName: String!) : Boolean!
   setEgressFlowExpectedAnnotations(flowName: String!, expectedAnnotations: [String]) : Boolean!
 
-  taskTimedIngress(name: String!, memo: String) : Boolean!
+  taskTimedDataSource(name: String!, memo: String) : Boolean!
   resume(action: String, dids: [String!]!, resumeMetadata: [ResumeMetadata!]) : [RetryResult!]!
   replay(dids: [String!]!, replaceDeltaFileName: String, replaceDataSource: String, removeSourceMetadata: [String!], replaceSourceMetadata: [KeyValueInput!]) : [RetryResult!]!
   acknowledge(dids: [String!]!, reason: String) : [AcknowledgeResult!]!

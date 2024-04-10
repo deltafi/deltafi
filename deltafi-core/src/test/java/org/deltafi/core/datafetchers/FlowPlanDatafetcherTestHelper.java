@@ -172,8 +172,8 @@ public class FlowPlanDatafetcherTestHelper {
         return executeQuery(dgsQueryExecutor, StopDataSourceGraphQLQuery.newRequest().name(TIMED_DATA_SOURCE_NAME).build());
     }
 
-    public static boolean setTimedIngressMemo(DgsQueryExecutor dgsQueryExecutor, String memo) {
-        return executeQuery(dgsQueryExecutor, SetTimedIngressMemoGraphQLQuery.newRequest().name(TIMED_DATA_SOURCE_NAME).memo(memo).build());
+    public static boolean setTimedDataSourceMemo(DgsQueryExecutor dgsQueryExecutor, String memo) {
+        return executeQuery(dgsQueryExecutor, SetTimedDataSourceMemoGraphQLQuery.newRequest().name(TIMED_DATA_SOURCE_NAME).memo(memo).build());
     }
 
     public static boolean savePluginVariables(DgsQueryExecutor dgsQueryExecutor) {

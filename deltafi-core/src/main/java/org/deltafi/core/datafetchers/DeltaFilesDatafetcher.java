@@ -224,9 +224,9 @@ public class DeltaFilesDatafetcher {
 
   @DgsMutation
   @NeedsPermission.Admin
-  public boolean taskTimedIngress(@InputArgument String name, @InputArgument String memo, DataFetchingEnvironment dataFetchingEnvironment) {
+  public boolean taskTimedDataSource(@InputArgument String name, @InputArgument String memo, DataFetchingEnvironment dataFetchingEnvironment) {
     // check if the memo argument was included to differentiate between setting it to null and leaving it out
-    return deltaFilesService.taskTimedIngress(name, memo, dataFetchingEnvironment.containsArgument("memo"));
+    return deltaFilesService.taskTimedDataSource(name, memo, dataFetchingEnvironment.containsArgument("memo"));
   }
 
   @DgsQuery

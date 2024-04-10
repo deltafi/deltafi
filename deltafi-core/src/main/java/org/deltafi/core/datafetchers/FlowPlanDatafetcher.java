@@ -88,13 +88,13 @@ public class FlowPlanDatafetcher {
 
     @DgsMutation
     @NeedsPermission.Admin
-    public boolean setTimedIngressMemo(@InputArgument String name, String memo) {
+    public boolean setTimedDataSourceMemo(@InputArgument String name, String memo) {
         return dataSourceService.setMemo(name, memo);
     }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
-    public boolean setTimedIngressCronSchedule(@InputArgument String name, String cronSchedule) {
+    public boolean setTimedDataSourceCronSchedule(@InputArgument String name, String cronSchedule) {
         return dataSourceService.setCronSchedule(name, cronSchedule);
     }
 

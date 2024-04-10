@@ -159,10 +159,10 @@ public class PluginRegistryService implements Snapshotter {
     public List<Flows> getFlowsByPlugin() {
         Map<PluginCoordinates, List<EgressFlow>> egressFlows = egressFlowService.getFlowsGroupedByPlugin();
         Map<PluginCoordinates, List<TransformFlow>> transformFlows = transformFlowService.getFlowsGroupedByPlugin();
-        Map<PluginCoordinates, List<DataSource>> timedIngressFlows = dataSourceService.getFlowsGroupedByPlugin();
+        Map<PluginCoordinates, List<DataSource>> timedIngressDataSources = dataSourceService.getFlowsGroupedByPlugin();
 
         return getPluginsWithVariables().stream()
-                .map(plugin -> toPluginFlows(plugin, egressFlows, transformFlows, timedIngressFlows))
+                .map(plugin -> toPluginFlows(plugin, egressFlows, transformFlows, timedIngressDataSources))
                 .toList();
     }
 

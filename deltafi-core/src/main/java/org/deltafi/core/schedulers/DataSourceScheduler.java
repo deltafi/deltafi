@@ -45,11 +45,11 @@ public class DataSourceScheduler {
     @Scheduled(fixedDelay = 1000)
     public void triggerTimedIngressFlows() {
         dataSourceService.refreshCache();
-        for (TimedDataSource dataSource : dataSourceService.getRunningTimedIngresses()) {
+        for (TimedDataSource dataSource : dataSourceService.getRunningTimedDataSources()) {
             if (dataSource.due(actionEventQueue, OffsetDateTime.now(clock)) &&
                     deltaFiPropertiesService.getDeltaFiProperties().getIngress().isEnabled() &&
                     !diskSpaceService.isContentStorageDepleted()) {
-                deltaFilesService.taskTimedIngress(dataSource);
+                deltaFilesService.taskTimedDataSource(dataSource);
             }
         }
     }

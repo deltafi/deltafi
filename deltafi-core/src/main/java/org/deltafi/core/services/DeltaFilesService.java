@@ -1306,7 +1306,7 @@ private void advanceAndSave(List<StateMachineInput> inputs) {
         }
     }
 
-    public boolean taskTimedIngress(String flowName, String memo, boolean overrideMemo) throws EnqueueActionException {
+    public boolean taskTimedDataSource(String flowName, String memo, boolean overrideMemo) throws EnqueueActionException {
         TimedDataSource dataSource;
         if (overrideMemo) {
             // use the stored value so the cached memo value is not overwritten
@@ -1319,10 +1319,10 @@ private void advanceAndSave(List<StateMachineInput> inputs) {
             dataSource = dataSourceService.getRunningTimedDataSource(flowName);
         }
 
-        return taskTimedIngress(dataSource);
+        return taskTimedDataSource(dataSource);
     }
 
-    public boolean taskTimedIngress(TimedDataSource dataSource) throws EnqueueActionException {
+    public boolean taskTimedDataSource(TimedDataSource dataSource) throws EnqueueActionException {
         ActionInput actionInput = dataSource.buildActionInput(getProperties().getSystemName(), OffsetDateTime.now(clock));
         try {
             if (!actionEventQueue.queueHasTaskingForAction(actionInput)) {
