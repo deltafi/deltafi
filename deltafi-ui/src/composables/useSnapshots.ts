@@ -74,7 +74,7 @@ export default function useSystemSnapshots() {
     },
     deltaFiProperties: {
       systemName: true,
-      requeueSeconds: true,
+      requeueDuration: true,
       autoResumeCheckFrequency: true,
       coreServiceThreads: true,
       coreInternalQueueSize: true,

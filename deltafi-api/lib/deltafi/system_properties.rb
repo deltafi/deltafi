@@ -27,7 +27,7 @@ module Deltafi
       query {
         getDeltaFiProperties {
           systemName
-          requeueSeconds
+          requeueDuration
           coreServiceThreads
           coreInternalQueueSize
           scheduledServiceThreads

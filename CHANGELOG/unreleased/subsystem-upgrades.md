@@ -1,7 +1,7 @@
-# Changes on branch `229-Add-new-cron-schedule-UI-for-Timed-Ingress-Actions`
+# Changes on branch `238-document-analytic-and-survey-metrics`
 Document any changes on this branch here.
 ### Added
-- Added a new cron schedule UI for Timed Ingress Actions. 
+- 
 
 ### Changed
 - 
@@ -22,4 +22,6 @@ Document any changes on this branch here.
 - 
 
 ### Upgrade and Migration
-- 
+- Redis 7.2.4
+- Minio RELEASE.2024-04-06T05-26-02Z
+- Clickhouse 24.3.2-debian-12-r2

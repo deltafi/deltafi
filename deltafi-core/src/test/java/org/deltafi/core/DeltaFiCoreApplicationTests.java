@@ -1999,7 +1999,7 @@ class DeltaFiCoreApplicationTests {
 		wrongStage.getFlows().get(0).setActions(List.of(shouldRequeue));
 		deltaFileRepo.save(wrongStage);
 
-		List<DeltaFile> hits = deltaFileRepo.updateForRequeue(MONGO_NOW, 30, Set.of("excluded", "anotherAction"), Set.of("did4", "did500"));
+		List<DeltaFile> hits = deltaFileRepo.updateForRequeue(MONGO_NOW, Duration.ofSeconds(30), Set.of("excluded", "anotherAction"), Set.of("did4", "did500"));
 
 		assertEquals(2, hits.size());
 		assertEquals(oneHit.getDid(), hits.get(0).getDid());

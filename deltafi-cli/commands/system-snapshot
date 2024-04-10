@@ -70,7 +70,7 @@ ALL_SNAPSHOT_FIELDS="id
             created
             deltaFiProperties {
               systemName
-              requeueSeconds
+              requeueDuration
               autoResumeCheckFrequency
               coreServiceThreads
               coreInternalQueueSize

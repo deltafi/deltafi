@@ -22,6 +22,7 @@ import org.deltafi.common.types.DeltaFile;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.springframework.data.mongodb.core.query.Update;
 
+import java.time.Duration;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -37,7 +38,7 @@ public abstract class DeltaFileCacheService {
 
     public abstract void remove(String did);
 
-    public abstract void removeOlderThan(int seconds);
+    public abstract void removeOlderThan(Duration duration);
 
     public abstract void save(DeltaFile deltaFile);
 

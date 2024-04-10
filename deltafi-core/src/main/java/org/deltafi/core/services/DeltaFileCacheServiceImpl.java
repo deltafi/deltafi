@@ -24,6 +24,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +53,7 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
     public void flush() {
         if (!deltaFileCache.isEmpty()) {
             log.info("Flushing {} files from the DeltaFileCache", deltaFileCache.size());
-            removeOlderThan(0);
+            removeOlderThan(Duration.ZERO);
         }
     }
 
@@ -80,8 +81,8 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
     }
 
     @Override
-    public void removeOlderThan(int seconds) {
-        OffsetDateTime threshold = OffsetDateTime.now(clock).minusSeconds(seconds);
+    public void removeOlderThan(Duration duration) {
+        OffsetDateTime threshold = OffsetDateTime.now(clock).minus(duration);
         List<DeltaFile> filesToRemove = deltaFileCache.values().stream()
                 .filter(d -> d.getCacheTime().isBefore(threshold))
                 .toList();
@@ -112,7 +113,8 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
             deltaFile.setCacheTime(OffsetDateTime.now(clock));
             deltaFileCache.put(deltaFile.getDid(), deltaFile);
             updateRepo(deltaFile, true);
-        } else if(deltaFile.getCacheTime().isBefore(OffsetDateTime.now(clock).minusSeconds(deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().getSyncSeconds()))) {
+        } else if (deltaFile.getCacheTime().isBefore(OffsetDateTime.now(clock).minus(
+                deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().getSyncDuration()))) {
             deltaFile.setCacheTime(OffsetDateTime.now(clock));
             updateRepo(deltaFile, true);
         }

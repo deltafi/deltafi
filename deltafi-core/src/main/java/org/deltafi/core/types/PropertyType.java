@@ -71,7 +71,7 @@ public enum PropertyType {
             "checked against the collect.maxLockDuration", props -> props.getCollect().getLockCheckInterval()) {
         @Override
         public Object convertValue(String value) {
-            return convertDuration(value, "The collect.lockCheckInterval must be greater than 0");
+            return convertDuration(value, "The collect lock check interval must be greater than 0");
         }
 
         @Override
@@ -83,7 +83,7 @@ public enum PropertyType {
             "collect entry before it is automatically unlocked", props -> props.getCollect().getMaxLockDuration()) {
         @Override
         public Object convertValue(String value) {
-            return convertDuration(value, "The collect.maxLockDuration must be greater than 0");
+            return convertDuration(value, "The collect maximum lock duration must be greater than 0");
         }
 
         @Override
@@ -163,16 +163,16 @@ public enum PropertyType {
             target.getDeltaFileCache().setEnabled(source.getDeltaFileCache().isEnabled());
         }
     },
-    DELTA_FILE_CACHE_SYNC_SECONDS("deltaFileCache.syncSeconds", "Sync all DeltaFiles that have not been modified for this many seconds",
-            props -> props.getDeltaFileCache().getSyncSeconds()) {
+    DELTA_FILE_CACHE_SYNC_DURATION("deltaFileCache.syncDuration", "Sync all DeltaFiles that have not been modified for this duration",
+            props -> props.getDeltaFileCache().getSyncDuration()) {
         @Override
         public Object convertValue(String value) {
-            return convertInt(value, 0);
+            return convertDuration(value, "The DeltaFile cache sync duration must be greater than 0");
         }
 
         @Override
         public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
-            target.getDeltaFileCache().setSyncSeconds(source.getDeltaFileCache().getSyncSeconds());
+            target.getDeltaFileCache().setSyncDuration(source.getDeltaFileCache().getSyncDuration());
         }
     },
     INGRESS_DISK_SPACE_REQUIREMENT_IN_MB("ingress.diskSpaceRequirementInMb", "The threshold for automatic disable of ingress.  If the available storage for ingress drops below this requirement, ingress will be temporarily disabled until the system frees up storage.",
@@ -248,16 +248,16 @@ public enum PropertyType {
             target.getPlugins().setImageRepositoryBase(source.getPlugins().getImageRepositoryBase());
         }
     },
-    REQUEUE_SECONDS("requeueSeconds", "Time to wait for an action to finish processing a DeltaFile before requeuing the action",
-            DeltaFiProperties::getRequeueSeconds) {
+    REQUEUE_DURATION("requeueDuration", "Time to wait for an action to finish processing a DeltaFile before requeuing the action",
+            DeltaFiProperties::getRequeueDuration) {
         @Override
         public Object convertValue(String value) {
-            return convertInt(value, 1);
+            return convertDuration(value, "The requeue duration must be greater than 0");
         }
 
         @Override
         public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
-            target.setRequeueSeconds(source.getRequeueSeconds());
+            target.setRequeueDuration(source.getRequeueDuration());
         }
     },
     SCHEDULED_SERVICE_THREADS("scheduledServiceThreads", "Maximum allowed number of threads",

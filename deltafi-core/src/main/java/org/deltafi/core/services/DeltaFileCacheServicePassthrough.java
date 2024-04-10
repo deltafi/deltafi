@@ -22,7 +22,7 @@ import org.deltafi.core.repo.DeltaFileRepo;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.time.Duration;
 
 @Service
 @ConditionalOnProperty(value = "schedule.actionEvents", havingValue = "false")
@@ -48,7 +48,7 @@ public class DeltaFileCacheServicePassthrough extends DeltaFileCacheService {
     public void remove(String did) {}
 
     @Override
-    public void removeOlderThan(int seconds) {}
+    public void removeOlderThan(Duration duration) {}
 
     @Override
     public void save(DeltaFile deltaFile) {

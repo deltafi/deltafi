@@ -30,6 +30,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -127,7 +128,7 @@ class DeltaFiPropertiesServiceTest {
 
     @Test
     void testMergeProperties() {
-        Set<String> setInBoth = Stream.of(PropertyType.REQUEUE_SECONDS, PropertyType.DELETE_AGE_OFF_DAYS).map(Enum::name).collect(Collectors.toSet());
+        Set<String> setInBoth = Stream.of(PropertyType.REQUEUE_DURATION, PropertyType.DELETE_AGE_OFF_DAYS).map(Enum::name).collect(Collectors.toSet());
 
         Link targetCommon = link("both", "target.both.com", "target both");
         Link targetOnly = link("target", "target.com", "target only");
@@ -135,7 +136,7 @@ class DeltaFiPropertiesServiceTest {
         Set<String> setTargetProps = Stream.of(PropertyType.SYSTEM_NAME, PropertyType.UI_SECURITY_BANNER_ENABLED, PropertyType.UI_SECURITY_BANNER_BACKGROUND_COLOR, PropertyType.UI_SECURITY_BANNER_TEXT, PropertyType.UI_SECURITY_BANNER_TEXT_COLOR)
                 .map(Enum::name).collect(Collectors.toSet());
         DeltaFiProperties targetProperties = new DeltaFiProperties();
-        targetProperties.setRequeueSeconds(1);
+        targetProperties.setRequeueDuration(Duration.ofSeconds(1));
         targetProperties.getDelete().setAgeOffDays(1);
         targetProperties.setSystemName("target");
         targetProperties.getUi().setSecurityBanner(securityBanner());
@@ -150,7 +151,7 @@ class DeltaFiPropertiesServiceTest {
         Link sourceOnly = link("source", "source.com", "source only");
         DeltaFiProperties snapshotSource = new DeltaFiProperties();
         Set<String> setSourceProps = Stream.of(PropertyType.UI_USE_UTC, PropertyType.UI_TOP_BAR_TEXT_COLOR, PropertyType.UI_TOP_BAR_BACKGROUND_COLOR).map(Enum::name).collect(Collectors.toSet());
-        snapshotSource.setRequeueSeconds(2);
+        snapshotSource.setRequeueDuration(Duration.ofSeconds(2));
         snapshotSource.getDelete().setAgeOffDays(2);
         snapshotSource.getUi().setUseUTC(false);
         snapshotSource.getUi().setTopBar(topBar());
@@ -165,7 +166,7 @@ class DeltaFiPropertiesServiceTest {
         assertThat(updated.getSetProperties()).hasSize(10).containsAll(setInBoth).containsAll(setSourceProps).containsAll(setTargetProps);
 
         // verify fields in the snapshot are applied over top of the target settings
-        assertThat(updated.getRequeueSeconds()).isEqualTo(snapshotSource.getRequeueSeconds());
+        assertThat(updated.getRequeueDuration()).isEqualTo(snapshotSource.getRequeueDuration());
         assertThat(updated.getDelete().getAgeOffDays()).isEqualTo(snapshotSource.getDelete().getAgeOffDays());
         assertThat(updated.getUi().isUseUTC()).isEqualTo(snapshotSource.getUi().isUseUTC());
         assertThat(updated.getUi().getTopBar()).isEqualTo(snapshotSource.getUi().getTopBar());

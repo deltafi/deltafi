@@ -17,19 +17,18 @@
  */
 package org.deltafi.core.schedulers.trigger;
 
+import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
-
 /**
- * Calculates the next execution time based on the requeueSeconds in the DeltaFiProperties.
+ * Calculates the next execution time based on the requeueDuration in the DeltaFiProperties.
  */
 @Service
 public class RequeueTrigger extends ConfigurableFixedDelayTrigger {
 
     public RequeueTrigger(DeltaFiPropertiesService deltaFiPropertiesService) {
-        super(deltaFiPropertiesService, (props) -> Duration.ofSeconds(props.getRequeueSeconds()), 0L);
+        super(deltaFiPropertiesService, DeltaFiProperties::getRequeueDuration, 0L);
     }
 
 }

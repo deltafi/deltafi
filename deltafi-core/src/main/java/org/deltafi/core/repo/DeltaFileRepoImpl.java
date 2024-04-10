@@ -252,13 +252,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
-    public List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, int requeueSeconds, Set<String> skipActions, Set<String> skipDids) {
-        List<DeltaFile> filesToRequeue = mongoTemplate.find(buildReadyForRequeueQuery(requeueTime, requeueSeconds, skipActions, skipDids), DeltaFile.class);
+    public List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, Duration requeueDuration, Set<String> skipActions, Set<String> skipDids) {
+        List<DeltaFile> filesToRequeue = mongoTemplate.find(buildReadyForRequeueQuery(requeueTime, requeueDuration, skipActions, skipDids), DeltaFile.class);
         List<DeltaFile> requeuedDeltaFiles = new ArrayList<>();
         for (List<DeltaFile> batch : Lists.partition(filesToRequeue, 1000)) {
             List<String> dids = batch.stream().map(DeltaFile::getDid).toList();
             Query query = new Query().addCriteria(Criteria.where(ID).in(dids));
-            mongoTemplate.updateMulti(query, buildRequeueUpdate(requeueTime, requeueSeconds), DeltaFile.class);
+            mongoTemplate.updateMulti(query, buildRequeueUpdate(requeueTime, requeueDuration), DeltaFile.class);
             requeuedDeltaFiles.addAll(mongoTemplate.find(query, DeltaFile.class));
         }
 
@@ -440,14 +440,14 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         return deltaFiles;
     }
 
-    Update buildRequeueUpdate(OffsetDateTime modified, int requeueSeconds) {
+    Update buildRequeueUpdate(OffsetDateTime modified, Duration requeueDuration) {
         if (modified == null) {
             modified = OffsetDateTime.now();
         }
 
         Update update = new Update();
 
-        long epochMs = requeueThreshold(modified, requeueSeconds);
+        long epochMs = requeueThreshold(modified, requeueDuration);
         update.filterArray(Criteria.where(FLOW_STATE).is(DeltaFileFlowState.IN_FLIGHT.name()));
         update.filterArray(Criteria.where(ACTION_STATE).is(ActionState.QUEUED.name())
                 .and(ACTION_MODIFIED).lt(new Date(epochMs)));
@@ -488,9 +488,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         return update;
     }
 
-    private Query buildReadyForRequeueQuery(OffsetDateTime requeueTime, int requeueSeconds, Set<String> skipActions, Set<String> skipDids) {
+    private Query buildReadyForRequeueQuery(OffsetDateTime requeueTime, Duration requeueDuration, Set<String> skipActions, Set<String> skipDids) {
         Criteria criteria = Criteria.where(IN_FLIGHT).is(true);
-        long epochMs = requeueThreshold(requeueTime, requeueSeconds);
+        long epochMs = requeueThreshold(requeueTime, requeueDuration);
         criteria.and(MODIFIED).lt(new Date(epochMs));
 
         if (skipDids != null && !skipDids.isEmpty()) {
@@ -696,13 +696,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         criteria.and(ANNOTATIONS + "." + key).is(value);
     }
 
-    private long requeueThreshold(OffsetDateTime requeueTime, int requeueSeconds) {
-        return requeueTime.minusSeconds(requeueSeconds).toInstant().toEpochMilli();
+    private long requeueThreshold(OffsetDateTime requeueTime, Duration requeueDuration) {
+        return requeueTime.minus(requeueDuration).toInstant().toEpochMilli();
     }
 
 
-    private void removeUnknownIndices(IndexOperations idxOps, IndexInfo existing, Set<String> knownIndicies) {
-        if (!knownIndicies.contains(existing.getName())) {
+    private void removeUnknownIndices(IndexOperations idxOps, IndexInfo existing, Set<String> knownIndices) {
+        if (!knownIndices.contains(existing.getName())) {
             log.info("Dropping unknown index {}", existing.getName());
             dropIndex(idxOps, existing.getName());
         }

@@ -1104,13 +1104,15 @@ private void advanceAndSave(List<StateMachineInput> inputs) {
     public void requeue() {
         OffsetDateTime modified = OffsetDateTime.now(clock);
         Set<String> longRunningDids = actionEventQueue.getLongRunningTasks().stream().map(ActionExecution::did).collect(Collectors.toSet());
-        List<DeltaFile> requeuedDeltaFiles = deltaFileRepo.updateForRequeue(modified, getProperties().getRequeueSeconds(), queueManagementService.coldQueueActions(), longRunningDids);
+        List<DeltaFile> requeuedDeltaFiles = deltaFileRepo.updateForRequeue(modified,
+                getProperties().getRequeueDuration(),queueManagementService.coldQueueActions(), longRunningDids);
         List<ActionInput> actionInputs = requeuedDeltaFiles.stream()
                 .map(deltaFile -> requeuedActionInputs(deltaFile, modified))
                 .flatMap(Collection::stream)
                 .toList();
         if (!actionInputs.isEmpty()) {
-            log.warn("{} actions exceeded requeue threshold of {} seconds, requeuing now", actionInputs.size(), getProperties().getRequeueSeconds());
+            log.warn(actionInputs.size() + " actions exceeded requeue threshold of " + getProperties().getRequeueDuration() +
+                    " seconds, requeuing now");
             enqueueActions(actionInputs, true);
         }
     }
@@ -1160,7 +1162,7 @@ private void advanceAndSave(List<StateMachineInput> inputs) {
         if (deltaFile.isAggregate()) {
             return null;
             // TODO: turn this into an ActionInput
-            /*return CollectingActionInvocation.builder()
+            /*return CollectingActionInput.builder()
                     .actionConfiguration(actionConfiguration)
                     .flow(flow.getName())
                     .deltaFile(deltaFile)
@@ -1570,7 +1572,7 @@ private void advanceAndSave(List<StateMachineInput> inputs) {
                 .build();
 
         // TODO: this
-        /*CollectingActionInvocation collectingActionInvocation = CollectingActionInvocation.builder()
+        /*CollectingActionInput collectingActionInput = CollectingActionInput.builder()
                 .actionConfiguration(actionConfiguration)
                 .flow(collectEntry.getCollectDefinition().getFlow())
                 .egressFlow(action.getType() == EGRESS ? action.getFlow() : null)
@@ -1580,7 +1582,7 @@ private void advanceAndSave(List<StateMachineInput> inputs) {
                 .stage(collectEntry.getCollectDefinition().getStage())
                 .build();
 
-        enqueueActions(List.of(collectingActionInvocation));*/
+        enqueueActions(List.of(collectingActionInput));*/
     }
 
     public void failTimedOutCollect(CollectEntry collectEntry, List<String> collectedDids, String reason) {

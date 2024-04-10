@@ -253,7 +253,7 @@ public class SystemSnapshotDatafetcherTestHelper {
                         ]
                         deltaFiProperties: {
                             systemName: "DeltaFi"
-                            requeueSeconds: 300
+                            requeueDuration: "PT5M"
                             autoResumeCheckFrequency: "PT10M"
                             coreServiceThreads: 16
                             coreInternalQueueSize: 64
@@ -383,7 +383,7 @@ public class SystemSnapshotDatafetcherTestHelper {
             created
             deltaFiProperties {
               systemName
-              requeueSeconds
+              requeueDuration
               autoResumeCheckFrequency
               coreServiceThreads
               scheduledServiceThreads

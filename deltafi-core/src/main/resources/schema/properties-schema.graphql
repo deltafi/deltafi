@@ -172,7 +172,7 @@ input UiPropertiesInput {
 
 type DeltaFiProperties {
     systemName: String!
-    requeueSeconds: Int!
+    requeueDuration: String!
     autoResumeCheckFrequency: String!
     coreServiceThreads: Int!
     coreInternalQueueSize: Int!
@@ -189,7 +189,7 @@ type DeltaFiProperties {
 
 input DeltaFiPropertiesInput {
     systemName: String!
-    requeueSeconds: Int!
+    requeueDuration: String!
     autoResumeCheckFrequency: String!
     coreServiceThreads: Int!
     coreInternalQueueSize: Int!
