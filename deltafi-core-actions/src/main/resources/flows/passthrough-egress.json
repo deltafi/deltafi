@@ -1,0 +1,16 @@
+{
+  "name": "passthrough-egress",
+  "type": "EGRESS",
+  "description": "Test flow that passes data through unchanged",
+  "subscriptions": [
+    {"topics": ["passthrough-egress"]}
+  ],
+  "egressAction": {
+    "name": "PassthroughEgress",
+    "type": "org.deltafi.core.action.egress.RestPostEgress",
+    "parameters": {
+      "metadataKey": "deltafiMetadata",
+      "url": "${passthroughEgressUrl}"
+    }
+  }
+}

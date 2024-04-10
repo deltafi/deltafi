@@ -99,7 +99,7 @@ The UI can be accessed at `http://local.deltafi.org` and the Grafana metrics das
 
 #### Check out your code
 
-You should have a single subdirectory where you checkout `deltafi`, `deltafi-ui`, `deltafi-stix`, `deltafi-passthrough`, and any other
+You should have a single subdirectory where you checkout `deltafi`, `deltafi-ui`, `deltafi-stix`, and any other
 plugins that you will be testing.  When the cluster is created, the cluster node will mount the directory above `deltafi` into
 the node.  Only repositories in this tree will be accessable to the cluster.
 

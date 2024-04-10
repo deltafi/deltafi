@@ -1,4 +1,0 @@
-# Deltafi-passthrough
-
-DeltaFi Passthrough
-

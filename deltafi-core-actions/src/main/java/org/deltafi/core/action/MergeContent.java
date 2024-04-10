@@ -17,51 +17,46 @@
  */
 package org.deltafi.core.action;
 
-import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.common.constant.DeltaFiConstants;
-import org.deltafi.common.io.WriterPipedInputStream;
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.transform.TransformAction;
 import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.actionkit.action.transform.TransformResult;
 import org.deltafi.actionkit.action.transform.TransformResultType;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.core.action.merge.MergeContentWriter;
-import org.deltafi.core.action.merge.MergeContentParameters;
+import org.deltafi.core.parameters.MergeContentParameters;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
-import javax.ws.rs.core.MediaType;
-import java.io.IOException;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 @Component
 public class MergeContent extends TransformAction<MergeContentParameters> {
-    private static final String MERGED_FILE_NAME = "merged";
-
-    private final ExecutorService executorService = Executors.newFixedThreadPool(1);
+    final static String FILENAME_REPLACEMENT = "{{filename}}";
 
     public MergeContent() {
-        super("Merges a list of content to a single content using binary concatenation, TAR, ZIP, AR, TAR.GZ, or TAR.XZ");
+        super("Merge multiple pieces of content into one blob");
     }
 
     @Override
-    public TransformResultType transform(@NotNull ActionContext context, @NotNull MergeContentParameters params,
-                                         @NotNull TransformInput input) {
-        String fileName = MERGED_FILE_NAME + (params.getArchiveType() == null ?
-                "" : ("." + params.getArchiveType().getValue()));
-        String mediaType = params.getArchiveType() == null ?
-                MediaType.APPLICATION_OCTET_STREAM : params.getArchiveType().getMediaType();
+    public TransformResultType transform(@NotNull ActionContext context, @NotNull MergeContentParameters params, @NotNull TransformInput input) {
+        ActionContent firstContent = input.content(0);
+        ActionContent mergedContent = firstContent.copy();
 
-        try (WriterPipedInputStream writerPipedInputStream = new WriterPipedInputStream()) {
-            writerPipedInputStream.runPipeWriter(new MergeContentWriter(input.getContent(), params.getArchiveType()),
-                    executorService);
-            TransformResult transformResult = new TransformResult(context);
-            transformResult.saveContent(writerPipedInputStream, fileName, mediaType);
-            return transformResult;
-        } catch (IOException e) {
-            return new ErrorResult(context, "Unable to write merged content", e);
+        String name = params.getMergedFilename();
+        if (name == null || name.isEmpty()) {
+            name = firstContent.getName();
         }
+        mergedContent.setName(name.replace(FILENAME_REPLACEMENT, firstContent.getName()));
+
+        String mediaType = params.getMediaType();
+        if (mediaType != null && !mediaType.isEmpty()) {
+            mergedContent.setMediaType(mediaType);
+        }
+
+        if (input.content().size() > 1) {
+            input.content().subList(1, input.content().size()).forEach(mergedContent::append);
+        }
+
+        TransformResult result = new TransformResult(context);
+        result.addContent(mergedContent);
+        return result;
     }
 }

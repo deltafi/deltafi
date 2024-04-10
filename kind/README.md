@@ -49,8 +49,8 @@ will tell you if your Java JDK version is incorrect.
 
 #### Check out your code
 
-You should have a single subdirectory where you checkout `deltafi`, `deltafi-ui`, `deltafi-stix`, `deltafi-passthrough`, and any other
-plugins that you will be testing.  The `cluster` script will automatically check out the UI, stix, and passthrough repos for you if
+You should have a single subdirectory where you checkout `deltafi`, `deltafi-ui`, `deltafi-stix`, and any other
+plugins that you will be testing.  The `cluster` script will automatically check out the UI and stix repos for you if
 you have not done it ahead of time.  When the cluster is created, the cluster node will mount the directory above `deltafi` into
 the node.  Only repositories in this tree will be accessable to the cluster.
 
@@ -88,7 +88,7 @@ To install a locally built version of DeltaFi (from docker images built locally)
 cluster loc build install
 ```
 
-This command will build and install the local versions of DeltaFi core, stix, passthrough and UI.
+This command will build and install the local versions of DeltaFi core, stix, and UI.
 
 After you install DeltaFi on the cluster, you will be able to point your browser at [local.deltafi.org](http://local.deltafi.org)
 and interact with the DeltaFi UI.  You can install plugins, enable flows, upload data, check metrics, etc.

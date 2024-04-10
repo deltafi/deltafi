@@ -34,7 +34,7 @@ import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformR
 
 class ExtractJsonMetadataTransformActionTest {
 
-    ExtractJsonMetadataTransformAction action = new ExtractJsonMetadataTransformAction();
+    ExtractJsonToMetadata action = new ExtractJsonToMetadata();
     DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action);
 
     @Test

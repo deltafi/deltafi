@@ -28,8 +28,9 @@ import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.common.types.SaveManyContent;
-import org.deltafi.core.action.MergeContent;
+import org.deltafi.core.action.ArchiveContent;
 import org.deltafi.core.exception.DecompressionTransformException;
+import org.deltafi.core.parameters.ArchiveContentParameters;
 import org.deltafi.core.parameters.ArchiveType;
 import org.deltafi.test.asserters.ContentAssert;
 import org.deltafi.test.content.DeltaFiTestRunner;
@@ -47,7 +48,7 @@ import java.util.List;
 import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformResult;
 
 class MergeContentFormatActionTest {
-    private final MergeContent action = new MergeContent();
+    private final ArchiveContent action = new ArchiveContent();
     private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action, "MergeContentFormatActionTest");
 
     private final List<byte[]> expectedArchiveContents = new ArrayList<>();
@@ -98,7 +99,7 @@ class MergeContentFormatActionTest {
     }
 
     private ResultType runAction(ArchiveType archiveType) {
-        return action.transform(runner.actionContext(), new MergeContentParameters(archiveType),
+        return action.transform(runner.actionContext(), new ArchiveContentParameters(archiveType),
                 input("thing1.txt", "thing2.txt"));
     }
 

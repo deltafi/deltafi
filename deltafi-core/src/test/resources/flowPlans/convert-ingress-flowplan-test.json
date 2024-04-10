@@ -10,7 +10,7 @@
   "transformActions": [
     {
       "name": "PassthroughTransformAction",
-      "type": "org.deltafi.passthrough.action.RoteTransformAction",
+      "type": "org.deltafi.core.action.Delay",
       "parameters": {
         "resultType": "${transform.produces}",
         "someString": "[a, b, c]"

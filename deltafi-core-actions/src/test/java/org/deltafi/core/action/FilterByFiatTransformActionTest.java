@@ -28,7 +28,7 @@ class FilterByFiatTransformActionTest {
 
     private static final ActionParameters EMPTY = new ActionParameters();
 
-    FilterByFiatTransformAction action = new FilterByFiatTransformAction();
+    Filter action = new Filter();
     DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action);
 
     @Test

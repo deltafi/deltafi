@@ -133,10 +133,10 @@ public class DeltaFilesService {
             DeltaFiProperties properties = getProperties();
             int threadCount = properties.getCoreServiceThreads() > 0 ? properties.getCoreServiceThreads() : 16;
             executor = Executors.newFixedThreadPool(threadCount);
-            log.info("Executors pool size: " + threadCount);
+            log.info("Executors pool size: {}", threadCount);
             int internalQueueSize = properties.getCoreInternalQueueSize() > 0 ? properties.getCoreInternalQueueSize() : 64;
             semaphore = new Semaphore(internalQueueSize);
-            log.info("Internal queue size: " + internalQueueSize);
+            log.info("Internal queue size: {}", internalQueueSize);
         }
 
         scheduledCollectService.registerHandlers(this::queueTimedOutCollect, this::failTimedOutCollect);
@@ -242,7 +242,7 @@ public class DeltaFilesService {
     public DeltaFile getLastWithName(String name) {
         PageRequest pageRequest = PageRequest.of(0, 1);
         List<DeltaFile> matches = deltaFileRepo.findByNameOrderByCreatedDesc(name, pageRequest).getContent();
-        return matches.isEmpty() ? null : matches.get(0);
+        return matches.isEmpty() ? null : matches.getFirst();
     }
 
     public long countUnacknowledgedErrors() {
@@ -315,7 +315,7 @@ public class DeltaFilesService {
         DeltaFile deltaFile = buildIngressDeltaFile(restDataSource, ingressEventItem, parentDids, ingressStartTime, ingressStopTime,
                 INGRESS_ACTION, FlowType.REST_DATA_SOURCE);
 
-        advanceAndSave(List.of(new StateMachineInput(deltaFile, deltaFile.getFlows().get(0))));
+        advanceAndSave(List.of(new StateMachineInput(deltaFile, deltaFile.getFlows().getFirst())));
         return deltaFile;
     }
 
@@ -359,7 +359,7 @@ public class DeltaFilesService {
             }
 
             if (deltaFile.getStage() == DeltaFileStage.CANCELLED) {
-                log.warn("Received event for cancelled did " + deltaFile.getDid());
+                log.warn("Received event for cancelled did {}", deltaFile.getDid());
                 return;
             }
 
@@ -466,7 +466,7 @@ public class DeltaFilesService {
                 event.getDid(), ingressEvent.getMemo(), ingressEvent.isExecuteImmediate(),
                 ingressEvent.getStatus(), ingressEvent.getStatusMessage(), dataSource.getCronSchedule());
         if (!completedExecution) {
-            log.warn("Received unexpected ingress event for flow " + event.getFlowName() + " with did " + event.getDid());
+            log.warn("Received unexpected ingress event for flow {} with did {}", event.getFlowName(), event.getDid());
             return;
         }
 
@@ -475,7 +475,7 @@ public class DeltaFilesService {
                 .map((item) -> buildIngressDeltaFile(dataSource, event, item))
                 .toList();
         List<StateMachineInput> stateMachineInputs = deltaFiles.stream()
-                .map((deltaFile) -> new StateMachineInput(deltaFile, deltaFile.getFlows().get(0)))
+                .map((deltaFile) -> new StateMachineInput(deltaFile, deltaFile.getFlows().getFirst()))
                 .toList();
 
         advanceAndSave(stateMachineInputs);
@@ -483,7 +483,7 @@ public class DeltaFilesService {
         for (DeltaFile deltaFile : deltaFiles) {
             counter.byteCount += deltaFile.getIngressBytes();
             if (deltaFile.getFlows().size() == 1) {
-                ActionState lastState = deltaFile.getFlows().get(0).lastAction().getState();
+                ActionState lastState = deltaFile.getFlows().getFirst().lastAction().getState();
                 if (lastState == ActionState.FILTERED) {
                     counter.filteredFiles++;
                 } else if (lastState == ActionState.ERROR) {
@@ -531,8 +531,8 @@ public class DeltaFilesService {
         deltaFile.setModified(now);
         flow.setModified(now);
 
-        if (transformEvents.size() == 1 && transformEvents.get(0).getName() == null) {
-            TransformEvent transformEvent = transformEvents.get(0);
+        if (transformEvents.size() == 1 && transformEvents.getFirst().getName() == null) {
+            TransformEvent transformEvent = transformEvents.getFirst();
             deltaFile.addAnnotations(transformEvent.getAnnotations());
             action.complete(event.getStart(), event.getStop(), transformEvent.getContent(),
                     transformEvent.getMetadata(), transformEvent.getDeleteMetadataKeys(), now);
@@ -798,8 +798,8 @@ public class DeltaFilesService {
 
     private static void addRetryAction(DeltaFile deltaFile, @NotNull List<String> removeSourceMetadata,
                                        @NotNull List<KeyValue> replaceSourceMetadata, OffsetDateTime now) {
-        List<Content> content = deltaFile.getFlows().get(0).lastAction().getContent();
-        Action replayAction = deltaFile.getFlows().get(0)
+        List<Content> content = deltaFile.getFlows().getFirst().lastAction().getContent();
+        Action replayAction = deltaFile.getFlows().getFirst()
                 .addAction("Replay", ActionType.INGRESS, ActionState.COMPLETE, now);
         replayAction.setContent(content);
         if (!removeSourceMetadata.isEmpty()) {
@@ -836,8 +836,8 @@ public class DeltaFilesService {
                             result.setError("Cannot replay DeltaFile " + did + " after content was deleted (" + deltaFile.getContentDeletedReason() + ")");
                         } else {
                             OffsetDateTime now = OffsetDateTime.now(clock);
-                            DeltaFileFlow firstFlow = deltaFile.getFlows().get(0);
-                            Action firstAction = firstFlow.getActions().get(0);
+                            DeltaFileFlow firstFlow = deltaFile.getFlows().getFirst();
+                            Action firstAction = firstFlow.getActions().getFirst();
                             Action action = Action.builder()
                                     .name(firstAction.getName())
                                     .type(ActionType.INGRESS)
@@ -1007,7 +1007,7 @@ public class DeltaFilesService {
         DeltaFiles deltaFiles = deltaFiles(0, dids.size(), filter, null, List.of(FLOWS_INPUT_METADATA));
 
         Map<String, UniqueKeyValues> keyValues = new HashMap<>();
-        deltaFiles.getDeltaFiles().forEach(deltaFile -> deltaFile.getFlows().get(0).getInput().getMetadata().forEach((key, value) -> {
+        deltaFiles.getDeltaFiles().forEach(deltaFile -> deltaFile.getFlows().getFirst().getInput().getMetadata().forEach((key, value) -> {
             if (!keyValues.containsKey(key)) {
                 keyValues.put(key, new UniqueKeyValues(key));
             }
@@ -1066,7 +1066,7 @@ private void advanceAndSave(List<StateMachineInput> inputs) {
     public boolean timedDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, Long minBytes, String flow, String policy, boolean deleteMetadata) {
         int batchSize = deltaFiPropertiesService.getDeltaFiProperties().getDelete().getPolicyBatchSize();
 
-        log.info("Searching for batch of up to " + batchSize + " deltaFiles to delete for policy " + policy);
+        logBatch(batchSize, policy);
         List<DeltaFile> deltaFiles = deltaFileRepo.findForTimedDelete(createdBefore, completedBefore, minBytes, flow, deleteMetadata, batchSize);
         delete(deltaFiles, policy, deleteMetadata);
 
@@ -1076,23 +1076,27 @@ private void advanceAndSave(List<StateMachineInput> inputs) {
     public List<DeltaFile> diskSpaceDelete(long bytesToDelete, String flow, String policy) {
         int batchSize = deltaFiPropertiesService.getDeltaFiProperties().getDelete().getPolicyBatchSize();
 
-        log.info("Searching for batch of up to " + batchSize + " deltaFiles to delete for policy " + policy);
+        logBatch(batchSize, policy);
         return delete(deltaFileRepo.findForDiskSpaceDelete(bytesToDelete, flow, batchSize), policy, false);
+    }
+
+    public void logBatch(int batchSize, String policy) {
+        log.info("Searching for batch of up to {} deltaFiles to delete for policy {}", batchSize, policy);
     }
 
     public List<DeltaFile> delete(List<DeltaFile> deltaFiles, String policy, boolean deleteMetadata) {
         if (deltaFiles.isEmpty()) {
-            log.info("No deltaFiles found to delete for policy " + policy);
+            log.info("No deltaFiles found to delete for policy {}", policy);
             return deltaFiles;
         }
 
-        log.info("Deleting " + deltaFiles.size() + " deltaFiles for policy " + policy);
+        log.info("Deleting {} deltaFiles for policy {}", deltaFiles.size(), policy);
         long totalBytes = deltaFiles.stream().filter(d -> d.getContentDeleted() == null).mapToLong(DeltaFile::getTotalBytes).sum();
 
         deleteContent(deltaFiles, policy, deleteMetadata);
         metricService.increment(new Metric(DELETED_FILES, deltaFiles.size()).addTag("policy", policy));
         metricService.increment(new Metric(DELETED_BYTES, totalBytes).addTag("policy", policy));
-        log.info("Finished deleting " + deltaFiles.size() + " deltaFiles for policy " + policy);
+        log.info("Finished deleting {} deltaFiles for policy {}", deltaFiles.size(), policy);
 
         return deltaFiles;
     }
@@ -1106,7 +1110,7 @@ private void advanceAndSave(List<StateMachineInput> inputs) {
                 .flatMap(Collection::stream)
                 .toList();
         if (!actionInputs.isEmpty()) {
-            log.warn(actionInputs.size() + " actions exceeded requeue threshold of " + getProperties().getRequeueSeconds() + " seconds, requeuing now");
+            log.warn("{} actions exceeded requeue threshold of {} seconds, requeuing now", actionInputs.size(), getProperties().getRequeueSeconds());
             enqueueActions(actionInputs, true);
         }
     }
@@ -1128,7 +1132,7 @@ private void advanceAndSave(List<StateMachineInput> inputs) {
                 .flatMap(Collection::stream)
                 .toList();
         if (!actionInputs.isEmpty()) {
-            log.warn("Moving " + actionInputs.size() + " from the cold to warm queue");
+            log.warn("Moving {} from the cold to warm queue", actionInputs.size());
             enqueueActions(actionInputs, true);
         }
     }
@@ -1193,7 +1197,7 @@ private void advanceAndSave(List<StateMachineInput> inputs) {
                     }
                     countByFlow.put(flow, count);
                 } else {
-                    log.error("Auto-resume: " + result.getError());
+                    log.error("Auto-resume: {}", result.getError());
                 }
             }
             if (queued > 0) {
@@ -1233,7 +1237,7 @@ private void advanceAndSave(List<StateMachineInput> inputs) {
                 processResult(event);
             }
         } catch (Throwable e) {
-            log.error("Error receiving event: " + e.getMessage());
+            log.error("Error receiving event: {}", e.getMessage());
             return false;
         }
         return true;
@@ -1242,7 +1246,7 @@ private void advanceAndSave(List<StateMachineInput> inputs) {
     public void validateActionEventHeader(ActionEvent event) throws JsonProcessingException {
         String validationError = event.validateHeader();
         if (validationError != null) {
-            log.error("Received invalid action event: " + validationError + ": (" + event + ")");
+            log.error("Received invalid action event: {}: ({})", validationError, event);
             throw new InvalidActionEventException(validationError);
         }
     }
@@ -1264,12 +1268,12 @@ private void advanceAndSave(List<StateMachineInput> inputs) {
                             if (count > 9) {
                                 throw e;
                             } else {
-                                log.warn("Retrying after OptimisticLockingFailureException caught processing " + event.getActionName() + " for " + event.getDid());
+                                log.warn("Retrying after OptimisticLockingFailureException caught processing {} for {}", event.getActionName(), event.getDid());
                             }
                         } catch (Throwable e) {
                             StringWriter stackWriter = new StringWriter();
                             e.printStackTrace(new PrintWriter(stackWriter));
-                            log.error("Exception processing incoming action event: " + "\n" + e.getMessage() + "\n" + stackWriter);
+                            log.error("Exception processing incoming action event: \n{}\n{}", e.getMessage(), stackWriter);
                             break;
                         }
                     }
@@ -1279,7 +1283,7 @@ private void advanceAndSave(List<StateMachineInput> inputs) {
             });
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt(); // Preserve interrupt status
-            log.error("Thread interrupted while waiting for a permit to process action event: " + e.getMessage());
+            log.error("Thread interrupted while waiting for a permit to process action event: {}", e.getMessage());
         }
     }
 

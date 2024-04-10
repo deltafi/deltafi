@@ -1,0 +1,23 @@
+{
+  "name": "passthrough-transform",
+  "type": "TRANSFORM",
+  "description": "Flow that passes data through unchanged",
+  "subscriptions": [
+    {"topics": ["passthrough"]}
+  ],
+  "transformActions": [{
+    "name": "Passthrough",
+    "type": "org.deltafi.core.action.Delay",
+    "parameters": {
+      "minDelayMS": "${minDelayMS}",
+      "maxDelayMS": "${maxDelayMS}"
+    }
+  }],
+  "publishRules": {
+    "matchingPolicy": "FIRST_MATCHING",
+    "defaultRule": {"defaultBehavior": "ERROR"},
+    "rules": [
+      {"topics": ["passthrough-egress"]}
+    ]
+  }
+}

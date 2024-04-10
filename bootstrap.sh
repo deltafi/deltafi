@@ -360,7 +360,6 @@ install_cluster() {
   bullet "Installing a DeltaFi KinD cluster"
   deltafi install
   deltafi set-admin-password password
-  deltafi install-plugin "org.deltafi.passthrough:deltafi-passthrough:$LATEST_RELEASE"
   deltafi versions
 }
 
@@ -413,7 +412,7 @@ if [[ -n "${DELTAFI_ON_MACOS-}" ]]; then
   info "    username: admin"
   info "    password: password"
   echo
-  info "Now you can enable flows, upload content to the passthrough flow, etc."
+  info "Now you can enable flows, upload content, etc."
 fi
 
 # Linux install (Debian, CentOS)

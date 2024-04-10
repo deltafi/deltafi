@@ -11,9 +11,6 @@ deltafi:
     trustStoreType: JKS
   core_actions:
     image: deltafi/deltafi-core-actions:2.0-alpha5
-  passthrough:
-    image: deltafi/deltafi-passthrough:2.0-alpha5
-    enabled: true
   core:
     image: deltafi/deltafi-core:2.0-alpha5
     mongo_host: deltafi-mongodb

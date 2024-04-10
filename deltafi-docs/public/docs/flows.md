@@ -151,7 +151,7 @@ Time ingress that publishes the `DeltaFile` based on the content type
   "description": "Create smoke DeltaFiles and publish them based on content type",
   "timedIngressAction": {
     "name": "SmokeTestIngressAction",
-    "type": "org.deltafi.core.action.SmokeTestIngressAction"
+    "type": "org.deltafi.core.action.ingress.SmokeTestIngressAction"
   },
   "publishRules": {
     "matchingPolicy": "FIRST_MATCHING",

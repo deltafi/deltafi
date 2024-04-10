@@ -1,0 +1,6 @@
+{
+  "name": "passthrough-rest-data-source",
+  "type": "REST_DATA_SOURCE",
+  "description": "Create DeltaFiles that will pass through the system unchanged",
+  "topic": "passthrough"
+}
