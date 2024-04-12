@@ -16,38 +16,8 @@
    limitations under the License.
 */
 
-import _ from "lodash";
-import { faker } from "@faker-js/faker";
+import ReconnectingEventSource from "reconnecting-eventsource";
 
-const generateDeltaFile = () => {
-  return {
-    did: faker.string.uuid(),
-    stage: "COMPLETE",
-    totalBytes: 65535,
-    modified: "2022-02-23T15:19:39.549Z",
-    created: "2022-02-23T15:19:39.434Z",
-    sourceInfo: {
-      filename: "fakeData.txt",
-      flow: "smoke",
-    },
-  }
+export default function useServerSentEventsSource() {
+  return process.env.NODE_ENV === "test" ? { addEventListener: () => { } } : new ReconnectingEventSource("/api/v1/sse");
 }
-
-const generateDeltaFiles = (count: number) => {
-  return _.times(count, generateDeltaFile);
-}
-
-const generateData = (count: number) => {
-  const data = {
-    offset: 0,
-    count: count,
-    totalCount: 2000,
-    deltaFiles: generateDeltaFiles(count),
-  };
-
-  return data;
-};
-
-export default {
-  deltaFiles: generateData(20),
-};

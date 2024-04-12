@@ -10,7 +10,8 @@
     "build": "vue-cli-service build",
     "lint": "npx eslint --max-warnings=0 --ext .js,.vue,.ts .",
     "lint:fix": "npm run lint -- --fix",
-    "test": "mocha"
+    "test-server": "VUE_APP_MOCK_REQUEST_DELAY=1 VUE_APP_MOCK_RESPONSES=successResponse vue-cli-service serve --mode test",
+    "test": "cypress run"
   },
   "dependencies": {
     "@faker-js/faker": "^8.3.1",
@@ -32,7 +33,7 @@
     "cookie-parser": "~1.4.6",
     "core-js": "^3.35.0",
     "cronstrue": "^2.48.0",
-    "cypress": "^13.6.2",
+    "cypress": "^13.7.3",
     "d3": "^3.5.17",
     "dayjs": "^1.11.10",
     "debug": "~4.3.4",

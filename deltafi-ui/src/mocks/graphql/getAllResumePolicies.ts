@@ -49,5 +49,5 @@ const generateData = (count: number) => {
 };
 
 export default {
-  getAllResumePolicies: generateData(Math.floor(Math.random() * 10)),
+  getAllResumePolicies: generateData(10),
 };

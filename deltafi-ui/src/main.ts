@@ -43,7 +43,7 @@ import "@/styles/global.scss";
 
 import auth from "./plugins/auth";
 
-if (process.env.NODE_ENV === "development") {
+if (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test") {
   const responseType = process.env.VUE_APP_MOCK_RESPONSES ? process.env.VUE_APP_MOCK_RESPONSES : "";
   if (["successResponse", "errorResponse", "customResponse"].includes(responseType)) {
     const { worker } = require("./mocks/browser.ts");
