@@ -101,7 +101,7 @@
 </template>
 
 <script setup>
-import StateInputSwitch from "@/components/ingressActions/StateInputSwitch.vue";
+import StateInputSwitch from "@/components/dataSources/StateInputSwitch.vue";
 import useFlowActions from "@/composables/useFlowActions";
 import useFlows from "@/composables/useFlows";
 import useIngressActions from "@/composables/useIngressActions";
@@ -236,7 +236,7 @@ onBeforeMount(async () => {
   allActionsData.value = responseFlowAction.data.plugins;
 
   const response = await getAllTimedIngress();
-  timedIngressActions.value = response.data.getAllFlows.timedIngress;
+  timedIngressActions.value = response.data.getAllFlows.dataSource;
 
   flattenedActionsTypes.value = await getTimedIngressActions();
 

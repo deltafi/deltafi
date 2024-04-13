@@ -97,8 +97,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String FORMATTED_DATA_FORMAT_ACTION = "formattedData.formatAction";
     public static final String FORMATTED_DATA_METADATA = "formattedData.metadata";
     public static final String FORMATTED_DATA_EGRESS_ACTIONS = "formattedData.egressActions";
-    public static final String ACTIONS = "flows.actions";
     public static final String FLOWS_INPUT_METADATA = "flows.input.metadata";
+    public static final String FLOWS_NAME = "flows.name";
     public static final String FLOWS_STATE = "flows.state";
     public static final String FLOWS_ACTIONS = "flows.actions";
     public static final String FLOWS_ACTIONS_NAME = "flows.actions.name";
@@ -502,9 +502,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                     Criteria.where(STATE).is(QUEUED.toString()).and(NAME).in(skipActions),
                     Criteria.where(STATE).is(COLD_QUEUED.name())
             );
-            criteria.and(ACTIONS).not().elemMatch(actionsCriteria);
+            criteria.and(FLOWS_ACTIONS).not().elemMatch(actionsCriteria);
         } else {
-            criteria.and(ACTIONS).not().elemMatch(Criteria.where(STATE).is(COLD_QUEUED.name()));
+            criteria.and(FLOWS_ACTIONS).not().elemMatch(Criteria.where(STATE).is(COLD_QUEUED.name()));
         }
 
         Query requeueQuery = new Query(criteria);
@@ -523,7 +523,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                 Criteria.where(STATE).is(COLD_QUEUED.name())
         );
 
-        Criteria actionMatch = Criteria.where(ACTIONS).elemMatch(coldQueuedCriteria);
+        Criteria actionMatch = Criteria.where(FLOWS_ACTIONS).elemMatch(coldQueuedCriteria);
 
         Query requeueQuery = new Query(new Criteria().andOperator(notComplete, actionMatch));
         requeueQuery.fields().include(ID);
@@ -599,7 +599,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         if (filter.getErrorCause() != null) {
             Criteria actionElemMatch = new Criteria().andOperator(Criteria.where(STATE).is(ERROR.name()),
                     Criteria.where(ERROR_CAUSE).regex(filter.getErrorCause()));
-            criteria.and(ACTIONS).elemMatch(actionElemMatch);
+            criteria.and(FLOWS_ACTIONS).elemMatch(actionElemMatch);
         }
 
         if (filter.getFilteredCause() != null) {
@@ -607,7 +607,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             criteria.and(FILTERED).is(filtered);
             Criteria actionElemMatch = new Criteria().andOperator(Criteria.where(STATE).is(ActionState.FILTERED.name()),
                     Criteria.where(FILTERED_CAUSE).regex(filter.getFilteredCause()));
-            criteria.and(ACTIONS).elemMatch(actionElemMatch);
+            criteria.and(FLOWS_ACTIONS).elemMatch(actionElemMatch);
         } else if (filter.getFiltered() != null) {
             criteria.and(FILTERED).is(filter.getFiltered());
         }
@@ -1002,7 +1002,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             return new DeltaFileStats(estimatedCount(), 0L, 0L);
         }
 
-        DeltaFileStats deltaFileStats = aggResults.getMappedResults().get(0);
+        DeltaFileStats deltaFileStats = aggResults.getMappedResults().getFirst();
         deltaFileStats.setTotalCount(estimatedCount());
         return deltaFileStats;
     }

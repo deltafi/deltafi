@@ -118,11 +118,11 @@
 <script setup>
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
-import IngressActionRemoveButton from "@/components/ingressActions/IngressActionRemoveButton.vue";
-import StatusBadge from "@/components/ingressActions/StatusBadge.vue";
-import StateInputSwitch from "@/components/ingressActions/StateInputSwitch.vue";
+import IngressActionRemoveButton from "@/components/dataSources/IngressActionRemoveButton.vue";
+import StatusBadge from "@/components/dataSources/StatusBadge.vue";
+import StateInputSwitch from "@/components/dataSources/StateInputSwitch.vue";
 import PermissionedRouterLink from "@/components/PermissionedRouterLink";
-import PublishRulesCell from "@/components/ingressActions/PublishRulesCell.vue";
+import PublishRulesCell from "@/components/dataSources/PublishRulesCell.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useIngressActions from "@/composables/useIngressActions";
 import useNotifications from "@/composables/useNotifications";
@@ -214,7 +214,7 @@ const refresh = async () => {
   if (editing.value) return;
 
   const response = await getAllTimedIngress();
-  timedIngressActions.value = response.data.getAllFlows.timedIngress;
+  timedIngressActions.value = response.data.getAllFlows.dataSource;
   emit("ingressActionsList", timedIngressActions.value);
 };
 

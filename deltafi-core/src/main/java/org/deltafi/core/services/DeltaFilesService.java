@@ -980,7 +980,7 @@ public class DeltaFilesService {
     public List<PerActionUniqueKeyValues> errorMetadataUnion(List<String> dids) {
         DeltaFilesFilter filter = new DeltaFilesFilter();
         filter.setDids(dids);
-        DeltaFiles deltaFiles = deltaFiles(0, dids.size(), filter, null, List.of(FLOWS_INPUT_METADATA, FLOWS_ACTIONS_NAME, FLOWS_ACTIONS_TYPE, FLOWS_ACTIONS_STATE, FLOWS_ACTIONS_METADATA, FLOWS_ACTIONS_DELETE_METADATA_KEYS));
+        DeltaFiles deltaFiles = deltaFiles(0, dids.size(), filter, null, List.of(FLOWS_INPUT_METADATA, FLOWS_NAME, FLOWS_ACTIONS_NAME, FLOWS_ACTIONS_TYPE, FLOWS_ACTIONS_STATE, FLOWS_ACTIONS_METADATA, FLOWS_ACTIONS_DELETE_METADATA_KEYS));
 
         Map<Pair<String, String>, PerActionUniqueKeyValues> actionKeyValues = new HashMap<>();
         for (DeltaFile deltaFile : deltaFiles.getDeltaFiles()) {

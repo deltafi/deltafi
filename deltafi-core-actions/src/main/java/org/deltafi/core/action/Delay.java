@@ -46,7 +46,7 @@ public class Delay extends TransformAction<DelayParameters> {
     }
 
     public static void sleep(int minMS, int maxMS) {
-        if (minMS >= 0 && maxMS >= 0 && maxMS >= minMS) {
+        if (minMS >= 0 && maxMS > 0 && maxMS >= minMS) {
             int randomDelay = ThreadLocalRandom.current().nextInt(minMS, maxMS + 1);
 
             try {

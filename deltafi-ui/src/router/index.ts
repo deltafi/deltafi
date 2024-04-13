@@ -19,6 +19,7 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
 import AutoResumePage from "@/pages/AutoResumePage.vue";
 import DashboardPage from "@/pages/DashboardPage.vue";
+import DataSourcesPage from "@/pages/DataSourcesPage.vue";
 import DeletePoliciesPage from "@/pages/DeletePoliciesPage.vue";
 import DeltaFileSearchPage from "@/pages/DeltaFileSearchPage.vue";
 import DeltaFileUploadPage from "@/pages/DeltaFileUploadPage.vue";
@@ -29,7 +30,6 @@ import EventsPage from "@/pages/EventsPage.vue";
 import ExternalLinksPage from "@/pages/ExternalLinksPage.vue";
 import FlowPlanBuilderPage from "@/pages/FlowPlanBuilderPage.vue";
 import FlowPlansPage from "@/pages/FlowPlansPage.vue";
-import IngressActionsPage from "@/pages/IngressActionsPage.vue";
 import PageNotFound from "@/pages/PageNotFound.vue";
 import PluginRepositoryPage from "@/pages/PluginRepositoryPage.vue";
 import PluginsPage from "@/pages/PluginsPage.vue";
@@ -203,9 +203,9 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
-    path: "/config/ingress-actions",
-    name: "Ingress Actions",
-    component: IngressActionsPage,
+    path: "/config/data-sources",
+    name: "Data Sources",
+    component: DataSourcesPage,
     meta: {
       permission: "FlowView",
     },

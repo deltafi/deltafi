@@ -26,8 +26,9 @@ export default function useIngressActions() {
   const getAllTimedIngress = () => {
     const query = {
       getAllFlows: {
-        timedIngress: {
+        dataSource: {
           name: true,
+          type: true,
           description: true,
           flowStatus: {
             state: true,
@@ -36,34 +37,39 @@ export default function useIngressActions() {
               errorType: true,
               message: true,
             },
+            testMode: true,
           },
-          targetFlow: true,
-          cronSchedule: true,
-          lastRun: true,
-          nextRun: true,
-          memo: true,
-          currentDid: true,
-          executeImmediate: true,
-          ingressStatus: true,
-          ingressStatusMessage: true,
-          timedIngressAction: {
-            name: true,
-            apiVersion: true,
-            actionType: true,
-            type: true,
-            parameters: true,
-          },
-          publishRules: {
-            matchingPolicy: true,
-            defaultRule: {
-              defaultBehavior: true,
-              topic: true,
-            },
-            rules: {
-              topics: true,
-              condition: true,
-            },
-          },
+          __typename: true,
+          __on: [
+            {
+              __typeName: "TimedDataSource",
+              cronSchedule: true,
+              lastRun: true,
+              nextRun: true,
+              memo: true,
+              currentDid: true,
+              executeImmediate: true,
+              ingressStatus: true,
+              ingressStatusMessage: true,
+              timedIngressAction: {
+                name: true,
+                apiVersion: true,
+                actionType: true,
+                type: true,
+                parameters: true,
+              },
+              variables: {
+                name: true,
+                description: true,
+                dataType: true,
+                required: true,
+                defaultValue: true,
+                value: true,
+                masked: true,
+              }
+            }
+          ],
+          topic: true,
           sourcePlugin: {
             groupId: true,
             artifactId: true,
@@ -75,40 +81,40 @@ export default function useIngressActions() {
     return sendGraphQLQuery(query, "getAllTimedIngress");
   };
 
-  // Starts a Timed Ingress flow
-  const startTimedIngressFlowByName = (flowName: string) => {
+  // Starts a DataSource
+  const startDataSourceByName = (name: string) => {
     const query = {
-      startTimedIngressFlow: {
+      startDataSource: {
         __args: {
-          flowName: flowName,
+          name: name,
         },
       },
     };
-    return sendGraphQLQuery(query, "startTimedIngressFlowByName", "mutation");
+    return sendGraphQLQuery(query, "startDataSourceFlowByName", "mutation");
   };
 
-  // Stops a Timed Ingress flow
-  const stopTimedIngressFlowByName = (flowName: string) => {
+  // Stops a DataSource
+  const stopDataSourceByName = (name: string) => {
     const query = {
-      stopTimedIngressFlow: {
+      stopDataSource: {
         __args: {
-          flowName: flowName,
+          name: name,
         },
       },
     };
-    return sendGraphQLQuery(query, "stopTimedIngressFlowByName", "mutation");
+    return sendGraphQLQuery(query, "stopDataSourceByName", "mutation");
   };
 
-  const setTimedIngressCronSchedule = (flowName: string, cronSchedule: string) => {
+  const setTimedDataSourceCronSchedule = (name: string, cronSchedule: string) => {
     const query = {
-      setTimedIngressCronSchedule: {
+      setTimedDataSourceCronSchedule: {
         __args: {
-          flowName: flowName,
+          name: name,
           cronSchedule: cronSchedule,
         },
       },
     };
-    return sendGraphQLQuery(query, "setTimedIngressCronSchedule", "mutation");
+    return sendGraphQLQuery(query, "setTimedDataSourceCronSchedule", "mutation");
   };
 
   const saveTimedIngressFlowPlan = (timedIngressFlowPlan: Object) => {
@@ -127,8 +133,6 @@ export default function useIngressActions() {
 
         if (enumKeysToKey.includes(key)) {
           queryObject[key] = new EnumType(value as any);
-        } else {
-          continue;
         }
       }
       newObject = queryObject;
@@ -172,9 +176,9 @@ export default function useIngressActions() {
 
   return {
     getAllTimedIngress,
-    startTimedIngressFlowByName,
-    stopTimedIngressFlowByName,
-    setTimedIngressCronSchedule,
+    startTimedIngressFlowByName: startDataSourceByName,
+    stopTimedIngressFlowByName: stopDataSourceByName,
+    setTimedIngressCronSchedule: setTimedDataSourceCronSchedule,
     saveTimedIngressFlowPlan,
     removeTimedIngressFlowPlan,
     loaded,

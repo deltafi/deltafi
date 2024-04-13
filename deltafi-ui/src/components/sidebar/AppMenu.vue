@@ -160,6 +160,12 @@ const staticMenuItems = ref([
         visible: computed(() => hasPermission("SystemPropertiesRead")),
       },
       {
+        name: "Data Sources",
+        icon: "fa-solid fa-cubes fa-fw",
+        path: "/config/data-sources",
+        visible: computed(() => hasPermission("FlowView")),
+      },
+      {
         name: "Flows",
         icon: "fas fa-project-diagram fa-fw",
         path: "/config/flows",
@@ -188,12 +194,6 @@ const staticMenuItems = ref([
         icon: "fas fa-landmark fa-fw",
         path: "/config/delete-policies",
         visible: computed(() => hasPermission("DeletePolicyRead")),
-      },
-      {
-        name: "Ingress Actions",
-        icon: "fa-solid fa-cubes fa-fw",
-        path: "/config/ingress-actions",
-        visible: computed(() => hasPermission("FlowView")),
       },
       {
         name: "Auto Resume",
