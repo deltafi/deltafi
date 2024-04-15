@@ -61,7 +61,7 @@ public class FlowfileEgressAction extends HttpEgressActionBase<HttpEgressParamet
                 flowFileInputStream.runPipeWriter(inputStream, attributes, input.content().getSize(), executorService);
                 response = httpPostService.post(params.getUrl(), Map.of(), flowFileInputStream, APPLICATION_FLOWFILE);
             } catch (IOException e) {
-                return new ErrorResult(context, "Unable to process flowfile stream", e);
+                return new ErrorResult(context, "Unable to process flowfile stream", e).logErrorTo(log);
             }
 
             Response.Status status = Response.Status.fromStatusCode(response.statusCode());
@@ -74,7 +74,7 @@ public class FlowfileEgressAction extends HttpEgressActionBase<HttpEgressParamet
         } catch (IOException e) {
             log.warn("Unable to close input stream from content storage", e);
         } catch (HttpPostException e) {
-            return new ErrorResult(context, "Service post failure", e);
+            return new ErrorResult(context, "Service post failure", e).logErrorTo(log);
         }
 
         return new EgressResult(context, params.getUrl(), input.content().getSize());

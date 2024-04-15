@@ -53,10 +53,15 @@ public abstract class HttpEgressActionBase<P extends HttpEgressParameters> exten
                 if (tries > params.getRetryCount()) {
                     return result;
                 } else {
-                    log.error("Retrying HTTP POST after error: " + ((ErrorResult) result).getErrorCause() + " (retry " + tries + "/" + params.getRetryCount() + ")");
+                    log.error("Retrying HTTP POST after error: {} (retry {}/{})", ((ErrorResult) result).getErrorCause(), tries, params.getRetryCount());
                     try {
                         Thread.sleep(params.getRetryDelayMs());
-                    } catch (InterruptedException ignored) {}
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        // in the future we might want this to requeue instead of error
+                        // but first we want to catch the error in the wild and identify if and why it is happening
+                        return new ErrorResult(context, "HTTP egress thread interrupted", e).logErrorTo(log);
+                    }
                 }
             } else {
                 return result;

@@ -58,11 +58,11 @@ public class DeltaFiEgressAction extends HttpEgressActionBase<DeltaFiEgressParam
                 }
             }
         } catch (JsonProcessingException e) {
-            return new ErrorResult(context, "Unable to build post headers", e);
+            return new ErrorResult(context, "Unable to build post headers", e).logErrorTo(log);
         } catch (IOException e) {
             log.warn("Unable to close input stream from content storage", e);
         } catch (HttpPostException e) {
-            return new ErrorResult(context, "Service post failure", e);
+            return new ErrorResult(context, "Service post failure", e).logErrorTo(log);
         }
 
         return new EgressResult(context, params.getUrl(), input.content().getSize());

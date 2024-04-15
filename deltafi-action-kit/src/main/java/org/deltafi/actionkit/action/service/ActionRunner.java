@@ -117,11 +117,14 @@ public class ActionRunner {
                 actionInput.getActionContext().setContentStorageService(contentStorageService);
                 executeAction(action, actionInput, actionInput.getReturnAddress());
             }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         } catch (Throwable e) {
             log.error("Unexpected exception caught at {} thread execution level: ", action.getClassCanonicalName(), e);
             ExecutorService actionExecutor = executors.get(action.getClassCanonicalName());
             actionExecutor.submit(() -> listen(action, actionsProperties.getActionPollingPeriodMs()));
         }
+        log.warn("Shutting down action thread: {}", action.getClassCanonicalName());
     }
 
     private void executeAction(Action<?, ?, ?> action, ActionInput actionInput, String returnAddress) {
