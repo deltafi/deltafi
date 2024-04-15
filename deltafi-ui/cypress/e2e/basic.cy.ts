@@ -24,9 +24,9 @@ describe("Delete Policies Page", () => {
 
 describe("DeltaFile Search Page", () => {
   it("loads DeltaFile Search", () => {
-    cy.visit("http://localhost:8080/deltafile/search?perPage=1000");
+    cy.visit("http://localhost:8080/deltafile/search?perPage=20");
     cy.get("span.p-panel-title").contains("Advanced Search Options");
-    cy.get("span.p-paginator-current").contains("1 - 1000 of 1000");
+    cy.get("span.p-paginator-current").contains("1 - 20 of 2000");
   });
 });
 
@@ -55,20 +55,14 @@ describe("DeltaFile Viewer Page", () => {
 });
 
 describe("DeltaFile Errors Page", () => {
-  it("loads all errors", () => {
+  it("randers all three tabs - All, By Flow, and By Message", () => {
     cy.visit("http://localhost:8080/errors?tab=0");
     cy.get("span.p-panel-title").contains("DeltaFiles");
     cy.get("span.p-paginator-current").contains("1 - 20 of 2000");
-  });
-
-  it("loads errors by flow", () => {
-    cy.visit("http://localhost:8080/errors?tab=1");
+    cy.get("span.p-tabview-title").contains("By Flow").click();
     cy.get("span.p-panel-title").contains("DeltaFiles by Flow");
     cy.get("span.p-paginator-current").contains("1 - 3 of 3");
-  });
-
-  it("loads errors by message", () => {
-    cy.visit("http://localhost:8080/errors?tab=2");
+    cy.get("span.p-tabview-title").contains("By Message").click();
     cy.get("span.p-panel-title").contains("DeltaFiles by Message");
     cy.get("span.p-paginator-current").contains("1 - 4 of 4");
   });
@@ -161,7 +155,7 @@ describe("DeltaFile Upload Page", () => {
     cy.visit("http://localhost:8080/deltafile/upload");
     const addButton = cy.get("span").contains("Add Metadata Field");
     Cypress._.times(3, () => {
-      cy.wait(250);
+      cy.wait(10);
       addButton.click();
     });
   });

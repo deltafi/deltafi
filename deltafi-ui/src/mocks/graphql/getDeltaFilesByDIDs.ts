@@ -36,6 +36,6 @@ const generateData = (count: number) => {
 
 export default {
   deltaFiles: {
-    deltaFiles: generateData(Math.floor(Math.random() * 100)),
+    deltaFiles: generateData(20),
   },
 };

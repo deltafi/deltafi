@@ -16,11 +16,11 @@
    limitations under the License.
 */
 
-import ReconnectingEventSource from "reconnecting-eventsource";
+import useServerSentEventsSource from "./useServerSentEventsSource";
 import { ref, Ref } from "vue";
 
 const connectionStatus = ref('CONNECTING') as Ref<'CONNECTING' | 'CONNECTED' | 'DISCONNECTED'>;
-const serverSentEvents = new ReconnectingEventSource("/api/v1/sse");
+const serverSentEvents = useServerSentEventsSource();
 
 serverSentEvents.addEventListener('open', () => {
   connectionStatus.value = 'CONNECTED';

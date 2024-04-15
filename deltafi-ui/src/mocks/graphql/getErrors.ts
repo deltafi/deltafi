@@ -51,6 +51,8 @@ const generateDeltaFiles = (count: number) => {
       },
       errorAcknowledged: null,
       errorAcknowledgedReason: null,
+      nextAutoResume: "2024-05-12T19:46:24.880Z",
+      nextAutoResumeReason: "No compression or archive formats detected"
     };
   });
 };
@@ -58,8 +60,8 @@ const generateDeltaFiles = (count: number) => {
 export default {
   deltaFiles: {
     offset: 0,
-    count: 1000,
+    count: 20,
     totalCount: 2000,
-    deltaFiles: generateDeltaFiles(1000),
+    deltaFiles: generateDeltaFiles(20),
   },
 };
