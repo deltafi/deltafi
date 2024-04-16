@@ -44,6 +44,7 @@ public class SurveyRest {
 
     @NeedsPermission.DeltaFileIngress
     @PostMapping(value = "survey", consumes = MediaType.WILDCARD)
+    @Deprecated
     public ResponseEntity<String> survey(@QueryParam(value = "flow") String flow,
                                          @QueryParam(value = "bytes") Long bytes,
                                          @QueryParam(value = "files") Long files,
@@ -54,7 +55,7 @@ public class SurveyRest {
 
         if (flow == null) {
             log.error("Received survey request from {} with no flow specified", username);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Missing flow parameter");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).header("Deprecated", "True").build();
         }
 
         if (direction == null) direction = "none";
@@ -84,7 +85,8 @@ public class SurveyRest {
                 metricService.increment(DeltaFiConstants.SURVEY_SUBFLOW_BYTES, subflowTags, bytes);
             }
 
-            return ResponseEntity.ok(null);
+
+            return ResponseEntity.status(HttpStatus.OK).header("Deprecated", "True").build();
         } catch (Throwable exception) {
             log.error("Exception thrown: ", exception);
             log.error("{} error for flow={} subflow={} direction={} bytes={} files={} username={}: {}", HttpStatus.INTERNAL_SERVER_ERROR.value(), flow, subflow, direction, bytes, files, username, exception.getMessage());

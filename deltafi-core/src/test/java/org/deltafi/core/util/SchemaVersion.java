@@ -203,7 +203,7 @@ public class SchemaVersion {
     private static final Document DELTAFILE_LATEST = Document.parse(DELTAFILE_JSON_V8);
 
     public static final Map<Integer, Document> deltaFileDocs = Map.of(
-            6, DELTAFILE_LATEST);
+            8, DELTAFILE_LATEST);
 
     public static void assertConverted(DeltaFileRepo deltaFileRepo, MongoTemplate mongoTemplate, int version) {
         Document document = deltaFileDocs.get(version);
@@ -222,6 +222,6 @@ public class SchemaVersion {
         mongoTemplate.insert(deltaFileDocs.get(version), "deltaFile");
         List<DeltaFile> deltaFiles = deltaFileRepo.findForDiskSpaceDelete(1, null, 1);
         assertEquals(1, deltaFiles.size());
-        assertEquals(3, deltaFiles.get(0).referencedSegments().size());
+        assertEquals(3, deltaFiles.getFirst().referencedSegments().size());
     }
 }

@@ -125,6 +125,7 @@ import static org.deltafi.core.plugin.PluginDataFetcherTestHelper.*;
 import static org.deltafi.core.util.Constants.*;
 import static org.deltafi.core.util.FlowBuilders.*;
 import static org.deltafi.core.util.FullFlowExemplars.*;
+import static org.deltafi.core.util.SchemaVersion.assertDeleted;
 import static org.deltafi.core.util.Util.*;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.*;
@@ -1983,9 +1984,9 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile miss = buildDeltaFile("did3", "flow1", DeltaFileStage.IN_FLIGHT, MONGO_NOW, MONGO_NOW.plusSeconds(1000));
 		miss.getFlows().get(0).setState(DeltaFileFlowState.IN_FLIGHT);
 		miss.getFlows().get(0).setActions(List.of(shouldStay));
-		flow2 = oneHit.addFlow("flow2", FlowType.TRANSFORM, oneHit.getFlows().get(0), MONGO_NOW.minusSeconds(1000));
+		flow2 = oneHit.addFlow("flow2", FlowType.TRANSFORM, oneHit.getFlows().getFirst(), MONGO_NOW.minusSeconds(1000));
 		flow2.setActions(List.of(excludedRequeue));
-		flow3 = oneHit.addFlow("flow3", FlowType.EGRESS, oneHit.getFlows().get(0), MONGO_NOW.minusSeconds(1000));
+		flow3 = oneHit.addFlow("flow3", FlowType.EGRESS, oneHit.getFlows().getFirst(), MONGO_NOW.minusSeconds(1000));
 		flow3.setActions(List.of(shouldStay));
 		deltaFileRepo.save(miss);
 
@@ -3935,7 +3936,138 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(child2.getDid(), actionInputListCaptor.getValue().get(1).getActionContext().getDid());
 
 		verifyCommonMetrics(ActionEventType.TRANSFORM, "SampleTransformAction", DATA_SOURCE_NAME, null, "type");
-	}*/
+	}
+
+
+	@Test
+	void testDeletesV8() {
+		assertDeleted(deltaFileRepo, mongoTemplate, 8);
+	} */
+
+	private static String egressFlow() {
+		return """
+				{
+				  "_id" : "passthrough-migration-test",
+				  "includeIngressFlows" : ["decompress-and-merge",
+				                "passthrough",
+				                "split-lines-passthrough"],
+				  "excludeIngressFlows": ["smoke"]
+				  "formatAction" : {
+						  "requiresEnrichments" : [ ],
+						  "requiresDomains" : [
+								  "binary"
+						  ],
+						  "type" : "org.deltafi.passthrough.action.RoteFormatAction",
+						  "internalParameters" : {
+								  "maxRoteDelayMS" : 0,
+								  "minRoteDelayMS" : 0
+						  },
+						  "parameters" : {
+								  "maxRoteDelayMS" : 0,
+								  "minRoteDelayMS" : 0
+						  },
+						  "name" : "PassthroughFormatAction"
+				  },
+				  "validateActions" : [
+						  {
+								  "type" : "org.deltafi.passthrough.action.RubberStampValidateAction",
+								  "internalParameters" : {
+										  "maxRoteDelayMS" : 0,
+										  "minRoteDelayMS" : 0
+								  },
+								  "parameters" : {
+										  "maxRoteDelayMS" : 0,
+										  "minRoteDelayMS" : 0
+								  },
+								  "name" : "PassthroughValidateAction"
+						  }
+				  ],
+				  "egressAction" : {
+						  "type" : "org.deltafi.core.action.RestPostEgressAction",
+						  "internalParameters" : {
+								  "metadataKey" : "deltafiMetadata",
+								  "url" : "http://deltafi-egress-sink-service"
+						  },
+						  "parameters" : {
+								  "metadataKey" : "deltafiMetadata",
+								  "url" : "http://deltafi-egress-sink-service"
+						  },
+						  "name" : "PassthroughEgressAction"
+				  },
+				  "schemaVersion" : 2,
+				  "description" : "Egress flow that passes data through unchanged",
+				  "sourcePlugin" : {
+						  "groupId" : "org.deltafi",
+						  "artifactId" : "deltafi-passthrough",
+						  "version" : "1.1.3"
+				  },
+				  "flowStatus" : {
+						  "state" : "INVALID",
+						  "errors" : [
+								  {
+										  "configName" : "PassthroughEgressAction",
+										  "errorType" : "UNREGISTERED_ACTION",
+										  "message" : "Action: org.deltafi.core.action.RestPostEgressAction has not been registered with the system"
+								  }
+						  ],
+						  "testMode" : false
+				  },
+				  "variables" : [ ],
+				  "_class" : "org.deltafi.core.types.EgressFlow"
+				  }
+				""";
+	}
+
+	private static String egressFlowPlan() {
+		return """
+				{
+				        "_id" : "passthrough-migration-test",
+				        "includeIngressFlows" : [
+				                "decompress-and-merge",
+				                "passthrough",
+				                "split-lines-passthrough"
+				        ],
+				        "excludeIngressFlows": ["smoke"],
+				        "formatAction" : {
+				                "requiresDomains" : [
+				                        "binary"
+				                ],
+				                "type" : "org.deltafi.passthrough.action.RoteFormatAction",
+				                "parameters" : {
+				                        "minRoteDelayMS" : "${minRoteDelayMS}",
+				                        "maxRoteDelayMS" : "${maxRoteDelayMS}"
+				                },
+				                "name" : "PassthroughFormatAction"
+				        },
+				        "validateActions" : [
+				                {
+				                        "type" : "org.deltafi.passthrough.action.RubberStampValidateAction",
+				                        "parameters" : {
+				                                "minRoteDelayMS" : "${minRoteDelayMS}",
+				                                "maxRoteDelayMS" : "${maxRoteDelayMS}"
+				                        },
+				                        "name" : "PassthroughValidateAction"
+				                }
+				        ],
+				        "egressAction" : {
+				                "type" : "org.deltafi.core.action.RestPostEgressAction",
+				                "parameters" : {
+				                        "metadataKey" : "deltafiMetadata",
+				                        "url" : "${passthroughEgressUrl}"
+				                },
+				                "name" : "PassthroughEgressAction"
+				        },
+				        "type" : "EGRESS",
+				        "description" : "Egress flow that passes data through unchanged",
+				        "sourcePlugin" : {
+				                "groupId" : "org.deltafi",
+				                "artifactId" : "deltafi-passthrough",
+				                "version" : "1.1.3"
+				        },
+				        "_class" : "org.deltafi.common.types.EgressFlowPlan"
+				}
+				""";
+	}
 
 	@Test
 	void testCountUnacknowledgedErrors() {

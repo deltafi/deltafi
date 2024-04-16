@@ -177,8 +177,8 @@ new Docute({
           link: '/operating/metrics'
         },
         {
-          title: 'Survey',
-          link: '/operating/survey'
+          title: 'DeltaFile Analytics and Survey',
+          link: '/operating/deltafile_analytics'
         },
       ]
     },
