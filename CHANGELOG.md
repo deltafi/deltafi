@@ -5,6 +5,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.2.5] - 2024-04-16
+
+### Added
+- Documentation for DeltaFile analytics and new survey
+- Additional logging on Egress action errors
+
+### Changed
+- Changed the requeueSeconds property to requeueDuration
+- Changed the deltaFileCache.syncSeconds property to deltaFileCache.syncDuration
+
+### Fixed
+- Potential thread interrupt deadlock in HTTP egress actions
+- Potential thread interrupt deadlock in ActionRunner
+- error in `migrate-to-durations.js` migration
+
+### Removed
+- Deprecated survey API documentation
+
+### Deprecated
+- Deprecation of original `/survey` rest endpoint in favor of the more robust `/api/v1/survey` API.  The original rest endpoint will be removed in 2.0.
+- `/survey` REST endpoint has been deprecated and will be removed in DeltaFi 2.0.  The `/api/v1/survey` API should be used for annotation of survey related data. 
+
+### Tech-Debt/Refactor
+- Added DeltaFile schema version tests for v6 and v7
+- Improved UI test reliability and speed.
+
+### Upgrade and Migration
+- The migrate-to-durations.js script (automatically run during installation) updates the deltaFiProperties and
+systemSnapshot Mongo database collections with the following:
+  - Replaces requeueSeconds with requeueDuration of "PT{requeueSeconds}S"
+  - Replaces deltaFileCache.syncSeconds with deltaFileCache.syncDuration of "PT{deltaFileCache.syncSeconds}S"
+  - Replaces REQUEUE_SECONDS with REQUEUE_DURATION in the setProperties array
+  - Replaces DELTAFILE_CACHE_SYNC_SECONDS with DELTA_FILE_CACHE_SYNC_DURATION in the setProperties array
+  - Replaces DELTA_FILE_CACHE_SYNC_SECONDS with DELTA_FILE_CACHE_SYNC_DURATION in the setProperties array
+- Redis 7.2.4
+- Minio RELEASE.2024-04-06T05-26-02Z
+- Clickhouse 24.3.2-debian-12-r2
+
 ## [1.2.4] - 2024-04-09
 
 ### Added
@@ -2864,7 +2902,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.4...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.5...main
+[1.2.5]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.4...1.2.5
 [1.2.4]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.2...1.2.4
 [1.2.2]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.1...1.2.2
 [1.2.1]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.0...1.2.1
