@@ -3858,6 +3858,24 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void testResumeNoSubscribers() throws IOException {
+		String did = UUID.randomUUID().toString();
+		deltaFileRepo.save(postTransformUtf8NoSubscriberDeltaFile(did));
+
+		List<RetryResult> retryResults = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
+				String.format(graphQL("resumeNoSubscribers"), did),
+				"data." + DgsConstants.MUTATION.Resume,
+				new TypeRef<>() {});
+
+		assertEquals(1, retryResults.size());
+		assertEquals(did, retryResults.getFirst().getDid());
+		assertTrue(retryResults.getFirst().getSuccess());
+
+		DeltaFile expected = postResumeNoSubscribersDeltaFile(did);
+		verifyActionEventResults(expected, ActionContext.builder().flowName(EGRESS_FLOW_NAME).actionName(SAMPLE_EGRESS_ACTION).build());
+	}
+
+	@Test
 	void testEgress() throws IOException {
 		String did = UUID.randomUUID().toString();
 		deltaFileRepo.save(postTransformDeltaFile(did));

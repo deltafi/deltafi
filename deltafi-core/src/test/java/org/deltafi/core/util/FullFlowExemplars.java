@@ -28,6 +28,8 @@ import static org.deltafi.common.constant.DeltaFiConstants.SYNTHETIC_EGRESS_ACTI
 import static org.deltafi.common.types.ActionState.QUEUED;
 import static org.deltafi.common.types.DeltaFile.CURRENT_SCHEMA_VERSION;
 import static org.deltafi.core.datafetchers.FlowPlanDatafetcherTestHelper.PLUGIN_COORDINATES;
+import static org.deltafi.core.services.pubsub.PublisherService.NO_SUBSCRIBERS;
+import static org.deltafi.core.services.pubsub.PublisherService.NO_SUBSCRIBER_CAUSE;
 import static org.deltafi.core.util.Constants.*;
 import static org.deltafi.core.util.FlowBuilders.EGRESS_TOPIC;
 import static org.deltafi.core.util.FlowBuilders.TRANSFORM_TOPIC;
@@ -86,15 +88,15 @@ public class FullFlowExemplars {
         DeltaFile deltaFile = ingressedFromAction(did, TIMED_DATA_SOURCE_ERROR_NAME);
         deltaFile.getFlow(TIMED_DATA_SOURCE_NAME, 0).setPublishTopics(List.of(MISSING_PUBLISH_TOPIC));
         deltaFile.getFlows().remove(1);
-        DeltaFileFlow flow = deltaFile.getFlows().get(0);
+        DeltaFileFlow flow = deltaFile.getFlows().getFirst();
         flow.setName(TIMED_DATA_SOURCE_ERROR_NAME);
         flow.setState(DeltaFileFlowState.ERROR);
-        flow.getActions().get(0).setName("SampleTimedIngressErrorAction");
+        flow.getActions().getFirst().setName("SampleTimedIngressErrorAction");
 
         Action action = flow.addAction("NO_SUBSCRIBERS", ActionType.PUBLISH, ActionState.ERROR, OffsetDateTime.now());
-        action.setErrorCause("No matching subscribers were found");
+        action.setErrorCause(NO_SUBSCRIBER_CAUSE);
         action.setErrorContext("No subscribers found for data source `sampleTimedDataSourceError`");
-        action.setContent(flow.getActions().get(0).getContent());
+        action.setContent(flow.getActions().getFirst().getContent());
 
         deltaFile.setStage(DeltaFileStage.ERROR);
 
@@ -126,7 +128,7 @@ public class FullFlowExemplars {
         Content content = new Content("name", "application/octet-stream", new Segment("objectName", 0, 500, did));
         DeltaFile deltaFile = Util.emptyDeltaFile(did, TIMED_DATA_SOURCE_NAME, List.of(content));
         deltaFile.setIngressBytes(500L);
-        DeltaFileFlow flow = deltaFile.addFlow(TRANSFORM_FLOW_NAME, FlowType.TRANSFORM, deltaFile.getFlows().get(0), OffsetDateTime.now());
+        DeltaFileFlow flow = deltaFile.addFlow(TRANSFORM_FLOW_NAME, FlowType.TRANSFORM, deltaFile.getFlows().getFirst(), OffsetDateTime.now());
         flow.getInput().setMetadata(SOURCE_METADATA);
         flow.getInput().setTopics(Set.of(TRANSFORM_TOPIC));
         flow.queueAction("Utf8TransformAction", ActionType.TRANSFORM, false, OffsetDateTime.now());
@@ -145,6 +147,35 @@ public class FullFlowExemplars {
         Action action = flow.getAction("Utf8TransformAction", 0);
         action.complete(START_TIME, STOP_TIME, List.of(content), Map.of(), List.of(), OffsetDateTime.now());
         flow.queueAction("SampleTransformAction", ActionType.TRANSFORM, false, OffsetDateTime.now());
+        return deltaFile;
+    }
+
+    public static DeltaFile postTransformUtf8NoSubscriberDeltaFile(String did) {
+        DeltaFile deltaFile = postTransformUtf8DeltaFile(did);
+        Content content = new Content("transformed", "application/octet-stream", new Segment("objectName", 0, 500, did));
+        DeltaFileFlow flow = deltaFile.getFlow(TRANSFORM_FLOW_NAME, 1);
+        flow.setPublishTopics(List.of(EGRESS_TOPIC));
+        Action action = flow.getAction("SampleTransformAction", 1);
+        action.complete(START_TIME, STOP_TIME, List.of(content), TRANSFORM_METADATA, List.of(), OffsetDateTime.now());
+        Action noSubAction = flow.queueNewAction(NO_SUBSCRIBERS, ActionType.PUBLISH, false, OffsetDateTime.now());
+        noSubAction.error(OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now(), NO_SUBSCRIBER_CAUSE, "");
+        deltaFile.setStage(DeltaFileStage.ERROR);
+        return deltaFile;
+    }
+
+    public static DeltaFile postResumeNoSubscribersDeltaFile(String did) {
+        DeltaFile deltaFile = postTransformUtf8NoSubscriberDeltaFile(did);
+        deltaFile.resumeErrors(List.of(new ResumeMetadata(TRANSFORM_FLOW_NAME, NO_SUBSCRIBERS, Map.of(), List.of())), OffsetDateTime.now());
+
+        DeltaFileFlow flow = deltaFile.getFlow(TRANSFORM_FLOW_NAME, 1);
+        flow.setState(DeltaFileFlowState.COMPLETE);
+
+        DeltaFileFlow egressFlow = deltaFile.addFlow(EGRESS_FLOW_NAME, FlowType.EGRESS, flow, OffsetDateTime.now());
+        egressFlow.getInput().setTopics(Set.of(EGRESS_TOPIC));
+        egressFlow.getInput().setMetadata(flow.getMetadata());
+        egressFlow.getInput().setContent(flow.lastContent());
+        egressFlow.queueAction(SAMPLE_EGRESS_ACTION, ActionType.EGRESS, false, OffsetDateTime.now());
+        deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
         return deltaFile;
     }
 
@@ -222,8 +253,8 @@ public class FullFlowExemplars {
     public static DeltaFile postResumeDeltaFile(String did) {
         DeltaFile deltaFile = postErrorDeltaFile(did);
         DeltaFileFlow flow = deltaFile.getFlow(EGRESS_FLOW_NAME, 2);
-        flow.getActions().get(0).setState(ActionState.RETRIED);
-        flow.getActions().get(0).setMetadata(Map.of("a", "b"));
+        flow.getActions().getFirst().setState(ActionState.RETRIED);
+        flow.getActions().getFirst().setMetadata(Map.of("a", "b"));
         flow.addAction(SAMPLE_EGRESS_ACTION, ActionType.EGRESS, QUEUED, OffsetDateTime.now());
         flow.getActions().get(1).setAttempt(2);
         flow.setState(DeltaFileFlowState.IN_FLIGHT);

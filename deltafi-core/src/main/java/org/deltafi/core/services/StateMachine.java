@@ -65,7 +65,8 @@ public class StateMachine {
 
     private List<ActionInput> advance(StateMachineInput input, Map<String, Long> pendingQueued) {
         List<ActionInput> actionInputs = updateCurrentFlow(input, pendingQueued);
-        if (actionInputs.isEmpty() && input.flow().getState() == DeltaFileFlowState.COMPLETE) {
+        if (actionInputs.isEmpty() &&
+                (input.flow().getState() == DeltaFileFlowState.COMPLETE || input.flow().lastAction().getType() == ActionType.PUBLISH)) {
             actionInputs.addAll(publishToNewFlows(input, pendingQueued));
         }
         input.deltaFile().updateState(OffsetDateTime.now(clock));
@@ -139,7 +140,8 @@ public class StateMachine {
     private List<ActionInput> publishToNewFlows(StateMachineInput input, Map<String, Long> pendingQueued) {
         List<ActionInput> actionInputs = new ArrayList<>();
 
-        if (input.flow().getType() == FlowType.EGRESS || input.flow().lastAction().getState() != ActionState.COMPLETE) {
+        if (input.flow().lastAction().getType() != ActionType.PUBLISH &&
+                (input.flow().getType() == FlowType.EGRESS || input.flow().lastAction().getState() != ActionState.COMPLETE)) {
             return Collections.emptyList();
         }
 
@@ -148,6 +150,10 @@ public class StateMachine {
         for (DeltaFileFlow newFlow : subscriberFlows) {
             StateMachineInput newInput = new StateMachineInput(input.deltaFile(), newFlow);
             actionInputs.addAll(advance(newInput, pendingQueued));
+        }
+
+        if (!actionInputs.isEmpty() && input.flow().getState() != DeltaFileFlowState.COMPLETE) {
+            input.flow().setState(DeltaFileFlowState.COMPLETE);
         }
 
         return actionInputs;

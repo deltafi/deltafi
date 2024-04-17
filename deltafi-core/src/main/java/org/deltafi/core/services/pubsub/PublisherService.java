@@ -42,8 +42,8 @@ import java.util.stream.Collectors;
 public class PublisherService {
 
     private static final DefaultRule ERROR_RULE = new DefaultRule(DefaultBehavior.ERROR);
-    static final String NO_SUBSCRIBERS = "NO_SUBSCRIBERS";
-    static final String NO_SUBSCRIBER_CAUSE = "No matching subscribers were found";
+    public static final String NO_SUBSCRIBERS = "NO_SUBSCRIBERS";
+    public static final String NO_SUBSCRIBER_CAUSE = "No matching subscribers were found";
 
     private final RuleEvaluator ruleEvaluator;
     private final List<SubscriberService> subscriberServices;
