@@ -178,7 +178,7 @@ const ingressActionTemplate = {
     type: null,
   },
   variables: null,
-  publishRules: {
+  publish: {
     defaultRule: {
       defaultBehavior: "ERROR",
       topic: null,

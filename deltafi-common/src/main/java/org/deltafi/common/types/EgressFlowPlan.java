@@ -35,7 +35,8 @@ import java.util.Set;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 public class EgressFlowPlan extends FlowPlan implements Subscriber {
     private final EgressActionConfiguration egressAction;
-    private Set<Rule> subscriptions;
+    @JsonProperty(required = true)
+    private Set<Rule> subscribe;
 
     public EgressFlowPlan(String name, String description, EgressActionConfiguration egressAction) {
         super(name, FlowType.EGRESS, description);
@@ -62,8 +63,8 @@ public class EgressFlowPlan extends FlowPlan implements Subscriber {
     }
 
     @Override
-    public Set<Rule> subscriptions() {
-        return subscriptions;
+    public Set<Rule> subscribeRules() {
+        return subscribe;
     }
 
     @Override

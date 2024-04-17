@@ -324,8 +324,8 @@ class DeltaFiCoreApplicationTests {
 		TransformActionConfiguration tc2 = new TransformActionConfiguration("SampleTransformAction", "type");
 
 		TransformFlow sampleTransformFlow = buildRunningTransformFlow(TRANSFORM_FLOW_NAME, List.of(tc, tc2), false);
-		sampleTransformFlow.setSubscriptions(Set.of(new Rule(Set.of(TRANSFORM_TOPIC))));
-		sampleTransformFlow.setPublishRules(publishRules(EGRESS_TOPIC));
+		sampleTransformFlow.setSubscribe(Set.of(new Rule(TRANSFORM_TOPIC)));
+		sampleTransformFlow.setPublish(publishRules(EGRESS_TOPIC));
 		TransformFlow retryFlow = buildRunningTransformFlow("theTransformFlow", null, false);
 		TransformFlow childFlow = buildRunningTransformFlow("transformChildFlow", List.of(tc2), false);
 
@@ -339,7 +339,7 @@ class DeltaFiCoreApplicationTests {
 		EgressActionConfiguration sampleEgress = new EgressActionConfiguration("SampleEgressAction", "type");
 
 		EgressFlow sampleEgressFlow = buildRunningEgressFlow(EGRESS_FLOW_NAME, sampleEgress, false);
-		sampleEgressFlow.setSubscriptions(Set.of(new Rule(Set.of(EGRESS_TOPIC))));
+		sampleEgressFlow.setSubscribe(Set.of(new Rule(EGRESS_TOPIC)));
 
 		EgressActionConfiguration errorEgress = new EgressActionConfiguration("ErrorEgressAction", "type");
 		EgressFlow errorFlow = buildRunningEgressFlow("error", errorEgress, false);
@@ -512,14 +512,14 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(1, deletePolicyRepo.count());
 		List<DeletePolicy> policyList = getDeletePolicies(dgsQueryExecutor);
 		assertEquals(1, policyList.size());
-		assertEquals(id, policyList.get(0).getId());
-		assertEquals(name, policyList.get(0).getName());
-		assertEquals(enabled, policyList.get(0).isEnabled());
+		assertEquals(id, policyList.getFirst().getId());
+		assertEquals(name, policyList.getFirst().getName());
+		assertEquals(enabled, policyList.getFirst().isEnabled());
 
 		if (disk) {
-            assertInstanceOf(DiskSpaceDeletePolicy.class, policyList.get(0));
+            assertInstanceOf(DiskSpaceDeletePolicy.class, policyList.getFirst());
 		} else {
-            assertInstanceOf(TimedDeletePolicy.class, policyList.get(0));
+            assertInstanceOf(TimedDeletePolicy.class, policyList.getFirst());
 		}
 	}
 
@@ -571,7 +571,7 @@ class DeltaFiCoreApplicationTests {
 		assertThat(deletePolicyRepo.count()).isEqualTo(3);
 		List<DeletePolicyWorker> policiesScheduled = deleteRunner.refreshPolicies();
 		assertThat(policiesScheduled).hasSize(2); // only 2 of 3 are enabled
-		List<String> names = List.of(policiesScheduled.get(0).getName(),
+		List<String> names = List.of(policiesScheduled.getFirst().getName(),
 				policiesScheduled.get(1).getName());
 		assertTrue(names.containsAll(List.of(DISK_SPACE_PERCENT_POLICY, AFTER_COMPLETE_POLICY)));
 	}
@@ -605,8 +605,8 @@ class DeltaFiCoreApplicationTests {
 				new TypeRef<>() {});
 
 		assertEquals(1, retryResults.size());
-		assertEquals(did, retryResults.get(0).getDid());
-		assertTrue(retryResults.get(0).getSuccess());
+		assertEquals(did, retryResults.getFirst().getDid());
+		assertTrue(retryResults.getFirst().getSuccess());
 
 		DeltaFile expected = postResumeTransformDeltaFile(did);
 		verifyActionEventResults(expected, ActionContext.builder().flowName(TRANSFORM_FLOW_NAME).actionName("SampleTransformAction").build());
@@ -621,8 +621,8 @@ class DeltaFiCoreApplicationTests {
 				new TypeRef<>() {});
 
 		assertEquals(1, errorMetadataUnion.size());
-		assertEquals("SampleTransformAction", errorMetadataUnion.get(0).getAction());
-		assertEquals(List.of("AuthorizedBy", "anotherKey"), errorMetadataUnion.get(0).getKeyVals().stream().map(UniqueKeyValues::getKey).sorted().toList());
+		assertEquals("SampleTransformAction", errorMetadataUnion.getFirst().getAction());
+		assertEquals(List.of("AuthorizedBy", "anotherKey"), errorMetadataUnion.getFirst().getKeyVals().stream().map(UniqueKeyValues::getKey).sorted().toList());
 
 		Mockito.verifyNoInteractions(metricService);
 	}
@@ -641,8 +641,8 @@ class DeltaFiCoreApplicationTests {
 				new TypeRef<>() {});
 
 		assertEquals(1, retryResults.size());
-		assertEquals(did, retryResults.get(0).getDid());
-		assertFalse(retryResults.get(0).getSuccess());
+		assertEquals(did, retryResults.getFirst().getDid());
+		assertFalse(retryResults.getFirst().getSuccess());
 
 		Mockito.verifyNoInteractions(metricService);
 	}
@@ -694,26 +694,26 @@ class DeltaFiCoreApplicationTests {
 		List<DeltaFile> children = deltaFilesService.deltaFiles(0, 50, DeltaFilesFilter.newBuilder().dids(deltaFile.getChildDids()).build(), DeltaFileOrder.newBuilder().field("created").direction(DeltaFileDirection.ASC).build()).getDeltaFiles();
 		assertEquals(2, children.size());
 
-		DeltaFile child1 = children.get(0);
+		DeltaFile child1 = children.getFirst();
 		assertEquals(DeltaFileStage.INGRESS, child1.getStage());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child1.getParentDids());
 		assertEquals("file1", child1.getSourceInfo().getFilename());
-		assertEquals(0, child1.lastContent().get(0).getSegments().get(0).getOffset());
+		assertEquals(0, child1.lastContent().getFirst().getSegments().getFirst().getOffset());
 		assertEquals(2, child1.lastContent().size());
 
 		DeltaFile child2 = children.get(1);
 		assertEquals(DeltaFileStage.INGRESS, child2.getStage());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child2.getParentDids());
 		assertEquals("file2", child2.getSourceInfo().getFilename());
-		assertEquals(250, child2.lastContent().get(0).getSegments().get(0).getOffset());
+		assertEquals(250, child2.lastContent().getFirst().getSegments().getFirst().getOffset());
 		assertEquals(1, child2.lastContent().size());
 
 		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture(), anyBoolean());
 		List<ActionInput> actionInputs = actionInputListCaptor.getValue();
 		assertThat(actionInputs).hasSize(2);
 
-		assertEquals(child1.forQueue(NORMALIZE_FLOW_NAME), actionInputs.get(0).getDeltaFileMessages().get(0));
-		assertEquals(child2.forQueue(NORMALIZE_FLOW_NAME), actionInputs.get(1).getDeltaFileMessages().get(0));
+		assertEquals(child1.forQueue(NORMALIZE_FLOW_NAME), actionInputs.getFirst().getDeltaFileMessages().getFirst());
+		assertEquals(child2.forQueue(NORMALIZE_FLOW_NAME), actionInputs.get(1).getDeltaFileMessages().getFirst());
 
 		verifyCommonMetrics(ActionEventType.REINJECT, "SampleLoadAction", DATA_SOURCE_NAME, null, "type");
 	}*/
@@ -847,8 +847,8 @@ class DeltaFiCoreApplicationTests {
 				new TypeRef<>() {});
 
 		assertEquals(2, retryResults.size());
-		assertEquals(did, retryResults.get(0).getDid());
-		assertTrue(retryResults.get(0).getSuccess());
+		assertEquals(did, retryResults.getFirst().getDid());
+		assertTrue(retryResults.getFirst().getSuccess());
 		assertFalse(retryResults.get(1).getSuccess());
 
 		verifyActionEventResults(postResumeDeltaFile(did),
@@ -886,8 +886,8 @@ class DeltaFiCoreApplicationTests {
 				new TypeRef<>() {});
 
 		assertEquals(2, acknowledgeResults.size());
-		assertEquals(did, acknowledgeResults.get(0).getDid());
-		assertTrue(acknowledgeResults.get(0).getSuccess());
+		assertEquals(did, acknowledgeResults.getFirst().getDid());
+		assertTrue(acknowledgeResults.getFirst().getSuccess());
 		assertFalse(acknowledgeResults.get(1).getSuccess());
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
@@ -909,8 +909,8 @@ class DeltaFiCoreApplicationTests {
 				});
 
 		assertEquals(2, cancelResults.size());
-		assertEquals(did, cancelResults.get(0).getDid());
-		assertTrue(cancelResults.get(0).getSuccess());
+		assertEquals(did, cancelResults.getFirst().getDid());
+		assertTrue(cancelResults.getFirst().getSuccess());
 		assertFalse(cancelResults.get(1).getSuccess());
 		assertTrue(cancelResults.get(1).getError().contains("not found"));
 
@@ -924,9 +924,9 @@ class DeltaFiCoreApplicationTests {
 				});
 
 		assertEquals(2, alreadyCancelledResult.size());
-		assertEquals(did, alreadyCancelledResult.get(0).getDid());
-		assertFalse(alreadyCancelledResult.get(0).getSuccess());
-		assertTrue(alreadyCancelledResult.get(0).getError().contains("no longer active"));
+		assertEquals(did, alreadyCancelledResult.getFirst().getDid());
+		assertFalse(alreadyCancelledResult.getFirst().getSuccess());
+		assertTrue(alreadyCancelledResult.getFirst().getError().contains("no longer active"));
 		assertFalse(alreadyCancelledResult.get(1).getSuccess());
 		assertTrue(alreadyCancelledResult.get(1).getError().contains("not found"));
 		Mockito.verifyNoInteractions(metricService);
@@ -968,23 +968,23 @@ class DeltaFiCoreApplicationTests {
 				new TypeRef<>() {});
 
 		assertEquals(1, results.size());
-		assertTrue(results.get(0).getSuccess());
+		assertTrue(results.getFirst().getSuccess());
 
 		DeltaFile parent = deltaFilesService.getDeltaFile(did);
 		assertEquals(1, parent.getChildDids().size());
-		assertEquals(parent.getChildDids().get(0), parent.getReplayDid());
-		assertEquals(results.get(0).getDid(), parent.getReplayDid());
+		assertEquals(parent.getChildDids().getFirst(), parent.getReplayDid());
+		assertEquals(results.getFirst().getDid(), parent.getReplayDid());
 		assertNotNull(parent.getReplayed());
 
 		DeltaFile expected = postIngressDeltaFile(did);
-		expected.setDid(parent.getChildDids().get(0));
+		expected.setDid(parent.getChildDids().getFirst());
 		expected.setParentDids(List.of(did));
-		Action action = expected.getFlows().get(0).addAction("Replay", ActionType.INGRESS, COMPLETE, OffsetDateTime.now());
+		Action action = expected.getFlows().getFirst().addAction("Replay", ActionType.INGRESS, COMPLETE, OffsetDateTime.now());
 		Map<String, String> replayMetadata = Map.of("AuthorizedBy", "ABC", "anotherKey", "anotherValue");
-		action.setContent(expected.getFlows().get(0).getActions().get(0).getContent());
+		action.setContent(expected.getFlows().getFirst().getActions().getFirst().getContent());
 		action.setMetadata(replayMetadata);
 		action.setDeleteMetadataKeys(List.of("removeMe"));
-		expected.getFlows().get(1).getInput().setMetadata(expected.getFlows().get(0).getMetadata());
+		expected.getFlows().get(1).getInput().setMetadata(expected.getFlows().getFirst().getMetadata());
 		verifyActionEventResults(expected, ActionContext.builder().flowName("sampleTransform").actionName("Utf8TransformAction").build());
 
 		List<RetryResult> secondResults = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
@@ -993,7 +993,7 @@ class DeltaFiCoreApplicationTests {
 				new TypeRef<>() {});
 
 		assertEquals(1, secondResults.size());
-		assertFalse(secondResults.get(0).getSuccess());
+		assertFalse(secondResults.getFirst().getSuccess());
 		Mockito.verifyNoInteractions(metricService);
 	}
 
@@ -1011,7 +1011,7 @@ class DeltaFiCoreApplicationTests {
 				new TypeRef<>() {});
 
 		assertEquals(1, results.size());
-		assertFalse(results.get(0).getSuccess());
+		assertFalse(results.getFirst().getSuccess());
 
 		DeltaFile parent = deltaFilesService.getDeltaFile(did);
 		assertTrue(parent.getChildDids().isEmpty());
@@ -1033,9 +1033,9 @@ class DeltaFiCoreApplicationTests {
 				});
 
 		assertEquals(1, metadataUnion.size());
-		assertEquals("key", metadataUnion.get(0).getKey());
-		assertEquals(2, metadataUnion.get(0).getValues().size());
-		assertTrue(metadataUnion.get(0).getValues().containsAll(List.of("val1", "val2")));
+		assertEquals("key", metadataUnion.getFirst().getKey());
+		assertEquals(2, metadataUnion.getFirst().getValues().size());
+		assertTrue(metadataUnion.getFirst().getValues().containsAll(List.of("val1", "val2")));
 	}
 
 	@Test
@@ -1099,9 +1099,9 @@ class DeltaFiCoreApplicationTests {
 				"data." + findConfig.getOperationName(),
 				listOfConfigs);
 
-        assertInstanceOf(TransformActionConfiguration.class, configs.get(0));
+        assertInstanceOf(TransformActionConfiguration.class, configs.getFirst());
 
-		TransformActionConfiguration transformActionConfiguration = (TransformActionConfiguration) configs.get(0);
+		TransformActionConfiguration transformActionConfiguration = (TransformActionConfiguration) configs.getFirst();
 		assertEquals(name, transformActionConfiguration.getName());
 	}
 
@@ -1195,11 +1195,11 @@ class DeltaFiCoreApplicationTests {
 
 		List<Flows> flows = FlowPlanDatafetcherTestHelper.getFlows(dgsQueryExecutor);
 		assertThat(flows).hasSize(1);
-		Flows pluginFlows = flows.get(0);
+		Flows pluginFlows = flows.getFirst();
 		assertThat(pluginFlows.getSourcePlugin().getArtifactId()).isEqualTo("test-actions");
-		assertThat(pluginFlows.getTransformFlows().get(0).getName()).isEqualTo("transform");
-		assertThat(pluginFlows.getEgressFlows().get(0).getName()).isEqualTo("egress");
-		assertThat(pluginFlows.getDataSources().get(0).getName()).isEqualTo("timedIngress");
+		assertThat(pluginFlows.getTransformFlows().getFirst().getName()).isEqualTo("transform");
+		assertThat(pluginFlows.getEgressFlows().getFirst().getName()).isEqualTo("egress");
+		assertThat(pluginFlows.getDataSources().getFirst().getName()).isEqualTo("timedIngress");
 	}
 
 	@Test
@@ -1249,8 +1249,8 @@ class DeltaFiCoreApplicationTests {
 		assertTrue(FlowPlanDatafetcherTestHelper.startEgressFlow(dgsQueryExecutor));
 
 		SystemFlows flows = FlowPlanDatafetcherTestHelper.getRunningFlows(dgsQueryExecutor);
-		assertThat(flows.getTransform()).hasSize(1).matches(transformFlows -> TRANSFORM_FLOW_NAME.equals(transformFlows.get(0).getName()));
-		assertThat(flows.getEgress()).hasSize(1).matches(egressFlows -> EGRESS_FLOW_NAME.equals(egressFlows.get(0).getName()));
+		assertThat(flows.getTransform()).hasSize(1).matches(transformFlows -> TRANSFORM_FLOW_NAME.equals(transformFlows.getFirst().getName()));
+		assertThat(flows.getEgress()).hasSize(1).matches(egressFlows -> EGRESS_FLOW_NAME.equals(egressFlows.getFirst().getName()));
 
 		assertTrue(FlowPlanDatafetcherTestHelper.stopEgressFlow(dgsQueryExecutor));
 		SystemFlows updatedFlows = FlowPlanDatafetcherTestHelper.getRunningFlows(dgsQueryExecutor);
@@ -1277,9 +1277,9 @@ class DeltaFiCoreApplicationTests {
 		refreshFlowCaches();
 
 		SystemFlows flows = FlowPlanDatafetcherTestHelper.getAllFlows(dgsQueryExecutor);
-		assertThat(flows.getTransform()).hasSize(1).matches(transformFlows -> TRANSFORM_FLOW_NAME.equals(transformFlows.get(0).getName()));
-		assertThat(flows.getDataSource()).hasSize(1).matches(timedIngressFlows -> TIMED_DATA_SOURCE_NAME.equals(timedIngressFlows.get(0).getName()));
-		assertThat(flows.getEgress()).hasSize(1).matches(egressFlows -> EGRESS_FLOW_NAME.equals(egressFlows.get(0).getName()));
+		assertThat(flows.getTransform()).hasSize(1).matches(transformFlows -> TRANSFORM_FLOW_NAME.equals(transformFlows.getFirst().getName()));
+		assertThat(flows.getDataSource()).hasSize(1).matches(timedIngressFlows -> TIMED_DATA_SOURCE_NAME.equals(timedIngressFlows.getFirst().getName()));
+		assertThat(flows.getEgress()).hasSize(1).matches(egressFlows -> EGRESS_FLOW_NAME.equals(egressFlows.getFirst().getName()));
 	}
 
 	@Test
@@ -1506,7 +1506,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testResumePolicyDatafetcher() {
 		List<Result> results = ResumePolicyDatafetcherTestHelper.loadResumePolicyWithDuplicate(dgsQueryExecutor);
-		assertTrue(results.get(0).isSuccess());
+		assertTrue(results.getFirst().isSuccess());
 		assertFalse(results.get(1).isSuccess());
 		assertTrue(results.get(1).getErrors().contains("duplicate name or criteria"));
 		assertTrue(results.get(2).getErrors().contains("duplicate name or criteria"));
@@ -1517,9 +1517,9 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(2, policies.size());
 		String idToUse;
 		// Result are not ordered explicitly
-		if (ResumePolicyDatafetcherTestHelper.isDefaultFlow(policies.get(0))) {
-			idToUse = policies.get(0).getId();
-			assertTrue(ResumePolicyDatafetcherTestHelper.matchesDefault(policies.get(0)));
+		if (ResumePolicyDatafetcherTestHelper.isDefaultFlow(policies.getFirst())) {
+			idToUse = policies.getFirst().getId();
+			assertTrue(ResumePolicyDatafetcherTestHelper.matchesDefault(policies.getFirst()));
 		} else {
 			idToUse = policies.get(1).getId();
 			assertTrue(ResumePolicyDatafetcherTestHelper.matchesDefault(policies.get(1)));
@@ -1554,7 +1554,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testApplyResumePolicies() throws IOException {
 		List<Result> results = ResumePolicyDatafetcherTestHelper.loadResumePolicyWithDuplicate(dgsQueryExecutor);
-		assertTrue(results.get(0).isSuccess());
+		assertTrue(results.getFirst().isSuccess());
 
 		Result applyResultNoPolicies = ResumePolicyDatafetcherTestHelper.applyResumePolicies(dgsQueryExecutor, Collections.emptyList());
 		assertFalse(applyResultNoPolicies.isSuccess());
@@ -1600,9 +1600,9 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile during2 = deltaFilesService.getDeltaFile(did2);
 		DeltaFile during3 = deltaFilesService.getDeltaFile(did3);
 
-		assertNull(during1.getFlows().get(during1.getFlows().size() - 1).lastAction().getNextAutoResume());
-		assertNull(during2.getFlows().get(during2.getFlows().size() - 1).lastAction().getNextAutoResume());
-		assertNull(during3.getFlows().get(during3.getFlows().size() - 1).lastAction().getNextAutoResume());
+		assertNull(during1.getFlows().getLast().lastAction().getNextAutoResume());
+		assertNull(during2.getFlows().getLast().lastAction().getNextAutoResume());
+		assertNull(during3.getFlows().getLast().lastAction().getNextAutoResume());
 
 		final String errorCause = "Authority XYZ not recognized";
 
@@ -1611,27 +1611,27 @@ class DeltaFiCoreApplicationTests {
 		List<Result> loadB = ResumePolicyDatafetcherTestHelper.loadResumePolicy(dgsQueryExecutor,
 				false, "policy2", null, errorCause);
 
-		assertTrue(loadA.get(0).isSuccess());
-		assertTrue(loadB.get(0).isSuccess());
+		assertTrue(loadA.getFirst().isSuccess());
+		assertTrue(loadB.getFirst().isSuccess());
 
 		Result applyResults = ResumePolicyDatafetcherTestHelper.applyResumePolicies(dgsQueryExecutor, List.of("policy1", "policy2"));
 		assertTrue(applyResults.isSuccess());
 		assertTrue(applyResults.getErrors().isEmpty());
 		assertEquals(2, applyResults.getInfo().size());
-		assertEquals("Applied policy1 policy to 2 DeltaFiles", applyResults.getInfo().get(0));
+		assertEquals("Applied policy1 policy to 2 DeltaFiles", applyResults.getInfo().getFirst());
 		assertEquals("Applied policy2 policy to 1 DeltaFiles", applyResults.getInfo().get(1));
 
 		DeltaFile final1 = deltaFilesService.getDeltaFile(did1);
 		DeltaFile final2 = deltaFilesService.getDeltaFile(did2);
 		DeltaFile final3 = deltaFilesService.getDeltaFile(did3);
 
-		assertNotNull(final1.getFlows().get(final1.getFlows().size() - 1).lastAction().getNextAutoResume());
-		assertNotNull(final2.getFlows().get(final2.getFlows().size() - 1).lastAction().getNextAutoResume());
-		assertNotNull(final3.getFlows().get(final3.getFlows().size() - 1).lastAction().getNextAutoResume());
+		assertNotNull(final1.getFlows().getLast().lastAction().getNextAutoResume());
+		assertNotNull(final2.getFlows().getLast().lastAction().getNextAutoResume());
+		assertNotNull(final3.getFlows().getLast().lastAction().getNextAutoResume());
 
-		assertEquals("policy1", final1.getFlows().get(final1.getFlows().size() - 1).lastAction().getNextAutoResumeReason());
-		assertEquals("policy1", final2.getFlows().get(final2.getFlows().size() - 1).lastAction().getNextAutoResumeReason());
-		assertEquals("policy2", final3.getFlows().get(final3.getFlows().size() - 1).lastAction().getNextAutoResumeReason());
+		assertEquals("policy1", final1.getFlows().getLast().lastAction().getNextAutoResumeReason());
+		assertEquals("policy1", final2.getFlows().getLast().lastAction().getNextAutoResumeReason());
+		assertEquals("policy2", final3.getFlows().getLast().lastAction().getNextAutoResumeReason());
 	}
 
 	@Test
@@ -1718,7 +1718,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(expected.getOffset(), actual.getOffset());
 		assertEquals(expected.getCount(), actual.getCount());
 		assertEquals(expected.getTotalCount(), actual.getTotalCount());
-		assertEqualsIgnoringDates(expected.getDeltaFiles().get(0), actual.getDeltaFiles().get(0));
+		assertEqualsIgnoringDates(expected.getDeltaFiles().getFirst(), actual.getDeltaFiles().getFirst());
 	}
 
 	@Test
@@ -1742,9 +1742,9 @@ class DeltaFiCoreApplicationTests {
 
 		assertEquals(3, results.size());
 
-		assertEquals(input.getDid(), results.get(0).getDid());
-		assertTrue(results.get(0).getSuccess());
-		assertNull(results.get(0).getError());
+		assertEquals(input.getDid(), results.getFirst().getDid());
+		assertTrue(results.getFirst().getSuccess());
+		assertNull(results.getFirst().getError());
 
 		assertEquals(second.getDid(), results.get(1).getDid());
 		assertFalse(results.get(1).getSuccess());
@@ -1756,7 +1756,7 @@ class DeltaFiCoreApplicationTests {
 
 		DeltaFile afterResumeFile = deltaFilesService.getDeltaFile(input.getDid());
 		assertEquals(2, afterResumeFile.getFlows().get(2).getActions().size());
-		assertEquals(ActionState.RETRIED, afterResumeFile.getFlows().get(2).getActions().get(0).getState());
+		assertEquals(ActionState.RETRIED, afterResumeFile.getFlows().get(2).getActions().getFirst().getState());
 		assertEquals(QUEUED, afterResumeFile.getFlows().get(2).getActions().get(1).getState());
 		// StateMachine will queue the failed loadAction again leaving the DeltaFile in the IN_FLIGHT stage
 		assertEquals(DeltaFileFlowState.IN_FLIGHT, afterResumeFile.getFlows().get(2).getState());
@@ -1777,7 +1777,7 @@ class DeltaFiCoreApplicationTests {
 
 		assertEquals(2, plugins.size());
 
-		validatePlugin1(plugins.get(0));
+		validatePlugin1(plugins.getFirst());
 	}
 
 	@Test
@@ -1881,17 +1881,17 @@ class DeltaFiCoreApplicationTests {
 		List<Plugin> matched = pluginRepository.findPluginsWithDependency(
 				new PluginCoordinates("org.deltafi", "plugin-3", "1.0.0"));
 		assertEquals(2, matched.size());
-		if (matched.get(0).getDisplayName().equals("Test Plugin 1")) {
+		if (matched.getFirst().getDisplayName().equals("Test Plugin 1")) {
 			assertEquals("Test Plugin 4", matched.get(1).getDisplayName());
 		} else {
 			assertEquals("Test Plugin 1", matched.get(1).getDisplayName());
-			assertEquals("Test Plugin 4", matched.get(0).getDisplayName());
+			assertEquals("Test Plugin 4", matched.getFirst().getDisplayName());
 		}
 
 		matched = pluginRepository.findPluginsWithDependency(
 				new PluginCoordinates("org.deltafi", "plugin-2", "1.0.0"));
 		assertEquals(1, matched.size());
-		assertEquals("Test Plugin 1", matched.get(0).getDisplayName());
+		assertEquals("Test Plugin 1", matched.getFirst().getDisplayName());
 
 		matched = pluginRepository.findPluginsWithDependency(
 				new PluginCoordinates("org.deltafi", "plugin-2", "2.0.0"));
@@ -1920,33 +1920,33 @@ class DeltaFiCoreApplicationTests {
 		Action other = Action.builder().name("other").modified(MONGO_NOW).state(ActionState.COMPLETE).build();
 
 		DeltaFile shouldResume = buildDeltaFile("did", TRANSFORM_FLOW_NAME, DeltaFileStage.ERROR, MONGO_NOW, MONGO_NOW);
-		shouldResume.getFlows().get(0).setActions(Arrays.asList(ingress, other, hit));
+		shouldResume.getFlows().getFirst().setActions(Arrays.asList(ingress, other, hit));
 		deltaFileRepo.save(shouldResume);
 
 		DeltaFile shouldNotResume = buildDeltaFile("did2", TRANSFORM_FLOW_NAME, DeltaFileStage.ERROR, MONGO_NOW, MONGO_NOW);
-		shouldNotResume.getFlows().get(0).setActions(Arrays.asList(ingress, miss));
+		shouldNotResume.getFlows().getFirst().setActions(Arrays.asList(ingress, miss));
 		deltaFileRepo.save(shouldNotResume);
 
 		DeltaFile notResumable = buildDeltaFile("did3", TRANSFORM_FLOW_NAME, DeltaFileStage.ERROR, MONGO_NOW, MONGO_NOW);
-		notResumable.getFlows().get(0).setActions(Arrays.asList(ingress, notSet));
+		notResumable.getFlows().getFirst().setActions(Arrays.asList(ingress, notSet));
 		deltaFileRepo.save(notResumable);
 
 		DeltaFile cancelled = buildDeltaFile("did4", TRANSFORM_FLOW_NAME, DeltaFileStage.CANCELLED, MONGO_NOW, MONGO_NOW);
-		cancelled.getFlows().get(0).setActions(Arrays.asList(ingress, other, hit));
+		cancelled.getFlows().getFirst().setActions(Arrays.asList(ingress, other, hit));
 		deltaFileRepo.save(cancelled);
 
 		DeltaFile contentDeleted = buildDeltaFile("did5", TRANSFORM_FLOW_NAME, DeltaFileStage.ERROR, MONGO_NOW, MONGO_NOW);
-		contentDeleted.getFlows().get(0).setActions(Arrays.asList(ingress, other, hit));
+		contentDeleted.getFlows().getFirst().setActions(Arrays.asList(ingress, other, hit));
 		contentDeleted.setContentDeleted(MONGO_NOW);
 		deltaFileRepo.save(contentDeleted);
 
 		DeltaFile shouldAlsoResume = buildDeltaFile("did6", TRANSFORM_FLOW_NAME, DeltaFileStage.ERROR, MONGO_NOW, MONGO_NOW);
-		shouldAlsoResume.getFlows().get(0).setActions(Arrays.asList(ingress, other, hit));
+		shouldAlsoResume.getFlows().getFirst().setActions(Arrays.asList(ingress, other, hit));
 		deltaFileRepo.save(shouldAlsoResume);
 
 		List<DeltaFile> hits = deltaFileRepo.findReadyForAutoResume(MONGO_NOW);
 		assertEquals(3, hits.size());
-		assertEquals(shouldResume.getDid(), hits.get(0).getDid());
+		assertEquals(shouldResume.getDid(), hits.getFirst().getDid());
 		assertEquals(contentDeleted.getDid(), hits.get(1).getDid());
 		assertEquals(shouldAlsoResume.getDid(), hits.get(2).getDid());
 
@@ -1965,25 +1965,25 @@ class DeltaFiCoreApplicationTests {
 		Action shouldStay = Action.builder().name("miss").modified(MONGO_NOW.plusSeconds(1000)).state(QUEUED).build();
 
 		DeltaFile oneHit = buildDeltaFile("did", "flow1", DeltaFileStage.IN_FLIGHT, MONGO_NOW, MONGO_NOW.minusSeconds(1000));
-		oneHit.getFlows().get(0).setState(DeltaFileFlowState.IN_FLIGHT);
-		oneHit.getFlows().get(0).setActions(List.of(shouldRequeue));
-		DeltaFileFlow flow2 = oneHit.addFlow("flow3", FlowType.EGRESS, oneHit.getFlows().get(0), MONGO_NOW.minusSeconds(1000));
+		oneHit.getFlows().getFirst().setState(DeltaFileFlowState.IN_FLIGHT);
+		oneHit.getFlows().getFirst().setActions(List.of(shouldRequeue));
+		DeltaFileFlow flow2 = oneHit.addFlow("flow3", FlowType.EGRESS, oneHit.getFlows().getFirst(), MONGO_NOW.minusSeconds(1000));
 		flow2.setActions(List.of(shouldStay));
 		deltaFileRepo.save(oneHit);
 
 		DeltaFile twoHits = buildDeltaFile("did2", "flow1", DeltaFileStage.IN_FLIGHT, MONGO_NOW, MONGO_NOW.minusSeconds(1000));
-		twoHits.getFlows().get(0).setState(DeltaFileFlowState.IN_FLIGHT);
+		twoHits.getFlows().getFirst().setState(DeltaFileFlowState.IN_FLIGHT);
 		twoHits.setRequeueCount(5);
-		twoHits.getFlows().get(0).setActions(List.of(shouldRequeue));
-		flow2 = twoHits.addFlow("flow2", FlowType.TRANSFORM, oneHit.getFlows().get(0), MONGO_NOW.minusSeconds(1000));
+		twoHits.getFlows().getFirst().setActions(List.of(shouldRequeue));
+		flow2 = twoHits.addFlow("flow2", FlowType.TRANSFORM, oneHit.getFlows().getFirst(), MONGO_NOW.minusSeconds(1000));
 		flow2.setActions(List.of(shouldStay));
-		DeltaFileFlow flow3 = twoHits.addFlow("flow3", FlowType.EGRESS, oneHit.getFlows().get(0), MONGO_NOW.minusSeconds(1000));
+		DeltaFileFlow flow3 = twoHits.addFlow("flow3", FlowType.EGRESS, oneHit.getFlows().getFirst(), MONGO_NOW.minusSeconds(1000));
 		flow3.setActions(List.of(shouldRequeue));
 		deltaFileRepo.save(twoHits);
 
 		DeltaFile miss = buildDeltaFile("did3", "flow1", DeltaFileStage.IN_FLIGHT, MONGO_NOW, MONGO_NOW.plusSeconds(1000));
-		miss.getFlows().get(0).setState(DeltaFileFlowState.IN_FLIGHT);
-		miss.getFlows().get(0).setActions(List.of(shouldStay));
+		miss.getFlows().getFirst().setState(DeltaFileFlowState.IN_FLIGHT);
+		miss.getFlows().getFirst().setActions(List.of(shouldStay));
 		flow2 = oneHit.addFlow("flow2", FlowType.TRANSFORM, oneHit.getFlows().getFirst(), MONGO_NOW.minusSeconds(1000));
 		flow2.setActions(List.of(excludedRequeue));
 		flow3 = oneHit.addFlow("flow3", FlowType.EGRESS, oneHit.getFlows().getFirst(), MONGO_NOW.minusSeconds(1000));
@@ -1991,24 +1991,24 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.save(miss);
 
 		DeltaFile excludedByDid = buildDeltaFile("did4", "flow1", DeltaFileStage.IN_FLIGHT, MONGO_NOW, MONGO_NOW.minusSeconds(1000));
-		excludedByDid.getFlows().get(0).setState(DeltaFileFlowState.IN_FLIGHT);
-		excludedByDid.getFlows().get(0).setActions(List.of(shouldRequeue));
+		excludedByDid.getFlows().getFirst().setState(DeltaFileFlowState.IN_FLIGHT);
+		excludedByDid.getFlows().getFirst().setActions(List.of(shouldRequeue));
 		deltaFileRepo.save(excludedByDid);
 
 		DeltaFile wrongStage = buildDeltaFile("did5", "flow1", DeltaFileStage.CANCELLED, MONGO_NOW, MONGO_NOW.minusSeconds(1000));
-		wrongStage.getFlows().get(0).setState(DeltaFileFlowState.IN_FLIGHT);
-		wrongStage.getFlows().get(0).setActions(List.of(shouldRequeue));
+		wrongStage.getFlows().getFirst().setState(DeltaFileFlowState.IN_FLIGHT);
+		wrongStage.getFlows().getFirst().setActions(List.of(shouldRequeue));
 		deltaFileRepo.save(wrongStage);
 
 		List<DeltaFile> hits = deltaFileRepo.updateForRequeue(MONGO_NOW, Duration.ofSeconds(30), Set.of("excluded", "anotherAction"), Set.of("did4", "did500"));
 
 		assertEquals(2, hits.size());
-		assertEquals(oneHit.getDid(), hits.get(0).getDid());
+		assertEquals(oneHit.getDid(), hits.getFirst().getDid());
 		assertEquals(twoHits.getDid(), hits.get(1).getDid());
-		assertEquals(1, hits.get(0).getRequeueCount());
+		assertEquals(1, hits.getFirst().getRequeueCount());
 		assertEquals(6, hits.get(1).getRequeueCount());
 
-		DeltaFile fromDatabase = deltaFilesService.getDeltaFile(hits.get(0).getDid());
+		DeltaFile fromDatabase = deltaFilesService.getDeltaFile(hits.getFirst().getDid());
 		assertEquals(1, fromDatabase.getRequeueCount());
 
 		DeltaFile oneHitAfter = loadDeltaFile("did");
@@ -2016,11 +2016,11 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile missAfter = loadDeltaFile("did3");
 
 		assertEquals(miss, missAfter);
-		assertNotEquals(oneHit.getFlows().get(0).getActions().get(0).getModified(), oneHitAfter.getFlows().get(0).getActions().get(0).getModified());
-		assertEquals(oneHit.getFlows().get(1).getActions().get(0).getModified(), oneHitAfter.getFlows().get(1).getActions().get(0).getModified());
-		assertNotEquals(twoHits.getFlows().get(0).getActions().get(0).getModified(), twoHitsAfter.getFlows().get(0).getActions().get(0).getModified());
-		assertEquals(twoHits.getFlows().get(1).getActions().get(0).getModified(), twoHitsAfter.getFlows().get(1).getActions().get(0).getModified());
-		assertNotEquals(twoHits.getFlows().get(2).getActions().get(0).getModified(), twoHitsAfter.getFlows().get(2).getActions().get(0).getModified());
+		assertNotEquals(oneHit.getFlows().getFirst().getActions().getFirst().getModified(), oneHitAfter.getFlows().getFirst().getActions().getFirst().getModified());
+		assertEquals(oneHit.getFlows().get(1).getActions().getFirst().getModified(), oneHitAfter.getFlows().get(1).getActions().getFirst().getModified());
+		assertNotEquals(twoHits.getFlows().getFirst().getActions().getFirst().getModified(), twoHitsAfter.getFlows().getFirst().getActions().getFirst().getModified());
+		assertEquals(twoHits.getFlows().get(1).getActions().getFirst().getModified(), twoHitsAfter.getFlows().get(1).getActions().getFirst().getModified());
+		assertNotEquals(twoHits.getFlows().get(2).getActions().getFirst().getModified(), twoHitsAfter.getFlows().get(2).getActions().getFirst().getModified());
 	}
 
 	@Test
@@ -2033,7 +2033,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.batchedBulkDeleteByDidIn(Arrays.asList("a", "c"));
 
 		assertEquals(1, deltaFileRepo.count());
-		assertEquals("b", deltaFileRepo.findAll().get(0).getDid());
+		assertEquals("b", deltaFileRepo.findAll().getFirst().getDid());
 		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
@@ -2091,16 +2091,16 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile2 = buildDeltaFile("2", null, DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now().plusSeconds(2));
 		deltaFileRepo.save(deltaFile2);
 		DeltaFile deltaFile3 = buildDeltaFile("3", null, DeltaFileStage.ERROR, OffsetDateTime.now(), OffsetDateTime.now());
-		deltaFile3.getFlows().get(0).addAction("errorAction", ActionType.TRANSFORM, ActionState.ERROR, OffsetDateTime.now());
+		deltaFile3.getFlows().getFirst().addAction("errorAction", ActionType.TRANSFORM, ActionState.ERROR, OffsetDateTime.now());
 		deltaFile3.updateFlags();
 		deltaFileRepo.save(deltaFile3);
 		DeltaFile deltaFile4 = buildDeltaFile("4", null, DeltaFileStage.ERROR, OffsetDateTime.now(), OffsetDateTime.now());
-		deltaFile4.getFlows().get(0).addAction("errorAction", ActionType.TRANSFORM, ActionState.ERROR, OffsetDateTime.now());
+		deltaFile4.getFlows().getFirst().addAction("errorAction", ActionType.TRANSFORM, ActionState.ERROR, OffsetDateTime.now());
 		deltaFile4.acknowledgeErrors(OffsetDateTime.now(), null);
 		deltaFile4.updateFlags();
 		deltaFileRepo.save(deltaFile4);
 		DeltaFile deltaFile5 = buildDeltaFile("5", null, DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now());
-		deltaFile5.getFlows().get(0).setPendingAnnotations(Set.of("a"));
+		deltaFile5.getFlows().getFirst().setPendingAnnotations(Set.of("a"));
 		deltaFile5.updateFlags();
 		deltaFileRepo.save(deltaFile5);
 
@@ -2182,7 +2182,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile7.setTotalBytes(1000L);
 
 		// TODO - fix this
-		deltaFile7.getFlows().get(0).setPendingAnnotations(Set.of("a"));
+		deltaFile7.getFlows().getFirst().setPendingAnnotations(Set.of("a"));
 		deltaFile7.updateFlags();
 		deltaFileRepo.save(deltaFile7);
 
@@ -2312,10 +2312,10 @@ class DeltaFiCoreApplicationTests {
 		deltaFile1.setTotalBytes(1000L);
 		deltaFile1.addAnnotations(Map.of("a.1", "first", "common", "value"));
 		deltaFile1.setContentDeleted(MONGO_NOW);
-		deltaFile1.getFlows().get(0).getInput().setMetadata(Map.of("key1", "value1", "key2", "value2"));
+		deltaFile1.getFlows().getFirst().getInput().setMetadata(Map.of("key1", "value1", "key2", "value2"));
 		deltaFile1.setName("filename1");
 		deltaFile1.setDataSource("flow1");
-		DeltaFileFlow flow1 = deltaFile1.addFlow("MyEgressFlow", FlowType.EGRESS, deltaFile1.getFlows().get(0), MONGO_NOW);
+		DeltaFileFlow flow1 = deltaFile1.addFlow("MyEgressFlow", FlowType.EGRESS, deltaFile1.getFlows().getFirst(), MONGO_NOW);
 		flow1.setActions(List.of(Action.builder().name("action1")
 				.state(ActionState.COMPLETE)
 				.content(List.of(new Content("formattedFilename1", "mediaType")))
@@ -2333,8 +2333,8 @@ class DeltaFiCoreApplicationTests {
 		deltaFile2.addAnnotations(Map.of("a.2", "first", "common", "value"));
 		deltaFile2.setName("filename2");
 		deltaFile2.setDataSource("flow2");
-		DeltaFileFlow flow2 = deltaFile2.addFlow("MyEgressFlow", FlowType.EGRESS, deltaFile2.getFlows().get(0), MONGO_NOW);
-		DeltaFileFlow flow2b = deltaFile2.addFlow("MyEgressFlow2", FlowType.EGRESS, deltaFile2.getFlows().get(0), MONGO_NOW);
+		DeltaFileFlow flow2 = deltaFile2.addFlow("MyEgressFlow", FlowType.EGRESS, deltaFile2.getFlows().getFirst(), MONGO_NOW);
+		DeltaFileFlow flow2b = deltaFile2.addFlow("MyEgressFlow2", FlowType.EGRESS, deltaFile2.getFlows().getFirst(), MONGO_NOW);
 		flow2.setActions(List.of(
 				Action.builder().name("action1")
 						.state(ActionState.ERROR)
@@ -2354,8 +2354,8 @@ class DeltaFiCoreApplicationTests {
 		deltaFile3.addAnnotations(Map.of("b.2", "first", "common", "value"));
 		deltaFile3.setName("filename3");
 		deltaFile3.setDataSource("flow3");
-		DeltaFileFlow flow3 = deltaFile3.addFlow("MyTransformFlow", FlowType.TRANSFORM, deltaFile3.getFlows().get(0), MONGO_NOW);
-		DeltaFileFlow flow3b = deltaFile3.addFlow("MyEgressFlow3", FlowType.EGRESS, deltaFile3.getFlows().get(0), MONGO_NOW);
+		DeltaFileFlow flow3 = deltaFile3.addFlow("MyTransformFlow", FlowType.TRANSFORM, deltaFile3.getFlows().getFirst(), MONGO_NOW);
+		DeltaFileFlow flow3b = deltaFile3.addFlow("MyEgressFlow3", FlowType.EGRESS, deltaFile3.getFlows().getFirst(), MONGO_NOW);
 		flow3.setActions(List.of(
 				Action.builder()
 						.name("action2")
@@ -2428,24 +2428,24 @@ class DeltaFiCoreApplicationTests {
 	void testQueryByFilterMessage() {
 		// Not filtered
 		DeltaFile deltaFile1 = buildDeltaFile("1", null, DeltaFileStage.COMPLETE, MONGO_NOW, MONGO_NOW);
-		deltaFile1.getFlows().get(0).setActions(List.of(Action.builder().name("action1").build()));
+		deltaFile1.getFlows().getFirst().setActions(List.of(Action.builder().name("action1").build()));
 		deltaFileRepo.save(deltaFile1);
 		// Not filtered, with errorCause
 		DeltaFile deltaFile2 = buildDeltaFile("2", null, DeltaFileStage.ERROR, MONGO_NOW.plusSeconds(1), MONGO_NOW.plusSeconds(1));
-		deltaFile2.getFlows().get(0).setActions(List.of(Action.builder().name("action1").state(ActionState.ERROR).errorCause("Error reason 1").build()));
+		deltaFile2.getFlows().getFirst().setActions(List.of(Action.builder().name("action1").state(ActionState.ERROR).errorCause("Error reason 1").build()));
 		deltaFileRepo.save(deltaFile2);
 		// Filtered, reason 1
 		DeltaFile deltaFile3 = buildDeltaFile("3", null, DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(2), MONGO_NOW.plusSeconds(2));
-		deltaFile3.getFlows().get(0).setActions(List.of(Action.builder().name("action1").state(ActionState.FILTERED).errorCause("Filtered reason 1").build()));
+		deltaFile3.getFlows().getFirst().setActions(List.of(Action.builder().name("action1").state(ActionState.FILTERED).errorCause("Filtered reason 1").build()));
 		deltaFile3.setFiltered(true);
 		deltaFileRepo.save(deltaFile3);
 		// Filtered, reason 2
 		DeltaFile deltaFile4 = buildDeltaFile("4", null, DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(3), MONGO_NOW.plusSeconds(3));
-		deltaFile4.getFlows().get(0).setActions(List.of(Action.builder().name("action1").state(ActionState.ERROR).filteredCause("Filtered reason 2").build()));
+		deltaFile4.getFlows().getFirst().setActions(List.of(Action.builder().name("action1").state(ActionState.ERROR).filteredCause("Filtered reason 2").build()));
 		deltaFile4.setFiltered(true);
 		deltaFileRepo.save(deltaFile4);
 		DeltaFile deltaFile5 = buildDeltaFile("5", null, DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(3), MONGO_NOW.plusSeconds(3));
-		deltaFile5.getFlows().get(0).setActions(List.of(Action.builder().name("action1").state(ActionState.FILTERED).filteredCause("Filtered reason 2").build()));
+		deltaFile5.getFlows().getFirst().setActions(List.of(Action.builder().name("action1").state(ActionState.FILTERED).filteredCause("Filtered reason 2").build()));
 		deltaFile5.setFiltered(true);
 		deltaFileRepo.save(deltaFile5);
 
@@ -2502,7 +2502,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testFilterByPendingAnnotations() {
 		DeltaFile pending = buildDeltaFile("1", "a", DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(2), MONGO_NOW.minusSeconds(2));
-		pending.getFlows().get(0).setPendingAnnotations(Set.of("a"));
+		pending.getFlows().getFirst().setPendingAnnotations(Set.of("a"));
 		DeltaFile notPending = buildDeltaFile("2", "a", DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(2), MONGO_NOW.minusSeconds(2));
 
 		deltaFileRepo.saveAll(List.of(pending, notPending));
@@ -2708,10 +2708,10 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(2, deltaFiles.getCount());
 		assertEquals(2, deltaFiles.getTotalCount());
 		assertEquals(0, deltaFiles.getOffset());
-		assertEquals(deltaFile2.getDid(), deltaFiles.getDeltaFiles().get(0).getDid());
-		assertEquals(deltaFile2.getFlows().get(0), deltaFiles.getDeltaFiles().get(0).getFlows().get(0));
+		assertEquals(deltaFile2.getDid(), deltaFiles.getDeltaFiles().getFirst().getDid());
+		assertEquals(deltaFile2.getFlows().getFirst(), deltaFiles.getDeltaFiles().getFirst().getFlows().getFirst());
 		assertEquals(deltaFile1.getDid(), deltaFiles.getDeltaFiles().get(1).getDid());
-		assertEquals(deltaFile1.getFlows().get(0).getName(), deltaFiles.getDeltaFiles().get(1).getFlows().get(0).getName());
+		assertEquals(deltaFile1.getFlows().getFirst().getName(), deltaFiles.getDeltaFiles().get(1).getFlows().getFirst().getName());
 	}
 
 	@Test
@@ -2866,13 +2866,13 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(3, firstPage.totalCount());
 		assertEquals(2, firstPage.countPerFlow().size());
 
-		assertEquals("flow1", firstPage.countPerFlow().get(0).getFlow());
+		assertEquals("flow1", firstPage.countPerFlow().getFirst().getFlow());
 		assertEquals("flow2", firstPage.countPerFlow().get(1).getFlow());
 
-		assertEquals(2, firstPage.countPerFlow().get(0).getCount());
+		assertEquals(2, firstPage.countPerFlow().getFirst().getCount());
 		assertEquals(1, firstPage.countPerFlow().get(1).getCount());
 
-		assertTrue(firstPage.countPerFlow().get(0).getDids().containsAll(List.of("1", "4")));
+		assertTrue(firstPage.countPerFlow().getFirst().getDids().containsAll(List.of("1", "4")));
 		assertTrue(firstPage.countPerFlow().get(1).getDids().contains("3"));
 
 		SummaryByFlow secondPage = deltaFilesService.getErrorSummaryByFlow(
@@ -2883,9 +2883,9 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(3, secondPage.totalCount());
 		assertEquals(1, secondPage.countPerFlow().size());
 
-		assertEquals("flow3", secondPage.countPerFlow().get(0).getFlow());
-		assertEquals(1, secondPage.countPerFlow().get(0).getCount());
-		assertTrue(secondPage.countPerFlow().get(0).getDids().contains("5"));
+		assertEquals("flow3", secondPage.countPerFlow().getFirst().getFlow());
+		assertEquals(1, secondPage.countPerFlow().getFirst().getCount());
+		assertTrue(secondPage.countPerFlow().getFirst().getDids().contains("5"));
 
 		DeltaFile deltaFile6 = buildDeltaFile("6", "flow3", DeltaFileStage.ERROR, now, minusTwo);
 		deltaFileRepo.save(deltaFile6);
@@ -2907,10 +2907,10 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(2, filterByTime.totalCount());
 		assertEquals(2, filterByTime.countPerFlow().size());
 
-		assertEquals(2, filterByTime.countPerFlow().get(0).getCount());
+		assertEquals(2, filterByTime.countPerFlow().getFirst().getCount());
 		assertEquals(1, filterByTime.countPerFlow().get(1).getCount());
 
-		assertEquals("flow3", filterByTime.countPerFlow().get(0).getFlow());
+		assertEquals("flow3", filterByTime.countPerFlow().getFirst().getFlow());
 		assertEquals("flow2", filterByTime.countPerFlow().get(1).getFlow());
 
 		SummaryByFlow filterByFlow = deltaFilesService.getErrorSummaryByFlow(
@@ -2927,8 +2927,8 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(0, filterByFlow.offset());
 		assertEquals(1, filterByFlow.totalCount());
 		assertEquals(1, filterByFlow.countPerFlow().size());
-		assertEquals(2, filterByFlow.countPerFlow().get(0).getCount());
-		assertEquals("flow3", filterByFlow.countPerFlow().get(0).getFlow());
+		assertEquals(2, filterByFlow.countPerFlow().getFirst().getCount());
+		assertEquals("flow3", filterByFlow.countPerFlow().getFirst().getFlow());
 
 		SummaryByFlow noneFound = deltaFilesService.getErrorSummaryByFlow(
 				0, 99, ErrorSummaryFilter.builder()
@@ -2999,9 +2999,9 @@ class DeltaFiCoreApplicationTests {
 
 		assertEquals(1, resultsAck.count());
 		assertEquals(1, resultsAck.countPerFlow().size());
-		assertEquals(1, resultsAck.countPerFlow().get(0).getCount());
-		assertEquals("f3", resultsAck.countPerFlow().get(0).getFlow());
-		assertTrue(resultsAck.countPerFlow().get(0).getDids().contains("6"));
+		assertEquals(1, resultsAck.countPerFlow().getFirst().getCount());
+		assertEquals("f3", resultsAck.countPerFlow().getFirst().getFlow());
+		assertTrue(resultsAck.countPerFlow().getFirst().getDids().contains("6"));
 
 		ErrorSummaryFilter filterNoAck = ErrorSummaryFilter.builder()
 				.errorAcknowledged(false)
@@ -3013,9 +3013,9 @@ class DeltaFiCoreApplicationTests {
 
 		assertEquals(1, resultsNoAck.count());
 		assertEquals(1, resultsNoAck.countPerFlow().size());
-		assertEquals(2, resultsNoAck.countPerFlow().get(0).getCount());
-		assertEquals("f3", resultsNoAck.countPerFlow().get(0).getFlow());
-		assertTrue(resultsNoAck.countPerFlow().get(0).getDids().containsAll(List.of("7", "8")));
+		assertEquals(2, resultsNoAck.countPerFlow().getFirst().getCount());
+		assertEquals("f3", resultsNoAck.countPerFlow().getFirst().getFlow());
+		assertTrue(resultsNoAck.countPerFlow().getFirst().getDids().containsAll(List.of("7", "8")));
 
 		ErrorSummaryFilter filterFlowOnly = ErrorSummaryFilter.builder()
 				.flow("f3")
@@ -3026,9 +3026,9 @@ class DeltaFiCoreApplicationTests {
 
 		assertEquals(1, resultsForFlow.count());
 		assertEquals(1, resultsForFlow.countPerFlow().size());
-		assertEquals(3, resultsForFlow.countPerFlow().get(0).getCount());
-		assertEquals("f3", resultsForFlow.countPerFlow().get(0).getFlow());
-		assertTrue(resultsForFlow.countPerFlow().get(0).getDids().containsAll(List.of("6", "7", "8")));
+		assertEquals(3, resultsForFlow.countPerFlow().getFirst().getCount());
+		assertEquals("f3", resultsForFlow.countPerFlow().getFirst().getFlow());
+		assertTrue(resultsForFlow.countPerFlow().getFirst().getDids().containsAll(List.of("6", "7", "8")));
 	}
 
 	@Test
@@ -3084,7 +3084,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(1, actual.totalCount());
 		assertEquals(1, actual.countPerFlow().size());
 		List<String> expectedDids = List.of("did");
-		CountPerFlow message0 = actual.countPerFlow().get(0);
+		CountPerFlow message0 = actual.countPerFlow().getFirst();
 		assertThat(message0.getFlow()).isEqualTo(REST_DATA_SOURCE_NAME);
 		assertThat(message0.getDids()).isEqualTo(expectedDids);
 	}
@@ -3114,7 +3114,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(2, actual.totalCount());
 		assertEquals(2, actual.countPerMessage().size());
 		List<String> expectedDids = List.of("did");
-		CountPerMessage message0 = actual.countPerMessage().get(0);
+		CountPerMessage message0 = actual.countPerMessage().getFirst();
 		CountPerMessage message1 = actual.countPerMessage().get(1);
 		assertThat(message0.getDids()).isEqualTo(expectedDids);
 		assertThat(message0.getMessage()).isEqualTo("filtered two");
@@ -3127,20 +3127,20 @@ class DeltaFiCoreApplicationTests {
 
 		DeltaFile deltaFile = postTransformDeltaFile("did");
 		deltaFile.setFiltered(true);
-		deltaFile.getFlows().get(0).getActions().add(filteredAction("filtered one"));
-		deltaFile.getFlows().get(0).getActions().add(filteredAction("filtered two"));
+		deltaFile.getFlows().getFirst().getActions().add(filteredAction("filtered one"));
+		deltaFile.getFlows().getFirst().getActions().add(filteredAction("filtered two"));
 
 		DeltaFile tooNew = postTransformDeltaFile("did2");
 		tooNew.setFiltered(true);
 		tooNew.setDataSource("other");
 		tooNew.setModified(plusTwo);
-		tooNew.getFlows().get(0).getActions().add(filteredAction("another message"));
+		tooNew.getFlows().getFirst().getActions().add(filteredAction("another message"));
 
 		DeltaFile notMarkedFiltered = postTransformDeltaFile("did3");
 		notMarkedFiltered.setFiltered(null);
 		notMarkedFiltered.setDataSource("other");
 		notMarkedFiltered.setModified(plusTwo);
-		notMarkedFiltered.getFlows().get(0).getActions().add(filteredAction("another message"));
+		notMarkedFiltered.getFlows().getFirst().getActions().add(filteredAction("another message"));
 
 		deltaFileRepo.saveAll(List.of(deltaFile, tooNew, notMarkedFiltered));
 	}
@@ -3429,7 +3429,7 @@ class DeltaFiCoreApplicationTests {
 		String flow = "flowThatChanges";
 		Set<String> expectedAnnotations = Set.of("f");
 		DeltaFile completeAfterChange = buildDeltaFile("a");
-		completeAfterChange.getFlows().get(0).setPendingAnnotations(expectedAnnotations);
+		completeAfterChange.getFlows().getFirst().setPendingAnnotations(expectedAnnotations);
 		completeAfterChange.addAnnotations(Map.of("a", "value")); // this already has the expected annotation, the flow state should go to complete
 		setupPendingAnnotations(completeAfterChange, flow, expectedAnnotations);
 
@@ -3447,11 +3447,11 @@ class DeltaFiCoreApplicationTests {
 
 		DeltaFile updated = deltaFilesService.getDeltaFile("a");
 		assertThat(updated.pendingAnnotationFlows()).isEmpty();
-		assertThat(updated.getFlows().get(0).getState()).isEqualTo(DeltaFileFlowState.COMPLETE);
+		assertThat(updated.getFlows().getFirst().getState()).isEqualTo(DeltaFileFlowState.COMPLETE);
 	}
 
 	private void setupPendingAnnotations(DeltaFile deltaFile, String flowName, Set<String> pendingAnnotations) {
-		DeltaFileFlow deltaFileFlow = deltaFile.getFlows().get(0);
+		DeltaFileFlow deltaFileFlow = deltaFile.getFlows().getFirst();
 		deltaFileFlow.setState(DeltaFileFlowState.PENDING_ANNOTATIONS);
 		deltaFileFlow.setName(flowName);
 		deltaFileFlow.setType(FlowType.EGRESS);
@@ -3473,7 +3473,7 @@ class DeltaFiCoreApplicationTests {
 			ActionInput actionInput = actionInputs.get(i);
 			assertThat(actionInput.getActionContext().getFlowName()).isEqualTo(forActions[i].getFlowName());
 			assertThat(actionInput.getActionContext().getActionName()).isEqualTo(forActions[i].getActionName());
-			assertEquals(forQueueHelper(expected, actionInput.getActionContext()), actionInput.getDeltaFileMessages().get(0));
+			assertEquals(forQueueHelper(expected, actionInput.getActionContext()), actionInput.getDeltaFileMessages().getFirst());
 		}
 	}
 
@@ -3916,23 +3916,23 @@ class DeltaFiCoreApplicationTests {
 		List<DeltaFile> children = deltaFilesService.deltaFiles(0, 50, DeltaFilesFilter.newBuilder().dids(deltaFile.getChildDids()).build(), DeltaFileOrder.newBuilder().field("created").direction(DeltaFileDirection.ASC).build()).getDeltaFiles();
 		assertEquals(2, children.size());
 
-		DeltaFile child1 = children.get(0);
+		DeltaFile child1 = children.getFirst();
 		assertEquals(DeltaFileStage.IN_FLIGHT, child1.getStage());
 		assertFalse(child1.getTestMode());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child1.getParentDids());
 		assertEquals("input.txt", child1.getSourceInfo().getFilename());
-		assertEquals(0, child1.lastCompleteAction().getContent().get(0).getSegments().get(0).getOffset());
+		assertEquals(0, child1.lastCompleteAction().getContent().getFirst().getSegments().getFirst().getOffset());
 
 		DeltaFile child2 = children.get(1);
 		assertEquals(DeltaFileStage.IN_FLIGHT, child2.getStage());
 		assertFalse(child2.getTestMode());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child2.getParentDids());
 		assertEquals("input.txt", child2.getSourceInfo().getFilename());
-		assertEquals(250, child2.lastCompleteAction().getContent().get(0).getSegments().get(0).getOffset());
+		assertEquals(250, child2.lastCompleteAction().getContent().getFirst().getSegments().getFirst().getOffset());
 
 		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture(), anyBoolean());
 		assertEquals(2, actionInputListCaptor.getValue().size());
-		assertEquals(child1.getDid(), actionInputListCaptor.getValue().get(0).getActionContext().getDid());
+		assertEquals(child1.getDid(), actionInputListCaptor.getValue().getFirst().getActionContext().getDid());
 		assertEquals(child2.getDid(), actionInputListCaptor.getValue().get(1).getActionContext().getDid());
 
 		verifyCommonMetrics(ActionEventType.TRANSFORM, "SampleTransformAction", DATA_SOURCE_NAME, null, "type");
@@ -4122,9 +4122,9 @@ class DeltaFiCoreApplicationTests {
 		action = parent2.getFlow(actionFlow, 1).actionNamed(actionName).orElseThrow();
 		assertEquals(ActionState.COLLECTING, action.getState());
 
-		ActionInput actionInput = actionInputs.get(0);
+		ActionInput actionInput = actionInputs.getFirst();
 		assertEquals(2, actionInput.getDeltaFileMessages().size());
-		assertEquals(forQueueHelper(parent1, actionInput.getActionContext()), actionInput.getDeltaFileMessages().get(0));
+		assertEquals(forQueueHelper(parent1, actionInput.getActionContext()), actionInput.getDeltaFileMessages().getFirst());
 		assertEquals(forQueueHelper(parent2, actionInput.getActionContext()), actionInput.getDeltaFileMessages().get(1));
 	}
 
@@ -4186,7 +4186,7 @@ class DeltaFiCoreApplicationTests {
 		Mockito.verify(actionEventQueue, Mockito.times(2))
 				.putActions(actionInputListCaptor.capture(), Mockito.anyBoolean());
 		List<List<ActionInput>> actionInputLists = actionInputListCaptor.getAllValues();
-		verifyActionInputs(actionInputLists.get(0), ingress2.getDid(), ingress3.getDid(), transformFlowName, COLLECTING_TRANSFORM_ACTION);
+		verifyActionInputs(actionInputLists.getFirst(), ingress2.getDid(), ingress3.getDid(), transformFlowName, COLLECTING_TRANSFORM_ACTION);
 		verifyActionInputs(actionInputLists.get(1), ingress1.getDid(), ingress4.getDid(), transformFlowName, COLLECTING_TRANSFORM_ACTION);
 	}
 
@@ -4249,16 +4249,16 @@ class DeltaFiCoreApplicationTests {
 				new TypeRef<>() {});
 
 		assertEquals(1, retryResults.size());
-		assertEquals(did, retryResults.get(0).getDid());
-		assertTrue(retryResults.get(0).getSuccess());
+		assertEquals(did, retryResults.getFirst().getDid());
+		assertTrue(retryResults.getFirst().getSuccess());
 
 		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture(), Mockito.anyBoolean());
 		List<ActionInput> actionInputs = actionInputListCaptor.getValue();
 		assertThat(actionInputs).hasSize(1);
 
-		ActionInput actionInput = actionInputs.get(0);
+		ActionInput actionInput = actionInputs.getFirst();
 		assertEquals(parentDids, actionInput.getActionContext().getCollectedDids());
-		assertEquals(forQueueHelper(parent1, actionInput.getActionContext()), actionInput.getDeltaFileMessages().get(0));
+		assertEquals(forQueueHelper(parent1, actionInput.getActionContext()), actionInput.getDeltaFileMessages().getFirst());
 		assertEquals(forQueueHelper(parent2, actionInput.getActionContext()), actionInput.getDeltaFileMessages().get(1));
 	}
 
@@ -4270,7 +4270,7 @@ class DeltaFiCoreApplicationTests {
 		transformAction.setCollect(configuration);
 		transformFlow.getTransformActions().add(transformAction);
 		transformFlow.getFlowStatus().setState(FlowState.RUNNING);
-		transformFlow.setSubscriptions(Set.of(new Rule(Set.of(COLLECT_TOPIC))));
+		transformFlow.setSubscribe(Set.of(new Rule(COLLECT_TOPIC)));
 		return transformFlow;
 	}
 }

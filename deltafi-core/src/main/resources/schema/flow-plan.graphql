@@ -59,7 +59,7 @@ type EgressFlowPlan {
   type: String!
   description: String!
   sourcePlugin: PluginCoordinates!
-  subscriptions: [Rule]
+  subscribe: [Rule!]!
   egressAction: EgressActionConfiguration!
 }
 
@@ -67,7 +67,7 @@ input EgressFlowPlanInput {
   name: String!
   type: String!
   description: String!
-  subscriptions: [RuleInput]
+  subscribe: [RuleInput!]!
   egressAction: EgressActionConfigurationInput!
 }
 
@@ -118,18 +118,18 @@ type TransformFlowPlan {
   type: String!
   description: String!
   sourcePlugin: PluginCoordinates!
-  subscriptions: [Rule]
+  subscribe: [Rule!]!
   transformActions: [TransformActionConfiguration!]
-  publishRules: PublishRules
+  publish: PublishRules
 }
 
 input TransformFlowPlanInput {
   name: String!
   type: String!
   description: String!
-  subscriptions: [RuleInput]
+  subscribe: [RuleInput!]!
   transformActions: [TransformActionConfigurationInput!]
-  publishRules: PublishRulesInput
+  publish: PublishRulesInput
 }
 
 enum FlowState {
@@ -183,7 +183,7 @@ type EgressFlow {
   description: String!
   sourcePlugin: PluginCoordinates!
   flowStatus: FlowStatus!
-  subscriptions: [Rule]
+  subscribe: [Rule!]!
   expectedAnnotations: [String]
   egressAction: EgressActionConfiguration!
   variables: [Variable]!
@@ -236,12 +236,12 @@ type TransformFlow {
   name: String!
   description: String!
   sourcePlugin: PluginCoordinates!
-  subscriptions: [Rule]
+  subscribe: [Rule!]!
   flowStatus: FlowStatus!
   maxErrors: Int!
   transformActions: [TransformActionConfiguration!]
   egressAction: EgressActionConfiguration
-  publishRules: PublishRules
+  publish: PublishRules
   variables: [Variable]!
 }
 

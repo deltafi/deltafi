@@ -75,7 +75,7 @@ public class FlowBuilders {
 
     public static PublishRules publishRules(String topic) {
         PublishRules publishRules = new PublishRules();
-        publishRules.setRules(List.of(new Rule(Set.of(topic))));
+        publishRules.setRules(List.of(new Rule(topic)));
         return publishRules;
     }
 

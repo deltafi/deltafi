@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.types;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.deltafi.common.types.*;
@@ -37,8 +38,9 @@ import java.util.Set;
 public class TransformFlow extends Flow implements Subscriber, Publisher {
     private List<TransformActionConfiguration> transformActions = new ArrayList<>();
     private int maxErrors = -1;
-    private Set<Rule> subscriptions;
-    private PublishRules publishRules;
+    @JsonProperty(required = true)
+    private Set<Rule> subscribe;
+    private PublishRules publish;
 
     /**
      * Schema versions:
@@ -95,8 +97,8 @@ public class TransformFlow extends Flow implements Subscriber, Publisher {
     }
 
     @Override
-    public Set<Rule> subscriptions() {
-        return subscriptions;
+    public Set<Rule> subscribeRules() {
+        return subscribe;
     }
 
     @Override
@@ -106,6 +108,6 @@ public class TransformFlow extends Flow implements Subscriber, Publisher {
 
     @Override
     public PublishRules publishRules() {
-        return publishRules;
+        return publish;
     }
 }

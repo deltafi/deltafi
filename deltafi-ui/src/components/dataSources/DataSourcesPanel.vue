@@ -91,7 +91,7 @@
           <span v-if="activeAction[fieldName] === null">-</span>
           <pre>{{ activeAction[fieldName] }}</pre>
         </span>
-        <span v-else-if="fieldName == 'publishRules'">
+        <span v-else-if="fieldName == 'publish'">
           <template v-if="_.isEmpty(activeAction[fieldName])"> - </template>
           <template v-else>
             <div class="ml-2">

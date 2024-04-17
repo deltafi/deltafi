@@ -15,9 +15,16 @@
       "type": "org.deltafi.core.action.SplitContent"
     }
   ],
-  "publishRules": {
+  "subscribe": [
+    {
+      "topic": "decompress-passthrough"
+    }
+  ],
+  "publish": {
     "rules": [
-      {"topics": ["passthrough"]}
+      {
+        "topic": "passthrough"
+      }
     ]
   }
 }

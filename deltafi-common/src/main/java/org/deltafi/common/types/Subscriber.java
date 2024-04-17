@@ -28,7 +28,7 @@ public interface Subscriber {
      * Get the set of subscription rules
      * @return set of subscription rules
      */
-    Set<Rule> subscriptions();
+    Set<Rule> subscribeRules();
 
     /**
      * Get the name of this subscriber

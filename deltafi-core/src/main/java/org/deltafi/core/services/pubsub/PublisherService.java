@@ -149,43 +149,40 @@ public class PublisherService {
             return publishRules.getRules().stream()
                     .filter(rule -> evaluateRule(rule, deltaFileFlow))
                     .findFirst()
-                    .map(Rule::getTopics).orElse(Set.of());
+                    .map(r -> Set.of(r.getTopic()))
+                    .orElse(Set.of());
         }
 
         return publishRules.getRules().stream()
                 .filter(rule -> evaluateRule(rule, deltaFileFlow))
-                .map(Rule::getTopics)
-                .flatMap(Collection::stream)
+                .map(Rule::getTopic)
                 .collect(Collectors.toSet());
     }
 
     /**
      * Get the set of topics that match for the subscriber. If there are matches, convert add a new DeltaFileFlow
      * to the DeltaFile and return it. Otherwise, return null.
-     * @param subscriber whose subscriptions will be matched against the completeDeltaFileFlow
+     * @param subscriber whose subscribeRules will be matched against the completeDeltaFileFlow
      * @param deltaFile to add the new DeltaFileFlow to
      * @param completeDeltaFileFlow completed DeltaFileFlow that is publishing the DeltaFile
      * @param topics that the DeltaFile is published on
      * @return new DeltaFileFlow if the subscriber matches otherwise null
      */
     private DeltaFileFlow subscribedDeltaFileFlow(Subscriber subscriber, DeltaFile deltaFile, DeltaFileFlow completeDeltaFileFlow, Set<String> topics) {
-        Set<String> matchedTopics = subscriber.subscriptions() != null ? subscriber.subscriptions().stream()
-                .map(subscription -> matchingTopics(subscription, completeDeltaFileFlow, topics))
-                .flatMap(Collection::stream).collect(Collectors.toSet()) : Set.of();
+        Set<String> matchedTopics = subscriber.subscribeRules().stream()
+                .map(subscription -> matchingTopic(subscription, completeDeltaFileFlow, topics))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
 
         return matchedTopics.isEmpty() ? null : deltaFileFlow(subscriber, deltaFile, completeDeltaFileFlow, matchedTopics);
     }
 
-    private Collection<String> matchingTopics(Rule rule, DeltaFileFlow deltaFileFlow, Set<String> topics) {
-        Set<String> subscribedTopics = Objects.requireNonNullElseGet(rule.getTopics(), Set::of);
-        Set<String> matchingTopics = topics.stream()
-                .filter(subscribedTopics::contains).collect(Collectors.toSet());
-
-        if (!matchingTopics.isEmpty() && ruleEvaluator.evaluateCondition(rule.getCondition(), deltaFileFlow)) {
-            return matchingTopics;
+    private String matchingTopic(Rule rule, DeltaFileFlow deltaFileFlow, Set<String> topics) {
+        if (topics.contains(rule.getTopic()) && ruleEvaluator.evaluateCondition(rule.getCondition(), deltaFileFlow)) {
+            return rule.getTopic();
         }
 
-        return List.of();
+        return null;
     }
 
     private Set<DeltaFileFlow> handleNoMatches(Publisher publisher, DeltaFile deltaFile, DeltaFileFlow completedFlow) {

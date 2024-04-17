@@ -74,9 +74,9 @@ const generateFlows = () => {
     transform: [
       {
         name: "keyword-extraction",
-        subscriptions: [{
+        subscribe: [{
           condition: "Run At Night",
-          topics: ["json", "HTML"],
+          topic: "json",
         }],
         description: "Extract keywords from text",
         type: "text/plain",

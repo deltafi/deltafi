@@ -48,11 +48,11 @@ public class RuleValidator {
     }
 
     public List<String> validateSubscriber(Subscriber subscriber) {
-        if (subscriber == null || subscriber.subscriptions() == null) {
-            return List.of();
+        if (subscriber == null || subscriber.subscribeRules() == null) {
+            return List.of("Missing subscribe");
         }
 
-        return validateRules(subscriber.subscriptions().stream().map(Rule::getCondition).collect(Collectors.toSet()));
+        return validateRules(subscriber.subscribeRules().stream().map(Rule::getCondition).collect(Collectors.toSet()));
     }
 
     /**

@@ -38,7 +38,7 @@ QUERY="fragment ActionFields on ActionConfiguration {
               topics
               condition
             }
-            publishRules {
+            publish {
               matchingPolicy
               defaultRule {
                 defaultBehavior

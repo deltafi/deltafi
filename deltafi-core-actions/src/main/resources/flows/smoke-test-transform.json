@@ -2,8 +2,10 @@
   "name": "smoke-test-transform",
   "type": "TRANSFORM",
   "description": "Test flow that passes data through unchanged",
-  "subscriptions": [
-    {"topics": ["smoke-transform"]}
+  "subscribe": [
+    {
+      "topic": "smoke-transform"
+    }
   ],
   "transformActions": [{
     "name": "SmokeTransformAction",
@@ -13,11 +15,13 @@
       "maxDelayMS": "${maxDelayMS}"
     }
   }],
-  "publishRules": {
+  "publish": {
     "matchingPolicy": "FIRST_MATCHING",
     "defaultRule": {"defaultBehavior": "ERROR"},
     "rules": [
-      {"topics": ["smoke-egress"]}
+      {
+        "topic": "smoke-egress"
+      }
     ]
   }
 }

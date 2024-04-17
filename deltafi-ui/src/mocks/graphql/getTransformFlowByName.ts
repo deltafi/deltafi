@@ -49,12 +49,12 @@ const generateData = () => {
   return {
     name: "decompress-passthrough",
     description: "Flow that passes data through unchanged",
-    subscriptions: [{
+    subscribe: [{
       condition: "Run At Night",
-      topics: ["json", "HTML"],
+      topic: "json",
     },{
       condition: "Stop At Night",
-      topics: ["Foo", "Bar"],
+      topic: "Foo",
     }],
     sourcePlugin: {
       groupId: "org.deltafi.passthrough",

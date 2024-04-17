@@ -2,8 +2,10 @@
   "name": "passthrough-transform",
   "type": "TRANSFORM",
   "description": "Flow that passes data through unchanged",
-  "subscriptions": [
-    {"topics": ["passthrough"]}
+  "subscribe": [
+    {
+      "topic": "passthrough"
+    }
   ],
   "transformActions": [{
     "name": "Passthrough",
@@ -13,11 +15,13 @@
       "maxDelayMS": "${maxDelayMS}"
     }
   }],
-  "publishRules": {
+  "publish": {
     "matchingPolicy": "FIRST_MATCHING",
     "defaultRule": {"defaultBehavior": "ERROR"},
     "rules": [
-      {"topics": ["passthrough-egress"]}
+      {
+        "topic": "passthrough-egress"
+      }
     ]
   }
 }

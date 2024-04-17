@@ -116,7 +116,7 @@ public class DeltaFileFlow {
     }
 
     public List<Content> lastContent() {
-        return latestMatchingAction(action -> action.getState() == ActionState.COMPLETE || action.getState() == ActionState.RETRIED)
+        return latestMatchingAction(action -> action.getState() == ActionState.COMPLETE)
                 .map(Action::getContent)
                 .orElseGet(this::inputContent);
     }

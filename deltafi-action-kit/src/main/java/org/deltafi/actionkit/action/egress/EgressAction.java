@@ -37,7 +37,7 @@ public abstract class EgressAction<P extends ActionParameters> extends Action<Eg
     @Override
     protected EgressInput buildInput(@NotNull ActionContext context, @NotNull DeltaFileMessage deltaFileMessage) {
         return EgressInput.builder()
-                .content(new ActionContent(deltaFileMessage.getContentList().get(0), context.getContentStorageService()))
+                .content(new ActionContent(deltaFileMessage.getContentList().getFirst(), context.getContentStorageService()))
                 .metadata(deltaFileMessage.getMetadata())
                 .build();
     }

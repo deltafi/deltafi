@@ -49,12 +49,10 @@ public interface SubscriberService {
     default Map<String, Set<Subscriber>> buildSubsriberMap() {
         Map<String, Set<Subscriber>> updatedMap = new HashMap<>();
         for (Subscriber subscriber : getRunningFlows()) {
-            if (subscriber.subscriptions() != null) {
-                for (Rule rule : subscriber.subscriptions()) {
-                    for (String topic : rule.getTopics()) {
-                        Set<Subscriber> subscribers = updatedMap.computeIfAbsent(topic, ignore -> new HashSet<>());
-                        subscribers.add(subscriber);
-                    }
+            if (subscriber.subscribeRules() != null) {
+                for (Rule rule : subscriber.subscribeRules()) {
+                    Set<Subscriber> subscribers = updatedMap.computeIfAbsent(rule.getTopic(), ignore -> new HashSet<>());
+                    subscribers.add(subscriber);
                 }
             }
         }

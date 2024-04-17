@@ -19,9 +19,16 @@
       }
     }
   ],
-  "publishRules": {
+  "subscribe": [
+    {
+      "topic": "decompress-and-merge"
+    }
+  ],
+  "publish": {
     "rules": [
-      {"topics": ["passthrough"]}
+      {
+        "topic": "passthrough"
+      }
     ]
   }
 }

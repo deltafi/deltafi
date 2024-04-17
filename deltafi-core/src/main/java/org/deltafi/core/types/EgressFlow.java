@@ -18,6 +18,7 @@
 package org.deltafi.core.types;
 
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.deltafi.common.types.*;
@@ -32,7 +33,8 @@ import java.util.*;
 public class EgressFlow extends Flow implements Subscriber {
     private EgressActionConfiguration egressAction;
     private Set<String> expectedAnnotations;
-    private Set<Rule> subscriptions;
+    @JsonProperty(required = true)
+    private Set<Rule> subscribe;
 
     /**
      * Schema versions:
@@ -88,8 +90,8 @@ public class EgressFlow extends Flow implements Subscriber {
         return new EgressFlowConfiguration(name, egressAction.getName());
     }
 
-    public Set<Rule> subscriptions() {
-        return subscriptions;
+    public Set<Rule> subscribeRules() {
+        return subscribe;
     }
 
     @Override

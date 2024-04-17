@@ -106,6 +106,7 @@ public class FlowPlanDatafetcherTestHelper {
                 .name("flowPlan")
                 .type("TRANSFORM")
                 .description("description")
+                .subscribe(List.of(new Rule("topic", null)))
                 .build();
 
         return executeQuery(dgsQueryExecutor, SaveTransformFlowPlanGraphQLQuery.newRequest().transformFlowPlan(input).build(), new SaveTransformFlowPlanProjectionRoot().name().flowStatus().state().parent().parent(), TransformFlow.class);
@@ -118,6 +119,7 @@ public class FlowPlanDatafetcherTestHelper {
                 .type("EGRESS")
                 .description("description")
                 .egressAction(egress)
+                .subscribe(List.of(new Rule("topic", null)))
                 .build();
         return executeQuery(dgsQueryExecutor, SaveEgressFlowPlanGraphQLQuery.newRequest().egressFlowPlan(input).build(), new SaveEgressFlowPlanProjectionRoot().name(), EgressFlow.class);
     }

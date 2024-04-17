@@ -29,8 +29,8 @@ public class TransformFlowPlanConverter extends FlowPlanConverter<TransformFlowP
     public TransformFlow createFlow(TransformFlowPlan transformFlowPlan, FlowPlanPropertyHelper flowPlanPropertyHelper) {
         TransformFlow transformFlow = new TransformFlow();
         transformFlow.setTransformActions(buildTransformActions(transformFlowPlan.getTransformActions(), flowPlanPropertyHelper));
-        transformFlow.setSubscriptions(transformFlowPlan.getSubscriptions());
-        transformFlow.setPublishRules(transformFlowPlan.publishRules());
+        transformFlow.setSubscribe(transformFlowPlan.getSubscribe());
+        transformFlow.setPublish(transformFlowPlan.publishRules());
         return transformFlow;
     }
 

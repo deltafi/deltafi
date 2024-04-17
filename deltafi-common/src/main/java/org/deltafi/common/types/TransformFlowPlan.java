@@ -37,8 +37,9 @@ import java.util.Set;
 @EqualsAndHashCode(callSuper = true)
 public class TransformFlowPlan extends FlowPlan implements Publisher, Subscriber {
     private List<TransformActionConfiguration> transformActions;
-    private Set<Rule> subscriptions;
-    private PublishRules publishRules;
+    @JsonProperty(required = true)
+    private Set<Rule> subscribe;
+    private PublishRules publish;
 
     public TransformFlowPlan(String name, String description) {
         super(name, FlowType.TRANSFORM, description);
@@ -63,13 +64,13 @@ public class TransformFlowPlan extends FlowPlan implements Publisher, Subscriber
     }
 
     @Override
-    public Set<Rule> subscriptions() {
-        return this.subscriptions;
+    public Set<Rule> subscribeRules() {
+        return this.subscribe;
     }
 
     @Override
     public PublishRules publishRules() {
-        return this.publishRules;
+        return this.publish;
     }
 
     @Override

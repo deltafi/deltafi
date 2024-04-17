@@ -25,21 +25,21 @@ import java.util.Set;
 @Data
 @NoArgsConstructor
 public class Rule {
-    private Set<String> topics;
+    private String topic;
     private String condition;
 
     /**
      * A rule consists of condition that will be evaluated against a DeltaFile
      * and a topic to use if the condition evaluates to true
-     * @param topics to uses if the condition matches
+     * @param topic to use if the condition matches
      * @param condition condition that must be true to use the topic
      */
-    public Rule(Set<String> topics, String condition) {
-        this.topics = topics;
+    public Rule(String topic, String condition) {
+        this.topic = topic;
         this.condition = condition;
     }
 
-    public Rule(Set<String> topics) {
-        this(topics, null);
+    public Rule(String topic) {
+        this(topic, null);
     }
 }

@@ -2,8 +2,10 @@
   "name": "passthrough-egress",
   "type": "EGRESS",
   "description": "Test flow that passes data through unchanged",
-  "subscriptions": [
-    {"topics": ["passthrough-egress"]}
+  "subscribe": [
+    {
+      "topic": "passthrough-egress"
+    }
   ],
   "egressAction": {
     "name": "PassthroughEgress",
