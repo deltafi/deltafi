@@ -112,16 +112,6 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: dashboard-survey-metrics
-  labels:
-    grafana_dashboard: "1"
-data:
-  survey-metrics.json: |-
-{{ .Files.Get "files/grafana/dashboards/survey-metrics.json" | indent 4 }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
   name: last-seen
   labels:
     grafana_dashboard: "1"
