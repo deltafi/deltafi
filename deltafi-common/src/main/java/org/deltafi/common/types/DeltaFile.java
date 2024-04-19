@@ -416,7 +416,7 @@ public class DeltaFile {
 
   public void setName(String name) {
     this.name = name;
-    this.normalizedName = name.toLowerCase();
+    this.normalizedName = name != null ? name.toLowerCase() : null;
   }
 
   public Update generateUpdate() {

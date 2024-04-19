@@ -727,8 +727,9 @@ public class DeltaFilesService {
         DeltaFile child = OBJECT_MAPPER.convertValue(deltaFile, DeltaFile.class);
         child.setVersion(0);
         child.setDid(uuidGenerator.generate());
-        child.setName(transformEvent.getName());
-        child.setNormalizedName(transformEvent.getName().toLowerCase());
+        String eventName = transformEvent.getName();
+        child.setName(eventName);
+        child.setNormalizedName(eventName != null ? eventName.toLowerCase() : null);
         child.setChildDids(Collections.emptyList());
         child.setParentDids(List.of(deltaFile.getDid()));
         DeltaFileFlow flow = child.getFlow(fromFlow.getName(), fromFlow.getId());
