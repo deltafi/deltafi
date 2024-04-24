@@ -541,14 +541,16 @@ public class DeltaFilesService {
             action.changeState(ActionState.SPLIT, event.getStart(), event.getStop(), now);
             List<StateMachineInput> inputs = new ArrayList<>();
             inputs.add(new StateMachineInput(deltaFile, flow));
-            inputs.addAll(createChildren(transformEvents, event.getStart(), event.getStop(), deltaFile, flow));
-            deltaFile.getChildDids().addAll(inputs.stream().map(input -> input.deltaFile().getDid()).toList());
+            List<StateMachineInput> childInputs =
+                    createChildren(transformEvents, event.getStart(), event.getStop(), deltaFile, flow);
+            inputs.addAll(childInputs);
+            deltaFile.getChildDids().addAll(childInputs.stream().map(input -> input.deltaFile().getDid()).toList());
             advanceAndSave(inputs);
         }
     }
 
     public List<StateMachineInput> createChildren(List<TransformEvent> transformEvents, OffsetDateTime startTime,
-                                          OffsetDateTime stopTime,DeltaFile deltaFile, DeltaFileFlow flow) {
+            OffsetDateTime stopTime, DeltaFile deltaFile, DeltaFileFlow flow) {
         return transformEvents.stream()
                 .map(transformEvent -> createChildDeltaFile(transformEvent, deltaFile, flow, startTime, stopTime))
                 .toList();
@@ -1017,7 +1019,7 @@ public class DeltaFilesService {
         return new ArrayList<>(keyValues.values());
     }
 
-private void advanceAndSave(List<StateMachineInput> inputs) {
+    private void advanceAndSave(List<StateMachineInput> inputs) {
         if (inputs.isEmpty()) {
             return;
         }
@@ -1246,7 +1248,7 @@ private void advanceAndSave(List<StateMachineInput> inputs) {
         return true;
     }
 
-    public void validateActionEventHeader(ActionEvent event) throws JsonProcessingException {
+    public void validateActionEventHeader(ActionEvent event) {
         String validationError = event.validateHeader();
         if (validationError != null) {
             log.error("Received invalid action event: {}: ({})", validationError, event);
