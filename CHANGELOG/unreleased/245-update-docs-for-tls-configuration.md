@@ -4,7 +4,7 @@ Document any changes on this branch here.
 - 
 
 ### Changed
-- Documenation for intial install to include enabling tls in kubernetes
+- Documentation for initial install to include enabling tls in kubernetes
 
 ### Fixed
 - 
