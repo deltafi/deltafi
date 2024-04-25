@@ -140,7 +140,8 @@ import static org.mockito.Mockito.never;
 		"schedule.flowSync=false",
 		"schedule.diskSpace=false",
 		"schedule.errorCount=false",
-		"schedule.propertySync=false"})
+		"schedule.propertySync=false",
+		"cold.queue.refresh.duration=PT1H"})
 @Testcontainers
 class DeltaFiCoreApplicationTests {
 
@@ -668,6 +669,8 @@ class DeltaFiCoreApplicationTests {
 				ActionContext.builder().flowName(EGRESS_FLOW_NAME).actionName(SAMPLE_EGRESS_ACTION).build());
 
 		verifyCommonMetrics(ActionEventType.TRANSFORM, "SampleTransformAction", REST_DATA_SOURCE_NAME, null, "type");
+
+		queueManagementService.getColdQueues().remove(SAMPLE_EGRESS_ACTION);
 	}
 
 	@Test

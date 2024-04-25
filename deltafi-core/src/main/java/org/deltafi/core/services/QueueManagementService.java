@@ -69,7 +69,7 @@ public class QueueManagementService {
         this.env = env;
     }
 
-    @Scheduled(fixedDelay = 2000)
+    @Scheduled(fixedDelayString = "${cold.queue.refresh.duration:PT2S}")
     void refreshQueues() {
         Set<String> keys = actionEventQueue.keys();
         Set<String> actionNames = unifiedFlowService.allActionConfigurations().stream().map(ActionConfiguration::getType).collect(Collectors.toSet());
@@ -84,13 +84,13 @@ public class QueueManagementService {
             if (coldQueues.containsKey(k)) {
                 if (size <= maxQueueSize * 0.8) {
                     coldQueues.remove(k);
-                    log.info("Action queue " + k + " has returned to normal operation.");
+                    log.info("Action queue {} has returned to normal operation.", k);
                 } else {
                     coldQueues.put(k, size);
                 }
             } else if (size >= maxQueueSize) {
                 if (!coldQueues.containsKey(k)) {
-                    log.warn("Action queue " + k + " exceeded the maximum size of " + maxQueueSize + ". Future events will be placed in a cold queue on disk until the queue is relieved.");
+                    log.warn("Action queue {} exceeded the maximum size of {}. Future events will be placed in a cold queue on disk until the queue is relieved.", k, maxQueueSize);
                 }
                 coldQueues.put(k, size);
             }
