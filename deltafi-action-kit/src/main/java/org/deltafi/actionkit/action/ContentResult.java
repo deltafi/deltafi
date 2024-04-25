@@ -21,6 +21,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.converters.ContentConverter;
+import org.deltafi.common.io.Writer;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionEventType;
@@ -102,6 +103,17 @@ public abstract class ContentResult<T extends Result<T>> extends MetadataResult<
      */
     public void saveContent(@NotNull InputStream stream, @NotNull String name, @NotNull String mediaType) {
         addContent(ActionContent.saveContent(context, stream, name, mediaType));
+    }
+
+    /**
+     * Save content to content storage and attach to the result. This method calls the supplied Writer from a separate
+     * thread to stream content to content storage.
+     * @param writer a Writer that produces the content to be stored
+     * @param name the content name
+     * @param mediaType Media type for the content being stored
+     */
+    public void saveContent(@NotNull Writer writer, @NotNull String name, @NotNull String mediaType) {
+        addContent(ActionContent.saveContent(context, writer, name, mediaType));
     }
 
     /**

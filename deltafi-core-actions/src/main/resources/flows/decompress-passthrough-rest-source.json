@@ -1,6 +1,6 @@
 {
-  "name": "decompress-passthrough-rest-source",
+  "name": "decompress-passthrough-rest-data-source",
   "type": "REST_DATA_SOURCE",
-  "description": "Decompress and/or unarchive input file, and reinject each result individually",
+  "description": "Receive files to decompress and publish to passthrough",
   "topic": "decompress-passthrough"
 }

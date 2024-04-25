@@ -17,7 +17,7 @@
  */
 package org.deltafi.common.test.storage.s3;
 
-import org.apache.commons.io.input.CountingInputStream;
+import org.apache.commons.io.input.BoundedInputStream;
 import org.deltafi.common.storage.s3.ObjectReference;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.storage.s3.ObjectStorageService;
@@ -52,10 +52,11 @@ public class InMemoryObjectStorageService implements ObjectStorageService {
     public ObjectReference putObject(ObjectReference objectReference, InputStream inputStream)
             throws ObjectStorageException {
         Map<String, byte[]> entry = objects.computeIfAbsent(objectReference.getBucket(), k -> new HashMap<>());
-        try (CountingInputStream countingInputStream = new CountingInputStream(inputStream)) {
-            entry.put(objectReference.getName(), countingInputStream.readAllBytes());
+        try {
+            BoundedInputStream boundedInputStream = BoundedInputStream.builder().setInputStream(inputStream).get();
+            entry.put(objectReference.getName(), boundedInputStream.readAllBytes());
             return new ObjectReference(objectReference.getBucket(), objectReference.getName(), 0,
-                    countingInputStream.getByteCount());
+                    boundedInputStream.getCount());
         } catch (IOException e) {
             throw new ObjectStorageException(e);
         }

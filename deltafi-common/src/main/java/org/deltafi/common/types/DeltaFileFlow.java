@@ -131,9 +131,7 @@ public class DeltaFileFlow {
     }
 
     public Action lastAction() {
-        return actions.stream()
-                .reduce((first, second) -> second)
-                .orElse(null);
+        return actions.isEmpty() ? null : actions.getLast();
     }
 
     public boolean hasUnacknowledgedError() {

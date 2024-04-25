@@ -17,31 +17,29 @@
  */
 package org.deltafi.core.action;
 
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.action.transform.*;
-import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.common.types.ActionContext;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 @Component
-@SuppressWarnings("unused")
 public class SplitContent extends TransformAction<ActionParameters> {
-
     public SplitContent() {
         super("Splits a DeltaFile with multiple pieces of content into multiple DeltaFiles");
     }
 
     @Override
     public TransformResultType transform(@NotNull ActionContext context, @NotNull ActionParameters params,
-                                         @NotNull TransformInput input) {
+            @NotNull TransformInput input) {
         TransformResults results = new TransformResults(context);
 
         for (ActionContent content : input.content()) {
             TransformResult transformResult = new TransformResult(context);
             transformResult.addContent(content);
             transformResult.addMetadata(input.getMetadata());
-            results.add(transformResult);
+            results.add(transformResult, content.getName());
         }
 
         return results;

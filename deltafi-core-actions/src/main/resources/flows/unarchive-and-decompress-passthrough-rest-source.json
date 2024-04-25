@@ -1,0 +1,6 @@
+{
+  "name": "unarchive-and-decompress-passthrough-rest-data-source",
+  "type": "REST_DATA_SOURCE",
+  "description": "Receive files to unarchive, decompress extracted files, and publish each to passthrough",
+  "topic": "unarchive-and-decompress-passthrough"
+}

@@ -34,28 +34,27 @@ public class ContentStorageService {
     private final ObjectStorageService objectStorageService;
 
     public InputStream load(Content content) throws ObjectStorageException {
-        if (content.getSize() > 0) {
-            if (content.getSegments().size() == 1) {
-                return objectStorageService.getObject(buildObjectReference(content.getSegments().get(0)));
-            } else {
-                try {
-                    return new SequenceInputStream(Collections.enumeration(content.getSegments().stream()
-                            .map(s -> {
-                                try {
-                                    return objectStorageService.getObject(buildObjectReference(s));
-                                } catch (ObjectStorageException e) {
-                                    throw new RuntimeException(e);
-                                }
-                            })
-                            .toList()));
-                } catch (RuntimeException e) {
-                    throw new ObjectStorageException(e);
-                }
-            }
-        } else {
+        if (content.getSize() == 0) {
             return InputStream.nullInputStream();
         }
 
+        if (content.getSegments().size() == 1) {
+            return objectStorageService.getObject(buildObjectReference(content.getSegments().getFirst()));
+        }
+
+        try {
+            return new SequenceInputStream(Collections.enumeration(content.getSegments().stream()
+                    .map(s -> {
+                        try {
+                            return objectStorageService.getObject(buildObjectReference(s));
+                        } catch (ObjectStorageException e) {
+                            throw new RuntimeException(e);
+                        }
+                    })
+                    .toList()));
+        } catch (RuntimeException e) {
+            throw new ObjectStorageException(e);
+        }
     }
 
     public Content save(String did, byte[] content, String name, String mediaType) throws ObjectStorageException {
@@ -92,7 +91,8 @@ public class ContentStorageService {
     public Content save(String did, InputStream inputStream, String name, String mediaType) throws ObjectStorageException {
         Segment segment = new Segment(did);
 
-        try(PushbackInputStream pushbackInputStream = new PushbackInputStream(inputStream)) {
+        PushbackInputStream pushbackInputStream = new PushbackInputStream(inputStream);
+        try {
             int byTe = pushbackInputStream.read();
             if (byTe == -1) {
                 return new Content(name, mediaType);
@@ -109,7 +109,7 @@ public class ContentStorageService {
 
     public void delete(Content content) {
         if (content.getSegments().size() == 1) {
-            objectStorageService.removeObject(buildObjectReference(content.getSegments().get(0)));
+            objectStorageService.removeObject(buildObjectReference(content.getSegments().getFirst()));
         } else {
             deleteAll(content.getSegments());
         }

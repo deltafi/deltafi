@@ -23,6 +23,7 @@ import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.filter.FilterResult;
 import org.deltafi.actionkit.action.transform.TransformResult;
+import org.deltafi.actionkit.action.transform.TransformResults;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -42,6 +43,15 @@ public class ActionResultAssertions {
      */
     public static TransformResultAssert assertTransformResult(ResultType resultType) {
         return TransformResultAssert.assertThat(cast(resultType, TransformResult.class));
+    }
+
+    /**
+     * Return a new TransformResultsAssert if the given ResultType is an instance of a TransformResults otherwise fail
+     * @param resultType result to check
+     * @return a new TransformResultsAssert if it is the correct type otherwise fail
+     */
+    public static TransformResultsAssert assertTransformResults(ResultType resultType) {
+        return TransformResultsAssert.assertThat(cast(resultType, TransformResults.class));
     }
 
     /**

@@ -21,6 +21,8 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.ActionKitException;
 import org.deltafi.common.content.ContentStorageService;
+import org.deltafi.common.io.Writer;
+import org.deltafi.common.io.WriterPipedInputStream;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.Content;
@@ -29,6 +31,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.Collections;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Slf4j
 public class ActionContent {
@@ -85,6 +89,27 @@ public class ActionContent {
                     context.getContentStorageService());
         } catch (ObjectStorageException e) {
             throw new ActionKitException("Failed to store content " + name, e);
+        }
+    }
+
+    private static final ExecutorService EXECUTOR_SERVICE = Executors.newCachedThreadPool();
+
+    /**
+     * Save content to content storage and return the new ActionContent. This method calls the supplied Writer from a
+     * separate thread to stream content to content storage.
+     *
+     * @param context The ActionContext from the current input being processed
+     * @param writer a Writer that produces the content to be stored
+     * @param name the content name
+     * @param mediaType Media type for the content being stored
+     * @return The ActionContent that was stored
+     */
+    public static ActionContent saveContent(ActionContext context, Writer writer, String name, String mediaType) {
+        try (WriterPipedInputStream writerPipedInputStream = new WriterPipedInputStream()) {
+            writerPipedInputStream.runPipeWriter(writer, EXECUTOR_SERVICE);
+            return saveContent(context, writerPipedInputStream, name, mediaType);
+        } catch (IOException e) {
+            throw new ActionKitException("Unable to write content " + name, e);
         }
     }
 

@@ -1,18 +1,11 @@
 {
   "name": "decompress-passthrough",
   "type": "TRANSFORM",
-  "description": "Decompress and/or unarchive input file, and reinject each result individually",
+  "description": "Decompress and publish to passthrough",
   "transformActions": [
     {
       "name": "Decompress",
-      "type": "org.deltafi.core.action.Decompress",
-      "parameters": {
-        "decompressionType": "auto"
-      }
-    },
-    {
-      "name": "SplitContent",
-      "type": "org.deltafi.core.action.SplitContent"
+      "type": "org.deltafi.core.action.compress.Decompress"
     }
   ],
   "subscribe": [

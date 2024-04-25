@@ -1,0 +1,27 @@
+{
+  "name": "unarchive-passthrough-transform",
+  "type": "TRANSFORM",
+  "description": "Unarchive and publish extracted files to passthrough",
+  "transformActions": [
+    {
+      "name": "Unarchive",
+      "type": "org.deltafi.core.action.archive.Unarchive"
+    },
+    {
+      "name": "SplitContent",
+      "type": "org.deltafi.core.action.SplitContent"
+    }
+  ],
+  "subscribe": [
+    {
+      "topic": "unarchive-passthrough"
+    }
+  ],
+  "publish": {
+    "rules": [
+      {
+        "topic": "passthrough"
+      }
+    ]
+  }
+}

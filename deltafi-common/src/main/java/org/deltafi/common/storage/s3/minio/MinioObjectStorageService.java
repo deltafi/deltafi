@@ -23,7 +23,7 @@ import io.minio.messages.DeleteError;
 import io.minio.messages.DeleteObject;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.input.CountingInputStream;
+import org.apache.commons.io.input.BoundedInputStream;
 import org.deltafi.common.storage.s3.ObjectReference;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.storage.s3.ObjectStorageService;
@@ -58,11 +58,12 @@ public class MinioObjectStorageService implements ObjectStorageService {
 
     @Override
     public ObjectReference putObject(ObjectReference objectReference, InputStream inputStream) throws ObjectStorageException {
-        try (CountingInputStream countingInputStream = new CountingInputStream(inputStream)) {
+        try {
+            BoundedInputStream boundedInputStream = BoundedInputStream.builder().setInputStream(inputStream).get();
             ObjectWriteResponse objectWriteResponse = minioClient.putObject(PutObjectArgs.builder()
                     .bucket(objectReference.getBucket())
                     .object(objectReference.getName())
-                    .stream(countingInputStream, objectReference.getSize(), minioProperties.getPartSize())
+                    .stream(boundedInputStream, objectReference.getSize(), minioProperties.getPartSize())
                     .build());
 
             if (objectWriteResponse == null) {
@@ -70,7 +71,7 @@ public class MinioObjectStorageService implements ObjectStorageService {
             }
 
             return new ObjectReference(objectWriteResponse.bucket(), objectWriteResponse.object(), 0,
-                    countingInputStream.getByteCount());
+                    boundedInputStream.getCount());
         } catch (ErrorResponseException | InsufficientDataException | InternalException |
                 InvalidKeyException | InvalidResponseException | IOException | NoSuchAlgorithmException |
                 ServerException | XmlParserException e) {

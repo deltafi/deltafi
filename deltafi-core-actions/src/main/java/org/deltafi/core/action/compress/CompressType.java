@@ -15,26 +15,19 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.test.asserters;
+package org.deltafi.core.action.compress;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
-import org.deltafi.actionkit.action.transform.TransformResult;
+@AllArgsConstructor
+@Getter
+public enum CompressType {
+    @JsonProperty("gz") GZIP("gz", "application/gzip"),
+    @JsonProperty("xz") XZ("xz", "application/x-xz"),
+    @JsonProperty("z") Z("z", "application/x-compress");
 
-/**
- * Assertions for TransformResults
- */
-public class TransformResultAssert extends ContentResultAssert<TransformResultAssert, TransformResult> {
-
-    public TransformResultAssert(TransformResult transformResult) {
-        super(transformResult, TransformResultAssert.class);
-    }
-
-    /**
-     * Create a new TransformResultAssert with the given result
-     * @param transformResult to validate
-     * @return a new TransformResultAssert
-     */
-    public static TransformResultAssert assertThat(TransformResult transformResult) {
-        return new TransformResultAssert(transformResult);
-    }
+    private final String value;
+    private final String mediaType;
 }

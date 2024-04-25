@@ -81,11 +81,10 @@ public abstract class ContentResultAssert<A extends AbstractAssert<A, T>, T exte
             Assertions.assertThat(actual.getContent()).isNull();
         } else {
             contentIsNotNull();
-            List<byte[]> byteList = actual.getContent().stream()
-                    .map(ActionContent::loadBytes)
-                    .toList();
-
-            Assertions.assertThat(byteList).isEqualTo(values);
+            int i = 0;
+            for (ActionContent content : actual.getContent()) {
+                Assertions.assertThat(content.loadBytes()).isEqualTo(values.get(i++));
+            }
         }
 
         return myself;
