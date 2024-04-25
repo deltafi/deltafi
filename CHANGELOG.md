@@ -5,6 +5,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.2.6] - 2024-04-25
+
+### Changed
+- Documenation for intial install to include enabling tls in kubernetes
+
+### Upgrade and Migration
+- Upgrade to deltafi/grafana:10.4.2-0
+- Upgrade Java base image to deltafi/deltafi-java-jre:21.0.3-alpine-0
+- Upgrade CI build image to use Java 21.0.3
+- Upgrade Ruby base image to deltafi/deltafi-ruby:3.3.1-alpine3.19-0
+
 ## [1.2.5] - 2024-04-16
 
 ### Added
@@ -2902,7 +2913,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.5...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.6...main
+[1.2.6]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.5...1.2.6
 [1.2.5]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.4...1.2.5
 [1.2.4]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.2...1.2.4
 [1.2.2]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.1...1.2.2
