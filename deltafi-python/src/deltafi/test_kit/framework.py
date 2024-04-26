@@ -188,21 +188,10 @@ class ActionTest(ABC):
 
     def __reset__(self, did: str):
         self.content_service = InternalContentService()
-<<<<<<< HEAD
         if did is None:
             self.did = str(uuid.uuid4())
         else:
             self.did = did
-        self.expected_outputs = []
-||||||| parent of 831733c7 (2.0 Refactor)
-        self.did = str(uuid.uuid4())
-        self.expected_outputs = []
-=======
-        if did is None:
-            self.did = str(uuid.uuid4())
-        else:
-            self.did = did
->>>>>>> 831733c7 (2.0 Refactor)
         self.loaded_inputs = []
         self.res_path = ""
 
@@ -237,21 +226,8 @@ class ActionTest(ABC):
         content_list = self.make_content_list(test_case)
         self.content_service.load(self.loaded_inputs)
 
-<<<<<<< HEAD
-        return DeltaFileMessage(
-            metadata=test_case.in_meta,
-            content_list=content_list,
-            domains=test_case.in_domains,
-            enrichments=test_case.in_enrichments)
-||||||| parent of 831733c7 (2.0 Refactor)
-        return DeltaFileMessage(metadata=test_case.in_meta,
-                                content_list=content_list,
-                                domains=test_case.in_domains,
-                                enrichments=test_case.in_enrichments)
-=======
         return DeltaFileMessage(metadata=test_case.in_meta,
                                 content_list=content_list)
->>>>>>> 831733c7 (2.0 Refactor)
 
     def make_context(self, test_case: TestCaseBase):
         action_name = INGRESS_FLOW + "." + test_case.action.__class__.__name__
@@ -334,15 +310,6 @@ class ActionTest(ABC):
         assert expected.name == result.name
         assert_equal_with_label(expected.value, result.value, expected.name)
         assert_keys_and_values(expected.tags, result.tags)
-
-            expected_value = expected['value']
-            if type(expected_value) == str:
-                comparitor.compare(expected_value, actual['value'], f"Domain[{index}]")
-            elif type(expected_value) == IOContent:
-                expected_data = self.load_file(expected_value)
-                comparitor.compare(expected_data, actual['value'], f"Domain[{index}]")
-            else:
-                raise ValueError(f"unknown expected_value type: {type(expected_value)}")
 
     def compare_one_metric(self, expected: Metric, result: Metric):
         assert expected.name == result.name
