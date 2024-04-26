@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -36,11 +37,11 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class ScheduledCollectService {
     public interface CollectHandler {
-        void collect(CollectEntry collectEntry, List<String> collectedDids);
+        void collect(CollectEntry collectEntry, List<UUID> collectedDids);
     }
 
     public interface FailCollectHandler {
-        void failCollect(CollectEntry collectEntry, List<String> collectedDids, String reason);
+        void failCollect(CollectEntry collectEntry, List<UUID> collectedDids, String reason);
     }
 
     private final Clock clock;

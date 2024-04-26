@@ -17,14 +17,14 @@
 #
 
 interface DeletePolicy {
-    id: String!
+    id: UUID!
     name: String!
     enabled: Boolean!
     flow: String
 }
 
 type DiskSpaceDeletePolicy implements DeletePolicy {
-    id: String!
+    id: UUID!
     name: String!
     enabled: Boolean!
     flow: String
@@ -32,7 +32,7 @@ type DiskSpaceDeletePolicy implements DeletePolicy {
 }
 
 input DiskSpaceDeletePolicyInput {
-    id: String
+    id: UUID
     name: String!
     enabled: Boolean!
     flow: String
@@ -40,7 +40,7 @@ input DiskSpaceDeletePolicyInput {
 }
 
 type TimedDeletePolicy implements DeletePolicy {
-    id: String!
+    id: UUID!
     name: String!
     enabled: Boolean!
     flow: String
@@ -51,7 +51,7 @@ type TimedDeletePolicy implements DeletePolicy {
 }
 
 input TimedDeletePolicyInput {
-    id: String
+    id: UUID
     name: String!
     enabled: Boolean!
     flow: String
@@ -78,9 +78,9 @@ extend type Query {
 }
 
 extend type Mutation {
-    removeDeletePolicy(id: String!) : Boolean!
+    removeDeletePolicy(id: UUID!) : Boolean!
     loadDeletePolicies(replaceAll: Boolean!, policies: DeletePoliciesInput!) : Result!
-    enablePolicy(id: String!, enabled: Boolean!) : Boolean!
+    enablePolicy(id: UUID!, enabled: Boolean!) : Boolean!
     updateDiskSpaceDeletePolicy(policyUpdate: DiskSpaceDeletePolicyInput!) : Result!
     updateTimedDeletePolicy(policyUpdate: TimedDeletePolicyInput!) : Result!
 }

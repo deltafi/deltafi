@@ -30,6 +30,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Map;
+import java.util.UUID;
 
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -39,7 +40,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(MockitoExtension.class)
 class DeltaFileAnnotationRestTest {
 
-    private static Map<String, String> METADATA = Map.of("k1", "v1", "k2", "v2");
+    private static final UUID DID = UUID.randomUUID();
+    private static final Map<String, String> METADATA = Map.of("k1", "v1", "k2", "v2");
 
     private MockMvc mockMvc;
 
@@ -55,28 +57,28 @@ class DeltaFileAnnotationRestTest {
 
     @Test
     void annotateDeltaFile_noOverwrites() throws Exception {
-        this.mockMvc.perform(post("/deltafile/annotate/did?k1=v1&k2=v2"))
+        this.mockMvc.perform(post("/deltafile/annotate/%s?k1=v1&k2=v2".formatted(DID)))
                 .andExpect(status().isOk())
                 .andExpect(content().string(is("Success")));
 
-        Mockito.verify(deltaFilesService).addAnnotations("did", METADATA, false);
+        Mockito.verify(deltaFilesService).addAnnotations(DID, METADATA, false);
     }
 
     @Test
     void annotateDeltaFile_allowOverwrites() throws Exception {
-        this.mockMvc.perform(post("/deltafile/annotate/did/allowOverwrites?k1=v1&k2=v2"))
+        this.mockMvc.perform(post("/deltafile/annotate/%s/allowOverwrites?k1=v1&k2=v2".formatted(DID)))
                 .andExpect(status().isOk())
                 .andExpect(content().string(is("Success")));
 
-        Mockito.verify(deltaFilesService).addAnnotations("did", METADATA, true);
+        Mockito.verify(deltaFilesService).addAnnotations(DID, METADATA, true);
     }
 
     @Test
     void annotateDeltaFile_missingDid() throws Exception {
         Mockito.doThrow(new DgsEntityNotFoundException("Missing did"))
-                .when(deltaFilesService).addAnnotations("did", METADATA, false);
+                .when(deltaFilesService).addAnnotations(DID, METADATA, false);
 
-        this.mockMvc.perform(post("/deltafile/annotate/did?k1=v1&k2=v2"))
+        this.mockMvc.perform(post("/deltafile/annotate/%s?k1=v1&k2=v2".formatted(DID)))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().string(is("Missing did")));
     }

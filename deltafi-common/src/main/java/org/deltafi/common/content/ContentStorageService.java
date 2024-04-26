@@ -57,7 +57,7 @@ public class ContentStorageService {
         }
     }
 
-    public Content save(String did, byte[] content, String name, String mediaType) throws ObjectStorageException {
+    public Content save(UUID did, byte[] content, String name, String mediaType) throws ObjectStorageException {
         if (content.length == 0) {
             return new Content(name, mediaType, Collections.emptyList());
         }
@@ -65,7 +65,7 @@ public class ContentStorageService {
         return save(did, new ByteArrayInputStream(content), name, mediaType);
     }
 
-    public List<Content> saveMany(String did, List<SaveManyContent> saveManyContentList) throws ObjectStorageException {
+    public List<Content> saveMany(UUID did, List<SaveManyContent> saveManyContentList) throws ObjectStorageException {
         List<Content> updatedContent = new ArrayList<>();
 
         Map<ObjectReference, InputStream> objectsToSave = new LinkedHashMap<>();
@@ -88,7 +88,7 @@ public class ContentStorageService {
         return updatedContent;
     }
 
-    public Content save(String did, InputStream inputStream, String name, String mediaType) throws ObjectStorageException {
+    public Content save(UUID did, InputStream inputStream, String name, String mediaType) throws ObjectStorageException {
         Segment segment = new Segment(did);
 
         PushbackInputStream pushbackInputStream = new PushbackInputStream(inputStream);

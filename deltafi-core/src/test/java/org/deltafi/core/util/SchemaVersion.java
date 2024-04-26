@@ -24,6 +24,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -208,10 +209,10 @@ public class SchemaVersion {
     public static void assertConverted(DeltaFileRepo deltaFileRepo, MongoTemplate mongoTemplate, int version) {
         Document document = deltaFileDocs.get(version);
         mongoTemplate.insert(document, "deltaFile");
-        DeltaFile actual = deltaFileRepo.findById(document.getString("_id")).orElseThrow();
+        DeltaFile actual = deltaFileRepo.findById(UUID.fromString(document.getString("_id"))).orElseThrow();
         assertEquals(version, actual.getSchemaVersion());
         mongoTemplate.insert(DELTAFILE_LATEST, "deltaFile");
-        DeltaFile expected = deltaFileRepo.findById(DELTAFILE_LATEST.getString("_id")).orElseThrow();
+        DeltaFile expected = deltaFileRepo.findById(UUID.fromString(DELTAFILE_LATEST.getString("_id"))).orElseThrow();
 
         actual.setDid(expected.getDid());
         actual.setSchemaVersion(expected.getSchemaVersion());

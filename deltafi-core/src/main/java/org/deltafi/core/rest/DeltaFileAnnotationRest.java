@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -37,17 +38,17 @@ public class DeltaFileAnnotationRest {
 
     @NeedsPermission.DeltaFileMetadataWrite
     @PostMapping("/deltafile/annotate/{did}")
-    public ResponseEntity<String> annotateDeltaFile(@PathVariable String did, @RequestParam Map<String, String> requestParams) {
+    public ResponseEntity<String> annotateDeltaFile(@PathVariable UUID did, @RequestParam Map<String, String> requestParams) {
         return annotateDeltaFile(did, requestParams, false);
     }
 
     @NeedsPermission.DeltaFileMetadataWrite
     @PostMapping("/deltafile/annotate/{did}/allowOverwrites")
-    public ResponseEntity<String> annotateDeltaFileAllowOverwrites(@PathVariable String did, @RequestParam Map<String, String> requestParams) {
+    public ResponseEntity<String> annotateDeltaFileAllowOverwrites(@PathVariable UUID did, @RequestParam Map<String, String> requestParams) {
         return annotateDeltaFile(did, requestParams, true);
     }
 
-    private ResponseEntity<String> annotateDeltaFile(String did, Map<String, String> requestParams, boolean allowOverwrites) {
+    private ResponseEntity<String> annotateDeltaFile(UUID did, Map<String, String> requestParams, boolean allowOverwrites) {
         try {
             deltaFilesService.addAnnotations(did, requestParams, allowOverwrites);
             return ResponseEntity.ok("Success");

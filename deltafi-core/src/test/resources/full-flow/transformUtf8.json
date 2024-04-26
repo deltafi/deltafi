@@ -13,7 +13,7 @@
                 {
                     "name": "file.json",
                     "segments": [{
-                        "uuid": "utf8ObjectName",
+                        "uuid": "11111111-1111-1111-1111-111111111114",
                         "offset": 0,
                         "size": 500,
                         "did": "%1$s" }],

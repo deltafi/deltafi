@@ -28,13 +28,14 @@ import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @Slf4j
 @ConditionalOnProperty(value = "schedule.actionEvents", havingValue = "true", matchIfMissing = true)
 public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
-    private final Map<String, DeltaFile> deltaFileCache;
+    private final Map<UUID, DeltaFile> deltaFileCache;
     final DeltaFiPropertiesService deltaFiPropertiesService;
     final DidMutexService didMutexService;
     final IdentityService identityService;
@@ -58,7 +59,7 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
     }
 
     @Override
-    public DeltaFile get(String did) {
+    public DeltaFile get(UUID did) {
         if (deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().isEnabled()) {
             DeltaFile deltaFile = deltaFileCache.computeIfAbsent(did, d -> getFromRepo(d, true));
             if (deltaFile.getCacheTime() == null) {
@@ -71,12 +72,12 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
     }
 
     @Override
-    public boolean isCached(String did) {
+    public boolean isCached(UUID did) {
         return deltaFileCache.containsKey(did);
     }
 
     @Override
-    public void remove(String did) {
+    public void remove(UUID did) {
         deltaFileCache.remove(did);
     }
 

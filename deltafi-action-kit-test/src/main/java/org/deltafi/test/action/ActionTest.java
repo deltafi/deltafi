@@ -50,7 +50,7 @@ import java.util.*;
 @ExtendWith(MockitoExtension.class)
 @Slf4j
 public abstract class ActionTest {
-    protected final String DID = "did";
+    protected final UUID DID = UUID.randomUUID();
     protected final String HOSTNAME = "hostname";
 
     @Mock

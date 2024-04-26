@@ -20,12 +20,14 @@ package org.deltafi.common.test.uuid;
 import lombok.Data;
 import org.deltafi.common.uuid.UUIDGenerator;
 
+import java.util.UUID;
+
 @Data
 public class TestUUIDGenerator implements UUIDGenerator {
-    private String uuid;
+    private static final UUID uuid = UUID.randomUUID();
 
     @Override
-    public String generate() {
+    public UUID generate() {
         return uuid;
     }
 }

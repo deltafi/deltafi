@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.lang.String;
+import java.util.UUID;
 
 /*
  * This is the codegen generated class, except the Spring-Mongo @Document annotation is added.
@@ -36,9 +37,9 @@ import java.lang.String;
 })
 @Document("deletePolicy")
 public interface DeletePolicy {
-  String getId();
+  UUID getId();
 
-  void setId(String id);
+  void setId(UUID id);
 
   String getName();
 

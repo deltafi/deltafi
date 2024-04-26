@@ -33,6 +33,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 public interface DeltaFileRepoCustom {
     /**
@@ -75,7 +76,7 @@ public interface DeltaFileRepoCustom {
      * @param skipDids Set of dids to not requeue
      * @return the list of the DeltaFiles to be requeued
      */
-    List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, Duration requeueDuration, Set<String> skipActions, Set<String> skipDids);
+    List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, Duration requeueDuration, Set<String> skipActions, Set<UUID> skipDids);
 
     /**
      * Requeue up to maxFiles COLD_QUEUED DeltaFiles with the given action names
@@ -112,7 +113,7 @@ public interface DeltaFileRepoCustom {
      * @param policyName The auto resume policy name which prompted the update
      * @param nextAutoResume The time the DeltaFile(s) should be scheduled for auto resume
      */
-    void updateForAutoResume(List<String> dids, String policyName, OffsetDateTime nextAutoResume);
+    void updateForAutoResume(List<UUID> dids, String policyName, OffsetDateTime nextAutoResume);
 
     /**
      * Find DeltaFiles that match the given criteria.
@@ -222,7 +223,7 @@ public interface DeltaFileRepoCustom {
      * @param now Timestamp for deletion
      * @param reason Reason for deletion
      */
-    void setContentDeletedByDidIn(List<String> dids, OffsetDateTime now, String reason);
+    void setContentDeletedByDidIn(List<UUID> dids, OffsetDateTime now, String reason);
 
     /**
      * Perform an estimated count of documents based on collection stats
@@ -251,7 +252,7 @@ public interface DeltaFileRepoCustom {
      * @param  update the update to apply to the document
      * @return true if the update was successful, false otherwise
      */
-    boolean update(String did, long version, Update update);
+    boolean update(UUID did, long version, Update update);
 
-    void batchedBulkDeleteByDidIn(List<String> dids);
+    void batchedBulkDeleteByDidIn(List<UUID> dids);
 }

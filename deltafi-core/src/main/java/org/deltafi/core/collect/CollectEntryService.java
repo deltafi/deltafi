@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -43,7 +44,7 @@ public class CollectEntryService {
     }
 
     public CollectEntry upsertAndLock(CollectDefinition collectDefinition, OffsetDateTime collectDate, Integer minNum,
-            Integer maxNum, String did) {
+            Integer maxNum, UUID did) {
         CollectEntry collectEntry = upsertAndLock(collectDefinition, collectDate, minNum, maxNum);
         if (collectEntry == null) {
             return null;
@@ -85,11 +86,11 @@ public class CollectEntryService {
         return collectEntryRepo.findAllByOrderByCollectDate();
     }
 
-    public List<String> findCollectedDids(String collectEntryId) {
+    public List<UUID> findCollectedDids(UUID collectEntryId) {
         return collectEntryDidRepo.findByCollectEntryId(collectEntryId).stream().map(CollectEntryDid::getDid).toList();
     }
 
-    public void delete(String collectEntryId) {
+    public void delete(UUID collectEntryId) {
         collectEntryRepo.deleteById(collectEntryId);
         collectEntryDidRepo.deleteByCollectEntryId(collectEntryId);
     }

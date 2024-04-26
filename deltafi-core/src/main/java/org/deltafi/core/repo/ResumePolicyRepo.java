@@ -22,8 +22,9 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.UUID;
 
 @Repository
-public interface ResumePolicyRepo extends MongoRepository<ResumePolicy, String>, ResumePolicyRepoCustom {
+public interface ResumePolicyRepo extends MongoRepository<ResumePolicy, UUID>, ResumePolicyRepoCustom {
     List<ResumePolicy> findByOrderByPriorityDesc();
 }

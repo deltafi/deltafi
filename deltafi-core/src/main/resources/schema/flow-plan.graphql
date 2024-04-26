@@ -215,7 +215,7 @@ type TimedDataSource implements DataSource {
   lastRun: DateTime
   nextRun: DateTime
   memo: String
-  currentDid: String
+  currentDid: UUID
   executeImmediate: Boolean
   ingressStatus: IngressStatus
   ingressStatusMessage: String

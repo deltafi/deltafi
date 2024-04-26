@@ -47,7 +47,7 @@ public class TimedDataSource extends DataSource {
     private OffsetDateTime lastRun;
     private OffsetDateTime nextRun;
     private String memo;
-    private String currentDid;
+    private UUID currentDid;
     private boolean executeImmediate = false;
     private IngressStatus ingressStatus = IngressStatus.HEALTHY;
     private String ingressStatusMessage;
@@ -151,7 +151,7 @@ public class TimedDataSource extends DataSource {
      */
     public ActionInput buildActionInput(String systemName, OffsetDateTime now) {
         DeltaFile deltaFile = DeltaFile.builder()
-                .did(UUID.randomUUID().toString())
+                .did(UUID.randomUUID())
                 .dataSource(name)
                 .build();
         DeltaFileFlow flow = DeltaFileFlow.builder()

@@ -41,6 +41,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -222,7 +223,7 @@ public class DataSourceService extends FlowService<DataSourcePlan, DataSource, D
         return false;
     }
 
-    public boolean setLastRun(String flowName, OffsetDateTime lastRun, String currentDid) {
+    public boolean setLastRun(String flowName, OffsetDateTime lastRun, UUID currentDid) {
         if (((DataSourceRepo) flowRepo).updateLastRun(flowName, lastRun, currentDid)) {
             refreshCache();
             return true;
@@ -231,8 +232,8 @@ public class DataSourceService extends FlowService<DataSourcePlan, DataSource, D
         return false;
     }
 
-    public boolean completeExecution(String flowName, String currentDid, String memo, boolean executeImmediate,
-            IngressStatus status, String statusMessage, String cronSchedule) {
+    public boolean completeExecution(String flowName, UUID currentDid, String memo, boolean executeImmediate,
+                                     IngressStatus status, String statusMessage, String cronSchedule) {
         CronExpression cronExpression = CronExpression.parse(cronSchedule);
         if (((DataSourceRepo) flowRepo).completeExecution(flowName, currentDid, memo, executeImmediate,
                 status == null ? IngressStatus.HEALTHY : status, statusMessage, cronExpression.next(OffsetDateTime.now(clock)))) {

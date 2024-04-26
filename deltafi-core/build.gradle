@@ -53,6 +53,7 @@ generateJava {
 			"JSON": "java.util.Map<String, Object>",
 			"Long": "java.lang.Long",
 			"Metadata": "java.util.Map<String, String>",
+			"UUID": "java.util.UUID",
 
 			"Action": "org.deltafi.common.types.Action",
 			"ActionConfiguration": "org.deltafi.common.types.ActionConfiguration",

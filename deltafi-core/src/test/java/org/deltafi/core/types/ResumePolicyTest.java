@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -152,7 +153,7 @@ class ResumePolicyTest {
 
     private ResumePolicy getValid() {
         ResumePolicy policy = new ResumePolicy();
-        policy.setId("id");
+        policy.setId(UUID.randomUUID());
         policy.setName("name");
         policy.setDataSource("flow");
         policy.setMaxAttempts(2);
@@ -167,7 +168,7 @@ class ResumePolicyTest {
 
     private ResumePolicy policy(String error, String flow, String action, ActionType actionType) {
         ResumePolicy policy = new ResumePolicy();
-        policy.setId("id");
+        policy.setId(UUID.randomUUID());
         policy.setName("name");
         policy.setMaxAttempts(2);
 

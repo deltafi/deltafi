@@ -21,6 +21,7 @@ scalar Duration
 scalar JSON
 scalar Long
 scalar Metadata
+scalar UUID
 
 type KeyValue {
   key: String!
@@ -61,10 +62,10 @@ type Content {
 }
 
 type Segment {
-  uuid: String!
+  uuid: UUID!
   offset: Long!
   size: Long!
-  did: String!
+  did: UUID!
 }
 
 enum DeltaFileStage {
@@ -169,12 +170,12 @@ type DeltaFileFlow {
 
 type DeltaFile {
   schemaVersion: Int!
-  did: String!
+  did: UUID!
   # optional name assigned by the data source
   name: String
   dataSource: String!
-  parentDids: [String!]!
-  childDids: [String!]!
+  parentDids: [UUID!]!
+  childDids: [UUID!]!
   flows: [DeltaFileFlow!]!
   requeueCount: Int!
   ingressBytes: Long!
@@ -190,7 +191,7 @@ type DeltaFile {
   egressed: Boolean
   filtered: Boolean
   replayed: DateTime
-  replayDid: String
+  replayDid: UUID
 }
 
 type DeltaFiles {
@@ -228,14 +229,14 @@ input FilteredSummaryFilter {
 type CountPerFlow {
   flow: String!
   count: Int!
-  dids: [String!]!
+  dids: [UUID!]!
 }
 
 type CountPerMessage {
   message: String!
   flow: String!
   count: Int!
-  dids: [String!]!
+  dids: [UUID!]!
 }
 
 type ErrorsByFlow {
@@ -267,9 +268,9 @@ type FilteredByMessage {
 }
 
 input DeltaFilesFilter {
-  dids: [String!]
+  dids: [UUID!]
   nameFilter: NameFilter
-  parentDid: String
+  parentDid: UUID
   requeueCountMin: Int
   ingressBytesMin: Long
   ingressBytesMax: Long
@@ -299,19 +300,19 @@ input DeltaFilesFilter {
 }
 
 type RetryResult {
-  did: String!
+  did: UUID!
   success: Boolean!
   error: String
 }
 
 type AcknowledgeResult {
-  did: String!
+  did: UUID!
   success: Boolean!
   error: String
 }
 
 type CancelResult {
-  did: String!
+  did: UUID!
   success: Boolean!
   error: String
 }
@@ -354,9 +355,9 @@ type Query {
   ingressFlowErrorsExceeded: [IngressFlowErrorState]!
 
   deltaFiles(offset: Int, limit: Int, filter: DeltaFilesFilter, orderBy: DeltaFileOrder): DeltaFiles!
-  deltaFile(did: String!): DeltaFile
-  rawDeltaFile(did: String!, pretty: Boolean): String
-  pendingAnnotations(did: String!): [String]!
+  deltaFile(did: UUID!): DeltaFile
+  rawDeltaFile(did: UUID!, pretty: Boolean): String
+  pendingAnnotations(did: UUID!): [String]!
   lastCreated(last: Int) : [DeltaFile]!
   lastModified(last: Int) : [DeltaFile]!
   lastErrored(last: Int) : [DeltaFile]!
@@ -368,8 +369,8 @@ type Query {
   filteredSummaryByFlow(offset: Int, limit: Int, filter: FilteredSummaryFilter, orderBy: DeltaFileOrder): FilteredByFlow!
   filteredSummaryByMessage(offset: Int, limit: Int, filter: FilteredSummaryFilter, orderBy: DeltaFileOrder): FilteredByMessage!
 
-  errorMetadataUnion(dids: [String!]!) : [PerActionUniqueKeyValues!]!
-  sourceMetadataUnion(dids: [String!]!) : [UniqueKeyValues!]!
+  errorMetadataUnion(dids: [UUID!]!) : [PerActionUniqueKeyValues!]!
+  sourceMetadataUnion(dids: [UUID!]!) : [UniqueKeyValues!]!
 
   deltaFiConfigs(configQuery: ConfigQueryInput) : [DeltaFiConfiguration]!
   actionDescriptors: [ActionDescriptor!]!
@@ -415,12 +416,12 @@ type Mutation {
   setEgressFlowExpectedAnnotations(flowName: String!, expectedAnnotations: [String]) : Boolean!
 
   taskTimedDataSource(name: String!, memo: String) : Boolean!
-  resume(action: String, dids: [String!]!, resumeMetadata: [ResumeMetadata!]) : [RetryResult!]!
-  replay(dids: [String!]!, replaceDeltaFileName: String, replaceDataSource: String, removeSourceMetadata: [String!], replaceSourceMetadata: [KeyValueInput!]) : [RetryResult!]!
-  acknowledge(dids: [String!]!, reason: String) : [AcknowledgeResult!]!
-  cancel(dids: [String!]!) : [CancelResult!]!
+  resume(action: String, dids: [UUID!]!, resumeMetadata: [ResumeMetadata!]) : [RetryResult!]!
+  replay(dids: [UUID!]!, replaceDeltaFileName: String, replaceDataSource: String, removeSourceMetadata: [String!], replaceSourceMetadata: [KeyValueInput!]) : [RetryResult!]!
+  acknowledge(dids: [UUID!]!, reason: String) : [AcknowledgeResult!]!
+  cancel(dids: [UUID!]!) : [CancelResult!]!
 
-  addAnnotations(did: String!, annotations: [KeyValueInput!]!, allowOverwrites: Boolean!) : Boolean!
+  addAnnotations(did: UUID!, annotations: [KeyValueInput!]!, allowOverwrites: Boolean!) : Boolean!
 
   savePluginVariables(variables: [VariableInput]!) : Boolean!
   removePluginVariables: Boolean!

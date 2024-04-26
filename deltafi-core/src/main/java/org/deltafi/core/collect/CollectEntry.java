@@ -21,11 +21,12 @@ import lombok.Data;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Document
 @Data
 public class CollectEntry {
-    private String id;
+    private UUID id;
 
     private CollectDefinition collectDefinition;
 

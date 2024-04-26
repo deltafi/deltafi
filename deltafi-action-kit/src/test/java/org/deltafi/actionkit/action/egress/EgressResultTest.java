@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -34,7 +35,7 @@ public class EgressResultTest {
     final String DESTINATION = "overThere";
     final long BYTES_EGRESSED = 42;
 
-    final ActionContext actionContext = new ActionContext("myDid", "mySourceFilename", "dataSource", "myFlow", 0, "myName", 0,
+    final ActionContext actionContext = new ActionContext(UUID.randomUUID(), "mySourceFilename", "dataSource", "myFlow", 0, "myName", 0,
             "myHostName", "myActionVersion", null, null, null, null, null, null);
     final EgressResult sut = new EgressResult(actionContext, DESTINATION, BYTES_EGRESSED);
     

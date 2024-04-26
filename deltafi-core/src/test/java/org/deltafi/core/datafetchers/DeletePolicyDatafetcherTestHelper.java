@@ -25,6 +25,9 @@ import org.deltafi.core.types.*;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
+
+import static org.deltafi.core.util.Constants.SCALARS;
 
 public class DeletePolicyDatafetcherTestHelper {
 
@@ -124,22 +127,22 @@ public class DeletePolicyDatafetcherTestHelper {
     }
 
     static public boolean enablePolicy(DgsQueryExecutor dgsQueryExecutor,
-                                       String id,
+                                       UUID id,
                                        boolean enabled) {
         EnablePolicyGraphQLQuery query = EnablePolicyGraphQLQuery.newRequest()
                 .id(id).enabled(enabled).build();
 
-        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, null);
+        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, new UpdateResumePolicyProjectionRoot(), SCALARS);
 
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
                 graphQLQueryRequest.serialize(),
                 "data." + query.getOperationName(), Boolean.class);
     }
 
-    static public boolean removeDeletePolicy(DgsQueryExecutor dgsQueryExecutor, String id) {
+    static public boolean removeDeletePolicy(DgsQueryExecutor dgsQueryExecutor, UUID id) {
         RemoveDeletePolicyGraphQLQuery query = RemoveDeletePolicyGraphQLQuery.newRequest().id(id).build();
 
-        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, null);
+        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, new UpdateResumePolicyProjectionRoot(), SCALARS);
 
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
                 graphQLQueryRequest.serialize(),
@@ -156,7 +159,7 @@ public class DeletePolicyDatafetcherTestHelper {
                 .success()
                 .errors();
 
-        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, projection);
+        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, projection, SCALARS);
 
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
                 graphQLQueryRequest.serialize(),
@@ -174,7 +177,7 @@ public class DeletePolicyDatafetcherTestHelper {
                 .success()
                 .errors();
 
-        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, projection);
+        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, projection, SCALARS);
 
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
                 graphQLQueryRequest.serialize(),

@@ -26,6 +26,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @SuppressWarnings("unused")
 @Slf4j
@@ -52,7 +53,7 @@ public class DataSourceRepoImpl extends BaseFlowRepoImpl<DataSource> implements 
     }
 
     @Override
-    public boolean updateLastRun(String flowName, OffsetDateTime lastRun, String currentDid) {
+    public boolean updateLastRun(String flowName, OffsetDateTime lastRun, UUID currentDid) {
         Query idMatches = Query.query(Criteria.where(ID).is(flowName));
         Update lastRunUpdate = Update.update(LAST_RUN, lastRun).set(CURRENT_DID, currentDid).set(EXECUTE_IMMEDIATE, false);
         return 1 == mongoTemplate.updateFirst(idMatches, lastRunUpdate, DataSource.class).getModifiedCount();
@@ -66,7 +67,7 @@ public class DataSourceRepoImpl extends BaseFlowRepoImpl<DataSource> implements 
     }
 
     @Override
-    public boolean completeExecution(String flowName, String currentDid, String memo, boolean executeImmediate,
+    public boolean completeExecution(String flowName, UUID currentDid, String memo, boolean executeImmediate,
             IngressStatus status, String statusMessage, OffsetDateTime nextRun) {
         Query idMatches = Query.query(Criteria.where(ID).is(flowName).and(CURRENT_DID).is(currentDid));
         Update update = Update.update(CURRENT_DID, null).set(MEMO, memo).set(EXECUTE_IMMEDIATE, executeImmediate)

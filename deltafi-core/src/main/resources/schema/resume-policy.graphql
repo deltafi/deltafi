@@ -31,7 +31,7 @@ input BackOffInput {
 }
 
 type ResumePolicy {
-    id: String!
+    id: UUID!
     name: String!
     errorSubstring: String
     dataSource: String
@@ -43,7 +43,7 @@ type ResumePolicy {
 }
 
 input ResumePolicyInput {
-    id: String
+    id: UUID
     name: String!
     errorSubstring: String
     dataSource: String
@@ -56,13 +56,13 @@ input ResumePolicyInput {
 
 extend type Query {
     getAllResumePolicies: [ResumePolicy!]!
-    getResumePolicy(id: String!): ResumePolicy
+    getResumePolicy(id: UUID!): ResumePolicy
     resumePolicyDryRun(resumePolicyInput: ResumePolicyInput!): Result!
 }
 
 extend type Mutation {
   applyResumePolicies(names: [String!]!): Result!
   loadResumePolicies(replaceAll: Boolean!, policies: [ResumePolicyInput!]!): [Result!]!
-    removeResumePolicy(id: String!) : Boolean!
+    removeResumePolicy(id: UUID!) : Boolean!
     updateResumePolicy(resumePolicy: ResumePolicyInput!) : Result!
 }

@@ -32,11 +32,14 @@ import org.springframework.security.test.context.support.WithMockUser;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 
 @SpringBootTest(classes = {DeltaFilesDatafetcher.class, SecurityConfig.class},
         webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class DeltaFilesDatafetcherSecurityTest {
+    
+    private static final UUID DID = UUID.randomUUID();
 
     @Autowired
     DeltaFilesDatafetcher deltaFilesDatafetcher;
@@ -82,13 +85,13 @@ class DeltaFilesDatafetcherSecurityTest {
 
     List<Callable<?>> allMethods() {
         List<Callable<?>> callables = new ArrayList<>();
-        callables.add(() -> deltaFilesDatafetcher.deltaFile("did"));
+        callables.add(() -> deltaFilesDatafetcher.deltaFile(DID));
         callables.add(() -> deltaFilesDatafetcher.deltaFiles(DataFetchingEnvironmentImpl.newDataFetchingEnvironment().build(), null, null));
-        callables.add(() -> deltaFilesDatafetcher.rawDeltaFile("did", true));
-        callables.add(() -> deltaFilesDatafetcher.acknowledge(List.of("did"), "reason"));
-        callables.add(() -> deltaFilesDatafetcher.cancel(List.of("did")));
-        callables.add(() -> deltaFilesDatafetcher.resume(List.of("did"), null));
-        callables.add(() -> deltaFilesDatafetcher.replay(List.of("did"), null, null));
+        callables.add(() -> deltaFilesDatafetcher.rawDeltaFile(DID, true));
+        callables.add(() -> deltaFilesDatafetcher.acknowledge(List.of(DID), "reason"));
+        callables.add(() -> deltaFilesDatafetcher.cancel(List.of(DID)));
+        callables.add(() -> deltaFilesDatafetcher.resume(List.of(DID), null));
+        callables.add(() -> deltaFilesDatafetcher.replay(List.of(DID), null, null));
         callables.add(() -> deltaFilesDatafetcher.lastCreated(1));
         callables.add(() -> deltaFilesDatafetcher.lastModified(1));
         callables.add(() -> deltaFilesDatafetcher.lastErrored(1));

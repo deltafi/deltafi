@@ -67,7 +67,7 @@ class FlowfileEgressTest {
             "thing1", "foo",
             "thing2", "bar");
 
-    private static final String DID = UUID.randomUUID().toString();
+    private static final UUID DID = UUID.randomUUID();
     private static final String ORIG_FILENAME = "origFilename";
     private static final String FLOW = "theFlow";
     private static final String POST_FILENAME = "postFilename";
@@ -79,18 +79,18 @@ class FlowfileEgressTest {
     private static final String CONTENT_TYPE = ContentType.APPLICATION_FLOWFILE;
 
     private static final Map<String, String> ADDITIONAL_METADATA = Map.of(
-            "did", DID,
+            "did", DID.toString(),
             "flow", EGRESS_FLOW,
             "dataSource", FLOW,
             "originalFilename", ORIG_FILENAME,
             "filename", POST_FILENAME
     );
 
-    private static final Content CONTENT = new Content(POST_FILENAME, CONTENT_TYPE, new Segment(UUID.randomUUID().toString(), 0, DATA.length, DID));
+    private static final Content CONTENT = new Content(POST_FILENAME, CONTENT_TYPE, new Segment(UUID.randomUUID(), 0, DATA.length, DID));
     private static final ActionContext CONTEXT = ActionContext.builder().did(DID).flowName(EGRESS_FLOW).actionName(ACTION).deltaFileName(ORIG_FILENAME).dataSource(FLOW).build();
 
-    final static Integer NUM_TRIES = 3;
-    final static Integer RETRY_WAIT = 10;
+    static final Integer NUM_TRIES = 3;
+    static final Integer RETRY_WAIT = 10;
     private static final HttpEgressParameters PARAMS = new HttpEgressParameters(URL, NUM_TRIES, RETRY_WAIT);
 
     @Mock
@@ -165,7 +165,7 @@ class FlowfileEgressTest {
         FlowFileUnpackagerV1 unpackager = new FlowFileUnpackagerV1();
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        Map<String, String> metadata = unpackager.unpackageFlowFile(new ByteArrayInputStream(posts.get(0)), out);
+        Map<String, String> metadata = unpackager.unpackageFlowFile(new ByteArrayInputStream(posts.getFirst()), out);
         // Expected metadata + ADDITIONAL_METADATA should be in the flowfile attributes
         assertThat(metadata, equalTo(Stream.of(FlowfileEgressTest.METADATA, ADDITIONAL_METADATA).flatMap(m -> m.entrySet().stream())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))));

@@ -29,31 +29,35 @@ public class SegmentTest {
         // Test case 1: Empty list of segments
         Set<Segment> emptySet = new HashSet<>();
         assertEquals(0, Segment.calculateTotalSize(emptySet));
+        
+        UUID did = UUID.randomUUID();
+        UUID uuid1 = UUID.randomUUID();
+        UUID uuid2 = UUID.randomUUID();
 
         // Test case 2: List with one segment
-        Segment segment1 = new Segment("uuid1", 0, 10, "did");
+        Segment segment1 = new Segment(uuid1, 0, 10, did);
         Set<Segment> oneSegmentList = new HashSet<>(List.of(segment1));
         assertEquals(10, Segment.calculateTotalSize(oneSegmentList));
 
         // Test case 3: List with two non-overlapping segments with the same objectName
-        Segment segment2 = new Segment("uuid1", 20, 5, "did");
+        Segment segment2 = new Segment(uuid1, 20, 5, did);
         Set<Segment> twoNonOverlappingSegmentsList = new HashSet<>(Arrays.asList(segment1, segment2));
         assertEquals(15, Segment.calculateTotalSize(twoNonOverlappingSegmentsList));
 
         // Test case 4: List with two overlapping segments with the same objectName
-        Segment segment3 = new Segment("uuid1", 5, 15, "did");
+        Segment segment3 = new Segment(uuid1, 5, 15, did);
         Set<Segment> twoOverlappingSegmentsList = new HashSet<>(Arrays.asList(segment1, segment3));
         assertEquals(20, Segment.calculateTotalSize(twoOverlappingSegmentsList));
 
         // Test case 5: List with three segments, two overlapping with the same objectName
-        Segment segment4 = new Segment("uuid1", 0, 5, "did");
+        Segment segment4 = new Segment(uuid1, 0, 5, did);
         Set<Segment> threeSegmentsList = new HashSet<>(Arrays.asList(segment1, segment3, segment4));
         assertEquals(20, Segment.calculateTotalSize(threeSegmentsList));
 
         // Test case 6: List with multiple segments, some overlapping with the same objectName
-        Segment segment5 = new Segment("uuid1", 25, 10, "did");
-        Segment segment6 = new Segment("uuid2", 10, 20, "did");
-        Segment segment7 = new Segment("uuid2", 15, 10, "did");
+        Segment segment5 = new Segment(uuid1, 25, 10, did);
+        Segment segment6 = new Segment(uuid2, 10, 20, did);
+        Segment segment7 = new Segment(uuid2, 15, 10, did);
         Set<Segment> multipleSegmentsList = new HashSet<>(Arrays.asList(segment1, segment2, segment3, segment4, segment5, segment6, segment7));
         assertEquals(55, Segment.calculateTotalSize(multipleSegmentsList));
     }

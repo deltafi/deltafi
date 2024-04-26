@@ -24,6 +24,7 @@ import org.springframework.data.mongodb.core.query.Update;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 public abstract class DeltaFileCacheService {
@@ -32,11 +33,11 @@ public abstract class DeltaFileCacheService {
 
     public abstract void flush();
 
-    public abstract DeltaFile get(String did);
+    public abstract DeltaFile get(UUID did);
 
-    public abstract boolean isCached(String did);
+    public abstract boolean isCached(UUID did);
 
-    public abstract void remove(String did);
+    public abstract void remove(UUID did);
 
     public abstract void removeOlderThan(Duration duration);
 
@@ -48,8 +49,8 @@ public abstract class DeltaFileCacheService {
         }
     }
 
-    protected DeltaFile getFromRepo(String did, boolean updateSnapshot) {
-        DeltaFile deltaFile = deltaFileRepo.findById(did.toLowerCase()).orElse(null);
+    protected DeltaFile getFromRepo(UUID did, boolean updateSnapshot) {
+        DeltaFile deltaFile = deltaFileRepo.findById(did).orElse(null);
         if (deltaFile != null && updateSnapshot) {
             deltaFile.snapshot();
         }

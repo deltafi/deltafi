@@ -25,13 +25,14 @@ import org.deltafi.common.content.ContentStorageService;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class ActionContext {
-    private String did;
+    private UUID did;
     private String deltaFileName;
     private String dataSource;
     private String flowName;
@@ -45,14 +46,14 @@ public class ActionContext {
     private ContentStorageService contentStorageService;
 
     private CollectConfiguration collect;
-    private List<String> collectedDids;
+    private List<UUID> collectedDids;
 
     private String memo;
 
     /** Create a copy of this ActionContext with a different did
      * @param newDid the new DID
      * */
-    public ActionContext copy(String newDid) {
+    public ActionContext copy(UUID newDid) {
         return new ActionContext(newDid, deltaFileName, dataSource, flowName, flowId, actionName, actionId, hostname,
                 actionVersion, startTime, systemName, contentStorageService, collect, collectedDids, memo);
     }

@@ -19,7 +19,6 @@ package org.deltafi.core.services;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.deltafi.core.types.*;
 import org.deltafi.core.repo.DeletePolicyRepo;
 import org.deltafi.core.snapshot.SnapshotRestoreOrder;
@@ -51,7 +50,7 @@ public class DeletePolicyService implements Snapshotter {
      * @param enable boolean to indicate if policy should be active.
      * @return true if updated, false if not found or enabled already set.
      */
-    public boolean enablePolicy(String id, boolean enable) {
+    public boolean enablePolicy(UUID id, boolean enable) {
         Optional<DeletePolicy> policy = get(id);
         if (policy.isEmpty() || policy.get().isEnabled() == enable) {
             return false;
@@ -67,7 +66,7 @@ public class DeletePolicyService implements Snapshotter {
      * @param id id of the policy to find.
      * @return DeletePolicy if found.
      */
-    public Optional<DeletePolicy> get(String id) {
+    public Optional<DeletePolicy> get(UUID id) {
         return deletePolicyRepo.findById(id);
     }
 
@@ -121,7 +120,7 @@ public class DeletePolicyService implements Snapshotter {
      * @return Result
      */
     public Result update(DeletePolicy policy) {
-        if (StringUtils.isBlank(policy.getId())) {
+        if (policy.getId() == null) {
             return Result.builder().success(false).errors(List.of("id is missing")).build();
         } else if (get(policy.getId()).isEmpty()) {
             return Result.builder().success(false).errors(List.of("policy not found")).build();
@@ -145,7 +144,7 @@ public class DeletePolicyService implements Snapshotter {
      * @param id id of the policy to delete.
      * @return true if deleted; false if not found
      */
-    public boolean remove(String id) {
+    public boolean remove(UUID id) {
         if (get(id).isPresent()) {
             deletePolicyRepo.deleteById(id);
             return true;
@@ -196,13 +195,13 @@ public class DeletePolicyService implements Snapshotter {
 
     private List<String> validate(List<DeletePolicy> policies) {
         List<String> errors = new ArrayList<>();
-        Set<String> ids = new HashSet<>();
+        Set<UUID> ids = new HashSet<>();
         policies.forEach(policy -> {
             if (policy.getId() == null) {
-                policy.setId(UUID.randomUUID().toString());
+                policy.setId(UUID.randomUUID());
             }
             errors.addAll(DeletePolicyValidator.validate(policy));
-            String id = policy.getId();
+            UUID id = policy.getId();
             if (ids.contains(id)) {
                 errors.add("duplicate policy id: " + id);
             } else {

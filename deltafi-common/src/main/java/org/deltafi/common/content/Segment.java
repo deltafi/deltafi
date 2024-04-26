@@ -26,29 +26,29 @@ import java.util.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Segment {
-    private String uuid;
+    private UUID uuid;
     private long offset;
     private long size;
-    private String did;
+    private UUID did;
 
-    public Segment(String did) {
-        this(UUID.randomUUID().toString(), did);
+    public Segment(UUID did) {
+        this(UUID.randomUUID(), did);
     }
 
     public Segment(Segment other) {
         this(other.getUuid(), other.getOffset(), other.getSize(), other.getDid());
     }
 
-    public Segment(String uuid, String did) {
+    public Segment(UUID uuid, UUID did) {
         this(uuid, 0, ObjectReference.UNKNOWN_SIZE, did);
     }
 
     public String objectName() {
-        return did.substring(0, 3) + "/" + did + "/" + uuid;
+        return did.toString().substring(0, 3) + "/" + did + "/" + uuid;
     }
 
     public static long calculateTotalSize(Set<Segment> segments) {
-        Map<String, List<Segment>> segmentsByUuid = new HashMap<>();
+        Map<UUID, List<Segment>> segmentsByUuid = new HashMap<>();
 
         // Group segments by objectName
         for (Segment segment : segments) {
@@ -67,7 +67,7 @@ public class Segment {
     // Helper function to get the non-overlapping segments for a given object name
     private static long calculateNonOverlappingSize(List<Segment> uuidSegments) {
         if (uuidSegments.size() == 1) {
-            return uuidSegments.get(0).getSize();
+            return uuidSegments.getFirst().getSize();
         }
 
         // Create a copy of the original list and sort by offset
@@ -76,7 +76,7 @@ public class Segment {
 
         // Merge overlapping segments and calculate total size
         long totalSize = 0;
-        Segment mergedSegment = sortedSegments.get(0);
+        Segment mergedSegment = sortedSegments.getFirst();
         for (int i = 1; i < sortedSegments.size(); i++) {
             Segment segment = sortedSegments.get(i);
             if (segment.getOffset() >= mergedSegment.getOffset() + mergedSegment.getSize()) {

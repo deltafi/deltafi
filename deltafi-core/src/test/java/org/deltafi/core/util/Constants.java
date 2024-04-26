@@ -19,15 +19,19 @@ package org.deltafi.core.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import graphql.scalars.id.UUIDScalar;
+import graphql.schema.Coercing;
 
 import javax.ws.rs.core.MediaType;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class Constants {
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    public static final Map<Class<?>, Coercing<?, ?>> SCALARS = Map.of(UUID.class, UUIDScalar.INSTANCE.getCoercing());
 
     public static final OffsetDateTime START_TIME = OffsetDateTime.of(2021, 7, 11, 13, 44, 22, 183, ZoneOffset.UTC);
     public static final OffsetDateTime STOP_TIME = OffsetDateTime.of(2021, 7, 11, 13, 44, 22, 184, ZoneOffset.UTC);
@@ -45,6 +49,6 @@ public class Constants {
     public static final String MEDIA_TYPE = MediaType.APPLICATION_OCTET_STREAM;
     public static final String USERNAME = "myname";
 
-    public final static Map<String, String> SOURCE_METADATA = new HashMap<>(Map.of("AuthorizedBy", "XYZ", "removeMe", "whatever"));
-    public final static Map<String, String> TRANSFORM_METADATA = Map.of("sampleType", "sample-type", "sampleVersion", "2.1");
+    public static final Map<String, String> SOURCE_METADATA = new HashMap<>(Map.of("AuthorizedBy", "XYZ", "removeMe", "whatever"));
+    public static final Map<String, String> TRANSFORM_METADATA = Map.of("sampleType", "sample-type", "sampleVersion", "2.1");
 }

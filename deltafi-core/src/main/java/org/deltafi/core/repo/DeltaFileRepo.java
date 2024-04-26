@@ -28,10 +28,11 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 @Repository
-public interface DeltaFileRepo extends MongoRepository<DeltaFile, String>, DeltaFileRepoCustom {
+public interface DeltaFileRepo extends MongoRepository<DeltaFile, UUID>, DeltaFileRepoCustom {
     Page<DeltaFile> findAllByOrderByCreatedDesc(Pageable pageable);
     Page<DeltaFile> findAllByOrderByModifiedDesc(Pageable pageable);
     Page<DeltaFile> findByStageOrderByModifiedDesc(DeltaFileStage stage, Pageable pageable);
@@ -47,5 +48,5 @@ public interface DeltaFileRepo extends MongoRepository<DeltaFile, String>, Delta
     @CountQuery("{'stage': ?0, 'flows.actions.errorAcknowledged': null}")
     long countByStageAndErrorAcknowledgedIsNull(DeltaFileStage stage);
 
-    Optional<DeltaFile> findByDidAndStageIn(String did, List<DeltaFileStage> stages);
+    Optional<DeltaFile> findByDidAndStageIn(UUID did, List<DeltaFileStage> stages);
 }

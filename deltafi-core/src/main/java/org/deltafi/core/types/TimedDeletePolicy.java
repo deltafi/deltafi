@@ -24,6 +24,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,
         property = "__typename",
@@ -37,7 +39,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class TimedDeletePolicy implements DeletePolicy {
-    private String id;
+    private UUID id;
     private String name;
     private boolean enabled;
     private String flow;

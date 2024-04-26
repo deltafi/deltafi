@@ -1,5 +1,5 @@
 {
-    "did": "xxx%1$s",
+    "did": "%1$s",
     "flowName": "sampleTransform",
     "flowId": 1,
     "actionName": "SampleTransformAction",

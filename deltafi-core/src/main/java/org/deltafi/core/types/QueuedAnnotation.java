@@ -29,15 +29,15 @@ import java.util.UUID;
 @Document
 public class QueuedAnnotation {
     @Id
-    String id;
+    UUID id;
 
-    String did;
+    UUID did;
     Map<String, String> annotations;
     boolean allowOverwrites;
     OffsetDateTime time;
 
-    public QueuedAnnotation(String did, Map<String, String> annotations, boolean allowOverwrites) {
-        this.id = UUID.randomUUID().toString();
+    public QueuedAnnotation(UUID did, Map<String, String> annotations, boolean allowOverwrites) {
+        this.id = UUID.randomUUID();
         this.did = did;
         this.annotations = annotations;
         this.allowOverwrites = allowOverwrites;

@@ -218,7 +218,7 @@ public class DeltaFileFlow {
                 .orElse(null);
     }
 
-    public Action getPendingAction(String actionName, int actionId, String did) {
+    public Action getPendingAction(String actionName, int actionId, UUID did) {
         Action action = getAction(actionName, actionId);
         if (action == null || action.terminal()) {
             throw new UnexpectedActionException(name, id, actionName, actionId, did);

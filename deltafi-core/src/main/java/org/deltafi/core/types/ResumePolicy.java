@@ -42,7 +42,7 @@ public class ResumePolicy extends org.deltafi.core.generated.types.ResumePolicy 
      */
     public List<String> validate() {
         List<String> errors = new ArrayList<>();
-        if (StringUtils.isBlank(getId())) {
+        if (getId() == null) {
             errors.add(MISSING_ID);
         }
 

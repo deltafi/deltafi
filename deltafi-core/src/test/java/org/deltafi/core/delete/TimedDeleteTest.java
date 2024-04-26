@@ -35,7 +35,7 @@ import static org.mockito.Mockito.verify;
 @ExtendWith(MockitoExtension.class)
 public class TimedDeleteTest {
 
-    static final String ID = UUID.randomUUID().toString();
+    static final UUID ID = UUID.randomUUID();
     static final String POLICY_NAME = "policyName";
     static final String FLOW_NAME = "flowName";
 

@@ -28,7 +28,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class Merge extends TransformAction<MergeParameters> {
-    final static String FILENAME_REPLACEMENT = "{{filename}}";
+    static final String FILENAME_REPLACEMENT = "{{filename}}";
 
     public Merge() {
         super("Merge multiple pieces of content into one blob");

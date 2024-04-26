@@ -41,6 +41,7 @@ import org.springframework.stereotype.Component;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.deltafi.common.constant.DeltaFiConstants.USER_HEADER;
@@ -66,7 +67,7 @@ public class CoreAuditLogger extends SimplePerformantInstrumentation {
                 DgsWebMvcRequestData webContext = DgsContext.getCustomContext(environment);
                 List<String> id = null != webContext && null != webContext.getHeaders() ? webContext.getHeaders().getOrEmpty(USER_HEADER) : List.of();
 
-                String userName = !id.isEmpty() ? id.get(0) : UNKNOWN_USER;
+                String userName = !id.isEmpty() ? id.getFirst() : UNKNOWN_USER;
 
                 try (@SuppressWarnings("unused") MDC.MDCCloseable mdc = MDC.putCloseable("user", userName)) {
                     log.info("called mutation {}", path);
@@ -101,9 +102,9 @@ public class CoreAuditLogger extends SimplePerformantInstrumentation {
         }
     }
 
-    public void logDelete(String policy, List<String> dids, boolean metadata) {
+    public void logDelete(String policy, List<UUID> dids, boolean metadata) {
         try (MDC.MDCCloseable ignored = MDC.putCloseable("user", UNKNOWN_USER)) {
-            for (String did : dids) {
+            for (UUID did : dids) {
                 log.info("policy {} deleted {} content{}", policy, did, (metadata ? " and metadata" : ""));
             }
         }

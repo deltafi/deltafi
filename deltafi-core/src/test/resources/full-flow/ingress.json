@@ -1,5 +1,5 @@
 {
-    "did": "taskedDid",
+    "did": "%1$s",
     "flowName": "sampleTimedDataSource",
     "flowId": 0,
     "actionName": "SampleTimedIngressAction",
@@ -10,7 +10,7 @@
     "ingress": {
         "ingressItems": [
             {
-                "did": "%1$s",
+                "did": "%2$s",
                 "deltaFileName": "filename",
                 "metadata": {
                     "smoke": "test"
@@ -21,10 +21,10 @@
                         "mediaType": "application/text",
                         "segments": [
                             {
-                                "uuid": "uuid",
+                                "uuid": "11111111-1111-1111-1111-111111111111",
                                 "offset": 0,
                                 "size": 36,
-                                "did": "%1$s"
+                                "did": "%2$s"
                             }
                         ],
                         "size": 36

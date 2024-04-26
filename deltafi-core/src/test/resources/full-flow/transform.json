@@ -14,7 +14,7 @@
                     "name": "transformed",
                     "segments": [
                         {
-                            "uuid": "objectName",
+                            "uuid": "11111111-1111-1111-1111-111111111111",
                             "offset": 0,
                             "size": 500,
                             "did": "%1$s"

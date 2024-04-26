@@ -23,6 +23,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.UUID;
 
 @Service
 @ConditionalOnProperty(value = "schedule.actionEvents", havingValue = "false")
@@ -35,17 +36,17 @@ public class DeltaFileCacheServicePassthrough extends DeltaFileCacheService {
     public void flush() {}
 
     @Override
-    public DeltaFile get(String did) {
+    public DeltaFile get(UUID did) {
         return getFromRepo(did, false);
     }
 
     @Override
-    public boolean isCached(String did) {
+    public boolean isCached(UUID did) {
         return false;
     }
 
     @Override
-    public void remove(String did) {}
+    public void remove(UUID did) {}
 
     @Override
     public void removeOlderThan(Duration duration) {}

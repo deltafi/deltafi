@@ -30,7 +30,6 @@ import org.deltafi.common.queue.jedis.SortedSetEntry;
 import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionExecution;
 import org.deltafi.common.types.ActionInput;
-import org.deltafi.common.types.ActionState;
 
 import java.net.URISyntaxException;
 import java.time.Duration;
@@ -273,7 +272,7 @@ public class ActionEventQueue {
                     String[] keyParts = key.split(":");
                     String clazz = keyParts[0];
                     String action = keyParts[1];
-                    String did = keyParts[2];
+                    UUID did = UUID.fromString(keyParts[2]);
 
                     longRunningTasks.add(new ActionExecution(clazz, action, did, startTime));
                 }
@@ -331,7 +330,7 @@ public class ActionEventQueue {
      * @return true if the task exists and its heartbeat is within the threshold, false otherwise.
      */
     @SuppressWarnings("ununsed")
-    public boolean longRunningTaskExists(String clazz, String action, String did) {
+    public boolean longRunningTaskExists(String clazz, String action, UUID did) {
         ActionExecution taskToCheck = new ActionExecution(clazz, action, did, null);  // Passing null since we don't care about the startTime for this check.
         String key = taskToCheck.key();
         String serializedValue = jedisKeyedBlockingQueue.getLongRunningTask(key);

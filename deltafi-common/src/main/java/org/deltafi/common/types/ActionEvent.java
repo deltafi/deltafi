@@ -29,13 +29,14 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class ActionEvent {
-  private String did;
+  private UUID did;
   private String flowName;
   private Integer flowId;
   private String actionName;
@@ -55,7 +56,7 @@ public class ActionEvent {
           .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
   public String validateHeader() {
-    if (StringUtils.isEmpty(did)) {
+    if (did == null) {
       return "Missing did";
     }
     if (StringUtils.isEmpty(flowName)) {

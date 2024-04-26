@@ -20,7 +20,6 @@ package org.deltafi.core.services;
 import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.Action;
 import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.DeltaFile;
@@ -105,7 +104,7 @@ public class ResumePolicyService implements Snapshotter {
      * @param excludeDids A set of DeltaFile dids to ignore
      * @return List of DeltaFiles that can be resumed
      */
-    public List<String> canBeApplied(ResumePolicy policy, List<DeltaFile> deltaFiles, Set<String> excludeDids) {
+    public List<UUID> canBeApplied(ResumePolicy policy, List<DeltaFile> deltaFiles, Set<UUID> excludeDids) {
         return deltaFiles.stream()
                 .filter(d -> !excludeDids.contains(d.getDid()))
                 .filter(d -> matchesActionError(policy, d))
@@ -153,7 +152,7 @@ public class ResumePolicyService implements Snapshotter {
      * @param id id of the policy to find.
      * @return ResumePolicy if found.
      */
-    public Optional<ResumePolicy> get(String id) {
+    public Optional<ResumePolicy> get(UUID id) {
         return resumePolicyRepo.findById(id);
     }
 
@@ -174,7 +173,7 @@ public class ResumePolicyService implements Snapshotter {
      */
     public Result save(ResumePolicy resumePolicy) {
         if (resumePolicy.getId() == null) {
-            resumePolicy.setId(UUID.randomUUID().toString());
+            resumePolicy.setId(UUID.randomUUID());
         }
         List<String> errors = resumePolicy.validate();
         if (errors.isEmpty()) {
@@ -196,11 +195,12 @@ public class ResumePolicyService implements Snapshotter {
      * @return Result
      */
     public Result update(ResumePolicy policy) {
-        if (StringUtils.isBlank(policy.getId())) {
+        if (policy.getId() == null) {
             return Result.builder().success(false).errors(List.of("id is missing")).build();
         } else if (get(policy.getId()).isEmpty()) {
             return Result.builder().success(false).errors(List.of("policy not found")).build();
         }
+
         return save(policy);
     }
 
@@ -210,7 +210,7 @@ public class ResumePolicyService implements Snapshotter {
      * @param id id of the policy to delete.
      * @return true if deleted; false if not found
      */
-    public boolean remove(String id) {
+    public boolean remove(UUID id) {
         if (get(id).isPresent()) {
             resumePolicyRepo.deleteById(id);
             refreshCache();
@@ -232,7 +232,7 @@ public class ResumePolicyService implements Snapshotter {
         List<ResumePolicy> valid = new ArrayList<>();
         for (ResumePolicy policy : policies) {
             if (policy.getId() == null) {
-                policy.setId(UUID.randomUUID().toString());
+                policy.setId(UUID.randomUUID());
             }
             List<String> errors = policy.validate();
             if (errors.isEmpty()) {

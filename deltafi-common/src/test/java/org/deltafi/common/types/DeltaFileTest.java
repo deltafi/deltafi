@@ -168,11 +168,16 @@ class DeltaFileTest {
 
     @Test
     void testRecalculateBytes() {
-        Content content1 = new Content("content1", "*/*", List.of(new Segment("uuid1", 0, 500, "did1")));
-        Content content2 = new Content("content1", "*/*", List.of(new Segment("uuid1", 400, 200, "did1")));
-        Content content3 = new Content("content1", "*/*", List.of(new Segment("uuid1", 200, 200, "did1")));
-        Content content4 = new Content("content1", "*/*", List.of(new Segment("uuid2", 5, 200, "did1")));
-        Content content5 = new Content("content1", "*/*", List.of(new Segment("uuid3", 5, 200, "did2")));
+        UUID uuid1 = UUID.randomUUID();
+        UUID uuid2 = UUID.randomUUID();
+        UUID uuid3 = UUID.randomUUID();
+        UUID did1 = UUID.randomUUID();
+        UUID did2 = UUID.randomUUID();
+        Content content1 = new Content("content1", "*/*", List.of(new Segment(uuid1, 0, 500, did1)));
+        Content content2 = new Content("content1", "*/*", List.of(new Segment(uuid1, 400, 200, did1)));
+        Content content3 = new Content("content1", "*/*", List.of(new Segment(uuid1, 200, 200, did1)));
+        Content content4 = new Content("content1", "*/*", List.of(new Segment(uuid2, 5, 200, did1)));
+        Content content5 = new Content("content1", "*/*", List.of(new Segment(uuid3, 5, 200, did2)));
 
         DeltaFile deltaFile = DeltaFile.builder()
                 .flows(List.of(DeltaFileFlow.builder().actions(List.of(
@@ -181,7 +186,7 @@ class DeltaFileTest {
                         Action.builder().content(List.of(content4)).build(),
                         Action.builder().content(List.of(content5)).build())
                 ).build()))
-                .did("did1")
+                .did(did1)
                 .build();
 
         deltaFile.recalculateBytes();

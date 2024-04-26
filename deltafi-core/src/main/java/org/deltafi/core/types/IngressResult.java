@@ -19,4 +19,6 @@ package org.deltafi.core.types;
 
 import org.deltafi.common.types.Content;
 
-public record IngressResult(String flow, String did, Content content) {}
+import java.util.UUID;
+
+public record IngressResult(String flow, UUID did, Content content) {}

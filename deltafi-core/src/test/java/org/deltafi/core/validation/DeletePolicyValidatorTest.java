@@ -22,6 +22,7 @@ import org.deltafi.core.types.TimedDeletePolicy;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -30,7 +31,7 @@ class DeletePolicyValidatorTest {
 
     private static final int MAX_PERCENT = 80;
     private static final Long MIN_BYTES = 9999L;
-    private static final String POLICY_ID = "policyId";
+    private static final UUID POLICY_ID = UUID.randomUUID();
     private static final String POLICY_NAME = "policyName";
     private static final String FLOW = "flow";
     private static final String GOOD_DURATION = "PT10M";
@@ -106,7 +107,7 @@ class DeletePolicyValidatorTest {
         policy.setAfterComplete(GOOD_DURATION);
         List<String> errors = DeletePolicyValidator.validate(policy);
         assertEquals(1, errors.size());
-        assertEquals(ERROR_MESSAGE, errors.get(0));
+        assertEquals(ERROR_MESSAGE, errors.getFirst());
     }
 
     @Test
@@ -115,7 +116,7 @@ class DeletePolicyValidatorTest {
         policy.setAfterCreate(null);
         List<String> errors = DeletePolicyValidator.validate(policy);
         assertEquals(1, errors.size());
-        assertEquals(ERROR_MESSAGE, errors.get(0));
+        assertEquals(ERROR_MESSAGE, errors.getFirst());
     }
 
     private DiskSpaceDeletePolicy makeDiskSpaceDeletePolicy(boolean withOptional) {

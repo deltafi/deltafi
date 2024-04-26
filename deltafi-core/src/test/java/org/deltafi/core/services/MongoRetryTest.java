@@ -48,6 +48,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.UUID;
 
 @ExtendWith(SpringExtension.class)
 @Import({DeltaFilesService.class, ClockConfiguration.class})
@@ -80,11 +81,11 @@ class MongoRetryTest {
 
     @Test
     void testRetryOnOptimisticLockingFailure() {
-        String did = "abc";
+        UUID did = UUID.randomUUID();
         String fromAction = "egressAction";
 
         DeltaFile deltaFile = Util.emptyDeltaFile(did, "flow");
-        deltaFile.getFlows().get(0).setActions(new ArrayList<>(Collections.singletonList(Action.builder().name(fromAction).state(ActionState.QUEUED).build())));
+        deltaFile.getFlows().getFirst().setActions(new ArrayList<>(Collections.singletonList(Action.builder().name(fromAction).state(ActionState.QUEUED).build())));
         // contrived, but it won't try to save if it's not complete, and the state machine flows aren't populated
         deltaFile.setStage(DeltaFileStage.COMPLETE);
 

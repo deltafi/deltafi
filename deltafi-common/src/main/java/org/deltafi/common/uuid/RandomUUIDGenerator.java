@@ -21,7 +21,7 @@ import java.util.UUID;
 
 public class RandomUUIDGenerator implements UUIDGenerator {
     @Override
-    public String generate() {
-        return UUID.randomUUID().toString();
+    public UUID generate() {
+        return UUID.randomUUID();
     }
 }

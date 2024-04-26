@@ -27,6 +27,7 @@ import org.deltafi.core.services.DeletePolicyService;
 import org.deltafi.core.types.*;
 
 import java.util.Collection;
+import java.util.UUID;
 
 @DgsComponent
 @RequiredArgsConstructor
@@ -48,13 +49,13 @@ public class DeletePolicyDatafetcher {
 
     @DgsMutation
     @NeedsPermission.DeletePolicyDelete
-    public boolean removeDeletePolicy(@InputArgument String id) {
+    public boolean removeDeletePolicy(@InputArgument UUID id) {
         return deletePolicyService.remove(id);
     }
 
     @DgsMutation
     @NeedsPermission.DeletePolicyUpdate
-    public boolean enablePolicy(@InputArgument String id, @InputArgument Boolean enabled) {
+    public boolean enablePolicy(@InputArgument UUID id, @InputArgument Boolean enabled) {
         return deletePolicyService.enablePolicy(id, enabled);
     }
 

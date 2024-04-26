@@ -21,8 +21,9 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.UUID;
 
 @Repository
-public interface CollectEntryRepo extends MongoRepository<CollectEntry, String>, CollectEntryRepoCustom {
+public interface CollectEntryRepo extends MongoRepository<CollectEntry, UUID>, CollectEntryRepoCustom {
     List<CollectEntry> findAllByOrderByCollectDate();
 }

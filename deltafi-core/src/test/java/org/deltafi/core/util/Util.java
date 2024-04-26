@@ -38,60 +38,60 @@ public class Util {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
     private static final String FLOW = "myFlow";
 
-    public static DeltaFile buildDeltaFile(String did) {
+    public static DeltaFile buildDeltaFile(UUID did) {
         return buildDeltaFile(did, List.of());
     }
 
-    public static DeltaFile buildDeltaFile(String did, List<Content> content) {
+    public static DeltaFile buildDeltaFile(UUID did, List<Content> content) {
         return emptyDeltaFile(did, FLOW, content);
     }
 
-    public static DeltaFile buildDeltaFile(String did, List<Content> content, Map<String, String> metadata) {
+    public static DeltaFile buildDeltaFile(UUID did, List<Content> content, Map<String, String> metadata) {
         OffsetDateTime now = OffsetDateTime.now();
         return buildDeltaFile(did, null, DeltaFileStage.IN_FLIGHT, now, now, content, metadata);
     }
 
-    public static DeltaFile emptyDeltaFile(String did, String flow) {
+    public static DeltaFile emptyDeltaFile(UUID did, String flow) {
         OffsetDateTime now = OffsetDateTime.now();
         return buildDeltaFile(did, flow, DeltaFileStage.IN_FLIGHT, now, now, new ArrayList<>());
     }
 
-    public static DeltaFile emptyDeltaFile(String did, String flow, List<Content> content) {
+    public static DeltaFile emptyDeltaFile(UUID did, String flow, List<Content> content) {
         OffsetDateTime now = OffsetDateTime.now();
         return buildDeltaFile(did, flow, DeltaFileStage.IN_FLIGHT, now, now, content);
     }
 
-    public static DeltaFile buildDeltaFile(String did, String flow, DeltaFileStage stage, OffsetDateTime created,
+    public static DeltaFile buildDeltaFile(UUID did, String flow, DeltaFileStage stage, OffsetDateTime created,
                                            OffsetDateTime modified) {
         return buildDeltaFile(did, flow, stage, created, modified, new ArrayList<>(), new HashMap<>());
     }
 
-    public static DeltaFile buildDeltaFile(String did, String flow, DeltaFileStage stage, OffsetDateTime created,
+    public static DeltaFile buildDeltaFile(UUID did, String flow, DeltaFileStage stage, OffsetDateTime created,
                                            OffsetDateTime modified, List<Content> content) {
         return buildDeltaFile(did, flow, stage, created, modified, content, new HashMap<>());
     }
 
     public static DeltaFile buildErrorDeltaFile(
-            String did, String flow, String cause, String context, OffsetDateTime created) {
+            UUID did, String flow, String cause, String context, OffsetDateTime created) {
         return buildErrorDeltaFile(did, flow, cause, context, created, created, null, List.of());
     }
 
-    public static DeltaFile buildErrorDeltaFile(String did, String flow, String cause, String context,
+    public static DeltaFile buildErrorDeltaFile(UUID did, String flow, String cause, String context,
                                                 OffsetDateTime created, OffsetDateTime modified, String extraError) {
         return buildErrorDeltaFile(did, flow, cause, context, created, modified, extraError, new ArrayList<>());
     }
 
-    public static DeltaFile buildErrorDeltaFile(String did, String flow, String cause, String context, OffsetDateTime created,
+    public static DeltaFile buildErrorDeltaFile(UUID did, String flow, String cause, String context, OffsetDateTime created,
                                                 OffsetDateTime modified, String extraError, List<Content> content) {
 
         DeltaFile deltaFile = Util.buildDeltaFile(did, flow, DeltaFileStage.ERROR, created, modified, content);
-        DeltaFileFlow firstFlow = deltaFile.addFlow("firstFlow", FlowType.TRANSFORM, deltaFile.getFlows().get(0), created);
+        DeltaFileFlow firstFlow = deltaFile.addFlow("firstFlow", FlowType.TRANSFORM, deltaFile.getFlows().getFirst(), created);
         Action errorAction = firstFlow.queueNewAction("ErrorAction", ActionType.TRANSFORM, false, created);
         errorAction.error(modified, modified, modified, cause, context);
         firstFlow.updateState(modified);
 
         if (extraError != null) {
-            DeltaFileFlow secondFlow = deltaFile.addFlow("firstFlow", FlowType.TRANSFORM, deltaFile.getFlows().get(0), created);
+            DeltaFileFlow secondFlow = deltaFile.addFlow("firstFlow", FlowType.TRANSFORM, deltaFile.getFlows().getFirst(), created);
             Action anotherErrorAction = secondFlow.queueNewAction("AnotherErrorAction", ActionType.TRANSFORM, false, created);
             anotherErrorAction.error(modified, modified, modified, extraError, context);
             secondFlow.updateState(modified);
@@ -101,7 +101,7 @@ public class Util {
         return deltaFile;
     }
 
-    public static DeltaFile buildDeltaFile(String did, String flowName, DeltaFileStage stage, OffsetDateTime created,
+    public static DeltaFile buildDeltaFile(UUID did, String flowName, DeltaFileStage stage, OffsetDateTime created,
                                            OffsetDateTime modified, List<Content> content, Map<String, String> metadata) {
         Action ingressAction = Action.builder()
                 .name(INGRESS_ACTION)
@@ -259,8 +259,9 @@ public class Util {
         return null;
     }
 
-    public static ActionEvent actionEvent(String filename, String... dids) throws IOException {
-        String json = String.format(new String(Objects.requireNonNull(Util.class.getClassLoader().getResourceAsStream("full-flow/" + filename + ".json")).readAllBytes()), (Object[]) dids);
+    public static ActionEvent actionEvent(String filename, UUID... dids) throws IOException {
+        String json = String.format(new String(Objects.requireNonNull(Util.class.getClassLoader().getResourceAsStream("full-flow/" + filename + ".json")).readAllBytes()),
+                (Object[]) Arrays.stream(dids).map(UUID::toString).toList().toArray(new String[0]));
         return ActionEventQueue.convertEvent(json);
     }
 
@@ -269,7 +270,7 @@ public class Util {
         return ActionEventQueue.convertEvent(json);
     }
 
-    public static ActionEvent filterActionEvent(String did, String flow, int flowId, String filteredAction, int actionId) throws IOException {
+    public static ActionEvent filterActionEvent(UUID did, String flow, int flowId, String filteredAction, int actionId) throws IOException {
         String json = String.format(new String(Objects.requireNonNull(Util.class.getClassLoader().getResourceAsStream("full-flow/filter.json")).readAllBytes()), did, flow, flowId, filteredAction, actionId);
         return ActionEventQueue.convertEvent(json);
     }
@@ -305,7 +306,7 @@ public class Util {
                 .build();
     }
 
-    public static void matchesCounterPerMessage(SummaryByFlowAndMessage result, int index, String cause, String flow, List<String> dids) {
+    public static void matchesCounterPerMessage(SummaryByFlowAndMessage result, int index, String cause, String flow, List<UUID> dids) {
         assertEquals(cause, result.countPerMessage().get(index).getMessage());
         assertEquals(flow, result.countPerMessage().get(index).getFlow());
         assertEquals(dids.size(), result.countPerMessage().get(index).getCount());

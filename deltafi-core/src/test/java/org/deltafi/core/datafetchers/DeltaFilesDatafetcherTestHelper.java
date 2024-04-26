@@ -35,16 +35,12 @@ public class DeltaFilesDatafetcherTestHelper {
 
     static final String FILENAME = "theFilename";
     static final Long SIZE = 500L;
-    static final String OBJECT_UUID = "theUuid";
-    static final String OBJECT_UUID_2 = "theUuid2";
-    static final String DID = UUID.randomUUID().toString();
-    static final String DID_2 = UUID.randomUUID().toString();
+    static final UUID OBJECT_UUID = UUID.randomUUID();
+    static final UUID DID = UUID.randomUUID();
     static final Map<String, String> METADATA = Map.of("k1", "v1", "k2", "v2");
     static final String MEDIA_TYPE = "plain/text";
     static final List<Content> CONTENT = Collections.singletonList(new Content(FILENAME, MEDIA_TYPE, new Segment(OBJECT_UUID, 0, SIZE, DID)));
-    static final List<Content> CONTENT_2 = Collections.singletonList(new Content(FILENAME, MEDIA_TYPE, new Segment(OBJECT_UUID_2, 0, SIZE, DID)));
     public static final IngressEventItem INGRESS_INPUT = new IngressEventItem(DID, FILENAME, REST_DATA_SOURCE_NAME, METADATA, CONTENT);
-    public static final IngressEventItem INGRESS_INPUT_2 = new IngressEventItem(DID_2, FILENAME, REST_DATA_SOURCE_NAME, METADATA, CONTENT_2);
 
     public static final DeltaFilesProjectionRoot DELTA_FILES_PROJECTION_ROOT = new DeltaFilesProjectionRoot()
             .deltaFiles()

@@ -158,13 +158,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     static class FlowCountAndDids {
         String dataSource;
         int groupCount;
-        List<String> dids;
+        List<UUID> dids;
     }
 
     static class MessageFlowGroup {
         TempGroupId id;
         int groupCount;
-        List<String> dids;
+        List<UUID> dids;
 
         static class TempGroupId {
             String errorMessage;
@@ -252,11 +252,11 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
-    public List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, Duration requeueDuration, Set<String> skipActions, Set<String> skipDids) {
+    public List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, Duration requeueDuration, Set<String> skipActions, Set<UUID> skipDids) {
         List<DeltaFile> filesToRequeue = mongoTemplate.find(buildReadyForRequeueQuery(requeueTime, requeueDuration, skipActions, skipDids), DeltaFile.class);
         List<DeltaFile> requeuedDeltaFiles = new ArrayList<>();
         for (List<DeltaFile> batch : Lists.partition(filesToRequeue, 1000)) {
-            List<String> dids = batch.stream().map(DeltaFile::getDid).toList();
+            List<UUID> dids = batch.stream().map(DeltaFile::getDid).toList();
             Query query = new Query().addCriteria(Criteria.where(ID).in(dids));
             mongoTemplate.updateMulti(query, buildRequeueUpdate(requeueTime, requeueDuration), DeltaFile.class);
             requeuedDeltaFiles.addAll(mongoTemplate.find(query, DeltaFile.class));
@@ -270,7 +270,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         List<DeltaFile> filesToRequeue = mongoTemplate.find(buildReadyForColdRequeueQuery(actionNames, maxFiles), DeltaFile.class);
         List<DeltaFile> requeuedDeltaFiles = new ArrayList<>();
         for (List<DeltaFile> batch : Lists.partition(filesToRequeue, 1000)) {
-            List<String> dids = batch.stream().map(DeltaFile::getDid).toList();
+            List<UUID> dids = batch.stream().map(DeltaFile::getDid).toList();
             Query query = new Query().addCriteria(Criteria.where(ID).in(dids));
             mongoTemplate.updateMulti(query, buildColdRequeueUpdate(modified), DeltaFile.class);
             requeuedDeltaFiles.addAll(mongoTemplate.find(query, DeltaFile.class));
@@ -314,7 +314,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
-    public void updateForAutoResume(List<String> dids, String policyName, OffsetDateTime nextAutoResume) {
+    public void updateForAutoResume(List<UUID> dids, String policyName, OffsetDateTime nextAutoResume) {
         Update update = new Update()
                 .set("flows.$[].actions.$[action].nextAutoResume", nextAutoResume)
                 .set("flows.$[].actions.$[action].nextAutoResumeReason", policyName)
@@ -488,7 +488,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         return update;
     }
 
-    private Query buildReadyForRequeueQuery(OffsetDateTime requeueTime, Duration requeueDuration, Set<String> skipActions, Set<String> skipDids) {
+    private Query buildReadyForRequeueQuery(OffsetDateTime requeueTime, Duration requeueDuration, Set<String> skipActions, Set<UUID> skipDids) {
         Criteria criteria = Criteria.where(IN_FLIGHT).is(true);
         long epochMs = requeueThreshold(requeueTime, requeueDuration);
         criteria.and(MODIFIED).lt(new Date(epochMs));
@@ -967,7 +967,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
-    public void setContentDeletedByDidIn(List<String> dids, OffsetDateTime now, String reason) {
+    public void setContentDeletedByDidIn(List<UUID> dids, OffsetDateTime now, String reason) {
         batchedBulkUpdateByIds(dids, new Update().set(CONTENT_DELETED, now)
                 .set(CONTENT_DELETED_REASON, reason)
                 .set(CONTENT_DELETABLE, false));
@@ -1045,27 +1045,27 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                 .toList();
     }
 
-    private void batchedBulkUpdateByIds(List<String> dids, Update update) {
+    private void batchedBulkUpdateByIds(List<UUID> dids, Update update) {
         if (dids == null || dids.isEmpty()) {
             return;
         }
 
         BulkOperations bulkOps = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, DeltaFile.class);
-        for (List<String> batch : Lists.partition(dids, 500)) {
+        for (List<UUID> batch : Lists.partition(dids, 500)) {
             Query query = new Query().addCriteria(Criteria.where(ID).in(batch));
             bulkOps.updateMulti(query, update);
         }
         bulkOps.execute();
     }
 
-    public void batchedBulkDeleteByDidIn(List<String> dids) {
+    public void batchedBulkDeleteByDidIn(List<UUID> dids) {
         if (dids == null || dids.isEmpty()) {
             return;
         }
 
         BulkOperations bulkOps = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, DeltaFile.class);
 
-        for (List<String> batch : Lists.partition(dids, 500)) {
+        for (List<UUID> batch : Lists.partition(dids, 500)) {
             Query query = new Query().addCriteria(Criteria.where(ID).in(batch));
             bulkOps.remove(query);
         }
@@ -1094,7 +1094,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
     }
 
-    public boolean update(String did, long version, Update update) {
+    public boolean update(UUID did, long version, Update update) {
         Query query = new Query(Criteria.where(ID).is(did).and(VERSION).is(version));
         UpdateResult result = mongoTemplate.updateFirst(query, update, DeltaFile.class);
 

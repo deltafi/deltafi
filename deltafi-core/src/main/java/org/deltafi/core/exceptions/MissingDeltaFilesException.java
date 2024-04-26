@@ -18,9 +18,11 @@
 package org.deltafi.core.exceptions;
 
 import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class MissingDeltaFilesException extends Exception {
-    public MissingDeltaFilesException(List<String> dids) {
-        super("DeltaFiles missing: " + dids);
+    public MissingDeltaFilesException(List<UUID> dids) {
+        super("DeltaFiles missing: " + dids.stream().map(UUID::toString).collect(Collectors.joining(", ")));
     }
 }

@@ -18,7 +18,7 @@
 
 mutation {
     acknowledge(
-        dids: ["%1$s", "fakedid"]
+        dids: ["%1$s", "11111111-1111-1111-1111-111111111111"]
         reason: "apathy"
     ) {
         did

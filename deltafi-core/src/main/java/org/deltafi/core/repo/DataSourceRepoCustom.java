@@ -21,14 +21,15 @@ import org.deltafi.common.types.IngressStatus;
 import org.deltafi.core.types.DataSource;
 
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 public interface DataSourceRepoCustom extends FlowRepoCustom<DataSource> {
     boolean updateCronSchedule(String flowName, String cronSchedule, OffsetDateTime nextRun);
 
-    boolean updateLastRun(String flowName, OffsetDateTime lastRun, String currentDid);
+    boolean updateLastRun(String flowName, OffsetDateTime lastRun, UUID currentDid);
 
-    boolean completeExecution(String flowName, String currentDid, String memo, boolean executeImmediate,
-            IngressStatus status, String statusMessage, OffsetDateTime nextRun);
+    boolean completeExecution(String flowName, UUID currentDid, String memo, boolean executeImmediate,
+                              IngressStatus status, String statusMessage, OffsetDateTime nextRun);
 
     boolean updateMemo(String flowName, String memo);
 }

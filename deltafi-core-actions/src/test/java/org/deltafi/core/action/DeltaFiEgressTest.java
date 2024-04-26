@@ -59,7 +59,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class DeltaFiEgressTest {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
-    private static final String DID = UUID.randomUUID().toString();
+    private static final UUID DID = UUID.randomUUID();
     private static final String SYSTEM_NAME = "DeltaFi Dev";
     private static final String ORIG_FILENAME = "origFilename";
     private static final String FLOW = "smoke";
@@ -70,7 +70,7 @@ class DeltaFiEgressTest {
     private static final byte[] DATA = "data to be egressed".getBytes();
     private static final String CONTENT_TYPE = "application/json";
     private static final Map<String, String> METADATA = Map.of("Foo", "Bar");
-    private static final Segment SEGMENT = new Segment(UUID.randomUUID().toString(), 0, DATA.length, DID);
+    private static final Segment SEGMENT = new Segment(UUID.randomUUID(), 0, DATA.length, DID);
     private static final ActionContext CONTEXT = ActionContext.builder().did(DID).flowName(EGRESS_FLOW).actionName(ACTION).deltaFileName(ORIG_FILENAME).dataSource(FLOW).systemName(SYSTEM_NAME).build();
     private static final Content CONTENT = new Content(POST_FILENAME, CONTENT_TYPE, List.of(SEGMENT));
     static final Integer NUM_TRIES = 3;
@@ -96,7 +96,7 @@ class DeltaFiEgressTest {
         when(contentStorageService.load(CONTENT)).thenReturn(new ByteArrayInputStream(DATA));
         EgressResultType result = runTest(200, "good job", 1);
 
-        assertTrue(result instanceof EgressResult);
+        assertInstanceOf(EgressResult.class, result);
         assertEquals(DID, result.toEvent().getDid());
         assertEquals(ACTION, result.toEvent().getActionName());
         assertEquals(EGRESS_FLOW, result.toEvent().getFlowName());
@@ -162,7 +162,7 @@ class DeltaFiEgressTest {
 
         Map<String, String> metadata = OBJECT_MAPPER.readValue(actual.get("metadata"), new TypeReference<>() {});
         Map<String, String> expectedMetadata = new HashMap<>(METADATA);
-        expectedMetadata.put("originalDid", DID);
+        expectedMetadata.put("originalDid", DID.toString());
         expectedMetadata.put("originalSystem", SYSTEM_NAME);
         assertEquals(metadata, expectedMetadata);
 
@@ -177,7 +177,7 @@ class DeltaFiEgressTest {
     void closingInputStreamThrowsIoException() throws IOException, ObjectStorageException {
         when(contentStorageService.load(CONTENT)).thenReturn(new TestInputStream(DATA));
         EgressResultType result = runTest(200, "good job", 1);
-        assertTrue(result instanceof EgressResult);
+        assertInstanceOf(EgressResult.class, result);
     }
 
     @Test
@@ -185,7 +185,7 @@ class DeltaFiEgressTest {
         when(contentStorageService.load(CONTENT)).thenReturn(new ByteArrayInputStream(DATA));
         EgressResultType result = runTest(500, "uh oh", 4);
 
-        assertTrue(result instanceof ErrorResult);
+        assertInstanceOf(ErrorResult.class, result);
         assertTrue(((ErrorResult) result).getErrorCause().contains("500"));
         assertTrue(((ErrorResult) result).getErrorCause().contains("uh oh"));
     }
@@ -195,7 +195,7 @@ class DeltaFiEgressTest {
         when(contentStorageService.load(CONTENT)).thenReturn(new ByteArrayInputStream(DATA));
         EgressResultType result = runTest(-1, "uh oh", 4);
 
-        assertTrue(result instanceof ErrorResult);
+        assertInstanceOf(ErrorResult.class, result);
         assertTrue(((ErrorResult) result).getErrorCause().contains("Service post failure"));
     }
 

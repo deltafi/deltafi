@@ -22,18 +22,22 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ContentTest {
-    final static String NAME = "name";
-    final static String MEDIA_TYPE = "text/plain";
-    final static Segment SEGMENT_A = new Segment("a", 0, 500, "a");
-    final static Segment SEGMENT_B = new Segment("b", 1000, 1000, "b");
-    final static Segment SEGMENT_C = new Segment("c", 0, 500, "c");
-    final static List<Segment> SEGMENT_LIST = List.of(SEGMENT_A, SEGMENT_B, SEGMENT_C);
-    final static Content CONTENT = new Content(NAME, MEDIA_TYPE, SEGMENT_LIST);
+    static final String NAME = "name";
+    static final String MEDIA_TYPE = "text/plain";
+    static final UUID UUID_A = UUID.randomUUID();
+    static final UUID UUID_B = UUID.randomUUID();
+    static final UUID UUID_C = UUID.randomUUID();
+    static final Segment SEGMENT_A = new Segment(UUID_A, 0, 500, UUID_A);
+    static final Segment SEGMENT_B = new Segment(UUID_B, 1000, 1000, UUID_B);
+    static final Segment SEGMENT_C = new Segment(UUID_C, 0, 500, UUID_C);
+    static final List<Segment> SEGMENT_LIST = List.of(SEGMENT_A, SEGMENT_B, SEGMENT_C);
+    static final Content CONTENT = new Content(NAME, MEDIA_TYPE, SEGMENT_LIST);
 
     @Test
     void testsubcontentOutOfBounds() {
@@ -53,8 +57,8 @@ public class ContentTest {
     }
 
     @Test void testsubcontentPartial() {
-        Segment subSegmentA = new Segment("a", 250, 250, "a");
-        Segment subSegmentC = new Segment("c", 0, 100, "c");
+        Segment subSegmentA = new Segment(UUID_A, 250, 250, UUID_A);
+        Segment subSegmentC = new Segment(UUID_C, 0, 100, UUID_C);
         assertEquals(new Content(NAME, MEDIA_TYPE, List.of(subSegmentA, SEGMENT_B, subSegmentC)),
                 CONTENT.subcontent(250, 1350));
     }

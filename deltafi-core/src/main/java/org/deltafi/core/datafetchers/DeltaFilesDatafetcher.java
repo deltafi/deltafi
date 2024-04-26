@@ -69,7 +69,7 @@ public class DeltaFilesDatafetcher {
 
   @DgsQuery
   @NeedsPermission.DeltaFileMetadataView
-  public DeltaFile deltaFile(@InputArgument String did) {
+  public DeltaFile deltaFile(@InputArgument UUID did) {
     DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 
     if (deltaFile == null) {
@@ -81,7 +81,7 @@ public class DeltaFilesDatafetcher {
 
   @DgsQuery
   @NeedsPermission.DeltaFileMetadataView
-  public String rawDeltaFile(@InputArgument String did, @InputArgument Boolean pretty) throws JsonProcessingException {
+  public String rawDeltaFile(@InputArgument UUID did, @InputArgument Boolean pretty) throws JsonProcessingException {
     String deltaFileJson = deltaFilesService.getRawDeltaFile(did, pretty == null || pretty);
 
     if (deltaFileJson == null) {
@@ -93,7 +93,7 @@ public class DeltaFilesDatafetcher {
 
   @DgsQuery
   @NeedsPermission.DeltaFileMetadataView
-  public Collection<String> pendingAnnotations(@InputArgument String did) {
+  public Collection<String> pendingAnnotations(@InputArgument UUID did) {
     return deltaFilesService.getPendingAnnotations(did);
   }
 
@@ -180,31 +180,31 @@ public class DeltaFilesDatafetcher {
 
   @DgsMutation
   @NeedsPermission.DeltaFileResume
-  public List<RetryResult> resume(@InputArgument List<String> dids, @InputArgument List<ResumeMetadata> resumeMetadata) {
+  public List<RetryResult> resume(@InputArgument List<UUID> dids, @InputArgument List<ResumeMetadata> resumeMetadata) {
     return deltaFilesService.resume(dids, (resumeMetadata == null) ? Collections.emptyList() : resumeMetadata);
   }
 
   @DgsMutation
   @NeedsPermission.DeltaFileReplay
-  public List<RetryResult> replay(@InputArgument List<String> dids, @InputArgument List<String> removeSourceMetadata, @InputArgument List<KeyValue> replaceSourceMetadata) {
+  public List<RetryResult> replay(@InputArgument List<UUID> dids, @InputArgument List<String> removeSourceMetadata, @InputArgument List<KeyValue> replaceSourceMetadata) {
     return deltaFilesService.replay(dids, (removeSourceMetadata == null) ? Collections.emptyList() : removeSourceMetadata, (replaceSourceMetadata == null) ? Collections.emptyList() : replaceSourceMetadata);
   }
 
   @DgsMutation
   @NeedsPermission.DeltaFileAcknowledge
-  public List<AcknowledgeResult> acknowledge(@InputArgument List<String> dids, @InputArgument String reason) {
+  public List<AcknowledgeResult> acknowledge(@InputArgument List<UUID> dids, @InputArgument String reason) {
     return deltaFilesService.acknowledge(dids, reason);
   }
 
   @DgsMutation
   @NeedsPermission.DeltaFileCancel
-  public List<CancelResult> cancel(@InputArgument List<String> dids) {
+  public List<CancelResult> cancel(@InputArgument List<UUID> dids) {
     return deltaFilesService.cancel(dids);
   }
 
   @DgsMutation
   @NeedsPermission.DeltaFileMetadataWrite
-  public boolean addAnnotations(String did, List<KeyValue> annotations, boolean allowOverwrites) {
+  public boolean addAnnotations(UUID did, List<KeyValue> annotations, boolean allowOverwrites) {
     deltaFilesService.addAnnotations(did, KeyValueConverter.convertKeyValues(annotations), allowOverwrites);
     return true;
   }
@@ -231,13 +231,13 @@ public class DeltaFilesDatafetcher {
 
   @DgsQuery
   @NeedsPermission.DeltaFileMetadataView
-  public List<PerActionUniqueKeyValues> errorMetadataUnion(@InputArgument List<String> dids) {
+  public List<PerActionUniqueKeyValues> errorMetadataUnion(@InputArgument List<UUID> dids) {
     return deltaFilesService.errorMetadataUnion(dids);
   }
 
   @DgsQuery
   @NeedsPermission.DeltaFileMetadataView
-  public List<UniqueKeyValues> sourceMetadataUnion(@InputArgument List<String> dids) {
+  public List<UniqueKeyValues> sourceMetadataUnion(@InputArgument List<UUID> dids) {
     return deltaFilesService.sourceMetadataUnion(dids);
   }
   @DgsMutation
@@ -262,7 +262,7 @@ public class DeltaFilesDatafetcher {
       List<Content> contentList = new ArrayList<>();
       for (int i = 0; i < Math.min(remainingFiles, batchSize); i++) {
         if (contentSize > 0) {
-          String did = UUID.randomUUID().toString();
+          UUID did = UUID.randomUUID();
           log.debug("Saving content for {} ({}/{})", did, i + (numFiles - remainingFiles) + 1, numFiles);
           byte[] contentBytes = new byte[contentSize];
           random.nextBytes(contentBytes);
@@ -274,7 +274,7 @@ public class DeltaFilesDatafetcher {
 
       for (int i = 0; i < Math.min(remainingFiles, batchSize); i++) {
         Content c = contentList.get(i);
-        String did = c.getSegments().isEmpty() ? UUID.randomUUID().toString() : c.getSegments().get(0).getDid();
+        UUID did = c.getSegments().isEmpty() ? UUID.randomUUID() : c.getSegments().getFirst().getDid();
         IngressEventItem ingressEventItem = new IngressEventItem(did, "stressTestData", flow,
                 metadata == null ? new HashMap<>() : metadata,
                 List.of(c));

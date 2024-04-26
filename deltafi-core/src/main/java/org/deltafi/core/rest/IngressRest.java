@@ -58,7 +58,7 @@ public class IngressRest {
         try {
             List<IngressResult> ingressResults = ingressService.ingress(flow, filename, contentType, username, metadata,
                     dataStream, OffsetDateTime.now());
-            return ResponseEntity.ok(String.join(",", ingressResults.stream().map(IngressResult::did).toList()));
+            return ResponseEntity.ok(String.join(",", ingressResults.stream().map(r -> r.did().toString()).toList()));
         } catch (IngressUnavailableException e) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(e.getMessage());
         } catch (IngressStorageException e) {

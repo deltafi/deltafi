@@ -56,11 +56,9 @@ class StateMachineTest {
     private static final String TRANSFORM_FLOW = "TheTransformFlow";
     private static final String EGRESS_FLOW = "TheEgressFlow";
 
-    private final DataSourceService dataSourceService;
     private final TransformFlowService transformFlowService;
     private final QueueManagementService queueManagementService;
     private final CollectEntryService collectEntryService;
-    private final PublisherService publisherService;
 
     private final StateMachine stateMachine;
 
@@ -68,11 +66,9 @@ class StateMachineTest {
                      @Mock EgressFlowService egressFlowService, @Mock IdentityService identityService,
                      @Mock QueueManagementService queueManagementService, @Mock CollectEntryService collectEntryService,
                      @Mock ScheduledCollectService scheduledCollectService, @Mock PublisherService publisherService) {
-        this.dataSourceService = dataSourceService;
         this.transformFlowService = transformFlowService;
         this.queueManagementService = queueManagementService;
         this.collectEntryService = collectEntryService;
-        this.publisherService = publisherService;
 
         this.stateMachine = new StateMachine(new TestClock(), dataSourceService, transformFlowService, egressFlowService,
                 new MockDeltaFiPropertiesService(), identityService, queueManagementService, collectEntryService,
@@ -88,10 +84,10 @@ class StateMachineTest {
     @Disabled("TODO: this is completely busted, needs publish rules set so the next flow gets added")
     void testAdvanceToEgressActionWhenInTransformTestMode() {
         // there should be two tests -- one that shows that test mode gets set, and one that acts on it creating synthetic egress
-        DeltaFile deltaFile = Util.emptyDeltaFile("did", TRANSFORM_FLOW);
+        DeltaFile deltaFile = Util.emptyDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW);
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
 
-        DeltaFileFlow deltaFileFlow = deltaFile.getFlows().get(0);
+        DeltaFileFlow deltaFileFlow = deltaFile.getFlows().getFirst();
         deltaFileFlow.setTestMode(true);
         deltaFileFlow.setTestModeReason("Transform flow 'TheTransformFlow' in test mode");
 
@@ -108,7 +104,7 @@ class StateMachineTest {
         assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.COMPLETE);
         assertThat(deltaFileFlow.actionNamed(SYNTHETIC_EGRESS_ACTION_FOR_TEST)).isPresent().get().matches(action -> ActionState.COMPLETE.equals(action.getState()));
 
-        assertThat(true).isFalse(); //  TODO what is the equivalent?
+        //  TODO what is the equivalent?
 //        assertThat(deltaFile.getEgress().stream().map(Egress::getFlow).toList()).containsExactlyInAnyOrder(TRANFORM_FLOW);
 
         assertTrue(deltaFileFlow.isTestMode());
@@ -118,9 +114,9 @@ class StateMachineTest {
     @Test
     @Disabled("TODO: collect")
     void advancesInTransformationFlowWithCollectingTransformAction() {
-        DeltaFile deltaFile = Util.emptyDeltaFile("did", TRANSFORM_FLOW);
+        DeltaFile deltaFile = Util.emptyDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW);
 
-        DeltaFileFlow deltaFileFlow = deltaFile.getFlows().get(0);
+        DeltaFileFlow deltaFileFlow = deltaFile.getFlows().getFirst();
 
         TransformFlow transformFlow = new TransformFlow();
         transformFlow.setName(TRANSFORM_FLOW);
@@ -143,7 +139,7 @@ class StateMachineTest {
         List<Action> collectingActions = deltaFileFlow.getActions().stream()
                 .filter(action -> action.getState().equals(ActionState.COLLECTING)).toList();
         assertEquals(1, collectingActions.size());
-        Action collectingAction = collectingActions.get(0);
+        Action collectingAction = collectingActions.getFirst();
         assertEquals("CollectingTransformAction", collectingAction.getName());
         assertEquals(ActionType.TRANSFORM, collectingAction.getType());
     }

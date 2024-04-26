@@ -30,6 +30,7 @@ import java.io.File;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 /**
@@ -39,7 +40,7 @@ import java.util.stream.Stream;
  */
 public class DeltaFiTestRunner {
 
-    protected static final String DID = "did";
+    protected static final UUID DID = UUID.randomUUID();
     protected static final String HOSTNAME = "hostname";
     private final ContentStorageService storageService = new ContentStorageService(new InMemoryObjectStorageService());
     private String testDataFolder = null;
@@ -177,7 +178,7 @@ public class DeltaFiTestRunner {
      */
     public byte[] readResourceAsBytes(String path) {
         path = joinPath(path);
-        return ContentLoader.readAsBytesFromClasspath(path).get(0);
+        return ContentLoader.readAsBytesFromClasspath(path).getFirst();
     }
 
     /**
@@ -187,7 +188,7 @@ public class DeltaFiTestRunner {
      */
     public String readResourceAsString(String path) {
         path = joinPath(path);
-        return ContentLoader.readAsStringFromClasspath(List.of(path)).get(0);
+        return ContentLoader.readAsStringFromClasspath(List.of(path)).getFirst();
     }
 
     /**

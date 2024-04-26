@@ -32,7 +32,7 @@ public class DeletePolicyValidator {
     public static List<String> validate(DeletePolicy policy) {
         List<String> errors = new ArrayList<>();
 
-        if (StringUtils.isBlank(policy.getId())) {
+        if (policy.getId() == null) {
             errors.add("id is missing");
         }
 

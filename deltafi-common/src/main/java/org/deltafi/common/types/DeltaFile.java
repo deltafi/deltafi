@@ -19,6 +19,8 @@ package org.deltafi.common.types;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
+import org.bson.UuidRepresentation;
+import org.bson.internal.UuidHelper;
 import org.deltafi.common.content.Segment;
 import org.deltafi.core.exceptions.UnexpectedFlowException;
 import org.jetbrains.annotations.NotNull;
@@ -41,16 +43,17 @@ import java.util.stream.Collectors;
 @Sharded
 public class DeltaFile {
   @Id
-  private String did;
+  @Builder.Default
+  private UUID did = UUID.randomUUID();
   private String name;
   // TODO: replace with case insensitive index?
   private String normalizedName;
   private String dataSource;
   @Builder.Default
-  private List<String> parentDids = new ArrayList<>();
+  private List<UUID> parentDids = new ArrayList<>();
   private boolean aggregate;
   @Builder.Default
-  private List<String> childDids = new ArrayList<>();
+  private List<UUID> childDids = new ArrayList<>();
   @Builder.Default
   private List<DeltaFileFlow> flows = new ArrayList<>();
   private int requeueCount;
@@ -71,7 +74,7 @@ public class DeltaFile {
   private Boolean egressed;
   private Boolean filtered;
   private OffsetDateTime replayed;
-  private String replayDid;
+  private UUID replayDid;
 
   @Builder.Default
   private boolean inFlight = true;
@@ -128,6 +131,14 @@ public class DeltaFile {
     this.cacheTime = other.cacheTime;
     this.schemaVersion = other.schemaVersion;
     this.snapshot = null;
+  }
+
+  @Transient
+  @SuppressWarnings("unused")
+  public String getMongoSearch() {
+    byte[] bsonBytes = UuidHelper.encodeUuidToBinary(did, UuidRepresentation.JAVA_LEGACY);
+    return "db.deltaFiles.find({_id: Binary.createFromBase64('%s', 3)})".formatted(
+            java.util.Base64.getEncoder().encodeToString(bsonBytes));
   }
 
   public void snapshot() {

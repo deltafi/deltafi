@@ -30,6 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Slf4j
 public abstract class HttpEgressBase<P extends HttpEgressParameters> extends EgressAction<P> {
@@ -71,12 +72,12 @@ public abstract class HttpEgressBase<P extends HttpEgressParameters> extends Egr
 
     abstract protected EgressResultType doEgress(@NotNull ActionContext context, @NotNull P params, @NotNull EgressInput input);
 
-    public Map<String, String> buildHeadersMap(String did, String sourceFilename, String filename, String dataSource, String egressFlow, Map<String, String> metadata) {
+    public Map<String, String> buildHeadersMap(UUID did, String sourceFilename, String filename, String dataSource, String egressFlow, Map<String, String> metadata) {
         Map<String, String> headersMap = new HashMap<>();
         if (metadata != null) {
             headersMap.putAll(metadata);
         }
-        headersMap.put("did", did);
+        headersMap.put("did", did.toString());
         headersMap.put("dataSource", dataSource);
         headersMap.put("flow", egressFlow);
         headersMap.put("originalFilename", sourceFilename);

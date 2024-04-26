@@ -29,6 +29,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -38,9 +39,9 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class DeletePolicyServiceTest {
 
-    private static final String DISABLED_POLICY = "disabled";
-    private static final String ENABLED_POLICY = "enabled";
-    private static final String NOT_FOUND = "notFound";
+    private static final UUID DISABLED_POLICY = UUID.randomUUID();
+    private static final UUID ENABLED_POLICY = UUID.randomUUID();
+    private static final UUID NOT_FOUND = UUID.randomUUID();
 
     private static final boolean REPLACE_ALL = true;
     private static final boolean DO_NOT_REPLACE = false;
@@ -163,7 +164,7 @@ class DeletePolicyServiceTest {
 
     DiskSpaceDeletePolicy buildDiskSpaceDeletePolicy(int maxPercent) {
         return DiskSpaceDeletePolicy.builder()
-                .id("disk1")
+                .id(UUID.randomUUID())
                 .name("disk1")
                 .maxPercent(maxPercent)
                 .build();
@@ -171,7 +172,7 @@ class DeletePolicyServiceTest {
 
     TimedDeletePolicy buildTimeDeletePolicy() {
         return TimedDeletePolicy.builder()
-                .id("timed1")
+                .id(UUID.randomUUID())
                 .name("timed1")
                 .afterComplete("PT50M")
                 .build();

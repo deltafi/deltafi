@@ -38,11 +38,11 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class ResumePolicyServiceTest {
 
-    private static final String DEFAULT_ID = "1";
+    private static final UUID DEFAULT_ID = UUID.randomUUID();
     private static final String ERROR = "error";
     private static final String DATA_SOURCE = "dataSource";
     private static final String ACTION = "action";
-    private static final String NOT_FOUND = "notFound";
+    private static final UUID NOT_FOUND = UUID.randomUUID();
     private static final int MAX_ATTEMPTS = 3;
 
     @Mock
@@ -233,24 +233,23 @@ class ResumePolicyServiceTest {
         List<DeltaFile> deltaFiles = List.of(
                 getDeltaFile("1", true),
                 getDeltaFile("2", true),
-                getDeltaFile("13", false),
-                getDeltaFile("14", true),
-                getDeltaFile("15", true));
-        Set<String> excludes = Set.of("2", "15", "16");
+                getDeltaFile("1", false),
+                getDeltaFile("1", true),
+                getDeltaFile("1", true));
+        Set<UUID> excludes = Set.of(deltaFiles.get(1).getDid(), deltaFiles.getLast().getDid(), UUID.randomUUID());
 
         assertTrue(resumePolicyService.findByName("name1").isPresent());
-        List<String> dids = resumePolicyService.canBeApplied(
+        List<UUID> dids = resumePolicyService.canBeApplied(
                 resumePolicyService.findByName("name1").get(), deltaFiles, excludes);
-        assertEquals(List.of("1", "14"), dids);
+        assertEquals(List.of(deltaFiles.getFirst().getDid(), deltaFiles.get(3).getDid()), dids);
 
         assertTrue(resumePolicyService.findByName("name3").isPresent());
-        List<String> noMatchese = resumePolicyService.canBeApplied(
+        List<UUID> noMatchese = resumePolicyService.canBeApplied(
                 resumePolicyService.findByName("name3").get(), deltaFiles, excludes);
         assertTrue(noMatchese.isEmpty());
     }
 
-    private DeltaFile getDeltaFile(String did, boolean withErrorAction) {
-        String prefix = did.substring(0, 1);
+    private DeltaFile getDeltaFile(String prefix, boolean withErrorAction) {
         Action action1 = Action.builder()
                 .name(prefix + ACTION)
                 .type(ActionType.TRANSFORM)
@@ -283,7 +282,7 @@ class ResumePolicyServiceTest {
                 .name(dataSource)
                 .actions(new ArrayList<>(List.of(action1, action2))).build();
         return DeltaFile.builder()
-                .did(did)
+                .did(UUID.randomUUID())
                 .dataSource(dataSource)
                 .flows(List.of(flow))
                 .build();
@@ -345,7 +344,7 @@ class ResumePolicyServiceTest {
                 .actions(new ArrayList<>(List.of(action))).build();
 
         return DeltaFile.builder()
-                .did(UUID.randomUUID().toString())
+                .did(UUID.randomUUID())
                 .dataSource(dataSource)
                 .requeueCount(0)
                 .stage(DeltaFileStage.IN_FLIGHT)

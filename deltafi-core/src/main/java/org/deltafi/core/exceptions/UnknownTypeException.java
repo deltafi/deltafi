@@ -19,8 +19,10 @@ package org.deltafi.core.exceptions;
 
 import org.deltafi.common.types.ActionEventType;
 
+import java.util.UUID;
+
 public class UnknownTypeException extends RuntimeException {
-    public UnknownTypeException(String actionName, String did, ActionEventType type) {
+    public UnknownTypeException(String actionName, UUID did, ActionEventType type) {
         super("Unknown action type " + type + " performed on DeltaFile " + did + " by  " + actionName);
     }
 }

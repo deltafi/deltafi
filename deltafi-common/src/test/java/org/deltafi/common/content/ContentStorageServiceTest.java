@@ -23,6 +23,7 @@ import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.storage.s3.ObjectStorageService;
 import org.deltafi.common.types.Content;
 import org.deltafi.common.types.SaveManyContent;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -34,6 +35,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -53,10 +55,13 @@ public class ContentStorageServiceTest {
     public void loadsContent() throws ObjectStorageException, IOException {
         byte[] bytes = "test".getBytes();
 
-        Segment segment = new Segment("uuid", 0, bytes.length, "did12345");
+        UUID objectId = UUID.randomUUID();
+        UUID did = UUID.randomUUID();
+        Segment segment = new Segment(objectId, 0, bytes.length, did);
         Content content = new Content("name","mediaType", segment);
 
-        ObjectReference objectReference = new ObjectReference("storage", "did/did12345/uuid", 0, bytes.length);
+        ObjectReference objectReference = new ObjectReference("storage", "%s/%s/%s"
+                .formatted(did.toString().substring(0, 3), did, objectId), 0, bytes.length);
         Mockito.when(objectStorageService.getObject(Mockito.eq(objectReference)))
                 .thenReturn(new ByteArrayInputStream(bytes));
 
@@ -77,11 +82,12 @@ public class ContentStorageServiceTest {
         Mockito.when(objectStorageService.putObject(Mockito.any(), Mockito.any()))
                 .thenReturn(new ObjectReference("storage", "did/uuid", 0, bytes.length));
 
-        Content content = contentStorageService.save("did", new ByteArrayInputStream(bytes), "name", "mediaType");
+        UUID did = UUID.randomUUID();
+        Content content = contentStorageService.save(did, new ByteArrayInputStream(bytes), "name", "mediaType");
 
         assertEquals(1, content.getSegments().size());
-        assertEquals(0, content.getSegments().get(0).getOffset());
-        assertEquals("did", content.getSegments().get(0).getDid());
+        assertEquals(0, content.getSegments().getFirst().getOffset());
+        assertEquals(did, content.getSegments().getFirst().getDid());
         assertEquals(bytes.length, content.getSize());
         assertEquals("mediaType", content.getMediaType());
     }
@@ -90,7 +96,7 @@ public class ContentStorageServiceTest {
     public void savesEmptyContent() throws ObjectStorageException {
         byte[] bytes = {};
 
-        Content content = contentStorageService.save("did", new ByteArrayInputStream(bytes), "name", "mediaType");
+        Content content = contentStorageService.save(UUID.randomUUID(), new ByteArrayInputStream(bytes), "name", "mediaType");
 
         assertEquals(0, content.getSegments().size());
         assertEquals(0, content.getSize());
@@ -104,27 +110,21 @@ public class ContentStorageServiceTest {
         Mockito.when(objectStorageService.putObject(Mockito.any(), Mockito.any()))
                 .thenReturn(new ObjectReference("storage", "did/uuid", 0, bytes.length));
 
-        Content content = contentStorageService.save("did", bytes, "name", "mediaType");
+        UUID did = UUID.randomUUID();
+        Content content = contentStorageService.save(did, bytes, "name", "mediaType");
 
         assertEquals(1, content.getSegments().size());
-        assertEquals(0, content.getSegments().get(0).getOffset());
-        assertEquals("did", content.getSegments().get(0).getDid());
+        assertEquals(0, content.getSegments().getFirst().getOffset());
+        assertEquals(did, content.getSegments().getFirst().getDid());
         assertEquals(bytes.length, content.getSize());
         assertEquals("mediaType", content.getMediaType());
     }
 
     @Test
     void saveContentMap() throws ObjectStorageException {
-        byte[] firstContentBytes = "first".getBytes();
-        byte[] secondContentBytes = "second".getBytes();
-        byte[] emptyContentBytes = "".getBytes();
+        List<SaveManyContent> saveManyContentList = getSaveManyContents();
 
-        List<SaveManyContent> saveManyContentList = List.of(
-            new SaveManyContent("first", MediaType.APPLICATION_OCTET_STREAM, firstContentBytes),
-            new SaveManyContent("second", MediaType.APPLICATION_OCTET_STREAM, secondContentBytes),
-            new SaveManyContent("empty", MediaType.APPLICATION_OCTET_STREAM, emptyContentBytes));
-        
-        List<Content> content = contentStorageService.saveMany("abc", saveManyContentList);
+        List<Content> content = contentStorageService.saveMany(UUID.randomUUID(), saveManyContentList);
 
         Assertions.assertThat(content).hasSize(3);
         Content first = content.get(0);
@@ -139,5 +139,16 @@ public class ContentStorageServiceTest {
         Map<ObjectReference, InputStream> contentMap = contentMapCaptor.getValue();
 
         Assertions.assertThat(contentMap).hasSize(2);
+    }
+
+    private static @NotNull List<SaveManyContent> getSaveManyContents() {
+        byte[] firstContentBytes = "first".getBytes();
+        byte[] secondContentBytes = "second".getBytes();
+        byte[] emptyContentBytes = "".getBytes();
+
+        return List.of(
+            new SaveManyContent("first", MediaType.APPLICATION_OCTET_STREAM, firstContentBytes),
+            new SaveManyContent("second", MediaType.APPLICATION_OCTET_STREAM, secondContentBytes),
+            new SaveManyContent("empty", MediaType.APPLICATION_OCTET_STREAM, emptyContentBytes));
     }
 }

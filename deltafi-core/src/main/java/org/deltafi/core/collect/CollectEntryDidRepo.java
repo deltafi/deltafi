@@ -21,9 +21,10 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.UUID;
 
 @Repository
-public interface CollectEntryDidRepo extends MongoRepository<CollectEntryDid, String> {
-    List<CollectEntryDid> findByCollectEntryId(String collectEntryId);
-    void deleteByCollectEntryId(String collectEntryId);
+public interface CollectEntryDidRepo extends MongoRepository<CollectEntryDid, UUID> {
+    List<CollectEntryDid> findByCollectEntryId(UUID collectEntryId);
+    void deleteByCollectEntryId(UUID collectEntryId);
 }

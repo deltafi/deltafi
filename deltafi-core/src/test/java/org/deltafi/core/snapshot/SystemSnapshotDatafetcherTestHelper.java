@@ -34,6 +34,7 @@ import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -55,7 +56,7 @@ public class SystemSnapshotDatafetcherTestHelper {
         TypeRef<Result> systemSnapshotTypeRef = new TypeRef<>() {
         };
 
-        @Language("GraphQL") String mutation = "mutation { resetFromSnapshotWithId(snapshotId: \"63fe71a7d021eb040c97bda2\", hardReset: false) { success info errors } }";
+        @Language("GraphQL") String mutation = "mutation { resetFromSnapshotWithId(snapshotId: \"11111111-1111-1111-1111-111111111111\", hardReset: false) { success info errors } }";
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
                 mutation,
                 "data.resetFromSnapshotWithId",
@@ -64,7 +65,7 @@ public class SystemSnapshotDatafetcherTestHelper {
 
     public static SystemSnapshot expectedSnapshot() {
         SystemSnapshot systemSnapshot = new SystemSnapshot();
-        systemSnapshot.setId("63fe71a7d021eb040c97bda2");
+        systemSnapshot.setId("11111111-1111-1111-1111-111111111111");
         systemSnapshot.setReason("TEST");
         systemSnapshot.setCreated(OffsetDateTime.parse("2023-02-28T21:27:03.407Z"));
         setResumePolicies(systemSnapshot);
@@ -78,14 +79,14 @@ public class SystemSnapshotDatafetcherTestHelper {
 
     private static void setResumePolicies(SystemSnapshot systemSnapshot) {
         ResumePolicy first = new ResumePolicy();
-        first.setId("88bc7429-7adf-4bb1-b23f-3922993e0a1a");
+        first.setId(UUID.fromString("88bc7429-7adf-4bb1-b23f-3922993e0a1a"));
         first.setName("auto-resume-passthrough");
         first.setDataSource("passthrough");
         first.setMaxAttempts(10);
         first.setBackOff(BackOff.newBuilder().delay(100).maxDelay(200).multiplier(1).build());
 
         ResumePolicy second = new ResumePolicy();
-        second.setId("a2b08968-866a-4080-bc28-1d7e7c81ada8");
+        second.setId(UUID.fromString("a2b08968-866a-4080-bc28-1d7e7c81ada8"));
         second.setName("resume-json-errors");
         second.setErrorSubstring("JsonException");
         second.setActionType(ActionType.TRANSFORM);
@@ -98,12 +99,12 @@ public class SystemSnapshotDatafetcherTestHelper {
     private static void setDeletePolicies(SystemSnapshot systemSnapshot) {
         DeletePolicies deletePolicies = new DeletePolicies();
 
-        TimedDeletePolicy afterComplete = TimedDeletePolicy.builder().id("afterComplete").name("afterComplete").enabled(true).afterComplete("P4D").deleteMetadata(true).build();
-        TimedDeletePolicy deleteSmoke = TimedDeletePolicy.builder().id("66e4572f-3c5f-45dc-b35d-b3ffd7f70245").name("deleteSmoke1MafterComplete").enabled(false).flow("smoke").afterComplete("PT2M").deleteMetadata(false).build();
+        TimedDeletePolicy afterComplete = TimedDeletePolicy.builder().id(UUID.fromString("7c513473-d16f-481b-8592-e933f8420c75")).name("afterComplete").enabled(true).afterComplete("P4D").deleteMetadata(true).build();
+        TimedDeletePolicy deleteSmoke = TimedDeletePolicy.builder().id(UUID.fromString("66e4572f-3c5f-45dc-b35d-b3ffd7f70245")).name("deleteSmoke1MafterComplete").enabled(false).flow("smoke").afterComplete("PT2M").deleteMetadata(false).build();
 
         deletePolicies.setTimedPolicies(List.of(afterComplete, deleteSmoke));
 
-        DiskSpaceDeletePolicy diskSpaceDeletePolicy = DiskSpaceDeletePolicy.builder().id("percentDisk").name("percentDisk").enabled(true).maxPercent(75).build();
+        DiskSpaceDeletePolicy diskSpaceDeletePolicy = DiskSpaceDeletePolicy.builder().id(UUID.fromString("66e4572f-3c5f-45dc-b35d-b3ffd7f70246")).name("percentDisk").enabled(true).maxPercent(75).build();
         deletePolicies.setDiskSpacePolicies(List.of(diskSpaceDeletePolicy));
 
         systemSnapshot.setDeletePolicies(deletePolicies);
@@ -188,13 +189,13 @@ public class SystemSnapshotDatafetcherTestHelper {
             mutation {
                 importSnapshot(
                     snapshot: {
-                        id: "63fe71a7d021eb040c97bda2"
+                        id: "11111111-1111-1111-1111-111111111111"
                         reason: "TEST"
                         created: "2023-02-28T21:27:03.407Z"
                         deletePolicies: {
                             timedPolicies: [
                                 {
-                                    id: "afterComplete"
+                                    id: "7c513473-d16f-481b-8592-e933f8420c75"
                                     name: "afterComplete"
                                     enabled: true
                                     flow: null
@@ -216,7 +217,7 @@ public class SystemSnapshotDatafetcherTestHelper {
                             ]
                             diskSpacePolicies: [
                                 {
-                                    id: "percentDisk"
+                                    id: "66e4572f-3c5f-45dc-b35d-b3ffd7f70246"
                                     name: "percentDisk"
                                     enabled: true
                                     flow: null

@@ -28,6 +28,9 @@ import org.deltafi.core.types.Result;
 import org.deltafi.core.types.ResumePolicy;
 
 import java.util.List;
+import java.util.UUID;
+
+import static org.deltafi.core.util.Constants.SCALARS;
 
 public class ResumePolicyDatafetcherTestHelper {
 
@@ -116,7 +119,7 @@ public class ResumePolicyDatafetcherTestHelper {
                 policyListType);
     }
 
-    public static ResumePolicy getResumePolicy(DgsQueryExecutor dgsQueryExecutor, String id) {
+    public static ResumePolicy getResumePolicy(DgsQueryExecutor dgsQueryExecutor, UUID id) {
         GetResumePolicyProjectionRoot projection = new GetResumePolicyProjectionRoot()
                 .id()
                 .name()
@@ -136,7 +139,7 @@ public class ResumePolicyDatafetcherTestHelper {
         GetResumePolicyGraphQLQuery query =
                 GetResumePolicyGraphQLQuery.newRequest().id(id).build();
         GraphQLQueryRequest graphQLQueryRequest =
-                new GraphQLQueryRequest(query, projection);
+                new GraphQLQueryRequest(query, projection, SCALARS);
 
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
                 graphQLQueryRequest.serialize(),
@@ -240,17 +243,18 @@ public class ResumePolicyDatafetcherTestHelper {
                 resultListType);
     }
 
-    public static boolean removeResumePolicy(DgsQueryExecutor dgsQueryExecutor, String id) {
+    public static boolean removeResumePolicy(DgsQueryExecutor dgsQueryExecutor, UUID id) {
         RemoveResumePolicyGraphQLQuery query = RemoveResumePolicyGraphQLQuery.newRequest().id(id).build();
 
-        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, null);
+        // the projection root is @NotNull, pass it a dummy since removeResumePolicy doesn't have a projection root
+        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, new LoadResumePoliciesProjectionRoot(), SCALARS);
 
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
                 graphQLQueryRequest.serialize(),
                 "data." + query.getOperationName(), Boolean.class);
     }
 
-    public static Result updateResumePolicy(DgsQueryExecutor dgsQueryExecutor, String id) {
+    public static Result updateResumePolicy(DgsQueryExecutor dgsQueryExecutor, UUID id) {
         ResumePolicyInput input = makeResumePolicy(POLICY_NAME3, ERROR_SUBSTRING, DATA_SOURCE3, ACTION3, ACTION_TYPE, MAX_ATTEMPTS, 2 * DELAY);
         input.setId(id);
 
@@ -261,7 +265,7 @@ public class ResumePolicyDatafetcherTestHelper {
         UpdateResumePolicyGraphQLQuery query =
                 UpdateResumePolicyGraphQLQuery.newRequest().resumePolicy(input).build();
         GraphQLQueryRequest graphQLQueryRequest =
-                new GraphQLQueryRequest(query, projection);
+                new GraphQLQueryRequest(query, projection, SCALARS);
 
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
                 graphQLQueryRequest.serialize(),

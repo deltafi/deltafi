@@ -32,11 +32,12 @@ import org.deltafi.core.types.ResumePolicy;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 @DgsComponent
 @RequiredArgsConstructor
 public class ResumePolicyDatafetcher {
-    private final static ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     private final ResumePolicyService resumePolicyService;
 
@@ -48,7 +49,7 @@ public class ResumePolicyDatafetcher {
 
     @DgsQuery
     @NeedsPermission.ResumePolicyRead
-    public ResumePolicy getResumePolicy(@InputArgument String id) {
+    public ResumePolicy getResumePolicy(@InputArgument UUID id) {
         return resumePolicyService.get(id).orElse(null);
     }
 
@@ -63,7 +64,7 @@ public class ResumePolicyDatafetcher {
 
     @DgsMutation
     @NeedsPermission.ResumePolicyDelete
-    public boolean removeResumePolicy(@InputArgument String id) {
+    public boolean removeResumePolicy(@InputArgument UUID id) {
         return resumePolicyService.remove(id);
     }
 

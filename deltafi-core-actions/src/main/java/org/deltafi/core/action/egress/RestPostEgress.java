@@ -37,11 +37,12 @@ import java.io.InputStream;
 import java.net.http.HttpResponse;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 
 @Component
 @Slf4j
 public class RestPostEgress extends HttpEgressBase<RestPostEgressParameters> {
-    private final static ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     public RestPostEgress() {
         super("Egresses to a REST endpoint");
@@ -70,7 +71,7 @@ public class RestPostEgress extends HttpEgressBase<RestPostEgressParameters> {
         return new EgressResult(context, params.getUrl(), input.getContent().getSize());
     }
 
-    private String buildHeadersMapString(String did, String deltaFileName, String filename, String ingressFlow, String egressFlow, Map<String, String> metadata)
+    private String buildHeadersMapString(UUID did, String deltaFileName, String filename, String ingressFlow, String egressFlow, Map<String, String> metadata)
             throws JsonProcessingException {
         return OBJECT_MAPPER.writeValueAsString(buildHeadersMap(did, deltaFileName, filename, ingressFlow, egressFlow, metadata));
     }

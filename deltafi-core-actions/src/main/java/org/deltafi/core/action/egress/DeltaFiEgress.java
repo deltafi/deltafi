@@ -42,7 +42,7 @@ import java.util.Objects;
 @Component
 @Slf4j
 public class DeltaFiEgress extends HttpEgressBase<DeltaFiEgressParameters> {
-    private final static ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     public DeltaFiEgress() {
         super("Egresses to another DeltaFi");
@@ -70,7 +70,7 @@ public class DeltaFiEgress extends HttpEgressBase<DeltaFiEgressParameters> {
 
     private Map<String, String> buildHeaders(@NotNull String filename, String flow, Map<String, String> metadata, ActionContext context) throws JsonProcessingException {
         Map<String, String> metadataMap = new HashMap<>(metadata);
-        metadataMap.put("originalDid", context.getDid());
+        metadataMap.put("originalDid", context.getDid().toString());
         metadataMap.put("originalSystem", context.getSystemName());
         String metadataJson = OBJECT_MAPPER.writeValueAsString(metadataMap);
 

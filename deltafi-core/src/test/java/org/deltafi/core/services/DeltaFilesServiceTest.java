@@ -73,11 +73,13 @@ class DeltaFilesServiceTest {
 
     private final DeltaFilesService deltaFilesService;
 
+    private static final UUID DID = UUID.randomUUID();
+
     @Captor
     ArgumentCaptor<List<Segment>> segmentCaptor;
 
     @Captor
-    ArgumentCaptor<List<String>> stringListCaptor;
+    ArgumentCaptor<List<UUID>> uuidListCaptor;
 
     @Captor
     ArgumentCaptor<DeltaFile> deltaFileCaptor;
@@ -121,7 +123,7 @@ class DeltaFilesServiceTest {
         RestDataSource dataSource = FlowBuilders.buildDataSource("theFlow");
         when(dataSourceService.getRunningRestDataSource(dataSource.getName())).thenReturn(dataSource);
 
-        String did = UUID.randomUUID().toString();
+        UUID did = UUID.randomUUID();
         List<Content> content = Collections.singletonList(new Content("name", "mediaType"));
         IngressEventItem ingressInputItem = new IngressEventItem(did, "filename", dataSource.getName(),
                 Map.of(), content);
@@ -129,7 +131,7 @@ class DeltaFilesServiceTest {
         DeltaFile deltaFile = deltaFilesService.ingress(dataSource, ingressInputItem, OffsetDateTime.now(), OffsetDateTime.now());
 
         assertNotNull(deltaFile);
-        DeltaFileFlow ingressFlow = deltaFile.getFlows().get(0);
+        DeltaFileFlow ingressFlow = deltaFile.getFlows().getFirst();
         assertEquals(dataSource.getName(), ingressFlow.getName());
         assertEquals(did, deltaFile.getDid());
         assertTrue(ingressFlow.lastCompleteAction().isPresent());
@@ -137,7 +139,7 @@ class DeltaFilesServiceTest {
 
     @Test
     void getReturnsNullOnMissingDid() {
-        assertNull(deltaFilesService.getDeltaFile("nonsense"));
+        assertNull(deltaFilesService.getDeltaFile(UUID.randomUUID()));
     }
 
     @Test
@@ -147,13 +149,13 @@ class DeltaFilesServiceTest {
         ingressFlow.setActions(List.of(action));
         ingressFlow.setInput(new DeltaFileFlowInput());
         DeltaFile deltaFile = DeltaFile.builder()
-                .did("hi")
+                .did(DID)
                 .created(OffsetDateTime.parse("2022-09-29T12:30:00+01:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME))
                 .flows(List.of(ingressFlow))
                 .build();
-        when(deltaFileRepo.findById("hi")).thenReturn(Optional.ofNullable(deltaFile));
-        String json = deltaFilesService.getRawDeltaFile("hi", false);
-        assertTrue(json.contains("\"did\":\"hi\""));
+        when(deltaFileRepo.findById(DID)).thenReturn(Optional.ofNullable(deltaFile));
+        String json = deltaFilesService.getRawDeltaFile(DID, false);
+        assertTrue(json.contains("\"did\":\"%s\"".formatted(DID)));
         assertTrue(json.contains("\"created\":\"2022-09-29T11:30:00.000Z\""));
         assertEquals(1, json.split("\n").length);
     }
@@ -165,29 +167,29 @@ class DeltaFilesServiceTest {
         ingressFlow.setActions(List.of(action));
         ingressFlow.setInput(new DeltaFileFlowInput());
         DeltaFile deltaFile = DeltaFile.builder()
-                .did("hi")
+                .did(DID)
                 .flows(List.of(ingressFlow))
                 .build();
-        when(deltaFileRepo.findById("hi")).thenReturn(Optional.ofNullable(deltaFile));
-        String json = deltaFilesService.getRawDeltaFile("hi", true);
-        assertTrue(json.contains("  \"did\" : \"hi\",\n"));
+        when(deltaFileRepo.findById(DID)).thenReturn(Optional.ofNullable(deltaFile));
+        String json = deltaFilesService.getRawDeltaFile(DID, true);
+        assertTrue(json.contains("  \"did\" : \"%s\",\n".formatted(DID)));
         assertNotEquals(1, json.split("\n").length);
     }
 
     @Test
     void getRawReturnsNullOnMissingDid() throws JsonProcessingException {
-        assertNull(deltaFilesService.getRawDeltaFile("nonsense", true));
-        assertNull(deltaFilesService.getRawDeltaFile("nonsense", false));
+        assertNull(deltaFilesService.getRawDeltaFile(UUID.randomUUID(), true));
+        assertNull(deltaFilesService.getRawDeltaFile(UUID.randomUUID(), false));
     }
 
     @Test
     void testSourceMetadataUnion() {
-        DeltaFile deltaFile1 = Util.buildDeltaFile("1", List.of(), Map.of("k1", "1a", "k2", "val2"));
-        DeltaFile deltaFile2 = Util.buildDeltaFile("2", List.of(), Map.of("k1", "1b", "k3", "val3"));
+        DeltaFile deltaFile1 = Util.buildDeltaFile(UUID.randomUUID(), List.of(), Map.of("k1", "1a", "k2", "val2"));
+        DeltaFile deltaFile2 = Util.buildDeltaFile(UUID.randomUUID(), List.of(), Map.of("k1", "1b", "k3", "val3"));
 
         // Map.of disallows null keys or values, so do it the hard way
-        DeltaFile deltaFile3 = Util.buildDeltaFile("3", List.of(), new HashMap<>());
-        DeltaFileFlow ingressFlow = deltaFile3.getFlows().get(0);
+        DeltaFile deltaFile3 = Util.buildDeltaFile(UUID.randomUUID(), List.of(), new HashMap<>());
+        DeltaFileFlow ingressFlow = deltaFile3.getFlows().getFirst();
         Map<String, String> metadata = new HashMap<>();
         metadata.put("k2", "val2");
         metadata.put("k3", null);
@@ -196,7 +198,7 @@ class DeltaFilesServiceTest {
         Action action = Action.builder().metadata(metadata).build();
         ingressFlow.getActions().add(action);
 
-        List<String> dids = List.of("1", "2", "3", "4");
+        List<UUID> dids = List.of(deltaFile1.getDid(), deltaFile2.getDid(), deltaFile3.getDid(), UUID.randomUUID());
         DeltaFilesFilter filter = new DeltaFilesFilter();
         filter.setDids(dids);
 
@@ -248,43 +250,47 @@ class DeltaFilesServiceTest {
 
     @Test
     void testDelete() {
-        Content content1 = new Content("name", "mediaType", new Segment("a", "1"));
-        DeltaFile deltaFile1 = Util.buildDeltaFile("1", List.of(content1));
-        Content content2 = new Content("name", "mediaType", new Segment("b", "2"));
-        DeltaFile deltaFile2 = Util.buildDeltaFile("2", List.of(content2));
+        UUID did1 = UUID.randomUUID();
+        Content content1 = new Content("name", "mediaType", new Segment(UUID.randomUUID(), did1));
+        DeltaFile deltaFile1 = Util.buildDeltaFile(did1, List.of(content1));
+        UUID did2 = UUID.randomUUID();
+        Content content2 = new Content("name", "mediaType", new Segment(UUID.randomUUID(), did2));
+        DeltaFile deltaFile2 = Util.buildDeltaFile(did2, List.of(content2));
         when(deltaFileRepo.findForTimedDelete(any(), any(), anyLong(), any(), anyBoolean(), anyInt())).thenReturn(List.of(deltaFile1, deltaFile2));
 
         deltaFilesService.timedDelete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", false);
 
         verify(contentStorageService).deleteAll(segmentCaptor.capture());
-        assertEquals(List.of(content1.getSegments().get(0), content2.getSegments().get(0)), segmentCaptor.getValue());
-        verify(deltaFileRepo).setContentDeletedByDidIn(stringListCaptor.capture(), any(), eq("policy"));
-        assertEquals(List.of("1", "2"), stringListCaptor.getValue());
+        assertEquals(List.of(content1.getSegments().getFirst(), content2.getSegments().getFirst()), segmentCaptor.getValue());
+        verify(deltaFileRepo).setContentDeletedByDidIn(uuidListCaptor.capture(), any(), eq("policy"));
+        assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), uuidListCaptor.getValue());
     }
 
     @Test
     void testDeleteMetadata() {
-        Content content1 = new Content("name", "mediaType", new Segment("a", "1"));
-        DeltaFile deltaFile1 = Util.buildDeltaFile("1", List.of(content1));
-        Content content2 = new Content("name", "mediaType", new Segment("b", "2"));
-        DeltaFile deltaFile2 = Util.buildDeltaFile("2", List.of(content2));
+        UUID did1 = UUID.randomUUID();
+        Content content1 = new Content("name", "mediaType", new Segment(UUID.randomUUID(), did1));
+        DeltaFile deltaFile1 = Util.buildDeltaFile(did1, List.of(content1));
+        UUID did2 = UUID.randomUUID();
+        Content content2 = new Content("name", "mediaType", new Segment(UUID.randomUUID(), did2));
+        DeltaFile deltaFile2 = Util.buildDeltaFile(did2, List.of(content2));
         when(deltaFileRepo.findForTimedDelete(any(), any(), anyLong(), any(), anyBoolean(), anyInt())).thenReturn(List.of(deltaFile1, deltaFile2));
 
         deltaFilesService.timedDelete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", true);
 
         verify(contentStorageService).deleteAll(segmentCaptor.capture());
-        assertEquals(List.of(content1.getSegments().get(0), content2.getSegments().get(0)), segmentCaptor.getValue());
+        assertEquals(List.of(content1.getSegments().getFirst(), content2.getSegments().getFirst()), segmentCaptor.getValue());
         verify(deltaFileRepo, never()).saveAll(any());
-        verify(deltaFileRepo).batchedBulkDeleteByDidIn(stringListCaptor.capture());
-        assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), stringListCaptor.getValue());
+        verify(deltaFileRepo).batchedBulkDeleteByDidIn(uuidListCaptor.capture());
+        assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), uuidListCaptor.getValue());
     }
 
     @Test
     void testRequeue_actionFound() {
         OffsetDateTime modified = OffsetDateTime.now();
-        DeltaFile deltaFile = Util.buildDeltaFile("1");
+        DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
-        DeltaFileFlow deltaFileFlow = deltaFile.getFlows().get(0);
+        DeltaFileFlow deltaFileFlow = deltaFile.getFlows().getFirst();
         deltaFileFlow.getActions().add(Action.builder().name("action").type(ActionType.EGRESS)
                 .state(ActionState.QUEUED).modified(modified).build());
 
@@ -323,9 +329,9 @@ class DeltaFilesServiceTest {
     @Test
     void testRequeue() {
         OffsetDateTime modified = OffsetDateTime.now();
-        DeltaFile deltaFile = Util.buildDeltaFile("1");
+        DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
-        deltaFile.getFlows().get(0).getActions().add(Action.builder().name("action").type(ActionType.EGRESS)
+        deltaFile.getFlows().getFirst().getActions().add(Action.builder().name("action").type(ActionType.EGRESS)
                 .state(ActionState.QUEUED).modified(modified).build());
 
         ActionConfiguration actionConfiguration = new EgressActionConfiguration(null, null);
@@ -373,19 +379,19 @@ class DeltaFilesServiceTest {
     }
 
     private Content createContent(String did) {
-        return new Content("name", APPLICATION_XML, new Segment(UUID.randomUUID().toString(), 0L, 32L, did));
+        return new Content("name", APPLICATION_XML, new Segment(UUID.randomUUID(), 0L, 32L, did));
     }*/
 
     @Test
     void testAnnotationDeltaFile() {
-        DeltaFile deltaFile = Util.buildDeltaFile("1");
+        DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
         deltaFile.addAnnotations(Map.of("key", "one"));
 
-        Mockito.when(deltaFileCacheService.isCached("1")).thenReturn(true);
-        Mockito.when(deltaFileCacheService.get("1")).thenReturn(deltaFile);
+        Mockito.when(deltaFileCacheService.isCached(deltaFile.getDid())).thenReturn(true);
+        Mockito.when(deltaFileCacheService.get(deltaFile.getDid())).thenReturn(deltaFile);
         Mockito.when(deltaFileRepo.save(any())).thenAnswer(AdditionalAnswers.returnsFirstArg());
 
-        deltaFilesService.addAnnotations("1", Map.of("sys-ack", "true"), false);
+        deltaFilesService.addAnnotations(deltaFile.getDid(), Map.of("sys-ack", "true"), false);
         Mockito.verify(deltaFileCacheService).save(deltaFileCaptor.capture());
 
         DeltaFile after = deltaFileCaptor.getValue();
@@ -396,38 +402,40 @@ class DeltaFilesServiceTest {
     @Test
     void testAnnotationDeltaFile_badDid() {
         Map<String, String> metadata = Map.of("sys-ack", "true");
-        Assertions.assertThatThrownBy(() -> deltaFilesService.addAnnotations("did", metadata, true))
+        UUID did = UUID.randomUUID();
+        Assertions.assertThatThrownBy(() -> deltaFilesService.addAnnotations(did, metadata, true))
                 .isInstanceOf(DgsEntityNotFoundException.class)
-                .hasMessage("DeltaFile did not found.");
+                .hasMessage("DeltaFile %s not found.".formatted(did));
     }
 
     @Test
     void testAddAnnotationOverwrites() {
-        DeltaFile deltaFile = Util.buildDeltaFile("1");
+        DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
         deltaFile.setAnnotations(new HashMap<>(Map.of("key", "one")));
         deltaFile.setAnnotationKeys(new HashSet<>(Set.of("key")));
 
-        Mockito.when(deltaFileCacheService.isCached("1")).thenReturn(true);
-        Mockito.when(deltaFileCacheService.get("1")).thenReturn(deltaFile);
+        Mockito.when(deltaFileCacheService.isCached(deltaFile.getDid())).thenReturn(true);
+        Mockito.when(deltaFileCacheService.get(deltaFile.getDid())).thenReturn(deltaFile);
 
-        deltaFilesService.addAnnotations("1", Map.of("key", "changed"), false);
+        deltaFilesService.addAnnotations(deltaFile.getDid(), Map.of("key", "changed"), false);
         Assertions.assertThat(deltaFile.getAnnotations()).hasSize(1).containsEntry("key", "one");
 
-        deltaFilesService.addAnnotations("1", Map.of("key", "changed", "newKey", "value"), false);
+        deltaFilesService.addAnnotations(deltaFile.getDid(), Map.of("key", "changed", "newKey", "value"), false);
         Assertions.assertThat(deltaFile.getAnnotations()).hasSize(2).containsEntry("key", "one").containsEntry("newKey", "value");
         Assertions.assertThat(deltaFile.getAnnotationKeys()).hasSize(2).contains("key", "newKey");
 
-        deltaFilesService.addAnnotations("1", Map.of("key", "changed", "newKey", "value"), true);
+        deltaFilesService.addAnnotations(deltaFile.getDid(), Map.of("key", "changed", "newKey", "value"), true);
         Assertions.assertThat(deltaFile.getAnnotations()).hasSize(2).containsEntry("key", "changed").containsEntry("newKey", "value");
     }
 
     @Test
     void testQueueAnnotation_whenDeltaFileNotReady() {
-        Mockito.when(deltaFileRepo.existsById("2")).thenReturn(true);
-        Mockito.when(deltaFileCacheService.isCached("2")).thenReturn(false);
-        Mockito.when(deltaFileRepo.findByDidAndStageIn(eq("2"), anyList())).thenReturn(Optional.empty());
+        UUID did = UUID.randomUUID();
+        Mockito.when(deltaFileRepo.existsById(did)).thenReturn(true);
+        Mockito.when(deltaFileCacheService.isCached(did)).thenReturn(false);
+        Mockito.when(deltaFileRepo.findByDidAndStageIn(eq(did), anyList())).thenReturn(Optional.empty());
 
-        deltaFilesService.addAnnotations("2", Map.of("queued", "true"), false);
+        deltaFilesService.addAnnotations(did, Map.of("queued", "true"), false);
 
         Mockito.verify(queuedAnnotationRepo).insert(queuedAnnotationCaptor.capture());
         Mockito.verify(deltaFileCacheService, never()).save(any());
@@ -439,12 +447,12 @@ class DeltaFilesServiceTest {
 
     @Test
     void testProcessQueuedAnnotations() {
-        DeltaFile deltaFile = Util.buildDeltaFile("3");
+        DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
 
-        QueuedAnnotation queuedAnnotation = new QueuedAnnotation("3", Map.of("queued", "true"), false);
+        QueuedAnnotation queuedAnnotation = new QueuedAnnotation(deltaFile.getDid(), Map.of("queued", "true"), false);
         Mockito.when(queuedAnnotationRepo.findAllByOrderByTimeAsc()).thenReturn(List.of(queuedAnnotation));
-        Mockito.when(deltaFileCacheService.isCached("3")).thenReturn(true);
-        Mockito.when(deltaFileCacheService.get("3")).thenReturn(deltaFile);
+        Mockito.when(deltaFileCacheService.isCached(deltaFile.getDid())).thenReturn(true);
+        Mockito.when(deltaFileCacheService.get(deltaFile.getDid())).thenReturn(deltaFile);
 
         deltaFilesService.processQueuedAnnotations();
         Mockito.verify(queuedAnnotationRepo).deleteById(queuedAnnotation.getId());
@@ -454,17 +462,19 @@ class DeltaFilesServiceTest {
     @Test
     void testDeleteContentAndMetadata() {
         Content content = new Content();
-        deltaFilesService.deleteContentAndMetadata("a", content);
+        UUID did = UUID.randomUUID();
+        deltaFilesService.deleteContentAndMetadata(did, content);
 
-        Mockito.verify(deltaFileRepo).deleteById("a");
+        Mockito.verify(deltaFileRepo).deleteById(did);
         Mockito.verify(contentStorageService).delete(content);
     }
 
     @Test
     void testDeleteContentAndMetadata_mongoFail() {
         Content content = new Content();
-        Mockito.doThrow(new RuntimeException("mongo fail")).when(deltaFileRepo).deleteById("a");
-        deltaFilesService.deleteContentAndMetadata("a", content);
+        UUID did = UUID.randomUUID();
+        Mockito.doThrow(new RuntimeException("mongo fail")).when(deltaFileRepo).deleteById(did);
+        deltaFilesService.deleteContentAndMetadata(did, content);
 
         // make sure content cleanup happens after a mongo failure
         Mockito.verify(contentStorageService).delete(content);
@@ -478,7 +488,7 @@ class DeltaFilesServiceTest {
         Mockito.when(egressFlowService.hasFlow("flow")).thenReturn(true);
         Mockito.when(egressFlowService.getRunningFlowByName("flow")).thenReturn(egressFlow);
 
-        DeltaFile deltaFile = Util.buildDeltaFile("1");
+        DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
         DeltaFileFlow flow = DeltaFileFlow.builder().name("flow").type(FlowType.EGRESS).build();
         flow.setPendingAnnotations(Set.of("a", "b"));
         Action action = flow.queueAction( "egress", ActionType.EGRESS, false, OffsetDateTime.now(testClock));
@@ -486,7 +496,7 @@ class DeltaFilesServiceTest {
         deltaFilesService.egress(deltaFile, flow, action);
 
         Assertions.assertThat(deltaFile.pendingAnnotationFlows()).hasSize(1);
-        Assertions.assertThat(deltaFile.pendingAnnotationFlows().get(0).getName()).isEqualTo("flow");
+        Assertions.assertThat(deltaFile.pendingAnnotationFlows().getFirst().getName()).isEqualTo("flow");
     }
 
     @Test
@@ -495,8 +505,8 @@ class DeltaFilesServiceTest {
         Mockito.when(egressFlowService.hasFlow("flow")).thenReturn(true);
         Mockito.when(egressFlowService.getRunningFlowByName("flow")).thenThrow(new DgsEntityNotFoundException("not running"));
 
-        DeltaFile deltaFile = Util.buildDeltaFile("1");
-        DeltaFileFlow flow = deltaFile.getFlows().get(0);
+        DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
+        DeltaFileFlow flow = deltaFile.getFlows().getFirst();
         Action action = flow.queueAction("egress", ActionType.EGRESS, false, OffsetDateTime.now(testClock));
         deltaFilesService.egress(deltaFile, flow, action);
 
@@ -506,15 +516,16 @@ class DeltaFilesServiceTest {
     @Test
     void testGetPendingAnnotations() {
         DeltaFile deltaFile = new DeltaFile();
+        deltaFile.setDid(UUID.randomUUID());
         deltaFile.setModified(OffsetDateTime.now());
         deltaFile.setFlows(Stream.of("a", "b", "c").map(this::deltaFileFlow).toList());
-        Mockito.when(deltaFileRepo.findById("1")).thenReturn(Optional.of(deltaFile));
-        Assertions.assertThat(deltaFilesService.getPendingAnnotations("1")).hasSize(3).contains("a", "b", "c");
+        Mockito.when(deltaFileRepo.findById(deltaFile.getDid())).thenReturn(Optional.of(deltaFile));
+        Assertions.assertThat(deltaFilesService.getPendingAnnotations(deltaFile.getDid())).hasSize(3).contains("a", "b", "c");
 
-        Mockito.when(deltaFileCacheService.isCached("1")).thenReturn(true);
-        Mockito.when(deltaFileCacheService.get("1")).thenReturn(deltaFile);
-        deltaFilesService.addAnnotations("1", Map.of("b", "2"), false);
-        Assertions.assertThat(deltaFilesService.getPendingAnnotations("1")).hasSize(2).contains("a", "c");
+        Mockito.when(deltaFileCacheService.isCached(deltaFile.getDid())).thenReturn(true);
+        Mockito.when(deltaFileCacheService.get(deltaFile.getDid())).thenReturn(deltaFile);
+        deltaFilesService.addAnnotations(deltaFile.getDid(), Map.of("b", "2"), false);
+        Assertions.assertThat(deltaFilesService.getPendingAnnotations(deltaFile.getDid())).hasSize(2).contains("a", "c");
     }
 
     private DeltaFileFlow deltaFileFlow(String name) {
@@ -529,11 +540,12 @@ class DeltaFilesServiceTest {
     @Test
     void testGetPendingAnnotations_nullPendingList() {
         DeltaFile deltaFile = new DeltaFile();
+        deltaFile.setDid(UUID.randomUUID());
         DeltaFileFlow deltaFileFlow = new DeltaFileFlow();
         deltaFile.setFlows(List.of(deltaFileFlow));
 
-        Mockito.when(deltaFileRepo.findById("did")).thenReturn(Optional.of(deltaFile));
-        Assertions.assertThat(deltaFilesService.getPendingAnnotations("did")).isEmpty();
+        Mockito.when(deltaFileRepo.findById(deltaFile.getDid())).thenReturn(Optional.of(deltaFile));
+        Assertions.assertThat(deltaFilesService.getPendingAnnotations(deltaFile.getDid())).isEmpty();
     }
 
     @Test
@@ -545,31 +557,31 @@ class DeltaFilesServiceTest {
 
     @Test
     void testErrorMetadataUnion() {
-        DeltaFile deltaFile1 = Util.buildDeltaFile("1", List.of());
-        DeltaFileFlow deltaFileFlow1 = deltaFile1.getFlows().get(0);
+        DeltaFile deltaFile1 = Util.buildDeltaFile(UUID.randomUUID(), List.of());
+        DeltaFileFlow deltaFileFlow1 = deltaFile1.getFlows().getFirst();
         deltaFileFlow1.setName("flow1");
-        deltaFileFlow1.getActions().get(0).setMetadata(Map.of("a", "1", "b", "2"));
+        deltaFileFlow1.getActions().getFirst().setMetadata(Map.of("a", "1", "b", "2"));
         Action error1 = deltaFileFlow1.queueAction("TransformAction1", ActionType.TRANSFORM, false, OffsetDateTime.now());
         error1.error(OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now(), "cause", "context");
 
-        DeltaFile deltaFile2 = Util.buildDeltaFile("2", List.of());
-        DeltaFileFlow deltaFileFlow2 = deltaFile2.getFlows().get(0);
+        DeltaFile deltaFile2 = Util.buildDeltaFile(UUID.randomUUID(), List.of());
+        DeltaFileFlow deltaFileFlow2 = deltaFile2.getFlows().getFirst();
         deltaFileFlow2.setName("flow1");
-        deltaFileFlow2.getActions().get(0).setMetadata(Map.of("a", "somethingElse", "c", "3"));
+        deltaFileFlow2.getActions().getFirst().setMetadata(Map.of("a", "somethingElse", "c", "3"));
         Action error2 = deltaFileFlow2.queueAction("TransformAction1", ActionType.TRANSFORM, false, OffsetDateTime.now());
         error2.error(OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now(), "cause", "context");
 
-        DeltaFile deltaFile3 = Util.buildDeltaFile("2", List.of());
-        DeltaFileFlow deltaFileFlow3 = deltaFile3.getFlows().get(0);
+        DeltaFile deltaFile3 = Util.buildDeltaFile(UUID.randomUUID(), List.of());
+        DeltaFileFlow deltaFileFlow3 = deltaFile3.getFlows().getFirst();
         deltaFileFlow3.setName("flow2");
-        deltaFileFlow3.getActions().get(0).setMetadata(Map.of("d", "4"));
+        deltaFileFlow3.getActions().getFirst().setMetadata(Map.of("d", "4"));
         Action error3 = deltaFileFlow3.queueAction("TransformAction2", ActionType.TRANSFORM, false, OffsetDateTime.now());
         error3.error(OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now(), "cause", "context");
 
-        DeltaFile deltaFile4 = Util.buildDeltaFile("3", List.of());
-        DeltaFileFlow deltaFileFlow4 = deltaFile4.getFlows().get(0);
+        DeltaFile deltaFile4 = Util.buildDeltaFile(UUID.randomUUID(), List.of());
+        DeltaFileFlow deltaFileFlow4 = deltaFile4.getFlows().getFirst();
         deltaFileFlow4.setName("flow3");
-        deltaFileFlow4.getActions().get(0).setMetadata(Map.of("e", "5"));
+        deltaFileFlow4.getActions().getFirst().setMetadata(Map.of("e", "5"));
         deltaFileFlow4.queueAction("TransformAction3", ActionType.TRANSFORM, false, OffsetDateTime.now());
 
         DeltaFiles deltaFiles = new DeltaFiles(0, 4, 4, List.of(deltaFile1, deltaFile2, deltaFile3, deltaFile4));
@@ -579,32 +591,32 @@ class DeltaFilesServiceTest {
 
         assertEquals(2, actionVals.size());
         actionVals.sort(Comparator.comparing(PerActionUniqueKeyValues::getAction));
-        assertEquals("flow1", actionVals.get(0).getFlow());
-        assertEquals("TransformAction1", actionVals.get(0).getAction());
-        assertEquals(3, actionVals.get(0).getKeyVals().size());
-        assertEquals("a", actionVals.get(0).getKeyVals().get(0).getKey());
-        assertEquals(List.of("1", "somethingElse"), actionVals.get(0).getKeyVals().get(0).getValues());
-        assertEquals("b", actionVals.get(0).getKeyVals().get(1).getKey());
-        assertEquals(List.of("2"), actionVals.get(0).getKeyVals().get(1).getValues());
-        assertEquals("c", actionVals.get(0).getKeyVals().get(2).getKey());
-        assertEquals(List.of("3"), actionVals.get(0).getKeyVals().get(2).getValues());
+        assertEquals("flow1", actionVals.getFirst().getFlow());
+        assertEquals("TransformAction1", actionVals.getFirst().getAction());
+        assertEquals(3, actionVals.getFirst().getKeyVals().size());
+        assertEquals("a", actionVals.getFirst().getKeyVals().getFirst().getKey());
+        assertEquals(List.of("1", "somethingElse"), actionVals.getFirst().getKeyVals().getFirst().getValues());
+        assertEquals("b", actionVals.getFirst().getKeyVals().get(1).getKey());
+        assertEquals(List.of("2"), actionVals.getFirst().getKeyVals().get(1).getValues());
+        assertEquals("c", actionVals.getFirst().getKeyVals().get(2).getKey());
+        assertEquals(List.of("3"), actionVals.getFirst().getKeyVals().get(2).getValues());
         assertEquals("TransformAction2", actionVals.get(1).getAction());
         assertEquals("flow2", actionVals.get(1).getFlow());
         assertEquals(1, actionVals.get(1).getKeyVals().size());
-        assertEquals("d", actionVals.get(1).getKeyVals().get(0).getKey());
-        assertEquals(List.of("4"), actionVals.get(1).getKeyVals().get(0).getValues());
+        assertEquals("d", actionVals.get(1).getKeyVals().getFirst().getKey());
+        assertEquals(List.of("4"), actionVals.get(1).getKeyVals().getFirst().getValues());
     }
 
     @Test
     @Disabled("TODO: collect")
     void requeuesCollectedAction() {
-        DeltaFile aggregate = Util.buildDeltaFile("3");
+        DeltaFile aggregate = Util.buildDeltaFile(UUID.randomUUID());
         aggregate.setAggregate(true);
-        DeltaFile parent1 = Util.buildDeltaFile("1");
-        DeltaFile parent2 = Util.buildDeltaFile("2");
+        DeltaFile parent1 = Util.buildDeltaFile(UUID.randomUUID());
+        DeltaFile parent2 = Util.buildDeltaFile(UUID.randomUUID());
         aggregate.setParentDids(List.of(parent1.getDid(), parent2.getDid()));
 
-        DeltaFileFlow flow = aggregate.getFlows().get(0);
+        DeltaFileFlow flow = aggregate.getFlows().getFirst();
         flow.queueAction("collect-transform", ActionType.TRANSFORM, false, OffsetDateTime.now());
 
         testClock.setInstant(flow.actionNamed("collect-transform").orElseThrow().getModified().toInstant());
@@ -626,8 +638,8 @@ class DeltaFilesServiceTest {
         verify(actionEventQueue).putActions(actionInputListCaptor.capture(), Mockito.anyBoolean());
         List<ActionInput> enqueuedActions = actionInputListCaptor.getValue();
         assertEquals(1, enqueuedActions.size());
-        assertEquals(List.of("1", "2"), enqueuedActions.get(0).getActionContext().getCollectedDids());
-        assertEquals(2, enqueuedActions.get(0).getDeltaFileMessages().size());
+        assertEquals(List.of(parent1.getDid(), parent2.getDid()), enqueuedActions.getFirst().getActionContext().getCollectedDids());
+        assertEquals(2, enqueuedActions.getFirst().getDeltaFileMessages().size());
     }
 
     @Test

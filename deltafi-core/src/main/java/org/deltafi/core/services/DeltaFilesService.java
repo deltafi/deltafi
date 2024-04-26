@@ -167,15 +167,15 @@ public class DeltaFilesService {
         log.info("Shutdown DeltaFilesService complete");
     }
 
-    public DeltaFile getDeltaFile(String did) {
-        return deltaFileRepo.findById(did.toLowerCase()).orElse(null);
+    public DeltaFile getDeltaFile(UUID did) {
+        return deltaFileRepo.findById(did).orElse(null);
     }
 
-    public DeltaFile getCachedDeltaFile(String did) {
+    public DeltaFile getCachedDeltaFile(UUID did) {
         return deltaFileCacheService.get(did);
     }
 
-    public String getRawDeltaFile(String did, boolean pretty) throws JsonProcessingException {
+    public String getRawDeltaFile(UUID did, boolean pretty) throws JsonProcessingException {
         DeltaFile deltaFile = getDeltaFile(did);
 
         if (deltaFile == null) {
@@ -196,7 +196,7 @@ public class DeltaFilesService {
      * @param did of the DeltaFile to check
      * @return set of annotations this DeltaFile is waiting for
      */
-    public Set<String> getPendingAnnotations(String did) {
+    public Set<String> getPendingAnnotations(UUID did) {
         DeltaFile deltaFile = getDeltaFile(did);
 
         if (deltaFile == null) {
@@ -219,7 +219,7 @@ public class DeltaFilesService {
                 filter, orderBy, includeFields);
     }
 
-    public Map<String, DeltaFile> deltaFiles(List<String> dids) {
+    public Map<UUID, DeltaFile> deltaFiles(List<UUID> dids) {
         return deltaFileRepo.findAllById(dids).stream()
                 .collect(Collectors.toMap(DeltaFile::getDid, Function.identity()));
     }
@@ -254,7 +254,7 @@ public class DeltaFilesService {
         return ingress(restDataSource, ingressEventItem, Collections.emptyList(), ingressStartTime, ingressStopTime);
     }
 
-    private DeltaFile buildIngressDeltaFile(DataSource dataSource, IngressEventItem ingressEventItem, List<String> parentDids,
+    private DeltaFile buildIngressDeltaFile(DataSource dataSource, IngressEventItem ingressEventItem, List<UUID> parentDids,
                                             OffsetDateTime ingressStartTime, OffsetDateTime ingressStopTime,
                                             String ingressActionName, FlowType flowType) {
 
@@ -310,7 +310,7 @@ public class DeltaFilesService {
                 .build();
     }
 
-    private DeltaFile ingress(RestDataSource restDataSource, IngressEventItem ingressEventItem, List<String> parentDids, OffsetDateTime ingressStartTime,
+    private DeltaFile ingress(RestDataSource restDataSource, IngressEventItem ingressEventItem, List<UUID> parentDids, OffsetDateTime ingressStartTime,
             OffsetDateTime ingressStopTime) {
         DeltaFile deltaFile = buildIngressDeltaFile(restDataSource, ingressEventItem, parentDids, ingressStartTime, ingressStopTime,
                 INGRESS_ACTION, FlowType.REST_DATA_SOURCE);
@@ -609,7 +609,7 @@ public class DeltaFilesService {
         generateMetrics(false, List.of(new Metric(DeltaFiConstants.FILES_ERRORED, 1)), event, deltaFile, flow, action);
     }
 
-    private DeltaFile getTerminalDeltaFileOrCache(String did) {
+    private DeltaFile getTerminalDeltaFileOrCache(UUID did) {
         if (deltaFileCacheService.isCached(did)) {
             return getCachedDeltaFile(did);
         }
@@ -618,8 +618,7 @@ public class DeltaFilesService {
                 .orElse(null);
     }
 
-    public void addAnnotations(String rawDid, Map<String, String> annotations, boolean allowOverwrites) {
-        String did = rawDid.toLowerCase();
+    public void addAnnotations(UUID did, Map<String, String> annotations, boolean allowOverwrites) {
         synchronized (didMutexService.getMutex(did)) {
             DeltaFile deltaFile = getTerminalDeltaFileOrCache(did);
 
@@ -640,7 +639,7 @@ public class DeltaFilesService {
     public void processQueuedAnnotations() {
         List<QueuedAnnotation> queuedAnnotations = queuedAnnotationRepo.findAllByOrderByTimeAsc();
         for (QueuedAnnotation queuedAnnotation : queuedAnnotations) {
-            String did = queuedAnnotation.getDid();
+            UUID did = queuedAnnotation.getDid();
             synchronized (didMutexService.getMutex(did)) {
                 DeltaFile deltaFile = getTerminalDeltaFileOrCache(did);
 
@@ -754,8 +753,8 @@ public class DeltaFilesService {
         return new StateMachineInput(child, flow);
     }
 
-    public List<RetryResult> resume(@NotNull List<String> dids, @NotNull List<ResumeMetadata> resumeMetadata) {
-        Map<String, DeltaFile> deltaFiles = deltaFiles(dids);
+    public List<RetryResult> resume(@NotNull List<UUID> dids, @NotNull List<ResumeMetadata> resumeMetadata) {
+        Map<UUID, DeltaFile> deltaFiles = deltaFiles(dids);
         List<StateMachineInput> advanceAndSaveInputs = new ArrayList<>();
 
         List<RetryResult> retryResults = dids.stream()
@@ -813,8 +812,8 @@ public class DeltaFilesService {
         }
     }
 
-    public List<RetryResult> replay(@NotNull List<String> dids, @NotNull List<String> removeSourceMetadata, @NotNull List<KeyValue> replaceSourceMetadata)  {
-        Map<String, DeltaFile> deltaFiles = deltaFiles(dids);
+    public List<RetryResult> replay(@NotNull List<UUID> dids, @NotNull List<String> removeSourceMetadata, @NotNull List<KeyValue> replaceSourceMetadata)  {
+        Map<UUID, DeltaFile> deltaFiles = deltaFiles(dids);
         List<StateMachineInput> inputs = new ArrayList<>();
         List<DeltaFile> parents = new ArrayList<>();
 
@@ -909,8 +908,8 @@ public class DeltaFilesService {
         return results;
     }
 
-    public List<AcknowledgeResult> acknowledge(List<String> dids, String reason) {
-        Map<String, DeltaFile> deltaFiles = deltaFiles(dids);
+    public List<AcknowledgeResult> acknowledge(List<UUID> dids, String reason) {
+        Map<UUID, DeltaFile> deltaFiles = deltaFiles(dids);
 
         OffsetDateTime now = OffsetDateTime.now(clock);
         List<DeltaFile> changedDeltaFiles = new ArrayList<>();
@@ -944,8 +943,8 @@ public class DeltaFilesService {
         return results;
     }
 
-    public List<CancelResult> cancel(List<String> dids) {
-        Map<String, DeltaFile> deltaFiles = deltaFiles(dids);
+    public List<CancelResult> cancel(List<UUID> dids) {
+        Map<UUID, DeltaFile> deltaFiles = deltaFiles(dids);
         List<DeltaFile> changedDeltaFiles = new ArrayList<>();
 
         List<CancelResult> results = dids.stream()
@@ -980,7 +979,7 @@ public class DeltaFilesService {
         return results;
     }
 
-    public List<PerActionUniqueKeyValues> errorMetadataUnion(List<String> dids) {
+    public List<PerActionUniqueKeyValues> errorMetadataUnion(List<UUID> dids) {
         DeltaFilesFilter filter = new DeltaFilesFilter();
         filter.setDids(dids);
         DeltaFiles deltaFiles = deltaFiles(0, dids.size(), filter, null, List.of(FLOWS_INPUT_METADATA, FLOWS_NAME, FLOWS_ACTIONS_NAME, FLOWS_ACTIONS_TYPE, FLOWS_ACTIONS_STATE, FLOWS_ACTIONS_METADATA, FLOWS_ACTIONS_DELETE_METADATA_KEYS));
@@ -1004,7 +1003,7 @@ public class DeltaFilesService {
         return new ArrayList<>(actionKeyValues.values());
     }
 
-    public List<UniqueKeyValues> sourceMetadataUnion(List<String> dids) {
+    public List<UniqueKeyValues> sourceMetadataUnion(List<UUID> dids) {
         DeltaFilesFilter filter = new DeltaFilesFilter();
         filter.setDids(dids);
         DeltaFiles deltaFiles = deltaFiles(0, dids.size(), filter, null, List.of(FLOWS_INPUT_METADATA));
@@ -1041,7 +1040,7 @@ public class DeltaFilesService {
         deltaFile.setStage(DeltaFileStage.ERROR);
     }
 
-    public void deleteContentAndMetadata(String did, Content content) {
+    public void deleteContentAndMetadata(UUID did, Content content) {
         try {
             deltaFileRepo.deleteById(did);
         } catch (Exception e) {
@@ -1106,7 +1105,7 @@ public class DeltaFilesService {
 
     public void requeue() {
         OffsetDateTime modified = OffsetDateTime.now(clock);
-        Set<String> longRunningDids = actionEventQueue.getLongRunningTasks().stream().map(ActionExecution::did).collect(Collectors.toSet());
+        Set<UUID> longRunningDids = actionEventQueue.getLongRunningTasks().stream().map(ActionExecution::did).collect(Collectors.toSet());
         List<DeltaFile> requeuedDeltaFiles = deltaFileRepo.updateForRequeue(modified,
                 getProperties().getRequeueDuration(),queueManagementService.coldQueueActions(), longRunningDids);
         List<ActionInput> actionInputs = requeuedDeltaFiles.stream()
@@ -1188,7 +1187,7 @@ public class DeltaFilesService {
         int queued = 0;
         List<DeltaFile> autoResumeDeltaFiles = deltaFileRepo.findReadyForAutoResume(timestamp);
         if (!autoResumeDeltaFiles.isEmpty()) {
-            Map<String, String> flowByDid = autoResumeDeltaFiles.stream()
+            Map<UUID, String> flowByDid = autoResumeDeltaFiles.stream()
                     .collect(Collectors.toMap(DeltaFile::getDid, DeltaFile::getDataSource));
             List<RetryResult> results = resume(flowByDid.keySet().stream().toList(), Collections.emptyList());
             Map<String, Integer> countByFlow = new HashMap<>();
@@ -1435,7 +1434,7 @@ public class DeltaFilesService {
 
         if (errors.isEmpty()) {
             OffsetDateTime now = OffsetDateTime.now(clock);
-            Set<String> previousDids = new HashSet<>();
+            Set<UUID> previousDids = new HashSet<>();
 
             /*
              * If applying any resume policy that is not flow-specific,
@@ -1453,7 +1452,7 @@ public class DeltaFilesService {
                     checkFiles = deltaFileRepo.findResumePolicyCandidates(resumePolicy.getDataSource());
                 }
 
-                List<String> dids = resumePolicyService.canBeApplied(resumePolicy, checkFiles, previousDids);
+                List<UUID> dids = resumePolicyService.canBeApplied(resumePolicy, checkFiles, previousDids);
                 if (dids.isEmpty()) {
                     information.add("No DeltaFile errors can be resumed by policy " + resumePolicy.getName());
                 } else {
@@ -1478,7 +1477,7 @@ public class DeltaFilesService {
         if (resumePolicy == null) {
             errors.add("Resume policy must not be null");
         } else {
-            if (StringUtils.isBlank(resumePolicy.getId())) {
+            if (resumePolicy.getId() == null) {
                 resumePolicy.setId(uuidGenerator.generate());
             }
             errors.addAll(resumePolicy.validate());
@@ -1488,7 +1487,7 @@ public class DeltaFilesService {
             List<DeltaFile> checkFiles =
                     deltaFileRepo.findResumePolicyCandidates(resumePolicy.getDataSource());
 
-            List<String> dids = resumePolicyService.canBeApplied(resumePolicy, checkFiles, Collections.emptySet());
+            List<UUID> dids = resumePolicyService.canBeApplied(resumePolicy, checkFiles, Collections.emptySet());
             if (dids.isEmpty()) {
                 information.add("No DeltaFile errors can be resumed by policy " + resumePolicy.getName());
             } else {
@@ -1537,12 +1536,12 @@ public class DeltaFilesService {
         }
     }*/
 
-    private List<DeltaFile> findDeltaFiles(List<String> dids) throws MissingDeltaFilesException {
-        Map<String, DeltaFile> deltaFileMap = deltaFileRepo.findAllById(dids).stream()
+    private List<DeltaFile> findDeltaFiles(List<UUID> dids) throws MissingDeltaFilesException {
+        Map<UUID, DeltaFile> deltaFileMap = deltaFileRepo.findAllById(dids).stream()
                 .collect(Collectors.toMap(DeltaFile::getDid, Function.identity()));
 
         if (deltaFileMap.size() < dids.size()) {
-            List<String> missingDids = dids.stream().filter(did -> !deltaFileMap.containsKey(did)).toList();
+            List<UUID> missingDids = dids.stream().filter(did -> !deltaFileMap.containsKey(did)).toList();
             if (!missingDids.isEmpty()) {
                 throw new MissingDeltaFilesException(missingDids);
             }
@@ -1553,7 +1552,7 @@ public class DeltaFilesService {
 
     public static final String AGGREGATE_SOURCE_FILE_NAME = "multiple";
 
-    public void queueTimedOutCollect(CollectEntry collectEntry, List<String> collectedDids) {
+    public void queueTimedOutCollect(CollectEntry collectEntry, List<UUID> collectedDids) {
         ActionConfiguration actionConfiguration = actionConfiguration(collectEntry.getCollectDefinition().getFlow(),
                 collectEntry.getCollectDefinition().getAction());
 
@@ -1588,14 +1587,14 @@ public class DeltaFilesService {
         enqueueActions(List.of(collectingActionInput));*/
     }
 
-    public void failTimedOutCollect(CollectEntry collectEntry, List<String> collectedDids, String reason) {
+    public void failTimedOutCollect(CollectEntry collectEntry, List<UUID> collectedDids, String reason) {
         log.debug("Failing collect action");
 
-        List<String> missingDids = new ArrayList<>();
+        List<UUID> missingDids = new ArrayList<>();
 
-        for (String did : collectedDids) {
+        for (UUID did : collectedDids) {
             try {
-                DeltaFile deltaFile = deltaFileRepo.findById(did.toLowerCase()).orElse(null);
+                DeltaFile deltaFile = deltaFileRepo.findById(did).orElse(null);
                 if (deltaFile == null) {
                     missingDids.add(did);
                     continue;

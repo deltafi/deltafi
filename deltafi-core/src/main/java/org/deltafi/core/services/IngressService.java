@@ -193,7 +193,7 @@ public class IngressService {
             throw new IngressException(error);
         }
 
-        String did = uuidGenerator.generate();
+        UUID did = uuidGenerator.generate();
 
         Content content = contentStorageService.save(did, contentInputStream, filename, mediaType);
 

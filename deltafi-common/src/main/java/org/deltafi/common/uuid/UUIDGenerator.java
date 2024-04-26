@@ -17,6 +17,8 @@
  */
 package org.deltafi.common.uuid;
 
+import java.util.UUID;
+
 public interface UUIDGenerator {
-    String generate();
+    UUID generate();
 }

@@ -21,7 +21,7 @@
                         "mediaType": "application/text",
                         "segments": [
                             {
-                                "uuid": "uuid",
+                                "uuid": "11111111-1111-1111-1111-111111111111",
                                 "offset": 0,
                                 "size": 36,
                                 "did": "%1$s"

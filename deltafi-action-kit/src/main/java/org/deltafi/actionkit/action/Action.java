@@ -25,7 +25,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.action.util.ActionParameterSchemaGenerator;
@@ -135,7 +134,7 @@ public abstract class Action<I, P extends ActionParameters, R extends ResultType
         }
 
         return execute(actionInput.getActionContext(), buildInput(actionInput.getActionContext(),
-                actionInput.getDeltaFileMessages().get(0)), convertToParams(actionInput.getActionParams()));
+                actionInput.getDeltaFileMessages().getFirst()), convertToParams(actionInput.getActionParams()));
     }
 
     public void clearActionExecution() {

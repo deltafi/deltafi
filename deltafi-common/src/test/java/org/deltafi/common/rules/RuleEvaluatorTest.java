@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 class RuleEvaluatorTest {
 
@@ -66,13 +67,13 @@ class RuleEvaluatorTest {
 
         //
         ruleEvaluator.doEvaluateCondition("content[0].setName('c')", deltaFile);
-        Assertions.assertThat(originalDeltaFileFlow.lastContent().get(0).getName()).isEqualTo("test.txt");
-        Assertions.assertThat(deltaFile.content().get(0).getName()).isEqualTo("c");
+        Assertions.assertThat(originalDeltaFileFlow.lastContent().getFirst().getName()).isEqualTo("test.txt");
+        Assertions.assertThat(deltaFile.content().getFirst().getName()).isEqualTo("c");
     }
 
     @SneakyThrows
     private DeltaFileFlow testDeltaFileFlow() {
-        Content content = contentStorageService.save("did", "test input".getBytes(StandardCharsets.UTF_8), "test.txt", "plain/text");
+        Content content = contentStorageService.save(UUID.randomUUID(), "test input".getBytes(StandardCharsets.UTF_8), "test.txt", "plain/text");
         Action action = new Action();
         action.setContent(List.of(content));
         action.setMetadata(Map.of("a", "b"));

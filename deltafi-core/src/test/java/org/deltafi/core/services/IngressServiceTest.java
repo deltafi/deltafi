@@ -143,8 +143,6 @@ class IngressServiceTest {
         DeltaFileFlow flow = DeltaFileFlow.builder().name("flow").build();
         DeltaFile deltaFile = DeltaFile.builder().flows(List.of(flow)).build();
         Mockito.when(deltaFilesService.ingress(any(), ingressEventCaptor.capture(), any(), any())).thenReturn(deltaFile);
-
-        UUID_GENERATOR.setUuid("TEST-UUID");
     }
 
     private void verifyNormalExecution(List<IngressResult> ingressResults) throws IOException, ObjectStorageException {
@@ -156,13 +154,13 @@ class IngressServiceTest {
         Mockito.verify(metricService).increment(DeltaFiConstants.BYTES_IN, metricTags, "content".length());
 
         String content;
-        try (InputStream contentInputStream = CONTENT_STORAGE_SERVICE.load(ingressResults.get(0).content())) {
+        try (InputStream contentInputStream = CONTENT_STORAGE_SERVICE.load(ingressResults.getFirst().content())) {
             content = new String(contentInputStream.readAllBytes());
         }
         assertEquals("content", content);
-        assertEquals("flow", ingressResults.get(0).flow());
-        assertEquals("filename", ingressResults.get(0).content().getName());
-        assertEquals("TEST-UUID", ingressResults.get(0).did());
+        assertEquals("flow", ingressResults.getFirst().flow());
+        assertEquals("filename", ingressResults.getFirst().content().getName());
+        assertEquals(UUID_GENERATOR.generate(), ingressResults.getFirst().did());
     }
 
     @Test

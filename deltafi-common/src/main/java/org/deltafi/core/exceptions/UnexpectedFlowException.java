@@ -17,8 +17,10 @@
  */
 package org.deltafi.core.exceptions;
 
+import java.util.UUID;
+
 public class UnexpectedFlowException extends RuntimeException {
-    public UnexpectedFlowException(String flowName, int flowId, String did) {
+    public UnexpectedFlowException(String flowName, int flowId, UUID did) {
         super("Action for unexpected flow " + flowName + " id " + flowId + " performed on DeltaFile " + did + ". ");
     }
 }
