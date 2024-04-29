@@ -25,9 +25,9 @@ import org.deltafi.common.uuid.RandomUUIDGenerator;
 import org.deltafi.common.uuid.UUIDGenerator;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.task.TaskSchedulerCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 import java.net.URISyntaxException;
 
@@ -43,8 +43,10 @@ public class DeltaFiConfiguration {
     }
 
     @Bean
-    public TaskSchedulerCustomizer taskSchedulerCustomizer(DeltaFiPropertiesService deltaFiPropertiesService) {
-        return taskScheduler ->  taskScheduler.setPoolSize(deltaFiPropertiesService.getDeltaFiProperties().getScheduledServiceThreads());
+    public ThreadPoolTaskScheduler threadPoolTaskScheduler(DeltaFiPropertiesService deltaFiPropertiesService) {
+        ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+        scheduler.setPoolSize(deltaFiPropertiesService.getDeltaFiProperties().getScheduledServiceThreads());
+        return scheduler;
     }
 
     @Bean

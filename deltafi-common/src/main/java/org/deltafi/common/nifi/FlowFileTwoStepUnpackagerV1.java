@@ -36,7 +36,7 @@ public class FlowFileTwoStepUnpackagerV1 implements FlowFileTwoStepUnpackager {
     @Override
     public Map<String, String> unpackageAttributes(InputStream in) throws IOException {
         this.tarIn = new TarArchiveInputStream(in);
-        TarArchiveEntry attribEntry = tarIn.getNextTarEntry();
+        TarArchiveEntry attribEntry = tarIn.getNextEntry();
         if ((attribEntry == null) || !attribEntry.getName().equals(FlowFilePackagerV1.FILENAME_ATTRIBUTES)) {
             tarIn.close();
             tarIn = null;
@@ -54,7 +54,7 @@ public class FlowFileTwoStepUnpackagerV1 implements FlowFileTwoStepUnpackager {
 
         flowFilesRead++;
         try {
-            TarArchiveEntry contentEntry = tarIn.getNextTarEntry();
+            TarArchiveEntry contentEntry = tarIn.getNextEntry();
             if ((contentEntry == null) || !contentEntry.getName().equals(FlowFilePackagerV1.FILENAME_CONTENT)) {
                 throw new IOException("Expected two tar entries: " + FlowFilePackagerV1.FILENAME_CONTENT + " and " +
                         FlowFilePackagerV1.FILENAME_ATTRIBUTES);

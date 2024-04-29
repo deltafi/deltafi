@@ -18,6 +18,7 @@
 package org.deltafi.core.types;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.DeltaFiConfiguration;
@@ -28,6 +29,7 @@ import java.util.EnumMap;
 import java.util.List;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 public class RestDataSource extends DataSource {
 
     public RestDataSource() {
