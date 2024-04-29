@@ -17,17 +17,16 @@ grafana:
     rules.yaml:
       groups:
         - orgId: 1
-          name: deltafi
+          name: Stock Alerts
           folder: DeltaFi
           interval: 30s
           rules:
-            - uid: smoke_detector
-              title: Smoke flow is down
+            - uid: stock_no_data
+              title: No Ingress Data
               for: 0s
               annotations:
-                summary: Smoke has gone down in flames.
+                summary: No recent data has been detected on ingress
               labels:
-                flow: smoke
                 severity: warning
               condition: B
               data:
@@ -41,7 +40,7 @@ grafana:
                     intervalMs: 10000
                     maxDataPoints: 99999
                     refId: A
-                    target: "seriesByTag('name=stats_counts.files_out','ingressFlow=smoke')"
+                    target: "seriesByTag('name=stats_counts.files_in')"
                 - refId: B
                   relativeTimeRange:
                     from: 0

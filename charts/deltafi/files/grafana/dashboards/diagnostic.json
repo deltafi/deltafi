@@ -136,7 +136,7 @@
             "uid": "${datasource}"
           },
           "refId": "A",
-          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_in', 'action=ingress', 'ingressFlow=~${flow:regex}'), 'average', 'ingressFlow'), 'ingressFlow'), true, false)"
+          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_in', 'action=ingress', 'dataSource=~${dfDataSource:regex}'), 'average', 'dataSource'), 'dataSource'), true, false)"
         }
       ],
       "title": "Files In",
@@ -231,7 +231,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "A",
-          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.bytes_in', 'action=ingress', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), 'ingressFlow'), true, false)"
+          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.bytes_in', 'action=ingress', 'dataSource=~${dfDataSource:regex}'), 'sum', 'dataSource'), 'dataSource'), true, false)"
         }
       ],
       "title": "Bytes In",
@@ -326,7 +326,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_out', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), 'ingressFlow'), true, false)"
+          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_out', 'dataSource=~${dfDataSource:regex}'), 'sum', 'dataSource'), 'dataSource'), true, false)"
         }
       ],
       "title": "Files Out",
@@ -422,7 +422,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.bytes_out', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), 'ingressFlow'), true, false)"
+          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.bytes_out', 'dataSource=~${dfDataSource:regex}'), 'sum', 'dataSource'), 'dataSource'), true, false)"
         }
       ],
       "title": "Bytes Out",
@@ -539,7 +539,7 @@
           "hide": true,
           "refCount": 0,
           "refId": "A",
-          "target": "aliasByTags(removeEmptySeries(groupByTags(seriesByTag('name=~stats_counts.files_out', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow')), 'ingressFlow')"
+          "target": "aliasByTags(removeEmptySeries(groupByTags(seriesByTag('name=~stats_counts.files_out', 'dataSource=~${dfDataSource:regex}'), 'sum', 'dataSource')), 'dataSource')"
         },
         {
           "datasource": {
@@ -549,8 +549,8 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "aliasByNode(divideSeriesLists(removeEmptySeries(aliasByTags(groupByTags(seriesByTag('name=~stats_counts.execution_time_ms', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), 'ingressFlow')), #A), 0)",
-          "targetFull": "aliasByNode(divideSeriesLists(removeEmptySeries(aliasByTags(groupByTags(seriesByTag('name=~stats_counts.execution_time_ms', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), 'ingressFlow')), aliasByTags(removeEmptySeries(groupByTags(seriesByTag('name=~stats_counts.files_out', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow')), 'ingressFlow')), 0)"
+          "target": "aliasByNode(divideSeriesLists(removeEmptySeries(aliasByTags(groupByTags(seriesByTag('name=~stats_counts.execution_time_ms', 'dataSource=~${dfDataSource:regex}'), 'sum', 'dataSource'), 'dataSource')), #A), 0)",
+          "targetFull": "aliasByNode(divideSeriesLists(removeEmptySeries(aliasByTags(groupByTags(seriesByTag('name=~stats_counts.execution_time_ms', 'dataSource=~${dfDataSource:regex}'), 'sum', 'dataSource'), 'dataSource')), aliasByTags(removeEmptySeries(groupByTags(seriesByTag('name=~stats_counts.files_out', 'dataSource=~${dfDataSource:regex}'), 'sum', 'dataSource')), 'dataSource')), 0)"
         },
         {
           "datasource": {
@@ -877,7 +877,7 @@
         },
         "hide": 0,
         "includeAll": false,
-        "label": "Data Source",
+        "label": "Graphite Data",
         "multi": false,
         "name": "datasource",
         "options": [],
@@ -902,15 +902,19 @@
           "type": "graphite",
           "uid": "${datasource}"
         },
-        "definition": "tag_values(ingressFlow)",
+        "definition": "tag_values(dataSource)",
         "hide": 0,
         "includeAll": true,
-        "label": "Flow",
+        "label": "Data Source",
         "multi": true,
-        "name": "flow",
+        "name": "dfDataSource",
         "options": [],
-        "query": "tag_values(ingressFlow)",
-        "refresh": 1,
+        "query": {
+          "queryType": "Default",
+          "refId": "A",
+          "target": "tag_values(dataSource)"
+        },
+        "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
         "sort": 1,
@@ -938,6 +942,6 @@
   "timezone": "",
   "title": "Diagnostic",
   "uid": "diagnostic",
-  "version": 3,
+  "version": 20,
   "weekStart": ""
 }

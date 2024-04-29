@@ -65,7 +65,7 @@
       },
       "id": 22,
       "options": {
-        "content": "<center><h2>Flow Summary: ${flow}</h2></center>",
+        "content": "<center><h2>Data Source Summary: ${dfDataSource}</h2></center>",
         "mode": "html"
       },
       "pluginVersion": "9.1.7",
@@ -177,7 +177,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=ingress', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false)), 'Ingress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=ingress', 'dataSource=~${dfDataSource:regex}'), '1d', 'sum', false)), 'Ingress')"
         },
         {
           "datasource": {
@@ -187,7 +187,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'ingressFlow=~${flow:regex}', 'egressFlow=~${egressFlow:regex}'), '1d', 'sum', false)), 'Egress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'dataSource=~${dfDataSource:regex}', 'egressFlow=~${egressdfDataSource:regex}'), '1d', 'sum', false)), 'Egress')"
         }
       ],
       "title": "Total Bytes",
@@ -337,7 +337,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(seriesByTag('name=stats_counts.bytes_in', 'action=ingress', 'ingressFlow=~${flow:regex}')), 'Ingress')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.bytes_in', 'action=ingress', 'dataSource=~${dfDataSource:regex}')), 'Ingress')"
         },
         {
           "datasource": {
@@ -347,7 +347,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'ingressFlow=~${flow:regex}', 'egressFlow=~${egressFlow:regex}')), 'Egress')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'dataSource=~${dfDataSource:regex}', 'egressFlow=~${egressdfDataSource:regex}')), 'Egress')"
         }
       ],
       "title": "Total Bytes",
@@ -490,7 +490,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_in', 'action=ingress', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false)), 'Ingress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_in', 'action=ingress', 'dataSource=~${dfDataSource:regex}'), '1d', 'sum', false)), 'Ingress')"
         },
         {
           "datasource": {
@@ -500,7 +500,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_out', 'action=egress', 'ingressFlow=~${flow:regex}', 'egressFlow=~${egressFlow:regex}'), '1d', 'sum', false)), 'Egress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_out', 'action=egress', 'dataSource=~${dfDataSource:regex}', 'egressFlow=~${egressdfDataSource:regex}'), '1d', 'sum', false)), 'Egress')"
         },
         {
           "datasource": {
@@ -510,7 +510,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Filtered",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_filtered', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false)), 'Filtered')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_filtered', 'dataSource=~${dfDataSource:regex}'), '1d', 'sum', false)), 'Filtered')"
         },
         {
           "datasource": {
@@ -520,7 +520,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Dropped",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_dropped', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false)), 'Dropped')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_dropped', 'dataSource=~${dfDataSource:regex}'), '1d', 'sum', false)), 'Dropped')"
         },
         {
           "datasource": {
@@ -530,7 +530,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Errored",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_errored', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false)), 'Errored')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_errored', 'dataSource=~${dfDataSource:regex}'), '1d', 'sum', false)), 'Errored')"
         }
       ],
       "title": "Total Files",
@@ -687,7 +687,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(seriesByTag('name=stats_counts.files_in', 'action=ingress', 'ingressFlow=~${flow:regex}')), 'Ingress')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.files_in', 'action=ingress', 'dataSource=~${dfDataSource:regex}')), 'Ingress')"
         },
         {
           "datasource": {
@@ -697,7 +697,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(seriesByTag('name=stats_counts.files_out', 'action=egress', 'ingressFlow=~${flow:regex}', 'egressFlow=~${egressFlow:regex}')), 'Egress')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.files_out', 'action=egress', 'dataSource=~${dfDataSource:regex}', 'egressFlow=~${egressdfDataSource:regex}')), 'Egress')"
         },
         {
           "datasource": {
@@ -707,7 +707,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Dropped",
-          "target": "alias(sum(seriesByTag('name=stats_counts.files_dropped', 'ingressFlow=~${flow:regex}')), 'Dropped')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.files_dropped', 'dataSource=~${dfDataSource:regex}')), 'Dropped')"
         },
         {
           "datasource": {
@@ -717,7 +717,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Errored",
-          "target": "alias(sum(seriesByTag('name=stats_counts.files_errored', 'ingressFlow=~${flow:regex}')), 'Errored')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.files_errored', 'dataSource=~${dfDataSource:regex}')), 'Errored')"
         },
         {
           "datasource": {
@@ -727,7 +727,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Filtered",
-          "target": "alias(sum(seriesByTag('name=stats_counts.files_filtered', 'ingressFlow=~${flow:regex}')), 'Filtered')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.files_filtered', 'dataSource=~${dfDataSource:regex}')), 'Filtered')"
         }
       ],
       "title": "Files",
@@ -811,10 +811,10 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_in', 'action=ingress', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), 'ingressFlow')"
+          "target": "aliasByTags(groupByTags(seriesByTag('name=stats_counts.files_in', 'action=ingress', 'dataSource=~${dfDataSource:regex}'), 'sum', 'dataSource'), 'dataSource')"
         }
       ],
-      "title": "Activity Heatmap by flow",
+      "title": "Activity Heatmap by Data Source",
       "transformations": [
         {
           "id": "seriesToColumns",
@@ -836,9 +836,9 @@
       },
       "id": 30,
       "panels": [],
-      "repeat": "flow",
+      "repeat": "dfDataSource",
       "repeatDirection": "h",
-      "title": "${flow} summary",
+      "title": "${dfDataSource} summary",
       "type": "row"
     },
     {
@@ -933,7 +933,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=ingress', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false)), 'Ingress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=ingress', 'dataSource=~${dfDataSource:regex}'), '1d', 'sum', false)), 'Ingress')"
         },
         {
           "datasource": {
@@ -943,7 +943,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'ingressFlow=~${flow:regex}', 'egressFlow=~${egressFlow:regex}'), '1d', 'sum', false)), 'Egress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'dataSource=~${dfDataSource:regex}', 'egressFlow=~${egressdfDataSource:regex}'), '1d', 'sum', false)), 'Egress')"
         }
       ],
       "title": "Total Bytes",
@@ -1069,7 +1069,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(seriesByTag('name=stats_counts.bytes_in', 'action=ingress', 'ingressFlow=~${flow:regex}')), 'Ingress')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.bytes_in', 'action=ingress', 'dataSource=~${dfDataSource:regex}')), 'Ingress')"
         },
         {
           "datasource": {
@@ -1079,7 +1079,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'ingressFlow=~${flow:regex}', 'egressFlow=~${egressFlow:regex}')), 'Egress')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'dataSource=~${dfDataSource:regex}', 'egressFlow=~${egressdfDataSource:regex}')), 'Egress')"
         }
       ],
       "title": "Total Bytes",
@@ -1222,7 +1222,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_in', 'action=ingress', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false)), 'Ingress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_in', 'action=ingress', 'dataSource=~${dfDataSource:regex}'), '1d', 'sum', false)), 'Ingress')"
         },
         {
           "datasource": {
@@ -1232,7 +1232,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_out', 'action=egress', 'ingressFlow=~${flow:regex}', 'egressFlow=~${egressFlow:regex}'), '1d', 'sum', false)), 'Egress')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_out', 'action=egress', 'dataSource=~${dfDataSource:regex}', 'egressFlow=~${egressdfDataSource:regex}'), '1d', 'sum', false)), 'Egress')"
         },
         {
           "datasource": {
@@ -1242,7 +1242,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Filtered",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_filtered', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false)), 'Filtered')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_filtered', 'dataSource=~${dfDataSource:regex}'), '1d', 'sum', false)), 'Filtered')"
         },
         {
           "datasource": {
@@ -1252,7 +1252,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Dropped",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_dropped', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false)), 'Dropped')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_dropped', 'dataSource=~${dfDataSource:regex}'), '1d', 'sum', false)), 'Dropped')"
         },
         {
           "datasource": {
@@ -1262,7 +1262,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Errored",
-          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_errored', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false)), 'Errored')"
+          "target": "alias(sum(summarize(seriesByTag('name=stats_counts.files_errored', 'dataSource=~${dfDataSource:regex}'), '1d', 'sum', false)), 'Errored')"
         }
       ],
       "title": "Total Files",
@@ -1434,7 +1434,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(seriesByTag('name=stats_counts.files_in', 'action=ingress', 'ingressFlow=~${flow:regex}')), 'Ingress')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.files_in', 'action=ingress', 'dataSource=~${dfDataSource:regex}')), 'Ingress')"
         },
         {
           "datasource": {
@@ -1444,7 +1444,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(seriesByTag('name=stats_counts.files_out', 'action=egress', 'ingressFlow=~${flow:regex}', 'egressFlow=~${egressFlow:regex}')), 'Egress')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.files_out', 'action=egress', 'dataSource=~${dfDataSource:regex}', 'egressFlow=~${egressdfDataSource:regex}')), 'Egress')"
         },
         {
           "datasource": {
@@ -1454,7 +1454,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Filtered",
-          "target": "alias(sum(seriesByTag('name=stats_counts.files_filtered', 'ingressFlow=~${flow:regex}')), 'Filtered')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.files_filtered', 'dataSource=~${dfDataSource:regex}')), 'Filtered')"
         },
         {
           "datasource": {
@@ -1464,7 +1464,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Dropped",
-          "target": "alias(sum(seriesByTag('name=stats_counts.files_dropped', 'ingressFlow=~${flow:regex}')), 'Dropped')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.files_dropped', 'dataSource=~${dfDataSource:regex}')), 'Dropped')"
         },
         {
           "datasource": {
@@ -1474,7 +1474,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Errored",
-          "target": "alias(sum(seriesByTag('name=stats_counts.files_errored', 'ingressFlow=~${flow:regex}')), 'Errored')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.files_errored', 'dataSource=~${dfDataSource:regex}')), 'Errored')"
         }
       ],
       "title": "Files",
@@ -1497,7 +1497,7 @@
         },
         "hide": 0,
         "includeAll": false,
-        "label": "Data Source",
+        "label": "Graphite Data",
         "multi": false,
         "name": "datasource",
         "options": [],
@@ -1509,29 +1509,32 @@
         "type": "datasource"
       },
       {
-        "allValue": "All flows",
         "current": {
           "selected": true,
           "text": [
-            "passthrough"
+            "All"
           ],
           "value": [
-            "passthrough"
+            "$__all"
           ]
         },
         "datasource": {
           "type": "graphite",
           "uid": "${datasource}"
         },
-        "definition": "tag_values(ingressFlow)",
+        "definition": "tag_values(dataSource)",
         "hide": 0,
-        "includeAll": false,
-        "label": "Ingress Flow",
+        "includeAll": true,
+        "label": "Data Source",
         "multi": true,
-        "name": "flow",
+        "name": "dfDataSource",
         "options": [],
-        "query": "tag_values(ingressFlow)",
-        "refresh": 1,
+        "query": {
+          "queryType": "Default",
+          "refId": "A",
+          "target": "tag_values(dataSource)"
+        },
+        "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
         "sort": 1,
@@ -1555,14 +1558,14 @@
         "description": "Filter egress graphs to only contain these egresses",
         "hide": 0,
         "includeAll": true,
-        "label": "Egress Flow",
+        "label": "Egress",
         "multi": true,
         "name": "egressFlow",
         "options": [],
         "query": {
           "queryType": "Default",
           "refId": "A",
-          "target": "tag_values(egressFlow, ingressFlow=~${flow:regex})"
+          "target": "tag_values(egressFlow, dataSource=~${dfDataSource:regex})"
         },
         "refresh": 1,
         "regex": "",
@@ -1590,8 +1593,8 @@
     ]
   },
   "timezone": "",
-  "title": "Flow Summary",
-  "uid": "flow-summary",
-  "version": 2,
+  "title": "Data Source Summary",
+  "uid": "data-source-summary",
+  "version": 1,
   "weekStart": ""
 }

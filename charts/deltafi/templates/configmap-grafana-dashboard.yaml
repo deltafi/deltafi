@@ -32,12 +32,12 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: dashboard-flow-summary
+  name: dashboard-data-source-summary
   labels:
     grafana_dashboard: "1"
 data:
-  flow-summary.json: |-
-{{ .Files.Get "files/grafana/dashboards/flow-summary.json" | indent 4 }}
+  data-source-summary.json: |-
+{{ .Files.Get "files/grafana/dashboards/data-source-summary.json" | indent 4 }}
 ---
 apiVersion: v1
 kind: ConfigMap

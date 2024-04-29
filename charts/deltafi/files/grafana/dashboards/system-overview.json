@@ -47,7 +47,7 @@
   "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 332,
+  "id": 75,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -114,7 +114,7 @@
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "10.4.2",
       "targets": [
         {
           "datasource": {
@@ -124,7 +124,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "A",
-          "target": "sum(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=ingress', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false))"
+          "target": "sum(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=ingress', 'dataSource=~${dfDataSource:regex}'), '1d', 'sum', false))"
         }
       ],
       "transparent": true,
@@ -221,7 +221,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "A",
-          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.bytes_in', 'action=ingress', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), 'ingressFlow'), true, false)"
+          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.bytes_in', 'action=ingress', 'dataSource=~${dfDataSource:regex}'), 'sum', 'dataSource'), 'dataSource'), true, false)"
         }
       ],
       "title": "Bytes In",
@@ -277,7 +277,7 @@
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "10.4.2",
       "targets": [
         {
           "datasource": {
@@ -287,7 +287,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "A",
-          "target": "sum(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'ingressFlow=~${flow:regex}'), '1h', 'sum', false))"
+          "target": "sum(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'dataSource=~${dfDataSource:regex}'), '1h', 'sum', false))"
         }
       ],
       "transparent": true,
@@ -356,7 +356,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "A",
-          "target": "maximumAbove(sortByTotal(aliasByTags(groupByTags(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=ingress', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false), 'sum', 'ingressFlow'), 'ingressFlow')), 0)"
+          "target": "maximumAbove(sortByTotal(aliasByTags(groupByTags(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=ingress', 'dataSource=~${dfDataSource:regex}'), '1d', 'sum', false), 'sum', 'dataSource'), 'dataSource')), 0)"
         }
       ],
       "transparent": true,
@@ -427,7 +427,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "A",
-          "target": "maximumAbove(sortByTotal(aliasByTags(groupByTags(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'ingressFlow=~${flow:regex}'), '1d', 'sum', false), 'sum', 'ingressFlow'), 'ingressFlow')), 0)"
+          "target": "maximumAbove(sortByTotal(aliasByTags(groupByTags(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'dataSource=~${dfDataSource:regex}'), '1d', 'sum', false), 'sum', 'dataSource'), 'dataSource')), 0)"
         }
       ],
       "transparent": true,
@@ -525,7 +525,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.bytes_out', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), 'ingressFlow'), true, false)"
+          "target": "sortByName(aliasByTags(groupByTags(seriesByTag('name=stats_counts.bytes_out', 'dataSource=~${dfDataSource:regex}'), 'sum', 'dataSource'), 'dataSource'), true, false)"
         }
       ],
       "title": "Bytes Out",
@@ -661,7 +661,7 @@
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "10.4.2",
       "targets": [
         {
           "datasource": {
@@ -670,7 +670,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "alias(sum(seriesByTag('name=stats_counts.files_in', 'action=ingress', 'ingressFlow=~${flow:regex}')), 'Ingress')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.files_in', 'action=ingress', 'dataSource=~${dfDataSource:regex}')), 'Ingress')"
         },
         {
           "datasource": {
@@ -680,7 +680,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Egress",
-          "target": "alias(sum(seriesByTag('name=stats_counts.files_out', 'action=egress', 'ingressFlow=~${flow:regex}')), 'Egress')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.files_out', 'action=egress', 'dataSource=~${dfDataSource:regex}')), 'Egress')"
         },
         {
           "datasource": {
@@ -690,7 +690,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Filtered",
-          "target": "alias(sum(seriesByTag('name=stats_counts.files_filtered', 'ingressFlow=~${flow:regex}')), 'Filtered')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.files_filtered', 'dataSource=~${dfDataSource:regex}')), 'Filtered')"
         },
         {
           "datasource": {
@@ -700,7 +700,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Dropped",
-          "target": "alias(sum(seriesByTag('name=stats_counts.files_dropped', 'ingressFlow=~${flow:regex}')), 'Dropped')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.files_dropped', 'dataSource=~${dfDataSource:regex}')), 'Dropped')"
         },
         {
           "datasource": {
@@ -710,7 +710,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Errored",
-          "target": "alias(sum(seriesByTag('name=stats_counts.files_errored', 'ingressFlow=~${flow:regex}')), 'Errored')"
+          "target": "alias(sum(seriesByTag('name=stats_counts.files_errored', 'dataSource=~${dfDataSource:regex}')), 'Errored')"
         }
       ],
       "transparent": true,
@@ -804,7 +804,7 @@
             "uid": "${datasource}"
           },
           "refId": "A",
-          "target": "sortByName(aliasByTags(smartSummarize(groupByTags(seriesByTag('name=stats_counts.files_in', 'action=ingress', 'ingressFlow=~${flow:regex}'), 'average', 'ingressFlow'), '1min', 'sum', 'minutes'), 'ingressFlow'), true, false)"
+          "target": "sortByName(aliasByTags(smartSummarize(groupByTags(seriesByTag('name=stats_counts.files_in', 'action=ingress', 'dataSource=~${dfDataSource:regex}'), 'average', 'dataSource'), '1min', 'sum', 'minutes'), 'dataSource'), true, false)"
         }
       ],
       "title": "Files In",
@@ -901,7 +901,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "sortByName(aliasByTags(smartSummarize(groupByTags(seriesByTag('name=stats_counts.files_out', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), '1min', 'sum', 'minutes'), 'ingressFlow'), true, false)"
+          "target": "sortByName(aliasByTags(smartSummarize(groupByTags(seriesByTag('name=stats_counts.files_out', 'dataSource=~${dfDataSource:regex}'), 'sum', 'dataSource'), '1min', 'sum', 'minutes'), 'dataSource'), true, false)"
         }
       ],
       "title": "Files Out",
@@ -999,7 +999,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "sortByName(aliasByTags(smartSummarize(groupByTags(seriesByTag('name=stats_counts.files_filtered', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), '1min', 'sum', 'minutes'), 'ingressFlow'), true, false)"
+          "target": "sortByName(aliasByTags(smartSummarize(groupByTags(seriesByTag('name=stats_counts.files_filtered', 'dataSource=~${dfDataSource:regex}'), 'sum', 'dataSource'), '1min', 'sum', 'minutes'), 'dataSource'), true, false)"
         }
       ],
       "title": "Files Filtered",
@@ -1097,7 +1097,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "sortByName(aliasByTags(smartSummarize(groupByTags(seriesByTag('name=stats_counts.files_dropped', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), '1min', 'sum', 'minutes'), 'ingressFlow'), true, false)"
+          "target": "sortByName(aliasByTags(smartSummarize(groupByTags(seriesByTag('name=stats_counts.files_dropped', 'dataSource=~${dfDataSource:regex}'), 'sum', 'dataSource'), '1min', 'sum', 'minutes'), 'dataSource'), true, false)"
         }
       ],
       "title": "Files Dropped",
@@ -1195,7 +1195,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "sortByName(aliasByTags(smartSummarize(groupByTags(seriesByTag('name=stats_counts.files_errored', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), '1min', 'sum', 'minutes'), 'ingressFlow'), true, false)"
+          "target": "sortByName(aliasByTags(smartSummarize(groupByTags(seriesByTag('name=stats_counts.files_errored', 'dataSource=~${dfDataSource:regex}'), 'sum', 'dataSource'), '1min', 'sum', 'minutes'), 'dataSource'), true, false)"
         }
       ],
       "title": "Files Errored",
@@ -1293,7 +1293,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "sortByName(aliasByTags(smartSummarize(groupByTags(seriesByTag('name=stats_counts.files_auto_resumed', 'ingressFlow=~${flow:regex}'), 'sum', 'ingressFlow'), '1min', 'sum', 'minutes'), 'ingressFlow'), true, false)"
+          "target": "sortByName(aliasByTags(smartSummarize(groupByTags(seriesByTag('name=stats_counts.files_auto_resumed', 'dataSource=~${dfDataSource:regex}'), 'sum', 'dataSource'), '1min', 'sum', 'minutes'), 'dataSource'), true, false)"
         }
       ],
       "title": "Files Retried",
@@ -1458,7 +1458,7 @@
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "10.4.2",
       "targets": [
         {
           "datasource": {
@@ -1529,7 +1529,7 @@
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "10.4.2",
       "targets": [
         {
           "datasource": {
@@ -1791,7 +1791,7 @@
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "10.4.2",
       "targets": [
         {
           "datasource": {
@@ -1861,7 +1861,7 @@
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "10.4.2",
       "targets": [
         {
           "datasource": {
@@ -2395,7 +2395,8 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -2459,7 +2460,8 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "dark-green",
@@ -2508,7 +2510,7 @@
         "sizing": "auto",
         "valueMode": "color"
       },
-      "pluginVersion": "10.4.1",
+      "pluginVersion": "10.4.2",
       "targets": [
         {
           "datasource": {
@@ -2590,7 +2592,8 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -2719,7 +2722,8 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -2848,7 +2852,8 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               }
             ]
           },
@@ -2940,7 +2945,8 @@
             "mode": "percentage",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -3004,7 +3010,7 @@
         },
         "hide": 0,
         "includeAll": false,
-        "label": "Data Source",
+        "label": "Graphite Data",
         "multi": false,
         "name": "datasource",
         "options": [],
@@ -3029,15 +3035,19 @@
           "type": "graphite",
           "uid": "${datasource}"
         },
-        "definition": "tag_values(ingressFlow)",
+        "definition": "tag_values(dataSource)",
         "hide": 0,
         "includeAll": true,
-        "label": "Flow",
+        "label": "Data Source",
         "multi": true,
-        "name": "flow",
+        "name": "dfDataSource",
         "options": [],
-        "query": "tag_values(ingressFlow)",
-        "refresh": 1,
+        "query": {
+          "queryType": "Default",
+          "refId": "A",
+          "target": "tag_values(dataSource)"
+        },
+        "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
         "sort": 1,
@@ -3065,6 +3075,6 @@
   "timezone": "",
   "title": "System Overview",
   "uid": "system-overview",
-  "version": 5,
+  "version": 20,
   "weekStart": ""
 }

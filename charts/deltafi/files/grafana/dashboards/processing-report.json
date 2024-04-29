@@ -615,7 +615,7 @@
           },
           "refCount": 0,
           "refId": "Ingress",
-          "target": "aliasByTags(seriesByTag('name=stats_counts.files_in', 'action=ingress'), 'ingressFlow')"
+          "target": "aliasByTags(seriesByTag('name=stats_counts.files_in', 'action=ingress'), 'dataSource')"
         }
       ],
       "title": "Processed Files by Flow",
@@ -682,7 +682,7 @@
           },
           "refCount": 0,
           "refId": "A",
-          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=ingress'), '1d', 'sum'), 'ingressFlow')"
+          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=ingress'), '1d', 'sum'), 'dataSource')"
         },
         {
           "datasource": {
@@ -692,7 +692,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'egressFlow=~${egressFlow:regex}'), '1d', 'sum'), 'ingressFlow')"
+          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.bytes_out', 'action=egress', 'egressFlow=~${egressFlow:regex}'), '1d', 'sum'), 'dataSource')"
         }
       ],
       "title": "Processed Bytes by Flow",
@@ -723,7 +723,7 @@
                 "aggregations": [],
                 "operation": "groupby"
               },
-              "ingressFlow": {
+              "dataSource": {
                 "aggregations": [
                   "lastNotNull"
                 ],
@@ -741,7 +741,7 @@
           "id": "groupingToMatrix",
           "options": {
             "columnField": "action",
-            "rowField": "ingressFlow",
+            "rowField": "dataSource",
             "valueField": "Total (sum)"
           }
         },
@@ -753,7 +753,7 @@
             "renameByName": {
               "egress": "Egress Bytes",
               "ingress": "Ingress Bytes",
-              "ingressFlow\\action": "Flow"
+              "dataSource\\action": "Flow"
             }
           }
         }
@@ -821,7 +821,7 @@
           },
           "refCount": 0,
           "refId": "A",
-          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.files_in', 'action=ingress'), '1d', 'sum'), 'ingressFlow')"
+          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.files_in', 'action=ingress'), '1d', 'sum'), 'dataSource')"
         },
         {
           "datasource": {
@@ -831,7 +831,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "B",
-          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.files_out', 'action=egress', 'egressFlow=~${egressFlow:regex}'), '1d', 'sum'), 'ingressFlow')"
+          "target": "aliasByTags(summarize(seriesByTag('name=stats_counts.files_out', 'action=egress', 'egressFlow=~${egressFlow:regex}'), '1d', 'sum'), 'dataSource')"
         }
       ],
       "title": "Processed Files by Flow",
@@ -862,7 +862,7 @@
                 "aggregations": [],
                 "operation": "groupby"
               },
-              "ingressFlow": {
+              "dataSource": {
                 "aggregations": [
                   "lastNotNull"
                 ],
@@ -880,7 +880,7 @@
           "id": "groupingToMatrix",
           "options": {
             "columnField": "action",
-            "rowField": "ingressFlow",
+            "rowField": "dataSource",
             "valueField": "Total (sum)"
           }
         },
@@ -892,7 +892,7 @@
             "renameByName": {
               "egress": "Egress Files",
               "ingress": "Ingress Files",
-              "ingressFlow\\action": "Flow"
+              "dataSource\\action": "Flow"
             }
           }
         }
@@ -974,6 +974,6 @@
   "timezone": "",
   "title": "Processing Report",
   "uid": "processing-report",
-  "version": 3,
+  "version": 20,
   "weekStart": ""
 }

@@ -604,7 +604,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Bytes In",
-          "target": "sortByName(aliasByTags(groupByTags(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=ingress', 'ingressFlow=~${flow:regex}'), '1min', 'sum', false), 'sum', 'ingressFlow'), 'ingressFlow'), true, false)"
+          "target": "sortByName(aliasByTags(groupByTags(summarize(seriesByTag('name=stats_counts.bytes_in', 'action=ingress', 'dataSource=~${dfDataSource:regex}'), '1min', 'sum', false), 'sum', 'dataSource'), 'dataSource'), true, false)"
         }
       ],
       "type": "timeseries"
@@ -696,7 +696,7 @@
           "hide": false,
           "refCount": 0,
           "refId": "Bytes Out",
-          "target": "sortByName(aliasByTags(groupByTags(summarize(seriesByTag('name=stats_counts.bytes_out', 'ingressFlow=~${flow:regex}'), '1min', 'sum', false), 'sum', 'ingressFlow'), 'ingressFlow'), true, false)"
+          "target": "sortByName(aliasByTags(groupByTags(summarize(seriesByTag('name=stats_counts.bytes_out', 'dataSource=~${dfDataSource:regex}'), '1min', 'sum', false), 'sum', 'dataSource'), 'dataSource'), true, false)"
         }
       ],
       "type": "timeseries"
@@ -1085,11 +1085,11 @@
         "current": {
           "selected": false,
           "text": "Graphite",
-          "value": "deltafi-graphite"
+          "value": "Graphite"
         },
         "hide": 0,
         "includeAll": false,
-        "label": "Data Source",
+        "label": "Graphite Data",
         "multi": false,
         "name": "datasource",
         "options": [],
@@ -1114,15 +1114,19 @@
           "type": "graphite",
           "uid": "${datasource}"
         },
-        "definition": "tag_values(ingressFlow)",
+        "definition": "tag_values(dataSource)",
         "hide": 0,
         "includeAll": true,
-        "label": "Flow",
+        "label": "Data Source",
         "multi": true,
-        "name": "flow",
+        "name": "dfDataSource",
         "options": [],
-        "query": "tag_values(ingressFlow)",
-        "refresh": 1,
+        "query": {
+          "queryType": "Default",
+          "refId": "A",
+          "target": "tag_values(dataSource)"
+        },
+        "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
         "sort": 1,
