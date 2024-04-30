@@ -136,6 +136,7 @@ Commands:
   ingress                 ingress one or more files to a flow
   install                 install/upgrade the DeltaFi core
   install-plugin          install/upgrade a DeltaFi plugin
+  integration-test        start an integration test from a config/YAML file
   list-actions            list the actions registered with deltafi
   list-flows              list the flows in the system with their status
   list-plans              list all flow plans within deltafi
@@ -242,6 +243,9 @@ case "$1" in
     ;;
   install-plugin)
     "$DELTAFICLI_WORKDIR/commands/install-plugin" "$@"
+    ;;
+  integration-test)
+    "$DELTAFICLI_WORKDIR/commands/integration-test" "$@"
     ;;
   list-actions)
     "$DELTAFICLI_WORKDIR/commands/list-actions" "$@"

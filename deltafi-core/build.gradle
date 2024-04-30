@@ -141,6 +141,8 @@ generateJava {
 			"SecurityBanner": "org.deltafi.core.configuration.ui.SecurityBanner",
 			"SecurityBannerInput": "org.deltafi.core.configuration.ui.SecurityBanner",
 			"Segment": "org.deltafi.common.content.Segment",
+			"TestResult": "org.deltafi.common.types.TestResult",
+			"TestStatus": "org.deltafi.common.types.TestStatus",
 			"TimedDataSource": "org.deltafi.core.types.TimedDataSource",
 			"TimedDataSourceConfiguration": "org.deltafi.common.types.TimedDataSourceConfiguration",
 			"TimedDataSourcePlan": "org.deltafi.common.types.TimedDataSourcePlan",

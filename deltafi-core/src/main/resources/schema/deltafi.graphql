@@ -323,6 +323,21 @@ type Result {
   errors: [String]
 }
 
+enum TestStatus {
+  INVALID
+  STARTED
+  SUCCESSFUL
+  FAILED
+}
+
+type TestResult {
+  id: String
+  status: TestStatus!
+  start: DateTime
+  stop: DateTime
+  errors: [String]
+}
+
 type DeltaFileStats {
   totalCount: Long!
   inFlightCount: Long!
@@ -386,6 +401,9 @@ type Query {
   countUnacknowledgedErrors: Long
 
   deltaFileStats: DeltaFileStats!
+
+  getIntegrationTest(id: String!): TestResult
+  getAllIntegrationTests: [TestResult]!
 }
 
 type Mutation {
@@ -428,4 +446,7 @@ type Mutation {
   setPluginVariableValues(pluginCoordinates: PluginCoordinatesInput!, variables: [KeyValueInput!]) : Boolean!
 
   stressTest(flow: String!, contentSize: Int!, numFiles: Int!, metadata: [KeyValueInput!], batchSize: Int) : Int!
+
+  launchIntegrationTest(configYaml: String!): TestResult!
+  removeIntegrationTest(id: String!): Boolean!
 }

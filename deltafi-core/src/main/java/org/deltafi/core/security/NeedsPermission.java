@@ -326,6 +326,21 @@ public class NeedsPermission {
     @PreAuthorize(value = "hasAnyAuthority('StressTest'" + OR_ADMIN)
     public @interface StressTest {}
 
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('IntegrationTestLaunch'" + OR_ADMIN)
+    public @interface IntegrationTestLaunch {}
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('IntegrationTestView'" + OR_ADMIN)
+    public @interface IntegrationTestView {}
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('IntegrationTestDelete'" + OR_ADMIN)
+    public @interface IntegrationTestDelete {}
+
 
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)

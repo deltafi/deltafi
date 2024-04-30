@@ -1,0 +1,88 @@
+plugins:
+  - groupId: org.deltafi
+    artifactId: deltafi-core-actions
+  - groupId: org.deltafi.testjig
+    artifactId: deltafi-testjig
+dataSources:
+  - unarchive-passthrough-rest-data-source
+transformationFlows:
+  - unarchive-passthrough-transform
+  - passthrough-transform
+egressFlows:
+  - passthrough-egress
+input:
+  flow: unarchive-passthrough-rest-data-source
+  ingressFileName: three-files.tar.gz
+  base64Encoded: true
+  data: !!binary |
+    H4sIANXJomUAA+3TsQrCMBCA4cw+RR5ANBdzcXBSn6StS0FENMXXV1uhTkqH
+    VIr/t9yQwN3y16dzk5aFyck9xBieU9bq3mdHopGg6jQEdd44kSArY13Wq16a
+    ayou1prDrT6mD/++vU/UtuhtZr++BmOr2/7LrDsG9e9j27/39D+GXdmb0//f
+    6fqvsu4Y1L9K17/Q/xj2VW9B/wAAAAAAAAAAAAAwWXcwyxBtACgAAA==
+
+  timeout: PT3M
+expectedDeltaFile:
+  stage: COMPLETE
+  childCount: 3
+  expectedActions:
+    - flow: unarchive-passthrough-transform
+      type: TRANSFORM
+      actions: [IngressAction, Unarchive, SplitContent]
+  children:
+
+    - stage: COMPLETE
+      childCount: 0
+      parentCount: 1
+      expectedActions:
+        - flow: passthrough-transform
+          type: TRANSFORM
+          actions: [Passthrough]
+        - flow: passthrough-egress
+          type: EGRESS
+          actions: [PassthroughEgress]
+      expectedContent:
+        flow: passthrough-egress
+        type: EGRESS
+        action: PassthroughEgress
+        data:
+          - name: input/a
+            value: >
+              Aaaaaaaaaaaa;
+
+    - stage: COMPLETE
+      childCount: 0
+      parentCount: 1
+      expectedActions:
+        - flow: passthrough-transform
+          type: TRANSFORM
+          actions: [Passthrough]
+        - flow: passthrough-egress
+          type: EGRESS
+          actions: [PassthroughEgress]
+      expectedContent:
+        flow: passthrough-egress
+        type: EGRESS
+        action: PassthroughEgress
+        data:
+          - name: input/b
+            value: >
+              Bbbbbbbbbbbb,
+
+    - stage: COMPLETE
+      childCount: 0
+      parentCount: 1
+      expectedActions:
+        - flow: passthrough-transform
+          type: TRANSFORM
+          actions: [Passthrough]
+        - flow: passthrough-egress
+          type: EGRESS
+          actions: [PassthroughEgress]
+      expectedContent:
+        flow: passthrough-egress
+        type: EGRESS
+        action: PassthroughEgress
+        data:
+          - name: input/c
+            value: >
+              Cccccccccccc.

@@ -44,6 +44,8 @@ import org.deltafi.core.generated.DgsConstants;
 import org.deltafi.core.generated.client.*;
 import org.deltafi.core.generated.types.ConfigType;
 import org.deltafi.core.generated.types.*;
+import org.deltafi.core.integration.IntegrationDataFetcherTestHelper;
+import org.deltafi.core.integration.TestResultRepo;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.plugin.PluginRepository;
 import org.deltafi.core.plugin.SystemPluginService;
@@ -125,7 +127,6 @@ import static org.deltafi.core.plugin.PluginDataFetcherTestHelper.*;
 import static org.deltafi.core.util.Constants.*;
 import static org.deltafi.core.util.FlowBuilders.*;
 import static org.deltafi.core.util.FullFlowExemplars.*;
-import static org.deltafi.core.util.SchemaVersion.assertDeleted;
 import static org.deltafi.core.util.Util.*;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.*;
@@ -208,6 +209,9 @@ class DeltaFiCoreApplicationTests {
 
 	@Autowired
 	EgressFlowPlanRepo egressFlowPlanRepo;
+
+	@Autowired
+	TestResultRepo testResultRepo;
 
 	@Autowired
 	PluginVariableRepo pluginVariableRepo;
@@ -2790,6 +2794,50 @@ class DeltaFiCoreApplicationTests {
 
 	private CompletableFuture<Void> submitNewVariables(Executor executor, PluginCoordinates pluginCoordinates, List<Variable> variables) {
 		return CompletableFuture.runAsync(() -> pluginVariableService.saveVariables(pluginCoordinates, variables), executor);
+	}
+
+	@Test
+	void launchIntegrationTest() throws IOException {
+		testResultRepo.deleteAll();
+		TestResult testResult = IntegrationDataFetcherTestHelper.launchIntegrationTest(
+				dgsQueryExecutor,
+				Resource.read("/integration/config-binary.yaml"));
+		List<String> errors = List.of(
+				"Could not validate config",
+				"Plugin not found: org.deltafi:deltafi-core-actions:*",
+				"Plugin not found: org.deltafi.testjig:deltafi-testjig:*",
+				"Flow does not exist (dataSource): unarchive-passthrough-rest-data-source",
+				"Flow does not exist (transformation): unarchive-passthrough-transform",
+				"Flow does not exist (transformation): passthrough-transform",
+				"Flow does not exist (egress): passthrough-egress"
+		);
+		assertEquals(testResult.getStatus(), TestStatus.INVALID);
+		assertEquals(errors, testResult.getErrors());
+	}
+
+	@Test
+	void integrationTestCrud() {
+		testResultRepo.deleteAll();
+		OffsetDateTime start = OffsetDateTime.of(2024, 1, 31, 12, 0, 30, 0, ZoneOffset.UTC);
+		OffsetDateTime stop = OffsetDateTime.of(2024, 1, 31, 12, 1, 30, 0, ZoneOffset.UTC);
+
+		TestResult testResult1 = new TestResult("1", TestStatus.SUCCESSFUL, start, stop, Collections.emptyList());
+		TestResult testResult2 = new TestResult("2", TestStatus.FAILED, start, stop, List.of("errors"));
+		testResultRepo.saveAll(List.of(testResult1, testResult2));
+
+		List<TestResult> listResult = IntegrationDataFetcherTestHelper.getAllIntegrationTests(dgsQueryExecutor);
+		assertEquals(2, listResult.size());
+		assertTrue(listResult.containsAll(List.of(testResult1, testResult2)));
+
+		TestResult get1Result = IntegrationDataFetcherTestHelper.getIntegrationTest(dgsQueryExecutor, "1");
+		assertEquals(testResult1, get1Result);
+
+		assertFalse(IntegrationDataFetcherTestHelper.removeIntegrationTest(dgsQueryExecutor, "3"));
+		assertTrue(IntegrationDataFetcherTestHelper.removeIntegrationTest(dgsQueryExecutor, "1"));
+
+		List<TestResult> anotherListResult = IntegrationDataFetcherTestHelper.getAllIntegrationTests(dgsQueryExecutor);
+		assertEquals(1, anotherListResult.size());
+		assertTrue(anotherListResult.contains(testResult2));
 	}
 
 	@Test

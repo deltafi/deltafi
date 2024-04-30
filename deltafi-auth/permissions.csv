@@ -62,6 +62,9 @@ Events,EventUpdate,Grants the ability to edit Events
 Events,EventDelete,Grants the ability to delete Events
 Events,EventAcknowledge,Grants the ability to acknowledge Events
 Stress Tests,StressTest,Grants the ability to execute Stress Tests
+Integration Tests,IntegrationTestLaunch,Grants the ability to launch an integration test
+Integration Tests,IntegrationTestView,Grants the ability to view integration test results
+Integration Tests,IntegrationTestDelete,Grants the ability to delete results of completed integration tests
 Resume Policies,ResumePolicyApply,Grants the ability to apply Resume Policies to DeltaFiles already in an ERROR state
 Resume Policies,ResumePolicyDryRun,Grants the ability to perform a dry run of what DeltaFiles a policy may affect
 Resume Policies,ResumePolicyCreate,Grants the ability to create Resume Policies
