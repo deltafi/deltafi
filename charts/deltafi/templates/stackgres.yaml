@@ -1,0 +1,14 @@
+{{- if .Values.postgres.enabled }}
+apiVersion: stackgres.io/v1
+kind: SGCluster
+metadata:
+  name: deltafi-postgres
+spec:
+  instances: 1
+  postgres:
+    version: {{ .Values.postgres.version | default "latest" | quote }}
+  pods:
+    persistentVolume:
+      size: '5Gi'
+---
+{{ end }}

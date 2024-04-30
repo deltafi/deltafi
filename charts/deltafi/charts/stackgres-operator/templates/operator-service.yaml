@@ -1,0 +1,45 @@
+{{- if .Values.enabled }}
+{{ if .Values.deploy.operator }}
+{{ if not (and .Values.developer.externalOperatorIp .Values.developer.externalOperatorPort) }}
+apiVersion: v1
+kind: Service
+metadata:
+  {{- with .Values.operator.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  namespace: {{ .Release.Namespace }}
+  name: {{ .Values.operator.name }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ .Values.operator.name }}
+  ports:
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: https
+{{ else }}
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ .Values.operator.name }}
+spec:
+  ports:
+   - port: 443
+     targetPort: {{ .Values.developer.externalOperatorPort }}
+---
+kind: Endpoints
+apiVersion: v1
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ .Values.operator.name }}
+subsets:
+ - addresses:
+    - ip: "{{ .Values.developer.externalOperatorIp }}"
+   ports:
+    - port: {{ .Values.developer.externalOperatorPort }}
+{{ end }}
+{{ end }}
+{{- end }}

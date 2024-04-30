@@ -465,3 +465,8 @@ clickhouse:
   auth:
     existingSecret: clickhouse-password
     existingSecretKey: clickhouse-password
+stackgres-operator:
+  enabled: false
+postgres:
+  version: 16.2
+  enabled: false

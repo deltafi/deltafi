@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: postgres-cli
+
+Usage:
+  postgres-cli"
+  exit 1
+}
+
+ARGS=($@)
+shift
+PARAMS="${*@Q}"
+if _is_standalone; then
+  echo "Not implemented for standalone mode"
+else
+  ${KUBECTL_BIN} exec -it "$(${KUBECTL_BIN} get pod --selector app=StackGresCluster,stackgres.io/cluster=true,role=master -o name)" -c postgres-util -- psql ${PARAMS}
+fi

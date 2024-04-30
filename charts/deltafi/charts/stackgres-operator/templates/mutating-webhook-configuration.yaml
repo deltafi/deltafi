@@ -1,0 +1,219 @@
+{{- if .Values.enabled }}
+{{- $cert := "Cg==" }}
+{{- $certSecret := lookup "v1" "Secret" .Release.Namespace (include "cert-name" .) }}
+{{- if $certSecret }}
+{{- if (index $certSecret.data "tls.crt") }}
+{{- $cert = (index $certSecret.data "tls.crt") }}
+{{- end }}
+{{- end }}
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+{{- with .Values.clusterOwnerRefereces }}
+  ownerReferences:
+    {{- toYaml . | nindent 4 }}
+{{- end }}
+  name: {{ .Values.operator.name }}
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    meta.helm.sh/release-name: {{ .Values.operator.name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+webhooks:
+  - name: sgcluster.mutating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgclusters"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Values.operator.name }}
+        path: '/stackgres/mutation/sgcluster'
+      caBundle: {{ $cert }}
+    admissionReviewVersions: ["v1"]
+  - name: sgpgconfig.mutating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgpgconfigs"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Values.operator.name }}
+        path: '/stackgres/mutation/sgpgconfig'
+      caBundle: {{ $cert }}
+    admissionReviewVersions: ["v1"]
+  - name: sgpoolconfig.mutating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgpoolconfigs"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Values.operator.name }}
+        path: '/stackgres/mutation/sgpoolconfig'
+      caBundle: {{ $cert }}
+    admissionReviewVersions: ["v1"]
+  - name: sginstanceprofile.mutating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sginstanceprofiles"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Values.operator.name }}
+        path: '/stackgres/mutation/sginstanceprofile'
+      caBundle: {{ $cert }}
+    admissionReviewVersions: ["v1"]
+  - name: sgbackupconfig.mutating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgbackupconfigs"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Values.operator.name }}
+        path: '/stackgres/mutation/sgbackupconfig'
+      caBundle: {{ $cert }}
+    admissionReviewVersions: ["v1"]
+  - name: sgbackup.mutating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgbackups"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Values.operator.name }}
+        path: '/stackgres/mutation/sgbackup'
+      caBundle: {{ $cert }}
+    admissionReviewVersions: ["v1"]
+  - name: sgdistributedlogs.mutating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgdistributedlogs"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Values.operator.name }}
+        path: '/stackgres/mutation/sgdistributedlogs'
+      caBundle: {{ $cert }}
+    admissionReviewVersions: ["v1"]
+  - name: sgdbops.mutating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgdbops"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Values.operator.name }}
+        path: '/stackgres/mutation/sgdbops'
+      caBundle: {{ $cert }}
+    admissionReviewVersions: ["v1"]
+  - name: sgobjectstorage.mutating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgobjectstorages"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Values.operator.name }}
+        path: '/stackgres/mutation/sgobjectstorage'
+      caBundle: {{ $cert }}
+    admissionReviewVersions: ["v1"]
+  - name: sgscripts.mutating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgscripts"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Values.operator.name }}
+        path: '/stackgres/mutation/sgscript'
+      caBundle: {{ $cert }}
+    admissionReviewVersions: ["v1"]
+  - name: sgshardedclusters.mutating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgshardedclusters"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Values.operator.name }}
+        path: '/stackgres/mutation/sgshardedcluster'
+      caBundle: {{ $cert }}
+    admissionReviewVersions: ["v1"]
+  - name: sgshardedbackups.mutating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgshardedbackups"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Values.operator.name }}
+        path: '/stackgres/mutation/sgshardedbackup'
+      caBundle: {{ $cert }}
+    admissionReviewVersions: ["v1"]
+  - name: sgshardeddbops.mutating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgshardeddbops"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Values.operator.name }}
+        path: '/stackgres/mutation/sgshardeddbops'
+      caBundle: {{ $cert }}
+    admissionReviewVersions: ["v1"]
+{{- end }}
