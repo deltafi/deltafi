@@ -288,30 +288,27 @@ class ActionTest(ABC):
         else:
             raise ValueError(f"unknown type: {test_case.expected_result_type}")
 
-    def compare_content_details(self, expected: LoadedContent, actual: Content):
+    @staticmethod
+    def compare_content_details(expected: LoadedContent, actual: Content):
         assert_equal(expected.content_type, actual.media_type)
         assert_equal(expected.name, actual.name)
 
-    def compare_one_content(self, comparitor: CompareHelper, expected: LoadedContent, actual, index):
+    def compare_one_content(self, comparator: CompareHelper, expected: LoadedContent, actual, index):
         self.compare_content_details(expected, actual)
         seg_id = actual.segments[0].uuid
-        comparitor.compare(expected.data, self.content_service.get_output(seg_id), f"Content[{index}]")
+        comparator.compare(expected.data, self.content_service.get_output(seg_id), f"Content[{index}]")
 
-    def compare_content_list(self, comparitor: CompareHelper, expected_outputs: List[IOContent], content: List):
+    def compare_content_list(self, comparator: CompareHelper, expected_outputs: List[IOContent], content: List):
         assert_equal_len(expected_outputs, content)
         for index, expected_ioc in enumerate(expected_outputs):
             if len(expected_ioc.content_bytes) == 0:
-                expected = LoadedContent(self.did, expected_ioc, self.load_file(output_ioc))
+                expected = LoadedContent(self.did, expected_ioc, self.load_file(expected_ioc))
             else:
                 expected = LoadedContent(self.did, expected_ioc, None)
-            self.compare_one_content(comparitor, expected, content[index], index)
+            self.compare_one_content(comparator, expected, content[index], index)
 
-    def compare_one_metric(self, expected: Metric, result: Metric):
-        assert expected.name == result.name
-        assert_equal_with_label(expected.value, result.value, expected.name)
-        assert_keys_and_values(expected.tags, result.tags)
-
-    def compare_one_metric(self, expected: Metric, result: Metric):
+    @staticmethod
+    def compare_one_metric(expected: Metric, result: Metric):
         assert expected.name == result.name
         assert_equal_with_label(expected.value, result.value, expected.name)
         assert_keys_and_values(expected.tags, result.tags)
