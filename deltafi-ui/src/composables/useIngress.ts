@@ -68,8 +68,8 @@ export default function useIngress() {
       .catch((error) => {
         result.loading = false;
         result.error = true;
-        console.error(error.response.data);
-        notify.error(`Failed to ingress ${file.name}`, error.response.data);
+        console.error(error);
+        notify.error(`Failed to ingress ${file.name}`, error);
       });
     return result;
   };
