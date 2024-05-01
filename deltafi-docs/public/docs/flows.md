@@ -143,7 +143,7 @@ hasMediaType('application/json')
 
 ### Examples
 #### Example Publisher
-Time ingress that publishes the `DeltaFile` based on the content type
+Timed ingress that publishes the `DeltaFile` based on the content type
 ```json
 {
   "name": "sample-timed-ingress",

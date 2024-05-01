@@ -21,7 +21,6 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
-import feign.Headers;
 import feign.Param;
 import feign.RequestLine;
 import lombok.AllArgsConstructor;
@@ -48,7 +47,6 @@ public class FeignClientFactoryTest {
 
     private interface TestClient {
         @RequestLine("GET /endpoint?param1={param1}&param2={param2}")
-        @Headers("Content-Type: application/json")
         TestClass testGet(URI uri, @Param("param1") String param1, @Param("param2") String param2);
     }
 
@@ -60,7 +58,7 @@ public class FeignClientFactoryTest {
     @Test
     void testHttp() throws URISyntaxException {
         wireMockHttp.stubFor(WireMock.get("/endpoint?param1=x&param2=y")
-                .willReturn(WireMock.ok("{\"a\":\"hello\",\"b\":\"there\",\"c\":123,\"d\":456789}")));
+                .willReturn(WireMock.okJson("{\"a\":\"hello\",\"b\":\"there\",\"c\":123,\"d\":456789}")));
 
         WireMockRuntimeInfo wmRuntimeInfo = wireMockHttp.getRuntimeInfo();
 
