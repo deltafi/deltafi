@@ -265,13 +265,16 @@ public class FullFlowExemplars {
 
     public static DeltaFile postTransformDeltaFileInTestMode(UUID did, OffsetDateTime now) {
         DeltaFile deltaFile = withCompleteTransformFlow(did);
+        deltaFile.setFiltered(true);
         DeltaFileFlow flow = deltaFile.getFlow(TRANSFORM_FLOW_NAME, 1);
         flow.setTestMode(true);
         flow.setTestModeReason(TRANSFORM_FLOW_NAME);
 
         DeltaFileFlow egressFlow = deltaFile.addFlow(EGRESS_FLOW_NAME, FlowType.EGRESS, flow, now);
         egressFlow.getInput().setTopics(Set.of(EGRESS_TOPIC));
-        egressFlow.addAction(SYNTHETIC_EGRESS_ACTION_FOR_TEST, ActionType.EGRESS, ActionState.FILTERED, now);
+        Action action = egressFlow.addAction(SYNTHETIC_EGRESS_ACTION_FOR_TEST, ActionType.EGRESS, ActionState.FILTERED, now);
+        action.setFilteredCause("Filtered by test mode");
+        action.setFilteredCause("Filtered by test mode with a reason of - " + TRANSFORM_FLOW_NAME);
         egressFlow.setState(DeltaFileFlowState.COMPLETE);
         egressFlow.setTestMode(true);
         egressFlow.setTestModeReason(TRANSFORM_FLOW_NAME);
