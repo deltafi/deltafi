@@ -126,6 +126,9 @@ _k8s_prerequisites() {
     "htpasswd" 'deltafi:$2y$05$1eNSa6WKdGY7ewxd9.tJPusPaZXJ0xMEO3T/gcqMkaBKzBuyaB0NC' \
     "haSharedSecret" "password"
   _k8s_add_secret clickhouse-password clickhouse-password "deltafi"
+  local postgres_password="$(_random_password 20)"
+  local create_user_sql="CREATE USER deltafi PASSWORD '${postgres_password}';"
+  _k8s_add_secret postgres deltafi-password "${postgres_password}" create-user.sql "${create_user_sql}"
 }
 
 _k8s_install() {

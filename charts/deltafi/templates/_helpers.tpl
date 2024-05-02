@@ -156,6 +156,15 @@ initContainers:
     secretKeyRef:
       name: minio-keys
       key: rootPassword
+{{- if .Values.postgres.enabled }}
+- name: POSTGRES_USER
+  value: deltafi
+- name: POSTGRES_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: postgres
+      key: deltafi-password
+{{- end -}}
 {{- end -}}
 
 {{- define "graphiteEnvVars" -}}

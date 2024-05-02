@@ -1,5 +1,23 @@
 {{- if .Values.postgres.enabled }}
 apiVersion: stackgres.io/v1
+kind: SGScript
+metadata:
+  name: deltafi-postgres-create-db
+  namespace: deltafi
+spec:
+  managedVersions: true
+  continueOnError: false
+  scripts:
+  - name: create-deltafi-user
+    scriptFrom:
+      secretKeyRef:
+        name: postgres
+        key: create-user.sql
+  - name: create-deltafi-database
+    script: |
+      CREATE DATABASE deltafi WITH OWNER deltafi;
+---
+apiVersion: stackgres.io/v1
 kind: SGCluster
 metadata:
   name: deltafi-postgres
@@ -10,5 +28,7 @@ spec:
   pods:
     persistentVolume:
       size: '5Gi'
----
+  managedSql:
+    scripts:
+    - sgScript: deltafi-postgres-create-db
 {{ end }}
