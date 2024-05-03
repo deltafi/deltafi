@@ -91,7 +91,7 @@ mongodb:
     repository: bitnami/mongodb
     tag: 5.0.17
   architecture: standalone
-  useStatefulSet: false
+  useStatefulSet: true
   auth:
     existingSecret: mongodb-passwords
     enabled: true
@@ -157,6 +157,7 @@ grafana:
     existingClaim: deltafi-grafana
   nodeSelector:
     node-role.deltafi.org/storage: "true"
+  useStatefulSet: true
   grafana.ini:
     paths:
       data: /var/lib/grafana/
