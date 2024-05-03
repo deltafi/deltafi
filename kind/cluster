@@ -1092,6 +1092,7 @@ EOF
 }
 plugin() {
 
+  local RUN=
   local CLEAN=
   local BUILD=
   local INSTALL=
