@@ -92,8 +92,9 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
             synchronized (didMutexService.getMutex(d.getDid())) {
                 try {
                     updateRepo(d, false);
-                    remove(d.getDid());
                 } catch (Exception ignored) {
+                } finally {
+                    remove(d.getDid());
                 }
             }
         }

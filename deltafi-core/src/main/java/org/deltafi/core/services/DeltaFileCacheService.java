@@ -70,7 +70,7 @@ public abstract class DeltaFileCacheService {
                 if (updated) {
                     deltaFile.setVersion(deltaFile.getVersion() + 1);
                 } else {
-                    deltaFileRepo.save(deltaFile);
+                    remove(deltaFile.getDid());
                 }
                 if (updateSnapshot) {
                     deltaFile.snapshot();
