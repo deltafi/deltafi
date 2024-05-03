@@ -7,10 +7,8 @@ data:
   StatefulSetCheck: |
     expected_stateful_sets:
     - deltafi-core-worker
-    - deltafi-docs
     - deltafi-grafana
     - deltafi-graphite
-    - deltafi-kubernetes-dashboard
     - deltafi-loki
     - deltafi-mongodb
     - deltafi-redis-master
@@ -19,8 +17,10 @@ data:
     - deltafi-api
     - deltafi-core
     - deltafi-core-actions
+    - deltafi-docs
     - deltafi-egress-sink
     - deltafi-ingress
+    - deltafi-kubernetes-dashboard
     - deltafi-minio
     - deltafi-monitor
     - deltafi-ui

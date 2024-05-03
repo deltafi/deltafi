@@ -1,7 +1,7 @@
 {{- if .Values.deltafi.docs.enabled -}}
 # Documentation server
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: deltafi-docs
   labels:
