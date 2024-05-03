@@ -90,6 +90,7 @@ enum ActionState {
 
 enum ActionType {
   INGRESS
+  TIMED_INGRESS
   TRANSFORM
   EGRESS
   PUBLISH

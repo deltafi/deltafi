@@ -30,15 +30,15 @@ def make_segment(seg_id):
 def make_context_dict():
     return {
         'did': TEST_DID,
-        'sourceFilename': 'FILENAME',
-        'flow': "ACTION_FLOW",
-        'name': "ACTION_FLOW.ACTION_NAME_IN_FLOW",
-        'ingressFlow': "IN",
-        'egressFlow': "OUT",
-        'systemName': "SYSTEM",
-        'collect': None,
-        'collectedDids': None,
-        'memo': 'note to self'
+        'deltaFileName': 'FILENAME',
+        'dataSource': 'DATA_SOURCE',
+        'flowName': 'FLOW_NAME',
+        'flowId': 'FLOW_ID',
+        'actionName': 'ACTION_NAME',
+        'actionId': 'ACTION_ID',
+        'actionVersion': '1.0',
+        'hostname': 'HOSTNAME',
+        'systemName': 'SYSTEM_NAME'
     }
 
 
@@ -52,19 +52,20 @@ def make_content_dict(name):
 
 def make_delta_file_message_dict():
     return {
-        'ingressFlow': "FLOW",
-        'contentList': [make_content_dict("CONTENT_NAME")],
-        'metadata': {'plKey1': 'valueA', 'plKey2': 'valueB'}
+        'metadata': {'plKey1': 'valueA', 'plKey2': 'valueB'},
+        'contentList': [make_content_dict('CONTENT_NAME')]
     }
 
 
 def make_context():
-    return Context(did="did",
-                   action_flow="action_flow",
-                   action_name="action_name",
-                   source_filename="source_filename",
-                   ingress_flow="ingress_flow",
-                   egress_flow="egress_flow",
-                   system="system",
-                   hostname="hostname",
+    return Context(did=TEST_DID,
+                   delta_file_name='FILENAME',
+                   data_source='DATA_SOURCE',
+                   flow_name='FLOW_NAME',
+                   flow_id='FLOW_ID',
+                   action_name='ACTION_NAME',
+                   action_id='ACTION_ID',
+                   action_version='1.0',
+                   hostname='HOSTNAME',
+                   system_name='SYSTEM_NAME',
                    content_service=None)

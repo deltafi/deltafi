@@ -96,12 +96,12 @@ class FilterResult(Result):
 
 
 class IngressResultItem:
-    def __init__(self, context: Context, filename: str):
+    def __init__(self, context: Context, delta_file_name: str):
         self.context = context
-        self.filename = filename
         self._did = str(uuid.uuid4())
         self.content = []
         self.metadata = {}
+        self.delta_file_name = delta_file_name
 
     @property
     def did(self):
@@ -140,7 +140,7 @@ class IngressResultItem:
     def response(self):
         return {
             'did': self._did,
-            'filename': self.filename,
+            'deltaFileName': self.delta_file_name,
             'metadata': self.metadata,
             'content': [content.json() for content in self.content]
         }
@@ -156,8 +156,8 @@ class IngressResult(Result):
     def __init__(self, context: Context):
         super().__init__('ingress', 'INGRESS', context)
         self.memo = None
-        self.execute_immediate = False
         self.ingress_result_items = []
+        self.execute_immediate = False
         self.status = IngressStatusEnum.HEALTHY
         self.statusMessage = None
 

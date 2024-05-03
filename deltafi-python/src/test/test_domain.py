@@ -118,17 +118,15 @@ def test_context_json():
         "HOSTNAME", mock_content_service, logger)
 
     assert context.did == TEST_DID
-    assert context.action_flow == "ACTION_FLOW"
-    assert context.action_name == "ACTION_NAME_IN_FLOW"
-    assert context.source_filename == 'FILENAME'
-    assert context.egress_flow == "OUT"
-    assert context.system == "SYSTEM"
+    assert context.delta_file_name == "FILENAME"
+    assert context.flow_name == "FLOW_NAME"
+    assert context.flow_id == "FLOW_ID"
+    assert context.action_name == "ACTION_NAME"
+    assert context.action_id == "ACTION_ID"
+    assert context.action_version == "1.0"
     assert context.hostname == "HOSTNAME"
-    assert context.ingress_flow == "IN"
+    assert context.system_name == "SYSTEM_NAME"
     assert context.content_service == mock_content_service
-    assert context.collect is None
-    assert context.collected_dids is None
-    assert context.memo == 'note to self'
     assert context.logger is None
 
 
@@ -144,9 +142,8 @@ def test_event():
         "HOSTNAME", mock_content_service, logger)
 
     assert event.context.did == TEST_DID
-    assert event.context.action_flow == "ACTION_FLOW"
-    assert event.context.action_name == "ACTION_NAME_IN_FLOW"
-    assert event.context.ingress_flow == "IN"
+    assert event.context.flow_name == "FLOW_NAME"
+    assert event.context.action_name == "ACTION_NAME"
     assert event.context.content_service == mock_content_service
     assert event.context.logger is None
     assert len(event.params) == 0

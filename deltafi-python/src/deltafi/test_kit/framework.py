@@ -233,16 +233,16 @@ class ActionTest(ABC):
         action_name = INGRESS_FLOW + "." + test_case.action.__class__.__name__
         return Context(
             did=self.did,
-            action_flow=INGRESS_FLOW,
+            delta_file_name=test_case.file_name,
+            data_source="DATASRC",
+            flow_name=INGRESS_FLOW,
+            flow_id="FLOWID",
             action_name=action_name,
-            source_filename=test_case.file_name,
-            ingress_flow=INGRESS_FLOW,
-            egress_flow=EGRESS_FLOW,
-            system=SYSTEM,
+            action_id="ACTIONID",
+            action_version="1.0",
             hostname=HOSTNAME,
+            system_name=SYSTEM,
             content_service=self.content_service,
-            collect=None,
-            collected_dids=None,
             logger=get_logger())
 
     def make_event(self, test_case: TestCaseBase):

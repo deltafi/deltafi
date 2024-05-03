@@ -20,8 +20,8 @@ from abc import ABC, abstractmethod
 from typing import Any, List
 
 from deltafi.actiontype import ActionType
-from deltafi.genericmodel import GenericModel
 from deltafi.domain import Context, DeltaFileMessage
+from deltafi.genericmodel import GenericModel
 from deltafi.input import EgressInput, TransformInput
 from deltafi.result import *
 from pydantic import BaseModel
@@ -48,20 +48,23 @@ class Action(ABC):
     def execute_action(self, event):
         if event.delta_file_messages is None or not len(event.delta_file_messages):
             raise RuntimeError(f"Received event with no delta file messages for did {event.context.did}")
-
         if event.context.collect is not None:
-            result = self.execute(event.context, self.collect([self.build_input(event.context, delta_file_message)
-                                                               for delta_file_message in event.delta_file_messages]),
-                                  self.param_class().model_validate(event.params))
+            result = self.execute(
+                event.context,
+                self.collect([self.build_input(event.context, delta_file_message)
+                              for delta_file_message in event.delta_file_messages]),
+                self.param_class().model_validate(event.params))
         else:
-            result = self.execute(event.context, self.build_input(event.context, event.delta_file_messages[0]),
-                                  self.param_class().model_validate(event.params))
+            result = self.execute(
+                event.context,
+                self.build_input(event.context, event.delta_file_messages[0]),
+                self.param_class().model_validate(event.params))
 
         self.validate_type(result)
         return result
 
     @staticmethod
-    def param_class( ):
+    def param_class():
         """Factory method to create and return an empty GenericModel instance.
 
         Returns
@@ -110,7 +113,8 @@ class TimedIngressAction(Action, ABC):
 
 class TransformAction(Action, ABC):
     def __init__(self, description: str):
-        super().__init__(ActionType.TRANSFORM, description, (TransformResult, TransformResults, ErrorResult, FilterResult))
+        super().__init__(ActionType.TRANSFORM, description,
+                         (TransformResult, TransformResults, ErrorResult, FilterResult))
 
     def build_input(self, context: Context, delta_file_message: DeltaFileMessage):
         return TransformInput(content=delta_file_message.content_list, metadata=delta_file_message.metadata)

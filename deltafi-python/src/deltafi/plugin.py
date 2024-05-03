@@ -286,7 +286,10 @@ class Plugin(object):
 
                 response = {
                     'did': event.context.did,
-                    'action': event.context.action_flow + "." + event.context.action_name,
+                    'flowName': event.context.flow_name,
+                    'flowId': event.context.flow_id,
+                    'actionName': event.context.action_name,
+                    'actionId': event.context.action_id,
                     'start': start_time,
                     'stop': time.time(),
                     'type': result.result_type,

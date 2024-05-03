@@ -20,7 +20,9 @@ from enum import Enum
 
 
 class ActionType(Enum):
+    INGRESS = "INGRESS"
     TIMED_INGRESS = "TIMED_INGRESS"
     TRANSFORM = "TRANSFORM"
     EGRESS = "EGRESS"
+    PUBLISH = "PUBLISH"
     UNKNOWN = "UNKNOWN"

@@ -40,13 +40,15 @@ class ActionExecution(NamedTuple):
 
 class Context(NamedTuple):
     did: str
-    action_flow: str
+    delta_file_name: str
+    data_source: str
+    flow_name: str
+    flow_id: str
     action_name: str
-    source_filename: str
-    ingress_flow: str
-    egress_flow: str
-    system: str
+    action_id: str
+    action_version: str
     hostname: str
+    system_name: str
     content_service: ContentService
     collect: dict = None
     collected_dids: List[str] = None
@@ -56,19 +58,42 @@ class Context(NamedTuple):
     @classmethod
     def create(cls, context: dict, hostname: str, content_service: ContentService, logger: Logger):
         did = context['did']
-        action_name_parts = context['name'].split(".")
-        action_flow = action_name_parts[0]
-        action_name = action_name_parts[1]
-        if 'sourceFilename' in context:
-            source_filename = context['sourceFilename']
+        if 'deltaFileName' in context:
+            delta_file_name = context['deltaFileName']
         else:
-            source_filename = None
-        ingress_flow = context['ingressFlow']
-        if 'egressFlow' in context:
-            egress_flow = context['egressFlow']
+            delta_file_name = None
+        if 'dataSource' in context:
+            data_source = context['dataSource']
         else:
-            egress_flow = None
-        system = context['systemName']
+            data_source = None
+        if 'flowName' in context:
+            flow_name = context['flowName']
+        else:
+            flow_name = None
+        if 'flowId' in context:
+            flow_id = context['flowId']
+        else:
+            flow_id = None
+        if 'actionName' in context:
+            action_name = context['actionName']
+        else:
+            action_name = None
+        if 'actionId' in context:
+            action_id = context['actionId']
+        else:
+            action_id = None
+        if 'actionVersion' in context:
+            action_version = context['actionVersion']
+        else:
+            action_version = None
+        if 'hostname' in context:
+            hostname = context['hostname']
+        else:
+            hostname = None
+        if 'systemName' in context:
+            system_name = context['systemName']
+        else:
+            system_name = None
         if 'collect' in context:
             collect = context['collect']
         else:
@@ -81,18 +106,21 @@ class Context(NamedTuple):
             memo = context['memo']
         else:
             memo = None
+
         return Context(did=did,
-                       action_flow=action_flow,
+                       delta_file_name=delta_file_name,
+                       data_source=data_source,
+                       flow_name=flow_name,
+                       flow_id=flow_id,
                        action_name=action_name,
-                       source_filename=source_filename,
-                       ingress_flow=ingress_flow,
-                       egress_flow=egress_flow,
-                       system=system,
+                       action_id=action_id,
+                       action_version=action_version,
                        hostname=hostname,
-                       content_service=content_service,
+                       system_name=system_name,
                        collect=collect,
                        collected_dids=collected_dids,
                        memo=memo,
+                       content_service=content_service,
                        logger=logger)
 
 
@@ -196,7 +224,6 @@ class Content:
                 break
 
         return new_segments
-
 
     def get_size(self):
         """
@@ -318,7 +345,8 @@ class Event(NamedTuple):
 
     @classmethod
     def create(cls, event: dict, hostname: str, content_service: ContentService, logger: Logger):
-        delta_file_messages = [DeltaFileMessage.from_dict(delta_file_message, content_service) for delta_file_message in event['deltaFileMessages']]
+        delta_file_messages = [DeltaFileMessage.from_dict(delta_file_message, content_service) for delta_file_message in
+                               event['deltaFileMessages']]
         context = Context.create(event['actionContext'], hostname, content_service, logger)
         params = event['actionParams']
         queue_name = None
