@@ -54,7 +54,7 @@
         </Column>
         <Column field="last_action_content" header="Output" class="content-column">
           <template #body="{ data }">
-            <ContentDialog :content="lastActionContent(data.actions)" :action="lastActionContent(data.actions).name">
+            <ContentDialog v-if="lastActionContent(data.actions).content.length > 0" :content="lastActionContent(data.actions).content" :action="lastActionContent(data.actions).name">
               <Button icon="far fa-window-maximize" label="View" class="content-button p-button-link" />
             </ContentDialog>
           </template>
@@ -92,8 +92,8 @@ const props = defineProps({
   },
 });
 
-const lastActionContent = (action) => {
-  return action[action.length - 1].content;
+const lastActionContent = (actions) => {
+  return actions[actions.length - 1];
 };
 
 const { duration } = useUtilFunctions();
