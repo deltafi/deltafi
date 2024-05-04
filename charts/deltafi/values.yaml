@@ -157,7 +157,6 @@ grafana:
     existingClaim: deltafi-grafana
   nodeSelector:
     node-role.deltafi.org/storage: "true"
-  useStatefulSet: true
   grafana.ini:
     paths:
       data: /var/lib/grafana/
