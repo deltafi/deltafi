@@ -24,21 +24,21 @@ $LOAD_PATH.unshift File.expand_path(File.join(File.dirname(__FILE__), '../lib'))
 require 'redis'
 require 'deltafi/common'
 
-REDIS_RETRY_COUNT = 30
+VALKEY_RETRY_COUNT = 30
 THRESHOLD = 30 # seconds
 
-def redis_client
-  url = ENV['DELTAFI_REDIS_MASTER_PORT'].gsub('tcp://', 'redis://')
-  password = ENV.fetch('REDIS_PASSWORD', nil)
+def valkey_client
+  url = ENV['DELTAFI_VALKEY_MASTER_PORT'].gsub('tcp://', 'redis://')
+  password = ENV.fetch('VALKEY_PASSWORD', nil)
   retries = 0
   begin
     Redis.new(
       url: url,
       password: password,
-      reconnect_attempts: REDIS_RETRY_COUNT
+      reconnect_attempts: VALKEY_RETRY_COUNT
     )
   rescue Errno::EALREADY => e
-    raise e if retries >= REDIS_RETRY_COUNT
+    raise e if retries >= VALKEY_RETRY_COUNT
 
     sleep 1
     retries += 1
@@ -46,4 +46,4 @@ def redis_client
   end
 end
 
-exit 1 if redis_client.get(Deltafi::Common::MONITOR_HEARTBEAT_REDIS_KEY).to_i < (Time.now.to_i - THRESHOLD)
+exit 1 if valkey_client.get(Deltafi::Common::MONITOR_HEARTBEAT_VALKEY_KEY).to_i < (Time.now.to_i - THRESHOLD)

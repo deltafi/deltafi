@@ -26,9 +26,9 @@ require 'deltafi/logger'
 module Deltafi
   extend Deltafi::Logger
 
-  REDIS_RECONNECT_ATTEMPTS = 5
-  REDIS_PASSWORD = ENV.fetch('REDIS_PASSWORD', nil)
-  REDIS_URL = ENV['REDIS_URL']&.gsub(/^http/, 'redis') || 'redis://deltafi-redis-master:6379'
+  VALKEY_RECONNECT_ATTEMPTS = 5
+  VALKEY_PASSWORD = ENV.fetch('VALKEY_PASSWORD', nil)
+  VALKEY_URL = ENV['VALKEY_URL']&.gsub(/^http/, 'redis') || ENV['REDIS_URL']&.gsub(/^http/, 'redis') || 'redis://deltafi-valkey-master:6379'
   BASE_URL = ENV['CORE_URL'] || 'http://deltafi-core-service'
   DELTAFI_MODE = ENV['DELTAFI_MODE'] || 'CLUSTER'
 
@@ -105,16 +105,16 @@ module Deltafi
     JSON.parse(response.body, symbolize_names: true)
   end
 
-  def self.redis
-    return @@redis if defined?(@@redis) && @@redis
+  def self.valkey
+    return @@valkey if defined?(@@valkey) && @@valkey
 
     debug "#{__method__} called from #{caller(1..1).first}"
 
-    @@redis = ConnectionPool::Wrapper.new(size: 10, timeout: 2) do
+    @@valkey = ConnectionPool::Wrapper.new(size: 10, timeout: 2) do
       Redis.new(
-        url: REDIS_URL,
-        password: REDIS_PASSWORD,
-        reconnect_attempts: REDIS_RECONNECT_ATTEMPTS
+        url: VALKEY_URL,
+        password: VALKEY_PASSWORD,
+        reconnect_attempts: VALKEY_RECONNECT_ATTEMPTS
       )
     end
   end

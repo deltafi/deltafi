@@ -105,12 +105,14 @@ mongodb:
     node-role.deltafi.org/storage: "true"
 # Redis config
 redis:
+  nameOverride: valkey
+  fullnameOverride: deltafi-valkey
   image:
     repository: valkey/valkey
     tag: 7.2.5
   architecture: standalone
   auth:
-    existingSecret: redis-password
+    existingSecret: valkey-password
     enabled: true
   commonConfiguration: |-
     # Diable AOF https://redis.io/topics/persistence#append-only-file

@@ -28,7 +28,7 @@ action, and return a response to the Core. Actions can retrieve and store conten
 
 ## Message Bus
 
-Communications between the Core and Actions occurs on queues implemented through Redis stateful sets. The goal of the
+Communications between the Core and Actions occurs on queues implemented through Valkey stateful sets. The goal of the
 message bus is to provide deliver-exactly-once semantics.
 
 ## Domains and Enrichments

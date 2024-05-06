@@ -25,7 +25,7 @@ module Deltafi
   module Monitor
     module DeltaFileStats
       class Service < Deltafi::Monitor::Service
-        SSE_REDIS_CHANNEL = [DF::Common::SSE_REDIS_CHANNEL_PREFIX, 'deltaFileStats'].compact.join('.')
+        SSE_VALKEY_CHANNEL = [DF::Common::SSE_VALKEY_CHANNEL_PREFIX, 'deltaFileStats'].compact.join('.')
         INTERVAL = 5
 
         def query
@@ -41,7 +41,7 @@ module Deltafi
           periodic_timer(INTERVAL) do
             result = query
 
-            DF.redis.set(SSE_REDIS_CHANNEL, result.to_json)
+            DF.valkey.set(SSE_VALKEY_CHANNEL, result.to_json)
 
             DF::Metrics.record_metrics(
               result.map do |k, v|

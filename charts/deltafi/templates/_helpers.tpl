@@ -143,12 +143,19 @@ initContainers:
 - name: MINIO_PARTSIZE
   value: "5242880"
 - name: REDIS_URL
-  value: http://deltafi-redis-master:6379
+  value: http://deltafi-valkey-master:6379
 - name: REDIS_PASSWORD
   valueFrom:
     secretKeyRef:
-      name: redis-password
-      key: redis-password
+      name: valkey-password
+      key: valkey-password
+- name: VALKEY_URL
+  value: http://deltafi-valkey-master:6379
+- name: VALKEY_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: valkey-password
+      key: valkey-password
 - name: MINIO_ACCESSKEY
   value: deltafi
 - name: MINIO_SECRETKEY

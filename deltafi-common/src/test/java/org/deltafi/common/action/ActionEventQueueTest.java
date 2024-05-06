@@ -21,7 +21,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.SneakyThrows;
-import org.deltafi.common.queue.jedis.JedisKeyedBlockingQueue;
+import org.deltafi.common.queue.jackey.JackeyKeyedBlockingQueue;
 import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionExecution;
 import org.junit.jupiter.api.Test;
@@ -148,9 +148,9 @@ public class ActionEventQueueTest {
 
     @Test
     public void testConvertBasic() throws JsonProcessingException, URISyntaxException {
-        try (MockedConstruction<JedisKeyedBlockingQueue> mock =
-                     Mockito.mockConstruction(JedisKeyedBlockingQueue.class, (mockJedis, context)
-                             -> when(mockJedis.take(DGS_QUEUE_NAME))
+        try (MockedConstruction<JackeyKeyedBlockingQueue> mock =
+                     Mockito.mockConstruction(JackeyKeyedBlockingQueue.class, (mockJackey, context)
+                             -> when(mockJackey.take(DGS_QUEUE_NAME))
                                      .thenReturn(GOOD_BASIC))) {
 
             ActionEventQueue actionEventQueue = new ActionEventQueue(new ActionEventQueueProperties(), 2);
@@ -162,9 +162,9 @@ public class ActionEventQueueTest {
 
     @Test
     public void testConvertUnicode() throws JsonProcessingException, URISyntaxException {
-        try (MockedConstruction<JedisKeyedBlockingQueue> mock =
-                     Mockito.mockConstruction(JedisKeyedBlockingQueue.class, (mockJedis, context)
-                             -> when(mockJedis.take(DGS_QUEUE_NAME))
+        try (MockedConstruction<JackeyKeyedBlockingQueue> mock =
+                     Mockito.mockConstruction(JackeyKeyedBlockingQueue.class, (mockJackey, context)
+                             -> when(mockJackey.take(DGS_QUEUE_NAME))
                                      .thenReturn(GOOD_UNICODE))) {
 
             ActionEventQueue actionEventQueue = new ActionEventQueue(new ActionEventQueueProperties(), 2);
@@ -176,9 +176,9 @@ public class ActionEventQueueTest {
 
     @Test
     public void testExtraFieldsIgnored() throws JsonProcessingException, URISyntaxException {
-        try (MockedConstruction<JedisKeyedBlockingQueue> mock =
-                     Mockito.mockConstruction(JedisKeyedBlockingQueue.class, (mockJedis, context)
-                             -> when(mockJedis.take(DGS_QUEUE_NAME))
+        try (MockedConstruction<JackeyKeyedBlockingQueue> mock =
+                     Mockito.mockConstruction(JackeyKeyedBlockingQueue.class, (mockJackey, context)
+                             -> when(mockJackey.take(DGS_QUEUE_NAME))
                                      .thenReturn(EXTRA_FIELDS_IGNORED))) {
 
             ActionEventQueue actionEventQueue = new ActionEventQueue(new ActionEventQueueProperties(), 2);
@@ -190,13 +190,13 @@ public class ActionEventQueueTest {
 
     @Test
     public void testWrongJsonType() throws URISyntaxException {
-        try (MockedConstruction<JedisKeyedBlockingQueue> mock =
-                     Mockito.mockConstruction(JedisKeyedBlockingQueue.class)) {
+        try (MockedConstruction<JackeyKeyedBlockingQueue> mock =
+                     Mockito.mockConstruction(JackeyKeyedBlockingQueue.class)) {
 
             ActionEventQueue actionEventQueue = new ActionEventQueue(new ActionEventQueueProperties(), 2);
             assertEquals(1, mock.constructed().size());
-            JedisKeyedBlockingQueue mockJedis = mock.constructed().getFirst();
-            when(mockJedis.take(DGS_QUEUE_NAME))
+            JackeyKeyedBlockingQueue mockJackey = mock.constructed().getFirst();
+            when(mockJackey.take(DGS_QUEUE_NAME))
                     .thenReturn(getActionEventsArray());
             org.assertj.core.api.Assertions.assertThatThrownBy(
                             () -> actionEventQueue.takeResult(QUEUE_NAME))
@@ -207,13 +207,13 @@ public class ActionEventQueueTest {
 
     @Test
     public void testInvalidConversion() throws URISyntaxException {
-        try (MockedConstruction<JedisKeyedBlockingQueue> mock =
-                     Mockito.mockConstruction(JedisKeyedBlockingQueue.class)) {
+        try (MockedConstruction<JackeyKeyedBlockingQueue> mock =
+                     Mockito.mockConstruction(JackeyKeyedBlockingQueue.class)) {
 
             ActionEventQueue actionEventQueue = new ActionEventQueue(new ActionEventQueueProperties(), 2);
             assertEquals(1, mock.constructed().size());
-            JedisKeyedBlockingQueue mockJedis = mock.constructed().getFirst();
-            when(mockJedis.take(DGS_QUEUE_NAME))
+            JackeyKeyedBlockingQueue mockJackey = mock.constructed().getFirst();
+            when(mockJackey.take(DGS_QUEUE_NAME))
                     .thenReturn(INVALID_DATE);
             org.assertj.core.api.Assertions.assertThatThrownBy(
                             () -> actionEventQueue.takeResult(QUEUE_NAME))
@@ -224,13 +224,13 @@ public class ActionEventQueueTest {
 
     @Test
     public void testIllegalControlChars() throws URISyntaxException {
-        try (MockedConstruction<JedisKeyedBlockingQueue> mock =
-                     Mockito.mockConstruction(JedisKeyedBlockingQueue.class)) {
+        try (MockedConstruction<JackeyKeyedBlockingQueue> mock =
+                     Mockito.mockConstruction(JackeyKeyedBlockingQueue.class)) {
 
             ActionEventQueue actionEventQueue = new ActionEventQueue(new ActionEventQueueProperties(), 2);
             assertEquals(1, mock.constructed().size());
-            JedisKeyedBlockingQueue mockJedis = mock.constructed().getFirst();
-            when(mockJedis.take(DGS_QUEUE_NAME))
+            JackeyKeyedBlockingQueue mockJackey = mock.constructed().getFirst();
+            when(mockJackey.take(DGS_QUEUE_NAME))
                     .thenReturn(ILLEGAL_CONTROL_CHARS);
             org.assertj.core.api.Assertions.assertThatThrownBy(
                             () -> actionEventQueue.takeResult(QUEUE_NAME))
@@ -241,13 +241,13 @@ public class ActionEventQueueTest {
 
     @Test
     public void testMetricsOverflow() throws URISyntaxException {
-        try (MockedConstruction<JedisKeyedBlockingQueue> mock =
-                     Mockito.mockConstruction(JedisKeyedBlockingQueue.class)) {
+        try (MockedConstruction<JackeyKeyedBlockingQueue> mock =
+                     Mockito.mockConstruction(JackeyKeyedBlockingQueue.class)) {
 
             ActionEventQueue actionEventQueue = new ActionEventQueue(new ActionEventQueueProperties(), 2);
             assertEquals(1, mock.constructed().size());
-            JedisKeyedBlockingQueue mockJedis = mock.constructed().getFirst();
-            when(mockJedis.take(DGS_QUEUE_NAME))
+            JackeyKeyedBlockingQueue mockJackey = mock.constructed().getFirst();
+            when(mockJackey.take(DGS_QUEUE_NAME))
                     .thenReturn(METRICS_OVERFLOW);
 
             org.assertj.core.api.Assertions.assertThatThrownBy(
@@ -265,7 +265,7 @@ public class ActionEventQueueTest {
     @SneakyThrows
     public void testRecordLongRunningTask() {
         ActionExecution actionExecution = new ActionExecution("TestClass", "testAction", DID, OffsetDateTime.now());
-        try (MockedConstruction<JedisKeyedBlockingQueue> mock = Mockito.mockConstruction(JedisKeyedBlockingQueue.class)) {
+        try (MockedConstruction<JackeyKeyedBlockingQueue> mock = Mockito.mockConstruction(JackeyKeyedBlockingQueue.class)) {
             ActionEventQueue actionEventQueue = new ActionEventQueue(new ActionEventQueueProperties(), 2);
             actionEventQueue.recordLongRunningTask(actionExecution);
             verify(mock.constructed().getFirst(), times(1)).recordLongRunningTask(anyString(), anyString());
@@ -276,7 +276,7 @@ public class ActionEventQueueTest {
     @SneakyThrows
     public void testRemoveLongRunningTask() {
         ActionExecution actionExecution = new ActionExecution("TestClass", "testAction", DID, OffsetDateTime.now());
-        try (MockedConstruction<JedisKeyedBlockingQueue> mock = Mockito.mockConstruction(JedisKeyedBlockingQueue.class)) {
+        try (MockedConstruction<JackeyKeyedBlockingQueue> mock = Mockito.mockConstruction(JackeyKeyedBlockingQueue.class)) {
             ActionEventQueue actionEventQueue = new ActionEventQueue(new ActionEventQueueProperties(), 2);
             actionEventQueue.removeLongRunningTask(actionExecution);
             verify(mock.constructed().getFirst(), times(1)).removeLongRunningTask(actionExecution.key());
@@ -286,8 +286,8 @@ public class ActionEventQueueTest {
     @Test
     @SneakyThrows
     public void testGetLongRunningTasks() {
-        try (MockedConstruction<JedisKeyedBlockingQueue> ignored = Mockito.mockConstruction(JedisKeyedBlockingQueue.class, (mockJedis, context)
-                -> when(mockJedis.getLongRunningTasks())
+        try (MockedConstruction<JackeyKeyedBlockingQueue> ignored = Mockito.mockConstruction(JackeyKeyedBlockingQueue.class, (mockJackey, context)
+                -> when(mockJackey.getLongRunningTasks())
                 .thenReturn(Map.of("TestClass:testAction:a3aeb57e-180f-4ea5-a997-2fd291e1d8e1", OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(5), OffsetDateTime.now().minusSeconds(5))),
                         "TestClass:testAction:a3aeb57e-180f-4ea5-a997-2fd291e1d8e2", OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(5), OffsetDateTime.now().minusSeconds(1))),
                         "TestClass:testAction:a3aeb57e-180f-4ea5-a997-2fd291e1d8e3", OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(5), OffsetDateTime.now().minusHours(1))))))) {
@@ -301,8 +301,8 @@ public class ActionEventQueueTest {
     @Test
     @SneakyThrows
     public void testRemoveExpiredLongRunningTasks() {
-        try (MockedConstruction<JedisKeyedBlockingQueue> mock = Mockito.mockConstruction(JedisKeyedBlockingQueue.class, (mockJedis, context)
-                -> when(mockJedis.getLongRunningTasks())
+        try (MockedConstruction<JackeyKeyedBlockingQueue> mock = Mockito.mockConstruction(JackeyKeyedBlockingQueue.class, (mockJackey, context)
+                -> when(mockJackey.getLongRunningTasks())
                 .thenReturn(Map.of("TestClass:testAction:a3aeb57e-180f-4ea5-a997-2fd291e1d8e1", OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(30), OffsetDateTime.now().minusMinutes(25))),
                         "TestClass:testAction:a3aeb57e-180f-4ea5-a997-2fd291e1d8e2", OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(5), OffsetDateTime.now().minusSeconds(1))))))) {
 
@@ -315,8 +315,8 @@ public class ActionEventQueueTest {
     @Test
     @SneakyThrows
     public void testLongRunningTaskExists() {
-        try (MockedConstruction<JedisKeyedBlockingQueue> ignored = Mockito.mockConstruction(JedisKeyedBlockingQueue.class, (mockJedis, context)
-                -> when(mockJedis.getLongRunningTask("TestClass:testAction:" + DID))
+        try (MockedConstruction<JackeyKeyedBlockingQueue> ignored = Mockito.mockConstruction(JackeyKeyedBlockingQueue.class, (mockJackey, context)
+                -> when(mockJackey.getLongRunningTask("TestClass:testAction:" + DID))
                 .thenReturn(OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(5), OffsetDateTime.now().minusSeconds(1)))))) {
 
             ActionEventQueue actionEventQueue = new ActionEventQueue(new ActionEventQueueProperties(), 2);
@@ -328,8 +328,8 @@ public class ActionEventQueueTest {
     @Test
     @SneakyThrows
     public void testLongRunningTaskExistsExpired() {
-        try (MockedConstruction<JedisKeyedBlockingQueue> ignored = Mockito.mockConstruction(JedisKeyedBlockingQueue.class, (mockJedis, context)
-                -> when(mockJedis.getLongRunningTask("TestClass:testAction:" + DID))
+        try (MockedConstruction<JackeyKeyedBlockingQueue> ignored = Mockito.mockConstruction(JackeyKeyedBlockingQueue.class, (mockJackey, context)
+                -> when(mockJackey.getLongRunningTask("TestClass:testAction:" + DID))
                 .thenReturn(OBJECT_MAPPER.writeValueAsString(List.of(OffsetDateTime.now().minusMinutes(5), OffsetDateTime.now().minusHours(100)))))) {
 
             ActionEventQueue actionEventQueue = new ActionEventQueue(new ActionEventQueueProperties(), 2);

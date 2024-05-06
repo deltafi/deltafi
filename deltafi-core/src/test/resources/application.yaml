@@ -43,6 +43,9 @@ minio:
 redis:
   url: http://localhost
 
+valkey:
+  url: http://localhost
+
 dgs:
   graphql:
     graphiql:

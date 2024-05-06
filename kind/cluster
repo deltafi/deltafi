@@ -172,7 +172,7 @@ if [[ "$(basename "$0")" == "deltafi" ]]; then
         cluster "$@"
         ;;
       # Commands that do not need recursive call into cluster
-      version|uninstall|did|list-actions|list-flows|list-plugins|list-plans|list-policies|mongol-cli|mongo-migrate|mongo-eval|redis-watch|redis-cli|redis-stats|redis-latency|serviceip)
+      version|uninstall|did|list-actions|list-flows|list-plugins|list-plans|list-policies|mongol-cli|mongo-migrate|mongo-eval|valkey-watch|valkey-cli|valkey-stats|valkey-latency|serviceip)
         "$DELTAFI_PATH/deltafi-cli/deltafi" "$@"
         ;;
       registry)
@@ -431,11 +431,11 @@ _restart_plugins() {
   _conditional "Plugin restart" _annotated_subshell -h "Restarting deltafi-plugin group" ${KUBECTL} delete pods --grace-period=0 -l group=deltafi-plugins
 }
 
-describe expose "Expose ports for deltafi-core, minio and redis on localhost"
+describe expose "Expose ports for deltafi-core, minio and valkey on localhost"
 expose() {
   kubectl port-forward svc/deltafi-core-service 8888:80  > /dev/null 2>&1 &
   kubectl port-forward svc/deltafi-minio 9000:9000 > /dev/null 2>&1 &
-  kubectl port-forward svc/deltafi-redis-master 6379:6379 > /dev/null 2>&1 &
+  kubectl port-forward svc/deltafi-valkey-master 6379:6379 > /dev/null 2>&1 &
 }
 
 describe prerequisites "Install or warn about prerequisites for the KinD cluster"
@@ -822,7 +822,7 @@ Options:
   nocore      Skips building core DeltaFi and UI (build only)
   noui        Skips building DeltaFi UI (build only)
   destroy     Destroys the cluster before proceeding
-  expose      Expose ports for deltafi-core, minio and redis on localhost
+  expose      Expose ports for deltafi-core, minio and valkey on localhost
   -f | force  Skip "are you sure?"
 
 Examples:
@@ -940,7 +940,7 @@ loc() {
   fi
 
   if [[ -n "$EXPOSE" ]]; then
-    _attention "Expose ports for deltafi-core, minio and redis on localhost"
+    _attention "Expose ports for deltafi-core, minio and valkey on localhost"
     expose
   fi
 }
@@ -1035,15 +1035,18 @@ _setup_plugin_env() {
   _attention "Setting up plugin env"
   truncate -s 0 "${PLUGIN_ENV}"
   MINIO_SECRETKEY=$(_get_secret "minio-keys" "rootPassword")
-  REDIS_PASSWORD=$(_get_secret "redis-password" "redis-password")
+  REDIS_PASSWORD=$(_get_secret "valkey-password" "valkey-password")
+  VALKEY_PASSWORD=$(_get_secret "valkey-password" "valkey-password")
   cat <<EOF > "${PLUGIN_ENV}"
 CORE_URL=http://localhost:8888
 MINIO_URL=http://localhost:9000
 REDIS_URL=http://localhost:6379
+VALKEY_URL=http://localhost:6379
 MINIO_ACCESSKEY=deltafi
 MINIO_PARTSIZE=5242880
 MINIO_SECRETKEY=${MINIO_SECRETKEY}
 REDIS_PASSWORD=${REDIS_PASSWORD}
+VALKEY_PASSWORD=${VALKEY_PASSWORD}
 EOF
 
   while read -r line; do

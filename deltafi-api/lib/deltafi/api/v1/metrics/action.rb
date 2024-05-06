@@ -29,7 +29,7 @@ module Deltafi
             DGS_QUEUE_NAME = 'dgs'
 
             def queues
-              queue_json = DF.redis.get(DF::Common::ACTION_QUEUE_SIZES_REDIS_KEY)
+              queue_json = DF.valkey.get(DF::Common::ACTION_QUEUE_SIZES_VALKEY_KEY)
 
               if queue_json.nil?
                 return []
@@ -48,7 +48,7 @@ module Deltafi
             end
 
             def recent_queues
-              queues = DF.redis.hgetall(DF::Common::ACTION_HEARTBEAT_REDIS_KEY)
+              queues = DF.valkey.hgetall(DF::Common::ACTION_HEARTBEAT_VALKEY_KEY)
               queues.select { |_, v| Time.now - Time.parse(v) < DF::Common::ACTION_HEARTBEAT_THRESHOLD }
             end
 

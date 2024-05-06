@@ -56,10 +56,10 @@ module Deltafi
 
               @sse_task_running = true
               begin
-                sse_keys = DF.redis.keys.select { |key| key.start_with?(DF::Common::SSE_REDIS_CHANNEL_PREFIX) }
+                sse_keys = DF.valkey.keys.select { |key| key.start_with?(DF::Common::SSE_VALKEY_CHANNEL_PREFIX) }
                 sse_keys.each do |sse_key|
-                  sse_value = DF.redis.get(sse_key)
-                  channel = sse_key[(DF::Common::SSE_REDIS_CHANNEL_PREFIX.size + 1)..-1]
+                  sse_value = DF.valkey.get(sse_key)
+                  channel = sse_key[(DF::Common::SSE_VALKEY_CHANNEL_PREFIX.size + 1)..-1]
                   if sse_value != @channels[channel]
                     @channels[channel] = sse_value
                     debug "Sending on channel '#{channel}' to #{subscribers.size} subscriber(s)" unless subscribers.empty?

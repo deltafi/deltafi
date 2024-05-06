@@ -27,7 +27,7 @@ module Deltafi
   module Monitor
     module NotificationCount
       class Service < Deltafi::Monitor::Service
-        SSE_REDIS_CHANNEL = [DF::Common::SSE_REDIS_CHANNEL_PREFIX, 'notificationCount'].compact.join('.')
+        SSE_VALKEY_CHANNEL = [DF::Common::SSE_VALKEY_CHANNEL_PREFIX, 'notificationCount'].compact.join('.')
         INTERVAL = 5
 
         def initialize
@@ -46,7 +46,7 @@ module Deltafi
               acknowledged: false
             }
             count = Event.where(query).count
-            DF.redis.set(SSE_REDIS_CHANNEL, count)
+            DF.valkey.set(SSE_VALKEY_CHANNEL, count)
           end
         end
       end

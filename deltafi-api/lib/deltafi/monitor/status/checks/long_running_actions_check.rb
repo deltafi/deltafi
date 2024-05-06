@@ -53,7 +53,7 @@ module Deltafi
           private
 
           def long_running_actions
-            tasks = DF.redis.hgetall(DF::Common::LONG_RUNNING_TASKS_REDIS_KEY)
+            tasks = DF.valkey.hgetall(DF::Common::LONG_RUNNING_TASKS_VALKEY_KEY)
 
             tasks.each_with_object(Hash.new { |h, k| h[k] = [] }) do |(k, v), result|
               times_array = JSON.parse(v)

@@ -22,11 +22,11 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
-            - name: REDIS_PASSWORD
+            - name: VALKEY_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  key: redis-password
-                  name: redis-password
+                  key: valkey-password
+                  name: valkey-password
             - name: MINIO_ACCESSKEY
               value: deltafi
             - name: MINIO_SECRETKEY

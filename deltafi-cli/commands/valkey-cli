@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: valkey-cli
+
+Usage:
+  valkey-cli"
+  exit 1
+}
+
+ARGS=($@)
+[[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
+VALKEY_PASSWORD_ENV='$VALKEY_PASSWORD'
+
+if _is_standalone; then
+  docker exec -it deltafi-valkey sh -c "valkey-cli --no-auth-warning -a $VALKEY_PASSWORD_ENV"
+else
+  ${KUBECTL_BIN} exec -it deltafi-valkey-master-0 -- sh -c "valkey-cli --no-auth-warning -a $VALKEY_PASSWORD_ENV"
+fi

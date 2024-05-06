@@ -15,18 +15,18 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.queue.jedis;
+package org.deltafi.common.queue.jackey;
 
+import io.jackey.Jedis;
+import io.jackey.JedisPool;
+import io.jackey.Pipeline;
+import io.jackey.Protocol;
+import io.jackey.params.ScanParams;
+import io.jackey.params.ZAddParams;
+import io.jackey.resps.ScanResult;
+import io.jackey.resps.Tuple;
+import io.jackey.util.KeyValue;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.Pipeline;
-import redis.clients.jedis.Protocol;
-import redis.clients.jedis.params.ScanParams;
-import redis.clients.jedis.params.ZAddParams;
-import redis.clients.jedis.resps.ScanResult;
-import redis.clients.jedis.resps.Tuple;
-import redis.clients.jedis.util.KeyValue;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -36,25 +36,25 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * A keyed blocking queue based on the Jedis client library for Redis.
+ * A keyed blocking queue based on the Jackey client library for Valkey.
  */
-public class JedisKeyedBlockingQueue {
+public class JackeyKeyedBlockingQueue {
     private static final String HEARTBEAT_HASH = "org.deltafi.action-queue.heartbeat";
     private static final String LONG_RUNNING_TASKS_HASH = "org.deltafi.action-queue.long-running-tasks";
 
     private final JedisPool jedisPool;
 
     /**
-     * Constructs a JedisKeyedBlockingQueue.
+     * Constructs a JackeyKeyedBlockingQueue.
      *
-     * @param url      the url of the redis server
-     * @param password the password for the redis server
-     * @param maxIdle  the maximum number of idle pooled connections to the redis server
-     * @param maxTotal the maximum number of pooled connections to the redis server. This should be set higher than the
+     * @param url      the url of the valkey server
+     * @param password the password for the valkey server
+     * @param maxIdle  the maximum number of idle pooled connections to the valkey server
+     * @param maxTotal the maximum number of pooled connections to the valkey server. This should be set higher than the
      *                 expected number of keys in the queue.
      * @throws URISyntaxException if the provided url is not valid
      */
-    public JedisKeyedBlockingQueue(String url, String password, int maxIdle, int maxTotal) throws URISyntaxException {
+    public JackeyKeyedBlockingQueue(String url, String password, int maxIdle, int maxTotal) throws URISyntaxException {
         GenericObjectPoolConfig<Jedis> poolConfig = new GenericObjectPoolConfig<>();
         poolConfig.setMaxIdle(maxIdle);
         poolConfig.setMaxTotal(maxTotal);
@@ -152,7 +152,7 @@ public class JedisKeyedBlockingQueue {
     }
 
     /**
-     * Get a list of unique keys from redis
+     * Get a list of unique keys from valkey
      * @return the set of keys
      */
     public Set<String> keys() {

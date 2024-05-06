@@ -31,7 +31,7 @@ module Deltafi
             def metrics
               keys = %w[gauge.node.memory.usage gauge.node.memory.limit gauge.node.disk.usage gauge.node.disk.limit gauge.node.cpu.usage gauge.node.cpu.limit]
 
-              results = DF.redis.pipelined do |pipeline|
+              results = DF.valkey.pipelined do |pipeline|
                 keys.each { |key| pipeline.hgetall(key) }
               end
 

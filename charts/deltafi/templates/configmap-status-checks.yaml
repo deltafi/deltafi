@@ -9,7 +9,7 @@ data:
     - deltafi-core-worker
     - deltafi-graphite
     - deltafi-loki
-    - deltafi-redis-master
+    - deltafi-valkey-master
   DeploymentCheck: |
     expected_deployments:
     - deltafi-api
@@ -45,8 +45,8 @@ data:
     - deltafi-loki-memberlist
     - deltafi-minio
     - deltafi-mongodb
-    - deltafi-redis-headless
-    - deltafi-redis-master
+    - deltafi-valkey-headless
+    - deltafi-valkey-master
     - deltafi-ui-service
   StorageCheck: |
     expected_volume_claims:

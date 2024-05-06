@@ -15,7 +15,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.queue.jedis;
+package org.deltafi.common.queue.jackey;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

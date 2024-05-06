@@ -21,7 +21,7 @@ services:
     image: ${DELTAFI_CORE}
     container_name: deltafi-core
     depends_on:
-      deltafi-redis:
+      deltafi-valkey:
         condition: service_healthy
       deltafi-mongodb:
         condition: service_healthy
@@ -34,7 +34,7 @@ services:
       UNIQUE_ID: deltafi-core
     env_file:
       - ${ENV_DIR}/common.env
-      - ${SECRETS_DIR}/redis.env
+      - ${SECRETS_DIR}/valkey.env
       - ${SECRETS_DIR}/mongodb.env
       - ${SECRETS_DIR}/minio.env
       - ${SECRETS_DIR}/ssl.env
@@ -50,7 +50,7 @@ services:
     image: ${DELTAFI_INGRESS}
     container_name: deltafi-ingress
     depends_on:
-      deltafi-redis:
+      deltafi-valkey:
         condition: service_healthy
       deltafi-mongodb:
         condition: service_healthy
@@ -60,7 +60,7 @@ services:
       JDK_JAVA_OPTIONS: "-Dcom.redhat.fips=false -Dschedule.actionEvents=false -Dschedule.maintenance=false -Dschedule.propertySync=true"
     env_file:
       - ${ENV_DIR}/common.env
-      - ${SECRETS_DIR}/redis.env
+      - ${SECRETS_DIR}/valkey.env
       - ${SECRETS_DIR}/mongodb.env
       - ${SECRETS_DIR}/minio.env
       - ${SECRETS_DIR}/ssl.env
@@ -82,7 +82,7 @@ services:
       WORKERS: ${API_WORKERS}
     env_file:
       - ${ENV_DIR}/common.env
-      - ${SECRETS_DIR}/redis.env
+      - ${SECRETS_DIR}/valkey.env
       - ${SECRETS_DIR}/mongodb.env
       - ${SECRETS_DIR}/minio.env
     expose:
@@ -130,7 +130,7 @@ services:
         condition: service_healthy
     env_file:
       - ${ENV_DIR}/common.env
-      - ${SECRETS_DIR}/redis.env
+      - ${SECRETS_DIR}/valkey.env
       - ${SECRETS_DIR}/mongodb.env
       - ${SECRETS_DIR}/minio.env
     healthcheck:
@@ -166,7 +166,7 @@ services:
         condition: service_healthy
     env_file:
       - ${ENV_DIR}/common.env
-      - ${SECRETS_DIR}/redis.env
+      - ${SECRETS_DIR}/valkey.env
       - ${SECRETS_DIR}/minio.env
     healthcheck:
       test: cat /running
@@ -268,16 +268,17 @@ services:
       - "27017"
     volumes:
       - ${DATA_DIR}/mongo:/bitnami/mongodb
-  deltafi-redis:
-    image: ghcr.io/zcube/bitnami-compat/redis:7.0.7
-    container_name: deltafi-redis
+  deltafi-valkey:
+    image: valkey/valkey:7.2.5
+    container_name: deltafi-valkey
     environment:
       BITNAMI_DEBUG: false
       REDIS_REPLICATION_MODE: master
+      VALKEY_REPLICATION_MODE: master
     env_file:
-      - ${SECRETS_DIR}/redis.env
+      - ${SECRETS_DIR}/valkey.env
     healthcheck:
-      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      test: [ "CMD", "valkey-cli", "--raw", "incr", "ping" ]
       interval: 5s
       timeout: 2s
       retries: 5

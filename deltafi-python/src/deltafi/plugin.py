@@ -46,9 +46,9 @@ def _coordinates():
 
 
 def _setup_queue(max_connections):
-    redis_url = os.getenv('REDIS_URL', 'http://deltafi-redis-master:6379')
-    password = os.getenv('REDIS_PASSWORD')
-    return ActionEventQueue(redis_url, max_connections, password)
+    url = os.getenv('VALKEY_URL', 'http://deltafi-valkey-master:6379')
+    password = os.getenv('VALKEY_PASSWORD')
+    return ActionEventQueue(url, max_connections, password)
 
 
 def _setup_content_service():

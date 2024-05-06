@@ -29,23 +29,25 @@ import java.util.List;
 public class EnvironmentVariableHelper {
     private final List<String> envVars;
 
-    public EnvironmentVariableHelper(MinioProperties minioProperties, ActionEventQueueProperties redisProperties, SslProperties sslProperties,  @Value("${CORE_URL:http://deltafi-core-service}") String coreUrl) {
-        this.envVars = buildEnvVarList(minioProperties, redisProperties, sslProperties, coreUrl);
+    public EnvironmentVariableHelper(MinioProperties minioProperties, ActionEventQueueProperties actionEventQueueProperties, SslProperties sslProperties,  @Value("${CORE_URL:http://deltafi-core-service}") String coreUrl) {
+        this.envVars = buildEnvVarList(minioProperties, actionEventQueueProperties, sslProperties, coreUrl);
     }
 
     public List<String> getEnvVars() {
         return envVars;
     }
 
-    private List<String> buildEnvVarList(MinioProperties minioProperties, ActionEventQueueProperties redisProperties, SslProperties sslProperties, String coreUrl) {
+    private List<String> buildEnvVarList(MinioProperties minioProperties, ActionEventQueueProperties actionEventQueueProperties, SslProperties sslProperties, String coreUrl) {
         return List.of(
                 "CORE_URL=" + coreUrl,
                 "MINIO_ACCESSKEY=" + minioProperties.getAccessKey(),
                 "MINIO_SECRETKEY=" + minioProperties.getSecretKey(),
                 "MINIO_URL=" + minioProperties.getUrl(),
                 "MINIO_PARTSIZE=" + minioProperties.getPartSize(),
-                "REDIS_URL=" + redisProperties.getUrl(),
-                "REDIS_PASSWORD=" + (redisProperties.getPassword() == null ? "" : redisProperties.getPassword()),
+                "REDIS_URL=" + actionEventQueueProperties.getUrl(),
+                "REDIS_PASSWORD=" + (actionEventQueueProperties.getPassword() == null ? "" : actionEventQueueProperties.getPassword()),
+                "VALKEY_URL=" + actionEventQueueProperties.getUrl(),
+                "VALKEY_PASSWORD=" + (actionEventQueueProperties.getPassword() == null ? "" : actionEventQueueProperties.getPassword()),
                 "SSL_KEYSTORE=" + sslProperties.getKeyStore(),
                 "SSL_KEYSTORETYPE=" + sslProperties.getKeyStoreType(),
                 "SSL_KEYSTORETPASSWORD=" + sslProperties.getKeyStorePassword(),

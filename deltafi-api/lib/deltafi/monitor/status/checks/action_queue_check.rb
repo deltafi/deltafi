@@ -30,11 +30,11 @@ module Deltafi
           DEFAULT_SIZE_THRESHOLD = 0
           SIZE_THRESHOLD_PROPERTY = %w[checks actionQueueSizeThreshold].freeze
           IGNORED_QUEUE_NAMES = [
-            DF::Common::STATUS_REDIS_KEY,
-            DF::Common::ACTION_HEARTBEAT_REDIS_KEY,
-            DF::Common::MONITOR_HEARTBEAT_REDIS_KEY,
-            DF::Common::LONG_RUNNING_TASKS_REDIS_KEY,
-            DF::Common::ACTION_QUEUE_SIZES_REDIS_KEY
+            DF::Common::STATUS_VALKEY_KEY,
+            DF::Common::ACTION_HEARTBEAT_VALKEY_KEY,
+            DF::Common::MONITOR_HEARTBEAT_VALKEY_KEY,
+            DF::Common::LONG_RUNNING_TASKS_VALKEY_KEY,
+            DF::Common::ACTION_QUEUE_SIZES_VALKEY_KEY
           ].freeze
 
           def initialize
@@ -69,27 +69,27 @@ module Deltafi
           private
 
           def recent_queues
-            queues = DF.redis.hgetall(DF::Common::ACTION_HEARTBEAT_REDIS_KEY)
+            queues = DF.valkey.hgetall(DF::Common::ACTION_HEARTBEAT_VALKEY_KEY)
             queues.select { |_, v| Time.now - Time.parse(v) < DF::Common::ACTION_HEARTBEAT_THRESHOLD }
           end
 
           def check_queue_sizes(queue_names)
             queue_sizes = {}
             queue_names.each do |queue_name|
-              queue_size = DF.redis.zcount(queue_name, '-inf', '+inf')
+              queue_size = DF.valkey.zcount(queue_name, '-inf', '+inf')
               queue_sizes[queue_name] = queue_size
               generate_queue_size_metric(queue_name, queue_size)
               @queues_over_threshold[queue_name] = queue_size if queue_size > @threshold
             end
-            DF.redis.set(DF::Common::ACTION_QUEUE_SIZES_REDIS_KEY, { time: Time.now, queues: queue_sizes }.to_json)
+            DF.valkey.set(DF::Common::ACTION_QUEUE_SIZES_VALKEY_KEY, { time: Time.now, queues: queue_sizes }.to_json)
           end
 
           def check_orphan_queues(queue_names)
-            (DF.redis.keys - queue_names - IGNORED_QUEUE_NAMES).each do |queue_name|
-              next if queue_name.start_with?(DF::Common::SSE_REDIS_CHANNEL_PREFIX) || queue_name.start_with?('gauge.node')
+            (DF.valkey.keys - queue_names - IGNORED_QUEUE_NAMES).each do |queue_name|
+              next if queue_name.start_with?(DF::Common::SSE_VALKEY_CHANNEL_PREFIX) || queue_name.start_with?('gauge.node')
 
               @orphan_queues[queue_name] = begin
-                                             DF.redis.zcount(queue_name, '-inf', '+inf')
+                                             DF.valkey.zcount(queue_name, '-inf', '+inf')
                                            rescue StandardError
                                              0
                                            end

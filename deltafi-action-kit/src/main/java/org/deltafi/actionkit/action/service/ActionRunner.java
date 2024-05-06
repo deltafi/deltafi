@@ -147,7 +147,7 @@ public class ActionRunner {
         try {
             actionEventQueue.putResult(result.toEvent(), returnAddress);
         } catch (Throwable e) {
-            log.error("Error sending result to redis for did " + context.getDid(), e);
+            log.error("Error sending result to valkey for did " + context.getDid(), e);
         }
     }
 

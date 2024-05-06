@@ -22,3 +22,6 @@ minio:
 
 redis:
   url: redis
+
+valkey:
+  url: valkey

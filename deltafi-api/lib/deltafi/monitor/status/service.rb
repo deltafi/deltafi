@@ -33,7 +33,7 @@ module Deltafi
         PUBLISH_INTERVAL = 5
         COLORS = %w[green yellow red].freeze
         STATES = %w[Healthy Degraded Unhealthy].freeze
-        SSE_REDIS_CHANNEL = [DF::Common::SSE_REDIS_CHANNEL_PREFIX, 'status'].compact.join('.')
+        SSE_VALKEY_CHANNEL = [DF::Common::SSE_VALKEY_CHANNEL_PREFIX, 'status'].compact.join('.')
 
         def initialize
           super
@@ -67,13 +67,12 @@ module Deltafi
           overall_code = @statuses.values.map { |s| s[:code] }.max || -1
           status = {
             code: overall_code,
-            color: COLORS[overall_code] || 'Unknown',
-            state: STATES[overall_code] || 'Unknown',
+            color: COLORS[overall_code] || 'Unknown', state: STATES[overall_code] || 'Unknown',
             checks: @statuses.values.sort_by { |s| [-s[:code], s[:description]] },
             timestamp: Time.now
           }
-          DF.redis.set(SSE_REDIS_CHANNEL, status.to_json)
-          DF.redis.set(DF::Common::STATUS_REDIS_KEY, status.to_json)
+          DF.valkey.set(SSE_VALKEY_CHANNEL, status.to_json)
+          DF.valkey.set(DF::Common::STATUS_VALKEY_KEY, status.to_json)
         end
       end
     end

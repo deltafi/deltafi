@@ -173,7 +173,7 @@ _setup_secrets() {
   GRAFANA_SECRET_PATH="${SECRETS_DIR}/grafana.env"
   MINIO_SECRET_PATH="${SECRETS_DIR}/minio.env"
   MONGODB_SECRET_PATH="${SECRETS_DIR}/mongodb.env"
-  REDIS_SECRET_PATH="${SECRETS_DIR}/redis.env"
+  VALKEY_SECRET_PATH="${SECRETS_DIR}/valkey.env"
   SSL_SECRET_PATH="${SECRETS_DIR}/ssl.env"
 
   if [[ ! -f "${GRAFANA_SECRET_PATH}" ]]; then
@@ -206,10 +206,10 @@ MONGODB_ROOT_PASSWORD=$mongo_root_password
 EOF
   fi
 
-  if [[ ! -f "${REDIS_SECRET_PATH}" ]]; then
-    redis_password=$(_random_password 16)
-    cat <<EOF > "${REDIS_SECRET_PATH}"
-REDIS_PASSWORD=$redis_password
+  if [[ ! -f "${VALKEY_SECRET_PATH}" ]]; then
+    valkey_password=$(_random_password 16)
+    cat <<EOF > "${VALKEY_SECRET_PATH}"
+VALKEY_PASSWORD=$valkey_password
 EOF
   fi
 
@@ -287,12 +287,12 @@ dependencies:
   nginx: docker.io/nginx:1.23.3-alpine
   promtail: docker.io/grafana/promtail:2.7.1
   mongodb: docker.io/bitnami/mongodb:5.0.14
-  redis: docker.io/bitnami/redis:7.0.7
+  valkey: docker.io/valkey/valkey:7.2.5
 EOF
 
   if _is_arm; then
     yq -i '.dependencies.mongodb = "zcube/bitnami-compat/mongodb:5.0.14"' "${VALUES_YAML}"
-    yq -i '.dependencies.redis = "zcube/bitnami-compat/redis:7.0.7"' "${VALUES_YAML}"
+    yq -i '.dependencies.valkey = "valkey/valkey:7.2.5"' "${VALUES_YAML}"
   fi
 }
 
@@ -382,7 +382,7 @@ _write_startup_file() {
   _append_startup_from_values "MONGODB" ".dependencies.mongodb"
   _append_startup_from_values "NGINX" ".dependencies.nginx"
   _append_startup_from_values "PROMTAIL" ".dependencies.promtail"
-  _append_startup_from_values "REDIS" ".dependencies.redis"
+  _append_startup_from_values "VALKEY" ".dependencies.valkey"
   _append_startup_from_values "API_WORKERS" ".deltafi.api.workers"
   _append_startup_from_values "AUTH_WORKERS" ".deltafi.auth.workers"
   _append_startup_from_values "AUTH_RESOLVER_PORT" ".deltafi.auth.entityResolver.port"
@@ -405,7 +405,7 @@ METRICS_PERIOD_SECONDS="10"
 MINIO_PARTSIZE="5242880"
 MINIO_URL=http://deltafi-minio:9000
 RACK_ENV=production
-REDIS_URL=http://deltafi-redis:6379
+VALKEY_URL=http://deltafi-valkey:6379
 RUNNING_IN_CLUSTER=false
 STATSD_HOSTNAME=deltafi-graphite
 STATSD_PORT="8125"

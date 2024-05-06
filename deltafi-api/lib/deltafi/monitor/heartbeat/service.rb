@@ -29,7 +29,7 @@ module Deltafi
 
         def run
           periodic_timer(INTERVAL) do
-            DF.redis.set(DF::Common::MONITOR_HEARTBEAT_REDIS_KEY, Time.now.to_i)
+            DF.valkey.set(DF::Common::MONITOR_HEARTBEAT_VALKEY_KEY, Time.now.to_i)
           end
         end
       end

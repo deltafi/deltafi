@@ -21,12 +21,12 @@
 module Deltafi
   module Common
     K8S_NAMESPACE = 'deltafi'
-    STATUS_REDIS_KEY = 'org.deltafi.monitor.status'
-    SSE_REDIS_CHANNEL_PREFIX = 'org.deltafi.ui.sse'
-    ACTION_HEARTBEAT_REDIS_KEY = 'org.deltafi.action-queue.heartbeat'
+    STATUS_VALKEY_KEY = 'org.deltafi.monitor.status'
+    SSE_VALKEY_CHANNEL_PREFIX = 'org.deltafi.ui.sse'
+    ACTION_HEARTBEAT_VALKEY_KEY = 'org.deltafi.action-queue.heartbeat'
     ACTION_HEARTBEAT_THRESHOLD = 60
-    MONITOR_HEARTBEAT_REDIS_KEY = 'org.deltafi.monitor.heartbeat'
-    LONG_RUNNING_TASKS_REDIS_KEY = 'org.deltafi.action-queue.long-running-tasks'
-    ACTION_QUEUE_SIZES_REDIS_KEY = 'org.deltafi.action-queue.sizes'
+    MONITOR_HEARTBEAT_VALKEY_KEY = 'org.deltafi.monitor.heartbeat'
+    LONG_RUNNING_TASKS_VALKEY_KEY = 'org.deltafi.action-queue.long-running-tasks'
+    ACTION_QUEUE_SIZES_VALKEY_KEY = 'org.deltafi.action-queue.sizes'
   end
 end

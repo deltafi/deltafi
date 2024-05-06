@@ -173,11 +173,11 @@ const generateData = () => {
         group: null,
       },
       {
-        app: "redis",
-        container: "redis",
+        app: "valkey",
+        container: "valkey",
         image: {
-          name: "docker.io/bitnami/redis",
-          tag: "6.2.4-debian-10-r13",
+          name: "docker.io/valkey/valkey",
+          tag: "7.2.5",
         },
         group: null,
       },

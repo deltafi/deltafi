@@ -54,7 +54,7 @@ const generateData = () => {
             name: "deltafi-promtail-9gpwv"
           },
           {
-            name: "deltafi-redis-master-0"
+            name: "deltafi-valkey-master-0"
           },
           {
             name: "deltafi-ui-7954c66dd4-rrn9n"

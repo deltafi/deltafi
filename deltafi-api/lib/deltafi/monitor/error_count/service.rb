@@ -25,7 +25,7 @@ module Deltafi
   module Monitor
     module ErrorCount
       class Service < Deltafi::Monitor::Service
-        SSE_REDIS_CHANNEL = [DF::Common::SSE_REDIS_CHANNEL_PREFIX, 'errorCount'].compact.join('.')
+        SSE_VALKEY_CHANNEL = [DF::Common::SSE_VALKEY_CHANNEL_PREFIX, 'errorCount'].compact.join('.')
         QUERY = 'query { countUnacknowledgedErrors }'
         INTERVAL = 5
 
@@ -36,7 +36,7 @@ module Deltafi
             raise StandardError, parsed_response[:errors]&.first&.dig(:message) if parsed_response.key?(:errors)
 
             count = parsed_response.dig(:data, :countUnacknowledgedErrors)
-            DF.redis.set(SSE_REDIS_CHANNEL, count || 0)
+            DF.valkey.set(SSE_VALKEY_CHANNEL, count || 0)
           end
         end
       end
