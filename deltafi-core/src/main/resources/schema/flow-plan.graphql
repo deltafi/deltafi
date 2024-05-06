@@ -240,7 +240,6 @@ type TransformFlow {
   flowStatus: FlowStatus!
   maxErrors: Int!
   transformActions: [TransformActionConfiguration!]
-  egressAction: EgressActionConfiguration
   publish: PublishRules
   variables: [Variable]!
 }
