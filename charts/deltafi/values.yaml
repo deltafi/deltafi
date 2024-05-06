@@ -106,8 +106,8 @@ mongodb:
 # Redis config
 redis:
   image:
-    repository: bitnami/redis
-    tag: 7.2.4
+    repository: valkey/valkey
+    tag: 7.2.5
   architecture: standalone
   auth:
     existingSecret: redis-password
