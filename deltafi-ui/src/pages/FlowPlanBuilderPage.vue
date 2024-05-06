@@ -562,7 +562,7 @@ const clearEmptyObjects = (queryObj) => {
       clearEmptyObjects(queryObj[objKey]);
     }
 
-    if (_.isEmpty(queryObj[objKey])) {
+    if (_.isEmpty(queryObj[objKey]) && !_.isBoolean(queryObj[objKey])) {
       delete queryObj[objKey];
     }
   }
@@ -571,15 +571,16 @@ const clearEmptyObjects = (queryObj) => {
 
 const save = async (rawFlow) => {
   let response = null;
-  rawFlow = clearEmptyObjects(rawFlow);
+  let newRawFlow = JSON.parse(JSON.stringify(rawFlow));
+  newRawFlow = clearEmptyObjects(newRawFlow);
   if (model.value.type === "TRANSFORM") {
-    response = await saveTransformFlowPlan(rawFlow);
+    response = await saveTransformFlowPlan(newRawFlow);
   } else if (model.value.type === "NORMALIZE") {
-    response = await saveNormalizeFlowPlan(rawFlow);
+    response = await saveNormalizeFlowPlan(newRawFlow);
   } else if (model.value.type === "ENRICH") {
-    response = await saveEnrichFlowPlan(rawFlow);
+    response = await saveEnrichFlowPlan(newRawFlow);
   } else if (model.value.type === "EGRESS") {
-    response = await saveEgressFlowPlan(rawFlow);
+    response = await saveEgressFlowPlan(newRawFlow);
   }
   if (response !== undefined) {
     notify.success(`${response.data[`save${_.capitalize(model.value.type)}FlowPlan`].name} Flow Plan Saved`);
