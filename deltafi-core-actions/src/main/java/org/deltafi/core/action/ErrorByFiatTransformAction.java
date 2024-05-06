@@ -17,25 +17,31 @@
  */
 package org.deltafi.core.action;
 
-import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.action.transform.TransformAction;
 import org.deltafi.actionkit.action.transform.TransformInput;
+import org.deltafi.actionkit.action.transform.TransformResult;
 import org.deltafi.actionkit.action.transform.TransformResultType;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.core.parameters.ErrorParameters;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 @Component
-@Slf4j
-public class ErrorByFiatTransformAction extends TransformAction<ActionParameters> {
+public class ErrorByFiatTransformAction extends TransformAction<ErrorParameters> {
     public ErrorByFiatTransformAction() {
-        super("Transform Action that always errors");
+        super("Action that errors, optionally when a configurable metadata key is present");
     }
 
     @Override
-    public TransformResultType transform(@NotNull ActionContext context, @NotNull ActionParameters p, @NotNull TransformInput input) {
-        return new ErrorResult(context, "Errored by fiat");
+    public TransformResultType transform(@NotNull ActionContext context, @NotNull ErrorParameters params,
+            @NotNull TransformInput input) {
+        if (params.getMetadataTrigger() == null) {
+            return new ErrorResult(context, params.getMessage());
+        }
+        if (input.getMetadata().get(params.getMetadataTrigger()) != null) {
+            return new ErrorResult(context, input.metadata(params.getMetadataTrigger()));
+        }
+        return new TransformResult(context, input.getContent());
     }
 }
