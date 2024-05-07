@@ -97,11 +97,6 @@ case "$SUBCOMMAND" in
                  type
                  parameters
                }
-               egressAction {
-                 name
-                 type
-                 parameters
-               }
                variables {
                  name
                  value
