@@ -25,9 +25,14 @@ from deltafi.test_kit.compare_helpers import JsonCompareHelper
 
 @pytest.mark.parametrize("obj, item",
                          [
-                             ([{"a": "alpha"}, {"b": "bravo"}], "notfound"),                 # string
-                             ([{"a": "alpha"}, {"b": "bravo"}], ["notfound"]),               # list of 1 string
-                             ([{"a": "alpha"}, {"b": "bravo"}], ["notfound1", "notfound2"])  # list of 2 strings
+                             ([{"a": "alpha"}, {"b": "bravo"}], "notfound"),                              # string
+                             ([{"a": "alpha"}, {"b": "bravo"}], re.compile("^notfound$")),                # regex
+                             ([{"a": "alpha"}, {"b": "bravo"}], ["notfound"]),                            # list of 1 string
+                             ([{"a": "alpha"}, {"b": "bravo"}], ["notfound1", "notfound2"]),              # list of 2 strings
+                             ([{"a": "alpha"}, {"b": "bravo"}], [re.compile("^notfound1$")]),             # list of 1 regex
+                             ([{"a": "alpha"}, {"b": "bravo"}], [re.compile("^notfound1$"),
+                                                                 re.compile("^notfound1$")]),             # list of 2 regexes
+                             ([{"a": "alpha"}, {"b": "bravo"}], ["notfound1", re.compile("^notfound$")])  # list of string and regex
                          ])
 def test_is_not_found_success(obj, item):
     json_compare_helper = JsonCompareHelper()
@@ -36,9 +41,15 @@ def test_is_not_found_success(obj, item):
 
 @pytest.mark.parametrize("obj, item, in_err_msg, not_in_err_msg",
                          [
-                             ([{"a": "alpha"}, {"b": "bravo"}], "bravo", ["bravo"], ["alpha"]),              # string
-                             ([{"a": "alpha"}, {"b": "bravo"}], ["bravo"], ["bravo"], ["alpha"]),            # list of 1 string
-                             ([{"a": "alpha"}, {"b": "bravo"}], ["alpha", "bravo"], ["alpha", "bravo"], [])  # list of 2 strings
+                             ([{"a": "alpha"}, {"b": "bravo"}], "bravo", ["bravo"], ["alpha"]),                  # string
+                             ([{"a": "alpha"}, {"b": "bravo"}], re.compile("^bravo$"), ["bravo"], ["alpha"]),    # regex
+                             ([{"a": "alpha"}, {"b": "bravo"}], ["bravo"], ["bravo"], ["alpha"]),                # list of 1 string
+                             ([{"a": "alpha"}, {"b": "bravo"}], ["alpha", "bravo"], ["alpha", "bravo"], []),     # list of 2 strings
+                             ([{"a": "alpha"}, {"b": "bravo"}], [re.compile("^bravo$")], ["bravo"], ["alpha"]),  # list of 1 regex
+                             ([{"a": "alpha"}, {"b": "bravo"}], [re.compile("^bravo$"), re.compile("^alpha$")],
+                              ["alpha", "bravo"], []),                                                           # list of 2 regexes
+                             ([{"a": "alpha"}, {"b": "bravo"}], ["bravo", re.compile("^alpha$")],
+                              ["alpha", "bravo"], [])                                                            # list of string and regex
                          ])
 def test_is_not_found_fail(obj, item, in_err_msg, not_in_err_msg):
 
@@ -55,9 +66,15 @@ def test_is_not_found_fail(obj, item, in_err_msg, not_in_err_msg):
 
 @pytest.mark.parametrize("obj, item",
                          [
-                             ([{"a": "alpha"}, {"b": "bravo"}], "bravo"),            # string
-                             ([{"a": "alpha"}, {"b": "bravo"}], ["bravo"]),          # list of 1 string
-                             ([{"a": "alpha"}, {"b": "bravo"}], ["alpha", "bravo"])  # list of 2 strings
+                             ([{"a": "alpha"}, {"b": "bravo"}], "bravo"),                        # string
+                             ([{"a": "alpha"}, {"b": "bravo"}], re.compile("^alp[a-z]{2}$")),    # regex
+                             ([{"a": "alpha"}, {"b": "bravo"}], ["bravo"]),                      # list of 1 string
+                             ([{"a": "alpha"}, {"b": "bravo"}], ["alpha", "bravo"]),             # list of 2 strings
+                             ([{"a": "alpha"}, {"b": "bravo"}], [re.compile("^alp[a-z]{2}$")]),  # list of 1 regex
+                             ([{"a": "alpha"}, {"b": "bravo"}], [re.compile("^alp[a-z]{2}$"),
+                                                                 re.compile("^br[a-z]{3}$")]),   # list of 2 regexes
+                             ([{"a": "alpha"}, {"b": "bravo"}],
+                              ["alpha", "bravo", re.compile("^alpha$")])                         # list of string and regex
                          ])
 def test_is_found_success(obj, item):
     json_compare_helper = JsonCompareHelper()
@@ -67,9 +84,18 @@ def test_is_found_success(obj, item):
 @pytest.mark.parametrize("obj, item, in_err_msg, not_in_err_msg",
                          [
                              ([{"a": "alpha"}, {"b": "bravo"}], "notfound", ["notfound"], ["alpha", "bravo"]),    # string
+                             ([{"a": "alpha"}, {"b": "bravo"}], re.compile("^alp[a-z]{3}$"),
+                              ["[re.compile('^alp[a-z]{3}$')]"], ["alpha", "bravo"]),                             # regex
                              ([{"a": "alpha"}, {"b": "bravo"}], ["notfound"], ["notfound"], ["alpha", "bravo"]),  # list of 1 string
                              ([{"a": "alpha"}, {"b": "bravo"}], ["notfound1", "notfound2"],
-                              ["notfound1", "notfound2"], ["alpha", "bravo"])   # list of 2 strings
+                              ["notfound1", "notfound2"], ["alpha", "bravo"]),                                    # list of 2 strings
+                             ([{"a": "alpha"}, {"b": "bravo"}], [re.compile("^alp[a-z]{3}$")],
+                              ["[re.compile('^alp[a-z]{3}$')]"], ["alpha", "bravo"]),                             # list of 1 regex
+                             ([{"a": "alpha"}, {"b": "bravo"}],
+                              [re.compile("^br[a-z]{3}$"), re.compile("^alp[a-z]{3}$")],
+                              ["[re.compile('^alp[a-z]{3}$')]"], ["alpha", "bravo"]),                             # list of 2 regexes
+                             ([{"a": "alpha"}, {"b": "bravo"}], ["bravo", re.compile("^alp[a-z]{3}$")],
+                              ["[re.compile('^alp[a-z]{3}$')]"], ["alpha", "bravo"]),                             # list of string and regex
                          ])
 def test_is_found_fail(obj, item, in_err_msg, not_in_err_msg):
 
@@ -82,6 +108,7 @@ def test_is_found_fail(obj, item, in_err_msg, not_in_err_msg):
 
     for err in not_in_err_msg:
         assert err not in str(exc_info)
+
 
 @pytest.mark.parametrize("expected, actual",
                          [
