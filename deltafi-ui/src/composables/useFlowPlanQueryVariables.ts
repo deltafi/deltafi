@@ -57,9 +57,6 @@ export const transformFlowFields = {
     ...defaultActionFields,
     ...collectFields,
   },
-  egressAction: {
-    ...defaultActionFields,
-  },
   ...variableFields,
 };
 
