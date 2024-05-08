@@ -178,8 +178,8 @@ const actionTypeList = ref(["DOMAIN", "EGRESS", "ENRICH", "FORMAT", "LOAD", "TRA
 const autoResumeConfigurationMap = new Map([
   ["name", { header: "Name*", placeholder: "e.g. Auto resume smoke error", type: "string", disabled: viewAutoResumeRule }],
   ["flow", { header: "Flow", placeholder: "e.g. smoke, passthrough", type: "string", disabled: viewAutoResumeRule }],
-  ["action", { header: "Action*", placeholder: "e.g. smoke.SmokeEgressAction", type: "string", disabled: viewAutoResumeRule }],
-  ["actionType", { header: "Action Type*", placeholder: "e.g. TRANSFORM or EGRESS", type: "string", disabled: viewAutoResumeRule }],
+  ["action", { header: "Action", placeholder: "e.g. smoke.SmokeEgressAction", type: "string", disabled: viewAutoResumeRule }],
+  ["actionType", { header: "Action Type", placeholder: "e.g. TRANSFORM or EGRESS", type: "string", disabled: viewAutoResumeRule }],
   ["maxAttempts", { header: "Max Attempts", placeholder: "A number 2 or greater", type: "number", min: 0, max: null, disabled: viewAutoResumeRule }],
   ["priority", { header: "Priority", placeholder: "A number 0 or greater", type: "number", disabled: viewAutoResumeRule }],
   ["errorSubstring", { header: "Error Substring*", placeholder: "e.g. ^abc.*, [Dd]eltafi", type: "string", disabled: viewAutoResumeRule }],
