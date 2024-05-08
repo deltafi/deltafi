@@ -11,6 +11,7 @@ spring:
       username: ${MONGO_USER:mongouser}
       password: ${MONGO_PASSWORD}
       authentication-database: ${MONGO_DATABASE:deltafi}
+      uuid-representation: standard
   main:
     banner-mode: "off"
   sql:

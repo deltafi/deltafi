@@ -19,8 +19,6 @@ package org.deltafi.common.types;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
-import org.bson.UuidRepresentation;
-import org.bson.internal.UuidHelper;
 import org.deltafi.common.content.Segment;
 import org.deltafi.core.exceptions.UnexpectedFlowException;
 import org.jetbrains.annotations.NotNull;
@@ -131,14 +129,6 @@ public class DeltaFile {
     this.cacheTime = other.cacheTime;
     this.schemaVersion = other.schemaVersion;
     this.snapshot = null;
-  }
-
-  @Transient
-  @SuppressWarnings("unused")
-  public String getMongoSearch() {
-    byte[] bsonBytes = UuidHelper.encodeUuidToBinary(did, UuidRepresentation.JAVA_LEGACY);
-    return "db.deltaFiles.find({_id: Binary.createFromBase64('%s', 3)})".formatted(
-            java.util.Base64.getEncoder().encodeToString(bsonBytes));
   }
 
   public void snapshot() {
