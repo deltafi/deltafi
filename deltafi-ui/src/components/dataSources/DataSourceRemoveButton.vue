@@ -34,7 +34,7 @@
 </template>
 
 <script setup>
-import useIngressActions from "@/composables/useIngressActions";
+import useDataSource from "@/composables/useDataSource";
 import useNotifications from "@/composables/useNotifications";
 import { defineEmits, defineProps, reactive } from "vue";
 
@@ -43,8 +43,8 @@ import Button from "primevue/button";
 import { useConfirm } from "primevue/useconfirm";
 
 const confirm = useConfirm();
-const { removeTimedIngressFlowPlan } = useIngressActions();
-const emit = defineEmits(["reloadIngressActions"]);
+const { removeDataSourcePlan } = useDataSource();
+const emit = defineEmits(["reloadDataSources"]);
 const notify = useNotifications();
 
 const props = defineProps({
@@ -56,24 +56,24 @@ const props = defineProps({
 
 const { rowDataProp: rowData } = reactive(props);
 
-const confirmationPopup = (event, actionName) => {
+const confirmationPopup = (event, dataSource) => {
   confirm.require({
     target: event.currentTarget,
-    group: `${actionName}`,
-    message: `Remove ${actionName} Ingress Action?`,
+    group: `${dataSource}`,
+    message: `Remove ${dataSource} Data Source?`,
     acceptLabel: "Remove",
     rejectLabel: "Cancel",
     icon: "pi pi-exclamation-triangle",
     accept: () => {
-      notify.info("Removing Ingress Action", `Removing action ${actionName}.`, 3000);
-      confirmedRemoveIngressAction(actionName);
+      notify.info("Removing Data Source", `Removing data source ${dataSource}.`, 3000);
+      confirmedRemoveDataSource(dataSource);
     },
     reject: () => {},
   });
 };
 
-const confirmedRemoveIngressAction = async (actionName) => {
-  await removeTimedIngressFlowPlan(actionName);
-  emit("reloadIngressActions");
+const confirmedRemoveDataSource = async (dataSource) => {
+  await removeDataSourcePlan(dataSource);
+  emit("reloadDataSources");
 };
 </script>

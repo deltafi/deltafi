@@ -20,32 +20,36 @@
   <div>
     <PageHeader heading="Data Sources">
       <div class="mb-2">
-          <DialogTemplate component-name="ingressActions/IngressActionConfigurationDialog" header="Add New Ingress Action" dialog-width="50vw" @reload-ingress-action="refresh">
-            <Button v-has-permission:DeletePolicyCreate label="Add Action" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
-          </DialogTemplate>
+        <DialogTemplate component-name="dataSources/DataSourceConfigurationDialog" header="Add New Data Source" dialog-width="50vw" @reload-data-sources="refresh">
+          <Button v-has-permission:DeletePolicyCreate label="Add Data Source" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
+        </DialogTemplate>
       </div>
     </PageHeader>
-    <dataSourcesPanel ref="dataSourcesPanel" @ingress-actions-list="exportableIngressActions"/>
+    <RestDataSourcesPanel ref="restDataSourcesPanel" @data-sources-list="exportableDataSource" />
+    <TimedDataSourcesPanel ref="timedDataSourcesPanel" @data-sources-list="exportableDataSource" />
   </div>
 </template>
 
 <script setup>
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import PageHeader from "@/components/PageHeader.vue";
-import DataSourcesPanel from "@/components/dataSources/DataSourcesPanel.vue";
+import RestDataSourcesPanel from "@/components/dataSources/RestDataSourcesPanel.vue";
+import TimedDataSourcesPanel from "@/components/dataSources/TimedDataSourcesPanel.vue";
 import { ref, inject, onMounted, provide, onUnmounted } from "vue";
 
 import Button from "primevue/button";
 
 const refreshInterval = 5000; // 5 seconds
 const isIdle = inject("isIdle");
-const dataSourcesPanel = ref(null);
+const restDataSourcesPanel = ref(null);
+const timedDataSourcesPanel = ref(null);
 const editing = ref(false);
-provide("isEditing", editing );
+provide("isEditing", editing);
 let autoRefresh;
 
 const refresh = async () => {
-  dataSourcesPanel.value.refresh();
+  restDataSourcesPanel.value.refresh();
+  timedDataSourcesPanel.value.refresh();
 };
 
 onMounted(() => {
@@ -60,9 +64,9 @@ onUnmounted(() => {
   clearInterval(autoRefresh);
 });
 
-const ingressActionsList = ref(null);
+const dataSourceList = ref(null);
 
-const exportableIngressActions = (value) => {
-  ingressActionsList.value = value;
+const exportableDataSource = (value) => {
+  dataSourceList.value = value;
 };
 </script>

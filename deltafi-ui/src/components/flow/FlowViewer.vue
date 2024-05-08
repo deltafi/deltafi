@@ -113,9 +113,9 @@
           <FlowExpectedAnnotationsViewer :key="Math.random()" :header="header" :expected-annotations="expectedAnnotations" :flow-name="flowName" :flow-type="flowType" @reload-flow-viewer="fetchFlows(flowName, flowType)"></FlowExpectedAnnotationsViewer>
         </TabPanel>
       </template>
-      <TabPanel header="Subscriptions">
-        <FlowSubscriptionsViewer v-if="!_.isEmpty(flowData?.subscriptions)" :key="Math.random()" :header="header" :subscriptions="flowData?.subscriptions"></FlowSubscriptionsViewer>
-        <a v-else>No Flow Subscriptions</a>
+      <TabPanel header="Subscribe">
+        <FlowSubscribeViewer v-if="!_.isEmpty(flowData?.subscribe)" :key="Math.random()" :header="header" :subscribe="flowData?.subscribe"></FlowSubscribeViewer>
+        <a v-else>Not Subscribing to any flows</a>
       </TabPanel>
     </TabView>
   </div>
@@ -125,7 +125,7 @@
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import FlowExpectedAnnotationsViewer from "@/components/flow/FlowExpectedAnnotationsViewer.vue";
 import FlowVariableViewer from "@/components/flow/FlowVariableViewer.vue";
-import FlowSubscriptionsViewer from "./FlowSubscriptionsViewer.vue";
+import FlowSubscribeViewer from "./FlowSubscribeViewer.vue";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import { computed, defineProps, inject, onBeforeMount, reactive, ref } from "vue";
 import useUtilFunctions from "@/composables/useUtilFunctions";

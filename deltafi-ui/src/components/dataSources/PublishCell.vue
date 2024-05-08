@@ -24,8 +24,8 @@
         <small><u>Rules</u></small>
       </div>
       <div v-for="(rule, index) in data[field].rules" :key="index" class="ml-2">
-        <div v-if="!_.isEmpty(rule.topics)">
-          <small>Topics: {{ rule.topics.join(", ") }}</small>
+        <div v-if="!_.isEmpty(rule.topic)">
+          <small>Topic: {{ rule.topic }}</small>
         </div>
         <div v-if="!_.isEmpty(rule.condition)">
           <small>Condition: {{ rule.condition }}</small>

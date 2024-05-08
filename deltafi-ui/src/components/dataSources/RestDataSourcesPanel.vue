@@ -17,22 +17,22 @@
 -->
 
 <template>
-  <div class="timed-ingress-actions-panel">
-    <CollapsiblePanel header="Timed Ingress Actions" class="table-panel pb-3">
-      <DataTable :loading="showLoading" :value="timedIngressActions" edit-mode="cell" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines ingress-actions-table" :global-filter-fields="['searchField']" sort-field="name" :sort-order="1" :row-hover="true" @cell-edit-init="onEditInit" @cell-edit-complete="onEditComplete" @cell-edit-cancel="onEditCancel">
-        <template #empty>No Timed Ingress Actions found.</template>
-        <template #loading>Loading Timed Ingress Actions. Please wait.</template>
+  <div class="rest-data-source-panel">
+    <CollapsiblePanel header="REST Data Sources" class="table-panel pb-3">
+      <DataTable :loading="showLoading" :value="restDataSources" edit-mode="cell" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines data-sources-table" :global-filter-fields="['searchField']" sort-field="name" :sort-order="1" :row-hover="true" @cell-edit-init="onEditInit" @cell-edit-complete="onEditComplete" @cell-edit-cancel="onEditCancel">
+        <template #empty>No REST Data Sources found.</template>
+        <template #loading>Loading REST Data Sources. Please wait.</template>
         <Column header="Name" field="name" :style="{ width: '25%' }" :sortable="true">
           <template #body="{ data }">
             <div class="d-flex justify-content-between align-items-center">
               <span class="cursor-pointer" @click="showAction(data.name)">{{ data.name }}</span>
               <span>
                 <span class="d-flex align-items-center">
-                  <IngressActionRemoveButton v-if="data.sourcePlugin.artifactId === 'system-plugin'" :disabled="!$hasPermission('FlowUpdate')" :row-data-prop="data" @reload-ingress-actions="refresh" />
-                  <DialogTemplate ref="updateIngressDialog" component-name="ingressActions/IngressActionConfigurationDialog" header="Edit Ingress Action" dialog-width="50vw" :row-data-prop="data" edit-ingress-action @reload-ingress-actions="refresh">
+                  <DataSourceRemoveButton v-if="data.sourcePlugin.artifactId === 'system-plugin'" :disabled="!$hasPermission('FlowUpdate')" :row-data-prop="data" @reload-data-sources="refresh" />
+                  <DialogTemplate ref="updateDataSource" component-name="dataSources/DataSourceConfigurationDialog" header="Edit Data Source" dialog-width="50vw" :row-data-prop="data" edit-data-source @reload-data-sources="refresh">
                     <Button v-if="data.sourcePlugin.artifactId === 'system-plugin'" v-tooltip.top="`Edit`" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary mx-n2" :disabled="!$hasPermission('FlowUpdate')" />
                   </DialogTemplate>
-                  <DialogTemplate ref="updateIngressDialog" component-name="ingressActions/IngressActionConfigurationDialog" header="Create Ingress Action" dialog-width="50vw" :row-data-prop="cloneIngressAction(data)" @reload-ingress-actions="refresh">
+                  <DialogTemplate ref="updateDataSource" component-name="dataSources/DataSourceConfigurationDialog" header="Create Data Source" dialog-width="50vw" :row-data-prop="cloneDataSource(data)" @reload-data-sources="refresh">
                     <Button v-tooltip.top="`Clone`" icon="pi pi-clone" class="p-button-text p-button-sm p-button-rounded p-button-secondary mx-n2" :disabled="!$hasPermission('FlowUpdate')" />
                   </DialogTemplate>
                   <PermissionedRouterLink :disabled="!$hasPermission('PluginsView')" :to="{ path: 'plugins/' + concatMvnCoordinates(data.sourcePlugin) }">
@@ -44,37 +44,15 @@
           </template>
         </Column>
         <Column header="Description" field="description" :sortable="true"></Column>
-        <Column header="Target Flow" field="targetFlow" :sortable="true"></Column>
-        <Column header="Publish Rules" field="publishRules" :sortable="true">
-          <template #body="{ data, field }">
-            <template v-if="!_.isEmpty(data[field])">
-              <div>
-                <i class="ml-1 text-muted fa-solid fa-right-to-bracket fa-fw" @mouseover="toggle($event, data, field)" @mouseleave="toggle($event, data, field)" />
-              </div>
-              <OverlayPanel ref="op">
-                <PublishRulesCell :data-prop="overlayData" :field-prop="overlayField"></PublishRulesCell>
-              </OverlayPanel>
-            </template>
-          </template>
-        </Column>
-        <Column header="Cron Schedule" field="cronSchedule" :sortable="true" class="inline-edit-column" style="width: 10rem">
-          <template #body="{ data, field }">
-            <span v-tooltip.top="cronString.toString(data[field], { verbose: false })">{{ data[field] }} </span>
-          </template>
-        </Column>
-        <Column header="Status" field="ingressStatus" :sortable="true">
+        <Column header="Topic" field="topic" :sortable="true"></Column>
+        <Column :style="{ width: '7%' }" class="data-source-state-column">
           <template #body="{ data }">
-            <StatusBadge :status="data.ingressStatus" :message="data.ingressStatusMessage" />
-          </template>
-        </Column>
-        <Column :style="{ width: '7%' }" class="ingress-action-state-column">
-          <template #body="{ data }">
-            <StateInputSwitch :row-data-prop="data" ingress-action-type="timedIngress" @change="refresh" />
+            <StateInputSwitch :row-data-prop="data" data-source-type="timedDataSource" @change="refresh" />
           </template>
         </Column>
       </DataTable>
     </CollapsiblePanel>
-    <Dialog v-model:visible="viewDialogVisible" :style="{ width: '30vw' }" :header="dialogHeader" :modal="true" :dismissable-mask="true" class="p-fluid timed-ingress-action-dialog">
+    <Dialog v-model:visible="viewDialogVisible" :style="{ width: '30vw' }" :header="dialogHeader" :modal="true" :dismissable-mask="true" class="p-fluid rest-data-source-dialog">
       <div v-for="(label, fieldName) in fields" :key="fieldName" class="mb-3">
         <strong>{{ label }}</strong>
         <br />
@@ -95,7 +73,7 @@
           <template v-if="_.isEmpty(activeAction[fieldName])"> - </template>
           <template v-else>
             <div class="ml-2">
-              <PublishRulesCell :data-prop="activeAction" :field-prop="fieldName"></PublishRulesCell>
+              <PublishCell :data-prop="activeAction" :field-prop="fieldName"></PublishCell>
             </div>
           </template>
         </span>
@@ -103,11 +81,9 @@
       </div>
       <template #footer>
         <div class="d-flex justify-content-between">
+          <span></span>
           <div>
-            <StatusBadge :status="activeAction.ingressStatus" :message="activeAction.ingressStatusMessage" />
-          </div>
-          <div>
-            <StateInputSwitch :row-data-prop="activeAction" ingress-action-type="timedIngress" @change="refresh" />
+            <StateInputSwitch :row-data-prop="activeAction" data-source-type="timedDataSource" @change="refresh" />
           </div>
         </div>
       </template>
@@ -118,37 +94,31 @@
 <script setup>
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
-import IngressActionRemoveButton from "@/components/dataSources/IngressActionRemoveButton.vue";
-import StatusBadge from "@/components/dataSources/StatusBadge.vue";
+import DataSourceRemoveButton from "@/components/dataSources/DataSourceRemoveButton.vue";
 import StateInputSwitch from "@/components/dataSources/StateInputSwitch.vue";
 import PermissionedRouterLink from "@/components/PermissionedRouterLink";
-import PublishRulesCell from "@/components/dataSources/PublishRulesCell.vue";
+import PublishCell from "@/components/dataSources/PublishCell.vue";
 import Timestamp from "@/components/Timestamp.vue";
-import useIngressActions from "@/composables/useIngressActions";
+import useDataSource from "@/composables/useDataSource";
 import useNotifications from "@/composables/useNotifications";
 import { computed, defineEmits, onMounted, inject, ref } from "vue";
 
-const cronString = require("cronstrue");
 import _ from "lodash";
 
 import Button from "primevue/button";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import Dialog from "primevue/dialog";
-import OverlayPanel from "primevue/overlaypanel";
 
-const emit = defineEmits(["ingressActionsList"]);
+const emit = defineEmits(["dataSourcesList"]);
 const editing = inject("isEditing");
 const notify = useNotifications();
-const { getAllTimedIngress, setTimedIngressCronSchedule, loaded, loading, errors } = useIngressActions();
+const { getAllDataSources, setTimedDataSourceCronSchedule, loaded, loading, errors } = useDataSource();
 const showLoading = computed(() => loading.value && !loaded.value);
-const timedIngressActions = ref([]);
+const restDataSources = ref([]);
 const onEditInit = () => (editing.value = true);
 const onEditCancel = () => (editing.value = false);
-const updateIngressDialog = ref(null);
-
-const overlayData = ref({});
-const overlayField = ref(null);
+const updateDataSource = ref(null);
 
 const onEditComplete = async (event) => {
   const { data, newValue, field } = event;
@@ -156,7 +126,7 @@ const onEditComplete = async (event) => {
   if (data.cronSchedule !== newValue && newValue !== "") {
     const resetValue = data.cronSchedule;
     data[field] = newValue;
-    await setTimedIngressCronSchedule(data.name, newValue);
+    await setTimedDataSourceCronSchedule(data.name, newValue);
     if (errors.value.length === 0) {
       notify.success("Cron Schedule Set Successfully", `Cron Schedule for ${data.name} set to ${newValue}`);
     } else {
@@ -175,22 +145,16 @@ const dialogHeader = computed(() => {
 });
 const activeActionName = ref();
 const activeAction = computed(() => {
-  if (activeActionName.value === undefined) return timedIngressActions.value[0];
-  return _.find(timedIngressActions.value, (action) => {
+  if (activeActionName.value === undefined) return restDataSources.value[0];
+  return _.find(restDataSources.value, (action) => {
     return action.name == activeActionName.value;
   });
 });
 
 const fields = {
+  name: "Name",
   description: "Description",
-  ingressStatusMessage: "Status Message",
-  targetFlow: "Target Flow",
-  cronSchedule: "Cron Schedule",
-  lastRun: "Last Run",
-  nextRun: "Next Run",
-  memo: "Memo",
-  executeImmediate: "Execute Immediate",
-  publishRules: "Publish Rules",
+  topic: "Topic",
 };
 
 const showAction = (actionName) => {
@@ -199,10 +163,10 @@ const showAction = (actionName) => {
 };
 // End Dialog
 
-const cloneIngressAction = (data) => {
-  let clonedIngressActionObject = _.cloneDeepWith(data);
-  clonedIngressActionObject["name"] = "";
-  return clonedIngressActionObject;
+const cloneDataSource = (data) => {
+  let clonedDataSourceObject = _.cloneDeepWith(data);
+  clonedDataSourceObject["name"] = "";
+  return clonedDataSourceObject;
 };
 
 const concatMvnCoordinates = (sourcePlugin) => {
@@ -213,17 +177,12 @@ const refresh = async () => {
   // Do not refresh data while editing.
   if (editing.value) return;
 
-  const response = await getAllTimedIngress();
-  timedIngressActions.value = response.data.getAllFlows.dataSource;
-  emit("ingressActionsList", timedIngressActions.value);
-};
+  const response = await getAllDataSources();
+  restDataSources.value = response.data.getAllFlows.dataSource.filter((ds) => {
+    return ds.type === "REST_DATA_SOURCE";
+  });
 
-const op = ref();
-
-const toggle = (event, data, field) => {
-  overlayData.value = data;
-  overlayField.value = field;
-  op.value.toggle(event);
+  emit("dataSourcesList", restDataSources.value);
 };
 
 onMounted(() => {
@@ -234,10 +193,10 @@ defineExpose({ refresh });
 </script>
 
 <style lang="scss">
-.timed-ingress-actions-panel {
+.rest-data-source-panel {
   .table-panel {
-    .ingress-action-table {
-      td.ingress-action-state-column {
+    .data-sources-table {
+      td.data-source-state-column {
         padding: 0 !important;
 
         .p-inputswitch {
@@ -253,7 +212,7 @@ defineExpose({ refresh });
     }
   }
 
-  .timed-ingress-action-dialog {
+  .rest-data-source-dialog {
     .p-dialog-footer {
       padding: 1rem 1rem 0.6rem 1rem !important;
     }

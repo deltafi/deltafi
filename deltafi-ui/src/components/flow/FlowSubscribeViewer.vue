@@ -17,18 +17,18 @@
 -->
 
 <template>
-  <div class="flow-subscriptions-viewer">
-    <span v-for="(subscription, index) in props.subscriptions" :key="subscription">
+  <div class="flow-subscribe-viewer">
+    <span v-for="(value, index) in props.subscribe" :key="value">
       <b>Condition: </b>
-      <a v-if="subscription.condition">{{ subscription.condition }}</a>
+      <a v-if="value.condition">{{ value.condition }}</a>
       <a v-else>None</a><br />
       <b>Topic: </b>
       <ul>
-        <div v-for="topic in subscription.topics" :key="topic">
+        <div v-for="topic in value.topic" :key="topic">
           <li>{{ topic }}</li>
         </div>
       </ul>
-      <hr v-if="index !== props.subscriptions.length - 1" />
+      <hr v-if="index !== props.subscribe.length - 1" />
     </span>
   </div>
 </template>
@@ -37,7 +37,7 @@
 import { defineProps } from "vue";
 
 const props = defineProps({
-  subscriptions: {
+  subscribe: {
     type: Array,
     required: true,
   },

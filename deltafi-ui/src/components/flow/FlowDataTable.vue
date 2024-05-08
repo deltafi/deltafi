@@ -48,25 +48,20 @@
           </div>
         </template>
       </Column>
-      <Column header="Bit Rate" class="bit-rate-column">
-        <template #body="{ data }">
-          <span class="text-muted">{{ bitRate(data.name) }}</span>
-        </template>
-      </Column>
       <Column header="Description" field="description" class="truncateDescription">
         <template #body="{ data, field }">
           <div v-if="_.size(data[field]) > 95" v-tooltip.bottom="data[field]">{{ displayDiscription(data[field]) }}</div>
           <span v-else>{{ data[field] }}</span>
         </template>
       </Column>
-      <Column v-if="FlowTypeTitle === 'Transform'" header="Subscriptions" field="subscriptions" :style="{ width: '7%' }">
+      <Column v-if="FlowTypeTitle === 'Transform'" header="Subscribe" field="subscribe" :style="{ width: '7%' }">
         <template #body="{ data, field }">
           <template v-if="!_.isEmpty(data[field])">
             <div>
               <i class="ml-1 text-muted fa-solid fa-right-to-bracket fa-fw" @mouseover="toggle($event, data, field)" @mouseleave="toggle($event, data, field)" />
             </div>
             <OverlayPanel ref="op">
-              <SubscriptionsCell :data-prop="overlayData" :field-prop="overlayField"></SubscriptionsCell>
+              <SubscribeCell :data-prop="overlayData" :field-prop="overlayField"></SubscribeCell>
             </OverlayPanel>
           </template>
         </template>
@@ -106,20 +101,18 @@ import DialogTemplate from "@/components/DialogTemplate.vue";
 import FlowStateInputSwitch from "@/components/flow/FlowStateInputSwitch.vue";
 import FlowStateValidationButton from "@/components/flow/FlowStateValidationButton.vue";
 import FlowTestModeInputSwitch from "@/components/flow/FlowTestModeInputSwitch.vue";
-import SubscriptionsCell from "@/components/flow/SubscriptionsCell.vue";
+import SubscribeCell from "@/components/flow/SubscribeCell.vue";
 import PermissionedRouterLink from "@/components/PermissionedRouterLink";
-import useGraphiteQueryBuilder from "@/composables/useGraphiteQueryBuilder";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import useFlowPlanQueryBuilder from "@/composables/useFlowPlanQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
 import { useStorage, StorageSerializers } from "@vueuse/core";
-import { computed, defineProps, inject, onBeforeMount, ref, onUnmounted, watch, defineEmits } from "vue";
+import { computed, defineProps, onBeforeMount, ref, onUnmounted, watch, defineEmits } from "vue";
 
 import Column from "primevue/column";
 import ConfirmPopup from "primevue/confirmpopup";
 import DataTable from "primevue/datatable";
 import { FilterMatchMode } from "primevue/api";
-import { filesize } from "filesize";
 import InputNumber from "primevue/inputnumber";
 import { useConfirm } from "primevue/useconfirm";
 import OverlayPanel from "primevue/overlaypanel";
@@ -131,10 +124,7 @@ const notify = useNotifications();
 const confirm = useConfirm();
 const { removeTransformFlowPlanByName, removeEgressFlowPlanByName } = useFlowPlanQueryBuilder();
 
-const refreshInterval = 5000; // 5 seconds
 let autoRefresh = null;
-const isIdle = inject("isIdle");
-const { data: metricsData, fetchIngressFlowsByteRate, fetchEgressFlowsByteRate } = useGraphiteQueryBuilder();
 const emit = defineEmits(["updateFlows"]);
 const flowData = ref({});
 
@@ -169,7 +159,6 @@ const filters = ref({
   mvnCoordinates: { value: null, matchMode: FilterMatchMode.CONTAINS },
 });
 
-const formattedBitRate = ref({});
 
 onUnmounted(() => {
   clearInterval(autoRefresh);
@@ -177,8 +166,6 @@ onUnmounted(() => {
 
 onBeforeMount(async () => {
   flowData.value = props.flowDataProp;
-  await formatBitRate();
-  autoRefresh = setInterval(formatBitRate, refreshInterval);
 });
 
 watch(
@@ -241,22 +228,6 @@ const flowDataByType = computed(() => {
   });
 });
 
-const formatBitRate = async () => {
-  if (!isIdle.value) {
-    if (_.isEqual(props.flowTypeProp, "transform")) {
-      await fetchIngressFlowsByteRate();
-    } else if (_.isEqual(props.flowTypeProp, "egress")) {
-      await fetchEgressFlowsByteRate();
-    } else {
-      return;
-    }
-
-    for (let value of metricsData.value) {
-      let newKey = value["tags"].normalizeFlow;
-      formattedBitRate.value[`${newKey}`] = value;
-    }
-  }
-};
 
 const confirmationPopup = (event, data) => {
   if (_.isEqual(data.flowStatus.state, "RUNNING")) {
@@ -272,7 +243,7 @@ const confirmationPopup = (event, data) => {
     accept: () => {
       deleteFlow(data);
     },
-    reject: () => {},
+    reject: () => { },
   });
 };
 
@@ -280,25 +251,6 @@ const removeFlowFromProp = (data) => {
   flowData.value[props.flowTypeProp] = flowData.value[props.flowTypeProp].filter((flow) => {
     return flow.name !== data.name;
   });
-};
-
-const bitRate = (bitsPerFlow) => {
-  let bitRate = 0;
-  let count = 0;
-  let totalBitRate = 0;
-
-  if (!_.isEmpty(_.get(formattedBitRate.value[`${bitsPerFlow}`], "datapoints"))) {
-    for (let datapoints of formattedBitRate.value[`${bitsPerFlow}`].datapoints) {
-      if (datapoints[0] != null) {
-        bitRate = bitRate + datapoints[0];
-        count++;
-      }
-    }
-    if (bitRate > 0) {
-      totalBitRate = bitRate / (count * 10);
-    }
-  }
-  return filesize(totalBitRate, { roundingMethod: "round", bits: true, symbols: "jedec" }) + "/s";
 };
 
 const onCellEditComplete = async (event) => {

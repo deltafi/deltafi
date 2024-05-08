@@ -31,24 +31,24 @@
       </template>
     </PageHeader>
     <div v-if="model.active">
-      <template v-if="_.isEqual(model.type, 'TRANSFORM')">
-        <div class="row p-2">
-          <div class="col pl-2 pr-1">
-            <Panel header="Subscriptions" :pt="{ content: { class: 'p-1' } }">
-              <div class="px-0">
-                <dd>
-                  <div class="deltafi-fieldset">
-                    <div class="px-2">
-                      <json-forms :data="model['subscriptions']" :renderers="renderers" :uischema="subscriptionsUISchema" :schema="subscriptionsSchema" @change="onSubscriptionsChange" />
-                    </div>
+      <div class="row p-2">
+        <div class="col pl-2 pr-1">
+          <Panel header="Subscribe" :pt="{ content: { class: 'p-1' } }">
+            <div class="px-0">
+              <dd>
+                <div class="deltafi-fieldset">
+                  <div class="px-2">
+                    <json-forms :data="model['subscribe']" :renderers="renderers" :uischema="subscribeUISchema" :schema="subscribeSchema" @change="onSubscribeChange" />
                   </div>
-                </dd>
-              </div>
-            </Panel>
-          </div>
+                </div>
+              </dd>
+            </div>
+          </Panel>
         </div>
-        <div v-for="action of flowTypesMap.get(model.type).flowActionTypes" :key="action" class="row p-2">
-          <div :class="getColSize(action)">
+      </div>
+      <div class="row p-2">
+        <div v-for="action of flowTypesMap.get(model.type).flowActionTypes" :key="action" class="col pl-2 pr-1">
+          <div>
             <Panel :header="_.startCase(flowActionTemplateMap.get(action).activeContainer)" class="table-panel">
               <template #icons>
                 <button class="p-panel-header-icon p-link" @click="viewActionTreeMenu($event, action)">
@@ -86,50 +86,22 @@
             </Panel>
           </div>
         </div>
-      </template>
-      <template v-else>
-        <div class="row p-2">
-          <div v-for="action of flowTypesMap.get(model.type).flowActionTypes" :key="action" :class="getColSize(action)">
-            <div>
-              <Panel :header="_.startCase(flowActionTemplateMap.get(action).activeContainer)" class="table-panel">
-                <template #icons>
-                  <button class="p-panel-header-icon p-link" @click="viewActionTreeMenu($event, action)">
-                    <span class="pi pi-plus-circle"></span>
-                  </button>
-                </template>
-                <div :class="`action-panel-content p-2 ${requiresActionCheck(action)}`">
-                  <template v-if="flowActionTemplateObject[flowActionTemplateMap.get(action).activeContainer].length == 0">
-                    <div v-if="flowActionTemplateMap.get(action).requiredActionMin" :class="`empty-action pt-2 mb-n3 ${requiresActionCheck(action)}`">{{ _.startCase(flowActionTemplateMap.get(action).activeContainer) }} Required</div>
-                    <div v-else class="empty-action pt-2 mb-n3">No {{ _.startCase(flowActionTemplateMap.get(action).activeContainer) }}</div>
-                  </template>
-                  <draggable :id="action" v-model="flowActionTemplateObject[flowActionTemplateMap.get(action).activeContainer]" item-key="id" :sort="true" :group="action" ghost-class="action-transition-layout" drag-class="action-transition-layout" class="dragArea panel-horizontal-wrap pb-2 pt-3" @change="validateNewAction" @move="actionOrderChanged">
-                    <template #item="{ element, index }">
-                      <div :id="element.id" class="action-layout border border-dark rounded mx-2 my-4 p-overlay-badge">
-                        <Badge v-if="!_.isEmpty(validateAction(element))" v-tooltip.left="{ value: `${validateAction(element)}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-exclamation-triangle pt-1'" severity="danger"></Badge>
-                        <div class="d-flex align-items-center justify-content-between">
-                          <span class="one-line">
-                            <InputText v-model="element.name" :class="'inputtext-border-remove pl-0 text-truncate'" placeholder="Action Name Required" />
-                          </span>
-                          <div class="pl-2 btn-group">
-                            <DialogTemplate component-name="flowBuilder/ActionConfigurationDialog" :header="`Edit ${displayActionName(element)}`" :row-data-prop="element" :action-index-prop="index" dialog-width="75vw" @update-action="updateAction">
-                              <Button v-tooltip.top="{ value: `Edit ${displayActionName(element)}`, class: 'tooltip-width', showDelay: 300 }" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary" />
-                            </DialogTemplate>
-                            <Button v-tooltip.top="{ value: `Remove ${displayActionName(element)}`, class: 'tooltip-width', showDelay: 300 }" icon="pi pi-trash" class="p-button-text p-button-sm p-button-rounded p-button-danger" @click="removeAction(element, index)" />
-                          </div>
-                        </div>
-                        <Divider class="my-0" />
-                        <dd>
-                          <span v-tooltip.bottom="{ value: `${element.type}`, class: 'tooltip-width', showDelay: 300 }">{{ element.displayName }}</span>
-                        </dd>
-                      </div>
-                    </template>
-                  </draggable>
+      </div>
+      <div v-if="_.isEqual(model.type, 'TRANSFORM')" class="row p-2">
+        <div class="col pl-2 pr-1">
+          <Panel header="Publish" :pt="{ content: { class: 'p-1' } }">
+            <div class="px-0">
+              <dd>
+                <div class="deltafi-fieldset">
+                  <div class="px-2">
+                    <json-forms :data="model['publish']" :renderers="renderers" :uischema="publishUISchema" :schema="publishSchema" @change="onPublishChange" />
+                  </div>
                 </div>
-              </Panel>
+              </dd>
             </div>
-          </div>
+          </Panel>
         </div>
-      </template>
+      </div>
     </div>
     <HoverSaveButton v-if="model.active" target="window" :model="items" />
     <OverlayPanel ref="actionsOverlayPanel" class="flow-plan-builder-page-overlay" append-to="body" dismissable show-close-icon :style="{ width: '22%' }">
@@ -215,7 +187,8 @@ const actionsTreeRef = ref(null);
 const { rendererList, myStyles } = usePrimeVueJsonSchemaUIRenderers();
 provide("style", myStyles);
 const renderers = ref(Object.freeze(rendererList));
-const subscriptionsUISchema = ref(undefined);
+const subscribeUISchema = ref(undefined);
+const publishUISchema = ref(undefined);
 
 const allActionsData = ref({});
 
@@ -301,7 +274,8 @@ const flowTemplate = {
   active: false,
   name: null,
   description: null,
-  subscriptions: [],
+  subscribe: [],
+  publish: {},
 };
 
 const defaultActionKeys = {
@@ -330,7 +304,7 @@ const flowTypesMap = new Map([
   [
     "TRANSFORM",
     {
-      flowActionTypes: ["TRANSFORM", "EGRESS"],
+      flowActionTypes: ["TRANSFORM"],
       activeContainerList: function () {
         return this.flowActionTypes.flatMap((v) => [flowActionTemplateMap.get(v).activeContainer]);
       },
@@ -339,7 +313,7 @@ const flowTypesMap = new Map([
   [
     "EGRESS",
     {
-      flowActionTypes: ["FORMAT", "VALIDATE", "EGRESS"],
+      flowActionTypes: ["EGRESS"],
       activeContainerList: function () {
         return this.flowActionTypes.flatMap((v) => [flowActionTemplateMap.get(v).activeContainer]);
       },
@@ -373,8 +347,11 @@ onBeforeMount(async () => {
       flowInfo["name"] = linkedFlowPlan.value.flowPlanParams.selectedFlowPlanName;
       flowInfo["selectedFlowPlan"] = _.find(allFlowPlanData.value[`${_.toLower(linkedFlowPlan.value.flowPlanParams.type)}`], { name: linkedFlowPlan.value.flowPlanParams.selectedFlowPlanName });
       flowInfo["description"] = flowInfo["selectedFlowPlan"].description;
-      if (_.has(linkedFlowPlan.value.flowPlanParams.selectedFlowPlan, "subscriptions")) {
-        flowInfo["subscriptions"] = linkedFlowPlan.value.flowPlanParams.selectedFlowPlan.subscriptions;
+      if (_.has(linkedFlowPlan.value.flowPlanParams.selectedFlowPlan, "subscribe")) {
+        flowInfo["subscribe"] = linkedFlowPlan.value.flowPlanParams.selectedFlowPlan.subscribe;
+      }
+      if (_.has(linkedFlowPlan.value.flowPlanParams.selectedFlowPlan, "publish")) {
+        flowInfo["publish"] = linkedFlowPlan.value.flowPlanParams.selectedFlowPlan.publish;
       }
       await createFlowPlan(flowInfo);
       originalFlowPlan.value = rawOutput.value;
@@ -422,13 +399,6 @@ const flowPlanHeader = computed(() => {
   return header;
 });
 
-const getColSize = (flowActionType) => {
-  if (flowTypesMap.get(model.value.type).flowActionTypes.length <= 2 && !_.isEqual(model.value.type, "TRANSFORM")) {
-    return !flowActionTemplateMap.get(flowActionType).limit ? "col pl-2 pr-1" : "col-4 pl-2 pr-1";
-  }
-  return "col pl-2 pr-1";
-};
-
 const createFlowPlan = async (newFlowPlan) => {
   removeFlow();
   await setFlowValues(newFlowPlan);
@@ -444,8 +414,12 @@ const setFlowValues = async (flowInfo) => {
   model.value.description = flowInfo["description"];
   model.value.selectedFlowPlan = flowInfo["selectedFlowPlan"];
 
-  if (_.has(flowInfo["selectedFlowPlan"], "subscriptions")) {
-    model.value["subscriptions"] = flowInfo["selectedFlowPlan"].subscriptions;
+  if (_.has(flowInfo["selectedFlowPlan"], "subscribe")) {
+    model.value["subscribe"] = flowInfo["selectedFlowPlan"].subscribe;
+  }
+
+  if (_.has(flowInfo["selectedFlowPlan"], "publish")) {
+    model.value["publish"] = flowInfo["selectedFlowPlan"].publish;
   }
   model.value.active = true;
 };
@@ -501,7 +475,7 @@ const clearEmptyObjects = (queryObj) => {
       clearEmptyObjects(queryObj[objKey]);
     }
 
-    if (_.isEmpty(queryObj[objKey])) {
+    if (_.isEmpty(queryObj[objKey]) && !_.isBoolean(queryObj[objKey])) {
       delete queryObj[objKey];
     }
   }
@@ -510,11 +484,12 @@ const clearEmptyObjects = (queryObj) => {
 
 const save = async (rawFlow) => {
   let response = null;
-  rawFlow = clearEmptyObjects(rawFlow);
+  let newRawFlow = JSON.parse(JSON.stringify(rawFlow));
+  newRawFlow = clearEmptyObjects(newRawFlow);
   if (model.value.type === "TRANSFORM") {
-    response = await saveTransformFlowPlan(rawFlow);
+    response = await saveTransformFlowPlan(newRawFlow);
   } else if (model.value.type === "EGRESS") {
-    response = await saveEgressFlowPlan(rawFlow);
+    response = await saveEgressFlowPlan(newRawFlow);
   }
   if (response !== undefined) {
     notify.success(`${response.data[`save${_.capitalize(model.value.type)}FlowPlan`].name} Flow Plan Saved`);
@@ -804,7 +779,7 @@ const getLoadedActions = () => {
       if (!_.isEmpty(action.schema.properties)) {
         for (const [key, value] of Object.entries(action.schema.properties)) {
           if (!_.isEmpty(value.default)) {
-              action["parameters"][key] = value.default;
+            action["parameters"][key] = value.default;
           }
         }
       }
@@ -922,11 +897,11 @@ const prettyPrint = (json) => {
   return "";
 };
 
-const onSubscriptionsChange = (event) => {
-  model.value["subscriptions"] = event.data;
+const onSubscribeChange = (event) => {
+  model.value["subscribe"] = event.data;
 };
 
-const subscriptionsSchema = {
+const subscribeSchema = {
   type: "array",
   items: {
     type: "object",
@@ -934,10 +909,50 @@ const subscriptionsSchema = {
       condition: {
         type: "string",
       },
-      topics: {
-        type: "array",
-        items: {
+      topic: {
+        type: "string",
+      },
+    },
+  },
+};
+
+const onPublishChange = (event) => {
+  model.value["publish"] = event.data;
+};
+
+const publishSchema = {
+  type: "object",
+  properties: {
+    defaultRule: {
+      type: "object",
+      default: {},
+      properties: {
+        defaultBehavior: {
           type: "string",
+          enum: ["ERROR", "FILTER", "PUBLISH"],
+          default: "ERROR",
+        },
+        topic: {
+          type: "string",
+        },
+      },
+    },
+    matchingPolicy: {
+      type: "string",
+      enum: ["ALL_MATCHING", "FIRST_MATCHING"],
+      default: "ALL_MATCHING",
+    },
+    rules: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          condition: {
+            type: "string",
+          },
+          topic: {
+            type: "string",
+          },
         },
       },
     },

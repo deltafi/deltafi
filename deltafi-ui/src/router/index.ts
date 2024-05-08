@@ -19,7 +19,6 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
 import AutoResumePage from "@/pages/AutoResumePage.vue";
 import DashboardPage from "@/pages/DashboardPage.vue";
-import DataSourcesPage from "@/pages/DataSourcesPage.vue";
 import DeletePoliciesPage from "@/pages/DeletePoliciesPage.vue";
 import DeltaFileSearchPage from "@/pages/DeltaFileSearchPage.vue";
 import DeltaFileUploadPage from "@/pages/DeltaFileUploadPage.vue";
@@ -30,6 +29,7 @@ import EventsPage from "@/pages/EventsPage.vue";
 import ExternalLinksPage from "@/pages/ExternalLinksPage.vue";
 import FlowPlanBuilderPage from "@/pages/FlowPlanBuilderPage.vue";
 import FlowPlansPage from "@/pages/FlowPlansPage.vue";
+import DataSourcePage from "@/pages/DataSourcePage.vue";
 import PageNotFound from "@/pages/PageNotFound.vue";
 import PluginRepositoryPage from "@/pages/PluginRepositoryPage.vue";
 import PluginsPage from "@/pages/PluginsPage.vue";
@@ -51,27 +51,11 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
-    path: "/metrics/system",
-    name: "System Metrics",
-    component: SystemMetricsPage,
-    meta: {
-      permission: "MetricsView",
-    },
-  },
-  {
     path: "/deltafile/search",
     name: "DeltaFile Search",
     component: DeltaFileSearchPage,
     meta: {
       permission: "DeltaFileMetadataView",
-    },
-  },
-  {
-    path: "/deltafile/upload",
-    name: "DeltaFile Upload",
-    component: DeltaFileUploadPage,
-    meta: {
-      permission: "DeltaFileIngress",
     },
   },
   {
@@ -99,19 +83,19 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
-    path: "/config/plugins/:pluginCordinates?",
-    name: "Plugins",
-    component: PluginsPage,
+    path: "/deltafile/upload",
+    name: "DeltaFile Upload",
+    component: DeltaFileUploadPage,
     meta: {
-      permission: "PluginsView",
+      permission: "DeltaFileIngress",
     },
   },
   {
-    path: "/config/plugin-repositories",
-    name: "Repositories",
-    component: PluginRepositoryPage,
+    path: "/metrics/system",
+    name: "System Metrics",
+    component: SystemMetricsPage,
     meta: {
-      permission: "PluginImageRepoView",
+      permission: "MetricsView",
     },
   },
   {
@@ -123,19 +107,11 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
-    path: "/config/delete-policies",
-    name: "Delete Policies",
-    component: DeletePoliciesPage,
+    path: "/config/data-sources",
+    name: "Data Sources",
+    component: DataSourcePage,
     meta: {
-      permission: "DeletePolicyRead",
-    },
-  },
-  {
-    path: "/config/auto-resume",
-    name: "Auto Resume",
-    component: AutoResumePage,
-    meta: {
-      permission: "ResumePolicyRead",
+      permission: "FlowView",
     },
   },
   {
@@ -155,27 +131,43 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
+    path: "/config/plugins/:pluginCordinates?",
+    name: "Plugins",
+    component: PluginsPage,
+    meta: {
+      permission: "PluginsView",
+    },
+  },
+  {
+    path: "/config/plugin-repositories",
+    name: "Repositories",
+    component: PluginRepositoryPage,
+    meta: {
+      permission: "PluginImageRepoView",
+    },
+  },
+  {
+    path: "/config/delete-policies",
+    name: "Delete Policies",
+    component: DeletePoliciesPage,
+    meta: {
+      permission: "DeletePolicyRead",
+    },
+  },
+  {
+    path: "/config/auto-resume",
+    name: "Auto Resume",
+    component: AutoResumePage,
+    meta: {
+      permission: "ResumePolicyRead",
+    },
+  },
+  {
     path: "/config/snapshots",
     name: "System Snapshots",
     component: SystemSnapshotsPage,
     meta: {
       permission: "SnapshotRead",
-    },
-  },
-  {
-    path: "/versions",
-    name: "Versions",
-    component: VersionsPage,
-    meta: {
-      permission: "VersionsView",
-    },
-  },
-  {
-    path: "/events",
-    name: "Events",
-    component: EventsPage,
-    meta: {
-      permission: "EventRead",
     },
   },
   {
@@ -203,11 +195,19 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
-    path: "/config/data-sources",
-    name: "Data Sources",
-    component: DataSourcesPage,
+    path: "/versions",
+    name: "Versions",
+    component: VersionsPage,
     meta: {
-      permission: "FlowView",
+      permission: "VersionsView",
+    },
+  },
+  {
+    path: "/events",
+    name: "Events",
+    component: EventsPage,
+    meta: {
+      permission: "EventRead",
     },
   },
   {

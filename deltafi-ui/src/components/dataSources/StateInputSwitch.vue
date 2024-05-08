@@ -19,7 +19,7 @@
 <template>
   <span v-if="(_.isEqual(rowData.flowStatus.state, 'RUNNING') && $hasPermission('FlowStop')) || (_.isEqual(rowData.flowStatus.state, 'STOPPED') && $hasPermission('FlowStart'))">
     <ConfirmPopup></ConfirmPopup>
-    <ConfirmPopup :group="ingressActionType + '_' + rowData.name">
+    <ConfirmPopup :group="dataSourceType + '_' + rowData.name">
       <template #message="slotProps">
         <div class="flex btn-group p-4">
           <i :class="slotProps.message.icon" style="font-size: 1.5rem"></i>
@@ -37,7 +37,7 @@
 </template>
 
 <script setup>
-import useIngressActions from "@/composables/useIngressActions";
+import useDataSource from "@/composables/useDataSource";
 import useNotifications from "@/composables/useNotifications";
 import { computed, defineProps, toRefs } from "vue";
 
@@ -48,7 +48,7 @@ import { useConfirm } from "primevue/useconfirm";
 import _ from "lodash";
 
 const confirm = useConfirm();
-const { startTimedIngressFlowByName, stopTimedIngressFlowByName } = useIngressActions();
+const { startDataSourceByName, stopDataSourceByName } = useDataSource();
 const notify = useNotifications();
 const emit = defineEmits(["change"]);
 
@@ -57,30 +57,30 @@ const props = defineProps({
     type: Object,
     required: true,
   },
-  ingressActionType: {
+  dataSourceType: {
     type: String,
     required: true,
   },
-  configureIngressActionDialog: {
+  configureDataSourceDialog: {
     type: Boolean,
     required: false,
     default: false,
   },
 });
 
-const { rowDataProp: rowData, ingressActionType, configureIngressActionDialog } = toRefs(props);
+const { rowDataProp: rowData, dataSourceType, configureDataSourceDialog } = toRefs(props);
 
 const confirmationPopup = async (event, name, state) => {
   if (_.isEqual(state, "RUNNING")) {
     confirm.require({
       target: event.currentTarget,
-      group: `${ingressActionType.value}_${name}`,
-      message: `Stop the '${name}' ingress action?`,
+      group: `${dataSourceType.value}_${name}`,
+      message: `Stop the '${name}' data source?`,
       acceptLabel: "Stop",
       rejectLabel: "Cancel",
       icon: "pi pi-exclamation-triangle",
       accept: async () => {
-        notify.info("Stopping Ingress Action", `Stopping ${name} ingress action.`, 3000);
+        notify.info("Stopping Data Source", `Stopping ${name} data source.`, 3000);
         await toggleFlowState(name, state);
       },
       reject: () => {},
@@ -101,12 +101,12 @@ const tooltip = computed(() => {
 });
 
 const toggleFlowState = async (flowName, newFlowState) => {
-  if (!configureIngressActionDialog.value) {
-    if (_.isEqual(ingressActionType.value, "timedIngress")) {
+  if (!configureDataSourceDialog.value) {
+    if (_.isEqual(dataSourceType.value, "timedDataSource")) {
       if (_.isEqual(newFlowState, "STOPPED")) {
-        await startTimedIngressFlowByName(flowName);
+        await startDataSourceByName(flowName);
       } else {
-        await stopTimedIngressFlowByName(flowName);
+        await stopDataSourceByName(flowName);
       }
     }
     emit("change");

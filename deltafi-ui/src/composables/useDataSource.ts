@@ -17,13 +17,11 @@
 */
 
 import useGraphQL from "./useGraphQL";
-import { EnumType } from "json-to-graphql-query";
-import _ from "lodash";
 
-export default function useIngressActions() {
+export default function useDataSource() {
   const { response, errors, queryGraphQL, loaded, loading } = useGraphQL();
 
-  const getAllTimedIngress = () => {
+  const getAllDataSources = () => {
     const query = {
       getAllFlows: {
         dataSource: {
@@ -78,7 +76,7 @@ export default function useIngressActions() {
         },
       },
     };
-    return sendGraphQLQuery(query, "getAllTimedIngress");
+    return sendGraphQLQuery(query, "getAllDataSources");
   };
 
   // Starts a DataSource
@@ -117,51 +115,45 @@ export default function useIngressActions() {
     return sendGraphQLQuery(query, "setTimedDataSourceCronSchedule", "mutation");
   };
 
-  const saveTimedIngressFlowPlan = (timedIngressFlowPlan: Object) => {
-    let newObject: any = null;
-    const enumKeysToKey = ["matchingPolicy", "defaultBehavior"];
-    // Function to convert certain keys values to enums
-    function graphqlQueryObjectConverter(queryObject: any) {
-      for (const [key, value] of Object.entries(queryObject)) {
-        if (_.isArray(value)) {
-          continue;
-        }
-
-        if (_.isObject(value)) {
-          graphqlQueryObjectConverter(value);
-        }
-
-        if (enumKeysToKey.includes(key)) {
-          queryObject[key] = new EnumType(value as any);
-        }
-      }
-      newObject = queryObject;
-    }
-
-    graphqlQueryObjectConverter(timedIngressFlowPlan);
-
-    const formattedQuery = newObject;
-
+  const saveTimedDataSourcePlan = (timedDataSourceFlowPlan: Object) => {
     const query = {
-      saveTimedIngressFlowPlan: {
+      saveTimedDataSourcePlan: {
         __args: {
-          timedIngressFlowPlan: formattedQuery,
+          dataSourcePlan: {
+            type: "TIMED_DATA_SOURCE",
+            ...timedDataSourceFlowPlan
+          },
         },
         name: true,
       },
     };
-    return sendGraphQLQuery(query, "saveTimedIngressFlowPlan", "mutation");
+    return sendGraphQLQuery(query, "saveTimedDataSourcePlan", "mutation");
   };
 
-  const removeTimedIngressFlowPlan = (flowName: string) => {
+  const saveRestDataSourcePlan = (restDataSourceFlowPlan: Object) => {
     const query = {
-      removeTimedIngressFlowPlan: {
+      saveRestDataSourcePlan: {
+        __args: {
+          dataSourcePlan: {
+            type: "REST_DATA_SOURCE",
+            ...restDataSourceFlowPlan
+          },
+        },
+        name: true,
+      },
+    };
+    return sendGraphQLQuery(query, "saveRestDataSourcePlan", "mutation");
+  };
+
+  const removeDataSourcePlan = (flowName: string) => {
+    const query = {
+      removeDataSourcePlan: {
         __args: {
           name: flowName,
         },
       },
     };
-    return sendGraphQLQuery(query, "removeTimedIngressFlowPlan", "mutation");
+    return sendGraphQLQuery(query, "removeDataSourcePlan", "mutation");
   };
 
   const sendGraphQLQuery = async (query: any, operationName: string, queryType?: string) => {
@@ -175,12 +167,13 @@ export default function useIngressActions() {
   };
 
   return {
-    getAllTimedIngress,
-    startTimedIngressFlowByName: startDataSourceByName,
-    stopTimedIngressFlowByName: stopDataSourceByName,
-    setTimedIngressCronSchedule: setTimedDataSourceCronSchedule,
-    saveTimedIngressFlowPlan,
-    removeTimedIngressFlowPlan,
+    getAllDataSources,
+    startDataSourceByName,
+    stopDataSourceByName,
+    setTimedDataSourceCronSchedule,
+    saveTimedDataSourcePlan,
+    saveRestDataSourcePlan,
+    removeDataSourcePlan,
     loaded,
     loading,
     errors,

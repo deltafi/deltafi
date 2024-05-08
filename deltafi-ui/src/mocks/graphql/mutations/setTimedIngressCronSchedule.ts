@@ -17,5 +17,5 @@
 */
 
 export default {
-  setTimedIngressCronSchedule: true,
+  setTimedDataSourceCronSchedule: true,
 };

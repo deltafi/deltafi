@@ -2,14 +2,14 @@
   <span>
     <template v-if="!_.isEmpty(data[field])">
       <div>
-        <small><u>Subscriptions</u></small>
+        <small><u>Subscribe</u></small>
       </div>
-      <div v-for="(subscription, index) in data[field]" :key="index" class="ml-2">
-        <div v-if="!_.isEmpty(subscription.topics)">
-          <small>Topics: {{ subscription.topics.join(", ") }}</small>
+      <div v-for="(subscribe, index) in data[field]" :key="index" class="ml-2">
+        <div v-if="!_.isEmpty(subscribe.topic)">
+          <small>Topic: {{ subscribe.topic }}</small>
         </div>
-        <div v-if="!_.isEmpty(subscription.condition)">
-          <small>Condition: {{ subscription.condition }}</small>
+        <div v-if="!_.isEmpty(subscribe.condition)">
+          <small>Condition: {{ subscribe.condition }}</small>
         </div>
         <Divider v-if="data[field].length > index + 1" class="mt-1 mb-3" />
       </div>
