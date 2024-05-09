@@ -154,6 +154,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     private static final String CONTENT_DELETABLE = "contentDeletable";
 
     public static final int MAX_COUNT = 50_000;
+    public static final String TYPE = "type";
 
     static class FlowCountAndDids {
         String dataSource;
@@ -537,6 +538,14 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         if (filter == null) {
             return criteria;
+        }
+
+        if (filter.getDataSources() != null && !filter.getDataSources().isEmpty()) {
+            criteria.and(DATA_SOURCE).in(filter.getDataSources());
+        }
+
+        if (filter.getTransformFlows() != null && !filter.getTransformFlows().isEmpty()) {
+            criteria.and(FLOWS).elemMatch(Criteria.where(NAME).in(filter.getTransformFlows()).and(TYPE).is(FlowType.TRANSFORM));
         }
 
         if (filter.getEgressFlows() != null && !filter.getEgressFlows().isEmpty()) {
@@ -1019,10 +1028,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         MatchOperation matchActionState = Aggregation.match(actionStateCriteria);
 
         ProjectionOperation projectFields = Aggregation.project()
-                .and(ACTIONS_NAME).as("name")
-                .and(ACTIONS_TYPE).as("type");
+                .and(ACTIONS_NAME).as(NAME)
+                .and(ACTIONS_TYPE).as(TYPE);
 
-        GroupOperation groupByActionNameAndType = Aggregation.group("name", "type").count().as(COUNT_LOWER_CASE);
+        GroupOperation groupByActionNameAndType = Aggregation.group(NAME, TYPE).count().as(COUNT_LOWER_CASE);
 
         Aggregation aggregation = Aggregation.newAggregation(
                 matchStage,
@@ -1037,8 +1046,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         return aggResults.getMappedResults().stream()
                 .map(doc -> {
-                    String actionName = ((Document) doc.get("_id")).getString("name");
-                    String actionType = ((Document) doc.get("_id")).getString("type");
+                    String actionName = ((Document) doc.get("_id")).getString(NAME);
+                    String actionType = ((Document) doc.get("_id")).getString(TYPE);
                     Integer count = doc.getInteger(COUNT_LOWER_CASE);
                     return new ColdQueuedActionSummary(actionName, ActionType.valueOf(actionType), count);
                 })

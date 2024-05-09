@@ -2411,6 +2411,9 @@ class DeltaFiCoreApplicationTests {
 		testFilter(DeltaFilesFilter.newBuilder().egressFlows(List.of("MyEgressFlow2")).build(), deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().egressFlows(List.of("MyEgressFlow", "MyEgressFlow2")).build(), deltaFile1, deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().egressFlows(List.of("MyEgressFlow", "MyEgressFlow3")).build(), deltaFile1, deltaFile2, deltaFile3);
+		testFilter(DeltaFilesFilter.newBuilder().transformFlows(List.of("MyTransformFlow", "MyEgressFlow")).build(), deltaFile3);
+		testFilter(DeltaFilesFilter.newBuilder().transformFlows(List.of("MyEgressFlow")).build());
+		testFilter(DeltaFilesFilter.newBuilder().dataSources(List.of("flow1", "flow3")).build(), deltaFile1, deltaFile3);
 	}
 
 	@Test

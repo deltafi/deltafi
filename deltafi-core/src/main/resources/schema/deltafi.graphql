@@ -283,6 +283,8 @@ input DeltaFilesFilter {
   createdAfter: DateTime
   createdBefore: DateTime
   annotations: [KeyValueInput!]
+  dataSources: [String]
+  transformFlows: [String]
   egressFlows: [String!]
   contentDeleted: Boolean
   modifiedAfter: DateTime
