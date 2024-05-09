@@ -112,6 +112,7 @@ public class PublisherService {
      */
     private DeltaFileFlow deltaFileFlow(Subscriber subscriber, DeltaFile deltaFile, DeltaFileFlow previousFlow, Set<String> sourceTopics) {
         DeltaFileFlow nextFlow = deltaFile.addFlow(subscriber.getName(), subscriber.flowType(), previousFlow, sourceTopics, OffsetDateTime.now(clock));
+        nextFlow.setActionConfigurations(subscriber.allActionConfigurations());
         if (subscriber.isTestMode()) {
             nextFlow.setTestMode(true);
             nextFlow.setTestModeReason(subscriber.getName());

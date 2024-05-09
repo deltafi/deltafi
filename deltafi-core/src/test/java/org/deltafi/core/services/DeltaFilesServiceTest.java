@@ -31,6 +31,7 @@ import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.collect.ScheduledCollectService;
 import org.deltafi.core.generated.types.DeltaFilesFilter;
+import org.deltafi.core.generated.types.RetryResult;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.repo.QueuedAnnotationRepo;
@@ -86,6 +87,9 @@ class DeltaFilesServiceTest {
 
     @Captor
     ArgumentCaptor<List<ActionInput>> actionInputListCaptor;
+
+    @Captor
+    ArgumentCaptor<List<StateMachineInput>> stateMachineInputCaptor;
 
     @Captor
     ArgumentCaptor<QueuedAnnotation> queuedAnnotationCaptor;
@@ -646,5 +650,174 @@ class DeltaFilesServiceTest {
     void applyResumePolicies() {
         deltaFilesService.applyResumePolicies(List.of("name1"));
         Mockito.verify(resumePolicyService, times(1)).refreshCache();
+    }
+
+    @Test
+    void testReplayChild() {
+        UUID uuid = UUID.randomUUID();
+        DeltaFile deltaFile = Util.buildDeltaFile(uuid,"myFlow");
+
+        DeltaFileFlow flow = deltaFile.addFlow("flow",  FlowType.TRANSFORM, new DeltaFileFlow(), OffsetDateTime.now(testClock));
+
+        flow.addAction("parentAction1", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
+        flow.addAction("parentAction2", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
+        Action starter = flow.addAction("splitAction", ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock));
+        starter.setReplayStart(true);
+        flow.addAction("childAction", ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock));
+        flow.addAction("childActionOldName", ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock)); // renamed action after the split should not cause an error
+
+        TransformFlow flowConfig = new TransformFlow();
+        flowConfig.setName("flow");
+        flowConfig.setTransformActions(mockActions("parentAction1", "parentAction2", "splitAction", "childAction", "childActionNewName"));
+
+        List<UUID> dids = List.of(uuid);
+        Mockito.when(deltaFileRepo.findAllById(dids)).thenReturn(List.of(deltaFile));
+        Mockito.when(transformFlowService.getFlowOrThrow("flow")).thenReturn(flowConfig);
+
+        List<RetryResult> results = deltaFilesService.replay(dids, List.of(), List.of());
+
+        assertEquals(1, results.size());
+        RetryResult result = results.getFirst();
+        assertTrue(result.getSuccess());
+
+        Mockito.verify(stateMachine).advance(stateMachineInputCaptor.capture());
+
+        List<StateMachineInput> stateMachines = stateMachineInputCaptor.getValue();
+        assertEquals(1, stateMachines.size());
+        DeltaFile child = stateMachines.getFirst().deltaFile();
+        ActionConfiguration nextAction = child.getFlows().getFirst().getNextActionConfiguration();
+        DeltaFileFlow childFirstFlow = child.getFlows().getFirst();
+        assertEquals(2, childFirstFlow.getActionConfigurations().size());
+        assertEquals("childAction", nextAction.getName());
+        List<Action> childActions = childFirstFlow.getActions();
+        assertEquals(4, childActions.size());
+        List<String> expectedActions = List.of("parentAction1", "parentAction2", "splitAction", "Replay");
+        for (int i = 0; i < expectedActions.size(); i++) {
+            assertEquals(expectedActions.get(i), childActions.get(i).getName());
+        }
+    }
+
+    @Test
+    void testReplayChildRemovedParentAction() {
+        UUID uuid = UUID.randomUUID();
+        DeltaFile deltaFile = Util.buildDeltaFile(uuid,"myFlow");
+
+        DeltaFileFlow flow = deltaFile.addFlow("flow",  FlowType.TRANSFORM, new DeltaFileFlow(), OffsetDateTime.now(testClock));
+
+        flow.addAction("parentAction1", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
+        flow.addAction("removedParentAction", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
+        Action starter = flow.addAction("splitAction", ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock));
+        starter.setReplayStart(true);
+
+        TransformFlow flowConfig = new TransformFlow();
+        flowConfig.setName("flow");
+        flowConfig.setTransformActions(mockActions("parentAction1", "splitAction", "childAction", "childAction2"));
+
+        List<UUID> dids = List.of(uuid);
+        Mockito.when(deltaFileRepo.findAllById(dids)).thenReturn(List.of(deltaFile));
+        Mockito.when(transformFlowService.getFlowOrThrow("flow")).thenReturn(flowConfig);
+
+        List<RetryResult> results = deltaFilesService.replay(dids, List.of(), List.of());
+
+        assertEquals(1, results.size());
+        RetryResult result = results.getFirst();
+        assertFalse(result.getSuccess());
+        assertEquals("The actions inherited from the parent DeltaFile for flow flow do not match the latest flow", result.getError());
+    }
+
+    @Test
+    void testReplayChildAddedParentAction() {
+        UUID uuid = UUID.randomUUID();
+        DeltaFile deltaFile = Util.buildDeltaFile(uuid,"myFlow");
+
+        DeltaFileFlow flow = deltaFile.addFlow("flow",  FlowType.TRANSFORM, new DeltaFileFlow(), OffsetDateTime.now(testClock));
+
+        flow.addAction("parentAction1", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
+        flow.addAction("parentAction2", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
+        Action starter = flow.addAction("splitAction", ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock));
+        starter.setReplayStart(true);
+        flow.addAction("childAction", ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock));
+        starter.setReplayStart(true);
+
+        TransformFlow flowConfig = new TransformFlow();
+        flowConfig.setName("flow");
+        flowConfig.setTransformActions(mockActions("parentAction1", "parentAction2", "extraParentAction", "splitAction", "childAction", "childAction2"));
+
+        List<UUID> dids = List.of(uuid);
+        Mockito.when(deltaFileRepo.findAllById(dids)).thenReturn(List.of(deltaFile));
+        Mockito.when(transformFlowService.getFlowOrThrow("flow")).thenReturn(flowConfig);
+
+        List<RetryResult> results = deltaFilesService.replay(dids, List.of(), List.of());
+
+        assertEquals(1, results.size());
+        RetryResult result = results.getFirst();
+        assertFalse(result.getSuccess());
+        assertEquals("The actions inherited from the parent DeltaFile for flow flow do not match the latest flow", result.getError());
+    }
+
+    @Test
+    void testReplayChildRenamedParentAction() {
+        UUID uuid = UUID.randomUUID();
+        DeltaFile deltaFile = Util.buildDeltaFile(uuid,"myFlow");
+
+        DeltaFileFlow flow = deltaFile.addFlow("flow",  FlowType.TRANSFORM, new DeltaFileFlow(), OffsetDateTime.now(testClock));
+
+        flow.addAction("parentAction1", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
+        flow.addAction("parentActionOldName", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
+        Action starter = flow.addAction("splitAction", ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock));
+        starter.setReplayStart(true);
+
+        TransformFlow flowConfig = new TransformFlow();
+        flowConfig.setName("flow");
+        flowConfig.setTransformActions(mockActions("parentAction1", "parentActionNewName", "splitAction", "childAction", "childAction2"));
+
+        List<UUID> dids = List.of(uuid);
+        Mockito.when(deltaFileRepo.findAllById(dids)).thenReturn(List.of(deltaFile));
+        Mockito.when(transformFlowService.getFlowOrThrow("flow")).thenReturn(flowConfig);
+
+        List<RetryResult> results = deltaFilesService.replay(dids, List.of(), List.of());
+
+        assertEquals(1, results.size());
+        RetryResult result = results.getFirst();
+        assertFalse(result.getSuccess());
+        assertEquals("The actions inherited from the parent DeltaFile for flow flow do not match the latest flow", result.getError());
+    }
+
+    @Test
+    void testReplayChildSplitActionRenamed() {
+        UUID uuid = UUID.randomUUID();
+        DeltaFile deltaFile = Util.buildDeltaFile(uuid,"myFlow");
+
+        DeltaFileFlow flow = deltaFile.addFlow("flow",  FlowType.TRANSFORM, new DeltaFileFlow(), OffsetDateTime.now(testClock));
+
+        flow.addAction("parentAction1", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
+        flow.addAction("parentAction2", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
+        Action starter = flow.addAction("splitActionOld", ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock));
+        starter.setReplayStart(true);
+        flow.addAction("childAction", ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock));
+        flow.addAction("childActionOldName", ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock)); // renamed action after the split should not cause an error
+
+        TransformFlow flowConfig = new TransformFlow();
+        flowConfig.setName("flow");
+        flowConfig.setTransformActions(mockActions("parentAction1", "parentAction2", "splitActionNew", "childAction", "childActionNewName"));
+
+        List<UUID> dids = List.of(uuid);
+        Mockito.when(deltaFileRepo.findAllById(dids)).thenReturn(List.of(deltaFile));
+        Mockito.when(transformFlowService.getFlowOrThrow("flow")).thenReturn(flowConfig);
+
+        List<RetryResult> results = deltaFilesService.replay(dids, List.of(), List.of());
+
+        assertEquals(1, results.size());
+        RetryResult result = results.getFirst();
+        assertFalse(result.getSuccess());
+        assertEquals("The flow flow no longer contains an action named splitActionOld where the replay would be begin", result.getError());
+    }
+
+    private List<TransformActionConfiguration> mockActions(String ... names) {
+        return Stream.of(names).map(this::mockAction).toList();
+    }
+
+    private TransformActionConfiguration mockAction(String name) {
+        return new TransformActionConfiguration(name, "org.action." + name);
     }
 }

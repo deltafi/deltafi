@@ -23,7 +23,7 @@ import org.deltafi.core.repo.DeltaFileRepo;
 import org.springframework.data.mongodb.core.query.Update;
 
 import java.time.Duration;
-import java.util.List;
+import java.util.Collection;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -43,7 +43,7 @@ public abstract class DeltaFileCacheService {
 
     public abstract void save(DeltaFile deltaFile);
 
-    public void saveAll(List<DeltaFile> deltaFiles) {
+    public void saveAll(Collection<DeltaFile> deltaFiles) {
         for (DeltaFile deltaFile : deltaFiles) {
             save(deltaFile);
         }

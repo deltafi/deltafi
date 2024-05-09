@@ -325,14 +325,11 @@ class DeltaFiCoreApplicationTests {
 	void loadTransformConfig() {
 		transformFlowRepo.deleteAll();
 
-		TransformActionConfiguration tc = new TransformActionConfiguration("Utf8TransformAction", "type");
-		TransformActionConfiguration tc2 = new TransformActionConfiguration("SampleTransformAction", "type");
-
-		TransformFlow sampleTransformFlow = buildRunningTransformFlow(TRANSFORM_FLOW_NAME, List.of(tc, tc2), false);
+		TransformFlow sampleTransformFlow = buildRunningTransformFlow(TRANSFORM_FLOW_NAME, TRANSFORM_ACTIONS, false);
 		sampleTransformFlow.setSubscribe(Set.of(new Rule(TRANSFORM_TOPIC)));
 		sampleTransformFlow.setPublish(publishRules(EGRESS_TOPIC));
 		TransformFlow retryFlow = buildRunningTransformFlow("theTransformFlow", null, false);
-		TransformFlow childFlow = buildRunningTransformFlow("transformChildFlow", List.of(tc2), false);
+		TransformFlow childFlow = buildRunningTransformFlow("transformChildFlow", List.of(TRANSFORM2), false);
 
 		transformFlowRepo.saveAll(List.of(sampleTransformFlow, retryFlow, childFlow));
 		refreshFlowCaches();
@@ -341,9 +338,7 @@ class DeltaFiCoreApplicationTests {
 	void loadEgressConfig() {
 		egressFlowRepo.deleteAll();
 
-		EgressActionConfiguration sampleEgress = new EgressActionConfiguration("SampleEgressAction", "type");
-
-		EgressFlow sampleEgressFlow = buildRunningEgressFlow(EGRESS_FLOW_NAME, sampleEgress, false);
+		EgressFlow sampleEgressFlow = buildRunningEgressFlow(EGRESS_FLOW_NAME, EGRESS, false);
 		sampleEgressFlow.setSubscribe(Set.of(new Rule(EGRESS_TOPIC)));
 
 		EgressActionConfiguration errorEgress = new EgressActionConfiguration("ErrorEgressAction", "type");

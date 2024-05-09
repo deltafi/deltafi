@@ -127,6 +127,17 @@ public class Util {
                 .actions(new ArrayList<>(List.of(ingressAction)))
                 .build();
 
+        DeltaFile deltaFile = buildDeltaFile(did, flowName);
+        deltaFile.setStage(stage);
+        deltaFile.setCreated(created);
+        deltaFile.setModified(modified);
+        deltaFile.getFlows().add(flow);
+
+        deltaFile.updateFlags();
+        return deltaFile;
+    }
+
+    public static DeltaFile buildDeltaFile(UUID did, String dataSource) {
         DeltaFile deltaFile = DeltaFile.builder()
                 .schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
                 .did(did)
@@ -135,11 +146,8 @@ public class Util {
                 .ingressBytes(0L)
                 .name("filename")
                 .normalizedName("filename")
-                .dataSource(flowName)
-                .stage(stage)
-                .created(created)
-                .modified(modified)
-                .flows(new ArrayList<>(List.of(flow)))
+                .dataSource(dataSource)
+                .flows(new ArrayList<>())
                 .egressFlows(new ArrayList<>())
                 .egressed(false)
                 .filtered(false)

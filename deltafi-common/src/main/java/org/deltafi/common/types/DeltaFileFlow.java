@@ -55,6 +55,10 @@ public class DeltaFileFlow {
     boolean testMode;
     String testModeReason;
 
+    @JsonIgnore
+    @Builder.Default
+    private List<ActionConfiguration> actionConfigurations = new ArrayList<>();
+
     public DeltaFileFlow(DeltaFileFlow other) {
         this.name = other.name;
         this.id = other.id;
@@ -70,6 +74,7 @@ public class DeltaFileFlow {
         this.pendingAnnotations = new HashSet<>(other.pendingAnnotations);
         this.testMode = other.testMode;
         this.testModeReason = other.testModeReason;
+        this.actionConfigurations = other.actionConfigurations;
     }
 
     /**
@@ -290,5 +295,14 @@ public class DeltaFileFlow {
         this.pendingAnnotations = this.pendingAnnotations != null ? new HashSet<>(pendingAnnotations) : new HashSet<>();
         this.pendingAnnotations.removeAll(receivedAnnotations);
         updateState(OffsetDateTime.now());
+    }
+
+    public void removeActionConfiguration(String actionName) {
+        actionConfigurations.removeIf(ac -> ac.getName().equals(actionName));
+    }
+
+    @JsonIgnore
+    public ActionConfiguration getNextActionConfiguration() {
+        return !actionConfigurations.isEmpty() ? actionConfigurations.getFirst() : null;
     }
 }

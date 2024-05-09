@@ -86,6 +86,7 @@ enum ActionState {
   CANCELLED
   COLLECTING
   COLLECTED
+  INHERITED
 }
 
 enum ActionType {

@@ -262,6 +262,7 @@ public class DeltaFilesService {
         Action ingressAction = Action.builder()
                 .name(ingressActionName)
                 .id(0)
+                .replayStart(true)
                 .type(ActionType.INGRESS)
                 .state(ActionState.COMPLETE)
                 .created(ingressStartTime)
@@ -364,6 +365,10 @@ public class DeltaFilesService {
 
             DeltaFileFlow flow = deltaFile.getPendingFlow(event.getFlowName(), event.getFlowId());
             Action action = flow.getPendingAction(event.getActionName(), event.getActionId(), event.getDid());
+
+            if (event.getType() != ActionEventType.ERROR) {
+                flow.removeActionConfiguration(action.getName());
+            }
 
             String validationError = event.validatePayload();
             if (validationError != null) {
@@ -550,9 +555,12 @@ public class DeltaFilesService {
 
     public List<StateMachineInput> createChildren(List<TransformEvent> transformEvents, OffsetDateTime startTime,
             OffsetDateTime stopTime, DeltaFile deltaFile, DeltaFileFlow flow) {
-        return transformEvents.stream()
+        List<StateMachineInput> inputs = transformEvents.stream()
                 .map(transformEvent -> createChildDeltaFile(transformEvent, deltaFile, flow, startTime, stopTime))
                 .toList();
+
+        flow.getActionConfigurations().clear(); // clear remaining action configurations out of the parent
+        return inputs;
     }
 
     public void egress(DeltaFile deltaFile, DeltaFileFlow flow, Action action) {
@@ -724,32 +732,53 @@ public class DeltaFilesService {
     private StateMachineInput createChildDeltaFile(TransformEvent transformEvent, DeltaFile deltaFile,
                                                   DeltaFileFlow fromFlow, OffsetDateTime startTime,
                                                   OffsetDateTime stopTime) {
-        DeltaFile child = OBJECT_MAPPER.convertValue(deltaFile, DeltaFile.class);
-        child.setVersion(0);
-        child.setDid(uuidGenerator.generate());
-        String eventName = transformEvent.getName();
-        child.setName(eventName);
-        child.setNormalizedName(eventName != null ? eventName.toLowerCase() : null);
-        child.setChildDids(Collections.emptyList());
-        child.setParentDids(List.of(deltaFile.getDid()));
-        DeltaFileFlow flow = child.getFlow(fromFlow.getName(), fromFlow.getId());
-        Action action = flow.lastAction();
-        action.changeState(ActionState.COMPLETE, startTime, stopTime, OffsetDateTime.now(clock));
+        OffsetDateTime now = OffsetDateTime.now(clock);
 
-        if (transformEvent.getContent() != null) {
-            action.setContent(transformEvent.getContent());
-        }
+        List<Action> inheritedActions = fromFlow.getActions().stream()
+                .map(Action::createChildAction)
+                .collect(Collectors.toCollection(ArrayList::new));
 
-        if (transformEvent.getMetadata() != null) {
-            action.setMetadata(transformEvent.getMetadata());
-        }
+        Action childAction = inheritedActions.getLast();
+        childAction.complete(startTime, stopTime, transformEvent.getContent(), transformEvent.getMetadata(), transformEvent.getDeleteMetadataKeys(), now);
+        childAction.setReplayStart(true);
 
-        if (transformEvent.getDeleteMetadataKeys() != null) {
-            action.setDeleteMetadataKeys(transformEvent.getDeleteMetadataKeys());
-        }
+        DeltaFileFlow childFlow = DeltaFileFlow.builder()
+                .name(fromFlow.getName())
+                .id(0)
+                .type(fromFlow.getType())
+                .state(DeltaFileFlowState.IN_FLIGHT)
+                .created(startTime)
+                .modified(now)
+                .actions(inheritedActions)
+                .publishTopics(new ArrayList<>())
+                .depth(0)
+                .flowPlan(fromFlow.getFlowPlan())
+                .testMode(fromFlow.isTestMode())
+                .testModeReason(fromFlow.getTestModeReason())
+                .actionConfigurations(new ArrayList<>(fromFlow.getActionConfigurations()))
+                .build();
 
-        child.removeFlowsNotDescendedFrom(fromFlow.getId());
-        return new StateMachineInput(child, flow);
+        DeltaFile child = DeltaFile.builder()
+                .version(0)
+                .schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
+                .did(uuidGenerator.generate())
+                .dataSource(deltaFile.getDataSource())
+                .parentDids(List.of(deltaFile.getDid()))
+                .childDids(new ArrayList<>())
+                .requeueCount(0)
+                .ingressBytes(deltaFile.getIngressBytes())
+                .totalBytes(deltaFile.getTotalBytes())
+                .stage(DeltaFileStage.IN_FLIGHT)
+                .inFlight(true)
+                .flows(new ArrayList<>(List.of(childFlow)))
+                .created(now)
+                .modified(now)
+                .egressed(false)
+                .filtered(false)
+                .build();
+
+        child.setName(transformEvent.getName());
+        return new StateMachineInput(child, childFlow);
     }
 
     public List<RetryResult> resume(@NotNull List<UUID> dids, @NotNull List<ResumeMetadata> resumeMetadata) {
@@ -797,20 +826,6 @@ public class DeltaFilesService {
         return retryResults;
     }
 
-    private static void addRetryAction(DeltaFile deltaFile, @NotNull List<String> removeSourceMetadata,
-                                       @NotNull List<KeyValue> replaceSourceMetadata, OffsetDateTime now) {
-        List<Content> content = deltaFile.getFlows().getFirst().lastAction().getContent();
-        Action replayAction = deltaFile.getFlows().getFirst()
-                .addAction("Replay", ActionType.INGRESS, ActionState.COMPLETE, now);
-        replayAction.setContent(content);
-        if (!removeSourceMetadata.isEmpty()) {
-            replayAction.setDeleteMetadataKeys(removeSourceMetadata);
-        }
-        if (!replaceSourceMetadata.isEmpty()) {
-            replayAction.setMetadata(KeyValueConverter.convertKeyValues(replaceSourceMetadata));
-        }
-    }
-
     public List<RetryResult> replay(@NotNull List<UUID> dids, @NotNull List<String> removeSourceMetadata, @NotNull List<KeyValue> replaceSourceMetadata)  {
         Map<UUID, DeltaFile> deltaFiles = deltaFiles(dids);
         List<StateMachineInput> inputs = new ArrayList<>();
@@ -838,16 +853,6 @@ public class DeltaFilesService {
                         } else {
                             OffsetDateTime now = OffsetDateTime.now(clock);
                             DeltaFileFlow firstFlow = deltaFile.getFlows().getFirst();
-                            Action firstAction = firstFlow.getActions().getFirst();
-                            Action action = Action.builder()
-                                    .name(firstAction.getName())
-                                    .type(ActionType.INGRESS)
-                                    .state(ActionState.COMPLETE)
-                                    .created(now)
-                                    .modified(now)
-                                    .content(firstAction.getContent())
-                                    .metadata(firstAction.getMetadata())
-                                    .build();
 
                             DeltaFileFlow flow = DeltaFileFlow.builder()
                                     .name(firstFlow.getName())
@@ -856,8 +861,10 @@ public class DeltaFilesService {
                                     .input(firstFlow.getInput())
                                     .created(now)
                                     .modified(now)
-                                    .actions(new ArrayList<>(List.of(action)))
                                     .build();
+
+                            Action startFromAction = findFirstActionUpdateFlow(flow, firstFlow, now);
+                            flow.getActions().add(startFromAction);
 
                             DeltaFile child = DeltaFile.builder()
                                     .schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
@@ -880,7 +887,16 @@ public class DeltaFilesService {
                                     .filtered(false)
                                     .build();
 
-                            addRetryAction(child, removeSourceMetadata, replaceSourceMetadata, now);
+                            List<Content> content = startFromAction.getContent();
+                            Action replayAction = flow.addAction("Replay", startFromAction.getType(), ActionState.COMPLETE, now);
+                            replayAction.setContent(content);
+
+                            if (!removeSourceMetadata.isEmpty()) {
+                                replayAction.setDeleteMetadataKeys(removeSourceMetadata);
+                            }
+                            if (!replaceSourceMetadata.isEmpty()) {
+                                replayAction.setMetadata(KeyValueConverter.convertKeyValues(replaceSourceMetadata));
+                            }
 
                             inputs.add(new StateMachineInput(child, flow));
 
@@ -905,6 +921,66 @@ public class DeltaFilesService {
         deltaFileRepo.saveAll(parents);
 
         return results;
+    }
+
+    private Action findFirstActionUpdateFlow(DeltaFileFlow flow, DeltaFileFlow firstFlow, OffsetDateTime now) {
+        Action startFromAction = null;
+        List<ActionConfiguration> nextActions = new ArrayList<>();
+
+        if (firstFlow.getType() == FlowType.TRANSFORM) {
+            TransformFlow flowConfig = transformFlowService.getFlowOrThrow(firstFlow.getName());
+            List<String> inheritedActions = new ArrayList<>();
+            List<String> expectedInheritedActions = new ArrayList<>();
+
+            List<ActionConfiguration> childActionConfigurations = new ArrayList<>();
+            for (ActionConfiguration action : flowConfig.getTransformActions()) {
+                expectedInheritedActions.add(action.getName());
+                childActionConfigurations.add(action);
+            }
+
+            for (Action originalAction : firstFlow.getActions()) {
+                startFromAction = new Action(originalAction);
+                final String checkName = startFromAction.getName();
+                if (!inheritedActions.contains(checkName)) {
+                    inheritedActions.add(checkName);
+                }
+                childActionConfigurations.removeIf(a -> a.getName().equals(checkName));
+                if (originalAction.isReplayStart()) {
+                    int indexOf = expectedInheritedActions.indexOf(checkName);
+                    if (indexOf >= 0) {
+                        expectedInheritedActions = expectedInheritedActions.subList(0, indexOf + 1);
+                    } else {
+                        throw new IllegalStateException("The flow " + flow.getName() + " no longer contains an action named " + startFromAction.getName() + " where the replay would be begin");
+                    }
+                    break;
+                } else {
+                    flow.getActions().add(new Action(originalAction));
+                }
+            }
+
+            if (!expectedInheritedActions.equals(inheritedActions)) {
+                throw new IllegalStateException("The actions inherited from the parent DeltaFile for flow " + flow.getName() + " do not match the latest flow");
+            }
+
+            nextActions.addAll(childActionConfigurations);
+        } else {
+            startFromAction = new Action(firstFlow.getActions().getFirst());
+        }
+
+        flow.setActionConfigurations(nextActions);
+        flow.setState(nextActions.isEmpty() ? DeltaFileFlowState.COMPLETE : DeltaFileFlowState.IN_FLIGHT);
+
+        return Action.builder()
+                .name(startFromAction.getName())
+                .id(startFromAction.getId())
+                .type(startFromAction.getType())
+                .state(ActionState.COMPLETE)
+                .created(now)
+                .modified(now)
+                .content(startFromAction.getContent())
+                .metadata(startFromAction.getMetadata())
+                .replayStart(true)
+                .build();
     }
 
     public List<AcknowledgeResult> acknowledge(List<UUID> dids, String reason) {
@@ -1023,12 +1099,11 @@ public class DeltaFilesService {
         }
 
         List<ActionInput> actionInputs = stateMachine.advance(inputs);
-
         inputs.stream()
                 .filter(input -> input.deltaFile().hasCollectingAction())
                 .forEach(input -> deltaFileCacheService.remove(input.deltaFile().getDid()));
 
-        deltaFileCacheService.saveAll(inputs.stream().map(StateMachineInput::deltaFile).distinct().toList());
+        deltaFileCacheService.saveAll(inputs.stream().map(StateMachineInput::deltaFile).collect(Collectors.toSet()));
         enqueueActions(actionInputs);
     }
 

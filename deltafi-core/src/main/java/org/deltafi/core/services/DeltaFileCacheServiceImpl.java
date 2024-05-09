@@ -103,7 +103,7 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
     @Override
     public void save(DeltaFile deltaFile) {
         if (!deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().isEnabled() ||
-                deltaFile.inactiveStage()) {
+                deltaFile.inactiveStage() || deltaFile.getVersion() == 0) {
             try {
                 updateRepo(deltaFile, false);
             } finally {

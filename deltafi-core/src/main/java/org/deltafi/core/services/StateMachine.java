@@ -93,20 +93,20 @@ public class StateMachine {
     }
 
     private List<ActionInput> advanceTransform(StateMachineInput input, Map<String, Long> pendingQueued) {
-        TransformFlow transformFlow = transformFlowService.getRunningFlowByName(input.flow().getName());
+        ActionConfiguration nextTransformAction = input.flow().getNextActionConfiguration();
 
-        TransformActionConfiguration nextTransformAction = transformFlow.getTransformActions().stream()
-                .filter(transformAction -> !input.flow().hasFinalAction(transformAction.getName()))
-                .findFirst().orElse(null);
+        if (nextTransformAction != null && !input.flow().hasFinalAction(nextTransformAction.getName())) {
+            return addNextAction(input, nextTransformAction, pendingQueued);
+        }
 
-        return nextTransformAction != null ? addNextAction(input, nextTransformAction, pendingQueued) :  new ArrayList<>();
+        return new ArrayList<>();
     }
 
     private List<ActionInput> advanceEgress(StateMachineInput input, Map<String, Long> pendingQueued) {
         EgressFlow egressFlow = egressFlowService.getRunningFlowByName(input.flow().getName());
 
-        EgressActionConfiguration nextEgressAction = egressFlow.getEgressAction();
-        if (input.flow().hasFinalAction(nextEgressAction.getName())) {
+        ActionConfiguration nextEgressAction = input.flow().getNextActionConfiguration();
+        if (nextEgressAction == null || input.flow().hasFinalAction(nextEgressAction.getName())) {
             Set<String> expectedAnnotations = egressFlow.getExpectedAnnotations();
             if (expectedAnnotations != null && !expectedAnnotations.isEmpty()) {
                 Set<String> pendingAnnotations = input.deltaFile().getPendingAnnotations(expectedAnnotations);

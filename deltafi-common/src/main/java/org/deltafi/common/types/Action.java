@@ -55,6 +55,7 @@ public class Action {
   private List<Content> content;
   private Map<String, String> metadata;
   private List<String> deleteMetadataKeys;
+  private boolean replayStart; // marker for the starting point of a replay
 
   public Action(Action other) {
     this.name = other.name;
@@ -78,6 +79,7 @@ public class Action {
     this.content = other.content == null ? null : other.content.stream().map(Content::new).toList();
     this.metadata = other.metadata == null ? null : new HashMap<>(other.metadata);
     this.deleteMetadataKeys = other.deleteMetadataKeys == null ? null : new ArrayList<>(other.deleteMetadataKeys);
+    this.replayStart = other.replayStart;
   }
 
   public List<Content> getContent() {
@@ -206,5 +208,22 @@ public class Action {
       return true;
     }
     return false;
+  }
+
+  public Action createChildAction() {
+    Action childAction = new Action();
+    childAction.setId(id);
+    childAction.setCreated(created);
+    childAction.setModified(modified);
+    childAction.setStart(start);
+    childAction.setStop(stop);
+    childAction.setName(name);
+    childAction.setType(type);
+    childAction.setState(ActionState.INHERITED);
+    childAction.setCreated(created);
+    childAction.setQueued(queued);
+    childAction.setAttempt(attempt);
+    childAction.setReplayStart(replayStart);
+    return childAction;
   }
 }

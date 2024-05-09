@@ -17,6 +17,7 @@
  */
 package org.deltafi.common.types;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -41,6 +42,8 @@ public interface Subscriber {
      * @return the FlowType
      */
     FlowType flowType();
+
+    List<ActionConfiguration> allActionConfigurations();
 
     /**
      *
