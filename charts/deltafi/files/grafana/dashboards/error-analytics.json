@@ -48,7 +48,7 @@
   "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 36,
+  "id": 79,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -483,7 +483,7 @@
           },
           "pluginVersion": "4.0.6",
           "queryType": "table",
-          "rawSql": "SELECT dataSource, if(empty(annotationValue),'(none)',annotationValue) AS annotationValue, value\nFROM(\nSELECT dataSource, annotations['${annotation}'] AS annotationValue, count() value \nFROM \"deltafi\".\"errors\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${flow} ) ) AND ( annotationValue IN (${annotationValue}))  \nGROUP BY dataSource, annotationValue\nORDER BY value DESC\nLIMIT 10)",
+          "rawSql": "SELECT dataSource, ' [' || if(empty(annotationValue),'none',annotationValue) || ']' AS annotationValue, value\nFROM(\nSELECT dataSource, annotations['${annotation}'] AS annotationValue, count() value \nFROM \"deltafi\".\"errors\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${flow} ) ) AND ( annotationValue IN (${annotationValue}))  \nGROUP BY dataSource, annotationValue\nORDER BY value DESC\nLIMIT 500)",
           "refId": "A"
         }
       ],
@@ -643,11 +643,11 @@
           },
           "pluginVersion": "4.0.6",
           "queryType": "timeseries",
-          "rawSql": "SELECT time, dataSource || ' (' || if(empty(annotationValue),'None',annotationValue) || ')' AS annotationValue, values \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, dataSource, annotations['${annotation}'] AS annotationValue, count() AS values \nFROM deltafi.\"errors\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${flow} ) ) AND ( annotationValue IN (${annotationValue}))\nGROUP BY dataSource, annotationValue, time \nORDER BY time ASC WITH FILL STEP $__interval_s)",
+          "rawSql": "SELECT time, dataSource || ' [' || if(empty(annotationValue),'none',annotationValue) || ']' AS annotationValue, values \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, dataSource, annotations['${annotation}'] AS annotationValue, count() AS values \nFROM deltafi.\"errors\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${flow} ) ) AND ( annotationValue IN (${annotationValue}))\nGROUP BY dataSource, annotationValue, time \nORDER BY time ASC WITH FILL STEP $__interval_s)",
           "refId": "A"
         }
       ],
-      "title": "Errors by Annotation Value",
+      "title": "Errors by ${annotation}",
       "transformations": [
         {
           "id": "organize",
@@ -793,7 +793,7 @@
           },
           "pluginVersion": "4.0.6",
           "queryType": "table",
-          "rawSql": "SELECT dataSource,  sum(value)\nFROM(\nSELECT dataSource, annotations['${annotation}'] AS annotationValue, count() value \nFROM \"deltafi\".\"errors\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${flow} ) ) AND ( annotationValue IN (${annotationValue}))  \nGROUP BY dataSource, annotationValue\nORDER BY value DESC\nLIMIT 10) GROUP BY dataSource",
+          "rawSql": "SELECT dataSource,  sum(value)\nFROM(\nSELECT dataSource, annotations['${annotation}'] AS annotationValue, count() value \nFROM \"deltafi\".\"errors\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${flow} ) ) AND ( annotationValue IN (${annotationValue}))  \nGROUP BY dataSource, annotationValue\nORDER BY value DESC\nLIMIT 500) GROUP BY dataSource",
           "refId": "A"
         }
       ],
@@ -872,7 +872,7 @@
       },
       "gridPos": {
         "h": 9,
-        "w": 15,
+        "w": 16,
         "x": 8,
         "y": 14
       },
@@ -1076,12 +1076,12 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "cause"
+              "options": "Causes"
             },
             "properties": [
               {
                 "id": "custom.width",
-                "value": 760
+                "value": 125
               }
             ]
           }
@@ -1106,7 +1106,12 @@
         },
         "frameIndex": 5,
         "showHeader": true,
-        "sortBy": []
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Causes"
+          }
+        ]
       },
       "pluginVersion": "10.4.2",
       "targets": [
@@ -1164,7 +1169,7 @@
           "refId": "A"
         }
       ],
-      "title": "Types of Errors by Data Source",
+      "title": "Causes of Errors by Data Source",
       "transformations": [
         {
           "id": "organize",
@@ -1256,7 +1261,12 @@
         },
         "frameIndex": 5,
         "showHeader": true,
-        "sortBy": []
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Annotated Values"
+          }
+        ]
       },
       "pluginVersion": "10.4.2",
       "targets": [
@@ -1310,11 +1320,11 @@
           },
           "pluginVersion": "4.0.6",
           "queryType": "table",
-          "rawSql": "SELECT dataSource, count(tag) FROM (SELECT dataSource, annotations['${annotation}'] AS tag, count() as values\nFROM \"deltafi\".\"errors\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and (dataSource IN (${flow})) AND ( tag IN (${annotationValue})) \nGROUP BY dataSource, tag\nORDER BY values DESC) GROUP BY dataSource",
+          "rawSql": "SELECT dataSource, count(tag) as \"Unique ${annotation} values\" FROM (SELECT dataSource, annotations['${annotation}'] AS tag, count() as values\nFROM \"deltafi\".\"errors\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and (dataSource IN (${flow})) AND ( tag IN (${annotationValue})) \nGROUP BY dataSource, tag\nORDER BY values DESC) GROUP BY dataSource",
           "refId": "A"
         }
       ],
-      "title": "Count of Annotated Values by Data Source",
+      "title": "Count of ${annotation} by Data Source",
       "transformations": [
         {
           "id": "organize",
@@ -1327,9 +1337,7 @@
               "sum(values)": 2
             },
             "renameByName": {
-              "cause": "Cause",
-              "count(cause)": "Causes",
-              "count(tag)": "Annotated Values",
+              "count(tag)": "Unique ${annotation} values",
               "dataSource": "Data Source",
               "sum(values)": "Frequency"
             }
@@ -1377,19 +1385,19 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "cause"
+              "options": "Frequency"
             },
             "properties": [
               {
                 "id": "custom.width",
-                "value": 760
+                "value": 125
               }
             ]
           }
         ]
       },
       "gridPos": {
-        "h": 20,
+        "h": 11,
         "w": 24,
         "x": 0,
         "y": 35
@@ -1407,7 +1415,12 @@
         },
         "frameIndex": 5,
         "showHeader": true,
-        "sortBy": []
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Frequency"
+          }
+        ]
       },
       "pluginVersion": "10.4.2",
       "targets": [
@@ -1526,29 +1539,31 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "cause"
+              "options": "Frequency"
             },
             "properties": [
               {
                 "id": "custom.width",
-                "value": 760
+                "value": 125
               }
             ]
           }
         ]
       },
       "gridPos": {
-        "h": 20,
+        "h": 11,
         "w": 24,
         "x": 0,
-        "y": 55
+        "y": 46
       },
       "id": 115,
       "options": {
         "cellHeight": "sm",
         "footer": {
           "countRows": false,
-          "fields": "",
+          "fields": [
+            "sum(values)"
+          ],
           "reducer": [
             "sum"
           ],
@@ -1556,7 +1571,12 @@
         },
         "frameIndex": 5,
         "showHeader": true,
-        "sortBy": []
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Frequency"
+          }
+        ]
       },
       "pluginVersion": "10.4.2",
       "targets": [
@@ -1610,11 +1630,11 @@
           },
           "pluginVersion": "4.0.6",
           "queryType": "table",
-          "rawSql": "SELECT dataSource, tag, sum(values) FROM (SELECT dataSource, annotations['${annotation}'] AS tag, cause, count() as values\nFROM \"deltafi\".\"errors\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and (dataSource IN (${flow})) AND ( tag IN (${annotationValue})) \nGROUP BY dataSource, cause, tag\nORDER BY values DESC) GROUP BY dataSource, tag",
+          "rawSql": "SELECT dataSource, tag as \"value\", sum(values) FROM (SELECT dataSource, annotations['${annotation}'] AS tag, cause, count() as values\nFROM \"deltafi\".\"errors\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and (dataSource IN (${flow})) AND ( tag IN (${annotationValue})) \nGROUP BY dataSource, cause, tag\nORDER BY values DESC) GROUP BY dataSource, tag",
           "refId": "A"
         }
       ],
-      "title": "Errors by Annotation",
+      "title": "Errors by ${annotation} Value",
       "transformations": [
         {
           "id": "organize",
@@ -1624,13 +1644,12 @@
             "indexByName": {
               "dataSource": 0,
               "sum(values)": 2,
-              "tag": 1
+              "value": 1
             },
             "renameByName": {
-              "cause": "Cause",
               "dataSource": "Data Source",
               "sum(values)": "Frequency",
-              "tag": "Annotation Value"
+              "value": "Value"
             }
           }
         }
@@ -1638,7 +1657,7 @@
       "type": "table"
     }
   ],
-  "refresh": false,
+  "refresh": "1h",
   "revision": 1,
   "schemaVersion": 39,
   "tags": [
@@ -1721,7 +1740,7 @@
       },
       {
         "current": {
-          "selected": true,
+          "selected": false,
           "text": [
             "All"
           ],
@@ -1750,7 +1769,7 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {
