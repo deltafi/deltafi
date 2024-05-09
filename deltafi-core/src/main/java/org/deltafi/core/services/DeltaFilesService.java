@@ -123,6 +123,7 @@ public class DeltaFilesService {
     private final ContentStorageService contentStorageService;
     private final ResumePolicyService resumePolicyService;
     private final MetricService metricService;
+    private final ClickhouseService clickhouseService;
     private final CoreAuditLogger coreAuditLogger;
     private final DidMutexService didMutexService;
     private final DeltaFileCacheService deltaFileCacheService;
@@ -566,6 +567,7 @@ public class DeltaFilesService {
                 DeltaFile deltaFile = ingressOrErrorOnMissingFlow(ingressItem, event.getAction(), event.getFlow(),
                         event.getStart(), event.getStop());
                 if (deltaFile.getStage() == DeltaFileStage.ERROR) {
+                    logErrorAnalytics(deltaFile, event, "Ingress flow missing");
                     counter.erroredFiles++;
                 }
                 counter.byteCount += deltaFile.getIngressBytes();
@@ -630,6 +632,7 @@ public class DeltaFilesService {
             if (lastState == ActionState.FILTERED) {
                 counter.filteredFiles++;
             } else if (lastState == ActionState.ERROR) {
+                logErrorAnalytics(deltaFile);
                 counter.erroredFiles++;
             }
         }
@@ -787,9 +790,19 @@ public class DeltaFilesService {
                 () -> deltaFile.errorAction(event));
         // false: we don't want action execution metrics, since they have already been recorded.
         generateMetrics(false, List.of(new Metric(DeltaFiConstants.FILES_ERRORED, 1)), event, deltaFile);
+        logErrorAnalytics(deltaFile, event, deltaFile.lastAction().getErrorCause());
 
         return deltaFile;
     }
+
+    private void logErrorAnalytics(DeltaFile deltaFile, ActionEvent action, String message) {
+        clickhouseService.insertError(deltaFile, action.getFlow(), action.getAction(), message);
+    }
+
+    private void logErrorAnalytics(DeltaFile deltaFile) {
+        clickhouseService.insertError(deltaFile, deltaFile.lastAction().getFlow(), deltaFile.lastAction().getName(), deltaFile.lastAction().getErrorCause());
+    }
+
 
     private DeltaFile getTerminalDeltaFileOrCache(String did) {
         if (deltaFileCacheService.isCached(did)) {

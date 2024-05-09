@@ -135,6 +135,16 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
+  name: dashboard-error-analytics
+  labels:
+    grafana_dashboard: "1"
+data:
+  error-analytics.json: |-
+{{ .Files.Get "files/grafana/dashboards/error-analytics.json" | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
   name: clickhouse-query-analysis
   labels:
     grafana_dashboard: "1"

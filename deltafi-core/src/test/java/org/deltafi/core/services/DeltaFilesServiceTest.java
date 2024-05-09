@@ -78,6 +78,7 @@ class DeltaFilesServiceTest {
     private final DeltaFileCacheService deltaFileCacheService;
     private final QueueManagementService queueManagementService;
     private final QueuedAnnotationRepo queuedAnnotationRepo;
+    private final ClickhouseService clickhouseService;
 
     private final DeltaFilesService deltaFilesService;
 
@@ -101,7 +102,7 @@ class DeltaFilesServiceTest {
             @Mock EgressFlowService egressFlowService, @Mock PublisherService publisherService, @Mock StateMachine stateMachine,
             @Mock DeltaFileRepo deltaFileRepo, @Mock ActionEventQueue actionEventQueue,
             @Mock ContentStorageService contentStorageService, @Mock ResumePolicyService resumePolicyService,
-            @Mock MetricService metricService, @Mock CoreAuditLogger coreAuditLogger,
+            @Mock MetricService metricService, @Mock ClickhouseService clickhouseService, @Mock CoreAuditLogger coreAuditLogger,
             @Mock DeltaFileCacheService deltaFileCacheService, @Mock TimedIngressFlowService timedIngressFlowService,
             @Mock QueueManagementService queueManagementService, @Mock QueuedAnnotationRepo queuedAnnotationRepo,
             @Mock Environment environment, @Mock ScheduledCollectService scheduledCollectService) {
@@ -117,10 +118,11 @@ class DeltaFilesServiceTest {
         this.deltaFileCacheService = deltaFileCacheService;
         this.queueManagementService = queueManagementService;
         this.queuedAnnotationRepo = queuedAnnotationRepo;
+        this.clickhouseService = clickhouseService;
 
         deltaFilesService = new DeltaFilesService(testClock, transformFlowService, normalizeFlowService,
                 enrichFlowService, egressFlowService, publisherService, mockDeltaFiPropertiesService, stateMachine, deltaFileRepo,
-                actionEventQueue, contentStorageService, resumePolicyService, metricService,
+                actionEventQueue, contentStorageService, resumePolicyService, metricService, clickhouseService,
                 coreAuditLogger, new DidMutexService(), deltaFileCacheService, timedIngressFlowService,
                 queueManagementService, queuedAnnotationRepo, environment, scheduledCollectService, uuidGenerator);
     }

@@ -33,6 +33,9 @@ dependencies {
 	implementation 'io.fabric8:kubernetes-client:6.10.0'
 	implementation 'com.github.docker-java:docker-java-core:3.3.4'
 	implementation 'com.github.docker-java:docker-java-transport-httpclient5:3.3.4'
+	implementation 'com.clickhouse:clickhouse-http-client:0.6.0-patch4'
+	implementation 'com.clickhouse:clickhouse-jdbc:0.6.0-patch4'
+	implementation 'org.lz4:lz4-java:1.8.0'
 
 	testImplementation project(':deltafi-common-test')
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'

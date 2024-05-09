@@ -23,4 +23,5 @@ import lombok.Data;
 @Data
 public class MetricsProperties {
     private boolean enabled = true;
+    private boolean errorAnalyticsEnabled = true;
 }
