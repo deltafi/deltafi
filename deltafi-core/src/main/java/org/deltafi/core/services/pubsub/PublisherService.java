@@ -228,8 +228,7 @@ public class PublisherService {
 
     private void errorDeltaFile(DeltaFileFlow flow, String context) {
         // grab the last content list to copy into the synthetic error action to make it available for retry
-        Action lastAction = flow.lastAction();
-        List<Content> toCopy = lastAction != null ? lastAction.getContent() : List.of();
+        List<Content> toCopy =  flow.lastActionContent();
         Action action = queueSyntheticAction(flow);
         action.setState(ActionState.ERROR);
         action.setErrorCause(NO_SUBSCRIBER_CAUSE);

@@ -18,6 +18,7 @@
 package org.deltafi.core.types;
 
 import org.apache.commons.lang3.StringUtils;
+import org.deltafi.common.types.Action;
 import org.deltafi.common.types.ActionType;
 
 import java.util.ArrayList;
@@ -122,6 +123,11 @@ public class ResumePolicy extends org.deltafi.core.generated.types.ResumePolicy 
         if (hasMultiplier && getBackOff().getMultiplier() < 1) {
             errors.add(INVALID_MULTIPLIER);
         }
+    }
+
+    public boolean isMatch(Action action, String dataSource) {
+        return isMatch(action.getAttempt(), action.getErrorCause(), dataSource,
+                action.getName(), action.getType());
     }
 
     /**

@@ -66,7 +66,7 @@ public class StateMachine {
     private List<ActionInput> advance(StateMachineInput input, Map<String, Long> pendingQueued) {
         List<ActionInput> actionInputs = updateCurrentFlow(input, pendingQueued);
         if (actionInputs.isEmpty() &&
-                (input.flow().getState() == DeltaFileFlowState.COMPLETE || input.flow().lastAction().getType() == ActionType.PUBLISH)) {
+                (input.flow().getState() == DeltaFileFlowState.COMPLETE || input.flow().lastActionType() == ActionType.PUBLISH)) {
             actionInputs.addAll(publishToNewFlows(input, pendingQueued));
         }
         input.deltaFile().updateState(OffsetDateTime.now(clock));
@@ -143,8 +143,9 @@ public class StateMachine {
     private List<ActionInput> publishToNewFlows(StateMachineInput input, Map<String, Long> pendingQueued) {
         List<ActionInput> actionInputs = new ArrayList<>();
 
-        if (input.flow().lastAction().getType() != ActionType.PUBLISH &&
-                (input.flow().getType() == FlowType.EGRESS || input.flow().lastAction().getState() != ActionState.COMPLETE)) {
+        Action lastAction = input.flow().lastAction();
+        if (lastAction != null && lastAction.getType() != ActionType.PUBLISH &&
+                (input.flow().getType() == FlowType.EGRESS || lastAction.getState() != ActionState.COMPLETE)) {
             return Collections.emptyList();
         }
 

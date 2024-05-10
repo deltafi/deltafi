@@ -23,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.Action;
 import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.DeltaFile;
+import org.deltafi.common.types.DeltaFileFlow;
 import org.deltafi.core.generated.types.BackOff;
 import org.deltafi.core.repo.ResumePolicyRepo;
 import org.deltafi.core.snapshot.SnapshotRestoreOrder;
@@ -41,6 +42,7 @@ import java.util.*;
 public class ResumePolicyService implements Snapshotter {
 
     private final ResumePolicyRepo resumePolicyRepo;
+    private final Random random = new Random();
     private List<ResumePolicy> policiesCache;
 
     @PostConstruct
@@ -88,11 +90,12 @@ public class ResumePolicyService implements Snapshotter {
      */
     boolean matchesActionError(ResumePolicy policy, DeltaFile deltaFile) {
         return deltaFile.erroredFlows().stream()
-                .anyMatch(f -> {
-                    Action action = f.lastAction();
-                    return policy.isMatch(action.getAttempt(), action.getErrorCause(), deltaFile.getDataSource(),
-                            action.getName(), action.getType());
-                });
+                .anyMatch(erroredFlow -> matchesActionError(policy, deltaFile, erroredFlow));
+    }
+
+    private boolean matchesActionError(ResumePolicy policy, DeltaFile deltaFile, DeltaFileFlow deltaFileFlow) {
+        Action lastAction = deltaFileFlow.lastAction();
+        return lastAction != null && policy.isMatch(lastAction, deltaFile.getDataSource());
     }
 
     /**
@@ -136,7 +139,7 @@ public class ResumePolicyService implements Snapshotter {
         int delay = backOff.getDelay();
         boolean randomDelay = null != backOff.getRandom() && backOff.getRandom();
         if (randomDelay) {
-            delay = new Random().nextInt(delay, 1 + backOff.getMaxDelay());
+            delay = random.nextInt(delay, 1 + backOff.getMaxDelay());
         } else if (null != backOff.getMultiplier()) {
             delay = attempt * backOff.getMultiplier() * delay;
             if (null != backOff.getMaxDelay() && delay > backOff.getMaxDelay()) {

@@ -141,7 +141,7 @@ public class DeltaFileFlow {
 
     public boolean hasUnacknowledgedError() {
         Action lastAction = lastAction();
-        return lastAction.getState() == ActionState.ERROR && lastAction.getErrorAcknowledged() == null;
+        return lastAction != null && lastAction.getState() == ActionState.ERROR && lastAction.getErrorAcknowledged() == null;
     }
 
     public boolean hasPendingAnnotations() {
@@ -247,16 +247,12 @@ public class DeltaFileFlow {
         return resumeMetadata.getFlow().equals(name);
     }
 
-    private boolean isActionErrored(Action action) {
-        return action != null && action.getState() == ActionState.ERROR;
-    }
-
     public boolean hasActionInState(ActionState actionState) {
         return actions.stream().anyMatch(action -> action.getState().equals(actionState));
     }
 
     public boolean acknowledgeError(OffsetDateTime now, String reason) {
-        boolean acked = lastAction().acknowledgeError(now, reason);
+        boolean acked = !actions.isEmpty() && actions.getLast().acknowledgeError(now, reason);
         if (acked) {
             modified = now;
         }
@@ -264,7 +260,7 @@ public class DeltaFileFlow {
     }
 
     public boolean clearErrorAcknowledged(OffsetDateTime now) {
-        boolean cleared = lastAction().clearErrorAcknowledged(now);
+        boolean cleared = !actions.isEmpty() && actions.getLast().clearErrorAcknowledged(now);
         if (cleared) {
             modified = now;
         }
@@ -282,7 +278,9 @@ public class DeltaFileFlow {
 
     public void updateState(OffsetDateTime now) {
         modified = now;
-        state = switch(lastAction().getState()) {
+        ActionState lastState = lastActionState();
+        state = switch(lastState) {
+            case null -> DeltaFileFlowState.COMPLETE;
             case ERROR -> DeltaFileFlowState.ERROR;
             case CANCELLED -> DeltaFileFlowState.CANCELLED;
             case COMPLETE -> hasPendingAnnotations() ? DeltaFileFlowState.PENDING_ANNOTATIONS : DeltaFileFlowState.COMPLETE;
@@ -304,5 +302,17 @@ public class DeltaFileFlow {
     @JsonIgnore
     public ActionConfiguration getNextActionConfiguration() {
         return !actionConfigurations.isEmpty() ? actionConfigurations.getFirst() : null;
+    }
+
+    public ActionType lastActionType() {
+        return !actions.isEmpty() ? actions.getLast().getType() : null;
+    }
+
+    public ActionState lastActionState() {
+        return !actions.isEmpty() ? actions.getLast().getState() : null;
+    }
+
+    public List<Content> lastActionContent() {
+        return !actions.isEmpty() ?  actions.getLast().getContent() : List.of();
     }
 }

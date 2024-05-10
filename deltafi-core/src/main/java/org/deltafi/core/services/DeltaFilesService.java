@@ -487,7 +487,7 @@ public class DeltaFilesService {
         for (DeltaFile deltaFile : deltaFiles) {
             counter.byteCount += deltaFile.getIngressBytes();
             if (deltaFile.getFlows().size() == 1) {
-                ActionState lastState = deltaFile.getFlows().getFirst().lastAction().getState();
+                ActionState lastState = deltaFile.getFlows().getFirst().lastActionState();
                 if (lastState == ActionState.FILTERED) {
                     counter.filteredFiles++;
                 } else if (lastState == ActionState.ERROR) {
