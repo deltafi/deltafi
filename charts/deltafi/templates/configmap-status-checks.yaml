@@ -9,18 +9,19 @@ data:
     - deltafi-core-worker
     - deltafi-graphite
     - deltafi-loki
+    - deltafi-mongodb
     - deltafi-valkey-master
   DeploymentCheck: |
     expected_deployments:
     - deltafi-api
     - deltafi-core
     - deltafi-core-actions
+    - deltafi-docs
     - deltafi-egress-sink
     - deltafi-grafana
     - deltafi-ingress
     - deltafi-kubernetes-dashboard
     - deltafi-minio
-    - deltafi-mongodb
     - deltafi-monitor
     - deltafi-ui
   IngressCheck: |
