@@ -210,6 +210,18 @@ public enum PropertyType {
              target.getMetrics().setEnabled(source.getMetrics().isEnabled());
         }
     },
+    METRICS_ERROR_ANALYTICS_ENABLED("metrics.errorAnalyticsEnabled", "Enable reporting of error analytic metrics to Clickhouse",
+            props -> props.getMetrics().isErrorAnalyticsEnabled(), false) {
+        @Override
+        public Object convertValue(String value) {
+            return convertBoolean(value);
+        }
+
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+             target.getMetrics().setErrorAnalyticsEnabled(source.getMetrics().isErrorAnalyticsEnabled());
+        }
+    },
     PLUGINS_AUTO_ROLLBACK("plugins.autoRollback", "Rollback failed plugin deployments",
             props -> props.getPlugins().isAutoRollback()) {
         @Override

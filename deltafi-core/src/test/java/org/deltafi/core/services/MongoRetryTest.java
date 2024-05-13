@@ -52,11 +52,11 @@ import java.util.UUID;
 
 @ExtendWith(SpringExtension.class)
 @Import({DeltaFilesService.class, ClockConfiguration.class})
-@MockBean({TransformFlowService.class, EgressFlowService.class, StateMachine.class, DeltaFileRepo.class,
-        ActionEventQueue.class, ContentStorageService.class, ResumePolicyService.class, MetricService.class,
-        CoreAuditLogger.class, DeltaFileCacheService.class, DataSourceService.class, PublisherService.class,
-        QueueManagementService.class, QueuedAnnotationRepo.class, Environment.class, CollectEntryService.class,
-        ScheduledCollectService.class, UUIDGenerator.class})
+@MockBean({TransformFlowService.class,EgressFlowService.class,
+        StateMachine.class, DeltaFileRepo.class, ActionEventQueue.class, ContentStorageService.class, DeltaFilesService.class,
+        ResumePolicyService.class, MetricService.class, ClickhouseService.class, CoreAuditLogger.class, DeltaFileCacheService.class,
+        PublisherService.class, QueueManagementService.class, QueuedAnnotationRepo.class, Environment.class,
+        CollectEntryService.class, ScheduledCollectService.class, UUIDGenerator.class})
 @EnableRetry
 class MongoRetryTest {
 

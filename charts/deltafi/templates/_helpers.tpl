@@ -203,6 +203,8 @@ initContainers:
 {{- end -}}
 
 {{- define "clickhouseEnvVars" -}}
+- name: CLICKHOUSE_ENABLED
+  value: "{{ .Values.clickhouse.enabled | toString }}"
 - name: CLICKHOUSE_PASSWORD
   valueFrom:
     secretKeyRef:

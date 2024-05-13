@@ -71,6 +71,7 @@ class DeltaFilesServiceTest {
     private final DeltaFileCacheService deltaFileCacheService;
     private final QueueManagementService queueManagementService;
     private final QueuedAnnotationRepo queuedAnnotationRepo;
+    private final ClickhouseService clickhouseService;
 
     private final DeltaFilesService deltaFilesService;
 
@@ -98,7 +99,7 @@ class DeltaFilesServiceTest {
             @Mock EgressFlowService egressFlowService, @Mock StateMachine stateMachine,
             @Mock DeltaFileRepo deltaFileRepo, @Mock ActionEventQueue actionEventQueue,
             @Mock ContentStorageService contentStorageService, @Mock ResumePolicyService resumePolicyService,
-            @Mock MetricService metricService, @Mock CoreAuditLogger coreAuditLogger,
+            @Mock MetricService metricService, @Mock ClickhouseService clickhouseService, @Mock CoreAuditLogger coreAuditLogger,
             @Mock DeltaFileCacheService deltaFileCacheService, @Mock DataSourceService dataSourceService,
             @Mock QueueManagementService queueManagementService, @Mock QueuedAnnotationRepo queuedAnnotationRepo,
             @Mock Environment environment, @Mock ScheduledCollectService scheduledCollectService) {
@@ -113,13 +114,12 @@ class DeltaFilesServiceTest {
         this.queueManagementService = queueManagementService;
         this.queuedAnnotationRepo = queuedAnnotationRepo;
         this.dataSourceService = dataSourceService;
+        this.clickhouseService = clickhouseService;
 
-        UUIDGenerator uuidGenerator = new TestUUIDGenerator();
-        deltaFilesService = new DeltaFilesService(testClock, transformFlowService, egressFlowService,
-                mockDeltaFiPropertiesService, stateMachine, deltaFileRepo, actionEventQueue, contentStorageService,
-                resumePolicyService, metricService, coreAuditLogger, new DidMutexService(), deltaFileCacheService,
-                dataSourceService, queueManagementService, queuedAnnotationRepo, environment,
-                scheduledCollectService, uuidGenerator);
+        deltaFilesService = new DeltaFilesService(testClock, transformFlowService, egressFlowService, mockDeltaFiPropertiesService,
+                stateMachine, deltaFileRepo, actionEventQueue, contentStorageService, resumePolicyService,
+                metricService, clickhouseService, coreAuditLogger, new DidMutexService(), deltaFileCacheService, dataSourceService,
+                queueManagementService, queuedAnnotationRepo, environment, scheduledCollectService, new TestUUIDGenerator());
     }
 
     @Test

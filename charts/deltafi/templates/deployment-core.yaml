@@ -29,6 +29,7 @@ spec:
         - name: UNIQUE_ID
           value: core
         {{- include "coreEnvVars" . | nindent 8 }}
+        {{- include "clickhouseEnvVars" . | nindent 8 }}
         envFrom:
         {{- include "keyStorePasswordSecret" . | nindent 8 }}
         ports:

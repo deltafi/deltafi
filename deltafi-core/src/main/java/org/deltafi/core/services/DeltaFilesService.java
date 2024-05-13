@@ -110,6 +110,7 @@ public class DeltaFilesService {
     private final ContentStorageService contentStorageService;
     private final ResumePolicyService resumePolicyService;
     private final MetricService metricService;
+    private final ClickhouseService clickhouseService;
     private final CoreAuditLogger coreAuditLogger;
     private final DidMutexService didMutexService;
     private final DeltaFileCacheService deltaFileCacheService;
@@ -491,6 +492,7 @@ public class DeltaFilesService {
                 if (lastState == ActionState.FILTERED) {
                     counter.filteredFiles++;
                 } else if (lastState == ActionState.ERROR) {
+                    logErrorAnalytics(deltaFile, event, "Ingress error. Data source: " + dataSource.getName());
                     counter.erroredFiles++;
                 }
             }
@@ -614,6 +616,15 @@ public class DeltaFilesService {
 
         // false: we don't want action execution metrics, since they have already been recorded.
         generateMetrics(false, List.of(new Metric(DeltaFiConstants.FILES_ERRORED, 1)), event, deltaFile, flow, action);
+        logErrorAnalytics(deltaFile, event);
+    }
+
+    private void logErrorAnalytics(DeltaFile deltaFile, ActionEvent action) {
+        clickhouseService.insertError(deltaFile, action.getFlowName(), action.getActionName(), action.getError().getCause());
+    }
+
+    private void logErrorAnalytics(DeltaFile deltaFile, ActionEvent action, String message) {
+        clickhouseService.insertError(deltaFile, action.getFlowName(), action.getActionName(), message);
     }
 
     private DeltaFile getTerminalDeltaFileOrCache(UUID did) {

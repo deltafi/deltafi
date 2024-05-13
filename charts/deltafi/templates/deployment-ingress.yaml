@@ -25,6 +25,7 @@ spec:
         - name: JDK_JAVA_OPTIONS
           value: "-Dcom.redhat.fips=false -Dschedule.actionEvents=false -Dschedule.maintenance=false -Dschedule.propertySync=true"
         {{- include "coreEnvVars" . | nindent 8 }}
+        {{- include "clickhouseEnvVars" . | nindent 8 }}
         envFrom:
         {{- include "keyStorePasswordSecret" . | nindent 8 }}
         ports:
