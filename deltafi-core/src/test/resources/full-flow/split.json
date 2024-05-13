@@ -1,0 +1,54 @@
+{
+    "did": "%1$s",
+    "flowName": "sampleTransform",
+    "flowId": 1,
+    "actionName": "SampleTransformAction",
+    "actionId": 1,
+    "start": "2021-07-11T13:44:22.183Z",
+    "stop": "2021-07-11T13:44:22.184Z",
+    "type": "TRANSFORM",
+    "transform": [
+        {
+            "name": "child1",
+            "content": [
+                {
+                    "name": "transformed",
+                    "segments": [
+                        {
+                            "uuid": "11111111-1111-1111-1111-111111111111",
+                            "offset": 0,
+                            "size": 100,
+                            "did": "%1$s"
+                        }
+                    ],
+                    "mediaType": "application/octet-stream"
+                }
+            ],
+            "metadata": {
+                "sampleType": "sample-type",
+                "sampleVersion": "2.1"
+            }
+        },
+        {
+            "name": "child2",
+            "content": [
+                {
+                    "name": "transformed",
+                    "segments": [
+                        {
+                            "uuid": "11111111-1111-1111-1111-111111111111",
+                            "offset": 100,
+                            "size": 400,
+                            "did": "%1$s"
+                        }
+                    ],
+                    "mediaType": "application/octet-stream"
+                }
+            ],
+            "metadata": {
+                "sampleType": "sample-type",
+                "sampleVersion": "2.1"
+            }
+        }
+    ]
+}

@@ -44,7 +44,6 @@ public class DeltaFile {
   @Builder.Default
   private UUID did = UUID.randomUUID();
   private String name;
-  // TODO: replace with case insensitive index?
   private String normalizedName;
   private String dataSource;
   @Builder.Default

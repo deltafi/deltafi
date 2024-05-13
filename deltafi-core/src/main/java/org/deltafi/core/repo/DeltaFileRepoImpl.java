@@ -78,7 +78,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String DATA_SOURCE = "dataSource";
     public static final String ERROR_CAUSE = "errorCause";
     public static final String FILTERED_CAUSE = "filteredCause";
-    public static final String ERROR_ACKNOWLEDGED = "flows.actions.errorAcknowledged";
+    public static final String ERROR_ACKNOWLEDGED = "errorAcknowledged";
     public static final String EGRESSED = "egressed";
     public static final String EGRESS_FLOWS = "egressFlows";
     public static final String FILTERED = "filtered";
@@ -90,8 +90,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String INGRESS_BYTES = "ingressBytes";
     public static final String REPLAYED = "replayed";
     public static final String REQUEUE_COUNT = "requeueCount";
-    public static final String NEXT_AUTO_RESUME = "flows.actions.nextAutoResume";
-    public static final String NEXT_AUTO_RESUME_REASON = "flows.actions.nextAutoResumeReason";
+    public static final String NEXT_AUTO_RESUME = "nextAutoResume";
     public static final String NORMALIZED_NAME = "normalizedName";
     public static final String FORMATTED_DATA_FILENAME = "formattedData.content.name";
     public static final String FORMATTED_DATA_FORMAT_ACTION = "formattedData.formatAction";
@@ -287,7 +286,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     private Query buildReadyForAutoResume(OffsetDateTime maxReadyTime) {
         Query requeueQuery = new Query(Criteria.where(STAGE).is(DeltaFileStage.ERROR)
-                .and(NEXT_AUTO_RESUME).lt(maxReadyTime));
+                .and(FLOWS_ACTIONS).elemMatch(Criteria.where(NEXT_AUTO_RESUME).lt(maxReadyTime)));
         requeueQuery.fields().include(ID, DATA_SOURCE, SCHEMA_VERSION);
 
         return requeueQuery;
@@ -300,8 +299,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     private Query buildResumePolicyCanidatesQuery(String dataSource) {
         Criteria criteria = Criteria.where(STAGE).is(DeltaFileStage.ERROR)
-                .and(NEXT_AUTO_RESUME).isNull()
-                .and(ERROR_ACKNOWLEDGED).isNull()
+                .and(FLOWS_ACTIONS).not().elemMatch(
+                        Criteria.where(NEXT_AUTO_RESUME).ne(null)
+                                .orOperator(Criteria.where(ERROR_ACKNOWLEDGED).ne(null)))
                 .and(CONTENT_DELETED).isNull();
 
         if (dataSource != null) {
@@ -651,9 +651,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         if (filter.getErrorAcknowledged() != null) {
             if (isTrue(filter.getErrorAcknowledged())) {
-                criteria.and(ERROR_ACKNOWLEDGED).ne(null);
+                criteria.and(FLOWS_ACTIONS).elemMatch(Criteria.where(ERROR_ACKNOWLEDGED).ne(null));
             } else {
-                criteria.and(ERROR_ACKNOWLEDGED).is(null);
+                criteria.and(FLOWS_ACTIONS).not().elemMatch(Criteria.where(ERROR_ACKNOWLEDGED).ne(null));
             }
         }
 
@@ -848,8 +848,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public Map<String, Integer> errorCountsByFlow(Set<String> flows) {
         // Match flows in the given set, ERROR_ACKNOWLEDGED is null, and STAGE is DeltaFileStage.ERROR
         Criteria flowsCriteria = Criteria.where(DATA_SOURCE).in(flows)
-                .and(ERROR_ACKNOWLEDGED).is(null)
+                .and(FLOWS_ACTIONS).not().elemMatch(Criteria.where(ERROR_ACKNOWLEDGED).ne(null))
                 .and(STAGE).is(DeltaFileStage.ERROR);
+
         MatchOperation matchFlowsStage = Aggregation.match(flowsCriteria);
 
         // Group by flow and count errors

@@ -681,47 +681,6 @@ class DeltaFiCoreApplicationTests {
 		verifyActionEventResults(postTransformDeltaFile(did), ActionContext.builder().flowName(EGRESS_FLOW_NAME).actionName(SAMPLE_EGRESS_ACTION).build());
 	}
 
-	// TODO - turn this into testing a split from a transform
-	/*@Test
-	void testReinject() throws IOException {
-		UUID did = UUID.randomUUID();
-		DeltaFile postTransform = postTransformDeltaFile(did);
-		deltaFileRepo.save(postTransform);
-
-		deltaFilesService.handleActionEvent(actionEvent("reinject", did));
-
-		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
-		assertEquals(DeltaFileStage.COMPLETE, deltaFile.getStage());
-		assertEquals(2, deltaFile.getChildDids().size());
-		assertEquals(ActionState.REINJECTED, deltaFile.getActions().get(deltaFile.getActions().size() - 1).getState());
-
-		List<DeltaFile> children = deltaFilesService.deltaFiles(0, 50, DeltaFilesFilter.newBuilder().dids(deltaFile.getChildDids()).build(), DeltaFileOrder.newBuilder().field("created").direction(DeltaFileDirection.ASC).build()).getDeltaFiles();
-		assertEquals(2, children.size());
-
-		DeltaFile child1 = children.getFirst();
-		assertEquals(DeltaFileStage.INGRESS, child1.getStage());
-		assertEquals(Collections.singletonList(deltaFile.getDid()), child1.getParentDids());
-		assertEquals("file1", child1.getSourceInfo().getFilename());
-		assertEquals(0, child1.lastContent().getFirst().getSegments().getFirst().getOffset());
-		assertEquals(2, child1.lastContent().size());
-
-		DeltaFile child2 = children.get(1);
-		assertEquals(DeltaFileStage.INGRESS, child2.getStage());
-		assertEquals(Collections.singletonList(deltaFile.getDid()), child2.getParentDids());
-		assertEquals("file2", child2.getSourceInfo().getFilename());
-		assertEquals(250, child2.lastContent().getFirst().getSegments().getFirst().getOffset());
-		assertEquals(1, child2.lastContent().size());
-
-		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture(), anyBoolean());
-		List<ActionInput> actionInputs = actionInputListCaptor.getValue();
-		assertThat(actionInputs).hasSize(2);
-
-		assertEquals(child1.forQueue(NORMALIZE_FLOW_NAME), actionInputs.getFirst().getDeltaFileMessages().getFirst());
-		assertEquals(child2.forQueue(NORMALIZE_FLOW_NAME), actionInputs.get(1).getDeltaFileMessages().getFirst());
-
-		verifyCommonMetrics(ActionEventType.REINJECT, "SampleLoadAction", DATA_SOURCE_NAME, null, "type");
-	}*/
-
 	@Test
 	void testTransformDidNotFound() {
 		UUID did = UUID.randomUUID();
@@ -2169,8 +2128,6 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.save(deltaFile6);
 		DeltaFile deltaFile7 = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, OffsetDateTime.now().plusSeconds(6), OffsetDateTime.now());
 		deltaFile7.setTotalBytes(1000L);
-
-		// TODO - fix this
 		deltaFile7.getFlows().getFirst().setPendingAnnotations(Set.of("a"));
 		deltaFile7.updateFlags();
 		deltaFileRepo.save(deltaFile7);
@@ -2394,9 +2351,8 @@ class DeltaFiCoreApplicationTests {
 		testFilter(DeltaFilesFilter.newBuilder().dids(List.of(deltaFile1.getDid(), deltaFile3.getDid())).build(), deltaFile1, deltaFile3);
 		testFilter(DeltaFilesFilter.newBuilder().dids(List.of(deltaFile1.getDid(), deltaFile2.getDid())).build(), deltaFile1, deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().dids(List.of(UUID.randomUUID(), UUID.randomUUID())).build());
-		// TODO: why don't these work?
-//		testFilter(DeltaFilesFilter.newBuilder().errorAcknowledged(true).build(), deltaFile1);
-//		testFilter(DeltaFilesFilter.newBuilder().errorAcknowledged(false).build(), deltaFile2, deltaFile3);
+		testFilter(DeltaFilesFilter.newBuilder().errorAcknowledged(true).build(), deltaFile1);
+		testFilter(DeltaFilesFilter.newBuilder().errorAcknowledged(false).build(), deltaFile2, deltaFile3);
 		testFilter(DeltaFilesFilter.newBuilder().egressed(false).build(), deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().egressed(true).build(), deltaFile2, deltaFile3);
 		testFilter(DeltaFilesFilter.newBuilder().filtered(false).build(), deltaFile1);
@@ -3954,175 +3910,41 @@ class DeltaFiCoreApplicationTests {
 		}
 	}
 
-	// TODO: restore the split egress case
-	/*
 	@Test
-	void testTransformFlowMultipleEgress() throws IOException {
+	void testSplit() throws IOException {
 		UUID did = UUID.randomUUID();
-		DeltaFile postUtf8Transform = transformFlowPostTransformUtf8DeltaFile(did);
+		DeltaFile postUtf8Transform = postTransformUtf8DeltaFile(did);
 		deltaFileRepo.save(postUtf8Transform);
 
-		deltaFilesService.handleActionEvent(actionEvent("transformFlowTransformMultiple", did));
+		deltaFilesService.handleActionEvent(actionEvent("split", did));
 
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		assertEquals(DeltaFileStage.COMPLETE, deltaFile.getStage());
 		assertEquals(2, deltaFile.getChildDids().size());
-		assertEquals(ActionState.SPLIT, deltaFile.getActions().get(deltaFile.getActions().size()-1).getState());
+		assertEquals(ActionState.SPLIT, deltaFile.getFlows().getLast().lastAction().getState());
 
 		List<DeltaFile> children = deltaFilesService.deltaFiles(0, 50, DeltaFilesFilter.newBuilder().dids(deltaFile.getChildDids()).build(), DeltaFileOrder.newBuilder().field("created").direction(DeltaFileDirection.ASC).build()).getDeltaFiles();
 		assertEquals(2, children.size());
+		assertEquals(List.of("child1", "child2"), children.stream().map(DeltaFile::getName).sorted().toList());
 
-		DeltaFile child1 = children.getFirst();
+		DeltaFile child1 = children.stream().filter(d -> d.getName().equals("child1")).findFirst().orElseThrow();
 		assertEquals(DeltaFileStage.IN_FLIGHT, child1.getStage());
-		assertFalse(child1.getTestMode());
+		assertNull(child1.getFlows().getFirst().getTestModeReason());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child1.getParentDids());
-		assertEquals("input.txt", child1.getSourceInfo().getFilename());
-		assertEquals(0, child1.lastCompleteAction().getContent().getFirst().getSegments().getFirst().getOffset());
+		assertEquals(0, child1.getFlows().getFirst().lastCompleteAction().orElseThrow().getContent().getFirst().getSegments().getFirst().getOffset());
 
-		DeltaFile child2 = children.get(1);
+		DeltaFile child2 = children.stream().filter(d -> d.getName().equals("child2")).findFirst().orElseThrow();
 		assertEquals(DeltaFileStage.IN_FLIGHT, child2.getStage());
-		assertFalse(child2.getTestMode());
+		assertNull(child2.getFlows().getFirst().getTestModeReason());
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child2.getParentDids());
-		assertEquals("input.txt", child2.getSourceInfo().getFilename());
-		assertEquals(250, child2.lastCompleteAction().getContent().getFirst().getSegments().getFirst().getOffset());
+		assertEquals(100, child2.getFlows().getFirst().lastCompleteAction().orElseThrow().getContent().getFirst().getSegments().getFirst().getOffset());
 
 		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture(), anyBoolean());
 		assertEquals(2, actionInputListCaptor.getValue().size());
 		assertEquals(child1.getDid(), actionInputListCaptor.getValue().getFirst().getActionContext().getDid());
 		assertEquals(child2.getDid(), actionInputListCaptor.getValue().get(1).getActionContext().getDid());
 
-		verifyCommonMetrics(ActionEventType.TRANSFORM, "SampleTransformAction", DATA_SOURCE_NAME, null, "type");
-	}
-
-
-	@Test
-	void testDeletesV8() {
-		assertDeleted(deltaFileRepo, mongoTemplate, 8);
-	} */
-
-	private static String egressFlow() {
-		return """
-				{
-				  "_id" : "passthrough-migration-test",
-				  "includeIngressFlows" : ["decompress-and-merge",
-				                "passthrough",
-				                "split-lines-passthrough"],
-				  "excludeIngressFlows": ["smoke"]
-				  "formatAction" : {
-						  "requiresEnrichments" : [ ],
-						  "requiresDomains" : [
-								  "binary"
-						  ],
-						  "type" : "org.deltafi.passthrough.action.RoteFormatAction",
-						  "internalParameters" : {
-								  "maxRoteDelayMS" : 0,
-								  "minRoteDelayMS" : 0
-						  },
-						  "parameters" : {
-								  "maxRoteDelayMS" : 0,
-								  "minRoteDelayMS" : 0
-						  },
-						  "name" : "PassthroughFormatAction"
-				  },
-				  "validateActions" : [
-						  {
-								  "type" : "org.deltafi.passthrough.action.RubberStampValidateAction",
-								  "internalParameters" : {
-										  "maxRoteDelayMS" : 0,
-										  "minRoteDelayMS" : 0
-								  },
-								  "parameters" : {
-										  "maxRoteDelayMS" : 0,
-										  "minRoteDelayMS" : 0
-								  },
-								  "name" : "PassthroughValidateAction"
-						  }
-				  ],
-				  "egressAction" : {
-						  "type" : "org.deltafi.core.action.RestPostEgressAction",
-						  "internalParameters" : {
-								  "metadataKey" : "deltafiMetadata",
-								  "url" : "http://deltafi-egress-sink-service"
-						  },
-						  "parameters" : {
-								  "metadataKey" : "deltafiMetadata",
-								  "url" : "http://deltafi-egress-sink-service"
-						  },
-						  "name" : "PassthroughEgressAction"
-				  },
-				  "schemaVersion" : 2,
-				  "description" : "Egress flow that passes data through unchanged",
-				  "sourcePlugin" : {
-						  "groupId" : "org.deltafi",
-						  "artifactId" : "deltafi-passthrough",
-						  "version" : "1.1.3"
-				  },
-				  "flowStatus" : {
-						  "state" : "INVALID",
-						  "errors" : [
-								  {
-										  "configName" : "PassthroughEgressAction",
-										  "errorType" : "UNREGISTERED_ACTION",
-										  "message" : "Action: org.deltafi.core.action.RestPostEgressAction has not been registered with the system"
-								  }
-						  ],
-						  "testMode" : false
-				  },
-				  "variables" : [ ],
-				  "_class" : "org.deltafi.core.types.EgressFlow"
-				  }
-				""";
-	}
-
-	private static String egressFlowPlan() {
-		return """
-				{
-				        "_id" : "passthrough-migration-test",
-				        "includeIngressFlows" : [
-				                "decompress-and-merge",
-				                "passthrough",
-				                "split-lines-passthrough"
-				        ],
-				        "excludeIngressFlows": ["smoke"],
-				        "formatAction" : {
-				                "requiresDomains" : [
-				                        "binary"
-				                ],
-				                "type" : "org.deltafi.passthrough.action.RoteFormatAction",
-				                "parameters" : {
-				                        "minRoteDelayMS" : "${minRoteDelayMS}",
-				                        "maxRoteDelayMS" : "${maxRoteDelayMS}"
-				                },
-				                "name" : "PassthroughFormatAction"
-				        },
-				        "validateActions" : [
-				                {
-				                        "type" : "org.deltafi.passthrough.action.RubberStampValidateAction",
-				                        "parameters" : {
-				                                "minRoteDelayMS" : "${minRoteDelayMS}",
-				                                "maxRoteDelayMS" : "${maxRoteDelayMS}"
-				                        },
-				                        "name" : "PassthroughValidateAction"
-				                }
-				        ],
-				        "egressAction" : {
-				                "type" : "org.deltafi.core.action.RestPostEgressAction",
-				                "parameters" : {
-				                        "metadataKey" : "deltafiMetadata",
-				                        "url" : "${passthroughEgressUrl}"
-				                },
-				                "name" : "PassthroughEgressAction"
-				        },
-				        "type" : "EGRESS",
-				        "description" : "Egress flow that passes data through unchanged",
-				        "sourcePlugin" : {
-				                "groupId" : "org.deltafi",
-				                "artifactId" : "deltafi-passthrough",
-				                "version" : "1.1.3"
-				        },
-				        "_class" : "org.deltafi.common.types.EgressFlowPlan"
-				}
-				""";
+		verifyCommonMetrics(ActionEventType.TRANSFORM, "SampleTransformAction", REST_DATA_SOURCE_NAME, null, "type");
 	}
 
 	@Test
@@ -4170,7 +3992,7 @@ class DeltaFiCoreApplicationTests {
 		assertThat(actionInputs).hasSize(1);
 
 		DeltaFile parent1 = deltaFileRepo.findById(did1).orElseThrow();
-		// TODO what is the id set too?
+		// TODO what is the id set to?
 		Action action = parent1.getFlow(actionFlow, 1).actionNamed(actionName).orElseThrow();
 		assertEquals(ActionState.COLLECTING, action.getState());
 
@@ -4263,14 +4085,13 @@ class DeltaFiCoreApplicationTests {
 				Collections.emptyList());
 		deltaFilesService.ingress(restDataSource, ingress2, OffsetDateTime.now(), OffsetDateTime.now());
 
-		await().atMost(5, TimeUnit.SECONDS).until(() -> hasErroredAction(ingress1.getDid(), transformFlowName, COLLECTING_TRANSFORM_ACTION));
-		await().atMost(5, TimeUnit.SECONDS).until(() -> hasErroredAction(ingress2.getDid(), transformFlowName, COLLECTING_TRANSFORM_ACTION));
+		await().atMost(5, TimeUnit.SECONDS).until(() -> hasErroredAction(ingress1.getDid(), transformFlowName, 0, COLLECTING_TRANSFORM_ACTION));
+		await().atMost(5, TimeUnit.SECONDS).until(() -> hasErroredAction(ingress2.getDid(), transformFlowName, 0, COLLECTING_TRANSFORM_ACTION));
 	}
 
-	private boolean hasErroredAction(UUID did, String actionFlow, String actionName) {
+	private boolean hasErroredAction(UUID did, String actionFlow, int flowId, String actionName) {
 		DeltaFile deltaFile = deltaFileRepo.findById(did).orElseThrow();
-		// TODO - fix this
-		Action action = deltaFile.getFlow(actionFlow, 0).actionNamed(actionName).orElseThrow();
+		Action action = deltaFile.getFlow(actionFlow, flowId).actionNamed(actionName).orElseThrow();
 		return action.getState() == ActionState.ERROR;
 	}
 
