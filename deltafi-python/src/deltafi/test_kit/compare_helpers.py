@@ -69,16 +69,17 @@ class JsonCompareHelper(CompareHelper):
         self.ignore_order = ignore_order
 
     def __perform_find(self, obj: object, item):
-        """Returns a dict of matches of the 'item' in the object 'obj'.  The item may be compiled regex pattern or a
-                string that compiles to a regex pattern.  The returned dict is empty if there are no matches. Excludes
-                path(s) determined by the constructor."""
+        """Returns a dict of matches of the 'item' in the object 'obj'.  Both keys and values of dicts are included in
+                the search.  The item may be compiled regex pattern or a string that compiles to a regex pattern.  The
+                returned dict is empty if there are no matches. Excludes path(s) determined by the constructor."""
         return DeepSearch(obj, item, verbose_level=2, exclude_regex_paths=self.excludes, use_regexp=True)
 
     def is_not_found(self, obj: object, item):
-        """Returns None if there are no occurrences of 'item' in object 'obj' else raises a ValueError.  If 'item' is a
-                list, then all elements of item must not be found in list, else a ValueError is raised.  The argument
-                'item' may be a compiled regex pattern, a string that compiles to a regex pattern, or a list of either
-                or both.  Excludes path(s) and failure on ordering of elements are determined by the constructor."""
+        """Returns None if there are no occurrences of 'item' in object 'obj' else raises a ValueError.  Both keys and
+                values of dicts are included in the search.  If 'item' is a list, then all elements of item must not be
+                found in list, else a ValueError is raised.  The argument 'item' may be a compiled regex pattern, a
+                string that compiles to a regex pattern, or a list of either or both.  Excludes path(s) and failure on
+                ordering of elements are determined by the constructor."""
 
         all_matches = []
 
@@ -98,10 +99,11 @@ class JsonCompareHelper(CompareHelper):
         assert len(all_matches) == 0
 
     def is_found(self, obj: object, item):
-        """Returns None if 'item' occurs in object 'obj' else raises a ValueError.  If 'item' is a list, then all
-                elements of item must occur in the object else a ValueError is returned.  The argument 'item' may be a
-                compiled regex pattern, a string that compiles to a regex pattern, or a list of either or both.
-                Excludes path(s) and failure on ordering of elements are determined by the constructor."""
+        """Returns None if 'item' occurs in object 'obj' else raises a ValueError.  Both keys and values of dicts are
+                included in the search.  If 'item' is a list, then all elements of item must occur in the object else a
+                ValueError is returned.  The argument 'item' may be a compiled regex pattern, a string that compiles to
+                a regex pattern, or a list of either or both. Excludes path(s) and failure on ordering of elements are
+                determined by the constructor."""
 
         not_found_items = []
 

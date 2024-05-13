@@ -49,7 +49,8 @@ def test_is_not_found_success(obj, item):
                              ([{"a": "alpha"}, {"b": "bravo"}], [re.compile("^bravo$"), re.compile("^alpha$")],
                               ["alpha", "bravo"], []),                                                           # list of 2 regexes
                              ([{"a": "alpha"}, {"b": "bravo"}], ["bravo", re.compile("^alpha$")],
-                              ["alpha", "bravo"], [])                                                            # list of string and regex
+                              ["alpha", "bravo"], []),                                                           # list of string and regex
+                             ([{"target-key": "alpha"}, {"b": "bravo"}], "target-key", ["target-key"], []),      # demonstrate dict key
                          ])
 def test_is_not_found_fail(obj, item, in_err_msg, not_in_err_msg):
 
@@ -74,7 +75,8 @@ def test_is_not_found_fail(obj, item, in_err_msg, not_in_err_msg):
                              ([{"a": "alpha"}, {"b": "bravo"}], [re.compile("^alp[a-z]{2}$"),
                                                                  re.compile("^br[a-z]{3}$")]),   # list of 2 regexes
                              ([{"a": "alpha"}, {"b": "bravo"}],
-                              ["alpha", "bravo", re.compile("^alpha$")])                         # list of string and regex
+                              ["alpha", "bravo", re.compile("^alpha$")]),                        # list of string and regex
+                             ([{"target-key": "alpha"}, {"b": "bravo"}], "target-key")           # demonstrate dict key
                          ])
 def test_is_found_success(obj, item):
     json_compare_helper = JsonCompareHelper()
@@ -95,7 +97,7 @@ def test_is_found_success(obj, item):
                               [re.compile("^br[a-z]{3}$"), re.compile("^alp[a-z]{3}$")],
                               ["[re.compile('^alp[a-z]{3}$')]"], ["alpha", "bravo"]),                             # list of 2 regexes
                              ([{"a": "alpha"}, {"b": "bravo"}], ["bravo", re.compile("^alp[a-z]{3}$")],
-                              ["[re.compile('^alp[a-z]{3}$')]"], ["alpha", "bravo"]),                             # list of string and regex
+                              ["[re.compile('^alp[a-z]{3}$')]"], ["alpha", "bravo"])                              # list of string and regex
                          ])
 def test_is_found_fail(obj, item, in_err_msg, not_in_err_msg):
 
