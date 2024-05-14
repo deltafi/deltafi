@@ -68,6 +68,8 @@ class User < Sequel::Model
 
   def password
     @password ||= Password.new(password_hash)
+  rescue BCrypt::Errors::InvalidHash
+    @password = nil
   end
 
   def password=(new_password)
