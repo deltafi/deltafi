@@ -100,7 +100,7 @@ public class FullFlowExemplars {
 
         Action action = flow.addAction("NO_SUBSCRIBERS", ActionType.PUBLISH, ActionState.ERROR, OffsetDateTime.now());
         action.setErrorCause(NO_SUBSCRIBER_CAUSE);
-        action.setErrorContext("No subscribers found for data source `sampleTimedDataSourceError`");
+        action.setErrorContext("No subscribers found for data source 'sampleTimedDataSourceError' on topic 'missingPublishTopic'");
         action.setContent(flow.getActions().getFirst().getContent());
 
         deltaFile.setStage(DeltaFileStage.ERROR);

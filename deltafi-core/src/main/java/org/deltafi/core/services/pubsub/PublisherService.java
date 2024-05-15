@@ -212,7 +212,7 @@ public class PublisherService {
     }
 
     private void handleNoMatches(DataSource dataSource, DeltaFileFlow flow) {
-        errorDeltaFile(flow, "No subscribers found for data source `" + dataSource.getName() + "`");
+        errorDeltaFile(flow, "No subscribers found for data source '" + dataSource.getName() + "'" + " on topic '" + dataSource.getTopic() + "'");
     }
 
     private Set<Subscriber> getSubscribers(String topic) {
