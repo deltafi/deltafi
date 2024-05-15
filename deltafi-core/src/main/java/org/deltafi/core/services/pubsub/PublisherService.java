@@ -86,7 +86,7 @@ public class PublisherService {
         Set<DeltaFileFlow> subscribers = subscribers(publishTopics, deltaFile, publishingFlow);
 
         if (subscribers.isEmpty()) {
-            return handleNoMatches(publisher, deltaFile, publishingFlow);
+            return handleNoMatches(publisher, deltaFile, publishingFlow, publishTopics);
         }
 
         return subscribers;
@@ -186,7 +186,7 @@ public class PublisherService {
         return null;
     }
 
-    private Set<DeltaFileFlow> handleNoMatches(Publisher publisher, DeltaFile deltaFile, DeltaFileFlow completedFlow) {
+    private Set<DeltaFileFlow> handleNoMatches(Publisher publisher, DeltaFile deltaFile, DeltaFileFlow completedFlow, Set<String> publishTopics) {
         PublishRules publishRules = publisher.publishRules();
         DefaultRule defaultRule = Objects.requireNonNullElse(publishRules.getDefaultRule(), ERROR_RULE);
         DefaultBehavior defaultBehavior = defaultRule.getDefaultBehavior();
@@ -201,7 +201,14 @@ public class PublisherService {
             defaultBehavior = DefaultBehavior.ERROR;
         }
 
-        String context = "No subscribers found using publisher `" + publisher.getName() + "`\n" + publishRules;
+        String context = "No subscribers found from flow '" + publisher.getName() + "' ";
+        if (publishTopics.isEmpty()) {
+            context += "because no topics matched the criteria.";
+        } else {
+            context += "listening on matching topics: " + String.join(", ", publishTopics);
+        }
+        context += "\nWith rules:\n" + publishRules;
+
         if (DefaultBehavior.FILTER.equals(defaultBehavior)) {
             filterDeltaFile(deltaFile, completedFlow, context);
         } else {
