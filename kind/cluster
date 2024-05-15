@@ -821,6 +821,7 @@ Options:
   bounce      Restart an application (deltafi-api, etc.).  App name must follow command
   nocore      Skips building core DeltaFi and UI (build only)
   noui        Skips building DeltaFi UI (build only)
+  noplugins   Skips building plugins
   destroy     Destroys the cluster before proceeding
   expose      Expose ports for deltafi-core, minio and valkey on localhost
   -f | force  Skip "are you sure?"
@@ -854,6 +855,7 @@ loc() {
   local FORCE=
   local NOCORE=
   local NOUI=
+  local NOPLUGINS=
   local DESTROY=
 
   [[ -z "$1" ]] && _loc_help
@@ -879,6 +881,9 @@ loc() {
         ;;
       noui)
         NOUI=noui
+        ;;
+      noplugins)
+        NOPLUGINS=noplugins
         ;;
       install)
         INSTALL=install
@@ -1012,18 +1017,19 @@ _local_build() {
   export DELTAFI_PYTHON
   DELTAFI_PYTHON="$ROOT/deltafi/deltafi-python/src"
 
-  for plugin in "${PLUGINS[@]}"; do
-    if [[ ! -d $ROOT/$plugin ]]; then
-      git clone "$(_url_for_plugin "$plugin")" "$ROOT/$plugin"
-    fi
-    cd "$ROOT/$plugin"
-    _annotated_subshell git pull || _warn "Cannot pull latest"
-    if [[ $# -gt 0 && $1 == "clean" ]]; then
-      _plugin_clean
-    fi
-    _do_plugin_build
-  done
-
+  if [[ -z "$NOPLUGINS" ]]; then
+    for plugin in "${PLUGINS[@]}"; do
+      if [[ ! -d $ROOT/$plugin ]]; then
+        git clone "$(_url_for_plugin "$plugin")" "$ROOT/$plugin"
+      fi
+      cd "$ROOT/$plugin"
+      _annotated_subshell git pull || _warn "Cannot pull latest"
+      if [[ $# -gt 0 && $1 == "clean" ]]; then
+        _plugin_clean
+      fi
+      _do_plugin_build
+    done
+  fi
 }
 
 _get_secret() {
