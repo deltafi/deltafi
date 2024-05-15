@@ -41,9 +41,11 @@
       box-shadow: none !important;
     }
   }
-  .state-column,
-  .elapsed-column {
+  .state-column {
     width: 8rem;
+  }
+  .elapsed-column {
+    width: 6rem;
   }
   .timestamp-column {
     width: 16rem;

@@ -34,6 +34,7 @@
             <Timestamp :timestamp="row.data.modified" />
           </template>
         </Column>
+        <Column field="elapsed" header="Elapsed" class="elapsed-column" />
         <Column header="Metadata" class="metadata-column">
           <template #body="{ data: flow }">
             <span v-if="flow.input.hasOwnProperty('metadata') && Object.keys(flow.input.metadata).length > 0">
