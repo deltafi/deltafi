@@ -161,7 +161,7 @@ const ackErrorsDialog = ref({
   visible: false,
 });
 const props = defineProps({
-  ingressFlowName: {
+  dataSourceName: {
     type: String,
     required: false,
     default: undefined,
@@ -248,10 +248,10 @@ const filters = ref({
 
 const fetchErrors = async () => {
   await getPersistedParams();
-  let ingressFlowName = props.ingressFlowName != null ? props.ingressFlowName : null;
+  let dataSourceName = props.dataSourceName != null ? props.dataSourceName : null;
   let errorMessage = filters.value.last_error_cause.value != null ? filters.value.last_error_cause.value.message : null;
   loading.value = true;
-  await getErrors(props.acknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, ingressFlowName, errorMessage);
+  await getErrors(props.acknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, dataSourceName, errorMessage);
   errors.value = response.value.deltaFiles.deltaFiles;
   totalErrors.value = response.value.deltaFiles.totalCount;
   loading.value = false;
@@ -356,7 +356,7 @@ defineExpose({
 });
 const setupWatchers = () => {
   watch(
-    () => props.ingressFlowName,
+    () => props.dataSourceName,
     () => {
       fetchErrors();
     }

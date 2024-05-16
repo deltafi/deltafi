@@ -19,7 +19,7 @@
 <template>
   <div>
     <CollapsiblePanel header="Flows" class="actions-panel table-panel">
-      <DataTable v-model:expandedRows="expandedRows" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="flows" :row-class="rowClass" @row-click="rowClick">
+      <DataTable v-model:expandedRows="expandedRows" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="flows" :row-class="rowClass">
         <Column class="expander-column" :expander="true" />
         <Column field="name" header="Name" :sortable="true" />
         <Column field="type" header="Type" :sortable="true" />
@@ -54,14 +54,20 @@
           </template>
         </Column>
         <Column field="last_action_content" header="Output" class="content-column">
-          <template #body="{ data }">
-            <ContentDialog v-if="lastActionContent(data.actions).content.length > 0" :content="lastActionContent(data.actions).content" :action="lastActionContent(data.actions).name">
+          <template #body="{ data: flow }">
+            <span v-if="flow.actions.length > 0">
+              <ContentDialog v-if="lastAction(flow.actions).content.length > 0" :content="lastAction(flow.actions).content" :action="lastAction(flow.actions).name">
+                <Button icon="far fa-window-maximize" label="View" class="content-button p-button-link" />
+              </ContentDialog>
+            </span>
+            <ContentDialog v-else :content="flow.input.content" :action="flow.input.content.name">
               <Button icon="far fa-window-maximize" label="View" class="content-button p-button-link" />
             </ContentDialog>
           </template>
         </Column>
-        <template #expansion="actions">
-          <DeltaFileActionsTable :delta-file-data="actions.data" :content-deleted="contentDeleted" />
+        <template #expansion="flow">
+          <DeltaFileActionsTable v-if="flow.data.actions.length > 0" :delta-file-data="flow.data" :content-deleted="contentDeleted" />
+          <span v-else>This flow has no actions.</span>
         </template>
       </DataTable>
     </CollapsiblePanel>
@@ -93,7 +99,7 @@ const props = defineProps({
   },
 });
 
-const lastActionContent = (actions) => {
+const lastAction = (actions) => {
   return actions[actions.length - 1];
 };
 
@@ -121,18 +127,9 @@ const contentDeleted = computed(() => {
   return deltaFile.contentDeleted !== null ? deltaFile.contentDeleted : false;
 });
 
-const rowClass = (action) => {
-  if (action.state === "ERROR") return "table-danger action-error";
-  if (action.state === "RETRIED") return "table-warning action-error";
-  if (action.state === "FILTERED") return "table-warning action-error";
-};
-
-const rowClick = (event) => {
-  let action = event.data;
-  if (!["ERROR", "RETRIED", "FILTERED"].includes(action.state)) return;
-
-  errorViewer.visible = true;
-  errorViewer.action = action;
+const rowClass = (flow) => {
+  if (flow.state === "ERROR") return "table-danger";
+  if (flow.state === "COMPLETE" && lastAction(flow.actions)?.state === "FILTERED") return "table-warning";
 };
 </script>
 

@@ -22,8 +22,7 @@
         <Button v-tooltip.right="{ value: `Clear Filters`, disabled: !filterOptionsSelected }" rounded :class="`ml-2 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${filterOptionsSelected ? 'p-column-filter-menu-button-active' : null}`" :disabled="!filterOptionsSelected" @click="clearOptions()">
           <i class="pi pi-filter" style="font-size: 1rem"></i>
         </Button>
-        <!-- TODO: Review for 2.0 -->
-        <!-- <Dropdown v-model="ingressFlowNameSelected" placeholder="Select an Ingress Flow" :options="ingressFlowNames" show-clear :editable="false" class="deltafi-input-field ml-3 flow-dropdown" /> -->
+        <Dropdown v-model="dataSourceNameSelected" placeholder="Select a Data Source" :options="ingressFlowNames" show-clear :editable="false" class="deltafi-input-field ml-3 flow-dropdown" />
         <AutoComplete v-model="selectedMessageValue" :suggestions="filteredErrorMessages" placeholder="Select Last Error" class="deltafi-input-field ml-3" force-selection @complete="messageSearch" />
         <Dropdown v-model="selectedAckOption" :options="ackOptions" option-label="name" option-value="value" :editable="false" class="deltafi-input-field ml-3 ack-dropdown" />
         <Button v-tooltip.left="refreshButtonTooltip" :icon="refreshButtonIcon" label="Refresh" :class="refreshButtonClass" :badge="refreshButtonBadge" badge-class="p-badge-danger" @click="onRefresh" />
@@ -31,13 +30,13 @@
     </PageHeader>
     <TabView v-model:activeIndex="activeTab">
       <TabPanel header="All">
-        <AllErrorsPanel ref="errorsSummaryPanel" :acknowledged="acknowledged" :ingress-flow-name="ingressFlowNameSelected" :errors-message-selected="errorMessageSelected" @refresh-errors="onRefresh()" @error-message-changed:error-message="messageSelected" />
+        <AllErrorsPanel ref="errorsSummaryPanel" :acknowledged="acknowledged" :data-source-name="dataSourceNameSelected" :errors-message-selected="errorMessageSelected" @refresh-errors="onRefresh()" @error-message-changed:error-message="messageSelected" />
       </TabPanel>
       <TabPanel header="By Flow">
-        <ErrorsSummaryByFlowPanel ref="errorSummaryFlowPanel" :acknowledged="acknowledged" :ingress-flow-name="ingressFlowNameSelected" @refresh-errors="onRefresh()" />
+        <ErrorsSummaryByFlowPanel ref="errorSummaryFlowPanel" :acknowledged="acknowledged" :ingress-flow-name="dataSourceNameSelected" @refresh-errors="onRefresh()" />
       </TabPanel>
       <TabPanel header="By Message">
-        <ErrorsSummaryByMessagePanel ref="errorSummaryMessagePanel" :acknowledged="acknowledged" :ingress-flow-name="ingressFlowNameSelected" @refresh-errors="onRefresh()" @change-tab:error-message:flow-selected="tabChange" />
+        <ErrorsSummaryByMessagePanel ref="errorSummaryMessagePanel" :acknowledged="acknowledged" :ingress-flow-name="dataSourceNameSelected" @refresh-errors="onRefresh()" @change-tab:error-message:flow-selected="tabChange" />
       </TabPanel>
     </TabView>
   </div>
@@ -59,6 +58,7 @@ import TabView from "primevue/tabview";
 import { useRoute } from "vue-router";
 import AutoComplete from "primevue/autocomplete";
 import useErrorsSummary from "@/composables/useErrorsSummary";
+import Dropdown from "primevue/dropdown";
 
 const messageValues = ref();
 const filteredErrorMessages = ref([]);
@@ -68,13 +68,13 @@ const isIdle = inject("isIdle");
 const errorSummaryMessagePanel = ref();
 const errorSummaryFlowPanel = ref();
 const errorsSummaryPanel = ref();
-const { fetchIngressFlowNames } = useFlows();
+const { ingressFlows: ingressFlowNames, fetchIngressFlowNames } = useFlows();
 const { pluralize } = useUtilFunctions();
 const { fetchErrorCountSince } = useErrorCount();
 const loading = ref(false);
 const newErrorsCount = ref(0);
 const lastServerContact = ref(new Date());
-const ingressFlowNameSelected = ref(null);
+const dataSourceNameSelected = ref(null);
 const errorMessageSelected = ref("");
 const activeTab = ref(0);
 const params = useUrlSearchParams("history");
@@ -87,26 +87,26 @@ const ackOptions = [
   { name: "Errors", value: 0 },
   { name: "Acknowledged", value: 1 },
   { name: "All", value: 2 },
-]
-const selectedAckOption = ref(0)
+];
+const selectedAckOption = ref(0);
 const acknowledged = computed(() => {
   if (selectedAckOption.value == 0) return false;
   if (selectedAckOption.value == 1) return true;
   return null;
-})
+});
 
 const setPersistedParams = () => {
   // Session Storage
   errorPanelState.value = {
     tabs: activeTab.value,
     ack: selectedAckOption.value,
-    ingressFlowNameSelected: ingressFlowNameSelected.value,
+    dataSourceNameSelected: dataSourceNameSelected.value,
     errorMessageSelected: errorMessageSelected.value,
   };
   // URL
   params.tab = activeTab.value > 0 ? activeTab.value : null;
-  params.ack = selectedAckOption.value > 0 ? selectedAckOption.value : null
-  params.ingressFlow = ingressFlowNameSelected.value;
+  params.ack = selectedAckOption.value > 0 ? selectedAckOption.value : null;
+  params.dataSource = dataSourceNameSelected.value;
   if (activeTab.value === 0) {
     params.errorMsg = errorMessageSelected.value ? encodeURIComponent(errorMessageSelected.value) : null;
   } else {
@@ -118,12 +118,12 @@ const getPersistedParams = async () => {
   if (useURLSearch.value) {
     activeTab.value = params.tab ? parseInt(params.tab) : 0;
     selectedAckOption.value = params.ack ? parseInt(params.ack) : 0;
-    ingressFlowNameSelected.value = params.ingressFlow ? params.ingressFlow : null;
+    dataSourceNameSelected.value = params.dataSource ? params.dataSource : null;
     selectedMessageValue.value = errorMessageSelected.value = params.errorMsg ? decodeURIComponent(params.errorMsg) : errorPanelState.value.errorMessageSelected;
   } else {
     activeTab.value = errorPanelState.value.tabs ? parseInt(errorPanelState.value.tabs) : 0;
     selectedAckOption.value = _.get(errorPanelState.value, "ack", 0);
-    ingressFlowNameSelected.value = _.get(errorPanelState.value, "ingressFlowNameSelected", null);
+    dataSourceNameSelected.value = _.get(errorPanelState.value, "dataSourceNameSelected", null);
     selectedMessageValue.value = errorMessageSelected.value = _.get(errorPanelState.value, "errorMessageSelected", null);
   }
   setPersistedParams();
@@ -144,22 +144,19 @@ const clearOptions = () => {
   filteredErrorMessages.value = [];
   selectedMessageValue.value = "";
   errorMessageSelected.value = "";
-  ingressFlowNameSelected.value = null;
+  dataSourceNameSelected.value = null;
   selectedAckOption.value = 0;
   setPersistedParams();
 };
 
 const filterOptionsSelected = computed(() => {
-  const formDirty = _.some([
-    selectedMessageValue.value,
-    ingressFlowNameSelected.value,
-  ], (value) => !(value === "" || value === null || value === undefined))
+  const formDirty = _.some([selectedMessageValue.value, dataSourceNameSelected.value], (value) => !(value === "" || value === null || value === undefined));
 
   return selectedAckOption.value > 0 || formDirty;
 });
 
 const setupWatchers = () => {
-  watch([activeTab, selectedAckOption, ingressFlowNameSelected, errorMessageSelected], () => {
+  watch([activeTab, selectedAckOption, dataSourceNameSelected, errorMessageSelected], () => {
     setPersistedParams();
   });
   watch([selectedMessageValue], () => {
@@ -174,7 +171,7 @@ const refreshButtonIcon = computed(() => {
 });
 
 const tabChange = (errorMessage, flowSelected) => {
-  ingressFlowNameSelected.value = flowSelected;
+  dataSourceNameSelected.value = flowSelected;
   errorMessageSelected.value = errorMessage;
   selectedMessageValue.value = errorMessage;
   activeTab.value = 0;

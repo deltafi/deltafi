@@ -27,27 +27,26 @@
         <Menu ref="menu" :model="menuItems" :popup="true" />
         <Paginator v-if="filtered.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalFiltered" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)"></Paginator>
       </template>
-      <DataTable id="filteredTable" v-model:selection="selectedDids" v-model:filters="filters" responsive-layout="scroll" selection-mode="multiple" data-key="did" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="filtered" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalFiltered" :row-hover="true" filter-display="menu" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
+      <DataTable id="filteredTable" v-model:expandedRows="expandedRows" v-model:selection="selectedDids" v-model:filters="filters" responsive-layout="scroll" selection-mode="multiple" data-key="did" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="filtered" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalFiltered" :row-hover="true" filter-display="menu" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
         <template #empty>No results to display.</template>
         <template #loading>Loading. Please wait...</template>
+        <Column class="expander-column" :expander="true" />
         <Column field="did" header="DID" class="did-column">
           <template #body="{ data }">
             <DidLink :did="data.did" />
           </template>
         </Column>
-        <Column field="sourceInfo.filename" header="Filename" :sortable="true" class="filename-column">
+        <Column field="name" header="Filename" :sortable="true" class="filename-column">
           <template #body="{ data }">
-            <div v-if="data.sourceInfo.filename.length > 28" v-tooltip.top="data.sourceInfo.filename" class="truncate">{{ data.sourceInfo.filename }}</div>
-            <div v-else>{{ data.sourceInfo.filename }}</div>
+            <div v-if="data.name.length > 28" v-tooltip.top="data.name" class="truncate">{{ data.name }}</div>
+            <div v-else>{{ data.name }}</div>
           </template>
         </Column>
-        <Column field="sourceInfo.flow" header="Flow" :sortable="true" class="flow-column" />
-        <Column field="last_filter_cause" header="Cause" filter-field="last_filter_cause" :show-filter-menu="false" :show-filter-match-modes="false" :show-apply-button="false" :show-clear-button="false" class="last-filter-column">
-          <template #filter="{ filterModel, filterCallback }">
-            <Dropdown v-model="filterModel.value" placeholder="Select a Cause" :options="filteredCauses" :filter="true" option-label="message" show-clear :editable="false" class="p-column-filter deltafi-input-field ml-3" @change="filterCallback()" />
-          </template>
+        <Column field="dataSource" header="Data Source" :sortable="true" class="flow-column" />
+        <Column field="filtered_cause" header="Last Filtered Reason">
           <template #body="{ data }">
-            {{ latestFiltered(data.actions).filteredCause }}
+            {{ latestFiltered(data.flows) }}
+            <!-- {{ data.flows }} -->
           </template>
         </Column>
         <Column field="created" header="Created" :sortable="true" class="timestamp-column">
@@ -60,6 +59,49 @@
             <Timestamp :timestamp="row.data.modified" />
           </template>
         </Column>
+        <template #expansion="filter">
+          <div class="filtered-Subtable">
+            <DataTable v-model:expandedRows="expandedRows" responsive-layout="scroll" :value="filter.data.flows" :row-hover="false" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-class="flowRowClass">
+              <Column class="expander-column" :expander="true" />
+              <Column field="name" header="Name" />
+              <Column field="state" header="State" />
+              <Column field="filtered_cause" header="Filtered Reason">
+                <template #body="{ data }">
+                  {{ filteredActions(data.actions) }}
+                </template>
+              </Column>
+              <Column field="created" header="Created">
+                <template #body="row">
+                  <Timestamp :timestamp="row.data.created" />
+                </template>
+              </Column>
+              <Column field="modified" header="Modified">
+                <template #body="row">
+                  <Timestamp :timestamp="row.data.modified" />
+                </template>
+              </Column>
+              <template #expansion="actions">
+                <div class="filtered-Subtable">
+                  <DataTable responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="actions.data.actions" :row-class="actionRowClass" @row-click="actionRowClick">
+                    <Column field="name" header="Action" :sortable="true" />
+                    <Column field="state" header="State" class="state-column" :sortable="true" />
+                    <Column field="created" header="Created" class="timestamp-column" :sortable="true">
+                      <template #body="row">
+                        <Timestamp :timestamp="row.data.created" />
+                      </template>
+                    </Column>
+                    <Column field="modified" header="Modified" class="timestamp-column" :sortable="true">
+                      <template #body="row">
+                        <Timestamp :timestamp="row.data.modified" />
+                      </template>
+                    </Column>
+                    <Column field="filteredCause" header="Filtered Cause" :sortable="true" />
+                  </DataTable>
+                </div>
+              </template>
+            </DataTable>
+          </div>
+        </template>
       </DataTable>
     </Panel>
     <RetryResumeDialog ref="retryResumeDialog" :did="filterSelectedDids" @update="fetchDeltaFilesData()" />
@@ -93,6 +135,7 @@ const loading = ref(true);
 const menu = ref();
 const filtered = ref([]);
 const retryResumeDialog = ref();
+const expandedRows = ref([]);
 
 const totalFiltered = ref(0);
 const offset = ref(0);
@@ -102,7 +145,7 @@ const sortDirection = ref("DESC");
 const selectedDids = ref([]);
 
 const props = defineProps({
-  ingressFlowName: {
+  dataSourceName: {
     type: String,
     required: false,
     default: undefined,
@@ -144,23 +187,48 @@ const menuItems = ref([
   },
 ]);
 
-// const onRefresh = async () => {
-//   fetchAllMessage();
-//   selectedDids.value = [];
-//   fetchFiltered();
-// };
+const onRefresh = async () => {
+  fetchAllMessage();
+  selectedDids.value = [];
+  fetchFiltered();
+};
 
 const { data: response, fetchAllFiltered: getFiltered, allCauses: filteredCauses, fetchAllMessage } = useFiltered();
 const filters = ref({
   last_filter_cause: { value: null, matchMode: FilterMatchMode.EQUALS },
 });
 
+const actionRowClass = (action) => {
+  if (action.state === "ERROR") return "table-danger action-error";
+  if (action.state === "FILTERED") return "table-warning action-filtered";
+  if (action.state === "RETRIED") return "table-warning action-error";
+};
+
+const flowRowClass = (action) => {
+  if (action.state === "ERROR") return "table-danger action-error";
+  if (action.state === "FILTERED") return "table-warning action-filtered";
+  if (action.state === "RETRIED") return "table-warning action-error";
+  if (filteredActions(action.actions) !== null) return "table-warning action-filtered";
+};
+
+const filterViewer = ref({
+  visible: false,
+  action: {},
+});
+const actionRowClick = (event) => {
+  let action = event.data;
+  if (["FILTERED", "RETRIED"].includes(action.state)) {
+    filterViewer.value.action = action;
+    filterViewer.value.visible = true;
+  }
+};
+
 const fetchFiltered = async () => {
   await getPersistedParams();
-  let ingressFlowName = props.ingressFlowName != null ? props.ingressFlowName : null;
+  let dataSourceName = props.dataSourceName != null ? props.dataSourceName : null;
   let filteredMessage = filters.value.last_filter_cause.value != null ? filters.value.last_filter_cause.value.message : null;
   loading.value = true;
-  await getFiltered(offset.value, perPage.value, sortField.value, sortDirection.value, ingressFlowName, filteredMessage);
+  await getFiltered(offset.value, perPage.value, sortField.value, sortDirection.value, dataSourceName, filteredMessage);
   await fetchAllMessage();
   filtered.value = response.value.deltaFiles.deltaFiles;
   totalFiltered.value = response.value.deltaFiles.totalCount;
@@ -194,8 +262,17 @@ const filterActions = (actions) => {
   });
 };
 
-const latestFiltered = (actions) => {
-  return filterActions(actions).sort((a, b) => (a.modified < b.modified ? 1 : -1))[0];
+const filteredActions = (actions) => {
+  let x = filterActions(actions);
+  return x.length > 0 ? x[0].filteredCause : null;
+};
+
+const latestFiltered = (flows) => {
+  let filteredActions = [];
+  flows.map((a) => {
+    filteredActions.push(filterActions(a.actions));
+  });
+  return filteredActions.sort((a, b) => (a.modified < b.modified ? 1 : -1))[0][0].filteredCause;
 };
 
 const onPage = async (event) => {
@@ -220,7 +297,7 @@ defineExpose({
 });
 const setupWatchers = () => {
   watch(
-    () => props.ingressFlowName,
+    () => props.dataSourceName,
     () => {
       fetchFiltered();
     }

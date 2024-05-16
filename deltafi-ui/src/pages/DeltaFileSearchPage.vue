@@ -229,7 +229,7 @@ const setupWatchers = () => {
   );
 
   watch(
-    () => [model.value.egressFlows, model.value.ingressFlows],
+    () => [model.value.egressFlows, model.value.dataSources],
     _.debounce(
       () => {
         fetchDeltaFilesData();
@@ -343,7 +343,7 @@ const defaultQueryParamsTemplate = {
   pendingAnnotations: null,
   validatedAnnotations: [],
   annotations: [],
-  ingressFlows: [],
+  dataSources: [],
   egressFlows: [],
   filteredCause: null,
   requeueMin: null,
@@ -393,7 +393,7 @@ const advanceOptionsPanelInfo = computed(() => {
     // The Advanced Options fields are broken up into three columns. The fields are sorted in ascending order in each column by the 'order' field.
     // First Column fields
     { field: "fileName", column: 1, order: 1, componentType: "InputText", label: "Filename:", placeholder: "Filename", class: "p-inputtext input-area-height responsive-width" },
-    { field: "ingressFlows", column: 1, order: 2, componentType: "MultiSelect", label: "Ingress Flow:", placeholder: "Select an Ingress Flow", options: ingressFlowOptions.value, class: "deltafi-input-field responsive-width" },
+    { field: "dataSources", column: 1, order: 2, componentType: "MultiSelect", label: "Data Sources:", placeholder: "Select a Data Source", options: ingressFlowOptions.value, class: "deltafi-input-field responsive-width" },
     { field: "egressFlows", column: 1, order: 3, componentType: "MultiSelect", label: "Egress Flow:", placeholder: "Select an Egress Flow", options: egressFlowOptions.value, class: "deltafi-input-field responsive-width" },
     { field: "size", column: 1, order: 4, componentType: "SizeUnit", label: "Size:" },
     // 2nd Column fields
@@ -527,7 +527,7 @@ const onPage = (event) => {
   fetchDeltaFilesDataNoDebounce();
 };
 
-const openPanel = ["fileName", "filteredCause", "requeueMin", "stage", "ingressFlows", "egressFlows", "egressed", "filtered", "testMode", "replayable", "terminalStage", "sizeMin", "sizeMax", "validatedAnnotations", "pendingAnnotations", "annotations", "sizeUnit", "sizeType"];
+const openPanel = ["fileName", "filteredCause", "requeueMin", "stage", "dataSources", "egressFlows", "egressed", "filtered", "testMode", "replayable", "terminalStage", "sizeMin", "sizeMax", "validatedAnnotations", "pendingAnnotations", "annotations", "sizeUnit", "sizeType"];
 
 const decodePersistedParams = (obj) =>
   _.transform(obj, (r, v, k) => {
@@ -537,7 +537,7 @@ const decodePersistedParams = (obj) =>
       r[k] = JSON.parse(v);
     } else if (["requeueMin", "sizeMin", "sizeMax", "perPage"].includes(k)) {
       r[k] = Number(v);
-    } else if (["ingressFlows", "egressFlows"].includes(k)) {
+    } else if (["dataSources", "egressFlows"].includes(k)) {
       r[k] = v.split(",");
     } else if (["annotations"].includes(k)) {
       const annotationsArrayVal = getAnnotationsArray(v);
@@ -569,7 +569,7 @@ const encodePersistedParams = (obj) =>
       r[k] = Boolean(v);
     } else if (["requeueMin", "sizeMin", "sizeMax", "perPage"].includes(k)) {
       r[k] = Number(v);
-    } else if (["ingressFlows", "egressFlows"].includes(k)) {
+    } else if (["dataSources", "egressFlows"].includes(k)) {
       r[k] = String(v);
     } else if (["annotations"].includes(k)) {
       r[k] = getAnnotationsString(v);

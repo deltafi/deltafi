@@ -23,20 +23,20 @@
         <Button v-tooltip.right="{ value: `Clear Filters`, disabled: !filterOptionsSelected }" rounded :class="`ml-2 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${filterOptionsSelected ? 'p-column-filter-menu-button-active' : null}`" :disabled="!filterOptionsSelected" @click="clearOptions()">
           <i class="pi pi-filter" style="font-size: 1rem"></i>
         </Button>
-        <Dropdown v-model="ingressFlowNameSelected" placeholder="Select an Ingress Flow" :options="ingressFlowNames" show-clear :editable="false" class="deltafi-input-field ml-3 flow-dropdown" />
+        <Dropdown v-model="dataSourceNameSelected" placeholder="Select a Data Source" :options="ingressFlowNames" show-clear :editable="false" class="deltafi-input-field ml-3 flow-dropdown" />
         <AutoComplete v-model="selectedMessageValue" :suggestions="filteredMessages" placeholder="Select Cause" class="deltafi-input-field ml-3" force-selection @complete="messageSearch" />
         <Button :icon="refreshButtonIcon" label="Refresh" class="p-button deltafi-input-field ml-3 p-button-outlined" @click="onRefresh" />
       </div>
     </PageHeader>
     <TabView v-model:activeIndex="activeTab">
       <TabPanel header="All">
-        <AllFilteredPanel ref="filterSummaryPanel" :ingress-flow-name="ingressFlowNameSelected" :filtered-cause-selected="filteredCauseSelected" @refresh-filters="onRefresh()" @filter-cause-changed:filtered-cause="messageSelected" />
+        <AllFilteredPanel ref="filterSummaryPanel" :data-source-name="dataSourceNameSelected" :filtered-cause-selected="filteredCauseSelected" @refresh-filters="onRefresh()" @filter-cause-changed:filtered-cause="messageSelected" />
       </TabPanel>
       <TabPanel header="By Flow">
-        <SummaryByFlowPanel ref="filterSummaryFlowPanel" :ingress-flow-name="ingressFlowNameSelected" @refresh-filters="onRefresh()" />
+        <SummaryByFlowPanel ref="filterSummaryFlowPanel" :ingress-flow-name="dataSourceNameSelected" @refresh-filters="onRefresh()" />
       </TabPanel>
       <TabPanel header="By Cause">
-        <SummaryByMessagePanel ref="filterSummaryMessagePanel" :ingress-flow-name="ingressFlowNameSelected" @refresh-filters="onRefresh()" @change-tab:filtered-cause:flow-selected="tabChange" />
+        <SummaryByMessagePanel ref="filterSummaryMessagePanel" :ingress-flow-name="dataSourceNameSelected" @refresh-filters="onRefresh()" @change-tab:filtered-cause:flow-selected="tabChange" />
       </TabPanel>
     </TabView>
   </div>
@@ -63,7 +63,7 @@ const filterSummaryFlowPanel = ref();
 const filterSummaryPanel = ref();
 const { ingressFlows: ingressFlowNames, fetchIngressFlowNames } = useFlows();
 const loading = ref(false);
-const ingressFlowNameSelected = ref(null);
+const dataSourceNameSelected = ref(null);
 const filteredCauseSelected = ref(null);
 const activeTab = ref(0);
 const params = useUrlSearchParams("history");
@@ -79,12 +79,12 @@ const setPersistedParams = () => {
   // Session Storage
   filteredPanelState.value = {
     tabs: activeTab.value,
-    ingressFlowNameSelected: ingressFlowNameSelected.value,
+    dataSourceNameSelected: dataSourceNameSelected.value,
     filteredCauseSelected: filteredCauseSelected.value,
   };
   // URL
   params.tab = activeTab.value;
-  params.ingressFlow = ingressFlowNameSelected.value;
+  params.dataSource = dataSourceNameSelected.value;
   if (activeTab.value === 0) {
     params.filtered = filteredCauseSelected.value ? encodeURIComponent(filteredCauseSelected.value) : null;
   } else {
@@ -108,32 +108,29 @@ const clearOptions = () => {
   filteredMessages.value = [];
   selectedMessageValue.value = "";
   filteredCauseSelected.value = "";
-  ingressFlowNameSelected.value = null;
+  dataSourceNameSelected.value = null;
   setPersistedParams();
 };
 
 const filterOptionsSelected = computed(() => {
-  return _.some([
-    selectedMessageValue.value,
-    ingressFlowNameSelected.value,
-  ], (value) => !(value === "" || value === null || value === undefined))
+  return _.some([selectedMessageValue.value, dataSourceNameSelected.value], (value) => !(value === "" || value === null || value === undefined));
 });
 
 const getPersistedParams = async () => {
   if (useURLSearch.value) {
     activeTab.value = params.tab ? parseInt(params.tab) : 0;
-    ingressFlowNameSelected.value = params.ingressFlow ? params.ingressFlow : null;
+    dataSourceNameSelected.value = params.dataSource ? params.dataSource : null;
     selectedMessageValue.value = filteredCauseSelected.value = params.filtered ? decodeURIComponent(params.filtered) : filteredPanelState.value.filteredCauseSelected;
   } else {
     activeTab.value = filteredPanelState.value.tabs ? parseInt(filteredPanelState.value.tabs) : 0;
-    ingressFlowNameSelected.value = _.get(filteredPanelState.value, "ingressFlowNameSelected", null);
+    dataSourceNameSelected.value = _.get(filteredPanelState.value, "dataSourceNameSelected", null);
     selectedMessageValue.value = filteredCauseSelected.value = _.get(filteredPanelState.value, "filteredCauseSelected", null);
   }
   setPersistedParams();
 };
 
 const setupWatchers = () => {
-  watch([activeTab, ingressFlowNameSelected, filteredCauseSelected], () => {
+  watch([activeTab, dataSourceNameSelected, filteredCauseSelected], () => {
     setPersistedParams();
   });
   watch([selectedMessageValue], () => {
@@ -148,7 +145,7 @@ const refreshButtonIcon = computed(() => {
 });
 
 const tabChange = (filteredCause, flowSelected) => {
-  ingressFlowNameSelected.value = flowSelected;
+  dataSourceNameSelected.value = flowSelected;
   filteredCauseSelected.value = filteredCause;
   selectedMessageValue.value = filteredCause;
 
@@ -232,7 +229,7 @@ onMounted(async () => {
     }
   }
 
-  .p-datatable.p-datatable-striped .p-datatable-tbody>tr.p-highlight {
+  .p-datatable.p-datatable-striped .p-datatable-tbody > tr.p-highlight {
     color: #ffffff;
 
     a,
