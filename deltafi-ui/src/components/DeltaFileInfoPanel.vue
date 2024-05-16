@@ -27,7 +27,7 @@
               <span v-if="['Modified', 'Created'].includes(key)">
                 <Timestamp :timestamp="value" />
               </span>
-              <span v-else-if="key.includes('Size')">
+              <span v-else-if="key.includes('Size') || key.includes('Bytes')">
                 <FormattedBytes :bytes="value" />
               </span>
               <span v-else>{{ value }}</span>
