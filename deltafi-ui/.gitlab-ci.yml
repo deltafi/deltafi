@@ -44,7 +44,7 @@ ui:docker-multiarch:
 .ui:test:
   image: deltafi/deltafi-ui-test
   stage: test
-  allow_failure: true # FIXME: Remove when 2.0 is production ready
+  allow_failure: false
   needs:
     - job: "ui:eslint"
   retry: 2

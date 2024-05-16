@@ -116,7 +116,6 @@ import Button from "primevue/button";
 import Panel from "primevue/panel";
 import Menu from "primevue/menu";
 import ContextMenu from "primevue/contextmenu";
-import Dropdown from "primevue/dropdown";
 import RetryResumeDialog from "@/components/MetadataDialogReplay.vue";
 
 import Paginator from "primevue/paginator";
@@ -187,13 +186,7 @@ const menuItems = ref([
   },
 ]);
 
-const onRefresh = async () => {
-  fetchAllMessage();
-  selectedDids.value = [];
-  fetchFiltered();
-};
-
-const { data: response, fetchAllFiltered: getFiltered, allCauses: filteredCauses, fetchAllMessage } = useFiltered();
+const { data: response, fetchAllFiltered: getFiltered, fetchAllMessage } = useFiltered();
 const filters = ref({
   last_filter_cause: { value: null, matchMode: FilterMatchMode.EQUALS },
 });
