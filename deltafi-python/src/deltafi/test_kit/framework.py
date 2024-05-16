@@ -57,6 +57,7 @@ class IOContent:
             self.content_type = content_type
         self.offset = offset
         self.content_bytes = content_bytes
+        self.segment_uuid = uuid.uuid4()
 
     @classmethod
     def file_type(cls, name: str):
@@ -80,7 +81,7 @@ class LoadedContent:
         else:
             self.data = ioc.content_bytes
         self.segment = Segment.from_dict(
-            {"uuid": str(uuid.uuid4()), "offset": self.offset, "size": len(self.data), "did": did})
+            {"uuid": str(ioc.segment_uuid), "offset": self.offset, "size": len(self.data), "did": did})
 
 
 class InternalContentService:
