@@ -17,6 +17,7 @@
 */
 
 import useGraphQL from "./useGraphQL";
+import { EnumType } from 'json-to-graphql-query';
 
 export default function useAutoResumeQueryBuilder() {
   const { response, errors, queryGraphQL, loaded, loading } = useGraphQL();
@@ -28,7 +29,7 @@ export default function useAutoResumeQueryBuilder() {
         id: true,
         name: true,
         errorSubstring: true,
-        flow: true,
+        dataSource: true,
         action: true,
         actionType: true,
         maxAttempts: true,
@@ -71,12 +72,18 @@ export default function useAutoResumeQueryBuilder() {
   };
 
   // Load Flow Assignment Rules
-  const loadResumePolicies = (policies: string) => {
+  const loadResumePolicies = (policies: any) => {
+    const policiesWithEnums = policies.map((policy: any) => {
+      return {
+        ...policy,
+        actionType: new EnumType(policy.actionType)
+      }
+    })
     const query = {
       loadResumePolicies: {
         __args: {
           replaceAll: false,
-          policies: policies,
+          policies: policiesWithEnums,
         },
         success: true,
         errors: true,
@@ -98,11 +105,15 @@ export default function useAutoResumeQueryBuilder() {
   };
 
   // Remove Flow Assignment Rule
-  const updateResumePolicy = (policy: string) => {
+  const updateResumePolicy = (policy: any) => {
+    const policyWithEnum = {
+      ...policy,
+      actionType: new EnumType(policy.actionType)
+    }
     const query = {
       updateResumePolicy: {
         __args: {
-          resumePolicy: policy,
+          resumePolicy: policyWithEnum,
         },
         success: true,
         info: true,

@@ -39,7 +39,7 @@
         </Button>
         <Menu ref="menu" :model="menuItems" :popup="true" />
       </template>
-      <DataTable v-model:selection="selectedRules" v-model:filters="filters" :edit-mode="$hasPermission('ResumePolicyUpdate') ? 'cell' : null" :value="uiAutoResumeRules" :loading="loading && !loaded" data-Key="id" selection-mode="multiple" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines auto-resume-table" :global-filter-fields="['flow', 'errorSubstring', 'action', 'actionType']" :row-hover="true" @row-contextmenu="onRowContextMenu" @cell-edit-complete="onCellEditComplete">
+      <DataTable v-model:selection="selectedRules" v-model:filters="filters" :edit-mode="$hasPermission('ResumePolicyUpdate') ? 'cell' : null" :value="uiAutoResumeRules" :loading="loading && !loaded" data-Key="id" selection-mode="multiple" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines auto-resume-table" :global-filter-fields="['dataSource', 'errorSubstring', 'action', 'actionType']" :row-hover="true" @row-contextmenu="onRowContextMenu" @cell-edit-complete="onCellEditComplete">
         <template #empty> No Auto Resume rules to display </template>
         <Column field="name" header="Name" :sortable="true" :style="{ width: '15%' }">
           <template #body="{ data }">
@@ -48,11 +48,11 @@
             </DialogTemplate>
           </template>
         </Column>
-        <Column field="errorSubstring" header="Error Substring" :sortable="true" :style="{ width: '38%' }"></Column>
-        <Column field="flow" header="Flow" :sortable="true" :style="{ width: '10%' }"></Column>
-        <Column field="action" header="Action" :sortable="true" :style="{ width: '18%' }"></Column>
-        <Column field="actionType" header="Action Type" :sortable="true" :style="{ width: '10%' }"></Column>
-        <Column field="priority" header="Priority" :sortable="true" :style="{ width: '6.5%' }" class="priority-column">
+        <Column field="errorSubstring" header="Error Substring" :sortable="true"></Column>
+        <Column field="dataSource" header="Data Source" :sortable="true"></Column>
+        <Column field="action" header="Action" :sortable="true"></Column>
+        <Column field="actionType" header="Action Type" :sortable="true"></Column>
+        <Column field="priority" header="Priority" :sortable="true" class="priority-column">
           <template #body="{ data, field }">
             <span v-if="data[field] === null">-</span>
             <span v-else>{{ data[field] }}</span>

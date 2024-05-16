@@ -21,7 +21,12 @@
     <DataTable responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="actions" :row-class="rowClass" @row-click="rowClick">
       <Column field="name" header="Action" :sortable="true" />
       <Column field="type" header="Type" :sortable="true" />
-      <Column field="state" header="State" class="state-column" :sortable="true" />
+      <Column field="state" header="State" class="state-column" :sortable="true">
+        <template #body="{ data: action }">
+          {{ action.state }}
+          <AutoResumeBadge v-if="action.state === 'ERROR' && action.nextAutoResume !== null" :timestamp="action.nextAutoResume" :reason="action.nextAutoResumeReason" class="ml-2" />
+        </template>
+      </Column>
       <Column field="created" header="Created" class="timestamp-column" :sortable="true">
         <template #body="row">
           <Timestamp :timestamp="row.data.created" />
@@ -59,6 +64,7 @@
 </template>
 
 <script setup>
+import AutoResumeBadge from "@/components/errors/AutoResumeBadge.vue";
 import ContentDialog from "@/components/ContentDialog.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import ErrorViewerDialog from "@/components/errors/ErrorViewerDialog.vue";

@@ -33,7 +33,7 @@
               <span v-else>{{ value }}</span>
               <span v-if="key === 'Stage'">
                 <ErrorAcknowledgedBadge v-if="deltaFile.errorAcknowledged" :reason="deltaFile.errorAcknowledgedReason" :timestamp="deltaFile.errorAcknowledged" class="ml-2" />
-                <AutoResumeBadge v-if="deltaFile.stage === 'ERROR' && deltaFile.nextAutoResume !== null" :timestamp="deltaFile.nextAutoResume" :reason="deltaFile.nextAutoResumeReason" class="ml-2" />
+                <AutoResumeBadge v-if="deltaFile.stage === 'ERROR' && nextActionWithAutoResume" :timestamp="nextActionWithAutoResume.nextAutoResume" :reason="nextActionWithAutoResume.nextAutoResumeReason" class="ml-2" />
                 <PendingAnnotationsBadge v-if="!_.isEmpty(deltaFile.pendingAnnotationsForFlows)" :pending-annotations="deltaFile.pendingAnnotations" class="ml-2" />
               </span>
             </dd>
@@ -76,6 +76,16 @@ const infoFields = computed(() => {
   fields["Modified"] = deltaFile.modified;
   return fields;
 });
+
+const nextActionWithAutoResume = computed(() => {
+  return _
+    .chain(deltaFile.flows)
+    .map((flow) => flow.actions)
+    .flatten()
+    .filter((action) => action.state === "ERROR" && action.nextAutoResume !== null)
+    .sortBy(["nextAutoResume"])
+    .value()[0];
+})
 </script>
 
 <style lang="scss">
