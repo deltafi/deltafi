@@ -53,12 +53,12 @@ const importFromDID = async () => {
   } else if (validDID.value) {
     await getDeltaFile(did.value);
     const raw = JSON.parse(JSON.stringify(deltaFile));
-    const metadata = Object.entries(raw.sourceInfo.metadata).map(([key, value]) => {
+    const metadata = Object.entries(raw.flows[0].actions[0].metadata).map(([key, value]) => {
       return { key, value };
     })
     let dataValue = {
       metadata: metadata,
-      flow: raw.sourceInfo.flow,
+      dataSource: raw.dataSource,
     }
     emit("metaDataValue", dataValue);
     did.value = null;

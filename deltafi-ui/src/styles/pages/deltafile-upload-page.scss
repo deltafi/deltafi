@@ -65,7 +65,7 @@
     .filename-column {
       overflow-wrap: anywhere;
     }
-    .flow-column {
+    .data-source-column {
       width: 15%;
     }
     .updated-timestamp-column {
@@ -97,4 +97,8 @@
 #replayMetadata {
   display: inline-block;
   /* additional code */
+}
+
+.p-dropdown.invalid {
+  border-color: #f87171;
 }

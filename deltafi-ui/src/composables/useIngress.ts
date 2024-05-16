@@ -20,28 +20,25 @@ import { reactive } from "vue";
 import useNotifications from "./useNotifications";
 import useCurrentUser from "./useCurrentUser";
 import axios from "axios";
-import _ from "lodash";
 
 export default function useIngress() {
   const notify = useNotifications();
   const { currentUser } = useCurrentUser();
 
-  const ingressFile = (file: File, metadata: Record<string, string>, flow?: string) => {
+  const ingressFile = (file: File, metadata: Record<string, string>, dataSource: string) => {
     const result = reactive({
       dids: [],
       loading: true,
       error: false,
       filename: file.name,
-      flow: flow,
+      dataSource: dataSource,
       percentComplete: 0,
     });
 
     const buildHeader = () => {
       const headerObject: any = {};
       headerObject["Content-Type"] = file.type || "application/octet-stream";
-      if (!_.isEmpty(flow)) {
-        headerObject["Flow"] = flow;
-      }
+      headerObject["Flow"] = dataSource; // TODO: Will need to be renamed once the backend is updated.
       headerObject["Filename"] = file.name;
       headerObject["Metadata"] = JSON.stringify({
         ...metadata,

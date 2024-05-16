@@ -43,16 +43,16 @@ export default function useDeltaFiles() {
           state: true,
           created: true,
           modified: true,
-          flowPlan:{
+          flowPlan: {
             name: false,
             plugin: false,
             pluginVersion: false,
           },
-          input:{
+          input: {
             metadata: true,
-            content:{
+            content: {
               name: true,
-              segments:{
+              segments: {
                 uuid: true,
                 offset: true,
                 size: true,
@@ -64,7 +64,7 @@ export default function useDeltaFiles() {
             topics: true,
             ancestorIds: true,
           },
-          actions:{
+          actions: {
             name: true,
             id: true,
             type: true,
@@ -83,11 +83,11 @@ export default function useDeltaFiles() {
             filteredCause: true,
             filteredContext: true,
             attempt: true,
-            content:{
+            content: {
               name: true,
               mediaType: true,
               size: true,
-              segments:{
+              segments: {
                 uuid: true,
                 offset: true,
                 size: true,

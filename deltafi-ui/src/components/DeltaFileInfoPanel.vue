@@ -66,7 +66,7 @@ const deltaFile = reactive(props.deltaFileData);
 const infoFields = computed(() => {
   let fields = {};
   fields["DID"] = deltaFile.did;
-  fields["dataSource"] = deltaFile.dataSource;
+  fields["Data Source"] = deltaFile.dataSource;
   fields["Name"] = deltaFile.name;
   fields["Ingress Size"] = deltaFile.ingressBytes;
   fields["Reference Bytes"] = deltaFile.referencedBytes;

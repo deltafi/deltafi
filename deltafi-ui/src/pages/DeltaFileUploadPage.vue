@@ -42,10 +42,10 @@
           </template>
           <div class="row">
             <div class="col-5 p-fluid">
-              <InputText type="text" value="Ingress Flow" disabled />
+              <InputText type="text" value="Data Source" disabled />
             </div>
             <div class="col-5">
-              <Dropdown v-model="selectedFlow" :options="activeIngressFlows" placeholder="Select an Ingress Flow" show-clear />
+              <Dropdown v-model="selectedDataSource" :options="activeIngressFlows" placeholder="Select a Data Source" show-clear :class="dataSourceDropdownClass" />
             </div>
           </div>
           <div v-for="field in metadata" :key="field" class="row mt-4 p-fluid">
@@ -91,12 +91,14 @@
                 </span>
                 <span v-else-if="file.data.error"> <i class="fas fa-times" /> Error </span>
                 <span v-else>
-                  <span v-for="(did,index) in file.data.dids" :key="did"><DidLink :did="did" /><br v-if="index != file.data.dids.length - 1" /></span>
+                  <span v-for="(did, index) in file.data.dids" :key="did">
+                    <DidLink :did="did" /><br v-if="index != file.data.dids.length - 1" />
+                  </span>
                 </span>
               </template>
             </Column>
             <Column field="filename" header="Filename" class="filename-column" />
-            <Column field="flow" header="Ingress Flow" class="flow-column" />
+            <Column field="dataSource" header="Data Source" class="data-source-column" />
             <Column field="uploadedTimestamp" header="Uploaded At" class="updated-timestamp-column">
               <template #body="file">
                 <Timestamp :timestamp="file.data.uploadedTimestamp" />
@@ -151,7 +153,7 @@ import ScrollTop from "primevue/scrolltop";
 const uploadedTimestamp = ref(new Date());
 const showUploadDialog = ref(false);
 const deltaFilesMenu = ref();
-const selectedFlow = ref(null);
+const selectedDataSource = ref(null);
 const metadata = ref([]);
 const fileUploader = ref();
 const deltaFiles = ref([]);
@@ -164,6 +166,7 @@ const errorsList = ref([]);
 const validUpload = ref({});
 const errorOverlayPanel = ref(null);
 const overlayPanelPosition = ref({});
+const uploadClicked = ref(false);
 
 const deltaFilesMenuItems = ref([
   {
@@ -180,19 +183,23 @@ const deltaFilesMenuItems = ref([
   },
 ]);
 
+const dataSourceDropdownClass = computed(() => {
+  return (selectedDataSource.value == null && uploadClicked.value) ? 'invalid' : null;
+});
+
 const showImportDialog = () => {
   showUploadDialog.value = true;
 };
 
 const onMetaImport = (importData) => {
   showUploadDialog.value = false;
-  selectedFlow.value = importData.flow;
+  selectedDataSource.value = importData.dataSource;
   metadata.value = importData.metadata;
   storeMetaDataUploadSession();
 };
 
 onBeforeMount(() => {
-  getSelectedFlowSession();
+  getselectedDataSourceSession();
   getMetadataSession();
   getDeltaFileSession();
 });
@@ -212,7 +219,7 @@ const metadataRecord = computed(() => {
 });
 
 const metadataClearDisabled = computed(() => {
-  return metadata.value.length == 0 && selectedFlow.value == null;
+  return metadata.value.length == 0 && selectedDataSource.value == null;
 });
 
 const addMetadataField = () => {
@@ -225,20 +232,25 @@ const removeMetadataField = (field) => {
 };
 
 const clearMetadata = () => {
-  selectedFlow.value = null;
-  selectedFlowStorage.value = "";
+  selectedDataSource.value = null;
+  selectedDataSourceStorage.value = "";
   metadata.value = [];
   metadataStorage.value = "";
 };
 
 const onUpload = (event) => {
-  ingressFiles(event);
+  if (selectedDataSource.value) {
+    ingressFiles(event);
+  } else {
+    uploadClicked.value = true;
+    notify.warn("Please Select Data Source", "A data source is required to upload files.")
+  }
 };
 
 const ingressFiles = async (event) => {
   uploadedTimestamp.value = new Date();
   for (let file of event.files) {
-    const result = ingressFile(file, metadataRecord.value, selectedFlow.value);
+    const result = ingressFile(file, metadataRecord.value, selectedDataSource.value);
     result["uploadedTimestamp"] = uploadedTimestamp.value;
     result["uploadedMetadata"] = JSON.parse(JSON.stringify(metadata.value));
     deltaFiles.value.unshift(result);
@@ -257,8 +269,8 @@ watch(
   { deep: true }
 );
 
-// Store for the sessions user selected Flow.
-const selectedFlowStorage = useStorage("selectedFlowStorage-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
+// Store for the sessions user selected data source.
+const selectedDataSourceStorage = useStorage("selectedDataSourceStorage-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
 // Store for the sessions user inputed metadata.
 const metadataStorage = useStorage("metadataStorage-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
 // Store for the sessions user uploaded deltaFiles.
@@ -268,8 +280,8 @@ const storeMetaDataUploadSession = async () => {
   // Save off inputed metadata into store.
   metadataStorage.value = metadata.value;
 
-  // Save off selected flow into store.
-  selectedFlowStorage.value = selectedFlow.value;
+  // Save off selected data source into store.
+  selectedDataSourceStorage.value = selectedDataSource.value;
 };
 
 const storeDeltaFileUploadSession = async (results) => {
@@ -284,8 +296,8 @@ const storeDeltaFileUploadSession = async (results) => {
   // Save off inputed metadata into store.
   metadataStorage.value = metadata.value;
 
-  // Save off selected flow into store.
-  selectedFlowStorage.value = selectedFlow.value;
+  // Save off selected data source into store.
+  selectedDataSourceStorage.value = selectedDataSource.value;
 
   getDeltaFileSession();
 };
@@ -302,17 +314,17 @@ const getMetadataSession = () => {
   }
 };
 
-const getSelectedFlowSession = () => {
-  if (!_.isEmpty(selectedFlowStorage.value)) {
-    selectedFlow.value = selectedFlowStorage.value;
+const getselectedDataSourceSession = () => {
+  if (!_.isEmpty(selectedDataSourceStorage.value)) {
+    selectedDataSource.value = selectedDataSourceStorage.value;
   }
 };
 
 const replayMetadata = (value) => {
   metadata.value = JSON.parse(JSON.stringify(value.uploadedMetadata));
-  let flowSelected = {};
-  flowSelected = value.flow;
-  selectedFlow.value = flowSelected;
+  let dataSourceSelected = {};
+  dataSourceSelected = value.dataSource;
+  selectedDataSource.value = dataSourceSelected;
 };
 
 const clearDeltaFilesSession = () => {
@@ -331,7 +343,7 @@ onMounted(async () => {
 });
 
 const checkActiveFlows = () => {
-  selectedFlow.value = activeIngressFlows.value.includes(selectedFlow.value) ? selectedFlow.value : null;
+  selectedDataSource.value = activeIngressFlows.value.includes(selectedDataSource.value) ? selectedDataSource.value : null;
 };
 
 const formatMetadataforViewer = (filename, uploadedMetadata) => {
@@ -342,11 +354,11 @@ const formatMetadataforViewer = (filename, uploadedMetadata) => {
 
 const onExportMetadata = () => {
   let formattedMetadata = {};
-  if (_.isEmpty(selectedFlow.value) && _.isEmpty(metadataRecord.value)) {
+  if (_.isEmpty(selectedDataSource.value) && _.isEmpty(metadataRecord.value)) {
     return;
   }
-  if (!_.isEmpty(selectedFlow.value)) {
-    formattedMetadata["flow"] = selectedFlow.value;
+  if (!_.isEmpty(selectedDataSource.value)) {
+    formattedMetadata["dataSource"] = selectedDataSource.value;
   }
   formattedMetadata["metadata"] = metadataRecord.value;
 
@@ -391,13 +403,13 @@ const preUploadMetadataValidation = async (request) => {
 
 const uploadMetadataFile = async (file) => {
   let parseMetadataUpload = JSON.parse(validUpload.value);
-  let flowSelected = {};
-  if (!_.isEmpty(_.get(parseMetadataUpload, "flow"))) {
-    flowSelected = _.get(parseMetadataUpload, "flow");
-    if (activeIngressFlows.value.includes(flowSelected)) {
-      selectedFlow.value = flowSelected;
+  let dataSourceSelected = {};
+  if (!_.isEmpty(_.get(parseMetadataUpload, "dataSource"))) {
+    dataSourceSelected = _.get(parseMetadataUpload, "dataSource");
+    if (activeIngressFlows.value.includes(dataSourceSelected)) {
+      selectedDataSource.value = dataSourceSelected;
     } else {
-      notify.warn("Ignoring Invalid Ingress Flow", `The uploaded metadata included an invalid ingress flow name: ${flowSelected}`);
+      notify.warn("Ignoring Invalid Data Source", `The uploaded metadata included an invalid Data Source: ${dataSourceSelected}`);
     }
   }
   let reformatMetadata = [];

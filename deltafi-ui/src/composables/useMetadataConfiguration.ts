@@ -22,7 +22,7 @@ export default function useMetadataConfiguration() {
   const ajv = new Ajv({ allErrors: true });
   require("ajv-errors")(ajv);
 
-  const flowSchema = () => {
+  const dataSourceSchema = () => {
     return {
       type: ["string"],
     };
@@ -37,13 +37,13 @@ export default function useMetadataConfiguration() {
   const metadataSchemaFile = {
     type: "object",
     properties: {
-      flow: { $ref: "#/definitions/flowSchema" },
+      dataSource: { $ref: "#/definitions/dataSourceSchema" },
       metadata: { $ref: "#/definitions/metadataSchema" },
     },
     required: ["metadata"],
     additionalProperties: false,
     definitions: {
-      flowSchema: flowSchema(),
+      dataSourceSchema: dataSourceSchema(),
       metadataSchema: metadataSchema(),
     },
     errorMessage: {
