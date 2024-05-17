@@ -42,6 +42,14 @@
             <div v-else>{{ data.name }}</div>
           </template>
         </Column>
+        <Column field="dataSource" header="Data Source" :sortable="true" />
+        <Column field="last_error_cause" header="Last Error" filter-field="last_error_cause" :show-filter-menu="false" :show-filter-match-modes="false" :show-apply-button="false" :show-clear-button="false" class="last-error-column">
+          <template #body="{ data: deltaFile }">
+            <ErrorAcknowledgedBadge v-if="deltaFile.lastErroredAction.errorAcknowledged" :reason="deltaFile.lastErroredAction.errorAcknowledgedReason" :timestamp="deltaFile.lastErroredAction.errorAcknowledged" class="mr-1" />
+            <AutoResumeBadge v-if="deltaFile.lastErroredAction.nextAutoResume !== null" :timestamp="deltaFile.lastErroredAction.nextAutoResume" :reason="deltaFile.lastErroredAction.nextAutoResumeReason" />
+            {{ deltaFile.lastErroredAction.errorCause }}
+          </template>
+        </Column>
         <Column field="created" header="Created" :sortable="true" class="timestamp-column">
           <template #body="row">
             <Timestamp :timestamp="row.data.created" />
@@ -52,17 +60,6 @@
             <Timestamp :timestamp="row.data.modified" />
           </template>
         </Column>
-        <!-- TODO: Review for 2.0 -->
-        <!-- <Column field="last_error_cause" header="Last Error" filter-field="last_error_cause" :show-filter-menu="false" :show-filter-match-modes="false" :show-apply-button="false" :show-clear-button="false" class="last-error-column">
-          <template #body="{ data }">
-            <ErrorAcknowledgedBadge v-if="data.errorAcknowledged" :reason="data.errorAcknowledgedReason" :timestamp="data.errorAcknowledged" class="mr-1" />
-            <AutoResumeBadge v-if="data.nextAutoResume !== null" :timestamp="data.nextAutoResume" :reason="data.nextAutoResumeReason" />
-            {{ latestError(data.actions).errorCause }}
-          </template>
-          <template #filter="{ filterModel, filterCallback }">
-            <Dropdown v-model="filterModel.value" placeholder="Select an Error Message" :options="errorsMessages" :filter="true" option-label="message" show-clear :editable="false" class="p-column-filter deltafi-input-field ml-3" @change="filterCallback()" />
-          </template>
-        </Column> -->
         <template #expansion="error">
           <div class="errors-Subtable">
             <DataTable v-model:expandedRows="expandedRows" responsive-layout="scroll" :value="error.data.flows" :row-hover="false" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-class="actionRowClass">
@@ -136,6 +133,8 @@ import useErrorsSummary from "@/composables/useErrorsSummary";
 import { computed, defineEmits, defineExpose, defineProps, inject, nextTick, onMounted, ref, watch } from "vue";
 import { useStorage, StorageSerializers } from "@vueuse/core";
 import AnnotateDialog from "@/components/AnnotateDialog.vue";
+import ErrorAcknowledgedBadge from "@/components/errors/AcknowledgedBadge.vue";
+import AutoResumeBadge from "@/components/errors/AutoResumeBadge.vue";
 
 const hasPermission = inject("hasPermission");
 const hasSomePermissions = inject("hasSomePermissions");
@@ -255,6 +254,12 @@ const fetchErrors = async () => {
   errors.value = response.value.deltaFiles.deltaFiles;
   totalErrors.value = response.value.deltaFiles.totalCount;
   loading.value = false;
+  errors.value = errors.value.map((deltaFile) => {
+    return {
+      ...deltaFile,
+      lastErroredAction: latestError(deltaFile)
+    }
+  })
 };
 
 const toggleMenu = (event) => {
@@ -317,9 +322,15 @@ const filterSelectedDids = computed(() => {
 // };
 
 // TODO: Review for 2.0
-// const latestError = (actions) => {
-//   return filterErrors(actions).sort((a, b) => (a.modified < b.modified ? 1 : -1))[0];
-// };
+const latestError = (deltaFile) => {
+  return _
+    .chain(deltaFile.flows)
+    .map((flow) => flow.actions)
+    .flatten()
+    .filter((action) => action.state === "ERROR")
+    .sortBy(["modified"])
+    .value()[0];
+};
 
 const actionRowClass = (action) => {
   if (action.state === "ERROR") return "table-danger action-error";

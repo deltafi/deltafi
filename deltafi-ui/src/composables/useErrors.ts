@@ -31,7 +31,7 @@ export default function useErrors() {
           limit: perPage,
           offset: offSet,
           filter: {
-            dataSources:!_.isEmpty(flowName) ? `${flowName}` : null,
+            dataSources: !_.isEmpty(flowName) ? `${flowName}` : null,
             stage: new EnumType("ERROR"),
             errorAcknowledged: showAcknowledged,
             errorCause: !_.isEmpty(errorCause) ? `\\Q${errorCause}\\E` : null,
@@ -51,6 +51,7 @@ export default function useErrors() {
           modified: true,
           created: true,
           name: true,
+          dataSource: true,
           flows: {
             name: true,
             created: true,
@@ -69,10 +70,10 @@ export default function useErrors() {
               nextAutoResume: true,
               nextAutoResumeReason: true,
             }
-            },
-          }
-        },
-      };
+          },
+        }
+      },
+    };
 
     await queryGraphQL(searchParams, "getErrors");
     data.value = response.value.data;

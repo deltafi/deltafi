@@ -32,7 +32,7 @@
       <TabPanel header="All">
         <AllErrorsPanel ref="errorsSummaryPanel" :acknowledged="acknowledged" :data-source-name="dataSourceNameSelected" :errors-message-selected="errorMessageSelected" @refresh-errors="onRefresh()" @error-message-changed:error-message="messageSelected" />
       </TabPanel>
-      <TabPanel header="By Flow">
+      <TabPanel header="By Data Source">
         <ErrorsSummaryByFlowPanel ref="errorSummaryFlowPanel" :acknowledged="acknowledged" :ingress-flow-name="dataSourceNameSelected" @refresh-errors="onRefresh()" />
       </TabPanel>
       <TabPanel header="By Message">
