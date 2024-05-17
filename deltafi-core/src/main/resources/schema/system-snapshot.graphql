@@ -46,7 +46,7 @@ type EgressFlowSnapshot {
 }
 
 type SystemSnapshot {
-    id: UUID!
+    id: String!
     reason: String
     created: DateTime!
     deletePolicies: DeletePolicies!
@@ -92,7 +92,7 @@ input EgressFlowSnapshotInput {
 }
 
 input SystemSnapshotInput {
-    id: UUID!
+    id: String!
     reason: String
     created: DateTime!
     deletePolicies: DeletePoliciesInput!
@@ -113,7 +113,7 @@ input SystemSnapshotInput {
 
 extend type Query {
   getSystemSnapshots: [SystemSnapshot]!
-  getSystemSnapshot(snapshotId: UUID!) : SystemSnapshot
+  getSystemSnapshot(snapshotId: String!) : SystemSnapshot
 }
 
 extend type Mutation {
@@ -121,11 +121,11 @@ extend type Mutation {
     snapshotSystem(reason: String): SystemSnapshot!
 
     # apply the snapshot with the given SnapshotId, hardReset (default=false) indicates all custom config should be reset before applying the snapshot
-    resetFromSnapshotWithId(snapshotId: UUID!, hardReset: Boolean) : Result!
+    resetFromSnapshotWithId(snapshotId: String!, hardReset: Boolean) : Result!
 
     # import the given SystemSnapshot
     importSnapshot(snapshot: SystemSnapshotInput!) : SystemSnapshot!
 
     # delete the snapshot with the given SnapshotId
-    deleteSnapshot(snapshotId: UUID!): Result
+    deleteSnapshot(snapshotId: String!): Result
 }
