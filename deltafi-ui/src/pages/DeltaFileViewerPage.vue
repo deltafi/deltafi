@@ -63,7 +63,7 @@
       </div>
       <div class="row mb-3">
         <div class="col-12">
-          <!-- <DeltaFileTracePanel :delta-file-data="deltaFile" /> -->
+          <DeltaFileTracePanel :delta-file-data="deltaFile" />
         </div>
       </div>
     </div>
@@ -93,7 +93,7 @@ import DeltaFileFlowsPanel from "@/components/DeltaFileViewer/DeltaFileFlowsPane
 import DeltaFileAnnotationsPanel from "@/components/DeltaFileAnnotationsPanel.vue";
 import DeltaFileInfoPanel from "@/components/DeltaFileInfoPanel.vue";
 import DeltaFileParentChildPanel from "@/components/DeltaFileViewer/DeltaFileParentChildPanel.vue";
-// import DeltaFileTracePanel from "@/components/DeltaFileTracePanel.vue";
+import DeltaFileTracePanel from "@/components/DeltaFileTracePanel.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
 import HighlightedCode from "@/components/HighlightedCode.vue";

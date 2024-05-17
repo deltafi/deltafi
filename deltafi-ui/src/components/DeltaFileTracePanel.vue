@@ -42,10 +42,23 @@ const props = defineProps({
   },
 });
 
+const deltaFileFlows = computed(() => {
+  let flows = [];
+  deltaFile.value.flows.forEach((action) => {
+    action.actions.forEach((a) => {
+      flows.push({
+        dataSource: action.name,
+        ...a,
+      });
+    });
+  });
+  return flows;
+});
+
 const deltaFile = ref(JSON.parse(JSON.stringify(props.deltaFileData)));
 
 const deltaFileActions = computed(() => {
-  let actions = deltaFile.value.actions.map((action) => {
+  let actions = deltaFileFlows.value.map((action) => {
     if (action.queued !== null) {
       action.created = new Date(action.queued);
       action.createdOrginal = new Date(action.queued);
@@ -86,6 +99,7 @@ const deltaFileActions = computed(() => {
     modified: actions[actions.length - 1].modifiedOrginal,
     created: deltaFile.value.createdOrginal,
   });
+  console.log("actions", actions);
   return actions;
 });
 
@@ -147,7 +161,7 @@ const HorizontalWaterfallChart = (attachTo, data) => {
   // create tooltip element
   const tooltip = d3.select("#traceCollapsible").append("div").attr("class", "d3-tooltip").style("position", "absolute").style("z-index", "2000").style("visibility", "hidden");
   const showToolTip = (d, event) => {
-    let tipString = d.name !== "IngressAction" && d.name !== "DeltaFileFlow" ? `Action: ${d.name} </br> Queued: ${formatTimestamp(d.createdOrginal, timestampFormat)} </br> Modified:   ${formatTimestamp(d.modifiedOrginal, timestampFormat)}</br> Total Elapsed: ${d.elapsed}ms </br> Action Start: ${formatTimestamp(d.startOrignal, timestampFormat)} </br> Action Stop: ${formatTimestamp(d.stopOrignal, timestampFormat)} </br> Action Elapsed: ${d.startTimeElapsedOrginal}ms ` : `Action: ${d.name} </br> Queued: ${formatTimestamp(d.createdOrginal, timestampFormat)} </br> Modified:   ${formatTimestamp(d.modifiedOrginal, timestampFormat)}</br> Total Elapsed: ${d.elapsed}ms`;
+    let tipString = d.name !== "IngressAction" && d.name !== "DeltaFileFlow" ? `Data Source: ${d.dataSource} </br> Action: ${d.name} </br> Queued: ${formatTimestamp(d.createdOrginal, timestampFormat)} </br> Modified:   ${formatTimestamp(d.modifiedOrginal, timestampFormat)}</br> Total Elapsed: ${d.elapsed}ms </br> Action Start: ${formatTimestamp(d.startOrignal, timestampFormat)} </br> Action Stop: ${formatTimestamp(d.stopOrignal, timestampFormat)} </br> Action Elapsed: ${d.startTimeElapsedOrginal}ms ` : d.name !== "DeltaFileFlow" ? `Data Source: ${d.dataSource} </br> Action: ${d.name} </br> Queued: ${formatTimestamp(d.createdOrginal, timestampFormat)} </br> Modified:   ${formatTimestamp(d.modifiedOrginal, timestampFormat)}</br> Total Elapsed: ${d.elapsed}ms` : `Action: ${d.name} </br> Queued: ${formatTimestamp(d.createdOrginal, timestampFormat)} </br> Modified:   ${formatTimestamp(d.modifiedOrginal, timestampFormat)}</br> Total Elapsed: ${d.elapsed}ms`;
     tooltip
       .html(tipString)
       .style("visibility", "visible")
@@ -272,7 +286,7 @@ const HorizontalWaterfallChart = (attachTo, data) => {
       d3.selectAll(".rectWF").style("opacity", 0.5);
     })
     .on("mouseout", function () {
-      d3.selectAll(".rectWF").style("opacity", 0)
+      d3.selectAll(".rectWF").style("opacity", 0);
       hideToolTip();
     })
     .transition()
