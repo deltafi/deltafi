@@ -45,7 +45,7 @@
             </DialogTemplate>
           </template>
         </Column>
-        <Column field="flow" header="Flow" :sortable="true" :style="{ width: '30%' }"></Column>
+        <Column field="flow" header="Data Source" :sortable="true" :style="{ width: '30%' }"></Column>
         <Column field="__typename" header="Type" :sortable="true" :style="{ width: '10%' }">
           <template #body="{ data }">
             <i v-tooltip.right="deletePolicyType.get(data.__typename).tooltip" :class="deletePolicyType.get(data.__typename).class" />

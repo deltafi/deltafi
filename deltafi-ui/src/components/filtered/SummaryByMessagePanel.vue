@@ -29,7 +29,7 @@
     <DataTable id="filteredSummaryTable" v-model:selection="selectedFilters" responsive-layout="scroll" selection-mode="multiple" data-key="dids" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="filteresCause" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalFilteredMessage" :row-hover="true" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
       <template #empty>No results to display.</template>
       <template #loading>Loading. Please wait...</template>
-      <Column field="flow" header="Flow" :sortable="true" class="filename-column"> </Column>
+      <Column field="flow" header="Data Source" :sortable="true" class="filename-column"> </Column>
       <Column field="count" header="Count" :sortable="true" />
       <Column field="message" header="Cause" :sortable="true">
         <template #body="msg">

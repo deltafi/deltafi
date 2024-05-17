@@ -43,10 +43,9 @@
           </template>
         </Column>
         <Column field="dataSource" header="Data Source" :sortable="true" class="flow-column" />
-        <Column field="filtered_cause" header="Last Filtered Reason">
+        <Column field="filtered_cause" header="Last Filtered Cause">
           <template #body="{ data }">
             {{ latestFiltered(data.flows) }}
-            <!-- {{ data.flows }} -->
           </template>
         </Column>
         <Column field="created" header="Created" :sortable="true" class="timestamp-column">
