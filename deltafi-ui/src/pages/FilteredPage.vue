@@ -32,7 +32,7 @@
       <TabPanel header="All">
         <AllFilteredPanel ref="filterSummaryPanel" :data-source-name="dataSourceNameSelected" :filtered-cause-selected="filteredCauseSelected" @refresh-filters="onRefresh()" @filter-cause-changed:filtered-cause="messageSelected" />
       </TabPanel>
-      <TabPanel header="By Flow">
+      <TabPanel header="By Data Source">
         <SummaryByFlowPanel ref="filterSummaryFlowPanel" :ingress-flow-name="dataSourceNameSelected" @refresh-filters="onRefresh()" />
       </TabPanel>
       <TabPanel header="By Cause">
@@ -229,7 +229,7 @@ onMounted(async () => {
     }
   }
 
-  .p-datatable.p-datatable-striped .p-datatable-tbody > tr.p-highlight {
+  .p-datatable.p-datatable-striped .p-datatable-tbody>tr.p-highlight {
     color: #ffffff;
 
     a,

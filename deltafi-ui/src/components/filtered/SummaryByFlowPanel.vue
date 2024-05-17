@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <Panel header="DeltaFiles by Flow" @contextmenu="onPanelRightClick">
+  <Panel header="DeltaFiles by Data Source" @contextmenu="onPanelRightClick">
     <ContextMenu ref="menu" :model="menuItems" />
     <template #icons>
       <Button class="p-panel-header-icon p-link p-mr-2" @click="toggleMenu">
@@ -29,7 +29,7 @@
     <DataTable id="filteredSummaryTable" v-model:selection="selectedFiltered" responsive-layout="scroll" selection-mode="multiple" data-key="flow" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="filteredFlow" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalFilteredFlow" :row-hover="true" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
       <template #empty>No results to display.</template>
       <template #loading>Loading. Please wait...</template>
-      <Column field="flow" header="Flow" :sortable="true" class="filename-column" />
+      <Column field="flow" header="Data Source" :sortable="true" class="filename-column" />
       <Column field="count" header="Count" :sortable="true" />
     </DataTable>
   </Panel>
