@@ -23,12 +23,7 @@ grafana:
           rules:
             - uid: stock_no_data
               title: No Ingress Data
-              for: 0s
-              annotations:
-                summary: No recent data has been detected on ingress
-              labels:
-                severity: warning
-              condition: B
+              condition: C
               data:
                 - refId: A
                   relativeTimeRange:
@@ -36,42 +31,75 @@ grafana:
                     to: 0
                   datasourceUid: deltafi-graphite
                   model:
-                    hide: false
-                    intervalMs: 10000
-                    maxDataPoints: 99999
+                    intervalMs: 1000
+                    maxDataPoints: 43200
                     refId: A
-                    target: "seriesByTag('name=stats_counts.files_in')"
+                    target: sum(seriesByTag('name=stats_counts.files_in'))
                 - refId: B
                   relativeTimeRange:
-                    from: 0
+                    from: 60
                     to: 0
-                  datasourceUid: '-100'
+                  datasourceUid: __expr__
                   model:
                     conditions:
-                      - evaluator:
-                          params:
-                            - 1
-                            - 0
-                          type: lt
-                        operator:
-                          type: and
-                        query:
-                          params:
-                            - A
-                        reducer:
-                          type: sum
-                          params: []
-                        type: query
+                        - evaluator:
+                            params: []
+                            type: gt
+                          operator:
+                            type: and
+                          query:
+                            params:
+                                - B
+                          reducer:
+                            params: []
+                            type: last
+                          type: query
                     datasource:
-                      name: Expression
-                      type: __expr__
-                      uid: __expr__
+                        type: __expr__
+                        uid: __expr__
                     expression: A
-                    hide: false
-                    intervalMs: 10000
-                    maxDataPoints: 99999
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    reducer: sum
                     refId: B
-                    type: classic_conditions
+                    settings:
+                        mode: dropNN
+                    type: reduce
+                - refId: C
+                  relativeTimeRange:
+                    from: 60
+                    to: 0
+                  datasourceUid: __expr__
+                  model:
+                    conditions:
+                        - evaluator:
+                            params:
+                                - 1
+                            type: lt
+                          operator:
+                            type: and
+                          query:
+                            params:
+                                - C
+                          reducer:
+                            params: []
+                            type: last
+                          type: query
+                    datasource:
+                        type: __expr__
+                        uid: __expr__
+                    expression: B
+                    intervalMs: 1000
+                    maxDataPoints: 43200
+                    refId: C
+                    type: threshold
+              execErrState: Error
+              for: 10m
+              annotations:
+                summary: No data detected
+              labels:
+                severity: warning
+              isPaused: false
               dashboardUid: system-overview
               noDataState: Alerting
     contact_points.yaml:

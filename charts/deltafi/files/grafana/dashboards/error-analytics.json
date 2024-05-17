@@ -48,7 +48,7 @@
   "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 79,
+  "id": 18,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -155,11 +155,11 @@
                 {
                   "condition": "AND",
                   "filterType": "custom",
-                  "key": "flow",
+                  "key": "dfDatasource",
                   "operator": "IN",
                   "type": "String",
                   "value": [
-                    "${flow}"
+                    "${dfDatasource}"
                   ]
                 },
                 {
@@ -179,7 +179,7 @@
           },
           "pluginVersion": "4.0.6",
           "queryType": "table",
-          "rawSql": "SELECT count()\nFROM \"deltafi\".\"errors\"\nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${flow} ) ) AND ( annotations['${annotation}'] IN (${annotationValue}))",
+          "rawSql": "SELECT count()\nFROM \"deltafi\".\"errors\"\nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${dfDatasource} ) ) AND ( annotations['${annotation}'] IN (${annotationValue}))",
           "refId": "A"
         }
       ],
@@ -323,7 +323,7 @@
                 }
               ],
               "groupBy": [
-                "flow"
+                "dfDatasource"
               ],
               "mode": "trend",
               "orderBy": [],
@@ -333,7 +333,7 @@
           },
           "pluginVersion": "4.0.6",
           "queryType": "timeseries",
-          "rawSql": "SELECT time, sum(values) \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, dataSource, annotations['${annotation}'] AS annotationValue, count() as values \nFROM deltafi.\"errors\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${flow} ) ) AND ( annotationValue IN (${annotationValue}))\nGROUP BY dataSource, annotationValue, time \nORDER BY time ASC WITH FILL STEP $__interval_s) GROUP BY time",
+          "rawSql": "SELECT time, sum(values) \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, dataSource, annotations['${annotation}'] AS annotationValue, count() as values \nFROM deltafi.\"errors\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${dfDatasource} ) ) AND ( annotationValue IN (${annotationValue}))\nGROUP BY dataSource, annotationValue, time \nORDER BY time ASC WITH FILL STEP $__interval_s) GROUP BY time",
           "refId": "A"
         }
       ],
@@ -463,11 +463,11 @@
                 {
                   "condition": "AND",
                   "filterType": "custom",
-                  "key": "flow",
+                  "key": "dfDatasource",
                   "operator": "IN",
                   "type": "String",
                   "value": [
-                    "${flow}"
+                    "${dfDatasource}"
                   ]
                 }
               ],
@@ -483,7 +483,7 @@
           },
           "pluginVersion": "4.0.6",
           "queryType": "table",
-          "rawSql": "SELECT dataSource, ' [' || if(empty(annotationValue),'none',annotationValue) || ']' AS annotationValue, value\nFROM(\nSELECT dataSource, annotations['${annotation}'] AS annotationValue, count() value \nFROM \"deltafi\".\"errors\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${flow} ) ) AND ( annotationValue IN (${annotationValue}))  \nGROUP BY dataSource, annotationValue\nORDER BY value DESC\nLIMIT 500)",
+          "rawSql": "SELECT dataSource, ' [' || if(empty(annotationValue),'none',annotationValue) || ']' AS annotationValue, value\nFROM(\nSELECT dataSource, annotations['${annotation}'] AS annotationValue, count() value \nFROM \"deltafi\".\"errors\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${dfDatasource} ) ) AND ( annotationValue IN (${annotationValue}))  \nGROUP BY dataSource, annotationValue\nORDER BY value DESC\nLIMIT 500)",
           "refId": "A"
         }
       ],
@@ -633,7 +633,7 @@
                 }
               ],
               "groupBy": [
-                "flow"
+                "dfDatasource"
               ],
               "mode": "trend",
               "orderBy": [],
@@ -643,7 +643,7 @@
           },
           "pluginVersion": "4.0.6",
           "queryType": "timeseries",
-          "rawSql": "SELECT time, dataSource || ' [' || if(empty(annotationValue),'none',annotationValue) || ']' AS annotationValue, values \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, dataSource, annotations['${annotation}'] AS annotationValue, count() AS values \nFROM deltafi.\"errors\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${flow} ) ) AND ( annotationValue IN (${annotationValue}))\nGROUP BY dataSource, annotationValue, time \nORDER BY time ASC WITH FILL STEP $__interval_s)",
+          "rawSql": "SELECT time, dataSource || ' [' || if(empty(annotationValue),'none',annotationValue) || ']' AS annotationValue, values \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, dataSource, annotations['${annotation}'] AS annotationValue, count() AS values \nFROM deltafi.\"errors\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${dfDatasource} ) ) AND ( annotationValue IN (${annotationValue}))\nGROUP BY dataSource, annotationValue, time \nORDER BY time ASC WITH FILL STEP $__interval_s)",
           "refId": "A"
         }
       ],
@@ -773,11 +773,11 @@
                 {
                   "condition": "AND",
                   "filterType": "custom",
-                  "key": "flow",
+                  "key": "dfDatasource",
                   "operator": "IN",
                   "type": "String",
                   "value": [
-                    "${flow}"
+                    "${dfDatasource}"
                   ]
                 }
               ],
@@ -793,7 +793,7 @@
           },
           "pluginVersion": "4.0.6",
           "queryType": "table",
-          "rawSql": "SELECT dataSource,  sum(value)\nFROM(\nSELECT dataSource, annotations['${annotation}'] AS annotationValue, count() value \nFROM \"deltafi\".\"errors\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${flow} ) ) AND ( annotationValue IN (${annotationValue}))  \nGROUP BY dataSource, annotationValue\nORDER BY value DESC\nLIMIT 500) GROUP BY dataSource",
+          "rawSql": "SELECT dataSource,  sum(value)\nFROM(\nSELECT dataSource, annotations['${annotation}'] AS annotationValue, count() value \nFROM \"deltafi\".\"errors\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${dfDatasource} ) ) AND ( annotationValue IN (${annotationValue}))  \nGROUP BY dataSource, annotationValue\nORDER BY value DESC\nLIMIT 500) GROUP BY dataSource",
           "refId": "A"
         }
       ],
@@ -943,7 +943,7 @@
                 }
               ],
               "groupBy": [
-                "flow"
+                "dfDatasource"
               ],
               "mode": "trend",
               "orderBy": [],
@@ -953,7 +953,7 @@
           },
           "pluginVersion": "4.0.6",
           "queryType": "timeseries",
-          "rawSql": "SELECT time, dataSource, values \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, dataSource, annotations['${annotation}'] AS annotationValue, count() AS values \nFROM deltafi.\"errors\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${flow} ) ) AND ( annotationValue IN (${annotationValue}))\nGROUP BY dataSource, annotationValue, time \nORDER BY time ASC WITH FILL STEP $__interval_s)",
+          "rawSql": "SELECT time, dataSource, values \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, dataSource, annotations['${annotation}'] AS annotationValue, count() AS values \nFROM deltafi.\"errors\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${dfDatasource} ) ) AND ( annotationValue IN (${annotationValue}))\nGROUP BY dataSource, annotationValue, time \nORDER BY time ASC WITH FILL STEP $__interval_s)",
           "refId": "A"
         }
       ],
@@ -1129,7 +1129,7 @@
                   "name": "files"
                 },
                 {
-                  "name": "flow"
+                  "name": "dfDatasource"
                 }
               ],
               "database": "deltafi",
@@ -1165,7 +1165,7 @@
           },
           "pluginVersion": "4.0.6",
           "queryType": "table",
-          "rawSql": "SELECT dataSource, count(cause) FROM (SELECT dataSource, annotations['${annotation}'] AS tag, cause, count() as values\nFROM \"deltafi\".\"errors\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and (dataSource IN (${flow})) AND ( tag IN (${annotationValue})) \nGROUP BY dataSource, cause, tag\nORDER BY values DESC) GROUP BY dataSource",
+          "rawSql": "SELECT dataSource, count(cause) FROM (SELECT dataSource, annotations['${annotation}'] AS tag, cause, count() as values\nFROM \"deltafi\".\"errors\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and (dataSource IN (${dfDatasource})) AND ( tag IN (${annotationValue})) \nGROUP BY dataSource, cause, tag\nORDER BY values DESC) GROUP BY dataSource",
           "refId": "A"
         }
       ],
@@ -1284,7 +1284,7 @@
                   "name": "files"
                 },
                 {
-                  "name": "flow"
+                  "name": "dfDatasource"
                 }
               ],
               "database": "deltafi",
@@ -1320,7 +1320,7 @@
           },
           "pluginVersion": "4.0.6",
           "queryType": "table",
-          "rawSql": "SELECT dataSource, count(tag) as \"Unique ${annotation} values\" FROM (SELECT dataSource, annotations['${annotation}'] AS tag, count() as values\nFROM \"deltafi\".\"errors\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and (dataSource IN (${flow})) AND ( tag IN (${annotationValue})) \nGROUP BY dataSource, tag\nORDER BY values DESC) GROUP BY dataSource",
+          "rawSql": "SELECT dataSource, count(tag) as \"Unique ${annotation} values\" FROM (SELECT dataSource, annotations['${annotation}'] AS tag, count() as values\nFROM \"deltafi\".\"errors\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and (dataSource IN (${dfDatasource})) AND ( tag IN (${annotationValue})) \nGROUP BY dataSource, tag\nORDER BY values DESC) GROUP BY dataSource",
           "refId": "A"
         }
       ],
@@ -1438,7 +1438,7 @@
                   "name": "files"
                 },
                 {
-                  "name": "flow"
+                  "name": "dfDatasource"
                 }
               ],
               "database": "deltafi",
@@ -1474,7 +1474,7 @@
           },
           "pluginVersion": "4.0.6",
           "queryType": "table",
-          "rawSql": "SELECT dataSource, cause, sum(values) FROM (SELECT dataSource, annotations['${annotation}'] AS tag, cause, count() as values\nFROM \"deltafi\".\"errors\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and (dataSource IN (${flow})) AND ( tag IN (${annotationValue})) \nGROUP BY dataSource, cause, tag\nORDER BY values DESC) GROUP BY dataSource, cause",
+          "rawSql": "SELECT dataSource, cause, sum(values) FROM (SELECT dataSource, annotations['${annotation}'] AS tag, cause, count() as values\nFROM \"deltafi\".\"errors\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and (dataSource IN (${dfDatasource})) AND ( tag IN (${annotationValue})) \nGROUP BY dataSource, cause, tag\nORDER BY values DESC) GROUP BY dataSource, cause",
           "refId": "A"
         }
       ],
@@ -1594,7 +1594,7 @@
                   "name": "files"
                 },
                 {
-                  "name": "flow"
+                  "name": "dfDatasource"
                 }
               ],
               "database": "deltafi",
@@ -1630,7 +1630,7 @@
           },
           "pluginVersion": "4.0.6",
           "queryType": "table",
-          "rawSql": "SELECT dataSource, tag as \"value\", sum(values) FROM (SELECT dataSource, annotations['${annotation}'] AS tag, cause, count() as values\nFROM \"deltafi\".\"errors\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and (dataSource IN (${flow})) AND ( tag IN (${annotationValue})) \nGROUP BY dataSource, cause, tag\nORDER BY values DESC) GROUP BY dataSource, tag",
+          "rawSql": "SELECT dataSource, tag as \"value\", sum(values) FROM (SELECT dataSource, annotations['${annotation}'] AS tag, cause, count() as values\nFROM \"deltafi\".\"errors\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and (dataSource IN (${dfDatasource})) AND ( tag IN (${annotationValue})) \nGROUP BY dataSource, cause, tag\nORDER BY values DESC) GROUP BY dataSource, tag",
           "refId": "A"
         }
       ],
@@ -1700,14 +1700,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "${clickhouseDatasource}"
         },
-        "definition": "SELECT DISTINCT dataSource FROM errors WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) UNION ALL SELECT DISTINCT flow FROM deltafiles WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime )",
+        "definition": "SELECT DISTINCT dataSource FROM errors WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) UNION ALL SELECT DISTINCT dataSource FROM complete_deltafiles WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime )",
         "hide": 0,
         "includeAll": true,
         "label": "Data Source",
         "multi": true,
-        "name": "flow",
+        "name": "dfDatasource",
         "options": [],
-        "query": "SELECT DISTINCT dataSource FROM errors WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) UNION ALL SELECT DISTINCT flow FROM deltafiles WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime )",
+        "query": "SELECT DISTINCT dataSource FROM errors WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) UNION ALL SELECT DISTINCT dataSource FROM complete_deltafiles WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime )",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
@@ -1716,22 +1716,23 @@
       },
       {
         "current": {
+          "isNone": true,
           "selected": false,
-          "text": "annotationValue",
-          "value": "annotationValue"
+          "text": "None",
+          "value": ""
         },
         "datasource": {
           "type": "grafana-clickhouse-datasource",
           "uid": "${clickhouseDatasource}"
         },
-        "definition": "SELECT DISTINCT arrayJoin(mapKeys(annotations)) AS keys FROM errors WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and ( dataSource IN (${flow} ) )",
+        "definition": "SELECT DISTINCT arrayJoin(mapKeys(annotations)) AS keys FROM errors WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and ( dataSource IN (${dfDatasource} ) )",
         "hide": 0,
         "includeAll": false,
         "label": "Annotation",
         "multi": false,
         "name": "annotation",
         "options": [],
-        "query": "SELECT DISTINCT arrayJoin(mapKeys(annotations)) AS keys FROM errors WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and ( dataSource IN (${flow} ) )",
+        "query": "SELECT DISTINCT arrayJoin(mapKeys(annotations)) AS keys FROM errors WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and ( dataSource IN (${dfDatasource} ) )",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
@@ -1740,7 +1741,7 @@
       },
       {
         "current": {
-          "selected": false,
+          "selected": true,
           "text": [
             "All"
           ],
@@ -1752,14 +1753,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "${clickhouseDatasource}"
         },
-        "definition": "SELECT DISTINCT annotations['${annotation}'] AS annotationValue FROM errors WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and ( dataSource IN (${flow} ) )",
+        "definition": "SELECT DISTINCT annotations['${annotation}'] AS annotationValue FROM errors WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and ( dataSource IN (${dfDatasource} ) )",
         "hide": 0,
         "includeAll": true,
         "label": "Annotation Value",
         "multi": true,
         "name": "annotationValue",
         "options": [],
-        "query": "SELECT DISTINCT annotations['${annotation}'] AS annotationValue FROM errors WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and ( dataSource IN (${flow} ) )",
+        "query": "SELECT DISTINCT annotations['${annotation}'] AS annotationValue FROM errors WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and ( dataSource IN (${dfDatasource} ) )",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
@@ -1785,6 +1786,6 @@
   "timezone": "",
   "title": "Error Analytics",
   "uid": "error-analytics",
-  "version": 1,
+  "version": 3,
   "weekStart": ""
 }

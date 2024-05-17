@@ -55,6 +55,7 @@ import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryRepo;
 import org.deltafi.core.repo.*;
 import org.deltafi.core.services.*;
+import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.snapshot.SystemSnapshotDatafetcherTestHelper;
 import org.deltafi.core.snapshot.SystemSnapshotRepo;
@@ -270,6 +271,9 @@ class DeltaFiCoreApplicationTests {
 
 	@Autowired
 	QueueManagementService queueManagementService;
+
+	@MockBean
+	AnalyticEventService analyticEventService;
 
 	// mongo eats microseconds, jump through hoops
 	private final OffsetDateTime MONGO_NOW = OffsetDateTime.of(LocalDateTime.ofEpochSecond(OffsetDateTime.now().toInstant().toEpochMilli(), 0, ZoneOffset.UTC), ZoneOffset.UTC);

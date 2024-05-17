@@ -30,6 +30,7 @@ spec:
             fieldRef:
               fieldPath: metadata.name
         {{- include "coreEnvVars" . | nindent 8 }}
+        {{- include "clickhouseEnvVars" . | nindent 8 }}
         envFrom:
         {{- include "keyStorePasswordSecret" . | nindent 8 }}
         ports:

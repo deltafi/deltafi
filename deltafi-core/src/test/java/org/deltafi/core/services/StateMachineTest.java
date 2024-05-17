@@ -26,6 +26,7 @@ import org.deltafi.core.collect.CollectEntryService;
 import org.deltafi.core.collect.ScheduledCollectService;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
+import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.services.pubsub.PublisherService;
 import org.deltafi.core.types.EgressFlow;
 import org.deltafi.core.types.StateMachineInput;
@@ -65,14 +66,14 @@ class StateMachineTest {
     StateMachineTest(@Mock DataSourceService dataSourceService, @Mock TransformFlowService transformFlowService,
                      @Mock EgressFlowService egressFlowService, @Mock IdentityService identityService,
                      @Mock QueueManagementService queueManagementService, @Mock CollectEntryService collectEntryService,
-                     @Mock ScheduledCollectService scheduledCollectService, @Mock PublisherService publisherService) {
+                     @Mock ScheduledCollectService scheduledCollectService, @Mock PublisherService publisherService, @Mock AnalyticEventService analyticEventService) {
         this.transformFlowService = transformFlowService;
         this.queueManagementService = queueManagementService;
         this.collectEntryService = collectEntryService;
 
         this.stateMachine = new StateMachine(new TestClock(), dataSourceService, transformFlowService, egressFlowService,
                 new MockDeltaFiPropertiesService(), identityService, queueManagementService, collectEntryService,
-                scheduledCollectService, publisherService);
+                scheduledCollectService, publisherService, analyticEventService);
     }
 
     @BeforeEach

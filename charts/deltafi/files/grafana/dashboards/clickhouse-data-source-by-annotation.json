@@ -44,10 +44,11 @@
       }
     ]
   },
-  "description": "Flow metrics grouped by the values in an annotation applied to the flows",
+  "description": "Data Source metrics grouped by the values in an annotation applied to the data sources",
   "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
+  "id": 39,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -101,60 +102,31 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "10.2.2",
+      "pluginVersion": "10.4.2",
       "targets": [
         {
-          "builderOptions": {
-            "database": "deltafi",
-            "fields": [],
-            "filters": [
-              {
-                "condition": "AND",
-                "filterType": "custom",
-                "key": "timestamp",
-                "operator": "WITH IN DASHBOARD TIME RANGE",
-                "restrictToFields": [
-                  {
-                    "label": "timestamp",
-                    "name": "timestamp",
-                    "picklistValues": [],
-                    "type": "DateTime"
-                  },
-                  {
-                    "label": "update_timestamp",
-                    "name": "update_timestamp",
-                    "picklistValues": [],
-                    "type": "DateTime"
-                  }
-                ],
-                "type": "datetime"
-              }
-            ],
-            "limit": 100,
-            "metrics": [
-              {
-                "aggregation": "sum",
-                "alias": "ingressBytes",
-                "field": "ingressBytes"
-              }
-            ],
-            "mode": "aggregate",
-            "orderBy": [],
-            "table": "deltafiles"
-          },
           "datasource": {
             "type": "grafana-clickhouse-datasource",
             "uid": "${clickhouseDatasource}"
           },
+          "editorType": "sql",
           "format": 1,
           "meta": {
             "builderOptions": {
+              "aggregates": [
+                {
+                  "aggregateType": "sum",
+                  "alias": "ingressBytes",
+                  "column": "ingressBytes"
+                }
+              ],
+              "columns": [],
               "database": "deltafi",
-              "fields": [],
               "filters": [
                 {
                   "condition": "AND",
@@ -179,22 +151,16 @@
                 }
               ],
               "limit": 100,
-              "metrics": [
-                {
-                  "aggregation": "sum",
-                  "alias": "ingressBytes",
-                  "field": "ingressBytes"
-                }
-              ],
               "mode": "aggregate",
               "orderBy": [],
-              "table": "deltafiles"
+              "queryType": "table",
+              "table": "complete_deltafiles"
             }
           },
-          "queryType": "sql",
-          "rawSql": "SELECT sum(ingressBytes) ingressBytes\nFROM \"deltafi\".\"deltafiles\"\nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) AND ( annotations['${annotation}'] IN (${subflow}))",
+          "pluginVersion": "4.0.6",
+          "queryType": "table",
+          "rawSql": "SELECT sum(ingressBytes)\nFROM \"deltafi\".\"complete_deltafiles\"\nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${dataSource} ) ) AND ( annotations['${annotation}'] IN (${annotationValue}))\nUNION ALL\nSELECT sum(ingressBytes)\nFROM \"deltafi\".\"errors\"\nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${dataSource} ) ) AND ( annotations['${annotation}'] IN (${annotationValue}))\n",
           "refId": "A",
-          "selectedFormat": 4,
           "target": ""
         }
       ],
@@ -219,10 +185,10 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
-        "content": "<h1><center>Flows Grouped by <span style='font-family: monospace; color: yellow'>${annotation}</span></center></h1>",
+        "content": "<h1><center>Data Sources Grouped by <span style='font-family: monospace; color: yellow'>${annotation}</span></center></h1>",
         "mode": "html"
       },
-      "pluginVersion": "10.2.2",
+      "pluginVersion": "10.4.2",
       "transparent": true,
       "type": "text"
     },
@@ -275,81 +241,35 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "10.2.2",
+      "pluginVersion": "10.4.2",
       "targets": [
         {
-          "builderOptions": {
-            "database": "deltafi",
-            "fields": [
-              "annotations['subflow']"
-            ],
-            "filters": [
-              {
-                "condition": "AND",
-                "filterType": "custom",
-                "key": "timestamp",
-                "operator": "WITH IN DASHBOARD TIME RANGE",
-                "restrictToFields": [
-                  {
-                    "label": "timestamp",
-                    "name": "timestamp",
-                    "picklistValues": [],
-                    "type": "DateTime"
-                  },
-                  {
-                    "label": "update_timestamp",
-                    "name": "update_timestamp",
-                    "picklistValues": [],
-                    "type": "DateTime"
-                  }
-                ],
-                "type": "datetime"
-              },
-              {
-                "condition": "AND",
-                "filterType": "custom",
-                "key": "flow",
-                "operator": "IN",
-                "type": "String",
-                "value": [
-                  "${flow}"
-                ]
-              },
-              {
-                "condition": "AND",
-                "filterType": "custom",
-                "key": "Id",
-                "operator": "IS NOT NULL",
-                "type": "id"
-              }
-            ],
-            "limit": 100,
-            "metrics": [
-              {
-                "aggregation": "sum",
-                "alias": "ingressBytes",
-                "field": "files"
-              }
-            ],
-            "mode": "aggregate",
-            "orderBy": [],
-            "table": "deltafiles"
-          },
           "datasource": {
             "type": "grafana-clickhouse-datasource",
             "uid": "${clickhouseDatasource}"
           },
+          "editorType": "sql",
           "format": 1,
           "meta": {
             "builderOptions": {
-              "database": "deltafi",
-              "fields": [
-                "annotations['subflow']"
+              "aggregates": [
+                {
+                  "aggregateType": "sum",
+                  "alias": "ingressBytes",
+                  "column": "files"
+                }
               ],
+              "columns": [
+                {
+                  "name": "annotations['subflow']"
+                }
+              ],
+              "database": "deltafi",
               "filters": [
                 {
                   "condition": "AND",
@@ -375,11 +295,11 @@
                 {
                   "condition": "AND",
                   "filterType": "custom",
-                  "key": "flow",
+                  "key": "dataSource",
                   "operator": "IN",
                   "type": "String",
                   "value": [
-                    "${flow}"
+                    "${dataSource}"
                   ]
                 },
                 {
@@ -391,22 +311,16 @@
                 }
               ],
               "limit": 100,
-              "metrics": [
-                {
-                  "aggregation": "sum",
-                  "alias": "ingressBytes",
-                  "field": "files"
-                }
-              ],
               "mode": "aggregate",
               "orderBy": [],
-              "table": "deltafiles"
+              "queryType": "table",
+              "table": "complete_deltafiles"
             }
           },
-          "queryType": "sql",
-          "rawSql": "SELECT sum(files) ingressBytes\nFROM \"deltafi\".\"deltafiles\"\nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) AND ( annotations['${annotation}'] IN (${subflow}))",
-          "refId": "A",
-          "selectedFormat": 4
+          "pluginVersion": "4.0.6",
+          "queryType": "table",
+          "rawSql": "SELECT sum(files) as files\nFROM \"deltafi\".\"complete_deltafiles\"\nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${dataSource} ) ) AND ( annotations['${annotation}'] IN (${annotationValue}))\nUNION ALL \nSELECT count() as files\nFROM \"deltafi\".\"errors\"\nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${dataSource} ) ) AND ( annotations['${annotation}'] IN (${annotationValue}))\n",
+          "refId": "A"
         }
       ],
       "transparent": true,
@@ -528,7 +442,7 @@
               }
             ],
             "groupBy": [
-              "flow"
+              "dataSource"
             ],
             "metrics": [
               {
@@ -539,7 +453,7 @@
             ],
             "mode": "trend",
             "orderBy": [],
-            "table": "deltafiles",
+            "table": "complete_deltafiles",
             "timeField": "update_timestamp",
             "timeFieldType": "DateTime"
           },
@@ -578,7 +492,7 @@
                 }
               ],
               "groupBy": [
-                "flow"
+                "dataSource"
               ],
               "metrics": [
                 {
@@ -589,13 +503,13 @@
               ],
               "mode": "trend",
               "orderBy": [],
-              "table": "deltafiles",
+              "table": "complete_deltafiles",
               "timeField": "update_timestamp",
               "timeFieldType": "DateTime"
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT time, flow || ' (' || if(empty(subflow),'None',subflow) || ')' AS subflow, bytes \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, flow, annotations['${annotation}'] AS subflow, sum(ingressBytes) AS bytes \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) AND ( subflow IN (${subflow}))\nGROUP BY flow, subflow, time \nORDER BY time ASC WITH FILL STEP $__interval_s)",
+          "rawSql": "SELECT time, dataSource || ' (' || if(empty(annotationValue),'None',annotationValue) || ')' AS annotationValue, bytes \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, dataSource, annotations['${annotation}'] AS annotationValue, sum(ingressBytes) AS bytes \nFROM deltafi.\"complete_deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${dataSource} ) ) AND ( annotationValue IN (${annotationValue}))\nGROUP BY dataSource, annotationValue, time \nORDER BY time ASC WITH FILL STEP $__interval_s)",
           "refId": "A",
           "selectedFormat": 0
         }
@@ -711,11 +625,11 @@
               {
                 "condition": "AND",
                 "filterType": "custom",
-                "key": "flow",
+                "key": "dataSource",
                 "operator": "IN",
                 "type": "String",
                 "value": [
-                  "${flow}"
+                  "${dataSource}"
                 ]
               }
             ],
@@ -732,7 +646,7 @@
             ],
             "mode": "aggregate",
             "orderBy": [],
-            "table": "deltafiles"
+            "table": "complete_deltafiles"
           },
           "datasource": {
             "type": "grafana-clickhouse-datasource",
@@ -768,11 +682,11 @@
                 {
                   "condition": "AND",
                   "filterType": "custom",
-                  "key": "flow",
+                  "key": "dataSource",
                   "operator": "IN",
                   "type": "String",
                   "value": [
-                    "${flow}"
+                    "${dataSource}"
                   ]
                 }
               ],
@@ -789,11 +703,11 @@
               ],
               "mode": "aggregate",
               "orderBy": [],
-              "table": "deltafiles"
+              "table": "complete_deltafiles"
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT flow, if(empty(subflow),'(none)',subflow) AS subflow, value\nFROM(\nSELECT flow, annotations['${annotation}'] AS subflow, sum(ingressBytes) value \nFROM \"deltafi\".\"deltafiles\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) AND ( subflow IN (${subflow}))  \nGROUP BY flow, subflow\nORDER BY value DESC\nLIMIT 10)",
+          "rawSql": "SELECT dataSource, if(empty(annotationValue),'(none)',annotationValue) AS annotationValue, value\nFROM(\nSELECT dataSource, annotations['${annotation}'] AS annotationValue, sum(ingressBytes) value \nFROM \"deltafi\".\"complete_deltafiles\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${dataSource} ) ) AND ( annotationValue IN (${annotationValue}))  \nGROUP BY dataSource, annotationValue\nORDER BY value DESC\nLIMIT 10)",
           "refId": "A",
           "selectedFormat": 4
         }
@@ -889,11 +803,11 @@
               {
                 "condition": "AND",
                 "filterType": "custom",
-                "key": "flow",
+                "key": "dataSource",
                 "operator": "IN",
                 "type": "String",
                 "value": [
-                  "${flow}"
+                  "${dataSource}"
                 ]
               }
             ],
@@ -910,7 +824,7 @@
             ],
             "mode": "aggregate",
             "orderBy": [],
-            "table": "deltafiles"
+            "table": "complete_deltafiles"
           },
           "datasource": {
             "type": "grafana-clickhouse-datasource",
@@ -946,11 +860,11 @@
                 {
                   "condition": "AND",
                   "filterType": "custom",
-                  "key": "flow",
+                  "key": "dataSource",
                   "operator": "IN",
                   "type": "String",
                   "value": [
-                    "${flow}"
+                    "${dataSource}"
                   ]
                 }
               ],
@@ -967,11 +881,11 @@
               ],
               "mode": "aggregate",
               "orderBy": [],
-              "table": "deltafiles"
+              "table": "complete_deltafiles"
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT flow, if(empty(subflow),'(none)',subflow) AS subflow, value\nFROM(\nSELECT flow, annotations['${annotation}'] AS subflow, sum(files) value \nFROM \"deltafi\".\"deltafiles\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) AND ( subflow IN (${subflow}))  \nGROUP BY flow, subflow\nORDER BY value DESC\nLIMIT 10)",
+          "rawSql": "SELECT dataSource, if(empty(annotationValue),'(none)',annotationValue) AS annotationValue, value\nFROM(\nSELECT dataSource, annotations['${annotation}'] AS annotationValue, sum(files) value \nFROM \"deltafi\".\"complete_deltafiles\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${dataSource} ) ) AND ( annotationValue IN (${annotationValue}))  \nGROUP BY dataSource, annotationValue\nORDER BY value DESC\nLIMIT 10)",
           "refId": "A",
           "selectedFormat": 4
         }
@@ -1099,7 +1013,7 @@
               }
             ],
             "groupBy": [
-              "flow"
+              "dataSource"
             ],
             "metrics": [
               {
@@ -1110,7 +1024,7 @@
             ],
             "mode": "trend",
             "orderBy": [],
-            "table": "deltafiles",
+            "table": "complete_deltafiles",
             "timeField": "update_timestamp",
             "timeFieldType": "DateTime"
           },
@@ -1149,7 +1063,7 @@
                 }
               ],
               "groupBy": [
-                "flow"
+                "dataSource"
               ],
               "metrics": [
                 {
@@ -1160,13 +1074,13 @@
               ],
               "mode": "trend",
               "orderBy": [],
-              "table": "deltafiles",
+              "table": "complete_deltafiles",
               "timeField": "update_timestamp",
               "timeFieldType": "DateTime"
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT time, flow || ' (' || if(empty(subflow),'None',subflow) || ')' AS subflow, values \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, flow, annotations['${annotation}'] AS subflow, sum(files) AS values \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) AND ( subflow IN (${subflow}))\nGROUP BY flow, subflow, time \nORDER BY time ASC WITH FILL STEP $__interval_s)",
+          "rawSql": "SELECT time, dataSource || ' (' || if(empty(annotationValue),'None',annotationValue) || ')' AS annotationValue, values \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, dataSource, annotations['${annotation}'] AS annotationValue, sum(files) AS values \nFROM deltafi.\"complete_deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${dataSource} ) ) AND ( annotationValue IN (${annotationValue}))\nGROUP BY dataSource, annotationValue, time \nORDER BY time ASC WITH FILL STEP $__interval_s)",
           "refId": "A",
           "selectedFormat": 0
         }
@@ -1221,7 +1135,7 @@
         "content": "<hr/>",
         "mode": "html"
       },
-      "pluginVersion": "10.2.2",
+      "pluginVersion": "10.4.2",
       "transparent": true,
       "type": "text"
     },
@@ -1274,11 +1188,12 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "10.2.2",
+      "pluginVersion": "10.4.2",
       "targets": [
         {
           "datasource": {
@@ -1313,33 +1228,7 @@
           "mappings": [],
           "unit": "none"
         },
-        "overrides": [
-          {
-            "__systemRef": "hideSeriesFrom",
-            "matcher": {
-              "id": "byNames",
-              "options": {
-                "mode": "exclude",
-                "names": [
-                  " ",
-                  "devFlow3 "
-                ],
-                "prefix": "All except:",
-                "readOnly": true
-              }
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom",
-                "value": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": true
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 11,
@@ -1375,65 +1264,37 @@
       },
       "targets": [
         {
-          "builderOptions": {
-            "database": "deltafi",
-            "fields": [
-              "totalBytes"
-            ],
-            "filters": [
-              {
-                "condition": "AND",
-                "filterType": "custom",
-                "key": "update_timestamp",
-                "operator": "WITH IN DASHBOARD TIME RANGE",
-                "restrictToFields": [
-                  {
-                    "label": "timestamp",
-                    "name": "timestamp",
-                    "picklistValues": [],
-                    "type": "DateTime"
-                  },
-                  {
-                    "label": "update_timestamp",
-                    "name": "update_timestamp",
-                    "picklistValues": [],
-                    "type": "DateTime"
-                  }
-                ],
-                "type": "datetime"
-              }
-            ],
-            "groupBy": [
-              "flow"
-            ],
-            "metrics": [
-              {
-                "aggregation": "sum",
-                "alias": "files",
-                "field": "files"
-              }
-            ],
-            "mode": "trend",
-            "orderBy": [],
-            "table": "deltafiles",
-            "timeField": "update_timestamp",
-            "timeFieldType": "DateTime"
-          },
           "datasource": {
             "type": "grafana-clickhouse-datasource",
             "uid": "${clickhouseDatasource}"
           },
+          "editorType": "sql",
           "format": 0,
           "meta": {
             "builderOptions": {
-              "database": "deltafi",
-              "fields": [
-                "totalBytes"
+              "aggregates": [
+                {
+                  "aggregateType": "sum",
+                  "alias": "files",
+                  "column": "files"
+                }
               ],
+              "columns": [
+                {
+                  "name": "totalBytes"
+                },
+                {
+                  "hint": "time",
+                  "name": "update_timestamp",
+                  "type": "DateTime"
+                }
+              ],
+              "database": "deltafi",
               "filters": [
                 {
                   "condition": "AND",
                   "filterType": "custom",
+                  "hint": "time",
                   "key": "update_timestamp",
                   "operator": "WITH IN DASHBOARD TIME RANGE",
                   "restrictToFields": [
@@ -1454,26 +1315,18 @@
                 }
               ],
               "groupBy": [
-                "flow"
-              ],
-              "metrics": [
-                {
-                  "aggregation": "sum",
-                  "alias": "files",
-                  "field": "files"
-                }
+                "dataSource"
               ],
               "mode": "trend",
               "orderBy": [],
-              "table": "deltafiles",
-              "timeField": "update_timestamp",
-              "timeFieldType": "DateTime"
+              "queryType": "timeseries",
+              "table": "complete_deltafiles"
             }
           },
-          "queryType": "sql",
-          "rawSql": "SELECT flow || ' ' || subflow AS subflow, values \" \" FROM\n(SELECT flow, annotations['${annotation}'] AS subflow, sum(egressed) AS values \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) AND ( subflow IN (${subflow})) \nGROUP BY flow, subflow)\nWHERE values > 0",
-          "refId": "A",
-          "selectedFormat": 0
+          "pluginVersion": "4.0.6",
+          "queryType": "timeseries",
+          "rawSql": "SELECT dataSource || ' ' || annotationValue AS annotationValue, values \" \" FROM\n(SELECT dataSource, annotations['${annotation}'] AS annotationValue, sum(egressedFiles) AS values \nFROM deltafi.\"complete_deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${dataSource} ) ) AND ( annotationValue IN (${annotationValue})) \nGROUP BY dataSource, annotationValue)\nWHERE values > 0",
+          "refId": "A"
         }
       ],
       "title": "Egressed DeltaFiles",
@@ -1593,65 +1446,37 @@
       },
       "targets": [
         {
-          "builderOptions": {
-            "database": "deltafi",
-            "fields": [
-              "totalBytes"
-            ],
-            "filters": [
-              {
-                "condition": "AND",
-                "filterType": "custom",
-                "key": "update_timestamp",
-                "operator": "WITH IN DASHBOARD TIME RANGE",
-                "restrictToFields": [
-                  {
-                    "label": "timestamp",
-                    "name": "timestamp",
-                    "picklistValues": [],
-                    "type": "DateTime"
-                  },
-                  {
-                    "label": "update_timestamp",
-                    "name": "update_timestamp",
-                    "picklistValues": [],
-                    "type": "DateTime"
-                  }
-                ],
-                "type": "datetime"
-              }
-            ],
-            "groupBy": [
-              "flow"
-            ],
-            "metrics": [
-              {
-                "aggregation": "sum",
-                "alias": "files",
-                "field": "files"
-              }
-            ],
-            "mode": "trend",
-            "orderBy": [],
-            "table": "deltafiles",
-            "timeField": "update_timestamp",
-            "timeFieldType": "DateTime"
-          },
           "datasource": {
             "type": "grafana-clickhouse-datasource",
             "uid": "${clickhouseDatasource}"
           },
+          "editorType": "sql",
           "format": 0,
           "meta": {
             "builderOptions": {
-              "database": "deltafi",
-              "fields": [
-                "totalBytes"
+              "aggregates": [
+                {
+                  "aggregateType": "sum",
+                  "alias": "files",
+                  "column": "files"
+                }
               ],
+              "columns": [
+                {
+                  "name": "totalBytes"
+                },
+                {
+                  "hint": "time",
+                  "name": "update_timestamp",
+                  "type": "DateTime"
+                }
+              ],
+              "database": "deltafi",
               "filters": [
                 {
                   "condition": "AND",
                   "filterType": "custom",
+                  "hint": "time",
                   "key": "update_timestamp",
                   "operator": "WITH IN DASHBOARD TIME RANGE",
                   "restrictToFields": [
@@ -1672,26 +1497,18 @@
                 }
               ],
               "groupBy": [
-                "flow"
-              ],
-              "metrics": [
-                {
-                  "aggregation": "sum",
-                  "alias": "files",
-                  "field": "files"
-                }
+                "dataSource"
               ],
               "mode": "trend",
               "orderBy": [],
-              "table": "deltafiles",
-              "timeField": "update_timestamp",
-              "timeFieldType": "DateTime"
+              "queryType": "timeseries",
+              "table": "complete_deltafiles"
             }
           },
-          "queryType": "sql",
-          "rawSql": "SELECT time, flow || ' (' || if(empty(subflow),'None',subflow) || ')' AS subflow, values \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, flow, annotations['${annotation}'] AS subflow, sum(egressed) AS values \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) AND ( subflow IN (${subflow})) \nGROUP BY flow, subflow, time \nORDER BY time ASC WITH FILL STEP $__interval_s)",
-          "refId": "A",
-          "selectedFormat": 0
+          "pluginVersion": "4.0.6",
+          "queryType": "timeseries",
+          "rawSql": "SELECT time, dataSource || ' (' || if(empty(annotationValue),'None',annotationValue) || ')' AS annotationValue, values \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, dataSource, annotations['${annotation}'] AS annotationValue, sum(egressedFiles) AS values \nFROM deltafi.\"complete_deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${dataSource} ) ) AND ( annotationValue IN (${annotationValue})) \nGROUP BY dataSource, annotationValue, time \nORDER BY time ASC WITH FILL STEP $__interval_s)",
+          "refId": "A"
         }
       ],
       "transformations": [
@@ -1767,11 +1584,12 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "10.2.2",
+      "pluginVersion": "10.4.2",
       "targets": [
         {
           "datasource": {
@@ -1806,33 +1624,7 @@
           "mappings": [],
           "unit": "none"
         },
-        "overrides": [
-          {
-            "__systemRef": "hideSeriesFrom",
-            "matcher": {
-              "id": "byNames",
-              "options": {
-                "mode": "exclude",
-                "names": [
-                  " ",
-                  "devFlow3 "
-                ],
-                "prefix": "All except:",
-                "readOnly": true
-              }
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom",
-                "value": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": true
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 11,
@@ -1868,65 +1660,37 @@
       },
       "targets": [
         {
-          "builderOptions": {
-            "database": "deltafi",
-            "fields": [
-              "totalBytes"
-            ],
-            "filters": [
-              {
-                "condition": "AND",
-                "filterType": "custom",
-                "key": "update_timestamp",
-                "operator": "WITH IN DASHBOARD TIME RANGE",
-                "restrictToFields": [
-                  {
-                    "label": "timestamp",
-                    "name": "timestamp",
-                    "picklistValues": [],
-                    "type": "DateTime"
-                  },
-                  {
-                    "label": "update_timestamp",
-                    "name": "update_timestamp",
-                    "picklistValues": [],
-                    "type": "DateTime"
-                  }
-                ],
-                "type": "datetime"
-              }
-            ],
-            "groupBy": [
-              "flow"
-            ],
-            "metrics": [
-              {
-                "aggregation": "sum",
-                "alias": "files",
-                "field": "files"
-              }
-            ],
-            "mode": "trend",
-            "orderBy": [],
-            "table": "deltafiles",
-            "timeField": "update_timestamp",
-            "timeFieldType": "DateTime"
-          },
           "datasource": {
             "type": "grafana-clickhouse-datasource",
             "uid": "${clickhouseDatasource}"
           },
+          "editorType": "sql",
           "format": 0,
           "meta": {
             "builderOptions": {
-              "database": "deltafi",
-              "fields": [
-                "totalBytes"
+              "aggregates": [
+                {
+                  "aggregateType": "sum",
+                  "alias": "files",
+                  "column": "files"
+                }
               ],
+              "columns": [
+                {
+                  "name": "totalBytes"
+                },
+                {
+                  "hint": "time",
+                  "name": "update_timestamp",
+                  "type": "DateTime"
+                }
+              ],
+              "database": "deltafi",
               "filters": [
                 {
                   "condition": "AND",
                   "filterType": "custom",
+                  "hint": "time",
                   "key": "update_timestamp",
                   "operator": "WITH IN DASHBOARD TIME RANGE",
                   "restrictToFields": [
@@ -1947,26 +1711,18 @@
                 }
               ],
               "groupBy": [
-                "flow"
-              ],
-              "metrics": [
-                {
-                  "aggregation": "sum",
-                  "alias": "files",
-                  "field": "files"
-                }
+                "dataSource"
               ],
               "mode": "trend",
               "orderBy": [],
-              "table": "deltafiles",
-              "timeField": "update_timestamp",
-              "timeFieldType": "DateTime"
+              "queryType": "timeseries",
+              "table": "complete_deltafiles"
             }
           },
-          "queryType": "sql",
-          "rawSql": "SELECT flow || ' ' || subflow AS subflow, values \" \" FROM\n(SELECT flow, annotations['${annotation}'] AS subflow, sum(errored) AS values \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) AND ( subflow IN (${subflow})) \nGROUP BY flow, subflow)\nWHERE values > 0",
-          "refId": "A",
-          "selectedFormat": 0
+          "pluginVersion": "4.0.6",
+          "queryType": "timeseries",
+          "rawSql": "SELECT dataSource || ' ' || annotationValue AS annotationValue, values \" \" FROM\n(SELECT dataSource, annotations['${annotation}'] AS annotationValue, count() AS values \nFROM deltafi.\"errors\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${dataSource} ) ) AND ( annotationValue IN (${annotationValue})) \nGROUP BY dataSource, annotationValue)\nWHERE values > 0",
+          "refId": "A"
         }
       ],
       "title": "Errored DeltaFiles",
@@ -2085,65 +1841,37 @@
       },
       "targets": [
         {
-          "builderOptions": {
-            "database": "deltafi",
-            "fields": [
-              "totalBytes"
-            ],
-            "filters": [
-              {
-                "condition": "AND",
-                "filterType": "custom",
-                "key": "update_timestamp",
-                "operator": "WITH IN DASHBOARD TIME RANGE",
-                "restrictToFields": [
-                  {
-                    "label": "timestamp",
-                    "name": "timestamp",
-                    "picklistValues": [],
-                    "type": "DateTime"
-                  },
-                  {
-                    "label": "update_timestamp",
-                    "name": "update_timestamp",
-                    "picklistValues": [],
-                    "type": "DateTime"
-                  }
-                ],
-                "type": "datetime"
-              }
-            ],
-            "groupBy": [
-              "flow"
-            ],
-            "metrics": [
-              {
-                "aggregation": "sum",
-                "alias": "files",
-                "field": "files"
-              }
-            ],
-            "mode": "trend",
-            "orderBy": [],
-            "table": "deltafiles",
-            "timeField": "update_timestamp",
-            "timeFieldType": "DateTime"
-          },
           "datasource": {
             "type": "grafana-clickhouse-datasource",
             "uid": "${clickhouseDatasource}"
           },
+          "editorType": "sql",
           "format": 0,
           "meta": {
             "builderOptions": {
-              "database": "deltafi",
-              "fields": [
-                "totalBytes"
+              "aggregates": [
+                {
+                  "aggregateType": "sum",
+                  "alias": "files",
+                  "column": "files"
+                }
               ],
+              "columns": [
+                {
+                  "name": "totalBytes"
+                },
+                {
+                  "hint": "time",
+                  "name": "update_timestamp",
+                  "type": "DateTime"
+                }
+              ],
+              "database": "deltafi",
               "filters": [
                 {
                   "condition": "AND",
                   "filterType": "custom",
+                  "hint": "time",
                   "key": "update_timestamp",
                   "operator": "WITH IN DASHBOARD TIME RANGE",
                   "restrictToFields": [
@@ -2164,26 +1892,18 @@
                 }
               ],
               "groupBy": [
-                "flow"
-              ],
-              "metrics": [
-                {
-                  "aggregation": "sum",
-                  "alias": "files",
-                  "field": "files"
-                }
+                "dataSource"
               ],
               "mode": "trend",
               "orderBy": [],
-              "table": "deltafiles",
-              "timeField": "update_timestamp",
-              "timeFieldType": "DateTime"
+              "queryType": "timeseries",
+              "table": "complete_deltafiles"
             }
           },
-          "queryType": "sql",
-          "rawSql": "SELECT time, flow || ' (' || if(empty(subflow),'None',subflow) || ')' AS subflow, values \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, flow, annotations['${annotation}'] AS subflow, sum(errored) AS values \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) AND ( subflow IN (${subflow})) \nGROUP BY flow, subflow, time \nORDER BY time ASC WITH FILL STEP $__interval_s)",
-          "refId": "A",
-          "selectedFormat": 0
+          "pluginVersion": "4.0.6",
+          "queryType": "timeseries",
+          "rawSql": "SELECT time, dataSource || ' (' || if(empty(annotationValue),'None',annotationValue) || ')' AS annotationValue, values \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, dataSource, annotations['${annotation}'] AS annotationValue, count() AS values \nFROM deltafi.\"errors\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${dataSource} ) ) AND ( annotationValue IN (${annotationValue})) \nGROUP BY dataSource, annotationValue, time \nORDER BY time ASC WITH FILL STEP $__interval_s)",
+          "refId": "A"
         }
       ],
       "transformations": [
@@ -2259,11 +1979,12 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "10.2.2",
+      "pluginVersion": "10.4.2",
       "targets": [
         {
           "datasource": {
@@ -2298,33 +2019,7 @@
           "mappings": [],
           "unit": "none"
         },
-        "overrides": [
-          {
-            "__systemRef": "hideSeriesFrom",
-            "matcher": {
-              "id": "byNames",
-              "options": {
-                "mode": "exclude",
-                "names": [
-                  " ",
-                  "devFlow3 "
-                ],
-                "prefix": "All except:",
-                "readOnly": true
-              }
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom",
-                "value": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": true
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 11,
@@ -2360,65 +2055,37 @@
       },
       "targets": [
         {
-          "builderOptions": {
-            "database": "deltafi",
-            "fields": [
-              "totalBytes"
-            ],
-            "filters": [
-              {
-                "condition": "AND",
-                "filterType": "custom",
-                "key": "update_timestamp",
-                "operator": "WITH IN DASHBOARD TIME RANGE",
-                "restrictToFields": [
-                  {
-                    "label": "timestamp",
-                    "name": "timestamp",
-                    "picklistValues": [],
-                    "type": "DateTime"
-                  },
-                  {
-                    "label": "update_timestamp",
-                    "name": "update_timestamp",
-                    "picklistValues": [],
-                    "type": "DateTime"
-                  }
-                ],
-                "type": "datetime"
-              }
-            ],
-            "groupBy": [
-              "flow"
-            ],
-            "metrics": [
-              {
-                "aggregation": "sum",
-                "alias": "files",
-                "field": "files"
-              }
-            ],
-            "mode": "trend",
-            "orderBy": [],
-            "table": "deltafiles",
-            "timeField": "update_timestamp",
-            "timeFieldType": "DateTime"
-          },
           "datasource": {
             "type": "grafana-clickhouse-datasource",
             "uid": "${clickhouseDatasource}"
           },
+          "editorType": "sql",
           "format": 0,
           "meta": {
             "builderOptions": {
-              "database": "deltafi",
-              "fields": [
-                "totalBytes"
+              "aggregates": [
+                {
+                  "aggregateType": "sum",
+                  "alias": "files",
+                  "column": "files"
+                }
               ],
+              "columns": [
+                {
+                  "name": "totalBytes"
+                },
+                {
+                  "hint": "time",
+                  "name": "update_timestamp",
+                  "type": "DateTime"
+                }
+              ],
+              "database": "deltafi",
               "filters": [
                 {
                   "condition": "AND",
                   "filterType": "custom",
+                  "hint": "time",
                   "key": "update_timestamp",
                   "operator": "WITH IN DASHBOARD TIME RANGE",
                   "restrictToFields": [
@@ -2439,26 +2106,18 @@
                 }
               ],
               "groupBy": [
-                "flow"
-              ],
-              "metrics": [
-                {
-                  "aggregation": "sum",
-                  "alias": "files",
-                  "field": "files"
-                }
+                "dataSource"
               ],
               "mode": "trend",
               "orderBy": [],
-              "table": "deltafiles",
-              "timeField": "update_timestamp",
-              "timeFieldType": "DateTime"
+              "queryType": "timeseries",
+              "table": "complete_deltafiles"
             }
           },
-          "queryType": "sql",
-          "rawSql": "SELECT flow || ' ' || subflow AS subflow, values \" \" FROM\n(SELECT flow, annotations['${annotation}'] AS subflow, sum(filtered) AS values \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) AND ( subflow IN (${subflow})) \nGROUP BY flow, subflow)\nWHERE values > 0",
-          "refId": "A",
-          "selectedFormat": 0
+          "pluginVersion": "4.0.6",
+          "queryType": "timeseries",
+          "rawSql": "SELECT dataSource || ' ' || annotationValue AS annotationValue, values \" \" FROM\n(SELECT dataSource, annotations['${annotation}'] AS annotationValue, sum(filteredFiles) AS values \nFROM deltafi.\"complete_deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${dataSource} ) ) AND ( annotationValue IN (${annotationValue})) \nGROUP BY dataSource, annotationValue)\nWHERE values > 0",
+          "refId": "A"
         }
       ],
       "title": "Filtered DeltaFiles",
@@ -2577,65 +2236,37 @@
       },
       "targets": [
         {
-          "builderOptions": {
-            "database": "deltafi",
-            "fields": [
-              "totalBytes"
-            ],
-            "filters": [
-              {
-                "condition": "AND",
-                "filterType": "custom",
-                "key": "update_timestamp",
-                "operator": "WITH IN DASHBOARD TIME RANGE",
-                "restrictToFields": [
-                  {
-                    "label": "timestamp",
-                    "name": "timestamp",
-                    "picklistValues": [],
-                    "type": "DateTime"
-                  },
-                  {
-                    "label": "update_timestamp",
-                    "name": "update_timestamp",
-                    "picklistValues": [],
-                    "type": "DateTime"
-                  }
-                ],
-                "type": "datetime"
-              }
-            ],
-            "groupBy": [
-              "flow"
-            ],
-            "metrics": [
-              {
-                "aggregation": "sum",
-                "alias": "files",
-                "field": "files"
-              }
-            ],
-            "mode": "trend",
-            "orderBy": [],
-            "table": "deltafiles",
-            "timeField": "update_timestamp",
-            "timeFieldType": "DateTime"
-          },
           "datasource": {
             "type": "grafana-clickhouse-datasource",
             "uid": "${clickhouseDatasource}"
           },
+          "editorType": "sql",
           "format": 0,
           "meta": {
             "builderOptions": {
-              "database": "deltafi",
-              "fields": [
-                "totalBytes"
+              "aggregates": [
+                {
+                  "aggregateType": "sum",
+                  "alias": "files",
+                  "column": "files"
+                }
               ],
+              "columns": [
+                {
+                  "name": "totalBytes"
+                },
+                {
+                  "hint": "time",
+                  "name": "update_timestamp",
+                  "type": "DateTime"
+                }
+              ],
+              "database": "deltafi",
               "filters": [
                 {
                   "condition": "AND",
                   "filterType": "custom",
+                  "hint": "time",
                   "key": "update_timestamp",
                   "operator": "WITH IN DASHBOARD TIME RANGE",
                   "restrictToFields": [
@@ -2656,26 +2287,18 @@
                 }
               ],
               "groupBy": [
-                "flow"
-              ],
-              "metrics": [
-                {
-                  "aggregation": "sum",
-                  "alias": "files",
-                  "field": "files"
-                }
+                "dataSource"
               ],
               "mode": "trend",
               "orderBy": [],
-              "table": "deltafiles",
-              "timeField": "update_timestamp",
-              "timeFieldType": "DateTime"
+              "queryType": "timeseries",
+              "table": "complete_deltafiles"
             }
           },
-          "queryType": "sql",
-          "rawSql": "SELECT time, flow || ' (' || if(empty(subflow),'None',subflow) || ')' AS subflow, values \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, flow, annotations['${annotation}'] AS subflow, sum(filtered) AS values \nFROM deltafi.\"deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( flow IN (${flow} ) ) AND ( subflow IN (${subflow})) \nGROUP BY flow, subflow, time \nORDER BY time ASC WITH FILL STEP $__interval_s)",
-          "refId": "A",
-          "selectedFormat": 0
+          "pluginVersion": "4.0.6",
+          "queryType": "timeseries",
+          "rawSql": "SELECT time, dataSource || ' (' || if(empty(annotationValue),'None',annotationValue) || ')' AS annotationValue, values \" \" FROM\n(SELECT $__timeInterval(timestamp) as time, dataSource, annotations['${annotation}'] AS annotationValue, sum(filteredFiles) AS values \nFROM deltafi.\"complete_deltafiles\" \nWHERE $__timeFilter(timestamp) AND   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND ( dataSource IN (${dataSource} ) ) AND ( annotationValue IN (${annotationValue})) \nGROUP BY dataSource, annotationValue, time \nORDER BY time ASC WITH FILL STEP $__interval_s)",
+          "refId": "A"
         }
       ],
       "transformations": [
@@ -2727,7 +2350,7 @@
         "content": "",
         "mode": "markdown"
       },
-      "pluginVersion": "10.2.2",
+      "pluginVersion": "10.4.2",
       "transparent": true,
       "type": "text"
     },
@@ -2788,14 +2411,14 @@
         "showHeader": true,
         "sortBy": []
       },
-      "pluginVersion": "10.2.2",
+      "pluginVersion": "10.4.2",
       "targets": [
         {
           "builderOptions": {
             "database": "deltafi",
             "fields": [
               "files",
-              "flow"
+              "dataSource"
             ],
             "filters": [
               {
@@ -2823,7 +2446,7 @@
             "limit": 100,
             "mode": "list",
             "orderBy": [],
-            "table": "deltafiles"
+            "table": "complete_deltafiles"
           },
           "datasource": {
             "type": "grafana-clickhouse-datasource",
@@ -2835,7 +2458,7 @@
               "database": "deltafi",
               "fields": [
                 "files",
-                "flow"
+                "dataSource"
               ],
               "filters": [
                 {
@@ -2863,17 +2486,16 @@
               "limit": 100,
               "mode": "list",
               "orderBy": [],
-              "table": "deltafiles"
+              "table": "complete_deltafiles"
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT flow, annotations['${annotation}'] AS tag, sum(ingressBytes) as values\nFROM \"deltafi\".\"deltafiles\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and (flow IN (${flow})) AND ( tag IN (${subflow})) \nGROUP BY flow, tag\nORDER BY values DESC",
+          "rawSql": "SELECT dataSource, annotations['${annotation}'] AS tag, sum(ingressBytes) as values\nFROM \"deltafi\".\"complete_deltafiles\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and (dataSource IN (${dataSource})) AND ( tag IN (${annotationValue})) \nGROUP BY dataSource, tag\nORDER BY values DESC",
           "refId": "A",
           "selectedFormat": 4
         }
       ],
       "title": "Bytes Ingressed",
-      "transformations": [],
       "type": "table"
     },
     {
@@ -2932,14 +2554,14 @@
         "showHeader": true,
         "sortBy": []
       },
-      "pluginVersion": "10.2.2",
+      "pluginVersion": "10.4.2",
       "targets": [
         {
           "builderOptions": {
             "database": "deltafi",
             "fields": [
               "files",
-              "flow"
+              "dataSource"
             ],
             "filters": [
               {
@@ -2967,7 +2589,7 @@
             "limit": 100,
             "mode": "list",
             "orderBy": [],
-            "table": "deltafiles"
+            "table": "complete_deltafiles"
           },
           "datasource": {
             "type": "grafana-clickhouse-datasource",
@@ -2979,7 +2601,7 @@
               "database": "deltafi",
               "fields": [
                 "files",
-                "flow"
+                "dataSource"
               ],
               "filters": [
                 {
@@ -3007,11 +2629,11 @@
               "limit": 100,
               "mode": "list",
               "orderBy": [],
-              "table": "deltafiles"
+              "table": "complete_deltafiles"
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT flow, annotations['${annotation}'] AS annotation, sum(files) as files\nFROM \"deltafi\".\"deltafiles\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND (flow IN (${flow})) AND ( annotation IN (${subflow})) \nGROUP BY flow, annotation\nORDER BY files DESC",
+          "rawSql": "SELECT dataSource, annotations['${annotation}'] AS annotation, sum(files) as files\nFROM \"deltafi\".\"complete_deltafiles\" \nWHERE   ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) AND (dataSource IN (${dataSource})) AND ( annotation IN (${annotationValue})) \nGROUP BY dataSource, annotation\nORDER BY files DESC",
           "refId": "A",
           "selectedFormat": 4
         }
@@ -3045,14 +2667,14 @@
               "name": {
                 "aggregations": []
               },
-              "surveyDirection": {
+              "surveyAnnotationValue": {
                 "aggregations": [],
                 "operation": "groupby"
               },
-              "surveyFlow": {
+              "surveyDataSource": {
                 "aggregations": []
               },
-              "surveySubflow": {
+              "surveyDirection": {
                 "aggregations": [],
                 "operation": "groupby"
               }
@@ -3083,7 +2705,7 @@
           "id": "groupingToMatrix",
           "options": {
             "columnField": "surveyDirection",
-            "rowField": "surveySubflow",
+            "rowField": "surveyAnnotationValue",
             "valueField": "Total"
           }
         },
@@ -3094,7 +2716,7 @@
             "excludeByName": {},
             "indexByName": {},
             "renameByName": {
-              "surveySubflow\\surveyDirection": "Subflow"
+              "surveyAnnotationValue\\surveyDirection": "Subflow"
             }
           }
         }
@@ -3104,10 +2726,11 @@
   ],
   "refresh": false,
   "revision": 1,
-  "schemaVersion": 38,
+  "schemaVersion": 39,
   "tags": [
     "DeltaFi",
-    "Clickhouse"
+    "Clickhouse",
+    "Analytics"
   ],
   "templating": {
     "list": [
@@ -3132,22 +2755,26 @@
       },
       {
         "current": {
-          "selected": false,
-          "text": "All",
-          "value": "$__all"
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
         },
         "datasource": {
           "type": "grafana-clickhouse-datasource",
           "uid": "${clickhouseDatasource}"
         },
-        "definition": "SELECT DISTINCT flow FROM deltafiles WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime )",
+        "definition": "SELECT DISTINCT dataSource FROM complete_deltafiles WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime )",
         "hide": 0,
         "includeAll": true,
-        "label": "Flow",
+        "label": "Data Source",
         "multi": true,
-        "name": "flow",
+        "name": "dataSource",
         "options": [],
-        "query": "SELECT DISTINCT flow FROM deltafiles WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime )",
+        "query": "SELECT DISTINCT dataSource FROM complete_deltafiles WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime )",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
@@ -3157,21 +2784,21 @@
       {
         "current": {
           "selected": false,
-          "text": "subflow",
-          "value": "subflow"
+          "text": "language",
+          "value": "language"
         },
         "datasource": {
           "type": "grafana-clickhouse-datasource",
           "uid": "${clickhouseDatasource}"
         },
-        "definition": "SELECT DISTINCT arrayJoin(mapKeys(annotations)) AS keys FROM deltafiles WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and ( flow IN (${flow} ) )",
+        "definition": "SELECT DISTINCT arrayJoin(mapKeys(annotations)) AS keys FROM complete_deltafiles WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and ( dataSource IN (${dataSource} ) )",
         "hide": 0,
         "includeAll": false,
         "label": "Annotation",
         "multi": false,
         "name": "annotation",
         "options": [],
-        "query": "SELECT DISTINCT arrayJoin(mapKeys(annotations)) AS keys FROM deltafiles WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and ( flow IN (${flow} ) )",
+        "query": "SELECT DISTINCT arrayJoin(mapKeys(annotations)) AS keys FROM complete_deltafiles WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and ( dataSource IN (${dataSource} ) )",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
@@ -3192,14 +2819,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "${clickhouseDatasource}"
         },
-        "definition": "SELECT DISTINCT annotations['${annotation}'] AS subflow FROM deltafiles WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and ( flow IN (${flow} ) )",
+        "definition": "SELECT DISTINCT annotations['${annotation}'] AS annotationValue FROM complete_deltafiles WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and ( dataSource IN (${dataSource} ) )",
         "hide": 0,
         "includeAll": true,
         "label": "Annotation Value",
         "multi": true,
-        "name": "subflow",
+        "name": "annotationValue",
         "options": [],
-        "query": "SELECT DISTINCT annotations['${annotation}'] AS subflow FROM deltafiles WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and ( flow IN (${flow} ) )",
+        "query": "SELECT DISTINCT annotations['${annotation}'] AS annotationValue FROM complete_deltafiles WHERE $__timeFilter(timestamp) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) and ( dataSource IN (${dataSource} ) )",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
@@ -3223,8 +2850,8 @@
     ]
   },
   "timezone": "",
-  "title": "Clickhouse Flow by Annotation",
-  "uid": "clickhouse-flow-by-annotation",
-  "version": 5,
+  "title": "Data Source by Annotation",
+  "uid": "clickhouse-data-source-by-annotation",
+  "version": 2,
   "weekStart": ""
 }

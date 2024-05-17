@@ -29,6 +29,7 @@ import org.deltafi.core.configuration.ClockConfiguration;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.repo.QueuedAnnotationRepo;
+import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.services.pubsub.PublisherService;
 import org.deltafi.core.util.Util;
 import org.junit.jupiter.api.Assertions;
@@ -54,7 +55,7 @@ import java.util.UUID;
 @Import({DeltaFilesService.class, ClockConfiguration.class})
 @MockBean({TransformFlowService.class,EgressFlowService.class,
         StateMachine.class, DeltaFileRepo.class, ActionEventQueue.class, ContentStorageService.class, DeltaFilesService.class,
-        ResumePolicyService.class, MetricService.class, ClickhouseService.class, CoreAuditLogger.class, DeltaFileCacheService.class,
+        ResumePolicyService.class, MetricService.class, AnalyticEventService.class, CoreAuditLogger.class, DeltaFileCacheService.class,
         PublisherService.class, QueueManagementService.class, QueuedAnnotationRepo.class, Environment.class,
         CollectEntryService.class, ScheduledCollectService.class, UUIDGenerator.class})
 @EnableRetry

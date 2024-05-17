@@ -36,6 +36,7 @@ dependencies {
 	implementation 'com.clickhouse:clickhouse-http-client:0.6.0-patch4'
 	implementation 'com.clickhouse:clickhouse-jdbc:0.6.0-patch4'
 	implementation 'org.lz4:lz4-java:1.8.0'
+	implementation 'com.zaxxer:HikariCP:5.1.0'
 
 	testImplementation project(':deltafi-common-test')
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'

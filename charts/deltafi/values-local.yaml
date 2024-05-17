@@ -18,9 +18,6 @@ deltafi:
     image: localhost:5000/deltafi-auth:latest
   api:
     image: localhost:5000/deltafi-api:latest
-  clickhouse_etl:
-    image: localhost:5000/deltafi-api:latest
-    enabled: false
   egress_sink:
     image: localhost:5000/deltafi-egress-sink:latest
   nodemonitor:

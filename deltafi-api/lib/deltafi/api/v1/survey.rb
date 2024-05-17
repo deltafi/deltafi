@@ -40,9 +40,9 @@ module Deltafi
 
           errors = []
 
-          clickhouse_client.insert(Deltafi::ClickhouseETL::DELTAFILE_TABLE_NAME, columns: %i[did timestamp update_timestamp flow files ingressBytes totalBytes errored filtered annotations]) do |insert_buffer|
+          clickhouse_client.insert('deltafi.complete_deltafiles', columns: %i[did timestamp dataSource files ingressBytes totalBytes annotations]) do |insert_buffer|
             blob.each_with_index do |survey, index|
-              unless survey.key?(:flow) && survey[:files].to_i >= 1
+              unless (survey.key?(:dataSource) || survey.key?(:flow)) && survey[:files].to_i >= 1
                 errors << { error: "Invalid survey data at #{index}", source: survey.to_json.to_s }
                 next
               end
@@ -50,14 +50,11 @@ module Deltafi
               survey_data = [
                 "survey-#{index}-#{formatted_now}",
                 survey[:timestamp] ? Time.parse(survey[:timestamp]).to_i : now.to_i,
-                survey[:update_timestamp] ? Time.parse(survey[:update_timestamp]).to_i : now.to_i,
-                survey[:flow].to_s,
+                (survey[:dataSource] || survey[:flow])&.to_s,
                 survey[:files].to_i,
                 survey[:ingress_bytes].to_i,
                 survey[:ingress_bytes].to_i,
-                survey[:errored].to_i,
-                survey[:filtered].to_i,
-                survey.except(:timestamp, :update_timestamp, :flow, :files, :ingress_bytes, :total_bytes, :errored, :filtered, :annotations)
+                survey.except(:timestamp, :update_timestamp, :dataSource, :flow, :files, :ingress_bytes, :total_bytes, :annotations)
               ]
 
               insert_buffer << survey_data

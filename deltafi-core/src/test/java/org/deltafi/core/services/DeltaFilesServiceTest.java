@@ -26,7 +26,6 @@ import org.deltafi.common.content.Segment;
 import org.deltafi.common.test.time.TestClock;
 import org.deltafi.common.test.uuid.TestUUIDGenerator;
 import org.deltafi.common.types.*;
-import org.deltafi.common.uuid.UUIDGenerator;
 import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.collect.ScheduledCollectService;
@@ -35,6 +34,7 @@ import org.deltafi.core.generated.types.RetryResult;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.repo.QueuedAnnotationRepo;
+import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.types.*;
 import org.deltafi.core.util.FlowBuilders;
 import org.deltafi.core.util.Util;
@@ -71,7 +71,7 @@ class DeltaFilesServiceTest {
     private final DeltaFileCacheService deltaFileCacheService;
     private final QueueManagementService queueManagementService;
     private final QueuedAnnotationRepo queuedAnnotationRepo;
-    private final ClickhouseService clickhouseService;
+    private final AnalyticEventService analyticEventService;
 
     private final DeltaFilesService deltaFilesService;
 
@@ -96,13 +96,13 @@ class DeltaFilesServiceTest {
     ArgumentCaptor<QueuedAnnotation> queuedAnnotationCaptor;
 
     DeltaFilesServiceTest(@Mock TransformFlowService transformFlowService,
-            @Mock EgressFlowService egressFlowService, @Mock StateMachine stateMachine,
-            @Mock DeltaFileRepo deltaFileRepo, @Mock ActionEventQueue actionEventQueue,
-            @Mock ContentStorageService contentStorageService, @Mock ResumePolicyService resumePolicyService,
-            @Mock MetricService metricService, @Mock ClickhouseService clickhouseService, @Mock CoreAuditLogger coreAuditLogger,
-            @Mock DeltaFileCacheService deltaFileCacheService, @Mock DataSourceService dataSourceService,
-            @Mock QueueManagementService queueManagementService, @Mock QueuedAnnotationRepo queuedAnnotationRepo,
-            @Mock Environment environment, @Mock ScheduledCollectService scheduledCollectService) {
+                          @Mock EgressFlowService egressFlowService, @Mock StateMachine stateMachine,
+                          @Mock DeltaFileRepo deltaFileRepo, @Mock ActionEventQueue actionEventQueue,
+                          @Mock ContentStorageService contentStorageService, @Mock ResumePolicyService resumePolicyService,
+                          @Mock MetricService metricService, @Mock AnalyticEventService analyticEventService, @Mock CoreAuditLogger coreAuditLogger,
+                          @Mock DeltaFileCacheService deltaFileCacheService, @Mock DataSourceService dataSourceService,
+                          @Mock QueueManagementService queueManagementService, @Mock QueuedAnnotationRepo queuedAnnotationRepo,
+                          @Mock Environment environment, @Mock ScheduledCollectService scheduledCollectService) {
         this.transformFlowService = transformFlowService;
         this.egressFlowService = egressFlowService;
         this.stateMachine = stateMachine;
@@ -114,11 +114,11 @@ class DeltaFilesServiceTest {
         this.queueManagementService = queueManagementService;
         this.queuedAnnotationRepo = queuedAnnotationRepo;
         this.dataSourceService = dataSourceService;
-        this.clickhouseService = clickhouseService;
+        this.analyticEventService = analyticEventService;
 
         deltaFilesService = new DeltaFilesService(testClock, transformFlowService, egressFlowService, mockDeltaFiPropertiesService,
                 stateMachine, deltaFileRepo, actionEventQueue, contentStorageService, resumePolicyService,
-                metricService, clickhouseService, coreAuditLogger, new DidMutexService(), deltaFileCacheService, dataSourceService,
+                metricService, analyticEventService, coreAuditLogger, new DidMutexService(), deltaFileCacheService, dataSourceService,
                 queueManagementService, queuedAnnotationRepo, environment, scheduledCollectService, new TestUUIDGenerator());
     }
 

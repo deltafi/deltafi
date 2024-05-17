@@ -46,6 +46,7 @@ import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.repo.QueuedAnnotationRepo;
 import org.deltafi.core.retry.MongoRetryable;
+import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.types.ResumePolicy;
 import org.deltafi.core.types.*;
 import org.jetbrains.annotations.NotNull;
@@ -110,7 +111,7 @@ public class DeltaFilesService {
     private final ContentStorageService contentStorageService;
     private final ResumePolicyService resumePolicyService;
     private final MetricService metricService;
-    private final ClickhouseService clickhouseService;
+    private final AnalyticEventService analyticEventService;
     private final CoreAuditLogger coreAuditLogger;
     private final DidMutexService didMutexService;
     private final DeltaFileCacheService deltaFileCacheService;
@@ -594,7 +595,12 @@ public class DeltaFilesService {
 
         // If the content was deleted by a delete policy mark as CANCELLED instead of ERROR
         if (deltaFile.getContentDeleted() != null) {
+            final DeltaFileStage startingStage = deltaFile.getStage();
             deltaFile.cancel(OffsetDateTime.now(clock));
+            final DeltaFileStage endingStage = deltaFile.getStage();
+            if (!startingStage.equals(endingStage) && endingStage.equals(DeltaFileStage.CANCELLED)) {
+                analyticEventService.recordCompleted(deltaFile);
+            }
             deltaFileCacheService.save(deltaFile);
         } else {
             processErrorEvent(deltaFile, flow, action, event);
@@ -620,11 +626,11 @@ public class DeltaFilesService {
     }
 
     private void logErrorAnalytics(DeltaFile deltaFile, ActionEvent action) {
-        clickhouseService.insertError(deltaFile, action.getFlowName(), action.getActionName(), action.getError().getCause());
+        analyticEventService.recordError(deltaFile, action.getFlowName(), action.getActionName(), action.getError().getCause());
     }
 
     private void logErrorAnalytics(DeltaFile deltaFile, ActionEvent action, String message) {
-        clickhouseService.insertError(deltaFile, action.getFlowName(), action.getActionName(), message);
+        analyticEventService.recordError(deltaFile, action.getFlowName(), action.getActionName(), message);
     }
 
     private DeltaFile getTerminalDeltaFileOrCache(UUID did) {
@@ -1050,7 +1056,13 @@ public class DeltaFilesService {
                             result.setSuccess(false);
                             result.setError("DeltaFile with did " + did + " is no longer active");
                         } else {
+                            final DeltaFileStage startingStage = deltaFile.getStage();
                             deltaFile.cancel(OffsetDateTime.now(clock));
+                            final DeltaFileStage endingStage = deltaFile.getStage();
+                            if (!startingStage.equals(endingStage) && endingStage.equals(DeltaFileStage.CANCELLED)) {
+                                analyticEventService.recordCompleted(deltaFile);
+                            }
+
                             changedDeltaFiles.add(deltaFile);
                         }
                     } catch (Exception e) {

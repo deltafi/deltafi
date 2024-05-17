@@ -21,6 +21,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.*;
 import org.deltafi.core.collect.*;
+import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.services.pubsub.PublisherService;
 import org.deltafi.core.types.*;
 import org.springframework.stereotype.Service;
@@ -45,6 +46,7 @@ public class StateMachine {
     private final CollectEntryService collectEntryService;
     private final ScheduledCollectService scheduledCollectService;
     private final PublisherService publisherService;
+    private final AnalyticEventService analyticEventService;
 
     /**
      * Advance a set of DeltaFiles to the next step using the state machine. Call if advancing multiple deltaFiles
@@ -69,8 +71,12 @@ public class StateMachine {
                 (input.flow().getState() == DeltaFileFlowState.COMPLETE || input.flow().lastActionType() == ActionType.PUBLISH)) {
             actionInputs.addAll(publishToNewFlows(input, pendingQueued));
         }
+        final DeltaFileStage startingStage = input.deltaFile().getStage();
         input.deltaFile().updateState(OffsetDateTime.now(clock));
-
+        final DeltaFileStage endingStage = input.deltaFile().getStage();
+        if (!startingStage.equals(endingStage) && endingStage.equals(DeltaFileStage.COMPLETE)) {
+            analyticEventService.recordCompleted(input.deltaFile());
+        }
         return actionInputs;
     }
 

@@ -30,12 +30,6 @@ deltafi:
       url: http://127.0.0.1:8080/
   api:
     image: deltafi/deltafi-api:2.0-beta3
-  clickhouse_etl:
-    enabled: false
-    interval: 10          # Period (seconds) between sync jobs
-    lag: 60               # Lag time (seconds) for deltafiles to settle into MongoDB
-    batch: 2000           # Maximum count of deltafiles to transfer at a time
-    delete_ttl: "1 MONTH" # Clickhouse Deltafiles DELETE TTL (i.e. 1 MONTH, 14 DAY, 12 HOUR, etc.)
   ui:
     image: deltafi/deltafi-ui:2.0-beta3
   egress_sink:
