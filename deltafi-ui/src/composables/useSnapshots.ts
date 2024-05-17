@@ -46,22 +46,11 @@ export default function useSystemSnapshots() {
         maxPercent: true
       }
     },
-    flowAssignmentRules: {
-      id: true,
-      name: true,
-      flow: true,
-      priority: true,
-      filenameRegex: true,
-      requiredMetadata: {
-        key: true,
-        value: true
-      }
-    },
     resumePolicies: {
       id: true,
       name: true,
       errorSubstring: true,
-      flow: true,
+      dataSource: true,
       action: true,
       actionType: true,
       maxAttempts: true,
