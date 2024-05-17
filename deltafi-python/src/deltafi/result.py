@@ -159,7 +159,7 @@ class IngressResult(Result):
         self.ingress_result_items = []
         self.execute_immediate = False
         self.status = IngressStatusEnum.HEALTHY
-        self.statusMessage = None
+        self.status_message = None
 
     def add_item(self, ingress_result_item: IngressResultItem):
         self.ingress_result_items.append(ingress_result_item)
@@ -171,7 +171,7 @@ class IngressResult(Result):
             'executeImmediate': self.execute_immediate,
             'ingressItems': [ingress_result_item.response() for ingress_result_item in self.ingress_result_items],
             'status': self.status.value,
-            'statusMessage': self.statusMessage
+            'statusMessage': self.status_message
         }
 
 
