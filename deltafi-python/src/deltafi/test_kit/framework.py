@@ -104,7 +104,12 @@ class InternalContentService:
         return self.loaded_content[seg_id].data
 
     def get_output(self, seg_id: str):
-        return self.outputs[seg_id]
+        if seg_id in self.outputs:
+            return self.outputs[seg_id]
+        elif seg_id in self.loaded_content:
+            return self.loaded_content[seg_id].data
+        else:
+            return None
 
 
 class TestCaseBase(ABC):
