@@ -22,7 +22,6 @@ import org.deltafi.actionkit.action.ingress.IngressResultItem;
 import org.deltafi.actionkit.action.ingress.IngressResultType;
 import org.deltafi.actionkit.action.ingress.TimedIngressAction;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.core.parameters.SmokeTestParameters;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 

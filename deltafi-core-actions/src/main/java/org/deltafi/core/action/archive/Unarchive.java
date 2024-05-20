@@ -56,7 +56,7 @@ public class Unarchive extends TransformAction<UnarchiveParameters> {
     private record DetectedArchiveData(ArchiveType archiveType, ArchiveInputStream<?> archiveInputStream) {}
 
     public Unarchive() {
-        super("Unarchives .ar, .tar, .tar.gz, .tar.xz, .tar.Z, and .zip");
+        super("Unarchives .ar, .tar, .tar.gz, .tar.xz, .tar.Z, or .zip");
     }
 
     @Override

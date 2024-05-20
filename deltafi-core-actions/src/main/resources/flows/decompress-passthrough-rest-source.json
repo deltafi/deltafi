@@ -1,6 +1,0 @@
-{
-  "name": "decompress-passthrough-rest-data-source",
-  "type": "REST_DATA_SOURCE",
-  "description": "Receive files to decompress and publish to passthrough",
-  "topic": "decompress-passthrough"
-}

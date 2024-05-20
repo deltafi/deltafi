@@ -1,6 +1,0 @@
-{
-  "name": "unarchive-and-merge-passthrough-rest-data-source",
-  "type": "REST_DATA_SOURCE",
-  "description": "Receive files to unarchive, merge into a single file, and publish to passthrough",
-  "topic": "unarchive-and-merge-passthrough"
-}

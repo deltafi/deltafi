@@ -27,7 +27,6 @@ import org.deltafi.actionkit.action.egress.EgressResultType;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.common.http.HttpPostException;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.core.parameters.DeltaFiEgressParameters;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 

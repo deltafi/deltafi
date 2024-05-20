@@ -73,10 +73,12 @@ public class SftpIngress extends TimedIngressAction<SftpIngress.Parameters> {
         private String fileRegex;
     }
 
+    private final JSch jSch;
     private final SslProperties sslProperties;
 
-    public SftpIngress(SslProperties sslProperties) {
+    public SftpIngress(JSch jSch, SslProperties sslProperties) {
         super("Poll an SFTP server for files to ingress");
+        this.jSch = jSch;
         this.sslProperties = sslProperties;
     }
 
@@ -84,7 +86,6 @@ public class SftpIngress extends TimedIngressAction<SftpIngress.Parameters> {
     public IngressResultType ingress(@NotNull ActionContext context, @NotNull SftpIngress.Parameters params) {
         IngressResult ingressResult = new IngressResult(context);
 
-        JSch jSch = new JSch();
         try {
             Session session = jSch.getSession(params.getUsername(), params.getHost(), params.getPort());
             session.setConfig("StrictHostKeyChecking", "no");

@@ -1,6 +1,0 @@
-{
-  "name": "unarchive-passthrough-rest-data-source",
-  "type": "REST_DATA_SOURCE",
-  "description": "Receive files to unarchive and publish extracted files to passthrough",
-  "topic": "unarchive-passthrough"
-}

@@ -9,7 +9,7 @@
   ],
   "transformActions": [{
     "name": "Passthrough",
-    "type": "org.deltafi.core.action.Delay",
+    "type": "org.deltafi.core.action.delay.Delay",
     "parameters": {
       "minDelayMS": "${minDelayMS}",
       "maxDelayMS": "${maxDelayMS}"

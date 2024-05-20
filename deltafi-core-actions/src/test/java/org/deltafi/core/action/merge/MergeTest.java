@@ -18,8 +18,8 @@
 package org.deltafi.core.action.merge;
 
 import org.bouncycastle.util.Arrays;
-import org.deltafi.actionkit.action.ResultType;
 import org.deltafi.actionkit.action.transform.TransformInput;
+import org.deltafi.actionkit.action.transform.TransformResultType;
 import org.deltafi.test.asserters.ContentAssert;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
@@ -34,13 +34,13 @@ public class MergeTest {
         Merge merge = new Merge();
         DeltaFiTestRunner runner = DeltaFiTestRunner.setup(merge, "MergeTest");
 
-        ResultType resultType = merge.transform(runner.actionContext(),
+        TransformResultType transformResultType = merge.transform(runner.actionContext(),
                 new MergeParameters("merged", MediaType.TEXT_PLAIN), TransformInput.builder().content(
                         runner.saveContentFromResource("thing1.txt", "thing2.txt")).build());
 
         byte[] expectedOutput = Arrays.concatenate(runner.readResourceAsBytes("thing1.txt"),
                 runner.readResourceAsBytes("thing2.txt"));
-        assertTransformResult(resultType)
+        assertTransformResult(transformResultType)
                 .hasContentMatching(actionContent -> {
                     ContentAssert.assertThat(actionContent)
                             .hasName("merged")

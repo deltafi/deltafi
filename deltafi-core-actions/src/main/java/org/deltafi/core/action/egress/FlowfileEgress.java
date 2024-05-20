@@ -25,7 +25,6 @@ import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.common.http.HttpPostException;
 import org.deltafi.common.nifi.FlowFileInputStream;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.core.parameters.HttpEgressParameters;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
