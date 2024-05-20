@@ -17,12 +17,10 @@
  */
 package org.deltafi.common.types;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.deltafi.common.converters.ObjectJsonConverter;
 
 import java.util.Map;
 
@@ -30,17 +28,9 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Entity
-@Table(name = "action_descriptors")
 public class ActionDescriptor {
-  @Id
-  private String name;
-
-  private String description;
-
-  @Enumerated(EnumType.STRING)
-  private ActionType type;
-
-  @Convert(converter = ObjectJsonConverter.class)
-  private Map<String, Object> schema;
+  protected String name;
+  protected String description;
+  protected ActionType type;
+  protected Map<String, Object> schema;
 }

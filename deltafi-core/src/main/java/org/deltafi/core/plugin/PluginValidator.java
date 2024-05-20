@@ -36,11 +36,14 @@ import java.util.Optional;
 public class PluginValidator {
     private final PluginRepository pluginRepository;
 
+    private final static int MAX_NAME_LEN = 256;
+
     public List<String> validate(Plugin plugin) {
         List<String> validationErrors = new ArrayList<>(validateCoordinates(plugin.getPluginCoordinates()));
         List<Plugin> existingPlugins = pluginRepository.findAll().stream().toList();
         validationErrors.addAll(validateDependencies(plugin.getDependencies(), existingPlugins));
         validationErrors.addAll(validateUniqueActions(plugin, existingPlugins));
+        validationErrors.addAll(validateActionDescriptors(plugin.getActions()));
         return validationErrors;
     }
 
@@ -120,5 +123,14 @@ public class PluginValidator {
         return errors;
     }
 
+    private List<String> validateActionDescriptors(List<ActionDescriptor> actionDescriptors) {
+        if (actionDescriptors == null) {
+            return List.of();
+        }
 
+        return actionDescriptors.stream()
+                .filter(ad -> ad.getName().length() > MAX_NAME_LEN)
+                .map(ad -> String.format("Action name %s exceeds maximum length %d", ad.getName(), MAX_NAME_LEN))
+                .toList();
+    }
 }

@@ -27,9 +27,11 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(MockitoExtension.class)
 class PluginValidatorTest {
@@ -67,11 +69,19 @@ class PluginValidatorTest {
         plugin.setPluginCoordinates(new PluginCoordinates("group", "plugin", "1.0.0"));
         plugin.setDependencies(List.of(new PluginCoordinates("group", "unregistered", "1.0.0"),
                 new PluginCoordinates("group", "plugin-1", "1.0.1")));
+        char[] chars = new char[257];
+        Arrays.fill(chars, 'a'); // Fill the array with 'a' characters
+        String longString = new String(chars);
+        plugin.setActions(List.of(
+                ActionDescriptor.builder().name(longString).build(),
+                ActionDescriptor.builder().name("okayName").build()));
         List<String> dependencyErrors = pluginValidator.validate(plugin);
 
-        assertThat(dependencyErrors).hasSize(2)
-                        .contains("Plugin dependency not registered: group:unregistered:1.0.0.",
-                                "Plugin dependency for group:plugin-1 not satisfied. Required version 1.0.1 but installed version is 1.0.0.");
+        assertEquals(3, dependencyErrors.size());
+        assertEquals("Plugin dependency not registered: group:unregistered:1.0.0.", dependencyErrors.get(0));
+        assertEquals("Plugin dependency for group:plugin-1 not satisfied. Required version 1.0.1 but installed version is 1.0.0.",
+                dependencyErrors.get(1));
+        assertThat(dependencyErrors.get(2)).contains("exceeds maximum length");
     }
 
     @Test

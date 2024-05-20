@@ -34,7 +34,6 @@ import java.net.URISyntaxException;
 
 @Configuration
 @EnableConfigurationProperties({ActionEventQueueProperties.class})
-@EntityScan(basePackages = "org.deltafi.common.types")
 public class DeltaFiConfiguration {
     @Bean
     public ActionEventQueue actionEventQueue(ActionEventQueueProperties actionEventQueueProperties,

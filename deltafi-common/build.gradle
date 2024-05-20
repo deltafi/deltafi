@@ -42,7 +42,6 @@ dependencies {
     api 'org.springframework.boot:spring-boot-starter-logging'
     api 'org.springframework.boot:spring-boot-autoconfigure'
     api 'org.springframework.data:spring-data-mongodb'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     api "org.springframework.retry:spring-retry"
     api 'org.apache.nifi:nifi-flowfile-packager:1.25.0'
     api 'org.apache.httpcomponents.client5:httpclient5:5.3.1'
