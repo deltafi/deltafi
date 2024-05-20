@@ -18,6 +18,7 @@
 package org.deltafi.core.collect;
 
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 public interface CollectEntryRepoCustom {
     void ensureCollectDefinitionIndex();
@@ -29,11 +30,12 @@ public interface CollectEntryRepoCustom {
      * @param collectDate the date to force a collect (set on insert)
      * @param minNum the minimum number of DeltaFiles to collect (set on insert)
      * @param maxNum the maximum number of DeltaFiles to collect (set on insert)
+     * @param flowDepth depth of the flow that caused the DeltaFile to join
      * @return the locked CollectEntry
      * @throws org.springframework.dao.DuplicateKeyException if a locked CollectEntry already exists for the provided id
      */
     CollectEntry upsertAndLock(CollectDefinition collectDefinition, OffsetDateTime collectDate, Integer minNum,
-            Integer maxNum);
+            Integer maxNum, int flowDepth);
 
     /**
      * Lock a single CollectEntry with a collect date less than or equal to the provided collect date.
@@ -48,7 +50,7 @@ public interface CollectEntryRepoCustom {
      *
      * @param id the id of the CollectEntry to unlock.
      */
-    void unlock(String id);
+    void unlock(UUID id);
 
     /**
      * Unlock all CollectEntrys locked before the provided date.

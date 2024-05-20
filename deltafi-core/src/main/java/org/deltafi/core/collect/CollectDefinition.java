@@ -27,7 +27,6 @@ import org.deltafi.common.types.DeltaFileStage;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CollectDefinition {
-    private DeltaFileStage stage;
     private String flow;
     private ActionType actionType;
     private String action;

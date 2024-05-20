@@ -26,7 +26,6 @@ import lombok.Setter;
 import lombok.ToString;
 import org.springframework.data.annotation.Transient;
 
-import java.time.OffsetDateTime;
 import java.util.*;
 
 @Getter
@@ -51,7 +50,7 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
 
     protected CollectConfiguration collect;
 
-    public ActionConfiguration(String name, ActionType actionType, String type) {
+    protected ActionConfiguration(String name, ActionType actionType, String type) {
         super(name);
         this.actionType = actionType;
         this.type = type;
@@ -69,6 +68,23 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
      */
     public ActionInput buildActionInput(DeltaFile deltaFile, DeltaFileFlow flow, Action action, String systemName,
                                         String returnAddress, String memo) {
+        ActionInput actionInput = buildActionInput(deltaFile, flow, List.of(), action, systemName, returnAddress, memo);
+        actionInput.setDeltaFileMessages(List.of(new DeltaFileMessage(flow.getMetadata(), flow.lastContent())));
+        return actionInput;
+    }
+
+    /**
+     * Create the ActionInput that should be sent to an Action
+     * @param flow the flow on which the Action is specified
+     * @param deltaFile DeltaFile that will be acted upon
+     * @param systemName system name to set in context
+     * @param returnAddress the unique address of this core instance
+     * @param action the action
+     * @param memo memo to set in the context
+     * @return ActionInput containing the ActionConfiguration
+     */
+    public ActionInput buildActionInput(DeltaFile deltaFile, DeltaFileFlow flow, List<UUID> collectedDids, Action action, String systemName,
+                                        String returnAddress, String memo) {
         if (Objects.isNull(internalParameters)) {
             // fall back to using parameters if internalParameters do not exist yet
             setInternalParameters(Objects.requireNonNullElse(parameters, Collections.emptyMap()));
@@ -84,54 +100,16 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
                         .actionId(action.getId())
                         .did(deltaFile.getDid())
                         .deltaFileName(deltaFile.getName())
+                        .collectedDids(Objects.requireNonNullElseGet(collectedDids, List::of))
+                        .collect(collect)
                         .systemName(systemName)
                         .memo(memo)
                         .build())
+                .deltaFile(deltaFile)
                 .actionParams(internalParameters)
-                .deltaFileMessages(List.of(new DeltaFileMessage(flow.getMetadata(), flow.lastContent())))
                 .returnAddress(returnAddress)
                 .actionCreated(action.getCreated())
                 .coldQueued(action.getState() == ActionState.COLD_QUEUED)
-                .build();
-    }
-
-    /**
-     * Create the ActionInput that should be sent to an Action with a collect configuration.
-     * @param flow the flow on which the Action is specified
-     * @param aggregate the aggregate DeltaFile
-     * @param collectedDeltaFiles the DeltaFiles that will be acted upon
-     * @param systemName system name to set in context
-     * @param actionCreated action created datetime
-     * @param action the action
-     * @return ActionInput containing the ActionConfiguration
-     */
-    public ActionInput buildCollectingActionInput(DeltaFileFlow flow, DeltaFile aggregate,
-                                                  List<DeltaFile> collectedDeltaFiles, String systemName,
-                                                  OffsetDateTime actionCreated, Action action) {
-        if (Objects.isNull(internalParameters)) {
-            setInternalParameters(Collections.emptyMap());
-        }
-
-        return ActionInput.builder()
-                .queueName(type)
-                .actionContext(ActionContext.builder()
-                        .flowName(flow.getName())
-                        .dataSource(aggregate.getDataSource())
-                        .flowId(flow.getId())
-                        .actionName(action.getName())
-                        .actionId(action.getId())
-                        .did(aggregate.getDid())
-                        .deltaFileName(aggregate.getName())
-                        .systemName(systemName)
-                        .collect(collect)
-                        .collectedDids(collectedDeltaFiles.stream().map(DeltaFile::getDid).toList())
-                        .build())
-                .actionParams(internalParameters)
-                // TODO: Fix collect. how do we know what flow it's collecting on?
-                //.deltaFileMessages(collectedDeltaFiles.stream().map(DeltaFile::forQueue).toList())
-                .actionCreated(actionCreated)
-                // TODO: ?
-                //.coldQueued(false)
                 .build();
     }
 

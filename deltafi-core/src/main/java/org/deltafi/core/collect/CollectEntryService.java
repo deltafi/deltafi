@@ -44,8 +44,8 @@ public class CollectEntryService {
     }
 
     public CollectEntry upsertAndLock(CollectDefinition collectDefinition, OffsetDateTime collectDate, Integer minNum,
-            Integer maxNum, UUID did) {
-        CollectEntry collectEntry = upsertAndLock(collectDefinition, collectDate, minNum, maxNum);
+            Integer maxNum, int flowDepth, UUID did) {
+        CollectEntry collectEntry = upsertAndLock(collectDefinition, collectDate, minNum, maxNum, flowDepth);
         if (collectEntry == null) {
             return null;
         }
@@ -54,12 +54,12 @@ public class CollectEntryService {
     }
 
     private CollectEntry upsertAndLock(CollectDefinition collectDefinition, OffsetDateTime collectDate, Integer minNum,
-            Integer maxNum) {
+            Integer maxNum, int flowDepth) {
         CollectEntry collectEntry = null;
         long endTimeMs = clock.millis() + deltaFiPropertiesService.getDeltaFiProperties().getCollect().getAcquireLockTimeoutMs();
         while ((collectEntry == null) && (clock.millis() < endTimeMs)) {
             try {
-                collectEntry = collectEntryRepo.upsertAndLock(collectDefinition, collectDate, minNum, maxNum);
+                collectEntry = collectEntryRepo.upsertAndLock(collectDefinition, collectDate, minNum, maxNum, flowDepth);
             } catch (DuplicateKeyException e) {
                 // Tried to insert duplicate while other was locked. Sleep and try again.
                 try {
@@ -74,7 +74,7 @@ public class CollectEntryService {
         return collectEntryRepo.lockOneBefore(collectDate);
     }
 
-    public void unlock(String collectEntryId) {
+    public void unlock(UUID collectEntryId) {
         collectEntryRepo.unlock(collectEntryId);
     }
 

@@ -36,6 +36,7 @@ public class CollectEntry {
     private OffsetDateTime collectDate;
     private Integer minNum;
     private Integer maxNum;
+    private int maxFlowDepth;
 
     private int count;
 }

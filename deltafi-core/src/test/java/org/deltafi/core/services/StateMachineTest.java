@@ -113,25 +113,21 @@ class StateMachineTest {
     }
 
     @Test
-    @Disabled("TODO: collect")
     void advancesInTransformationFlowWithCollectingTransformAction() {
         DeltaFile deltaFile = Util.emptyDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW);
 
         DeltaFileFlow deltaFileFlow = deltaFile.getFlows().getFirst();
-
-        TransformFlow transformFlow = new TransformFlow();
-        transformFlow.setName(TRANSFORM_FLOW);
+        deltaFileFlow.setType(FlowType.TRANSFORM);
         TransformActionConfiguration transformAction = new TransformActionConfiguration("CollectingTransformAction",
                 "org.deltafi.action.SomeCollectingTransformAction");
         transformAction.setCollect(new CollectConfiguration(Duration.parse("PT1S"), null, 3, null));
-        transformFlow.getTransformActions().add(transformAction);
-        transformFlow.getFlowStatus().setState(FlowState.RUNNING);
-        Mockito.when(transformFlowService.getRunningFlowByName(TRANSFORM_FLOW)).thenReturn(transformFlow);
+        // add the transform action as the next action config to use in the DeltaFileFlow
+        deltaFileFlow.setActionConfigurations(new ArrayList<>(List.of(transformAction)));
 
         CollectEntry collectEntry = new CollectEntry();
         collectEntry.setCount(2);
         Mockito.when(collectEntryService.upsertAndLock(Mockito.any(), Mockito.any(), Mockito.isNull(), Mockito.eq(3),
-                Mockito.eq(deltaFile.getDid()))).thenReturn(collectEntry);
+                Mockito.eq(0), Mockito.eq(deltaFile.getDid()))).thenReturn(collectEntry);
 
         StateMachineInput stateMachineInput = new StateMachineInput(deltaFile, deltaFileFlow);
         List<ActionInput> actionInvocations = stateMachine.advance(List.of(stateMachineInput));

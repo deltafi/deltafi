@@ -143,7 +143,9 @@ public class StateMachine {
                 lastAction.getName().equals(newAction.getName())) {
             newAction.setAttempt(lastAction.getAttempt() + 1);
         }
-        return List.of(buildActionInput(nextAction, input.deltaFile(), input.flow(), newAction));
+
+        ActionInput actionInput = buildActionInput(nextAction, input.deltaFile(), input.flow(), newAction);
+        return actionInput != null ? List.of(actionInput) : Collections.emptyList();
     }
 
     private List<ActionInput> publishToNewFlows(StateMachineInput input, Map<String, Long> pendingQueued) {
@@ -183,6 +185,16 @@ public class StateMachine {
         String returnAddress = deltaFile.getVersion() > 0 &&
                 deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().isEnabled() ?
                 identityService.getUniqueId() : null;
+
+        if (actionConfiguration.getCollect() != null) {
+            try {
+                return collectActionInput(actionConfiguration, deltaFile, flow, action, systemName, returnAddress);
+            } catch (CollectException collectException) {
+                deltaFile.setStage(DeltaFileStage.ERROR);
+                return null;
+            }
+        }
+
         return actionConfiguration.buildActionInput(deltaFile, flow, action, systemName, returnAddress, null);
     }
 
@@ -192,65 +204,53 @@ public class StateMachine {
         return coldQueued ? ActionState.COLD_QUEUED : ActionState.QUEUED;
     }
 
-    //TODO: put collect stuff back
-/*
-    private Optional<ActionInput> collect(String flow, ActionConfiguration actionConfiguration, DeltaFile deltaFile,
-            ActionState actionState) throws CollectException {
-        String collectGroup = actionConfiguration.getCollect().metadataKey() == null ? "DEFAULT" :
-                deltaFile.getMetadata().getOrDefault(actionConfiguration.getCollect().metadataKey(), "DEFAULT");
-
-        CollectDefinition collectDefinition = new CollectDefinition(deltaFile.getStage(), flow,
-                actionConfiguration.getActionType(), actionConfiguration.getName(), collectGroup);
-
-        CollectEntry collectEntry = collectEntryService.upsertAndLock(collectDefinition,
-                OffsetDateTime.now(clock).plus(actionConfiguration.getCollect().maxAge()),
-                actionConfiguration.getCollect().minNum(), actionConfiguration.getCollect().maxNum(), deltaFile.getDid());
-
-        if (collectEntry == null) {
-            throw new CollectException("Timed out trying to lock collect entry");
+    private ActionInput collectActionInput(ActionConfiguration actionConfiguration, DeltaFile deltaFile,
+                                           DeltaFileFlow currentFlow, Action action, String systemName, String returnAddress) throws CollectException {
+        if (deltaFile.getCollectId() != null) {
+            return actionConfiguration.buildActionInput(deltaFile, currentFlow, deltaFile.getParentDids(), action, systemName, returnAddress, null);
         }
+
+        CollectEntry collectEntry = getCollectEntry(actionConfiguration, currentFlow, deltaFile.getDid());
+        ActionState coldOrWarm = action.getState();
+        action.setState(ActionState.COLLECTING);
+        currentFlow.setCollectId(collectEntry.getId());
 
         if (collectEntry.getCount() < actionConfiguration.getCollect().maxNum()) {
             if (collectEntry.getCount() == 1) { // Only update collect check for new collect entries
                 scheduledCollectService.updateCollectCheck(collectEntry.getCollectDate());
             }
             collectEntryService.unlock(collectEntry.getId());
-            return Optional.empty();
+            return null;
         }
 
-        ActionInput ActionInput = buildCollectingActionInput(collectEntry,
-                collectEntryService.findCollectedDids(collectEntry.getId()), actionConfiguration, actionState);
+        List<UUID> collectedDids = collectEntryService.findCollectedDids(collectEntry.getId());
 
+        ActionInput actionInput = DeltaFileUtil.createAggregateInput(actionConfiguration, currentFlow, collectEntry, collectedDids, coldOrWarm, systemName, returnAddress);
+
+        // TODO - is it safe to do this here before child has been sunk to disk?
         collectEntryService.delete(collectEntry.getId());
         scheduledCollectService.scheduleNextCollectCheck();
 
-        return Optional.of(ActionInput);
+        return actionInput;
     }
 
-    private CollectingActionInput buildCollectingActionInput(CollectEntry collectEntry,
-            List<String> collectedDids, ActionConfiguration actionConfiguration, ActionState actionState) {
-        OffsetDateTime now = OffsetDateTime.now(clock);
+    private CollectEntry getCollectEntry(ActionConfiguration actionConfiguration, DeltaFileFlow currentFlow, UUID parentDid) throws CollectException {
+        String collectGroup = Optional.ofNullable(actionConfiguration.getCollect().metadataKey())
+                .map(metadataKey -> currentFlow.getMetadata().get(metadataKey))
+                .orElse("DEFAULT");
 
-        Action action = Action.builder()
-                .name(collectEntry.getCollectDefinition().getAction())
-                .type(collectEntry.getCollectDefinition().getActionType())
-                .flow(collectEntry.getCollectDefinition().getFlow())
-                .state(actionState)
-                .created(now)
-                .queued(now)
-                .modified(now)
-                .build();
+        CollectDefinition collectDefinition = new CollectDefinition(currentFlow.getName(),
+                actionConfiguration.getActionType(), actionConfiguration.getName(), collectGroup);
 
-        return CollectingActionInput.builder()
-                .actionConfiguration(actionConfiguration)
-                .flow(collectEntry.getCollectDefinition().getFlow())
-                // TODO: figure out what to do with the egress flow list after we have proper egress again
-                //.egressFlow(collectEntry.getCollectDefinition().getStage() == DeltaFileStage.EGRESS ?
-                //        collectEntry.getCollectDefinition().getFlow() : null)
-                .actionCreated(now)
-                .action(action)
-                .collectedDids(collectedDids)
-                .stage(collectEntry.getCollectDefinition().getStage())
-                .build();
-    }*/
+        CollectEntry collectEntry = collectEntryService.upsertAndLock(collectDefinition,
+                OffsetDateTime.now(clock).plus(actionConfiguration.getCollect().maxAge()),
+                actionConfiguration.getCollect().minNum(), actionConfiguration.getCollect().maxNum(), currentFlow.getDepth(), parentDid);
+
+        if (collectEntry == null) {
+            throw new CollectException("Timed out trying to lock collect entry");
+        }
+
+        return collectEntry;
+    }
+
 }

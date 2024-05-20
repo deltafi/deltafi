@@ -37,11 +37,13 @@ public class ActionInput {
     private Map<String, Object> actionParams;
     private String queueName;
     private String returnAddress;
-    private List<String> collectedDids;
 
     @JsonIgnore
     private OffsetDateTime actionCreated;
 
     @JsonIgnore
-    boolean coldQueued;
+    private boolean coldQueued;
+
+    @JsonIgnore
+    private DeltaFile deltaFile;
 }

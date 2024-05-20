@@ -84,6 +84,7 @@ public class DeltaFilesService {
             .registerModule(new JavaTimeModule())
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     private static final String PUBLISH_ACTION_NAME = "Publish";
+    public static final String REPLAY_ACTION_NAME = "Replay";
 
     static {
         SimpleModule simpleModule = new SimpleModule().addSerializer(OffsetDateTime.class, new JsonSerializer<>() {
@@ -768,7 +769,7 @@ public class DeltaFilesService {
                 .modified(now)
                 .actions(inheritedActions)
                 .publishTopics(new ArrayList<>())
-                .depth(0)
+                .depth(fromFlow.getDepth())
                 .flowPlan(fromFlow.getFlowPlan())
                 .testMode(fromFlow.isTestMode())
                 .testModeReason(fromFlow.getTestModeReason())
@@ -880,13 +881,32 @@ public class DeltaFilesService {
                                     .modified(now)
                                     .build();
 
-                            Action startFromAction = findFirstActionUpdateFlow(flow, firstFlow, now);
-                            flow.getActions().add(startFromAction);
+                            List<UUID> parentDids = new ArrayList<>(List.of(deltaFile.getDid()));
+                            Action replayAction;
+                            if (deltaFile.getCollectId() != null) {
+                                setNextActionsInAggregateFlow(flow, firstFlow);
+                                replayAction = flow.addAction(REPLAY_ACTION_NAME, ActionType.TRANSFORM, ActionState.COMPLETE, now);
+                                parentDids.addAll(deltaFile.getParentDids());
+                            } else {
+                                Action startFromAction = findFirstActionUpdateFlow(flow, firstFlow, now);
+                                flow.getActions().add(startFromAction);
+
+                                List<Content> content = startFromAction.getContent();
+                                replayAction = flow.addAction(REPLAY_ACTION_NAME, startFromAction.getType(), ActionState.COMPLETE, now);
+                                replayAction.setContent(content);
+                            }
+
+                            if (!removeSourceMetadata.isEmpty()) {
+                                replayAction.setDeleteMetadataKeys(removeSourceMetadata);
+                            }
+                            if (!replaceSourceMetadata.isEmpty()) {
+                                replayAction.setMetadata(KeyValueConverter.convertKeyValues(replaceSourceMetadata));
+                            }
 
                             DeltaFile child = DeltaFile.builder()
                                     .schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
                                     .did(uuidGenerator.generate())
-                                    .parentDids(List.of(deltaFile.getDid()))
+                                    .parentDids(parentDids)
                                     .childDids(new ArrayList<>())
                                     .requeueCount(0)
                                     .ingressBytes(deltaFile.getIngressBytes())
@@ -902,18 +922,8 @@ public class DeltaFilesService {
                                     .modified(now)
                                     .egressed(false)
                                     .filtered(false)
+                                    .collectId(deltaFile.getCollectId())
                                     .build();
-
-                            List<Content> content = startFromAction.getContent();
-                            Action replayAction = flow.addAction("Replay", startFromAction.getType(), ActionState.COMPLETE, now);
-                            replayAction.setContent(content);
-
-                            if (!removeSourceMetadata.isEmpty()) {
-                                replayAction.setDeleteMetadataKeys(removeSourceMetadata);
-                            }
-                            if (!replaceSourceMetadata.isEmpty()) {
-                                replayAction.setMetadata(KeyValueConverter.convertKeyValues(replaceSourceMetadata));
-                            }
 
                             inputs.add(new StateMachineInput(child, flow));
 
@@ -998,6 +1008,34 @@ public class DeltaFilesService {
                 .metadata(startFromAction.getMetadata())
                 .replayStart(true)
                 .build();
+    }
+
+    private void setNextActionsInAggregateFlow(DeltaFileFlow aggregateFlow, DeltaFileFlow firstFlow) {
+        List<ActionConfiguration> nextActions = new ArrayList<>();
+        if (firstFlow.getType() == FlowType.TRANSFORM) {
+            String collectActionName = firstFlow.getActions().stream()
+                    .filter(action -> !REPLAY_ACTION_NAME.equals(action.getName()))
+                    .findFirst().orElseThrow(() -> new IllegalStateException("Could not find the collect action to replay"))
+                    .getName();
+            TransformFlow flowConfig = transformFlowService.getFlowOrThrow(firstFlow.getName());
+            boolean addConfig = false;
+            for (ActionConfiguration actionConfiguration : flowConfig.getTransformActions()) {
+                if (actionConfiguration.getName().equals(collectActionName) && actionConfiguration.getCollect() != null) {
+                    addConfig = true;
+                }
+                if (addConfig) {
+                    nextActions.add(actionConfiguration);
+                }
+            }
+            if (!addConfig) {
+                throw new IllegalStateException("Flow " + aggregateFlow.getName() + " no longer has a collect action named " + collectActionName);
+            }
+        } else if (firstFlow.getType() == FlowType.EGRESS) {
+            EgressFlow flowConfig = egressFlowService.getFlowOrThrow(firstFlow.getName());
+            nextActions.add(flowConfig.getEgressAction());
+        }
+
+        aggregateFlow.setActionConfigurations(nextActions);
     }
 
     public List<AcknowledgeResult> acknowledge(List<UUID> dids, String reason) {
@@ -1123,8 +1161,8 @@ public class DeltaFilesService {
 
         List<ActionInput> actionInputs = stateMachine.advance(inputs);
         inputs.stream()
-                .filter(input -> input.deltaFile().hasCollectingAction())
-                .forEach(input -> deltaFileCacheService.remove(input.deltaFile().getDid()));
+            .filter(input -> input.deltaFile().hasCollectingAction())
+            .forEach(input -> deltaFileCacheService.remove(input.deltaFile().getDid()));
 
         deltaFileCacheService.saveAll(inputs.stream().map(StateMachineInput::deltaFile).collect(Collectors.toSet()));
         enqueueActions(actionInputs);
@@ -1258,19 +1296,8 @@ public class DeltaFilesService {
             return null;
         }
 
-        if (deltaFile.isAggregate()) {
-            return null;
-            // TODO: turn this into an ActionInput
-            /*return CollectingActionInput.builder()
-                    .actionConfiguration(actionConfiguration)
-                    .flow(flow.getName())
-                    .deltaFile(deltaFile)
-                    .egressFlow(flow.getType() == FlowType.EGRESS ? flow.getName() : null)
-                    .actionCreated(action.getCreated())
-                    .action(action)
-                    .collectedDids(deltaFile.getParentDids())
-                    .stage(deltaFile.getStage())
-                    .build();*/
+        if (deltaFile.getCollectId() != null) {
+            return actionConfiguration.buildActionInput(deltaFile, flow, deltaFile.getParentDids(), action, getProperties().getSystemName(), null, null);
         }
 
         return actionConfiguration.buildActionInput(deltaFile, flow, action, getProperties().getSystemName(), null, null);
@@ -1398,10 +1425,55 @@ public class DeltaFilesService {
         }
 
         try {
+            for (ActionInput actionInput : actionInputs) {
+                populateBatchInput(actionInput);
+            }
             actionEventQueue.putActions(actionInputs, checkUnique);
         } catch (Exception e) {
             log.error("Failed to queue action(s)", e);
             throw new EnqueueActionException("Failed to queue action(s)", e);
+        }
+    }
+
+    private void populateBatchInput(ActionInput actionInput) throws MissingDeltaFilesException {
+        UUID did = actionInput.getActionContext().getDid();
+        List<UUID> collectedDids = actionInput.getActionContext().getCollectedDids();
+        if (!collectedDids.isEmpty() && actionInput.getDeltaFileMessages() == null) {
+            if (!deltaFileRepo.existsById(did)) {
+                deltaFileRepo.save(actionInput.getDeltaFile());
+            }
+
+            DeltaFile deltaFile = actionInput.getDeltaFile();
+            Action action = deltaFile.getFlows().getFirst().getActions().getFirst();
+            List<String> deleteMetadataKeys = new ArrayList<>();
+            Map<String, String> addMetadata = new HashMap<>();
+            boolean isReplay = action.getName().equals(REPLAY_ACTION_NAME);
+            if (isReplay) {
+                deleteMetadataKeys.addAll(action.getDeleteMetadataKeys());
+                addMetadata.putAll(action.getMetadata());
+            }
+
+            List<DeltaFileMessage> deltaFileMessages = new ArrayList<>();
+            List<DeltaFile> parents = findDeltaFiles(collectedDids);
+
+            UUID collectId = actionInput.getDeltaFile().getCollectId();
+            for (DeltaFile parent : parents) {
+                for (DeltaFileFlow deltaFileFlow : parent.getFlows()) {
+                    if (collectId.equals(deltaFileFlow.getCollectId())) {
+                        if (isReplay) {
+                            DeltaFileFlow tmpFlow = new DeltaFileFlow();
+                            tmpFlow.setActions(new ArrayList<>(deltaFileFlow.getActions()));
+                            Action tmpAction = tmpFlow.addAction("tmp", ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(clock));
+                            tmpAction.setDeleteMetadataKeys(deleteMetadataKeys);
+                            tmpAction.setMetadata(addMetadata);
+                            deltaFileMessages.add(new DeltaFileMessage(tmpFlow.getMetadata(), deltaFileFlow.getImmutableContent()));
+                        } else {
+                            deltaFileMessages.add(new DeltaFileMessage(deltaFileFlow.getMetadata(), deltaFileFlow.getImmutableContent()));
+                        }
+                    }
+                }
+            }
+            actionInput.setDeltaFileMessages(deltaFileMessages);
         }
     }
 
@@ -1598,41 +1670,6 @@ public class DeltaFilesService {
                 .build();
     }
 
-    /*private ActionInput buildCollectingActionInput(ActionInput actionInput, String systemName) {
-        try {
-            List<DeltaFile> collectedDeltaFiles = findDeltaFiles(actionInput.getCollectedDids());
-
-            DeltaFile aggregate = actionInput.getDeltaFile();
-
-            if (aggregate == null) {
-                OffsetDateTime now = OffsetDateTime.now(clock);
-
-                aggregate = DeltaFile.builder()
-                        .schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
-                        .did(uuidGenerator.generate())
-                        .parentDids(actionInput.getCollectedDids())
-                        .name(AGGREGATE_SOURCE_FILE_NAME)
-                        .aggregate(true)
-                        .childDids(Collections.emptyList())
-                        .dataSource(collectedDeltaFiles.get(0).getDataSource())
-                        .created(now)
-                        .modified(now)
-                        .egressed(false)
-                        .filtered(false)
-                        .actions(List.of(actionInput.getAction()))
-                        .build();
-
-                deltaFileRepo.save(aggregate);
-            }
-
-            return actionInput.getActionConfiguration().buildCollectingActionInput(actionInput.getFlow(),
-                    aggregate, collectedDeltaFiles, systemName, actionInput.getEgressFlow(),
-                    actionInput.getActionCreated(), actionInput.getAction());
-        } catch (MissingDeltaFilesException e) {
-            throw new EnqueueActionException("Failed to queue collecting action", e);
-        }
-    }*/
-
     private List<DeltaFile> findDeltaFiles(List<UUID> dids) throws MissingDeltaFilesException {
         Map<UUID, DeltaFile> deltaFileMap = deltaFileRepo.findAllById(dids).stream()
                 .collect(Collectors.toMap(DeltaFile::getDid, Function.identity()));
@@ -1647,8 +1684,6 @@ public class DeltaFilesService {
         return dids.stream().map(deltaFileMap::get).toList();
     }
 
-    public static final String AGGREGATE_SOURCE_FILE_NAME = "multiple";
-
     public void queueTimedOutCollect(CollectEntry collectEntry, List<UUID> collectedDids) {
         ActionConfiguration actionConfiguration = actionConfiguration(collectEntry.getCollectDefinition().getFlow(),
                 collectEntry.getCollectDefinition().getAction());
@@ -1659,29 +1694,17 @@ public class DeltaFilesService {
             return;
         }
 
-        OffsetDateTime now = OffsetDateTime.now(clock);
+        DeltaFile parent = getDeltaFile(collectedDids.getLast());
+        DeltaFileFlow deltaFileFlow = parent.getFlows().stream().filter(flow -> collectEntry.getId().equals(flow.getCollectId())).findFirst().orElse(null);
+        if (deltaFileFlow == null) {
+            log.warn("Time-based collect action couldn't run because a flow with a collectId of {} was not found in the parent with a did of {}. Failed executing action {} from flow flow {}",
+                    collectEntry.getId(), parent.getDid(), collectEntry.getCollectDefinition().getAction(), collectEntry.getCollectDefinition().getFlow());
+            return;
+        }
 
-        Action action = Action.builder()
-                .name(collectEntry.getCollectDefinition().getAction())
-                .type(collectEntry.getCollectDefinition().getActionType())
-                .state(ActionState.QUEUED)
-                .created(now)
-                .queued(now)
-                .modified(now)
-                .build();
+        ActionInput input = DeltaFileUtil.createAggregateInput(actionConfiguration, deltaFileFlow, collectEntry, collectedDids, ActionState.QUEUED, getProperties().getSystemName(),  null);
 
-        // TODO: this
-        /*CollectingActionInput collectingActionInput = CollectingActionInput.builder()
-                .actionConfiguration(actionConfiguration)
-                .flow(collectEntry.getCollectDefinition().getFlow())
-                .egressFlow(action.getType() == EGRESS ? action.getFlow() : null)
-                .actionCreated(now)
-                .action(action)
-                .collectedDids(collectedDids)
-                .stage(collectEntry.getCollectDefinition().getStage())
-                .build();
-
-        enqueueActions(List.of(collectingActionInput));*/
+        enqueueActions(List.of(input));
     }
 
     public void failTimedOutCollect(CollectEntry collectEntry, List<UUID> collectedDids, String reason) {
@@ -1696,11 +1719,8 @@ public class DeltaFilesService {
                     missingDids.add(did);
                     continue;
                 }
-                OffsetDateTime now = OffsetDateTime.now(clock);
-                // TODO: this
-                /*deltaFile.errorAction(collectEntry.getCollectDefinition().getFlow(),
-                        collectEntry.getCollectDefinition().getAction(), now, now, "Failed collect", reason);*/
-                deltaFile.setStage(DeltaFileStage.ERROR);
+
+                deltaFile.timeoutCollectAction(collectEntry.getId(), collectEntry.getCollectDefinition().getAction(),  OffsetDateTime.now(clock), reason);
                 deltaFileRepo.save(deltaFile);
             } catch (OptimisticLockingFailureException e) {
                 log.warn("Unable to save DeltaFile with failed collect action", e);
@@ -1717,13 +1737,9 @@ public class DeltaFilesService {
         if ((actionConfiguration != null) && (actionConfiguration.getCollect() != null)) {
             List<ActionInput> actionInputs = new ArrayList<>();
             List<DeltaFile> parentDeltaFiles = deltaFileRepo.findAllById(deltaFile.getParentDids());
-            // TODO: this can have conflicts/collisions if the same flow is running multiple times
-            // we need ids mixed in.  it's going to be messy.
             for (DeltaFile parentDeltaFile : parentDeltaFiles) {
                 parentDeltaFile.getChildDids().add(deltaFile.getDid());
-                parentDeltaFile.collectedAction(flow.getName(), action.getName(), event.getStart(), event.getStop(), now);
-                // TODO: statemachineinput
-                //actionInputs.addAll(advanceOnly(parentDeltaFile));
+                parentDeltaFile.collectedAction(event.getDid(), action.getName(), event.getStart(), event.getStop(), now);
             }
             deltaFileRepo.saveAll(parentDeltaFiles);
             enqueueActions(actionInputs);

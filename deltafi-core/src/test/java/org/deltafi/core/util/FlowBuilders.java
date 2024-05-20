@@ -20,6 +20,7 @@ package org.deltafi.core.util;
 import org.deltafi.common.types.*;
 import org.deltafi.core.datafetchers.FlowPlanDatafetcherTestHelper;
 import org.deltafi.core.generated.types.FlowState;
+import org.deltafi.core.generated.types.FlowStatus;
 import org.deltafi.core.types.*;
 import org.deltafi.core.types.DataSource;
 
@@ -58,6 +59,7 @@ public class FlowBuilders {
         restDataSource.setName("RestDataSource");
         restDataSource.setTopic(topic);
         restDataSource.setSourcePlugin(PLUGIN_COORDINATES);
+        restDataSource.setFlowStatus(FlowStatus.newBuilder().state(FlowState.RUNNING).build());
         return restDataSource;
     }
 

@@ -18,7 +18,7 @@
 package org.deltafi.core.collect;
 
 import lombok.RequiredArgsConstructor;
-import org.bson.types.ObjectId;
+import org.deltafi.common.uuid.UUIDGenerator;
 import org.deltafi.core.repo.IndexUtils;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
@@ -32,6 +32,7 @@ import org.springframework.data.mongodb.core.query.UpdateDefinition;
 
 import java.time.Clock;
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 public class CollectEntryRepoImpl implements CollectEntryRepoCustom {
@@ -43,9 +44,11 @@ public class CollectEntryRepoImpl implements CollectEntryRepoCustom {
     private static final String MIN_NUM_FIELD = "minNum";
     private static final String MAX_NUM_FIELD = "maxNum";
     private static final String COUNT_FIELD = "count";
+    private static final String MAX_FLOW_DEPTH = "maxFlowDepth";
 
     private final MongoTemplate mongoTemplate;
     private final Clock clock;
+    private final UUIDGenerator uuidGenerator;
 
     @Override
     public void ensureCollectDefinitionIndex() {
@@ -57,15 +60,17 @@ public class CollectEntryRepoImpl implements CollectEntryRepoCustom {
 
     @Override
     public CollectEntry upsertAndLock(CollectDefinition collectDefinition, OffsetDateTime collectDate, Integer minNum,
-            Integer maxNum) {
+            Integer maxNum, int maxFlowDepth) {
         Query query = new Query().addCriteria(Criteria.where(COLLECT_DEFINITION_FIELD).is(collectDefinition)
                 .and(LOCKED_FIELD).is(false));
         UpdateDefinition updateDefinition = new Update()
                 .setOnInsert(COLLECT_DATE_FIELD, collectDate)
                 .setOnInsert(MIN_NUM_FIELD, minNum)
                 .setOnInsert(MAX_NUM_FIELD, maxNum)
+                .setOnInsert("_id", uuidGenerator.generate())
                 .set(LOCKED_FIELD, true)
                 .set(LOCKED_TIME_FIELD, OffsetDateTime.now(clock))
+                .max(MAX_FLOW_DEPTH, maxFlowDepth)
                 .inc(COUNT_FIELD, 1);
         FindAndModifyOptions findAndModifyOptions = FindAndModifyOptions.options().upsert(true).returnNew(true);
         return mongoTemplate.findAndModify(query, updateDefinition, findAndModifyOptions, CollectEntry.class);
@@ -82,8 +87,8 @@ public class CollectEntryRepoImpl implements CollectEntryRepoCustom {
     }
 
     @Override
-    public void unlock(String id) {
-        mongoTemplate.updateFirst(new Query().addCriteria(Criteria.where(ID_FIELD).is(new ObjectId(id))),
+    public void unlock(UUID id) {
+        mongoTemplate.updateFirst(new Query().addCriteria(Criteria.where(ID_FIELD).is(id)),
                 new Update().set(LOCKED_FIELD, false).unset(LOCKED_TIME_FIELD), CollectEntry.class);
     }
 

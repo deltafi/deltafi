@@ -38,7 +38,6 @@ import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.types.*;
 import org.deltafi.core.util.FlowBuilders;
 import org.deltafi.core.util.Util;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -612,12 +611,13 @@ class DeltaFilesServiceTest {
     }
 
     @Test
-    @Disabled("TODO: collect")
     void requeuesCollectedAction() {
         DeltaFile aggregate = Util.buildDeltaFile(UUID.randomUUID());
-        aggregate.setAggregate(true);
+        aggregate.setCollectId(aggregate.getDid());
         DeltaFile parent1 = Util.buildDeltaFile(UUID.randomUUID());
+        parent1.getFlows().getFirst().setCollectId(aggregate.getDid());
         DeltaFile parent2 = Util.buildDeltaFile(UUID.randomUUID());
+        parent2.getFlows().getFirst().setCollectId(aggregate.getDid());
         aggregate.setParentDids(List.of(parent1.getDid(), parent2.getDid()));
 
         DeltaFileFlow flow = aggregate.getFlows().getFirst();
@@ -634,7 +634,7 @@ class DeltaFilesServiceTest {
         TransformActionConfiguration transformActionConfiguration =
                 new TransformActionConfiguration("collect-transform", "org.deltafi.SomeCollectingTransformAction");
         transformActionConfiguration.setCollect(new CollectConfiguration(Duration.parse("PT1H"), null, 3, null));
-        when(transformFlowService.findActionConfig(eq("test-ingress"), eq("collect-transform")))
+        when(transformFlowService.findActionConfig(eq("myFlow"), eq("collect-transform")))
                 .thenReturn(transformActionConfiguration);
 
         deltaFilesService.requeue();

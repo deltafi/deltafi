@@ -68,7 +68,6 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -99,6 +98,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -272,8 +272,11 @@ class DeltaFiCoreApplicationTests {
 	@Autowired
 	QueueManagementService queueManagementService;
 
-	@MockBean
-	AnalyticEventService analyticEventService;
+    @Autowired
+    private Clock clock;
+
+    @MockBean
+    AnalyticEventService analyticEventService;
 
 	// mongo eats microseconds, jump through hoops
 	private final OffsetDateTime MONGO_NOW = OffsetDateTime.of(LocalDateTime.ofEpochSecond(OffsetDateTime.now().toInstant().toEpochMilli(), 0, ZoneOffset.UTC), ZoneOffset.UTC);
@@ -3971,23 +3974,24 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	@Disabled("TODO: collect")
 	void queuesCollectingTransformActionOnMaxNum() {
-		TransformFlow transformFlow = collectingTransformFlow(new CollectConfiguration(Duration.parse("PT1H"), null, 2, null));
+		TransformFlow transformFlow = collectingTransformFlow("coll-max-num", new CollectConfiguration(Duration.parse("PT1H"), null, 2, null));
 		RestDataSource restDataSource = buildDataSource(COLLECT_TOPIC);
 		transformFlowRepo.insert(transformFlow);
 		transformFlowService.refreshCache();
+		dataSourceRepo.insert(restDataSource);
+		dataSourceService.refreshCache();
 
-		IngressEventItem ingress1 = new IngressEventItem(UUID.randomUUID(), FILENAME, MULTI_TRANSFORM, null,
+		IngressEventItem ingress1 = new IngressEventItem(UUID.randomUUID(), FILENAME, restDataSource.getName(), null,
 				Collections.emptyList());
 		deltaFilesService.ingress(restDataSource, ingress1, OffsetDateTime.now(), OffsetDateTime.now());
 
-		IngressEventItem ingress2 = new IngressEventItem(UUID.randomUUID(), "file-2", MULTI_TRANSFORM, null,
+		IngressEventItem ingress2 = new IngressEventItem(UUID.randomUUID(), "file-2", restDataSource.getName(), null,
 				Collections.emptyList());
 		deltaFilesService.ingress(restDataSource, ingress2, OffsetDateTime.now(), OffsetDateTime.now());
 
 		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture(), Mockito.anyBoolean());
-		verifyActionInputs(actionInputListCaptor.getValue(), ingress1.getDid(), ingress2.getDid(), MULTI_TRANSFORM,
+		verifyActionInputs(actionInputListCaptor.getValue(), ingress1.getDid(), ingress2.getDid(), transformFlow.getName(),
 				COLLECTING_TRANSFORM_ACTION);
 	}
 
@@ -4006,63 +4010,70 @@ class DeltaFiCoreApplicationTests {
 
 		ActionInput actionInput = actionInputs.getFirst();
 		assertEquals(2, actionInput.getDeltaFileMessages().size());
-		assertEquals(forQueueHelper(parent1, actionInput.getActionContext()), actionInput.getDeltaFileMessages().getFirst());
-		assertEquals(forQueueHelper(parent2, actionInput.getActionContext()), actionInput.getDeltaFileMessages().get(1));
+		assertEquals(forQueueHelper(parent1.getFlows().getLast()), actionInput.getDeltaFileMessages().getFirst());
+		assertEquals(forQueueHelper(parent2.getFlows().getLast()), actionInput.getDeltaFileMessages().get(1));
 	}
 
 	private DeltaFileMessage forQueueHelper(DeltaFile deltaFile, ActionContext actionContext) {
 		DeltaFileFlow deltaFileFlow = deltaFile.getFlow(actionContext.getFlowName(), actionContext.getFlowId());
+		return forQueueHelper(deltaFileFlow);
+	}
+
+	private DeltaFileMessage forQueueHelper(DeltaFileFlow deltaFileFlow) {
 		return new DeltaFileMessage(deltaFileFlow.getMetadata(), deltaFileFlow.lastContent());
 	}
 
 	@Test
-	@Disabled("TODO: collect")
 	void queuesCollectingTransformActionOnTimeout() {
-		TransformFlow transformFlow = collectingTransformFlow(new CollectConfiguration(Duration.parse("PT3S"), null, 5, null));
-		String transformFlowName = transformFlow.getName();
+		TransformFlow transformFlow = collectingTransformFlow("coll-on-timeout", new CollectConfiguration(Duration.parse("PT3S"), null, 5, null));
 		RestDataSource restDataSource = buildDataSource(COLLECT_TOPIC);
 		transformFlowRepo.insert(transformFlow);
 		transformFlowService.refreshCache();
+		dataSourceRepo.insert(restDataSource);
+		dataSourceService.refreshCache();
+		String dataSourceName = restDataSource.getName();
 
-		IngressEventItem ingress1 = new IngressEventItem(UUID.randomUUID(), FILENAME, transformFlowName, null,
+		IngressEventItem ingress1 = new IngressEventItem(UUID.randomUUID(), FILENAME, dataSourceName, null,
 				Collections.emptyList());
 		deltaFilesService.ingress(restDataSource, ingress1, OffsetDateTime.now(), OffsetDateTime.now());
 
-		IngressEventItem ingress2 = new IngressEventItem(UUID.randomUUID(), "file-2", transformFlowName, null,
+		IngressEventItem ingress2 = new IngressEventItem(UUID.randomUUID(), "file-2", dataSourceName, null,
 				Collections.emptyList());
 		deltaFilesService.ingress(restDataSource, ingress2, OffsetDateTime.now(), OffsetDateTime.now());
 
 		Mockito.verify(actionEventQueue, Mockito.timeout(5000))
 				.putActions(actionInputListCaptor.capture(), Mockito.anyBoolean());
-		verifyActionInputs(actionInputListCaptor.getValue(), ingress1.getDid(), ingress2.getDid(), transformFlowName,
+		verifyActionInputs(actionInputListCaptor.getValue(), ingress1.getDid(), ingress2.getDid(), transformFlow.getName(),
 				COLLECTING_TRANSFORM_ACTION);
 	}
 
 	@Test
-	@Disabled("TODO: collect")
 	void queuesCollectingTransformActionOnMaxNumGrouping() {
-		TransformFlow transformFlow = collectingTransformFlow(new CollectConfiguration(Duration.parse("PT1H"), null, 2, "a"));
-		String transformFlowName = transformFlow.getName();
+		TransformFlow transformFlow = collectingTransformFlow("col-max-num-grouping", new CollectConfiguration(Duration.parse("PT1H"), null, 2, "a"));
 		RestDataSource restDataSource = buildDataSource(COLLECT_TOPIC);
 		transformFlow.getFlowStatus().setState(FlowState.RUNNING);
+		String dataSourceName = restDataSource.getName();
+		String transformFlowName = transformFlow.getName();
 
 		transformFlowRepo.insert(transformFlow);
 		transformFlowService.refreshCache();
+		dataSourceRepo.insert(restDataSource);
+		dataSourceService.refreshCache();
 
 		IngressEventItem ingress1 = new IngressEventItem(UUID.randomUUID(),
-				FILENAME, transformFlowName, Map.of("a", "1"), Collections.emptyList());
+				FILENAME, dataSourceName, Map.of("a", "1"), Collections.emptyList());
 		deltaFilesService.ingress(restDataSource, ingress1, OffsetDateTime.now(), OffsetDateTime.now());
 
 		IngressEventItem ingress2 = new IngressEventItem(UUID.randomUUID(),
-				"file-2", transformFlowName, Map.of("a", "2"), Collections.emptyList());
+				"file-2", dataSourceName, Map.of("a", "2"), Collections.emptyList());
 		deltaFilesService.ingress(restDataSource, ingress2, OffsetDateTime.now(), OffsetDateTime.now());
 
 		IngressEventItem ingress3 = new IngressEventItem(UUID.randomUUID(),
-				"file-3", transformFlowName, Map.of("a", "2"), Collections.emptyList());
+				"file-3", dataSourceName, Map.of("a", "2"), Collections.emptyList());
 		deltaFilesService.ingress(restDataSource, ingress3, OffsetDateTime.now(), OffsetDateTime.now());
 
 		IngressEventItem ingress4 = new IngressEventItem(UUID.randomUUID(),
-				"file-4", transformFlowName, Map.of("a", "1"), Collections.emptyList());
+				"file-4", dataSourceName, Map.of("a", "1"), Collections.emptyList());
 		deltaFilesService.ingress(restDataSource, ingress4, OffsetDateTime.now(), OffsetDateTime.now());
 
 		Mockito.verify(actionEventQueue, Mockito.times(2))
@@ -4073,24 +4084,26 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	@Disabled("TODO: collect")
 	void failsCollectingTransformActionOnMinNum() {
-		TransformFlow transformFlow = collectingTransformFlow(new CollectConfiguration(Duration.parse("PT3S"), 3, 5, null));
+		TransformFlow transformFlow = collectingTransformFlow("col-fail-min-num", new CollectConfiguration(Duration.parse("PT3S"), 3, 5, null));
 		String transformFlowName = transformFlow.getName();
 		RestDataSource restDataSource = buildDataSource(COLLECT_TOPIC);
 		transformFlowRepo.insert(transformFlow);
 		transformFlowService.refreshCache();
+		dataSourceRepo.insert(restDataSource);
+		dataSourceService.refreshCache();
+		String dataSourceName = restDataSource.getName();
 
-		IngressEventItem ingress1 = new IngressEventItem(UUID.randomUUID(), FILENAME, transformFlowName, null,
+		IngressEventItem ingress1 = new IngressEventItem(UUID.randomUUID(), FILENAME, dataSourceName, null,
 				Collections.emptyList());
 		deltaFilesService.ingress(restDataSource, ingress1, OffsetDateTime.now(), OffsetDateTime.now());
 
-		IngressEventItem ingress2 = new IngressEventItem(UUID.randomUUID(), "file-2", transformFlowName, null,
+		IngressEventItem ingress2 = new IngressEventItem(UUID.randomUUID(), "file-2", dataSourceName, null,
 				Collections.emptyList());
 		deltaFilesService.ingress(restDataSource, ingress2, OffsetDateTime.now(), OffsetDateTime.now());
 
-		await().atMost(5, TimeUnit.SECONDS).until(() -> hasErroredAction(ingress1.getDid(), transformFlowName, 0, COLLECTING_TRANSFORM_ACTION));
-		await().atMost(5, TimeUnit.SECONDS).until(() -> hasErroredAction(ingress2.getDid(), transformFlowName, 0, COLLECTING_TRANSFORM_ACTION));
+		await().atMost(5, TimeUnit.SECONDS).until(() -> hasErroredAction(ingress1.getDid(), transformFlowName, 1, COLLECTING_TRANSFORM_ACTION));
+		await().atMost(5, TimeUnit.SECONDS).until(() -> hasErroredAction(ingress2.getDid(), transformFlowName, 1, COLLECTING_TRANSFORM_ACTION));
 	}
 
 	private boolean hasErroredAction(UUID did, String actionFlow, int flowId, String actionName) {
@@ -4100,28 +4113,31 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	@Disabled("TODO: collect")
 	void testResumeAggregate() throws IOException {
-		TransformFlow transformFlow = collectingTransformFlow(new CollectConfiguration(Duration.parse("PT1H"), null, 2, null));
-		String transformFlowName = transformFlow.getName();
-
+		TransformFlow transformFlow = collectingTransformFlow("col-resume", new CollectConfiguration(Duration.parse("PT1H"), null, 2, null));
 		transformFlowRepo.insert(transformFlow);
 		transformFlowService.refreshCache();
 
+		UUID did = UUID.randomUUID();
+
 		DeltaFile parent1 = Util.emptyDeltaFile(UUID.randomUUID(), transformFlow.getName());
+		parent1.getFlows().getFirst().setCollectId(did);
 		deltaFileRepo.save(parent1);
 		DeltaFile parent2 = Util.emptyDeltaFile(UUID.randomUUID(), transformFlow.getName());
+		parent2.getFlows().getFirst().setCollectId(did);
 		deltaFileRepo.save(parent2);
 
-		UUID did = UUID.randomUUID();
 		List<UUID> parentDids = List.of(parent1.getDid(), parent2.getDid());
 		DeltaFile aggregate = Util.emptyDeltaFile(did, transformFlow.getName());
-		aggregate.setAggregate(true);
+		aggregate.setCollectId(did);
 		aggregate.setParentDids(parentDids);
 		aggregate.setStage(DeltaFileStage.ERROR);
-//		aggregate.queueNewAction(transformFlowName, COLLECTING_TRANSFORM_ACTION, ActionType.TRANSFORM, false);
-//		aggregate.errorAction(transformFlowName, COLLECTING_TRANSFORM_ACTION, START_TIME, STOP_TIME, "collect action failed", "message");
-		Assertions.fail("add back in");
+
+		DeltaFileFlow aggregateFlow = aggregate.getFlows().getFirst();
+		aggregateFlow.setType(FlowType.TRANSFORM);
+		aggregateFlow.queueNewAction(COLLECTING_TRANSFORM_ACTION, ActionType.TRANSFORM, false, OffsetDateTime.now(clock));
+		aggregateFlow.actionNamed(COLLECTING_TRANSFORM_ACTION).orElseThrow().error(START_TIME, STOP_TIME, OffsetDateTime.now(clock), "collect action failed", "message");
+		aggregateFlow.setActionConfigurations(transformFlow.allActionConfigurations());
 		deltaFileRepo.save(aggregate);
 
 		List<RetryResult> retryResults = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
@@ -4139,13 +4155,13 @@ class DeltaFiCoreApplicationTests {
 
 		ActionInput actionInput = actionInputs.getFirst();
 		assertEquals(parentDids, actionInput.getActionContext().getCollectedDids());
-		assertEquals(forQueueHelper(parent1, actionInput.getActionContext()), actionInput.getDeltaFileMessages().getFirst());
-		assertEquals(forQueueHelper(parent2, actionInput.getActionContext()), actionInput.getDeltaFileMessages().get(1));
+		assertEquals(forQueueHelper(parent1.getFlows().getFirst()), actionInput.getDeltaFileMessages().getFirst());
+		assertEquals(forQueueHelper(parent2.getFlows().getFirst()), actionInput.getDeltaFileMessages().get(1));
 	}
 
-	private TransformFlow collectingTransformFlow(CollectConfiguration configuration) {
+	private TransformFlow collectingTransformFlow(String name, CollectConfiguration configuration) {
 		TransformFlow transformFlow = new TransformFlow();
-		transformFlow.setName(MULTI_TRANSFORM);
+		transformFlow.setName(name);
 		TransformActionConfiguration transformAction = new TransformActionConfiguration(COLLECTING_TRANSFORM_ACTION,
 				"org.deltafi.action.SomeCollectingTransformAction");
 		transformAction.setCollect(configuration);

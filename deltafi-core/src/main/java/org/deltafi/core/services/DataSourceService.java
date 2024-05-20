@@ -53,7 +53,7 @@ public class DataSourceService extends FlowService<DataSourcePlan, DataSource, D
 
     public DataSourceService(DataSourceRepo dataSourceRepo, PluginVariableService pluginVariableService,
                              DataSourceValidator dataSourceValidator, BuildProperties buildProperties, Clock clock) {
-        super("timedDataSource", dataSourceRepo, pluginVariableService, TIMED_DATA_SOURCE_FLOW_PLAN_CONVERTER,
+        super("dataSource", dataSourceRepo, pluginVariableService, TIMED_DATA_SOURCE_FLOW_PLAN_CONVERTER,
                 dataSourceValidator, buildProperties);
 
         this.clock = clock;

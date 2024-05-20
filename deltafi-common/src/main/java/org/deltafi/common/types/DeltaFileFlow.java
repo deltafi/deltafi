@@ -54,6 +54,7 @@ public class DeltaFileFlow {
     private Set<String> pendingAnnotations = new HashSet<>();
     boolean testMode;
     String testModeReason;
+    private UUID collectId;
 
     @JsonIgnore
     @Builder.Default
@@ -74,6 +75,7 @@ public class DeltaFileFlow {
         this.pendingAnnotations = new HashSet<>(other.pendingAnnotations);
         this.testMode = other.testMode;
         this.testModeReason = other.testModeReason;
+        this.collectId = other.collectId;
         this.actionConfigurations = other.actionConfigurations;
     }
 

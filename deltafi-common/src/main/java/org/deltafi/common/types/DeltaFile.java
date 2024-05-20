@@ -32,6 +32,7 @@ import org.springframework.data.mongodb.core.query.Update;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Data
 @AllArgsConstructor
@@ -48,7 +49,7 @@ public class DeltaFile {
   private String dataSource;
   @Builder.Default
   private List<UUID> parentDids = new ArrayList<>();
-  private boolean aggregate;
+  private UUID collectId;
   @Builder.Default
   private List<UUID> childDids = new ArrayList<>();
   @Builder.Default
@@ -102,7 +103,7 @@ public class DeltaFile {
   public DeltaFile(DeltaFile other) {
     this.did = other.did;
     this.parentDids = other.parentDids == null ? null : new ArrayList<>(other.parentDids);
-    this.aggregate = other.aggregate;
+    this.collectId = other.collectId;
     this.childDids = other.childDids == null ? null : new ArrayList<>(other.childDids);
     this.requeueCount = other.requeueCount;
     this.ingressBytes = other.ingressBytes;
@@ -210,12 +211,45 @@ public class DeltaFile {
             .toList();
   }
 
-  public void collectedAction(String flowName, String actionName, OffsetDateTime start, OffsetDateTime stop, OffsetDateTime now) {
-    flows.stream()
-            .filter(f -> f.getName().equals(flowName) && !f.terminal())
-            .flatMap(f -> f.getActions().stream())
-            .filter(a -> a.getName().equals(actionName) && !a.terminal())
+  /**
+   * Find all flows that were collecting on the given CollectId and update the
+   * collecting actions to a state of collected. Update the state of each modified
+   * flow and then update this DeltaFiles state.
+   * @param collectId did of the child DeltaFile that collected the data
+   * @param actionName name of the action to mark as Collected
+   * @param start start time of the action
+   * @param stop stop time of the action
+   * @param now current time
+   */
+  public void collectedAction(UUID collectId, String actionName, OffsetDateTime start, OffsetDateTime stop, OffsetDateTime now) {
+    collectingFlows(collectId).forEach(f -> collectAction(f, actionName, start, stop, now));
+    updateState(now);
+  }
+
+  private void collectAction(DeltaFileFlow deltaFileFlow, String actionName, OffsetDateTime start, OffsetDateTime stop, OffsetDateTime now) {
+    deltaFileFlow.getActions().stream()
+            .filter(a -> a.getName().equals(actionName) && a.getState() == ActionState.COLLECTING)
             .forEach(action -> action.changeState(ActionState.COLLECTED, start, stop, now));
+    deltaFileFlow.updateState(now);
+  }
+
+  public void timeoutCollectAction(UUID collectId, String actionName, OffsetDateTime now, String reason) {
+    collectingFlows(collectId).forEach(f -> timeoutCollectAction(f, actionName, now, reason));
+    updateState(now);
+  }
+
+  private void timeoutCollectAction(DeltaFileFlow deltaFileFlow, String actionName, OffsetDateTime now, String reason) {
+    deltaFileFlow.getActions().stream()
+            .filter(a -> a.getName().equals(actionName) && a.getState() == ActionState.COLLECTING)
+            .forEach(a -> a.error(now, now, now, "Failed collect", reason));
+  }
+
+  private Stream<DeltaFileFlow> collectingFlows(UUID collectId) {
+    return flows.stream().filter(flow -> collectedWithId(flow, collectId));
+  }
+
+  private boolean collectedWithId(DeltaFileFlow flow, UUID collectId) {
+    return collectId.equals(flow.getCollectId()) && !flow.terminal();
   }
 
   public List<DeltaFileFlow> resumeErrors(@NotNull List<ResumeMetadata> resumeMetadata, OffsetDateTime now) {
@@ -424,8 +458,8 @@ public class DeltaFile {
     Update update = new Update();
     boolean updated = false;
     // did, name, normalizedName, dataSource, parentDids, and created do not change
-    if (!Objects.equals(this.aggregate, snapshot.aggregate)) {
-      update.set("aggregate", this.aggregate);
+    if (!Objects.equals(this.collectId, snapshot.collectId)) {
+      update.set("collectId", this.collectId);
       updated = true;
     }
     if (!Objects.equals(this.childDids, snapshot.childDids)) {
