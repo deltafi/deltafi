@@ -91,7 +91,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -118,8 +117,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static org.deltafi.common.constant.DeltaFiConstants.*;
-import static org.deltafi.common.test.TestConstants.MONGODB_CONTAINER;
-import static org.deltafi.common.test.TestConstants.POSTGRESQL_CONTAINER;
 import static org.deltafi.common.types.ActionState.*;
 import static org.deltafi.common.types.DeltaFile.CURRENT_SCHEMA_VERSION;
 import static org.deltafi.core.datafetchers.DeletePolicyDatafetcherTestHelper.*;
@@ -137,21 +134,12 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.never;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@TestPropertySource(properties = {
-		"schedule.actionEvents=false",
-		"schedule.maintenance=false",
-		"schedule.flowSync=false",
-		"schedule.diskSpace=false",
-		"schedule.errorCount=false",
-		"schedule.propertySync=false",
-		"cold.queue.refresh.duration=PT1H"})
 @Testcontainers
 class DeltaFiCoreApplicationTests {
-
 	@Container
-	public static final MongoDBContainer MONGO_DB_CONTAINER = new MongoDBContainer(MONGODB_CONTAINER);
+	public static final MongoDBContainer MONGO_DB_CONTAINER = new MongoDBContainer("mongo:5.0.17");
 	@Container
-	public static final PostgreSQLContainer<?> POSTGRES_CONTAINER = new PostgreSQLContainer<>(POSTGRESQL_CONTAINER);
+	public static final PostgreSQLContainer<?> POSTGRES_CONTAINER = new PostgreSQLContainer<>("postgres:16.2");
 	public static final String SAMPLE_EGRESS_ACTION = "SampleEgressAction";
 	public static final String COLLECTING_TRANSFORM_ACTION = "CollectingTransformAction";
 	public static final String COLLECT_TOPIC = "collect-topic";
@@ -163,6 +151,13 @@ class DeltaFiCoreApplicationTests {
 		registry.add("spring.datasource.username", POSTGRES_CONTAINER::getUsername);
 		registry.add("spring.datasource.password", POSTGRES_CONTAINER::getPassword);
 		registry.add("spring.datasource.driver-class-name", POSTGRES_CONTAINER::getDriverClassName);
+		registry.add("schedule.actionEvents", () -> false);
+		registry.add("schedule.maintenance", () -> false);
+		registry.add("schedule.flowSync", () -> false);
+		registry.add("schedule.diskSpace", () -> false);
+		registry.add("schedule.errorCount", () -> false);
+		registry.add("schedule.propertySync", () -> false);
+		registry.add("cold.queue.refresh.duration", () -> "PT1M");
 	}
 
 	@Autowired
