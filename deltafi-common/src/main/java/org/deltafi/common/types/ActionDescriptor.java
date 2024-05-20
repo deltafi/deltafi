@@ -29,8 +29,8 @@ import java.util.Map;
 @AllArgsConstructor
 @Builder
 public class ActionDescriptor {
-  protected String name;
-  protected String description;
-  protected ActionType type;
-  protected Map<String, Object> schema;
+  private String name;
+  private String description;
+  private ActionType type;
+  private Map<String, Object> schema;
 }
