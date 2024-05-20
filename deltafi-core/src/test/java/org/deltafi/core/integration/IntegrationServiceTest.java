@@ -22,16 +22,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.SneakyThrows;
-import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.types.TestResult;
 import org.deltafi.core.integration.config.Configuration;
-import org.deltafi.core.services.DeltaFilesService;
-import org.deltafi.core.services.IngressService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.io.ClassPathResource;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -47,32 +46,11 @@ class IntegrationServiceTest {
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
             .registerModule(new JavaTimeModule());
 
-    private final IngressService ingressService;
-    private final ConfigurationValidator configurationValidator;
-    private final DeltaFilesService deltaFilesService;
-    private final ContentStorageService contentStorageService;
-    private final TestResultRepo testResultRepo;
+    @Mock
+    private ConfigurationValidator configurationValidator;
 
-    private final IntegrationService integrationService;
-
-    IntegrationServiceTest(@Mock IngressService ingressService,
-                           @Mock ConfigurationValidator configurationValidator,
-                           @Mock DeltaFilesService deltaFilesService,
-                           @Mock ContentStorageService contentStorageService,
-                           @Mock TestResultRepo testResultRepo) {
-        this.ingressService = ingressService;
-        this.configurationValidator = configurationValidator;
-        this.deltaFilesService = deltaFilesService;
-        this.contentStorageService = contentStorageService;
-        this.testResultRepo = testResultRepo;
-
-        this.integrationService = new IntegrationService(
-                this.ingressService,
-                this.configurationValidator,
-                this.deltaFilesService,
-                this.contentStorageService,
-                this.testResultRepo);
-    }
+    @InjectMocks
+    private IntegrationService integrationService;
 
     @Test
     @SneakyThrows
@@ -117,9 +95,7 @@ class IntegrationServiceTest {
     }
 
     Configuration readConfig(String path) throws IOException {
-        byte[] theBytes = IntegrationServiceTest.class.getResourceAsStream(path).readAllBytes();
-        String configYaml = new String(theBytes);
-        Configuration config = YAML_MAPPER.readValue(configYaml, Configuration.class);
-        return config;
+        byte[] bytes = new ClassPathResource(path).getInputStream().readAllBytes();
+        return YAML_MAPPER.readValue(bytes, Configuration.class);
     }
 }

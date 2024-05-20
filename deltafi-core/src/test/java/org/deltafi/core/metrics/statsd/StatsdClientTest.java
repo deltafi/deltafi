@@ -52,13 +52,13 @@ class StatsdClientTest {
     }
 
     @Test @SneakyThrows
-    public void connect() {
+    void connect() {
         statsdClient.connect();
         verify(socketFactory).create(HOSTNAME, PORT);
     }
 
     @Test @SneakyThrows
-    public void close() {
+    void close() {
         try (StatsdClient client = statsdClient) {
             client.connect();
         }
@@ -67,7 +67,7 @@ class StatsdClientTest {
     }
 
     @Test @SneakyThrows
-    public void sendCounter() {
+    void sendCounter() {
         statsdClient.connect();
         statsdClient.sendCounter("foo", "42");
         assertThat(capturedString.getValue(), equalTo("foo:42|c"));
@@ -78,7 +78,7 @@ class StatsdClientTest {
     }
 
     @Test @SneakyThrows
-    public void sendGauge() {
+    void sendGauge() {
         statsdClient.connect();
         statsdClient.sendGauge("foo", "42");
         assertThat(capturedString.getValue(), equalTo("foo:42|g"));
@@ -89,7 +89,7 @@ class StatsdClientTest {
     }
 
     @Test @SneakyThrows
-    public void connectFailure() {
+    void connectFailure() {
         statsdClient.connect();
         assertThat(statsdClient.success(), is(true));
         statsdClient.sendGauge("foo", "42");
@@ -103,7 +103,7 @@ class StatsdClientTest {
     }
 
     @Test @SneakyThrows
-    public void closeFailure() {
+    void closeFailure() {
         doThrow(new IOException("Boom")).when(socket).close();
         statsdClient.connect();
         assertThat(statsdClient.success(), is(true));
@@ -114,7 +114,7 @@ class StatsdClientTest {
     }
 
     @Test @SneakyThrows
-    public void sendFailure() {
+    void sendFailure() {
         doThrow(new MissingResourceException("Boom", "Boom", "Boom")).when(stream).println(anyString());
         statsdClient.connect();
         assertThat(statsdClient.success(), is(true));
@@ -125,7 +125,7 @@ class StatsdClientTest {
     }
 
     @Test @SneakyThrows
-    public void sanitize() {
+    void sanitize() {
         statsdClient.connect();
         statsdClient.sendGauge("foo |bar : baz", "42");
         assertThat(capturedString.getValue(), equalTo("foo-bar-baz:42|g"));
@@ -133,7 +133,7 @@ class StatsdClientTest {
     }
 
     @Test @SneakyThrows
-    public void doubleConnect() {
+    void doubleConnect() {
         statsdClient.connect();
         assertThrows( IllegalStateException.class, statsdClient::connect);
     }

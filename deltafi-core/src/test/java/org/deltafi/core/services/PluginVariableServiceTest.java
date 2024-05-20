@@ -63,7 +63,7 @@ class PluginVariableServiceTest {
         pluginVariableService.updateSnapshot(systemSnapshot);
 
         assertThat(systemSnapshot.getPluginVariables()).hasSize(1);
-        PluginVariables fromSnapshot = systemSnapshot.getPluginVariables().get(0);
+        PluginVariables fromSnapshot = systemSnapshot.getPluginVariables().getFirst();
         assertThat(fromSnapshot.getSourcePlugin()).isEqualTo(pluginVariablesToKeep.getSourcePlugin());
         assertThat(fromSnapshot.getVariables()).hasSize(1).contains(KEEP_VARIABLE);
     }

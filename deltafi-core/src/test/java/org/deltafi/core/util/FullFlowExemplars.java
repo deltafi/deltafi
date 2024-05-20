@@ -281,7 +281,7 @@ public class FullFlowExemplars {
         egressFlow.getInput().setTopics(Set.of(EGRESS_TOPIC));
         Action action = egressFlow.addAction(SYNTHETIC_EGRESS_ACTION_FOR_TEST, ActionType.EGRESS, ActionState.FILTERED, now);
         action.setFilteredCause("Filtered by test mode");
-        action.setFilteredCause("Filtered by test mode with a reason of - " + TRANSFORM_FLOW_NAME);
+        action.setFilteredContext("Filtered by test mode with a reason of - " + TRANSFORM_FLOW_NAME);
         egressFlow.setState(DeltaFileFlowState.COMPLETE);
         egressFlow.setTestMode(true);
         egressFlow.setTestModeReason(TRANSFORM_FLOW_NAME);

@@ -57,12 +57,12 @@ class ResumePolicyTest {
         ResumePolicy randomIsNull = getValid();
         randomIsNull.getBackOff().setRandom(null);
         randomIsNull.getBackOff().setMaxDelay(9999);
-        assertEquals(randomIsNull.validate(), Collections.emptyList());
+        assertEquals(Collections.emptyList(), randomIsNull.validate());
 
         ResumePolicy validRandom = getValid();
         validRandom.getBackOff().setRandom(true);
         validRandom.getBackOff().setMaxDelay(9999);
-        assertEquals(validRandom.validate(), Collections.emptyList());
+        assertEquals(Collections.emptyList(), validRandom.validate());
 
         ResumePolicy invalidMaxDelay = getValid();
         invalidMaxDelay.getBackOff().setRandom(true);
@@ -71,7 +71,7 @@ class ResumePolicyTest {
 
         ResumePolicy notRandom = getValid();
         notRandom.getBackOff().setRandom(false);
-        assertEquals(notRandom.validate(), Collections.emptyList());
+        assertEquals(Collections.emptyList(), notRandom.validate());
 
         ResumePolicy badMultiplier = getValid();
         badMultiplier.getBackOff().setMultiplier(0);
@@ -79,7 +79,7 @@ class ResumePolicyTest {
 
         ResumePolicy goodMultiplier = getValid();
         goodMultiplier.getBackOff().setMultiplier(1);
-        assertEquals(goodMultiplier.validate(), Collections.emptyList());
+        assertEquals(Collections.emptyList(), goodMultiplier.validate());
     }
 
     @Test

@@ -18,14 +18,12 @@
 package org.deltafi.core.util;
 
 import org.deltafi.common.types.*;
-import org.deltafi.core.datafetchers.FlowPlanDatafetcherTestHelper;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
 import org.deltafi.core.types.*;
 import org.deltafi.core.types.DataSource;
 
 import java.util.List;
-import java.util.Set;
 
 import static org.deltafi.core.datafetchers.FlowPlanDatafetcherTestHelper.PLUGIN_COORDINATES;
 import static org.deltafi.core.util.Constants.*;

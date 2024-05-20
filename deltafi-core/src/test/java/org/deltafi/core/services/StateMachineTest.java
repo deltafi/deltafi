@@ -23,7 +23,6 @@ import org.deltafi.common.types.*;
 import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.deltafi.core.collect.CollectEntry;
 import org.deltafi.core.collect.CollectEntryService;
-import org.deltafi.core.collect.ScheduledCollectService;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
 import org.deltafi.core.services.analytics.AnalyticEventService;
@@ -33,13 +32,15 @@ import org.deltafi.core.types.StateMachineInput;
 import org.deltafi.core.types.TransformFlow;
 import org.deltafi.core.util.Util;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.util.*;
 
@@ -57,24 +58,25 @@ class StateMachineTest {
     private static final String TRANSFORM_FLOW = "TheTransformFlow";
     private static final String EGRESS_FLOW = "TheEgressFlow";
 
-    private final TransformFlowService transformFlowService;
-    private final QueueManagementService queueManagementService;
-    private final CollectEntryService collectEntryService;
+    @Mock
+    private TransformFlowService transformFlowService;
+    @Mock
+    private EgressFlowService egressFlowService;
+    @Mock
+    private QueueManagementService queueManagementService;
+    @Mock
+    private CollectEntryService collectEntryService;
+    @Mock
+    private PublisherService publisherService;
+    @Mock
+    private AnalyticEventService analyticEventService;
+    @Spy
+    private Clock clock = new TestClock();
+    @Spy
+    private DeltaFiPropertiesService deltaFiPropertiesService = new MockDeltaFiPropertiesService();
 
-    private final StateMachine stateMachine;
-
-    StateMachineTest(@Mock DataSourceService dataSourceService, @Mock TransformFlowService transformFlowService,
-                     @Mock EgressFlowService egressFlowService, @Mock IdentityService identityService,
-                     @Mock QueueManagementService queueManagementService, @Mock CollectEntryService collectEntryService,
-                     @Mock ScheduledCollectService scheduledCollectService, @Mock PublisherService publisherService, @Mock AnalyticEventService analyticEventService) {
-        this.transformFlowService = transformFlowService;
-        this.queueManagementService = queueManagementService;
-        this.collectEntryService = collectEntryService;
-
-        this.stateMachine = new StateMachine(new TestClock(), dataSourceService, transformFlowService, egressFlowService,
-                new MockDeltaFiPropertiesService(), identityService, queueManagementService, collectEntryService,
-                scheduledCollectService, publisherService, analyticEventService);
-    }
+    @InjectMocks
+    private StateMachine stateMachine;
 
     @BeforeEach
     void setup() {
@@ -82,15 +84,12 @@ class StateMachineTest {
     }
 
     @Test
-    @Disabled("TODO: this is completely busted, needs publish rules set so the next flow gets added")
     void testAdvanceToEgressActionWhenInTransformTestMode() {
-        // there should be two tests -- one that shows that test mode gets set, and one that acts on it creating synthetic egress
         DeltaFile deltaFile = Util.emptyDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW);
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
 
         DeltaFileFlow deltaFileFlow = deltaFile.getFlows().getFirst();
-        deltaFileFlow.setTestMode(true);
-        deltaFileFlow.setTestModeReason("Transform flow 'TheTransformFlow' in test mode");
+        deltaFileFlow.setType(FlowType.TRANSFORM);
 
         TransformFlow transformFlow = TransformFlowMaker.builder()
                 .name(TRANSFORM_FLOW)
@@ -98,18 +97,31 @@ class StateMachineTest {
                 .flowState(FlowState.RUNNING).build().makeTransformFlow();
         Mockito.when(transformFlowService.getRunningFlowByName(TRANSFORM_FLOW)).thenReturn(transformFlow);
 
+        EgressFlow egressFlowConfig = EgressFlowMaker.builder().build().makeEgressFlow();
+        Mockito.when(egressFlowService.getRunningFlowByName("egressFlow"))
+                .thenReturn(egressFlowConfig);
+
+        DeltaFileFlow egressFlow = new DeltaFileFlow();
+        egressFlow.setName("egressFlow");
+        egressFlow.setType(FlowType.EGRESS);
+        egressFlow.setTestMode(true);
+        egressFlow.setTestModeReason("test mode reason");
+        egressFlow.setActionConfigurations(new ArrayList<>(egressFlowConfig.allActionConfigurations()));
+        Mockito.when(publisherService.subscribers(transformFlow, deltaFile, deltaFileFlow))
+                .thenReturn(Set.of(egressFlow));
+
         StateMachineInput stateMachineInput = new StateMachineInput(deltaFile, deltaFileFlow);
         List<ActionInput> actionInputs = stateMachine.advance(List.of(stateMachineInput));
         assertThat(actionInputs).isEmpty();
 
         assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.COMPLETE);
-        assertThat(deltaFileFlow.actionNamed(SYNTHETIC_EGRESS_ACTION_FOR_TEST)).isPresent().get().matches(action -> ActionState.COMPLETE.equals(action.getState()));
-
-        //  TODO what is the equivalent?
-//        assertThat(deltaFile.getEgress().stream().map(Egress::getFlow).toList()).containsExactlyInAnyOrder(TRANFORM_FLOW);
-
-        assertTrue(deltaFileFlow.isTestMode());
-        assertThat(deltaFileFlow.getTestModeReason()).isEqualTo("Transform flow 'TheTransformFlow' in test mode");
+        assertThat(deltaFile.getFiltered()).isTrue();
+        assertThat(egressFlow.getActions()).hasSize(1);
+        Action egressAction = egressFlow.getActions().getFirst();
+        assertThat(egressAction.getName()).isEqualTo(SYNTHETIC_EGRESS_ACTION_FOR_TEST);
+        assertThat(egressAction.getState()).isEqualTo(ActionState.FILTERED);
+        assertThat(egressAction.getFilteredCause()).isEqualTo("Filtered by test mode");
+        assertThat(egressAction.getFilteredContext()).isEqualTo("Filtered by test mode with a reason of - test mode reason");
     }
 
     @Test

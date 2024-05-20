@@ -20,6 +20,7 @@ package org.deltafi.core.datafetchers;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import org.deltafi.common.types.PropertySet;
 import org.deltafi.core.configuration.DeltaFiProperties;
+import org.intellij.lang.annotations.Language;
 
 import java.util.List;
 import java.util.Map;
@@ -27,14 +28,19 @@ import java.util.Map;
 
 public class PropertiesDatafetcherTestHelper {
 
+    @Language("GraphQL")
     private static final String UPDATE_PROPERTIES = "mutation($updates: [PropertyUpdate]!) {updateProperties(updates: $updates)}";
+    @Language("GraphQL")
     private static final String GET_PROPERTIES = "query { getDeltaFiProperties { systemName requeueDuration coreServiceThreads scheduledServiceThreads checks {actionQueueSizeThreshold contentStoragePercentThreshold} delete {frequency ageOffDays policyBatchSize} ingress {enabled diskSpaceRequirementInMb} plugins {imageRepositoryBase imagePullSecret} metrics {enabled} setProperties }}";
+    @Language("GraphQL")
     private static final String UNSET_PROPERTY = "mutation($ids: [PropertyId]!) { removePropertyOverrides(propertyIds: $ids)}";
+    @Language("GraphQL")
     private static final String ADD_EXTERNAL_LINK = "mutation($link: LinkInput!) {saveExternalLink(link: $link)}";
+    @Language("GraphQL")
     private static final String ADD_DELTA_FILE_LINK = "mutation($link: LinkInput!) {saveDeltaFileLink(link: $link)}";
 
     public static List<PropertySet> getPropertySets(DgsQueryExecutor dgsQueryExecutor) {
-        String query = "query {getPropertySets {id displayName description properties {key value refreshable}}}";
+        @Language("GraphQL") String query = "query {getPropertySets {id displayName description properties {key value refreshable}}}";
         return dgsQueryExecutor.executeAndExtractJsonPath(query, "data.getPropertySets");
     }
 

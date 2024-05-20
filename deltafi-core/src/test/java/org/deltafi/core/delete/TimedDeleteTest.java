@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-public class TimedDeleteTest {
+class TimedDeleteTest {
 
     static final UUID ID = UUID.randomUUID();
     static final String POLICY_NAME = "policyName";

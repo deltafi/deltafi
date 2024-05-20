@@ -64,7 +64,7 @@ class SchemaComplianceValidatorTest {
         List<FlowConfigError> errors = schemaComplianceValidator.validate(config);
 
         assertThat(errors).hasSize(1);
-        FlowConfigError error = errors.get(0);
+        FlowConfigError error = errors.getFirst();
         assertThat(error.getConfigName()).isEqualTo("egressName");
         assertThat(error.getErrorType()).isEqualTo(FlowErrorType.INVALID_ACTION_PARAMETERS);
         assertThat(error.getMessage()).isEqualTo("$.url: is missing but it is required; $.url2: is not defined in the schema and the schema does not allow additional properties");
@@ -76,7 +76,7 @@ class SchemaComplianceValidatorTest {
 
         List<FlowConfigError> errors = schemaComplianceValidator.validate(config);
         Mockito.verifyNoInteractions(actionDescriptorService);
-        FlowConfigError error = errors.get(0);
+        FlowConfigError error = errors.getFirst();
         assertThat(error.getConfigName()).isEqualTo("egressName");
         assertThat(error.getErrorType()).isEqualTo(FlowErrorType.INVALID_CONFIG);
         assertThat(error.getMessage()).isEqualTo("The action configuration type cannot be null or empty");
@@ -89,7 +89,7 @@ class SchemaComplianceValidatorTest {
         List<FlowConfigError> errors = schemaComplianceValidator.validateAgainstSchema(
                 ActionDescriptor.builder().type(ActionType.INGRESS).build(), config);
 
-        FlowConfigError error = errors.get(0);
+        FlowConfigError error = errors.getFirst();
         assertThat(error.getConfigName()).isEqualTo("egressAction");
         assertThat(error.getErrorType()).isEqualTo(FlowErrorType.INVALID_CONFIG);
         assertThat(error.getMessage()).isEqualTo("Action: org.deltafi.core.action.RestPostEgressAction is not registered as an action of type EGRESS");
@@ -100,7 +100,7 @@ class SchemaComplianceValidatorTest {
         Mockito.when(actionDescriptorService.getByActionClass(EGRESS_ACTION)).thenReturn(Optional.empty());
 
         List<FlowConfigError> errors = schemaComplianceValidator.validate(egressConfig(null));
-        FlowConfigError error = errors.get(0);
+        FlowConfigError error = errors.getFirst();
         assertThat(error.getConfigName()).isEqualTo("RestEgress");
         assertThat(error.getErrorType()).isEqualTo(FlowErrorType.UNREGISTERED_ACTION);
         assertThat(error.getMessage()).isEqualTo("Action: org.deltafi.core.action.RestPostEgressAction has not been registered with the system");

@@ -70,7 +70,7 @@ public class DeletePolicyDatafetcherTestHelper {
             .minBytes()
             .parent();
 
-    static public List<DeletePolicy> getDeletePolicies(DgsQueryExecutor dgsQueryExecutor) {
+    public static List<DeletePolicy> getDeletePolicies(DgsQueryExecutor dgsQueryExecutor) {
 
         GetDeletePoliciesGraphQLQuery query =
                 GetDeletePoliciesGraphQLQuery.newRequest().build();
@@ -86,25 +86,24 @@ public class DeletePolicyDatafetcherTestHelper {
                 policiesListType);
     }
 
-    static public Result loadOneDeletePolicy(DgsQueryExecutor dgsQueryExecutor) {
-        return executeLoad(dgsQueryExecutor, true, DISK_POLICY_LIST, Collections.emptyList());
+    public static void loadOneDeletePolicy(DgsQueryExecutor dgsQueryExecutor) {
+        executeLoad(dgsQueryExecutor, true, Collections.emptyList());
     }
 
-    static public Result addOnePolicy(DgsQueryExecutor dgsQueryExecutor) {
-        return executeLoad(dgsQueryExecutor, false, DISK_POLICY_LIST, Collections.emptyList());
+    public static Result addOnePolicy(DgsQueryExecutor dgsQueryExecutor) {
+        return executeLoad(dgsQueryExecutor, false, Collections.emptyList());
     }
 
-    static public Result replaceAllDeletePolicies(DgsQueryExecutor dgsQueryExecutor) {
-        return executeLoad(dgsQueryExecutor, true, DISK_POLICY_LIST, TIMED_POLICY_LIST);
+    public static Result replaceAllDeletePolicies(DgsQueryExecutor dgsQueryExecutor) {
+        return executeLoad(dgsQueryExecutor, true, TIMED_POLICY_LIST);
     }
 
-    static private Result executeLoad(DgsQueryExecutor dgsQueryExecutor,
+    private static Result executeLoad(DgsQueryExecutor dgsQueryExecutor,
                                       boolean replace,
-                                      List<DiskSpaceDeletePolicy> diskPolicies,
                                       List<TimedDeletePolicy> timedPolicies) {
 
         DeletePolicies input = DeletePolicies.builder()
-                .diskSpacePolicies(diskPolicies)
+                .diskSpacePolicies(DISK_POLICY_LIST)
                 .timedPolicies(timedPolicies)
                 .build();
 
@@ -126,7 +125,7 @@ public class DeletePolicyDatafetcherTestHelper {
                 Result.class);
     }
 
-    static public boolean enablePolicy(DgsQueryExecutor dgsQueryExecutor,
+    public static boolean enablePolicy(DgsQueryExecutor dgsQueryExecutor,
                                        UUID id,
                                        boolean enabled) {
         EnablePolicyGraphQLQuery query = EnablePolicyGraphQLQuery.newRequest()
@@ -139,7 +138,7 @@ public class DeletePolicyDatafetcherTestHelper {
                 "data." + query.getOperationName(), Boolean.class);
     }
 
-    static public boolean removeDeletePolicy(DgsQueryExecutor dgsQueryExecutor, UUID id) {
+    public static boolean removeDeletePolicy(DgsQueryExecutor dgsQueryExecutor, UUID id) {
         RemoveDeletePolicyGraphQLQuery query = RemoveDeletePolicyGraphQLQuery.newRequest().id(id).build();
 
         GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, new UpdateResumePolicyProjectionRoot(), SCALARS);
@@ -149,7 +148,7 @@ public class DeletePolicyDatafetcherTestHelper {
                 "data." + query.getOperationName(), Boolean.class);
     }
 
-    static public Result updateDiskSpaceDeletePolicy(DgsQueryExecutor dgsQueryExecutor,
+    public static Result updateDiskSpaceDeletePolicy(DgsQueryExecutor dgsQueryExecutor,
                                                      DiskSpaceDeletePolicy input) {
         UpdateDiskSpaceDeletePolicyGraphQLQuery query = UpdateDiskSpaceDeletePolicyGraphQLQuery.newRequest()
                 .policyUpdate(input)
@@ -167,7 +166,7 @@ public class DeletePolicyDatafetcherTestHelper {
                 Result.class);
     }
 
-    static public Result updateTimedDeletePolicy(DgsQueryExecutor dgsQueryExecutor,
+    public static Result updateTimedDeletePolicy(DgsQueryExecutor dgsQueryExecutor,
                                                  TimedDeletePolicy input) {
         UpdateTimedDeletePolicyGraphQLQuery query = UpdateTimedDeletePolicyGraphQLQuery.newRequest()
                 .policyUpdate(input)

@@ -61,12 +61,12 @@ class K8sDeployerServiceTest {
 
         Deployment deployment = k8sDeployerService.buildDeployment(PLUGIN_COORDINATES, pluginImageRepository, pluginCustomization, List.of());
 
-        Assertions.assertThat(deployment).isEqualTo(expectedDeployment("plugins/deployer/expected-deployment.yaml"));
+        Assertions.assertThat(deployment).isEqualTo(expectedDeployment());
     }
 
     @Test
     void testPreserveValuesIfUpgrade() throws IOException {
-        Deployment withReplicas = expectedDeployment("plugins/deployer/expected-deployment.yaml");
+        Deployment withReplicas = expectedDeployment();
         withReplicas.getSpec().setReplicas(2);
 
         Deployment deployment = k8sDeployerService.buildDeployment(PLUGIN_COORDINATES, getPluginImageRepository(), new PluginCustomization(), List.of());
@@ -76,9 +76,9 @@ class K8sDeployerServiceTest {
         Assertions.assertThat(deployment.getSpec().getReplicas()).isEqualTo(2);
     }
 
-    Deployment expectedDeployment(String path) {
+    Deployment expectedDeployment() {
         try {
-            return Serialization.unmarshal(new ClassPathResource(path).getInputStream(), Deployment.class);
+            return Serialization.unmarshal(new ClassPathResource("plugins/deployer/expected-deployment.yaml").getInputStream(), Deployment.class);
         } catch (IOException exception) {
             Assertions.fail("Could not read the file", exception);
             return null;

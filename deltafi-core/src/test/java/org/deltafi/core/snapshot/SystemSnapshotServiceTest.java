@@ -67,10 +67,10 @@ class SystemSnapshotServiceTest {
         SystemSnapshot systemSnapshot = systemSnapshotService.getWithMaskedVariables("abc");
 
         assertThat(systemSnapshot.getPluginVariables()).hasSize(2);
-        assertThat(systemSnapshot.getPluginVariables().get(0).getVariables()).hasSize(2);
-        assertThat(systemSnapshot.getPluginVariables().get(0).getVariables()).contains(one);
-        assertThat(systemSnapshot.getPluginVariables().get(0).getVariables()).doesNotContain(two);
-        assertThat(systemSnapshot.getPluginVariables().get(0).getVariables()).contains(afterMask);
+        assertThat(systemSnapshot.getPluginVariables().getFirst().getVariables()).hasSize(2);
+        assertThat(systemSnapshot.getPluginVariables().getFirst().getVariables()).contains(one);
+        assertThat(systemSnapshot.getPluginVariables().getFirst().getVariables()).doesNotContain(two);
+        assertThat(systemSnapshot.getPluginVariables().getFirst().getVariables()).contains(afterMask);
 
         assertThat(systemSnapshot.getPluginVariables().get(1).getVariables()).hasSize(2);
         assertThat(systemSnapshot.getPluginVariables().get(1).getVariables()).contains(three);
@@ -111,7 +111,7 @@ class SystemSnapshotServiceTest {
         // pluginVariables3 was pruned because it was empty after the masked variable is removed
         assertThat(imported.getPluginVariables()).hasSize(2);
 
-        assertThat(imported.getPluginVariables().get(0).getVariables()).hasSize(1).contains(one);
+        assertThat(imported.getPluginVariables().getFirst().getVariables()).hasSize(1).contains(one);
         assertThat(imported.getPluginVariables().get(1).getVariables()).hasSize(1).contains(three);
     }
 }

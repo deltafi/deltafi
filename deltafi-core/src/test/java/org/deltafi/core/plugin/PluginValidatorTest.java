@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(MockitoExtension.class)
-public class PluginValidatorTest {
+class PluginValidatorTest {
     @Mock
     PluginRepository pluginRepository;
 
@@ -53,7 +53,7 @@ public class PluginValidatorTest {
     }
 
     @Test
-    public void validate() {
+    void validate() {
         Plugin plugin1 = new Plugin();
         PluginCoordinates pluginCoordinates1 = new PluginCoordinates("group", "plugin-1", "1.0.0");
         plugin1.setPluginCoordinates(pluginCoordinates1);

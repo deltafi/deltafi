@@ -36,7 +36,7 @@ class EgressFlowPlanGeneratorTest {
     void testDefaults() {
         List<FlowPlan> flowPlans = egressFlowPlanGenerator.generateEgressFlowPlans("base", null);
         assertThat(flowPlans).hasSize(1);
-        matches(flowPlans.get(0), "base-egress", ActionConfigMatchers.DEFAULT_EGRESS_MATCHER);
+        matches(flowPlans.getFirst(), "base-egress", ActionConfigMatchers.DEFAULT_EGRESS_MATCHER);
     }
 
     @Test
@@ -66,7 +66,7 @@ class EgressFlowPlanGeneratorTest {
     void testMultipleValidate() {
         List<FlowPlan> flowPlans = egressFlowPlanGenerator.generateEgressFlowPlans("base", null);
         assertThat(flowPlans).hasSize(1);
-        matches(flowPlans.get(0), "base-egress", ActionConfigMatchers.DEFAULT_EGRESS_MATCHER);
+        matches(flowPlans.getFirst(), "base-egress", ActionConfigMatchers.DEFAULT_EGRESS_MATCHER);
     }
 
     void matches(FlowPlan flowPlan, String name, ActionConfigMatcher egressMatcher) {

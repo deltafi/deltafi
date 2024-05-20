@@ -87,7 +87,7 @@ class StorageConfigurationServiceTest {
         assertThat(args.bucket()).isEqualTo(BUCKET);
 
         assertThat(args.config().rules()).asList().hasSize(1);
-        LifecycleRule rule = args.config().rules().get(0);
+        LifecycleRule rule = args.config().rules().getFirst();
         assertThat(rule.expiration().days()).isEqualTo(13);
     }
 

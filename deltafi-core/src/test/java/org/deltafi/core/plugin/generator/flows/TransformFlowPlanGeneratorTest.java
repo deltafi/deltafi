@@ -38,7 +38,7 @@ class TransformFlowPlanGeneratorTest {
     void testDefaults() {
         List<FlowPlan> flowPlans = transformFlowPlanGenerator.generateTransformFlows("my-plugin", null);
         assertThat(flowPlans).hasSize(1);
-        matches(flowPlans.get(0), null);
+        matches(flowPlans.getFirst(), null);
     }
 
     @Test
@@ -48,7 +48,7 @@ class TransformFlowPlanGeneratorTest {
 
         assertThat(flowPlans).hasSize(1);
         List<ActionConfigMatcher> transformMatchers = List.of(new ActionConfigMatcher("t1", "org.t1"), new ActionConfigMatcher("t2", "org.t2"));
-        matches(flowPlans.get(0), transformMatchers);
+        matches(flowPlans.getFirst(), transformMatchers);
     }
 
     void matches(FlowPlan flowPlan, List<ActionConfigMatcher> transformActionMatchers) {

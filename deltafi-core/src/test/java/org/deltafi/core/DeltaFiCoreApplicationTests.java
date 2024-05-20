@@ -149,7 +149,6 @@ class DeltaFiCoreApplicationTests {
 	@Container
 	public static final MongoDBContainer MONGO_DB_CONTAINER = new MongoDBContainer(MONGODB_CONTAINER);
 	public static final String SAMPLE_EGRESS_ACTION = "SampleEgressAction";
-	public static final String MULTI_TRANSFORM = "multi-transform";
 	public static final String COLLECTING_TRANSFORM_ACTION = "CollectingTransformAction";
 	public static final String COLLECT_TOPIC = "collect-topic";
 
@@ -689,13 +688,14 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void testTransformDidNotFound() {
+	void testTransformDidNotFound() throws IOException {
 		UUID did = UUID.randomUUID();
 		deltaFileRepo.save(postTransformUtf8DeltaFile(did));
 		UUID wrongDid = UUID.randomUUID();
 
+		ActionEvent event = actionEvent("transformDidNotFound", wrongDid);
 		org.assertj.core.api.Assertions.assertThatThrownBy(
-						() -> deltaFilesService.handleActionEvent(actionEvent("transformDidNotFound", wrongDid)))
+						() -> deltaFilesService.handleActionEvent(event))
 				.isInstanceOf(InvalidActionEventException.class)
 				.hasMessageContaining("Invalid ActionEvent: DeltaFile %s not found.".formatted(wrongDid));
 	}
@@ -712,17 +712,19 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void testTransformMissingAction() {
+	void testTransformMissingAction() throws IOException {
+		ActionEvent actionEvent = actionEvent("transformMissingAction", UUID.randomUUID());
 		org.assertj.core.api.Assertions.assertThatThrownBy(
-						() -> deltaFilesService.validateActionEventHeader(actionEvent("transformMissingAction", UUID.randomUUID())))
+						() -> deltaFilesService.validateActionEventHeader(actionEvent))
 				.isInstanceOf(InvalidActionEventException.class)
 				.hasMessageContaining("Invalid ActionEvent: Missing action");
 	}
 
 	@Test
-	void testTransformMissingDid() {
+	void testTransformMissingDid() throws IOException {
+		ActionEvent actionEvent = actionEvent("transformMissingDid", UUID.randomUUID());
 		org.assertj.core.api.Assertions.assertThatThrownBy(
-						() -> deltaFilesService.validateActionEventHeader(actionEvent("transformMissingDid", UUID.randomUUID())))
+						() -> deltaFilesService.validateActionEventHeader(actionEvent))
 				.isInstanceOf(InvalidActionEventException.class)
 				.hasMessageContaining("Invalid ActionEvent: Missing did");
 	}
@@ -2700,9 +2702,10 @@ class DeltaFiCoreApplicationTests {
 		Map<String, Variable> updatedVars = pluginVariableRepo.findById(coords).orElseThrow()
 				.getVariables().stream().collect(Collectors.toMap(Variable::getName, Function.identity()));
 
-		assertThat(updatedVars.get("notSet")).isEqualTo(notSet);
-		assertThat(updatedVars.get("notSetAndMasked")).isEqualTo(notSetAndMasked);
-		assertThat(updatedVars.get("setValueAndMasked")).isEqualTo(setValueAndMasked);
+		assertThat(updatedVars)
+				.containsEntry("notSet", notSet)
+				.containsEntry("notSetAndMasked", notSetAndMasked)
+				.containsEntry("setValueAndMasked", setValueAndMasked);
 
 		Variable updatedSetValue = updatedVars.get("setValue");
 		assertThat(updatedSetValue).isNotEqualTo(setValue);
@@ -2775,7 +2778,7 @@ class DeltaFiCoreApplicationTests {
 				"Flow does not exist (transformation): passthrough-transform",
 				"Flow does not exist (egress): passthrough-egress"
 		);
-		assertEquals(testResult.getStatus(), TestStatus.INVALID);
+		assertEquals(TestStatus.INVALID, testResult.getStatus());
 		assertEquals(errors, testResult.getErrors());
 	}
 
@@ -3991,21 +3994,18 @@ class DeltaFiCoreApplicationTests {
 		deltaFilesService.ingress(restDataSource, ingress2, OffsetDateTime.now(), OffsetDateTime.now());
 
 		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture(), Mockito.anyBoolean());
-		verifyActionInputs(actionInputListCaptor.getValue(), ingress1.getDid(), ingress2.getDid(), transformFlow.getName(),
-				COLLECTING_TRANSFORM_ACTION);
+		verifyActionInputs(actionInputListCaptor.getValue(), ingress1.getDid(), ingress2.getDid(), transformFlow.getName());
 	}
 
-	private void verifyActionInputs(List<ActionInput> actionInputs, UUID did1, UUID did2, String actionFlow,
-			String actionName) {
+	private void verifyActionInputs(List<ActionInput> actionInputs, UUID did1, UUID did2, String actionFlow) {
 		assertThat(actionInputs).hasSize(1);
 
 		DeltaFile parent1 = deltaFileRepo.findById(did1).orElseThrow();
-		// TODO what is the id set to?
-		Action action = parent1.getFlow(actionFlow, 1).actionNamed(actionName).orElseThrow();
+		Action action = parent1.getFlow(actionFlow, 1).actionNamed(DeltaFiCoreApplicationTests.COLLECTING_TRANSFORM_ACTION).orElseThrow();
 		assertEquals(ActionState.COLLECTING, action.getState());
 
 		DeltaFile parent2 = deltaFileRepo.findById(did2).orElseThrow();
-		action = parent2.getFlow(actionFlow, 1).actionNamed(actionName).orElseThrow();
+		action = parent2.getFlow(actionFlow, 1).actionNamed(DeltaFiCoreApplicationTests.COLLECTING_TRANSFORM_ACTION).orElseThrow();
 		assertEquals(ActionState.COLLECTING, action.getState());
 
 		ActionInput actionInput = actionInputs.getFirst();
@@ -4043,8 +4043,8 @@ class DeltaFiCoreApplicationTests {
 
 		Mockito.verify(actionEventQueue, Mockito.timeout(5000))
 				.putActions(actionInputListCaptor.capture(), Mockito.anyBoolean());
-		verifyActionInputs(actionInputListCaptor.getValue(), ingress1.getDid(), ingress2.getDid(), transformFlow.getName(),
-				COLLECTING_TRANSFORM_ACTION);
+
+		verifyActionInputs(actionInputListCaptor.getValue(), ingress1.getDid(), ingress2.getDid(), transformFlow.getName());
 	}
 
 	@Test
@@ -4079,8 +4079,8 @@ class DeltaFiCoreApplicationTests {
 		Mockito.verify(actionEventQueue, Mockito.times(2))
 				.putActions(actionInputListCaptor.capture(), Mockito.anyBoolean());
 		List<List<ActionInput>> actionInputLists = actionInputListCaptor.getAllValues();
-		verifyActionInputs(actionInputLists.getFirst(), ingress2.getDid(), ingress3.getDid(), transformFlowName, COLLECTING_TRANSFORM_ACTION);
-		verifyActionInputs(actionInputLists.get(1), ingress1.getDid(), ingress4.getDid(), transformFlowName, COLLECTING_TRANSFORM_ACTION);
+		verifyActionInputs(actionInputLists.getFirst(), ingress2.getDid(), ingress3.getDid(), transformFlowName);
+		verifyActionInputs(actionInputLists.get(1), ingress1.getDid(), ingress4.getDid(), transformFlowName);
 	}
 
 	@Test
@@ -4102,13 +4102,13 @@ class DeltaFiCoreApplicationTests {
 				Collections.emptyList());
 		deltaFilesService.ingress(restDataSource, ingress2, OffsetDateTime.now(), OffsetDateTime.now());
 
-		await().atMost(5, TimeUnit.SECONDS).until(() -> hasErroredAction(ingress1.getDid(), transformFlowName, 1, COLLECTING_TRANSFORM_ACTION));
-		await().atMost(5, TimeUnit.SECONDS).until(() -> hasErroredAction(ingress2.getDid(), transformFlowName, 1, COLLECTING_TRANSFORM_ACTION));
+		await().atMost(5, TimeUnit.SECONDS).until(() -> hasErroredCollectingAction(ingress1.getDid(), transformFlowName));
+		await().atMost(5, TimeUnit.SECONDS).until(() -> hasErroredCollectingAction(ingress2.getDid(), transformFlowName));
 	}
 
-	private boolean hasErroredAction(UUID did, String actionFlow, int flowId, String actionName) {
+	private boolean hasErroredCollectingAction(UUID did, String actionFlow) {
 		DeltaFile deltaFile = deltaFileRepo.findById(did).orElseThrow();
-		Action action = deltaFile.getFlow(actionFlow, flowId).actionNamed(actionName).orElseThrow();
+		Action action = deltaFile.getFlow(actionFlow, 1).actionNamed(COLLECTING_TRANSFORM_ACTION).orElseThrow();
 		return action.getState() == ActionState.ERROR;
 	}
 

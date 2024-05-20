@@ -129,7 +129,7 @@ public class StateMachine {
         Action action = input.flow().addAction(SYNTHETIC_EGRESS_ACTION_FOR_TEST, ActionType.EGRESS, ActionState.FILTERED,
                 OffsetDateTime.now(clock));
         action.setFilteredCause("Filtered by test mode");
-        action.setFilteredCause("Filtered by test mode with a reason of - " + input.flow().getTestModeReason());
+        action.setFilteredContext("Filtered by test mode with a reason of - " + input.flow().getTestModeReason());
         input.deltaFile().setFiltered(true);
         return Collections.emptyList();
     }

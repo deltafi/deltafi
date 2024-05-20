@@ -66,26 +66,26 @@ public class PluginDataFetcherTestHelper {
         assertEquals("1.1.0", plugin1.getActionKitVersion());
 
         assertEquals(2, plugin1.getActions().size());
-        assertEquals("org.deltafi.test.actions.TestAction1", plugin1.getActions().get(0).getName());
+        assertEquals("org.deltafi.test.actions.TestAction1", plugin1.getActions().getFirst().getName());
         assertEquals("org.deltafi.test.actions.TestAction2", plugin1.getActions().get(1).getName());
         assertEquals("TestAction2", plugin1.getActions().get(1).getDescription());
 
         assertEquals(2, plugin1.getDependencies().size());
-        assertEquals("org.deltafi", plugin1.getDependencies().get(0).getGroupId());
-        assertEquals("plugin-2", plugin1.getDependencies().get(0).getArtifactId());
-        assertEquals("1.0.0", plugin1.getDependencies().get(0).getVersion());
+        assertEquals("org.deltafi", plugin1.getDependencies().getFirst().getGroupId());
+        assertEquals("plugin-2", plugin1.getDependencies().getFirst().getArtifactId());
+        assertEquals("1.0.0", plugin1.getDependencies().getFirst().getVersion());
         assertEquals("plugin-3", plugin1.getDependencies().get(1).getArtifactId());
 
         assertEquals(2, plugin1.getPropertySets().size());
-        assertEquals("propertySet1", plugin1.getPropertySets().get(0).getId());
-        assertEquals("Property Set 1", plugin1.getPropertySets().get(0).getDisplayName());
-        assertEquals("A description of property set 1", plugin1.getPropertySets().get(0).getDescription());
-        assertEquals(2, plugin1.getPropertySets().get(0).getProperties().size());
-        assertEquals("property1", plugin1.getPropertySets().get(0).getProperties().get(0).getKey());
-        assertEquals("A description of property 1", plugin1.getPropertySets().get(0).getProperties().get(0).getDescription());
-        assertEquals("property1Default", plugin1.getPropertySets().get(0).getProperties().get(0).getDefaultValue());
-        assertTrue(plugin1.getPropertySets().get(0).getProperties().get(0).isRefreshable());
-        assertEquals("property1Value", plugin1.getPropertySets().get(0).getProperties().get(0).getValue());
+        assertEquals("propertySet1", plugin1.getPropertySets().getFirst().getId());
+        assertEquals("Property Set 1", plugin1.getPropertySets().getFirst().getDisplayName());
+        assertEquals("A description of property set 1", plugin1.getPropertySets().getFirst().getDescription());
+        assertEquals(2, plugin1.getPropertySets().getFirst().getProperties().size());
+        assertEquals("property1", plugin1.getPropertySets().getFirst().getProperties().getFirst().getKey());
+        assertEquals("A description of property 1", plugin1.getPropertySets().getFirst().getProperties().getFirst().getDescription());
+        assertEquals("property1Default", plugin1.getPropertySets().getFirst().getProperties().getFirst().getDefaultValue());
+        assertTrue(plugin1.getPropertySets().getFirst().getProperties().getFirst().isRefreshable());
+        assertEquals("property1Value", plugin1.getPropertySets().getFirst().getProperties().getFirst().getValue());
         assertEquals("property4Value", plugin1.getPropertySets().get(1).getProperties().get(1).getValue());
         assertEquals("propertySet2", plugin1.getPropertySets().get(1).getId());
     }

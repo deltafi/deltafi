@@ -32,6 +32,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.io.ClassPathResource;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -72,7 +73,7 @@ class ConfigurationValidatorTest {
     @Test
     @SneakyThrows
     void testConfigCheck() {
-        Configuration c = readConfig("/integration/config-binary.yaml");
+        Configuration c = readConfig();
 
         Mockito.when(pluginRegistryService.getPlugins()).thenReturn(new ArrayList<>());
         Mockito.when(dataSourceService.hasFlow("unarchive-passthrough-rest-data-source")).thenReturn(false);
@@ -93,9 +94,8 @@ class ConfigurationValidatorTest {
         assertEquals(expectedErrors, actualErrors);
     }
 
-    Configuration readConfig(String path) throws IOException {
-        byte[] theBytes = IntegrationServiceTest.class.getResourceAsStream(path).readAllBytes();
-        String configYaml = new String(theBytes);
-        return YAML_MAPPER.readValue(configYaml, Configuration.class);
+    Configuration readConfig() throws IOException {
+        byte[] bytes = new ClassPathResource("/integration/config-binary.yaml").getInputStream().readAllBytes();
+        return YAML_MAPPER.readValue(bytes, Configuration.class);
     }
 }

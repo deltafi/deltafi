@@ -85,6 +85,64 @@ class PublisherServiceTest {
         Assertions.assertThat(nextFlow.getInput().getTopics()).isEqualTo(Set.of("topic"));
         Assertions.assertThat(nextFlow.getInput().getMetadata()).isEqualTo(deltaFileFlow.getMetadata());
         Assertions.assertThat(nextFlow.getInput().getContent()).isEqualTo(deltaFileFlow.lastContent());
+        Assertions.assertThat(nextFlow.isTestMode()).isFalse();
+    }
+
+    @Test
+    void testModeFromSubscribers() {
+        DeltaFile deltaFile = deltaFile();
+        DeltaFileFlow deltaFileFlow = deltaFile.getFlows().getFirst();
+
+        String condition = "metadata != null";
+        TransformFlow subscriber = flow(null, Set.of(rule("topic", condition)));
+        subscriber.setName("transformFlow");
+        subscriber.setTestMode(true);
+
+        Mockito.when(mockSubscriberService.subscriberForTopic("topic")).thenReturn(Set.of(subscriber));
+        Mockito.when(ruleEvaluator.evaluateCondition(condition, deltaFileFlow)).thenReturn(true);
+
+        PublishRules publishRules = new PublishRules();
+        publishRules.setRules(List.of(rule("topic", condition)));
+        Publisher publisher = flow(publishRules, Set.of());
+
+        Set<DeltaFileFlow> subscribers = publisherService.publisherSubscribers(publisher, deltaFile, deltaFileFlow);
+        Assertions.assertThat(subscribers).hasSize(1);
+        DeltaFileFlow nextFlow = subscribers.iterator().next();
+        Assertions.assertThat(nextFlow.getName()).isEqualTo(subscriber.getName());
+        Assertions.assertThat(nextFlow.getInput().getTopics()).isEqualTo(Set.of("topic"));
+        Assertions.assertThat(nextFlow.getInput().getMetadata()).isEqualTo(deltaFileFlow.getMetadata());
+        Assertions.assertThat(nextFlow.getInput().getContent()).isEqualTo(deltaFileFlow.lastContent());
+        Assertions.assertThat(nextFlow.isTestMode()).isTrue();
+        Assertions.assertThat(nextFlow.getTestModeReason()).isEqualTo("transformFlow");
+    }
+
+    @Test
+    void testModeCarriedToSubscribers() {
+        DeltaFile deltaFile = deltaFile();
+        DeltaFileFlow deltaFileFlow = deltaFile.getFlows().getFirst();
+
+        deltaFileFlow.setTestMode(true);
+        deltaFileFlow.setTestModeReason("data source test mode enabled");
+
+        String condition = "metadata != null";
+        Subscriber subscriber = flow(null, Set.of(rule("topic", condition)));
+
+        Mockito.when(mockSubscriberService.subscriberForTopic("topic")).thenReturn(Set.of(subscriber));
+        Mockito.when(ruleEvaluator.evaluateCondition(condition, deltaFileFlow)).thenReturn(true);
+
+        PublishRules publishRules = new PublishRules();
+        publishRules.setRules(List.of(rule("topic", condition)));
+        Publisher publisher = flow(publishRules, Set.of());
+
+        Set<DeltaFileFlow> subscribers = publisherService.publisherSubscribers(publisher, deltaFile, deltaFileFlow);
+        Assertions.assertThat(subscribers).hasSize(1);
+        DeltaFileFlow nextFlow = subscribers.iterator().next();
+        Assertions.assertThat(nextFlow.getName()).isEqualTo(subscriber.getName());
+        Assertions.assertThat(nextFlow.getInput().getTopics()).isEqualTo(Set.of("topic"));
+        Assertions.assertThat(nextFlow.getInput().getMetadata()).isEqualTo(deltaFileFlow.getMetadata());
+        Assertions.assertThat(nextFlow.getInput().getContent()).isEqualTo(deltaFileFlow.lastContent());
+        Assertions.assertThat(nextFlow.isTestMode()).isTrue();
+        Assertions.assertThat(nextFlow.getTestModeReason()).isEqualTo("data source test mode enabled");
     }
 
     @Test
