@@ -124,7 +124,7 @@ public class Action {
     changeState(ActionState.FILTERED, start, stop, now);
   }
 
-  private void changeState(ActionState actionState, OffsetDateTime start, OffsetDateTime now, OffsetDateTime stop, String errorCause, String errorContext, OffsetDateTime nextAutoResume) {
+  private void changeState(ActionState actionState, OffsetDateTime start, OffsetDateTime stop, OffsetDateTime now, String errorCause, String errorContext, OffsetDateTime nextAutoResume) {
     setState(actionState);
     if (created == null) {
       created = now;

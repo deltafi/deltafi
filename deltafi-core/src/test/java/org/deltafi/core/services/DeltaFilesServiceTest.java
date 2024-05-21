@@ -70,7 +70,6 @@ class DeltaFilesServiceTest {
     private final DeltaFileCacheService deltaFileCacheService;
     private final QueueManagementService queueManagementService;
     private final QueuedAnnotationRepo queuedAnnotationRepo;
-    private final AnalyticEventService analyticEventService;
 
     private final DeltaFilesService deltaFilesService;
 
@@ -113,7 +112,6 @@ class DeltaFilesServiceTest {
         this.queueManagementService = queueManagementService;
         this.queuedAnnotationRepo = queuedAnnotationRepo;
         this.dataSourceService = dataSourceService;
-        this.analyticEventService = analyticEventService;
 
         deltaFilesService = new DeltaFilesService(testClock, transformFlowService, egressFlowService, mockDeltaFiPropertiesService,
                 stateMachine, deltaFileRepo, actionEventQueue, contentStorageService, resumePolicyService,
@@ -432,7 +430,7 @@ class DeltaFilesServiceTest {
         flow.setPendingAnnotations(Set.of("a", "b"));
         Action action = flow.queueAction( "egress", ActionType.EGRESS, false, OffsetDateTime.now(testClock));
         deltaFile.getFlows().add(flow);
-        deltaFilesService.egress(deltaFile, flow, action);
+        deltaFilesService.egress(deltaFile, flow, action, OffsetDateTime.now(testClock), OffsetDateTime.now(testClock));
 
         Assertions.assertThat(deltaFile.pendingAnnotationFlows()).hasSize(1);
         Assertions.assertThat(deltaFile.pendingAnnotationFlows().getFirst().getName()).isEqualTo("flow");
@@ -447,7 +445,7 @@ class DeltaFilesServiceTest {
         DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
         DeltaFileFlow flow = deltaFile.getFlows().getFirst();
         Action action = flow.queueAction("egress", ActionType.EGRESS, false, OffsetDateTime.now(testClock));
-        deltaFilesService.egress(deltaFile, flow, action);
+        deltaFilesService.egress(deltaFile, flow, action, OffsetDateTime.now(testClock), OffsetDateTime.now(testClock));
 
         Assertions.assertThat(deltaFile.pendingAnnotationFlows()).isEmpty();
     }
