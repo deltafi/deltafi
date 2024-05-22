@@ -38,10 +38,6 @@
           <dd>
             <Textarea v-model="model.description" rows="4" cols="47" class="inputWidth" />
           </dd>
-          <dt>Type*</dt>
-          <dd>
-            <Dropdown v-model="model.type" :options="flowTypesDisplay" option-label="header" option-value="field" placeholder="Select Flow Type" :show-clear="!editFlowPlan" :disabled="editFlowPlan" class="inputWidth" />
-          </dd>
           <dt>Clone From <small class="text-muted">- Optional</small></dt>
           <dd>
             <Dropdown v-model="model.selectedFlowPlan" :options="_.orderBy(allFlowPlans[`${_.toLower(model.type)}`], [(flow) => flow.name.toLowerCase()], ['asc'])" option-label="name" placeholder="Select Flow" :show-clear="!editFlowPlan" :disabled="editFlowPlan" class="inputWidth" />
@@ -133,11 +129,6 @@ onMounted(async () => {
 
   allFlowPlans.value = response.data.getAllFlows;
 });
-
-const flowTypesDisplay = [
-  { header: "Transform", field: "TRANSFORM" },
-  { header: "Egress", field: "EGRESS" },
-];
 
 const hasErrors = computed(() => {
   return errors.value.length > 0;

@@ -87,7 +87,7 @@
           </div>
         </div>
       </div>
-      <div v-if="_.isEqual(model.type, 'TRANSFORM')" class="row p-2">
+      <div class="row p-2">
         <div class="col pl-2 pr-1">
           <Panel header="Publish" :pt="{ content: { class: 'p-1' } }">
             <div class="px-0">
@@ -175,7 +175,7 @@ import _ from "lodash";
 
 const { getAllFlows } = useFlowQueryBuilder();
 const { getPluginActionSchema } = useFlowActions();
-const { saveTransformFlowPlan, saveEgressFlowPlan } = useFlowPlanQueryBuilder();
+const { saveTransformFlowPlan } = useFlowPlanQueryBuilder();
 const keys = useMagicKeys();
 const devKey = keys["d+e+v"];
 const { copy } = useClipboard();
@@ -270,7 +270,7 @@ const viewActionTreeMenu = (event, flowActionType) => {
 };
 
 const flowTemplate = {
-  type: null,
+  type: "TRANSFORM",
   active: false,
   name: null,
   description: null,
@@ -293,11 +293,6 @@ const transformActionsTemplate = {
   collect: {},
 };
 
-const egressActionTemplate = {
-  flowActionType: "EGRESS",
-  ...defaultActionKeys,
-};
-
 const flowPlan = ref(JSON.parse(JSON.stringify(flowTemplate)));
 
 const flowTypesMap = new Map([
@@ -310,25 +305,12 @@ const flowTypesMap = new Map([
       },
     },
   ],
-  [
-    "EGRESS",
-    {
-      flowActionTypes: ["EGRESS"],
-      activeContainerList: function () {
-        return this.flowActionTypes.flatMap((v) => [flowActionTemplateMap.get(v).activeContainer]);
-      },
-    },
-  ],
 ]);
 
-const flowActionTemplateMap = new Map([
-  ["TRANSFORM", { selectTemplate: [transformActionsTemplate], activeContainer: "transformActions", limit: false, requiredActionMin: false }],
-  ["EGRESS", { selectTemplate: [egressActionTemplate], activeContainer: "egressAction", limit: true, requiredActionMin: true }],
-]);
+const flowActionTemplateMap = new Map([["TRANSFORM", { selectTemplate: [transformActionsTemplate], activeContainer: "transformActions", limit: false, requiredActionMin: false }]]);
 
 const flowActionTemplateObject = ref({
   transformActions: [],
-  egressAction: [],
 });
 
 const originalFlowActionTemplateObject = JSON.parse(JSON.stringify(flowActionTemplateObject.value));
@@ -486,11 +468,7 @@ const save = async (rawFlow) => {
   let response = null;
   let newRawFlow = JSON.parse(JSON.stringify(rawFlow));
   newRawFlow = clearEmptyObjects(newRawFlow);
-  if (model.value.type === "TRANSFORM") {
-    response = await saveTransformFlowPlan(newRawFlow);
-  } else if (model.value.type === "EGRESS") {
-    response = await saveEgressFlowPlan(newRawFlow);
-  }
+  response = await saveTransformFlowPlan(newRawFlow);
   if (response !== undefined) {
     notify.success(`${response.data[`save${_.capitalize(model.value.type)}FlowPlan`].name} Flow Plan Saved`);
     model.value.active = false;

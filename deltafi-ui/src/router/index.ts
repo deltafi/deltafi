@@ -19,17 +19,18 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
 import AutoResumePage from "@/pages/AutoResumePage.vue";
 import DashboardPage from "@/pages/DashboardPage.vue";
+import DataSourcePage from "@/pages/DataSourcePage.vue";
 import DeletePoliciesPage from "@/pages/DeletePoliciesPage.vue";
 import DeltaFileSearchPage from "@/pages/DeltaFileSearchPage.vue";
 import DeltaFileUploadPage from "@/pages/DeltaFileUploadPage.vue";
 import DeltaFileViewerPage from "@/pages/DeltaFileViewerPage.vue";
+import EgressActionsPage from "@/pages/EgressActionsPage.vue";
 import ErrorsPage from "@/pages/ErrorsPage.vue";
-import FilteredPage from "@/pages/FilteredPage.vue";
 import EventsPage from "@/pages/EventsPage.vue";
 import ExternalLinksPage from "@/pages/ExternalLinksPage.vue";
+import FilteredPage from "@/pages/FilteredPage.vue";
 import FlowPlanBuilderPage from "@/pages/FlowPlanBuilderPage.vue";
 import FlowPlansPage from "@/pages/FlowPlansPage.vue";
-import DataSourcePage from "@/pages/DataSourcePage.vue";
 import PageNotFound from "@/pages/PageNotFound.vue";
 import PluginRepositoryPage from "@/pages/PluginRepositoryPage.vue";
 import PluginsPage from "@/pages/PluginsPage.vue";
@@ -128,6 +129,14 @@ const routes: Array<RouteRecordRaw> = [
     component: FlowPlanBuilderPage,
     meta: {
       permission: "FlowUpdate",
+    },
+  },
+  {
+    path: "/config/egress",
+    name: "Egress",
+    component: EgressActionsPage,
+    meta: {
+      permission: "FlowView",
     },
   },
   {

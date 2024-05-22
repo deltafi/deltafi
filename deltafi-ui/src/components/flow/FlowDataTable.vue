@@ -54,7 +54,7 @@
           <span v-else>{{ data[field] }}</span>
         </template>
       </Column>
-      <Column v-if="FlowTypeTitle === 'Transform'" header="Subscribe" field="subscribe" :style="{ width: '7%' }">
+      <Column header="Subscribe" field="subscribe" :style="{ width: '7%' }">
         <template #body="{ data, field }">
           <template v-if="!_.isEmpty(data[field])">
             <div>
@@ -66,7 +66,7 @@
           </template>
         </template>
       </Column>
-      <Column v-if="FlowTypeTitle === 'Normalize' || FlowTypeTitle === 'Transform'" header="Max Errors" field="maxErrors" class="max-error-column">
+      <Column header="Max Errors" field="maxErrors" class="max-error-column">
         <template #body="{ data, field }">
           <span v-if="data[field] === null">-</span>
           <span v-else>{{ data[field] }}</span>
@@ -75,7 +75,7 @@
           <InputNumber v-model="data[field]" :min="0" class="p-inputtext-sm max-error-input" autofocus />
         </template>
       </Column>
-      <Column v-if="FlowTypeTitle !== 'Enrich'" header="Test Mode" class="test-mode-column">
+      <Column header="Test Mode" class="test-mode-column">
         <template #body="{ data }">
           <FlowTestModeInputSwitch :row-data-prop="data" />
         </template>
@@ -122,7 +122,7 @@ import _ from "lodash";
 const { setMaxErrors, errors } = useFlowQueryBuilder();
 const notify = useNotifications();
 const confirm = useConfirm();
-const { removeTransformFlowPlanByName, removeEgressFlowPlanByName } = useFlowPlanQueryBuilder();
+const { removeTransformFlowPlanByName } = useFlowPlanQueryBuilder();
 
 let autoRefresh = null;
 const emit = defineEmits(["updateFlows"]);
@@ -189,11 +189,7 @@ watch(
 );
 const deleteFlow = async (data) => {
   let response = false;
-  if (data.flowType === "transform") {
-    response = await removeTransformFlowPlanByName(data.name);
-  } else if (data.flowType === "egress") {
-    response = await removeEgressFlowPlanByName(data.name);
-  }
+  response = await removeTransformFlowPlanByName(data.name);
   if (response) {
     notify.success(`Removed ${data.flowType} flow:`, data.name);
     removeFlowFromProp(data);

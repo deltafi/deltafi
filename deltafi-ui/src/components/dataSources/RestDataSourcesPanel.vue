@@ -30,10 +30,10 @@
                 <span class="d-flex align-items-center">
                   <DataSourceRemoveButton v-if="data.sourcePlugin.artifactId === 'system-plugin'" :disabled="!$hasPermission('FlowUpdate')" :row-data-prop="data" @reload-data-sources="refresh" />
                   <DialogTemplate ref="updateDataSource" component-name="dataSources/DataSourceConfigurationDialog" header="Edit Data Source" dialog-width="50vw" :row-data-prop="data" edit-data-source @reload-data-sources="refresh">
-                    <Button v-if="data.sourcePlugin.artifactId === 'system-plugin'" v-tooltip.top="`Edit`" icon="pi pi-pencil" class="p-button-text p-button-sm p-button-rounded p-button-secondary mx-n2" :disabled="!$hasPermission('FlowUpdate')" />
+                    <i v-if="data.sourcePlugin.artifactId === 'system-plugin'" v-tooltip.top="`Edit`" class="ml-2 text-muted pi pi-pencil cursor-pointer" :disabled="!$hasPermission('FlowUpdate')" />
                   </DialogTemplate>
                   <DialogTemplate ref="updateDataSource" component-name="dataSources/DataSourceConfigurationDialog" header="Create Data Source" dialog-width="50vw" :row-data-prop="cloneDataSource(data)" @reload-data-sources="refresh">
-                    <Button v-tooltip.top="`Clone`" icon="pi pi-clone" class="p-button-text p-button-sm p-button-rounded p-button-secondary mx-n2" :disabled="!$hasPermission('FlowUpdate')" />
+                    <i v-tooltip.top="`Clone`" class="ml-2 text-muted pi pi-clone cursor-pointer" :disabled="!$hasPermission('FlowUpdate')" />
                   </DialogTemplate>
                   <PermissionedRouterLink :disabled="!$hasPermission('PluginsView')" :to="{ path: 'plugins/' + concatMvnCoordinates(data.sourcePlugin) }">
                     <i v-tooltip.top="concatMvnCoordinates(data.sourcePlugin)" class="ml-1 text-muted fas fa-plug fa-rotate-90 fa-fw align-items-center" />

@@ -33,7 +33,6 @@
     <ProgressBar v-if="showLoading" mode="indeterminate" style="height: 0.5em" />
     <div v-else>
       <FlowDataTable flow-type-prop="transform" :flow-data-prop="flowData" :plugin-name-selected-prop="pluginNameSelected" :filter-flows-text-prop="filterFlowsText" @update-flows="fetchFlows()"></FlowDataTable>
-      <FlowDataTable flow-type-prop="egress" :flow-data-prop="flowData" :plugin-name-selected-prop="pluginNameSelected" :filter-flows-text-prop="filterFlowsText" @update-flows="fetchFlows()"></FlowDataTable>
     </div>
   </div>
 </template>
@@ -85,7 +84,7 @@ const pluginNamesList = (allFlowData) => {
 
 const formatData = (allFlowData) => {
   let formattedFlowData = JSON.parse(JSON.stringify(allFlowData));
-  const flowTypes = ["transform", "egress"];
+  const flowTypes = ["transform"];
 
   for (const flowType of flowTypes) {
     formattedFlowData[flowType.toString()].forEach((flow) => {

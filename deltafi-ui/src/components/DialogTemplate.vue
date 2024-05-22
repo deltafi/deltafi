@@ -21,17 +21,18 @@
     <span @click="showDialog()">
       <slot />
     </span>
-    <Dialog id="dialogTemplate" v-model:visible="dialogVisible" :header="$attrs['header']" :position="modelPosition" :style="{ width: dialogSize }" :maximizable="true" :modal="!disableModel" :dismissable-mask="dismissableMask" :draggable="false" :closable="isClosable">
+    <Dialog id="dialogTemplate" v-model:visible="dialogVisible" :header="$attrs['header']" :position="modelPosition" :style="{ width: dialogSize }" :maximizable="true" :modal="!disableModel" :dismissable-mask="dismissableMask" :draggable="false" :closable="isClosable" @hide="closeDialogTemplate" @show="openDialogTemplate">
       <Component :is="loadComponent" :key="Math.random()" v-bind="$attrs" :close-dialog-command="closeDialogCommand" />
     </Dialog>
   </div>
 </template>
 
 <script setup>
-import { computed, defineAsyncComponent, inject, ref, useAttrs } from "vue";
+import { computed, defineAsyncComponent, defineEmits, inject, ref, useAttrs } from "vue";
 import Dialog from "primevue/dialog";
 import _ from "lodash";
 
+const emit = defineEmits(["openDialogTemplate", "closeDialogTemplate"]);
 const hasPermission = inject("hasPermission");
 
 //View dynamic props being sent down
@@ -66,6 +67,14 @@ const modelPosition = computed(() => {
 const isClosable = computed(() => {
   return _.get(attrs, "closable", true);
 });
+
+const closeDialogTemplate = () => {
+  emit("closeDialogTemplate");
+};
+
+const openDialogTemplate = () => {
+  emit("openDialogTemplate");
+};
 
 const dialogVisible = ref(false);
 const showDialog = () => {

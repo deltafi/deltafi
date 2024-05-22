@@ -75,6 +75,10 @@ export const transformFlowPlanFields = {
 
 export const egressFlowFields = {
   name: true,
+  subscribe: {
+    condition: true,
+    topic: true,
+  },
   description: true,
   flowStatus: {
     ...flowStatusFields,

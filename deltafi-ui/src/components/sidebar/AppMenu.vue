@@ -178,6 +178,12 @@ const staticMenuItems = ref([
         visible: computed(() => hasPermission("FlowView")),
       },
       {
+        name: "Egress",
+        icon: "fas fas fa-file-export fa-fw",
+        path: "/config/egress",
+        visible: computed(() => hasPermission("FlowView")),
+      },
+      {
         name: "Plugins",
         icon: "fas fa-plug fa-rotate-90 fa-fw",
         path: "/config/plugins",

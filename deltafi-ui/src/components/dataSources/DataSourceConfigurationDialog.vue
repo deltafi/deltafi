@@ -58,7 +58,7 @@
                 <dd>
                   <div class="deltafi-fieldset">
                     <div class="px-2 pt-3">
-                      <json-forms :data="model['timedIngressActionOption']['parameters']" :renderers="renderers" :uischema="parametersSchema" :schema="model['timedIngressActionOption']['schema']" :ajv="handleDefaultsAjv" @change="onParametersChange($event, model)" />
+                      <json-forms :data="model['timedIngressActionOption']['parameters']" :renderers="renderers" :uischema="parametersSchema" :schema="model['timedIngressActionOption']['schema']" @change="onParametersChange($event, model)" />
                     </div>
                   </div>
                 </dd>
@@ -93,9 +93,6 @@ import { computed, defineEmits, defineProps, inject, nextTick, onMounted, onBefo
 
 import usePrimeVueJsonSchemaUIRenderers from "@/composables/usePrimeVueJsonSchemaUIRenderers";
 import { JsonForms } from "@jsonforms/vue";
-import { createAjv } from "@jsonforms/core";
-
-const handleDefaultsAjv = createAjv({ useDefaults: true });
 
 import Button from "primevue/button";
 import Dropdown from "primevue/dropdown";

@@ -1,0 +1,189 @@
+<!--
+   DeltaFi - Data transformation and enrichment platform
+
+   Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+
+<template>
+  <div class="egress-actions-panel">
+    <CollapsiblePanel header="Egress Actions" class="table-panel pb-3">
+      <DataTable v-model:filters="filters" :loading="showLoading" :value="egressActionsList" edit-mode="cell" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines egress-action-table" :global-filter-fields="['name', 'description']" sort-field="name" :sort-order="1" :row-hover="true">
+        <template #empty>No Egress Actions found.</template>
+        <template #loading>Loading Egress Actions. Please wait.</template>
+        <Column header="Name" field="name" :style="{ width: '25%' }" :sortable="true">
+          <template #body="{ data }">
+            <div class="d-flex justify-content-between align-items-center">
+              <span>
+                <DialogTemplate component-name="flow/FlowViewer" :header="data.name" :flow-name="data.name" flow-type="egress" @close-dialog-template="flowViewerPopup" @open-dialog-template="flowViewerPopup">
+                  <span v-tooltip.right="'View Flow information' + errorTooltip(data) + ' for ' + data.name" class="cursor-pointer">
+                    {{ data.name }}
+                  </span>
+                </DialogTemplate>
+              </span>
+              <span>
+                <span class="d-flex align-items-center">
+                  <EgressActionRemoveButton v-if="data.sourcePlugin.artifactId === 'system-plugin'" :disabled="!$hasPermission('FlowUpdate')" :row-data-prop="data" @reload-egress-actions="refresh" />
+                  <DialogTemplate ref="updateEgressDialog" component-name="egressActions/EgressActionConfigurationDialog" header="Edit Egress Action" dialog-width="50vw" :row-data-prop="data" edit-egress-action @reload-egress-actions="refresh">
+                    <i v-if="data.sourcePlugin.artifactId === 'system-plugin'" v-tooltip.top="`Edit`" class="ml-2 text-muted pi pi-pencil cursor-pointer" :disabled="!$hasPermission('FlowUpdate')" />
+                  </DialogTemplate>
+                  <DialogTemplate ref="updateEgressDialog" component-name="egressActions/EgressActionConfigurationDialog" header="Create Egress Action" dialog-width="50vw" :row-data-prop="cloneEgressAction(data)" @reload-egress-actions="refresh">
+                    <i v-tooltip.top="`Clone`" icon="pi pi-clone" class="ml-2 text-muted pi pi-clone cursor-pointer" :disabled="!$hasPermission('FlowUpdate')" />
+                  </DialogTemplate>
+                  <PermissionedRouterLink :disabled="!$hasPermission('PluginsView')" :to="{ path: 'plugins/' + concatMvnCoordinates(data.sourcePlugin) }">
+                    <i v-tooltip.top="concatMvnCoordinates(data.sourcePlugin)" class="ml-1 text-muted fas fa-plug fa-rotate-90 fa-fw align-items-center" />
+                  </PermissionedRouterLink>
+                </span>
+              </span>
+            </div>
+          </template>
+        </Column>
+        <Column header="Description" field="description" :sortable="true"></Column>
+        <Column header="Subscribe" field="subscribe" :style="{ width: '7%' }">
+        <template #body="{ data, field }">
+          <template v-if="!_.isEmpty(data[field])">
+            <div>
+              <i class="ml-1 text-muted fa-solid fa-right-to-bracket fa-fw" @mouseover="toggle($event, data, field)" @mouseleave="toggle($event, data, field)" />
+            </div>
+            <OverlayPanel ref="op">
+              <SubscribeCell :data-prop="overlayData" :field-prop="overlayField"></SubscribeCell>
+            </OverlayPanel>
+          </template>
+        </template>
+      </Column>
+        <Column :style="{ width: '7%' }" class="egress-action-state-column">
+          <template #body="{ data }">
+            <StateInputSwitch :row-data-prop="data" @change="refresh" />
+          </template>
+        </Column>
+      </DataTable>
+    </CollapsiblePanel>
+  </div>
+</template>
+
+<script setup>
+import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
+import DialogTemplate from "@/components/DialogTemplate.vue";
+import EgressActionRemoveButton from "@/components/egressActions/EgressActionRemoveButton.vue";
+import StateInputSwitch from "@/components/egressActions/StateInputSwitch.vue";
+import SubscribeCell from "@/components/flow/SubscribeCell.vue";
+import PermissionedRouterLink from "@/components/PermissionedRouterLink";
+import useEgressActions from "@/composables/useEgressActions";
+import { computed, defineEmits, defineProps, inject, onMounted, ref, watch } from "vue";
+
+import _ from "lodash";
+
+import { FilterMatchMode } from "primevue/api";
+import Button from "primevue/button";
+import Column from "primevue/column";
+import DataTable from "primevue/datatable";
+import OverlayPanel from "primevue/overlaypanel";
+
+const emit = defineEmits(["egressActionsList"]);
+const editing = inject("isEditing");
+const { getAllEgress, loaded, loading } = useEgressActions();
+const showLoading = computed(() => loading.value && !loaded.value);
+const egressActionsList = ref([]);
+const updateEgressDialog = ref(null);
+const overlayData = ref({});
+const overlayField = ref(null);
+
+const props = defineProps({
+  pluginNameSelectedProp: {
+    type: Object,
+    required: false,
+    default: null,
+  },
+  filterFlowsTextProp: {
+    type: String,
+    required: false,
+    default: null,
+  },
+});
+
+onMounted(() => {
+  refresh();
+});
+
+const filters = ref({
+  global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+});
+
+watch(
+  () => props.filterFlowsTextProp,
+  () => {
+    filters.value["global"].value = props.filterFlowsTextProp;
+  }
+);
+
+
+const op = ref();
+
+const toggle = (event, data, field) => {
+  overlayData.value = data;
+  overlayField.value = field;
+  op.value.toggle(event);
+};
+
+const errorTooltip = (data) => {
+  return _.isEmpty(data.flowStatus.errors) ? "" : " and errors";
+};
+
+const cloneEgressAction = (data) => {
+  let clonedEgressActionObject = _.cloneDeepWith(data);
+  clonedEgressActionObject["name"] = "";
+  return clonedEgressActionObject;
+};
+
+const concatMvnCoordinates = (sourcePlugin) => {
+  return sourcePlugin.groupId + ":" + sourcePlugin.artifactId + ":" + sourcePlugin.version;
+};
+
+const refresh = async () => {
+  // Do not refresh data while editing.
+  if (editing.value) return;
+
+  const response = await getAllEgress();
+  egressActionsList.value = response.data.getAllFlows.egress;
+  emit("egressActionsList", egressActionsList.value);
+};
+
+const flowViewerPopup = () => {
+  editing.value = !editing.value;
+};
+
+defineExpose({ refresh });
+</script>
+
+<style lang="scss">
+.egress-actions-panel {
+  .table-panel {
+    .egress-action-table {
+      td.egress-action-state-column {
+        padding: 0 !important;
+
+        .p-inputswitch {
+          padding: 0.25rem !important;
+          margin: 0.25rem 0 0 0.25rem !important;
+        }
+
+        .p-button {
+          padding: 0.25rem !important;
+          margin: 0 0 0 0.25rem !important;
+        }
+      }
+    }
+  }
+}
+</style>
