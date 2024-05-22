@@ -26,10 +26,10 @@ import org.deltafi.common.types.ActionDescriptor;
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
-import org.deltafi.core.services.ActionDescriptorService;
+import org.deltafi.core.plugin.PluginRegistryService;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
-import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -40,12 +40,11 @@ public class SchemaComplianceValidator {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final JsonSchemaFactory FACTORY = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V201909);
 
-    private final ActionDescriptorService actionDescriptorService;
+    private final PluginRegistryService pluginService;
     private final SchemaValidatorsConfig validatorsConfig;
 
-    public SchemaComplianceValidator(ActionDescriptorService actionDescriptorService) {
-        this.actionDescriptorService = actionDescriptorService;
-
+    public SchemaComplianceValidator(@Lazy PluginRegistryService pluginService) {
+        this.pluginService = pluginService;
         validatorsConfig = new SchemaValidatorsConfig();
         validatorsConfig.setTypeLoose(true);
     }
@@ -67,7 +66,7 @@ public class SchemaComplianceValidator {
     }
 
     private List<FlowConfigError> validateAgainstSchema(ActionConfiguration actionConfiguration) {
-        return actionDescriptorService.getByActionClass(actionConfiguration.getType())
+        return pluginService.getByActionClass(actionConfiguration.getType())
                 .map(actionDescriptor -> validateAgainstSchema(actionDescriptor, actionConfiguration))
                 .orElseGet(() -> Collections.singletonList(notRegisteredError(actionConfiguration)));
     }
@@ -108,14 +107,6 @@ public class SchemaComplianceValidator {
         actionConfigError.setConfigName(actionConfiguration.getName());
         actionConfigError.setErrorType(FlowErrorType.UNREGISTERED_ACTION);
         actionConfigError.setMessage("Action: " + actionConfiguration.getType() + " has not been registered with the system");
-        return actionConfigError;
-    }
-
-    FlowConfigError inactiveActionError(ActionConfiguration actionConfiguration, OffsetDateTime lastHeard) {
-        FlowConfigError actionConfigError = new FlowConfigError();
-        actionConfigError.setConfigName(actionConfiguration.getName());
-        actionConfigError.setErrorType(FlowErrorType.INACTIVE_ACTION);
-        actionConfigError.setMessage("Action: " + actionConfiguration.getType() + " has not been active since " + lastHeard);
         return actionConfigError;
     }
 

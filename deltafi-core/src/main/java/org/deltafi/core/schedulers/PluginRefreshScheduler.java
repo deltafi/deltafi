@@ -17,25 +17,25 @@
  */
 package org.deltafi.core.schedulers;
 
-import org.deltafi.core.services.FlowValidationService;
+import org.deltafi.core.plugin.PluginRegistryService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-@ConditionalOnProperty(value = "schedule.maintenance", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(value = "schedule.pluginSync", havingValue = "true", matchIfMissing = true)
 @Service
 @EnableScheduling
-public class FlowValidationScheduler {
+public class PluginRefreshScheduler {
 
-    private final FlowValidationService flowValidationService;
+    private final PluginRegistryService pluginRegistryService;
 
-    public FlowValidationScheduler(FlowValidationService flowValidationService) {
-        this.flowValidationService = flowValidationService;
+    public PluginRefreshScheduler(PluginRegistryService pluginRegistryService) {
+        this.pluginRegistryService = pluginRegistryService;
     }
 
     @Scheduled(fixedDelay = 5000)
-    public void revalidateFlows() {
-        flowValidationService.revalidateFlows();
+    public void refreshActionDescriptors() {
+        pluginRegistryService.updateActionDescriptors();
     }
 }

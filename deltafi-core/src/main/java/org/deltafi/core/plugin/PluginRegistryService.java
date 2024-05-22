@@ -18,7 +18,7 @@
 package org.deltafi.core.plugin;
 
 import jakarta.annotation.PostConstruct;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.Flows;
@@ -32,10 +32,11 @@ import org.deltafi.core.types.DataSource;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Slf4j
 public class PluginRegistryService implements Snapshotter {
     private final EgressFlowService egressFlowService;
@@ -43,7 +44,6 @@ public class PluginRegistryService implements Snapshotter {
     private final DataSourceService dataSourceService;
     private final PluginRepository pluginRepository;
     private final PluginValidator pluginValidator;
-    private final ActionDescriptorService actionDescriptorService;
     private final PluginVariableService pluginVariableService;
     private final EgressFlowPlanService egressFlowPlanService;
     private final TransformFlowPlanService transformFlowPlanService;
@@ -52,12 +52,23 @@ public class PluginRegistryService implements Snapshotter {
     private final FlowValidationService flowValidationService;
     private final List<PluginUninstallCheck> pluginUninstallChecks;
     private final List<PluginCleaner> pluginCleaners;
+    private Map<String, ActionDescriptor> actionDescriptorMap;
 
     @PostConstruct
-    public void createSystemPlugin() {
+    public void initialize() {
         Plugin systemPlugin = systemPluginService.getSystemPlugin();
         pluginRepository.deleteOlderVersions(systemPlugin.getPluginCoordinates().getGroupId(), systemPlugin.getPluginCoordinates().getArtifactId());
         pluginRepository.save(systemPlugin);
+        updateActionDescriptors();
+    }
+
+    public void updateActionDescriptors() {
+        actionDescriptorMap = pluginRepository.findAll()
+                .stream()
+                .map(Plugin::getActions)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toMap(ActionDescriptor::getName, Function.identity(), (a,b) -> a));
     }
 
     public Result register(PluginRegistration pluginRegistration) {
@@ -73,12 +84,11 @@ public class PluginRegistryService implements Snapshotter {
 
         pluginRepository.deleteOlderVersions(plugin.getPluginCoordinates().getGroupId(), plugin.getPluginCoordinates().getArtifactId());
         pluginRepository.save(plugin);
-        actionDescriptorService.registerActions(plugin.getActions());
+        updateActionDescriptors();
         pluginVariableService.saveVariables(plugin.getPluginCoordinates(), pluginRegistration.getVariables());
         upgradeFlowPlans(plugin.getPluginCoordinates(), groupedFlowPlans);
 
-        flowValidationService.asyncRebuildInvalidFlows();
-
+        flowValidationService.asyncRevalidateFlows();
         return Result.builder().success(true).build();
     }
 
@@ -116,14 +126,11 @@ public class PluginRegistryService implements Snapshotter {
         if (pluginRegistration.getFlowPlans() != null) {
             pluginRegistration.getFlowPlans().forEach(flowPlan -> {
                 flowPlan.setSourcePlugin(pluginRegistration.getPluginCoordinates());
-                if (flowPlan instanceof TransformFlowPlan plan) {
-                    transformFlowPlans.add(plan);
-                } else if (flowPlan instanceof EgressFlowPlan plan) {
-                    egressFlowPlans.add(plan);
-                } else if (flowPlan instanceof DataSourcePlan plan) {
-                    dataSourcePlans.add(plan);
-                } else {
-                    log.warn("Unknown flow plan type: {}", flowPlan.getClass());
+                switch (flowPlan) {
+                    case TransformFlowPlan plan -> transformFlowPlans.add(plan);
+                    case EgressFlowPlan plan -> egressFlowPlans.add(plan);
+                    case DataSourcePlan plan -> dataSourcePlans.add(plan);
+                    default -> log.warn("Unknown flow plan type: {}", flowPlan.getClass());
                 }
             });
         }
@@ -164,16 +171,6 @@ public class PluginRegistryService implements Snapshotter {
         return getPluginsWithVariables().stream()
                 .map(plugin -> toPluginFlows(plugin, egressFlows, transformFlows, timedIngressDataSources))
                 .toList();
-    }
-
-    /**
-     * Verify that all the actions listed in the plugin have registered themselves.
-     * @param pluginCoordinates whose actions will be checked for registration
-     * @return true if all the actions are registered
-     */
-    public boolean verifyActionsAreRegistered(PluginCoordinates pluginCoordinates) {
-        Plugin plugin = getPlugin(pluginCoordinates).orElseThrow(() -> new IllegalArgumentException("No plugin is registered with coordinates of " + pluginCoordinates.toString()));
-        return actionDescriptorService.verifyActionsExist(plugin.actionNames());
     }
 
     private Flows toPluginFlows(Plugin plugin,
@@ -274,8 +271,18 @@ public class PluginRegistryService implements Snapshotter {
         // TODO: TBD: remove plugin property sets
         Plugin plugin = getPlugin(pluginCoordinates).orElseThrow();
         pluginCleaners.forEach(pluginCleaner -> pluginCleaner.cleanupFor(plugin));
-        // remove the plugin from the registry
         removePlugin(plugin);
+        updateActionDescriptors();
+        flowValidationService.revalidateFlows();
+    }
+
+    public Optional<ActionDescriptor> getByActionClass(String type) {
+        ActionDescriptor actionDescriptor = actionDescriptorMap != null ? actionDescriptorMap.get(type) : null;
+        return Optional.ofNullable(actionDescriptor);
+    }
+
+    public Collection<ActionDescriptor> getActionDescriptors() {
+        return actionDescriptorMap.values();
     }
 
     private record GroupedFlowPlans(List<TransformFlowPlan> transformFlowPlans, List<EgressFlowPlan> egressFlowPlans, List<DataSourcePlan> dataSourcePlans){}

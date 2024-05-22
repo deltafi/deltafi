@@ -8,10 +8,10 @@
   "description": "This is a test plugin",
   "actionKitVersion": "1.1.0",
   "actions" : [ {
-    "name" : "org.deltafi.test.actions.TestAction1",
+    "name" : "org.deltafi.test.actions1.TestAction1",
     "type" : "TRANSFORM"
   }, {
-    "name" : "org.deltafi.test.actions.TestAction2",
+    "name" : "org.deltafi.test.actions1.TestAction2",
     "description" : "TestAction2",
     "type" : "TRANSFORM"
   } ],

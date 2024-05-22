@@ -22,6 +22,7 @@ import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.InputArgument;
 import lombok.RequiredArgsConstructor;
+import org.deltafi.common.types.ActionDescriptor;
 import org.deltafi.common.types.Plugin;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.plugin.deployer.DeployerService;
@@ -47,12 +48,6 @@ public class PluginDataFetcher {
     @NeedsPermission.PluginsView
     public Collection<Plugin> plugins() {
         return pluginRegistryService.getPluginsWithVariables();
-    }
-
-    @DgsQuery
-    @NeedsPermission.PluginsView
-    public boolean verifyActionsAreRegistered(@InputArgument PluginCoordinates pluginCoordinates) {
-        return pluginRegistryService.verifyActionsAreRegistered(pluginCoordinates);
     }
 
     @DgsQuery
@@ -113,6 +108,12 @@ public class PluginDataFetcher {
     @NeedsPermission.PluginCustomizationConfigDelete
     public Result removePluginCustomizationConfig(@InputArgument String id) {
         return deployerService.removePluginCustomizationConfig(id);
+    }
+
+    @DgsQuery
+    @NeedsPermission.PluginsView
+    public Collection<ActionDescriptor> actionDescriptors() {
+        return pluginRegistryService.getActionDescriptors();
     }
 
 }

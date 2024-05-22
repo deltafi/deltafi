@@ -20,12 +20,15 @@ package org.deltafi.core.plugin;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.maven.VersionMatcher;
+import org.deltafi.common.types.ActionDescriptor;
 import org.deltafi.common.types.Plugin;
 import org.deltafi.common.types.PluginCoordinates;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -34,9 +37,10 @@ public class PluginValidator {
     private final PluginRepository pluginRepository;
 
     public List<String> validate(Plugin plugin) {
-        List<String> validationErrors = new ArrayList<>();
-        validationErrors.addAll(validateCoordinates(plugin.getPluginCoordinates()));
-        validationErrors.addAll(validateDependencies(plugin.getDependencies()));
+        List<String> validationErrors = new ArrayList<>(validateCoordinates(plugin.getPluginCoordinates()));
+        List<Plugin> existingPlugins = pluginRepository.findAll().stream().toList();
+        validationErrors.addAll(validateDependencies(plugin.getDependencies(), existingPlugins));
+        validationErrors.addAll(validateUniqueActions(plugin, existingPlugins));
         return validationErrors;
     }
 
@@ -63,14 +67,14 @@ public class PluginValidator {
         return errors;
     }
 
-    private List<String> validateDependencies(List<PluginCoordinates> dependencies) {
+    private List<String> validateDependencies(List<PluginCoordinates> dependencies, List<Plugin> existingPlugins) {
         if (dependencies == null) {
             return List.of();
         }
 
         List<String> dependencyErrors = new ArrayList<>();
 
-        List<PluginCoordinates> registeredPluginCoordinates = pluginRepository.findAll().stream()
+        List<PluginCoordinates> registeredPluginCoordinates = existingPlugins.stream()
                 .map(Plugin::getPluginCoordinates)
                 .toList();
 
@@ -91,4 +95,30 @@ public class PluginValidator {
 
         return dependencyErrors;
     }
+
+    List<String> validateUniqueActions(Plugin newPlugin, List<Plugin> existingPlugins) {
+        if (newPlugin.getActions() == null || newPlugin.getActions().isEmpty()) {
+            return List.of();
+        }
+
+        Map<String, String> actionMap = new HashMap<>();
+        for (Plugin existingPlugin : existingPlugins) {
+            if (existingPlugin.getActions() != null && !existingPlugin.getPluginCoordinates().equalsIgnoreVersion(newPlugin.getPluginCoordinates())) {
+                for (ActionDescriptor existingAction : existingPlugin.getActions()) {
+                    actionMap.put(existingAction.getName(), existingPlugin.getPluginCoordinates().toString());
+                }
+            }
+        }
+
+        List<String> errors = new ArrayList<>();
+        for (ActionDescriptor action : newPlugin.getActions()) {
+            if (actionMap.containsKey(action.getName())) {
+                errors.add("Action '" + action.getName() + "' has registered in another plugin '" + actionMap.get(action.getName()) +"'");
+            }
+        }
+
+        return errors;
+    }
+
+
 }

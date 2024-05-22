@@ -176,9 +176,6 @@ class DeltaFiCoreApplicationTests {
 	DeltaFileRepo deltaFileRepo;
 
 	@Autowired
-	ActionDescriptorRepo actionDescriptorRepo;
-
-	@Autowired
 	DeletePolicyRepo deletePolicyRepo;
 
 	@Autowired
@@ -296,7 +293,6 @@ class DeltaFiCoreApplicationTests {
 	@BeforeEach
 	@SneakyThrows
 	void setup() {
-		actionDescriptorRepo.deleteAll();
 		deltaFileRepo.deleteAll();
 		deltaFiPropertiesRepo.save(new DeltaFiProperties());
 		deltaFileRepo.deleteAll();
@@ -3299,7 +3295,6 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(0, noneFound.count());
 		assertEquals(0, noneFound.totalCount());
 		assertEquals(0, noneFound.countPerMessage().size());
-
 	}
 
 	private static final List<UUID> DIDS = Stream.generate(UUID::randomUUID)
@@ -3385,21 +3380,6 @@ class DeltaFiCoreApplicationTests {
 		// second time no change is needed so it returns false
 		assertThat(deltaFiPropertiesRepo.unsetProperties(List.of(PropertyType.SYSTEM_NAME))).isFalse();
 
-	}
-
-	@Test
-	void testActionRegisteredQuery() {
-		actionDescriptorRepo.deleteAll();
-
-		ActionDescriptor transformActionDescriptor = ActionDescriptor.builder().name("transformAction").build();
-		ActionDescriptor loadActionDescriptor = ActionDescriptor.builder().name("loadAction").build();
-		// name does not match
-		ActionDescriptor formatActionDescriptor = ActionDescriptor.builder().name("otherFormatAction").build();
-
-		actionDescriptorRepo.saveAll(List.of(transformActionDescriptor, loadActionDescriptor, formatActionDescriptor));
-
-		assertThat(actionDescriptorRepo.countAllByNameIn(List.of("transformAction", "loadAction", "formatAction"))).isEqualTo(2);
-		assertThat(actionDescriptorRepo.count()).isEqualTo(3);
 	}
 
 	@Test

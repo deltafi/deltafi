@@ -396,7 +396,6 @@ type Query {
   exportConfigAsYaml: String!
 
   plugins: [Plugin!]!
-  verifyActionsAreRegistered(pluginCoordinates: PluginCoordinatesInput!) : Boolean
 
   annotationKeys: [String!]!
 

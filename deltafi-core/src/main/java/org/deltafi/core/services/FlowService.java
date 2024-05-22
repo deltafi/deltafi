@@ -195,6 +195,13 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     }
 
     /**
+     * Get all the flows and rerun validation
+     */
+    public void validateAllFlows() {
+        getAll().forEach(this::validateAndSaveFlow);
+    }
+
+    /**
      * Find the given flow by name and rerun validation
      * @param flowName name of the flow to validate
      * @return updated flow after validation is run

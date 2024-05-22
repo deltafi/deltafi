@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.plugin;
 
+import org.deltafi.common.types.ActionDescriptor;
 import org.deltafi.common.types.Plugin;
 import org.deltafi.common.types.PluginCoordinates;
 import org.junit.jupiter.api.Test;
@@ -28,7 +29,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(MockitoExtension.class)
@@ -69,9 +69,29 @@ class PluginValidatorTest {
                 new PluginCoordinates("group", "plugin-1", "1.0.1")));
         List<String> dependencyErrors = pluginValidator.validate(plugin);
 
-        assertEquals(2, dependencyErrors.size());
-        assertEquals("Plugin dependency not registered: group:unregistered:1.0.0.", dependencyErrors.get(0));
-        assertEquals("Plugin dependency for group:plugin-1 not satisfied. Required version 1.0.1 but installed version is 1.0.0.",
-                dependencyErrors.get(1));
+        assertThat(dependencyErrors).hasSize(2)
+                        .contains("Plugin dependency not registered: group:unregistered:1.0.0.",
+                                "Plugin dependency for group:plugin-1 not satisfied. Required version 1.0.1 but installed version is 1.0.0.");
+    }
+
+    @Test
+    void validateUniqueActions() {
+        Plugin pluginOldVersion = new Plugin();
+        PluginCoordinates olderVersion = new PluginCoordinates("group", "plugin-1", "1.0.0");
+        pluginOldVersion.setPluginCoordinates(olderVersion);
+        pluginOldVersion.setActions(List.of(ActionDescriptor.builder().name("org.deltafi.A1").build()));
+
+        Plugin pluginNewVersion = new Plugin();
+        PluginCoordinates newVersion = new PluginCoordinates("group", "plugin-1", "1.0.1");
+        pluginNewVersion.setPluginCoordinates(newVersion);
+        pluginNewVersion.setActions(List.of(ActionDescriptor.builder().name("org.deltafi.A1").build()));
+
+        Plugin differentPlugin = new Plugin();
+        PluginCoordinates differentVersion = new PluginCoordinates("group", "plugin-2", "1.0.0");
+        differentPlugin.setPluginCoordinates(differentVersion);
+        differentPlugin.setActions(List.of(ActionDescriptor.builder().name("org.deltafi.A1").build()));
+
+        List<String> errors = pluginValidator.validateUniqueActions(pluginNewVersion, List.of(pluginOldVersion, differentPlugin));
+        assertThat(errors).hasSize(1).contains("Action 'org.deltafi.A1' has registered in another plugin 'group:plugin-2:1.0.0'");
     }
 }

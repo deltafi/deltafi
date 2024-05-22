@@ -126,20 +126,6 @@ export default function usePlugins() {
     return sendGraphQLQuery(query, "uninstallPlugin", "mutation");
   };
 
-  const verifyActionsAreRegistered = async (groupId: String, artifactId: String, version: String) => {
-    const query = {
-      verifyActionsAreRegistered: {
-        pluginCoordinates: {
-          groupId: groupId,
-          artifactId: artifactId,
-          version: version,
-        },
-      },
-    };
-    await queryGraphQL(query, "updatePluginVariable", "mutation");
-    return;
-  };
-
   const getPluginImageRepositories = async () => {
     const query = {
       getPluginImageRepositories: {
@@ -204,7 +190,6 @@ export default function usePlugins() {
     uninstallPlugin,
     fetch,
     setPluginVariableValues,
-    verifyActionsAreRegistered,
     getPluginImageRepositories,
     savePluginImageRepository,
     removePluginImageRepository,

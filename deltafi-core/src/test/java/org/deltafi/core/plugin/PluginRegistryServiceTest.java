@@ -52,9 +52,6 @@ class PluginRegistryServiceTest {
     private static final PluginCoordinates PLUGIN_COORDINATES_2 = new PluginCoordinates("org.mock", "plugin-2", "1.0.0");
 
     @Mock
-    ActionDescriptorService actionDescriptorService;
-
-    @Mock
     PluginRepository pluginRepository;
 
     @Mock
@@ -94,10 +91,10 @@ class PluginRegistryServiceTest {
 
     @BeforeEach
     public void setup() {
-        List<PluginCleaner> cleaners = List.of(egressFlowPlanService, transformFlowPlanService, dataSourcePlanService, pluginVariableService, actionDescriptorService, actionEventQueuePluginCleaner);
+        List<PluginCleaner> cleaners = List.of(egressFlowPlanService, transformFlowPlanService, dataSourcePlanService, pluginVariableService, actionEventQueuePluginCleaner);
         List<PluginUninstallCheck> checkers = List.of(egressFlowService, transformFlowService, dataSourceService);
         pluginRegistryService = new PluginRegistryService(egressFlowService,
-                transformFlowService, dataSourceService, pluginRepository, pluginValidator, actionDescriptorService, pluginVariableService,
+                transformFlowService, dataSourceService, pluginRepository, pluginValidator, pluginVariableService,
                 egressFlowPlanService, transformFlowPlanService, dataSourcePlanService, systemPluginService, flowValidationService, checkers, cleaners);
     }
 
@@ -114,7 +111,7 @@ class PluginRegistryServiceTest {
         ArgumentCaptor<Plugin> pluginArgumentCaptor = ArgumentCaptor.forClass(Plugin.class);
         Mockito.verify(pluginRepository).save(pluginArgumentCaptor.capture());
         assertEquals(plugin, pluginArgumentCaptor.getValue());
-        Mockito.verify(flowValidationService).asyncRebuildInvalidFlows();
+        Mockito.verify(flowValidationService).asyncRevalidateFlows();
     }
 
     @Test
@@ -197,7 +194,6 @@ class PluginRegistryServiceTest {
         Mockito.verify(pluginRepository).deleteById(PLUGIN_COORDINATES_1);
         Mockito.verify(egressFlowPlanService).cleanupFor(plugin1);
         Mockito.verify(pluginVariableService).cleanupFor(plugin1);
-        Mockito.verify(actionDescriptorService).cleanupFor(plugin1);
         Mockito.verify(actionEventQueuePluginCleaner).cleanupFor(plugin1);
     }
 

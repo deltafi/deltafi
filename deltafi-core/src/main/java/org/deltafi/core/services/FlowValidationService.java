@@ -25,23 +25,32 @@ import java.util.List;
 @Service
 public class FlowValidationService {
     private final List<FlowPlanService<?, ?, ?>> flowPlanServices;
+    private final List<FlowService<?, ?, ?>> flowServices;
 
-    public FlowValidationService(List<FlowPlanService<?, ?, ?>> flowPlanServices) {
+    public FlowValidationService(List<FlowPlanService<?, ?, ?>> flowPlanServices, List<FlowService<?, ?, ?>> flowServices) {
         this.flowPlanServices = flowPlanServices;
+        this.flowServices = flowServices;
     }
 
     /**
-     * Find all invalid flows and rebuild them
+     * Rebuild all invalid flows and then run validate
+     * against all flows.
      */
-    public void rebuildInvalidFlows() {
+    public void revalidateFlows() {
+        rebuildInvalidFlows();
+        validateAllFlows();
+    }
+
+    @Async
+    public void asyncRevalidateFlows() {
+        revalidateFlows();
+    }
+
+    private void rebuildInvalidFlows() {
         flowPlanServices.forEach(FlowPlanService::rebuildInvalidFlows);
     }
 
-    /**
-     * Find all invalid flows and attempt to rebuild them in a background task
-     */
-    @Async
-    public void asyncRebuildInvalidFlows() {
-        rebuildInvalidFlows();
+    private void validateAllFlows() {
+        flowServices.forEach(FlowService::validateAllFlows);
     }
 }
