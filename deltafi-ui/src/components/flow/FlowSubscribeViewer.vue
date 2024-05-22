@@ -23,11 +23,8 @@
       <a v-if="value.condition">{{ value.condition }}</a>
       <a v-else>None</a><br />
       <b>Topic: </b>
-      <ul>
-        <div v-for="topic in value.topic" :key="topic">
-          <li>{{ topic }}</li>
-        </div>
-      </ul>
+      <a v-if="value.topic">{{ value.topic }}</a>
+      <a v-else>None</a>
       <hr v-if="index !== props.subscribe.length - 1" />
     </span>
   </div>
