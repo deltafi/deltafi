@@ -55,7 +55,7 @@ if [ -d "${FLOWS_DIRECTORY}" ]; then
   FLOWS_DIRECTORY=$(cd ${FLOWS_DIRECTORY} && pwd)
 fi
 
-DELTAFI_DGS=$(deltafi serviceip deltafi-core-service)
+DELTAFI_DGS=$(_graphql)
 
 read_file() {
   FLOW_PLAN_FILE="$@"
@@ -74,7 +74,7 @@ execute_graphql() {
 
   local POST_QUERY="$@"
 
-  local RESPONSE_CODE=$(curl -s -X POST -o ${TMPFILE} -w "%{http_code}" -H "Content-Type: application/json" -H "${PERMISSION}" -H "${CLI_USER}" -d "${POST_QUERY}" http://${DELTAFI_DGS}/graphql)
+  local RESPONSE_CODE=$(curl -s -X POST -o ${TMPFILE} -w "%{http_code}" -H "Content-Type: application/json" -H "${PERMISSION}" -H "${CLI_USER}" -d "${POST_QUERY}" "${DELTAFI_DGS}")
 
   if [[ "${RESPONSE_CODE}" != "200" ]]; then
     echo -e "${RESPONSE_CODE} Error: $(cat ${TMPFILE})"

@@ -33,7 +33,7 @@ module Deltafi
 
       def generate_url
         dgs_ip = `deltafi serviceip deltafi-core-service`
-        "http://#{dgs_ip.chomp}/graphql"
+        "http://#{dgs_ip.chomp}/api/v2/graphql"
       end
 
       def execute_request(query_string, variables = '{}', dig_path = [:data])

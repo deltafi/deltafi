@@ -54,7 +54,7 @@ list_events() {
     exit 1
   fi
 
-  API_URL="http://${API_HOST}/api/v1/events"
+  API_URL="${API_V1}/events"
 
   local width
   width=$(tput cols)
@@ -88,7 +88,7 @@ pretty_json() {
 }
 
 create_event() {
-  API_URL="http://${API_HOST}/api/v1/events"
+  API_URL="${API_V1}/events"
 
   local summary=$*
   local content
@@ -109,7 +109,7 @@ EOF
 }
 trap cleanup INT
 
-API_HOST=$(deltafi serviceip deltafi-api-service)
+API_V1=$(_api_v1)
 
 ARGS=("$@")
 [[ ${#ARGS[@]} -lt 2 ]] && cli_help_command

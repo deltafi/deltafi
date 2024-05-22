@@ -24,7 +24,7 @@ if [[ "$1" == '-c' || "$1" == '--color' ]]; then
 fi
 
 QUERY=$(echo "$1" | jq -Rsa .)
-GRAPHQL_IP=$(deltafi serviceip deltafi-core-service)
+DELTAFI_DGS=$(_graphql)
 POST_QUERY="{ \"query\": $QUERY,\"variables\":null}"
 
-curl -s -X POST -H "Content-Type: application/json" -H "$PERMISSION" -H "$CLI_USER" -d "$POST_QUERY" "http://$GRAPHQL_IP/graphql" | jq "$JQ_ARGS" '.'
+curl -s -X POST -H "Content-Type: application/json" -H "$PERMISSION" -H "$CLI_USER" -d "$POST_QUERY" "$DELTAFI_DGS" | jq "$JQ_ARGS" '.'

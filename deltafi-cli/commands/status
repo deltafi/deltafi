@@ -18,8 +18,8 @@ ARGS=($@)
 ICONS=('✔' '⚠' '✕')
 COLORS=($green $yellow $red)
 
-API_HOST=$(deltafi serviceip deltafi-api-service)
-API_URL="http://${API_HOST}/api/v1/status"
+API_V1=$(_api_v1)
+API_URL="${API_V1}/status"
 
 STATUS=$(curl --connect-timeout 3 -s -H "$PERMISSION" ${API_URL})
 if [ $? -ne 0 ]; then

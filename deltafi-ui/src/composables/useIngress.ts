@@ -50,7 +50,7 @@ export default function useIngress() {
     axios
       .request({
         method: "post",
-        url: "/deltafile/ingress",
+        url: "/api/v2/deltafile/ingress",
         data: file,
         headers: buildHeader(),
         onUploadProgress: (progressEvent: any) => {

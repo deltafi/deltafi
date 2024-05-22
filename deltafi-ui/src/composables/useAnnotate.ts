@@ -23,7 +23,7 @@ const maxSuccessDisplay = 20;
 
 export default function useAnnotate() {
   const notify = useNotifications();
-  const endpoint: string = '/deltafile/annotate';
+  const endpoint: string = '/api/v2/deltafile/annotate';
   const { pluralize } = useUtilFunctions();
 
   const post = async (url: string) => {

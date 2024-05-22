@@ -76,7 +76,7 @@ docker:
 
     TMPFILE="/tmp/.deltafi-install-plugin"
     POST_QUERY='{ "query": "mutation { installPlugin(pluginCoordinates: { groupId: \"'$GROUP_ID'\" artifactId: \"'$PROJECT_NAME'\" version: \"'${CI_COMMIT_SHA}'\"}) { success info errors }}","variables":null}'
-    RESPONSE_CODE=$(curl -s -u "$DELTAFI_USERNAME:$DELTAFI_PASSWORD" -X POST -o ${TMPFILE} -w "%{http_code}" -H "Content-Type: application/json" -d "$POST_QUERY" https://$DELTAFI_CD_SYSTEM/graphql-core)
+    RESPONSE_CODE=$(curl -s -u "$DELTAFI_USERNAME:$DELTAFI_PASSWORD" -X POST -o ${TMPFILE} -w "%{http_code}" -H "Content-Type: application/json" -d "$POST_QUERY" https://$DELTAFI_CD_SYSTEM/api/v2/graphql)
 
     if [[ "$RESPONSE_CODE" != "200" ]]; then
       echo -e "${RESPONSE_CODE} Error: $(cat ${TMPFILE})"

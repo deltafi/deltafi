@@ -29,7 +29,7 @@ module Deltafi
   VALKEY_RECONNECT_ATTEMPTS = 5
   VALKEY_PASSWORD = ENV.fetch('VALKEY_PASSWORD', nil)
   VALKEY_URL = ENV['VALKEY_URL']&.gsub(/^http/, 'redis') || ENV['REDIS_URL']&.gsub(/^http/, 'redis') || 'redis://deltafi-valkey-master:6379'
-  BASE_URL = ENV['CORE_URL'] || 'http://deltafi-core-service'
+  BASE_URL = ENV['CORE_URL'] || 'http://deltafi-core-service/api/v2'
   DELTAFI_MODE = ENV['DELTAFI_MODE'] || 'CLUSTER'
 
   def self.k8s_client

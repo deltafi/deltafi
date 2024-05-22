@@ -22,35 +22,21 @@ spec:
             name: deltafi-ui-service
             port:
               number: 80
-      - path: /(api.*)
+      - path: /(api/v1/.*)
         pathType: Prefix
         backend:
           service:
             name: deltafi-api-service
             port:
               number: 80
-      - path: /(graphql)-core
-        pathType: Prefix
-        backend:
-          service:
-            name: deltafi-core-service
-            port:
-              number: 80
-      - path: /(deltafile/ingress)
+      - path: /(api/v2/deltafile/ingress)
         pathType: Prefix
         backend:
           service:
             name: deltafi-ingress-service
             port:
               number: 80
-      - path: /(survey)
-        pathType: Prefix
-        backend:
-          service:
-            name: deltafi-ingress-service
-            port:
-              number: 80
-      - path: /(deltafile/annotate/.*)
+      - path: /(api/v2/.*)
         pathType: Prefix
         backend:
           service:

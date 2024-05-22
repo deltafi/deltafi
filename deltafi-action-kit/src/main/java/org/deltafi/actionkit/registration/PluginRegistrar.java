@@ -62,7 +62,7 @@ public class PluginRegistrar {
     @Autowired
     ActionsProperties actionsProperties;
 
-    @Value("${CORE_URL:http://deltafi-core-service}")
+    @Value("${CORE_URL:http://deltafi-core-service/api/v2/}")
     private String coreUrl;
 
     public void register() {

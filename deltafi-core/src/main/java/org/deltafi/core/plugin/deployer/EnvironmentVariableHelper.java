@@ -29,7 +29,7 @@ import java.util.List;
 public class EnvironmentVariableHelper {
     private final List<String> envVars;
 
-    public EnvironmentVariableHelper(MinioProperties minioProperties, ActionEventQueueProperties actionEventQueueProperties, SslProperties sslProperties,  @Value("${CORE_URL:http://deltafi-core-service}") String coreUrl) {
+    public EnvironmentVariableHelper(MinioProperties minioProperties, ActionEventQueueProperties actionEventQueueProperties, SslProperties sslProperties,  @Value("${CORE_URL:http://deltafi-core-service/api/v2}") String coreUrl) {
         this.envVars = buildEnvVarList(minioProperties, actionEventQueueProperties, sslProperties, coreUrl);
     }
 

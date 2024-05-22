@@ -233,8 +233,8 @@ if [ -n "$ZIP" ]; then
   outfile="$DELTAFI_DIR/../$ZIP"
 fi
 
-DELTAFI_DGS=$(deltafi serviceip deltafi-core-service)
-RESPONSE_CODE=$(curl -s -X POST -o "${outfile}" -w "%{http_code}" -H 'Content-Type: application/json' -H "$PERMISSION" -H "$CLI_USER" -d "$json" http://$DELTAFI_DGS/generate/plugin?message=true)
+API_V2=$(_api_v2)
+RESPONSE_CODE=$(curl -s -X POST -o "${outfile}" -w "%{http_code}" -H 'Content-Type: application/json' -H "$PERMISSION" -H "$CLI_USER" -d "$json" "${API_V2}/generate/plugin?message=true")
 
 if [[ "$RESPONSE_CODE" != "200" ]]; then
   cli_log "${red}$Error generating the plugin${normal}"

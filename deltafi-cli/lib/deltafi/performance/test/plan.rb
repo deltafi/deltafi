@@ -32,8 +32,8 @@ module Deltafi
 
           domain = yaml_hash['deltafi_domain']
           unless domain.nil?
-            graphql_url = "https://#{domain}/graphql-core-domain"
-            ingress_url = "https://ingress.#{domain}/deltafile/ingress"
+            graphql_url = "https://#{domain}/api/v2/graphql"
+            ingress_url = "https://ingress.#{domain}/api/v2/deltafile/ingress"
           end
 
           @test_steps = raw_test_steps.each_with_index.map { |test_step_yaml, idx| Step.new(test_step_yaml, @duration, idx, graphql_url, ingress_url) }

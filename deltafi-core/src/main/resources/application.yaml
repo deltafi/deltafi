@@ -27,3 +27,5 @@ management:
 server:
   error:
     include-message: on-param
+  servlet:
+    context-path: "/api/v2"

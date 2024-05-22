@@ -2,7 +2,7 @@
 
 . "$DELTAFICLI_WORKDIR/common"
 
-API_HOST=$(deltafi serviceip deltafi-api-service)
+API_V1=$(_api_v1)
 TEMPFILE=
 
 cli_help_command() {
@@ -106,7 +106,7 @@ prerequisites() {
 
 list() {
   prerequisites
-  LIST_URL="http://${API_HOST}/api/v1/registry/list"
+  LIST_URL="${API_V1}/registry/list"
   if [[ -n "$TERSE" ]]; then
     curl --connect-timeout 3 -s -H "$PERMISSION" "${LIST_URL}" 2>/dev/null | \
     jq -r '(.result[] | .name as $name | .tags[] | $name + ":" + .)'
@@ -121,7 +121,7 @@ list() {
 
 delete() {
   prerequisites
-  DELETE_URL="http://${API_HOST}/api/v1/registry/delete"
+  DELETE_URL="${API_V1}/registry/delete"
 
   local result
   local error
@@ -142,9 +142,9 @@ delete() {
 
 add() {
   prerequisites
-  ADD_URL="http://${API_HOST}/api/v1/registry/add"
-  [[ -n "$REPLACE" ]] && ADD_URL="http://${API_HOST}/api/v1/registry/replace"
-  UPLOAD_URL="http://${API_HOST}/api/v1/registry/upload"
+  ADD_URL="${API_V1}/registry/add"
+  [[ -n "$REPLACE" ]] && ADD_URL="${API_V1}/registry/replace"
+  UPLOAD_URL="${API_V1}/registry/upload"
   local image_name
   local result
   local error
@@ -213,7 +213,7 @@ case "$SUBCOMMAND" in
           shift
           ;;
         --api-host)
-          API_HOST="$2"
+          API_V1=$(_api_v1 "$2")
           shift 2
           ;;
         -t | --terse)
@@ -241,7 +241,7 @@ case "$SUBCOMMAND" in
           shift
           ;;
         --api-host)
-          API_HOST="$2"
+          API_V1=$(_api_v1 "$2")
           shift 2
           ;;
         --) shift;
@@ -265,7 +265,7 @@ case "$SUBCOMMAND" in
           shift
           ;;
         --api-host)
-          API_HOST="$2"
+          API_V1=$(_api_v1 "$2")
           shift 2
           ;;
         -d | --docker-client)

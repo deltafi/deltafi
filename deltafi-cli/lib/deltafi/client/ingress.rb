@@ -29,7 +29,7 @@ module Deltafi
 
       def generate_url
         ingress_ip = `deltafi serviceip deltafi-ingress-service`
-        "http://#{ingress_ip.chomp}/deltafile/ingress"
+        "http://#{ingress_ip.chomp}/api/v2/deltafile/ingress"
       end
 
       def ingress_data(flow, filename, body, media_type = 'application/octet-stream', filename_tag = nil)
