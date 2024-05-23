@@ -6,6 +6,10 @@ module.exports = {
     host: "localhost",
     compress: false,
     proxy: {
+      // TODO: Will need to be removed after beta6 is released.
+      "^/api/v2/graphql": {
+        target: `https://${DELTAFI_DOMAIN}/graphql-core`,
+      },
       "^/api": {
         target: `https://${DELTAFI_DOMAIN}`,
         bypass: (req, res) => {
@@ -15,9 +19,6 @@ module.exports = {
             return null;
           }
         },
-      },
-      "^/graphql": {
-        target: `https://${DELTAFI_DOMAIN}`,
       },
       "^/deltafile/ingress": {
         target: `https://ingress.${DELTAFI_DOMAIN}`,
