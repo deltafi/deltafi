@@ -100,7 +100,6 @@ import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
@@ -275,7 +274,7 @@ class DeltaFiCoreApplicationTests {
     AnalyticEventService analyticEventService;
 
 	// mongo eats microseconds, jump through hoops
-	private final OffsetDateTime MONGO_NOW = OffsetDateTime.of(LocalDateTime.ofEpochSecond(OffsetDateTime.now().toInstant().toEpochMilli(), 0, ZoneOffset.UTC), ZoneOffset.UTC);
+	private final OffsetDateTime MONGO_NOW = OffsetDateTime.now(Clock.tickMillis(ZoneOffset.UTC));
 
 	@TestConfiguration
 	public static class Config {
@@ -287,6 +286,11 @@ class DeltaFiCoreApplicationTests {
 		@Bean
 		public StorageConfigurationService storageConfigurationService(MinioClient minioClient, DeltaFiPropertiesService deltaFiPropertiesService) {
 			return new StorageConfigurationService(minioClient, deltaFiPropertiesService);
+		}
+
+		@Bean
+		public Clock clock() {
+			return Clock.tickMillis(ZoneOffset.UTC);
 		}
 	}
 
@@ -2268,7 +2272,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile1.setDataSource("flow1");
 		DeltaFileFlow flow1 = deltaFile1.addFlow("MyEgressFlow", FlowType.EGRESS, deltaFile1.getFlows().getFirst(), MONGO_NOW);
 		flow1.setActions(List.of(Action.builder().name("action1")
-				.state(ActionState.COMPLETE)
+				.state(ActionState.ERROR)
 				.content(List.of(new Content("formattedFilename1", "mediaType")))
 				.metadata(Map.of("formattedKey1", "formattedValue1", "formattedKey2", "formattedValue2"))
 				.errorAcknowledged(MONGO_NOW)
@@ -2357,7 +2361,7 @@ class DeltaFiCoreApplicationTests {
 		testFilter(DeltaFilesFilter.newBuilder().dids(List.of(deltaFile1.getDid(), deltaFile2.getDid())).build(), deltaFile1, deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().dids(List.of(UUID.randomUUID(), UUID.randomUUID())).build());
 		testFilter(DeltaFilesFilter.newBuilder().errorAcknowledged(true).build(), deltaFile1);
-		testFilter(DeltaFilesFilter.newBuilder().errorAcknowledged(false).build(), deltaFile2, deltaFile3);
+		testFilter(DeltaFilesFilter.newBuilder().errorAcknowledged(false).build(), deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().egressed(false).build(), deltaFile1);
 		testFilter(DeltaFilesFilter.newBuilder().egressed(true).build(), deltaFile2, deltaFile3);
 		testFilter(DeltaFilesFilter.newBuilder().filtered(false).build(), deltaFile1);
@@ -2375,6 +2379,33 @@ class DeltaFiCoreApplicationTests {
 		testFilter(DeltaFilesFilter.newBuilder().transformFlows(List.of("MyTransformFlow", "MyEgressFlow")).build(), deltaFile3);
 		testFilter(DeltaFilesFilter.newBuilder().transformFlows(List.of("MyEgressFlow")).build());
 		testFilter(DeltaFilesFilter.newBuilder().dataSources(List.of("flow1", "flow3")).build(), deltaFile1, deltaFile3);
+	}
+
+	@Test
+	void multipleActionElemCriteria() {
+		String reason = "reason";
+		OffsetDateTime time = OffsetDateTime.now(clock);
+		DeltaFile acknowledgedError = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, time, time);
+		Action ackedAction = acknowledgedError.getFlows().getFirst().addAction("ErrorAction", ActionType.TRANSFORM, ERROR, time);
+		ackedAction.setErrorAcknowledged(time);
+		ackedAction.setErrorCause(reason);
+
+		time = time.minusMinutes(1);
+		DeltaFile unacknowledgedError = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, time, time);
+		Action unacknowledgedAction = unacknowledgedError.getFlows().getFirst().addAction("ErrorAction", ActionType.TRANSFORM, ERROR, time);
+		unacknowledgedAction.setErrorCause(reason);
+
+		time = time.minusMinutes(2);
+		DeltaFile filtered = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, time, time);
+		Action filteredAction = filtered.getFlows().getFirst().addAction("FilteredAction", ActionType.TRANSFORM, FILTERED, time);
+		filteredAction.setFilteredCause(reason);
+		deltaFileRepo.saveAll(List.of(unacknowledgedError, acknowledgedError, filtered));
+
+		testFilter(DeltaFilesFilter.newBuilder().errorCause(reason).build(), acknowledgedError, unacknowledgedError);
+		testFilter(DeltaFilesFilter.newBuilder().errorCause(reason).errorAcknowledged(true).build(), acknowledgedError);
+		testFilter(DeltaFilesFilter.newBuilder().errorCause(reason).errorAcknowledged(false).build(), unacknowledgedError);
+		testFilter(DeltaFilesFilter.newBuilder().filteredCause(reason).errorCause(reason).build(), acknowledgedError, unacknowledgedError, filtered);
+		testFilter(DeltaFilesFilter.newBuilder().filteredCause(reason).errorCause(reason).errorAcknowledged(true).build(), acknowledgedError, filtered);
 	}
 
 	@Test

@@ -152,6 +152,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     private static final String TERMINAL = "terminal";
     private static final String CONTENT_DELETABLE = "contentDeletable";
 
+    private static final String CREATED_BEFORE_INDEX = "created_before_index";
+    private static final String TERMINAL_INDEX = "terminal_index";
+
     public static final int MAX_COUNT = 50_000;
     public static final String TYPE = "type";
 
@@ -175,7 +178,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     private static final Map<String, Index> INDICES;
     static {
         INDICES = new HashMap<>();
-        INDICES.put("created_before_index", new Index().named("created_before_index").on(CREATED, Sort.Direction.ASC).on(DATA_SOURCE, Sort.Direction.ASC));
+        INDICES.put(CREATED_BEFORE_INDEX, new Index().named(CREATED_BEFORE_INDEX).on(CREATED, Sort.Direction.ASC).on(DATA_SOURCE, Sort.Direction.ASC));
         INDICES.put("modified_before_index", new Index().named("modified_before_index").on(MODIFIED, Sort.Direction.ASC).on(DATA_SOURCE, Sort.Direction.ASC));
         INDICES.put("auto_resume_index", new Index().named("auto_resume_index").on(NEXT_AUTO_RESUME, Sort.Direction.ASC).on(STAGE, Sort.Direction.ASC));
         INDICES.put("flow_first_index", new Index().named("flow_first_index").on(DATA_SOURCE, Sort.Direction.ASC).on(NORMALIZED_NAME, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
@@ -185,7 +188,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         INDICES.put("egress_flow_index", new Index().named("egress_flow_index").on(EGRESS_FLOWS, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
         INDICES.put("ingress_bytes_index", new Index().named("ingress_bytes_index").on(INGRESS_BYTES, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
         INDICES.put("in_flight_index", new Index().named("in_flight_index").on(IN_FLIGHT, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(IN_FLIGHT).is(true))));
-        INDICES.put("terminal_index", new Index().named("terminal_index").on(TERMINAL, Sort.Direction.ASC).on(DATA_SOURCE, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
+        INDICES.put(TERMINAL_INDEX, new Index().named(TERMINAL_INDEX).on(TERMINAL, Sort.Direction.ASC).on(DATA_SOURCE, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
         INDICES.put("content_deletable_index", new Index().named("content_deletable_index").on(CONTENT_DELETABLE, Sort.Direction.ASC).on(DATA_SOURCE, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(CONTENT_DELETABLE).is(true))));
 
         // partial index to support finding DeltaFiles that are pending annotations
@@ -336,11 +339,11 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         String indexHint;
         if (createdBeforeDate != null) {
             criteria = Criteria.where(CREATED).lt(createdBeforeDate);
-            indexHint = "created_before_index";
+            indexHint = CREATED_BEFORE_INDEX;
         } else {
             criteria = Criteria.where(MODIFIED).lt(completedBeforeDate);
             criteria.and(TERMINAL).is(true);
-            indexHint = "terminal_index";
+            indexHint = TERMINAL_INDEX;
         }
 
         if (flow != null) {
@@ -581,13 +584,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             }
         }
 
-        if (filter.getModifiedAfter() != null && filter.getModifiedBefore() != null) {
-            criteria.and(MODIFIED).gt(filter.getModifiedAfter()).lt(filter.getModifiedBefore());
-        } else if (filter.getModifiedAfter() != null) {
-            criteria.and(MODIFIED).gt(filter.getModifiedAfter());
-        } else if (filter.getModifiedBefore() != null) {
-            criteria.and(MODIFIED).lt(filter.getModifiedBefore());
-        }
+        addModifiedDateCriteria(criteria, filter.getModifiedAfter(), filter.getModifiedBefore());
 
         if (filter.getTerminalStage() != null) {
             criteria.and(TERMINAL).is(isTrue(filter.getTerminalStage()));
@@ -605,21 +602,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             criteria.and(ACTIONS_NAME).all(filter.getActions());
         }
 
-        if (filter.getErrorCause() != null) {
-            Criteria actionElemMatch = new Criteria().andOperator(Criteria.where(STATE).is(ERROR.name()),
-                    Criteria.where(ERROR_CAUSE).regex(filter.getErrorCause()));
-            criteria.and(FLOWS_ACTIONS).elemMatch(actionElemMatch);
-        }
-
-        if (filter.getFilteredCause() != null) {
-            boolean filtered = filter.getFiltered() == null || filter.getFiltered();
-            criteria.and(FILTERED).is(filtered);
-            Criteria actionElemMatch = new Criteria().andOperator(Criteria.where(STATE).is(ActionState.FILTERED.name()),
-                    Criteria.where(FILTERED_CAUSE).regex(filter.getFilteredCause()));
-            criteria.and(FLOWS_ACTIONS).elemMatch(actionElemMatch);
-        } else if (filter.getFiltered() != null) {
-            criteria.and(FILTERED).is(filter.getFiltered());
-        }
+        addErrorAndFilterCriteria(filter, criteria);
 
         if (filter.getRequeueCountMin() != null) {
             criteria.and(REQUEUE_COUNT).gte(filter.getRequeueCountMin());
@@ -647,14 +630,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             criteria.and(TOTAL_BYTES).gte(filter.getTotalBytesMin());
         } else if (filter.getTotalBytesMax() != null) {
             criteria.and(TOTAL_BYTES).lte(filter.getTotalBytesMax());
-        }
-
-        if (filter.getErrorAcknowledged() != null) {
-            if (isTrue(filter.getErrorAcknowledged())) {
-                criteria.and(FLOWS_ACTIONS).elemMatch(Criteria.where(ERROR_ACKNOWLEDGED).ne(null));
-            } else {
-                criteria.and(FLOWS_ACTIONS).not().elemMatch(Criteria.where(ERROR_ACKNOWLEDGED).ne(null));
-            }
         }
 
         if (filter.getEgressed() != null) {
@@ -691,6 +666,59 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         return criteria;
+    }
+
+    private void addModifiedDateCriteria(Criteria criteria, OffsetDateTime modifiedAfter, OffsetDateTime modifiedBefore) {
+        if (modifiedAfter != null && modifiedBefore != null) {
+            criteria.and(MODIFIED).gt(modifiedAfter).lt(modifiedBefore);
+        } else if (modifiedAfter != null) {
+            criteria.and(MODIFIED).gt(modifiedAfter);
+        } else if (modifiedBefore != null) {
+            criteria.and(MODIFIED).lt(modifiedBefore);
+        }
+    }
+
+    private void addErrorAndFilterCriteria(DeltaFilesFilter filter, Criteria criteria) {
+        Criteria erroredActionCriteria = getErroredActionsCriteria(filter.getErrorCause(), filter.getErrorAcknowledged());
+        Criteria filteredActionCriteria = getFilteredActionsCriteria(filter.getFilteredCause());
+
+        if (erroredActionCriteria != null && filteredActionCriteria != null) {
+            Criteria errorOrFilteredCriteria = new Criteria().orOperator(erroredActionCriteria, filteredActionCriteria);
+            criteria.and(FLOWS_ACTIONS).elemMatch(errorOrFilteredCriteria);
+        } else if (erroredActionCriteria != null) {
+            criteria.and(FLOWS_ACTIONS).elemMatch(erroredActionCriteria);
+        } else if (filteredActionCriteria != null) {
+            boolean filtered = filter.getFiltered() == null || filter.getFiltered();
+            criteria.and(FILTERED).is(filtered);
+            criteria.and(FLOWS_ACTIONS).elemMatch(filteredActionCriteria);
+        } else if (filter.getFiltered() != null) {
+            criteria.and(FILTERED).is(filter.getFiltered());
+        }
+    }
+
+    private Criteria getErroredActionsCriteria(String errorCause, Boolean acknowledged) {
+        if (errorCause == null && acknowledged == null) {
+            return null;
+        }
+        List<Criteria> elemCriteria = new ArrayList<>();
+        elemCriteria.add(Criteria.where(STATE).is(ERROR.name()));
+        if (errorCause != null) {
+            elemCriteria.add(Criteria.where(ERROR_CAUSE).regex(errorCause));
+        }
+
+        if (acknowledged != null) {
+            if (acknowledged) {
+                elemCriteria.add(Criteria.where(ERROR_ACKNOWLEDGED).ne(null));
+            } else {
+                elemCriteria.add(Criteria.where(ERROR_ACKNOWLEDGED).isNull());
+            }
+        }
+        return new Criteria().andOperator(elemCriteria);
+    }
+
+    private Criteria getFilteredActionsCriteria(String filteredCause) {
+        return filteredCause != null ? new Criteria().andOperator(
+                Criteria.where(STATE).is(ActionState.FILTERED.name()), Criteria.where(FILTERED_CAUSE).regex(filteredCause)) : null;
     }
 
     private void addAnnotationCriteria(String key, String value, Criteria criteria) {
@@ -925,9 +953,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         if (filter.getErrorAcknowledged() != null) {
             if (isTrue(filter.getErrorAcknowledged())) {
-                criteria.and(FLOWS).elemMatch(Criteria.where("actions").elemMatch(Criteria.where("errorAcknowledged").ne(null)));
+                criteria.and(FLOWS).elemMatch(Criteria.where("actions").elemMatch(Criteria.where(ERROR_ACKNOWLEDGED).ne(null)));
             } else {
-                criteria.and(FLOWS).not().elemMatch(Criteria.where("actions").elemMatch(Criteria.where("errorAcknowledged").ne(null)));
+                criteria.and(FLOWS).not().elemMatch(Criteria.where("actions").elemMatch(Criteria.where(ERROR_ACKNOWLEDGED).ne(null)));
             }
         }
 
@@ -947,13 +975,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     private void applySummaryCriteria(SummaryFilter filter, Criteria criteria) {
-        if (filter.getModifiedAfter() != null && filter.getModifiedBefore() != null) {
-            criteria.and(MODIFIED).gt(filter.getModifiedAfter()).lt(filter.getModifiedBefore());
-        } else if (filter.getModifiedAfter() != null) {
-            criteria.and(MODIFIED).gt(filter.getModifiedAfter());
-        } else if (filter.getModifiedBefore() != null) {
-            criteria.and(MODIFIED).lt(filter.getModifiedBefore());
-        }
+        addModifiedDateCriteria(criteria, filter.getModifiedAfter(), filter.getModifiedBefore());
 
         if (filter.getFlow() != null) {
             criteria.and(DATA_SOURCE).is(filter.getFlow());

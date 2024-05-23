@@ -26,7 +26,9 @@ import org.deltafi.core.generated.types.ActionFamily;
 import org.deltafi.core.types.SummaryByFlowAndMessage;
 
 import java.io.IOException;
+import java.time.Clock;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.*;
 
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
@@ -37,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class Util {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
     private static final String FLOW = "myFlow";
+    private static final Clock clock = Clock.tickMillis(ZoneOffset.UTC);
 
     public static DeltaFile buildDeltaFile(UUID did) {
         return buildDeltaFile(did, List.of());
@@ -47,17 +50,17 @@ public class Util {
     }
 
     public static DeltaFile buildDeltaFile(UUID did, List<Content> content, Map<String, String> metadata) {
-        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime now = now();
         return buildDeltaFile(did, null, DeltaFileStage.IN_FLIGHT, now, now, content, metadata);
     }
 
     public static DeltaFile emptyDeltaFile(UUID did, String flow) {
-        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime now = now();
         return buildDeltaFile(did, flow, DeltaFileStage.IN_FLIGHT, now, now, new ArrayList<>());
     }
 
     public static DeltaFile emptyDeltaFile(UUID did, String flow, List<Content> content) {
-        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime now = now();
         return buildDeltaFile(did, flow, DeltaFileStage.IN_FLIGHT, now, now, content);
     }
 
@@ -273,11 +276,6 @@ public class Util {
         return ActionEventQueue.convertEvent(json);
     }
 
-    public static ActionEvent actionEvent(String filename) throws IOException {
-        String json = new String(Objects.requireNonNull(Util.class.getClassLoader().getResourceAsStream("full-flow/" + filename + ".json")).readAllBytes());
-        return ActionEventQueue.convertEvent(json);
-    }
-
     public static ActionEvent filterActionEvent(UUID did, String flow, int flowId, String filteredAction, int actionId) throws IOException {
         String json = String.format(new String(Objects.requireNonNull(Util.class.getClassLoader().getResourceAsStream("full-flow/filter.json")).readAllBytes()), did, flow, flowId, filteredAction, actionId);
         return ActionEventQueue.convertEvent(json);
@@ -320,5 +318,9 @@ public class Util {
         assertEquals(dids.size(), result.countPerMessage().get(index).getCount());
         assertEquals(dids.size(), result.countPerMessage().get(index).getDids().size());
         assertTrue(result.countPerMessage().get(index).getDids().containsAll(dids));
+    }
+
+    private static OffsetDateTime now() {
+        return OffsetDateTime.now(clock);
     }
 }
