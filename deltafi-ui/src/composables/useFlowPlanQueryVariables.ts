@@ -47,6 +47,17 @@ export const transformFlowFields = {
     condition: true,
     topic: true,
   },
+  publish: {
+    matchingPolicy: true,
+    defaultRule: {
+      defaultBehavior: true,
+      topic: true
+    },
+    rules: {
+      condition: true,
+      topic: true,
+    }
+  },
   description: true,
   flowStatus: {
     ...flowStatusFields,

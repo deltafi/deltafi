@@ -24,7 +24,7 @@
       </dd>
     </dl>
     <TabView ref="tabview1" class="pt-2">
-      <TabPanel header="Flow Actions">
+      <TabPanel header="Actions">
         <div v-if="!_.isEmpty(_.get(flowData, 'flowStatus.errors'))" class="pt-2">
           <Message severity="error" :closable="false" class="mb-2 mt-0">
             <ul>
@@ -100,6 +100,7 @@
                 </div>
               </template>
             </template>
+            <span v-else>No actions to display.</span>
           </template>
         </div>
       </TabPanel>
@@ -108,15 +109,21 @@
           <FlowVariableViewer :header="header" :variables="flowData?.variables"></FlowVariableViewer>
         </TabPanel>
       </template>
+      <TabPanel header="Subscribe">
+        <SubscribeCell v-if="!_.isEmpty(flowData?.subscribe)" :subscribe-data="flowData?.subscribe" />
+        <a v-else>No subscription information to display.</a>
+      </TabPanel>
       <template v-if="['egress'].includes(flowType)">
         <TabPanel header="Read Receipts">
           <FlowExpectedAnnotationsViewer :key="Math.random()" :header="header" :expected-annotations="expectedAnnotations" :flow-name="flowName" :flow-type="flowType" @reload-flow-viewer="fetchFlows(flowName, flowType)"></FlowExpectedAnnotationsViewer>
         </TabPanel>
       </template>
-      <TabPanel header="Subscribe">
-        <FlowSubscribeViewer v-if="!_.isEmpty(flowData?.subscribe)" :key="Math.random()" :header="header" :subscribe="flowData?.subscribe"></FlowSubscribeViewer>
-        <a v-else>Not Subscribing to any flows</a>
-      </TabPanel>
+      <template v-else>
+        <TabPanel header="Publish">
+          <PublishCell v-if="!_.isEmpty(flowData?.publish)" :publish-data="flowData?.publish" />
+          <a v-else>No publish information to display.</a>
+        </TabPanel>
+      </template>
     </TabView>
   </div>
 </template>
@@ -125,10 +132,11 @@
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import FlowExpectedAnnotationsViewer from "@/components/flow/FlowExpectedAnnotationsViewer.vue";
 import FlowVariableViewer from "@/components/flow/FlowVariableViewer.vue";
-import FlowSubscribeViewer from "./FlowSubscribeViewer.vue";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import { computed, defineProps, inject, onBeforeMount, reactive, ref } from "vue";
 import useUtilFunctions from "@/composables/useUtilFunctions";
+import PublishCell from "@/components/PublishCell.vue";
+import SubscribeCell from "@/components/SubscribeCell.vue";
 
 import Divider from "primevue/divider";
 import Message from "primevue/message";

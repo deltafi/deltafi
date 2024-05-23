@@ -91,8 +91,8 @@ const formatData = (allFlowData) => {
       flow["flowType"] = flowType;
       let mvnCoordinates = "";
       flow["mvnCoordinates"] = mvnCoordinates.concat(flow.sourcePlugin.groupId, ":", flow.sourcePlugin.artifactId, ":", flow.sourcePlugin.version);
-      let searchableFlowKeys = (({ name, description, mvnCoordinates }) => ({ name, description, mvnCoordinates }))(flow);
-      flow["searchField"] = Object.values(searchableFlowKeys).toString();
+      let searchableFlowKeys = (({ name, description, mvnCoordinates, publish }) => ({ name, description, mvnCoordinates, publish }))(flow);
+      flow["searchField"] = JSON.stringify(Object.values(searchableFlowKeys));
     });
   }
   return formattedFlowData;

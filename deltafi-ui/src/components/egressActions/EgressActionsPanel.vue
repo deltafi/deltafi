@@ -51,17 +51,17 @@
         </Column>
         <Column header="Description" field="description" :sortable="true"></Column>
         <Column header="Subscribe" field="subscribe" :style="{ width: '7%' }">
-        <template #body="{ data, field }">
-          <template v-if="!_.isEmpty(data[field])">
-            <div>
-              <i class="ml-1 text-muted fa-solid fa-right-to-bracket fa-fw" @mouseover="toggle($event, data, field)" @mouseleave="toggle($event, data, field)" />
-            </div>
-            <OverlayPanel ref="op">
-              <SubscribeCell :data-prop="overlayData" :field-prop="overlayField"></SubscribeCell>
-            </OverlayPanel>
+          <template #body="{ data, field }">
+            <template v-if="!_.isEmpty(data[field])">
+              <div>
+                <i class="ml-1 text-muted fa-solid fa-right-to-bracket fa-fw" @mouseover="toggleSubscribeOverlayPanel($event, data[field])" @mouseleave="toggleSubscribeOverlayPanel($event, data[field])" />
+              </div>
+              <OverlayPanel ref="subscribeOverlayPanel">
+                <SubscribeCell :subscribe-data="subscribeOverlayData"></SubscribeCell>
+              </OverlayPanel>
+            </template>
           </template>
-        </template>
-      </Column>
+        </Column>
         <Column :style="{ width: '7%' }" class="egress-action-state-column">
           <template #body="{ data }">
             <StateInputSwitch :row-data-prop="data" @change="refresh" />
@@ -77,7 +77,7 @@ import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import EgressActionRemoveButton from "@/components/egressActions/EgressActionRemoveButton.vue";
 import StateInputSwitch from "@/components/egressActions/StateInputSwitch.vue";
-import SubscribeCell from "@/components/flow/SubscribeCell.vue";
+import SubscribeCell from "@/components/SubscribeCell.vue";
 import PermissionedRouterLink from "@/components/PermissionedRouterLink";
 import useEgressActions from "@/composables/useEgressActions";
 import { computed, defineEmits, defineProps, inject, onMounted, ref, watch } from "vue";
@@ -85,7 +85,6 @@ import { computed, defineEmits, defineProps, inject, onMounted, ref, watch } fro
 import _ from "lodash";
 
 import { FilterMatchMode } from "primevue/api";
-import Button from "primevue/button";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import OverlayPanel from "primevue/overlaypanel";
@@ -96,8 +95,6 @@ const { getAllEgress, loaded, loading } = useEgressActions();
 const showLoading = computed(() => loading.value && !loaded.value);
 const egressActionsList = ref([]);
 const updateEgressDialog = ref(null);
-const overlayData = ref({});
-const overlayField = ref(null);
 
 const props = defineProps({
   pluginNameSelectedProp: {
@@ -127,13 +124,11 @@ watch(
   }
 );
 
-
-const op = ref();
-
-const toggle = (event, data, field) => {
-  overlayData.value = data;
-  overlayField.value = field;
-  op.value.toggle(event);
+const subscribeOverlayData = ref({});
+const subscribeOverlayPanel = ref();
+const toggleSubscribeOverlayPanel = (event, data) => {
+  subscribeOverlayData.value = data;
+  subscribeOverlayPanel.value.toggle(event);
 };
 
 const errorTooltip = (data) => {

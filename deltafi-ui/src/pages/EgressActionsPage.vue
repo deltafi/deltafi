@@ -22,7 +22,7 @@
       <div class="btn-toolbar mb-2">
         <span class="p-input-icon-left">
           <i class="pi pi-search" />
-          <InputText v-model="filterFlowsText" type="text" placeholder="Search" class="p-inputtext-sm deltafi-input-field flow-panel-search-txt" />
+          <InputText v-model="filterFlowsText" type="text" placeholder="Search" class="p-inputtext-sm deltafi-input-field flow-panel-search-txt mr-2" />
         </span>
         <DialogTemplate component-name="egressActions/EgressActionConfigurationDialog" header="Add New Egress" dialog-width="50vw" @reload-egress-action="refresh">
           <Button v-has-permission:FlowUpdate label="Add Egress" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />

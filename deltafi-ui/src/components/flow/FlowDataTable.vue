@@ -50,7 +50,7 @@
       </Column>
       <Column header="Description" field="description" class="truncateDescription">
         <template #body="{ data, field }">
-          <div v-if="_.size(data[field]) > 95" v-tooltip.bottom="data[field]">{{ displayDiscription(data[field]) }}</div>
+          <div v-if="_.size(data[field]) > maxDescriptionLength" v-tooltip.bottom="data[field]">{{ displayDescription(data[field]) }}</div>
           <span v-else>{{ data[field] }}</span>
         </template>
       </Column>
@@ -58,10 +58,22 @@
         <template #body="{ data, field }">
           <template v-if="!_.isEmpty(data[field])">
             <div>
-              <i class="ml-1 text-muted fa-solid fa-right-to-bracket fa-fw" @mouseover="toggle($event, data, field)" @mouseleave="toggle($event, data, field)" />
+              <i class="ml-1 text-muted fa-solid fa-right-to-bracket fa-fw" @mouseover="toggleSubscribeOverlayPanel($event, data[field])" @mouseleave="toggleSubscribeOverlayPanel($event, data[field])" />
             </div>
-            <OverlayPanel ref="op">
-              <SubscribeCell :data-prop="overlayData" :field-prop="overlayField"></SubscribeCell>
+            <OverlayPanel ref="subscribeOverlayPanel">
+              <SubscribeCell :subscribe-data="subscribeOverlayData"></SubscribeCell>
+            </OverlayPanel>
+          </template>
+        </template>
+      </Column>
+      <Column header="Publish" field="publish" :style="{ width: '7%' }">
+        <template #body="{ data, field }">
+          <template v-if="!_.isEmpty(data[field])">
+            <div>
+              <i class="ml-1 text-muted fa-solid fa-right-from-bracket fa-fw" @mouseover="togglePublishOverlayPanel($event, data[field])" @mouseleave="togglePublishOverlayPanel($event, data[field])" />
+            </div>
+            <OverlayPanel ref="publishOverlayPanel">
+              <PublishCell :publish-data="publishOverlayData"></PublishCell>
             </OverlayPanel>
           </template>
         </template>
@@ -101,7 +113,8 @@ import DialogTemplate from "@/components/DialogTemplate.vue";
 import FlowStateInputSwitch from "@/components/flow/FlowStateInputSwitch.vue";
 import FlowStateValidationButton from "@/components/flow/FlowStateValidationButton.vue";
 import FlowTestModeInputSwitch from "@/components/flow/FlowTestModeInputSwitch.vue";
-import SubscribeCell from "@/components/flow/SubscribeCell.vue";
+import SubscribeCell from "@/components/SubscribeCell.vue";
+import PublishCell from "@/components/PublishCell.vue";
 import PermissionedRouterLink from "@/components/PermissionedRouterLink";
 import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import useFlowPlanQueryBuilder from "@/composables/useFlowPlanQueryBuilder";
@@ -127,9 +140,6 @@ const { removeTransformFlowPlanByName } = useFlowPlanQueryBuilder();
 let autoRefresh = null;
 const emit = defineEmits(["updateFlows"]);
 const flowData = ref({});
-
-const overlayData = ref({});
-const overlayField = ref(null);
 
 const linkedFlowPlan = useStorage("linked-flow-plan-persisted-params", {}, sessionStorage, { serializer: StorageSerializers.object });
 
@@ -198,9 +208,10 @@ const deleteFlow = async (data) => {
   }
 };
 
-const displayDiscription = (data) => {
+const maxDescriptionLength = ref(80)
+const displayDescription = (data) => {
   return _.truncate(data, {
-    length: 95,
+    length: maxDescriptionLength.value,
     separator: " ",
   });
 };
@@ -269,12 +280,19 @@ const onCellEditComplete = async (event) => {
   }
 };
 
-const op = ref();
+// Overlay Panels
+const subscribeOverlayData = ref({});
+const subscribeOverlayPanel = ref();
+const toggleSubscribeOverlayPanel = (event, data) => {
+  subscribeOverlayData.value = data;
+  subscribeOverlayPanel.value.toggle(event);
+};
 
-const toggle = (event, data, field) => {
-  overlayData.value = data;
-  overlayField.value = field;
-  op.value.toggle(event);
+const publishOverlayData = ref({});
+const publishOverlayPanel = ref();
+const togglePublishOverlayPanel = (event, data) => {
+  publishOverlayData.value = data;
+  publishOverlayPanel.value.toggle(event);
 };
 
 const setFlowPlanParams = (data, editExistingFlow) => {

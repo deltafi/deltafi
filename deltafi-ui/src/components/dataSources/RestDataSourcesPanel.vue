@@ -69,14 +69,6 @@
           <span v-if="activeAction[fieldName] === null">-</span>
           <pre>{{ activeAction[fieldName] }}</pre>
         </span>
-        <span v-else-if="fieldName == 'publish'">
-          <template v-if="_.isEmpty(activeAction[fieldName])"> - </template>
-          <template v-else>
-            <div class="ml-2">
-              <PublishCell :data-prop="activeAction" :field-prop="fieldName"></PublishCell>
-            </div>
-          </template>
-        </span>
         <span v-else>{{ activeAction[fieldName] || "-" }}</span>
       </div>
       <template #footer>
@@ -97,7 +89,6 @@ import DialogTemplate from "@/components/DialogTemplate.vue";
 import DataSourceRemoveButton from "@/components/dataSources/DataSourceRemoveButton.vue";
 import StateInputSwitch from "@/components/dataSources/StateInputSwitch.vue";
 import PermissionedRouterLink from "@/components/PermissionedRouterLink";
-import PublishCell from "@/components/dataSources/PublishCell.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useDataSource from "@/composables/useDataSource";
 import useNotifications from "@/composables/useNotifications";
@@ -105,7 +96,6 @@ import { computed, defineEmits, onMounted, inject, ref } from "vue";
 
 import _ from "lodash";
 
-import Button from "primevue/button";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import Dialog from "primevue/dialog";
