@@ -15,11 +15,12 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.services.api;
+package org.deltafi.core.repo;
 
-import org.deltafi.core.exceptions.DeltafiApiException;
-import org.deltafi.core.services.api.model.DiskMetrics;
+import org.deltafi.core.types.Event;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.stereotype.Repository;
 
-public interface DeltafiApiClient {
-    DiskMetrics contentMetrics() throws DeltafiApiException;
+@Repository
+public interface EventRepo extends MongoRepository<Event, String>, EventRepoCustom {
 }

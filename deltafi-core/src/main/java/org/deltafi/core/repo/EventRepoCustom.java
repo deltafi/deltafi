@@ -15,11 +15,27 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.services.api;
+package org.deltafi.core.repo;
 
-import org.deltafi.core.exceptions.DeltafiApiException;
-import org.deltafi.core.services.api.model.DiskMetrics;
+import org.deltafi.core.types.Event;
 
-public interface DeltafiApiClient {
-    DiskMetrics contentMetrics() throws DeltafiApiException;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+public interface EventRepoCustom {
+    /**
+     * Find and update an event with the given id, setting the acknowledged field
+     * @param id of the event to update
+     * @param acknowledged new value for the acknowledged field
+     * @return the updated event if it existed
+     */
+    Optional<Event> updateAcknowledged(String id, boolean acknowledged);
+
+    /**
+     * Find the events matching the filters
+     * @param filters map that will be converted to search criteria
+     * @return list of matching events
+     */
+    List<Event> findEvents(Map<String, String> filters);
 }

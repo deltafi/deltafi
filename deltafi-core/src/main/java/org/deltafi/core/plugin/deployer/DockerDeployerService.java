@@ -82,6 +82,9 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
             CreateContainerResponse containerResponse = containerCmd.exec();
             dockerClient.startContainerCmd(containerResponse.getId()).exec();
         } catch (Exception e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             log.error("Failed to start plugin", e);
             return DeployResult.builder().success(false).info(info).errors(List.of(e.getMessage())).build();
         }

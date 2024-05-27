@@ -40,7 +40,6 @@ public class DeltafiApiRestClient implements DeltafiApiClient {
     private static final int MAX_STARTUP_FAILURES = 5;
     private static final int MAX_FAILURES_BEFORE_ERROR_REPEAT = 180; // ~15 minutes
     private static final String CONTENT_METRICS_ENDPOINT = "/api/v1/metrics/system/content";
-    private static final String EVENTS_ENDPOINT = "/api/v1/events";
     private static final String METRIC_VIEW_PERMISSION = "MetricsView";
     private final String url;
     private final HttpClient httpClient;
@@ -94,6 +93,9 @@ public class DeltafiApiRestClient implements DeltafiApiClient {
             trackConnectionChanges("Unable to connect to DeltaFi API");
             throw new DeltafiApiException("Unable to connect to API", e);
         } catch (Exception e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             trackConnectionChanges("DeltaFi API communication error " + e.getMessage());
             throw new DeltafiApiException("Unable to communicate with API", e);
         }
@@ -129,23 +131,6 @@ public class DeltafiApiRestClient implements DeltafiApiClient {
                 break;
             }
         }
-    }
-
-    public String createEvent(String body) {
-        try {
-            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url + EVENTS_ENDPOINT))
-                    .POST(HttpRequest.BodyPublishers.ofString(body))
-                    .headers("accept", MediaType.APPLICATION_JSON.toString(), DeltaFiConstants.PERMISSIONS_HEADER, "Admin").build();
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() / 100 != 2) {
-                String error = "Unable to post to the event API (Error " + response.statusCode() + "):\n" + body;
-                log.error(error);
-            }
-            return response.body();
-        } catch (Throwable e) {
-            log.error("Unable to post a new event", e);
-        }
-        return null;
     }
 
     enum ConnectionState {

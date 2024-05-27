@@ -103,6 +103,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -273,6 +274,9 @@ class DeltaFiCoreApplicationTests {
 
 	@Autowired
 	QueueManagementService queueManagementService;
+
+    @Autowired
+    EventRepo eventRepo;
 
     @Autowired
     private Clock clock;
@@ -4194,4 +4198,51 @@ class DeltaFiCoreApplicationTests {
 		transformFlow.setSubscribe(Set.of(new Rule(COLLECT_TOPIC)));
 		return transformFlow;
 	}
+
+    @Test
+    void findEventsByTime() {
+        OffsetDateTime first = OffsetDateTime.now(Clock.tickMillis(ZoneOffset.UTC));
+        OffsetDateTime second = first.plusMinutes(5);
+
+        Event event1 = Event.builder().id("1").severity("info").summary("first").timestamp(first).build();
+        Event event2 = Event.builder().id("2").severity("warn").summary("second").timestamp(second).acknowledged(true).build();
+
+        eventRepo.saveAll(List.of(event1, event2));
+
+        List<Event> found = eventRepo.findEvents(eventFilters(first.minusSeconds(1), second.plusSeconds(1)));
+        assertThat(found).isEqualTo(List.of(event2, event1));
+
+        found = eventRepo.findEvents(eventFilters(first.minusSeconds(1), second));
+        assertThat(found).hasSize(1).containsExactly(event1);
+
+        found = eventRepo.findEvents(eventFilters(first, second.plusSeconds(1)));
+        assertThat(found).hasSize(1).containsExactly(event2);
+
+        Map<String, String> filters = new HashMap<>(eventFilters(first.minusSeconds(1), second.plusSeconds(1)));
+        filters.put("acknowledged", "true");
+        found = eventRepo.findEvents(filters);
+        assertThat(found).isEqualTo(List.of(event2));
+    }
+
+    private Map<String, String> eventFilters(OffsetDateTime start, OffsetDateTime stop) {
+        return Map.of("start", start.format(DateTimeFormatter.ISO_DATE_TIME), "end", stop.format(DateTimeFormatter.ISO_DATE_TIME));
+    }
+
+    @Test
+    void updateAcknowledged() {
+        Clock clock = Clock.tickMillis(ZoneOffset.UTC); // TODO use class level clock after 653 is merged
+        Event event1 = Event.builder().id("1").severity("info").summary("first").timestamp(OffsetDateTime.now(clock)).build();
+        Event event2 = Event.builder().id("2").severity("warn").summary("second").timestamp(OffsetDateTime.now(clock)).acknowledged(true).build();
+
+        eventRepo.saveAll(List.of(event1, event2));
+
+        Event updated = eventRepo.updateAcknowledged("1", true).orElseThrow();
+        assertThat(updated.acknowledged()).isTrue();
+
+        Event noChange = eventRepo.updateAcknowledged("2", true).orElseThrow();
+        assertThat(noChange).isEqualTo(event2);
+
+        assertThat(eventRepo.updateAcknowledged("3", true)).isEmpty();
+    }
+
 }

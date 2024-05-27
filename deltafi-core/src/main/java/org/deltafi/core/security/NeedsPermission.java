@@ -108,6 +108,25 @@ public class NeedsPermission {
     @PreAuthorize(value = "hasAnyAuthority('DeltaFileResume'" + OR_ADMIN)
     public @interface DeltaFileResume {}
 
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('EventRead'" + OR_ADMIN)
+    public @interface EventRead {}
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('EventCreate'" + OR_ADMIN)
+    public @interface EventCreate {}
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('EventUpdate'" + OR_ADMIN)
+    public @interface EventUpdate {}
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('EventDelete'" + OR_ADMIN)
+    public @interface EventDelete {}
 
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)

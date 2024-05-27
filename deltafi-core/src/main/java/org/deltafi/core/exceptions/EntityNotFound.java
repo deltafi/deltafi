@@ -15,11 +15,15 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.services.api;
+package org.deltafi.core.exceptions;
 
-import org.deltafi.core.exceptions.DeltafiApiException;
-import org.deltafi.core.services.api.model.DiskMetrics;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
-public interface DeltafiApiClient {
-    DiskMetrics contentMetrics() throws DeltafiApiException;
+@ResponseStatus(HttpStatus.NOT_FOUND)
+public class EntityNotFound extends RuntimeException {
+
+    public EntityNotFound(String message) {
+        super(message);
+    }
 }

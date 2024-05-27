@@ -157,7 +157,7 @@ public class K8sDeployerService extends BaseDeployerService {
         // just use the app label in the match label, so we don't break existing deployments
         deployment.getSpec().getSelector().getMatchLabels().put(APP_LABEL_KEY, applicationName);
 
-        Container container = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
+        Container container = deployment.getSpec().getTemplate().getSpec().getContainers().getFirst();
         container.setName(applicationName);
         container.setImage(pluginImageRepository.getImageRepositoryBase() + pluginCoordinates.getArtifactId() + ":" + pluginCoordinates.getVersion());
 
@@ -208,7 +208,7 @@ public class K8sDeployerService extends BaseDeployerService {
             return;
         }
 
-        checkStatusDetail(details.get(0), result);
+        checkStatusDetail(details.getFirst(), result);
     }
 
     void deleteService(PluginCoordinates pluginCoordinates, Result result) {
@@ -221,7 +221,7 @@ public class K8sDeployerService extends BaseDeployerService {
         }
 
         if (!details.isEmpty()) {
-            checkStatusDetail(details.get(0), result);
+            checkStatusDetail(details.getFirst(), result);
         }
     }
 
@@ -269,7 +269,7 @@ public class K8sDeployerService extends BaseDeployerService {
                 .withConfigMap(new ConfigMapVolumeSourceBuilder().withName(String.format(CONFIG_MAP_NAME_TPL, applicationName)).withOptional(true).build())
                 .build();
 
-        deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts().add(volumeMount);
+        deployment.getSpec().getTemplate().getSpec().getContainers().getFirst().getVolumeMounts().add(volumeMount);
         deployment.getSpec().getTemplate().getSpec().getVolumes().add(configVolume);
     }
 
