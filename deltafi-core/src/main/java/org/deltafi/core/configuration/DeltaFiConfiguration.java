@@ -24,7 +24,6 @@ import org.deltafi.common.rules.RuleValidator;
 import org.deltafi.common.uuid.RandomUUIDGenerator;
 import org.deltafi.common.uuid.UUIDGenerator;
 import org.deltafi.core.services.DeltaFiPropertiesService;
-import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
