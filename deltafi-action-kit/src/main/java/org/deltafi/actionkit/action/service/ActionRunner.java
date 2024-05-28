@@ -29,7 +29,7 @@ import org.deltafi.actionkit.exception.StartupException;
 import org.deltafi.actionkit.properties.ActionsProperties;
 import org.deltafi.actionkit.registration.PluginRegistrar;
 import org.deltafi.actionkit.service.HostnameService;
-import org.deltafi.common.action.ActionEventQueue;
+import org.deltafi.actionkit.service.ActionEventQueue;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.ActionInput;

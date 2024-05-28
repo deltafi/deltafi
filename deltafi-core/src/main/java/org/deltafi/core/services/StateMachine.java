@@ -56,17 +56,17 @@ public class StateMachine {
      * @return the list of action invocations to be performed
      * flow configured.
      */
-    public List<ActionInput> advance(List<StateMachineInput> inputs) {
+    public List<WrappedActionInput> advance(List<StateMachineInput> inputs) {
         Map<String, Long> pendingQueued = new HashMap<>();
-        List<ActionInput> actionInputs = new ArrayList<>();
+        List<WrappedActionInput> actionInputs = new ArrayList<>();
         for (StateMachineInput input : inputs) {
             actionInputs.addAll(advance(input, pendingQueued));
         }
         return actionInputs;
     }
 
-    private List<ActionInput> advance(StateMachineInput input, Map<String, Long> pendingQueued) {
-        List<ActionInput> actionInputs = updateCurrentFlow(input, pendingQueued);
+    private List<WrappedActionInput> advance(StateMachineInput input, Map<String, Long> pendingQueued) {
+        List<WrappedActionInput> actionInputs = updateCurrentFlow(input, pendingQueued);
         if (actionInputs.isEmpty() &&
                 (input.flow().getState() == DeltaFileFlowState.COMPLETE || input.flow().lastActionType() == ActionType.PUBLISH)) {
             actionInputs.addAll(publishToNewFlows(input, pendingQueued));
@@ -80,8 +80,8 @@ public class StateMachine {
         return actionInputs;
     }
 
-    private List<ActionInput> updateCurrentFlow(StateMachineInput input, Map<String, Long> pendingQueued) {
-        List<ActionInput> actionInputs = new ArrayList<>();
+    private List<WrappedActionInput> updateCurrentFlow(StateMachineInput input, Map<String, Long> pendingQueued) {
+        List<WrappedActionInput> actionInputs = new ArrayList<>();
 
         Action lastAction =  input.flow().lastAction();
         // lastAction can be null if we are entering a new flow via a subscription
@@ -98,7 +98,7 @@ public class StateMachine {
         return actionInputs;
     }
 
-    private List<ActionInput> advanceTransform(StateMachineInput input, Map<String, Long> pendingQueued) {
+    private List<WrappedActionInput> advanceTransform(StateMachineInput input, Map<String, Long> pendingQueued) {
         ActionConfiguration nextTransformAction = input.flow().getNextActionConfiguration();
 
         if (nextTransformAction != null && !input.flow().hasFinalAction(nextTransformAction.getName())) {
@@ -108,7 +108,7 @@ public class StateMachine {
         return new ArrayList<>();
     }
 
-    private List<ActionInput> advanceEgress(StateMachineInput input, Map<String, Long> pendingQueued) {
+    private List<WrappedActionInput> advanceEgress(StateMachineInput input, Map<String, Long> pendingQueued) {
         EgressFlow egressFlow = egressFlowService.getRunningFlowByName(input.flow().getName());
 
         ActionConfiguration nextEgressAction = input.flow().getNextActionConfiguration();
@@ -125,7 +125,7 @@ public class StateMachine {
                 syntheticEgress(input) : addNextAction(input, nextEgressAction, pendingQueued);
     }
 
-    private List<ActionInput> syntheticEgress(StateMachineInput input) {
+    private List<WrappedActionInput> syntheticEgress(StateMachineInput input) {
         Action action = input.flow().addAction(SYNTHETIC_EGRESS_ACTION_FOR_TEST, ActionType.EGRESS, ActionState.FILTERED,
                 OffsetDateTime.now(clock));
         action.setFilteredCause("Filtered by test mode");
@@ -134,7 +134,7 @@ public class StateMachine {
         return Collections.emptyList();
     }
 
-    private List<ActionInput> addNextAction(StateMachineInput input, ActionConfiguration nextAction, Map<String, Long> pendingQueued) {
+    private List<WrappedActionInput> addNextAction(StateMachineInput input, ActionConfiguration nextAction, Map<String, Long> pendingQueued) {
         Action lastAction = input.flow().lastAction();
         ActionState actionState = queueState(nextAction.getName(), pendingQueued);
         Action newAction = input.flow().addAction(nextAction.getName(), nextAction.getActionType(),
@@ -144,12 +144,12 @@ public class StateMachine {
             newAction.setAttempt(lastAction.getAttempt() + 1);
         }
 
-        ActionInput actionInput = buildActionInput(nextAction, input.deltaFile(), input.flow(), newAction);
+        WrappedActionInput actionInput = buildActionInput(nextAction, input.deltaFile(), input.flow(), newAction);
         return actionInput != null ? List.of(actionInput) : Collections.emptyList();
     }
 
-    private List<ActionInput> publishToNewFlows(StateMachineInput input, Map<String, Long> pendingQueued) {
-        List<ActionInput> actionInputs = new ArrayList<>();
+    private List<WrappedActionInput> publishToNewFlows(StateMachineInput input, Map<String, Long> pendingQueued) {
+        List<WrappedActionInput> actionInputs = new ArrayList<>();
 
         Action lastAction = input.flow().lastAction();
         if (lastAction != null && lastAction.getType() != ActionType.PUBLISH &&
@@ -179,8 +179,8 @@ public class StateMachine {
         };
     }
 
-    private ActionInput buildActionInput(ActionConfiguration actionConfiguration, DeltaFile deltaFile,
-                                         DeltaFileFlow flow, Action action) {
+    private WrappedActionInput buildActionInput(ActionConfiguration actionConfiguration, DeltaFile deltaFile,
+                                                DeltaFileFlow flow, Action action) {
         String systemName = deltaFiPropertiesService.getDeltaFiProperties().getSystemName();
         String returnAddress = deltaFile.getVersion() > 0 &&
                 deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().isEnabled() ?
@@ -195,7 +195,7 @@ public class StateMachine {
             }
         }
 
-        return actionConfiguration.buildActionInput(deltaFile, flow, action, systemName, returnAddress, null);
+        return deltaFile.buildActionInput(actionConfiguration, flow, action, systemName, returnAddress, null);
     }
 
     private ActionState queueState(String queueName, Map<String, Long> pendingQueued) {
@@ -204,10 +204,10 @@ public class StateMachine {
         return coldQueued ? ActionState.COLD_QUEUED : ActionState.QUEUED;
     }
 
-    private ActionInput collectActionInput(ActionConfiguration actionConfiguration, DeltaFile deltaFile,
-                                           DeltaFileFlow currentFlow, Action action, String systemName, String returnAddress) throws CollectException {
+    private WrappedActionInput collectActionInput(ActionConfiguration actionConfiguration, DeltaFile deltaFile,
+                                                  DeltaFileFlow currentFlow, Action action, String systemName, String returnAddress) throws CollectException {
         if (deltaFile.getCollectId() != null) {
-            return actionConfiguration.buildActionInput(deltaFile, currentFlow, deltaFile.getParentDids(), action, systemName, returnAddress, null);
+            return deltaFile.buildActionInput(actionConfiguration, currentFlow, deltaFile.getParentDids(), action, systemName, returnAddress, null);
         }
 
         CollectEntry collectEntry = getCollectEntry(actionConfiguration, currentFlow, deltaFile.getDid());
@@ -225,7 +225,7 @@ public class StateMachine {
 
         List<UUID> collectedDids = collectEntryService.findCollectedDids(collectEntry.getId());
 
-        ActionInput actionInput = DeltaFileUtil.createAggregateInput(actionConfiguration, currentFlow, collectEntry, collectedDids, coldOrWarm, systemName, returnAddress);
+        WrappedActionInput actionInput = DeltaFileUtil.createAggregateInput(actionConfiguration, currentFlow, collectEntry, collectedDids, coldOrWarm, systemName, returnAddress);
 
         // TODO - is it safe to do this here before child has been sunk to disk?
         collectEntryService.delete(collectEntry.getId());

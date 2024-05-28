@@ -20,6 +20,7 @@ package org.deltafi.core.services;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.BackOff;
 import org.deltafi.core.repo.ResumePolicyRepo;
+import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.types.ResumePolicy;
 import org.junit.jupiter.api.Test;

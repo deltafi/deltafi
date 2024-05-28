@@ -24,8 +24,8 @@ import org.deltafi.actionkit.action.service.HeartbeatService;
 import org.deltafi.actionkit.properties.ActionsProperties;
 import org.deltafi.actionkit.registration.PluginRegistrar;
 import org.deltafi.actionkit.service.HostnameService;
-import org.deltafi.common.action.ActionEventQueue;
-import org.deltafi.common.action.ActionEventQueueProperties;
+import org.deltafi.actionkit.service.ActionEventQueue;
+import org.deltafi.common.action.EventQueueProperties;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -36,13 +36,13 @@ import java.util.List;
 
 @AllArgsConstructor
 @AutoConfiguration
-@EnableConfigurationProperties({ActionEventQueueProperties.class, ActionsProperties.class})
+@EnableConfigurationProperties({EventQueueProperties.class, ActionsProperties.class})
 @EnableScheduling
 public class ActionKitAutoConfiguration {
     private ActionsProperties actionsProperties;
 
     @Bean
-    public ActionEventQueue actionEventQueue(ActionEventQueueProperties actionEventQueueProperties,
+    public ActionEventQueue actionEventQueue(EventQueueProperties eventQueueProperties,
                                              List<Action<?, ?, ?>> actions) throws URISyntaxException {
         // Calculate the total number of threads for all actions
         int totalThreads = actions.stream()
@@ -52,7 +52,7 @@ public class ActionKitAutoConfiguration {
         // Add a thread for heartbeats
         totalThreads += 1;
 
-        return new ActionEventQueue(actionEventQueueProperties, totalThreads);
+        return new ActionEventQueue(eventQueueProperties, totalThreads);
     }
 
     @Bean

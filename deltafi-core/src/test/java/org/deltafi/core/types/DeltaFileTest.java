@@ -15,10 +15,11 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.types;
+package org.deltafi.core.types;
 
 import org.assertj.core.api.Assertions;
 import org.deltafi.common.content.Segment;
+import org.deltafi.common.types.*;
 import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;

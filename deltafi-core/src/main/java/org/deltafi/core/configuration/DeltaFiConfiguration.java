@@ -17,12 +17,12 @@
  */
 package org.deltafi.core.configuration;
 
-import org.deltafi.common.action.ActionEventQueue;
-import org.deltafi.common.action.ActionEventQueueProperties;
+import org.deltafi.common.action.EventQueueProperties;
 import org.deltafi.common.rules.RuleEvaluator;
 import org.deltafi.common.rules.RuleValidator;
 import org.deltafi.common.uuid.RandomUUIDGenerator;
 import org.deltafi.common.uuid.UUIDGenerator;
+import org.deltafi.core.services.CoreEventQueue;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -32,14 +32,14 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import java.net.URISyntaxException;
 
 @Configuration
-@EnableConfigurationProperties({ActionEventQueueProperties.class})
+@EnableConfigurationProperties({EventQueueProperties.class})
 public class DeltaFiConfiguration {
     @Bean
-    public ActionEventQueue actionEventQueue(ActionEventQueueProperties actionEventQueueProperties,
-                                             DeltaFiPropertiesService deltaFiPropertiesService) throws URISyntaxException {
+    public CoreEventQueue coreEventQueue(EventQueueProperties eventQueueProperties,
+                                         DeltaFiPropertiesService deltaFiPropertiesService) throws URISyntaxException {
         // add two additional threads to the pool for the incoming action event threads
         int poolSize = deltaFiPropertiesService.getDeltaFiProperties().getCoreServiceThreads() + 2;
-        return new ActionEventQueue(actionEventQueueProperties, poolSize);
+        return new CoreEventQueue(eventQueueProperties, poolSize);
     }
 
     @Bean

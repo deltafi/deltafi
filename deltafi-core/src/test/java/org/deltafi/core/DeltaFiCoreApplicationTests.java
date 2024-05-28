@@ -24,7 +24,6 @@ import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import com.netflix.graphql.dgs.exceptions.QueryException;
 import io.minio.MinioClient;
 import lombok.SneakyThrows;
-import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.resource.Resource;
@@ -118,7 +117,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static org.deltafi.common.constant.DeltaFiConstants.*;
 import static org.deltafi.common.types.ActionState.*;
-import static org.deltafi.common.types.DeltaFile.CURRENT_SCHEMA_VERSION;
+import static org.deltafi.core.types.DeltaFile.CURRENT_SCHEMA_VERSION;
 import static org.deltafi.core.datafetchers.DeletePolicyDatafetcherTestHelper.*;
 import static org.deltafi.core.datafetchers.DeltaFilesDatafetcherTestHelper.*;
 import static org.deltafi.core.metrics.MetricsUtil.extendTagsForAction;
@@ -248,7 +247,7 @@ class DeltaFiCoreApplicationTests {
 	DiskSpaceService diskSpaceService;
 
 	@Captor
-	ArgumentCaptor<List<ActionInput>> actionInputListCaptor;
+	ArgumentCaptor<List<WrappedActionInput>> actionInputListCaptor;
 
 	@Autowired
 	TestRestTemplate restTemplate;
@@ -260,7 +259,7 @@ class DeltaFiCoreApplicationTests {
 	MetricService metricService;
 
 	@MockBean
-	ActionEventQueue actionEventQueue;
+	CoreEventQueue coreEventQueue;
 
 	@MockBean
 	DeployerService deployerService;
@@ -303,7 +302,7 @@ class DeltaFiCoreApplicationTests {
 		resumePolicyService.refreshCache();
 		loadConfig();
 
-		Mockito.clearInvocations(actionEventQueue);
+		Mockito.clearInvocations(coreEventQueue);
 
 		// Set the security context for the tests that DgsQueryExecutor
 		SecurityContextHolder.clearContext();
@@ -914,7 +913,7 @@ class DeltaFiCoreApplicationTests {
 				deltaFile
 		);
 		MatcherAssert.assertThat(deltaFile.getFlows().get(1).getTestModeReason(), containsString(TRANSFORM_FLOW_NAME));
-		Mockito.verify(actionEventQueue, never()).putActions(any(), anyBoolean());
+		Mockito.verify(coreEventQueue, never()).putActions(any(), anyBoolean());
 		verifyCommonMetrics(ActionEventType.TRANSFORM, "SampleTransformAction", REST_DATA_SOURCE_NAME, null, "type");
 	}
 
@@ -1028,7 +1027,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals("here is why: blah", action.getFilteredContext());
 		assertEquals("filter metadata", actual.getAnnotations().get("filterKey"));
 
-		Mockito.verify(actionEventQueue, never()).putActions(any(), anyBoolean());
+		Mockito.verify(coreEventQueue, never()).putActions(any(), anyBoolean());
 	}
 
 	@Test
@@ -3453,11 +3452,11 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile afterMutation = deltaFilesService.getDeltaFile(expected.getDid());
 		assertEqualsIgnoringDates(expected, afterMutation);
 
-		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture(), anyBoolean());
-		List<ActionInput> actionInputs = actionInputListCaptor.getValue();
+		Mockito.verify(coreEventQueue).putActions(actionInputListCaptor.capture(), anyBoolean());
+		List<WrappedActionInput> actionInputs = actionInputListCaptor.getValue();
 		assertThat(actionInputs).hasSize(forActions.length);
 		for (int i = 0; i < forActions.length; i++) {
-			ActionInput actionInput = actionInputs.get(i);
+			WrappedActionInput actionInput = actionInputs.get(i);
 			assertThat(actionInput.getActionContext().getFlowName()).isEqualTo(forActions[i].getFlowName());
 			assertThat(actionInput.getActionContext().getActionName()).isEqualTo(forActions[i].getActionName());
 			assertEquals(forQueueHelper(expected, actionInput.getActionContext()), actionInput.getDeltaFileMessages().getFirst());
@@ -3872,7 +3871,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile = deltaFilesService.getDeltaFile(did);
 		assertEqualsIgnoringDates(postEgressDeltaFile(did), deltaFile);
 
-		Mockito.verify(actionEventQueue, never()).putActions(any(), anyBoolean());
+		Mockito.verify(coreEventQueue, never()).putActions(any(), anyBoolean());
 		Map<String, String> tags = tagsFor(ActionEventType.EGRESS, "SampleEgressAction", REST_DATA_SOURCE_NAME, EGRESS_FLOW_NAME);
 		Map<String, String> classTags = tagsFor(ActionEventType.EGRESS, "SampleEgressAction", REST_DATA_SOURCE_NAME, EGRESS_FLOW_NAME);
 		classTags.put(DeltaFiConstants.CLASS, "type");
@@ -3932,7 +3931,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(Collections.singletonList(deltaFile.getDid()), child2.getParentDids());
 		assertEquals(100, child2.getFlows().getFirst().lastCompleteAction().orElseThrow().getContent().getFirst().getSegments().getFirst().getOffset());
 
-		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture(), anyBoolean());
+		Mockito.verify(coreEventQueue).putActions(actionInputListCaptor.capture(), anyBoolean());
 		assertEquals(2, actionInputListCaptor.getValue().size());
 		assertEquals(child1.getDid(), actionInputListCaptor.getValue().getFirst().getActionContext().getDid());
 		assertEquals(child2.getDid(), actionInputListCaptor.getValue().get(1).getActionContext().getDid());
@@ -3976,11 +3975,11 @@ class DeltaFiCoreApplicationTests {
 				Collections.emptyList());
 		deltaFilesService.ingress(restDataSource, ingress2, OffsetDateTime.now(), OffsetDateTime.now());
 
-		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture(), Mockito.anyBoolean());
+		Mockito.verify(coreEventQueue).putActions(actionInputListCaptor.capture(), Mockito.anyBoolean());
 		verifyActionInputs(actionInputListCaptor.getValue(), ingress1.getDid(), ingress2.getDid(), transformFlow.getName());
 	}
 
-	private void verifyActionInputs(List<ActionInput> actionInputs, UUID did1, UUID did2, String actionFlow) {
+	private void verifyActionInputs(List<WrappedActionInput> actionInputs, UUID did1, UUID did2, String actionFlow) {
 		assertThat(actionInputs).hasSize(1);
 
 		DeltaFile parent1 = deltaFileRepo.findById(did1).orElseThrow();
@@ -4024,7 +4023,7 @@ class DeltaFiCoreApplicationTests {
 				Collections.emptyList());
 		deltaFilesService.ingress(restDataSource, ingress2, OffsetDateTime.now(), OffsetDateTime.now());
 
-		Mockito.verify(actionEventQueue, Mockito.timeout(5000))
+		Mockito.verify(coreEventQueue, Mockito.timeout(5000))
 				.putActions(actionInputListCaptor.capture(), Mockito.anyBoolean());
 
 		verifyActionInputs(actionInputListCaptor.getValue(), ingress1.getDid(), ingress2.getDid(), transformFlow.getName());
@@ -4059,9 +4058,9 @@ class DeltaFiCoreApplicationTests {
 				"file-4", dataSourceName, Map.of("a", "1"), Collections.emptyList());
 		deltaFilesService.ingress(restDataSource, ingress4, OffsetDateTime.now(), OffsetDateTime.now());
 
-		Mockito.verify(actionEventQueue, Mockito.times(2))
+		Mockito.verify(coreEventQueue, Mockito.times(2))
 				.putActions(actionInputListCaptor.capture(), Mockito.anyBoolean());
-		List<List<ActionInput>> actionInputLists = actionInputListCaptor.getAllValues();
+		List<List<WrappedActionInput>> actionInputLists = actionInputListCaptor.getAllValues();
 		verifyActionInputs(actionInputLists.getFirst(), ingress2.getDid(), ingress3.getDid(), transformFlowName);
 		verifyActionInputs(actionInputLists.get(1), ingress1.getDid(), ingress4.getDid(), transformFlowName);
 	}
@@ -4132,8 +4131,8 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(did, retryResults.getFirst().getDid());
 		assertTrue(retryResults.getFirst().getSuccess());
 
-		Mockito.verify(actionEventQueue).putActions(actionInputListCaptor.capture(), Mockito.anyBoolean());
-		List<ActionInput> actionInputs = actionInputListCaptor.getValue();
+		Mockito.verify(coreEventQueue).putActions(actionInputListCaptor.capture(), Mockito.anyBoolean());
+		List<WrappedActionInput> actionInputs = actionInputListCaptor.getValue();
 		assertThat(actionInputs).hasSize(1);
 
 		ActionInput actionInput = actionInputs.getFirst();

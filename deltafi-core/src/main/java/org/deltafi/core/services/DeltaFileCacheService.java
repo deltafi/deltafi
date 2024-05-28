@@ -18,7 +18,7 @@
 package org.deltafi.core.services;
 
 import lombok.RequiredArgsConstructor;
-import org.deltafi.common.types.DeltaFile;
+import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.springframework.data.mongodb.core.query.Update;
 

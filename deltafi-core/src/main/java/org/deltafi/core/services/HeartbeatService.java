@@ -18,13 +18,12 @@
 package org.deltafi.core.services;
 
 import lombok.AllArgsConstructor;
-import org.deltafi.common.action.ActionEventQueue;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import static org.deltafi.common.action.ActionEventQueue.DGS_QUEUE;
+import static org.deltafi.core.services.CoreEventQueue.DGS_QUEUE;
 
 @AllArgsConstructor
 @ConditionalOnProperty(value = "schedule.actionEvents", havingValue = "true", matchIfMissing = true)
@@ -32,11 +31,11 @@ import static org.deltafi.common.action.ActionEventQueue.DGS_QUEUE;
 @Service
 public class HeartbeatService {
     private IdentityService identityService;
-    private ActionEventQueue actionEventQueue;
+    private CoreEventQueue coreEventQueue;
 
     @Scheduled(fixedDelay = 10000)
     public void heartbeat() {
-        actionEventQueue.setHeartbeat(DGS_QUEUE + "-" + identityService.getUniqueId());
-        actionEventQueue.setHeartbeat(DGS_QUEUE);
+        coreEventQueue.setHeartbeat(DGS_QUEUE + "-" + identityService.getUniqueId());
+        coreEventQueue.setHeartbeat(DGS_QUEUE);
     }
 }

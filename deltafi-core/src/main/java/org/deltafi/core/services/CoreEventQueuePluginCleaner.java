@@ -15,13 +15,22 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.types;
+package org.deltafi.core.services;
 
-import org.deltafi.common.types.DeltaFileFlow;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.types.Plugin;
+import org.deltafi.core.plugin.PluginCleaner;
+import org.springframework.stereotype.Service;
 
-/**
- * the deltaFile, flow, and action that were most recently processed and require next steps
- * @param deltaFile the deltaFile for which an event was received
- * @param flow the flow for which the event was received
- */
-public record StateMachineInput(DeltaFile deltaFile, DeltaFileFlow flow) {}
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class CoreEventQueuePluginCleaner implements PluginCleaner {
+    private final CoreEventQueue coreEventQueue;
+
+    @Override
+    public void cleanupFor(Plugin plugin) {
+        coreEventQueue.drop(plugin.actionNames());
+    }
+}

@@ -57,63 +57,6 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
     }
 
     /**
-     * Create the ActionInput that should be sent to an Action
-     * @param flow the flow on which the Action is specified
-     * @param deltaFile DeltaFile that will be acted upon
-     * @param systemName system name to set in context
-     * @param returnAddress the unique address of this core instance
-     * @param action the action
-     * @param memo memo to set in the context
-     * @return ActionInput containing the ActionConfiguration
-     */
-    public ActionInput buildActionInput(DeltaFile deltaFile, DeltaFileFlow flow, Action action, String systemName,
-                                        String returnAddress, String memo) {
-        ActionInput actionInput = buildActionInput(deltaFile, flow, List.of(), action, systemName, returnAddress, memo);
-        actionInput.setDeltaFileMessages(List.of(new DeltaFileMessage(flow.getMetadata(), flow.lastContent())));
-        return actionInput;
-    }
-
-    /**
-     * Create the ActionInput that should be sent to an Action
-     * @param flow the flow on which the Action is specified
-     * @param deltaFile DeltaFile that will be acted upon
-     * @param systemName system name to set in context
-     * @param returnAddress the unique address of this core instance
-     * @param action the action
-     * @param memo memo to set in the context
-     * @return ActionInput containing the ActionConfiguration
-     */
-    public ActionInput buildActionInput(DeltaFile deltaFile, DeltaFileFlow flow, List<UUID> collectedDids, Action action, String systemName,
-                                        String returnAddress, String memo) {
-        if (Objects.isNull(internalParameters)) {
-            // fall back to using parameters if internalParameters do not exist yet
-            setInternalParameters(Objects.requireNonNullElse(parameters, Collections.emptyMap()));
-        }
-
-        return ActionInput.builder()
-                .queueName(type)
-                .actionContext(ActionContext.builder()
-                        .flowName(flow.getName())
-                        .dataSource(deltaFile.getDataSource())
-                        .flowId(flow.getId())
-                        .actionName(action.getName())
-                        .actionId(action.getId())
-                        .did(deltaFile.getDid())
-                        .deltaFileName(deltaFile.getName())
-                        .collectedDids(Objects.requireNonNullElseGet(collectedDids, List::of))
-                        .collect(collect)
-                        .systemName(systemName)
-                        .memo(memo)
-                        .build())
-                .deltaFile(deltaFile)
-                .actionParams(internalParameters)
-                .returnAddress(returnAddress)
-                .actionCreated(action.getCreated())
-                .coldQueued(action.getState() == ActionState.COLD_QUEUED)
-                .build();
-    }
-
-    /**
      * Validates this action configuration.
      *
      * @param actionDescriptor action descriptor to be validated against
@@ -129,5 +72,14 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
             errors.addAll(collect.validate());
         }
         return errors;
+    }
+
+    public Map<String, Object> getInternalParameters() {
+        if (Objects.isNull(internalParameters)) {
+            // fall back to using parameters if internalParameters do not exist yet
+            setInternalParameters(Objects.requireNonNullElse(parameters, Collections.emptyMap()));
+        }
+
+        return internalParameters;
     }
 }

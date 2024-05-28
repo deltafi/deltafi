@@ -15,7 +15,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.action;
+package org.deltafi.core.services;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -25,11 +25,13 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.queue.jackey.JackeyKeyedBlockingQueue;
+import org.deltafi.common.action.EventQueueProperties;
+import org.deltafi.common.queue.jackey.ValkeyKeyedBlockingQueue;
 import org.deltafi.common.queue.jackey.SortedSetEntry;
 import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionExecution;
 import org.deltafi.common.types.ActionInput;
+import org.deltafi.core.types.WrappedActionInput;
 
 import java.net.URISyntaxException;
 import java.time.Duration;
@@ -40,7 +42,7 @@ import java.util.*;
  * Service for pushing and popping action events to a valkey queue.
  */
 @Slf4j
-public class ActionEventQueue {
+public class CoreEventQueue {
 
     private static final ObjectMapper OBJECT_MAPPER;
     static {
@@ -60,14 +62,24 @@ public class ActionEventQueue {
     public static final String DGS_QUEUE = "dgs";
     private static final Duration LONG_RUNNING_HEARTBEAT_THRESHOLD = Duration.ofSeconds(30);
 
-    private final JackeyKeyedBlockingQueue jackeyKeyedBlockingQueue;
+    private final ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue;
 
-    public ActionEventQueue(ActionEventQueueProperties actionEventQueueProperties, int poolSize) throws URISyntaxException {
-        int maxIdle = poolSize > 0 ? poolSize : actionEventQueueProperties.getMaxIdle();
-        int maxTotal = poolSize > 0 ? poolSize : actionEventQueueProperties.getMaxTotal();
-        jackeyKeyedBlockingQueue = new JackeyKeyedBlockingQueue(actionEventQueueProperties.getUrl(),
-                actionEventQueueProperties.getPassword(), maxIdle, maxTotal);
-        log.info("Jackey pool size: " + maxTotal);
+    public CoreEventQueue(EventQueueProperties eventQueueProperties, int poolSize) throws URISyntaxException {
+        int maxIdle = poolSize > 0 ? poolSize : eventQueueProperties.getMaxIdle();
+        int maxTotal = poolSize > 0 ? poolSize : eventQueueProperties.getMaxTotal();
+        valkeyKeyedBlockingQueue = new ValkeyKeyedBlockingQueue(eventQueueProperties.getUrl(),
+                eventQueueProperties.getPassword(), maxIdle, maxTotal);
+        log.info("Valkey pool size: {}", maxTotal);
+    }
+
+    public Set<String> keys() { return valkeyKeyedBlockingQueue.keys(); }
+
+    public void drop(List<String> actionNames) {
+        valkeyKeyedBlockingQueue.drop(actionNames);
+    }
+
+    public void setHeartbeat(String key) {
+        valkeyKeyedBlockingQueue.setHeartbeat(key);
     }
 
     /**
@@ -77,7 +89,7 @@ public class ActionEventQueue {
      * @return true if a tasking for the action exists in the queue, false otherwise
      */
     public boolean queueHasTaskingForAction(ActionInput actionInput) {
-        return jackeyKeyedBlockingQueue.exists(actionInput.getQueueName(), "*\"actionName\":\"" +
+        return valkeyKeyedBlockingQueue.exists(actionInput.getQueueName(), "*\"actionName\":\"" +
                 actionInput.getActionContext().getActionName() + "\"*");
     }
 
@@ -96,16 +108,16 @@ public class ActionEventQueue {
      * @param checkUnique  if {@code true}, the method will check for uniqueness of 'did' field values before queuing an action input;
      *                     if {@code false}, the method will queue all action inputs without checking for uniqueness
      */
-    public void putActions(List<ActionInput> actionInputs, boolean checkUnique) {
+    public void putActions(List<WrappedActionInput> actionInputs, boolean checkUnique) {
         List<SortedSetEntry> actions = new ArrayList<>();
-        for (ActionInput actionInput : actionInputs) {
+        for (WrappedActionInput actionInput : actionInputs) {
             if (actionInput.isColdQueued()) {
                 continue;
             }
 
             if (checkUnique) {
                 String pattern = "*\"did\":\"" + actionInput.getActionContext().getDid() + "\"*";
-                if (jackeyKeyedBlockingQueue.exists(actionInput.getQueueName(), pattern)) {
+                if (valkeyKeyedBlockingQueue.exists(actionInput.getQueueName(), pattern)) {
                     log.warn("Skipping queueing for potential duplicate action event: {}", actionInput);
                     continue;
                 }
@@ -118,21 +130,10 @@ public class ActionEventQueue {
             }
         }
 
-        jackeyKeyedBlockingQueue.put(actions);
+        valkeyKeyedBlockingQueue.put(actions);
     }
 
-    /**
-     * Request an ActionInput object from the ActionEvent queue for the specified action
-     *
-     * @param actionClassName Name of action for Action event request
-     * @return next Action on the queue for the given action name
-     * @throws JsonProcessingException if the incoming event cannot be serialized
-     */
-    public ActionInput takeAction(String actionClassName) throws JsonProcessingException {
-        return convertInput(jackeyKeyedBlockingQueue.take(actionClassName));
-    }
-
-    private String queueName(String returnAddress) {
+     private String queueName(String returnAddress) {
         String queueName = DGS_QUEUE;
         if (returnAddress != null) {
             queueName += "-" + returnAddress;
@@ -141,48 +142,8 @@ public class ActionEventQueue {
         return queueName;
     }
 
-    /**
-     * Submit a result object for action processing
-     *
-     * @param result ActionEvent result to be posted to the action queue
-     * @throws JsonProcessingException if the outgoing event cannot be deserialized
-     */
-    public void putResult(ActionEvent result, String returnAddress) throws JsonProcessingException {
-        jackeyKeyedBlockingQueue.put(new SortedSetEntry(queueName(returnAddress), OBJECT_MAPPER.writeValueAsString(result), OffsetDateTime.now()));
-    }
-
-    /**
-     * Submit a List of result objects for action processing
-     *
-     * @param results List of ActionEvent results to be posted to the action queue
-     * @throws JsonProcessingException if any of the outgoing events cannot be deserialized
-     */
-    public void putResults(List<ActionEvent> results, String returnAddress) throws JsonProcessingException {
-        String queueName = queueName(returnAddress);
-        final List<Exception> exceptions = new ArrayList<>();
-        OffsetDateTime now = OffsetDateTime.now();
-
-        List<SortedSetEntry> queuedResults = results.stream()
-                .map(actionEvent -> {
-                    try {
-                        return new SortedSetEntry(queueName, OBJECT_MAPPER.writeValueAsString(actionEvent), now);
-                    } catch (JsonProcessingException e) {
-                        exceptions.add(e);
-                        return null;
-                    }
-                })
-                .filter(Objects::isNull)
-                .toList();
-
-        if (!exceptions.isEmpty()) {
-            throw (JsonProcessingException) exceptions.get(0);
-        }
-
-        jackeyKeyedBlockingQueue.put(queuedResults);
-    }
-
     public ActionEvent takeResult(String returnAddress) throws JsonProcessingException {
-        return convertEvent(jackeyKeyedBlockingQueue.take(queueName(returnAddress)));
+        return convertEvent(valkeyKeyedBlockingQueue.take(queueName(returnAddress)));
 
     }
 
@@ -190,51 +151,8 @@ public class ActionEventQueue {
         return OBJECT_MAPPER.readValue(element, ActionEvent.class);
     }
 
-    public static ActionInput convertInput(String element) throws JsonProcessingException {
-        return OBJECT_MAPPER.readValue(element, ActionInput.class);
-    }
-
-    public void setHeartbeat(String key) {
-        jackeyKeyedBlockingQueue.setHeartbeat(key);
-    }
-
-    public void drop(List<String> actionNames) {
-        jackeyKeyedBlockingQueue.drop(actionNames);
-    }
-
-    public Set<String> keys() { return jackeyKeyedBlockingQueue.keys(); }
-
     public long size(String key) {
-        return jackeyKeyedBlockingQueue.sortedSetSize(key);
-    }
-
-    /**
-     * Records a long-running task in Valkey.
-     *
-     * Serializes the given {@link ActionExecution} object and stores it in Valkey
-     * along with its start time and the current time as the heartbeat.
-     *
-     * @param actionExecution the {@link ActionExecution} object representing the task
-     */
-    public void recordLongRunningTask(ActionExecution actionExecution) {
-        try {
-            jackeyKeyedBlockingQueue.recordLongRunningTask(actionExecution.key(),
-                    OBJECT_MAPPER.writeValueAsString(List.of(actionExecution.startTime().toString(), OffsetDateTime.now().toString())));
-        } catch (JsonProcessingException e) {
-            log.error("Unable to convert long running task information to JSON", e);
-        }
-    }
-
-    /**
-     * Removes the specified long-running task from Valkey.
-     *
-     * Deletes the given {@link ActionExecution} object from the Valkey hash,
-     * thus marking it as no longer a long-running task.
-     *
-     * @param actionExecution the {@link ActionExecution} object to be removed
-     */
-    public void removeLongRunningTask(ActionExecution actionExecution) {
-        jackeyKeyedBlockingQueue.removeLongRunningTask(actionExecution.key());
+        return valkeyKeyedBlockingQueue.sortedSetSize(key);
     }
 
     /**
@@ -249,7 +167,7 @@ public class ActionEventQueue {
      */
     @SuppressWarnings("unused")
     public List<ActionExecution> getLongRunningTasks() {
-        Map<String, String> allTasks = jackeyKeyedBlockingQueue.getLongRunningTasks();
+        Map<String, String> allTasks = valkeyKeyedBlockingQueue.getLongRunningTasks();
         List<ActionExecution> longRunningTasks = new ArrayList<>();
 
         for (Map.Entry<String, String> entry : allTasks.entrySet()) {
@@ -285,43 +203,6 @@ public class ActionEventQueue {
     }
 
     /**
-     * Removes long-running tasks from Valkey that have heartbeat times
-     * exceeding the specified duration threshold.
-     *
-     * Iterates over tasks in Valkey, deserializing and checking their heartbeat times.
-     * If a task's heartbeat is older than the threshold or if its data is malformed,
-     * it's removed from Valkey.
-     */
-    public void removeExpiredLongRunningTasks() {
-        Map<String, String> allTasks = jackeyKeyedBlockingQueue.getLongRunningTasks();
-
-        for (Map.Entry<String, String> entry : allTasks.entrySet()) {
-            String key = entry.getKey();
-            String value = entry.getValue();
-
-            try {
-                List<OffsetDateTime> times = OBJECT_MAPPER.readValue(value, new TypeReference<>() {});
-
-                if (times.size() != 2) {
-                    jackeyKeyedBlockingQueue.removeLongRunningTask(key);
-                    log.warn("Removed long-running task with malformed data (unexpected length) with key: {}", key);
-                    continue;
-                }
-
-                OffsetDateTime heartbeatTime = times.get(1);
-
-                if (heartbeatTime.plus(LONG_RUNNING_HEARTBEAT_THRESHOLD).isBefore(OffsetDateTime.now())) {
-                    jackeyKeyedBlockingQueue.removeLongRunningTask(key);
-                    log.info("Removed expired long-running task with key: {}", key);
-                }
-            } catch (JsonProcessingException e) {
-                jackeyKeyedBlockingQueue.removeLongRunningTask(key);
-                log.error("Unable to deserialize long running task information from JSON for key: {}. Removed the key.", key, e);
-            }
-        }
-    }
-
-    /**
      * Check if a specific long-running task exists and if its heartbeat is within the acceptable threshold.
      *
      * @param clazz  The class name.
@@ -333,7 +214,7 @@ public class ActionEventQueue {
     public boolean longRunningTaskExists(String clazz, String action, UUID did) {
         ActionExecution taskToCheck = new ActionExecution(clazz, action, did, null);  // Passing null since we don't care about the startTime for this check.
         String key = taskToCheck.key();
-        String serializedValue = jackeyKeyedBlockingQueue.getLongRunningTask(key);
+        String serializedValue = valkeyKeyedBlockingQueue.getLongRunningTask(key);
 
         if (serializedValue == null) {
             return false;
@@ -352,6 +233,43 @@ public class ActionEventQueue {
         } catch (JsonProcessingException e) {
             log.error("Unable to deserialize long running task information from JSON for key: {}", key, e);
             return false;
+        }
+    }
+
+    /**
+     * Removes long-running tasks from Valkey that have heartbeat times
+     * exceeding the specified duration threshold.
+     *
+     * Iterates over tasks in Valkey, deserializing and checking their heartbeat times.
+     * If a task's heartbeat is older than the threshold or if its data is malformed,
+     * it's removed from Valkey.
+     */
+    public void removeExpiredLongRunningTasks() {
+        Map<String, String> allTasks = valkeyKeyedBlockingQueue.getLongRunningTasks();
+
+        for (Map.Entry<String, String> entry : allTasks.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+
+            try {
+                List<OffsetDateTime> times = OBJECT_MAPPER.readValue(value, new TypeReference<>() {});
+
+                if (times.size() != 2) {
+                    valkeyKeyedBlockingQueue.removeLongRunningTask(key);
+                    log.warn("Removed long-running task with malformed data (unexpected length) with key: {}", key);
+                    continue;
+                }
+
+                OffsetDateTime heartbeatTime = times.get(1);
+
+                if (heartbeatTime.plus(LONG_RUNNING_HEARTBEAT_THRESHOLD).isBefore(OffsetDateTime.now())) {
+                    valkeyKeyedBlockingQueue.removeLongRunningTask(key);
+                    log.info("Removed expired long-running task with key: {}", key);
+                }
+            } catch (JsonProcessingException e) {
+                valkeyKeyedBlockingQueue.removeLongRunningTask(key);
+                log.error("Unable to deserialize long running task information from JSON for key: {}. Removed the key.", key, e);
+            }
         }
     }
 }

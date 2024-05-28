@@ -15,11 +15,12 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.types;
+package org.deltafi.core.types;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.deltafi.common.content.Segment;
+import org.deltafi.common.types.*;
 import org.deltafi.core.exceptions.UnexpectedFlowException;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.annotation.Id;
@@ -563,5 +564,57 @@ public class DeltaFile {
     update.set("version", this.version + 1);
 
     return update;
+  }
+
+  /**
+   * Create the ActionInput that should be sent to an Action
+   * @param flow the flow on which the Action is specified
+   * @param actionConfiguration Configured action
+   * @param systemName system name to set in context
+   * @param returnAddress the unique address of this core instance
+   * @param action the action
+   * @param memo memo to set in the context
+   * @return ActionInput containing the ActionConfiguration
+   */
+  public WrappedActionInput buildActionInput(ActionConfiguration actionConfiguration, DeltaFileFlow flow, Action action, String systemName,
+                                             String returnAddress, String memo) {
+    WrappedActionInput actionInput = buildActionInput(actionConfiguration, flow, List.of(), action, systemName, returnAddress, memo);
+    actionInput.setDeltaFileMessages(List.of(new DeltaFileMessage(flow.getMetadata(), flow.lastContent())));
+    return actionInput;
+  }
+
+  /**
+   * Create the ActionInput that should be sent to an Action
+   * @param flow the flow on which the Action is specified
+   * @param actionConfiguration Configured action
+   * @param systemName system name to set in context
+   * @param returnAddress the unique address of this core instance
+   * @param action the action
+   * @param memo memo to set in the context
+   * @return ActionInput containing the ActionConfiguration
+   */
+  public WrappedActionInput buildActionInput(ActionConfiguration actionConfiguration, DeltaFileFlow flow, List<UUID> collectedDids, Action action, String systemName,
+                                             String returnAddress, String memo) {
+    return WrappedActionInput.builder()
+            .queueName(actionConfiguration.getType())
+            .actionContext(ActionContext.builder()
+                    .flowName(flow.getName())
+                    .dataSource(dataSource)
+                    .flowId(flow.getId())
+                    .actionName(action.getName())
+                    .actionId(action.getId())
+                    .did(did)
+                    .deltaFileName(name)
+                    .collectedDids(Objects.requireNonNullElseGet(collectedDids, List::of))
+                    .collect(actionConfiguration.getCollect())
+                    .systemName(systemName)
+                    .memo(memo)
+                    .build())
+            .deltaFile(this)
+            .actionParams(actionConfiguration.getInternalParameters())
+            .returnAddress(returnAddress)
+            .actionCreated(action.getCreated())
+            .coldQueued(action.getState() == ActionState.COLD_QUEUED)
+            .build();
   }
 }

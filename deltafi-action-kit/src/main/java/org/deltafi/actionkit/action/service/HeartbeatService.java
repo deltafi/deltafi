@@ -19,7 +19,7 @@ package org.deltafi.actionkit.action.service;
 
 import org.deltafi.actionkit.action.Action;
 import org.deltafi.common.types.ActionExecution;
-import org.deltafi.common.action.ActionEventQueue;
+import org.deltafi.actionkit.service.ActionEventQueue;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 
@@ -54,9 +54,7 @@ public class HeartbeatService {
                 action.getActionExecution().exceedsDuration(LONG_RUNNING_TASK_DURATION)).forEach(action -> {
                     ActionExecution actionExecution = action.getActionExecution();
                     longRunningActions.add(actionExecution);
-                    if (oldList.contains(actionExecution)) {
-                        oldList.remove(actionExecution);
-                    }
+                    oldList.remove(actionExecution);
                     actionEventQueue.recordLongRunningTask(actionExecution);
                 });
 

@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.repo;
 
-import org.deltafi.common.types.DeltaFile;
+import org.deltafi.core.types.DeltaFile;
 import org.deltafi.common.types.DeltaFileFlowState;
 import org.deltafi.common.types.DeltaFileStage;
 import org.springframework.data.domain.Page;

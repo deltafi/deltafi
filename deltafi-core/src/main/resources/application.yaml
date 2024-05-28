@@ -17,12 +17,12 @@ spring:
     username: ${POSTGRES_USER:deltafi}
     password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
-    jpa:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
       hibernate:
-        ddl-auto: update
-      properties:
-        hibernate:
-          dialect: org.hibernate.dialect.PostgreSQLDialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
   main:
     banner-mode: "off"
   sql:

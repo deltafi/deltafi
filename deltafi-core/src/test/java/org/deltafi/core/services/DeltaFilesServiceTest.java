@@ -20,7 +20,6 @@ package org.deltafi.core.services;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import org.assertj.core.api.Assertions;
-import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.test.time.TestClock;
@@ -64,7 +63,7 @@ class DeltaFilesServiceTest {
     private final EgressFlowService egressFlowService;
     private final StateMachine stateMachine;
     private final DeltaFileRepo deltaFileRepo;
-    private final ActionEventQueue actionEventQueue;
+    private final CoreEventQueue coreEventQueue;
     private final ContentStorageService contentStorageService;
     private final ResumePolicyService resumePolicyService;
     private final DeltaFileCacheService deltaFileCacheService;
@@ -85,7 +84,7 @@ class DeltaFilesServiceTest {
     ArgumentCaptor<DeltaFile> deltaFileCaptor;
 
     @Captor
-    ArgumentCaptor<List<ActionInput>> actionInputListCaptor;
+    ArgumentCaptor<List<WrappedActionInput>> actionInputListCaptor;
 
     @Captor
     ArgumentCaptor<List<StateMachineInput>> stateMachineInputCaptor;
@@ -95,7 +94,7 @@ class DeltaFilesServiceTest {
 
     DeltaFilesServiceTest(@Mock TransformFlowService transformFlowService,
                           @Mock EgressFlowService egressFlowService, @Mock StateMachine stateMachine,
-                          @Mock DeltaFileRepo deltaFileRepo, @Mock ActionEventQueue actionEventQueue,
+                          @Mock DeltaFileRepo deltaFileRepo, @Mock CoreEventQueue coreEventQueue,
                           @Mock ContentStorageService contentStorageService, @Mock ResumePolicyService resumePolicyService,
                           @Mock MetricService metricService, @Mock AnalyticEventService analyticEventService, @Mock CoreAuditLogger coreAuditLogger,
                           @Mock DeltaFileCacheService deltaFileCacheService, @Mock DataSourceService dataSourceService,
@@ -105,7 +104,7 @@ class DeltaFilesServiceTest {
         this.egressFlowService = egressFlowService;
         this.stateMachine = stateMachine;
         this.deltaFileRepo = deltaFileRepo;
-        this.actionEventQueue = actionEventQueue;
+        this.coreEventQueue = coreEventQueue;
         this.contentStorageService = contentStorageService;
         this.resumePolicyService = resumePolicyService;
         this.deltaFileCacheService = deltaFileCacheService;
@@ -114,7 +113,7 @@ class DeltaFilesServiceTest {
         this.dataSourceService = dataSourceService;
 
         deltaFilesService = new DeltaFilesService(testClock, transformFlowService, egressFlowService, mockDeltaFiPropertiesService,
-                stateMachine, deltaFileRepo, actionEventQueue, contentStorageService, resumePolicyService,
+                stateMachine, deltaFileRepo, coreEventQueue, contentStorageService, resumePolicyService,
                 metricService, analyticEventService, coreAuditLogger, new DidMutexService(), deltaFileCacheService, dataSourceService,
                 queueManagementService, queuedAnnotationRepo, environment, scheduledCollectService, new TestUUIDGenerator());
     }
@@ -298,7 +297,7 @@ class DeltaFilesServiceTest {
         ActionConfiguration actionConfiguration = new TransformActionConfiguration(null, null);
         Mockito.when(egressFlowService.findActionConfig("myFlow", "action")).thenReturn(actionConfiguration);
 
-        List<ActionInput> actionInvocations = deltaFilesService.requeuedActionInputs(deltaFile, modified);
+        List<WrappedActionInput> actionInvocations = deltaFilesService.requeuedActionInputs(deltaFile, modified);
         Assertions.assertThat(actionInvocations).hasSize(1);
         Mockito.verifyNoInteractions(stateMachine);
     }
@@ -314,7 +313,7 @@ class DeltaFilesServiceTest {
         ActionConfiguration actionConfiguration = new EgressActionConfiguration(null, null);
         Mockito.when(transformFlowService.findActionConfig("myFlow", "action")).thenReturn(actionConfiguration);
 
-        List<ActionInput> actionInvocations = deltaFilesService.requeuedActionInputs(deltaFile, modified);
+        List<WrappedActionInput> actionInvocations = deltaFilesService.requeuedActionInputs(deltaFile, modified);
         Assertions.assertThat(actionInvocations).hasSize(1);
         Mockito.verifyNoInteractions(stateMachine);
     }
@@ -487,7 +486,7 @@ class DeltaFilesServiceTest {
 
     @Test
     void testProcessActionEventsExceptionHandling() throws JsonProcessingException {
-        Mockito.when(actionEventQueue.takeResult(Mockito.anyString()))
+        Mockito.when(coreEventQueue.takeResult(Mockito.anyString()))
                 .thenThrow(JsonProcessingException.class);
         assertFalse(deltaFilesService.processActionEvents("test"));
     }
@@ -573,8 +572,8 @@ class DeltaFilesServiceTest {
 
         deltaFilesService.requeue();
 
-        verify(actionEventQueue).putActions(actionInputListCaptor.capture(), Mockito.anyBoolean());
-        List<ActionInput> enqueuedActions = actionInputListCaptor.getValue();
+        verify(coreEventQueue).putActions(actionInputListCaptor.capture(), Mockito.anyBoolean());
+        List<WrappedActionInput> enqueuedActions = actionInputListCaptor.getValue();
         assertEquals(1, enqueuedActions.size());
         assertEquals(List.of(parent1.getDid(), parent2.getDid()), enqueuedActions.getFirst().getActionContext().getCollectedDids());
         assertEquals(2, enqueuedActions.getFirst().getDeltaFileMessages().size());

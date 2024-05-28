@@ -19,7 +19,6 @@ package org.deltafi.core.services;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.DeltaFiConfiguration;
 import org.deltafi.core.repo.DeltaFileRepo;
@@ -48,20 +47,20 @@ public class QueueManagementService {
     @Getter
     private final ConcurrentHashMap<String, Long> allQueues = new ConcurrentHashMap<>();
 
-    ActionEventQueue actionEventQueue;
+    CoreEventQueue coreEventQueue;
     DeltaFileRepo deltaFileRepo;
     UnifiedFlowService unifiedFlowService;
     DeltaFilesService deltaFilesService;
     DeltaFiPropertiesService deltaFiPropertiesService;
     Environment env;
 
-    public QueueManagementService(ActionEventQueue actionEventQueue,
+    public QueueManagementService(CoreEventQueue coreEventQueue,
                                   DeltaFileRepo deltaFileRepo,
                                   UnifiedFlowService unifiedFlowService,
                                   @Lazy DeltaFilesService deltaFilesService,
                                   DeltaFiPropertiesService deltaFiPropertiesService,
                                   Environment env) {
-        this.actionEventQueue = actionEventQueue;
+        this.coreEventQueue = coreEventQueue;
         this.deltaFileRepo = deltaFileRepo;
         this.unifiedFlowService = unifiedFlowService;
         this.deltaFilesService = deltaFilesService;
@@ -71,7 +70,7 @@ public class QueueManagementService {
 
     @Scheduled(fixedDelayString = "${cold.queue.refresh.duration:PT2S}")
     void refreshQueues() {
-        Set<String> keys = actionEventQueue.keys();
+        Set<String> keys = coreEventQueue.keys();
         Set<String> actionNames = unifiedFlowService.allActionConfigurations().stream().map(ActionConfiguration::getType).collect(Collectors.toSet());
         int maxQueueSize = maxQueueSize();
 
@@ -79,7 +78,7 @@ public class QueueManagementService {
         allQueues.keySet().removeIf(q -> !keys.contains(q) || !actionNames.contains(q));
 
         keys.stream().filter(actionNames::contains).forEach(k -> {
-            long size = actionEventQueue.size(k);
+            long size = coreEventQueue.size(k);
             allQueues.put(k, size);
             if (coldQueues.containsKey(k)) {
                 if (size <= maxQueueSize * 0.8) {

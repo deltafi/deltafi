@@ -79,7 +79,7 @@ class PluginRegistryServiceTest {
     PluginValidator pluginValidator;
 
     @Mock
-    ActionEventQueuePluginCleaner actionEventQueuePluginCleaner;
+    CoreEventQueuePluginCleaner coreEventQueuePluginCleaner;
 
     @Mock
     SystemPluginService systemPluginService;
@@ -91,7 +91,7 @@ class PluginRegistryServiceTest {
 
     @BeforeEach
     public void setup() {
-        List<PluginCleaner> cleaners = List.of(egressFlowPlanService, transformFlowPlanService, dataSourcePlanService, pluginVariableService, actionEventQueuePluginCleaner);
+        List<PluginCleaner> cleaners = List.of(egressFlowPlanService, transformFlowPlanService, dataSourcePlanService, pluginVariableService, coreEventQueuePluginCleaner);
         List<PluginUninstallCheck> checkers = List.of(egressFlowService, transformFlowService, dataSourceService);
         pluginRegistryService = new PluginRegistryService(egressFlowService,
                 transformFlowService, dataSourceService, pluginRepository, pluginValidator, pluginVariableService,
@@ -194,7 +194,7 @@ class PluginRegistryServiceTest {
         Mockito.verify(pluginRepository).deleteById(PLUGIN_COORDINATES_1);
         Mockito.verify(egressFlowPlanService).cleanupFor(plugin1);
         Mockito.verify(pluginVariableService).cleanupFor(plugin1);
-        Mockito.verify(actionEventQueuePluginCleaner).cleanupFor(plugin1);
+        Mockito.verify(coreEventQueuePluginCleaner).cleanupFor(plugin1);
     }
 
     @Test

@@ -19,9 +19,9 @@ package org.deltafi.core.services;
 
 import org.deltafi.common.types.Action;
 import org.deltafi.common.types.ActionConfiguration;
-import org.deltafi.common.types.ActionInput;
 import org.deltafi.common.types.ActionState;
-import org.deltafi.common.types.DeltaFile;
+import org.deltafi.core.types.WrappedActionInput;
+import org.deltafi.core.types.DeltaFile;
 import org.deltafi.common.types.DeltaFileFlow;
 import org.deltafi.common.types.DeltaFileFlowState;
 import org.deltafi.common.types.DeltaFileStage;
@@ -36,7 +36,7 @@ public class DeltaFileUtil {
 
     private DeltaFileUtil() {}
 
-    public static ActionInput createAggregateInput(ActionConfiguration joinAction, DeltaFileFlow currentFlow, CollectEntry collectEntry, List<UUID> collectedDids, ActionState actionState, String systemName, String returnAddress) {
+    public static WrappedActionInput createAggregateInput(ActionConfiguration joinAction, DeltaFileFlow currentFlow, CollectEntry collectEntry, List<UUID> collectedDids, ActionState actionState, String systemName, String returnAddress) {
         OffsetDateTime now = OffsetDateTime.now();
 
         DeltaFileFlow aggregateFlow = aggregateDeltaFileFlow(currentFlow, now, collectEntry.getMaxFlowDepth());
@@ -57,7 +57,7 @@ public class DeltaFileUtil {
 
         aggregate.setName("multiple");
 
-        return joinAction.buildActionInput(aggregate, aggregateFlow, collectedDids, aggregateAction, systemName, returnAddress, null);
+        return aggregate.buildActionInput(joinAction, aggregateFlow, collectedDids, aggregateAction, systemName, returnAddress, null);
     }
 
     private static DeltaFileFlow aggregateDeltaFileFlow(DeltaFileFlow currentFlow, OffsetDateTime now, int flowDepth) {

@@ -18,7 +18,7 @@
 package org.deltafi.core.util;
 
 import org.bson.Document;
-import org.deltafi.common.types.DeltaFile;
+import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.springframework.data.mongodb.core.MongoTemplate;
 

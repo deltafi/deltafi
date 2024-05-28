@@ -19,7 +19,7 @@ package org.deltafi.core.delete;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.types.DeltaFile;
+import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.exceptions.DeltafiApiException;
 import org.deltafi.core.services.DeltaFilesService;
 import org.deltafi.core.services.DiskSpaceService;
