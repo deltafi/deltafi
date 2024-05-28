@@ -60,7 +60,7 @@ public class DeleteRunner {
         List<DeletePolicyWorker> policies = new ArrayList<>();
         for (DeletePolicy policy : deletePolicyService.getEnabledPolicies()) {
             if (policy instanceof DiskSpaceDeletePolicy) {
-                policies.add(0, new DiskSpaceDelete(deltaFilesService, diskSpaceService, (DiskSpaceDeletePolicy) policy));
+                policies.addFirst(new DiskSpaceDelete(deltaFilesService, diskSpaceService, (DiskSpaceDeletePolicy) policy));
             } else if (policy instanceof TimedDeletePolicy) {
                 policies.add(new TimedDelete(deltaFilesService, (TimedDeletePolicy) policy));
             } else {

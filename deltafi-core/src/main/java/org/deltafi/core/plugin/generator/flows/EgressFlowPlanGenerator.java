@@ -42,7 +42,7 @@ public class EgressFlowPlanGenerator {
         List<FlowPlan> egressFlowPlans = new ArrayList<>();
 
         if (egressActionConfigs.size() == 1) {
-            egressFlowPlans.add(generateEgressFlow(planName, egressActionConfigs.get(0)));
+            egressFlowPlans.add(generateEgressFlow(planName, egressActionConfigs.getFirst()));
         } else {
             for (int i = 0; i < egressActionConfigs.size(); i++) {
                 EgressActionConfiguration egressActionConfiguration = egressActionConfigs.get(i);

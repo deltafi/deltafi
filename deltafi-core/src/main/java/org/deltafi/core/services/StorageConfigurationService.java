@@ -141,7 +141,7 @@ public class StorageConfigurationService {
             return null;
         }
 
-        LifecycleRule lifecycleRule = lifecycleConfiguration.rules().get(0);
+        LifecycleRule lifecycleRule = lifecycleConfiguration.rules().getFirst();
 
         if (!Status.ENABLED.equals(lifecycleRule.status()) || !AGE_OFF.equals(lifecycleRule.id())) {
             return null;

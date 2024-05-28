@@ -178,24 +178,17 @@ public class StatsdDeltaReporter extends ScheduledReporter {
 
   @Nullable
   private String format(final Object o) {
-    if (o instanceof Float) {
-      return formatNumber(((Float) o).doubleValue());
-    } else if (o instanceof Double) {
-      return formatNumber((Double) o);
-    } else if (o instanceof Byte) {
-      return formatNumber(((Byte) o).longValue());
-    } else if (o instanceof Short) {
-      return formatNumber(((Short) o).longValue());
-    } else if (o instanceof Integer) {
-      return formatNumber(((Integer) o).longValue());
-    } else if (o instanceof Long) {
-      return formatNumber((Long) o);
-    } else if (o instanceof BigInteger) {
-      return formatNumber((BigInteger) o);
-    } else if (o instanceof BigDecimal) {
-      return formatNumber(((BigDecimal) o).doubleValue());
-    }
-    return null;
+      return switch (o) {
+          case Float v -> formatNumber(v.doubleValue());
+          case Double v -> formatNumber(v);
+          case Byte b -> formatNumber(b.longValue());
+          case Short i -> formatNumber(i.longValue());
+          case Integer i -> formatNumber(i.longValue());
+          case Long l -> formatNumber(l);
+          case BigInteger bigInteger -> formatNumber(bigInteger);
+          case BigDecimal bigDecimal -> formatNumber(bigDecimal.doubleValue());
+          default -> null;
+      };
   }
 
   private String prefix(final String... components) {

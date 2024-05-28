@@ -57,7 +57,7 @@ public class EgressFlowPlanConverter extends FlowPlanConverter<EgressFlowPlan, E
         }
 
         return 1 == ingressFlowNames.size() ?
-                handleValue(ingressFlowNames.get(0), flowPlanPropertyHelper, inEgressPlanNamed) :
+                handleValue(ingressFlowNames.getFirst(), flowPlanPropertyHelper, inEgressPlanNamed) :
                 handleValues(ingressFlowNames, flowPlanPropertyHelper, inEgressPlanNamed);
     }
 

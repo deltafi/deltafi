@@ -47,7 +47,7 @@ public interface Subscriber {
 
     /**
      *
-     * @return
+     * @return if the subscriber is in test mode
      */
     default boolean isTestMode() {
         return false;

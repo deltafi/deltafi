@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.schedulers;
 
+import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.core.env.Environment;
@@ -24,7 +25,7 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
 
 public class OnDiskSpaceOrMaintenanceCondition implements Condition {
     @Override
-    public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+    public boolean matches(ConditionContext context, @NotNull AnnotatedTypeMetadata metadata) {
         Environment env = context.getEnvironment();
         boolean diskSpace = env.getProperty("schedule.diskSpace", Boolean.class, true);
         boolean maintenance = env.getProperty("schedule.maintenance", Boolean.class, true);
