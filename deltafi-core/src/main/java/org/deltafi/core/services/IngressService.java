@@ -25,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.ContentStorageService;
+import org.deltafi.common.io.Writer;
 import org.deltafi.common.io.WriterPipedInputStream;
 import org.deltafi.common.nifi.FlowFileTwoStepUnpackager;
 import org.deltafi.common.nifi.FlowFileTwoStepUnpackagerV1;
@@ -164,9 +165,8 @@ public class IngressService {
                     throw new IngressMetadataException("Filename must be passed in as a header or FlowFile attribute");
                 }
 
-                try (WriterPipedInputStream writerPipedInputStream = new WriterPipedInputStream()) {
-                    writerPipedInputStream.runPipeWriter(outputStream -> flowFileTwoStepUnpackager.unpackageContent(
-                            contentInputStream, outputStream), executorService);
+                Writer writer = outputStream -> flowFileTwoStepUnpackager.unpackageContent(contentInputStream, outputStream);
+                try (WriterPipedInputStream writerPipedInputStream = WriterPipedInputStream.create(writer, executorService)) {
                     ingressResults.add(ingress(flow, filename, MediaType.APPLICATION_OCTET_STREAM,
                             writerPipedInputStream, combinedMetadata, created));
                 }

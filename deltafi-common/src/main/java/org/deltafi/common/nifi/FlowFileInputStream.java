@@ -26,20 +26,58 @@ import java.io.InputStream;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
+/**
+ * An InputStream providing a FlowFile for supplied content and attributes that is written in a separate thread.
+ */
 public class FlowFileInputStream extends WriterPipedInputStream {
-    private final FlowFilePackager flowFilePackager;
-
-    public FlowFileInputStream() throws IOException {
-        this(new FlowFilePackagerV1());
-    }
-
-    public FlowFileInputStream(FlowFilePackager flowFilePackager) throws IOException {
-        this.flowFilePackager = flowFilePackager;
-    }
-
-    public void runPipeWriter(InputStream in, Map<String, String> attributes, long fileSize,
+    /**
+     * Creates a FlowFileInputStream that packages the content in the provided InputStream with the supplied attributes
+     * in a FlowFile V1, starting a separate thread for writing.
+     *
+     * @param inputStream the InputStream containing the content
+     * @param attributes the Map of attributes to include
+     * @param fileSize the size of the content
+     * @param executorService the ExecutorService used to submit the writing thread
+     * @return the FlowFileInputStream
+     * @throws IOException if an I/O error occurs
+     */
+    public static FlowFileInputStream create(InputStream inputStream, Map<String, String> attributes, long fileSize,
             ExecutorService executorService) throws IOException {
-        super.runPipeWriter(outputStream ->
-                flowFilePackager.packageFlowFile(in, outputStream, attributes, fileSize), executorService);
+        return create(new FlowFilePackagerV1(), inputStream, attributes, fileSize, executorService);
+    }
+
+    /**
+     * Creates a FlowFileInputStream that packages the content in the provided InputStream with the supplied attributes
+     * using the supplied FlowFilePackager, starting a separate thread for writing.
+     *
+     * @param flowFilePackager the FlowFilePackager used to package the content and attributes
+     * @param inputStream the InputStream containing the content
+     * @param attributes the Map of attributes to include
+     * @param fileSize the size of the content
+     * @param executorService the ExecutorService used to submit the writing thread
+     * @return the FlowFileInputStream
+     * @throws IOException if an I/O error occurs
+     */
+    public static FlowFileInputStream create(FlowFilePackager flowFilePackager, InputStream inputStream,
+            Map<String, String> attributes, long fileSize, ExecutorService executorService) throws IOException {
+        FlowFileInputStream flowFileInputStream = new FlowFileInputStream(flowFilePackager, inputStream, attributes,
+                fileSize, executorService);
+        flowFileInputStream.runPipeWriter();
+        return flowFileInputStream;
+    }
+
+    private final InputStream inputStream;
+
+    private FlowFileInputStream(FlowFilePackager flowFilePackager, InputStream inputStream,
+            Map<String, String> attributes, long fileSize, ExecutorService executorService) throws IOException {
+        super(outputStream -> flowFilePackager.packageFlowFile(inputStream, outputStream, attributes, fileSize),
+                executorService);
+        this.inputStream = inputStream;
+    }
+
+    @Override
+    public void close() throws IOException {
+        super.close();
+        inputStream.close();
     }
 }

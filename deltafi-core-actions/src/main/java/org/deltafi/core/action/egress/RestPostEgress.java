@@ -22,56 +22,25 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.egress.EgressInput;
-import org.deltafi.actionkit.action.egress.EgressResult;
-import org.deltafi.actionkit.action.egress.EgressResultType;
-import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.common.http.HttpPostException;
+import org.deltafi.common.http.HttpService;
 import org.deltafi.common.types.ActionContext;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
-import javax.ws.rs.core.Response;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.http.HttpResponse;
 import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
 
 @Component
 @Slf4j
 public class RestPostEgress extends HttpEgressBase<RestPostEgressParameters> {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
-    public RestPostEgress() {
-        super("Egresses to a REST endpoint");
+    public RestPostEgress(HttpService httpService) {
+        super("Egresses to a REST endpoint", httpService);
     }
 
-    protected EgressResultType doEgress(@NotNull ActionContext context, @NotNull RestPostEgressParameters params, @NotNull EgressInput input) {
-        try (InputStream inputStream = input.getContent().loadInputStream()) {
-            HttpResponse<InputStream> response = httpPostService.post(params.getUrl(), Map.of(params.getMetadataKey(),
-                    buildHeadersMapString(context.getDid(), context.getDeltaFileName(), input.getContent().getName(), context.getDataSource(),
-                            context.getFlowName(), input.getMetadata())), inputStream, input.getContent().getMediaType());
-            Response.Status status = Response.Status.fromStatusCode(response.statusCode());
-            if (Objects.isNull(status) || status.getFamily() != Response.Status.Family.SUCCESSFUL) {
-                try (InputStream body = response.body()) {
-                    return new ErrorResult(context, "Unsuccessful POST: " + response.statusCode() + " " + new String(body.readAllBytes())).logErrorTo(log);
-                }
-            }
-
-        } catch (JsonProcessingException e) {
-            return new ErrorResult(context, "Unable to build post headers", e);
-        } catch (IOException e) {
-            log.warn("Unable to close input stream from content storage", e);
-        } catch (HttpPostException e) {
-            return new ErrorResult(context, "Service post failure", e);
-        }
-
-        return new EgressResult(context, params.getUrl(), input.getContent().getSize());
-    }
-
-    private String buildHeadersMapString(UUID did, String deltaFileName, String filename, String ingressFlow, String egressFlow, Map<String, String> metadata)
-            throws JsonProcessingException {
-        return OBJECT_MAPPER.writeValueAsString(buildHeadersMap(did, deltaFileName, filename, ingressFlow, egressFlow, metadata));
+    protected Map<String, String> buildHeaders(@NotNull ActionContext context, @NotNull RestPostEgressParameters params,
+            @NotNull EgressInput input) throws JsonProcessingException {
+        return Map.of(params.getMetadataKey(),
+                OBJECT_MAPPER.writeValueAsString(StandardEgressHeaders.buildMap(context, input)));
     }
 }

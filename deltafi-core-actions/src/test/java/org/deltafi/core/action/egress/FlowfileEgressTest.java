@@ -17,197 +17,109 @@
  */
 package org.deltafi.core.action.egress;
 
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
+import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
 import org.apache.nifi.util.FlowFileUnpackagerV1;
-import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.egress.EgressResultType;
-import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.common.content.ContentStorageService;
-import org.deltafi.common.content.Segment;
 import org.deltafi.common.http.HttpService;
-import org.deltafi.common.nifi.ContentType;
-import org.deltafi.common.storage.s3.ObjectStorageException;
+import org.deltafi.common.test.storage.s3.InMemoryObjectStorageService;
 import org.deltafi.common.types.ActionContext;
-import org.deltafi.common.types.Content;
+import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.stubbing.Answer;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-import javax.net.ssl.SSLSession;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpHeaders;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.deltafi.common.constant.DeltaFiConstants.BYTES_OUT;
+import static org.deltafi.common.constant.DeltaFiConstants.FILES_OUT;
+import static org.deltafi.common.nifi.ContentType.APPLICATION_FLOWFILE;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
-@ExtendWith(MockitoExtension.class)
-class FlowfileEgressTest {
-    private static final byte[] DATA = "This is the content.".getBytes();
-    private static final Map<String, String> METADATA = Map.of(
-            "thing1", "foo",
-            "thing2", "bar");
+public class FlowfileEgressTest {
+    private static final String URL_CONTEXT = "/endpoint";
+    private static final String CONTENT = "This is the test content.";
 
-    private static final UUID DID = UUID.randomUUID();
-    private static final String ORIG_FILENAME = "origFilename";
-    private static final String FLOW = "theFlow";
-    private static final String POST_FILENAME = "postFilename";
+    private final HttpService httpService = new HttpService(HttpClient.newHttpClient());
+    private final FlowfileEgress action = new FlowfileEgress(httpService);
+    private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action, "FlowfileEgressTest");
 
-    private static final String ACTION = "MyEgressAction";
-    private static final String EGRESS_FLOW = "outFlow";
-    private static final String URL = "https://url.com";
+    private static final ContentStorageService CONTENT_STORAGE_SERVICE =
+            new ContentStorageService(new InMemoryObjectStorageService());
 
-    private static final String CONTENT_TYPE = ContentType.APPLICATION_FLOWFILE;
-
-    private static final Map<String, String> ADDITIONAL_METADATA = Map.of(
-            "did", DID.toString(),
-            "flow", EGRESS_FLOW,
-            "dataSource", FLOW,
-            "originalFilename", ORIG_FILENAME,
-            "filename", POST_FILENAME
-    );
-
-    private static final Content CONTENT = new Content(POST_FILENAME, CONTENT_TYPE, new Segment(UUID.randomUUID(), 0, DATA.length, DID));
-    private static final ActionContext CONTEXT = ActionContext.builder().did(DID).flowName(EGRESS_FLOW).actionName(ACTION).deltaFileName(ORIG_FILENAME).dataSource(FLOW).build();
-
-    static final Integer NUM_TRIES = 3;
-    static final Integer RETRY_WAIT = 10;
-    private static final HttpEgressParameters PARAMS = new HttpEgressParameters(URL, NUM_TRIES, RETRY_WAIT);
-
-    @Mock
-    private ContentStorageService contentStorageService;
-
-    @Mock
-    private HttpService httpService;
-
-    @InjectMocks
-    private FlowfileEgress action;
+    @RegisterExtension
+    static WireMockExtension wireMockHttp = WireMockExtension.newInstance()
+            .options(WireMockConfiguration.wireMockConfig().dynamicPort().http2PlainDisabled(true))
+            .build();
 
     @BeforeEach
-    public void init() {
-        CONTEXT.setContentStorageService(contentStorageService);
+    public void beforeEach() {
+        wireMockHttp.resetAll();
     }
 
     @Test
-    public void execute() throws IOException, ObjectStorageException {
-        when(contentStorageService.load(eq(CONTENT))).thenAnswer(invocation -> new ByteArrayInputStream(DATA));
-        EgressResultType result = runTest(200, 1);
+    public void egresses() throws IOException {
+        UUID did = UUID.randomUUID();
 
-        assertThat(result, instanceOf(EgressResult.class));
-        assertThat(result.toEvent().getDid(), equalTo(DID));
-        assertThat(result.toEvent().getActionName(), equalTo(ACTION));
-        assertThat(result.toEvent().getFlowName(), equalTo(EGRESS_FLOW));
-    }
+        wireMockHttp.stubFor(WireMock.post(URL_CONTEXT)
+                .withHeader(HttpHeaders.CONTENT_TYPE, WireMock.equalTo(APPLICATION_FLOWFILE))
+                .willReturn(WireMock.ok()));
 
-    @SuppressWarnings("unchecked")
-    private EgressResultType runTest(int statusCode, int numTries) throws IOException {
-        final List<byte[]> posts = new ArrayList<>();
+        HttpEgressParameters httpEgressParameters = new HttpEgressParameters();
+        String url = wireMockHttp.getRuntimeInfo().getHttpBaseUrl() + URL_CONTEXT;
+        httpEgressParameters.setUrl(url);
 
-        when(httpService.post(any(), any(), any(), any())).thenAnswer(
-                (Answer<HttpResponse<InputStream>>) invocation -> {
-                    InputStream is = invocation.getArgument(2);
-                    posts.add(is.readAllBytes());
-                    is.close();
-                    return new HttpResponse<>() {
-                        @Override public int statusCode() {
-                            return statusCode;
-                        }
-                        @Override public HttpRequest request() {
-                            return null;
-                        }
-                        @Override public Optional<HttpResponse<InputStream>> previousResponse() {
-                            return Optional.empty();
-                        }
-                        @Override public HttpHeaders headers() {
-                            return null;
-                        }
-                        @Override public InputStream body() {
-                            return new ByteArrayInputStream("Hello there.".getBytes());
-                        }
-                        @Override public Optional<SSLSession> sslSession() {
-                            return Optional.empty();
-                        }
-                        @Override public URI uri() {
-                            return null;
-                        }
-                        @Override public HttpClient.Version version() {
-                            return null;
-                        }
-                    };
-                }
-        );
+        EgressInput egressInput = EgressInput.builder()
+                .content(runner.saveContent(CONTENT, "test-content", MediaType.TEXT_PLAIN))
+                .metadata(Map.of("key-1", "value-1", "key-2", "value-2"))
+                .build();
 
-        EgressResultType result = action.egress(CONTEXT, PARAMS, egressInput());
+        EgressResultType egressResultType = action.egress(
+                ActionContext.builder()
+                        .contentStorageService(CONTENT_STORAGE_SERVICE)
+                        .did(did)
+                        .deltaFileName("test-delta-file")
+                        .dataSource("test-data-source")
+                        .flowName("test-flow-name")
+                        .build(),
+                httpEgressParameters, egressInput);
 
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<Map<String, String>> headersCaptor = ArgumentCaptor.forClass(Map.class);
-        verify(httpService, times(numTries)).post(eq(URL), headersCaptor.capture(), any(), eq(CONTENT_TYPE));
+        assertInstanceOf(EgressResult.class, egressResultType);
 
-        FlowFileUnpackagerV1 unpackager = new FlowFileUnpackagerV1();
+        List<ServeEvent> serveEventList = wireMockHttp.getServeEvents().getRequests();
+        byte[] flowfileSent = serveEventList.getFirst().getRequest().getBody();
+        FlowFileUnpackagerV1 flowFileUnpackagerV1 = new FlowFileUnpackagerV1();
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        Map<String, String> flowfileAttributes = flowFileUnpackagerV1.unpackageFlowFile(
+                new ByteArrayInputStream(flowfileSent), byteArrayOutputStream);
+        assertEquals(CONTENT, byteArrayOutputStream.toString());
+        assertEquals("value-1", flowfileAttributes.get("key-1"));
+        assertEquals("value-2", flowfileAttributes.get("key-2"));
+        assertEquals(did.toString(), flowfileAttributes.get("did"));
+        assertEquals("test-data-source", flowfileAttributes.get("dataSource"));
+        assertEquals("test-flow-name", flowfileAttributes.get("flow"));
+        assertEquals("test-delta-file", flowfileAttributes.get("originalFilename"));
+        assertEquals("test-content", flowfileAttributes.get("filename"));
 
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        Map<String, String> metadata = unpackager.unpackageFlowFile(new ByteArrayInputStream(posts.getFirst()), out);
-        // Expected metadata + ADDITIONAL_METADATA should be in the flowfile attributes
-        assertThat(metadata, equalTo(Stream.of(FlowfileEgressTest.METADATA, ADDITIONAL_METADATA).flatMap(m -> m.entrySet().stream())
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))));
-        assertThat(out.toByteArray(), equalTo(DATA));
-
-        return result;
-    }
-
-    private static class TestInputStream extends ByteArrayInputStream {
-        public TestInputStream(byte[] buf) {
-            super(buf);
-        }
-
-        @Override
-        public void close() throws IOException {
-            throw new IOException("This is a contrived exception.");
-        }
-    }
-
-    @Test
-    public void closingInputStreamThrowsIoException() throws IOException, ObjectStorageException {
-        when(contentStorageService.load(eq(CONTENT))).thenAnswer(invocation -> new TestInputStream(DATA));
-
-        EgressResultType result = runTest(200, 1);
-
-        assertThat(result, instanceOf(EgressResult.class));
-    }
-
-    @Test
-    public void badResponse() throws IOException, ObjectStorageException {
-        when(contentStorageService.load(eq(CONTENT))).thenAnswer(invocation -> new ByteArrayInputStream(DATA));
-
-        EgressResultType result = runTest(505, 4);
-
-        assertThat(result, instanceOf(ErrorResult.class));
-        assertThat(((ErrorResult) result).getErrorCause(), containsString("505"));
-        assertThat(((ErrorResult) result).getErrorContext(), containsString("Hello there"));
-    }
-
-    private ActionContent actionContent() {
-        return new ActionContent(CONTENT, contentStorageService);
-    }
-
-    private EgressInput egressInput() {
-        return EgressInput.builder().content(actionContent()).metadata(METADATA).build();
+        assertEquals(FILES_OUT, ((EgressResult) egressResultType).getMetrics().getFirst().getName());
+        assertEquals(1, ((EgressResult) egressResultType).getMetrics().getFirst().getValue());
+        assertEquals(url, ((EgressResult) egressResultType).getMetrics().getFirst().getTags().get("endpoint"));
+        assertEquals(BYTES_OUT, ((EgressResult) egressResultType).getMetrics().getLast().getName());
+        assertEquals(CONTENT.length(), ((EgressResult) egressResultType).getMetrics().getLast().getValue());
+        assertEquals(url, ((EgressResult) egressResultType).getMetrics().getLast().getTags().get("endpoint"));
     }
 }

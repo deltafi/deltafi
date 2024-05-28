@@ -19,16 +19,14 @@ package org.deltafi.core.action.egress;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 
 @Data
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
+@AllArgsConstructor
 public class HttpEgressParameters extends ActionParameters {
     @JsonProperty(required = true)
     @JsonPropertyDescription("The URL to post the DeltaFile to")
@@ -41,10 +39,4 @@ public class HttpEgressParameters extends ActionParameters {
     @JsonProperty(defaultValue = "150")
     @JsonPropertyDescription("Number milliseconds to wait for an HTTP retry")
     public Integer retryDelayMs = 150;
-
-    public HttpEgressParameters(String url, Integer retryCount, Integer retryDelayMs) {
-        this.url = url;
-        this.retryCount = retryCount;
-        this.retryDelayMs = retryDelayMs;
-    }
 }

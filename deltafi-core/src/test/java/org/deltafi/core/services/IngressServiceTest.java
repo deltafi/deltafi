@@ -284,9 +284,9 @@ class IngressServiceTest {
 
         Map<String, String> headerMetadata = Map.of("k1", "v1", "flow", "flow");
         Map<String, String> flowFileAttributes = Map.of("k1", "b", "encodedString", "\uD84E\uDCE7");
-        try (FlowFileInputStream flowFileInputStream = new FlowFileInputStream()) {
-            flowFileInputStream.runPipeWriter(new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)),
-                    flowFileAttributes, "content".length(), executorService);
+        try (FlowFileInputStream flowFileInputStream = FlowFileInputStream.create(
+                new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)), flowFileAttributes,
+                "content".length(), executorService)) {
             verifyNormalExecution(ingressService.ingress(null, "filename", ContentType.APPLICATION_FLOWFILE_V_1,
                     "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), flowFileInputStream, TIME));
         }
@@ -304,9 +304,9 @@ class IngressServiceTest {
 
         Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
         Map<String, String> flowFileAttributes = Map.of("k1", "b", "flow", "flow");
-        try (FlowFileInputStream flowFileInputStream = new FlowFileInputStream()) {
-            flowFileInputStream.runPipeWriter(new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)),
-                    flowFileAttributes, "content".length(), executorService);
+        try (FlowFileInputStream flowFileInputStream = FlowFileInputStream.create(
+                new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)), flowFileAttributes,
+                "content".length(), executorService)) {
             verifyNormalExecution(ingressService.ingress(null, "filename", ContentType.APPLICATION_FLOWFILE_V_1,
                     "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), flowFileInputStream, TIME));
         }
@@ -323,9 +323,9 @@ class IngressServiceTest {
 
         Map<String, String> headerMetadata = Map.of("k1", "v1", "filename", "filename");
         Map<String, String> flowFileAttributes = Map.of("k1", "b", "encodedString", "\uD84E\uDCE7");
-        try (FlowFileInputStream flowFileInputStream = new FlowFileInputStream()) {
-            flowFileInputStream.runPipeWriter(new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)),
-                    flowFileAttributes, "content".length(), executorService);
+        try (FlowFileInputStream flowFileInputStream = FlowFileInputStream.create(
+                new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)), flowFileAttributes,
+                "content".length(), executorService)) {
             verifyNormalExecution(ingressService.ingress("flow", null, ContentType.APPLICATION_FLOWFILE_V_1,
                     "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), flowFileInputStream, TIME));
         }
@@ -343,9 +343,9 @@ class IngressServiceTest {
 
         Map<String, String> headerMetadata = Map.of("k1", "v1", "k2", "v2");
         Map<String, String> flowFileAttributes = Map.of("k1", "b", "filename", "filename");
-        try (FlowFileInputStream flowFileInputStream = new FlowFileInputStream()) {
-            flowFileInputStream.runPipeWriter(new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)),
-                    flowFileAttributes, "content".length(), executorService);
+        try (FlowFileInputStream flowFileInputStream = FlowFileInputStream.create(
+                new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)), flowFileAttributes,
+                "content".length(), executorService)) {
             verifyNormalExecution(ingressService.ingress("flow", null, ContentType.APPLICATION_FLOWFILE_V_1,
                     "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), flowFileInputStream, TIME));
         }
@@ -363,9 +363,9 @@ class IngressServiceTest {
         Map<String, String> flowFileAttributes = Map.of("k1", "b", "encodedString", "\uD84E\uDCE7");
         assertThrows(IngressMetadataException.class,
                 () -> {
-                    try (FlowFileInputStream flowFileInputStream = new FlowFileInputStream()) {
-                        flowFileInputStream.runPipeWriter(new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)),
-                                flowFileAttributes, "content".length(), executorService);
+                    try (FlowFileInputStream flowFileInputStream = FlowFileInputStream.create(
+                            new ByteArrayInputStream("content".getBytes(StandardCharsets.UTF_8)), flowFileAttributes,
+                            "content".length(), executorService)) {
                         ingressService.ingress("flow", null, ContentType.APPLICATION_FLOWFILE_V_1,
                                 "username", OBJECT_MAPPER.writeValueAsString(headerMetadata), flowFileInputStream, TIME);
                     }

@@ -20,19 +20,12 @@ package org.deltafi.core.action.egress;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 @Data
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-@NoArgsConstructor
 public class DeltaFiEgressParameters extends HttpEgressParameters {
     @JsonPropertyDescription("Name of the flow on the receiving DeltaFi")
     public String flow;
-
-    public DeltaFiEgressParameters(String url, String flow, Integer retryCount, Integer retryDelayMs) {
-        super(url, retryCount, retryDelayMs);
-        this.flow = flow;
-    }
 }

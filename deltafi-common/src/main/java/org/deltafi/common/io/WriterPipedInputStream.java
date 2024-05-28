@@ -25,39 +25,61 @@ import java.io.PipedOutputStream;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+/**
+ * An InputStream providing data written to a supplied Writer running in a separate thread.
+ */
 @Slf4j
 public class WriterPipedInputStream extends PipedInputStream {
     private static final int DEFAULT_BUFFER_SIZE = 512 * 1024;
 
+    /**
+     * Creates a WriterPipedInputStream with a default buffer size, starting a separate thread for writing.
+     *
+     * @param writer the Writer that will write bytes to be available to this WriterPipedInputStream
+     * @param executorService the ExecutorService used to submit the writing thread
+     * @return the WriterPipedInputStream
+     * @throws IOException if an I/O error occurs
+     */
+    public static WriterPipedInputStream create(Writer writer, ExecutorService executorService) throws IOException {
+        return create(writer, executorService, DEFAULT_BUFFER_SIZE);
+    }
+
+    /**
+     * Creates a WriterPipedInputStream, starting a separate thread for writing.
+     *
+     * @param writer the Writer that will write bytes to be available to this WriterPipedInputStream
+     * @param executorService the ExecutorService used to submit the writing thread
+     * @param bufferSize the buffer size
+     * @return the WriterPipedInputStream
+     * @throws IOException if an I/O error occurs
+     */
+    public static WriterPipedInputStream create(Writer writer, ExecutorService executorService, int bufferSize)
+            throws IOException {
+        WriterPipedInputStream writerPipedInputStream = new WriterPipedInputStream(writer, executorService, bufferSize);
+        writerPipedInputStream.runPipeWriter();
+        return writerPipedInputStream;
+    }
+
+    private final Writer writer;
+    private final ExecutorService executorService;
     private final PipedOutputStream pipedOutputStream;
 
     private Future<?> future;
 
-    /**
-     * Creates a WriterPipedInputStream with a default buffer size.
-     */
-    public WriterPipedInputStream() throws IOException {
-        this(DEFAULT_BUFFER_SIZE);
+    protected WriterPipedInputStream(Writer writer, ExecutorService executorService) throws IOException {
+        this(writer, executorService, DEFAULT_BUFFER_SIZE);
     }
 
-    /**
-     * Creates a WriterPipedInputStream.
-     *
-     * @param bufferSize the buffer size
-     */
-    public WriterPipedInputStream(int bufferSize) throws IOException {
+    protected WriterPipedInputStream(Writer writer, ExecutorService executorService, int bufferSize) throws IOException {
         super(bufferSize);
 
-        this.pipedOutputStream = new PipedOutputStream(this);
+        this.writer = writer;
+        this.executorService = executorService;
+
+        pipedOutputStream = new PipedOutputStream(this);
     }
 
-    /**
-     * Writes bytes in a separate thread to be available to this WriterPipedInputStream.
-     *
-     * @param writer the Writer that will write bytes to be available to this WriterPipedInputStream
-     * @param executorService the ExecutorService used to submit the writing thread
-     */
-    public void runPipeWriter(Writer writer, ExecutorService executorService) {
+    protected void runPipeWriter() {
         future = executorService.submit(() -> {
             try (pipedOutputStream) {
                 writer.write(pipedOutputStream);

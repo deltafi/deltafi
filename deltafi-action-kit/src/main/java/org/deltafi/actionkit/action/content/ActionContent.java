@@ -105,8 +105,7 @@ public class ActionContent {
      * @return The ActionContent that was stored
      */
     public static ActionContent saveContent(ActionContext context, Writer writer, String name, String mediaType) {
-        try (WriterPipedInputStream writerPipedInputStream = new WriterPipedInputStream()) {
-            writerPipedInputStream.runPipeWriter(writer, EXECUTOR_SERVICE);
+        try (WriterPipedInputStream writerPipedInputStream = WriterPipedInputStream.create(writer, EXECUTOR_SERVICE)) {
             return saveContent(context, writerPipedInputStream, name, mediaType);
         } catch (IOException e) {
             throw new ActionKitException("Unable to write content " + name, e);
