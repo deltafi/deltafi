@@ -19,4 +19,5 @@ package org.deltafi.common.test;
 
 public class TestConstants {
     public static final String MONGODB_CONTAINER = "mongo:5.0.6";
+    public static final String POSTGRESQL_CONTAINER = "postgres:16.2";
 }

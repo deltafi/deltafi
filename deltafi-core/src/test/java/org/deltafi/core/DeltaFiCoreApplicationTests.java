@@ -93,6 +93,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.MongoDBContainer;
+import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -118,6 +119,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static org.deltafi.common.constant.DeltaFiConstants.*;
 import static org.deltafi.common.test.TestConstants.MONGODB_CONTAINER;
+import static org.deltafi.common.test.TestConstants.POSTGRESQL_CONTAINER;
 import static org.deltafi.common.types.ActionState.*;
 import static org.deltafi.common.types.DeltaFile.CURRENT_SCHEMA_VERSION;
 import static org.deltafi.core.datafetchers.DeletePolicyDatafetcherTestHelper.*;
@@ -148,6 +150,8 @@ class DeltaFiCoreApplicationTests {
 
 	@Container
 	public static final MongoDBContainer MONGO_DB_CONTAINER = new MongoDBContainer(MONGODB_CONTAINER);
+	@Container
+	public static final PostgreSQLContainer<?> POSTGRES_CONTAINER = new PostgreSQLContainer<>(POSTGRESQL_CONTAINER);
 	public static final String SAMPLE_EGRESS_ACTION = "SampleEgressAction";
 	public static final String COLLECTING_TRANSFORM_ACTION = "CollectingTransformAction";
 	public static final String COLLECT_TOPIC = "collect-topic";
@@ -155,6 +159,10 @@ class DeltaFiCoreApplicationTests {
 	@DynamicPropertySource
 	static void setProperties(DynamicPropertyRegistry registry) {
 		registry.add("spring.data.mongodb.uri", MONGO_DB_CONTAINER::getReplicaSetUrl);
+		registry.add("spring.datasource.url", POSTGRES_CONTAINER::getJdbcUrl);
+		registry.add("spring.datasource.username", POSTGRES_CONTAINER::getUsername);
+		registry.add("spring.datasource.password", POSTGRES_CONTAINER::getPassword);
+		registry.add("spring.datasource.driver-class-name", POSTGRES_CONTAINER::getDriverClassName);
 	}
 
 	@Autowired

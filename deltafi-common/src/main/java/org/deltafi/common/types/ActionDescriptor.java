@@ -17,23 +17,30 @@
  */
 package org.deltafi.common.types;
 
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
+import org.deltafi.common.converters.ObjectJsonConverter;
 
-import java.util.List;
 import java.util.Map;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Entity
+@Table(name = "action_descriptors")
 public class ActionDescriptor {
   @Id
   private String name;
+
   private String description;
+
+  @Enumerated(EnumType.STRING)
   private ActionType type;
+
+  @Convert(converter = ObjectJsonConverter.class)
   private Map<String, Object> schema;
 }

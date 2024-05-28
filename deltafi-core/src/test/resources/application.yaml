@@ -26,6 +26,12 @@ spring:
       features:
         - SYNC_DELAY
         - NO_HTTP_INTERFACE_ARG
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
   sql:
     init:
       mode: never

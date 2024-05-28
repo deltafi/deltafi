@@ -27,6 +27,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.cache.Cache;
@@ -42,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
                 "cache.caches.test-cache-b=expireAfterWrite=PT5S" },
         webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @EnableAutoConfiguration(exclude = { ContentStorageServiceAutoConfiguration.class, HttpServiceAutoConfiguration.class,
-        MinioAutoConfiguration.class })
+        MinioAutoConfiguration.class, DataSourceAutoConfiguration.class, HibernateJpaAutoConfiguration.class })
 public class CacheAutoConfigurationTest {
     @SpringBootApplication
     public static class TestApp {

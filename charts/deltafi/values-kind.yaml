@@ -13,6 +13,6 @@ deltafi:
 # - install your cluster (deltafi-postgres-0 pod will come up)
 # - deltafi postgres-cli -or- access postgress through deltafi-postgres service
 stackgres-operator:
-  enabled: false
+  enabled: true
 postgres:
-  enabled: false
+  enabled: true
