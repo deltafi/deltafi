@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.rules.RuleEvaluator;
 import org.deltafi.common.types.*;
 import org.deltafi.core.types.DataSource;
+import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.types.Flow;
 import org.springframework.stereotype.Service;
 

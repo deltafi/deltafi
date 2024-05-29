@@ -21,7 +21,7 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.types.DeltaFile;
+import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;

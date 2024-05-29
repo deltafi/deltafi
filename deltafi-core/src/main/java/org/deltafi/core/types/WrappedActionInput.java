@@ -15,23 +15,26 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.services;
+package org.deltafi.core.types;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.action.ActionEventQueue;
-import org.deltafi.common.types.Plugin;
-import org.deltafi.core.plugin.PluginCleaner;
-import org.springframework.stereotype.Service;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.SuperBuilder;
+import org.deltafi.common.types.ActionInput;
 
-@Service
-@RequiredArgsConstructor
-@Slf4j
-public class ActionEventQueuePluginCleaner implements PluginCleaner {
-    private final ActionEventQueue actionEventQueue;
+import java.time.OffsetDateTime;
 
-    @Override
-    public void cleanupFor(Plugin plugin) {
-        actionEventQueue.drop(plugin.actionNames());
-    }
+@EqualsAndHashCode(callSuper = true)
+@SuperBuilder
+@Data
+public class WrappedActionInput extends ActionInput {
+    @JsonIgnore
+    private boolean coldQueued;
+
+    @JsonIgnore
+    private OffsetDateTime actionCreated;
+
+    @JsonIgnore
+    private DeltaFile deltaFile;
 }

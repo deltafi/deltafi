@@ -26,7 +26,7 @@ import org.deltafi.common.nifi.FlowFileInputStream;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.test.storage.s3.InMemoryObjectStorageService;
 import org.deltafi.common.test.uuid.TestUUIDGenerator;
-import org.deltafi.common.types.DeltaFile;
+import org.deltafi.core.types.DeltaFile;
 import org.deltafi.common.types.DeltaFileFlow;
 import org.deltafi.common.types.IngressEventItem;
 import org.deltafi.core.audit.CoreAuditLogger;

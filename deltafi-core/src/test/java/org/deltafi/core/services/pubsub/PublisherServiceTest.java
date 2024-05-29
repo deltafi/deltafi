@@ -24,7 +24,7 @@ import org.deltafi.common.types.Action;
 import org.deltafi.common.types.ActionState;
 import org.deltafi.common.types.DefaultBehavior;
 import org.deltafi.common.types.DefaultRule;
-import org.deltafi.common.types.DeltaFile;
+import org.deltafi.core.types.DeltaFile;
 import org.deltafi.common.types.DeltaFileFlow;
 import org.deltafi.common.types.MatchingPolicy;
 import org.deltafi.common.types.PublishRules;

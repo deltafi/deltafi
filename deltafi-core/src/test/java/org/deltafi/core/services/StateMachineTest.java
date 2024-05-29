@@ -27,9 +27,7 @@ import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.services.pubsub.PublisherService;
-import org.deltafi.core.types.EgressFlow;
-import org.deltafi.core.types.StateMachineInput;
-import org.deltafi.core.types.TransformFlow;
+import org.deltafi.core.types.*;
 import org.deltafi.core.util.Util;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -111,7 +109,7 @@ class StateMachineTest {
                 .thenReturn(Set.of(egressFlow));
 
         StateMachineInput stateMachineInput = new StateMachineInput(deltaFile, deltaFileFlow);
-        List<ActionInput> actionInputs = stateMachine.advance(List.of(stateMachineInput));
+        List<WrappedActionInput> actionInputs = stateMachine.advance(List.of(stateMachineInput));
         assertThat(actionInputs).isEmpty();
 
         assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.COMPLETE);
@@ -142,7 +140,7 @@ class StateMachineTest {
                 Mockito.eq(0), Mockito.eq(deltaFile.getDid()))).thenReturn(collectEntry);
 
         StateMachineInput stateMachineInput = new StateMachineInput(deltaFile, deltaFileFlow);
-        List<ActionInput> actionInvocations = stateMachine.advance(List.of(stateMachineInput));
+        List<WrappedActionInput> actionInvocations = stateMachine.advance(List.of(stateMachineInput));
 
         assertTrue(actionInvocations.isEmpty());
         List<Action> collectingActions = deltaFileFlow.getActions().stream()

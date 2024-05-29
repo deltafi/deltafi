@@ -18,7 +18,7 @@
 package org.deltafi.core.services.analytics;
 
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.types.DeltaFile;
+import org.deltafi.core.types.DeltaFile;
 import org.deltafi.common.types.DeltaFileStage;
 import org.jetbrains.annotations.NotNull;
 

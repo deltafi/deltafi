@@ -21,9 +21,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.ActionFamily;
+import org.deltafi.core.services.CoreEventQueue;
 import org.springframework.data.annotation.PersistenceCreator;
 
 import java.time.Duration;
@@ -131,13 +131,13 @@ public class TimedDataSource extends DataSource {
         return dataSourceConfiguration;
     }
 
-    public boolean due(ActionEventQueue actionEventQueue, OffsetDateTime now) {
+    public boolean due(CoreEventQueue coreEventQueue, OffsetDateTime now) {
         if (executeImmediate) {
             return true;
         }
 
         if (currentDid != null && (lastRun.plus(TASKING_TIMEOUT).isAfter(now) ||
-                actionEventQueue.longRunningTaskExists(timedIngressAction.getType(), timedIngressAction.getName(), currentDid))) {
+                coreEventQueue.longRunningTaskExists(timedIngressAction.getType(), timedIngressAction.getName(), currentDid))) {
             return false;
         }
 
@@ -149,7 +149,7 @@ public class TimedDataSource extends DataSource {
      * @param systemName system name to set in context
      * @return ActionInput containing the ActionConfiguration
      */
-    public ActionInput buildActionInput(String systemName, OffsetDateTime now) {
+    public WrappedActionInput buildActionInput(String systemName, OffsetDateTime now) {
         DeltaFile deltaFile = DeltaFile.builder()
                 .did(UUID.randomUUID())
                 .dataSource(name)
@@ -164,6 +164,6 @@ public class TimedDataSource extends DataSource {
                 .created(now)
                 .state(ActionState.QUEUED)
                 .build();
-        return timedIngressAction.buildActionInput(deltaFile, flow, action, systemName, null, memo);
+        return deltaFile.buildActionInput(timedIngressAction, flow, action, systemName, null, memo);
     }
 }

@@ -19,6 +19,7 @@ package org.deltafi.core.util;
 
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.*;
+import org.deltafi.core.types.DeltaFile;
 
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -26,7 +27,7 @@ import java.util.*;
 import static org.deltafi.common.constant.DeltaFiConstants.INVALID_ACTION_EVENT_RECEIVED;
 import static org.deltafi.common.constant.DeltaFiConstants.SYNTHETIC_EGRESS_ACTION_FOR_TEST;
 import static org.deltafi.common.types.ActionState.QUEUED;
-import static org.deltafi.common.types.DeltaFile.CURRENT_SCHEMA_VERSION;
+import static org.deltafi.core.types.DeltaFile.CURRENT_SCHEMA_VERSION;
 import static org.deltafi.core.datafetchers.FlowPlanDatafetcherTestHelper.PLUGIN_COORDINATES;
 import static org.deltafi.core.services.pubsub.PublisherService.NO_SUBSCRIBERS;
 import static org.deltafi.core.services.pubsub.PublisherService.NO_SUBSCRIBER_CAUSE;

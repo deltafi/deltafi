@@ -38,7 +38,7 @@ import java.util.Set;
 /**
  * A keyed blocking queue based on the Jackey client library for Valkey.
  */
-public class JackeyKeyedBlockingQueue {
+public class ValkeyKeyedBlockingQueue {
     private static final String HEARTBEAT_HASH = "org.deltafi.action-queue.heartbeat";
     private static final String LONG_RUNNING_TASKS_HASH = "org.deltafi.action-queue.long-running-tasks";
 
@@ -54,7 +54,7 @@ public class JackeyKeyedBlockingQueue {
      *                 expected number of keys in the queue.
      * @throws URISyntaxException if the provided url is not valid
      */
-    public JackeyKeyedBlockingQueue(String url, String password, int maxIdle, int maxTotal) throws URISyntaxException {
+    public ValkeyKeyedBlockingQueue(String url, String password, int maxIdle, int maxTotal) throws URISyntaxException {
         GenericObjectPoolConfig<Jedis> poolConfig = new GenericObjectPoolConfig<>();
         poolConfig.setMaxIdle(maxIdle);
         poolConfig.setMaxTotal(maxTotal);

@@ -18,7 +18,6 @@
 package org.deltafi.core.types;
 
 import lombok.*;
-import org.deltafi.common.types.DeltaFile;
 
 import java.util.List;
 

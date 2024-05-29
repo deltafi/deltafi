@@ -20,7 +20,7 @@ package org.deltafi.core.schedulers;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
-import org.deltafi.common.action.ActionEventQueue;
+import org.deltafi.core.services.CoreEventQueue;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -35,7 +35,7 @@ import java.time.Instant;
 @RequiredArgsConstructor
 public class LongRunningTaskEvictScheduler {
 
-    private final ActionEventQueue actionEventQueue;
+    private final CoreEventQueue coreEventQueue;
     private final TaskScheduler taskScheduler;
 
     private static final long INITIAL_DELAY = 5L;
@@ -47,6 +47,6 @@ public class LongRunningTaskEvictScheduler {
     }
 
     public void removeExpiredLongRunningTasks() {
-        actionEventQueue.removeExpiredLongRunningTasks();
+        coreEventQueue.removeExpiredLongRunningTasks();
     }
 }

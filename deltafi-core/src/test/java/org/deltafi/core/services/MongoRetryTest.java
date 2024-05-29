@@ -17,7 +17,6 @@
  */
 package org.deltafi.core.services;
 
-import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.types.*;
 import org.deltafi.common.uuid.UUIDGenerator;
@@ -31,6 +30,7 @@ import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.repo.QueuedAnnotationRepo;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.services.pubsub.PublisherService;
+import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.util.Util;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -54,7 +54,7 @@ import java.util.UUID;
 @ExtendWith(SpringExtension.class)
 @Import({DeltaFilesService.class, ClockConfiguration.class})
 @MockBean({TransformFlowService.class,EgressFlowService.class,
-        StateMachine.class, DeltaFileRepo.class, ActionEventQueue.class, ContentStorageService.class, DeltaFilesService.class,
+        StateMachine.class, DeltaFileRepo.class, CoreEventQueue.class, ContentStorageService.class, DeltaFilesService.class,
         ResumePolicyService.class, MetricService.class, AnalyticEventService.class, CoreAuditLogger.class, DeltaFileCacheService.class,
         PublisherService.class, QueueManagementService.class, QueuedAnnotationRepo.class, Environment.class,
         CollectEntryService.class, ScheduledCollectService.class, UUIDGenerator.class})

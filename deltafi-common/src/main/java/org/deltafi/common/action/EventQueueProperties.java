@@ -22,7 +22,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties("valkey")
 @Data
-public class ActionEventQueueProperties {
+public class EventQueueProperties {
+    public static final String DGS_QUEUE = "dgs";
+
     private String url;
     private String password = null;
     private int maxIdle = 16;

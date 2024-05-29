@@ -26,6 +26,7 @@ import org.deltafi.core.integration.config.ContentList;
 import org.deltafi.core.integration.config.ExpectedActions;
 import org.deltafi.core.integration.config.ExpectedDeltaFile;
 import org.deltafi.core.services.DeltaFilesService;
+import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.types.IngressResult;
 import org.springframework.stereotype.Service;
 
@@ -36,7 +37,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
 
 @Service
 @Slf4j
@@ -51,17 +51,16 @@ public class TestEvaluator {
 
     private final List<String> errors = new ArrayList<>();
     private boolean fatalError = false;
-    private Duration maxTime;
-    private Duration timeRunning;
 
     public void waitForDeltaFile(String testId, IngressResult ingressed, ExpectedDeltaFile expected, Duration timeout) throws InterruptedException {
         OffsetDateTime startTime = OffsetDateTime.now();
+        Duration maxTime;
         if (timeout == null || timeout.isZero()) {
             maxTime = Duration.ofMinutes(DEFAULT_TIMEOUT_MINUTES);
         } else {
             maxTime = timeout;
         }
-        timeRunning = Duration.of(0, ChronoUnit.SECONDS);
+        Duration timeRunning = Duration.of(0, ChronoUnit.SECONDS);
 
         boolean done = false;
         while (!fatalError && !done) {
@@ -247,8 +246,8 @@ public class TestEvaluator {
                 // TODO: This needs work to verify 2+ contents
                 for (int i = 0; i < actualContent.size(); i++) {
                     if (!actualContent.get(i).getName().equals(
-                            expectedContent.getData().get(0).getName())) {
-                        fatalError("Expected content name " + expectedContent.getData().get(0).getName()
+                            expectedContent.getData().getFirst().getName())) {
+                        fatalError("Expected content name " + expectedContent.getData().getFirst().getName()
                                 + ", but was: " + actualContent.get(i).getName());
                         return false;
                     } else {

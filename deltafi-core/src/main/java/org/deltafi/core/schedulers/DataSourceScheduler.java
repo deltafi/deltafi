@@ -18,7 +18,6 @@
 package org.deltafi.core.schedulers;
 
 import lombok.RequiredArgsConstructor;
-import org.deltafi.common.action.ActionEventQueue;
 import org.deltafi.core.services.*;
 import org.deltafi.core.types.TimedDataSource;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -37,7 +36,7 @@ public class DataSourceScheduler {
 
     private final DeltaFilesService deltaFilesService;
     private final DataSourceService dataSourceService;
-    private final ActionEventQueue actionEventQueue;
+    private final CoreEventQueue coreEventQueue;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
     private final DiskSpaceService diskSpaceService;
     private final Clock clock;
@@ -46,7 +45,7 @@ public class DataSourceScheduler {
     public void triggerTimedIngressFlows() {
         dataSourceService.refreshCache();
         for (TimedDataSource dataSource : dataSourceService.getRunningTimedDataSources()) {
-            if (dataSource.due(actionEventQueue, OffsetDateTime.now(clock)) &&
+            if (dataSource.due(coreEventQueue, OffsetDateTime.now(clock)) &&
                     deltaFiPropertiesService.getDeltaFiProperties().getIngress().isEnabled() &&
                     !diskSpaceService.isContentStorageDepleted()) {
                 deltaFilesService.taskTimedDataSource(dataSource);
