@@ -53,13 +53,13 @@ public class MetadataToAnnotation extends TransformAction<MetadataToAnnotationPa
             return metadata.entrySet().stream()
                     .collect(Collectors.toMap(
                             e -> updateKey(discardPrefix, e.getKey()),
-                            e -> e.getValue()));
+                            Map.Entry::getValue));
         }
         return metadata.entrySet().stream()
                 .filter(entry -> patterns.stream().anyMatch(pattern -> Pattern.matches(pattern, entry.getKey())))
                 .collect(Collectors.toMap(
                         e -> updateKey(discardPrefix, e.getKey()),
-                        e -> e.getValue()));
+                        Map.Entry::getValue));
     }
 
     private String updateKey(String discardPrefix, String key) {

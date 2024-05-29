@@ -74,7 +74,7 @@ public class ScheduledCollectService {
             return;
         }
 
-        scheduleCollectCheck(collectEntries.get(0).getCollectDate());
+        scheduleCollectCheck(collectEntries.getFirst().getCollectDate());
     }
 
     private void cancelCollectCheck() {

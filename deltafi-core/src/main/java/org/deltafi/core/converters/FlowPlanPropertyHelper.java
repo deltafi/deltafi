@@ -118,17 +118,12 @@ public class FlowPlanPropertyHelper {
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     Object resolveObject(Object object, String actionNamed) {
-        if (null == object) {
-            return null;
-        }
-
-        if (object instanceof Collection collectionObject) {
-            return replaceListPlaceholders(collectionObject, actionNamed);
-        } else if (object instanceof Map mapObject) {
-            return replaceMapPlaceholders(mapObject, actionNamed);
-        }
-
-        return resolvePrimitive(object, actionNamed);
+        return switch (object) {
+            case null -> null;
+            case Collection collectionObject -> replaceListPlaceholders(collectionObject, actionNamed);
+            case Map mapObject -> replaceMapPlaceholders(mapObject, actionNamed);
+            default -> resolvePrimitive(object, actionNamed);
+        };
     }
 
     Collection<Object> replaceListPlaceholders(Collection<Object> objects, String actionNamed) {

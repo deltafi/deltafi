@@ -60,7 +60,7 @@ public abstract class MetadataResultAssert<A extends AbstractAssert<A, T>, T ext
     /**
      * Verify that result deleted the given list of keys from the metadata
      * @param keys zero or more keys that should have been deleted
-     * @return
+     * @return this
      */
     public A deletedKeyEquals(String ... keys) {
         Assertions.assertThat(actual.getDeleteMetadataKeys()).containsExactly(keys);
