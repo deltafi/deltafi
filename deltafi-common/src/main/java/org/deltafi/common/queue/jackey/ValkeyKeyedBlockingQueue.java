@@ -26,11 +26,13 @@ import io.jackey.params.ZAddParams;
 import io.jackey.resps.ScanResult;
 import io.jackey.resps.Tuple;
 import io.jackey.util.KeyValue;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.OffsetDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,6 +40,7 @@ import java.util.Set;
 /**
  * A keyed blocking queue based on the Jackey client library for Valkey.
  */
+@Slf4j
 public class ValkeyKeyedBlockingQueue {
     private static final String HEARTBEAT_HASH = "org.deltafi.action-queue.heartbeat";
     private static final String LONG_RUNNING_TASKS_HASH = "org.deltafi.action-queue.long-running-tasks";
@@ -63,6 +66,7 @@ public class ValkeyKeyedBlockingQueue {
 
         jedisPool = (password == null || password.isEmpty()) ? new JedisPool(poolConfig, uri) :
                 new JedisPool(poolConfig, uri.getHost(), uri.getPort(), Protocol.DEFAULT_TIMEOUT, password);
+        log.info("Valkey pool size: {}", maxTotal);
     }
 
     /**
@@ -216,5 +220,26 @@ public class ValkeyKeyedBlockingQueue {
         try (Jedis jedis = jedisPool.getResource()) {
             jedis.hdel(LONG_RUNNING_TASKS_HASH, key);
         }
+    }
+
+    /**
+     * Find all keys with the given prefix and the associated values
+     * @param prefix to search for
+     * @return map of keys to values with keys that match the prefix
+     */
+    public Map<String, String> getItemsWithPrefix(String prefix) {
+        Map<String, String> result = new HashMap<>();
+
+        try (Jedis jedis = jedisPool.getResource()) {
+            ScanParams scanParams = new ScanParams().match(prefix + "*").count(100);
+            boolean completed = false;
+            while (!completed){
+                ScanResult<String> scanResult = jedis.scan(ScanParams.SCAN_POINTER_START, scanParams);
+                scanResult.getResult().forEach(key -> result.put(key, jedis.get(key)));
+                completed = scanResult.isCompleteIteration();
+            }
+        }
+
+        return result;
     }
 }

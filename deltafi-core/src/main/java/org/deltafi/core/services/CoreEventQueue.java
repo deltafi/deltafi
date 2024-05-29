@@ -69,7 +69,10 @@ public class CoreEventQueue {
         int maxTotal = poolSize > 0 ? poolSize : eventQueueProperties.getMaxTotal();
         valkeyKeyedBlockingQueue = new ValkeyKeyedBlockingQueue(eventQueueProperties.getUrl(),
                 eventQueueProperties.getPassword(), maxIdle, maxTotal);
-        log.info("Valkey pool size: {}", maxTotal);
+    }
+
+    public CoreEventQueue(ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue) {
+        this.valkeyKeyedBlockingQueue = valkeyKeyedBlockingQueue;
     }
 
     public Set<String> keys() { return valkeyKeyedBlockingQueue.keys(); }
@@ -158,7 +161,7 @@ public class CoreEventQueue {
     /**
      * Fetches and returns a list of tasks that have been running for longer
      * than the specified duration threshold.
-     *
+     * <p>
      * Deserializes tasks from Valkey and filters out those which have
      * heartbeat times within the acceptable range.
      *
@@ -195,7 +198,7 @@ public class CoreEventQueue {
                     longRunningTasks.add(new ActionExecution(clazz, action, did, startTime));
                 }
             } catch (JsonProcessingException e) {
-                log.error("Unable to deserialize long running task information from JSON: " + key + " = " + value, e);
+                log.error("Unable to deserialize long running task information from JSON: {} = {}", key, value, e);
             }
         }
 
@@ -239,7 +242,7 @@ public class CoreEventQueue {
     /**
      * Removes long-running tasks from Valkey that have heartbeat times
      * exceeding the specified duration threshold.
-     *
+     * <p>
      * Iterates over tasks in Valkey, deserializing and checking their heartbeat times.
      * If a task's heartbeat is older than the threshold or if its data is malformed,
      * it's removed from Valkey.

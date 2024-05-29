@@ -27,6 +27,7 @@ import io.minio.MinioClient;
 import lombok.SneakyThrows;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.Segment;
+import org.deltafi.common.queue.jackey.ValkeyKeyedBlockingQueue;
 import org.deltafi.common.resource.Resource;
 import org.deltafi.common.types.*;
 import org.deltafi.common.types.FlowType;
@@ -257,6 +258,12 @@ class DeltaFiCoreApplicationTests {
 
 	@MockBean
 	CoreEventQueue coreEventQueue;
+
+	@MockBean
+	ValkeyKeyedBlockingQueue vakkeyKeyedBlockingQueue;
+
+	@MockBean
+	ServerSentService serverSentService;
 
 	@MockBean
 	DeployerService deployerService;
