@@ -17,6 +17,7 @@
  */
 package org.deltafi.core;
 
+import com.clickhouse.client.http.ClickHouseHttpClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
@@ -313,6 +314,12 @@ class DeltaFiCoreApplicationTests {
 		SecurityContextHolder.setContext(securityContext);
 
 		Mockito.when(diskSpaceService.isContentStorageDepleted()).thenReturn(false);
+
+		// set static LOCAL_HOST to avoid blocking thread during test execution
+		ClickHouseHttpClient.HostNameAndAddress hostNameAndAddress = new ClickHouseHttpClient.HostNameAndAddress();
+		hostNameAndAddress.hostName = "localhost";
+		hostNameAndAddress.address = "127.0.0.1";
+		ClickHouseHttpClient.LOCAL_HOST = hostNameAndAddress;
 	}
 
 	void refreshFlowCaches() {
