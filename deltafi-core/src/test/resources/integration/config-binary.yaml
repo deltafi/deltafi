@@ -13,6 +13,11 @@ egressFlows:
 input:
   flow: unarchive-passthrough-rest-data-source
   ingressFileName: three-files.tar.gz
+  metadata:
+    - key: KEY1
+      value: VALUE1
+    - key: KEY2
+      value: VALUE2
   base64Encoded: true
   data: !!binary |
     H4sIANXJomUAA+3TsQrCMBCA4cw+RR5ANBdzcXBSn6StS0FENMXXV1uhTkqH
@@ -27,7 +32,7 @@ expectedDeltaFile:
   expectedActions:
     - flow: unarchive-passthrough-transform
       type: TRANSFORM
-      actions: [IngressAction, Unarchive, SplitContent]
+      actions: [ IngressAction, Unarchive, SplitContent ]
   children:
 
     - stage: COMPLETE
@@ -36,10 +41,10 @@ expectedDeltaFile:
       expectedActions:
         - flow: passthrough-transform
           type: TRANSFORM
-          actions: [Passthrough]
+          actions: [ Passthrough ]
         - flow: passthrough-egress
           type: EGRESS
-          actions: [PassthroughEgress]
+          actions: [ PassthroughEgress ]
       expectedContent:
         flow: passthrough-egress
         type: EGRESS
@@ -55,10 +60,10 @@ expectedDeltaFile:
       expectedActions:
         - flow: passthrough-transform
           type: TRANSFORM
-          actions: [Passthrough]
+          actions: [ Passthrough ]
         - flow: passthrough-egress
           type: EGRESS
-          actions: [PassthroughEgress]
+          actions: [ PassthroughEgress ]
       expectedContent:
         flow: passthrough-egress
         type: EGRESS
@@ -74,10 +79,10 @@ expectedDeltaFile:
       expectedActions:
         - flow: passthrough-transform
           type: TRANSFORM
-          actions: [Passthrough]
+          actions: [ Passthrough ]
         - flow: passthrough-egress
           type: EGRESS
-          actions: [PassthroughEgress]
+          actions: [ PassthroughEgress ]
       expectedContent:
         flow: passthrough-egress
         type: EGRESS

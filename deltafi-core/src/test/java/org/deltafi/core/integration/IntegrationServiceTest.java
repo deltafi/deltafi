@@ -35,6 +35,7 @@ import org.springframework.core.io.ClassPathResource;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -60,6 +61,8 @@ class IntegrationServiceTest {
         assertEquals(1, c.getDataSources().size());
         assertEquals(2, c.getTransformationFlows().size());
         assertEquals(1, c.getEgressFlows().size());
+
+        assertEquals(Map.of("KEY1", "VALUE1", "KEY2", "VALUE2"), c.getInput().getMetadataMap());
 
         assertEquals("unarchive-passthrough-rest-data-source", c.getInput().getFlow());
 
