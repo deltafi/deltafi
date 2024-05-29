@@ -151,7 +151,7 @@ const staticMenuItems = ref([
   {
     name: "Configuration",
     expand: true,
-    visible: computed(() => hasSomePermissions("SystemPropertiesRead", "FlowView", "PluginsView", "PluginImageRepoView", "DeletePolicyRead", "IngressRoutingRuleRead", "ResumePolicyRead", "SnapshotRead")),
+    visible: computed(() => hasSomePermissions("SystemPropertiesRead", "FlowView", "PluginsView", "PluginImageRepoView", "DeletePolicyRead", "ResumePolicyRead", "SnapshotRead")),
     children: [
       {
         name: "System Properties",

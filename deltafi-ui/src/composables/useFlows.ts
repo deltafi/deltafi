@@ -22,7 +22,7 @@ import useGraphQL from './useGraphQL'
 
 export default function useFlows() {
   const { response, queryGraphQL, loading, loaded, errors } = useGraphQL();
-  const ingressFlows: Ref<Array<Record<string, string>>> = ref([]);
+  const dataSourceFlows: Ref<Array<Record<string, string>>> = ref([]);
   const egressFlows: Ref<Array<Record<string, string>>> = ref([]);
 
   const buildQuery = (egress: Boolean, transform: Boolean, dataSource: Boolean, state?: string) => {
@@ -38,9 +38,9 @@ export default function useFlows() {
     };
   };
 
-  const fetchIngressFlowNames = async (state?: string) => {
-    await queryGraphQL(buildQuery(false, false, true, state), "getIngressFlowNames");
-    ingressFlows.value = response.value.data.getFlowNames.dataSource.sort();
+  const fetchDataSourceFlowNames = async (state?: string) => {
+    await queryGraphQL(buildQuery(false, false, true, state), "getDataSourceFlowNames");
+    dataSourceFlows.value = response.value.data.getFlowNames.dataSource.sort();
   }
 
   const fetchEgressFlowNames = async (state?: string) => {
@@ -48,5 +48,5 @@ export default function useFlows() {
     egressFlows.value = response.value.data.getFlowNames.egress.sort();
   }
 
-  return { ingressFlows, egressFlows, fetchIngressFlowNames, fetchEgressFlowNames, loading, loaded, errors };
+  return { dataSourceFlows, egressFlows, fetchDataSourceFlowNames, fetchEgressFlowNames, loading, loaded, errors };
 }

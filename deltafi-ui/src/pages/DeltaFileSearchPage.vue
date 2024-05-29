@@ -175,7 +175,7 @@ const hasPermission = inject("hasPermission");
 const params = useUrlSearchParams("history");
 const { getDeltaFileSearchData, getEnumValuesByEnumType } = useDeltaFilesQueryBuilder();
 const { duration, shortTimezone } = useUtilFunctions();
-const { ingressFlows: ingressFlowOptions, fetchIngressFlowNames, egressFlows: egressFlowOptions, fetchEgressFlowNames } = useFlows();
+const { dataSourceFlows: dataSourceFlowOptions, fetchDataSourceFlowNames, egressFlows: egressFlowOptions, fetchEgressFlowNames } = useFlows();
 const route = useRoute();
 const useURLSearch = ref(false);
 const uiConfig = inject("uiConfig");
@@ -292,7 +292,7 @@ onBeforeMount(async () => {
 
 // Fetches all the options used in the dropdown
 const fetchDropdownOptions = async () => {
-  fetchIngressFlowNames();
+  fetchDataSourceFlowNames();
   fetchEgressFlowNames();
   fetchStages();
 };
@@ -393,7 +393,7 @@ const advanceOptionsPanelInfo = computed(() => {
     // The Advanced Options fields are broken up into three columns. The fields are sorted in ascending order in each column by the 'order' field.
     // First Column fields
     { field: "fileName", column: 1, order: 1, componentType: "InputText", label: "Filename:", placeholder: "Filename", class: "p-inputtext input-area-height responsive-width" },
-    { field: "dataSources", column: 1, order: 2, componentType: "MultiSelect", label: "Data Sources:", placeholder: "Select a Data Source", options: ingressFlowOptions.value, class: "deltafi-input-field responsive-width" },
+    { field: "dataSources", column: 1, order: 2, componentType: "MultiSelect", label: "Data Sources:", placeholder: "Select a Data Source", options: dataSourceFlowOptions.value, class: "deltafi-input-field responsive-width" },
     { field: "egressFlows", column: 1, order: 3, componentType: "MultiSelect", label: "Egress Flow:", placeholder: "Select an Egress Flow", options: egressFlowOptions.value, class: "deltafi-input-field responsive-width" },
     { field: "size", column: 1, order: 4, componentType: "SizeUnit", label: "Size:" },
     // 2nd Column fields

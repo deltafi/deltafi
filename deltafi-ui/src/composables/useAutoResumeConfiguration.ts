@@ -45,10 +45,6 @@ export default function useAutoResumeConfiguration() {
         type: ["string", "null"],
         minLength: 1,
       },
-      actionType: {
-        type: ["string", "null"],
-        minLength: 1,
-      },
       maxAttempts: {
         type: ["number", "null"],
         minimum: 2,
@@ -106,10 +102,6 @@ export default function useAutoResumeConfiguration() {
             type: ["string", "null"],
             minLength: 1,
           },
-          actionType: {
-            type: ["string", "null"],
-            minLength: 1,
-          },
         },
       },
       {
@@ -122,9 +114,6 @@ export default function useAutoResumeConfiguration() {
           },
           {
             required: ["action"],
-          },
-          {
-            required: ["actionType"],
           },
         ],
       },

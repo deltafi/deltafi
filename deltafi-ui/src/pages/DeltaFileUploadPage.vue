@@ -45,7 +45,7 @@
               <InputText type="text" value="Data Source" disabled />
             </div>
             <div class="col-5">
-              <Dropdown v-model="selectedDataSource" :options="activeIngressFlows" placeholder="Select a Data Source" show-clear :class="dataSourceDropdownClass" />
+              <Dropdown v-model="selectedDataSource" :options="activeDataSourceFlows" placeholder="Select a Data Source" show-clear :class="dataSourceDropdownClass" />
             </div>
           </div>
           <div v-for="field in metadata" :key="field" class="row mt-4 p-fluid">
@@ -157,7 +157,7 @@ const selectedDataSource = ref(null);
 const metadata = ref([]);
 const fileUploader = ref();
 const deltaFiles = ref([]);
-const { fetchIngressFlowNames, ingressFlows: activeIngressFlows } = useFlows();
+const { fetchDataSourceFlowNames, dataSourceFlows: activeDataSourceFlows } = useFlows();
 const { ingressFile } = useIngress();
 const notify = useNotifications();
 const { validateMetadataFile } = useMetadataConfiguration();
@@ -338,12 +338,12 @@ const uploadsRowClass = (data) => {
 
 // Created
 onMounted(async () => {
-  await fetchIngressFlowNames("RUNNING");
+  await fetchDataSourceFlowNames("RUNNING");
   checkActiveFlows();
 });
 
 const checkActiveFlows = () => {
-  selectedDataSource.value = activeIngressFlows.value.includes(selectedDataSource.value) ? selectedDataSource.value : null;
+  selectedDataSource.value = activeDataSourceFlows.value.includes(selectedDataSource.value) ? selectedDataSource.value : null;
 };
 
 const formatMetadataforViewer = (filename, uploadedMetadata) => {
@@ -406,7 +406,7 @@ const uploadMetadataFile = async (file) => {
   let dataSourceSelected = {};
   if (!_.isEmpty(_.get(parseMetadataUpload, "dataSource"))) {
     dataSourceSelected = _.get(parseMetadataUpload, "dataSource");
-    if (activeIngressFlows.value.includes(dataSourceSelected)) {
+    if (activeDataSourceFlows.value.includes(dataSourceSelected)) {
       selectedDataSource.value = dataSourceSelected;
     } else {
       notify.warn("Ignoring Invalid Data Source", `The uploaded metadata included an invalid Data Source: ${dataSourceSelected}`);

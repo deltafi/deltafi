@@ -189,26 +189,6 @@ const generateData = () => {
       description: "Grants the ability to delete Delete Policies"
     },
     {
-      category: "Ingress Routing",
-      name: "IngressRoutingRuleCreate",
-      description: "Grants the ability to created Ingress Routing Rules"
-    },
-    {
-      category: "Ingress Routing",
-      name: "IngressRoutingRuleRead",
-      description: "Grants the ability to view Ingress Routing Rules"
-    },
-    {
-      category: "Ingress Routing",
-      name: "IngressRoutingRuleUpdate",
-      description: "Grants the ability to edit Ingress Routing Rules"
-    },
-    {
-      category: "Ingress Routing",
-      name: "IngressRoutingRuleDelete",
-      description: "Grants the ability to delete Ingress Routing Rules"
-    },
-    {
       category: "Snapshots",
       name: "SnapshotCreate",
       description: "Grants the ability to delete Snapshots"

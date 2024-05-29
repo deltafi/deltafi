@@ -65,7 +65,7 @@ const sortDirection = ref("DESC");
 const selectedFiltered = ref([]);
 const emit = defineEmits(["refreshFilters"]);
 const props = defineProps({
-  ingressFlowName: {
+  dataSourceFlowName: {
     type: String,
     required: false,
     default: undefined,
@@ -112,9 +112,9 @@ const { data: response, fetchByFlow: getFilteredByFlow } = useFiltered();
 
 const fetchFilteredFlow = async () => {
   getPersistedParams();
-  let ingressFlowName = props.ingressFlowName != null ? props.ingressFlowName : null;
+  let dataSourceFlowName = props.dataSourceFlowName != null ? props.dataSourceFlowName : null;
   loading.value = true;
-  await getFilteredByFlow(offset.value, perPage.value, sortField.value, sortDirection.value, ingressFlowName);
+  await getFilteredByFlow(offset.value, perPage.value, sortField.value, sortDirection.value, dataSourceFlowName);
   filteredFlow.value = response.value.countPerFlow;
   totalFilteredFlow.value = response.value.totalCount;
   loading.value = false;
@@ -165,7 +165,7 @@ const onPage = async (event) => {
 };
 const setupWatchers = () => {
   watch(
-    () => props.ingressFlowName,
+    () => props.dataSourceFlowName,
     () => {
       fetchFilteredFlow();
     }

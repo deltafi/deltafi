@@ -84,7 +84,7 @@ const ackErrorsDialog = ref({
   visible: false,
 });
 const props = defineProps({
-  ingressFlowName: {
+  dataSourceFlowName: {
     type: String,
     required: false,
     default: undefined,
@@ -166,9 +166,9 @@ const { data: response, fetchByFlow: getErrorsByFlow } = useErrorsSummary();
 
 const fetchErrorsFlow = async () => {
   getPersistedParams();
-  let ingressFlowName = props.ingressFlowName != null ? props.ingressFlowName : null;
+  let dataSourceFlowName = props.dataSourceFlowName != null ? props.dataSourceFlowName : null;
   loading.value = true;
-  await getErrorsByFlow(props.acknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, ingressFlowName);
+  await getErrorsByFlow(props.acknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, dataSourceFlowName);
   errorsFlow.value = response.value.countPerFlow;
   totalErrorsFlow.value = response.value.totalCount;
   loading.value = false;
@@ -245,7 +245,7 @@ const onPage = async (event) => {
 };
 const setupWatchers = () => {
   watch(
-    () => props.ingressFlowName,
+    () => props.dataSourceFlowName,
     () => {
       fetchErrorsFlow();
     }

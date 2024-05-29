@@ -23,7 +23,7 @@
         <Button v-tooltip.right="{ value: `Clear Filters`, disabled: !filterOptionsSelected }" rounded :class="`ml-2 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${filterOptionsSelected ? 'p-column-filter-menu-button-active' : null}`" :disabled="!filterOptionsSelected" @click="clearOptions()">
           <i class="pi pi-filter" style="font-size: 1rem"></i>
         </Button>
-        <Dropdown v-model="dataSourceNameSelected" placeholder="Select a Data Source" :options="ingressFlowNames" show-clear :editable="false" class="deltafi-input-field ml-3 flow-dropdown" />
+        <Dropdown v-model="dataSourceNameSelected" placeholder="Select a Data Source" :options="dataSourceFlowNames" show-clear :editable="false" class="deltafi-input-field ml-3 flow-dropdown" />
         <AutoComplete v-model="selectedMessageValue" :suggestions="filteredMessages" placeholder="Select Cause" class="deltafi-input-field ml-3" force-selection @complete="messageSearch" />
         <Button :icon="refreshButtonIcon" label="Refresh" class="p-button deltafi-input-field ml-3 p-button-outlined" @click="onRefresh" />
       </div>
@@ -33,10 +33,10 @@
         <AllFilteredPanel ref="filterSummaryPanel" :data-source-name="dataSourceNameSelected" :filtered-cause-selected="filteredCauseSelected" @refresh-filters="onRefresh()" @filter-cause-changed:filtered-cause="messageSelected" />
       </TabPanel>
       <TabPanel header="By Data Source">
-        <SummaryByFlowPanel ref="filterSummaryFlowPanel" :ingress-flow-name="dataSourceNameSelected" @refresh-filters="onRefresh()" />
+        <SummaryByFlowPanel ref="filterSummaryFlowPanel" :data-source-flow-name="dataSourceNameSelected" @refresh-filters="onRefresh()" />
       </TabPanel>
       <TabPanel header="By Cause">
-        <SummaryByMessagePanel ref="filterSummaryMessagePanel" :ingress-flow-name="dataSourceNameSelected" @refresh-filters="onRefresh()" @change-tab:filtered-cause:flow-selected="tabChange" />
+        <SummaryByMessagePanel ref="filterSummaryMessagePanel" :data-source-flow-name="dataSourceNameSelected" @refresh-filters="onRefresh()" @change-tab:filtered-cause:flow-selected="tabChange" />
       </TabPanel>
     </TabView>
   </div>
@@ -61,7 +61,7 @@ import useFiltered from "@/composables/useFiltered";
 const filterSummaryMessagePanel = ref();
 const filterSummaryFlowPanel = ref();
 const filterSummaryPanel = ref();
-const { ingressFlows: ingressFlowNames, fetchIngressFlowNames } = useFlows();
+const { dataSourceFlows: dataSourceFlowNames, fetchDataSourceFlowNames } = useFlows();
 const loading = ref(false);
 const dataSourceNameSelected = ref(null);
 const filteredCauseSelected = ref(null);
@@ -156,7 +156,7 @@ const messageSelected = (cause) => {
   if (filteredCauseSelected.value !== cause) filteredCauseSelected.value = cause;
 };
 
-fetchIngressFlowNames();
+fetchDataSourceFlowNames();
 
 const onRefresh = () => {
   loading.value = true;

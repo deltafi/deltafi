@@ -42,10 +42,6 @@
           <dd>
             <InputText v-model="selectedRuleAction" :placeholder="autoResumeConfigurationMap.get('action').placeholder" :disabled="autoResumeConfigurationMap.get('action').disabled" class="inputWidth" />
           </dd>
-          <dt>{{ autoResumeConfigurationMap.get("actionType").header }}</dt>
-          <dd>
-            <Dropdown v-model="selectedRuleActionType" :options="actionTypeList" :placeholder="autoResumeConfigurationMap.get('actionType').placeholder" :disabled="autoResumeConfigurationMap.get('actionType').disabled" show-clear class="inputWidth" />
-          </dd>
           <dt>{{ autoResumeConfigurationMap.get("errorSubstring").header }}</dt>
           <dd>
             <InputText v-model="selectedRuleErrorSubstring" :placeholder="autoResumeConfigurationMap.get('errorSubstring').placeholder" :disabled="autoResumeConfigurationMap.get('errorSubstring').disabled" class="inputWidth" />
@@ -164,24 +160,22 @@ const confirmApply = (event) => {
   });
 };
 
-const rowdata = reactive(JSON.parse(JSON.stringify(props.rowDataProp)));
+const rowData = reactive(JSON.parse(JSON.stringify(props.rowDataProp)));
 const { viewAutoResumeRule, closeDialogCommand } = reactive(props);
 const emit = defineEmits(["reloadResumeRules", "applyChanges"]);
 const { validateAutoResumeFile, validateAutoResumeRule } = useAutoResumeConfiguration();
 const { loadResumePolicies, updateResumePolicy, applyResumePolicies } = useAutoResumeQueryBuilder();
-const { ingressFlows: dataSourceNames, fetchIngressFlowNames: fetchDataSourceNames } = useFlows();
+const { dataSourceFlows: dataSourceNames, fetchDataSourceFlowNames: fetchDataSourceNames } = useFlows();
 const notify = useNotifications();
 const isMounted = ref(useMounted());
 
 const autoResumeRuleUpload = ref(null);
 const errorsList = ref([]);
-const actionTypeList = ref(["INGRESS", "TRANSFORM", "EGRESS"]);
 
 const autoResumeConfigurationMap = new Map([
   ["name", { header: "Name*", placeholder: "e.g. Auto resume smoke error", type: "string", disabled: viewAutoResumeRule }],
   ["dataSource", { header: "Data Source", placeholder: "e.g. smoke, passthrough", type: "string", disabled: viewAutoResumeRule }],
   ["action", { header: "Action", placeholder: "e.g. smoke.SmokeEgressAction", type: "string", disabled: viewAutoResumeRule }],
-  ["actionType", { header: "Action Type", placeholder: "e.g. TRANSFORM", type: "string", disabled: viewAutoResumeRule }],
   ["maxAttempts", { header: "Max Attempts", placeholder: "A number 2 or greater", type: "number", min: 0, max: null, disabled: viewAutoResumeRule }],
   ["priority", { header: "Priority", placeholder: "A number 0 or greater", type: "number", disabled: viewAutoResumeRule }],
   ["errorSubstring", { header: "Error Substring*", placeholder: "e.g. ^abc.*, [Dd]eltafi", type: "string", disabled: viewAutoResumeRule }],
@@ -191,18 +185,17 @@ const autoResumeConfigurationMap = new Map([
   ["random", { header: "Random", type: "number", min: 0, max: null, disabled: viewAutoResumeRule }],
 ]);
 
-const ruleid = ref(_.get(rowdata, "id", null));
-const selectedRuleName = ref(_.get(rowdata, "name", null));
-const selectedRuleDataSource = ref(_.get(rowdata, "dataSource", null));
-const selectedRuleAction = ref(_.get(rowdata, "action", null));
-const selectedRuleActionType = ref(_.get(rowdata, "actionType", null));
-const selectedRuleErrorSubstring = ref(_.get(rowdata, "errorSubstring", null));
-const selectedRuleMaxAttempts = ref(_.get(rowdata, "maxAttempts", 2));
-const selectedPriority = ref(_.get(rowdata, "priority", 0));
-const selectedRuleDelay = ref(_.get(rowdata, "backOff.delay", 0));
-const selectedRuleMaxDelay = ref(_.get(rowdata, "backOff.maxDelay", null));
-const selectedRuleMultiplier = ref(_.get(rowdata, "backOff.multiplier", null));
-const selectedRuleRandom = ref(_.get(rowdata, "backOff.random", false));
+const ruleId = ref(_.get(rowData, "id", null));
+const selectedRuleName = ref(_.get(rowData, "name", null));
+const selectedRuleDataSource = ref(_.get(rowData, "dataSource", null));
+const selectedRuleAction = ref(_.get(rowData, "action", null));
+const selectedRuleErrorSubstring = ref(_.get(rowData, "errorSubstring", null));
+const selectedRuleMaxAttempts = ref(_.get(rowData, "maxAttempts", 2));
+const selectedPriority = ref(_.get(rowData, "priority", 0));
+const selectedRuleDelay = ref(_.get(rowData, "backOff.delay", 0));
+const selectedRuleMaxDelay = ref(_.get(rowData, "backOff.maxDelay", null));
+const selectedRuleMultiplier = ref(_.get(rowData, "backOff.multiplier", null));
+const selectedRuleRandom = ref(_.get(rowData, "backOff.random", false));
 
 onMounted(async () => {
   fetchDataSourceNames();
@@ -217,8 +210,8 @@ const createNewRule = () => {
 
   let autoResumeRule = {};
 
-  if (ruleid.value) {
-    autoResumeRule["id"] = ruleid.value;
+  if (ruleId.value) {
+    autoResumeRule["id"] = ruleId.value;
   }
 
   if (selectedRuleName.value) {
@@ -231,10 +224,6 @@ const createNewRule = () => {
 
   if (selectedRuleAction.value) {
     autoResumeRule["action"] = selectedRuleAction.value;
-  }
-
-  if (selectedRuleActionType.value) {
-    autoResumeRule["actionType"] = selectedRuleActionType.value;
   }
 
   if (selectedRuleErrorSubstring.value) {
@@ -266,7 +255,7 @@ const createNewRule = () => {
 
   autoResumeRule["backOff"] = backOffObject;
 
-  if (ruleid.value) {
+  if (ruleId.value) {
     autoResumeRuleUpload.value = autoResumeRule;
   } else {
     autoResumeRuleUpload.value = [];
@@ -293,7 +282,7 @@ const submit = async () => {
   createNewRule();
 
   let uploadNotValid = null;
-  if (ruleid.value) {
+  if (ruleId.value) {
     uploadNotValid = validateAutoResumeRule(JSON.stringify(autoResumeRuleUpload.value));
   } else {
     uploadNotValid = validateAutoResumeFile(JSON.stringify(autoResumeRuleUpload.value));
@@ -307,7 +296,7 @@ const submit = async () => {
   } else {
     let response = null;
     let uploadErrorsList = null;
-    if (ruleid.value) {
+    if (ruleId.value) {
       response = await updateResumePolicy(autoResumeRuleUpload.value);
       uploadErrorsList = response.data.updateResumePolicy;
     } else {

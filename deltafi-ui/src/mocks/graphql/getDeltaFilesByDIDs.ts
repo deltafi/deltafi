@@ -28,7 +28,7 @@ const generateData = (count: number) => {
       modified: "2022-03-03T19:23:20.888Z",
       sourceInfo: {
         filename: faker.system.commonFileName("txt"),
-        flow: "mock.ingressFlow",
+        flow: "mock.dataSourceFlow",
       },
     };
   });

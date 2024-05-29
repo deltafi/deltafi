@@ -36,7 +36,7 @@
           </dd>
           <dt>{{ deletePolicyConfigurationMap.get("flow").header }}</dt>
           <dd>
-            <Dropdown v-model="selectedDeleteflow" :options="ingressFlowNames" :placeholder="deletePolicyConfigurationMap.get('flow').placeholder" :disabled="deletePolicyConfigurationMap.get('flow').disabled" show-clear class="inputWidth" />
+            <Dropdown v-model="selectedDeleteFlow" :options="dataSourceFlowNames" :placeholder="deletePolicyConfigurationMap.get('flow').placeholder" :disabled="deletePolicyConfigurationMap.get('flow').disabled" show-clear class="inputWidth" />
           </dd>
           <dt>{{ deletePolicyConfigurationMap.get("__typename").header }}</dt>
           <dd>
@@ -139,11 +139,11 @@ const props = defineProps({
   },
 });
 
-const { rowDataProp: rowdata, editDeletePolicy, viewDeletePolicy, closeDialogCommand } = reactive(props);
+const { rowDataProp: rowData, editDeletePolicy, viewDeletePolicy, closeDialogCommand } = reactive(props);
 const emit = defineEmits(["reloadDeletePolicies"]);
 const { validateDeletePolicyFile } = useDeletePolicyConfiguration();
 const { loadDeletePolicies } = useDeletePolicyQueryBuilder();
-const { ingressFlows: ingressFlowNames, fetchIngressFlowNames } = useFlows();
+const { dataSourceFlows: dataSourceFlowNames, fetchDataSourceFlowNames } = useFlows();
 const notify = useNotifications();
 
 const deletePolicyTypes = ref(["TimedDeletePolicy", "DiskSpaceDeletePolicy"]);
@@ -164,20 +164,20 @@ const deletePolicyConfigurationMap = new Map([
   ["maxPercent", { header: "Max Percent*", placeholder: "A number between 0 and 100", type: "number", min: 0, max: 100, disabled: viewDeletePolicy }],
 ]);
 
-const selectedDeleteId = ref(_.get(rowdata, "id", null));
-const selectedDeleteName = ref(_.get(rowdata, "name", null));
-const selectedDeleteflow = ref(_.isEmpty(_.get(rowdata, "flow")) || _.isEqual(_.get(rowdata, "flow"), "All") ? null : rowdata["flow"]);
-const selectedDeleteType = ref(_.get(rowdata, "__typename", null));
-const selectedEnabledBoolean = ref(_.get(rowdata, "enabled", false));
-const selectedAfterCreate = ref(_.get(rowdata, "afterCreate", null));
-const selectedAfterComplete = ref(_.get(rowdata, "afterComplete", null));
-const selectedMinBytes = ref(_.get(rowdata, "minBytes", null));
-const selectedDeleteMetadata = ref(_.get(rowdata, "deleteMetadata", false));
-const selectedMaxPercent = ref(_.get(rowdata, "maxPercent", null));
+const selectedDeleteId = ref(_.get(rowData, "id", null));
+const selectedDeleteName = ref(_.get(rowData, "name", null));
+const selectedDeleteFlow = ref(_.isEmpty(_.get(rowData, "flow")) || _.isEqual(_.get(rowData, "flow"), "All") ? null : rowData["flow"]);
+const selectedDeleteType = ref(_.get(rowData, "__typename", null));
+const selectedEnabledBoolean = ref(_.get(rowData, "enabled", false));
+const selectedAfterCreate = ref(_.get(rowData, "afterCreate", null));
+const selectedAfterComplete = ref(_.get(rowData, "afterComplete", null));
+const selectedMinBytes = ref(_.get(rowData, "minBytes", null));
+const selectedDeleteMetadata = ref(_.get(rowData, "deleteMetadata", false));
+const selectedMaxPercent = ref(_.get(rowData, "maxPercent", null));
 const isMounted = ref(useMounted());
 
 onMounted(async () => {
-  await fetchIngressFlowNames();
+  await fetchDataSourceFlowNames();
 });
 
 const createNewPolicy = () => {
@@ -188,10 +188,10 @@ const createNewPolicy = () => {
 
   newDeletePolicy["id"] = selectedDeleteId.value;
   newDeletePolicy["name"] = selectedDeleteName.value;
-  if (_.isEqual(selectedDeleteflow.value, "All")) {
+  if (_.isEqual(selectedDeleteFlow.value, "All")) {
     newDeletePolicy["flow"] = null;
   } else {
-    newDeletePolicy["flow"] = selectedDeleteflow.value;
+    newDeletePolicy["flow"] = selectedDeleteFlow.value;
   }
 
   newDeletePolicy["enabled"] = selectedEnabledBoolean.value;

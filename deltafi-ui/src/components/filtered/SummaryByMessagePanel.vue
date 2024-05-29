@@ -68,7 +68,7 @@ const sortDirection = ref("DESC");
 const selectedFilters = ref([]);
 const emit = defineEmits(["refreshFilters", "changeTab:filteredCause:flowSelected"]);
 const props = defineProps({
-  ingressFlowName: {
+  dataSourceFlowName: {
     type: String,
     required: false,
     default: undefined,
@@ -128,9 +128,9 @@ const filterSelectedDids = computed(() => {
 
 const fetchFilteresMessages = async () => {
   getPersistedParams();
-  let ingressFlowName = props.ingressFlowName != null ? props.ingressFlowName : null;
+  let dataSourceFlowName = props.dataSourceFlowName != null ? props.dataSourceFlowName : null;
   loading.value = true;
-  await getFilteredByMessage(offset.value, perPage.value, sortField.value, sortDirection.value, ingressFlowName);
+  await getFilteredByMessage(offset.value, perPage.value, sortField.value, sortDirection.value, dataSourceFlowName);
   filteresCause.value = response.value.countPerMessage;
   totalFilteredMessage.value = response.value.totalCount;
   loading.value = false;
@@ -164,7 +164,7 @@ const onSort = (event) => {
 
 const setupWatchers = () => {
   watch(
-    () => props.ingressFlowName,
+    () => props.dataSourceFlowName,
     () => {
       fetchFilteresMessages();
     }
