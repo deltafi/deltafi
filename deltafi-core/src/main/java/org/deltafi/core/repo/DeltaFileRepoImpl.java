@@ -22,6 +22,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.result.UpdateResult;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -332,47 +333,63 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     @Override
     public List<DeltaFile> findForTimedDelete(OffsetDateTime createdBeforeDate, OffsetDateTime completedBeforeDate,
                                               long minBytes, String flow, boolean deleteMetadata, int batchSize) {
-        // one of these must be set for any matches to occur
         if (createdBeforeDate == null && completedBeforeDate == null) {
             return Collections.emptyList();
         }
 
-        Criteria criteria;
+        StringBuilder queryBuilder = new StringBuilder("SELECT d FROM DeltaFile d WHERE ");
+        boolean hasPreviousCondition = false;
 
-        String indexHint;
         if (createdBeforeDate != null) {
-            criteria = Criteria.where(CREATED).lt(createdBeforeDate);
-            indexHint = CREATED_BEFORE_INDEX;
-        } else {
-            criteria = Criteria.where(MODIFIED).lt(completedBeforeDate);
-            criteria.and(TERMINAL).is(true);
-            indexHint = TERMINAL_INDEX;
+            queryBuilder.append("d.created < :createdBeforeDate ");
+            hasPreviousCondition = true;
+        }
+
+        if (completedBeforeDate != null) {
+            if (hasPreviousCondition) queryBuilder.append("AND ");
+            queryBuilder.append("d.modified < :completedBeforeDate AND d.terminal = true ");
         }
 
         if (flow != null) {
-            criteria.and(DATA_SOURCE).is(flow);
+            queryBuilder.append("AND d.dataSource = :flow ");
         }
 
         if (minBytes > 0L) {
-            criteria.and(TOTAL_BYTES).gte(minBytes);
+            queryBuilder.append("AND d.totalBytes >= :minBytes ");
         }
 
         if (!deleteMetadata) {
-            criteria.and(CONTENT_DELETABLE).is(true);
+            queryBuilder.append("AND d.contentDeletable = true ");
         }
 
-        Query query = new Query(criteria);
-        query.limit(batchSize);
+        queryBuilder.append("ORDER BY ");
+        if (createdBeforeDate != null) {
+            queryBuilder.append("d.created ASC");
+        } else {
+            queryBuilder.append("d.modified ASC");
+        }
+
+        TypedQuery<DeltaFile> query = entityManager.createQuery(queryBuilder.toString(), DeltaFile.class);
 
         if (createdBeforeDate != null) {
-            query.with(Sort.by(Sort.Direction.ASC, CREATED));
-        } else {
-            query.with(Sort.by(Sort.Direction.ASC, MODIFIED));
+            query.setParameter("createdBeforeDate", createdBeforeDate);
         }
-        query.fields().include(ID, TOTAL_BYTES, ACTION_SEGMENTS, ACTIONS_NAME, CONTENT_DELETED, SCHEMA_VERSION);
-        query.withHint(indexHint);
 
-        return mongoTemplate.find(query, DeltaFile.class);
+        if (completedBeforeDate != null) {
+            query.setParameter("completedBeforeDate", completedBeforeDate);
+        }
+
+        if (flow != null) {
+            query.setParameter("flow", flow);
+        }
+
+        if (minBytes > 0L) {
+            query.setParameter("minBytes", minBytes);
+        }
+
+        query.setMaxResults(batchSize);
+
+        return query.getResultList();
     }
 
     @Override
@@ -1093,21 +1110,20 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         bulkOps.execute();
     }
 
+    @Transactional
     public void batchedBulkDeleteByDidIn(List<UUID> dids) {
         if (dids == null || dids.isEmpty()) {
             return;
         }
 
-        BulkOperations bulkOps = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, DeltaFile.class);
-
         for (List<UUID> batch : Lists.partition(dids, 500)) {
-            Query query = new Query().addCriteria(Criteria.where(ID).in(batch));
-            bulkOps.remove(query);
+            entityManager.createQuery("DELETE FROM DeltaFile d WHERE d.did IN :dids")
+                    .setParameter("dids", batch)
+                    .executeUpdate();
+            entityManager.flush();
+            entityManager.clear();
         }
-
-        bulkOps.execute();
     }
-
 
     private void addNameCriteria(NameFilter filenameFilter, Criteria criteria) {
         String filename = filenameFilter.getName();
