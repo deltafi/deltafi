@@ -39,6 +39,8 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class ConfigurationValidator {
+    // 1 second longer then the refresh in FlowConfigurationCacheEvictScheduler:
+    private static final Long FLOW_START_DELAY_MILLIS = 6000L;
 
     private final DataSourceService dataSourceService;
     private final TransformFlowService transformFlowService;
@@ -54,20 +56,36 @@ public class ConfigurationValidator {
             errors.addAll(checkPlugins(config.getPlugins()));
         }
 
+        boolean flowsStarted = false;
         if (config.getDataSources() != null) {
-            errors.addAll(checkOrStartFlow("dataSource", dataSourceService, config.getDataSources()));
+            if (checkOrStartFlow(errors, "dataSource", dataSourceService, config.getDataSources())) {
+                flowsStarted = true;
+            }
         }
 
         if (config.getTransformationFlows() != null) {
-            errors.addAll(checkOrStartFlow("transformation", transformFlowService, config.getTransformationFlows()));
+            if (checkOrStartFlow(errors, "transformation", transformFlowService, config.getTransformationFlows())) {
+                flowsStarted = true;
+            }
         }
 
         if (config.getEgressFlows() != null) {
-            errors.addAll(checkOrStartFlow("egress", egressFlowService, config.getEgressFlows()));
+            if (checkOrStartFlow(errors, "egress", egressFlowService, config.getEgressFlows())) {
+                flowsStarted = true;
+            }
         }
 
         errors.addAll(validateInput(config));
         errors.addAll(validateExpectedDeltaFile(config));
+
+        if (errors.isEmpty() && flowsStarted) {
+            try {
+                // Allow core and core-workers to sync
+                Thread.sleep(FLOW_START_DELAY_MILLIS);
+            } catch (Exception e) {
+                errors.add("Thread error during sync delay");
+            }
+        }
 
         return errors;
     }
@@ -119,18 +137,20 @@ public class ConfigurationValidator {
         return errors;
     }
 
-    private Collection<String> checkOrStartFlow(String type, FlowService<?, ?, ?> flowService, List<String> flows) {
-        List<String> errors = new ArrayList<>();
+    private boolean checkOrStartFlow(List<String> errors, String type, FlowService<?, ?, ?> flowService, List<String> flows) {
+        boolean flowStarted = false;
         for (String flow : flows) {
             if (!flowService.hasFlow(flow)) {
                 errors.add("Flow does not exist (" + type + "): " + flow);
             } else if (!flowService.hasRunningFlow(flow)) {
                 if (!flowService.startFlow(flow)) {
                     errors.add("Could not start flow (" + type + "): " + flow);
+                } else {
+                    flowStarted = true;
                 }
             }
         }
-        return errors;
+        return flowStarted;
     }
 
 }
