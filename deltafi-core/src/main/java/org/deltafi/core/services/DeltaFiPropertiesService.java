@@ -26,10 +26,7 @@ import org.deltafi.core.repo.DeltaFiPropertiesRepo;
 import org.deltafi.core.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.snapshot.Snapshotter;
 import org.deltafi.core.snapshot.SystemSnapshot;
-import org.deltafi.core.types.PropertyId;
-import org.deltafi.core.types.PropertyType;
-import org.deltafi.core.types.PropertyUpdate;
-import org.deltafi.core.types.Result;
+import org.deltafi.core.types.*;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -65,6 +62,13 @@ public class DeltaFiPropertiesService implements Snapshotter {
      */
     public void refreshProperties() {
         cachedDeltaFiProperties = getDeltaFiPropertiesFromRepo();
+    }
+
+    public DeltaFiProperties getDeltaFiProperties(Boolean skipCache) {
+        if (Boolean.TRUE.equals(skipCache)) {
+            refreshProperties();
+        }
+        return cachedDeltaFiProperties;
     }
 
     public DeltaFiProperties getDeltaFiProperties() {

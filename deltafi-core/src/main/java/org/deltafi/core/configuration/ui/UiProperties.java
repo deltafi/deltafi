@@ -19,18 +19,28 @@ package org.deltafi.core.configuration.ui;
 
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 @Data
+@NoArgsConstructor
 public class UiProperties {
     private boolean useUTC = true;
     private TopBar topBar = new TopBar();
     private SecurityBanner securityBanner = new SecurityBanner();
     private List<Link> deltaFileLinks = new ArrayList<>();
     private List<Link> externalLinks = new ArrayList<>();
+
+    public UiProperties(UiProperties other) {
+        this.useUTC = other.useUTC;
+        this.topBar = other.topBar;
+        this.securityBanner = other.securityBanner;
+        this.deltaFileLinks = other.deltaFileLinks;
+        this.externalLinks = other.externalLinks;
+    }
 
     public void mergeLinkLists(UiProperties source) {
         setExternalLinks(combineLinkList(this.externalLinks, source.externalLinks));

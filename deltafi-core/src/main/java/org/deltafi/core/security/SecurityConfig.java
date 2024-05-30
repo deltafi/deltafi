@@ -61,7 +61,7 @@ public class SecurityConfig {
         // Do not secure internal use endpoints that are not exposed
         return webSecurity -> webSecurity
                 .ignoring()
-                .requestMatchers(new AntPathRequestMatcher("/config/**"), new AntPathRequestMatcher("/plugins"));
+                .requestMatchers(new AntPathRequestMatcher("/plugins"));
     }
 
     @Bean
