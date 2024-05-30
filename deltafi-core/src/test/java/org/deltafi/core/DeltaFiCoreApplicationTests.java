@@ -308,7 +308,6 @@ class DeltaFiCoreApplicationTests {
 	@BeforeEach
 	@SneakyThrows
 	void setup() {
-		deltaFileRepo.deleteAll();
 		deltaFiPropertiesRepo.save(new DeltaFiProperties());
 		deltaFileRepo.deleteAll();
 		resumePolicyRepo.deleteAll();
@@ -1146,10 +1145,10 @@ class DeltaFiCoreApplicationTests {
 		pluginRepository.deleteAll();
 
 		PluginCoordinates pluginCoordinates = PluginCoordinates.builder().artifactId("test-actions").groupId("org.deltafi").version("1.0").build();
-		Variable var = Variable.builder().name("var").description("description").defaultValue("value").required(false).build();
+		Variable variable = Variable.builder().name("var").description("description").defaultValue("value").required(false).build();
 		PluginVariables variables = new PluginVariables();
 		variables.setSourcePlugin(pluginCoordinates);
-		variables.setVariables(List.of(var));
+		variables.setVariables(List.of(variable));
 
 		TransformFlow transformFlow = new TransformFlow();
 		transformFlow.setName("transform");
@@ -3925,7 +3924,7 @@ class DeltaFiCoreApplicationTests {
 		Mockito.verify(metricService, Mockito.atLeast(5)).increment(metricCaptor.capture());
 		List<Metric> metrics = metricCaptor.getAllValues();
 		MatcherAssert.assertThat(
-				metrics.stream().map(Metric::getName).collect(Collectors.toList()),
+				metrics.stream().map(Metric::getName).toList(),
 				Matchers.containsInAnyOrder(
 						DeltaFiConstants.FILES_IN,
 						DeltaFiConstants.FILES_OUT,
@@ -4230,7 +4229,6 @@ class DeltaFiCoreApplicationTests {
 
     @Test
     void updateAcknowledged() {
-        Clock clock = Clock.tickMillis(ZoneOffset.UTC); // TODO use class level clock after 653 is merged
         Event event1 = Event.builder().id("1").severity("info").summary("first").timestamp(OffsetDateTime.now(clock)).build();
         Event event2 = Event.builder().id("2").severity("warn").summary("second").timestamp(OffsetDateTime.now(clock)).acknowledged(true).build();
 

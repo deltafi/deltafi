@@ -4,8 +4,8 @@
     "flowId": 0,
     "actionName": "SampleTimedIngressAction",
     "actionId": 0,
-    "start": "2021-07-11T13:44:22.183Z",
-    "stop": "2021-07-11T13:44:22.184Z",
+    "start": "3021-07-11T13:44:22.183Z",
+    "stop": "3021-07-11T13:44:22.184Z",
     "type": "INGRESS",
     "ingress": {
         "ingressItems": [
@@ -29,8 +29,7 @@
                         ],
                         "size": 36
                     }
-                ],
-                "created": 1695396455.461844721
+                ]
             }
         ]
     }
