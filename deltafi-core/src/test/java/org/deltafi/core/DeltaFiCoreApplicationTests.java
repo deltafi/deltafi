@@ -43,7 +43,6 @@ import org.deltafi.core.exceptions.IngressUnavailableException;
 import org.deltafi.core.exceptions.InvalidActionEventException;
 import org.deltafi.core.generated.DgsConstants;
 import org.deltafi.core.generated.client.*;
-import org.deltafi.core.generated.types.ConfigType;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.integration.IntegrationDataFetcherTestHelper;
 import org.deltafi.core.integration.TestResultRepo;
@@ -381,8 +380,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void contextLoads() {
 		assertTrue(true);
-		ConfigQueryInput input = ConfigQueryInput.newBuilder().configType(ConfigType.TRANSFORM_FLOW).build();
-		assertFalse(transformFlowService.getConfigs(input).isEmpty());
+		assertFalse(transformFlowService.getAll().isEmpty());
 	}
 
 	@Test
@@ -1051,36 +1049,6 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void setDeltaFileTtl() {
 		assertEquals(Duration.ofDays(13), deltaFileRepo.getTtlExpiration());
-	}
-
-	@Test
-	void findConfigsTest() {
-		String name = "SampleTransformAction";
-
-		ConfigQueryInput configQueryInput = ConfigQueryInput.newBuilder().configType(ConfigType.TRANSFORM_ACTION).name(name).build();
-
-		DeltaFiConfigsProjectionRoot projection = new DeltaFiConfigsProjectionRoot()
-				.name()
-				.apiVersion()
-				.onTransformActionConfiguration()
-				.name()
-				.actionType()
-				.type()
-				.parent();
-
-		DeltaFiConfigsGraphQLQuery findConfig = DeltaFiConfigsGraphQLQuery.newRequest().configQuery(configQueryInput).build();
-
-		TypeRef<List<DeltaFiConfiguration>> listOfConfigs = new TypeRef<>() {};
-		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(findConfig, projection);
-		List<DeltaFiConfiguration> configs = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				graphQLQueryRequest.serialize(),
-				"data." + findConfig.getOperationName(),
-				listOfConfigs);
-
-        assertInstanceOf(TransformActionConfiguration.class, configs.getFirst());
-
-		TransformActionConfiguration transformActionConfiguration = (TransformActionConfiguration) configs.getFirst();
-		assertEquals(name, transformActionConfiguration.getName());
 	}
 
 	@Test

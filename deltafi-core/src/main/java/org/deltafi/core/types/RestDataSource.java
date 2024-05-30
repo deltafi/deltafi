@@ -21,12 +21,10 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.ActionType;
-import org.deltafi.common.types.DeltaFiConfiguration;
-import org.deltafi.common.types.RestDataSourceConfiguration;
 import org.deltafi.core.generated.types.ActionFamily;
 
-import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -46,20 +44,8 @@ public class RestDataSource extends DataSource {
     }
 
     @Override
-    public List<DeltaFiConfiguration> findByConfigType(ConfigType configType) {
-        return List.of();
-    }
-
-    @Override
-    public void updateActionNamesByFamily(EnumMap<ActionType, ActionFamily> actionFamilyMap) {
+    public void updateActionNamesByFamily(Map<ActionType, ActionFamily> actionFamilyMap) {
         // nothing to do here
-    }
-
-    @Override
-    public DeltaFiConfiguration asFlowConfiguration() {
-        RestDataSourceConfiguration restDataSourceConfiguration = new RestDataSourceConfiguration(name);
-        restDataSourceConfiguration.setTopic(getTopic());
-        return restDataSourceConfiguration;
     }
 
     @Override

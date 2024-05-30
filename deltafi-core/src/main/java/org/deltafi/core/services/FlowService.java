@@ -29,7 +29,6 @@ import org.deltafi.core.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.snapshot.Snapshotter;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.snapshot.types.FlowSnapshot;
-import org.deltafi.core.types.ConfigType;
 import org.deltafi.core.types.Flow;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.validation.FlowValidator;
@@ -96,12 +95,12 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         FlowStatus flowStatus = flow.getFlowStatus();
 
         if (FlowState.INVALID.equals(flowStatus.getState())) {
-            log.warn("Tried to start " + flowType+ " flow: " + flowName + " when it was in an invalid state");
+            log.warn("Tried to start {} flow: {} when it was in an invalid state", flowType, flowName);
             throw new IllegalStateException("Flow: " + flowName + " cannot be started until configuration errors are resolved");
         }
 
         if (FlowState.RUNNING.equals(flowStatus.getState())) {
-            log.warn("Tried to start " + flowType + " flow: " + flowName + " when it was already running");
+            log.warn("Tried to start {} flow: {} when it was already running", flowType, flowName);
             return false;
         }
 
@@ -453,15 +452,6 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
                 .collect(Collectors.groupingBy(FlowT::getSourcePlugin));
     }
 
-    /**
-     * Search the flows for a configuration configurations
-     * @param configQueryInput search parameters
-     * @return an immutable list of matching configurations
-     */
-    public List<DeltaFiConfiguration> getConfigs(ConfigQueryInput configQueryInput) {
-        return Objects.nonNull(configQueryInput) ? findConfigsWithFilter(configQueryInput) : findAllConfigs();
-    }
-
     FlowT buildFlow(FlowPlanT flowPlan, List<Variable> variables) {
         Optional<FlowT> existing = flowRepo.findById(flowPlan.getName());
 
@@ -493,30 +483,6 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
      */
     void copyFlowSpecificFields(FlowT sourceFlow, FlowT targetFlow) {
 
-    }
-
-    private List<DeltaFiConfiguration> findConfigsWithFilter(ConfigQueryInput configQueryInput) {
-        ConfigType configType = ConfigType.valueOf(configQueryInput.getConfigType().name());
-        String nameFilter = configQueryInput.getName();
-        List<DeltaFiConfiguration> allByType = allOfConfigType(configType);
-        return Objects.isNull(nameFilter) ? allByType :
-                allByType.stream()
-                        .filter(actionConfig -> configQueryInput.getName().equals(actionConfig.getName()))
-                        .toList();
-    }
-
-    private List<DeltaFiConfiguration> allOfConfigType(ConfigType configType) {
-        return getAll().stream()
-                .map(flow -> flow.findByConfigType(configType))
-                .flatMap(Collection::stream)
-                .toList();
-    }
-
-    private List<DeltaFiConfiguration> findAllConfigs() {
-        return getAll().stream()
-                .map(Flow::allConfigurations)
-                .flatMap(Collection::stream)
-                .toList();
     }
 
     private FlowT save(FlowT flow) {

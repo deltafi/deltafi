@@ -391,7 +391,6 @@ type Query {
   errorMetadataUnion(dids: [UUID!]!) : [PerActionUniqueKeyValues!]!
   sourceMetadataUnion(dids: [UUID!]!) : [UniqueKeyValues!]!
 
-  deltaFiConfigs(configQuery: ConfigQueryInput) : [DeltaFiConfiguration]!
   actionDescriptors: [ActionDescriptor!]!
   exportConfigAsYaml: String!
 
