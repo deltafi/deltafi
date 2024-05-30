@@ -26,10 +26,7 @@ import org.deltafi.common.types.*;
 import org.deltafi.core.converters.DurationScalar;
 import org.deltafi.core.generated.client.*;
 import org.deltafi.core.generated.types.*;
-import org.deltafi.core.types.EgressFlow;
-import org.deltafi.core.types.DataSource;
-import org.deltafi.core.types.TimedDataSource;
-import org.deltafi.core.types.TransformFlow;
+import org.deltafi.core.types.*;
 
 import java.time.Duration;
 import java.util.List;

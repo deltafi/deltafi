@@ -19,6 +19,7 @@ package org.deltafi.core.converters;
 
 import org.deltafi.common.types.*;
 import org.deltafi.core.types.TransformFlow;
+import org.deltafi.common.types.TransformFlowPlan;
 
 import java.util.List;
 import java.util.Objects;

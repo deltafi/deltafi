@@ -19,7 +19,7 @@ package org.deltafi.core.util;
 
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.*;
-import org.deltafi.core.types.DeltaFile;
+import org.deltafi.core.types.*;
 
 import java.time.OffsetDateTime;
 import java.util.*;

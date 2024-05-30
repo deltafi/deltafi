@@ -17,13 +17,13 @@
  */
 package org.deltafi.core.services;
 
-import org.deltafi.common.types.Action;
+import org.deltafi.core.types.Action;
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.ActionState;
 import org.deltafi.core.types.WrappedActionInput;
 import org.deltafi.core.types.DeltaFile;
-import org.deltafi.common.types.DeltaFileFlow;
-import org.deltafi.common.types.DeltaFileFlowState;
+import org.deltafi.core.types.DeltaFileFlow;
+import org.deltafi.core.types.DeltaFileFlowState;
 import org.deltafi.common.types.DeltaFileStage;
 import org.deltafi.core.collect.CollectEntry;
 
@@ -63,7 +63,7 @@ public class DeltaFileUtil {
     private static DeltaFileFlow aggregateDeltaFileFlow(DeltaFileFlow currentFlow, OffsetDateTime now, int flowDepth) {
         DeltaFileFlow aggregateFlow = new DeltaFileFlow();
         aggregateFlow.setName(currentFlow.getName());
-        aggregateFlow.setId(0);
+        aggregateFlow.setNumber(0);
         aggregateFlow.setDepth(flowDepth);
         aggregateFlow.setState(DeltaFileFlowState.IN_FLIGHT);
         aggregateFlow.setType(currentFlow.getType());

@@ -19,13 +19,13 @@ package org.deltafi.common.rules;
 
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.Content;
-import org.deltafi.common.types.DeltaFileFlow;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.SimpleEvaluationContext;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -58,12 +58,13 @@ public class RuleEvaluator {
      * Evaluate the condition against the given DeltaFile. A null condition
      * will result in true. An invalid condition results in false.
      * @param condition SPeL expression to evaluate
-     * @param deltaFileFlow used in the evaluation
+     * @param metadata used in the evaluation
+     * @param content used in the evaluation
      * @return the result of evaluating the condition
      */
-    public boolean evaluateCondition(String condition, DeltaFileFlow deltaFileFlow) {
+    public boolean evaluateCondition(String condition, Map<String, String> metadata, List<Content> content) {
         try {
-            return doEvaluateCondition(condition, new ImmutableDeltaFileFlow(deltaFileFlow));
+            return doEvaluateCondition(condition, new ImmutableDeltaFileFlow(metadata, content));
         } catch (Exception e) {
             log.error("Failed to evaluate condition", e);
             return false;
@@ -94,12 +95,13 @@ public class RuleEvaluator {
     /**
      * Holds a copy of the DeltaFileFlow metadata and content list to prevent
      * SpEL expressions from modifying the original DeltaFile
-     * @param metadata to use when evaluating conditions
-     * @param content to use when evaluating conditions
      */
-    public record ImmutableDeltaFileFlow(Map<String, String> metadata, List<Content> content) {
-        public ImmutableDeltaFileFlow(DeltaFileFlow deltaFileFlow) {
-            this(deltaFileFlow.getImmutableMetadata(), deltaFileFlow.getImmutableContent());
+    public static class ImmutableDeltaFileFlow {
+        final public Map<String, String> metadata;
+        final public List<Content> content;
+        public ImmutableDeltaFileFlow(Map<String, String> metadata, List<Content> content) {
+            this.metadata = Collections.unmodifiableMap(metadata);
+            this.content = content.stream().map(Content::copy).toList();
         }
 
         /**

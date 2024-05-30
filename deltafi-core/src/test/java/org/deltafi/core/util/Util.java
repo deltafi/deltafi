@@ -23,8 +23,7 @@ import org.assertj.core.api.Assertions;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.ActionFamily;
 import org.deltafi.core.services.CoreEventQueue;
-import org.deltafi.core.types.DeltaFile;
-import org.deltafi.core.types.SummaryByFlowAndMessage;
+import org.deltafi.core.types.*;
 
 import java.io.IOException;
 import java.time.Clock;
@@ -198,7 +197,7 @@ public class Util {
             Assertions.assertThat(actual).isEqualTo(expected);
         } else {
             Assertions.assertThat(actual.getName()).isEqualTo(expected.getName());
-            Assertions.assertThat(actual.getId()).isEqualTo(expected.getId());
+            Assertions.assertThat(actual.getNumber()).isEqualTo(expected.getNumber());
             Assertions.assertThat(actual.getType()).isEqualTo(expected.getType());
             Assertions.assertThat(actual.getState()).isEqualTo(expected.getState());
             Assertions.assertThat(actual.getFlowPlan()).isEqualTo(expected.getFlowPlan());
@@ -232,7 +231,7 @@ public class Util {
             Assertions.assertThat(actual).isEqualTo(expected);
         } else {
             Assertions.assertThat(actual.getName()).isEqualTo(expected.getName());
-            Assertions.assertThat(actual.getId()).isEqualTo(expected.getId());
+            Assertions.assertThat(actual.getNumber()).isEqualTo(expected.getNumber());
             Assertions.assertThat(actual.getType()).isEqualTo(expected.getType());
             Assertions.assertThat(actual.getState()).isEqualTo(expected.getState());
             Assertions.assertThat(actual.getErrorCause()).isEqualTo(expected.getErrorCause());

@@ -15,15 +15,18 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.types;
+package org.deltafi.core.types;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.deltafi.common.content.Segment;
+import org.deltafi.common.types.*;
 import org.deltafi.core.exceptions.UnexpectedActionException;
+import org.hibernate.annotations.Type;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.OffsetDateTime;
@@ -34,35 +37,59 @@ import java.util.function.Predicate;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Entity
+@Table(name = "delta_file_flows")
 public class DeltaFileFlow {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "flow_name")
     private String name;
-    private int id;
+    private int number;
+    @Enumerated(EnumType.STRING)
     private FlowType type;
     @Builder.Default
+    @Enumerated(EnumType.STRING)
     private DeltaFileFlowState state = DeltaFileFlowState.IN_FLIGHT;
     private OffsetDateTime created;
     private OffsetDateTime modified;
-    private FlowPlanCoordinates flowPlan;
     @Builder.Default
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
+    private FlowPlanCoordinates flowPlan = new FlowPlanCoordinates();
+    @Builder.Default
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
     private DeltaFileFlowInput input = new DeltaFileFlowInput();
+    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "delta_file_flow_id")
     @Builder.Default
     private List<Action> actions = new ArrayList<>();
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
     @Builder.Default
     private List<String> publishTopics = new ArrayList<>();
     private int depth;
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
     @Builder.Default
     private Set<String> pendingAnnotations = new HashSet<>();
     boolean testMode;
     String testModeReason;
     private UUID collectId;
 
-    @JsonIgnore
+    @Transient
     @Builder.Default
     private List<ActionConfiguration> actionConfigurations = new ArrayList<>();
 
+    @ManyToOne
+    @JoinColumn(name = "delta_file_id", insertable = false, updatable = false)
+    private DeltaFile deltaFile;
+
     public DeltaFileFlow(DeltaFileFlow other) {
         this.name = other.name;
-        this.id = other.id;
+        this.number = other.number;
         this.type = other.type;
         this.state = other.state;
         this.created = other.created;
@@ -84,6 +111,7 @@ public class DeltaFileFlow {
      *
      * @return A Map containing the resulting metadata
      */
+    @Transient
     public Map<String, String> getMetadata() {
         Map<String, String> metadata = new HashMap<>(input.getMetadata());
         for (Action action : actions) {
@@ -117,11 +145,6 @@ public class DeltaFileFlow {
         return actions.stream().anyMatch(a -> a.getNextAutoResume() != null);
     }
 
-    @JsonIgnore
-    public Map<String, String> getImmutableMetadata() {
-        return Collections.unmodifiableMap(getMetadata());
-    }
-
     public List<Content> lastContent() {
         return latestMatchingAction(action -> action.getState() == ActionState.COMPLETE)
                 .map(Action::getContent)
@@ -132,7 +155,7 @@ public class DeltaFileFlow {
         return input != null ? input.content : List.of();
     }
 
-    @JsonIgnore
+    @Transient
     public List<Content> getImmutableContent() {
         return lastContent().stream().map(Content::copy).toList();
     }
@@ -188,7 +211,7 @@ public class DeltaFileFlow {
     public Action addAction(String name, ActionType type, ActionState state, OffsetDateTime now) {
         Action action = Action.builder()
                 .name(name)
-                .id(actions.size())
+                .number(actions.size())
                 .type(type)
                 .state(state)
                 .created(now)
@@ -220,7 +243,7 @@ public class DeltaFileFlow {
 
     public Action getAction(String actionName, int actionId) {
         return getActions().stream()
-                .filter(action -> action.getName().equals(actionName) && action.getId() == actionId)
+                .filter(action -> action.getName().equals(actionName) && action.getNumber() == actionId)
                 .findFirst()
                 .orElse(null);
     }
@@ -228,7 +251,7 @@ public class DeltaFileFlow {
     public Action getPendingAction(String actionName, int actionId, UUID did) {
         Action action = getAction(actionName, actionId);
         if (action == null || action.terminal()) {
-            throw new UnexpectedActionException(name, id, actionName, actionId, did);
+            throw new UnexpectedActionException(name, number, actionName, actionId, did);
         }
 
         return action;
@@ -261,18 +284,6 @@ public class DeltaFileFlow {
         return acked;
     }
 
-    public boolean clearErrorAcknowledged(OffsetDateTime now) {
-        boolean cleared = !actions.isEmpty() && actions.getLast().clearErrorAcknowledged(now);
-        if (cleared) {
-            modified = now;
-        }
-        return cleared;
-    }
-
-    public boolean hasCollectedAction(String name) {
-        return actions.stream().anyMatch(a -> a.getName().equals(name) && a.getState() == ActionState.COLLECTED);
-    }
-
     public boolean hasFinalAction(String name) {
         return getActions().stream().anyMatch(action -> action.getName().equals(name) &&
                 action.getState() != ActionState.RETRIED && action.terminal());
@@ -301,7 +312,7 @@ public class DeltaFileFlow {
         actionConfigurations.removeIf(ac -> ac.getName().equals(actionName));
     }
 
-    @JsonIgnore
+    @Transient
     public ActionConfiguration getNextActionConfiguration() {
         return !actionConfigurations.isEmpty() ? actionConfigurations.getFirst() : null;
     }

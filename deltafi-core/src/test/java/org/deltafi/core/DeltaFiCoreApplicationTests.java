@@ -3516,11 +3516,11 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void annotations() {
-		deltaFileRepo.insert(DeltaFile.builder()
+		deltaFileRepo.save(DeltaFile.builder()
 				.annotations(Map.of("x", "1", "y", "2"))
 				.annotationKeys(Set.of("x", "y"))
 				.build());
-		deltaFileRepo.insert(DeltaFile.builder()
+		deltaFileRepo.save(DeltaFile.builder()
 				.annotations(Map.of("y", "3", "z", "4"))
 				.annotationKeys(Set.of("y", "z"))
 				.build());

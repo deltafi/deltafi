@@ -156,11 +156,11 @@ public class TimedDataSource extends DataSource {
                 .build();
         DeltaFileFlow flow = DeltaFileFlow.builder()
                 .name(name)
-                .id(0)
+                .number(0)
                 .build();
         Action action = Action.builder()
                 .name(timedIngressAction.getName())
-                .id(0)
+                .number(0)
                 .created(now)
                 .state(ActionState.QUEUED)
                 .build();

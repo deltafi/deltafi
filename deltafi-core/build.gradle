@@ -39,6 +39,7 @@ dependencies {
 	implementation 'org.lz4:lz4-java:1.8.0'
 	implementation 'com.zaxxer:HikariCP:5.1.0'
 	implementation 'org.postgresql:postgresql:42.7.3'
+	implementation 'io.hypersistence:hypersistence-utils-hibernate-63:3.7.5'
 
 	testImplementation project(':deltafi-common-test')
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -62,7 +63,7 @@ generateJava {
 			"Metadata": "java.util.Map<String, String>",
 			"UUID": "java.util.UUID",
 
-			"Action": "org.deltafi.common.types.Action",
+			"Action": "org.deltafi.core.types.Action",
 			"ActionConfiguration": "org.deltafi.common.types.ActionConfiguration",
 			"ActionDescriptor": "org.deltafi.common.types.ActionDescriptor",
 			"ActionDescriptorInput": "org.deltafi.common.types.ActionDescriptor",
@@ -82,10 +83,10 @@ generateJava {
 			"DeletePolicies": "org.deltafi.core.types.DeletePolicies",
 			"DeletePoliciesInput": "org.deltafi.core.types.DeletePolicies",
 			"DeltaFiConfiguration": "org.deltafi.common.types.DeltaFiConfiguration",
-			"DeltaFile": "org.deltafi.common.types.DeltaFile",
-			"DeltaFileFlow": "org.deltafi.common.types.DeltaFileFlow",
-			"DeltaFileFlowInput": "org.deltafi.common.types.DeltaFileFlowInput",
-			"DeltaFileFlowState": "org.deltafi.common.types.DeltaFileFlowState",
+			"DeltaFile": "org.deltafi.core.types.DeltaFile",
+			"DeltaFileFlow": "org.deltafi.core.types.DeltaFileFlow",
+			"DeltaFileFlowInput": "org.deltafi.core.types.DeltaFileFlowInput",
+			"DeltaFileFlowState": "org.deltafi.core.types.DeltaFileFlowState",
 			"DeltaFiles": "org.deltafi.core.types.DeltaFiles",
 			"DeltaFileStage": "org.deltafi.common.types.DeltaFileStage",
 			"DeltaFiProperties": "org.deltafi.core.configuration.DeltaFiProperties",

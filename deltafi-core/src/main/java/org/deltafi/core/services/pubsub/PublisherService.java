@@ -20,9 +20,7 @@ package org.deltafi.core.services.pubsub;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.rules.RuleEvaluator;
 import org.deltafi.common.types.*;
-import org.deltafi.core.types.DataSource;
-import org.deltafi.core.types.DeltaFile;
-import org.deltafi.core.types.Flow;
+import org.deltafi.core.types.*;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
@@ -180,7 +178,7 @@ public class PublisherService {
     }
 
     private String matchingTopic(Rule rule, DeltaFileFlow deltaFileFlow, Set<String> topics) {
-        if (topics.contains(rule.getTopic()) && ruleEvaluator.evaluateCondition(rule.getCondition(), deltaFileFlow)) {
+        if (topics.contains(rule.getTopic()) && ruleEvaluator.evaluateCondition(rule.getCondition(), deltaFileFlow.getMetadata(), deltaFileFlow.lastContent().stream().map(c -> new Content(c.getName(), c.getMediaType(), c.getSegments())).toList())) {
             return rule.getTopic();
         }
 
@@ -231,7 +229,7 @@ public class PublisherService {
     }
 
     private boolean evaluateRule(Rule rule, DeltaFileFlow deltaFileFlow) {
-        return ruleEvaluator.evaluateCondition(rule.getCondition(), deltaFileFlow);
+        return ruleEvaluator.evaluateCondition(rule.getCondition(), deltaFileFlow.getMetadata(), deltaFileFlow.lastContent().stream().map(c -> new Content(c.getName(), c.getMediaType(), c.getSegments())).toList());
     }
 
     private void errorDeltaFile(DeltaFileFlow flow, String context) {

@@ -17,10 +17,11 @@
  */
 package org.deltafi.core.services;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.repo.DeltaFileRepo;
-import org.springframework.data.mongodb.core.query.Update;
+import org.hibernate.Hibernate;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -62,9 +63,9 @@ public abstract class DeltaFileCacheService {
             return;
         }
         if (deltaFile.getVersion() == 0) {
-            deltaFileRepo.insert(deltaFile);
+            deltaFileRepo.save(deltaFile);
         } else if (deltaFile.getSnapshot() != null) {
-            Update update = deltaFile.generateUpdate();
+            /*Update update = deltaFile.generateUpdate();
             if (update != null) {
                 boolean updated = deltaFileRepo.update(deltaFile.getDid(), deltaFile.getVersion(), deltaFile.generateUpdate());
                 if (updated) {
@@ -75,7 +76,8 @@ public abstract class DeltaFileCacheService {
                 if (updateSnapshot) {
                     deltaFile.snapshot();
                 }
-            }
+            }*/
+            deltaFileRepo.save(deltaFile);
         } else {
             deltaFileRepo.save(deltaFile);
         }

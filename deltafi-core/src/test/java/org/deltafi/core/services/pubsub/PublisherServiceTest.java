@@ -20,12 +20,12 @@ package org.deltafi.core.services.pubsub;
 import org.assertj.core.api.Assertions;
 import org.deltafi.common.rules.RuleEvaluator;
 import org.deltafi.common.test.time.TestClock;
-import org.deltafi.common.types.Action;
+import org.deltafi.core.types.Action;
 import org.deltafi.common.types.ActionState;
 import org.deltafi.common.types.DefaultBehavior;
 import org.deltafi.common.types.DefaultRule;
 import org.deltafi.core.types.DeltaFile;
-import org.deltafi.common.types.DeltaFileFlow;
+import org.deltafi.core.types.DeltaFileFlow;
 import org.deltafi.common.types.MatchingPolicy;
 import org.deltafi.common.types.PublishRules;
 import org.deltafi.common.types.Publisher;
@@ -71,7 +71,7 @@ class PublisherServiceTest {
         Subscriber subscriber = flow(null, Set.of(rule("topic", condition)));
 
         Mockito.when(mockSubscriberService.subscriberForTopic("topic")).thenReturn(Set.of(subscriber));
-        Mockito.when(ruleEvaluator.evaluateCondition(condition, deltaFileFlow)).thenReturn(true);
+        Mockito.when(ruleEvaluator.evaluateCondition(condition, deltaFileFlow.getMetadata(), deltaFileFlow.lastContent())).thenReturn(true);
 
         PublishRules publishRules = new PublishRules();
         publishRules.setRules(List.of(rule("topic", condition)));
@@ -99,7 +99,7 @@ class PublisherServiceTest {
         subscriber.setTestMode(true);
 
         Mockito.when(mockSubscriberService.subscriberForTopic("topic")).thenReturn(Set.of(subscriber));
-        Mockito.when(ruleEvaluator.evaluateCondition(condition, deltaFileFlow)).thenReturn(true);
+        Mockito.when(ruleEvaluator.evaluateCondition(condition, deltaFileFlow.getMetadata(), deltaFileFlow.lastContent())).thenReturn(true);
 
         PublishRules publishRules = new PublishRules();
         publishRules.setRules(List.of(rule("topic", condition)));
@@ -128,7 +128,7 @@ class PublisherServiceTest {
         Subscriber subscriber = flow(null, Set.of(rule("topic", condition)));
 
         Mockito.when(mockSubscriberService.subscriberForTopic("topic")).thenReturn(Set.of(subscriber));
-        Mockito.when(ruleEvaluator.evaluateCondition(condition, deltaFileFlow)).thenReturn(true);
+        Mockito.when(ruleEvaluator.evaluateCondition(condition, deltaFileFlow.getMetadata(), deltaFileFlow.lastContent())).thenReturn(true);
 
         PublishRules publishRules = new PublishRules();
         publishRules.setRules(List.of(rule("topic", condition)));
@@ -196,7 +196,7 @@ class PublisherServiceTest {
 
         Subscriber subscriber = flow(null, Set.of(rule("default-topic", null)));
         Mockito.when(mockSubscriberService.subscriberForTopic("default-topic")).thenReturn(Set.of(subscriber));
-        Mockito.when(ruleEvaluator.evaluateCondition(null, deltaFileFlow)).thenReturn(true);
+        Mockito.when(ruleEvaluator.evaluateCondition(null, deltaFileFlow.getMetadata(), deltaFileFlow.lastContent())).thenReturn(true);
 
         PublishRules publishRules = new PublishRules();
         publishRules.setDefaultRule(new DefaultRule(DefaultBehavior.PUBLISH, "default-topic"));
@@ -232,9 +232,9 @@ class PublisherServiceTest {
     @Test
     void getMatchingTopicNames() {
         DeltaFileFlow deltaFileFlow = new DeltaFileFlow();
-        Mockito.when(ruleEvaluator.evaluateCondition("a", deltaFileFlow)).thenReturn(false);
-        Mockito.when(ruleEvaluator.evaluateCondition("b", deltaFileFlow)).thenReturn(true);
-        Mockito.when(ruleEvaluator.evaluateCondition("c", deltaFileFlow)).thenReturn(true);
+        Mockito.when(ruleEvaluator.evaluateCondition("a", deltaFileFlow.getMetadata(), deltaFileFlow.lastContent())).thenReturn(false);
+        Mockito.when(ruleEvaluator.evaluateCondition("b", deltaFileFlow.getMetadata(), deltaFileFlow.lastContent())).thenReturn(true);
+        Mockito.when(ruleEvaluator.evaluateCondition("c", deltaFileFlow.getMetadata(), deltaFileFlow.lastContent())).thenReturn(true);
 
         PublishRules publishRules = new PublishRules();
         publishRules.setRules(new ArrayList<>());
@@ -286,7 +286,7 @@ class PublisherServiceTest {
         Assertions.assertThat(publisherService.publisherSubscribers(publisher, deltaFile, deltaFileFlow)).isEmpty();
 
         // the second subscription should not be evaluated because the DeltaFile was only published to topic `a`
-        Mockito.verify(ruleEvaluator, Mockito.never()).evaluateCondition("subscribe-b", deltaFileFlow);
+        Mockito.verify(ruleEvaluator, Mockito.never()).evaluateCondition("subscribe-b", deltaFileFlow.getMetadata(), deltaFileFlow.lastContent());
     }
 
     @Test
@@ -326,7 +326,7 @@ class PublisherServiceTest {
     }
 
     void  mockRuleEval(String condition, DeltaFileFlow deltaFileFlow, boolean result) {
-        Mockito.when(ruleEvaluator.evaluateCondition(condition, deltaFileFlow)).thenReturn(result);
+        Mockito.when(ruleEvaluator.evaluateCondition(condition, deltaFileFlow.getMetadata(), deltaFileFlow.lastContent())).thenReturn(result);
     }
 
     private Rule rule(String topic, String condition) {

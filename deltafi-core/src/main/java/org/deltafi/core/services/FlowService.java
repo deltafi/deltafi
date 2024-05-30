@@ -31,6 +31,7 @@ import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.snapshot.types.FlowSnapshot;
 import org.deltafi.core.types.ConfigType;
 import org.deltafi.core.types.Flow;
+import org.deltafi.common.types.FlowPlan;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.validation.FlowValidator;
 import org.springframework.boot.info.BuildProperties;

@@ -18,12 +18,11 @@
 package org.deltafi.core.repo;
 
 import org.deltafi.core.types.DeltaFile;
-import org.deltafi.common.types.DeltaFileFlowState;
+import org.deltafi.core.types.DeltaFileFlowState;
 import org.deltafi.common.types.DeltaFileStage;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.mongodb.repository.CountQuery;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -32,7 +31,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 @Repository
-public interface DeltaFileRepo extends MongoRepository<DeltaFile, UUID>, DeltaFileRepoCustom {
+public interface DeltaFileRepo extends JpaRepository<DeltaFile, UUID>, DeltaFileRepoCustom {
     Page<DeltaFile> findAllByOrderByCreatedDesc(Pageable pageable);
     Page<DeltaFile> findAllByOrderByModifiedDesc(Pageable pageable);
     Page<DeltaFile> findByStageOrderByModifiedDesc(DeltaFileStage stage, Pageable pageable);
@@ -45,8 +44,7 @@ public interface DeltaFileRepo extends MongoRepository<DeltaFile, UUID>, DeltaFi
      */
     Stream<DeltaFile> findByTerminalAndFlowsNameAndFlowsState(boolean isTerminal, String flowName, DeltaFileFlowState state);
 
-    @CountQuery("{'stage': ?0, 'flows.actions.errorAcknowledged': null}")
-    long countByStageAndErrorAcknowledgedIsNull(DeltaFileStage stage);
+    long countByStageAndFlowsActionsErrorAcknowledgedIsNull(DeltaFileStage stage);
 
     Optional<DeltaFile> findByDidAndStageIn(UUID did, List<DeltaFileStage> stages);
 }

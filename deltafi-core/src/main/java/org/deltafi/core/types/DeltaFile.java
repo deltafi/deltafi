@@ -17,18 +17,15 @@
  */
 package org.deltafi.core.types;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
+import jakarta.persistence.*;
 import lombok.*;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.*;
 import org.deltafi.core.exceptions.UnexpectedFlowException;
+import org.hibernate.annotations.Type;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.Transient;
 import org.springframework.data.annotation.Version;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.Sharded;
-import org.springframework.data.mongodb.core.query.Update;
 
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -39,31 +36,43 @@ import java.util.stream.Stream;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Document("deltaFiles")
-@Sharded
+@Entity
+@Table(name = "delta_files")
 public class DeltaFile {
   @Id
-  @Builder.Default
-  private UUID did = UUID.randomUUID();
+  private UUID did;
   private String name;
   private String normalizedName;
   private String dataSource;
+  @Type(JsonBinaryType.class)
+  @Column(columnDefinition = "jsonb")
   @Builder.Default
   private List<UUID> parentDids = new ArrayList<>();
   private UUID collectId;
+  @Type(JsonBinaryType.class)
+  @Column(columnDefinition = "jsonb")
   @Builder.Default
   private List<UUID> childDids = new ArrayList<>();
   @Builder.Default
+  @JoinColumn(name = "delta_file_id")
+  @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
   private List<DeltaFileFlow> flows = new ArrayList<>();
   private int requeueCount;
   private long ingressBytes;
   private long referencedBytes;
   private long totalBytes;
+  @Enumerated(EnumType.STRING)
   private DeltaFileStage stage;
+  @Type(JsonBinaryType.class)
+  @Column(columnDefinition = "jsonb")
   @Builder.Default
   private Map<String, String> annotations = new HashMap<>();
+  @Type(JsonBinaryType.class)
+  @Column(columnDefinition = "jsonb")
   @Builder.Default
   private Set<String> annotationKeys = new HashSet<>();
+  @Type(JsonBinaryType.class)
+  @Column(columnDefinition = "jsonb")
   @Builder.Default
   private List<String> egressFlows = new ArrayList<>();
   private OffsetDateTime created;
@@ -83,15 +92,10 @@ public class DeltaFile {
   private boolean contentDeletable = false;
 
   @Version
-  @Getter
-  @Setter
-  @JsonIgnore
   private long version;
 
-  @Getter
-  @JsonIgnore
-  @Setter
   @Builder.Default
+  @Transient
   private OffsetDateTime cacheTime = null;
 
   @Transient
@@ -191,6 +195,7 @@ public class DeltaFile {
     updateFlags();
   }
 
+  @Transient
   public Set<String> getPendingAnnotations(Set<String> expectedAnnotations) {
     Set<String> pendingAnnotations = expectedAnnotations != null ? new HashSet<>(expectedAnnotations) : new HashSet<>();
 
@@ -312,7 +317,7 @@ public class DeltaFile {
   }
 
   public DeltaFileFlow getFlow(String flowName, int flowId) {
-    return flows.stream().filter(f -> f.getId() == flowId && f.getName().equals(flowName)).findFirst().orElse(null);
+    return flows.stream().filter(f -> f.getNumber() == flowId && f.getName().equals(flowName)).findFirst().orElse(null);
   }
 
   public DeltaFileFlow getPendingFlow(String flowName, int flowId) {
@@ -388,16 +393,6 @@ public class DeltaFile {
     }
   }
 
-  public void clearErrorAcknowledged(OffsetDateTime now) {
-    boolean found = flows.stream()
-            .map(f -> f.clearErrorAcknowledged(now))
-            .reduce(false, (a, b) -> a || b);
-    if (found) {
-      modified = now;
-      updateFlags();
-    }
-  }
-
   public void updateState(OffsetDateTime now) {
     modified = now;
     if (!hasPendingActions()) {
@@ -416,7 +411,7 @@ public class DeltaFile {
   public DeltaFileFlow addFlow(String name, FlowType type, DeltaFileFlow previousFlow, Set<String> subscribedTopics, OffsetDateTime now) {
     DeltaFileFlow flow = DeltaFileFlow.builder()
             .name(name)
-            .id(flows.stream().mapToInt(DeltaFileFlow::getId).max().orElse(0) + 1)
+            .number(flows.stream().mapToInt(DeltaFileFlow::getNumber).max().orElse(0) + 1)
             .type(type)
             .state(DeltaFileFlowState.IN_FLIGHT)
             .created(now)
@@ -443,127 +438,9 @@ public class DeltaFile {
     return flow;
   }
 
-  public void removeFlowsNotDescendedFrom(int flowId) {
-    flows.removeIf(f -> !f.getInput().getAncestorIds().contains(flowId));
-    List<Integer> remainingFlowIds = flows.stream().map(DeltaFileFlow::getId).toList();
-    flows.forEach(f -> f.getInput().getAncestorIds().retainAll(remainingFlowIds));
-  }
-
   public void setName(String name) {
     this.name = name;
     this.normalizedName = name != null ? name.toLowerCase() : null;
-  }
-
-  public Update generateUpdate() {
-    // only update fields that are modified after creation in Java code
-    Update update = new Update();
-    boolean updated = false;
-    // did, name, normalizedName, dataSource, parentDids, and created do not change
-    if (!Objects.equals(this.collectId, snapshot.collectId)) {
-      update.set("collectId", this.collectId);
-      updated = true;
-    }
-    if (!Objects.equals(this.childDids, snapshot.childDids)) {
-      update.set("childDids", this.childDids);
-      updated = true;
-    }
-    if (!Objects.equals(this.flows, snapshot.flows)) {
-      if (flows.size() == snapshot.flows.size()) {
-        for (int i = 0; i < snapshot.flows.size(); i++) {
-          if (!Objects.equals(this.flows.get(i), snapshot.flows.get(i))) {
-            update.set(String.format("flows.%d", i), this.flows.get(i));
-          }
-        }
-      } else {
-        // mongo does not support both sets and pushes in the same update, so we have to send the whole object
-        update.set("flows", this.flows);
-      }
-      updated = true;
-    }
-    if (!Objects.equals(this.requeueCount, snapshot.requeueCount)) {
-      update.set("requeueCount", this.requeueCount);
-      updated = true;
-    }
-    if (!Objects.equals(this.ingressBytes, snapshot.ingressBytes)) {
-      update.set("ingressBytes", this.ingressBytes);
-      updated = true;
-    }
-    if (!Objects.equals(this.referencedBytes, snapshot.referencedBytes)) {
-      update.set("referencedBytes", this.referencedBytes);
-      updated = true;
-    }
-    if (!Objects.equals(this.totalBytes, snapshot.totalBytes)) {
-      update.set("totalBytes", this.totalBytes);
-      updated = true;
-    }
-    if (!Objects.equals(this.stage, snapshot.stage)) {
-      update.set("stage", this.stage);
-      updated = true;
-    }
-    if (!Objects.equals(this.annotations, snapshot.annotations)) {
-      update.set("annotations", this.annotations);
-      updated = true;
-    }
-    if (!Objects.equals(this.annotationKeys, snapshot.annotationKeys)) {
-      update.set("annotationKeys", this.annotationKeys);
-      updated = true;
-    }
-    if (!Objects.equals(this.egressFlows, snapshot.egressFlows)) {
-      update.set("egressFlows", this.egressFlows);
-      updated = true;
-    }
-    if (!Objects.equals(this.modified, snapshot.modified)) {
-      update.set("modified", this.modified);
-      updated = true;
-    }
-    if (!Objects.equals(this.contentDeleted, snapshot.contentDeleted)) {
-      update.set("contentDeleted", this.contentDeleted);
-      updated = true;
-    }
-    if (!Objects.equals(this.contentDeletedReason, snapshot.contentDeletedReason)) {
-      update.set("contentDeletedReason", this.contentDeletedReason);
-      updated = true;
-    }
-    if (!Objects.equals(this.egressed, snapshot.egressed)) {
-      update.set("egressed", this.egressed);
-      updated = true;
-    }
-    if (!Objects.equals(this.filtered, snapshot.filtered)) {
-      update.set("filtered", this.filtered);
-      updated = true;
-    }
-    if (!Objects.equals(this.replayed, snapshot.replayed)) {
-      update.set("replayed", this.replayed);
-      updated = true;
-    }
-    if (!Objects.equals(this.replayDid, snapshot.replayDid)) {
-      update.set("replayDid", this.replayDid);
-      updated = true;
-    }
-    if (!Objects.equals(this.inFlight, snapshot.inFlight)) {
-      update.set("inFlight", this.inFlight);
-      updated = true;
-    }
-    if (!Objects.equals(this.terminal, snapshot.terminal)) {
-      update.set("terminal", this.terminal);
-      updated = true;
-    }
-    if (!Objects.equals(this.contentDeletable, snapshot.contentDeletable)) {
-      update.set("contentDeletable", this.contentDeletable);
-      updated = true;
-    }
-    if (!Objects.equals(this.schemaVersion, snapshot.schemaVersion)) {
-      update.set("schemaVersion", this.schemaVersion);
-      updated = true;
-    }
-
-    if (!updated) {
-      return null;
-    }
-
-    update.set("version", this.version + 1);
-
-    return update;
   }
 
   /**
@@ -579,7 +456,7 @@ public class DeltaFile {
   public WrappedActionInput buildActionInput(ActionConfiguration actionConfiguration, DeltaFileFlow flow, Action action, String systemName,
                                              String returnAddress, String memo) {
     WrappedActionInput actionInput = buildActionInput(actionConfiguration, flow, List.of(), action, systemName, returnAddress, memo);
-    actionInput.setDeltaFileMessages(List.of(new DeltaFileMessage(flow.getMetadata(), flow.lastContent())));
+    actionInput.setDeltaFileMessages(List.of(new DeltaFileMessage(flow.getMetadata(), flow.lastContent().stream().map(c -> new Content(c.getName(), c.getMediaType(), c.getSegments())).toList())));
     return actionInput;
   }
 
@@ -600,9 +477,9 @@ public class DeltaFile {
             .actionContext(ActionContext.builder()
                     .flowName(flow.getName())
                     .dataSource(dataSource)
-                    .flowId(flow.getId())
+                    .flowId(flow.getNumber())
                     .actionName(action.getName())
-                    .actionId(action.getId())
+                    .actionId(action.getNumber())
                     .did(did)
                     .deltaFileName(name)
                     .collectedDids(Objects.requireNonNullElseGet(collectedDids, List::of))

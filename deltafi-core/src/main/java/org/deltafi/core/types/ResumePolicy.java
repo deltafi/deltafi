@@ -18,7 +18,6 @@
 package org.deltafi.core.types;
 
 import org.apache.commons.lang3.StringUtils;
-import org.deltafi.common.types.Action;
 import org.deltafi.common.types.ActionType;
 
 import java.util.ArrayList;

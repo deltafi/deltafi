@@ -20,6 +20,9 @@ package org.deltafi.core.repo;
 import com.google.common.collect.Lists;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.result.UpdateResult;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.BsonValue;
@@ -40,6 +43,7 @@ import org.springframework.data.mongodb.core.index.PartialIndexFilter;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 
 import java.time.Duration;
@@ -52,8 +56,10 @@ import static org.deltafi.common.types.ActionState.*;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 
 @SuppressWarnings("unused")
-@RequiredArgsConstructor
 @Slf4j
+@Repository
+@RequiredArgsConstructor
+@Transactional
 public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String ID = "_id";
     public static final String VERSION = "version";
@@ -198,6 +204,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         INDICES.put("cold_queued_index", new Index().named("cold_queued_index").on(IN_FLIGHT, Sort.Direction.ASC).on(ACTIONS_STATE, Sort.Direction.ASC).on(ACTIONS_NAME, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(IN_FLIGHT).is(true).and(ACTIONS_STATE).is(COLD_QUEUED.name()))));
         INDICES.put("queued_index", new Index().named("queued_index").on(IN_FLIGHT, Sort.Direction.ASC).on(ACTIONS_STATE, Sort.Direction.ASC).on(ACTIONS_NAME, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(IN_FLIGHT).is(true).and(ACTIONS_STATE).is(QUEUED.name()))));
     }
+
+    @PersistenceContext
+    private final EntityManager entityManager;
 
     private final MongoTemplate mongoTemplate;
     private Duration cachedTtlDuration;

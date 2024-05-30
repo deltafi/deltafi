@@ -15,13 +15,20 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.types;
+package org.deltafi.core.types;
 
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.deltafi.common.converters.KeyValueConverter;
+import org.deltafi.common.types.ActionState;
+import org.deltafi.common.types.ActionType;
+import org.deltafi.common.types.Content;
+import org.deltafi.common.types.ResumeMetadata;
+import org.hibernate.annotations.Type;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.OffsetDateTime;
@@ -31,11 +38,18 @@ import java.util.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Entity
+@Table(name = "actions")
 public class Action {
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
   private String name;
-  private int id;
+  private int number;
   @Builder.Default
+  @Enumerated(EnumType.STRING)
   private ActionType type = ActionType.UNKNOWN;
+  @Enumerated(EnumType.STRING)
   private ActionState state;
   private OffsetDateTime created;
   private OffsetDateTime queued;
@@ -52,14 +66,26 @@ public class Action {
   private String filteredContext;
   @Builder.Default
   private int attempt = 1;
+  @Type(JsonBinaryType.class)
+  @Column(columnDefinition = "jsonb")
   private List<Content> content;
-  private Map<String, String> metadata;
+  @Type(JsonBinaryType.class)
+  @Column(columnDefinition = "jsonb")
+  @Builder.Default
+  private Map<String, String> metadata = new HashMap<>();
+  @Type(JsonBinaryType.class)
+  @Column(columnDefinition = "jsonb")
   private List<String> deleteMetadataKeys;
   private boolean replayStart; // marker for the starting point of a replay
 
+  @ManyToOne
+  @JoinColumn(name = "delta_file_flow_id", insertable = false, updatable = false)
+  private DeltaFileFlow deltaFileFlow;
+
   public Action(Action other) {
-    this.name = other.name;
     this.id = other.id;
+    this.name = other.name;
+    this.number = other.number;
     this.type = other.type;
     this.state = other.state;
     this.created = other.created;
@@ -76,7 +102,7 @@ public class Action {
     this.filteredCause = other.filteredCause;
     this.filteredContext = other.filteredContext;
     this.attempt = other.attempt;
-    this.content = other.content == null ? null : other.content.stream().map(Content::new).toList();
+    this.content = other.content == null ? null : other.content;
     this.metadata = other.metadata == null ? null : new HashMap<>(other.metadata);
     this.deleteMetadataKeys = other.deleteMetadataKeys == null ? null : new ArrayList<>(other.deleteMetadataKeys);
     this.replayStart = other.replayStart;
@@ -100,10 +126,6 @@ public class Action {
     return !queued() && state != ActionState.COLLECTING;
   }
 
-  boolean completeOrRetried() {
-    return state == ActionState.COMPLETE || state == ActionState.RETRIED;
-  }
-
   public void cancel(OffsetDateTime time) {
     if (terminal() && state != ActionState.ERROR) {
         return;
@@ -114,17 +136,13 @@ public class Action {
     modified = time;
   }
 
-  public void changeState(ActionState actionState, OffsetDateTime start, OffsetDateTime stop, OffsetDateTime now) {
-    changeState(actionState, start, stop, now, null, null, null);
-  }
-
   public void setFilteredActionState(OffsetDateTime start, OffsetDateTime stop, OffsetDateTime now, String filteredCause, String filteredContext) {
     this.filteredCause = filteredCause;
     this.filteredContext = filteredContext;
     changeState(ActionState.FILTERED, start, stop, now);
   }
 
-  private void changeState(ActionState actionState, OffsetDateTime start, OffsetDateTime stop, OffsetDateTime now, String errorCause, String errorContext, OffsetDateTime nextAutoResume) {
+  public void changeState(ActionState actionState, OffsetDateTime start, OffsetDateTime stop, OffsetDateTime now) {
     setState(actionState);
     if (created == null) {
       created = now;
@@ -132,9 +150,6 @@ public class Action {
     this.start = start;
     this.stop = stop;
     modified = now;
-    this.errorCause = errorCause;
-    this.errorContext = errorContext;
-    this.nextAutoResume = nextAutoResume;
     setNextAutoResume(nextAutoResume);
   }
 
@@ -199,20 +214,9 @@ public class Action {
     setErrorContext(context);
   }
 
-
-  public boolean clearErrorAcknowledged(OffsetDateTime now) {
-    if (state == ActionState.ERROR && errorAcknowledged != null) {
-      modified = now;
-      errorAcknowledged = null;
-      errorAcknowledgedReason = null;
-      return true;
-    }
-    return false;
-  }
-
   public Action createChildAction() {
     Action childAction = new Action();
-    childAction.setId(id);
+    childAction.setNumber(number);
     childAction.setCreated(created);
     childAction.setModified(modified);
     childAction.setStart(start);

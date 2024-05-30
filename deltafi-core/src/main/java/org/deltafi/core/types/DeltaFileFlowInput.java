@@ -15,12 +15,14 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.types;
+package org.deltafi.core.types;
 
+import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.deltafi.common.types.Content;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -45,7 +47,7 @@ public class DeltaFileFlowInput {
 
     public DeltaFileFlowInput(DeltaFileFlowInput other) {
         this.metadata = new HashMap<>(other.metadata);
-        this.content = other.content == null ? null : other.content.stream().map(Content::new).toList();
+        this.content = other.content == null ? null : other.content;
         this.topics = other.topics;
         this.ancestorIds = new ArrayList<>(other.ancestorIds);
     }

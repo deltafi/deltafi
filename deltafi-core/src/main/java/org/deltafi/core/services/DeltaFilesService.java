@@ -246,7 +246,7 @@ public class DeltaFilesService {
     }
 
     public long countUnacknowledgedErrors() {
-        return deltaFileRepo.countByStageAndErrorAcknowledgedIsNull(DeltaFileStage.ERROR);
+        return deltaFileRepo.countByStageAndFlowsActionsErrorAcknowledgedIsNull(DeltaFileStage.ERROR);
     }
 
     public DeltaFile ingress(RestDataSource restDataSource, IngressEventItem ingressEventItem, OffsetDateTime ingressStartTime,
@@ -262,7 +262,7 @@ public class DeltaFilesService {
 
         Action ingressAction = Action.builder()
                 .name(ingressActionName)
-                .id(0)
+                .number(0)
                 .replayStart(true)
                 .type(ActionType.INGRESS)
                 .state(ActionState.COMPLETE)
@@ -276,7 +276,7 @@ public class DeltaFilesService {
 
         DeltaFileFlow ingressFlow = DeltaFileFlow.builder()
                 .name(ingressEventItem.getFlowName())
-                .id(0)
+                .number(0)
                 .type(flowType)
                 .state(DeltaFileFlowState.COMPLETE)
                 .created(ingressStartTime)
@@ -737,7 +737,7 @@ public class DeltaFilesService {
 
         DeltaFileFlow childFlow = DeltaFileFlow.builder()
                 .name(fromFlow.getName())
-                .id(0)
+                .number(0)
                 .type(fromFlow.getType())
                 .state(DeltaFileFlowState.IN_FLIGHT)
                 .created(startTime)
@@ -977,7 +977,7 @@ public class DeltaFilesService {
         }
         return Action.builder()
                 .name(startFromAction.getName())
-                .id(startFromAction.getId())
+                .number(startFromAction.getNumber())
                 .type(startFromAction.getType())
                 .state(ActionState.COMPLETE)
                 .created(now)
@@ -1262,9 +1262,9 @@ public class DeltaFilesService {
             ActionEvent event = ActionEvent.builder()
                     .did(deltaFile.getDid())
                     .flowName(flow.getName())
-                    .flowId(flow.getId())
+                    .flowId(flow.getNumber())
                     .actionName(action.getName())
-                    .actionId(action.getId())
+                    .actionId(action.getNumber())
                     .error(ErrorEvent.builder().cause(errorMessage).build())
                     .type(ActionEventType.UNKNOWN)
                     .build();

@@ -22,6 +22,7 @@ import org.deltafi.common.rules.RuleValidator;
 import org.deltafi.common.types.*;
 import org.deltafi.core.exceptions.DeltafiConfigurationException;
 import org.deltafi.core.repo.TransformFlowPlanRepo;
+import org.deltafi.common.types.TransformFlowPlan;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
