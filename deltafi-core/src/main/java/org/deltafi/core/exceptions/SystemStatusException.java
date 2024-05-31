@@ -15,9 +15,14 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.types;
+package org.deltafi.core.exceptions;
 
-import lombok.Builder;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
-@Builder
-public record AppInfo(String app, String container, Image image, String group){}
+@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+public class SystemStatusException extends RuntimeException {
+    public SystemStatusException(String message) {
+        super(message);
+    }
+}

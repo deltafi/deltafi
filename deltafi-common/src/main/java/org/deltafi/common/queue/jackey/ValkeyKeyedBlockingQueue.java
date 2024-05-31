@@ -242,4 +242,10 @@ public class ValkeyKeyedBlockingQueue {
 
         return result;
     }
+
+    public String getByKey(String key) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            return jedis.get(key);
+        }
+    }
 }

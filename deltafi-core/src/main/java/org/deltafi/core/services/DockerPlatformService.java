@@ -33,14 +33,14 @@ import java.util.Map;
 @Slf4j
 @Service
 @Profile("!kubernetes")
-public class DockerAppInfoService {
+public class DockerPlatformService implements PlatformService {
 
     public static final String DELTAFI_GROUP = "deltafi-group";
     private final DockerClient dockerClient;
     @Value("${HOSTNAME:UNKNOWN}")
     private String hostname;
 
-    public DockerAppInfoService(DockerClient dockerClient) {
+    public DockerPlatformService(DockerClient dockerClient) {
         this.dockerClient = dockerClient;
     }
 
@@ -66,7 +66,7 @@ public class DockerAppInfoService {
 
     private AppInfo containerToAppInfo(Container container) {
         String nameOrId = containerNameOrId(container);
-        return new AppInfo(nameOrId, nameOrId, containerGroupLabel(container), getImage(container));
+        return new AppInfo(nameOrId, nameOrId, getImage(container), containerGroupLabel(container));
     }
 
     private String containerNameOrId(Container container) {
@@ -84,17 +84,7 @@ public class DockerAppInfoService {
     }
 
     private Image getImage(Container container) {
-        String image = container.getImage();
-        int tagIndex = image.lastIndexOf(":");
-
-        if (tagIndex != -1) {
-            String tag = image.substring(tagIndex + 1);
-            image = image.substring(0, tagIndex);
-
-            return new Image(image, tag);
-        }
-
-        return new Image(image, "latest");
+        return Image.image(container.getImage());
     }
 
 }

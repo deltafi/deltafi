@@ -374,6 +374,11 @@ public class NeedsPermission {
 
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('StatusView'" + OR_ADMIN)
+    public @interface StatusView {}
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
     @PreAuthorize(value = "hasAnyAuthority('TopicsDelete'" + OR_ADMIN)
     public @interface TopicsDelete {}
 

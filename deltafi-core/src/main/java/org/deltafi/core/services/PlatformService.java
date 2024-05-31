@@ -15,9 +15,26 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.types;
+package org.deltafi.core.services;
 
-import lombok.Builder;
+import org.deltafi.core.types.AppInfo;
+import org.deltafi.core.types.AppName;
 
-@Builder
-public record AppInfo(String app, String container, Image image, String group){}
+import java.util.List;
+import java.util.Map;
+
+public interface PlatformService {
+
+    /**
+     * Get a map of node names to the list of applications
+     * running on that node
+     * @return node to app list map
+     */
+    Map<String, List<AppName>> getNodeInfo();
+
+    /**
+     * Find all running applications with their versions
+     * @return running application info
+     */
+    List<AppInfo> getRunningVersions();
+}

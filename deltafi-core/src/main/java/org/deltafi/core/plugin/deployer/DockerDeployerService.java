@@ -39,7 +39,7 @@ import org.deltafi.core.types.Result;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-import static org.deltafi.core.services.DockerAppInfoService.DELTAFI_GROUP;
+import static org.deltafi.core.services.DockerPlatformService.DELTAFI_GROUP;
 
 @Slf4j
 public class DockerDeployerService extends BaseDeployerService implements DeployerService {
