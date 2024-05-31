@@ -82,7 +82,7 @@ public class SecurityConfig {
         AuthenticationManager authenticationManager = new ProviderManager(preAuthenticatedAuthenticationProvider);
 
         RequestHeaderAuthenticationFilter headerFilter = new RequestHeaderAuthenticationFilter();
-        headerFilter.setPrincipalRequestHeader(DeltaFiConstants.USER_HEADER);
+        headerFilter.setPrincipalRequestHeader(DeltaFiConstants.USER_NAME_HEADER);
         headerFilter.setAuthenticationManager(authenticationManager);
         headerFilter.setExceptionIfHeaderMissing(false);
 

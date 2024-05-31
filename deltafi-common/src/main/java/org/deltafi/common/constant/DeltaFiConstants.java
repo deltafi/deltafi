@@ -28,7 +28,8 @@ public class DeltaFiConstants {
     public static final String MONGO_MAP_KEY_DOT_REPLACEMENT = ";;";
     public static final String PERMISSIONS_HEADER = "X-User-Permissions";
     public static final String SYNTHETIC_EGRESS_ACTION_FOR_TEST = "SyntheticEgressActionForTestEgress";
-    public static final String USER_HEADER = "X-User-Name";
+    public static final String USER_NAME_HEADER = "X-User-Name";
+    public static final String USER_ID_HEADER = "X-User-Id";
 
     // Metric names
     public static final String BYTES_IN = "bytes_in";

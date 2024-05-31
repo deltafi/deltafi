@@ -3564,7 +3564,7 @@ class DeltaFiCoreApplicationTests {
 		headers.add("Flow", TRANSFORM_FLOW_NAME);
 		headers.add("Metadata", METADATA);
 		headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM);
-		headers.add(USER_HEADER, USERNAME);
+		headers.add(USER_NAME_HEADER, USERNAME);
 		headers.add(DeltaFiConstants.PERMISSIONS_HEADER, DeltaFiConstants.ADMIN_PERMISSION);
 		HttpEntity<byte[]> request = new HttpEntity<>(body, headers);
 

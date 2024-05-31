@@ -44,7 +44,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static org.deltafi.common.constant.DeltaFiConstants.USER_HEADER;
+import static org.deltafi.common.constant.DeltaFiConstants.USER_NAME_HEADER;
 
 @Component
 @Slf4j(topic = "AUDIT")
@@ -65,7 +65,7 @@ public class CoreAuditLogger extends SimplePerformantInstrumentation {
             if (isMutation && !IGNORABLE_PATH.equals(path)) {
 
                 DgsWebMvcRequestData webContext = DgsContext.getCustomContext(environment);
-                List<String> id = null != webContext && null != webContext.getHeaders() ? webContext.getHeaders().getOrEmpty(USER_HEADER) : List.of();
+                List<String> id = null != webContext && null != webContext.getHeaders() ? webContext.getHeaders().getOrEmpty(USER_NAME_HEADER) : List.of();
 
                 String userName = !id.isEmpty() ? id.getFirst() : UNKNOWN_USER;
 
