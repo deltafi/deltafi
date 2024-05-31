@@ -274,16 +274,6 @@ public class FlowPlanDatafetcher {
 
     @DgsQuery
     @NeedsPermission.FlowView
-    public List<DeltaFiConfiguration> deltaFiConfigs(@InputArgument ConfigQueryInput configQuery) {
-        List<DeltaFiConfiguration> matchingConfigs = new ArrayList<>(egressFlowService.getConfigs(configQuery));
-        matchingConfigs.addAll(transformFlowService.getConfigs(configQuery));
-        matchingConfigs.addAll(dataSourceService.getConfigs(configQuery));
-
-        return matchingConfigs;
-    }
-
-    @DgsQuery
-    @NeedsPermission.FlowView
     public String exportConfigAsYaml() throws JsonProcessingException {
         Map<String, List<? extends Flow>> flowMap = new HashMap<>();
         flowMap.put("egressFlows", egressFlowService.getAll());

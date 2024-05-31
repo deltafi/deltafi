@@ -17,5 +17,5 @@
 */
 
 export default {
-  stopTimedIngressFlow: true,
+  stopdataSourceFlow: true,
 };

@@ -17,13 +17,13 @@
 -->
 
 <template>
-  <CollapsiblePanel :header="header" class="table-panel">
-    <DataTable :value="variables" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines plugin-variables-table" striped-rows :row-hover="true">
+  <CollapsiblePanel :header="header" class="property-set table-panel">
+    <DataTable :value="variables" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines table-striped plugin-variables-table" :row-hover="true">
       <template #empty>No variables included </template>
       <Column field="name" header="Name" :style="{ width: '50%' }">
         <template #body="{ data }">
           {{ data.name }}
-          <i v-if="data.description" v-tooltip.right="data.description" class="ml-1 text-muted fas fa-info-circle fa-fw" />
+          <i v-if="data.description" v-tooltip.right="data.description" class="ml-2 text-muted fas fa-info-circle fa-fw" />
         </template>
       </Column>
       <Column field="value" header="Value" class="value-column" :style="{ width: '50%' }">

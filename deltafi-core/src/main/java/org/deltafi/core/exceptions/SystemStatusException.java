@@ -15,21 +15,14 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.types;
+package org.deltafi.core.exceptions;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import lombok.Getter;
-import lombok.Setter;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
-import java.util.List;
-
-@Getter
-@Setter
-@JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
-public class TransformFlowConfiguration extends DeltaFiConfiguration {
-    private List<String> transformActions;
-
-    public TransformFlowConfiguration(String name) {
-        super(name);
+@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+public class SystemStatusException extends RuntimeException {
+    public SystemStatusException(String message) {
+        super(message);
     }
 }

@@ -20,7 +20,6 @@ package org.deltafi.core.services;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.ActionConfiguration;
-import org.deltafi.common.types.DeltaFiConfiguration;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.types.ColdQueuedActionSummary;
 import org.springframework.context.annotation.Lazy;
@@ -154,7 +153,7 @@ public class QueueManagementService {
     public Set<String> coldQueueActions() {
         return unifiedFlowService.allActionConfigurations().stream()
                 .filter(a -> coldQueues.containsKey(a.getType()))
-                .map(DeltaFiConfiguration::getName)
+                .map(ActionConfiguration::getName)
                 .collect(Collectors.toSet());
     }
 }

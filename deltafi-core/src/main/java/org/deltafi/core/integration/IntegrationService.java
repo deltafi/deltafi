@@ -17,6 +17,8 @@
  */
 package org.deltafi.core.integration;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,10 +41,7 @@ import org.springframework.stereotype.Service;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -54,7 +53,9 @@ import java.util.concurrent.TimeUnit;
 public class IntegrationService {
     private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
     private static final String USERNAME = "itest";
-    //
+    private static final String TEST_ID_KEY = "deltaFiIntTestId";
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     private final IngressService ingressService;
     private final ConfigurationValidator configurationValidator;
     private final DeltaFilesService deltaFilesService;
@@ -120,10 +121,10 @@ public class IntegrationService {
         return testResult;
     }
 
-    private List<String> ingressAndEvaluate(String testId, OffsetDateTime startTime, Configuration config) throws IngressUnavailableException, ObjectStorageException, IngressStorageException, IngressMetadataException, IngressException, InterruptedException {
+    private List<String> ingressAndEvaluate(String testId, OffsetDateTime startTime, Configuration config) throws IngressUnavailableException, ObjectStorageException, IngressStorageException, IngressMetadataException, IngressException, InterruptedException, JsonProcessingException {
         List<String> errors = new ArrayList<>();
 
-        List<IngressResult> ingressResults = ingress(config.getInput());
+        List<IngressResult> ingressResults = ingress(testId, config.getInput());
         if (ingressResults.isEmpty()) {
             errors.add("Failed to ingress");
         } else {
@@ -139,13 +140,18 @@ public class IntegrationService {
         return errors;
     }
 
-    private List<IngressResult> ingress(Input input) throws IngressUnavailableException, ObjectStorageException, IngressStorageException, IngressMetadataException, IngressException, InterruptedException {
+    private List<IngressResult> ingress(String testId, Input input) throws IngressUnavailableException, ObjectStorageException, IngressStorageException, IngressMetadataException, IngressException, InterruptedException, JsonProcessingException {
         String contentType = StringUtils.isNoneEmpty(input.getContentType()) ? input.getContentType() : DEFAULT_CONTENT_TYPE;
+
+        Map<String, String> metadataMap = new HashMap<>();
+        metadataMap.putAll(input.getMetadataMap());
+        metadataMap.put(TEST_ID_KEY, testId);
+
         return ingressService.ingress(
                 input.getFlow(),
                 input.getIngressFileName(),
                 contentType, USERNAME,
-                null,
+                OBJECT_MAPPER.writeValueAsString(metadataMap),
                 input.getByteArrayInputStream(),
                 OffsetDateTime.now());
     }

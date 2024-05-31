@@ -22,5 +22,4 @@ import org.deltafi.core.services.api.model.DiskMetrics;
 
 public interface DeltafiApiClient {
     DiskMetrics contentMetrics() throws DeltafiApiException;
-    String createEvent(String body);
 }

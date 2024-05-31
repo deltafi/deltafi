@@ -27,6 +27,7 @@ import io.minio.MinioClient;
 import lombok.SneakyThrows;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.Segment;
+import org.deltafi.common.queue.jackey.ValkeyKeyedBlockingQueue;
 import org.deltafi.common.resource.Resource;
 import org.deltafi.common.types.*;
 import org.deltafi.common.types.FlowType;
@@ -42,7 +43,6 @@ import org.deltafi.core.exceptions.IngressUnavailableException;
 import org.deltafi.core.exceptions.InvalidActionEventException;
 import org.deltafi.core.generated.DgsConstants;
 import org.deltafi.core.generated.client.*;
-import org.deltafi.core.generated.types.ConfigType;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.integration.IntegrationDataFetcherTestHelper;
 import org.deltafi.core.integration.TestResultRepo;
@@ -102,6 +102,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -262,6 +263,12 @@ class DeltaFiCoreApplicationTests {
 	CoreEventQueue coreEventQueue;
 
 	@MockBean
+	ValkeyKeyedBlockingQueue vakkeyKeyedBlockingQueue;
+
+	@MockBean
+	ServerSentService serverSentService;
+
+	@MockBean
 	DeployerService deployerService;
 
 	@MockBean
@@ -269,6 +276,9 @@ class DeltaFiCoreApplicationTests {
 
 	@Autowired
 	QueueManagementService queueManagementService;
+
+    @Autowired
+    EventRepo eventRepo;
 
     @Autowired
     private Clock clock;
@@ -300,7 +310,6 @@ class DeltaFiCoreApplicationTests {
 	@BeforeEach
 	@SneakyThrows
 	void setup() {
-		deltaFileRepo.deleteAll();
 		deltaFiPropertiesRepo.save(new DeltaFiProperties());
 		deltaFileRepo.deleteAll();
 		resumePolicyRepo.deleteAll();
@@ -374,8 +383,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void contextLoads() {
 		assertTrue(true);
-		ConfigQueryInput input = ConfigQueryInput.newBuilder().configType(ConfigType.TRANSFORM_FLOW).build();
-		assertFalse(transformFlowService.getConfigs(input).isEmpty());
+		assertFalse(transformFlowService.getAll().isEmpty());
 	}
 
 	@Test
@@ -1047,36 +1055,6 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void findConfigsTest() {
-		String name = "SampleTransformAction";
-
-		ConfigQueryInput configQueryInput = ConfigQueryInput.newBuilder().configType(ConfigType.TRANSFORM_ACTION).name(name).build();
-
-		DeltaFiConfigsProjectionRoot projection = new DeltaFiConfigsProjectionRoot()
-				.name()
-				.apiVersion()
-				.onTransformActionConfiguration()
-				.name()
-				.actionType()
-				.type()
-				.parent();
-
-		DeltaFiConfigsGraphQLQuery findConfig = DeltaFiConfigsGraphQLQuery.newRequest().configQuery(configQueryInput).build();
-
-		TypeRef<List<DeltaFiConfiguration>> listOfConfigs = new TypeRef<>() {};
-		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(findConfig, projection);
-		List<DeltaFiConfiguration> configs = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
-				graphQLQueryRequest.serialize(),
-				"data." + findConfig.getOperationName(),
-				listOfConfigs);
-
-        assertInstanceOf(TransformActionConfiguration.class, configs.getFirst());
-
-		TransformActionConfiguration transformActionConfiguration = (TransformActionConfiguration) configs.getFirst();
-		assertEquals(name, transformActionConfiguration.getName());
-	}
-
-	@Test
 	void testGetTransformFlowPlan() {
 		clearForFlowTests();
 		TransformFlowPlan transformFlowPlanA = new TransformFlowPlan("transformPlan", "description");
@@ -1138,10 +1116,10 @@ class DeltaFiCoreApplicationTests {
 		pluginRepository.deleteAll();
 
 		PluginCoordinates pluginCoordinates = PluginCoordinates.builder().artifactId("test-actions").groupId("org.deltafi").version("1.0").build();
-		Variable var = Variable.builder().name("var").description("description").defaultValue("value").required(false).build();
+		Variable variable = Variable.builder().name("var").description("description").defaultValue("value").required(false).build();
 		PluginVariables variables = new PluginVariables();
 		variables.setSourcePlugin(pluginCoordinates);
-		variables.setVariables(List.of(var));
+		variables.setVariables(List.of(variable));
 
 		TransformFlow transformFlow = new TransformFlow();
 		transformFlow.setName("transform");
@@ -3557,7 +3535,7 @@ class DeltaFiCoreApplicationTests {
 		headers.add("Flow", TRANSFORM_FLOW_NAME);
 		headers.add("Metadata", METADATA);
 		headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM);
-		headers.add(USER_HEADER, USERNAME);
+		headers.add(USER_NAME_HEADER, USERNAME);
 		headers.add(DeltaFiConstants.PERMISSIONS_HEADER, DeltaFiConstants.ADMIN_PERMISSION);
 		HttpEntity<byte[]> request = new HttpEntity<>(body, headers);
 
@@ -3917,7 +3895,7 @@ class DeltaFiCoreApplicationTests {
 		Mockito.verify(metricService, Mockito.atLeast(5)).increment(metricCaptor.capture());
 		List<Metric> metrics = metricCaptor.getAllValues();
 		MatcherAssert.assertThat(
-				metrics.stream().map(Metric::getName).collect(Collectors.toList()),
+				metrics.stream().map(Metric::getName).toList(),
 				Matchers.containsInAnyOrder(
 						DeltaFiConstants.FILES_IN,
 						DeltaFiConstants.FILES_OUT,
@@ -4190,4 +4168,50 @@ class DeltaFiCoreApplicationTests {
 		transformFlow.setSubscribe(Set.of(new Rule(COLLECT_TOPIC)));
 		return transformFlow;
 	}
+
+    @Test
+    void findEventsByTime() {
+        OffsetDateTime first = OffsetDateTime.now(Clock.tickMillis(ZoneOffset.UTC));
+        OffsetDateTime second = first.plusMinutes(5);
+
+        Event event1 = Event.builder().id("1").severity("info").summary("first").timestamp(first).build();
+        Event event2 = Event.builder().id("2").severity("warn").summary("second").timestamp(second).acknowledged(true).build();
+
+        eventRepo.saveAll(List.of(event1, event2));
+
+        List<Event> found = eventRepo.findEvents(eventFilters(first.minusSeconds(1), second.plusSeconds(1)));
+        assertThat(found).isEqualTo(List.of(event2, event1));
+
+        found = eventRepo.findEvents(eventFilters(first.minusSeconds(1), second));
+        assertThat(found).hasSize(1).containsExactly(event1);
+
+        found = eventRepo.findEvents(eventFilters(first, second.plusSeconds(1)));
+        assertThat(found).hasSize(1).containsExactly(event2);
+
+        Map<String, String> filters = new HashMap<>(eventFilters(first.minusSeconds(1), second.plusSeconds(1)));
+        filters.put("acknowledged", "true");
+        found = eventRepo.findEvents(filters);
+        assertThat(found).isEqualTo(List.of(event2));
+    }
+
+    private Map<String, String> eventFilters(OffsetDateTime start, OffsetDateTime stop) {
+        return Map.of("start", start.format(DateTimeFormatter.ISO_DATE_TIME), "end", stop.format(DateTimeFormatter.ISO_DATE_TIME));
+    }
+
+    @Test
+    void updateAcknowledged() {
+        Event event1 = Event.builder().id("1").severity("info").summary("first").timestamp(OffsetDateTime.now(clock)).build();
+        Event event2 = Event.builder().id("2").severity("warn").summary("second").timestamp(OffsetDateTime.now(clock)).acknowledged(true).build();
+
+        eventRepo.saveAll(List.of(event1, event2));
+
+        Event updated = eventRepo.updateAcknowledged("1", true).orElseThrow();
+        assertThat(updated.acknowledged()).isTrue();
+
+        Event noChange = eventRepo.updateAcknowledged("2", true).orElseThrow();
+        assertThat(noChange).isEqualTo(event2);
+
+        assertThat(eventRepo.updateAcknowledged("3", true)).isEmpty();
+    }
+
 }

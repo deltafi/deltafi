@@ -61,7 +61,7 @@ public class SecurityConfig {
         // Do not secure internal use endpoints that are not exposed
         return webSecurity -> webSecurity
                 .ignoring()
-                .requestMatchers(new AntPathRequestMatcher("/config/**"), new AntPathRequestMatcher("/plugins"));
+                .requestMatchers(new AntPathRequestMatcher("/plugins"));
     }
 
     @Bean
@@ -82,7 +82,7 @@ public class SecurityConfig {
         AuthenticationManager authenticationManager = new ProviderManager(preAuthenticatedAuthenticationProvider);
 
         RequestHeaderAuthenticationFilter headerFilter = new RequestHeaderAuthenticationFilter();
-        headerFilter.setPrincipalRequestHeader(DeltaFiConstants.USER_HEADER);
+        headerFilter.setPrincipalRequestHeader(DeltaFiConstants.USER_NAME_HEADER);
         headerFilter.setAuthenticationManager(authenticationManager);
         headerFilter.setExceptionIfHeaderMissing(false);
 

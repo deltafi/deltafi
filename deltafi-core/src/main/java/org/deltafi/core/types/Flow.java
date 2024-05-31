@@ -21,7 +21,6 @@ import lombok.Data;
 import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.Variable;
-import org.deltafi.common.types.DeltaFiConfiguration;
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.core.generated.types.ActionFamily;
 import org.deltafi.core.generated.types.FlowState;
@@ -62,23 +61,13 @@ public abstract class Flow {
     }
 
     /**
-     * Get all the configurations in this flow, including itself
-     * @return all configurations in the flow
-     */
-    public List<DeltaFiConfiguration> allConfigurations() {
-        List<DeltaFiConfiguration> configs = new ArrayList<>(allActionConfigurations());
-        configs.add(asFlowConfiguration());
-        return configs;
-    }
-
-    /**
      * Add the given action names to an existing ActionFamily or create a
      * new ActionFamily to hold the list of action names for that family
      * @param actionFamilyMap map of family name to list of action names
      * @param actionType type of action i.e. load, transform ... egress
      * @param actionNames list of action names to add
      */
-    public void updateActionNamesByFamily(EnumMap<ActionType, ActionFamily> actionFamilyMap, ActionType actionType, List<String> actionNames) {
+    public void updateActionNamesByFamily(Map<ActionType, ActionFamily> actionFamilyMap, ActionType actionType, List<String> actionNames) {
         if (actionFamilyMap.containsKey(actionType)) {
             actionFamilyMap.get(actionType).getActionNames().addAll(actionNames);
         } else {
@@ -101,19 +90,10 @@ public abstract class Flow {
     public abstract List<ActionConfiguration> allActionConfigurations();
 
     /**
-     * Get all the action configurations of the given type in this flow
-     * @param configType type of ActionsConfigurations that should be returned
-     * @return list of matching ActionConfigurations
-     */
-    public abstract List<DeltaFiConfiguration> findByConfigType(ConfigType configType);
-
-    /**
      * Add the action names in this flow to the appropriate action family
      * @param actionFamilyMap map of family type to action families
      */
-    public abstract void updateActionNamesByFamily(EnumMap<ActionType, ActionFamily> actionFamilyMap);
-
-    public abstract DeltaFiConfiguration asFlowConfiguration();
+    public abstract void updateActionNamesByFamily(Map<ActionType, ActionFamily> actionFamilyMap);
 
     /**
      * Add the given action name to an existing ActionFamily or create a
@@ -122,7 +102,7 @@ public abstract class Flow {
      * @param actionType type of action i.e. load, transform ... egress
      * @param actionName action name to add
      */
-    public void updateActionNamesByFamily(EnumMap<ActionType, ActionFamily> actionFamilyMap, ActionType actionType, String actionName) {
+    public void updateActionNamesByFamily(Map<ActionType, ActionFamily> actionFamilyMap, ActionType actionType, String actionName) {
         updateActionNamesByFamily(actionFamilyMap, actionType, List.of(actionName));
     }
 

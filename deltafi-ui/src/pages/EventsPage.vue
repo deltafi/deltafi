@@ -273,8 +273,12 @@ const clearSelectedEvents = () => {
 
 const getEvents = async () => {
   loading.value = true;
-  await fetchEvents({ start: startTimeDate.value, end: endTimeDate.value });
+  await fetchEvents({ start: dateToISOString(startTimeDate.value), end: dateToISOString(endTimeDate.value) });
   loading.value = false;
+};
+
+const dateToISOString = (dateData) => {
+  return dayjs(dateData).utc(uiConfig.useUTC).toISOString();
 };
 
 onBeforeMount(() => {

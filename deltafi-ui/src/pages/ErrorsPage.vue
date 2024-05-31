@@ -22,7 +22,7 @@
         <Button v-tooltip.right="{ value: `Clear Filters`, disabled: !filterOptionsSelected }" rounded :class="`ml-2 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${filterOptionsSelected ? 'p-column-filter-menu-button-active' : null}`" :disabled="!filterOptionsSelected" @click="clearOptions()">
           <i class="pi pi-filter" style="font-size: 1rem"></i>
         </Button>
-        <Dropdown v-model="dataSourceNameSelected" placeholder="Select a Data Source" :options="ingressFlowNames" show-clear :editable="false" class="deltafi-input-field ml-3 flow-dropdown" />
+        <Dropdown v-model="dataSourceNameSelected" placeholder="Select a Data Source" :options="dataSourceFlowNames" show-clear :editable="false" class="deltafi-input-field ml-3 flow-dropdown" />
         <AutoComplete v-model="selectedMessageValue" :suggestions="filteredErrorMessages" placeholder="Select Last Error" class="deltafi-input-field ml-3" force-selection @complete="messageSearch" />
         <Dropdown v-model="selectedAckOption" :options="ackOptions" option-label="name" option-value="value" :editable="false" class="deltafi-input-field ml-3 ack-dropdown" />
         <Button v-tooltip.left="refreshButtonTooltip" :icon="refreshButtonIcon" label="Refresh" :class="refreshButtonClass" :badge="refreshButtonBadge" badge-class="p-badge-danger" @click="onRefresh" />
@@ -33,10 +33,10 @@
         <AllErrorsPanel ref="errorsSummaryPanel" :acknowledged="acknowledged" :data-source-name="dataSourceNameSelected" :errors-message-selected="errorMessageSelected" @refresh-errors="onRefresh()" @error-message-changed:error-message="messageSelected" />
       </TabPanel>
       <TabPanel header="By Data Source">
-        <ErrorsSummaryByFlowPanel ref="errorSummaryFlowPanel" :acknowledged="acknowledged" :ingress-flow-name="dataSourceNameSelected" @refresh-errors="onRefresh()" />
+        <ErrorsSummaryByFlowPanel ref="errorSummaryFlowPanel" :acknowledged="acknowledged" :data-source-flow-name="dataSourceNameSelected" @refresh-errors="onRefresh()" />
       </TabPanel>
       <TabPanel header="By Message">
-        <ErrorsSummaryByMessagePanel ref="errorSummaryMessagePanel" :acknowledged="acknowledged" :ingress-flow-name="dataSourceNameSelected" @refresh-errors="onRefresh()" @change-tab:error-message:flow-selected="tabChange" />
+        <ErrorsSummaryByMessagePanel ref="errorSummaryMessagePanel" :acknowledged="acknowledged" :data-source-flow-name="dataSourceNameSelected" @refresh-errors="onRefresh()" @change-tab:error-message:flow-selected="tabChange" />
       </TabPanel>
     </TabView>
   </div>
@@ -68,7 +68,7 @@ const isIdle = inject("isIdle");
 const errorSummaryMessagePanel = ref();
 const errorSummaryFlowPanel = ref();
 const errorsSummaryPanel = ref();
-const { ingressFlows: ingressFlowNames, fetchIngressFlowNames } = useFlows();
+const { dataSourceFlows: dataSourceFlowNames, fetchDataSourceFlowNames } = useFlows();
 const { pluralize } = useUtilFunctions();
 const { fetchErrorCountSince } = useErrorCount();
 const loading = ref(false);
@@ -203,7 +203,7 @@ const refreshButtonBadge = computed(() => {
   return newErrorsCount.value > 0 ? newErrorsCount.value.toString() : null;
 });
 
-fetchIngressFlowNames();
+fetchDataSourceFlowNames();
 
 const onRefresh = () => {
   loading.value = true;

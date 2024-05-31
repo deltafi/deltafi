@@ -15,19 +15,12 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.types;
+package org.deltafi.core.repo;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import lombok.Getter;
-import lombok.Setter;
+import org.deltafi.core.types.Event;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.stereotype.Repository;
 
-@Getter
-@Setter
-@JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
-public class RestDataSourceConfiguration extends DeltaFiConfiguration {
-        private String topic;
-
-    public RestDataSourceConfiguration(String name) {
-        super(name);
-    }
+@Repository
+public interface EventRepo extends MongoRepository<Event, String>, EventRepoCustom {
 }

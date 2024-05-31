@@ -24,8 +24,8 @@ module Deltafi
   module Events
     extend self
 
-    BASE_API_URL = ENV['API_URL'] || 'http://deltafi-api-service'
-    EVENT_API_URL = File.join(BASE_API_URL, 'api/v1/events')
+    BASE_API_URL = ENV['CORE_URL'] || 'http://deltafi-core-service'
+    EVENT_API_URL = File.join(BASE_API_URL, 'api/v2/events')
 
     def self.generate(summary,
                       content: nil,

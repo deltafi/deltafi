@@ -17,4 +17,17 @@
  */
 package org.deltafi.core.types;
 
-public record Image(String name, String tag) {}
+public record Image(String name, String tag) {
+
+    public static Image image(String image) {
+        int tagIndex = image.lastIndexOf(":");
+
+        if (tagIndex == -1) {
+            return new Image(image, "latest");
+        }
+
+        String tag = image.substring(tagIndex + 1);
+        image = image.substring(0, tagIndex);
+        return new Image(image, tag);
+    }
+}

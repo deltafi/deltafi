@@ -36,9 +36,11 @@ import java.util.*;
         @JsonSubTypes.Type(value = TransformActionConfiguration.class, name = "TransformActionConfiguration"),
         @JsonSubTypes.Type(value = EgressActionConfiguration.class, name = "EgressActionConfiguration")
 })
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode
 @ToString(callSuper = true, exclude = "internalParameters")
-public abstract class ActionConfiguration extends DeltaFiConfiguration {
+public abstract class ActionConfiguration {
+    protected String name;
+    protected String apiVersion;
     @JsonIgnore
     @Transient
     protected final ActionType actionType;
@@ -51,7 +53,7 @@ public abstract class ActionConfiguration extends DeltaFiConfiguration {
     protected CollectConfiguration collect;
 
     protected ActionConfiguration(String name, ActionType actionType, String type) {
-        super(name);
+        this.name = name;
         this.actionType = actionType;
         this.type = type;
     }

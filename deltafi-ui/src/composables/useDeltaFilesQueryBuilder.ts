@@ -160,20 +160,6 @@ export default function useDeltaFilesQueryBuilder() {
     return sendGraphQLQuery(query, "getEnumValuesByEnumType");
   };
 
-  const getConfigByType = (typeParam: string) => {
-    const query = {
-      deltaFiConfigs: {
-        __args: {
-          configQuery: {
-            configType: new EnumType(typeParam),
-          },
-        },
-        name: true,
-      },
-    };
-    return sendGraphQLQuery(query, "getConfigByType");
-  };
-
   const pendingAnnotations = (did: string) => {
     const query = {
       pendingAnnotations: {
@@ -198,7 +184,6 @@ export default function useDeltaFilesQueryBuilder() {
     getDeltaFileSearchData,
     getDeltaFilesByDIDs,
     getEnumValuesByEnumType,
-    getConfigByType,
     pendingAnnotations,
   };
 }

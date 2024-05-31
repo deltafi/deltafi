@@ -37,6 +37,6 @@ management:
       enabled: false
 server:
   error:
-    include-message: on-param
+    include-message: always
   servlet:
     context-path: "/api/v2"

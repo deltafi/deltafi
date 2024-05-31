@@ -163,6 +163,10 @@ initContainers:
     secretKeyRef:
       name: minio-keys
       key: rootPassword
+- name: DELTAFI_UI_DOMAIN
+  value: {{ .Values.ingress.domain }}
+- name: AUTH_MODE
+  value: {{ .Values.deltafi.auth.mode | quote }}
 {{- if .Values.postgres.enabled }}
 - name: POSTGRES_USER
   value: deltafi

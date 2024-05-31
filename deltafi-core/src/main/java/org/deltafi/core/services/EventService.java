@@ -15,42 +15,64 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-
 package org.deltafi.core.services;
 
+import com.networknt.schema.utils.StringUtils;
 import lombok.AllArgsConstructor;
-import org.deltafi.core.services.api.DeltafiApiClient;
-import org.deltafi.core.services.api.model.Event;
-import org.jetbrains.annotations.NotNull;
+import org.deltafi.core.exceptions.EntityNotFound;
+import org.deltafi.core.exceptions.ValidationException;
+import org.deltafi.core.repo.EventRepo;
+import org.deltafi.core.types.Event;
+import org.deltafi.core.types.Event.Severity;
 import org.springframework.stereotype.Service;
 
-/**
- * Service object used to post events to the DeltaFi event stream
- */
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Supplier;
+
 @Service
 @AllArgsConstructor
 public class EventService {
-    private DeltafiApiClient deltafiApiClient;
+    private static final Set<String> VALID_SEVERITIES = Set.of(Severity.ERROR, Severity.INFO, Severity.SUCCESS, Severity.WARN);
 
-    /**
-     * Publish an event to the DeltaFi event API:
-     *
-     * <ul>
-     *     <li>Set notification to true on the event object in order for the event to appear in the UI notification list</li>
-     *     <li>Severity, source and content can also be added to event</li>
-     * </ul>
-     *
-     * @param event Event object representing the event to post to the event API
-     */
-    public void publishEvent(@NotNull Event event) {
-        deltafiApiClient.createEvent(event.asJson());
+    private final EventRepo eventRepo;
+
+    public List<Event> getEvents(Map<String, String> filters) {
+        return eventRepo.findEvents(filters);
     }
 
-    /**
-     * Publish a simple info event to the DeltaFi event API
-     * @param eventSummary the summary string that will appear in the event
-     */
-    public void publishInfo(@NotNull String eventSummary) {
-        deltafiApiClient.createEvent(Event.builder(eventSummary).build().asJson());
+    public Event getEvent(String id) {
+        return eventRepo.findById(id).orElseThrow(notFound(id));
+    }
+
+    public Event createEvent(Event event) {
+        if (StringUtils.isNotBlank(event.id())) {
+            throw new ValidationException("_id cannot be specified on Event creation");
+        }
+
+        if (StringUtils.isBlank(event.summary()) || event.severity() == null) {
+            throw new ValidationException("Event summary and severity are required");
+        }
+
+        if (StringUtils.isBlank(event.severity()) || !VALID_SEVERITIES.contains(event.severity())) {
+            throw new ValidationException("Severity must be info, success, warn, or error (given severity: " + event.severity() + ")");
+        }
+
+        return eventRepo.insert(event);
+    }
+
+    public Event updateAcknowledgement(String id, boolean acknowledged) {
+        return eventRepo.updateAcknowledged(id, acknowledged).orElseThrow(notFound(id));
+    }
+
+    public Event deleteEvent(String id) {
+        Event event = getEvent(id);
+        eventRepo.deleteById(id);
+        return event;
+    }
+
+    private Supplier<EntityNotFound> notFound(String id) {
+        return () -> new EntityNotFound("Event with ID '" + id + "' not found.");
     }
 }

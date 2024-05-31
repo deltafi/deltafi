@@ -17,33 +17,25 @@
  */
 package org.deltafi.core.rest;
 
-import org.deltafi.core.services.DockerAppInfoService;
-import org.deltafi.core.types.AppInfo;
-import org.deltafi.core.types.AppName;
-import org.springframework.context.annotation.Profile;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Map;
 
+import static org.deltafi.common.constant.DeltaFiConstants.*;
+
+@Slf4j
 @RestController
-@Profile("!kubernetes")
-public class AppInfoRest {
+public class MeRest {
 
-    private final DockerAppInfoService appInfoService;
-
-    public AppInfoRest(DockerAppInfoService appInfoService) {
-        this.appInfoService = appInfoService;
+    @GetMapping("me")
+    public Object me(@RequestHeader(value = USER_ID_HEADER, required = false, defaultValue = "-1") String userId,
+                     @RequestHeader(value = USER_NAME_HEADER, required = false, defaultValue = "Unknown") String userName,
+                     @RequestHeader(value = PERMISSIONS_HEADER, required = false, defaultValue = "") String permissions) {
+        return new Me(userId, userName, List.of(permissions.split(",")));
     }
 
-    @GetMapping("appsByNode")
-    public Map<String, List<AppName>> getAppsByNode() {
-        return appInfoService.getNodeInfo();
-    }
-
-    @GetMapping("app/versions")
-    public List<AppInfo> getRunningVersions() {
-        return appInfoService.getRunningVersions();
-    }
+    private record Me(String id, String name, List<String> permissions) {}
 }

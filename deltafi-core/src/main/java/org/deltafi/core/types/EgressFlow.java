@@ -72,23 +72,10 @@ public class EgressFlow extends Flow implements Subscriber {
     }
 
     @Override
-    public List<DeltaFiConfiguration> findByConfigType(ConfigType configType) {
-        return switch (configType) {
-            case EGRESS_FLOW -> List.of(asFlowConfiguration());
-            case EGRESS_ACTION -> List.of(egressAction);
-            default -> Collections.emptyList();
-        };
-    }
-
-    @Override
-    public void updateActionNamesByFamily(EnumMap<ActionType, ActionFamily> actionFamilyMap) {
+    public void updateActionNamesByFamily(Map<ActionType, ActionFamily> actionFamilyMap) {
         updateActionNamesByFamily(actionFamilyMap, ActionType.EGRESS, egressAction.getName());
     }
 
-    @Override
-    public DeltaFiConfiguration asFlowConfiguration() {
-        return new EgressFlowConfiguration(name, egressAction.getName());
-    }
 
     public Set<Rule> subscribeRules() {
         return subscribe;

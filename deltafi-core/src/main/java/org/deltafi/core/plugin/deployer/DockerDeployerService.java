@@ -39,7 +39,7 @@ import org.deltafi.core.types.Result;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-import static org.deltafi.core.services.DockerAppInfoService.DELTAFI_GROUP;
+import static org.deltafi.core.services.DockerPlatformService.DELTAFI_GROUP;
 
 @Slf4j
 public class DockerDeployerService extends BaseDeployerService implements DeployerService {
@@ -82,6 +82,9 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
             CreateContainerResponse containerResponse = containerCmd.exec();
             dockerClient.startContainerCmd(containerResponse.getId()).exec();
         } catch (Exception e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             log.error("Failed to start plugin", e);
             return DeployResult.builder().success(false).info(info).errors(List.of(e.getMessage())).build();
         }

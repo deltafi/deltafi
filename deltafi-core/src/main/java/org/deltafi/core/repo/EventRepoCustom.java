@@ -15,24 +15,27 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.types;
+package org.deltafi.core.repo;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import org.deltafi.core.types.Event;
 
-@Getter
-@Setter
-@JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
-@EqualsAndHashCode(callSuper = true)
-@ToString(callSuper = true)
-public class EgressFlowConfiguration extends DeltaFiConfiguration {
-    private final String egressAction;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
-    public EgressFlowConfiguration(String name, String egressAction) {
-        super(name);
-        this.egressAction = egressAction;
-    }
+public interface EventRepoCustom {
+    /**
+     * Find and update an event with the given id, setting the acknowledged field
+     * @param id of the event to update
+     * @param acknowledged new value for the acknowledged field
+     * @return the updated event if it existed
+     */
+    Optional<Event> updateAcknowledged(String id, boolean acknowledged);
+
+    /**
+     * Find the events matching the filters
+     * @param filters map that will be converted to search criteria
+     * @return list of matching events
+     */
+    List<Event> findEvents(Map<String, String> filters);
 }

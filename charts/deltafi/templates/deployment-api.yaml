@@ -29,14 +29,10 @@ spec:
           value: production
         - name: RUNNING_IN_CLUSTER
           value: "true"
-        - name: DELTAFI_UI_DOMAIN
-          value: {{ .Values.ingress.domain }}
         {{- include "commonEnvVars" . | nindent 8 }}
         {{- include "mongoEnvVars" . | nindent 8 }}
         - name: WORKERS
           value: {{ default "4" .Values.deltafi.api.workers | quote }}
-        - name: AUTH_MODE
-          value: {{ .Values.deltafi.auth.mode | quote }}
         {{- include "defaultStartupProbe" . | nindent 8 }}
         {{- include "defaultReadinessProbe" . | nindent 8 }}
         {{- include "defaultLivenessProbe" . | nindent 8 }}

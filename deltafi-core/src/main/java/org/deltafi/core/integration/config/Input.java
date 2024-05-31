@@ -19,6 +19,8 @@ package org.deltafi.core.integration.config;
 
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
+import org.deltafi.common.converters.KeyValueConverter;
+import org.deltafi.common.types.KeyValue;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -26,6 +28,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 
 @Data
 public class Input {
@@ -38,8 +41,7 @@ public class Input {
     // true:" "data: !!binary | ..."
     private boolean base64Encoded;
     private String data;
-
-    // TODO: Metadata map?
+    private List<KeyValue> metadata;
     private Duration timeout;
 
     public List<String> validate(List<String> flows) {
@@ -78,5 +80,9 @@ public class Input {
         } else {
             return new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
         }
+    }
+
+    public Map<String, String> getMetadataMap() {
+        return KeyValueConverter.convertKeyValues(metadata);
     }
 }

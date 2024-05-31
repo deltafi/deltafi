@@ -89,7 +89,7 @@ const ackErrorsDialog = ref({
   visible: false,
 });
 const props = defineProps({
-  ingressFlowName: {
+  dataSourceFlowName: {
     type: String,
     required: false,
     default: undefined,
@@ -184,9 +184,9 @@ const filterSelectedDids = computed(() => {
 
 const fetchErrorsMessages = async () => {
   getPersistedParams();
-  let ingressFlowName = props.ingressFlowName != null ? props.ingressFlowName : null;
+  let dataSourceFlowName = props.dataSourceFlowName != null ? props.dataSourceFlowName : null;
   loading.value = true;
-  await getErrorsByMessage(props.acknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, ingressFlowName);
+  await getErrorsByMessage(props.acknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, dataSourceFlowName);
   errorsMessage.value = response.value.countPerMessage;
   totalErrorsMessage.value = response.value.totalCount;
   loading.value = false;
@@ -246,7 +246,7 @@ const autoResumeSelected = computed(() => {
 });
 const setupWatchers = () => {
   watch(
-    () => props.ingressFlowName,
+    () => props.dataSourceFlowName,
     () => {
       fetchErrorsMessages();
     }

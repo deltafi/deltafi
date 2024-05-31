@@ -17,4 +17,7 @@
  */
 package org.deltafi.core.types;
 
-public record AppInfo(String app, String container, String group, Image image){}
+import lombok.Builder;
+
+@Builder
+public record AppInfo(String app, String container, Image image, String group){}

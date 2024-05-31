@@ -15,6 +15,14 @@ describe("Dashboard Page", () => {
   });
 });
 
+describe("Data Sources", () => {
+  it("loads Data Sources", () => {
+    cy.visit("http://localhost:8080/config/data-sources");
+    cy.get("span.p-panel-title").contains("REST Data Sources");
+    cy.get("span.p-panel-title").contains("Timed Data Sources");
+  });
+});
+
 describe("Delete Policies Page", () => {
   it("loads Delete Policies", () => {
     cy.visit("http://localhost:8080/config/delete-policies");
@@ -68,11 +76,29 @@ describe("DeltaFile Errors Page", () => {
   });
 });
 
+describe("Egress Page", () => {
+  it("loads Egress Page", () => {
+    cy.visit("http://localhost:8080/config/egress");
+    cy.get("span.p-panel-title").contains("Egress Actions");
+  });
+});
+
 describe("External Links Page", () => {
   it("loads External Links", () => {
     cy.visit("http://localhost:8080/admin/external-links");
     cy.get("span.p-panel-title").contains("External links");
     cy.get("span.p-panel-title").contains("DeltaFile Links");
+  });
+});
+
+describe("DeltaFile Filtered Page", () => {
+  it("randers all three tabs - All, By Data Source, and By Cause", () => {
+    cy.visit("http://localhost:8080/filtered?tab=0");
+    cy.get("span.p-panel-title").contains("DeltaFiles");
+    cy.get("span.p-tabview-title").contains("By Data Source").click();
+    cy.get("span.p-panel-title").contains("DeltaFiles by Data Source");
+    cy.get("span.p-tabview-title").contains("By Cause").click();
+    cy.get("span.p-panel-title").contains("DeltaFiles by Cause");
   });
 });
 
@@ -87,14 +113,6 @@ describe("Flows Page", () => {
   it("loads Flows", () => {
     cy.visit("http://localhost:8080/config/flows");
     cy.get("span.p-panel-title").contains("Transform");
-    cy.get("span.p-panel-title").contains("Egress");
-  });
-});
-
-describe("Ingress Routing Page", () => {
-  it("loads Ingress Routing", () => {
-    cy.visit("http://localhost:8080/config/ingress-routing");
-    cy.get("span.p-panel-title").contains("Rules");
   });
 });
 

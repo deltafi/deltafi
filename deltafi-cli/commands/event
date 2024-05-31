@@ -54,16 +54,16 @@ list_events() {
     exit 1
   fi
 
-  API_URL="${API_V1}/events"
+  API_URL="${API_V2}/events"
 
   local width
   width=$(tput cols)
   local summaryLen=$((width - 60))
   summaryLen=$((summaryLen < 7 ? 7 : summaryLen))
 
-  curl --connect-timeout 3 -s -H "$PERMISSION" "${API_URL}" 2>/dev/null | \
+  curl --connect-timeout 3 -s -H "$PERMISSION" -H "$CLI_USER" "${API_URL}" 2>/dev/null | \
     sed 's|\\n| |g' | \
-    jq -r "([\"TIMESTAMP\",\"LEVEL\",\"SUMMARY\",\"SOURCE\",\"ACK\",\"NOTIFY\"]| (.,map(length*\"-\")) | join(\"|\")), (sort_by(.timestamp) | reverse | .[] | [.timestamp[0:19], .severity, .summary[0:${summaryLen}], .source, .acknowledged, .notification] | join(\"|\"))" | \
+    jq -r "([\"TIMESTAMP\",\"LEVEL\",\"SUMMARY\",\"SOURCE\",\"ACK\",\"NOTIFY\"]| (.,map(length*\"-\")) | join(\"|\")), (sort_by(.timestamp) | reverse | .[] | [.timestamp, .severity, .summary[0:${summaryLen}], .source, .acknowledged, .notification] | join(\"|\"))" | \
     column -t -s '|'
   if [ $? -ne 0 ]; then
     echo -e "\nUnable to communicate with API: ${API_URL}\n"
@@ -88,7 +88,7 @@ pretty_json() {
 }
 
 create_event() {
-  API_URL="${API_V1}/events"
+  API_URL="${API_V2}/events"
 
   local summary=$*
   local content
@@ -97,7 +97,7 @@ create_event() {
   local notification=false
   [[ "$NOTIFICATION" ]] && notification=true
   local severity=${SEVERITY:-info}
-  curl -0 -X POST --connect-timeout 3 -s -H "$PERMISSION" -H 'Content-Type: application/json' "${API_URL}" --data @- <<EOF | tac | tac | pretty_json
+  curl -0 -X POST --connect-timeout 3 -s -H "$PERMISSION" -H "$CLI_USER" -H 'Content-Type: application/json' "${API_URL}" --data @- <<EOF | tac | tac | pretty_json
 {
   "summary": "${summary}",
   ${content}
@@ -109,7 +109,7 @@ EOF
 }
 trap cleanup INT
 
-API_V1=$(_api_v1)
+API_V2=$(_api_v2)
 
 ARGS=("$@")
 [[ ${#ARGS[@]} -lt 2 ]] && cli_help_command

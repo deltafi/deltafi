@@ -27,19 +27,21 @@ import org.deltafi.core.plugin.deployer.customization.PluginCustomizationService
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
 import org.deltafi.core.services.EventService;
-import org.deltafi.core.services.api.model.Event;
 import org.deltafi.core.snapshot.SystemSnapshotService;
+import org.deltafi.core.types.Event;
+import org.deltafi.core.types.Event.Severity;
 import org.deltafi.core.types.Result;
+import org.deltafi.core.util.MarkdownBuilder;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class BaseDeployerService implements DeployerService {
-
 
     final PluginImageRepositoryService pluginImageRepositoryService;
     private final PluginRegistryService pluginRegistryService;
@@ -80,22 +82,16 @@ public abstract class BaseDeployerService implements DeployerService {
     }
 
     private void publishEvent(PluginCoordinates pluginCoordinates, DeployResult retval) {
-        Event.EventBuilder eventBuilder = Event.builder("Plugin installed: " + pluginCoordinates.getArtifactId() + ":" + pluginCoordinates.getVersion())
-                .notification(true)
-                .severity(retval.isSuccess() ? Event.Severity.SUCCESS : Event.Severity.ERROR)
-                .content(pluginCoordinates + "\\n\\n")
-                .addList("Additional information:", retval.getInfo())
-                .addList("Errors:", retval.getErrors());
-
+        MarkdownBuilder markdownBuilder = new MarkdownBuilder(pluginCoordinates + "\n\n");
         if (retval.hasEvents()) {
-            eventBuilder.addTable("#### Events:", K8sEventUtil.EVENT_COLUMNS, retval.getEvents());
+            markdownBuilder.addTable("#### Events:", K8sEventUtil.EVENT_COLUMNS, retval.getEvents());
         }
 
         if (retval.getLogs() != null) {
-            eventBuilder.addJsonLog("#### Plugin Logs:", retval.getLogs());
+            markdownBuilder.addJsonBlock("#### Plugin Logs:", retval.getLogs());
         }
 
-        eventService.publishEvent(eventBuilder.build());
+        eventService.createEvent(event(pluginCoordinates, "Plugin installed: ", retval.isSuccess(), markdownBuilder));
     }
 
     @Override
@@ -108,17 +104,23 @@ public abstract class BaseDeployerService implements DeployerService {
         pluginRegistryService.uninstallPlugin(pluginCoordinates);
         Result retval = removePluginResources(pluginCoordinates);
 
-        eventService.publishEvent(
-                Event.builder("Plugin uninstalled: " + pluginCoordinates.getArtifactId() + ":" + pluginCoordinates.getVersion())
-                        .notification(true)
-                        .severity(retval.isSuccess() ? Event.Severity.SUCCESS : Event.Severity.ERROR)
-                        .content(pluginCoordinates + "\\n\\n")
-                        .addList("Additional information:", retval.getInfo())
-                        .addList("Errors:", retval.getErrors())
-                        .build()
-        );
+        MarkdownBuilder markdownBuilder = new MarkdownBuilder(pluginCoordinates + "\n\n")
+                .addList("Additional information:", retval.getInfo())
+                .addList("Errors:", retval.getErrors());
 
+        eventService.createEvent(event(pluginCoordinates, "Plugin uninstalled: ", retval.isSuccess(), markdownBuilder));
         return retval;
+    }
+
+    private Event event(PluginCoordinates pluginCoordinates, String summary, boolean success, MarkdownBuilder markdownBuilder) {
+        return Event.builder()
+                .summary(summary + pluginCoordinates.getArtifactId() + ":" + pluginCoordinates.getVersion())
+                .timestamp(OffsetDateTime.now())
+                .source("core")
+                .notification(true)
+                .severity(success ? Severity.SUCCESS : Severity.ERROR)
+                .content(markdownBuilder.build())
+                .build();
     }
 
     abstract DeployResult deploy(PluginCoordinates pluginCoordinates, PluginImageRepository pluginImageRepository, PluginCustomization pluginCustomization, ArrayList<String> info);
@@ -159,7 +161,10 @@ public abstract class BaseDeployerService implements DeployerService {
 
         Object principal = securityContext.getAuthentication().getPrincipal();
 
-        return principal instanceof User ? ((User) principal).getUsername() : principal.toString();
+        if (principal instanceof User user) {
+            return user.getUsername();
+        }
+        return principal.toString();
     }
 
 }

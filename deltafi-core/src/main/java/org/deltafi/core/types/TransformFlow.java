@@ -22,12 +22,14 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.ActionFamily;
+import org.deltafi.common.types.Rule;
+import org.deltafi.common.types.Subscriber;
+import org.deltafi.common.types.TransformActionConfiguration;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Document
@@ -74,24 +76,8 @@ public class TransformFlow extends Flow implements Subscriber, Publisher {
     }
 
     @Override
-    public List<DeltaFiConfiguration> findByConfigType(ConfigType configType)  {
-        return switch (configType) {
-            case TRANSFORM_FLOW -> List.of(asFlowConfiguration());
-            case TRANSFORM_ACTION -> transformActions != null ? new ArrayList<>(transformActions) : Collections.emptyList();
-            default -> Collections.emptyList();
-        };
-    }
-
-    @Override
-    public void updateActionNamesByFamily(EnumMap<ActionType, ActionFamily> actionFamilyMap) {
+    public void updateActionNamesByFamily(Map<ActionType, ActionFamily> actionFamilyMap) {
         updateActionNamesByFamily(actionFamilyMap, ActionType.TRANSFORM, actionNames(transformActions));
-    }
-
-    @Override
-    public DeltaFiConfiguration asFlowConfiguration() {
-        TransformFlowConfiguration transformFlowConfiguration = new TransformFlowConfiguration(name);
-        transformFlowConfiguration.setTransformActions(transformActions.stream().map(ActionConfiguration::getName).toList());
-        return transformFlowConfiguration;
     }
 
     @Override

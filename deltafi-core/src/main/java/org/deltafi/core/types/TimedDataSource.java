@@ -29,9 +29,8 @@ import org.springframework.data.annotation.PersistenceCreator;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -107,28 +106,11 @@ public class TimedDataSource extends DataSource {
         return actionConfigurations;
     }
 
-    public List<DeltaFiConfiguration> findByConfigType(ConfigType configType)  {
-        return switch (configType) {
-            case TIMED_INGRESS_FLOW -> List.of(asFlowConfiguration());
-            case TIMED_INGRESS_ACTION -> timedIngressAction != null ? List.of(timedIngressAction) : Collections.emptyList();
-            default -> Collections.emptyList();
-        };
-    }
-
-    public void updateActionNamesByFamily(EnumMap<ActionType, ActionFamily> actionFamilyMap) {
+    @Override
+    public void updateActionNamesByFamily(Map<ActionType, ActionFamily> actionFamilyMap) {
         if (timedIngressAction != null) {
             updateActionNamesByFamily(actionFamilyMap, ActionType.TIMED_INGRESS, timedIngressAction.getName());
         }
-    }
-
-    public DeltaFiConfiguration asFlowConfiguration() {
-        TimedDataSourceConfiguration dataSourceConfiguration = new TimedDataSourceConfiguration(name);
-        dataSourceConfiguration.setTopic(getTopic());
-        if (timedIngressAction != null) {
-            dataSourceConfiguration.setTimedIngressAction(timedIngressAction.getName());
-        }
-        dataSourceConfiguration.setCronSchedule(cronSchedule);
-        return dataSourceConfiguration;
     }
 
     public boolean due(CoreEventQueue coreEventQueue, OffsetDateTime now) {

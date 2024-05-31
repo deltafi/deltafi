@@ -24,7 +24,7 @@ interface ActionConfiguration {
     parameters: JSON
 }
 
-type TimedIngressActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
+type TimedIngressActionConfiguration implements ActionConfiguration {
     name: String!
     apiVersion: String
     actionType: String!
@@ -53,7 +53,7 @@ input CollectConfigurationInput {
     metadataKey: String
 }
 
-type TransformActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
+type TransformActionConfiguration implements ActionConfiguration {
     name: String!
     apiVersion: String
     actionType: String!
@@ -70,7 +70,7 @@ input TransformActionConfigurationInput {
     collect: CollectConfigurationInput
 }
 
-type EgressActionConfiguration implements ActionConfiguration & DeltaFiConfiguration {
+type EgressActionConfiguration implements ActionConfiguration {
     name: String!
     apiVersion: String
     actionType: String!

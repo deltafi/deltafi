@@ -25,7 +25,7 @@ const generateData = () => {
     ingressBytes: 36,
     sourceInfo: {
       filename: "fakeData.txt",
-      flow: "mock.ingressFlow",
+      flow: "mock.dataSourceFlow",
       metadata: [
         {
           key: "123",

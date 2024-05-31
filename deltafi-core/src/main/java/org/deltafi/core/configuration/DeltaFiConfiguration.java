@@ -18,6 +18,7 @@
 package org.deltafi.core.configuration;
 
 import org.deltafi.common.action.EventQueueProperties;
+import org.deltafi.common.queue.jackey.ValkeyKeyedBlockingQueue;
 import org.deltafi.common.rules.RuleEvaluator;
 import org.deltafi.common.rules.RuleValidator;
 import org.deltafi.common.uuid.RandomUUIDGenerator;
@@ -34,12 +35,20 @@ import java.net.URISyntaxException;
 @Configuration
 @EnableConfigurationProperties({EventQueueProperties.class})
 public class DeltaFiConfiguration {
+
     @Bean
-    public CoreEventQueue coreEventQueue(EventQueueProperties eventQueueProperties,
-                                         DeltaFiPropertiesService deltaFiPropertiesService) throws URISyntaxException {
+    public ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue(EventQueueProperties eventQueueProperties,
+                                                             DeltaFiPropertiesService deltaFiPropertiesService) throws URISyntaxException {
         // add two additional threads to the pool for the incoming action event threads
         int poolSize = deltaFiPropertiesService.getDeltaFiProperties().getCoreServiceThreads() + 2;
-        return new CoreEventQueue(eventQueueProperties, poolSize);
+
+        return new ValkeyKeyedBlockingQueue(eventQueueProperties.getUrl(),
+                eventQueueProperties.getPassword(), poolSize, poolSize);
+    }
+
+    @Bean
+    public CoreEventQueue coreEventQueue(ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue) {
+        return new CoreEventQueue(valkeyKeyedBlockingQueue);
     }
 
     @Bean

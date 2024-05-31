@@ -15,21 +15,21 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.types;
+package org.deltafi.core.types;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import org.deltafi.core.configuration.ui.UiProperties;
 
-@Getter
-@Setter
-@JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
-public class TimedDataSourceConfiguration extends DeltaFiConfiguration {
-    private String timedIngressAction;
-    private String cronSchedule;
-    private String topic;
+@Data
+@EqualsAndHashCode(callSuper = true)
+public class UiConfig extends UiProperties {
+    private String title;
+    private String domain;
+    private String authMode;
+    private boolean clusterMode;
 
-    public TimedDataSourceConfiguration(String name) {
-        super(name);
+    public UiConfig(UiProperties uiProperties) {
+        super(uiProperties);
     }
 }

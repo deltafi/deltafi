@@ -29,7 +29,7 @@
         </div>
       </template>
     </ConfirmPopup>
-    <Button v-tooltip.left="`Remove Rule`" icon="pi pi-trash" class="p-button-text p-button-sm p-button-rounded p-button-danger" @click="confirmationPopup($event, rowData.id)" />
+    <Button v-tooltip.left="`Remove Rule`" icon="pi pi-trash" class="p-button-text p-button-sm p-button-rounded p-button-danger" @click="confirmationPopup($event, rowData)" />
   </span>
 </template>
 
@@ -56,17 +56,17 @@ const props = defineProps({
 
 const { rowDataProp: rowData } = reactive(props);
 
-const confirmationPopup = (event, ruleId) => {
+const confirmationPopup = (event, rule) => {
   confirm.require({
     target: event.currentTarget,
-    group: ruleId,
-    message: `Remove ${ruleId} Rule?`,
+    group: rule.id,
+    message: `Remove ${rule.name} Rule?`,
     acceptLabel: "Remove",
     rejectLabel: "Cancel",
     icon: "pi pi-exclamation-triangle",
     accept: () => {
-      notify.info("Removing Rule", `Removing rule ${ruleId}.`, 3000);
-      confirmedRemoveAutoResumeRule(ruleId);
+      notify.info("Removing Rule", `Removing rule ${rule.name}.`, 3000);
+      confirmedRemoveAutoResumeRule(rule.id);
     },
     reject: () => {},
   });
