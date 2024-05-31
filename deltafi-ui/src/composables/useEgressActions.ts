@@ -66,7 +66,7 @@ export default function useEgressActions() {
         },
       },
     };
-    return sendGraphQLQuery(query, "getAllEgressFlows");
+    return sendGraphQLQuery(query, "getAllFlows");
   };
 
   // Starts a Egress flow

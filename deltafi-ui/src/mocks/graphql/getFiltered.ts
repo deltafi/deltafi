@@ -23,107 +23,132 @@ const generateData = () => {
     totalCount: 1,
     deltaFiles: [
       {
-        did: "2549aa54-c7e8-4353-a226-622e71956c5d",
-        stage: "COMPLETE",
-        modified: "2023-11-08T19:15:09.031Z",
-        created: "2023-11-08T19:15:09.008Z",
-        actions: [
-          {
-            name: "IngressAction",
-            created: "2023-11-08T19:15:09.008Z",
-            modified: "2023-11-08T19:15:09.015Z",
-            filteredCause: null,
-            errorCause: null,
-            errorContext: null,
-            state: "COMPLETE"
-          },
-          {
-            name: "FilterTransform",
-            created: "2023-11-08T19:15:09.015Z",
-            modified: "2023-11-08T19:15:09.031Z",
-            filteredCause: "Mock filtered cause",
-            errorCause: null,
-            errorContext: null,
-            state: "FILTERED"
-          }
-        ],
-        sourceInfo: {
-          filename: "filtermeplease.txt",
-          flow: "mock-flow"
+          did: "2a086f4e-ce1d-4eb6-bc8f-8709c4d74374",
+          name: "hello-world-java-timed-data-source-12877",
+          dataSource: "hello-world-java-timed-data-source",
+          stage: "COMPLETE",
+          modified: "2024-05-29T11:02:40.221Z",
+          created: "2024-05-29T11:02:40.202Z",
+          flows: [
+            {
+              name: "hello-world-java-timed-data-source",
+              state: "COMPLETE",
+              created: "2024-05-29T11:02:40.202Z",
+              modified: "2024-05-29T11:02:40.216Z",
+              actions: [
+                {
+                  name: "HelloWorldTimedIngressAction",
+                  created: "2024-05-29T11:02:40.202Z",
+                  modified: "2024-05-29T11:02:40.216Z",
+                  filteredCause: null,
+                  state: "COMPLETE"
+                }
+              ]
+            },
+            {
+              name: "hello-world-java-data-route-or-filter",
+              state: "COMPLETE",
+              created: "2024-05-29T11:02:40.217Z",
+              modified: "2024-05-29T11:02:40.217Z",
+              actions: []
+            },
+            {
+              name: "hello-world-java-transform",
+              state: "COMPLETE",
+              created: "2024-05-29T11:02:40.217Z",
+              modified: "2024-05-29T11:02:40.221Z",
+              actions: [
+                {
+                  name: "HelloWorldTransformAction",
+                  created: "2024-05-29T11:02:40.217Z",
+                  modified: "2024-05-29T11:02:40.221Z",
+                  filteredCause: "We prefer DIDs that do not start with 2",
+                  state: "FILTERED"
+                }
+              ]
+            }
+          ]
         },
-        errorAcknowledged: null,
-        errorAcknowledgedReason: null,
-        nextAutoResume: null,
-        nextAutoResumeReason: null
-      },
-      {
-        did: "6cba7eb0-9604-4f93-bc70-1afc201d10f6",
-        stage: "COMPLETE",
-        modified: "2023-11-08T19:15:10.031Z",
-        created: "2023-11-08T19:15:10.008Z",
-        actions: [
-          {
-            name: "IngressAction",
-            created: "2023-11-08T19:15:10.008Z",
-            modified: "2023-11-08T19:15:10.015Z",
-            filteredCause: null,
-            errorCause: null,
-            errorContext: null,
-            state: "COMPLETE"
-          },
-          {
-            name: "FilterTransform",
-            created: "2023-11-08T19:15:10.015Z",
-            modified: "2023-11-08T19:15:10.031Z",
-            filteredCause: "Mock filtered cause",
-            errorCause: null,
-            errorContext: null,
-            state: "FILTERED"
-          }
-        ],
-        sourceInfo: {
-          filename: "pleasefilterme.txt",
-          flow: "mock-flow"
+        {
+          did: "3789abd2-c13e-47e9-816d-6c4efc9546ed",
+          name: "hello-world-java-timed-data-source-12876",
+          dataSource: "hello-world-java-timed-data-source",
+          stage: "COMPLETE",
+          modified: "2024-05-29T11:02:35.183Z",
+          created: "2024-05-29T11:02:35.175Z",
+          flows: [
+            {
+              name: "hello-world-java-timed-data-source",
+              state: "COMPLETE",
+              created: "2024-05-29T11:02:35.175Z",
+              modified: "2024-05-29T11:02:35.183Z",
+              actions: [
+                {
+                  name: "HelloWorldTimedIngressAction",
+                  created: "2024-05-29T11:02:35.175Z",
+                  modified: "2024-05-29T11:02:35.183Z",
+                  filteredCause: null,
+                  state: "COMPLETE"
+                }
+              ]
+            },
+            {
+              name: "hello-world-java-data-route-or-filter",
+              state: "COMPLETE",
+              created: "2024-05-29T11:02:35.183Z",
+              modified: "2024-05-29T11:02:35.183Z",
+              actions: [
+                {
+                  name: "NO_SUBSCRIBERS",
+                  created: "2024-05-29T11:02:35.183Z",
+                  modified: "2024-05-29T11:02:35.183Z",
+                  filteredCause: "No matching subscribers were found",
+                  state: "FILTERED"
+                }
+              ]
+            }
+          ]
         },
-        errorAcknowledged: null,
-        errorAcknowledgedReason: null,
-        nextAutoResume: null,
-        nextAutoResumeReason: null
-      },
-      {
-        did: "2f5de6d5-c5dd-45b2-9d6f-3dd412524129",
-        stage: "COMPLETE",
-        modified: "2023-11-08T19:15:11.031Z",
-        created: "2023-11-08T19:15:11.008Z",
-        actions: [
-          {
-            name: "IngressAction",
-            created: "2023-11-08T19:15:11.008Z",
-            modified: "2023-11-08T19:15:11.015Z",
-            filteredCause: null,
-            errorCause: null,
-            errorContext: null,
-            state: "COMPLETE"
-          },
-          {
-            name: "FilterTransform",
-            created: "2023-11-08T19:15:11.015Z",
-            modified: "2023-11-08T19:15:11.031Z",
-            filteredCause: "Another mock filtered cause",
-            errorCause: null,
-            errorContext: null,
-            state: "FILTERED"
-          }
-        ],
-        sourceInfo: {
-          filename: "filterit.txt",
-          flow: "another-mock-flow"
-        },
-        errorAcknowledged: null,
-        errorAcknowledgedReason: null,
-        nextAutoResume: null,
-        nextAutoResumeReason: null
-      }
+        {
+          did: "2206a40d-83ce-44c3-b24b-4d7d51641f67",
+          name: "hello-world-java-timed-data-source-12875",
+          dataSource: "hello-world-java-timed-data-source",
+          stage: "COMPLETE",
+          modified: "2024-05-29T11:02:30.155Z",
+          created: "2024-05-29T11:02:30.147Z",
+          flows: [
+            {
+              name: "hello-world-java-timed-data-source",
+              state: "COMPLETE",
+              created: "2024-05-29T11:02:30.147Z",
+              modified: "2024-05-29T11:02:30.155Z",
+              actions: [
+                {
+                  name: "HelloWorldTimedIngressAction",
+                  created: "2024-05-29T11:02:30.147Z",
+                  modified: "2024-05-29T11:02:30.155Z",
+                  filteredCause: null,
+                  state: "COMPLETE"
+                }
+              ]
+            },
+            {
+              name: "hello-world-java-data-route-or-filter",
+              state: "COMPLETE",
+              created: "2024-05-29T11:02:30.155Z",
+              modified: "2024-05-29T11:02:30.155Z",
+              actions: [
+                {
+                  name: "NO_SUBSCRIBERS",
+                  created: "2024-05-29T11:02:30.155Z",
+                  modified: "2024-05-29T11:02:30.155Z",
+                  filteredCause: "No matching subscribers were found",
+                  state: "FILTERED"
+                }
+              ]
+            }
+          ]
+        }
     ]
   }
 };

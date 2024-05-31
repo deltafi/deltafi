@@ -21,15 +21,13 @@ import { faker } from "@faker-js/faker";
 
 const generateDeltaFile = () => {
   return {
+    dataSource: "dev-flow-3-rest-data-source",
     did: faker.string.uuid(),
     stage: "COMPLETE",
+    name: "fakeData.txt",
     totalBytes: 65535,
     modified: "2022-02-23T15:19:39.549Z",
     created: "2022-02-23T15:19:39.434Z",
-    sourceInfo: {
-      filename: "fakeData.txt",
-      flow: "smoke",
-    },
   }
 }
 

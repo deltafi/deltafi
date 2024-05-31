@@ -3,7 +3,7 @@ ui:eslint:
     - light
   image: node:alpine
   stage: build
-  allow_failure: true # FIXME: Remove when 2.0 is production ready
+  allow_failure: false
   needs: []
   retry: 2
   script:
@@ -41,7 +41,7 @@ ui:docker-multiarch:
     - .ui
     - .docker-multiarch
 
-.ui:test:
+ui:test:
   image: deltafi/deltafi-ui-test
   stage: test
   allow_failure: false

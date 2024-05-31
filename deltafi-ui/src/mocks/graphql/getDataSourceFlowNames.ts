@@ -19,7 +19,7 @@
 const generateData = () => {
   const data = {
     getFlowNames: {
-      transform: [
+      dataSource: [
         "devFlow1",
         "devFlow2",
         "devFlow4",
