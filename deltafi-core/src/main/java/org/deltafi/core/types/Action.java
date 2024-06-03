@@ -17,12 +17,10 @@
  */
 package org.deltafi.core.types;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.deltafi.common.converters.KeyValueConverter;
 import org.deltafi.common.types.ActionState;
 import org.deltafi.common.types.ActionType;
@@ -80,6 +78,8 @@ public class Action {
 
   @ManyToOne
   @JoinColumn(name = "delta_file_flow_id", insertable = false, updatable = false)
+  @ToString.Exclude
+  @JsonBackReference
   private DeltaFileFlow deltaFileFlow;
 
   public Action(Action other) {
@@ -106,6 +106,7 @@ public class Action {
     this.metadata = other.metadata == null ? null : new HashMap<>(other.metadata);
     this.deleteMetadataKeys = other.deleteMetadataKeys == null ? null : new ArrayList<>(other.deleteMetadataKeys);
     this.replayStart = other.replayStart;
+    this.deltaFileFlow = other.deltaFileFlow;
   }
 
   public List<Content> getContent() {

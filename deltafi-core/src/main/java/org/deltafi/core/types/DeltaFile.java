@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.types;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
 import lombok.*;
@@ -56,6 +57,7 @@ public class DeltaFile {
   @Builder.Default
   @JoinColumn(name = "delta_file_id")
   @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+  @JsonManagedReference
   private List<DeltaFileFlow> flows = new ArrayList<>();
   private int requeueCount;
   private long ingressBytes;

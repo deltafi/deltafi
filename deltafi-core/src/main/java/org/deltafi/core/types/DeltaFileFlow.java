@@ -17,12 +17,11 @@
  */
 package org.deltafi.core.types;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.*;
 import org.deltafi.core.exceptions.UnexpectedActionException;
@@ -44,7 +43,6 @@ public class DeltaFileFlow {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "flow_name")
     private String name;
     private int number;
     @Enumerated(EnumType.STRING)
@@ -65,6 +63,7 @@ public class DeltaFileFlow {
     @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "delta_file_flow_id")
     @Builder.Default
+    @JsonManagedReference
     private List<Action> actions = new ArrayList<>();
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
@@ -85,9 +84,12 @@ public class DeltaFileFlow {
 
     @ManyToOne
     @JoinColumn(name = "delta_file_id", insertable = false, updatable = false)
+    @ToString.Exclude
+    @JsonBackReference
     private DeltaFile deltaFile;
 
     public DeltaFileFlow(DeltaFileFlow other) {
+        this.id = other.id;
         this.name = other.name;
         this.number = other.number;
         this.type = other.type;
@@ -104,6 +106,7 @@ public class DeltaFileFlow {
         this.testModeReason = other.testModeReason;
         this.collectId = other.collectId;
         this.actionConfigurations = other.actionConfigurations;
+        this.deltaFile = other.deltaFile;
     }
 
     /**
