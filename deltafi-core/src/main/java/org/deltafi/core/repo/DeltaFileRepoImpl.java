@@ -26,6 +26,7 @@ import com.mongodb.client.result.UpdateResult;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,7 +57,6 @@ import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.*;
 
-import static org.apache.commons.lang3.BooleanUtils.isFalse;
 import static org.apache.commons.lang3.BooleanUtils.isTrue;
 import static org.deltafi.common.types.ActionState.*;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
@@ -430,46 +430,220 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     public DeltaFiles deltaFiles(Integer offset, int limit, DeltaFilesFilter filter, DeltaFileOrder orderBy, List<String> includeFields) {
-        Criteria filterCriteria = buildDeltaFilesCriteria(filter);
-        Query query = new Query(filterCriteria);
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<DeltaFile> query = cb.createQuery(DeltaFile.class);
+        Root<DeltaFile> root = query.from(DeltaFile.class);
+
+        List<Predicate> predicates = buildDeltaFilesCriteria(cb, root, filter);
+        query.where(cb.and(predicates.toArray(new Predicate[0])));
+
+        if (orderBy == null) {
+            orderBy = new DeltaFileOrder();
+            orderBy.setField("modified");
+            orderBy.setDirection(DeltaFileDirection.DESC);
+        }
+
+        query.orderBy(orderBy.getDirection() == DeltaFileDirection.ASC ?
+                cb.asc(root.get(orderBy.getField())) :
+                cb.desc(root.get(orderBy.getField())));
+
+        TypedQuery<DeltaFile> typedQuery = entityManager.createQuery(query);
 
         if (offset != null && offset > 0) {
-            query.skip(offset);
+            typedQuery.setFirstResult(offset);
         } else {
             offset = 0;
         }
 
-        query.limit(limit);
+        typedQuery.setMaxResults(limit);
 
-        if (includeFields != null) {
-            query.fields().include(SCHEMA_VERSION);
-            for (String includeField : includeFields) {
-                query.fields().include(includeField);
-            }
-        }
-
-        if (orderBy == null) {
-            orderBy = DeltaFileOrder.newBuilder().field(MODIFIED).direction(DeltaFileDirection.DESC).build();
-        }
-
-        query.with(Sort.by(Sort.Direction.fromString(orderBy.getDirection().name()), orderBy.getField()));
+        List<DeltaFile> deltaFileList = typedQuery.getResultList();
 
         DeltaFiles deltaFiles = new DeltaFiles();
         deltaFiles.setOffset(offset);
-        if (includeFields != null && includeFields.isEmpty()) {
-            deltaFiles.setDeltaFiles(Collections.emptyList());
+        deltaFiles.setDeltaFiles(deltaFileList);
+        deltaFiles.setCount(deltaFileList.size());
+
+        if (deltaFileList.size() < limit) {
+            deltaFiles.setTotalCount(offset + deltaFileList.size());
         } else {
-            deltaFiles.setDeltaFiles(mongoTemplate.find(query, DeltaFile.class));
-        }
-        deltaFiles.setCount(deltaFiles.getDeltaFiles().size());
-        if ((includeFields == null || !includeFields.isEmpty()) && deltaFiles.getCount() < limit) {
-            deltaFiles.setTotalCount(deltaFiles.getOffset() + deltaFiles.getCount());
-        } else {
-            int total = (int) mongoTemplate.count(new Query(filterCriteria).limit(MAX_COUNT), DeltaFile.class);
-            deltaFiles.setTotalCount(total);
+            CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
+            Root<DeltaFile> countRoot = countQuery.from(DeltaFile.class);
+            countQuery.select(cb.count(countRoot)).where(cb.and(predicates.toArray(new Predicate[0])));
+            Long total = entityManager.createQuery(countQuery).getSingleResult();
+            deltaFiles.setTotalCount(total.intValue());
         }
 
         return deltaFiles;
+    }
+
+    private List<Predicate> buildDeltaFilesCriteria(CriteriaBuilder cb, Root<DeltaFile> root, DeltaFilesFilter filter) {
+        List<Predicate> predicates = new ArrayList<>();
+
+        if (filter == null) {
+            return predicates;
+        }
+
+        if (filter.getDataSources() != null && !filter.getDataSources().isEmpty()) {
+            predicates.add(root.get("dataSource").in(filter.getDataSources()));
+        }
+
+        if (filter.getTransformFlows() != null && !filter.getTransformFlows().isEmpty()) {
+            Join<DeltaFile, DeltaFileFlow> flowJoin = root.join("flows");
+            predicates.add(cb.and(flowJoin.get("name").in(filter.getTransformFlows()), cb.equal(flowJoin.get("type"), FlowType.TRANSFORM)));
+        }
+
+        if (filter.getEgressFlows() != null && !filter.getEgressFlows().isEmpty()) {
+            predicates.add(root.get("egressFlows").in(filter.getEgressFlows()));
+        }
+
+        if (filter.getDids() != null && !filter.getDids().isEmpty()) {
+            predicates.add(root.get("did").in(filter.getDids()));
+        }
+
+        if (filter.getParentDid() != null) {
+            predicates.add(root.get("parentDids").in(filter.getParentDid()));
+        }
+
+        if (filter.getCreatedAfter() != null) {
+            predicates.add(cb.greaterThan(root.get("created"), filter.getCreatedAfter()));
+        }
+
+        if (filter.getCreatedBefore() != null) {
+            predicates.add(cb.lessThan(root.get("created"), filter.getCreatedBefore()));
+        }
+
+        if (filter.getAnnotations() != null) {
+            for (KeyValue kv : filter.getAnnotations()) {
+                predicates.add(cb.equal(root.get("annotations").get(kv.getKey()), kv.getValue()));
+            }
+        }
+
+        if (filter.getContentDeleted() != null) {
+            if (filter.getContentDeleted()) {
+                predicates.add(cb.isNotNull(root.get("contentDeleted")));
+            } else {
+                predicates.add(cb.isNull(root.get("contentDeleted")));
+            }
+        }
+
+        addModifiedDateCriteria(cb, root, filter.getModifiedAfter(), filter.getModifiedBefore(), predicates);
+
+        if (filter.getTerminalStage() != null) {
+            predicates.add(cb.equal(root.get("terminal"), filter.getTerminalStage()));
+        }
+
+        if (filter.getStage() != null) {
+            predicates.add(cb.equal(root.get("stage"), filter.getStage().name()));
+        }
+
+        if (filter.getNameFilter() != null) {
+            addNameCriteria(cb, root, filter.getNameFilter(), predicates);
+        }
+
+        if (filter.getActions() != null && !filter.getActions().isEmpty()) {
+            Join<DeltaFile, DeltaFileFlow> flowJoin = root.join("flows");
+            Join<DeltaFileFlow, Action> actionJoin = flowJoin.join("actions");
+            predicates.add(actionJoin.get("name").in(filter.getActions()));
+        }
+
+        addErrorAndFilterCriteria(filter, predicates, cb, root);
+
+        if (filter.getRequeueCountMin() != null) {
+            predicates.add(cb.greaterThanOrEqualTo(root.get("requeueCount"), filter.getRequeueCountMin()));
+        }
+
+        if (filter.getIngressBytesMin() != null) {
+            predicates.add(cb.greaterThanOrEqualTo(root.get("ingressBytes"), filter.getIngressBytesMin()));
+        }
+
+        if (filter.getIngressBytesMax() != null) {
+            predicates.add(cb.lessThanOrEqualTo(root.get("ingressBytes"), filter.getIngressBytesMax()));
+        }
+
+        if (filter.getReferencedBytesMin() != null) {
+            predicates.add(cb.greaterThanOrEqualTo(root.get("referencedBytes"), filter.getReferencedBytesMin()));
+        }
+
+        if (filter.getReferencedBytesMax() != null) {
+            predicates.add(cb.lessThanOrEqualTo(root.get("referencedBytes"), filter.getReferencedBytesMax()));
+        }
+
+        if (filter.getTotalBytesMin() != null) {
+            predicates.add(cb.greaterThanOrEqualTo(root.get("totalBytes"), filter.getTotalBytesMin()));
+        }
+
+        if (filter.getTotalBytesMax() != null) {
+            predicates.add(cb.lessThanOrEqualTo(root.get("totalBytes"), filter.getTotalBytesMax()));
+        }
+
+        if (filter.getEgressed() != null) {
+            predicates.add(cb.equal(root.get("egressed"), filter.getEgressed()));
+        }
+
+        if (filter.getTestMode() != null) {
+            predicates.add(cb.equal(root.get("testMode"), filter.getTestMode()));
+        }
+
+        if (filter.getReplayable() != null) {
+            if (filter.getReplayable()) {
+                predicates.add(cb.isNull(root.get("replayed")));
+                predicates.add(cb.isNull(root.get("contentDeleted")));
+            } else {
+                predicates.add(cb.or(cb.isNotNull(root.get("replayed")), cb.isNotNull(root.get("contentDeleted"))));
+            }
+        }
+
+        if (filter.getReplayed() != null) {
+            if (filter.getReplayed()) {
+                predicates.add(cb.isNotNull(root.get("replayed")));
+            } else {
+                predicates.add(cb.isNull(root.get("replayed")));
+            }
+        }
+
+        if (filter.getPendingAnnotations() != null) {
+            if (filter.getPendingAnnotations()) {
+                predicates.add(cb.isNotEmpty(root.get("pendingAnnotations")));
+            } else {
+                predicates.add(cb.isEmpty(root.get("pendingAnnotations")));
+            }
+        }
+
+        return predicates;
+    }
+
+    private void addNameCriteria(CriteriaBuilder cb, Root<DeltaFile> root, NameFilter nameFilter, List<Predicate> predicates) {
+        if (Boolean.TRUE.equals(nameFilter.getRegex())) {
+            // TODO: fix this
+            throw new UnsupportedOperationException("Regex filtering is not supported");
+        }
+
+        String name = nameFilter.getName();
+        if (nameFilter.getCaseSensitive() != null && !nameFilter.getCaseSensitive()) {
+            name = name.toLowerCase();
+            predicates.add(cb.like(cb.lower(root.get("name")), "%" + name + "%"));
+        } else {
+            predicates.add(cb.like(root.get("name"), "%" + name + "%"));
+        }
+    }
+
+    private void addErrorAndFilterCriteria(DeltaFilesFilter filter, List<Predicate> predicates, CriteriaBuilder cb, Root<DeltaFile> root) {
+        if (filter.getErrorCause() != null) {
+            predicates.add(cb.equal(root.get("errorCause"), filter.getErrorCause()));
+        }
+
+        if (filter.getFilteredCause() != null) {
+            predicates.add(cb.equal(root.get("filteredCause"), filter.getFilteredCause()));
+        }
+
+        if (filter.getErrorAcknowledged() != null) {
+            predicates.add(cb.equal(root.get("errorAcknowledged"), filter.getErrorAcknowledged()));
+        }
+
+        if (filter.getFiltered() != null) {
+            predicates.add(cb.equal(root.get("filtered"), filter.getFiltered()));
+        }
     }
 
     Update buildRequeueUpdate(OffsetDateTime modified, Duration requeueDuration) {
@@ -564,145 +738,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         return requeueQuery;
     }
 
-    private Criteria buildDeltaFilesCriteria(DeltaFilesFilter filter) {
-        final Criteria criteria = new Criteria();
-
-        if (filter == null) {
-            return criteria;
-        }
-
-        if (filter.getDataSources() != null && !filter.getDataSources().isEmpty()) {
-            criteria.and(DATA_SOURCE).in(filter.getDataSources());
-        }
-
-        if (filter.getTransformFlows() != null && !filter.getTransformFlows().isEmpty()) {
-            criteria.and(FLOWS).elemMatch(Criteria.where(NAME).in(filter.getTransformFlows()).and(TYPE).is(FlowType.TRANSFORM));
-        }
-
-        if (filter.getEgressFlows() != null && !filter.getEgressFlows().isEmpty()) {
-            criteria.and(EGRESS_FLOWS).in(filter.getEgressFlows());
-        }
-
-        if (filter.getDids() != null && !filter.getDids().isEmpty()) {
-            criteria.and(ID).in(filter.getDids());
-        }
-
-        if (filter.getParentDid() != null) {
-            criteria.and(PARENT_DIDS).in(filter.getParentDid());
-        }
-
-        if (filter.getCreatedAfter() != null && filter.getCreatedBefore() != null) {
-            criteria.and(CREATED).gt(filter.getCreatedAfter()).lt(filter.getCreatedBefore());
-        } else if (filter.getCreatedAfter() != null) {
-            criteria.and(CREATED).gt(filter.getCreatedAfter());
-        } else if (filter.getCreatedBefore() != null) {
-            criteria.and(CREATED).lt(filter.getCreatedBefore());
-        }
-
-        if (filter.getAnnotations() != null) {
-            filter.getAnnotations()
-                    .forEach(e -> addAnnotationCriteria(e.getKey(), e.getValue(), criteria));
-        }
-
-        if (filter.getContentDeleted() != null) {
-            if (isTrue(filter.getContentDeleted())) {
-                criteria.and(CONTENT_DELETED).ne(null);
-            } else {
-                criteria.and(CONTENT_DELETED).is(null);
-            }
-        }
-
-        addModifiedDateCriteria(criteria, filter.getModifiedAfter(), filter.getModifiedBefore());
-
-        if (filter.getTerminalStage() != null) {
-            criteria.and(TERMINAL).is(isTrue(filter.getTerminalStage()));
-        }
-
-        if (filter.getStage() != null) {
-            criteria.and(STAGE).is(filter.getStage().name());
-        }
-
-        if (filter.getNameFilter() != null) {
-            addNameCriteria(filter.getNameFilter(), criteria);
-        }
-
-        if (filter.getActions() != null && !filter.getActions().isEmpty()) {
-            criteria.and(ACTIONS_NAME).all(filter.getActions());
-        }
-
-        addErrorAndFilterCriteria(filter, criteria);
-
-        if (filter.getRequeueCountMin() != null) {
-            criteria.and(REQUEUE_COUNT).gte(filter.getRequeueCountMin());
-        }
-
-        if (filter.getIngressBytesMin() != null && filter.getIngressBytesMax() != null) {
-            criteria.and(INGRESS_BYTES).gte(filter.getIngressBytesMin()).lte(filter.getIngressBytesMax());
-        } else if (filter.getIngressBytesMin() != null) {
-            criteria.and(INGRESS_BYTES).gte(filter.getIngressBytesMin());
-        } else if (filter.getIngressBytesMax() != null) {
-            criteria.and(INGRESS_BYTES).lte(filter.getIngressBytesMax());
-        }
-
-        if (filter.getReferencedBytesMin() != null && filter.getReferencedBytesMax() != null) {
-            criteria.and(REFERENCED_BYTES).gte(filter.getReferencedBytesMin()).lte(filter.getReferencedBytesMax());
-        } else if (filter.getReferencedBytesMin() != null) {
-            criteria.and(REFERENCED_BYTES).gte(filter.getReferencedBytesMin());
-        } else if (filter.getReferencedBytesMax() != null) {
-            criteria.and(REFERENCED_BYTES).lte(filter.getReferencedBytesMax());
-        }
-
-        if (filter.getTotalBytesMin() != null && filter.getTotalBytesMax() != null) {
-            criteria.and(TOTAL_BYTES).gte(filter.getTotalBytesMin()).lte(filter.getTotalBytesMax());
-        } else if (filter.getTotalBytesMin() != null) {
-            criteria.and(TOTAL_BYTES).gte(filter.getTotalBytesMin());
-        } else if (filter.getTotalBytesMax() != null) {
-            criteria.and(TOTAL_BYTES).lte(filter.getTotalBytesMax());
-        }
-
-        if (filter.getEgressed() != null) {
-            criteria.and(EGRESSED).is(filter.getEgressed());
-        }
-
-        if (filter.getTestMode() != null) {
-            if (isTrue(filter.getTestMode())) {
-                criteria.and(TEST_MODE).is(true);
-            } else {
-                criteria.and(TEST_MODE).ne(true);
-            }
-        }
-
-        if (filter.getReplayable() != null) {
-            if (isTrue(filter.getReplayable())) {
-                criteria.and(REPLAYED).isNull();
-                criteria.and(CONTENT_DELETED).isNull();
-            } else {
-                criteria.orOperator(Criteria.where(REPLAYED).ne(null), Criteria.where(CONTENT_DELETED).ne(null));
-            }
-        }
-
-        if (filter.getReplayed() != null) {
-            if (isTrue(filter.getReplayed())) {
-                criteria.and(REPLAYED).ne(null);
-            } else {
-                criteria.and(REPLAYED).isNull();
-            }
-        }
-
-        if (filter.getPendingAnnotations() != null) {
-            criteria.and(FIRST_PENDING_ANNOTATIONS).exists(filter.getPendingAnnotations());
-        }
-
-        return criteria;
-    }
-
-    private void addModifiedDateCriteria(Criteria criteria, OffsetDateTime modifiedAfter, OffsetDateTime modifiedBefore) {
+    private void addModifiedDateCriteria(CriteriaBuilder cb, Root<DeltaFile> root, OffsetDateTime modifiedAfter, OffsetDateTime modifiedBefore, List<Predicate> predicates) {
         if (modifiedAfter != null && modifiedBefore != null) {
-            criteria.and(MODIFIED).gt(modifiedAfter).lt(modifiedBefore);
+            predicates.add(cb.and(cb.greaterThan(root.get("modified"), modifiedAfter), cb.lessThan(root.get("modified"), modifiedBefore)));
         } else if (modifiedAfter != null) {
-            criteria.and(MODIFIED).gt(modifiedAfter);
+            predicates.add(cb.greaterThan(root.get("modified"), modifiedAfter));
         } else if (modifiedBefore != null) {
-            criteria.and(MODIFIED).lt(modifiedBefore);
+            predicates.add(cb.lessThan(root.get("modified"), modifiedBefore));
         }
     }
 
@@ -1003,7 +1045,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     private void applySummaryCriteria(SummaryFilter filter, Criteria criteria) {
-        addModifiedDateCriteria(criteria, filter.getModifiedAfter(), filter.getModifiedBefore());
+        // TODO: fixme
+        //addModifiedDateCriteria(criteria, filter.getModifiedAfter(), filter.getModifiedBefore());
 
         if (filter.getFlow() != null) {
             criteria.and(DATA_SOURCE).is(filter.getFlow());
@@ -1260,26 +1303,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                     .executeUpdate();
             entityManager.flush();
             entityManager.clear();
-        }
-    }
-
-    private void addNameCriteria(NameFilter filenameFilter, Criteria criteria) {
-        String filename = filenameFilter.getName();
-        Objects.requireNonNull(filename, "The filename must be provided in the FilenameFilter");
-
-        String searchField = NORMALIZED_NAME;
-
-        if (isFalse(filenameFilter.getCaseSensitive())) {
-            filename =  filename.toLowerCase();
-        } else {
-            searchField = NAME;
-        }
-
-        // use the exact match criteria by default
-        if (isTrue(filenameFilter.getRegex())) {
-            criteria.and(searchField).regex(filename);
-        } else {
-            criteria.and(searchField).is(filename);
         }
     }
 

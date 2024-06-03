@@ -38,6 +38,7 @@ import java.util.*;
 @Builder
 @Entity
 @Table(name = "actions")
+@EqualsAndHashCode(exclude = "deltaFileFlow")
 public class Action {
   @Id
   @Builder.Default

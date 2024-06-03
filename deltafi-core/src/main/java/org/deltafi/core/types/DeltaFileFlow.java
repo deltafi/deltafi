@@ -38,6 +38,7 @@ import java.util.function.Predicate;
 @Builder
 @Entity
 @Table(name = "delta_file_flows")
+@EqualsAndHashCode(exclude = "deltaFile")
 public class DeltaFileFlow {
     @Id
     @Builder.Default

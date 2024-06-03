@@ -2429,9 +2429,9 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile noContent = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, MONGO_NOW, MONGO_NOW);
 		noContent.setContentDeleted(MONGO_NOW);
 		noContent.setEgressed(true);
-		DeltaFile hasReplayDate = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, MONGO_NOW, MONGO_NOW);
+		DeltaFile hasReplayDate = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, MONGO_NOW, MONGO_NOW.plusSeconds(1));
 		hasReplayDate.setReplayed(MONGO_NOW);
-		DeltaFile replayable = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, MONGO_NOW, MONGO_NOW);
+		DeltaFile replayable = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, MONGO_NOW, MONGO_NOW.plusSeconds(2));
 
 		deltaFileRepo.saveAll(List.of(noContent, hasReplayDate, replayable));
 
