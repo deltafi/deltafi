@@ -41,7 +41,8 @@ import java.util.stream.Stream;
 @Table(name = "delta_files")
 public class DeltaFile {
   @Id
-  private UUID did;
+  @Builder.Default
+  private UUID did = UUID.randomUUID();
   private String name;
   private String normalizedName;
   private String dataSource;
