@@ -254,5 +254,6 @@ public interface DeltaFileRepoCustom {
      */
     boolean update(UUID did, long version, Update update);
 
+    void batchInsert(List<DeltaFile> deltaFiles);
     void batchedBulkDeleteByDidIn(List<UUID> dids);
 }

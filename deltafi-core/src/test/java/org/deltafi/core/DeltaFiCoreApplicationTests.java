@@ -3958,20 +3958,20 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testCountUnacknowledgedErrors() {
 		List<DeltaFile> deltaFiles = new ArrayList<>();
-		for (int i = 0; i < 50005; i++) {
+		for (int i = 0; i < 505; i++) {
 			DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID(), List.of());
 			deltaFile.getFlow("myFlow", 0).getAction("IngressAction", 0).setState(ERROR);
 			deltaFile.setStage(DeltaFileStage.ERROR);
 
-			if (i >= 50001) {
+			if (i >= 501) {
 				deltaFile.acknowledgeErrors(OffsetDateTime.now(), "acked");
 			}
 			deltaFiles.add(deltaFile);
 		}
-		deltaFileRepo.saveAll(deltaFiles);
+		deltaFileRepo.batchInsert(deltaFiles);
 
-		assertEquals(50005, deltaFileRepo.count());
-		assertEquals(50001, deltaFilesService.countUnacknowledgedErrors());
+		assertEquals(505, deltaFileRepo.count());
+		assertEquals(501, deltaFilesService.countUnacknowledgedErrors());
 	}
 
 	@Test

@@ -40,8 +40,8 @@ import java.util.function.Predicate;
 @Table(name = "delta_file_flows")
 public class DeltaFileFlow {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Builder.Default
+    private UUID id = UUID.randomUUID();
 
     private String name;
     private int number;

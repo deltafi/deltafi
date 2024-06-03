@@ -40,8 +40,8 @@ import java.util.*;
 @Table(name = "actions")
 public class Action {
   @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+  @Builder.Default
+  private UUID id = UUID.randomUUID();
   private String name;
   private int number;
   @Builder.Default

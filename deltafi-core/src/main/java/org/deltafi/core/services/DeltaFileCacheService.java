@@ -45,6 +45,7 @@ public abstract class DeltaFileCacheService {
     public abstract void save(DeltaFile deltaFile);
 
     public void saveAll(Collection<DeltaFile> deltaFiles) {
+        // TODO: batchInsert the new ones
         for (DeltaFile deltaFile : deltaFiles) {
             save(deltaFile);
         }

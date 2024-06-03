@@ -17,6 +17,9 @@
  */
 package org.deltafi.core.repo;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.collect.Lists;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.result.UpdateResult;
@@ -44,9 +47,11 @@ import org.springframework.data.mongodb.core.index.PartialIndexFilter;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 
+import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -208,6 +213,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @PersistenceContext
     private final EntityManager entityManager;
+    private final JdbcTemplate jdbcTemplate;
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     private final MongoTemplate mongoTemplate;
     private Duration cachedTtlDuration;
@@ -1095,6 +1103,136 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                     return new ColdQueuedActionSummary(actionName, ActionType.valueOf(actionType), count);
                 })
                 .toList();
+    }
+
+    @Override
+    @Transactional
+    public void batchInsert(List<DeltaFile> deltaFiles) {
+        String sql = """
+                INSERT INTO delta_files (did, name, normalized_name, data_source, parent_dids, collect_id, child_dids,
+                                         requeue_count, ingress_bytes, referenced_bytes, total_bytes, stage, annotations,
+                                         annotation_keys, egress_flows, created, modified, content_deleted, content_deleted_reason,
+                                         egressed, filtered, replayed, replay_did, in_flight, terminal, content_deletable, version, schema_version)
+                VALUES (?, ?, ?, ?, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
+
+        jdbcTemplate.batchUpdate(sql, deltaFiles, 1000, (ps, deltaFile) -> {
+            ps.setObject(1, deltaFile.getDid());
+            ps.setString(2, deltaFile.getName());
+            ps.setString(3, deltaFile.getNormalizedName());
+            ps.setString(4, deltaFile.getDataSource());
+            ps.setString(5, toJson(deltaFile.getParentDids()));
+            ps.setObject(6, deltaFile.getCollectId());
+            ps.setString(7, toJson(deltaFile.getChildDids()));
+            ps.setInt(8, deltaFile.getRequeueCount());
+            ps.setLong(9, deltaFile.getIngressBytes());
+            ps.setLong(10, deltaFile.getReferencedBytes());
+            ps.setLong(11, deltaFile.getTotalBytes());
+            ps.setString(12, deltaFile.getStage().name());
+            ps.setString(13, toJson(deltaFile.getAnnotations()));
+            ps.setString(14, toJson(deltaFile.getAnnotationKeys()));
+            ps.setString(15, toJson(deltaFile.getEgressFlows()));
+            ps.setTimestamp(16, toTimestamp(deltaFile.getCreated()));
+            ps.setTimestamp(17, toTimestamp(deltaFile.getModified()));
+            ps.setTimestamp(18, toTimestamp(deltaFile.getContentDeleted()));
+            ps.setString(19, deltaFile.getContentDeletedReason());
+            ps.setObject(20, deltaFile.getEgressed());
+            ps.setObject(21, deltaFile.getFiltered());
+            ps.setTimestamp(22, toTimestamp(deltaFile.getReplayed()));
+            ps.setObject(23, deltaFile.getReplayDid());
+            ps.setBoolean(24, deltaFile.isInFlight());
+            ps.setBoolean(25, deltaFile.isTerminal());
+            ps.setBoolean(26, deltaFile.isContentDeletable());
+            ps.setLong(27, deltaFile.getVersion());
+            ps.setInt(28, deltaFile.getSchemaVersion());
+        });
+
+        // Batch insert DeltaFileFlows
+        List<DeltaFileFlow> deltaFileFlows = new ArrayList<>();
+        for (DeltaFile deltaFile : deltaFiles) {
+            for (DeltaFileFlow flow : deltaFile.getFlows()) {
+                flow.setDeltaFile(deltaFile);  // Ensure relationship is set
+                deltaFileFlows.add(flow);
+            }
+        }
+
+        String deltaFileFlowSql = """
+                INSERT INTO delta_file_flows (id, name, number, type, state, created, modified, flow_plan, input, publish_topics,
+                                              depth, pending_annotations, test_mode, test_mode_reason, collect_id, delta_file_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?)""";
+
+        jdbcTemplate.batchUpdate(deltaFileFlowSql, deltaFileFlows, 1000, (ps, flow) -> {
+            ps.setObject(1, flow.getId());
+            ps.setString(2, flow.getName());
+            ps.setInt(3, flow.getNumber());
+            ps.setString(4, flow.getType().name());
+            ps.setString(5, flow.getState().name());
+            ps.setTimestamp(6, toTimestamp(flow.getCreated()));
+            ps.setTimestamp(7, toTimestamp(flow.getModified()));
+            ps.setString(8, toJson(flow.getFlowPlan()));
+            ps.setString(9, toJson(flow.getInput()));
+            ps.setString(10, toJson(flow.getPublishTopics()));
+            ps.setInt(11, flow.getDepth());
+            ps.setString(12, toJson(flow.getPendingAnnotations()));
+            ps.setBoolean(13, flow.isTestMode());
+            ps.setString(14, flow.getTestModeReason());
+            ps.setObject(15, flow.getCollectId());
+            ps.setObject(16, flow.getDeltaFile().getDid());
+        });
+
+        // Batch insert Actions
+        List<Action> actions = new ArrayList<>();
+        for (DeltaFileFlow flow : deltaFileFlows) {
+            for (Action action : flow.getActions()) {
+                action.setDeltaFileFlow(flow);  // Ensure relationship is set
+                actions.add(action);
+            }
+        }
+
+        String actionSql = """
+                INSERT INTO actions (id, name, number, type, state, created, queued, start, stop, modified, error_cause,
+                                     error_context, error_acknowledged, error_acknowledged_reason, next_auto_resume,
+                                     next_auto_resume_reason, filtered_cause, filtered_context, attempt, content,
+                                     metadata, delete_metadata_keys, replay_start, delta_file_flow_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?)""";
+
+        jdbcTemplate.batchUpdate(actionSql, actions, 1000, (ps, action) -> {
+            ps.setObject(1, action.getId());
+            ps.setString(2, action.getName());
+            ps.setInt(3, action.getNumber());
+            ps.setString(4, action.getType().name());
+            ps.setString(5, action.getState().name());
+            ps.setTimestamp(6, toTimestamp(action.getCreated()));
+            ps.setTimestamp(7, toTimestamp(action.getQueued()));
+            ps.setTimestamp(8, toTimestamp(action.getStart()));
+            ps.setTimestamp(9, toTimestamp(action.getStop()));
+            ps.setTimestamp(10, toTimestamp(action.getModified()));
+            ps.setString(11, action.getErrorCause());
+            ps.setString(12, action.getErrorContext());
+            ps.setTimestamp(13, toTimestamp(action.getErrorAcknowledged()));
+            ps.setString(14, action.getErrorAcknowledgedReason());
+            ps.setTimestamp(15, toTimestamp(action.getNextAutoResume()));
+            ps.setString(16, action.getNextAutoResumeReason());
+            ps.setString(17, action.getFilteredCause());
+            ps.setString(18, action.getFilteredContext());
+            ps.setInt(19, action.getAttempt());
+            ps.setString(20, toJson(action.getContent()));
+            ps.setString(21, toJson(action.getMetadata()));
+            ps.setString(22, toJson(action.getDeleteMetadataKeys()));
+            ps.setBoolean(23, action.isReplayStart());
+            ps.setObject(24, action.getDeltaFileFlow().getId());
+        });
+    }
+
+    private String toJson(Object object) {
+        try {
+            return object == null ? null : OBJECT_MAPPER.writeValueAsString(object);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Timestamp toTimestamp(OffsetDateTime offsetDateTime) {
+        return offsetDateTime == null ? null : Timestamp.valueOf(offsetDateTime.toLocalDateTime());
     }
 
     private void batchedBulkUpdateByIds(List<UUID> dids, Update update) {
