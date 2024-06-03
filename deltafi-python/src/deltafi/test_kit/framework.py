@@ -103,6 +103,10 @@ class InternalContentService:
         seg_id = segments[0].uuid
         return self.loaded_content[seg_id].data
 
+    def get_bytes(self, segments: List[Segment]):
+        seg_id = segments[0].uuid
+        return self.loaded_content[seg_id].data.encode('utf-8')
+
     def get_output(self, seg_id: str):
         if seg_id in self.outputs:
             return self.outputs[seg_id]
