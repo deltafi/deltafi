@@ -210,13 +210,6 @@ public interface DeltaFileRepoCustom {
     Map<String, Integer> errorCountsByFlow(Set<String> flows);
 
     /**
-     * Get a list of all annotation keys currently assigned by deltaFiles
-     *
-     * @return the annotation keys
-     */
-    List<String> annotationKeys();
-
-    /**
      * For each did in the list, update the corresponding DeltaFile contentDeleted to value
      *
      * @param dids List of dids for DeltaFiles to be updated

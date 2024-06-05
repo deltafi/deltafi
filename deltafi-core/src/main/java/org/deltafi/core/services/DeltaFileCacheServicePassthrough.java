@@ -37,7 +37,7 @@ public class DeltaFileCacheServicePassthrough extends DeltaFileCacheService {
 
     @Override
     public DeltaFile get(UUID did) {
-        return getFromRepo(did, false);
+        return getFromRepo(did);
     }
 
     @Override
@@ -53,6 +53,6 @@ public class DeltaFileCacheServicePassthrough extends DeltaFileCacheService {
 
     @Override
     public void save(DeltaFile deltaFile) {
-        updateRepo(deltaFile, false);
+        updateRepo(deltaFile);
     }
 }

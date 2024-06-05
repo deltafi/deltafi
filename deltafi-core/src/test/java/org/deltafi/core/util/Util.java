@@ -171,8 +171,7 @@ public class Util {
         Assertions.assertThat(actual.getDataSource()).isEqualTo(expected.getDataSource());
         Assertions.assertThat(actual.getName()).isEqualTo(expected.getName());
         Assertions.assertThat(actual.getNormalizedName()).isEqualTo(expected.getNormalizedName());
-        Assertions.assertThat(actual.getAnnotations()).isEqualTo(expected.getAnnotations());
-        Assertions.assertThat(actual.getAnnotationKeys()).isEqualTo(expected.getAnnotationKeys());
+        Assertions.assertThat(actual.annotationMap()).isEqualTo(expected.annotationMap());
         Assertions.assertThat(actual.getEgressed()).isEqualTo(expected.getEgressed());
         Assertions.assertThat(actual.getFiltered()).isEqualTo(expected.getFiltered());
         Assertions.assertThat(actual.getEgressFlows()).isEqualTo(expected.getEgressFlows());

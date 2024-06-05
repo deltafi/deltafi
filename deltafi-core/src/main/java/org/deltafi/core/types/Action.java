@@ -77,8 +77,8 @@ public class Action {
   private List<String> deleteMetadataKeys;
   private boolean replayStart; // marker for the starting point of a replay
 
-  @ManyToOne
-  @JoinColumn(name = "delta_file_flow_id", insertable = false, updatable = false)
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "delta_file_flow_id")
   @ToString.Exclude
   @JsonBackReference
   private DeltaFileFlow deltaFileFlow;

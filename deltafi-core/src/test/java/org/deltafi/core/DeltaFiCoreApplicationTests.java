@@ -1044,7 +1044,7 @@ class DeltaFiCoreApplicationTests {
 		assertTrue(actual.getFiltered());
 		assertEquals("you got filtered", action.getFilteredCause());
 		assertEquals("here is why: blah", action.getFilteredContext());
-		assertEquals("filter metadata", actual.getAnnotations().get("filterKey"));
+		assertEquals("filter metadata", actual.getAnnotations().stream().filter(a -> a.getKey().equals("filterKey")).findFirst().orElse(new Annotation()).getValue());
 
 		Mockito.verify(coreEventQueue, never()).putActions(any(), anyBoolean());
 	}
@@ -2472,9 +2472,9 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void testFilterByPendingAnnotations() {
-		DeltaFile pending = buildDeltaFile(UUID.randomUUID(), "a", DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(2), MONGO_NOW.minusSeconds(2));
+		DeltaFile pending = buildDeltaFile(UUID.randomUUID(), "a", DeltaFileStage.COMPLETE, MONGO_NOW, MONGO_NOW);
 		pending.getFlows().getFirst().setPendingAnnotations(Set.of("a"));
-		DeltaFile notPending = buildDeltaFile(UUID.randomUUID(), "a", DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(2), MONGO_NOW.minusSeconds(2));
+		DeltaFile notPending = buildDeltaFile(UUID.randomUUID(), "a", DeltaFileStage.COMPLETE, MONGO_NOW, MONGO_NOW);
 
 		deltaFileRepo.saveAll(List.of(pending, notPending));
 		testFilter(DeltaFilesFilter.newBuilder().pendingAnnotations(true).build(), pending);
@@ -2518,22 +2518,22 @@ class DeltaFiCoreApplicationTests {
 		assertThat(deltaFilesService.annotationKeys()).isEmpty();
 
 		DeltaFile nullKeys = new DeltaFile();
-		nullKeys.setAnnotationKeys(null);
+		nullKeys.setAnnotations(null);
 		deltaFileRepo.save(nullKeys);
 
 		assertThat(deltaFilesService.annotationKeys()).isEmpty();
 
 		DeltaFile emptyKeys = new DeltaFile();
-		emptyKeys.setAnnotationKeys(Set.of());
+		emptyKeys.setAnnotations(List.of());
 		deltaFileRepo.save(emptyKeys);
 
 		assertThat(deltaFilesService.annotationKeys()).isEmpty();
 
 		DeltaFile withKeys = new DeltaFile();
-		withKeys.setAnnotationKeys(Set.of("a", "b"));
+		withKeys.addAnnotations(Map.of("a", "x", "b", "y"));
 
 		DeltaFile otherDomain = new DeltaFile();
-		otherDomain.setAnnotationKeys(Set.of("b", "c", "d"));
+		otherDomain.addAnnotations(Map.of("b", "x", "c", "y", "d", "z"));
 		deltaFileRepo.saveAll(List.of(withKeys, otherDomain));
 
 		assertThat(deltaFilesService.annotationKeys()).hasSize(4).contains("a", "b", "c", "d");
@@ -3495,12 +3495,10 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void annotations() {
 		deltaFileRepo.save(DeltaFile.builder()
-				.annotations(Map.of("x", "1", "y", "2"))
-				.annotationKeys(Set.of("x", "y"))
+				.annotations(List.of(new Annotation("x", "1"), new Annotation("y", "2")))
 				.build());
 		deltaFileRepo.save(DeltaFile.builder()
-				.annotations(Map.of("y", "3", "z", "4"))
-				.annotationKeys(Set.of("y", "z"))
+				.annotations(List.of(new Annotation("y", "3"), new Annotation("z", "4")))
 				.build());
 
 		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(new AnnotationKeysGraphQLQuery());

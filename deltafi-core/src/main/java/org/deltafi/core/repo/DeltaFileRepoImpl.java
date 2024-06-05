@@ -88,6 +88,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String EGRESSED = "egressed";
     public static final String EGRESS_FLOWS = "egressFlows";
     public static final String FILTERED = "filtered";
+    public static final String HAS_PENDING_ANNOTATIONS = "hasPendingAnnotations";
     public static final String PENDING_ANNOTATIONS = "flows.pendingAnnotations";
     public static final String FIRST_PENDING_ANNOTATIONS = "flows.pendingAnnotations.0";
     public static final String TEST_MODE = "flows.testMode";
@@ -135,6 +136,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     private static final String DID = "did";
     private static final String DIDS = "dids";
     private static final String ERROR_MESSAGE = "errorMessage";
+    private static final String ACTIONS = "actions";
     private static final String FLOW_LOWER_CASE = "flow";
     private static final String FLOWS = "flows";
     private static final String FLOW_STATE = "flow.state";
@@ -485,56 +487,64 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (filter.getDataSources() != null && !filter.getDataSources().isEmpty()) {
-            predicates.add(root.get("dataSource").in(filter.getDataSources()));
+            predicates.add(root.get(DATA_SOURCE).in(filter.getDataSources()));
         }
 
         if (filter.getTransformFlows() != null && !filter.getTransformFlows().isEmpty()) {
-            Join<DeltaFile, DeltaFileFlow> flowJoin = root.join("flows");
-            predicates.add(cb.and(flowJoin.get("name").in(filter.getTransformFlows()), cb.equal(flowJoin.get("type"), FlowType.TRANSFORM)));
+            Join<DeltaFile, DeltaFileFlow> flowJoin = root.join(FLOWS);
+            predicates.add(cb.and(flowJoin.get(NAME).in(filter.getTransformFlows()), cb.equal(flowJoin.get(TYPE), FlowType.TRANSFORM)));
         }
 
         if (filter.getEgressFlows() != null && !filter.getEgressFlows().isEmpty()) {
-            predicates.add(root.get("egressFlows").in(filter.getEgressFlows()));
+            predicates.add(root.get(EGRESS_FLOWS).in(filter.getEgressFlows()));
         }
 
         if (filter.getDids() != null && !filter.getDids().isEmpty()) {
-            predicates.add(root.get("did").in(filter.getDids()));
+            predicates.add(root.get(DID).in(filter.getDids()));
         }
 
         if (filter.getParentDid() != null) {
-            predicates.add(root.get("parentDids").in(filter.getParentDid()));
+            predicates.add(cb.isMember(filter.getParentDid(), root.get("parentDids")));
         }
 
         if (filter.getCreatedAfter() != null) {
-            predicates.add(cb.greaterThan(root.get("created"), filter.getCreatedAfter()));
+            predicates.add(cb.greaterThan(root.get(CREATED), filter.getCreatedAfter()));
         }
 
         if (filter.getCreatedBefore() != null) {
-            predicates.add(cb.lessThan(root.get("created"), filter.getCreatedBefore()));
+            predicates.add(cb.lessThan(root.get(CREATED), filter.getCreatedBefore()));
         }
 
-        if (filter.getAnnotations() != null) {
-            for (KeyValue kv : filter.getAnnotations()) {
-                predicates.add(cb.equal(root.get("annotations").get(kv.getKey()), kv.getValue()));
+        if (filter.getAnnotations() != null && !filter.getAnnotations().isEmpty()) {
+            for (KeyValue keyValue : filter.getAnnotations()) {
+                Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
+                Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
+                Join<DeltaFile, Annotation> subAnnotationJoin = subRoot.join("annotations");
+
+                subquery.select(cb.literal(1L)).where(
+                        cb.equal(subRoot.get("did"), root.get("did")),
+                        cb.equal(subAnnotationJoin.get("key"), keyValue.getKey()),
+                        cb.equal(subAnnotationJoin.get("value"), keyValue.getValue())
+                );
+
+                predicates.add(cb.exists(subquery));
             }
         }
 
-        if (filter.getContentDeleted() != null) {
-            if (filter.getContentDeleted()) {
-                predicates.add(cb.isNotNull(root.get("contentDeleted")));
-            } else {
-                predicates.add(cb.isNull(root.get("contentDeleted")));
-            }
+        if (filter.getModifiedAfter() != null) {
+            predicates.add(cb.greaterThan(root.get("modified"), filter.getModifiedAfter()));
         }
 
-        addModifiedDateCriteria(cb, root, filter.getModifiedAfter(), filter.getModifiedBefore(), predicates);
+        if (filter.getModifiedBefore() != null) {
+            predicates.add(cb.lessThan(root.get("modified"), filter.getModifiedBefore()));
+        }
 
         if (filter.getTerminalStage() != null) {
-            predicates.add(cb.equal(root.get("terminal"), filter.getTerminalStage()));
+            predicates.add(cb.equal(root.get(TERMINAL), filter.getTerminalStage()));
         }
 
         if (filter.getStage() != null) {
-            predicates.add(cb.equal(root.get("stage"), filter.getStage().name()));
+            predicates.add(cb.equal(root.get(STAGE), filter.getStage().name()));
         }
 
         if (filter.getNameFilter() != null) {
@@ -542,71 +552,81 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (filter.getActions() != null && !filter.getActions().isEmpty()) {
-            Join<DeltaFile, DeltaFileFlow> flowJoin = root.join("flows");
-            Join<DeltaFileFlow, Action> actionJoin = flowJoin.join("actions");
-            predicates.add(actionJoin.get("name").in(filter.getActions()));
+            for (String actionName : filter.getActions()) {
+                Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
+                Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
+                Join<DeltaFile, DeltaFileFlow> subFlowJoin = subRoot.join("flows");
+                Join<DeltaFileFlow, Action> subActionJoin = subFlowJoin.join("actions");
+
+                subquery.select(cb.literal(1L)).where(
+                        cb.equal(subRoot.get("did"), root.get("did")),
+                        cb.equal(subActionJoin.get("name"), actionName)
+                );
+
+                predicates.add(cb.exists(subquery));
+            }
         }
 
         addErrorAndFilterCriteria(filter, predicates, cb, root);
 
         if (filter.getRequeueCountMin() != null) {
-            predicates.add(cb.greaterThanOrEqualTo(root.get("requeueCount"), filter.getRequeueCountMin()));
+            predicates.add(cb.greaterThanOrEqualTo(root.get(REQUEUE_COUNT), filter.getRequeueCountMin()));
         }
 
         if (filter.getIngressBytesMin() != null) {
-            predicates.add(cb.greaterThanOrEqualTo(root.get("ingressBytes"), filter.getIngressBytesMin()));
+            predicates.add(cb.greaterThanOrEqualTo(root.get(INGRESS_BYTES), filter.getIngressBytesMin()));
         }
 
         if (filter.getIngressBytesMax() != null) {
-            predicates.add(cb.lessThanOrEqualTo(root.get("ingressBytes"), filter.getIngressBytesMax()));
+            predicates.add(cb.lessThanOrEqualTo(root.get(INGRESS_BYTES), filter.getIngressBytesMax()));
         }
 
         if (filter.getReferencedBytesMin() != null) {
-            predicates.add(cb.greaterThanOrEqualTo(root.get("referencedBytes"), filter.getReferencedBytesMin()));
+            predicates.add(cb.greaterThanOrEqualTo(root.get(REFERENCED_BYTES), filter.getReferencedBytesMin()));
         }
 
         if (filter.getReferencedBytesMax() != null) {
-            predicates.add(cb.lessThanOrEqualTo(root.get("referencedBytes"), filter.getReferencedBytesMax()));
+            predicates.add(cb.lessThanOrEqualTo(root.get(REFERENCED_BYTES), filter.getReferencedBytesMax()));
         }
 
         if (filter.getTotalBytesMin() != null) {
-            predicates.add(cb.greaterThanOrEqualTo(root.get("totalBytes"), filter.getTotalBytesMin()));
+            predicates.add(cb.greaterThanOrEqualTo(root.get(TOTAL_BYTES), filter.getTotalBytesMin()));
         }
 
         if (filter.getTotalBytesMax() != null) {
-            predicates.add(cb.lessThanOrEqualTo(root.get("totalBytes"), filter.getTotalBytesMax()));
+            predicates.add(cb.lessThanOrEqualTo(root.get(TOTAL_BYTES), filter.getTotalBytesMax()));
         }
 
         if (filter.getEgressed() != null) {
-            predicates.add(cb.equal(root.get("egressed"), filter.getEgressed()));
+            predicates.add(cb.equal(root.get(EGRESSED), filter.getEgressed()));
         }
 
         if (filter.getTestMode() != null) {
-            predicates.add(cb.equal(root.get("testMode"), filter.getTestMode()));
+            predicates.add(cb.equal(root.get(TEST_MODE), filter.getTestMode()));
         }
 
         if (filter.getReplayable() != null) {
             if (filter.getReplayable()) {
-                predicates.add(cb.isNull(root.get("replayed")));
-                predicates.add(cb.isNull(root.get("contentDeleted")));
+                predicates.add(cb.isNull(root.get(REPLAYED)));
+                predicates.add(cb.isNull(root.get(CONTENT_DELETED)));
             } else {
-                predicates.add(cb.or(cb.isNotNull(root.get("replayed")), cb.isNotNull(root.get("contentDeleted"))));
+                predicates.add(cb.or(cb.isNotNull(root.get(REPLAYED)), cb.isNotNull(root.get(CONTENT_DELETED))));
+            }
+        }
+
+        if (filter.getContentDeleted() != null) {
+            if (filter.getContentDeleted()) {
+                predicates.add(cb.isNotNull(root.get(CONTENT_DELETED)));
+            } else {
+                predicates.add(cb.isNull(root.get(CONTENT_DELETED)));
             }
         }
 
         if (filter.getReplayed() != null) {
             if (filter.getReplayed()) {
-                predicates.add(cb.isNotNull(root.get("replayed")));
+                predicates.add(cb.isNotNull(root.get(REPLAYED)));
             } else {
-                predicates.add(cb.isNull(root.get("replayed")));
-            }
-        }
-
-        if (filter.getPendingAnnotations() != null) {
-            if (filter.getPendingAnnotations()) {
-                predicates.add(cb.isNotEmpty(root.get("pendingAnnotations")));
-            } else {
-                predicates.add(cb.isEmpty(root.get("pendingAnnotations")));
+                predicates.add(cb.isNull(root.get(REPLAYED)));
             }
         }
 
@@ -736,16 +756,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         requeueQuery.limit(maxFiles);
 
         return requeueQuery;
-    }
-
-    private void addModifiedDateCriteria(CriteriaBuilder cb, Root<DeltaFile> root, OffsetDateTime modifiedAfter, OffsetDateTime modifiedBefore, List<Predicate> predicates) {
-        if (modifiedAfter != null && modifiedBefore != null) {
-            predicates.add(cb.and(cb.greaterThan(root.get("modified"), modifiedAfter), cb.lessThan(root.get("modified"), modifiedBefore)));
-        } else if (modifiedAfter != null) {
-            predicates.add(cb.greaterThan(root.get("modified"), modifiedAfter));
-        } else if (modifiedBefore != null) {
-            predicates.add(cb.lessThan(root.get("modified"), modifiedBefore));
-        }
     }
 
     private void addErrorAndFilterCriteria(DeltaFilesFilter filter, Criteria criteria) {
@@ -1053,14 +1063,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
     }
 
-    @Override
-    public List<String> annotationKeys() {
-        return mongoTemplate.findDistinct(new Query(), ANNOTATION_KEYS, DeltaFile.class, BsonValue.class).stream()
-                .filter(this::filterStrings)
-                .map(this::bsonValueAsString)
-                .toList();
-    }
-
     private boolean filterStrings(BsonValue bsonValue) {
         return bsonValue != null && bsonValue.isString();
     }
@@ -1153,10 +1155,11 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public void batchInsert(List<DeltaFile> deltaFiles) {
         String sql = """
                 INSERT INTO delta_files (did, name, normalized_name, data_source, parent_dids, collect_id, child_dids,
-                                         requeue_count, ingress_bytes, referenced_bytes, total_bytes, stage, annotations,
-                                         annotation_keys, egress_flows, created, modified, content_deleted, content_deleted_reason,
-                                         egressed, filtered, replayed, replay_did, in_flight, terminal, content_deletable, version, schema_version)
-                VALUES (?, ?, ?, ?, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
+                                         requeue_count, ingress_bytes, referenced_bytes, total_bytes, stage, 
+                                         egress_flows, created, modified, content_deleted, content_deleted_reason,
+                                         egressed, filtered, replayed, replay_did, in_flight, terminal,
+                                         content_deletable, version, schema_version)
+                VALUES (?, ?, ?, ?, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
 
         jdbcTemplate.batchUpdate(sql, deltaFiles, 1000, (ps, deltaFile) -> {
             ps.setObject(1, deltaFile.getDid());
@@ -1171,22 +1174,20 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             ps.setLong(10, deltaFile.getReferencedBytes());
             ps.setLong(11, deltaFile.getTotalBytes());
             ps.setString(12, deltaFile.getStage().name());
-            ps.setString(13, toJson(deltaFile.getAnnotations()));
-            ps.setString(14, toJson(deltaFile.getAnnotationKeys()));
-            ps.setString(15, toJson(deltaFile.getEgressFlows()));
-            ps.setTimestamp(16, toTimestamp(deltaFile.getCreated()));
-            ps.setTimestamp(17, toTimestamp(deltaFile.getModified()));
-            ps.setTimestamp(18, toTimestamp(deltaFile.getContentDeleted()));
-            ps.setString(19, deltaFile.getContentDeletedReason());
-            ps.setObject(20, deltaFile.getEgressed());
-            ps.setObject(21, deltaFile.getFiltered());
-            ps.setTimestamp(22, toTimestamp(deltaFile.getReplayed()));
-            ps.setObject(23, deltaFile.getReplayDid());
-            ps.setBoolean(24, deltaFile.isInFlight());
-            ps.setBoolean(25, deltaFile.isTerminal());
-            ps.setBoolean(26, deltaFile.isContentDeletable());
-            ps.setLong(27, deltaFile.getVersion());
-            ps.setInt(28, deltaFile.getSchemaVersion());
+            ps.setString(13, toJson(deltaFile.getEgressFlows()));
+            ps.setTimestamp(14, toTimestamp(deltaFile.getCreated()));
+            ps.setTimestamp(15, toTimestamp(deltaFile.getModified()));
+            ps.setTimestamp(16, toTimestamp(deltaFile.getContentDeleted()));
+            ps.setString(17, deltaFile.getContentDeletedReason());
+            ps.setObject(18, deltaFile.getEgressed());
+            ps.setObject(19, deltaFile.getFiltered());
+            ps.setTimestamp(20, toTimestamp(deltaFile.getReplayed()));
+            ps.setObject(21, deltaFile.getReplayDid());
+            ps.setBoolean(22, deltaFile.isInFlight());
+            ps.setBoolean(23, deltaFile.isTerminal());
+            ps.setBoolean(24, deltaFile.isContentDeletable());
+            ps.setLong(25, deltaFile.getVersion());
+            ps.setInt(26, deltaFile.getSchemaVersion());
         });
 
         // Batch insert DeltaFileFlows
@@ -1199,8 +1200,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         String deltaFileFlowSql = """
-                INSERT INTO delta_file_flows (id, name, number, type, state, created, modified, flow_plan, input, publish_topics,
-                                              depth, pending_annotations, test_mode, test_mode_reason, collect_id, delta_file_id)
+                INSERT INTO delta_file_flows (id, name, number, type, state, created, modified, flow_plan, input,
+                                              publish_topics, depth, pending_annotations, test_mode, test_mode_reason,
+                                              collect_id, delta_file_id)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?)""";
 
         jdbcTemplate.batchUpdate(deltaFileFlowSql, deltaFileFlows, 1000, (ps, flow) -> {
@@ -1263,6 +1265,26 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             ps.setString(22, toJson(action.getDeleteMetadataKeys()));
             ps.setBoolean(23, action.isReplayStart());
             ps.setObject(24, action.getDeltaFileFlow().getId());
+        });
+
+        // Batch insert Annotations
+        List<Annotation> annotations = new ArrayList<>();
+        for (DeltaFile deltaFile : deltaFiles) {
+            for (Annotation annotation : deltaFile.getAnnotations()) {
+                annotation.setDeltaFile(deltaFile);  // Ensure relationship is set
+                annotations.add(annotation);
+            }
+        }
+
+        String annotationSql = """
+                INSERT INTO annotations (id, key, value, delta_file_id)
+                VALUES (?, ?, ?, ?)""";
+
+        jdbcTemplate.batchUpdate(annotationSql, annotations, 1000, (ps, annotation) -> {
+            ps.setObject(1, annotation.getId());
+            ps.setString(2, annotation.getKey());
+            ps.setString(3, annotation.getValue());
+            ps.setObject(4, annotation.getDeltaFile().getDid());
         });
     }
 

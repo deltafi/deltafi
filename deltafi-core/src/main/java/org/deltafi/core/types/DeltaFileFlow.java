@@ -38,7 +38,6 @@ import java.util.function.Predicate;
 @Builder
 @Entity
 @Table(name = "delta_file_flows")
-@EqualsAndHashCode(exclude = "deltaFile")
 public class DeltaFileFlow {
     @Id
     @Builder.Default
@@ -83,8 +82,8 @@ public class DeltaFileFlow {
     @Builder.Default
     private List<ActionConfiguration> actionConfigurations = new ArrayList<>();
 
-    @ManyToOne
-    @JoinColumn(name = "delta_file_id", insertable = false, updatable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "delta_file_id")
     @ToString.Exclude
     @JsonBackReference
     private DeltaFile deltaFile;
@@ -108,6 +107,32 @@ public class DeltaFileFlow {
         this.collectId = other.collectId;
         this.actionConfigurations = other.actionConfigurations;
         this.deltaFile = other.deltaFile;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        DeltaFileFlow other = (DeltaFileFlow) o;
+
+        return number == other.number &&
+                depth == other.depth &&
+                testMode == other.testMode &&
+                Objects.equals(id, other.id) &&
+                Objects.equals(name, other.name) &&
+                type == other.type &&
+                state == other.state &&
+                Objects.equals(created, other.created) &&
+                Objects.equals(modified, other.modified) &&
+                Objects.equals(flowPlan, other.flowPlan) &&
+                Objects.equals(input, other.input) &&
+                Objects.equals(new ArrayList<>(actions), new ArrayList<>(other.actions)) &&
+                Objects.equals(publishTopics, other.publishTopics) &&
+                Objects.equals(pendingAnnotations, other.pendingAnnotations) &&
+                Objects.equals(testModeReason, other.testModeReason) &&
+                Objects.equals(collectId, other.collectId) &&
+                Objects.equals(actionConfigurations, other.actionConfigurations);
     }
 
     /**

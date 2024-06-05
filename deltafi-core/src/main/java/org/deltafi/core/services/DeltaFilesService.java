@@ -42,6 +42,7 @@ import org.deltafi.core.exceptions.*;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.metrics.MetricsUtil;
+import org.deltafi.core.repo.AnnotationRepo;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.repo.QueuedAnnotationRepo;
 import org.deltafi.core.retry.MongoRetryable;
@@ -105,6 +106,7 @@ public class DeltaFilesService {
     private final EgressFlowService egressFlowService;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
     private final StateMachine stateMachine;
+    private final AnnotationRepo annotationRepo;
     private final DeltaFileRepo deltaFileRepo;
     private final CoreEventQueue coreEventQueue;
     private final ContentStorageService contentStorageService;
@@ -1538,7 +1540,7 @@ public class DeltaFilesService {
     }
 
     public List<String> annotationKeys() {
-        return deltaFileRepo.annotationKeys();
+        return annotationRepo.findDistinctAnnotationKeys().stream().sorted().toList();
     }
 
     private DeltaFiProperties getProperties() {

@@ -17,11 +17,9 @@
  */
 package org.deltafi.core.services;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.repo.DeltaFileRepo;
-import org.hibernate.Hibernate;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -51,36 +49,14 @@ public abstract class DeltaFileCacheService {
         }
     }
 
-    protected DeltaFile getFromRepo(UUID did, boolean updateSnapshot) {
-        DeltaFile deltaFile = deltaFileRepo.findById(did).orElse(null);
-        if (deltaFile != null && updateSnapshot) {
-            deltaFile.snapshot();
-        }
-        return deltaFile;
+    protected DeltaFile getFromRepo(UUID did) {
+        return deltaFileRepo.findById(did).orElse(null);
     }
 
-    protected void updateRepo(DeltaFile deltaFile, boolean updateSnapshot) {
+    protected void updateRepo(DeltaFile deltaFile) {
         if (deltaFile == null) {
             return;
         }
-        if (deltaFile.getVersion() == 0) {
-            deltaFileRepo.save(deltaFile);
-        } else if (deltaFile.getSnapshot() != null) {
-            /*Update update = deltaFile.generateUpdate();
-            if (update != null) {
-                boolean updated = deltaFileRepo.update(deltaFile.getDid(), deltaFile.getVersion(), deltaFile.generateUpdate());
-                if (updated) {
-                    deltaFile.setVersion(deltaFile.getVersion() + 1);
-                } else {
-                    remove(deltaFile.getDid());
-                }
-                if (updateSnapshot) {
-                    deltaFile.snapshot();
-                }
-            }*/
-            deltaFileRepo.save(deltaFile);
-        } else {
-            deltaFileRepo.save(deltaFile);
-        }
+        deltaFileRepo.save(deltaFile);
     }
 }

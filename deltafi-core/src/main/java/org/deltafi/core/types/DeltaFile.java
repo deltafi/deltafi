@@ -66,14 +66,11 @@ public class DeltaFile {
   private long totalBytes;
   @Enumerated(EnumType.STRING)
   private DeltaFileStage stage;
-  @Type(JsonBinaryType.class)
-  @Column(columnDefinition = "jsonb")
   @Builder.Default
-  private Map<String, String> annotations = new HashMap<>();
-  @Type(JsonBinaryType.class)
-  @Column(columnDefinition = "jsonb")
-  @Builder.Default
-  private Set<String> annotationKeys = new HashSet<>();
+  @JoinColumn(name = "delta_file_id")
+  @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+  @JsonManagedReference
+  private List<Annotation> annotations = new ArrayList<>();
   @Type(JsonBinaryType.class)
   @Column(columnDefinition = "jsonb")
   @Builder.Default
@@ -101,15 +98,14 @@ public class DeltaFile {
   @Transient
   private OffsetDateTime cacheTime = null;
 
-  @Transient
-  @Builder.Default
-  private DeltaFile snapshot = null;
-
   public static final int CURRENT_SCHEMA_VERSION = 1;
   private int schemaVersion;
 
   public DeltaFile(DeltaFile other) {
     this.did = other.did;
+    this.name = other.name;
+    this.normalizedName = other.normalizedName;
+    this.dataSource = other.dataSource;
     this.parentDids = other.parentDids == null ? null : new ArrayList<>(other.parentDids);
     this.collectId = other.collectId;
     this.childDids = other.childDids == null ? null : new ArrayList<>(other.childDids);
@@ -119,8 +115,7 @@ public class DeltaFile {
     this.totalBytes = other.totalBytes;
     this.stage = other.stage;
     this.flows = other.flows == null ? null : other.flows.stream().map(DeltaFileFlow::new).toList();
-    this.annotations = other.annotations == null ? null : new HashMap<>(other.annotations);
-    this.annotationKeys = other.annotationKeys == null ? null :new HashSet<>(other.annotationKeys);
+    this.annotations = other.annotations == null ? null : new ArrayList<>(other.annotations);
     this.egressFlows = other.egressFlows == null ? null : new ArrayList<>(other.egressFlows);
     this.created = other.created;
     this.modified = other.modified;
@@ -136,19 +131,44 @@ public class DeltaFile {
     this.version = other.version;
     this.cacheTime = other.cacheTime;
     this.schemaVersion = other.schemaVersion;
-    this.snapshot = null;
   }
 
-  public void snapshot() {
-    this.snapshot = new DeltaFile(this);
-  }
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    
+    DeltaFile other = (DeltaFile) o;
 
-  public Map<String, String> getAnnotations() {
-    return annotations == null ? Collections.emptyMap() : annotations;
-  }
-
-  public Set<String> getAnnotationKeys() {
-    return annotationKeys == null ? Collections.emptySet() : annotationKeys;
+    return requeueCount == other.requeueCount &&
+            ingressBytes == other.ingressBytes &&
+            referencedBytes == other.referencedBytes &&
+            totalBytes == other.totalBytes &&
+            inFlight == other.inFlight &&
+            terminal == other.terminal &&
+            contentDeletable == other.contentDeletable &&
+            version == other.version &&
+            Objects.equals(did, other.did) &&
+            Objects.equals(name, other.name) &&
+            Objects.equals(normalizedName, other.normalizedName) &&
+            Objects.equals(dataSource, other.dataSource) &&
+            Objects.equals(parentDids, other.parentDids) &&
+            Objects.equals(collectId, other.collectId) &&
+            Objects.equals(childDids, other.childDids) &&
+            Objects.equals(stage, other.stage) &&
+            Objects.equals(egressFlows, other.egressFlows) &&
+            Objects.equals(created, other.created) &&
+            Objects.equals(modified, other.modified) &&
+            Objects.equals(contentDeleted, other.contentDeleted) &&
+            Objects.equals(contentDeletedReason, other.contentDeletedReason) &&
+            Objects.equals(egressed, other.egressed) &&
+            Objects.equals(filtered, other.filtered) &&
+            Objects.equals(replayed, other.replayed) &&
+            Objects.equals(replayDid, other.replayDid) &&
+            Objects.equals(cacheTime, other.cacheTime) &&
+            Objects.equals(schemaVersion, other.schemaVersion) &&
+            Objects.equals(new ArrayList<>(flows), new ArrayList<>(other.flows)) &&
+            Objects.equals(new ArrayList<>(annotations), new ArrayList<>(other.annotations));
   }
 
   public void setStage(DeltaFileStage stage) {
@@ -184,7 +204,7 @@ public class DeltaFile {
     List<DeltaFileFlow> pendingAnnotations = pendingAnnotationFlows();
 
     if (!pendingAnnotations.isEmpty()) {
-      pendingAnnotations.forEach(deltaFileFlow -> deltaFileFlow.removePendingAnnotations(this.annotationKeys));
+      pendingAnnotations.forEach(deltaFileFlow -> deltaFileFlow.removePendingAnnotations(this.annotations.stream().map(Annotation::getKey).collect(Collectors.toSet())));
       updateFlags();
     }
   }
@@ -202,9 +222,7 @@ public class DeltaFile {
   public Set<String> getPendingAnnotations(Set<String> expectedAnnotations) {
     Set<String> pendingAnnotations = expectedAnnotations != null ? new HashSet<>(expectedAnnotations) : new HashSet<>();
 
-    if (annotationKeys != null) {
-      pendingAnnotations.removeAll(annotationKeys);
-    }
+    pendingAnnotations.removeAll(this.annotations.stream().map(Annotation::getKey).collect(Collectors.toSet()));
 
     return pendingAnnotations;
   }
@@ -273,19 +291,18 @@ public class DeltaFile {
     return retries;
   }
 
-  public void addAnnotations(Map<String, String> metadata) {
-    if (null == metadata) {
-      return;
-    }
-
+  public void addAnnotations(Map<String, String> newAnnotations) {
     if (annotations == null) {
-      annotations = new HashMap<>();
+      annotations = new ArrayList<>();
     }
-    this.annotations.putAll(metadata);
-    if (annotationKeys == null) {
-      annotationKeys = new HashSet<>();
+    for (Map.Entry<String, String> newAnnotation : newAnnotations.entrySet()) {
+      Optional<Annotation> maybeAnnotation = annotations.stream().filter(a -> a.getKey().equals(newAnnotation.getKey())).findFirst();
+      if (maybeAnnotation.isPresent()) {
+        maybeAnnotation.get().setValue(newAnnotation.getValue());
+      } else {
+        annotations.add(new Annotation(newAnnotation.getKey(), newAnnotation.getValue()));
+      }
     }
-    this.annotationKeys.addAll(metadata.keySet());
   }
 
   public void addAnnotationsIfAbsent(Map<String, String> metadata) {
@@ -293,18 +310,14 @@ public class DeltaFile {
   }
 
   public void addAnnotationIfAbsent(String key, String value) {
-    if (null == key || (annotations != null && annotations.containsKey(key))) {
+    if (key == null || (annotations != null && annotations.stream().anyMatch(a -> a.getKey().equals(key)))) {
       return;
     }
 
     if (annotations == null) {
-      annotations = new HashMap<>();
+      annotations = new ArrayList<>();
     }
-    this.annotations.put(key, value);
-    if (annotationKeys == null) {
-      annotationKeys = new HashSet<>();
-    }
-    this.annotationKeys.add(key);
+    this.annotations.add(new Annotation(key, value));
   }
 
   public boolean hasPendingActions() {
@@ -341,7 +354,7 @@ public class DeltaFile {
     // make sure the expectedAnnotations set is modifiable
     expectedAnnotations = expectedAnnotations != null ? new HashSet<>(expectedAnnotations) : new HashSet<>();
 
-    Set<String> indexedKeys = getAnnotationKeys();
+    Set<String> indexedKeys = annotations.stream().map(Annotation::getKey).collect(Collectors.toSet());
     indexedKeys.forEach(expectedAnnotations::remove);
 
     return expectedAnnotations;
@@ -496,5 +509,9 @@ public class DeltaFile {
             .actionCreated(action.getCreated())
             .coldQueued(action.getState() == ActionState.COLD_QUEUED)
             .build();
+  }
+
+  public Map<String, String> annotationMap() {
+    return annotations.stream().collect(Collectors.toMap(Annotation::getKey, Annotation::getValue));
   }
 }

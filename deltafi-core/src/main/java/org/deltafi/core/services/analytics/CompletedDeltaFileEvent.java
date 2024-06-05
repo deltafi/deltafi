@@ -18,6 +18,7 @@
 package org.deltafi.core.services.analytics;
 
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.core.types.Annotation;
 import org.deltafi.core.types.DeltaFile;
 import org.deltafi.common.types.DeltaFileStage;
 import org.jetbrains.annotations.NotNull;
@@ -28,6 +29,7 @@ import java.sql.Statement;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 class CompletedDeltaFileEvent implements AnalyticEvent {
@@ -74,7 +76,7 @@ class CompletedDeltaFileEvent implements AnalyticEvent {
         this.egressedFiles = deltafile.getEgressed() ? 1L : 0L;
         this.filteredFiles = deltafile.getFiltered() ? 1L : 0L;
         this.cancelledFiles = deltafile.getStage() == DeltaFileStage.CANCELLED ? 1L : 0L;
-        this.annotations = deltafile.getAnnotations();
+        this.annotations = deltafile.annotationMap();
         this.egresses = deltafile.getEgressFlows();
     }
 
