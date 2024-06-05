@@ -73,7 +73,7 @@ class ConfigurationValidatorTest {
     @Test
     @SneakyThrows
     void testConfigCheck() {
-        Configuration c = readConfig();
+        Configuration c = readConfig("config-binary.yaml");
 
         Mockito.when(pluginRegistryService.getPlugins()).thenReturn(new ArrayList<>());
         Mockito.when(dataSourceService.hasFlow("unarchive-passthrough-rest-data-source")).thenReturn(false);
@@ -94,8 +94,8 @@ class ConfigurationValidatorTest {
         assertEquals(expectedErrors, actualErrors);
     }
 
-    Configuration readConfig() throws IOException {
-        byte[] bytes = new ClassPathResource("/integration/config-binary.yaml").getInputStream().readAllBytes();
+    Configuration readConfig(String file) throws IOException {
+        byte[] bytes = new ClassPathResource("/integration/" + file).getInputStream().readAllBytes();
         return YAML_MAPPER.readValue(bytes, Configuration.class);
     }
 }

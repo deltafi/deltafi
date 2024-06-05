@@ -24,7 +24,6 @@ import org.deltafi.common.types.KeyValue;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -42,7 +41,6 @@ public class Input {
     private boolean base64Encoded;
     private String data;
     private List<KeyValue> metadata;
-    private Duration timeout;
 
     public List<String> validate(List<String> flows) {
         List<String> errors = new ArrayList<>();

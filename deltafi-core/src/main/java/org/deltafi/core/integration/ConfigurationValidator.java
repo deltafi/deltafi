@@ -23,6 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.Plugin;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.integration.config.Configuration;
+import org.deltafi.core.integration.config.Input;
 import org.deltafi.core.plugin.PluginRegistryService;
 import org.deltafi.core.services.DataSourceService;
 import org.deltafi.core.services.EgressFlowService;
@@ -75,7 +76,7 @@ public class ConfigurationValidator {
             }
         }
 
-        errors.addAll(validateInput(config));
+        errors.addAll(validateInputs(config));
         errors.addAll(validateExpectedDeltaFile(config));
 
         if (errors.isEmpty() && flowsStarted) {
@@ -90,12 +91,16 @@ public class ConfigurationValidator {
         return errors;
     }
 
-    private List<String> validateInput(Configuration config) {
-        if (config.getInput() == null) {
-            return List.of("Test configuration is missing input");
+    private List<String> validateInputs(Configuration config) {
+        if (config.getInputs() == null || config.getInputs().isEmpty()) {
+            return List.of("Test configuration is missing 'inputs''");
         }
 
-        return config.getInput().validate(config.getDataSources());
+        List<String> errors = new ArrayList<>();
+        for (Input input : config.getInputs()) {
+            input.validate(config.getDataSources());
+        }
+        return errors;
     }
 
     private List<String> validateExpectedDeltaFile(Configuration config) {

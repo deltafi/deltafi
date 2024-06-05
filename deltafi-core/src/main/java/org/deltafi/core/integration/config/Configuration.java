@@ -20,6 +20,7 @@ package org.deltafi.core.integration.config;
 import lombok.Data;
 import org.deltafi.common.types.PluginCoordinates;
 
+import java.time.Duration;
 import java.util.List;
 
 @Data
@@ -28,6 +29,7 @@ public class Configuration {
     private List<String> dataSources;
     private List<String> transformationFlows;
     private List<String> egressFlows;
-    private Input input;
+    private List<Input> inputs;
+    private Duration timeout;
     private ExpectedDeltaFile expectedDeltaFile;
 }

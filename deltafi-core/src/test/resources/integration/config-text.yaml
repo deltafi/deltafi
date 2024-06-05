@@ -10,19 +10,23 @@ transformationFlows:
   - passthrough-transform
 egressFlows:
   - passthrough-egress
-input:
-  flow: unarchive-passthrough-rest-data-source
-  ingressFileName: three-files.tar.gz
-  base64Encoded: false
-  data: "Here is some\ntext on two lines"
-  timeout: PT3M
+inputs:
+  - flow: unarchive-passthrough-rest-data-source
+    ingressFileName: file-1.txt
+    base64Encoded: false
+    data: "Here is some\ntext on two lines"
+  - flow: unarchive-passthrough-rest-data-source
+    ingressFileName: file-2.txt
+    base64Encoded: false
+    data: Single line of text content
+timeout: PT3M
 expectedDeltaFile:
   stage: COMPLETE
   childCount: 3
   expectedActions:
     - flow: unarchive-passthrough-transform
       type: TRANSFORM
-      actions: [IngressAction, Unarchive, SplitContent]
+      actions: [ IngressAction, Unarchive, SplitContent ]
   children:
 
     - stage: COMPLETE
@@ -31,7 +35,7 @@ expectedDeltaFile:
       expectedActions:
         - flow: passthrough-transform
           type: TRANSFORM
-          actions: [Passthrough, PassthroughEgress]
+          actions: [ Passthrough, PassthroughEgress ]
 
     - stage: COMPLETE
       childCount: 0
@@ -39,7 +43,7 @@ expectedDeltaFile:
       expectedActions:
         - flow: passthrough-transform
           type: TRANSFORM
-          actions: [Passthrough, PassthroughEgress]
+          actions: [ Passthrough, PassthroughEgress ]
 
     - stage: COMPLETE
       childCount: 0
@@ -47,7 +51,7 @@ expectedDeltaFile:
       expectedActions:
         - flow: passthrough-transform
           type: TRANSFORM
-          actions: [Passthrough, PassthroughEgress]
+          actions: [ Passthrough, PassthroughEgress ]
       expectedContent:
         flow: passthrough-egress
         type: EGRESS

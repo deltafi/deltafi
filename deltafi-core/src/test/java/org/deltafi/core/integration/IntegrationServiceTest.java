@@ -62,9 +62,10 @@ class IntegrationServiceTest {
         assertEquals(2, c.getTransformationFlows().size());
         assertEquals(1, c.getEgressFlows().size());
 
-        assertEquals(Map.of("KEY1", "VALUE1", "KEY2", "VALUE2"), c.getInput().getMetadataMap());
+        assertEquals(Map.of("KEY1", "VALUE1", "KEY2", "VALUE2"),
+                c.getInputs().getFirst().getMetadataMap());
 
-        assertEquals("unarchive-passthrough-rest-data-source", c.getInput().getFlow());
+        assertEquals("unarchive-passthrough-rest-data-source", c.getInputs().getFirst().getFlow());
 
         assertEquals(3, c.getExpectedDeltaFile().getChildCount());
 
@@ -85,7 +86,9 @@ class IntegrationServiceTest {
         assertEquals(2, c.getTransformationFlows().size());
         assertEquals(1, c.getEgressFlows().size());
 
-        assertEquals("unarchive-passthrough-rest-data-source", c.getInput().getFlow());
+        assertEquals("unarchive-passthrough-rest-data-source", c.getInputs().getFirst().getFlow());
+        assertEquals("file-1.txt", c.getInputs().get(0).getIngressFileName());
+        assertEquals("file-2.txt", c.getInputs().get(1).getIngressFileName());
 
         assertEquals(3, c.getExpectedDeltaFile().getChildCount());
 
