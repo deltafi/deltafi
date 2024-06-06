@@ -29,6 +29,10 @@ import org.springframework.stereotype.Service;
 
 import javax.sql.DataSource;
 import java.sql.*;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -105,6 +109,47 @@ public class AnalyticEventService {
     public void recordCompleted(DeltaFile deltafile) {
         if (!enabled) return;
         completed.add(new CompletedDeltaFileEvent(deltafile));
+    }
+
+    /**
+     * Generate analytic events for Surveys
+     *
+     * @param surveyEvents the list of surveys to record
+     * @return list of errors if there was invalid survey data
+     */
+    public List<SurveyError> recordSurveys(List<SurveyEvent> surveyEvents) {
+        if (!enabled) {
+            log.error("Attempted to add survey metrics with analytics disabled");
+            throw new DisabledAnalyticsException();
+        }
+
+        if (surveyEvents == null || surveyEvents.isEmpty()) {
+            return List.of();
+        }
+
+        Instant instant = OffsetDateTime.now(ZoneOffset.UTC).toInstant();
+        String formattedNow = "" + instant.getEpochSecond() + instant.getNano();
+        List<SurveyError> surveyErrors = new ArrayList<>();
+        int index = 0;
+        List<CompletedDeltaFileEvent> completedEvents = new ArrayList<>();
+        for (SurveyEvent surveyEvent : surveyEvents) {
+            if (surveyEvent.isValid()) {
+                String did = "survey-" + index + "-" + formattedNow;
+                completedEvents.add(new CompletedDeltaFileEvent(surveyEvent, did));
+            } else {
+                surveyErrors.add(new SurveyError(index, surveyEvent));
+            }
+            index++;
+        }
+
+        // if there were errors do not process any of the survey entries
+        if (!surveyErrors.isEmpty()) {
+            return surveyErrors;
+        }
+
+        completed.addAll(completedEvents);
+        processPipelines(); // fire immediately instead of waiting for the next scheduled execution
+        return List.of();
     }
 
     /**
@@ -216,4 +261,12 @@ public class AnalyticEventService {
             log.info("Flushed {} {} to Clickhouse", count, pipeline.tableName);
         }
     }
+
+    public record SurveyError(String error, SurveyEvent surveyEvent) {
+        public SurveyError(int index, SurveyEvent surveyEvent) {
+            this("Invalid survey data at " + index, surveyEvent);
+        }
+    }
+
+    public static class DisabledAnalyticsException extends RuntimeException { }
 }
