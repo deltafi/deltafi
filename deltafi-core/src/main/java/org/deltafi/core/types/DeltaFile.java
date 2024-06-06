@@ -243,6 +243,7 @@ public class DeltaFile {
     deltaFileFlow.getActions().stream()
             .filter(a -> a.getName().equals(actionName) && a.getState() == ActionState.COLLECTING)
             .forEach(a -> a.error(now, now, now, "Failed collect", reason));
+    deltaFileFlow.setState(DeltaFileFlowState.ERROR);
   }
 
   private Stream<DeltaFileFlow> collectingFlows(UUID collectId) {
