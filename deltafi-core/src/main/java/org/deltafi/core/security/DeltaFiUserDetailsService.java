@@ -23,6 +23,7 @@ import org.deltafi.common.constant.DeltaFiConstants;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -58,5 +59,20 @@ public class DeltaFiUserDetailsService implements org.springframework.security.c
     private static boolean hasPluginVariableUpdate(GrantedAuthority grantedAuthority) {
         String auth = grantedAuthority != null ? grantedAuthority.getAuthority() : null;
         return DeltaFiConstants.ADMIN_PERMISSION.equals(auth) || "PluginVariableUpdate".equals(auth);
+    }
+
+    public static String currentUsername() {
+        SecurityContext securityContext = SecurityContextHolder.getContext();
+
+        if (securityContext == null || securityContext.getAuthentication() == null || securityContext.getAuthentication().getPrincipal() == null) {
+            return null;
+        }
+
+        Object principal = securityContext.getAuthentication().getPrincipal();
+
+        if (principal instanceof User user) {
+            return user.getUsername();
+        }
+        return principal.toString();
     }
 }

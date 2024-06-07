@@ -28,6 +28,7 @@ import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import lombok.extern.slf4j.Slf4j;
 import org.aopalliance.intercept.MethodInvocation;
+import org.deltafi.core.security.DeltaFiUserDetailsService;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.MDC;
 import org.springframework.context.event.EventListener;
@@ -110,6 +111,13 @@ public class CoreAuditLogger extends SimplePerformantInstrumentation {
         }
     }
 
+    public void audit(String message, Object ... objects) {
+        String username = DeltaFiUserDetailsService.currentUsername();
+        try (MDC.MDCCloseable ignored = MDC.putCloseable("user", username)) {
+            log.info(message, objects);
+        }
+    }
+
     @EventListener
     public void accessDeniedLogger(AuthorizationDeniedEvent<MethodInvocation> authorizationDeniedEvent) {
         String username = extractUsername(authorizationDeniedEvent);
@@ -125,19 +133,25 @@ public class CoreAuditLogger extends SimplePerformantInstrumentation {
     private String extractUsername(AuthorizationDeniedEvent<MethodInvocation> authorizationDeniedEvent) {
         Authentication authentication = authorizationDeniedEvent.getAuthentication().get();
         Object rawUser = authentication.getPrincipal();
-        return rawUser instanceof User ? ((User) rawUser).getUsername() : rawUser.toString();
+        if (rawUser instanceof User user) {
+            return user.getUsername();
+        }
+        return rawUser.toString();
     }
 
     private String extractMethodName(AuthorizationDeniedEvent<MethodInvocation> authorizationDeniedEvent) {
         Object rawMethodInvocation = authorizationDeniedEvent.getSource();
-        return rawMethodInvocation instanceof MethodInvocation ? ((MethodInvocation) rawMethodInvocation).getMethod().getName() : "unknownMethod";
+        if (rawMethodInvocation instanceof MethodInvocation methodInvocation) {
+            return methodInvocation.getMethod().getName();
+        }
+        return "unknownMethod";
     }
 
     private String extractMissingPermissions(AuthorizationDeniedEvent<MethodInvocation> authorizationDeniedEvent) {
         String permissions = "unknownPermissions";
         Object rawMethodInvocation = authorizationDeniedEvent.getSource();
-        if (rawMethodInvocation instanceof MethodInvocation) {
-            Method method = ((MethodInvocation) rawMethodInvocation).getMethod();
+        if (rawMethodInvocation instanceof MethodInvocation methodInvocation) {
+            Method method = methodInvocation.getMethod();
             permissions = permissionMap.get(method.getName());
             if (permissions == null) {
                 permissions = extractMissingPermissions(method);

@@ -26,15 +26,13 @@ import org.deltafi.core.plugin.deployer.customization.PluginCustomizationConfig;
 import org.deltafi.core.plugin.deployer.customization.PluginCustomizationService;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
+import org.deltafi.core.security.DeltaFiUserDetailsService;
 import org.deltafi.core.services.EventService;
 import org.deltafi.core.snapshot.SystemSnapshotService;
 import org.deltafi.core.types.Event;
 import org.deltafi.core.types.Event.Severity;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.util.MarkdownBuilder;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -153,18 +151,7 @@ public abstract class BaseDeployerService implements DeployerService {
     }
 
     private String getUsername() {
-        SecurityContext securityContext = SecurityContextHolder.getContext();
-
-        if (securityContext == null || securityContext.getAuthentication() == null || securityContext.getAuthentication().getPrincipal() == null) {
-            return null;
-        }
-
-        Object principal = securityContext.getAuthentication().getPrincipal();
-
-        if (principal instanceof User user) {
-            return user.getUsername();
-        }
-        return principal.toString();
+        return DeltaFiUserDetailsService.currentUsername();
     }
 
 }
