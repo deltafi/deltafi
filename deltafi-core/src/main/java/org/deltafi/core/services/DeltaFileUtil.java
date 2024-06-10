@@ -17,13 +17,9 @@
  */
 package org.deltafi.core.services;
 
-import org.deltafi.core.types.Action;
 import org.deltafi.common.types.ActionConfiguration;
+import org.deltafi.core.types.*;
 import org.deltafi.common.types.ActionState;
-import org.deltafi.core.types.WrappedActionInput;
-import org.deltafi.core.types.DeltaFile;
-import org.deltafi.core.types.DeltaFileFlow;
-import org.deltafi.core.types.DeltaFileFlowState;
 import org.deltafi.common.types.DeltaFileStage;
 import org.deltafi.core.collect.CollectEntry;
 
@@ -73,8 +69,8 @@ public class DeltaFileUtil {
         aggregateFlow.setTestMode(currentFlow.isTestMode());
         String testModeReason = currentFlow.isTestMode() ? currentFlow.getName() : currentFlow.getTestModeReason();
         aggregateFlow.setTestModeReason(testModeReason);
-        aggregateFlow.setActionConfigurations(new ArrayList<>(currentFlow.getActionConfigurations()));
-        currentFlow.getActionConfigurations().clear();
+        aggregateFlow.setPendingActions(new ArrayList<>(currentFlow.getPendingActions()));
+        currentFlow.getPendingActions().clear();
         return aggregateFlow;
     }
 }

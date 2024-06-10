@@ -18,41 +18,31 @@
 package org.deltafi.common.types;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 import org.springframework.data.annotation.Transient;
 
 import java.util.*;
 
 @Getter
 @Setter
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "__typename")
-@JsonSubTypes({
-        @JsonSubTypes.Type(value = TimedIngressActionConfiguration.class, name = "TimedIngressActionConfiguration"),
-        @JsonSubTypes.Type(value = TransformActionConfiguration.class, name = "TransformActionConfiguration"),
-        @JsonSubTypes.Type(value = EgressActionConfiguration.class, name = "EgressActionConfiguration")
-})
 @EqualsAndHashCode
 @ToString(callSuper = true, exclude = "internalParameters")
-public abstract class ActionConfiguration {
-    protected String name;
-    protected String apiVersion;
+@NoArgsConstructor
+public class ActionConfiguration {
+    private String name;
+    private String apiVersion;
+    @JsonIgnore
+    private ActionType actionType;
+    private String type;
+
     @JsonIgnore
     @Transient
-    protected final ActionType actionType;
-    protected final String type;
+    private Map<String, Object> internalParameters;
+    private Map<String, Object> parameters;
 
-    @JsonIgnore
-    protected Map<String, Object> internalParameters;
-    protected Map<String, Object> parameters;
+    private CollectConfiguration collect;
 
-    protected CollectConfiguration collect;
-
-    protected ActionConfiguration(String name, ActionType actionType, String type) {
+    public ActionConfiguration(String name, ActionType actionType, String type) {
         this.name = name;
         this.actionType = actionType;
         this.type = type;
@@ -76,6 +66,7 @@ public abstract class ActionConfiguration {
         return errors;
     }
 
+    @Transient
     public Map<String, Object> getInternalParameters() {
         if (Objects.isNull(internalParameters)) {
             // fall back to using parameters if internalParameters do not exist yet

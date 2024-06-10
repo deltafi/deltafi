@@ -365,7 +365,7 @@ class DeltaFiCoreApplicationTests {
 		EgressFlow sampleEgressFlow = buildRunningEgressFlow(EGRESS_FLOW_NAME, EGRESS, false);
 		sampleEgressFlow.setSubscribe(Set.of(new Rule(EGRESS_TOPIC)));
 
-		EgressActionConfiguration errorEgress = new EgressActionConfiguration("ErrorEgressAction", "type");
+		ActionConfiguration errorEgress = new ActionConfiguration("ErrorEgressAction", ActionType.EGRESS, "type");
 		EgressFlow errorFlow = buildRunningEgressFlow("error", errorEgress, false);
 
 		egressFlowRepo.saveAll(List.of(sampleEgressFlow, errorFlow));
@@ -1067,8 +1067,8 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testGetEgressFlowPlan() {
 		clearForFlowTests();
-		EgressFlowPlan egressFlowPlanA = new EgressFlowPlan("egressPlan", "description", new EgressActionConfiguration("egress", "type"));
-		EgressFlowPlan egressFlowPlanB = new EgressFlowPlan("b", "description", new EgressActionConfiguration("egress", "type"));
+		EgressFlowPlan egressFlowPlanA = new EgressFlowPlan("egressPlan", "description", new ActionConfiguration("egress", ActionType.EGRESS, "type"));
+		EgressFlowPlan egressFlowPlanB = new EgressFlowPlan("b", "description", new ActionConfiguration("egress", ActionType.EGRESS, "type"));
 		egressFlowPlanRepo.saveAll(List.of(egressFlowPlanA, egressFlowPlanB));
 		EgressFlowPlan plan = FlowPlanDatafetcherTestHelper.getEgressFlowPlan(dgsQueryExecutor);
 		assertThat(plan.getName()).isEqualTo("egressPlan");
@@ -1078,9 +1078,9 @@ class DeltaFiCoreApplicationTests {
 	void testGetTimedIngressDataSource() {
 		clearForFlowTests();
 		DataSourcePlan dataSourcePlanA = new TimedDataSourcePlan("timedIngressPlan", FlowType.TIMED_DATA_SOURCE,
-				"description", "topic", new TimedIngressActionConfiguration("timedIngress", "type"),  "*/5 * * * * *");
+				"description", "topic", new ActionConfiguration("timedIngress", ActionType.TIMED_INGRESS, "type"),  "*/5 * * * * *");
 		DataSourcePlan dataSourcePlanB = new TimedDataSourcePlan("b", FlowType.TIMED_DATA_SOURCE, "description", "topic",
-				new TimedIngressActionConfiguration("timedIngress", "type"), "*/5 * * * * *");
+				new ActionConfiguration("timedIngress", ActionType.TIMED_INGRESS, "type"), "*/5 * * * * *");
 		dataSourcePlanRepo.saveAll(List.of(dataSourcePlanA, dataSourcePlanB));
 		DataSourcePlan plan = FlowPlanDatafetcherTestHelper.getTimedIngressFlowPlan(dgsQueryExecutor);
 		assertThat(plan.getName()).isEqualTo("timedIngressPlan");
@@ -1636,6 +1636,7 @@ class DeltaFiCoreApplicationTests {
 		Action erroredAction = deltaFile.getFlow("firstFlow", 1).getAction("ErrorAction", 0);
 		erroredAction.setNextAutoResume(MONGO_NOW);
 		erroredAction.setNextAutoResumeReason("nextAutoResumeReason");
+		erroredAction.setCreated(MONGO_NOW.minusSeconds(1));
 		deltaFile.getFlows().forEach(flow -> flow.setFlowPlan(FlowPlanCoordinates.builder().plugin("plugin").pluginVersion("1").name(flow.getName()).build()));
 
 		deltaFileRepo.save(deltaFile);
@@ -1707,7 +1708,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(2, afterResumeFile.getFlows().get(2).getActions().size());
 		assertEquals(ActionState.RETRIED, afterResumeFile.getFlows().get(2).getActions().getFirst().getState());
 		assertEquals(QUEUED, afterResumeFile.getFlows().get(2).getActions().get(1).getState());
-		// StateMachine will queue the failed loadAction again leaving the DeltaFile in the IN_FLIGHT stage
+		// StateMachine will queue the failed egress action again leaving the DeltaFile in the IN_FLIGHT stage
 		assertEquals(DeltaFileFlowState.IN_FLIGHT, afterResumeFile.getFlows().get(2).getState());
 		assertEquals(DeltaFileStage.IN_FLIGHT, afterResumeFile.getStage());
 	}
@@ -4133,7 +4134,7 @@ class DeltaFiCoreApplicationTests {
 		aggregateFlow.setType(FlowType.TRANSFORM);
 		aggregateFlow.queueNewAction(COLLECTING_TRANSFORM_ACTION, ActionType.TRANSFORM, false, OffsetDateTime.now(clock));
 		aggregateFlow.actionNamed(COLLECTING_TRANSFORM_ACTION).orElseThrow().error(START_TIME, STOP_TIME, OffsetDateTime.now(clock), "collect action failed", "message");
-		aggregateFlow.setActionConfigurations(transformFlow.allActionConfigurations());
+		aggregateFlow.setPendingActions(transformFlow.allActionConfigurations().stream().map(ActionConfiguration::getName).toList());
 		deltaFileRepo.save(aggregate);
 
 		List<RetryResult> retryResults = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
@@ -4158,8 +4159,8 @@ class DeltaFiCoreApplicationTests {
 	private TransformFlow collectingTransformFlow(String name, CollectConfiguration configuration) {
 		TransformFlow transformFlow = new TransformFlow();
 		transformFlow.setName(name);
-		TransformActionConfiguration transformAction = new TransformActionConfiguration(COLLECTING_TRANSFORM_ACTION,
-				"org.deltafi.action.SomeCollectingTransformAction");
+		ActionConfiguration transformAction = new ActionConfiguration(COLLECTING_TRANSFORM_ACTION,
+				ActionType.TRANSFORM, "org.deltafi.action.SomeCollectingTransformAction");
 		transformAction.setCollect(configuration);
 		transformFlow.getTransformActions().add(transformAction);
 		transformFlow.getFlowStatus().setState(FlowState.RUNNING);

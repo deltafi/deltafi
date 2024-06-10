@@ -17,8 +17,8 @@
  */
 package org.deltafi.core.plugin.generator.flows;
 
+import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.FlowPlan;
-import org.deltafi.common.types.TransformActionConfiguration;
 import org.deltafi.common.types.TransformFlowPlan;
 import org.deltafi.core.plugin.generator.ActionGeneratorInput;
 import org.springframework.stereotype.Service;
@@ -37,7 +37,7 @@ public class TransformFlowPlanGenerator {
      * @return list of transform flow plans
      */
     public List<FlowPlan> generateTransformFlows(String baseFlowName, List<ActionGeneratorInput> transformActions) {
-        List<TransformActionConfiguration> transformActionConfigs = ActionUtil.transformActionConfigurations(transformActions);
+        List<ActionConfiguration> transformActionConfigs = ActionUtil.transformActionConfigurations(transformActions);
 
         List<FlowPlan> flowPlans = new ArrayList<>();
 
@@ -47,7 +47,7 @@ public class TransformFlowPlanGenerator {
         return flowPlans;
     }
 
-    private FlowPlan generateTransformFlowPlan(String planName, List<TransformActionConfiguration> transformActions) {
+    private FlowPlan generateTransformFlowPlan(String planName, List<ActionConfiguration> transformActions) {
         TransformFlowPlan transformFlowPlan = new TransformFlowPlan(planName, "Sample transform flow");
         transformFlowPlan.setTransformActions(transformActions);
         return transformFlowPlan;

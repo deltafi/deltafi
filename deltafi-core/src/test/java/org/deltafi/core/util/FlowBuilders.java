@@ -41,13 +41,13 @@ public class FlowBuilders {
     }
 
     public static DataSource buildTimedDataSource(FlowState flowState) {
-        TimedIngressActionConfiguration tic = new TimedIngressActionConfiguration("SampleTimedIngressAction", "type");
+        ActionConfiguration tic = new ActionConfiguration("SampleTimedIngressAction", ActionType.TIMED_INGRESS, "type");
 
         return buildDataSource(TIMED_DATA_SOURCE_NAME, tic, flowState, false, "*/5 * * * * *", TRANSFORM_TOPIC);
     }
 
     public static DataSource buildTimedDataSourceError(FlowState flowState) {
-        TimedIngressActionConfiguration tic = new TimedIngressActionConfiguration("SampleTimedIngressErrorAction", "type");
+        ActionConfiguration tic = new ActionConfiguration("SampleTimedIngressErrorAction", ActionType.TIMED_INGRESS, "type");
 
         return buildDataSource(TIMED_DATA_SOURCE_ERROR_NAME, tic, flowState, false, "*/5 * * * * *", MISSING_PUBLISH_TOPIC);
     }
@@ -61,11 +61,11 @@ public class FlowBuilders {
         return restDataSource;
     }
 
-    public static TimedDataSource buildDataSource(String name, TimedIngressActionConfiguration timedIngressActionConfiguration, FlowState flowState, boolean testMode, String cronSchedule, String targetFlow) {
+    public static TimedDataSource buildDataSource(String name, ActionConfiguration ActionConfiguration, FlowState flowState, boolean testMode, String cronSchedule, String targetFlow) {
         TimedDataSource dataSource = new TimedDataSource();
         dataSource.setName(name);
         dataSource.getFlowStatus().setState(flowState);
-        dataSource.setTimedIngressAction(timedIngressActionConfiguration);
+        dataSource.setTimedIngressAction(ActionConfiguration);
         dataSource.setTestMode(testMode);
         dataSource.setCronSchedule(cronSchedule);
         dataSource.setTopic(targetFlow);
@@ -80,12 +80,12 @@ public class FlowBuilders {
     }
 
     public static EgressFlow buildEgressFlow(FlowState flowState) {
-        EgressActionConfiguration sampleEgress = new EgressActionConfiguration("SampleEgressAction", "type");
+        ActionConfiguration sampleEgress = new ActionConfiguration("SampleEgressAction", ActionType.EGRESS, "type");
 
         return buildFlow(EGRESS_FLOW_NAME, sampleEgress, flowState, false);
     }
 
-    public static EgressFlow buildFlow(String name, EgressActionConfiguration egressAction, FlowState flowState, boolean testMode) {
+    public static EgressFlow buildFlow(String name, ActionConfiguration egressAction, FlowState flowState, boolean testMode) {
         EgressFlow egressFlow = new EgressFlow();
         egressFlow.setName(name);
         egressFlow.setEgressAction(egressAction);
@@ -94,18 +94,18 @@ public class FlowBuilders {
         return egressFlow;
     }
 
-    public static EgressFlow buildRunningEgressFlow(String name, EgressActionConfiguration egressAction, boolean testMode) {
+    public static EgressFlow buildRunningEgressFlow(String name, ActionConfiguration egressAction, boolean testMode) {
         return buildFlow(name, egressAction, FlowState.RUNNING, testMode);
     }
 
     public static TransformFlow buildTransformFlow(FlowState flowState) {
-        TransformActionConfiguration tc = new TransformActionConfiguration("sampleTransform.Utf8TransformAction", "type");
-        TransformActionConfiguration tc2 = new TransformActionConfiguration("sampleTransform.SampleTransformAction", "type");
+        ActionConfiguration tc = new ActionConfiguration("sampleTransform.Utf8TransformAction", ActionType.TRANSFORM, "type");
+        ActionConfiguration tc2 = new ActionConfiguration("sampleTransform.SampleTransformAction", ActionType.TRANSFORM, "type");
 
         return buildFlow(TRANSFORM_FLOW_NAME, List.of(tc, tc2), flowState, false);
     }
 
-    public static TransformFlow buildFlow(String name, List<TransformActionConfiguration> transforms, FlowState flowState, boolean testMode) {
+    public static TransformFlow buildFlow(String name, List<ActionConfiguration> transforms, FlowState flowState, boolean testMode) {
         TransformFlow transformFlow = new TransformFlow();
         transformFlow.setName(name);
         transformFlow.getFlowStatus().setState(flowState);
@@ -114,7 +114,7 @@ public class FlowBuilders {
         return transformFlow;
     }
 
-    public static TransformFlow buildRunningTransformFlow(String name, List<TransformActionConfiguration> transforms, boolean testMode) {
+    public static TransformFlow buildRunningTransformFlow(String name, List<ActionConfiguration> transforms, boolean testMode) {
         return buildFlow(name, transforms, FlowState.RUNNING, testMode);
     }
 

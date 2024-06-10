@@ -33,7 +33,7 @@ import java.util.List;
 @Setter
 @EqualsAndHashCode(callSuper = true)
 public class TimedDataSourcePlan extends DataSourcePlan {
-    private TimedIngressActionConfiguration timedIngressAction;
+    private ActionConfiguration timedIngressAction;
     private String cronSchedule;
 
     @PersistenceCreator
@@ -43,7 +43,7 @@ public class TimedDataSourcePlan extends DataSourcePlan {
             @JsonProperty(value = "type") FlowType type,
             @JsonProperty(value = "description", required = true) String description,
             @JsonProperty(value = "topic", required = true) String topic,
-            @JsonProperty(value = "timedIngressAction", required = true) TimedIngressActionConfiguration timedIngressAction,
+            @JsonProperty(value = "timedIngressAction", required = true) ActionConfiguration timedIngressAction,
             @JsonProperty(value = "cronSchedule", required = true) String cronSchedule) {
         super(name, FlowType.TIMED_DATA_SOURCE, description, topic);
         this.timedIngressAction = timedIngressAction;

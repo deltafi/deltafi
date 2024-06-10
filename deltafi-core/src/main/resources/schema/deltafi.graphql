@@ -101,6 +101,7 @@ enum ActionType {
 type Action {
   name: String!
   id: UUID!
+  number: Int!
   type: ActionType!
   state: ActionState!
   created: DateTime!
@@ -153,8 +154,8 @@ enum FlowType {
 
 type DeltaFileFlow {
   name: String!
-  # unique uuid produced for this deltaFile instantiation, used to reconstruct the DAG
   id: UUID!
+  number: Int!
   type: FlowType!
   state: DeltaFileFlowState!
   created: DateTime!

@@ -19,7 +19,6 @@ package org.deltafi.core.services;
 
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.ActionType;
-import org.deltafi.common.types.TransformActionConfiguration;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.types.ColdQueuedActionSummary;
@@ -41,7 +40,7 @@ class QueueManagementServiceTest {
     private static final String QUEUE_NAME = "queueName";
     private static final String ACTION_NAME = "actionName";
     private static final ColdQueuedActionSummary COLD_QUEUED_ACTION_SUMMARY = new ColdQueuedActionSummary(ACTION_NAME, ActionType.TRANSFORM, 1);
-    private static final ActionConfiguration ACTION_CONFIGURATION = new TransformActionConfiguration(ACTION_NAME, QUEUE_NAME);
+    private static final ActionConfiguration ACTION_CONFIGURATION = new ActionConfiguration(ACTION_NAME, ActionType.TRANSFORM, QUEUE_NAME);
 
     @Mock
     CoreEventQueue coreEventQueue;

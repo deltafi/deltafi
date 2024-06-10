@@ -36,7 +36,7 @@ import java.util.Set;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 @EqualsAndHashCode(callSuper = true)
 public class TransformFlowPlan extends FlowPlan implements Publisher, Subscriber {
-    private List<TransformActionConfiguration> transformActions;
+    private List<ActionConfiguration> transformActions;
     @JsonProperty(required = true)
     private Set<Rule> subscribe;
     private PublishRules publish;

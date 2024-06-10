@@ -24,7 +24,7 @@ import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.ActionFamily;
 import org.deltafi.common.types.Rule;
 import org.deltafi.common.types.Subscriber;
-import org.deltafi.common.types.TransformActionConfiguration;
+import org.deltafi.common.types.ActionConfiguration;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
@@ -36,7 +36,7 @@ import java.util.Set;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class TransformFlow extends Flow implements Subscriber, Publisher {
-    private List<TransformActionConfiguration> transformActions = new ArrayList<>();
+    private List<ActionConfiguration> transformActions = new ArrayList<>();
     private int maxErrors = -1;
     @JsonProperty(required = true)
     private Set<Rule> subscribe;

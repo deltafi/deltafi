@@ -40,7 +40,7 @@ public class TimedDataSource extends DataSource {
     private static final Duration TASKING_TIMEOUT = Duration.ofSeconds(30);
     private static final String TYPE = "TIMED_DATA_SOURCE";
 
-    private TimedIngressActionConfiguration timedIngressAction;
+    private ActionConfiguration timedIngressAction;
     private String cronSchedule;
 
     private OffsetDateTime lastRun;
@@ -64,7 +64,7 @@ public class TimedDataSource extends DataSource {
     }
 
     @Builder
-    public TimedDataSource(String name, String topic, String description, TimedIngressActionConfiguration timedIngressAction, String cronSchedule) {
+    public TimedDataSource(String name, String topic, String description, ActionConfiguration timedIngressAction, String cronSchedule) {
         this.setTopic(topic);
         this.setName(name);
         this.setDescription(description);

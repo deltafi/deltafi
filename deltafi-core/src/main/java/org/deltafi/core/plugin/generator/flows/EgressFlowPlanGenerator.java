@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.plugin.generator.flows;
 
-import org.deltafi.common.types.EgressActionConfiguration;
+import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.EgressFlowPlan;
 import org.deltafi.common.types.FlowPlan;
 import org.deltafi.core.plugin.generator.ActionGeneratorInput;
@@ -36,7 +36,7 @@ public class EgressFlowPlanGenerator {
      * @return list of flow plans built using the given actions
      */
     List<FlowPlan> generateEgressFlowPlans(String baseFlowName, List<ActionGeneratorInput> egressActions) {
-        List<EgressActionConfiguration> egressActionConfigs = ActionUtil.egressActionConfigurations(egressActions);
+        List<ActionConfiguration> egressActionConfigs = ActionUtil.egressActionConfigurations(egressActions);
 
         String planName = baseFlowName + "-egress";
         List<FlowPlan> egressFlowPlans = new ArrayList<>();
@@ -45,7 +45,7 @@ public class EgressFlowPlanGenerator {
             egressFlowPlans.add(generateEgressFlow(planName, egressActionConfigs.getFirst()));
         } else {
             for (int i = 0; i < egressActionConfigs.size(); i++) {
-                EgressActionConfiguration egressActionConfiguration = egressActionConfigs.get(i);
+                ActionConfiguration egressActionConfiguration = egressActionConfigs.get(i);
                 int planNum = i + 1;
                 egressFlowPlans.add(generateEgressFlow(planName + "-" + planNum, egressActionConfiguration));
             }
@@ -53,7 +53,7 @@ public class EgressFlowPlanGenerator {
         return egressFlowPlans;
     }
 
-    private FlowPlan generateEgressFlow(String planName, EgressActionConfiguration egressAction) {
+    private FlowPlan generateEgressFlow(String planName, ActionConfiguration egressAction) {
         return new EgressFlowPlan(planName, "Sample egress flow", egressAction);
     }
 

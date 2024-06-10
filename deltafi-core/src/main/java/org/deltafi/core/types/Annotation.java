@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.types;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -42,5 +43,6 @@ public class Annotation {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "delta_file_id")
     @ToString.Exclude
+    @JsonBackReference
     private DeltaFile deltaFile;
 }

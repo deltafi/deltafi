@@ -1202,8 +1202,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         String deltaFileFlowSql = """
                 INSERT INTO delta_file_flows (id, name, number, type, state, created, modified, flow_plan, input,
                                               publish_topics, depth, pending_annotations, test_mode, test_mode_reason,
-                                              collect_id, delta_file_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?)""";
+                                              collect_id, pending_actions, delta_file_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?::jsonb, ?)""";
 
         jdbcTemplate.batchUpdate(deltaFileFlowSql, deltaFileFlows, 1000, (ps, flow) -> {
             ps.setObject(1, flow.getId());
@@ -1221,7 +1221,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             ps.setBoolean(13, flow.isTestMode());
             ps.setString(14, flow.getTestModeReason());
             ps.setObject(15, flow.getCollectId());
-            ps.setObject(16, flow.getDeltaFile().getDid());
+            ps.setObject(16, flow.getPendingActions());
+            ps.setObject(17, flow.getDeltaFile().getDid());
         });
 
         // Batch insert Actions

@@ -104,7 +104,7 @@ class StateMachineTest {
         egressFlow.setType(FlowType.EGRESS);
         egressFlow.setTestMode(true);
         egressFlow.setTestModeReason("test mode reason");
-        egressFlow.setActionConfigurations(new ArrayList<>(egressFlowConfig.allActionConfigurations()));
+        egressFlow.setPendingActions(new ArrayList<>(egressFlowConfig.allActionConfigurations().stream().map(ActionConfiguration::getName).toList()));
         Mockito.when(publisherService.subscribers(transformFlow, deltaFile, deltaFileFlow))
                 .thenReturn(Set.of(egressFlow));
 
@@ -128,11 +128,11 @@ class StateMachineTest {
 
         DeltaFileFlow deltaFileFlow = deltaFile.getFlows().getFirst();
         deltaFileFlow.setType(FlowType.TRANSFORM);
-        TransformActionConfiguration transformAction = new TransformActionConfiguration("CollectingTransformAction",
-                "org.deltafi.action.SomeCollectingTransformAction");
+        ActionConfiguration transformAction = new ActionConfiguration("CollectingTransformAction",
+                ActionType.TRANSFORM, "org.deltafi.action.SomeCollectingTransformAction");
         transformAction.setCollect(new CollectConfiguration(Duration.parse("PT1S"), null, 3, null));
         // add the transform action as the next action config to use in the DeltaFileFlow
-        deltaFileFlow.setActionConfigurations(new ArrayList<>(List.of(transformAction)));
+        deltaFileFlow.setPendingActions(List.of(transformAction.getName()));
 
         CollectEntry collectEntry = new CollectEntry();
         collectEntry.setCount(2);
@@ -184,8 +184,8 @@ class StateMachineTest {
         private EgressFlow makeEgressFlow() {
             EgressFlow egressFlow = new EgressFlow();
             egressFlow.setName(name);
-            EgressActionConfiguration egressActionConfiguration = new EgressActionConfiguration(egressActionName, null);
-            egressFlow.setEgressAction(egressActionConfiguration);
+            ActionConfiguration ActionConfiguration = new ActionConfiguration(egressActionName, ActionType.EGRESS, null);
+            egressFlow.setEgressAction(ActionConfiguration);
 
             egressFlow.setFlowStatus(FlowStatus.newBuilder().state(flowState).testMode(testMode).build());
 

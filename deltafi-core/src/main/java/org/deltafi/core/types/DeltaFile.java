@@ -59,6 +59,7 @@ public class DeltaFile {
   @JoinColumn(name = "delta_file_id")
   @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
   @JsonManagedReference
+  @OrderBy("number ASC")
   private List<DeltaFileFlow> flows = new ArrayList<>();
   private int requeueCount;
   private long ingressBytes;
@@ -461,11 +462,11 @@ public class DeltaFile {
 
   /**
    * Create the ActionInput that should be sent to an Action
-   * @param flow the flow on which the Action is specified
    * @param actionConfiguration Configured action
+   * @param flow the flow on which the Action is specified
+   * @param action the action
    * @param systemName system name to set in context
    * @param returnAddress the unique address of this core instance
-   * @param action the action
    * @param memo memo to set in the context
    * @return ActionInput containing the ActionConfiguration
    */
@@ -478,11 +479,12 @@ public class DeltaFile {
 
   /**
    * Create the ActionInput that should be sent to an Action
-   * @param flow the flow on which the Action is specified
    * @param actionConfiguration Configured action
+   * @param flow the flow on which the Action is specified
+   * @param collectedDids the list of dids that were combined to create the child, or an empty list
+   * @param action the action
    * @param systemName system name to set in context
    * @param returnAddress the unique address of this core instance
-   * @param action the action
    * @param memo memo to set in the context
    * @return ActionInput containing the ActionConfiguration
    */
@@ -504,7 +506,7 @@ public class DeltaFile {
                     .memo(memo)
                     .build())
             .deltaFile(this)
-            .actionParams(actionConfiguration.getInternalParameters())
+            .actionParams(actionConfiguration.getParameters())
             .returnAddress(returnAddress)
             .actionCreated(action.getCreated())
             .coldQueued(action.getState() == ActionState.COLD_QUEUED)

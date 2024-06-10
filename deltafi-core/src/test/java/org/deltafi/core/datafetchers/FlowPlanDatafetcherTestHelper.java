@@ -110,7 +110,7 @@ public class FlowPlanDatafetcherTestHelper {
     }
 
     public static EgressFlow saveEgressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
-        EgressActionConfigurationInput egress = EgressActionConfigurationInput.newBuilder().name("egress").type("org.deltafi.actions.EgressAction").build();
+        ActionConfigurationInput egress = ActionConfigurationInput.newBuilder().name("egress").type("org.deltafi.actions.EgressAction").build();
         EgressFlowPlanInput input = EgressFlowPlanInput.newBuilder()
                 .name("flowPlan")
                 .type("EGRESS")
@@ -122,7 +122,7 @@ public class FlowPlanDatafetcherTestHelper {
     }
 
     public static TimedDataSource saveTimedIngressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
-        TimedIngressActionConfigurationInput timedIngress = TimedIngressActionConfigurationInput.newBuilder().name("timedIngress").type("org.deltafi.actions.TimedIngress").build();
+        ActionConfigurationInput timedIngress = ActionConfigurationInput.newBuilder().name("timedIngress").type("org.deltafi.actions.TimedIngress").build();
 
         TimedDataSourcePlanInput input = TimedDataSourcePlanInput.newBuilder()
                 .name("flowPlan")

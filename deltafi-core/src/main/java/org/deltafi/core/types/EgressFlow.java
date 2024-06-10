@@ -31,7 +31,7 @@ import java.util.*;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class EgressFlow extends Flow implements Subscriber {
-    private EgressActionConfiguration egressAction;
+    private ActionConfiguration egressAction;
     private Set<String> expectedAnnotations;
     @JsonProperty(required = true)
     private Set<Rule> subscribe;

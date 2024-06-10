@@ -60,7 +60,7 @@ type EgressFlowPlan {
   description: String!
   sourcePlugin: PluginCoordinates!
   subscribe: [Rule!]!
-  egressAction: EgressActionConfiguration!
+  egressAction: ActionConfiguration!
 }
 
 input EgressFlowPlanInput {
@@ -68,7 +68,7 @@ input EgressFlowPlanInput {
   type: String!
   description: String!
   subscribe: [RuleInput!]!
-  egressAction: EgressActionConfigurationInput!
+  egressAction: ActionConfigurationInput!
 }
 
 interface DataSourcePlan {
@@ -85,7 +85,7 @@ type TimedDataSourcePlan implements DataSourcePlan {
   description: String!
   sourcePlugin: PluginCoordinates!
   topic: String!
-  timedIngressAction: TimedIngressActionConfiguration!
+  timedIngressAction: ActionConfiguration!
   cronSchedule: String
 }
 
@@ -102,7 +102,7 @@ input TimedDataSourcePlanInput {
   type: String!
   description: String!
   topic: String!
-  timedIngressAction: TimedIngressActionConfigurationInput!
+  timedIngressAction: ActionConfigurationInput!
   cronSchedule: String
 }
 
@@ -119,7 +119,7 @@ type TransformFlowPlan {
   description: String!
   sourcePlugin: PluginCoordinates!
   subscribe: [Rule!]!
-  transformActions: [TransformActionConfiguration!]
+  transformActions: [ActionConfiguration!]
   publish: PublishRules
 }
 
@@ -128,7 +128,7 @@ input TransformFlowPlanInput {
   type: String!
   description: String!
   subscribe: [RuleInput!]!
-  transformActions: [TransformActionConfigurationInput!]
+  transformActions: [ActionConfigurationInput!]
   publish: PublishRulesInput
 }
 
@@ -185,7 +185,7 @@ type EgressFlow {
   flowStatus: FlowStatus!
   subscribe: [Rule!]!
   expectedAnnotations: [String]
-  egressAction: EgressActionConfiguration!
+  egressAction: ActionConfiguration!
   variables: [Variable]!
 }
 
@@ -219,7 +219,7 @@ type TimedDataSource implements DataSource {
   executeImmediate: Boolean
   ingressStatus: IngressStatus
   ingressStatusMessage: String
-  timedIngressAction: TimedIngressActionConfiguration!
+  timedIngressAction: ActionConfiguration!
   variables: [Variable]!
 }
 
@@ -239,7 +239,7 @@ type TransformFlow {
   subscribe: [Rule!]!
   flowStatus: FlowStatus!
   maxErrors: Int!
-  transformActions: [TransformActionConfiguration!]
+  transformActions: [ActionConfiguration!]
   publish: PublishRules
   variables: [Variable]!
 }

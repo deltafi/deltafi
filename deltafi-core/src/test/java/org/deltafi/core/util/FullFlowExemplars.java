@@ -37,10 +37,10 @@ import static org.deltafi.core.util.FlowBuilders.TRANSFORM_TOPIC;
 
 public class FullFlowExemplars {
 
-    public static final TransformActionConfiguration TRANSFORM1 = new TransformActionConfiguration("Utf8TransformAction", "type");
-    public static final TransformActionConfiguration TRANSFORM2 = new TransformActionConfiguration("SampleTransformAction", "type");
-    public static final EgressActionConfiguration EGRESS = new EgressActionConfiguration("SampleEgressAction", "type");
-    public static final List<TransformActionConfiguration> TRANSFORM_ACTIONS = List.of(TRANSFORM1, TRANSFORM2);
+    public static final ActionConfiguration TRANSFORM1 = new ActionConfiguration("Utf8TransformAction", ActionType.TRANSFORM, "type");
+    public static final ActionConfiguration TRANSFORM2 = new ActionConfiguration("SampleTransformAction", ActionType.TRANSFORM, "type");
+    public static final ActionConfiguration EGRESS = new ActionConfiguration("SampleEgressAction", ActionType.EGRESS, "type");
+    public static final List<ActionConfiguration> TRANSFORM_ACTIONS = List.of(TRANSFORM1, TRANSFORM2);
     public static final String SAMPLE_EGRESS_ACTION = "SampleEgressAction";
 
     public static DeltaFile ingressedFromAction(UUID did, String dataSource) {
@@ -135,7 +135,7 @@ public class FullFlowExemplars {
         DeltaFile deltaFile = Util.emptyDeltaFile(did, TIMED_DATA_SOURCE_NAME, List.of(content));
         deltaFile.setIngressBytes(500L);
         DeltaFileFlow flow = deltaFile.addFlow(TRANSFORM_FLOW_NAME, FlowType.TRANSFORM, deltaFile.getFlows().getFirst(), OffsetDateTime.now());
-        flow.setActionConfigurations(new ArrayList<>(TRANSFORM_ACTIONS));
+        flow.setPendingActions(TRANSFORM_ACTIONS.stream().map(ActionConfiguration::getName).toList());
         flow.getInput().setMetadata(SOURCE_METADATA);
         flow.getInput().setTopics(Set.of(TRANSFORM_TOPIC));
         flow.queueAction("Utf8TransformAction", ActionType.TRANSFORM, false, OffsetDateTime.now());
@@ -194,7 +194,7 @@ public class FullFlowExemplars {
 
     public static DeltaFile postTransformHadErrorDeltaFile(UUID did) {
         DeltaFile deltaFile = postTransformUtf8DeltaFile(did);
-        deltaFile.getFlows().get(1).setActionConfigurations(new ArrayList<>(List.of(TRANSFORM2)));
+        deltaFile.getFlows().get(1).setPendingActions(List.of(TRANSFORM2.getName()));
         deltaFile.setStage(DeltaFileStage.ERROR);
         DeltaFileFlow flow = deltaFile.getFlow(TRANSFORM_FLOW_NAME, 1);
         Action action = flow.getAction("SampleTransformAction", 1);
@@ -247,7 +247,7 @@ public class FullFlowExemplars {
         DeltaFile deltaFile = postTransformDeltaFile(did);
         deltaFile.setStage(DeltaFileStage.ERROR);
         DeltaFileFlow flow = deltaFile.getFlow(EGRESS_FLOW_NAME, 2);
-        flow.setActionConfigurations(new ArrayList<>(List.of(EGRESS)));
+        flow.setPendingActions(List.of(EGRESS.getName()));
         flow.setState(DeltaFileFlowState.ERROR);
         Action action = flow.getAction(SAMPLE_EGRESS_ACTION, 0);
         action.error(START_TIME, STOP_TIME, OffsetDateTime.now(),

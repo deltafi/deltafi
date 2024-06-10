@@ -42,10 +42,6 @@ public class DeltaFiConstants {
     public static final String FILES_OUT = "files_out";
     public static final String ACTION_EXECUTION_TIME_MS = "action_execution_time_ms";
     public static final String EXECUTION_TIME_MS = "execution_time_ms";
-    public static final String SURVEY_FILES = "survey.files";
-    public static final String SURVEY_BYTES = "survey.bytes";
-    public static final String SURVEY_SUBFLOW_FILES = "survey.subflow.files";
-    public static final String SURVEY_SUBFLOW_BYTES = "survey.subflow.bytes";
     public static final String DELETED_FILES = "deleted.files";
     public static final String DELETED_BYTES = "deleted.bytes";
 

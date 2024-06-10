@@ -22,21 +22,16 @@ interface ActionConfiguration {
     actionType: String!
     type: String!
     parameters: JSON
+    collect: CollectConfiguration
 }
 
-type TimedIngressActionConfiguration implements ActionConfiguration {
+input ActionConfigurationInput {
     name: String!
     apiVersion: String
     actionType: String!
     type: String!
     parameters: JSON
-}
-
-input TimedIngressActionConfigurationInput {
-    name: String!
-    apiVersion: String
-    type: String!
-    parameters: JSON
+    collect: CollectConfigurationInput
 }
 
 type CollectConfiguration {
@@ -51,36 +46,4 @@ input CollectConfigurationInput {
     minNum: Int
     maxNum: Int
     metadataKey: String
-}
-
-type TransformActionConfiguration implements ActionConfiguration {
-    name: String!
-    apiVersion: String
-    actionType: String!
-    type: String!
-    parameters: JSON
-    collect: CollectConfiguration
-}
-
-input TransformActionConfigurationInput {
-    name: String!
-    apiVersion: String
-    type: String!
-    parameters: JSON
-    collect: CollectConfigurationInput
-}
-
-type EgressActionConfiguration implements ActionConfiguration {
-    name: String!
-    apiVersion: String
-    actionType: String!
-    type: String!
-    parameters: JSON
-}
-
-input EgressActionConfigurationInput {
-    name: String!
-    apiVersion: String
-    type: String!
-    parameters: JSON
 }

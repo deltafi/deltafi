@@ -353,7 +353,7 @@ public class DeltaFilesService {
             Action action = flow.getPendingAction(event.getActionName(), event.getActionId(), event.getDid());
 
             if (event.getType() != ActionEventType.ERROR) {
-                flow.removeActionConfiguration(action.getName());
+                flow.removePendingAction(action.getName());
             }
 
             String validationError = event.validatePayload();
@@ -538,7 +538,7 @@ public class DeltaFilesService {
                 .map(transformEvent -> createChildDeltaFile(transformEvent, deltaFile, flow, startTime, stopTime))
                 .toList();
 
-        flow.getActionConfigurations().clear(); // clear remaining action configurations out of the parent
+        flow.getPendingActions().clear(); // clear remaining pending actions out of the parent
         return inputs;
     }
 
@@ -750,7 +750,7 @@ public class DeltaFilesService {
                 .flowPlan(fromFlow.getFlowPlan())
                 .testMode(fromFlow.isTestMode())
                 .testModeReason(fromFlow.getTestModeReason())
-                .actionConfigurations(new ArrayList<>(fromFlow.getActionConfigurations()))
+                .pendingActions(new ArrayList<>(fromFlow.getPendingActions()))
                 .build();
 
         DeltaFile child = DeltaFile.builder()
@@ -971,7 +971,7 @@ public class DeltaFilesService {
             startFromAction = new Action(firstFlow.getActions().getFirst());
         }
 
-        flow.setActionConfigurations(nextActions);
+        flow.setPendingActions(nextActions.stream().map(ActionConfiguration::getName).toList());
         flow.setState(nextActions.isEmpty() ? DeltaFileFlowState.COMPLETE : DeltaFileFlowState.IN_FLIGHT);
 
         if (startFromAction == null) {
@@ -1015,7 +1015,7 @@ public class DeltaFilesService {
             nextActions.add(flowConfig.getEgressAction());
         }
 
-        aggregateFlow.setActionConfigurations(nextActions);
+        aggregateFlow.setPendingActions(nextActions.stream().map(ActionConfiguration::getName).toList());
     }
 
     public List<AcknowledgeResult> acknowledge(List<UUID> dids, String reason) {

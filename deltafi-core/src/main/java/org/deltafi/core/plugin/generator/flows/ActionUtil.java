@@ -19,8 +19,7 @@ package org.deltafi.core.plugin.generator.flows;
 
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.ActionConfiguration;
-import org.deltafi.common.types.EgressActionConfiguration;
-import org.deltafi.common.types.TransformActionConfiguration;
+import org.deltafi.common.types.ActionType;
 import org.deltafi.core.plugin.generator.ActionGeneratorInput;
 
 import java.util.List;
@@ -50,21 +49,21 @@ public class ActionUtil {
     private ActionUtil() {}
 
 
-    public static List<TransformActionConfiguration> transformActionConfigurations(List<ActionGeneratorInput> actions) {
+    public static List<ActionConfiguration> transformActionConfigurations(List<ActionGeneratorInput> actions) {
         return notEmpty(actions) ? actions.stream().map(ActionUtil::transformActionConfiguration).toList() : null;
     }
 
-    public static TransformActionConfiguration transformActionConfiguration(ActionGeneratorInput actionGeneratorInput) {
-        TransformActionConfiguration actionConfig = new TransformActionConfiguration(actionGeneratorInput.getClassName(), actionGeneratorInput.getFullClassName());
+    public static ActionConfiguration transformActionConfiguration(ActionGeneratorInput actionGeneratorInput) {
+        ActionConfiguration actionConfig = new ActionConfiguration(actionGeneratorInput.getClassName(), ActionType.TRANSFORM, actionGeneratorInput.getFullClassName());
         return addParams(actionConfig, actionGeneratorInput);
     }
 
-    public static List<EgressActionConfiguration> egressActionConfigurations(List<ActionGeneratorInput> actions) {
+    public static List<ActionConfiguration> egressActionConfigurations(List<ActionGeneratorInput> actions) {
         return useDefaultIfEmpty(actions, DEFAULT_EGRESS).stream().map(ActionUtil::egressActionConfiguration).toList();
     }
 
-    public static EgressActionConfiguration egressActionConfiguration(ActionGeneratorInput actionGeneratorInput) {
-        EgressActionConfiguration egressActionConfiguration = new EgressActionConfiguration(actionGeneratorInput.getClassName(), actionGeneratorInput.getFullClassName());
+    public static ActionConfiguration egressActionConfiguration(ActionGeneratorInput actionGeneratorInput) {
+        ActionConfiguration egressActionConfiguration = new ActionConfiguration(actionGeneratorInput.getClassName(), ActionType.EGRESS, actionGeneratorInput.getFullClassName());
         if (actionGeneratorInput.equals(DEFAULT_EGRESS)) {
             egressActionConfiguration.setParameters(EGRESS_PARAMS);
         } else if (StringUtils.isNotBlank(actionGeneratorInput.getParameterClassName())) {

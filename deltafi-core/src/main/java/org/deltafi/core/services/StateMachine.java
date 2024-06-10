@@ -99,7 +99,8 @@ public class StateMachine {
     }
 
     private List<WrappedActionInput> advanceTransform(StateMachineInput input, Map<String, Long> pendingQueued) {
-        ActionConfiguration nextTransformAction = input.flow().getNextActionConfiguration();
+        String pendingAction = input.flow().getNextPendingAction();
+        ActionConfiguration nextTransformAction = transformFlowService.findActionConfig(input.flow().getName(), pendingAction);
 
         if (nextTransformAction != null && !input.flow().hasFinalAction(nextTransformAction.getName())) {
             return addNextAction(input, nextTransformAction, pendingQueued);
@@ -110,8 +111,8 @@ public class StateMachine {
 
     private List<WrappedActionInput> advanceEgress(StateMachineInput input, Map<String, Long> pendingQueued) {
         EgressFlow egressFlow = egressFlowService.getRunningFlowByName(input.flow().getName());
+        ActionConfiguration nextEgressAction = egressFlow.getEgressAction();
 
-        ActionConfiguration nextEgressAction = input.flow().getNextActionConfiguration();
         if (nextEgressAction == null || input.flow().hasFinalAction(nextEgressAction.getName())) {
             Set<String> expectedAnnotations = egressFlow.getExpectedAnnotations();
             if (expectedAnnotations != null && !expectedAnnotations.isEmpty()) {

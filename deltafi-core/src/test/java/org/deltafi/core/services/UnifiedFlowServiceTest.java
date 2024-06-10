@@ -43,8 +43,8 @@ class UnifiedFlowServiceTest {
     @Test
     void testRunningTransformActions() {
         TransformFlow transformFlow = mock(TransformFlow.class);
-        TransformActionConfiguration transformFlowAction = mock(TransformActionConfiguration.class);
-        TransformActionConfiguration transformFlowAction2 = mock(TransformActionConfiguration.class);
+        ActionConfiguration transformFlowAction = mock(ActionConfiguration.class);
+        ActionConfiguration transformFlowAction2 = mock(ActionConfiguration.class);
         when(transformFlow.getTransformActions()).thenReturn(List.of(transformFlowAction, transformFlowAction2));
 
         when(transformFlowService.getRunningFlows()).thenReturn(List.of(transformFlow));
@@ -54,10 +54,10 @@ class UnifiedFlowServiceTest {
 
     @Test
     void testRunningActionForTransformType() {
-        TransformActionConfiguration transformFlowAction = mock(TransformActionConfiguration.class);
+        ActionConfiguration transformFlowAction = mock(ActionConfiguration.class);
         when(transformFlowAction.getName()).thenReturn("anotherAction");
         TransformFlow transformFlow = mock(TransformFlow.class);
-        TransformActionConfiguration transformFlowAction2 = mock(TransformActionConfiguration.class);
+        ActionConfiguration transformFlowAction2 = mock(ActionConfiguration.class);
         when(transformFlowAction2.getName()).thenReturn("testAction");
         when(transformFlow.getTransformActions()).thenReturn(List.of(transformFlowAction, transformFlowAction2));
 
@@ -68,7 +68,7 @@ class UnifiedFlowServiceTest {
 
     @Test
     void testRunningActionForEgressType() {
-        EgressActionConfiguration egressFlowEgressAction = mock(EgressActionConfiguration.class);
+        ActionConfiguration egressFlowEgressAction = mock(ActionConfiguration.class);
         when(egressFlowEgressAction.getName()).thenReturn("testAction");
         EgressFlow egressFlow = mock(EgressFlow.class);
         when(egressFlow.getEgressAction()).thenReturn(egressFlowEgressAction);

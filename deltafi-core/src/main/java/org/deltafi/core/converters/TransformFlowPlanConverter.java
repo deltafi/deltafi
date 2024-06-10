@@ -35,7 +35,7 @@ public class TransformFlowPlanConverter extends FlowPlanConverter<TransformFlowP
         return transformFlow;
     }
 
-    List<TransformActionConfiguration> buildTransformActions(List<TransformActionConfiguration> transformActionTemplates, FlowPlanPropertyHelper flowPlanPropertyHelper) {
+    List<ActionConfiguration> buildTransformActions(List<ActionConfiguration> transformActionTemplates, FlowPlanPropertyHelper flowPlanPropertyHelper) {
         return Objects.nonNull(transformActionTemplates) ? transformActionTemplates.stream()
                     .map(transformTemplate -> buildTransformAction(transformTemplate, flowPlanPropertyHelper))
                     .toList() : List.of();
@@ -47,9 +47,9 @@ public class TransformFlowPlanConverter extends FlowPlanConverter<TransformFlowP
      * @param transformActionTemplate template of the TransformActionConfiguration that should be created
      * @return TransformActionConfiguration with variable values substituted in
      */
-    TransformActionConfiguration buildTransformAction(TransformActionConfiguration transformActionTemplate, FlowPlanPropertyHelper flowPlanPropertyHelper) {
-        TransformActionConfiguration transformActionConfiguration = new TransformActionConfiguration(
-                flowPlanPropertyHelper.getReplacedName(transformActionTemplate), transformActionTemplate.getType());
+    ActionConfiguration buildTransformAction(ActionConfiguration transformActionTemplate, FlowPlanPropertyHelper flowPlanPropertyHelper) {
+        ActionConfiguration transformActionConfiguration = new ActionConfiguration(
+                flowPlanPropertyHelper.getReplacedName(transformActionTemplate), ActionType.TRANSFORM, transformActionTemplate.getType());
         flowPlanPropertyHelper.replaceCommonActionPlaceholders(transformActionConfiguration, transformActionTemplate);
         return transformActionConfiguration;
     }

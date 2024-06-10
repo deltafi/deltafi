@@ -17,9 +17,10 @@
  */
 package org.deltafi.core.services;
 
+import org.deltafi.common.types.ActionConfiguration;
+import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.common.types.TimedDataSourcePlan;
-import org.deltafi.common.types.TimedIngressActionConfiguration;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
 import org.deltafi.core.repo.DataSourceRepo;
@@ -72,10 +73,10 @@ class DataSourceServiceTest {
         Mockito.when(flowValidator.validate(Mockito.any())).thenReturn(Collections.emptyList());
 
         TimedDataSourcePlan runningFlowPlan = new TimedDataSourcePlan("running", FlowType.TIMED_DATA_SOURCE, "yep", "topic",
-                new TimedIngressActionConfiguration("TimedIngressActionConfig", "TimedIngressActionConfigType"),
+                new ActionConfiguration("TimedIngressActionConfig", ActionType.TIMED_INGRESS, "TimedIngressActionConfigType"),
                 "0 */10 * * * *");
         TimedDataSourcePlan stoppedFlowPlan = new TimedDataSourcePlan("stopped", FlowType.TIMED_DATA_SOURCE, "naw", "topic",
-                new TimedIngressActionConfiguration("TimedIngressActionConfig", "TimedIngressActionConfigType"),
+                new ActionConfiguration("TimedIngressActionConfig", ActionType.TIMED_INGRESS, "TimedIngressActionConfigType"),
                 "*/1 * * * * *");
 
         DataSource runningDataSource = dataSourceService.buildFlow(runningFlowPlan, Collections.emptyList());

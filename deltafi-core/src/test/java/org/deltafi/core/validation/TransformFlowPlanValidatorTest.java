@@ -47,9 +47,9 @@ class TransformFlowPlanValidatorTest {
 
     @Test
     void duplicateActionNameErrors() {
-        TransformActionConfiguration transform1 = new TransformActionConfiguration("action", "org.deltafi.transform.Action1");
-        TransformActionConfiguration transform2 = new TransformActionConfiguration("transform", "org.deltafi.transform.Action2");
-        TransformActionConfiguration transform3 = new TransformActionConfiguration("transform",  "org.deltafi.transform.Action3");
+        ActionConfiguration transform1 = new ActionConfiguration("action", ActionType.TRANSFORM, "org.deltafi.transform.Action1");
+        ActionConfiguration transform2 = new ActionConfiguration("transform", ActionType.TRANSFORM, "org.deltafi.transform.Action2");
+        ActionConfiguration transform3 = new ActionConfiguration("transform",  ActionType.TRANSFORM, "org.deltafi.transform.Action3");
 
         TransformFlowPlan transformFlow = new TransformFlowPlan("flow", null);
         transformFlow.setTransformActions(List.of(transform1, transform2, transform3));

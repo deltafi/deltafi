@@ -17,10 +17,7 @@
  */
 package org.deltafi.core.converters;
 
-import org.deltafi.common.types.RestDataSourcePlan;
-import org.deltafi.common.types.TimedDataSourcePlan;
-import org.deltafi.common.types.TimedIngressActionConfiguration;
-import org.deltafi.common.types.DataSourcePlan;
+import org.deltafi.common.types.*;
 import org.deltafi.core.types.DataSource;
 import org.deltafi.core.types.RestDataSource;
 import org.deltafi.core.types.TimedDataSource;
@@ -59,9 +56,9 @@ public class DataSourcePlanConverter extends FlowPlanConverter<DataSourcePlan, D
      * @param timedIngressActionTemplate template of the TimedIngressActionConfiguration that should be created
      * @return TimedIngressActionConfiguration with variable values substituted in
      */
-    TimedIngressActionConfiguration buildTimedIngressAction(TimedIngressActionConfiguration timedIngressActionTemplate, FlowPlanPropertyHelper flowPlanPropertyHelper) {
-        TimedIngressActionConfiguration timedIngressActionConfiguration = new TimedIngressActionConfiguration(
-                flowPlanPropertyHelper.getReplacedName(timedIngressActionTemplate), timedIngressActionTemplate.getType());
+    ActionConfiguration buildTimedIngressAction(ActionConfiguration timedIngressActionTemplate, FlowPlanPropertyHelper flowPlanPropertyHelper) {
+        ActionConfiguration timedIngressActionConfiguration = new ActionConfiguration(
+                flowPlanPropertyHelper.getReplacedName(timedIngressActionTemplate), ActionType.TIMED_INGRESS, timedIngressActionTemplate.getType());
         flowPlanPropertyHelper.replaceCommonActionPlaceholders(timedIngressActionConfiguration, timedIngressActionTemplate);
         return timedIngressActionConfiguration;
     }

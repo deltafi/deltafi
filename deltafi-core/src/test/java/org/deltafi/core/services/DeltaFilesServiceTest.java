@@ -295,7 +295,7 @@ class DeltaFilesServiceTest {
         deltaFileFlow.getActions().add(Action.builder().name("action").type(ActionType.EGRESS)
                 .state(ActionState.QUEUED).modified(modified).build());
 
-        ActionConfiguration actionConfiguration = new TransformActionConfiguration(null, null);
+        ActionConfiguration actionConfiguration = new ActionConfiguration(null, ActionType.TRANSFORM, null);
         Mockito.when(egressFlowService.findActionConfig("myFlow", "action")).thenReturn(actionConfiguration);
 
         List<WrappedActionInput> actionInvocations = deltaFilesService.requeuedActionInputs(deltaFile, modified);
@@ -311,7 +311,7 @@ class DeltaFilesServiceTest {
         deltaFile.getFlows().getFirst().getActions().add(Action.builder().name("action").type(ActionType.EGRESS)
                 .state(ActionState.QUEUED).modified(modified).build());
 
-        ActionConfiguration actionConfiguration = new EgressActionConfiguration(null, null);
+        ActionConfiguration actionConfiguration = new ActionConfiguration(null, ActionType.EGRESS, null);
         Mockito.when(transformFlowService.findActionConfig("myFlow", "action")).thenReturn(actionConfiguration);
 
         List<WrappedActionInput> actionInvocations = deltaFilesService.requeuedActionInputs(deltaFile, modified);
@@ -562,11 +562,11 @@ class DeltaFilesServiceTest {
         when(deltaFileRepo.findAllById(List.of(parent1.getDid(), parent2.getDid())))
                 .thenReturn(List.of(parent1, parent2));
 
-        TransformActionConfiguration transformActionConfiguration =
-                new TransformActionConfiguration("collect-transform", "org.deltafi.SomeCollectingTransformAction");
-        transformActionConfiguration.setCollect(new CollectConfiguration(Duration.parse("PT1H"), null, 3, null));
+        ActionConfiguration ActionConfiguration =
+                new ActionConfiguration("collect-transform", ActionType.TRANSFORM, "org.deltafi.SomeCollectingTransformAction");
+        ActionConfiguration.setCollect(new CollectConfiguration(Duration.parse("PT1H"), null, 3, null));
         when(transformFlowService.findActionConfig("myFlow", "collect-transform"))
-                .thenReturn(transformActionConfiguration);
+                .thenReturn(ActionConfiguration);
 
         deltaFilesService.requeue();
 
@@ -616,10 +616,10 @@ class DeltaFilesServiceTest {
         List<StateMachineInput> stateMachines = stateMachineInputCaptor.getValue();
         assertEquals(1, stateMachines.size());
         DeltaFile child = stateMachines.getFirst().deltaFile();
-        ActionConfiguration nextAction = child.getFlows().getFirst().getNextActionConfiguration();
+        String nextAction = child.getFlows().getFirst().getNextPendingAction();
         DeltaFileFlow childFirstFlow = child.getFlows().getFirst();
-        assertEquals(2, childFirstFlow.getActionConfigurations().size());
-        assertEquals("childAction", nextAction.getName());
+        assertEquals(2, childFirstFlow.getPendingActions().size());
+        assertEquals("childAction", nextAction);
         List<Action> childActions = childFirstFlow.getActions();
         assertEquals(4, childActions.size());
         List<String> expectedActions = List.of("parentAction1", "parentAction2", "splitAction", "Replay");
@@ -744,11 +744,11 @@ class DeltaFilesServiceTest {
         assertEquals("The flow flow no longer contains an action named splitActionOld where the replay would be begin", result.getError());
     }
 
-    private List<TransformActionConfiguration> mockActions(String ... names) {
+    private List<ActionConfiguration> mockActions(String ... names) {
         return Stream.of(names).map(this::mockAction).toList();
     }
 
-    private TransformActionConfiguration mockAction(String name) {
-        return new TransformActionConfiguration(name, "org.action." + name);
+    private ActionConfiguration mockAction(String name) {
+        return new ActionConfiguration(name, ActionType.TRANSFORM, "org.action." + name);
     }
 }

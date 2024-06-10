@@ -64,6 +64,7 @@ public class DeltaFileFlow {
     @JoinColumn(name = "delta_file_flow_id")
     @Builder.Default
     @JsonManagedReference
+    @OrderBy("number ASC")
     private List<Action> actions = new ArrayList<>();
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
@@ -77,10 +78,10 @@ public class DeltaFileFlow {
     boolean testMode;
     String testModeReason;
     private UUID collectId;
-
-    @Transient
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
     @Builder.Default
-    private List<ActionConfiguration> actionConfigurations = new ArrayList<>();
+    private List<String> pendingActions = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "delta_file_id")
@@ -105,7 +106,7 @@ public class DeltaFileFlow {
         this.testMode = other.testMode;
         this.testModeReason = other.testModeReason;
         this.collectId = other.collectId;
-        this.actionConfigurations = other.actionConfigurations;
+        this.pendingActions = other.pendingActions;
         this.deltaFile = other.deltaFile;
     }
 
@@ -132,7 +133,7 @@ public class DeltaFileFlow {
                 Objects.equals(pendingAnnotations, other.pendingAnnotations) &&
                 Objects.equals(testModeReason, other.testModeReason) &&
                 Objects.equals(collectId, other.collectId) &&
-                Objects.equals(actionConfigurations, other.actionConfigurations);
+                Objects.equals(pendingActions, other.pendingActions);
     }
 
     /**
@@ -337,13 +338,13 @@ public class DeltaFileFlow {
         updateState(OffsetDateTime.now());
     }
 
-    public void removeActionConfiguration(String actionName) {
-        actionConfigurations.removeIf(ac -> ac.getName().equals(actionName));
+    public void removePendingAction(String actionName) {
+        pendingActions.remove(actionName);
     }
 
     @Transient
-    public ActionConfiguration getNextActionConfiguration() {
-        return !actionConfigurations.isEmpty() ? actionConfigurations.getFirst() : null;
+    public String getNextPendingAction() {
+        return !pendingActions.isEmpty() ? pendingActions.getFirst() : null;
     }
 
     public ActionType lastActionType() {

@@ -22,8 +22,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.resource.Resource;
+import org.deltafi.common.types.ActionConfiguration;
+import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.DataSourcePlan;
-import org.deltafi.common.types.TimedIngressActionConfiguration;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
 import org.deltafi.core.generated.types.FlowState;
@@ -71,10 +72,10 @@ class DataSourcePlanConverterTest {
         assertThat(dataSource.getFlowStatus().getErrors()).hasSize(1).contains(expected);
     }
 
-    TimedIngressActionConfiguration expectedTimedIngressAction() {
-        TimedIngressActionConfiguration timedIngressActionConfiguration = new TimedIngressActionConfiguration("SmokeTestIngressAction", "org.deltafi.core.action.SmokeTestIngressAction");
-        timedIngressActionConfiguration.setInternalParameters(Map.of("metadata", Map.of("smoke", "test")));
-        timedIngressActionConfiguration.setParameters(Map.of("metadata", Map.of("smoke", "test")));
-        return timedIngressActionConfiguration;
+    ActionConfiguration expectedTimedIngressAction() {
+        ActionConfiguration ActionConfiguration = new ActionConfiguration("SmokeTestIngressAction", ActionType.TIMED_INGRESS, "org.deltafi.core.action.SmokeTestIngressAction");
+        ActionConfiguration.setInternalParameters(Map.of("metadata", Map.of("smoke", "test")));
+        ActionConfiguration.setParameters(Map.of("metadata", Map.of("smoke", "test")));
+        return ActionConfiguration;
     }
 }

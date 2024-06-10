@@ -20,8 +20,6 @@ package org.deltafi.core.services;
 import lombok.AllArgsConstructor;
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.ActionType;
-import org.deltafi.common.types.EgressActionConfiguration;
-import org.deltafi.common.types.TransformActionConfiguration;
 import org.deltafi.core.types.EgressFlow;
 import org.deltafi.core.types.TransformFlow;
 import org.springframework.stereotype.Service;
@@ -34,13 +32,13 @@ public class UnifiedFlowService {
     EgressFlowService egressFlowService;
     TransformFlowService transformFlowService;
 
-    public List<TransformActionConfiguration> runningTransformActions() {
+    public List<ActionConfiguration> runningTransformActions() {
         return new ArrayList<>(transformFlowService.getRunningFlows().stream()
                 .map(TransformFlow::getTransformActions)
                 .flatMap(Collection::stream).toList());
     }
 
-    public List<EgressActionConfiguration> runningEgressActions() {
+    public List<ActionConfiguration> runningEgressActions() {
         return new ArrayList<>(egressFlowService.getRunningFlows().stream()
                 .map(EgressFlow::getEgressAction)
                 .toList());

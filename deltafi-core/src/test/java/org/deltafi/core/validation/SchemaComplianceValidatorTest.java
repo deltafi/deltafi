@@ -58,7 +58,7 @@ class SchemaComplianceValidatorTest {
         params.remove("url");
         params.put("url2", "https://egress");
 
-        EgressActionConfiguration config = egressConfig("egressName", params);
+        ActionConfiguration config = egressConfig("egressName", params);
 
         Mockito.when(pluginRegistryService.getByActionClass(EGRESS_ACTION)).thenReturn(egressActionDescriptorOptional());
         List<FlowConfigError> errors = schemaComplianceValidator.validate(config);
@@ -72,7 +72,7 @@ class SchemaComplianceValidatorTest {
 
     @Test
     void runValidate_missingType() {
-        EgressActionConfiguration config = egressConfig("egressName", "   ", getRequiredEgressParams());
+        ActionConfiguration config = egressConfig("egressName", "   ", getRequiredEgressParams());
 
         List<FlowConfigError> errors = schemaComplianceValidator.validate(config);
         Mockito.verifyNoInteractions(pluginRegistryService);
@@ -84,7 +84,7 @@ class SchemaComplianceValidatorTest {
 
     @Test
     void validateAgainstSchema_wrongInstanceType() {
-        EgressActionConfiguration config = egressConfig("egressAction", getRequiredEgressParams());
+        ActionConfiguration config = egressConfig("egressAction", getRequiredEgressParams());
 
         List<FlowConfigError> errors = schemaComplianceValidator.validateAgainstSchema(
                 ActionDescriptor.builder().type(ActionType.INGRESS).build(), config);
@@ -157,16 +157,16 @@ class SchemaComplianceValidatorTest {
         return Optional.of(Util.egressActionDescriptor());
     }
 
-    private EgressActionConfiguration egressConfig(Map<String, Object> params) {
+    private ActionConfiguration egressConfig(Map<String, Object> params) {
         return egressConfig("RestEgress", EGRESS_ACTION, params);
     }
 
-    private EgressActionConfiguration egressConfig(String name, Map<String, Object> params) {
+    private ActionConfiguration egressConfig(String name, Map<String, Object> params) {
         return egressConfig(name, EGRESS_ACTION, params);
     }
 
-    private EgressActionConfiguration egressConfig(String name, String type, Map<String, Object> params) {
-        EgressActionConfiguration restEgressConfig = new EgressActionConfiguration(name, type);
+    private ActionConfiguration egressConfig(String name, String type, Map<String, Object> params) {
+        ActionConfiguration restEgressConfig = new ActionConfiguration(name, ActionType.EGRESS, type);
         restEgressConfig.setApiVersion("0.19.0");
         restEgressConfig.setInternalParameters(params);
         return restEgressConfig;
@@ -188,7 +188,7 @@ class SchemaComplianceValidatorTest {
                 .build();
     }
 
-    private TransformActionConfiguration transformConfig() {
-        return new TransformActionConfiguration("MyTransform", TRANSFORM_ACTION);
+    private ActionConfiguration transformConfig() {
+        return new ActionConfiguration("MyTransform", ActionType.TRANSFORM, TRANSFORM_ACTION);
     }
 }
