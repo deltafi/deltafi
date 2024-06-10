@@ -1084,35 +1084,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
-    public DeltaFileStats deltaFileStats() {
-        List<AggregationOperation> aggregationOps = new ArrayList<>();
-        Criteria inFlightCriteria = Criteria.where(IN_FLIGHT).is(true);
-        aggregationOps.add(Aggregation.match(inFlightCriteria));
-
-        ProjectionOperation project = Aggregation.project()
-                .andExclude("_id")
-                .andInclude(REFERENCED_BYTES);
-        aggregationOps.add(project);
-
-        aggregationOps.add(group("null").count().as(IN_FLIGHT_COUNT)
-                .sum(REFERENCED_BYTES).as(IN_FLIGHT_BYTES));
-
-        Aggregation aggregation = Aggregation.newAggregation(aggregationOps)
-                .withOptions(AggregationOptions.builder().allowDiskUse(true).build());
-
-        AggregationResults<DeltaFileStats> aggResults = mongoTemplate.aggregate(
-                aggregation, COLLECTION, DeltaFileStats.class);
-
-        if (aggResults.getMappedResults().isEmpty()) {
-            return new DeltaFileStats(estimatedCount(), 0L, 0L);
-        }
-
-        DeltaFileStats deltaFileStats = aggResults.getMappedResults().getFirst();
-        deltaFileStats.setTotalCount(estimatedCount());
-        return deltaFileStats;
-    }
-
-    @Override
     public List<ColdQueuedActionSummary> coldQueuedActionsSummary() {
         Criteria stageCriteria = Criteria.where(IN_FLIGHT).is(true);
         MatchOperation matchStage = Aggregation.match(stageCriteria);

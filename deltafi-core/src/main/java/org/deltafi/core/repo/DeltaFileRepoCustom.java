@@ -225,12 +225,6 @@ public interface DeltaFileRepoCustom {
     Long estimatedCount();
 
     /**
-     * Get count and sizes of deltaFiles in the system
-     * @return stats
-     */
-    DeltaFileStats deltaFileStats();
-
-    /**
      * Retrieves a summary of all cold queued actions.
      *
      * @return A list of ColdQueuedActionSummary objects representing the summary of cold queued actions.

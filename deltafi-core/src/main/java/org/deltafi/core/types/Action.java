@@ -55,13 +55,17 @@ public class Action {
   private OffsetDateTime start;
   private OffsetDateTime stop;
   private OffsetDateTime modified;
+  @Lob
   private String errorCause;
+  @Lob
   private String errorContext;
   private OffsetDateTime errorAcknowledged;
   private String errorAcknowledgedReason;
   private OffsetDateTime nextAutoResume;
   private String nextAutoResumeReason;
+  @Lob
   private String filteredCause;
+  @Lob
   private String filteredContext;
   @Builder.Default
   private int attempt = 1;

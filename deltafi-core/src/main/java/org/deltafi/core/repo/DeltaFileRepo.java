@@ -17,12 +17,14 @@
  */
 package org.deltafi.core.repo;
 
+import org.deltafi.core.generated.types.DeltaFileStats;
 import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.types.DeltaFileFlowState;
 import org.deltafi.common.types.DeltaFileStage;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -47,4 +49,15 @@ public interface DeltaFileRepo extends JpaRepository<DeltaFile, UUID>, DeltaFile
     long countByStageAndFlowsActionsErrorAcknowledgedIsNull(DeltaFileStage stage);
 
     Optional<DeltaFile> findByDidAndStageIn(UUID did, List<DeltaFileStage> stages);
+
+    /**
+     * Get count and sizes of deltaFiles in the system
+     * @return stats
+     */
+    @Query("SELECT new org.deltafi.core.generated.types.DeltaFileStats(" +
+            "(SELECT COUNT(d) FROM DeltaFile d), " +
+            "COUNT(d) FILTER (WHERE d.inFlight = true), " +
+            "COALESCE(SUM(d.referencedBytes) FILTER (WHERE d.inFlight = true), 0)) " +
+            "FROM DeltaFile d")
+    DeltaFileStats deltaFileStats();
 }
