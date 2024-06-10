@@ -24,17 +24,17 @@
 
 <script setup>
 import Avatar from 'primevue/avatar';
-import useApi from '@/composables/useApi';
+import useCurrentUser from "@/composables/useCurrentUser";
 import { ref, onMounted } from "vue";
 
-const { response: me, get } = useApi();
+const { currentUser } = useCurrentUser();
+
 const tooltip = ref('Unknown');
 const label = ref('?');
 
-onMounted(async () => {
-  await get('me');
-  tooltip.value = me.value.name;
-  label.value = me.value.name.charAt(0).toUpperCase();
+onMounted(() => {
+  tooltip.value = currentUser.name;
+  label.value = currentUser.name.charAt(0).toUpperCase();
 });
 </script>
 

@@ -19,5 +19,5 @@
 import ReconnectingEventSource from "reconnecting-eventsource";
 
 export default function useServerSentEventsSource() {
-  return process.env.NODE_ENV === "test" ? { addEventListener: () => { } } : new ReconnectingEventSource("/api/v1/sse");
+  return process.env.NODE_ENV === "test" ? { addEventListener: () => { } } : new ReconnectingEventSource("/api/v2/sse");
 }

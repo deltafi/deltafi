@@ -78,7 +78,7 @@ export default function useUiConfig(): {
     if (skipCache) params.append("skip_cache", "true")
     try {
       await get(endpoint, params);
-      setUiConfig(response.value.config.ui);
+      setUiConfig(response.value);
     } catch {
       // Continue regardless of error
     }

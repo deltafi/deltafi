@@ -19,7 +19,7 @@
 import { ref, Ref } from "vue";
 import useNotifications from "./useNotifications";
 
-export default function useApi(version: Number = 1) {
+export default function useApi(version: Number = 2) {
   const notify = useNotifications();
   const basePath: RequestInfo = `/api/v${version}`;
   const response: Ref<any> = ref({});
