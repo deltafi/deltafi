@@ -42,6 +42,7 @@ import org.deltafi.core.exceptions.*;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.metrics.MetricsUtil;
+import org.deltafi.core.repo.ActionRepo;
 import org.deltafi.core.repo.AnnotationRepo;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.repo.QueuedAnnotationRepo;
@@ -100,6 +101,10 @@ public class DeltaFilesService {
     public static final String MISSING_FLOW_CAUSE = "The flow is no longer installed or running";
 
     private static final int DEFAULT_QUERY_LIMIT = 50;
+    private static final DeltaFileOrder DEFAULT_ORDER_BY = DeltaFileOrder.newBuilder()
+            .field("modified")
+            .direction(DeltaFileDirection.DESC)
+            .build();
 
     private final Clock clock;
     private final TransformFlowService transformFlowService;
@@ -108,6 +113,7 @@ public class DeltaFilesService {
     private final StateMachine stateMachine;
     private final AnnotationRepo annotationRepo;
     private final DeltaFileRepo deltaFileRepo;
+    private final ActionRepo actionRepo;
     private final CoreEventQueue coreEventQueue;
     private final ContentStorageService contentStorageService;
     private final ResumePolicyService resumePolicyService;
@@ -248,7 +254,7 @@ public class DeltaFilesService {
     }
 
     public long countUnacknowledgedErrors() {
-        return deltaFileRepo.countByStageAndFlowsActionsErrorAcknowledgedIsNull(DeltaFileStage.ERROR);
+        return actionRepo.countByStateAndErrorAcknowledgedIsNull(ActionState.ERROR);
     }
 
     public DeltaFile ingress(RestDataSource restDataSource, IngressEventItem ingressEventItem, OffsetDateTime ingressStartTime,
@@ -1515,28 +1521,32 @@ public class DeltaFilesService {
 
     }
 
-    public SummaryByFlow getErrorSummaryByFlow(Integer offset, Integer limit, ErrorSummaryFilter filter, DeltaFileOrder orderBy) {
-        return deltaFileRepo.getErrorSummaryByFlow(offset,
+    public SummaryByFlow getErrorSummaryByFlow(Integer offset, Integer limit, ErrorSummaryFilter filter, DeltaFileDirection direction) {
+        return actionRepo.getErrorSummaryByFlow(offset,
                 (Objects.nonNull(limit) && limit > 0) ? limit : DEFAULT_QUERY_LIMIT,
-                filter, orderBy);
+                filter,
+                Objects.nonNull(direction) ? direction : DeltaFileDirection.ASC);
     }
 
-    public SummaryByFlowAndMessage getErrorSummaryByMessage(Integer offset, Integer limit, ErrorSummaryFilter filter, DeltaFileOrder orderBy) {
-        return deltaFileRepo.getErrorSummaryByMessage(offset,
+    public SummaryByFlowAndMessage getErrorSummaryByMessage(Integer offset, Integer limit, ErrorSummaryFilter filter, DeltaFileDirection direction) {
+        return actionRepo.getErrorSummaryByMessage(offset,
                 (Objects.nonNull(limit) && limit > 0) ? limit : DEFAULT_QUERY_LIMIT,
-                filter, orderBy);
+                filter,
+                Objects.nonNull(direction) ? direction : DeltaFileDirection.ASC);
     }
 
-    public SummaryByFlow getFilteredSummaryByFlow(Integer offset, Integer limit, FilteredSummaryFilter filter, DeltaFileOrder orderBy) {
-        return deltaFileRepo.getFilteredSummaryByFlow(offset,
+    public SummaryByFlow getFilteredSummaryByFlow(Integer offset, Integer limit, FilteredSummaryFilter filter, DeltaFileDirection direction) {
+        return actionRepo.getFilteredSummaryByFlow(offset,
                 (Objects.nonNull(limit) && limit > 0) ? limit : DEFAULT_QUERY_LIMIT,
-                filter, orderBy);
+                filter,
+                Objects.nonNull(direction) ? direction : DeltaFileDirection.ASC);
     }
 
-    public SummaryByFlowAndMessage getFilteredSummaryByMessage(Integer offset, Integer limit, FilteredSummaryFilter filter, DeltaFileOrder orderBy) {
-        return deltaFileRepo.getFilteredSummaryByMessage(offset,
+    public SummaryByFlowAndMessage getFilteredSummaryByMessage(Integer offset, Integer limit, FilteredSummaryFilter filter, DeltaFileDirection direction) {
+        return actionRepo.getFilteredSummaryByMessage(offset,
                 (Objects.nonNull(limit) && limit > 0) ? limit : DEFAULT_QUERY_LIMIT,
-                filter, orderBy);
+                filter,
+                Objects.nonNull(direction) ? direction : DeltaFileDirection.ASC);
     }
 
     public List<String> annotationKeys() {

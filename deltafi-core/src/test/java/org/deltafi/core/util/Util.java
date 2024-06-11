@@ -87,14 +87,15 @@ public class Util {
     public static DeltaFile buildErrorDeltaFile(UUID did, String flow, String cause, String context, OffsetDateTime created,
                                                 OffsetDateTime modified, String extraError, List<Content> content) {
 
-        DeltaFile deltaFile = Util.buildDeltaFile(did, flow, DeltaFileStage.ERROR, created, modified, content);
-        DeltaFileFlow firstFlow = deltaFile.addFlow("firstFlow", FlowType.TRANSFORM, deltaFile.getFlows().getFirst(), created);
+        DeltaFile deltaFile = Util.buildDeltaFile(did, "ingressFlow", DeltaFileStage.ERROR, created, modified, content);
+        deltaFile.getFlows().getFirst().getActions().getFirst().setState(ActionState.COMPLETE);
+        DeltaFileFlow firstFlow = deltaFile.addFlow(flow, FlowType.TRANSFORM, deltaFile.getFlows().getFirst(), created);
         Action errorAction = firstFlow.queueNewAction("ErrorAction", ActionType.TRANSFORM, false, created);
         errorAction.error(modified, modified, modified, cause, context);
         firstFlow.updateState(modified);
 
         if (extraError != null) {
-            DeltaFileFlow secondFlow = deltaFile.addFlow("firstFlow", FlowType.TRANSFORM, deltaFile.getFlows().getFirst(), created);
+            DeltaFileFlow secondFlow = deltaFile.addFlow("extraFlow", FlowType.TRANSFORM, deltaFile.getFlows().getFirst(), created);
             Action anotherErrorAction = secondFlow.queueNewAction("AnotherErrorAction", ActionType.TRANSFORM, false, created);
             anotherErrorAction.error(modified, modified, modified, extraError, context);
             secondFlow.updateState(modified);
@@ -109,7 +110,7 @@ public class Util {
         Action ingressAction = Action.builder()
                 .name(INGRESS_ACTION)
                 .type(ActionType.INGRESS)
-                .state(ActionState.COMPLETE)
+                .state(stage == DeltaFileStage.ERROR ? ActionState.ERROR : ActionState.COMPLETE)
                 .created(created)
                 .modified(modified)
                 .content(content)

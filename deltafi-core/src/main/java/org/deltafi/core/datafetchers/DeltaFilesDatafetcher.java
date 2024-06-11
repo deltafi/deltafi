@@ -136,8 +136,8 @@ public class DeltaFilesDatafetcher {
           @InputArgument Integer offset,
           @InputArgument Integer limit,
           @InputArgument ErrorSummaryFilter filter,
-          @InputArgument DeltaFileOrder orderBy) {
-    return deltaFilesService.getErrorSummaryByFlow(offset, limit, filter, orderBy);
+          @InputArgument DeltaFileDirection direction) {
+    return deltaFilesService.getErrorSummaryByFlow(offset, limit, filter, direction);
   }
 
   @DgsQuery
@@ -146,8 +146,8 @@ public class DeltaFilesDatafetcher {
           @InputArgument Integer offset,
           @InputArgument Integer limit,
           @InputArgument ErrorSummaryFilter filter,
-          @InputArgument DeltaFileOrder orderBy) {
-    return deltaFilesService.getErrorSummaryByMessage(offset, limit, filter, orderBy);
+          @InputArgument DeltaFileDirection direction) {
+    return deltaFilesService.getErrorSummaryByMessage(offset, limit, filter, direction);
   }
 
   @DgsQuery
@@ -156,8 +156,8 @@ public class DeltaFilesDatafetcher {
           @InputArgument Integer offset,
           @InputArgument Integer limit,
           @InputArgument FilteredSummaryFilter filter,
-          @InputArgument DeltaFileOrder orderBy) {
-    return deltaFilesService.getFilteredSummaryByFlow(offset, limit, filter, orderBy);
+          @InputArgument DeltaFileDirection direction) {
+    return deltaFilesService.getFilteredSummaryByFlow(offset, limit, filter, direction);
   }
 
   @DgsQuery
@@ -166,8 +166,8 @@ public class DeltaFilesDatafetcher {
           @InputArgument Integer offset,
           @InputArgument Integer limit,
           @InputArgument FilteredSummaryFilter filter,
-          @InputArgument DeltaFileOrder orderBy) {
-    return deltaFilesService.getFilteredSummaryByMessage(offset, limit, filter, orderBy);
+          @InputArgument DeltaFileDirection direction) {
+    return deltaFilesService.getFilteredSummaryByMessage(offset, limit, filter, direction);
   }
 
   @DgsMutation

@@ -383,11 +383,11 @@ type Query {
   lastErrored(last: Int) : [DeltaFile]!
   lastWithName(name: String!) : DeltaFile
 
-  errorSummaryByFlow(offset: Int, limit: Int, filter: ErrorSummaryFilter, orderBy: DeltaFileOrder): ErrorsByFlow!
-  errorSummaryByMessage(offset: Int, limit: Int, filter: ErrorSummaryFilter, orderBy: DeltaFileOrder): ErrorsByMessage!
+  errorSummaryByFlow(offset: Int, limit: Int, filter: ErrorSummaryFilter, direction: DeltaFileDirection): ErrorsByFlow!
+  errorSummaryByMessage(offset: Int, limit: Int, filter: ErrorSummaryFilter, direction: DeltaFileDirection): ErrorsByMessage!
 
-  filteredSummaryByFlow(offset: Int, limit: Int, filter: FilteredSummaryFilter, orderBy: DeltaFileOrder): FilteredByFlow!
-  filteredSummaryByMessage(offset: Int, limit: Int, filter: FilteredSummaryFilter, orderBy: DeltaFileOrder): FilteredByMessage!
+  filteredSummaryByFlow(offset: Int, limit: Int, filter: FilteredSummaryFilter, direction: DeltaFileDirection): FilteredByFlow!
+  filteredSummaryByMessage(offset: Int, limit: Int, filter: FilteredSummaryFilter, direction: DeltaFileDirection): FilteredByMessage!
 
   errorMetadataUnion(dids: [UUID!]!) : [PerActionUniqueKeyValues!]!
   sourceMetadataUnion(dids: [UUID!]!) : [UniqueKeyValues!]!

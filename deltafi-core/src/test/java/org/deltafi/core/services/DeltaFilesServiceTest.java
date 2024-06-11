@@ -31,6 +31,7 @@ import org.deltafi.core.collect.ScheduledCollectService;
 import org.deltafi.core.generated.types.DeltaFilesFilter;
 import org.deltafi.core.generated.types.RetryResult;
 import org.deltafi.core.metrics.MetricService;
+import org.deltafi.core.repo.ActionRepo;
 import org.deltafi.core.repo.AnnotationRepo;
 import org.deltafi.core.repo.DeltaFileRepo;
 import org.deltafi.core.repo.QueuedAnnotationRepo;
@@ -95,7 +96,8 @@ class DeltaFilesServiceTest {
 
     DeltaFilesServiceTest(@Mock TransformFlowService transformFlowService,
                           @Mock EgressFlowService egressFlowService, @Mock StateMachine stateMachine,
-                          @Mock AnnotationRepo annotationRepo, @Mock DeltaFileRepo deltaFileRepo, @Mock CoreEventQueue coreEventQueue,
+                          @Mock AnnotationRepo annotationRepo, @Mock DeltaFileRepo deltaFileRepo,
+                          @Mock ActionRepo actionRepo, @Mock CoreEventQueue coreEventQueue,
                           @Mock ContentStorageService contentStorageService, @Mock ResumePolicyService resumePolicyService,
                           @Mock MetricService metricService, @Mock AnalyticEventService analyticEventService, @Mock CoreAuditLogger coreAuditLogger,
                           @Mock DeltaFileCacheService deltaFileCacheService, @Mock DataSourceService dataSourceService,
@@ -114,7 +116,7 @@ class DeltaFilesServiceTest {
         this.dataSourceService = dataSourceService;
 
         deltaFilesService = new DeltaFilesService(testClock, transformFlowService, egressFlowService, mockDeltaFiPropertiesService,
-                stateMachine, annotationRepo, deltaFileRepo, coreEventQueue, contentStorageService, resumePolicyService,
+                stateMachine, annotationRepo, deltaFileRepo, actionRepo, coreEventQueue, contentStorageService, resumePolicyService,
                 metricService, analyticEventService, coreAuditLogger, new DidMutexService(), deltaFileCacheService, dataSourceService,
                 queueManagementService, queuedAnnotationRepo, environment, scheduledCollectService, new TestUUIDGenerator());
     }

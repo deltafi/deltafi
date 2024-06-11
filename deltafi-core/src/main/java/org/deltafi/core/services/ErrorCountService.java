@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.services;
 
-import org.deltafi.core.repo.DeltaFileRepo;
+import org.deltafi.core.repo.ActionRepo;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
@@ -27,13 +27,13 @@ import java.util.Set;
 
 @Service
 public class ErrorCountService {
-    private final DeltaFileRepo deltaFileRepo;
+    private final ActionRepo actionRepo;
     private final TransformFlowService transformFlowService;
 
     private volatile Map<String, Integer> errorCounts = Collections.emptyMap();
 
-    public ErrorCountService(DeltaFileRepo deltaFileRepo, @Lazy TransformFlowService transformFlowService) {
-        this.deltaFileRepo = deltaFileRepo;
+    public ErrorCountService(ActionRepo actionRepo, @Lazy TransformFlowService transformFlowService) {
+        this.actionRepo = actionRepo;
         this.transformFlowService = transformFlowService;
     }
 
@@ -41,7 +41,7 @@ public class ErrorCountService {
         if (flowNames.isEmpty()) {
             errorCounts = Collections.emptyMap();
         } else {
-            errorCounts = deltaFileRepo.errorCountsByFlow(flowNames);
+            errorCounts = actionRepo.errorCountsByFlow(flowNames);
         }
     }
 

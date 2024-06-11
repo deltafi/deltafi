@@ -46,18 +46,17 @@ public interface DeltaFileRepo extends JpaRepository<DeltaFile, UUID>, DeltaFile
      */
     Stream<DeltaFile> findByTerminalAndFlowsNameAndFlowsState(boolean isTerminal, String flowName, DeltaFileFlowState state);
 
-    long countByStageAndFlowsActionsErrorAcknowledgedIsNull(DeltaFileStage stage);
-
     Optional<DeltaFile> findByDidAndStageIn(UUID did, List<DeltaFileStage> stages);
 
     /**
      * Get count and sizes of deltaFiles in the system
      * @return stats
      */
-    @Query("SELECT new org.deltafi.core.generated.types.DeltaFileStats(" +
-            "(SELECT COUNT(d) FROM DeltaFile d), " +
-            "COUNT(d) FILTER (WHERE d.inFlight = true), " +
-            "COALESCE(SUM(d.referencedBytes) FILTER (WHERE d.inFlight = true), 0)) " +
-            "FROM DeltaFile d")
+    @Query("""
+            SELECT new org.deltafi.core.generated.types.DeltaFileStats(
+              (SELECT COUNT(d) FROM DeltaFile d),
+               COUNT(d) FILTER (WHERE d.inFlight = true),
+               COALESCE(SUM(d.referencedBytes) FILTER (WHERE d.inFlight = true), 0))
+            FROM DeltaFile d""")
     DeltaFileStats deltaFileStats();
 }

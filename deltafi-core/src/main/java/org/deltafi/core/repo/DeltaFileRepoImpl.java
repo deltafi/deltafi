@@ -30,9 +30,7 @@ import jakarta.persistence.criteria.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.bson.BsonValue;
 import org.bson.Document;
-import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.types.*;
@@ -50,45 +48,33 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
-import org.springframework.util.StringUtils;
 
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.*;
 
-import static org.apache.commons.lang3.BooleanUtils.isTrue;
 import static org.deltafi.common.types.ActionState.*;
-import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 
-@SuppressWarnings("unused")
-@Slf4j
 @Repository
 @RequiredArgsConstructor
+@Slf4j
 @Transactional
 public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String ID = "_id";
     public static final String VERSION = "version";
-    public static final String PARENT_DIDS = "parentDids";
     public static final String MODIFIED = "modified";
     public static final String CREATED = "created";
     public static final String STAGE = "stage";
     public static final String STATE = "state";
     public static final String NAME = "name";
-    public static final String ACTIONS_METADATA = "actions.metadata";
-    public static final String ACTIONS_DELETE_METADATA_KEYS = "actions.deleteMetadataKeys";
     public static final String CONTENT_DELETED = "contentDeleted";
     public static final String CONTENT_DELETED_REASON = "contentDeletedReason";
-    public static final String KEY = "key";
-    public static final String VALUE = "value";
     public static final String DATA_SOURCE = "dataSource";
-    public static final String ERROR_CAUSE = "errorCause";
-    public static final String FILTERED_CAUSE = "filteredCause";
     public static final String ERROR_ACKNOWLEDGED = "errorAcknowledged";
     public static final String EGRESSED = "egressed";
     public static final String EGRESS_FLOWS = "egressFlows";
     public static final String FILTERED = "filtered";
-    public static final String HAS_PENDING_ANNOTATIONS = "hasPendingAnnotations";
     public static final String PENDING_ANNOTATIONS = "flows.pendingAnnotations";
     public static final String FIRST_PENDING_ANNOTATIONS = "flows.pendingAnnotations.0";
     public static final String TEST_MODE = "flows.testMode";
@@ -99,10 +85,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String REQUEUE_COUNT = "requeueCount";
     public static final String NEXT_AUTO_RESUME = "nextAutoResume";
     public static final String NORMALIZED_NAME = "normalizedName";
-    public static final String FORMATTED_DATA_FILENAME = "formattedData.content.name";
-    public static final String FORMATTED_DATA_FORMAT_ACTION = "formattedData.formatAction";
-    public static final String FORMATTED_DATA_METADATA = "formattedData.metadata";
-    public static final String FORMATTED_DATA_EGRESS_ACTIONS = "formattedData.egressActions";
     public static final String FLOWS_INPUT_METADATA = "flows.input.metadata";
     public static final String FLOWS_NAME = "flows.name";
     public static final String FLOWS_STATE = "flows.state";
@@ -114,11 +96,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String FLOWS_ACTIONS_DELETE_METADATA_KEYS = "flows.actions.deleteMetadataKeys";
     public static final String ACTIONS_ATTEMPT = "actions.attempt";
     public static final String ACTIONS_ERROR_CAUSE = "flows.actions.errorCause";
-    public static final String ACTIONS_FILTERED_CAUSE = "flows.actions.filteredCause";
     public static final String ACTIONS_NAME = "flows.actions.name";
     public static final String ACTIONS_TYPE = "flows.actions.type";
     public static final String ACTIONS_STATE = "flows.actions.state";
-    public static final String ACTIONS_MODIFIED = "flows.actions.modified";
     public static final String ACTION_MODIFIED = "action.modified";
     public static final String ACTION_STATE = "action.state";
     public static final String ACTIONS_UPDATE_STATE = "flows.$[flow].actions.$[action].state";
@@ -126,36 +106,20 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String ACTIONS_UPDATE_QUEUED = "flows.$[flow].actions.$[action].queued";
     public static final String ACTIONS_UPDATE_ERROR = "flows.$[flow].actions.$[action].errorCause";
     public static final String ACTIONS_UPDATE_ERROR_CONTEXT = "flows.$[flow].actions.$[action].errorContext";
-    public static final String ACTIONS_UPDATE_HISTORY = "flows.$[flow].actions.$[action].history";
     private static final String COLLECTION = "deltaFiles";
     private static final String TTL_INDEX_NAME = "ttl_index";
     private static final String SCHEMA_VERSION = "schemaVersion";
     // Aggregation variables
-    private static final String COUNT_FOR_PAGING = "countForPaging";
     private static final String COUNT_LOWER_CASE = "count";
     private static final String DID = "did";
-    private static final String DIDS = "dids";
-    private static final String ERROR_MESSAGE = "errorMessage";
-    private static final String ACTIONS = "actions";
-    private static final String FLOW_LOWER_CASE = "flow";
     private static final String FLOWS = "flows";
     private static final String FLOW_STATE = "flow.state";
-    private static final String GROUP_COUNT = "groupCount";
-    private static final String ID_ERROR_MESSAGE = ID + "." + ERROR_MESSAGE;
-    private static final String ID_DATA_SOURCE = ID + "." + DATA_SOURCE;
-    private static final String UNWIND_STATE = "unwindState";
     public static final String ANNOTATIONS = "annotations";
     public static final String ANNOTATION_KEYS = "annotationKeys";
 
     private static final String ACTION_SEGMENTS = "flows.actions.content.segments";
 
-    private static final String CUMULATIVE_BYTES = "cumulativeBytes";
-    private static final String OVER = "over";
-    private static final String CUMULATIVE_OVER = "cumulativeOver";
-
     private static final String IN_FLIGHT = "inFlight";
-    private static final String IN_FLIGHT_COUNT = "inFlightCount";
-    private static final String IN_FLIGHT_BYTES = "inFlightBytes";
 
     private static final String TERMINAL = "terminal";
     private static final String CONTENT_DELETABLE = "contentDeletable";
@@ -163,25 +127,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     private static final String CREATED_BEFORE_INDEX = "created_before_index";
     private static final String TERMINAL_INDEX = "terminal_index";
 
-    public static final int MAX_COUNT = 50_000;
     public static final String TYPE = "type";
-
-    static class FlowCountAndDids {
-        String dataSource;
-        int groupCount;
-        List<UUID> dids;
-    }
-
-    static class MessageFlowGroup {
-        TempGroupId id;
-        int groupCount;
-        List<UUID> dids;
-
-        static class TempGroupId {
-            String errorMessage;
-            String dataSource;
-        }
-    }
 
     private static final Map<String, Index> INDICES;
     static {
@@ -758,65 +704,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         return requeueQuery;
     }
 
-    private void addErrorAndFilterCriteria(DeltaFilesFilter filter, Criteria criteria) {
-        Criteria erroredActionCriteria = getErroredActionsCriteria(filter.getErrorCause(), filter.getErrorAcknowledged());
-        Criteria filteredActionCriteria = getFilteredActionsCriteria(filter.getFilteredCause());
-
-        if (erroredActionCriteria != null && filteredActionCriteria != null) {
-            Criteria errorOrFilteredCriteria = new Criteria().orOperator(erroredActionCriteria, filteredActionCriteria);
-            criteria.and(FLOWS_ACTIONS).elemMatch(errorOrFilteredCriteria);
-        } else if (erroredActionCriteria != null) {
-            criteria.and(FLOWS_ACTIONS).elemMatch(erroredActionCriteria);
-        } else if (filteredActionCriteria != null) {
-            boolean filtered = filter.getFiltered() == null || filter.getFiltered();
-            criteria.and(FILTERED).is(filtered);
-            criteria.and(FLOWS_ACTIONS).elemMatch(filteredActionCriteria);
-        } else if (filter.getFiltered() != null) {
-            criteria.and(FILTERED).is(filter.getFiltered());
-        }
-    }
-
-    private Criteria getErroredActionsCriteria(String errorCause, Boolean acknowledged) {
-        if (errorCause == null && acknowledged == null) {
-            return null;
-        }
-        List<Criteria> elemCriteria = new ArrayList<>();
-        elemCriteria.add(Criteria.where(STATE).is(ERROR.name()));
-        if (errorCause != null) {
-            elemCriteria.add(Criteria.where(ERROR_CAUSE).regex(errorCause));
-        }
-
-        if (acknowledged != null) {
-            if (acknowledged) {
-                elemCriteria.add(Criteria.where(ERROR_ACKNOWLEDGED).ne(null));
-            } else {
-                elemCriteria.add(Criteria.where(ERROR_ACKNOWLEDGED).isNull());
-            }
-        }
-        return new Criteria().andOperator(elemCriteria);
-    }
-
-    private Criteria getFilteredActionsCriteria(String filteredCause) {
-        return filteredCause != null ? new Criteria().andOperator(
-                Criteria.where(STATE).is(ActionState.FILTERED.name()), Criteria.where(FILTERED_CAUSE).regex(filteredCause)) : null;
-    }
-
-    private void addAnnotationCriteria(String key, String value, Criteria criteria) {
-        if (null == key || null == value) {
-            return;
-        }
-
-        if (key.contains(".")) {
-            key = StringUtils.replace(key, ".", DeltaFiConstants.MONGO_MAP_KEY_DOT_REPLACEMENT);
-        }
-
-        criteria.and(ANNOTATIONS + "." + key).is(value);
-    }
-
     private long requeueThreshold(OffsetDateTime requeueTime, Duration requeueDuration) {
         return requeueTime.minus(requeueDuration).toInstant().toEpochMilli();
     }
-
 
     private void removeUnknownIndices(IndexOperations idxOps, IndexInfo existing, Set<String> knownIndices) {
         if (!knownIndices.contains(existing.getName())) {
@@ -831,244 +721,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         } catch (UncategorizedMongoDbException ex) {
             log.error("Failed to remove unknown index {}", indexName, ex);
         }
-    }
-
-    @Override
-    public SummaryByFlow getErrorSummaryByFlow(Integer offset, int limit, ErrorSummaryFilter filter, DeltaFileOrder orderBy) {
-        return getSummaryByFlow(offset, limit, buildErrorSummaryCriteria(filter), orderBy);
-    }
-
-    @Override
-    public SummaryByFlow getFilteredSummaryByFlow(Integer offset, int limit, FilteredSummaryFilter filter, DeltaFileOrder orderBy) {
-        return getSummaryByFlow(offset, limit, buildFilterSummaryCriteria(filter), orderBy);
-    }
-
-    private SummaryByFlow getSummaryByFlow(Integer offset, int limit, Criteria filter, DeltaFileOrder orderBy) {
-        long elementsToSkip = (offset != null && offset > 0) ? offset : 0;
-
-        MatchOperation matchesErrorStage = Aggregation.match(filter);
-
-        Aggregation countAggregation = Aggregation.newAggregation(
-                matchesErrorStage,
-                group(DATA_SOURCE).count().as(GROUP_COUNT),
-                count().as(COUNT_FOR_PAGING))
-                .withOptions(AggregationOptions.builder().allowDiskUse(true).build());
-
-        final Long countForPaging = Optional
-                .ofNullable(mongoTemplate.aggregate(countAggregation, COLLECTION,
-                        Document.class).getUniqueMappedResult())
-                .map(doc -> ((Integer) doc.get(COUNT_FOR_PAGING)).longValue())
-                .orElse(0L);
-
-        List<CountPerFlow> countPerFlow = new ArrayList<>();
-        if (countForPaging > 0) {
-            Aggregation pagingAggregation = Aggregation.newAggregation(
-                    matchesErrorStage,
-                    group(DATA_SOURCE).count().as(GROUP_COUNT).addToSet(ID).as(DIDS),
-                    project(DIDS, GROUP_COUNT).and(DATA_SOURCE).previousOperation(),
-                    errorSummaryByFlowSort(orderBy),
-                    skip(elementsToSkip),
-                    limit(limit))
-                    .withOptions(AggregationOptions.builder().allowDiskUse(true).build());
-
-            AggregationResults<FlowCountAndDids> aggResults = mongoTemplate.aggregate(
-                    pagingAggregation, COLLECTION, FlowCountAndDids.class);
-
-            for (FlowCountAndDids r : aggResults.getMappedResults()) {
-                countPerFlow.add(CountPerFlow.newBuilder()
-                        .flow(r.dataSource)
-                        .count(r.dids.size())
-                        .dids(r.dids)
-                        .build()
-                );
-            }
-        }
-
-        return new SummaryByFlow((int)elementsToSkip, countPerFlow.size(), countForPaging.intValue(), countPerFlow);
-    }
-
-    public SummaryByFlowAndMessage getErrorSummaryByMessage(Integer offset, int limit, ErrorSummaryFilter filter, DeltaFileOrder orderBy) {
-        return getSummaryByMessage(ACTIONS_ERROR_CAUSE, ERROR, offset, limit, buildErrorSummaryCriteria(filter), orderBy);
-    }
-
-    public SummaryByFlowAndMessage getFilteredSummaryByMessage(Integer offset, int limit, FilteredSummaryFilter filter, DeltaFileOrder orderBy) {
-        return getSummaryByMessage(ACTIONS_FILTERED_CAUSE, ActionState.FILTERED, offset, limit, buildFilterSummaryCriteria(filter), orderBy);
-    }
-
-    private SummaryByFlowAndMessage getSummaryByMessage(String messageField, ActionState actionState, Integer offset, int limit, Criteria filter, DeltaFileOrder orderBy) {
-        long elementsToSkip = (offset != null && offset > 0) ? offset : 0;
-
-        MatchOperation matchesErrorStage = Aggregation.match(filter);
-
-        GroupOperation groupByCauseAndFlow = Aggregation.group(ERROR_MESSAGE, DATA_SOURCE)
-                .count().as(GROUP_COUNT)
-                .addToSet(DID).as(DIDS);
-
-        List<AggregationOperation> mainStages = Arrays.asList(
-                matchesErrorStage,
-                unwind(FLOWS),
-                unwind(FLOWS_ACTIONS),
-                project()
-                        .and(DATA_SOURCE).as(DATA_SOURCE)
-                        .and(ID).as(DID)
-                        .and(messageField).as(ERROR_MESSAGE)
-                        .and(FLOWS_ACTIONS_STATE).as(UNWIND_STATE),
-                match(Criteria.where(UNWIND_STATE).is(actionState)),
-                groupByCauseAndFlow
-        );
-
-        List<AggregationOperation> aggregationWithCount = new ArrayList<>(mainStages);
-        aggregationWithCount.add(count().as(COUNT_FOR_PAGING));
-        Aggregation countAggregation = Aggregation.newAggregation(aggregationWithCount)
-                .withOptions(AggregationOptions.builder().allowDiskUse(true).build());
-
-        final Long countForPaging = Optional
-                .ofNullable(mongoTemplate.aggregate(countAggregation, COLLECTION,
-                        Document.class).getUniqueMappedResult())
-                .map(doc -> ((Integer) doc.get(COUNT_FOR_PAGING)).longValue())
-                .orElse(0L);
-
-        List<CountPerMessage> messageList = new ArrayList<>();
-        if (countForPaging > 0) {
-            List<AggregationOperation> stagesWithPaging = new ArrayList<>(mainStages);
-            stagesWithPaging.add(errorSummaryByMessageSort(orderBy));
-            stagesWithPaging.add(skip(elementsToSkip));
-            stagesWithPaging.add(limit(limit));
-            Aggregation pagingAggregation = Aggregation.newAggregation(stagesWithPaging)
-                    .withOptions(AggregationOptions.builder().allowDiskUse(true).build());
-
-            AggregationResults<MessageFlowGroup> aggResults = mongoTemplate.aggregate(
-                    pagingAggregation, COLLECTION, MessageFlowGroup.class);
-
-            for (MessageFlowGroup groupResult : aggResults.getMappedResults()) {
-                messageList.add(CountPerMessage.newBuilder()
-                        .message(groupResult.id.errorMessage)
-                        .flow(groupResult.id.dataSource)
-                        .count(groupResult.dids.size())
-                        .dids(groupResult.dids)
-                        .build());
-            }
-        }
-
-        return new SummaryByFlowAndMessage((int) elementsToSkip, messageList.size(), countForPaging.intValue(), messageList);
-    }
-
-    public Map<String, Integer> errorCountsByFlow(Set<String> flows) {
-        // Match flows in the given set, ERROR_ACKNOWLEDGED is null, and STAGE is DeltaFileStage.ERROR
-        Criteria flowsCriteria = Criteria.where(DATA_SOURCE).in(flows)
-                .and(FLOWS_ACTIONS).not().elemMatch(Criteria.where(ERROR_ACKNOWLEDGED).ne(null))
-                .and(STAGE).is(DeltaFileStage.ERROR);
-
-        MatchOperation matchFlowsStage = Aggregation.match(flowsCriteria);
-
-        // Group by flow and count errors
-        GroupOperation groupByFlowAndCountErrorsStage = Aggregation.group(DATA_SOURCE).count().as("errorCount");
-
-        // clean up field names to match the FlowErrorCount class
-        ProjectionOperation projectStage = Aggregation.project("errorCount").and("_id").as("flow");
-
-        // Build the aggregation pipeline
-        Aggregation aggregation = Aggregation.newAggregation(
-                        matchFlowsStage,
-                        groupByFlowAndCountErrorsStage,
-                        projectStage)
-                .withOptions(AggregationOptions.builder().allowDiskUse(true).build());
-
-        // Execute the aggregation and map results to FlowErrorCount objects
-        AggregationResults<FlowErrorCount> aggResults = mongoTemplate.aggregate(
-                aggregation, COLLECTION, FlowErrorCount.class);
-
-        // Convert the list of FlowErrorCount objects to a Map<String, Integer>
-        Map<String, Integer> errorCountsByFlow = new HashMap<>();
-        for (FlowErrorCount result : aggResults.getMappedResults()) {
-            errorCountsByFlow.put(result.getFlow(), result.getErrorCount());
-        }
-
-        return errorCountsByFlow;
-    }
-
-    private SortOperation errorSummaryByFlowSort(DeltaFileOrder orderBy) {
-        String sortField = DATA_SOURCE;
-        Sort.Direction direction = Sort.Direction.ASC;
-
-        if (orderBy != null) {
-            direction = Sort.Direction.fromString(orderBy.getDirection().name());
-            if (orderBy.getField().toLowerCase(Locale.ROOT).contains(COUNT_LOWER_CASE)) {
-                sortField = GROUP_COUNT;
-            }
-        }
-
-        return Aggregation.sort(direction, sortField);
-    }
-
-    private SortOperation errorSummaryByMessageSort(DeltaFileOrder orderBy) {
-        String sortField = ID_ERROR_MESSAGE;
-        String secondaryField = ID_DATA_SOURCE;
-        Sort.Direction direction = Sort.Direction.ASC;
-
-        if (orderBy != null) {
-            direction = Sort.Direction.fromString(orderBy.getDirection().name());
-
-            String requestedField = orderBy.getField().toLowerCase(Locale.ROOT);
-            if (requestedField.contains(FLOW_LOWER_CASE)) {
-                sortField = ID_DATA_SOURCE;
-                secondaryField = ID_ERROR_MESSAGE;
-            } else if (requestedField.contains(COUNT_LOWER_CASE)) {
-                sortField = GROUP_COUNT;
-                secondaryField = ID_ERROR_MESSAGE;
-            }
-        }
-
-        return Aggregation.sort(direction, sortField).and(direction, secondaryField);
-    }
-
-    private Criteria buildErrorSummaryCriteria(ErrorSummaryFilter filter) {
-        Criteria criteria = Criteria.where(STAGE).is(DeltaFileStage.ERROR);
-
-        if (filter == null) {
-            return criteria;
-        }
-
-        applySummaryCriteria(filter, criteria);
-
-        if (filter.getErrorAcknowledged() != null) {
-            if (isTrue(filter.getErrorAcknowledged())) {
-                criteria.and(FLOWS).elemMatch(Criteria.where("actions").elemMatch(Criteria.where(ERROR_ACKNOWLEDGED).ne(null)));
-            } else {
-                criteria.and(FLOWS).not().elemMatch(Criteria.where("actions").elemMatch(Criteria.where(ERROR_ACKNOWLEDGED).ne(null)));
-            }
-        }
-
-        return criteria;
-    }
-
-    private Criteria buildFilterSummaryCriteria(FilteredSummaryFilter filter) {
-        Criteria criteria = Criteria.where(FILTERED).is(true);
-
-        if (filter == null) {
-            return criteria;
-        }
-
-        applySummaryCriteria(filter, criteria);
-
-        return criteria;
-    }
-
-    private void applySummaryCriteria(SummaryFilter filter, Criteria criteria) {
-        // TODO: fixme
-        //addModifiedDateCriteria(criteria, filter.getModifiedAfter(), filter.getModifiedBefore());
-
-        if (filter.getFlow() != null) {
-            criteria.and(DATA_SOURCE).is(filter.getFlow());
-        }
-    }
-
-    private boolean filterStrings(BsonValue bsonValue) {
-        return bsonValue != null && bsonValue.isString();
-    }
-
-    private String bsonValueAsString(BsonValue bsonValue) {
-        return bsonValue.asString().getValue();
     }
 
     @Override
@@ -1192,7 +844,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             ps.setBoolean(13, flow.isTestMode());
             ps.setString(14, flow.getTestModeReason());
             ps.setObject(15, flow.getCollectId());
-            ps.setObject(16, flow.getPendingActions());
+            ps.setString(16, toJson(flow.getPendingActions()));
             ps.setObject(17, flow.getDeltaFile().getDid());
         });
 

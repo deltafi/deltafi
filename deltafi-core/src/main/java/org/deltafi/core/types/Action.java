@@ -40,6 +40,8 @@ import java.util.*;
 @Table(name = "actions")
 @EqualsAndHashCode(exclude = "deltaFileFlow")
 public class Action {
+  static final private int MAX_CAUSE_SIZE = 100_000;
+
   @Id
   @Builder.Default
   private UUID id = UUID.randomUUID();
@@ -55,17 +57,17 @@ public class Action {
   private OffsetDateTime start;
   private OffsetDateTime stop;
   private OffsetDateTime modified;
-  @Lob
+  @Column(length = MAX_CAUSE_SIZE)
   private String errorCause;
-  @Lob
+  @Column(length = MAX_CAUSE_SIZE)
   private String errorContext;
   private OffsetDateTime errorAcknowledged;
   private String errorAcknowledgedReason;
   private OffsetDateTime nextAutoResume;
   private String nextAutoResumeReason;
-  @Lob
+  @Column(length = MAX_CAUSE_SIZE)
   private String filteredCause;
-  @Lob
+  @Column(length = MAX_CAUSE_SIZE)
   private String filteredContext;
   @Builder.Default
   private int attempt = 1;
@@ -143,8 +145,8 @@ public class Action {
   }
 
   public void setFilteredActionState(OffsetDateTime start, OffsetDateTime stop, OffsetDateTime now, String filteredCause, String filteredContext) {
-    this.filteredCause = filteredCause;
-    this.filteredContext = filteredContext;
+    this.filteredCause = filteredCause.substring(0, Math.min(filteredCause.length(), MAX_CAUSE_SIZE));
+    this.filteredContext = filteredContext.substring(0, Math.min(filteredContext.length(), MAX_CAUSE_SIZE));
     changeState(ActionState.FILTERED, start, stop, now);
   }
 
@@ -216,8 +218,8 @@ public class Action {
 
   public void error(OffsetDateTime start, OffsetDateTime stop, OffsetDateTime now, String cause, String context) {
     changeState(ActionState.ERROR, start, stop, now);
-    setErrorCause(cause);
-    setErrorContext(context);
+    errorCause = cause.substring(0, Math.min(cause.length(), MAX_CAUSE_SIZE));
+    errorContext = context.substring(0, Math.min(context.length(), MAX_CAUSE_SIZE));
   }
 
   public Action createChildAction() {

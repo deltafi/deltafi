@@ -21,6 +21,4 @@ import org.deltafi.core.generated.types.CountPerMessage;
 
 import java.util.List;
 
-public record SummaryByFlowAndMessage(int offset, int count, int totalCount,
-                                      List<CountPerMessage> countPerMessage) {
-}
+public record SummaryByFlowAndMessage(int offset, int count, int totalCount, List<CountPerMessage> countPerMessage) {}
