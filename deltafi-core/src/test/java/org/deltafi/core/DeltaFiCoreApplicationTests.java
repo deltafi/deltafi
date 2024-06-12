@@ -1913,45 +1913,38 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void testUpdateForRequeue() {
-		Action shouldRequeue = Action.builder().name("hit").modified(MONGO_NOW.minusSeconds(1000)).state(QUEUED).build();
-		Action excludedRequeue = Action.builder().name("excluded").modified(MONGO_NOW.minusSeconds(1000)).state(QUEUED).build();
-		Action shouldStay = Action.builder().name("miss").modified(MONGO_NOW.plusSeconds(1000)).state(QUEUED).build();
-
 		DeltaFile oneHit = buildDeltaFile(UUID.randomUUID(), "flow1", DeltaFileStage.IN_FLIGHT, MONGO_NOW, MONGO_NOW.minusSeconds(1000));
 		oneHit.getFlows().getFirst().setState(DeltaFileFlowState.IN_FLIGHT);
-		oneHit.getFlows().getFirst().setActions(List.of(shouldRequeue));
+		oneHit.getFlows().getFirst().addAction("hit", ActionType.TRANSFORM, QUEUED, MONGO_NOW.minusSeconds(1000));
 		DeltaFileFlow flow2 = oneHit.addFlow("flow3", FlowType.EGRESS, oneHit.getFlows().getFirst(), MONGO_NOW.minusSeconds(1000));
-		flow2.setActions(List.of(shouldStay));
-		deltaFileRepo.save(oneHit);
+		flow2.addAction("miss", ActionType.TRANSFORM, QUEUED, MONGO_NOW.plusSeconds(1000));
 
 		DeltaFile twoHits = buildDeltaFile(UUID.randomUUID(), "flow1", DeltaFileStage.IN_FLIGHT, MONGO_NOW, MONGO_NOW.minusSeconds(1000));
 		twoHits.getFlows().getFirst().setState(DeltaFileFlowState.IN_FLIGHT);
 		twoHits.setRequeueCount(5);
-		twoHits.getFlows().getFirst().setActions(List.of(shouldRequeue));
+		twoHits.getFlows().getFirst().addAction("hit", ActionType.TRANSFORM, QUEUED, MONGO_NOW.minusSeconds(1000));
 		flow2 = twoHits.addFlow("flow2", FlowType.TRANSFORM, oneHit.getFlows().getFirst(), MONGO_NOW.minusSeconds(1000));
-		flow2.setActions(List.of(shouldStay));
+		flow2.addAction("miss", ActionType.TRANSFORM, QUEUED, MONGO_NOW.plusSeconds(1000));
 		DeltaFileFlow flow3 = twoHits.addFlow("flow3", FlowType.EGRESS, oneHit.getFlows().getFirst(), MONGO_NOW.minusSeconds(1000));
-		flow3.setActions(List.of(shouldRequeue));
-		deltaFileRepo.save(twoHits);
+		flow3.addAction("hit", ActionType.TRANSFORM, QUEUED, MONGO_NOW.minusSeconds(1000));
 
 		DeltaFile miss = buildDeltaFile(UUID.randomUUID(), "flow1", DeltaFileStage.IN_FLIGHT, MONGO_NOW, MONGO_NOW.plusSeconds(1000));
 		miss.getFlows().getFirst().setState(DeltaFileFlowState.IN_FLIGHT);
-		miss.getFlows().getFirst().setActions(List.of(shouldStay));
+		miss.getFlows().getFirst().addAction("miss", ActionType.TRANSFORM, QUEUED, MONGO_NOW.plusSeconds(1000));
 		flow2 = oneHit.addFlow("flow2", FlowType.TRANSFORM, oneHit.getFlows().getFirst(), MONGO_NOW.minusSeconds(1000));
-		flow2.setActions(List.of(excludedRequeue));
+		flow2.addAction("excluded", ActionType.TRANSFORM, QUEUED, MONGO_NOW.minusSeconds(1000));
 		flow3 = oneHit.addFlow("flow3", FlowType.EGRESS, oneHit.getFlows().getFirst(), MONGO_NOW.minusSeconds(1000));
-		flow3.setActions(List.of(shouldStay));
-		deltaFileRepo.save(miss);
+		flow3.addAction("miss", ActionType.TRANSFORM, QUEUED, MONGO_NOW.plusSeconds(1000));
 
 		DeltaFile excludedByDid = buildDeltaFile(UUID.randomUUID(), "flow1", DeltaFileStage.IN_FLIGHT, MONGO_NOW, MONGO_NOW.minusSeconds(1000));
 		excludedByDid.getFlows().getFirst().setState(DeltaFileFlowState.IN_FLIGHT);
-		excludedByDid.getFlows().getFirst().setActions(List.of(shouldRequeue));
-		deltaFileRepo.save(excludedByDid);
+		excludedByDid.getFlows().getFirst().addAction("hit", ActionType.TRANSFORM, QUEUED, MONGO_NOW.minusSeconds(1000));
 
 		DeltaFile wrongStage = buildDeltaFile(UUID.randomUUID(), "flow1", DeltaFileStage.CANCELLED, MONGO_NOW, MONGO_NOW.minusSeconds(1000));
 		wrongStage.getFlows().getFirst().setState(DeltaFileFlowState.IN_FLIGHT);
-		wrongStage.getFlows().getFirst().setActions(List.of(shouldRequeue));
-		deltaFileRepo.save(wrongStage);
+		wrongStage.getFlows().getFirst().addAction("hit", ActionType.TRANSFORM, QUEUED, MONGO_NOW.minusSeconds(1000));
+
+		deltaFileRepo.batchInsert(List.of(oneHit, twoHits, miss, excludedByDid, wrongStage));
 
 		List<DeltaFile> hits = deltaFileRepo.updateForRequeue(MONGO_NOW, Duration.ofSeconds(30), Set.of("excluded", "anotherAction"), Set.of(excludedByDid.getDid(), UUID.randomUUID()));
 

@@ -62,7 +62,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String MODIFIED = "modified";
     public static final String CREATED = "created";
     public static final String STAGE = "stage";
-    public static final String STATE = "state";
     public static final String NAME = "name";
     public static final String CONTENT_DELETED = "contentDeleted";
     public static final String DATA_SOURCE = "dataSource";
@@ -88,19 +87,12 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String ACTIONS_NAME = "flows.actions.name";
     public static final String ACTIONS_TYPE = "flows.actions.type";
     public static final String ACTIONS_STATE = "flows.actions.state";
-    public static final String ACTION_MODIFIED = "action.modified";
-    public static final String ACTION_STATE = "action.state";
-    public static final String ACTIONS_UPDATE_MODIFIED = "flows.$[flow].actions.$[action].modified";
-    public static final String ACTIONS_UPDATE_QUEUED = "flows.$[flow].actions.$[action].queued";
-    public static final String ACTIONS_UPDATE_ERROR = "flows.$[flow].actions.$[action].errorCause";
-    public static final String ACTIONS_UPDATE_ERROR_CONTEXT = "flows.$[flow].actions.$[action].errorContext";
     private static final String COLLECTION = "deltaFiles";
     private static final String TTL_INDEX_NAME = "ttl_index";
     private static final String SCHEMA_VERSION = "schemaVersion";
     // Aggregation variables
     private static final String DID = "did";
     private static final String FLOWS = "flows";
-    private static final String FLOW_STATE = "flow.state";
     public static final String ANNOTATIONS = "annotations";
     public static final String ANNOTATION_KEYS = "annotationKeys";
 
@@ -199,19 +191,98 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         return mongoTemplate.indexOps(COLLECTION).getIndexInfo();
     }
 
-    // TODO: can this happen in one shot?
     @Override
+    @Transactional
     public List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, Duration requeueDuration, Set<String> skipActions, Set<UUID> skipDids) {
-        List<DeltaFile> filesToRequeue = mongoTemplate.find(buildReadyForRequeueQuery(requeueTime, requeueDuration, skipActions, skipDids), DeltaFile.class);
-        List<DeltaFile> requeuedDeltaFiles = new ArrayList<>();
-        for (List<DeltaFile> batch : Lists.partition(filesToRequeue, 1000)) {
-            List<UUID> dids = batch.stream().map(DeltaFile::getDid).toList();
-            Query query = new Query().addCriteria(Criteria.where(ID).in(dids));
-            mongoTemplate.updateMulti(query, buildRequeueUpdate(requeueTime, requeueDuration), DeltaFile.class);
-            requeuedDeltaFiles.addAll(mongoTemplate.find(query, DeltaFile.class));
+        OffsetDateTime requeueThreshold = requeueTime.minus(requeueDuration);
+
+        StringBuilder filesToRequeueQuery = new StringBuilder("""
+            SELECT df
+            FROM DeltaFile df
+            WHERE df.inFlight = true
+            AND df.modified < :requeueThreshold
+            """);
+
+        if (skipDids != null && !skipDids.isEmpty()) {
+            filesToRequeueQuery.append("AND df.did NOT IN :skipDids\n");
         }
 
-        return requeuedDeltaFiles;
+        filesToRequeueQuery.append("""
+            AND EXISTS (
+                SELECT action
+                FROM df.flows flow
+                JOIN flow.actions action
+                WHERE action.modified < :requeueThreshold
+                AND action.state IN ('QUEUED', 'COLD_QUEUED')
+            """);
+
+
+        if (skipActions != null && !skipActions.isEmpty()) {
+            filesToRequeueQuery.append("AND action.name NOT IN :skipActions\n");
+        }
+
+        filesToRequeueQuery.append(")");
+
+        TypedQuery<DeltaFile> typedQuery = entityManager.createQuery(filesToRequeueQuery.toString(), DeltaFile.class)
+                .setParameter("requeueThreshold", requeueThreshold);
+        if (skipDids != null && !skipDids.isEmpty()) {
+            typedQuery.setParameter("skipDids", skipDids);
+        }
+        if (skipActions != null && !skipActions.isEmpty()) {
+            typedQuery.setParameter("skipActions", skipActions);
+        }
+        List<DeltaFile> filesToRequeue = typedQuery.getResultList();
+
+        if (filesToRequeue.isEmpty()) {
+            return filesToRequeue;
+        }
+
+        List<UUID> dids = filesToRequeue.stream().map(DeltaFile::getDid).toList();
+
+        entityManager.createQuery("""
+            UPDATE DeltaFile df
+            SET df.requeueCount = df.requeueCount + 1,
+                df.modified = :modified,
+                df.version = df.version + 1
+            WHERE df.did IN :dids
+            """)
+                .setParameter("modified", requeueTime)
+                .setParameter("dids", dids)
+                .executeUpdate();
+
+        filesToRequeue.forEach(deltaFile -> {
+            deltaFile.setRequeueCount(deltaFile.getRequeueCount() + 1);
+            deltaFile.setModified(requeueTime);
+            deltaFile.setVersion(deltaFile.getVersion() + 1);
+        });
+
+        List<Action> actions = filesToRequeue.stream()
+                .flatMap(d -> d.getFlows().stream())
+                .flatMap(f -> f.getActions().stream())
+                .filter(a -> (a.getState() == ActionState.QUEUED || a.getState() == COLD_QUEUED) &&
+                        a.getModified().isBefore(requeueThreshold) && (skipActions == null || !skipActions.contains(a.getName())))
+                .toList();
+
+        List<UUID> actionIds = actions.stream().map(Action::getId).toList();
+
+        entityManager.createQuery("""
+            UPDATE Action a
+            SET a.state = 'QUEUED',
+                a.modified = :modified,
+                a.queued = :modified
+            WHERE a.id IN :actionIds
+            """)
+                .setParameter("modified", requeueTime)
+                .setParameter("actionIds", actionIds)
+                .executeUpdate();
+
+        actions.forEach(action -> {
+            action.setState(ActionState.QUEUED);
+            action.setModified(requeueTime);
+            action.setQueued(requeueTime);
+        });
+
+        return filesToRequeue;
     }
 
     @Override
@@ -223,8 +294,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                 JOIN df.flows flow
                 JOIN flow.actions action
                 WHERE df.inFlight = true
-                AND action.state = 'COLD_QUEUED'
-                AND action.name IN :actionNames
+                AND EXISTS (
+                  SELECT action
+                  FROM df.flows flow
+                  JOIN flow.actions action
+                  WHERE  action.state = 'COLD_QUEUED'
+                  AND action.name IN :actionNames
+                )
                 ORDER BY df.modified ASC
                 LIMIT :limit
                 """, DeltaFile.class)
@@ -247,7 +323,11 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                 .setParameter("modified", modified)
                 .setParameter("dids", dids)
                 .executeUpdate();
-        filesToRequeue.forEach(deltaFile -> deltaFile.setModified(modified));
+        filesToRequeue.forEach(deltaFile -> {
+            deltaFile.setRequeueCount(deltaFile.getRequeueCount() + 1);
+            deltaFile.setModified(modified);
+            deltaFile.setVersion(deltaFile.getVersion() + 1);
+        });
 
         List<Action> actions = filesToRequeue.stream()
                 .flatMap(d -> d.getFlows().stream())
@@ -714,63 +794,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         } else {
             predicates.add(cb.like(root.get("name"), "%" + name + "%"));
         }
-    }
-
-    Update buildRequeueUpdate(OffsetDateTime modified, Duration requeueDuration) {
-        if (modified == null) {
-            modified = OffsetDateTime.now();
-        }
-
-        Update update = new Update();
-
-        long epochMs = requeueThreshold(modified, requeueDuration);
-        update.filterArray(Criteria.where(FLOW_STATE).is(DeltaFileFlowState.IN_FLIGHT.name()));
-        update.filterArray(Criteria.where(ACTION_STATE).is(ActionState.QUEUED.name())
-                .and(ACTION_MODIFIED).lt(new Date(epochMs)));
-
-        update.inc(REQUEUE_COUNT, 1);
-
-        // clear out any old error messages
-        update.set(ACTIONS_UPDATE_ERROR, null);
-        update.set(ACTIONS_UPDATE_ERROR_CONTEXT, null);
-
-        update.set(ACTIONS_UPDATE_MODIFIED, modified);
-        update.set(ACTIONS_UPDATE_QUEUED, modified);
-
-        update.set(MODIFIED, modified);
-
-        update.inc(VERSION, 1);
-
-        return update;
-    }
-
-    private Query buildReadyForRequeueQuery(OffsetDateTime requeueTime, Duration requeueDuration, Set<String> skipActions, Set<UUID> skipDids) {
-        Criteria criteria = Criteria.where(IN_FLIGHT).is(true);
-        long epochMs = requeueThreshold(requeueTime, requeueDuration);
-        criteria.and(MODIFIED).lt(new Date(epochMs));
-
-        if (skipDids != null && !skipDids.isEmpty()) {
-            criteria.and(DID).not().in(skipDids);
-        }
-
-        if (skipActions != null && !skipActions.isEmpty()) {
-            Criteria actionsCriteria = new Criteria().orOperator(
-                    Criteria.where(STATE).is(QUEUED.toString()).and(NAME).in(skipActions),
-                    Criteria.where(STATE).is(COLD_QUEUED.name())
-            );
-            criteria.and(FLOWS_ACTIONS).not().elemMatch(actionsCriteria);
-        } else {
-            criteria.and(FLOWS_ACTIONS).not().elemMatch(Criteria.where(STATE).is(COLD_QUEUED.name()));
-        }
-
-        Query requeueQuery = new Query(criteria);
-        requeueQuery.fields().include(ID);
-
-        return requeueQuery;
-    }
-
-    private long requeueThreshold(OffsetDateTime requeueTime, Duration requeueDuration) {
-        return requeueTime.minus(requeueDuration).toInstant().toEpochMilli();
     }
 
     private void removeUnknownIndices(IndexOperations idxOps, IndexInfo existing, Set<String> knownIndices) {
