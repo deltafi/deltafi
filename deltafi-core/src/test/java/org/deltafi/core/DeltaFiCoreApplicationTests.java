@@ -2373,30 +2373,42 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void multipleActionElemCriteria() {
+	void testErrorAndFilterCriteria() {
 		String reason = "reason";
 		OffsetDateTime time = OffsetDateTime.now(clock);
 		DeltaFile acknowledgedError = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, time, time);
+		acknowledgedError.setName("acknowledgedError");
 		Action ackedAction = acknowledgedError.getFlows().getFirst().addAction("ErrorAction", ActionType.TRANSFORM, ERROR, time);
 		ackedAction.setErrorAcknowledged(time);
 		ackedAction.setErrorCause(reason);
 
 		time = time.minusMinutes(1);
 		DeltaFile unacknowledgedError = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, time, time);
+		unacknowledgedError.setName("unacknowledgedError");
 		Action unacknowledgedAction = unacknowledgedError.getFlows().getFirst().addAction("ErrorAction", ActionType.TRANSFORM, ERROR, time);
 		unacknowledgedAction.setErrorCause(reason);
 
 		time = time.minusMinutes(2);
 		DeltaFile filtered = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, time, time);
+		filtered.setName("filtered");
 		Action filteredAction = filtered.getFlows().getFirst().addAction("FilteredAction", ActionType.TRANSFORM, FILTERED, time);
 		filteredAction.setFilteredCause(reason);
-		deltaFileRepo.saveAll(List.of(unacknowledgedError, acknowledgedError, filtered));
 
-		testFilter(DeltaFilesFilter.newBuilder().errorCause(reason).build(), acknowledgedError, unacknowledgedError);
+		time = time.minusMinutes(3);
+		DeltaFile filteredAndErrored = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, time, time);
+		filteredAndErrored.setName("filteredAndErrored");
+		Action filteredAction2 = filteredAndErrored.getFlows().getFirst().addAction("FilteredAction", ActionType.TRANSFORM, FILTERED, time);
+		filteredAction2.setFilteredCause(reason);
+		Action unacknowledgedAction2 = filteredAndErrored.getFlows().getFirst().addAction("ErrorAction", ActionType.TRANSFORM, ERROR, time);
+		unacknowledgedAction2.setErrorCause(reason);
+
+		deltaFileRepo.saveAll(List.of(unacknowledgedError, acknowledgedError, filtered, filteredAndErrored));
+
+		testFilter(DeltaFilesFilter.newBuilder().errorCause(reason).build(), acknowledgedError, unacknowledgedError, filteredAndErrored);
 		testFilter(DeltaFilesFilter.newBuilder().errorCause(reason).errorAcknowledged(true).build(), acknowledgedError);
-		testFilter(DeltaFilesFilter.newBuilder().errorCause(reason).errorAcknowledged(false).build(), unacknowledgedError);
-		testFilter(DeltaFilesFilter.newBuilder().filteredCause(reason).errorCause(reason).build(), acknowledgedError, unacknowledgedError, filtered);
-		testFilter(DeltaFilesFilter.newBuilder().filteredCause(reason).errorCause(reason).errorAcknowledged(true).build(), acknowledgedError, filtered);
+		testFilter(DeltaFilesFilter.newBuilder().errorCause(reason).errorAcknowledged(false).build(), unacknowledgedError, filteredAndErrored);
+		testFilter(DeltaFilesFilter.newBuilder().filteredCause(reason).build(), filtered, filteredAndErrored);
+		testFilter(DeltaFilesFilter.newBuilder().errorCause(reason).filteredCause(reason).build(), filteredAndErrored);
 	}
 
 	@Test

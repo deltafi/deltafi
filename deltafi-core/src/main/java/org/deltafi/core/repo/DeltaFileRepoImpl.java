@@ -499,7 +499,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         if (filter.getActions() != null && !filter.getActions().isEmpty()) {
             for (String actionName : filter.getActions()) {
-                Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
+                Subquery<Long> subquery = query.subquery(Long.class);
                 Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
                 Join<DeltaFile, DeltaFileFlow> subFlowJoin = subRoot.join("flows");
                 Join<DeltaFileFlow, Action> subActionJoin = subFlowJoin.join("actions");
@@ -531,7 +531,52 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             predicates.add(cb.exists(subquery));
         }
 
-        addErrorAndFilterCriteria(filter, predicates, cb, root);
+        if (filter.getErrorCause() != null) {
+            Subquery<Long> subquery = query.subquery(Long.class);
+            Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
+            Join<DeltaFile, DeltaFileFlow> subFlowJoin = subRoot.join("flows");
+            Join<DeltaFileFlow, Action> subActionJoin = subFlowJoin.join("actions");
+
+            subquery.select(cb.literal(1L)).where(
+                    cb.equal(subRoot.get("did"), root.get("did")),
+                    cb.like(cb.lower(subActionJoin.get("errorCause")), "%" + filter.getErrorCause().toLowerCase() + "%")
+            );
+            predicates.add(cb.exists(subquery));
+        }
+
+        if (filter.getFilteredCause() != null) {
+            Subquery<Long> subquery = query.subquery(Long.class);
+            Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
+            Join<DeltaFile, DeltaFileFlow> subFlowJoin = subRoot.join("flows");
+            Join<DeltaFileFlow, Action> subActionJoin = subFlowJoin.join("actions");
+
+            subquery.select(cb.literal(1L)).where(
+                    cb.equal(subRoot.get("did"), root.get("did")),
+                    cb.like(cb.lower(subActionJoin.get("filteredCause")), "%" + filter.getFilteredCause().toLowerCase() + "%")
+            );
+            predicates.add(cb.exists(subquery));
+        }
+
+        if (filter.getErrorAcknowledged() != null) {
+            Subquery<Long> subquery = query.subquery(Long.class);
+            Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
+            Join<DeltaFile, DeltaFileFlow> subFlowJoin = subRoot.join("flows");
+            Join<DeltaFileFlow, Action> subActionJoin = subFlowJoin.join("actions");
+
+            subquery.select(cb.literal(1L)).where(
+                    cb.equal(subRoot.get("did"), root.get("did")),
+                    cb.isNotNull((subActionJoin.get("errorAcknowledged"))));
+
+            if (filter.getErrorAcknowledged()) {
+                predicates.add(cb.exists(subquery));
+            } else {
+                predicates.add(cb.not(cb.exists(subquery)));
+            }
+        }
+
+        if (filter.getFiltered() != null) {
+            predicates.add(cb.equal(root.get("filtered"), filter.getFiltered()));
+        }
 
         if (filter.getRequeueCountMin() != null) {
             predicates.add(cb.greaterThanOrEqualTo(root.get(REQUEUE_COUNT), filter.getRequeueCountMin()));
@@ -609,24 +654,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             predicates.add(cb.like(cb.lower(root.get("name")), "%" + name + "%"));
         } else {
             predicates.add(cb.like(root.get("name"), "%" + name + "%"));
-        }
-    }
-
-    private void addErrorAndFilterCriteria(DeltaFilesFilter filter, List<Predicate> predicates, CriteriaBuilder cb, Root<DeltaFile> root) {
-        if (filter.getErrorCause() != null) {
-            predicates.add(cb.equal(root.get("errorCause"), filter.getErrorCause()));
-        }
-
-        if (filter.getFilteredCause() != null) {
-            predicates.add(cb.equal(root.get("filteredCause"), filter.getFilteredCause()));
-        }
-
-        if (filter.getErrorAcknowledged() != null) {
-            predicates.add(cb.equal(root.get("errorAcknowledged"), filter.getErrorAcknowledged()));
-        }
-
-        if (filter.getFiltered() != null) {
-            predicates.add(cb.equal(root.get("filtered"), filter.getFiltered()));
         }
     }
 
