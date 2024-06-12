@@ -962,6 +962,16 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         for (List<UUID> batch : Lists.partition(dids, 500)) {
+            entityManager.createQuery("DELETE FROM Action a WHERE a.deltaFileFlow.id IN " +
+                            "(SELECT f.id FROM DeltaFileFlow f WHERE f.deltaFile.id in :dids)")
+                    .setParameter("dids", batch)
+                    .executeUpdate();
+            entityManager.createQuery("DELETE FROM DeltaFileFlow f WHERE f.deltaFile.id in :dids")
+                    .setParameter("dids", batch)
+                    .executeUpdate();
+            entityManager.createQuery("DELETE FROM Annotation a WHERE a.deltaFile.id in :dids")
+                    .setParameter("dids", batch)
+                    .executeUpdate();
             entityManager.createQuery("DELETE FROM DeltaFile d WHERE d.did IN :dids")
                     .setParameter("dids", batch)
                     .executeUpdate();
