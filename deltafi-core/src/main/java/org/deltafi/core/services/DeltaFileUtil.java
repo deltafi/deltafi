@@ -70,7 +70,7 @@ public class DeltaFileUtil {
         String testModeReason = currentFlow.isTestMode() ? currentFlow.getName() : currentFlow.getTestModeReason();
         aggregateFlow.setTestModeReason(testModeReason);
         aggregateFlow.setPendingActions(new ArrayList<>(currentFlow.getPendingActions()));
-        currentFlow.getPendingActions().clear();
+        currentFlow.setPendingActions(new ArrayList<>());
         return aggregateFlow;
     }
 }
