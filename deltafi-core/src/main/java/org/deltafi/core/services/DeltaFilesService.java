@@ -101,10 +101,6 @@ public class DeltaFilesService {
     public static final String MISSING_FLOW_CAUSE = "The flow is no longer installed or running";
 
     private static final int DEFAULT_QUERY_LIMIT = 50;
-    private static final DeltaFileOrder DEFAULT_ORDER_BY = DeltaFileOrder.newBuilder()
-            .field("modified")
-            .direction(DeltaFileDirection.DESC)
-            .build();
 
     private final Clock clock;
     private final TransformFlowService transformFlowService;
@@ -1558,7 +1554,7 @@ public class DeltaFilesService {
     }
 
     public Long totalCount() {
-        return deltaFileRepo.estimatedCount();
+        return deltaFileRepo.count();
     }
 
     public DeltaFileStats deltaFileStats() {

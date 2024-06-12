@@ -21,17 +21,12 @@ import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.types.ColdQueuedActionSummary;
 import org.deltafi.core.types.DeltaFiles;
-import org.deltafi.core.types.ErrorSummaryFilter;
-import org.deltafi.core.types.SummaryByFlow;
-import org.deltafi.core.types.FilteredSummaryFilter;
-import org.deltafi.core.types.SummaryByFlowAndMessage;
 import org.springframework.data.mongodb.core.index.IndexInfo;
 import org.springframework.data.mongodb.core.query.Update;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -161,12 +156,6 @@ public interface DeltaFileRepoCustom {
      * @param reason Reason for deletion
      */
     void setContentDeletedByDidIn(List<UUID> dids, OffsetDateTime now, String reason);
-
-    /**
-     * Perform an estimated count of documents based on collection stats
-     * @return the estimated count
-     */
-    Long estimatedCount();
 
     /**
      * Retrieves a summary of all cold queued actions.

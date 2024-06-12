@@ -21,7 +21,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.collect.Lists;
-import com.mongodb.client.MongoCollection;
 import com.mongodb.client.result.UpdateResult;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -36,7 +35,6 @@ import org.deltafi.core.generated.types.*;
 import org.deltafi.core.types.*;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.UncategorizedMongoDbException;
-import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.index.Index;
@@ -69,7 +67,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String STATE = "state";
     public static final String NAME = "name";
     public static final String CONTENT_DELETED = "contentDeleted";
-    public static final String CONTENT_DELETED_REASON = "contentDeletedReason";
     public static final String DATA_SOURCE = "dataSource";
     public static final String ERROR_ACKNOWLEDGED = "errorAcknowledged";
     public static final String EGRESSED = "egressed";
@@ -116,8 +113,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     private static final String FLOW_STATE = "flow.state";
     public static final String ANNOTATIONS = "annotations";
     public static final String ANNOTATION_KEYS = "annotationKeys";
-
-    private static final String ACTION_SEGMENTS = "flows.actions.content.segments";
 
     private static final String IN_FLIGHT = "inFlight";
 
@@ -214,6 +209,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         return mongoTemplate.indexOps(COLLECTION).getIndexInfo();
     }
 
+    // TODO: can this happen in one shot?
     @Override
     public List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, Duration requeueDuration, Set<String> skipActions, Set<UUID> skipDids) {
         List<DeltaFile> filesToRequeue = mongoTemplate.find(buildReadyForRequeueQuery(requeueTime, requeueDuration, skipActions, skipDids), DeltaFile.class);
@@ -278,12 +274,26 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
+    @Transactional
     public void updateForAutoResume(List<UUID> dids, String policyName, OffsetDateTime nextAutoResume) {
-        Update update = new Update()
-                .set("flows.$[].actions.$[action].nextAutoResume", nextAutoResume)
-                .set("flows.$[].actions.$[action].nextAutoResumeReason", policyName)
-                .filterArray(Criteria.where(ACTION_STATE).is(ERROR));
-        batchedBulkUpdateByIds(dids, update);
+        if (dids == null || dids.isEmpty()) {
+            return;
+        }
+
+        for (List<UUID> batch : Lists.partition(dids, 500)) {
+            CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+            CriteriaUpdate<Action> update = cb.createCriteriaUpdate(Action.class);
+            Root<Action> root = update.from(Action.class);
+
+            update.set("nextAutoResume", nextAutoResume)
+                    .set("nextAutoResumeReason", policyName)
+                    .where(cb.and(
+                            root.get("deltaFileFlow").get("deltaFile").get("did").in(batch),
+                            cb.equal(root.get("state"), ActionState.ERROR)
+                    ));
+
+            entityManager.createQuery(update).executeUpdate();
+        }
     }
 
     @Override
@@ -348,24 +358,32 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         return query.getResultList();
     }
 
+    // TODO: do this in one shot
     @Override
     public List<DeltaFile> findForDiskSpaceDelete(long bytesToDelete, String dataSource, int batchSize) {
         if (bytesToDelete < 1) {
-            throw new IllegalArgumentException("bytesToDelete (" + bytesToDelete + ") must be positive");
+            throw new IllegalArgumentException("bytesToDelete (%s) must be positive".formatted(bytesToDelete));
         }
 
-        Criteria criteria = Criteria.where(CONTENT_DELETABLE).is(true);
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<DeltaFile> query = cb.createQuery(DeltaFile.class);
+        Root<DeltaFile> root = query.from(DeltaFile.class);
+
+        List<Predicate> predicates = new ArrayList<>();
+        predicates.add(cb.equal(root.get("contentDeletable"), true));
 
         if (dataSource != null) {
-            criteria.and(DATA_SOURCE).is(dataSource);
+            predicates.add(cb.equal(root.get("dataSource"), dataSource));
         }
 
-        Query query = new Query(criteria);
-        query.limit(batchSize);
-        query.with(Sort.by(Sort.Direction.ASC, MODIFIED));
-        query.fields().include(ID, TOTAL_BYTES, ACTION_SEGMENTS, ACTIONS_NAME, SCHEMA_VERSION);
+        query.select(root)
+                .where(predicates.toArray(new Predicate[0]))
+                .orderBy(cb.asc(root.get("modified")));
 
-        List<DeltaFile> deltaFiles = mongoTemplate.find(query, DeltaFile.class);
+        TypedQuery<DeltaFile> typedQuery = entityManager.createQuery(query);
+        typedQuery.setMaxResults(batchSize);
+        List<DeltaFile> deltaFiles = typedQuery.getResultList();
+
         long[] sum = {0};
         return deltaFiles.stream()
                 .filter(d -> {
@@ -768,16 +786,26 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
     }
 
+    // TODO: can this happen in one shot?
     @Override
+    @Transactional
     public void setContentDeletedByDidIn(List<UUID> dids, OffsetDateTime now, String reason) {
-        batchedBulkUpdateByIds(dids, new Update().set(CONTENT_DELETED, now)
-                .set(CONTENT_DELETED_REASON, reason)
-                .set(CONTENT_DELETABLE, false));
-    }
+        if (dids == null || dids.isEmpty()) {
+            return;
+        }
 
-    @Override
-    public Long estimatedCount() {
-        return mongoTemplate.execute(COLLECTION, MongoCollection::estimatedDocumentCount);
+        for (List<UUID> batch : Lists.partition(dids, 500)) {
+            CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+            CriteriaUpdate<DeltaFile> update = cb.createCriteriaUpdate(DeltaFile.class);
+            Root<DeltaFile> root = update.from(DeltaFile.class);
+
+            update.set("contentDeleted", now)
+                    .set("contentDeletedReason", reason)
+                    .set("contentDeletable", false)
+                    .where(root.get("did").in(batch));
+
+            entityManager.createQuery(update).executeUpdate();
+        }
     }
 
     @Override
@@ -967,19 +995,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     private Timestamp toTimestamp(OffsetDateTime offsetDateTime) {
         return offsetDateTime == null ? null : Timestamp.valueOf(offsetDateTime.toLocalDateTime());
-    }
-
-    private void batchedBulkUpdateByIds(List<UUID> dids, Update update) {
-        if (dids == null || dids.isEmpty()) {
-            return;
-        }
-
-        BulkOperations bulkOps = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, DeltaFile.class);
-        for (List<UUID> batch : Lists.partition(dids, 500)) {
-            Query query = new Query().addCriteria(Criteria.where(ID).in(batch));
-            bulkOps.updateMulti(query, update);
-        }
-        bulkOps.execute();
     }
 
     @Transactional
