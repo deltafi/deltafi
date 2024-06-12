@@ -382,7 +382,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         CriteriaQuery<DeltaFile> query = cb.createQuery(DeltaFile.class);
         Root<DeltaFile> root = query.from(DeltaFile.class);
 
-        List<Predicate> predicates = buildDeltaFilesCriteria(cb, root, filter);
+        List<Predicate> predicates = buildDeltaFilesCriteria(cb, root, query, filter);
         query.where(cb.and(predicates.toArray(new Predicate[0])));
 
         if (orderBy == null) {
@@ -425,7 +425,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         return deltaFiles;
     }
 
-    private List<Predicate> buildDeltaFilesCriteria(CriteriaBuilder cb, Root<DeltaFile> root, DeltaFilesFilter filter) {
+    private List<Predicate> buildDeltaFilesCriteria(CriteriaBuilder cb, Root<DeltaFile> root, CriteriaQuery<DeltaFile> query, DeltaFilesFilter filter) {
         List<Predicate> predicates = new ArrayList<>();
 
         if (filter == null) {
@@ -463,7 +463,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         if (filter.getAnnotations() != null && !filter.getAnnotations().isEmpty()) {
             for (KeyValue keyValue : filter.getAnnotations()) {
-                Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
+                Subquery<Long> subquery = query.subquery(Long.class);
                 Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
                 Join<DeltaFile, Annotation> subAnnotationJoin = subRoot.join("annotations");
 
@@ -511,6 +511,24 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
                 predicates.add(cb.exists(subquery));
             }
+        }
+
+        if (filter.getPendingAnnotations() != null) {
+            Subquery<Long> subquery = query.subquery(Long.class);
+            Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
+            Join<DeltaFile, DeltaFileFlow> subFlowJoin = subRoot.join("flows");
+
+            if (filter.getPendingAnnotations()) {
+                subquery.select(cb.literal(1L)).where(
+                        cb.equal(subRoot.get("did"), root.get("did")),
+                        cb.greaterThan(cb.function("jsonb_array_length", Integer.class, subFlowJoin.get("pendingAnnotations")), 0));
+            } else {
+                subquery.select(cb.literal(1L)).where(
+                        cb.equal(subRoot.get("did"), root.get("did")),
+                        cb.equal(cb.function("jsonb_array_length", Integer.class, subFlowJoin.get("pendingAnnotations")), 0));
+            }
+
+            predicates.add(cb.exists(subquery));
         }
 
         addErrorAndFilterCriteria(filter, predicates, cb, root);
