@@ -19,12 +19,21 @@ package org.deltafi.core.repo;
 
 import org.deltafi.common.types.ActionState;
 import org.deltafi.core.types.Action;
+import org.deltafi.core.types.ColdQueuedActionSummary;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.UUID;
 
 @Repository
 public interface ActionRepo extends JpaRepository<Action, UUID>, ActionRepoCustom {
     long countByStateAndErrorAcknowledgedIsNull(ActionState stage);
+
+    @Query("SELECT new org.deltafi.core.types.ColdQueuedActionSummary(a.name, a.type, COUNT(a)) " +
+            "FROM Action a " +
+            "WHERE a.state = 'COLD_QUEUED' " +
+            "GROUP BY a.name, a.type")
+    List<ColdQueuedActionSummary> coldQueuedActionsSummary();
 }

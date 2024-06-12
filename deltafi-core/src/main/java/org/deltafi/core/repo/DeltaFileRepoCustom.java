@@ -19,7 +19,6 @@ package org.deltafi.core.repo;
 
 import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.generated.types.*;
-import org.deltafi.core.types.ColdQueuedActionSummary;
 import org.deltafi.core.types.DeltaFiles;
 import org.springframework.data.mongodb.core.index.IndexInfo;
 import org.springframework.data.mongodb.core.query.Update;
@@ -156,13 +155,6 @@ public interface DeltaFileRepoCustom {
      * @param reason Reason for deletion
      */
     void setContentDeletedByDidIn(List<UUID> dids, OffsetDateTime now, String reason);
-
-    /**
-     * Retrieves a summary of all cold queued actions.
-     *
-     * @return A list of ColdQueuedActionSummary objects representing the summary of cold queued actions.
-     */
-    List<ColdQueuedActionSummary> coldQueuedActionsSummary();
 
     /**
      * Updates the specified version of the DeltaFile with the given update

@@ -18,6 +18,7 @@
 package org.deltafi.core.repo;
 
 import org.deltafi.core.generated.types.DeltaFileStats;
+import org.deltafi.core.types.ColdQueuedActionSummary;
 import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.types.DeltaFileFlowState;
 import org.deltafi.common.types.DeltaFileStage;

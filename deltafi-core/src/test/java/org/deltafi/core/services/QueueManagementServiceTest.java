@@ -20,7 +20,7 @@ package org.deltafi.core.services;
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.ActionType;
 import org.deltafi.core.configuration.DeltaFiProperties;
-import org.deltafi.core.repo.DeltaFileRepo;
+import org.deltafi.core.repo.ActionRepo;
 import org.deltafi.core.types.ColdQueuedActionSummary;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -46,7 +46,7 @@ class QueueManagementServiceTest {
     CoreEventQueue coreEventQueue;
 
     @Mock
-    DeltaFileRepo deltaFileRepo;
+    ActionRepo actionRepo;
 
     @Mock
     UnifiedFlowService unifiedFlowService;
@@ -131,7 +131,7 @@ class QueueManagementServiceTest {
     void testColdToWarmWithoutCheckedQueues() {
         queueManagementService.getCheckedQueues().set(false);
         queueManagementService.coldToWarm();
-        verify(deltaFileRepo, times(0)).coldQueuedActionsSummary();
+        verify(actionRepo, times(0)).coldQueuedActionsSummary();
     }
 
     @Test
@@ -140,7 +140,7 @@ class QueueManagementServiceTest {
         queueManagementService.getColdQueues().put(QUEUE_NAME, 8L);
         when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
         when(deltaFiProperties.getInMemoryQueueSize()).thenReturn(10);
-        when(deltaFileRepo.coldQueuedActionsSummary()).thenReturn(List.of(COLD_QUEUED_ACTION_SUMMARY));
+        when(actionRepo.coldQueuedActionsSummary()).thenReturn(List.of(COLD_QUEUED_ACTION_SUMMARY));
         when(unifiedFlowService.runningAction(ACTION_NAME, ActionType.TRANSFORM)).thenReturn(ACTION_CONFIGURATION);
         when(env.getProperty("schedule.maintenance")).thenReturn("true");
         queueManagementService.scheduleColdToWarm();

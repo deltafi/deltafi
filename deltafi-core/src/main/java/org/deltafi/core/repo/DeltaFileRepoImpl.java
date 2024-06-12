@@ -29,14 +29,12 @@ import jakarta.persistence.criteria.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.bson.Document;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.types.*;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.UncategorizedMongoDbException;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.index.Index;
 import org.springframework.data.mongodb.core.index.IndexInfo;
 import org.springframework.data.mongodb.core.index.IndexOperations;
@@ -83,14 +81,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String NEXT_AUTO_RESUME = "nextAutoResume";
     public static final String NORMALIZED_NAME = "normalizedName";
     public static final String FLOWS_INPUT_METADATA = "flows.input.metadata";
-    public static final String FLOWS_NAME = "flows.name";
     public static final String FLOWS_STATE = "flows.state";
     public static final String FLOWS_ACTIONS = "flows.actions";
-    public static final String FLOWS_ACTIONS_NAME = "flows.actions.name";
-    public static final String FLOWS_ACTIONS_STATE = "flows.actions.state";
-    public static final String FLOWS_ACTIONS_TYPE = "flows.actions.type";
-    public static final String FLOWS_ACTIONS_METADATA = "flows.actions.metadata";
-    public static final String FLOWS_ACTIONS_DELETE_METADATA_KEYS = "flows.actions.deleteMetadataKeys";
     public static final String ACTIONS_ATTEMPT = "actions.attempt";
     public static final String ACTIONS_ERROR_CAUSE = "flows.actions.errorCause";
     public static final String ACTIONS_NAME = "flows.actions.name";
@@ -98,7 +90,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String ACTIONS_STATE = "flows.actions.state";
     public static final String ACTION_MODIFIED = "action.modified";
     public static final String ACTION_STATE = "action.state";
-    public static final String ACTIONS_UPDATE_STATE = "flows.$[flow].actions.$[action].state";
     public static final String ACTIONS_UPDATE_MODIFIED = "flows.$[flow].actions.$[action].modified";
     public static final String ACTIONS_UPDATE_QUEUED = "flows.$[flow].actions.$[action].queued";
     public static final String ACTIONS_UPDATE_ERROR = "flows.$[flow].actions.$[action].errorCause";
@@ -107,7 +98,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     private static final String TTL_INDEX_NAME = "ttl_index";
     private static final String SCHEMA_VERSION = "schemaVersion";
     // Aggregation variables
-    private static final String COUNT_LOWER_CASE = "count";
     private static final String DID = "did";
     private static final String FLOWS = "flows";
     private static final String FLOW_STATE = "flow.state";
@@ -225,17 +215,68 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
+    @Transactional
     public List<DeltaFile> updateColdQueuedForRequeue(List<String> actionNames, int maxFiles, OffsetDateTime modified) {
-        List<DeltaFile> filesToRequeue = mongoTemplate.find(buildReadyForColdRequeueQuery(actionNames, maxFiles), DeltaFile.class);
-        List<DeltaFile> requeuedDeltaFiles = new ArrayList<>();
-        for (List<DeltaFile> batch : Lists.partition(filesToRequeue, 1000)) {
-            List<UUID> dids = batch.stream().map(DeltaFile::getDid).toList();
-            Query query = new Query().addCriteria(Criteria.where(ID).in(dids));
-            mongoTemplate.updateMulti(query, buildColdRequeueUpdate(modified), DeltaFile.class);
-            requeuedDeltaFiles.addAll(mongoTemplate.find(query, DeltaFile.class));
+        List<DeltaFile> filesToRequeue = entityManager.createQuery("""
+                SELECT df
+                FROM DeltaFile df
+                JOIN df.flows flow
+                JOIN flow.actions action
+                WHERE df.inFlight = true
+                AND action.state = 'COLD_QUEUED'
+                AND action.name IN :actionNames
+                ORDER BY df.modified ASC
+                LIMIT :limit
+                """, DeltaFile.class)
+                .setParameter("actionNames", actionNames)
+                .setParameter("limit", maxFiles)
+                .getResultList();
+
+        if (filesToRequeue.isEmpty()) {
+            return filesToRequeue;
         }
 
-        return requeuedDeltaFiles;
+        List<UUID> dids = filesToRequeue.stream().map(DeltaFile::getDid).toList();
+        entityManager.createQuery("""
+                UPDATE DeltaFile df
+                SET df.requeueCount = df.requeueCount + 1,
+                    df.modified = :modified,
+                    df.version = df.version + 1
+                WHERE df.did IN :dids
+                """)
+                .setParameter("modified", modified)
+                .setParameter("dids", dids)
+                .executeUpdate();
+        filesToRequeue.forEach(deltaFile -> deltaFile.setModified(modified));
+
+        List<Action> actions = filesToRequeue.stream()
+                .flatMap(d -> d.getFlows().stream())
+                .flatMap(f -> f.getActions().stream())
+                .filter(a -> a.getState() == COLD_QUEUED && actionNames.contains(a.getName()))
+                .toList();
+
+        List<UUID> actionIds = actions.stream()
+                .map(Action::getId)
+                .toList();
+
+        entityManager.createQuery("""
+                UPDATE Action a
+                SET a.state = 'QUEUED',
+                    a.modified = :modified,
+                    a.queued = :modified
+                WHERE a.id IN :actionIds
+                """)
+                .setParameter("modified", modified)
+                .setParameter("actionIds", actionIds)
+                .executeUpdate();
+
+        actions.forEach(action -> {
+            action.setState(QUEUED);
+            action.setModified(modified);
+            action.setQueued(modified);
+        });
+
+        return filesToRequeue;
     }
 
     @Override
@@ -703,26 +744,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         return update;
     }
 
-    Update buildColdRequeueUpdate(OffsetDateTime modified) {
-        Update update = new Update();
-        update.inc(REQUEUE_COUNT, 1);
-
-        // clear out any old error messages
-        update.set(ACTIONS_UPDATE_ERROR, null);
-        update.set(ACTIONS_UPDATE_ERROR_CONTEXT, null);
-        update.set(ACTIONS_UPDATE_MODIFIED, modified);
-        update.set(ACTIONS_UPDATE_QUEUED, modified);
-
-        update.set(ACTIONS_UPDATE_STATE, ActionState.QUEUED.name());
-        update.filterArray(Criteria.where(FLOW_STATE).is(DeltaFileFlowState.IN_FLIGHT.name()));
-        update.filterArray(Criteria.where(ACTION_STATE).is(COLD_QUEUED.name()));
-        update.set(MODIFIED, modified);
-
-        update.inc(VERSION, 1);
-
-        return update;
-    }
-
     private Query buildReadyForRequeueQuery(OffsetDateTime requeueTime, Duration requeueDuration, Set<String> skipActions, Set<UUID> skipDids) {
         Criteria criteria = Criteria.where(IN_FLIGHT).is(true);
         long epochMs = requeueThreshold(requeueTime, requeueDuration);
@@ -744,25 +765,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         Query requeueQuery = new Query(criteria);
         requeueQuery.fields().include(ID);
-
-        return requeueQuery;
-    }
-
-    private Query buildReadyForColdRequeueQuery(List<String> actionNames, int maxFiles) {
-        Criteria notComplete = Criteria.where(IN_FLIGHT).is(true)
-                .and(FLOWS_ACTIONS_STATE).is(COLD_QUEUED)
-                .and(FLOWS_ACTIONS_NAME).in(actionNames);
-
-        Criteria coldQueuedCriteria = new Criteria().andOperator(
-                Criteria.where(NAME).in(actionNames),
-                Criteria.where(STATE).is(COLD_QUEUED.name())
-        );
-
-        Criteria actionMatch = Criteria.where(FLOWS_ACTIONS).elemMatch(coldQueuedCriteria);
-
-        Query requeueQuery = new Query(new Criteria().andOperator(notComplete, actionMatch));
-        requeueQuery.fields().include(ID);
-        requeueQuery.limit(maxFiles);
 
         return requeueQuery;
     }
@@ -806,44 +808,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
             entityManager.createQuery(update).executeUpdate();
         }
-    }
-
-    @Override
-    public List<ColdQueuedActionSummary> coldQueuedActionsSummary() {
-        Criteria stageCriteria = Criteria.where(IN_FLIGHT).is(true);
-        MatchOperation matchStage = Aggregation.match(stageCriteria);
-
-        UnwindOperation unwindFlows = Aggregation.unwind(FLOWS);
-        UnwindOperation unwindActions = Aggregation.unwind(FLOWS_ACTIONS);
-
-        Criteria actionStateCriteria = Criteria.where(ACTIONS_STATE).is("COLD_QUEUED");
-        MatchOperation matchActionState = Aggregation.match(actionStateCriteria);
-
-        ProjectionOperation projectFields = Aggregation.project()
-                .and(ACTIONS_NAME).as(NAME)
-                .and(ACTIONS_TYPE).as(TYPE);
-
-        GroupOperation groupByActionNameAndType = Aggregation.group(NAME, TYPE).count().as(COUNT_LOWER_CASE);
-
-        Aggregation aggregation = Aggregation.newAggregation(
-                matchStage,
-                unwindFlows,
-                unwindActions,
-                matchActionState,
-                projectFields,
-                groupByActionNameAndType
-        ).withOptions(AggregationOptions.builder().allowDiskUse(true).build());
-
-        AggregationResults<Document> aggResults = mongoTemplate.aggregate(aggregation, COLLECTION, Document.class);
-
-        return aggResults.getMappedResults().stream()
-                .map(doc -> {
-                    String actionName = ((Document) doc.get("_id")).getString(NAME);
-                    String actionType = ((Document) doc.get("_id")).getString(TYPE);
-                    Integer count = doc.getInteger(COUNT_LOWER_CASE);
-                    return new ColdQueuedActionSummary(actionName, ActionType.valueOf(actionType), count);
-                })
-                .toList();
     }
 
     @Override
