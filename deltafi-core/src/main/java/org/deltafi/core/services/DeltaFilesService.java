@@ -42,10 +42,7 @@ import org.deltafi.core.exceptions.*;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.metrics.MetricsUtil;
-import org.deltafi.core.repo.ActionRepo;
-import org.deltafi.core.repo.AnnotationRepo;
-import org.deltafi.core.repo.DeltaFileRepo;
-import org.deltafi.core.repo.QueuedAnnotationRepo;
+import org.deltafi.core.repo.*;
 import org.deltafi.core.retry.MongoRetryable;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.types.ResumePolicy;
@@ -109,6 +106,7 @@ public class DeltaFilesService {
     private final StateMachine stateMachine;
     private final AnnotationRepo annotationRepo;
     private final DeltaFileRepo deltaFileRepo;
+    private final DeltaFileFlowRepo deltaFileFlowRepo;
     private final ActionRepo actionRepo;
     private final CoreEventQueue coreEventQueue;
     private final ContentStorageService contentStorageService;
@@ -1098,24 +1096,22 @@ public class DeltaFilesService {
     }
 
     public List<PerActionUniqueKeyValues> errorMetadataUnion(List<UUID> dids) {
-        DeltaFilesFilter filter = new DeltaFilesFilter();
-        filter.setDids(dids);
-        DeltaFiles deltaFiles = deltaFiles(0, dids.size(), filter, null, List.of(FLOWS_INPUT_METADATA, FLOWS_NAME, FLOWS_ACTIONS_NAME, FLOWS_ACTIONS_TYPE, FLOWS_ACTIONS_STATE, FLOWS_ACTIONS_METADATA, FLOWS_ACTIONS_DELETE_METADATA_KEYS));
+        // TODO: limit fields returned
+        List<DeltaFileFlow> deltaFileFlows = deltaFileFlowRepo.findAllByDeltaFileIds(dids);
+        //deltaFiles(0, dids.size(), filter, null, List.of(FLOWS_INPUT_METADATA, FLOWS_NAME, FLOWS_ACTIONS_NAME, FLOWS_ACTIONS_TYPE, FLOWS_ACTIONS_STATE, FLOWS_ACTIONS_METADATA, FLOWS_ACTIONS_DELETE_METADATA_KEYS));
 
         Map<Pair<String, String>, PerActionUniqueKeyValues> actionKeyValues = new HashMap<>();
-        for (DeltaFile deltaFile : deltaFiles.getDeltaFiles()) {
-            for (DeltaFileFlow flow : deltaFile.getFlows()) {
-                for (Action action : flow.getActions()) {
-                    if (action.getType() == ActionType.UNKNOWN || action.getState() != ActionState.ERROR) {
-                        // ignore synthetic actions like NoEgressFlowConfigured
-                        continue;
-                    }
-                    if (!actionKeyValues.containsKey(Pair.of(flow.getName(), action.getName()))) {
-                        actionKeyValues.put(Pair.of(flow.getName(), action.getName()), new PerActionUniqueKeyValues(flow.getName(), action.getName()));
-                    }
-                    flow.getMetadata()
-                            .forEach((key, value) -> actionKeyValues.get(Pair.of(flow.getName(), action.getName())).addValue(key, value));
+        for (DeltaFileFlow flow : deltaFileFlows) {
+            for (Action action : flow.getActions()) {
+                if (action.getType() == ActionType.UNKNOWN || action.getState() != ActionState.ERROR) {
+                    // ignore synthetic actions like NoEgressFlowConfigured
+                    continue;
                 }
+                if (!actionKeyValues.containsKey(Pair.of(flow.getName(), action.getName()))) {
+                    actionKeyValues.put(Pair.of(flow.getName(), action.getName()), new PerActionUniqueKeyValues(flow.getName(), action.getName()));
+                }
+                flow.getMetadata()
+                        .forEach((key, value) -> actionKeyValues.get(Pair.of(flow.getName(), action.getName())).addValue(key, value));
             }
         }
         return new ArrayList<>(actionKeyValues.values());

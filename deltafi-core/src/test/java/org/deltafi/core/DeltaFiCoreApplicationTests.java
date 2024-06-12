@@ -1636,7 +1636,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile = buildErrorDeltaFile(UUID.randomUUID(), "flow", "errorCause", "context", MONGO_NOW);
 		deltaFile.setContentDeleted(MONGO_NOW);
 		deltaFile.setContentDeletedReason("contentDeletedReason");
-		Action erroredAction = deltaFile.getFlow("firstFlow", 1).getAction("ErrorAction", 0);
+		Action erroredAction = deltaFile.getFlow("flow", 1).getAction("ErrorAction", 0);
 		erroredAction.setNextAutoResume(MONGO_NOW);
 		erroredAction.setNextAutoResumeReason("nextAutoResumeReason");
 		erroredAction.setCreated(MONGO_NOW.minusSeconds(1));

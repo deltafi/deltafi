@@ -31,10 +31,7 @@ import org.deltafi.core.collect.ScheduledCollectService;
 import org.deltafi.core.generated.types.DeltaFilesFilter;
 import org.deltafi.core.generated.types.RetryResult;
 import org.deltafi.core.metrics.MetricService;
-import org.deltafi.core.repo.ActionRepo;
-import org.deltafi.core.repo.AnnotationRepo;
-import org.deltafi.core.repo.DeltaFileRepo;
-import org.deltafi.core.repo.QueuedAnnotationRepo;
+import org.deltafi.core.repo.*;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.types.*;
 import org.deltafi.core.util.FlowBuilders;
@@ -97,9 +94,10 @@ class DeltaFilesServiceTest {
     DeltaFilesServiceTest(@Mock TransformFlowService transformFlowService,
                           @Mock EgressFlowService egressFlowService, @Mock StateMachine stateMachine,
                           @Mock AnnotationRepo annotationRepo, @Mock DeltaFileRepo deltaFileRepo,
-                          @Mock ActionRepo actionRepo, @Mock CoreEventQueue coreEventQueue,
-                          @Mock ContentStorageService contentStorageService, @Mock ResumePolicyService resumePolicyService,
-                          @Mock MetricService metricService, @Mock AnalyticEventService analyticEventService, @Mock CoreAuditLogger coreAuditLogger,
+                          @Mock ActionRepo actionRepo, @Mock DeltaFileFlowRepo deltaFileFlowRepo,
+                          @Mock CoreEventQueue coreEventQueue, @Mock ContentStorageService contentStorageService,
+                          @Mock ResumePolicyService resumePolicyService, @Mock MetricService metricService,
+                          @Mock AnalyticEventService analyticEventService, @Mock CoreAuditLogger coreAuditLogger,
                           @Mock DeltaFileCacheService deltaFileCacheService, @Mock DataSourceService dataSourceService,
                           @Mock QueueManagementService queueManagementService, @Mock QueuedAnnotationRepo queuedAnnotationRepo,
                           @Mock Environment environment, @Mock ScheduledCollectService scheduledCollectService) {
@@ -116,7 +114,7 @@ class DeltaFilesServiceTest {
         this.dataSourceService = dataSourceService;
 
         deltaFilesService = new DeltaFilesService(testClock, transformFlowService, egressFlowService, mockDeltaFiPropertiesService,
-                stateMachine, annotationRepo, deltaFileRepo, actionRepo, coreEventQueue, contentStorageService, resumePolicyService,
+                stateMachine, annotationRepo, deltaFileRepo, deltaFileFlowRepo, actionRepo, coreEventQueue, contentStorageService, resumePolicyService,
                 metricService, analyticEventService, coreAuditLogger, new DidMutexService(), deltaFileCacheService, dataSourceService,
                 queueManagementService, queuedAnnotationRepo, environment, scheduledCollectService, new TestUUIDGenerator());
     }
