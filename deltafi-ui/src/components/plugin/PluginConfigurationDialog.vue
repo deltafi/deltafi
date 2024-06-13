@@ -32,15 +32,15 @@
         <dl>
           <dt>{{ pluginConfigurationMap.get("groupId").header }}</dt>
           <dd>
-            <InputText v-model="model.groupId" :placeholder="pluginConfigurationMap.get('groupId').placeholder" :disabled="pluginConfigurationMap.get('groupId').disabled" class="inputWidth" />
+            <InputText v-model.trim="model.groupId" :placeholder="pluginConfigurationMap.get('groupId').placeholder" :disabled="pluginConfigurationMap.get('groupId').disabled" class="inputWidth" />
           </dd>
           <dt>{{ pluginConfigurationMap.get("artifactId").header }}</dt>
           <dd>
-            <InputText v-model="model.artifactId" :placeholder="pluginConfigurationMap.get('artifactId').placeholder" :disabled="pluginConfigurationMap.get('artifactId').disabled" class="inputWidth" />
+            <InputText v-model.trim="model.artifactId" :placeholder="pluginConfigurationMap.get('artifactId').placeholder" :disabled="pluginConfigurationMap.get('artifactId').disabled" class="inputWidth" />
           </dd>
           <dt>{{ pluginConfigurationMap.get("version").header }}</dt>
           <dd>
-            <InputText v-model="model.version" :placeholder="pluginConfigurationMap.get('version').placeholder" :disabled="pluginConfigurationMap.get('version').disabled" class="inputWidth" />
+            <InputText v-model.trim="model.version" :placeholder="pluginConfigurationMap.get('version').placeholder" :disabled="pluginConfigurationMap.get('version').disabled" class="inputWidth" />
           </dd>
         </dl>
       </div>
@@ -148,7 +148,7 @@ const pluginUpdateFlow = async () => {
         if (Object.hasOwn(errorMessage, "message")) {
           errorsList.value.push(errorMessage.message);
         } else {
-          errorsList.value.push(errorMessage);
+          errorsList.value.push(_.trim(errorMessage));
         }
       }
       notify.error(`Removing plugin ${originalModel.artifactId} failed`, `Plugin ${originalModel.artifactId} was not removed.`, 4000);
@@ -166,7 +166,7 @@ const pluginUpdateFlow = async () => {
       if (Object.hasOwn(errorMessage, "message")) {
         errorsList.value.push(errorMessage.message);
       } else {
-        errorsList.value.push(errorMessage);
+        errorsList.value.push(_.trim(errorMessage));
       }
     }
     notify.error(`Installing ${model.value.artifactId} failed`, `Plugin ${model.value.artifactId} was not installed.`, 4000);

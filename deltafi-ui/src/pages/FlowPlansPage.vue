@@ -82,7 +82,7 @@ const pluginNamesList = (allFlowData) => {
       mvnCoordinatesArray.push({ name: mvnCoordinates });
     });
   });
-  return _.uniqBy(mvnCoordinatesArray, "name");
+  return _.uniqBy(mvnCoordinatesArray, "name").sort((a, b) => a.name.localeCompare(b.name));
 };
 
 const formatData = (allFlowData) => {
