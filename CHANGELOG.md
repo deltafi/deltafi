@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.2.8] - 2024-05-24
+
+### Fixed
+- Back-port 2.0 Python Test Kit fixes into 1.2:
+  - Fix passthrough data checks
+  - Bug fix for JsonCompareHelper and enable regex support
+- Resolved an issue causing a Internal Server Error (500) during authentication attempts by users lacking a password.
+
 ## [1.2.7] - 2024-05-09
 
 ### Added
@@ -2929,7 +2937,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.7...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.8...main
+[1.2.8]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.7...1.2.8
 [1.2.7]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.6...1.2.7
 [1.2.6]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.5...1.2.6
 [1.2.5]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.4...1.2.5
