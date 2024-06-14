@@ -5,6 +5,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.2.9] - 2024-06-14
+
+### Changed
+- Auto Resume remove confirmation should show Name instead of Id 
+
+### Fixed
+- Fixed errors displayed when installing a plugin on the Plugins page
+- Trim groupId, artifactId, and version on Plugins page
+- Sorted plugin list in "Select a Plugin" dropdown on Flows page 
+- Fixed default boolean and integer values not being set in Actions in Flow Builder 
+
+### Upgrade and Migration
+- Minio: RELEASE.2024-06-11T03-13-30Z 
+- Upgrade to Grafana 11.0.0
+- Upgrade to Clickhouse 24.3.3
+
 ## [1.2.8] - 2024-05-24
 
 ### Fixed
@@ -2937,7 +2953,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.8...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.9...main
+[1.2.9]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.8...1.2.9
 [1.2.8]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.7...1.2.8
 [1.2.7]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.6...1.2.7
 [1.2.6]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.5...1.2.6
