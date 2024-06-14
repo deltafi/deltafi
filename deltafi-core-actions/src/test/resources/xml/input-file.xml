@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ships>
+    <ship>
+        <model>T-65 X-Wing</model>
+        <type>starfighter</type>
+        <length>
+            <value>13.4</value>
+            <units>meters</units>
+        </length>
+        <maximum_atmospheric_speed>
+            <value>1,050</value>
+            <units>kph</units>
+        </maximum_atmospheric_speed>
+    </ship>
+    <ship>
+        <model>YT-1300fp light freighter</model>
+        <type>light freighter</type>
+        <length>
+            <value>34</value>
+            <units>meters</units>
+        </length>
+        <maximum_atmospheric_speed>
+            <value>1,200</value>
+            <units>kph</units>
+        </maximum_atmospheric_speed>
+    </ship>
+    <ship>
+        <model>Delta-7</model>
+        <type>starfighter</type>
+        <length>
+            <value>8</value>
+            <units>meters</units>
+        </length>
+        <maximum_atmospheric_speed>
+            <value>1,260</value>
+            <units>kph</units>
+        </maximum_atmospheric_speed>
+    </ship>
+</ships>
