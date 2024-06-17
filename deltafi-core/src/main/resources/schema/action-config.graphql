@@ -16,7 +16,7 @@
 #    limitations under the License.
 #
 
-interface ActionConfiguration {
+type ActionConfiguration {
     name: String!
     apiVersion: String
     actionType: String!
