@@ -68,9 +68,10 @@ public interface DeltaFileRepoCustom {
      * @param requeueDuration duration to wait for an action to finish before requeuing
      * @param skipActions Set of actions to not requeue
      * @param skipDids Set of dids to not requeue
+     * @param limit maximum number of results to return
      * @return the list of the DeltaFiles to be requeued
      */
-    List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, Duration requeueDuration, Set<String> skipActions, Set<UUID> skipDids);
+    List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, Duration requeueDuration, Set<String> skipActions, Set<UUID> skipDids, int limit);
 
     /**
      * Requeue up to maxFiles COLD_QUEUED DeltaFiles with the given action names

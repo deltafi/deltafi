@@ -1923,17 +1923,17 @@ class DeltaFiCoreApplicationTests {
 		twoHits.getFlows().getFirst().setState(DeltaFileFlowState.IN_FLIGHT);
 		twoHits.setRequeueCount(5);
 		twoHits.getFlows().getFirst().addAction("hit", ActionType.TRANSFORM, QUEUED, MONGO_NOW.minusSeconds(1000));
-		flow2 = twoHits.addFlow("flow2", FlowType.TRANSFORM, oneHit.getFlows().getFirst(), MONGO_NOW.minusSeconds(1000));
+		flow2 = twoHits.addFlow("flow2", FlowType.TRANSFORM, twoHits.getFlows().getFirst(), MONGO_NOW.minusSeconds(1000));
 		flow2.addAction("miss", ActionType.TRANSFORM, QUEUED, MONGO_NOW.plusSeconds(1000));
-		DeltaFileFlow flow3 = twoHits.addFlow("flow3", FlowType.EGRESS, oneHit.getFlows().getFirst(), MONGO_NOW.minusSeconds(1000));
+		DeltaFileFlow flow3 = twoHits.addFlow("flow3", FlowType.EGRESS, twoHits.getFlows().getFirst(), MONGO_NOW.minusSeconds(1000));
 		flow3.addAction("hit", ActionType.TRANSFORM, QUEUED, MONGO_NOW.minusSeconds(1000));
 
 		DeltaFile miss = buildDeltaFile(UUID.randomUUID(), "flow1", DeltaFileStage.IN_FLIGHT, MONGO_NOW, MONGO_NOW.plusSeconds(1000));
 		miss.getFlows().getFirst().setState(DeltaFileFlowState.IN_FLIGHT);
 		miss.getFlows().getFirst().addAction("miss", ActionType.TRANSFORM, QUEUED, MONGO_NOW.plusSeconds(1000));
-		flow2 = oneHit.addFlow("flow2", FlowType.TRANSFORM, oneHit.getFlows().getFirst(), MONGO_NOW.minusSeconds(1000));
+		flow2 = miss.addFlow("flow2", FlowType.TRANSFORM, miss.getFlows().getFirst(), MONGO_NOW.minusSeconds(1000));
 		flow2.addAction("excluded", ActionType.TRANSFORM, QUEUED, MONGO_NOW.minusSeconds(1000));
-		flow3 = oneHit.addFlow("flow3", FlowType.EGRESS, oneHit.getFlows().getFirst(), MONGO_NOW.minusSeconds(1000));
+		flow3 = miss.addFlow("flow3", FlowType.EGRESS, miss.getFlows().getFirst(), MONGO_NOW.minusSeconds(1000));
 		flow3.addAction("miss", ActionType.TRANSFORM, QUEUED, MONGO_NOW.plusSeconds(1000));
 
 		DeltaFile excludedByDid = buildDeltaFile(UUID.randomUUID(), "flow1", DeltaFileStage.IN_FLIGHT, MONGO_NOW, MONGO_NOW.minusSeconds(1000));
@@ -1946,7 +1946,8 @@ class DeltaFiCoreApplicationTests {
 
 		deltaFileRepo.batchInsert(List.of(oneHit, twoHits, miss, excludedByDid, wrongStage));
 
-		List<DeltaFile> hits = deltaFileRepo.updateForRequeue(MONGO_NOW, Duration.ofSeconds(30), Set.of("excluded", "anotherAction"), Set.of(excludedByDid.getDid(), UUID.randomUUID()));
+		List<DeltaFile> hits = deltaFileRepo.updateForRequeue(MONGO_NOW, Duration.ofSeconds(30),
+				Set.of("excluded", "anotherAction"), Set.of(excludedByDid.getDid(), UUID.randomUUID()), 5000);
 
 		assertEquals(2, hits.size());
 
@@ -1957,11 +1958,11 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(1, oneHitAfter.getRequeueCount());
 		assertEquals(6, twoHitsAfter.getRequeueCount());
 		assertEquals(miss, missAfter);
-		assertNotEquals(oneHit.getFlows().getFirst().getActions().getFirst().getModified(), oneHitAfter.getFlows().getFirst().getActions().getFirst().getModified());
+		assertNotEquals(oneHit.getFlows().getFirst().getActions().getLast().getModified(), oneHitAfter.getFlows().getFirst().getActions().getLast().getModified());
 		assertEquals(oneHit.getFlows().get(1).getActions().getFirst().getModified(), oneHitAfter.getFlows().get(1).getActions().getFirst().getModified());
-		assertNotEquals(twoHits.getFlows().getFirst().getActions().getFirst().getModified(), twoHitsAfter.getFlows().getFirst().getActions().getFirst().getModified());
+		assertNotEquals(twoHits.getFlows().getFirst().getActions().getLast().getModified(), twoHitsAfter.getFlows().getFirst().getActions().getLast().getModified());
 		assertEquals(twoHits.getFlows().get(1).getActions().getFirst().getModified(), twoHitsAfter.getFlows().get(1).getActions().getFirst().getModified());
-		assertNotEquals(twoHits.getFlows().get(2).getActions().getFirst().getModified(), twoHitsAfter.getFlows().get(2).getActions().getFirst().getModified());
+		assertNotEquals(twoHits.getFlows().get(2).getActions().getLast().getModified(), twoHitsAfter.getFlows().get(2).getActions().getLast().getModified());
 	}
 
 	@Test

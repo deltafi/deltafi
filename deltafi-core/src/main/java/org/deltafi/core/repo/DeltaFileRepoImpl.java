@@ -49,6 +49,7 @@ import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.deltafi.common.types.ActionState.*;
 
@@ -193,9 +194,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     @Transactional
-    public List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, Duration requeueDuration, Set<String> skipActions, Set<UUID> skipDids) {
-        OffsetDateTime requeueThreshold = requeueTime.minus(requeueDuration);
-
+    public List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, Duration requeueDuration, Set<String> skipActions, Set<UUID> skipDids, int limit) {
         StringBuilder filesToRequeueQuery = new StringBuilder("""
             SELECT df
             FROM DeltaFile df
@@ -212,19 +211,21 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                 SELECT action
                 FROM df.flows flow
                 JOIN flow.actions action
-                WHERE action.modified < :requeueThreshold
+                WHERE flow.state = 'IN_FLIGHT'
+                AND action.modified < :requeueThreshold
                 AND action.state IN ('QUEUED', 'COLD_QUEUED')
             """);
-
 
         if (skipActions != null && !skipActions.isEmpty()) {
             filesToRequeueQuery.append("AND action.name NOT IN :skipActions\n");
         }
 
-        filesToRequeueQuery.append(")");
+        filesToRequeueQuery.append(") ORDER BY df.modified ASC LIMIT :limit");
 
+        OffsetDateTime requeueThreshold = requeueTime.minus(requeueDuration);
         TypedQuery<DeltaFile> typedQuery = entityManager.createQuery(filesToRequeueQuery.toString(), DeltaFile.class)
-                .setParameter("requeueThreshold", requeueThreshold);
+                .setParameter("requeueThreshold", requeueThreshold)
+                .setParameter("limit", limit);;
         if (skipDids != null && !skipDids.isEmpty()) {
             typedQuery.setParameter("skipDids", skipDids);
         }
@@ -280,7 +281,19 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             action.setState(ActionState.QUEUED);
             action.setModified(requeueTime);
             action.setQueued(requeueTime);
+            action.getDeltaFileFlow().updateState(requeueTime);
         });
+
+        Set<UUID> deltaFileFlowIds = actions.stream().map(a -> a.getDeltaFileFlow().getId()).collect(Collectors.toSet());
+
+        entityManager.createQuery("""
+            UPDATE DeltaFileFlow d
+            SET d.modified = :modified
+            WHERE d.id IN :deltaFileFlowIds
+            """)
+                .setParameter("modified", requeueTime)
+                .setParameter("deltaFileFlowIds", deltaFileFlowIds)
+                .executeUpdate();
 
         return filesToRequeue;
     }
@@ -355,6 +368,17 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             action.setModified(modified);
             action.setQueued(modified);
         });
+
+        Set<UUID> deltaFileFlowIds = actions.stream().map(a -> a.getDeltaFileFlow().getId()).collect(Collectors.toSet());
+
+        entityManager.createQuery("""
+            UPDATE DeltaFileFlow d
+            SET d.modified = :modified
+            WHERE d.id IN :deltaFileFlowIds
+            """)
+                .setParameter("modified", modified)
+                .setParameter("deltaFileFlowIds", deltaFileFlowIds)
+                .executeUpdate();
 
         return filesToRequeue;
     }
@@ -981,7 +1005,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     private Timestamp toTimestamp(OffsetDateTime offsetDateTime) {
-        return offsetDateTime == null ? null : Timestamp.valueOf(offsetDateTime.toLocalDateTime());
+        return offsetDateTime == null ? null : Timestamp.from(offsetDateTime.toInstant());
     }
 
     @Transactional

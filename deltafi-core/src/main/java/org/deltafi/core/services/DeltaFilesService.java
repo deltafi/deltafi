@@ -82,6 +82,7 @@ public class DeltaFilesService {
             .registerModule(new JavaTimeModule())
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     public static final String REPLAY_ACTION_NAME = "Replay";
+    private static final int REQUEUE_BATCH_SIZE = 5000;
 
     static {
         SimpleModule simpleModule = new SimpleModule().addSerializer(OffsetDateTime.class, new JsonSerializer<>() {
@@ -1217,17 +1218,24 @@ public class DeltaFilesService {
     }
 
     public void requeue() {
-        OffsetDateTime modified = OffsetDateTime.now(clock);
-        Set<UUID> longRunningDids = coreEventQueue.getLongRunningTasks().stream().map(ActionExecution::did).collect(Collectors.toSet());
-        List<DeltaFile> requeuedDeltaFiles = deltaFileRepo.updateForRequeue(modified,
-                getProperties().getRequeueDuration(),queueManagementService.coldQueueActions(), longRunningDids);
-        List<WrappedActionInput> actionInputs = requeuedDeltaFiles.stream()
-                .map(deltaFile -> requeuedActionInputs(deltaFile, modified))
-                .flatMap(Collection::stream)
-                .toList();
-        if (!actionInputs.isEmpty()) {
-            log.warn("{} actions exceeded requeue threshold of {} seconds, requeuing now", actionInputs.size(), getProperties().getRequeueDuration());
-            enqueueActions(actionInputs, true);
+        Integer numFound = null;
+        while (numFound == null || numFound == REQUEUE_BATCH_SIZE) {
+            OffsetDateTime modified = OffsetDateTime.now(clock);
+            Set<UUID> longRunningDids = coreEventQueue.getLongRunningTasks().stream().map(ActionExecution::did).collect(Collectors.toSet());
+            Set<String> skipActions = queueManagementService.coldQueueActions();
+
+            List<DeltaFile> filesToRequeue = deltaFileRepo.updateForRequeue(modified,
+                    getProperties().getRequeueDuration(), skipActions, longRunningDids, REQUEUE_BATCH_SIZE);
+            numFound = filesToRequeue.size();
+
+            List<WrappedActionInput> actionInputs = filesToRequeue.stream()
+                    .map(deltaFile -> requeuedActionInputs(deltaFile, modified))
+                    .flatMap(Collection::stream)
+                    .toList();
+            if (!actionInputs.isEmpty()) {
+                log.warn("{} actions exceeded requeue threshold of {} seconds, requeuing now", actionInputs.size(), getProperties().getRequeueDuration());
+                enqueueActions(actionInputs, true);
+            }
         }
     }
 
