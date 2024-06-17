@@ -50,7 +50,6 @@ type Egress {
 
 input NameFilter {
   name: String!
-  regex: Boolean
   caseSensitive: Boolean
 }
 

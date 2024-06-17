@@ -2415,16 +2415,17 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile2 = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.ERROR, MONGO_NOW.plusSeconds(1), MONGO_NOW.plusSeconds(1));
 		deltaFile2.getFlows().getFirst().setActions(List.of(Action.builder().name("action1").state(ActionState.ERROR).errorCause("Error reason 1").build()));
 		deltaFileRepo.save(deltaFile2);
-		// Filtered, reason 1
+		// filtered with errorCause
 		DeltaFile deltaFile3 = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(2), MONGO_NOW.plusSeconds(2));
 		deltaFile3.getFlows().getFirst().setActions(List.of(Action.builder().name("action1").state(ActionState.FILTERED).errorCause("Filtered reason 1").build()));
 		deltaFile3.setFiltered(true);
 		deltaFileRepo.save(deltaFile3);
-		// Filtered, reason 2
+		// errored with filteredCause
 		DeltaFile deltaFile4 = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(3), MONGO_NOW.plusSeconds(3));
 		deltaFile4.getFlows().getFirst().setActions(List.of(Action.builder().name("action1").state(ActionState.ERROR).filteredCause("Filtered reason 2").build()));
 		deltaFile4.setFiltered(true);
 		deltaFileRepo.save(deltaFile4);
+		// Filtered
 		DeltaFile deltaFile5 = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(3), MONGO_NOW.plusSeconds(3));
 		deltaFile5.getFlows().getFirst().setActions(List.of(Action.builder().name("action1").state(ActionState.FILTERED).filteredCause("Filtered reason 2").build()));
 		deltaFile5.setFiltered(true);
@@ -2494,27 +2495,25 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testFilterByName() {
 		DeltaFile deltaFile = new DeltaFile();
+		deltaFile.setModified(MONGO_NOW.plusSeconds(1));
 		deltaFile.setName("filename");
 		deltaFile.setSchemaVersion(CURRENT_SCHEMA_VERSION);
 
 		DeltaFile deltaFile1 = new DeltaFile();
+		deltaFile1.setModified(MONGO_NOW);
 		deltaFile1.setName("file");
 		deltaFile1.setSchemaVersion(CURRENT_SCHEMA_VERSION);
 
 		deltaFileRepo.saveAll(List.of(deltaFile1, deltaFile));
 
-		testFilter(nameFilter("iLe", true, true));
-		testFilter(nameFilter("iLe", true, false), deltaFile, deltaFile1);
-		testFilter(nameFilter("ile", true, true), deltaFile, deltaFile1);
-		testFilter(nameFilter("ilen", true, true), deltaFile);
-		testFilter(nameFilter("^FILE", true, false), deltaFile, deltaFile1);
-		testFilter(nameFilter("FILE", false, true));
-		testFilter(nameFilter("FILE", false, false), deltaFile1);
-		testFilter(nameFilter("file", false, true), deltaFile1);
+		testFilter(nameFilter("iLe", true));
+		testFilter(nameFilter("iLe", false), deltaFile, deltaFile1);
+		testFilter(nameFilter("ile", true), deltaFile, deltaFile1);
+		testFilter(nameFilter("ilen", true), deltaFile);
 	}
 
-	private DeltaFilesFilter nameFilter(String filename, boolean regex, boolean caseSensitive) {
-		NameFilter nameFilter = NameFilter.newBuilder().name(filename).regex(regex).caseSensitive(caseSensitive).build();
+	private DeltaFilesFilter nameFilter(String filename, boolean caseSensitive) {
+		NameFilter nameFilter = NameFilter.newBuilder().name(filename).caseSensitive(caseSensitive).build();
 		return DeltaFilesFilter.newBuilder().nameFilter(nameFilter).build();
 	}
 

@@ -702,6 +702,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
             subquery.select(cb.literal(1L)).where(
                     cb.equal(subRoot.get("did"), root.get("did")),
+                    cb.equal(subActionJoin.get("state"), "ERROR"),
                     cb.like(cb.lower(subActionJoin.get("errorCause")), "%" + filter.getErrorCause().toLowerCase() + "%")
             );
             predicates.add(cb.exists(subquery));
@@ -715,6 +716,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
             subquery.select(cb.literal(1L)).where(
                     cb.equal(subRoot.get("did"), root.get("did")),
+                    cb.equal(subActionJoin.get("state"), "FILTERED"),
                     cb.like(cb.lower(subActionJoin.get("filteredCause")), "%" + filter.getFilteredCause().toLowerCase() + "%")
             );
             predicates.add(cb.exists(subquery));
@@ -806,11 +808,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     private void addNameCriteria(CriteriaBuilder cb, Root<DeltaFile> root, NameFilter nameFilter, List<Predicate> predicates) {
-        if (Boolean.TRUE.equals(nameFilter.getRegex())) {
-            // TODO: fix this
-            throw new UnsupportedOperationException("Regex filtering is not supported");
-        }
-
         String name = nameFilter.getName();
         if (nameFilter.getCaseSensitive() != null && !nameFilter.getCaseSensitive()) {
             name = name.toLowerCase();
