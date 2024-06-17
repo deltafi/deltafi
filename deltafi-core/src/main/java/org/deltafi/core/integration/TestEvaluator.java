@@ -19,9 +19,11 @@ package org.deltafi.core.integration;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.*;
+import org.deltafi.core.integration.config.ContentData;
 import org.deltafi.core.integration.config.ContentList;
 import org.deltafi.core.integration.config.ExpectedActions;
 import org.deltafi.core.integration.config.ExpectedDeltaFile;
@@ -46,6 +48,7 @@ import java.util.UUID;
 public class TestEvaluator {
     final int SLEEP_INTERVAL_MILLIS = 500; // 1 sec
     final int DEFAULT_TIMEOUT_MINUTES = 2; // 1 sec
+    final int MAX_DEPTH = 6;
 
     private final DeltaFilesService deltaFilesService;
     private final ContentStorageService contentStorageService;
@@ -110,54 +113,74 @@ public class TestEvaluator {
         errors.add(msg);
     }
 
+    private void fatalError(String field, String expected, String actual) {
+        fatalError("Expected " + field + " to be '" + expected + "', but was '" + actual + "'");
+    }
+
+    private void fatalSizeError(String field, int expected, int actual) {
+        fatalError("Expected " + field + " size to be '" + expected + "', but was '" + actual + "'");
+    }
+
+    private void fatalError(String label, String field, String expected, String actual) {
+        fatalError("[" + label + "] Expected " + field + " to be '" + expected + "', but was '" + actual + "'");
+    }
+
+    private void fatalSizeError(String label, String field, int expected, int actual) {
+        fatalError("[" + label + "] Expected " + field + " size to be '" + expected + "', but was '" + actual + "'");
+    }
+
     public void evaluate(IngressResult ingressed, ExpectedDeltaFile expected) {
         DeltaFile deltaFile = deltaFilesService.getCachedDeltaFile(ingressed.did());
         if (deltaFile == null) {
             fatalError("Unable to retrieve DeltaFile, did: " + ingressed.did());
         } else {
             if (deltaFile.getStage() == expected.getStage()) {
-                childCheck(deltaFile, expected);
+                deltaFileCompare("Top", 1, deltaFile, expected);
             } else {
                 maybeFatalError(deltaFile.isTerminal(),
                         "DeltaFile had expected stage " + expected.getStage() +
                                 ", but was " + deltaFile.getStage());
             }
+
         }
     }
 
-    private void childCheck(DeltaFile deltaFile, ExpectedDeltaFile expectedDeltaFile) {
-        if (deltaFile.getChildDids().size() != expectedDeltaFile.getChildCount()) {
-            maybeFatalError(
-                    deltaFile.getChildDids().size() > expectedDeltaFile.getChildCount(),
-                    "Expected " + expectedDeltaFile.getChildCount() +
-                            " child DeltaFiles,  but had: " + deltaFile.getChildDids().size()
-                            + ", " + deltaFile.getDid());
-        } else if (!expectedDeltaFile.getChildren().isEmpty()) {
-            compareAllChildren(deltaFile, expectedDeltaFile.getChildren());
+    private void childCheck(int depth, DeltaFile deltaFile, ExpectedDeltaFile expectedDeltaFile) {
+        if (depth <= MAX_DEPTH) {
+            if (deltaFile.getChildDids().size() != expectedDeltaFile.getChildCount()) {
+                maybeFatalError(
+                        deltaFile.getChildDids().size() > expectedDeltaFile.getChildCount(),
+                        "Expected " + expectedDeltaFile.getChildCount() +
+                                " child DeltaFiles,  but had: " + deltaFile.getChildDids().size()
+                                + ", " + deltaFile.getDid());
+            } else if (!expectedDeltaFile.getChildren().isEmpty()) {
+                compareAllChildren(depth, deltaFile, expectedDeltaFile.getChildren());
+            }
+        } else {
+            fatalError("Reached maximum depth comparison level: " + MAX_DEPTH);
         }
     }
 
-    private void compareAllChildren(DeltaFile parentDeltaFile, List<ExpectedDeltaFile> children) {
+    private void compareAllChildren(int depth, DeltaFile parentDeltaFile, List<ExpectedDeltaFile> children) {
         for (int index = 0; index < children.size(); index++) {
             UUID childDid = parentDeltaFile.getChildDids().get(index);
             DeltaFile childDeltaFile = deltaFilesService.getCachedDeltaFile(childDid);
             if (childDeltaFile == null || !childDeltaFile.isTerminal()) {
                 errors.add("Cannot find child, or child not terminal yet. " + childDid);
             } else {
-                testTerminalChild(index, childDeltaFile, children.get(index));
+                deltaFileCompare("Child " + index, depth, childDeltaFile, children.get(index));
             }
         }
     }
 
-    private void testTerminalChild(int index, DeltaFile deltaFile, ExpectedDeltaFile expected) {
+    private void deltaFileCompare(String label, int depth, DeltaFile deltaFile, ExpectedDeltaFile expected) {
         if (deltaFile.getStage() != expected.getStage()) {
-            fatalError("Child " + index + ": expected " + expected.getStage() +
-                    ", but was " + deltaFile.getStage() + ", " + deltaFile.getDid());
+            fatalError(label + ":" + deltaFile.getDid(), "stage", expected.getStage().name(), deltaFile.getStage().name());
         } else {
             if (deltaFile.getChildDids().size() != expected.getChildCount()) {
                 maybeFatalError(
                         deltaFile.getChildDids().size() > expected.getChildCount(),
-                        "Child " + index + ": expected " +
+                        label + ": expected " +
                                 expected.getChildCount() +
                                 " children, but was " + deltaFile.getChildDids().size()
                                 + ", " + deltaFile.getDid());
@@ -171,15 +194,14 @@ public class TestEvaluator {
                             .toList();
                     if (deltaFileFlows.size() != 1) {
                         // TODO: Maybe handle >1 later?
-                        fatalError("Found " + deltaFileFlows.size() + " flows matching "
-                                + ea.getFlow() + "/" + ea.getType());
+                        fatalSizeError(ea.getFlow(), "deltaFileFlows", 1, deltaFileFlows.size());
                     } else {
                         List<String> actionNames = deltaFileFlows.getFirst().getActions()
                                 .stream().map(Action::getName)
                                 .toList();
 
                         if (!actionNames.containsAll(ea.getActions())) {
-                            fatalError("Child " + index + ": expected actions " +
+                            fatalError(label + ": expected actions " +
                                     String.join(",", ea.getActions()) +
                                     " - but were " + String.join(",", actionNames)
                                     + ", " + deltaFile.getDid());
@@ -196,16 +218,16 @@ public class TestEvaluator {
                 } else {
 
                     if (expected.getParentCount() != null && expected.getParentCount() != deltaFile.getParentDids().size()) {
-                        errors.add("Child " + index + ": expected " +
+                        errors.add(label + ": expected " +
                                 expected.getParentCount() +
                                 " parents, but was " + deltaFile.getParentDids().size()
                                 + ", " + deltaFile.getDid());
 
                     } else {
                         if (contentMatches(deltaFile, expected.getExpectedContent())) {
-                            childCheck(deltaFile, expected);
+                            childCheck(depth + 1, deltaFile, expected);
                         } else {
-                            errors.add("Child " + index + ": content does not match");
+                            errors.add(label + ": content does not match");
                         }
                     }
                 }
@@ -219,6 +241,7 @@ public class TestEvaluator {
 
     private boolean contentMatches(DeltaFile deltaFile, ContentList expectedContent) {
         if (expectedContent == null) {
+            // Test configuration does not want to verify output/content
             return true;
         }
 
@@ -228,52 +251,73 @@ public class TestEvaluator {
                 .toList();
         if (deltaFileFlows.size() != 1) {
             // TODO: Maybe handle >1 later?
-            fatalError("Found " + deltaFileFlows.size() + " flows matching "
-                    + expectedContent.getFlow() + "/" + expectedContent.getType());
+            fatalSizeError(expectedContent.getFlow() + "/" + expectedContent.getType(), "flows", 1, deltaFileFlows.size());
             return false;
         }
 
-        boolean found = false;
         for (Action action : deltaFileFlows.getFirst().getActions()) {
-            if (action.getName().equals(expectedContent.getAction())
-                // && action.getFlow().equals(expectedContent.getFlow())
-            ) {
+            // Find the action in this flow we want to compare content for
+            if (action.getName().equals(expectedContent.getAction())) {
+                return allContentsForActionAreEqual(action.getContent(), expectedContent.getData());
+            }
+        }
+        // Did not find the action we wanted to compare
+        return false;
+    }
 
-                List<Content> actualContent = action.getContent();
-                if (actualContent.size() != expectedContent.getData().size()) {
-                    fatalError("Content count differs");
-                    return false;
-                }
+    private boolean allContentsForActionAreEqual(List<Content> actualContent, List<ContentData> expectedData) {
+        if (actualContent.size() != expectedData.size()) {
+            fatalSizeError("content", expectedData.size(), actualContent.size());
+            return false;
+        }
 
-                // TODO: This needs work to verify 2+ contents
-                for (int i = 0; i < actualContent.size(); i++) {
-                    if (!actualContent.get(i).getName().equals(
-                            expectedContent.getData().getFirst().getName())) {
-                        fatalError("Expected content name " + expectedContent.getData().getFirst().getName()
-                                + ", but was: " + actualContent.get(i).getName());
-                        return false;
-                    } else {
-                        try {
-                            String loadedContent = loadContent(actualContent.get(i));
-                            if (loadedContent.equals(expectedContent.getData().get(i).getValue())) {
-                                found = true;
-                            } else {
-                                fatalError("Content does mot match for content named "
-                                        + actualContent.get(i).getName());
-                                fatalError("Expected <" + expectedContent.getData().get(i).getValue()
-                                        + ">, but was <" + loadedContent + ">");
-                            }
-                        } catch (Exception e) {
-                            fatalError("Failed to retrieve content for " + actualContent.get(i).getName());
-                        }
-                    }
-                }
-
-                break;
+        for (int i = 0; i < actualContent.size(); i++) {
+            if (!actualContent.get(i).getName().equals(expectedData.get(i).getName())) {
+                fatalError("content name", expectedData.get(i).getName(), actualContent.get(i).getName());
+                return false;
             }
 
+            String expectedMediaType = expectedData.get(i).getMediaType();
+            if (StringUtils.isNotEmpty(expectedMediaType) &&
+                    !expectedMediaType.equals(actualContent.get(i).getMediaType())) {
+                fatalError("mediaType", expectedMediaType, actualContent.get(i).getMediaType());
+                return false;
+            }
+
+            if (!contentIsEqual(actualContent.get(i), expectedData.get(i))) {
+                return false;
+            }
         }
-        return found;
+
+        return true;
+    }
+
+    private boolean contentIsEqual(Content actualContent, ContentData expectedData) {
+        try {
+            String loadedContent = loadContent(actualContent);
+            String expectedValue = expectedData.getValue();
+
+            // Compare either the expected 'value', or the 'contains' strings
+            if (StringUtils.isNotEmpty(expectedValue)) {
+                if (loadedContent.equals(expectedValue)) {
+                    return true;
+                } else {
+                    fatalError(actualContent.getName(), "content", expectedValue, loadedContent);
+                }
+            } else {
+                List<String> missing = expectedData.getContains().stream()
+                        .filter(stringToContain -> !loadedContent.contains(stringToContain))
+                        .toList();
+                if (missing.isEmpty()) {
+                    return true;
+                } else {
+                    fatalError("Did not find expected content: " + String.join(",", missing));
+                }
+            }
+        } catch (Exception e) {
+            fatalError("Failed to retrieve content for " + actualContent.getName());
+        }
+        return false;
     }
 
     private String loadContent(Content content) throws ObjectStorageException, IOException {

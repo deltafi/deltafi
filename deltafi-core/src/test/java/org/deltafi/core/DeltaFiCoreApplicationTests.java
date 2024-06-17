@@ -4100,7 +4100,14 @@ class DeltaFiCoreApplicationTests {
 
 	private boolean hasErroredCollectingAction(UUID did, String actionFlow) {
 		DeltaFile deltaFile = deltaFileRepo.findById(did).orElseThrow();
-		Action action = deltaFile.getFlow(actionFlow, 1).actionNamed(COLLECTING_TRANSFORM_ACTION).orElseThrow();
+		if (deltaFile.getStage() != DeltaFileStage.ERROR) {
+			return false;
+		}
+		DeltaFileFlow deltaFileFlow = deltaFile.getFlow(actionFlow, 1);
+		if (deltaFileFlow.getState() != DeltaFileFlowState.ERROR) {
+			return false;
+		}
+		Action action = deltaFileFlow.actionNamed(COLLECTING_TRANSFORM_ACTION).orElseThrow();
 		return action.getState() == ActionState.ERROR;
 	}
 

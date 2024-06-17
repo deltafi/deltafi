@@ -41,7 +41,7 @@ public class AnnotationService implements Snapshotter {
     }
 
     /**
-     * Find the transform or egress flow with the given name and update the set of expected annotations.
+     * Find the egress flow with the given name and update the set of expected annotations.
      * If the flow no longer has expected annotations remove the flow from all DeltaFiles
      * that have the flow in their pendingAnnotationsForFlow set.
      * @param flowName name of the flow to update
@@ -70,9 +70,6 @@ public class AnnotationService implements Snapshotter {
     @Override
     public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
         Result result = new Result();
-        if (systemSnapshot.getTransformFlows() != null) {
-            systemSnapshot.getTransformFlows().forEach(transformFlowSnapshot -> resetFromSnapshot(transformFlowSnapshot, result));
-        }
         if (systemSnapshot.getEgressFlows() != null) {
             systemSnapshot.getEgressFlows().forEach(egressFlowSnapshot -> resetFromSnapshot(egressFlowSnapshot, result));
         }

@@ -23,13 +23,11 @@ const generateData = (count: number) => {
   return Array.from(Array(count)).map(() => {
     return {
       did: faker.string.uuid(),
-      stage: "ERROR",
+      stage: "COMPLETE",
       created: "2022-03-03T19:23:20.823Z",
       modified: "2022-03-03T19:23:20.888Z",
-      sourceInfo: {
-        filename: faker.system.commonFileName("txt"),
-        flow: "mock.dataSourceFlow",
-      },
+      name: "hello-world-java-timed-data-source-28494",
+      dataSource: "hello-world-java-timed-data-source",
     };
   });
 };

@@ -27,32 +27,74 @@ const generateDeltaFiles = (count: number) => {
       stage: "ERROR",
       created: date,
       modified: date,
-      actions: [
+      name: `mock_smoke-${uuid}`,
+      dataSource: "mock_smoke",
+      flows: [
         {
-          name: "IngressAction",
-          state: "ERROR",
+          name: "mock_smoke",
           created: date,
           modified: date,
-          errorCause: "Failed Ingress",
-          errorContext: "Details...",
+          state: "COMPLETED",
+          actions: [
+            {
+              name: "IngressAction",
+              state: "COMPLETED",
+              created: date,
+              modified: date,
+              errorCause: "Failed Ingress",
+              errorContext: "Details...",
+              errorAcknowledged: null,
+              errorAcknowledgedReason: null,
+              nextAutoResume: "2024-05-12T19:46:24.880Z",
+              nextAutoResumeReason: "No compression or archive formats detected"
+            },
+            {
+              name: "IngressAction",
+              state: "COMPLETED",
+              created: date,
+              modified: date,
+              errorCause: "Failed Ingress Two",
+              errorContext: "Details...",
+              errorAcknowledged: null,
+              errorAcknowledgedReason: null,
+              nextAutoResume: "2024-05-12T19:46:24.880Z",
+              nextAutoResumeReason: "No compression or archive formats detected"
+            },
+          ],          
         },
         {
-          name: "IngressAction",
-          state: "ERROR",
+          name: "mock_smoke",
           created: date,
           modified: date,
-          errorCause: "Failed Ingress Two",
-          errorContext: "Details...",
-        },
-      ],
-      sourceInfo: {
-        filename: `mock_smoke-${uuid}`,
-        flow: "mock_smoke",
-      },
-      errorAcknowledged: null,
-      errorAcknowledgedReason: null,
-      nextAutoResume: "2024-05-12T19:46:24.880Z",
-      nextAutoResumeReason: "No compression or archive formats detected"
+          state: "ERROR",
+          actions: [
+            {
+              name: "IngressAction",
+              state: "ERROR",
+              created: date,
+              modified: date,
+              errorCause: "Failed Ingress",
+              errorContext: "Details...",
+              errorAcknowledged: null,
+              errorAcknowledgedReason: null,
+              nextAutoResume: "2024-05-12T19:46:24.880Z",
+              nextAutoResumeReason: "No compression or archive formats detected"
+            },
+            {
+              name: "IngressAction",
+              state: "ERROR",
+              created: date,
+              modified: date,
+              errorCause: "Failed Ingress Two",
+              errorContext: "Details...",
+              errorAcknowledged: null,
+              errorAcknowledgedReason: null,
+              nextAutoResume: "2024-05-12T19:46:24.880Z",
+              nextAutoResumeReason: "No compression or archive formats detected"
+            },
+          ],          
+        }
+      ]
     };
   });
 };

@@ -145,10 +145,9 @@ enum DeltaFileFlowState {
 }
 
 enum FlowType {
-  TIMED_DATA_SOURCE
   REST_DATA_SOURCE
-  FLOW
-  TRANSFORM # TODO should this be replaced with FLOW
+  TIMED_DATA_SOURCE
+  TRANSFORM
   EGRESS
 }
 

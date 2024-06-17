@@ -38,8 +38,6 @@ import org.deltafi.core.services.IngressService;
 import org.deltafi.core.types.IngressResult;
 import org.springframework.stereotype.Service;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -54,6 +52,7 @@ public class IntegrationService {
     private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
     private static final String USERNAME = "itest";
     private static final String TEST_ID_KEY = "deltaFiIntTestId";
+    private static final String TEST_PREFIX_MACRO = "XXX_TESTPREFIX_XXX";
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final IngressService ingressService;
@@ -91,16 +90,7 @@ public class IntegrationService {
         OffsetDateTime startTime = OffsetDateTime.now();
 
         if (errors.isEmpty()) {
-            try {
-                errors.addAll(ingressAndEvaluate(testId, startTime, config));
-            } catch (Exception e) {
-                errors.add("test start() exception");
-                errors.add(e.getMessage());
-
-                StringWriter stackWriter = new StringWriter();
-                e.printStackTrace(new PrintWriter(stackWriter));
-                errors.add(stackWriter.toString());
-            }
+            errors.addAll(ingressAndEvaluate(testId, startTime, config));
         } else {
             errors.addFirst("Could not validate config");
         }
@@ -121,39 +111,61 @@ public class IntegrationService {
         return testResult;
     }
 
-    private List<String> ingressAndEvaluate(String testId, OffsetDateTime startTime, Configuration config) throws IngressUnavailableException, ObjectStorageException, IngressStorageException, IngressMetadataException, IngressException, InterruptedException, JsonProcessingException {
+    private List<String> ingressAndEvaluate(String testId, OffsetDateTime startTime, Configuration config) {
         List<String> errors = new ArrayList<>();
 
-        List<IngressResult> ingressResults = ingress(testId, config.getInput());
-        if (ingressResults.isEmpty()) {
-            errors.add("Failed to ingress");
-        } else {
-            TestResult started = TestResult.builder()
-                    .id(testId)
-                    .status(TestStatus.STARTED)
-                    .start(startTime)
-                    .build();
-            testResultRepo.save(started);
-            evaluate(testId, ingressResults.getFirst(), config);
+        try {
+            List<IngressResult> ingressResults = ingress(testId, config.getInputs());
+            if (ingressResults.isEmpty()) {
+                errors.add("Failed to ingress");
+            } else {
+                TestResult started = TestResult.builder()
+                        .id(testId)
+                        .status(TestStatus.STARTED)
+                        .start(startTime)
+                        .build();
+                testResultRepo.save(started);
+                evaluate(testId, ingressResults.getFirst(), config);
+            }
+        } catch (JsonProcessingException e) {
+            errors.add("Failed to parse input metadata: " + e.getMessage());
+        } catch (Exception e) {
+            errors.add("Failed to ingress: " + e.getMessage());
         }
 
         return errors;
     }
 
-    private List<IngressResult> ingress(String testId, Input input) throws IngressUnavailableException, ObjectStorageException, IngressStorageException, IngressMetadataException, IngressException, InterruptedException, JsonProcessingException {
-        String contentType = StringUtils.isNoneEmpty(input.getContentType()) ? input.getContentType() : DEFAULT_CONTENT_TYPE;
+    private List<IngressResult> ingress(String testId, List<Input> inputs) throws IngressUnavailableException, ObjectStorageException, IngressStorageException, IngressMetadataException, IngressException, InterruptedException, JsonProcessingException {
+        List<IngressResult> results = new ArrayList<>();
+        for (Input input : inputs) {
+            String contentType = StringUtils.isNoneEmpty(input.getContentType()) ? input.getContentType() : DEFAULT_CONTENT_TYPE;
 
+            results.addAll(ingressService.ingress(
+                    input.getFlow(),
+                    input.getIngressFileName(),
+                    contentType, USERNAME,
+                    OBJECT_MAPPER.writeValueAsString(buildMetadataMap(input, testId)),
+                    input.getByteArrayInputStream(),
+                    OffsetDateTime.now()));
+        }
+        return results;
+    }
+
+    public Map<String, String> buildMetadataMap(Input input, String testId) {
+        String testIdPrefix = testId.substring(0, 8);
         Map<String, String> metadataMap = new HashMap<>();
-        metadataMap.putAll(input.getMetadataMap());
-        metadataMap.put(TEST_ID_KEY, testId);
 
-        return ingressService.ingress(
-                input.getFlow(),
-                input.getIngressFileName(),
-                contentType, USERNAME,
-                OBJECT_MAPPER.writeValueAsString(metadataMap),
-                input.getByteArrayInputStream(),
-                OffsetDateTime.now());
+        for (Map.Entry<String, String> entry : input.getMetadataMap().entrySet()) {
+            if (entry.getValue().contains(TEST_PREFIX_MACRO)) {
+                metadataMap.put(entry.getKey(),
+                        entry.getValue().replaceAll(TEST_PREFIX_MACRO, testIdPrefix));
+            } else {
+                metadataMap.put(entry.getKey(), entry.getValue());
+            }
+        }
+        metadataMap.put(TEST_ID_KEY, testId);
+        return metadataMap;
     }
 
     public void evaluate(String testId, IngressResult ingressed, Configuration config) {
@@ -163,7 +175,7 @@ public class IntegrationService {
         executor.submit(() -> {
             TestEvaluator testEvaluator = new TestEvaluator(deltaFilesService, contentStorageService, testResultRepo);
             try {
-                testEvaluator.waitForDeltaFile(testId, ingressed, config.getExpectedDeltaFile(), config.getInput().getTimeout());
+                testEvaluator.waitForDeltaFile(testId, ingressed, config.getExpectedDeltaFile(), config.getTimeout());
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 log.error("Unexpected exception caught from TestEvaluator: ", e);

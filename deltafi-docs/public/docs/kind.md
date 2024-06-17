@@ -22,7 +22,7 @@ To start up a demo DeltaFi or to set up a DeltaFi development environment, your 
 
 ### Hardware
 
-Hardware requiements are:
+Hardware requirements are:
 
 - minimum system resources:
   - 4 CPU cores

@@ -330,10 +330,10 @@ onBeforeMount(async () => {
       flowInfo["selectedFlowPlan"] = _.find(allFlowPlanData.value[`${_.toLower(linkedFlowPlan.value.flowPlanParams.type)}`], { name: linkedFlowPlan.value.flowPlanParams.selectedFlowPlanName });
       flowInfo["description"] = flowInfo["selectedFlowPlan"].description;
       if (_.has(linkedFlowPlan.value.flowPlanParams.selectedFlowPlan, "subscribe")) {
-        flowInfo["subscribe"] = linkedFlowPlan.value.flowPlanParams.selectedFlowPlan.subscribe;
+        flowInfo["subscribe"] = linkedFlowPlan.value.flowPlanParams.selectedFlowPlan.subscribe || [];
       }
       if (_.has(linkedFlowPlan.value.flowPlanParams.selectedFlowPlan, "publish")) {
-        flowInfo["publish"] = linkedFlowPlan.value.flowPlanParams.selectedFlowPlan.publish;
+        flowInfo["publish"] = linkedFlowPlan.value.flowPlanParams.selectedFlowPlan.publish || {};
       }
       await createFlowPlan(flowInfo);
       originalFlowPlan.value = rawOutput.value;
@@ -397,11 +397,11 @@ const setFlowValues = async (flowInfo) => {
   model.value.selectedFlowPlan = flowInfo["selectedFlowPlan"];
 
   if (_.has(flowInfo["selectedFlowPlan"], "subscribe")) {
-    model.value["subscribe"] = flowInfo["selectedFlowPlan"].subscribe;
+    model.value["subscribe"] = flowInfo["selectedFlowPlan"].subscribe || [];
   }
 
   if (_.has(flowInfo["selectedFlowPlan"], "publish")) {
-    model.value["publish"] = flowInfo["selectedFlowPlan"].publish;
+    model.value["publish"] = flowInfo["selectedFlowPlan"].publish || {};
   }
   model.value.active = true;
 };
@@ -457,7 +457,7 @@ const clearEmptyObjects = (queryObj) => {
       clearEmptyObjects(queryObj[objKey]);
     }
 
-    if (_.isEmpty(queryObj[objKey]) && !_.isBoolean(queryObj[objKey])) {
+    if (_.isEmpty(queryObj[objKey]) && !_.isBoolean(queryObj[objKey]) && !_.isNumber(queryObj[objKey])) {
       delete queryObj[objKey];
     }
   }
@@ -756,7 +756,7 @@ const getLoadedActions = () => {
       action["parameters"] = {};
       if (!_.isEmpty(action.schema.properties)) {
         for (const [key, value] of Object.entries(action.schema.properties)) {
-          if (!_.isEmpty(value.default)) {
+          if (!_.isEmpty(value.default) || _.isBoolean(value.default) || _.isNumber(value.default)) {
             action["parameters"][key] = value.default;
           }
         }

@@ -20,7 +20,7 @@ import { ref } from 'vue'
 import useApi from './useApi'
 
 export default function useSystemMetrics() {
-  const { response, get, loading, loaded } = useApi();
+  const { response, get, loading, loaded } = useApi(1);
   const endpoint = 'metrics/system/nodes';
   const data = ref([]);
 

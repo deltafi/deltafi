@@ -150,6 +150,19 @@ new Docute({
       ]
     },
     {
+      title: 'Core Actions',
+      children: [
+        {
+          title: 'Core Actions Overview',
+          link: '/core-actions-overview'
+        },
+        {
+          title: 'XmlEditor',
+          link: '/core-actions/xml-editor'
+        }
+      ]
+    },
+    {
       title: 'Operating',
       children: [
         {

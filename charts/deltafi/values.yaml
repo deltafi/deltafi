@@ -10,37 +10,37 @@ deltafi:
     trustStoreName: trustStore.jks
     trustStoreType: JKS
   core_actions:
-    image: deltafi/deltafi-core-actions:2.0-beta6
+    image: deltafi/deltafi-core-actions:2.0-rc2
   core:
-    image: deltafi/deltafi-core:2.0-beta6
+    image: deltafi/deltafi-core:2.0-rc2
     mongo_host: deltafi-mongodb
   docs:
-    image: deltafi/deltafi-docs:2.0-beta6
+    image: deltafi/deltafi-docs:2.0-rc2
     enabled: true
   ingress:
     envVar:
       HTTP_MAX_BODY_SIZE: 5G
   auth:
-    image: deltafi/deltafi-auth:2.0-beta6
+    image: deltafi/deltafi-auth:2.0-rc2
     mode: basic # basic, cert, or disabled
     secret: auth-secret
     entityResolver:
       enabled: false
-      image: deltafi/deltafi-entity-resolver:2.0-beta6
+      image: deltafi/deltafi-entity-resolver:2.0-rc2
       url: http://127.0.0.1:8080/
   api:
-    image: deltafi/deltafi-api:2.0-beta6
+    image: deltafi/deltafi-api:2.0-rc2
   ui:
-    image: deltafi/deltafi-ui:2.0-beta6
+    image: deltafi/deltafi-ui:2.0-rc2
   egress_sink:
     enabled: true
-    image: deltafi/deltafi-egress-sink:2.0-beta6
+    image: deltafi/deltafi-egress-sink:2.0-rc2
   nodemonitor:
-    image: deltafi/deltafi-nodemonitor:2.0-beta6
+    image: deltafi/deltafi-nodemonitor:2.0-rc2
     period: 9
   clustermonitor:
     enabled: true
-    image: deltafi/deltafi-clustermonitor:2.0-beta6
+    image: deltafi/deltafi-clustermonitor:2.0-rc2
     period: 9
 
 # Kubernetes ingress config
@@ -59,7 +59,7 @@ minio:
     MINIO_SCANNER_SPEED: slow
     MINIO_BROWSER: off
   image:
-    tag: RELEASE.2024-04-06T05-26-02Z
+    tag: RELEASE.2024-06-11T03-13-30Z
   mode: standalone
   existingSecret: minio-keys
   resources:
@@ -144,7 +144,7 @@ kubernetes-dashboard:
 grafana:
   image:
     repository: deltafi/grafana
-    tag: 10.4.2-0
+    tag: 11.0.0-0
   persistence:
     enabled: true
     existingClaim: deltafi-grafana
@@ -440,7 +440,7 @@ clickhouse:
   enabled: false
   image:
     repository: bitnami/clickhouse
-    tag: 24.3.2-debian-12-r2
+    tag: 24.3.3-debian-12-r2
   shards: 1
   replicaCount: 1
   keeper:

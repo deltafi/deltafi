@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 @Slf4j
@@ -45,6 +46,15 @@ class EventPipeline<T extends AnalyticEvent> {
      */
     public void add(T event) {
         queue.add(event);
+    }
+
+    /**
+     * Adds multiple events to the queue.
+     *
+     * @param  events  the list of events to be added to the queue
+     */
+    public void addAll(List<T> events) {
+        queue.addAll(events);
     }
 
     /**

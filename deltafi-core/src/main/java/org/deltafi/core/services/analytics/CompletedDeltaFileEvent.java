@@ -18,7 +18,6 @@
 package org.deltafi.core.services.analytics;
 
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.core.types.Annotation;
 import org.deltafi.core.types.DeltaFile;
 import org.deltafi.common.types.DeltaFileStage;
 import org.jetbrains.annotations.NotNull;
@@ -29,7 +28,7 @@ import java.sql.Statement;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Objects;
 
 @Slf4j
 class CompletedDeltaFileEvent implements AnalyticEvent {
@@ -65,6 +64,20 @@ class CompletedDeltaFileEvent implements AnalyticEvent {
     long cancelledFiles;
     Map<String, String> annotations;
     List<String> egresses;
+
+    CompletedDeltaFileEvent(SurveyEvent surveyEvent, String did) {
+        this.did = did;
+        this.timestamp = Objects.requireNonNullElseGet(surveyEvent.timestamp(), OffsetDateTime::now);
+        this.dataSource = surveyEvent.dataSource();
+        this.ingressBytes = surveyEvent.ingressBytes();
+        this.totalBytes = surveyEvent.ingressBytes();
+        this.files = surveyEvent.files();
+
+        Map<String, String> surveyAnnotations = surveyEvent.annotations();
+        if (!surveyAnnotations.isEmpty()) {
+            this.annotations = surveyAnnotations;
+        }
+    }
 
     CompletedDeltaFileEvent(DeltaFile deltafile) {
         this.timestamp = deltafile.getCreated();

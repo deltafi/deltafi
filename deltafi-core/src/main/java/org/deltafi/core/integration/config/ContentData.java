@@ -26,17 +26,27 @@ import java.util.List;
 
 @Data
 public class ContentData {
+    // required
     private String name;
+    // optional
+    private String mediaType;
+    // exactly one of value or contains is required
     private String value;
+    private List<String> contains;
 
     public Collection<String> validate() {
         List<String> errors = new ArrayList<>();
         if (StringUtils.isEmpty(name)) {
-            errors.add("ContentData missing name");
+            errors.add("ContentData missing 'name'");
         }
-        if (StringUtils.isEmpty(value)) {
-            errors.add("ContentData missing value");
+        if (StringUtils.isEmpty(value) &&
+                (contains == null || contains.isEmpty())) {
+            errors.add("ContentData missing 'value' or 'contains'");
+        } else if (!StringUtils.isEmpty(value) &&
+                contains != null && !contains.isEmpty()) {
+            errors.add("ContentData must contain only one of 'value' or 'contains'");
         }
+
         return errors;
     }
 }

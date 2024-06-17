@@ -16,260 +16,368 @@
    limitations under the License.
 */
 
-const errors = [
-  {
-    configName: "passthroughv2",
-    errorType: "UNRESOLVED_VARIABLE",
-    message: "Could not resolve placeholder 'notFound' in value \"${notFound}\"",
-  },
-  {
-    configName: "PassthroughLoadAction",
-    errorType: "INVALID_ACTION_PARAMETERS",
-    message: "$.unexpected: is not defined in the schema and the schema does not allow additional properties",
-  },
-  {
-    configName: "PassthroughTransformAction",
-    errorType: "UNREGISTERED_ACTION",
-    message: "Action: org.deltafi.passthrough.action.MissingRoteTransformAction has not been registered with the system",
-  },
-  {
-    configName: "NotReallyTranformAction",
-    errorType: "INVALID_ACTION_CONFIG",
-    message: "Action: org.deltafi.passthrough.action.RoteLoadAction is not registered as a TransformAction",
-  },
-];
-// TODO: Review for 2.0
-// const getEnrichedData = () => {
-//   const data = [
-//     {
-//       name: "smoke",
-//       description: "Test flow that passes data through enrich flow unchanged",
-//       sourcePlugin: {
-//         artifactId: "smoke",
-//         groupId: "org.deltafi",
-//         version: "0.17.0",
-//       },
-//       flowStatus: {
-//         state: "RUNNING",
-//         errors: errors,
-//       },
-//       variables: [
-//         {
-//           name: "smoke-enrich-url",
-//           value: "smoke-value",
-//           description: "The URL to post the DeltaFile to",
-//           defaultValue: "http://deltafi-enrich-sink-service",
-//           dataType: "STRING",
-//         },
-//       ],
-//     },
-//   ];
-//   return data;
-// };
-// TODO: Review for 2.0
-//const enrichData = [[], getEnrichedData()];
-
 const generateFlows = () => {
   return {
     transform: [
       {
-        name: "keyword-extraction",
-        subscribe: [{
-          condition: "Run At Night",
-          topic: "json",
-        }],
-        description: "Extract keywords from text",
-        type: "text/plain",
-        flowStatus: {
-          state: "STOPPED",
-          errors: [],
-          testMode: false,
-        },
         sourcePlugin: {
-          artifactId: "keyword-actions",
-          groupId: "org.deltafi",
-          version: "1.0.0",
+          artifactId: "deltafi-testjig",
+          groupId: "org.deltafi.testjig",
+          version: "2.0-beta5"
+        },
+        name: "mockFlow4",
+        subscribe: [
+          {
+            condition: null,
+            topic: "mockFlow4"
+          }
+        ],
+        publish: {
+          matchingPolicy: "ALL_MATCHING",
+          defaultRule: {
+            defaultBehavior: "ERROR",
+            topic: null
+          },
+          rules: [
+            {
+              condition: null,
+              topic: "blackhole"
+            }
+          ]
+        },
+        description: "A mock flow for testing",
+        flowStatus: {
+          state: "RUNNING",
+          errors: [],
+          testMode: false
         },
         maxErrors: -1,
         transformActions: [
           {
-            name: "keyword.KeywordExtractionTransformAction",
-            type: "org.deltafi.keyword.action.KeywordExtractionTransformAction",
-            parameters: {
-              resultType: "text/plain",
-            },
+            name: "SampleTransformAction",
+            type: "org.deltafi.core.action.delay.Delay",
+            parameters: null,
             apiVersion: null,
-            collect: null,
-          },
+            collect: null
+          }
         ],
-        egressAction: {
-          name: "keyword.KeywordEgressAction",
-          type: "org.deltafi.core.action.RestPostEgressAction",
-          parameters: {
-            metadataKey: "deltafiMetadata",
-            url: "http://deltafi-egress-sink-service",
-          },
-          apiVersion: null,
+        variables: []
+      },
+      {
+        sourcePlugin: {
+          artifactId: "deltafi-testjig",
+          groupId: "org.deltafi.testjig",
+          version: "2.0-beta5"
         },
-        variables: [],
-        expectedAnnotations: null,
-      }
+        name: "mockFlow3",
+        subscribe: [
+          {
+            condition: null,
+            topic: "mockFlow3"
+          }
+        ],
+        publish: {
+          matchingPolicy: "ALL_MATCHING",
+          defaultRule: {
+            defaultBehavior: "ERROR",
+            topic: null
+          },
+          rules: [
+            {
+              condition: null,
+              topic: "blackhole"
+            }
+          ]
+        },
+        description: "A mock flow for testing",
+        flowStatus: {
+          state: "RUNNING",
+          errors: [],
+          testMode: false
+        },
+        maxErrors: -1,
+        transformActions: [
+          {
+            name: "SampleTransformAction",
+            type: "org.deltafi.core.action.delay.Delay",
+            parameters: null,
+            apiVersion: null,
+            collect: null
+          }
+        ],
+        variables: []
+      },
+      {
+        sourcePlugin: {
+          artifactId: "deltafi-testjig",
+          groupId: "org.deltafi.testjig",
+          version: "2.0-beta5"
+        },
+        name: "mockFlow2",
+        subscribe: [
+          {
+            condition: null,
+            topic: "mockFlow2"
+          }
+        ],
+        publish: {
+          matchingPolicy: "ALL_MATCHING",
+          defaultRule: {
+            defaultBehavior: "ERROR",
+            topic: null
+          },
+          rules: [
+            {
+              condition: null,
+              topic: "blackhole"
+            }
+          ]
+        },
+        description: "A mock flow for testing",
+        flowStatus: {
+          state: "RUNNING",
+          errors: [],
+          testMode: false
+        },
+        maxErrors: -1,
+        transformActions: [
+          {
+            name: "SampleTransformAction",
+            type: "org.deltafi.core.action.delay.Delay",
+            parameters: null,
+            apiVersion: null,
+            collect: null
+          }
+        ],
+        variables: []
+      },
+      {
+        sourcePlugin: {
+          artifactId: "deltafi-testjig",
+          groupId: "org.deltafi.testjig",
+          version: "2.0-beta5"
+        },
+        name: "mockFlow1",
+        subscribe: [
+          {
+            condition: null,
+            topic: "mockFlow1"
+          }
+        ],
+        publish: {
+          matchingPolicy: "ALL_MATCHING",
+          defaultRule: {
+            defaultBehavior: "ERROR",
+            topic: null
+          },
+          rules: [
+            {
+              condition: null,
+              topic: "blackhole"
+            }
+          ]
+        },
+        description: "A mock flow for testing",
+        flowStatus: {
+          state: "RUNNING",
+          errors: [],
+          testMode: false
+        },
+        maxErrors: -1,
+        transformActions: [
+          {
+            name: "SampleTransformAction",
+            type: "org.deltafi.core.action.delay.Delay",
+            parameters: null,
+            apiVersion: null,
+            collect: null
+          }
+        ],
+        variables: []
+      },
+
     ],
     egress: [
       {
-        name: "error",
-        description: "Defines the flow for errored DeltaFiles",
-        flowStatus: {
-          state: "RUNNING",
-          errors: [],
-        },
         sourcePlugin: {
           artifactId: "deltafi-core-actions",
           groupId: "org.deltafi",
-          version: "0.17.0",
+          version: "2.0-beta6"
         },
-        egressAction: {
-          name: "error.ErrorEgressAction",
-          type: "org.deltafi.core.action.RestPostEgressAction",
-          parameters: {
-            egressFlow: "egress",
-            metadataKey: "deltafiMetadata",
-            url: "http://deltafi-egress-sink-service",
-          },
-        },
-        variables: [],
-      },
-      {
-        name: "passthrough",
-        description: "Egress flow that passes data through unchanged",
-        flowStatus: {
-          state: "RUNNING",
-          errors: errors,
-        },
-        sourcePlugin: {
-          artifactId: "passthrough",
-          groupId: "org.deltafi",
-          version: "0.17.0",
-        },
-        egressAction: {
-          name: "passthrough.PassthroughEgressAction",
-          type: "org.deltafi.core.action.RestPostEgressAction",
-          parameters: {
-            egressFlow: "egressFlow",
-            metadataKey: "deltafiMetadata",
-            url: "http://deltafi-egress-sink-service",
-          },
-        },
-        variables: [
+        name: "passthrough-egress",
+        subscribe: [
           {
-            name: "passthrough-egressUrl-one",
-            value: "passthrough-value-one",
-            description: "The URL to post the DeltaFile to",
-            defaultValue: "http://deltafi-egress-sink-service",
-            dataType: "STRING",
-          },
-          {
-            name: "passthrough-egressUrl-two",
-            value: "passthrough-value-two",
-            description: "The URL to post the DeltaFile to",
-            defaultValue: "http://deltafi-egress-sink-service",
-            dataType: "STRING",
-          },
+            condition: null,
+            topic: "passthrough-egress"
+          }
         ],
-      },
-      {
-        name: "smoke",
         description: "Test flow that passes data through unchanged",
         flowStatus: {
-          state: "STOPPED",
+          state: "RUNNING",
           errors: [],
-        },
-        sourcePlugin: {
-          artifactId: "smoke",
-          groupId: "org.deltafi",
-          version: "0.17.0",
+          testMode: false
         },
         egressAction: {
-          name: "smoke.SmokeEgressAction",
-          type: "org.deltafi.core.action.RestPostEgressAction",
+          name: "PassthroughEgress",
+          type: "org.deltafi.core.action.egress.RestPostEgress",
           parameters: {
-            egressFlow: "smoke",
             metadataKey: "deltafiMetadata",
-            url: "http://deltafi-egress-sink-service",
+            url: "http://deltafi-egress-sink-service"
           },
+          apiVersion: null
         },
-        variables: [
-          {
-            name: "smoke-egress-url",
-            value: "smoke-value",
-            description: "The URL to post the DeltaFile to",
-            defaultValue: "http://deltafi-egress-sink-service",
-            dataType: "STRING",
-          },
-        ],
+        variables: [],
+        expectedAnnotations: null
       },
       {
-        name: "stix1_x",
-        description: "Defines the egress flow that outputs stix1.x xml.",
+        sourcePlugin: {
+          artifactId: "deltafi-testjig",
+          groupId: "org.deltafi.testjig",
+          version: "2.0-beta5"
+        },
+        name: "blackhole-egress",
+        subscribe: [
+          {
+            condition: null,
+            topic: "blackhole"
+          }
+        ],
+        description: "POST to nowhere",
         flowStatus: {
           state: "RUNNING",
           errors: [],
-        },
-        sourcePlugin: {
-          artifactId: "stix",
-          groupId: "org.deltafi",
-          version: "0.17.0",
+          testMode: false
         },
         egressAction: {
-          name: "stix1_x.Stix1_xEgressAction",
-          type: "org.deltafi.core.action.RestPostEgressAction",
+          name: "BlackHoleEgressAction",
+          type: "org.deltafi.core.action.egress.RestPostEgress",
           parameters: {
-            egressFlow: "stix1_x",
             metadataKey: "deltafiMetadata",
-            url: "http://deltafi-egress-sink-service",
+            url: "http://deltafi-egress-sink-service/blackhole"
           },
+          apiVersion: null
         },
-        variables: [
-          {
-            name: "stix1_x-egress-Url",
-            value: "stix1_x-value",
-            description: "The URL to post the DeltaFile to",
-            defaultValue: "http://deltafi-egress-sink-service",
-            dataType: "STRING",
-          },
-        ],
+        variables: [],
+        expectedAnnotations: null
       },
       {
-        name: "stix2_1",
-        description: "Defines the egress flow that outputs stix2.1 json.",
+        sourcePlugin: {
+          artifactId: "deltafi-stix",
+          groupId: "org.deltafi.stix",
+          version: "2.0b7.dev0+g4f25d95.d20240524"
+        },
+        name: "stix-2_1-egress",
+        subscribe: [
+          {
+            condition: null,
+            topic: "stix-2_1-validated"
+          }
+        ],
+        description: "Egress validated STIX 2.1",
         flowStatus: {
           state: "RUNNING",
           errors: [],
-        },
-        sourcePlugin: {
-          artifactId: "stix",
-          groupId: "org.deltafi",
-          version: "0.17.0",
+          testMode: false
         },
         egressAction: {
-          name: "stix2_1.Stix2_1EgressAction",
-          type: "org.deltafi.core.action.RestPostEgressAction",
+          name: "Stix2_1Egress",
+          type: "org.deltafi.core.action.egress.RestPostEgress",
           parameters: {
-            egressFlow: "stix2_1",
             metadataKey: "deltafiMetadata",
-            url: "http://deltafi-egress-sink-service",
+            url: "http://deltafi-egress-sink-service/"
           },
+          apiVersion: null
         },
-        variables: [
-          {
-            name: "stix2_1-egress-url",
-            value: "stix2_1-value",
-            description: "The URL to post the DeltaFile to",
-            defaultValue: "http://deltafi-egress-sink-service",
-            dataType: "STRING",
-          },
-        ],
+        variables: [],
+        expectedAnnotations: null
       },
+      {
+        sourcePlugin: {
+          artifactId: "deltafi-java-hello-world",
+          groupId: "org.deltafi.helloworld",
+          version: "2.0-beta5"
+        },
+        name: "hello-world-java-egress",
+        subscribe: [
+          {
+            condition: null,
+            topic: "hello-world-java-egress"
+          }
+        ],
+        description: "Hello World Java egress",
+        flowStatus: {
+          state: "RUNNING",
+          errors: [],
+          testMode: false
+        },
+        egressAction: {
+          name: "HelloWorldEgressAction",
+          type: "org.deltafi.helloworld.actions.HelloWorldEgressAction",
+          parameters: null,
+          apiVersion: null
+        },
+        variables: [],
+        expectedAnnotations: null
+      },
+      {
+        sourcePlugin: {
+          artifactId: "deltafi-core-actions",
+          groupId: "org.deltafi",
+          version: "2.0-beta6"
+        },
+        name: "smoke-test-egress",
+        subscribe: [
+          {
+            condition: null,
+            topic: "smoke-egress"
+          }
+        ],
+        description: "Test flow that passes data through unchanged",
+        flowStatus: {
+          state: "RUNNING",
+          errors: [],
+          testMode: false
+        },
+        egressAction: {
+          name: "SmokeEgressAction",
+          type: "org.deltafi.core.action.egress.RestPostEgress",
+          parameters: {
+            metadataKey: "deltafiMetadata",
+            url: "http://deltafi-egress-sink-service/blackhole"
+          },
+          apiVersion: null
+        },
+        variables: [],
+        expectedAnnotations: null
+      },
+      {
+        sourcePlugin: {
+          artifactId: "deltafi-python-hello-world",
+          groupId: "org.deltafi.python-hello-world",
+          version: "2.0b7.dev0+gfa7ef50.d20240524"
+        },
+        name: "hello-world-python-egress",
+        subscribe: [
+          {
+            condition: null,
+            topic: "hello-world-python-egress"
+          }
+        ],
+        description: "Hello World Python egress",
+        flowStatus: {
+          state: "RUNNING",
+          errors: [],
+          testMode: false
+        },
+        egressAction: {
+          name: "HelloWorldEgressAction",
+          type: "org.deltafi.python-hello-world.HelloWorldEgressAction",
+          parameters: null,
+          apiVersion: null
+        },
+        variables: [],
+        expectedAnnotations: null
+      }
     ],
   };
 };

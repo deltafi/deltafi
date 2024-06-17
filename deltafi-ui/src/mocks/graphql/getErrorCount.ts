@@ -18,7 +18,7 @@
 
 const generateData = () => {
   const data = {
-    totalCount: 1,
+    totalCount: 172,
   };
 
   return data;

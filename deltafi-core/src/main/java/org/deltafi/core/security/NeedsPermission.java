@@ -363,6 +363,12 @@ public class NeedsPermission {
 
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('SurveyCreate'" + OR_ADMIN)
+    public @interface SurveyCreate {}
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
     @PreAuthorize(value = "hasAnyAuthority('SystemPropertiesRead'" + OR_ADMIN)
     public @interface SystemPropertiesRead {}
 

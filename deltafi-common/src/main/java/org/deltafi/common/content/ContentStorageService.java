@@ -18,6 +18,7 @@
 package org.deltafi.common.content;
 
 import lombok.RequiredArgsConstructor;
+import org.deltafi.common.storage.s3.MissingContentException;
 import org.deltafi.common.storage.s3.ObjectReference;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.storage.s3.ObjectStorageService;
@@ -38,22 +39,39 @@ public class ContentStorageService {
             return InputStream.nullInputStream();
         }
 
-        if (content.getSegments().size() == 1) {
-            return objectStorageService.getObject(buildObjectReference(content.getSegments().getFirst()));
-        }
+        return content.getSegments().size() == 1 ?
+                getObject(content.getSegments().getFirst()) :
+                getObjects(content.getSegments());
+    }
 
+    private InputStream getObjects(List<Segment> segments) throws ObjectStorageException {
         try {
-            return new SequenceInputStream(Collections.enumeration(content.getSegments().stream()
-                    .map(s -> {
-                        try {
-                            return objectStorageService.getObject(buildObjectReference(s));
-                        } catch (ObjectStorageException e) {
-                            throw new RuntimeException(e);
-                        }
-                    })
-                    .toList()));
+            return new SequenceInputStream(Collections.enumeration(segments.stream()
+                    .map(this::getObjectWrapExceptions).toList()));
+        } catch (ObjectStorageRuntimeException e) {
+            throw e.objectStorageException;
         } catch (RuntimeException e) {
             throw new ObjectStorageException(e);
+        }
+    }
+
+    private InputStream getObjectWrapExceptions(Segment segment) {
+        try {
+            return getObject(segment);
+        } catch (ObjectStorageException e) {
+            throw new ObjectStorageRuntimeException(e);
+        }
+    }
+
+    /*
+      Get the InputStream for the given segment. If the content is missing add the segment
+      object to the exception and rethrow it
+     */
+    private InputStream getObject(Segment segment) throws ObjectStorageException {
+        try {
+            return objectStorageService.getObject(buildObjectReference(segment));
+        } catch (MissingContentException e) {
+            throw new MissingContentException(segment, e.getMessage());
         }
     }
 
@@ -127,5 +145,13 @@ public class ContentStorageService {
     private ObjectReference buildObjectReference(Segment segment) {
         return new ObjectReference(CONTENT_BUCKET, segment.objectName(),
                 segment.getOffset(), segment.getSize());
+    }
+
+    private static class ObjectStorageRuntimeException extends RuntimeException {
+        private final ObjectStorageException objectStorageException;
+
+        ObjectStorageRuntimeException(ObjectStorageException objectStorageException) {
+            this.objectStorageException = objectStorageException;
+        }
     }
 }

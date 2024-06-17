@@ -22,14 +22,14 @@ const requestDelay = parseInt(process.env.VUE_APP_MOCK_REQUEST_DELAY || "500");
 console.log("Mock Request Delay: ", requestDelay);
 
 export default [
-  rest.get("/api/v1/sse", (req, res, ctx) => {
-    const status = require(`./api/v1/status.ts`);
+  rest.get("/api/v*/sse", (req, res, ctx) => {
+    const status = require(`./api/v2/status.ts`);
     const errorCount = 2;
 
     return res(ctx.set("Connection", "keep-alive"), ctx.set("Content-Type", "text/event-stream"), ctx.status(200, "Mocked status"), ctx.body(`event: errorCount\ndata: ${errorCount}\n\nevent: status\ndata: ${JSON.stringify(status)}\n\n`));
   }),
 
-  rest.get("/api/v1/metrics/graphite", (req, res, ctx) => {
+  rest.get("/api/v*/metrics/graphite", (req, res, ctx) => {
     try {
       const url = new URL(req.url.href);
       const params = new URLSearchParams(url.search);
@@ -48,7 +48,7 @@ export default [
     }
   }),
 
-  rest.get("/api/v1/content", (req, res, ctx) => {
+  rest.get("/api/v*/content", (req, res, ctx) => {
     try {
       const contentBase64: string = req.url.searchParams.get("content") || "";
       const contentJson = window.atob(contentBase64);
@@ -63,7 +63,7 @@ export default [
     }
   }),
 
-  rest.get("/api/v1/*", (req, res, ctx) => {
+  rest.get("/api/v*/*", (req, res, ctx) => {
     try {
       if (require.resolve(`.${req.url.pathname}`)) {
         const module = require.resolve(`.${req.url.pathname}`);

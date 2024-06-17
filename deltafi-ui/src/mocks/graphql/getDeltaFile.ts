@@ -18,273 +18,212 @@
 
 const generateData = () => {
   const data = {
-    did: "27186720-723a-4f82-a5ab-2fff441b2c9b",
-    parentDids: ["27186720-723a-4f82-a5ab-2fff441b2c9b"],
-    childDids: ["27186720-723a-4f82-a5ab-2fff441b2c9b"],
-    totalBytes: 65535,
-    ingressBytes: 36,
-    sourceInfo: {
-      filename: "fakeData.txt",
-      flow: "mock.dataSourceFlow",
-      metadata: [
+    schemaVersion: 1,
+      did: "2ace8f8a-60d6-4211-894a-0cd7455bf59z",
+      name: "hello-world-java-timed-data-source-28494",
+      totalBytes: 0,
+      ingressBytes: 24,
+      dataSource: "hello-world-java-timed-data-source",
+      parentDids: ["2ace8f8a-60d6-4211-894a-0cd7455bf59z"],
+      childDids: [],
+      flows: [
         {
-          key: "123",
-          value: "456",
+          name: "hello-world-java-timed-data-source",
+          id: 0,
+          type: "TIMED_DATA_SOURCE",
+          state: "COMPLETE",
+          created: "2024-05-30T11:31:55.653Z",
+          modified: "2024-05-30T11:31:55.659Z",
+          input: {
+            metadata: {},
+            content: [],
+            topics: [],
+            ancestorIds: []
+          },
+          actions: [
+            {
+              name: "HelloWorldTimedIngressAction",
+              id: 0,
+              type: "INGRESS",
+              state: "COMPLETE",
+              created: "2024-05-30T11:31:55.653Z",
+              queued: null,
+              start: null,
+              stop: null,
+              modified: "2024-05-30T11:31:55.653Z",
+              errorCause: null,
+              errorContext: null,
+              errorAcknowledged: null,
+              errorAcknowledgedReason: null,
+              nextAutoResume: null,
+              nextAutoResumeReason: null,
+              filteredCause: null,
+              filteredContext: null,
+              attempt: 1,
+              content: [
+                {
+                  name: "hello-world-java-timed-data-source-28494",
+                  mediaType: "text/plain",
+                  size: 24,
+                  segments: [
+                    {
+                      uuid: "0bb6acee-0020-47c2-a8f2-36d28de07169",
+                      offset: 0,
+                      size: 24,
+                      did: "b4be75f4-7902-4c3b-88d9-4ed3c1b85a09"
+                    }
+                  ]
+                },
+                {
+                  name: "TestFile.xml",
+                  mediaType: "application/xml",
+                  size: 1024,
+                  segments: [
+                    {
+                      uuid: "0bb6acee-0020-47c2-a8f2-36d28de07169",
+                      offset: 0,
+                      size: 1024,
+                      did: "06a6287c-dcec-477f-a2be-e6dd77caa143"
+                    }
+                  ]
+                }
+              ],
+              metadata: {
+                index: "28494"
+              },
+              deleteMetadataKeys: []
+            },
+            {
+              name: "Replay",
+              id: 1,
+              type: "INGRESS",
+              state: "COMPLETE",
+              created: "2024-05-30T11:31:55.653Z",
+              queued: "2024-05-30T11:31:55.653Z",
+              start: null,
+              stop: null,
+              modified: "2024-05-30T11:31:55.653Z",
+              errorCause: null,
+              errorContext: null,
+              errorAcknowledged: null,
+              errorAcknowledgedReason: null,
+              nextAutoResume: null,
+              nextAutoResumeReason: null,
+              filteredCause: null,
+              filteredContext: null,
+              attempt: 1,
+              content: [
+                {
+                  name: "hello-world-java-timed-data-source-28494",
+                  mediaType: "text/plain",
+                  size: 24,
+                  segments: [
+                    {
+                      uuid: "0bb6acee-0020-47c2-a8f2-36d28de07169",
+                      offset: 0,
+                      size: 24,
+                      did: "b4be75f4-7902-4c3b-88d9-4ed3c1b85a09"
+                    }
+                  ]
+                }
+              ],
+              metadata: {
+                Mockdata: "mockMeta",
+                Mock: "MetaMock2"
+              },
+              deleteMetadataKeys: []
+            }
+          ],
+          publishTopics: [
+            "hello-world-java-data"
+          ],
+          depth: 0,
+          pendingAnnotations: [],
+          testMode: false,
+          testModeReason: null
         },
         {
-          key: "foo",
-          value: "bar",
-        },
-        {
-          key: "abc",
-          value: "xyz",
-        },
+          name: "hello-world-java-data-route-or-filter",
+          id: 1,
+          type: "TRANSFORM",
+          state: "COMPLETE",
+          created: "2024-05-30T11:31:55.659Z",
+          modified: "2024-05-30T11:31:55.659Z",
+          input: {
+            metadata: {
+              Mockdata: "mockMeta",
+              index: "28494",
+              Mock: "MetaMock2"
+            },
+            content: [
+              {
+                name: "hello-world-java-timed-data-source-28494",
+                segments: [
+                  {
+                    uuid: "0bb6acee-0020-47c2-a8f2-36d28de07169",
+                    offset: 0,
+                    size: 24,
+                    did: "b4be75f4-7902-4c3b-88d9-4ed3c1b85a09"
+                  }
+                ],
+                mediaType: "text/plain",
+                size: 24
+              }
+            ],
+            topics: [
+              "hello-world-java-data"
+            ],
+            ancestorIds: []
+          },
+          actions: [
+            {
+              name: "NO_SUBSCRIBERS",
+              id: 0,
+              type: "PUBLISH",
+              state: "FILTERED",
+              created: "2024-05-30T11:31:55.659Z",
+              queued: "2024-05-30T11:31:55.659Z",
+              start: null,
+              stop: null,
+              modified: "2024-05-30T11:31:55.659Z",
+              errorCause: null,
+              errorContext: null,
+              errorAcknowledged: null,
+              errorAcknowledgedReason: null,
+              nextAutoResume: null,
+              nextAutoResumeReason: null,
+              filteredCause: "No matching subscribers were found",
+              filteredContext: "No subscribers found from flow 'hello-world-java-data-route-or-filter' because no topics matched the criteria.\nWith rules:\n---\nmatchingPolicy: \"FIRST_MATCHING\"\ndefaultRule:\n  defaultBehavior: \"FILTER\"\nrules:\n- topic: \"hello-world-java-transform\"\n  condition: \"metadata['hello'] == 'transform'\"\n- topic: \"hello-world-java-collect\"\n  condition: \"metadata['hello'] == 'collect'\"\n",
+              attempt: 1,
+              content: [],
+              metadata: {},
+              deleteMetadataKeys: []
+            }
+          ],
+          publishTopics: [],
+          depth: 1,
+          pendingAnnotations: [],
+          testMode: false,
+          testModeReason: null
+        }
       ],
-    },
-    stage: "ERROR",
-    created: "2022-09-24T22:17:58.491Z",
-    modified: "2022-09-24T22:17:58.563Z",
-    actions: [
-      {
-        name: "IngressAction",
-        type: "INGRESS",
-        state: "COMPLETE",
-        created: "2022-09-24T22:17:58.491Z",
-        modified: "2022-09-24T22:17:58.499Z",
-        queued: null,
-        start: null,
-        stop: null,
-        errorCause: null,
-        errorContext: null,
-        content: [
-          {
-            name: "testfile.zip",
-            mediaType: "application/octet-stream",
-            segments: [
-              {
-                uuid: "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
-                offset: 0,
-                size: 36,
-                did: "b558ef37-4d20-4082-84d6-31e6d62e6f4a",
-              },
-            ],
-            size: 36,
-          },
-        ],
-        metadata: {
-          "absolute.path": "/home/testFile/",
-          path: "/",
-          filename: "testfile",
-          "file.group": "test",
-          "file.lastModifiedTime": "2023-03-12T20:02:18+0000",
-          "file.creationTime": "2023-03-12T20:02:18+0000",
-          "file.lastAccessTime": "2023-06-09T20:49:31+0000",
-          "file.owner": "test",
-          "file.permissions": "rw-rw-r--",
-          uuid: "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
-          flow: "ingress",
-        },
-        deleteMetadataKeys: ["fakeKey1", "fakeKey2"],
+      requeueCount: 0,
+      referencedBytes: 24,
+      stage: "COMPLETE",
+      annotations: {
+        MockAnnotate1: "MockVal1",
+        MockCnnotate2: "MockVal2"
       },
-      {
-        name: "MockTransformAction",
-        type: "TRANSFORM",
-        state: "COMPLETE",
-        created: "2022-09-24T22:17:58.499Z",
-        modified: "2022-09-24T22:17:58.517Z",
-        queued: "2022-09-24T22:17:58.499Z",
-        start: "2022-09-24T22:17:58.514Z",
-        stop: "2022-09-24T22:17:58.514Z",
-        errorCause: null,
-        errorContext: null,
-        content: [
-          {
-            name: "TestFile.json",
-            segments: [
-              {
-                uuid: "19a12f6f-3b63-4c20-8f69-8fcd464d390d",
-                offset: 0,
-                size: 36,
-                did: "b558ef37-4d20-4082-84d6-31e6d62e6f4a",
-              },
-            ],
-            size: 488,
-            mediaType: "application/json",
-          },
-          {
-            name: "TestFile.nosj",
-            segments: [
-              {
-                uuid: "19a12f6f-3b63-4c20-8f69-8fcd464d390d",
-                offset: 0,
-                size: 36,
-                did: "b558ef37-4d20-4082-84d6-31e6d62e6f4a",
-              },
-            ],
-            size: 488,
-            mediaType: "application/nosj",
-          },
-          {
-            name: "TestFile.xml",
-            segments: [
-              {
-                uuid: "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
-                offset: 0,
-                size: 36,
-                did: "b558ef37-4d20-4082-84d6-31e6d62e6f4a",
-              },
-            ],
-            size: 718,
-            mediaType: "application/xml",
-          },
-          {
-            name: "TestFile.lmx",
-            segments: [
-              {
-                uuid: "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
-                offset: 0,
-                size: 36,
-                did: "b558ef37-4d20-4082-84d6-31e6d62e6f4a",
-              },
-            ],
-            size: 718,
-            mediaType: "application/lmx",
-          },
-          {
-            name: "TestFile.bin",
-            segments: [
-              {
-                uuid: "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
-                offset: 0,
-                size: 128,
-                did: "b558ef37-4d20-4082-84d6-31e6d62e6f4a",
-              },
-            ],
-            size: 128,
-            mediaType: "application/octet-stream",
-          },
-          {
-            name: "TestFile.txt",
-            segments: [
-              {
-                uuid: "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
-                offset: 0,
-                size: 32,
-                did: "b558ef37-4d20-4082-84d6-31e6d62e6f4a",
-              },
-            ],
-            size: 32,
-            mediaType: "text/plain",
-          },
-        ],
-        metadata: {
-          "absolute.path": "/home/testFile/",
-          path: "/",
-          filename: "testfile",
-          "file.group": "test",
-          "file.lastModifiedTime": "2023-03-12T20:02:18+0000",
-          "file.creationTime": "2023-03-12T20:02:18+0000",
-          "file.lastAccessTime": "2023-06-09T20:49:31+0000",
-          "file.owner": "test",
-          "file.permissions": "rw-rw-r--",
-          uuid: "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
-        },
-        deleteMetadataKeys: ["flow"],
-      },
-      {
-        name: "MockLoadAction",
-        type: "LOAD",
-        state: "COMPLETE",
-        created: "2022-09-24T22:17:58.517Z",
-        modified: "2022-09-24T22:17:58.526Z",
-        queued: "2022-09-24T22:17:58.517Z",
-        start: "2022-09-24T22:17:58.519Z",
-        stop: "2022-09-24T22:17:58.519Z",
-        errorCause: null,
-        errorContext: null,
-        content: [
-          {
-            name: "testfile1.txt",
-            segments: [
-              {
-                uuid: "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
-                offset: 0,
-                size: 36,
-                did: "b558ef37-4d20-4082-84d6-31e6d62e6f4a",
-              },
-            ],
-            size: 23423,
-            mediaType: "application/octet-stream",
-          },
-          {
-            name: "foobar.txt",
-            segments: [
-              {
-                uuid: "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
-                offset: 0,
-                size: 36,
-                did: "b558ef37-4d20-4082-84d6-31e6d62e6f4a",
-              },
-            ],
-            size: 24,
-            mediaType: "application/octet-stream",
-          },
-        ],
-        metadata: {
-          "absolute.path": "/home/testFile/",
-          path: "/",
-          filename: "testfile",
-          "file.group": "test",
-          "file.lastModifiedTime": "2023-03-12T20:02:18+0000",
-          "file.creationTime": "2023-03-12T20:02:18+0000",
-          "file.lastAccessTime": "2023-06-09T20:49:31+0000",
-          "file.owner": "test",
-          "file.permissions": "rw-rw-r--",
-          uuid: "82a12f6f-3b63-4c20-8f69-8fcd464d390d",
-          newMetadata: "fake metadata",
-        },
-        deleteMetadataKeys: [],
-      },
-      {
-        name: "MockEgressAction",
-        type: "EGRESS",
-        state: "FILTERED",
-        created: "2022-09-24T22:17:58.541Z",
-        modified: "2022-09-24T22:17:58.563Z",
-        queued: "2022-09-24T22:17:58.541Z",
-        start: "2022-09-24T22:17:58.543Z",
-        stop: "2022-09-24T22:17:58.561Z",
-        filteredCause: "Because I'm Batman! 🦇",
-        errorCause: null,
-        errorContext: null,
-        content: [],
-        metadata: {},
-        deleteMetadataKeys: [],
-      },
-    ],
-    annotations: {
-      a: "b",
-      c: "d",
-    },
-    contentDeleted: null,
-    contentDeletedReason: null,
-    errorAcknowledged: null,
-    errorAcknowledgedReason: null,
-    metadata: {
-      "absolute.path": "/home/centos/stix-examples/2.1/cti-stix-elevator/",
-      path: "/",
-      filename: "archive-file.json",
-      "file.group": "centos",
-      "file.lastModifiedTime": "2023-03-12T20:02:18+0000",
-      "file.creationTime": "2023-03-12T20:02:18+0000",
-      "file.lastAccessTime": "2023-06-09T20:49:31+0000",
-      "file.owner": "centos",
-      "file.permissions": "rw-rw-r--",
-      uuid: "b358260d-a1c2-4412-8259-c617cae96700",
-      flow: "stix2_1",
-    },
-    pendingAnnotationsForFlows: ["mock_DevFlow1"],
-  };
+      egressFlows: [],
+      created: "2024-05-30T11:31:55.653Z",
+      modified: "2024-05-30T11:33:13.041Z",
+      contentDeleted: null,
+      contentDeletedReason: null,
+      egressed: false,
+      filtered: true,
+      replayed: "2024-05-30T11:32:27.827Z",
+      replayDid: "993c1172-449d-4b7d-be1f-ec47f21b13fc"
+    };
 
   return data;
 };

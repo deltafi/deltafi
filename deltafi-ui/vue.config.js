@@ -9,7 +9,7 @@ module.exports = {
       "^/api": {
         target: `https://${DELTAFI_DOMAIN}`,
         bypass: (req, res) => {
-          if (req.originalUrl === '/api/v1/local-git-branch' && process.env.NODE_ENV === "development") {
+          if (req.originalUrl === '/api/v2/local-git-branch' && process.env.NODE_ENV === "development") {
             const branch = execSync('git rev-parse --abbrev-ref HEAD').slice(0, -1).toString()
             res.json({ branch: branch })
             return null;

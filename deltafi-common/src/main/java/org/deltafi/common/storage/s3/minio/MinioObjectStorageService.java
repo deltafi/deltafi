@@ -21,9 +21,11 @@ import io.minio.*;
 import io.minio.errors.*;
 import io.minio.messages.DeleteError;
 import io.minio.messages.DeleteObject;
+import io.minio.messages.ErrorResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.input.BoundedInputStream;
+import org.deltafi.common.storage.s3.MissingContentException;
 import org.deltafi.common.storage.s3.ObjectReference;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.storage.s3.ObjectStorageService;
@@ -51,7 +53,15 @@ public class MinioObjectStorageService implements ObjectStorageService {
                     .offset(objectReference.getOffset())
                     .length(objectReference.getSize())
                     .build());
-        } catch (ErrorResponseException | InsufficientDataException | InternalException | InvalidKeyException | InvalidResponseException | IOException | NoSuchAlgorithmException | ServerException | XmlParserException e) {
+        } catch (ErrorResponseException e) {
+            ErrorResponse errorResponse = e.errorResponse();
+            // MinioClient maps 404 responses to an ErrorResponse with NoSuchKey as the code
+            if (errorResponse != null && "NoSuchKey".equals(errorResponse.code())) {
+                throw new MissingContentException(errorResponse.message());
+            }
+
+            throw new ObjectStorageException("Failed to get object from minio", e);
+        } catch (InsufficientDataException | InternalException | InvalidKeyException | InvalidResponseException | IOException | NoSuchAlgorithmException | ServerException | XmlParserException e) {
             throw new ObjectStorageException("Failed to get object from minio", e);
         }
     }
@@ -115,7 +125,7 @@ public class MinioObjectStorageService implements ObjectStorageService {
     public boolean removeObjects(String bucket, List<String> objectNames) {
         List<DeleteObject> objectsInStorage = objectNames.stream().map(DeleteObject::new).toList();
 
-        log.info("Sending command to delete " + objectsInStorage.size() + " objects in storage from minio");
+        log.info("Sending command to delete {} objects in storage from minio", objectsInStorage.size());
         Iterable<Result<DeleteError>> removeResults =
                 minioClient.removeObjects(RemoveObjectsArgs.builder().bucket(bucket).objects(objectsInStorage).build());
 

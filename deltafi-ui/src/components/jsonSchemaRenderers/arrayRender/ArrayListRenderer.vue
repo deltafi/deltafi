@@ -26,7 +26,9 @@
         <Button icon="pi pi-plus" small :class="schemaData.styles.arrayList.addButton + ' align-items-center text-dark'" text rounded @click="addButtonClick" />
       </div>
       <dd class="pb-0">
-        <small v-if="!_.isEmpty(schemaData.control.description)" :id="schemaData.control.id + '-input-help'">{{ schemaData.control.description }}</small>
+        <small v-if="!_.isEmpty(schemaData.control.description)" :id="schemaData.control.id + '-input-help'">
+          <pre>{{ schemaData.control.description }}</pre>
+        </small>
         <span v-if="!noData" class="deltafi-fieldset pb-1 pt-3">
           <div v-for="(element, index) in renderArrayData" :key="`${schemaData.control.path}-${index}`" :class="checkSchemaIsObject(schemaData.styles.arrayList.itemWrapper, schemaData.control.path, schemaData.control.schema.type)">
             <ArrayListElement :move-up="schemaData.moveUp?.(schemaData.control.path, index)" :move-up-enabled="index > 0" :move-down="schemaData.moveDown?.(schemaData.control.path, index)" :move-down-enabled="index < schemaData.control.data.length - 1" :delete="schemaData.removeItems?.(schemaData.control.path, [index])" :label="schemaData.childLabelForIndex(index)" :styles="schemaData.styles">
