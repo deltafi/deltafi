@@ -1119,17 +1119,13 @@ public class DeltaFilesService {
     }
 
     public List<UniqueKeyValues> sourceMetadataUnion(List<UUID> dids) {
-        DeltaFilesFilter filter = new DeltaFilesFilter();
-        filter.setDids(dids);
-        DeltaFiles deltaFiles = deltaFiles(0, dids.size(), filter, null, List.of(FLOWS_INPUT_METADATA));
+        // TODO: limit fields returned
+        List<DeltaFileFlow> deltaFileFlows = deltaFileFlowRepo.findAllByDeltaFileIdsAndFlowZero(dids);
 
         Map<String, UniqueKeyValues> keyValues = new HashMap<>();
-        deltaFiles.getDeltaFiles().forEach(deltaFile -> deltaFile.getFlows().getFirst().getInput().getMetadata().forEach((key, value) -> {
-            if (!keyValues.containsKey(key)) {
-                keyValues.put(key, new UniqueKeyValues(key));
-            }
-            keyValues.get(key).addValue(value);
-        }));
+        deltaFileFlows.stream()
+                .map(f -> f.getInput().getMetadata())
+                .forEach(map -> map.forEach((key, value) -> keyValues.computeIfAbsent(key, UniqueKeyValues::new).addValue(value)));
         return new ArrayList<>(keyValues.values());
     }
 

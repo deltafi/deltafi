@@ -30,4 +30,7 @@ import java.util.UUID;
 public interface DeltaFileFlowRepo extends JpaRepository<DeltaFileFlow, UUID> {
     @Query("SELECT df FROM DeltaFileFlow df WHERE df.deltaFile.did IN :deltaFileIds")
     List<DeltaFileFlow> findAllByDeltaFileIds(@Param("deltaFileIds") List<UUID> deltaFileIds);
+
+    @Query("SELECT df FROM DeltaFileFlow df WHERE df.deltaFile.did IN :deltaFileIds AND df.number = 0")
+    List<DeltaFileFlow> findAllByDeltaFileIdsAndFlowZero(@Param("deltaFileIds") List<UUID> deltaFileIds);
 }
