@@ -72,10 +72,6 @@ public class DeltaFile {
   @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
   @JsonManagedReference
   private List<Annotation> annotations = new ArrayList<>();
-  @Type(JsonBinaryType.class)
-  @Column(columnDefinition = "jsonb")
-  @Builder.Default
-  private List<String> egressFlows = new ArrayList<>();
   private OffsetDateTime created;
   private OffsetDateTime modified;
   private OffsetDateTime contentDeleted;
@@ -117,7 +113,6 @@ public class DeltaFile {
     this.stage = other.stage;
     this.flows = other.flows == null ? null : other.flows.stream().map(DeltaFileFlow::new).toList();
     this.annotations = other.annotations == null ? null : new ArrayList<>(other.annotations);
-    this.egressFlows = other.egressFlows == null ? null : new ArrayList<>(other.egressFlows);
     this.created = other.created;
     this.modified = other.modified;
     this.contentDeleted = other.contentDeleted;
@@ -157,7 +152,6 @@ public class DeltaFile {
             Objects.equals(collectId, other.collectId) &&
             Objects.equals(childDids, other.childDids) &&
             Objects.equals(stage, other.stage) &&
-            Objects.equals(egressFlows, other.egressFlows) &&
             Objects.equals(created, other.created) &&
             Objects.equals(modified, other.modified) &&
             Objects.equals(contentDeleted, other.contentDeleted) &&
@@ -449,10 +443,6 @@ public class DeltaFile {
             .build();
     flows.add(flow);
 
-    if (type == FlowType.EGRESS) {
-      egressFlows.add(name);
-    }
-
     return flow;
   }
 
@@ -516,5 +506,9 @@ public class DeltaFile {
 
   public Map<String, String> annotationMap() {
     return annotations.stream().collect(Collectors.toMap(Annotation::getKey, Annotation::getValue));
+  }
+
+  public List<String> egressFlowNames() {
+    return flows.stream().filter(f -> f.getType() == FlowType.EGRESS).map(DeltaFileFlow::getName).distinct().toList();
   }
 }

@@ -2308,8 +2308,8 @@ class DeltaFiCoreApplicationTests {
 		testFilter(DeltaFilesFilter.newBuilder().actions(Collections.emptyList()).build(), deltaFile1, deltaFile2, deltaFile3);
 		testFilter(DeltaFilesFilter.newBuilder().actions(List.of("action1")).build(), deltaFile1, deltaFile2);
 		testFilter(DeltaFilesFilter.newBuilder().actions(List.of("action1", "action2")).build(), deltaFile2);
-		testFilter(DeltaFilesFilter.newBuilder().errorCause("^Cause$").build(), deltaFile2);
-		testFilter(DeltaFilesFilter.newBuilder().filtered(true).filteredCause("^Coffee$").build(), deltaFile3);
+		testFilter(DeltaFilesFilter.newBuilder().errorCause("Cause").build(), deltaFile2);
+		testFilter(DeltaFilesFilter.newBuilder().filtered(true).filteredCause("Coffee").build(), deltaFile3);
 		testFilter(DeltaFilesFilter.newBuilder().filteredCause("off").build(), deltaFile3);
 		testFilter(DeltaFilesFilter.newBuilder().filteredCause("nope").build());
 		testFilter(DeltaFilesFilter.newBuilder().dids(Collections.emptyList()).build(), deltaFile1, deltaFile2, deltaFile3);

@@ -152,7 +152,6 @@ public class Util {
                 .normalizedName("filename")
                 .dataSource(dataSource)
                 .flows(new ArrayList<>())
-                .egressFlows(new ArrayList<>())
                 .egressed(false)
                 .filtered(false)
                 .totalBytes(1)
@@ -175,7 +174,6 @@ public class Util {
         Assertions.assertThat(actual.annotationMap()).isEqualTo(expected.annotationMap());
         Assertions.assertThat(actual.getEgressed()).isEqualTo(expected.getEgressed());
         Assertions.assertThat(actual.getFiltered()).isEqualTo(expected.getFiltered());
-        Assertions.assertThat(actual.getEgressFlows()).isEqualTo(expected.getEgressFlows());
         Assertions.assertThat(actual.getContentDeleted() == null).isEqualTo(expected.getContentDeleted() == null);
         Assertions.assertThat(actual.getContentDeletedReason()).isEqualTo(expected.getContentDeletedReason());
     }

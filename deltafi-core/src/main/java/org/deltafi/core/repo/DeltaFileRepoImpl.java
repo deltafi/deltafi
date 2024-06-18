@@ -148,11 +148,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         // TODO: set up shard indexes
     }
 
-    private Duration getTtlExpirationFromMongo() {
-        return getIndexes().stream().filter(index -> index.getName().equals(TTL_INDEX_NAME)).findFirst()
-                .flatMap(IndexInfo::getExpireAfter).orElse(null);
-    }
-
     @Override
     public List<IndexInfo> getIndexes() {
         return mongoTemplate.indexOps(COLLECTION).getIndexInfo();
@@ -588,7 +583,16 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (filter.getEgressFlows() != null && !filter.getEgressFlows().isEmpty()) {
-            predicates.add(root.get(EGRESS_FLOWS).in(filter.getEgressFlows()));
+            Subquery<Long> subquery = query.subquery(Long.class);
+            Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
+            Join<DeltaFile, DeltaFileFlow> subFlowJoin = subRoot.join("flows");
+
+            subquery.select(cb.literal(1L)).where(
+                    cb.equal(subRoot.get("did"), root.get("did")),
+                    subFlowJoin.get("name").in(filter.getEgressFlows())
+            );
+
+            predicates.add(cb.exists(subquery));
         }
 
         if (filter.getDids() != null && !filter.getDids().isEmpty()) {
@@ -711,15 +715,21 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             Join<DeltaFile, DeltaFileFlow> subFlowJoin = subRoot.join("flows");
             Join<DeltaFileFlow, Action> subActionJoin = subFlowJoin.join("actions");
 
-            subquery.select(cb.literal(1L)).where(
-                    cb.equal(subRoot.get("did"), root.get("did")),
-                    cb.isNotNull((subActionJoin.get("errorAcknowledged"))));
-
             if (filter.getErrorAcknowledged()) {
+                subquery.select(cb.literal(1L)).where(
+                        cb.equal(subRoot.get("did"), root.get("did")),
+                        cb.equal(subActionJoin.get("state"), "ERROR"),
+                        cb.isNotNull((subActionJoin.get("errorAcknowledged"))));
+
                 predicates.add(cb.exists(subquery));
             } else {
-                predicates.add(cb.not(cb.exists(subquery)));
+                subquery.select(cb.literal(1L)).where(
+                        cb.equal(subRoot.get("did"), root.get("did")),
+                        cb.equal(subActionJoin.get("state"), "ERROR"),
+                        cb.isNull((subActionJoin.get("errorAcknowledged"))));
             }
+
+            predicates.add(cb.exists(subquery));
         }
 
         if (filter.getFiltered() != null) {
@@ -759,7 +769,19 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (filter.getTestMode() != null) {
-            predicates.add(cb.equal(root.get(TEST_MODE), filter.getTestMode()));
+            Subquery<Long> subquery = query.subquery(Long.class);
+            Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
+            Join<DeltaFile, DeltaFileFlow> subFlowJoin = subRoot.join("flows");
+
+            subquery.select(cb.literal(1L)).where(
+                    cb.equal(subRoot.get("did"), root.get("did")),
+                    cb.equal(subFlowJoin.get("testMode"), true));
+
+            if (filter.getTestMode()) {
+                predicates.add(cb.exists(subquery));
+            } else {
+                predicates.add(cb.not(cb.exists(subquery)));
+            }
         }
 
         if (filter.getReplayable() != null) {
@@ -843,10 +865,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         String sql = """
                 INSERT INTO delta_files (did, name, normalized_name, data_source, parent_dids, collect_id, child_dids,
                                          requeue_count, ingress_bytes, referenced_bytes, total_bytes, stage, 
-                                         egress_flows, created, modified, content_deleted, content_deleted_reason,
+                                         created, modified, content_deleted, content_deleted_reason,
                                          egressed, filtered, replayed, replay_did, in_flight, terminal,
                                          content_deletable, version, schema_version)
-                VALUES (?, ?, ?, ?, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
+                VALUES (?, ?, ?, ?, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
 
         jdbcTemplate.batchUpdate(sql, deltaFiles, 1000, (ps, deltaFile) -> {
             ps.setObject(1, deltaFile.getDid());
@@ -861,20 +883,19 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             ps.setLong(10, deltaFile.getReferencedBytes());
             ps.setLong(11, deltaFile.getTotalBytes());
             ps.setString(12, deltaFile.getStage().name());
-            ps.setString(13, toJson(deltaFile.getEgressFlows()));
-            ps.setTimestamp(14, toTimestamp(deltaFile.getCreated()));
-            ps.setTimestamp(15, toTimestamp(deltaFile.getModified()));
-            ps.setTimestamp(16, toTimestamp(deltaFile.getContentDeleted()));
-            ps.setString(17, deltaFile.getContentDeletedReason());
-            ps.setObject(18, deltaFile.getEgressed());
-            ps.setObject(19, deltaFile.getFiltered());
-            ps.setTimestamp(20, toTimestamp(deltaFile.getReplayed()));
-            ps.setObject(21, deltaFile.getReplayDid());
-            ps.setBoolean(22, deltaFile.isInFlight());
-            ps.setBoolean(23, deltaFile.isTerminal());
-            ps.setBoolean(24, deltaFile.isContentDeletable());
-            ps.setLong(25, deltaFile.getVersion());
-            ps.setInt(26, deltaFile.getSchemaVersion());
+            ps.setTimestamp(13, toTimestamp(deltaFile.getCreated()));
+            ps.setTimestamp(14, toTimestamp(deltaFile.getModified()));
+            ps.setTimestamp(15, toTimestamp(deltaFile.getContentDeleted()));
+            ps.setString(16, deltaFile.getContentDeletedReason());
+            ps.setObject(17, deltaFile.getEgressed());
+            ps.setObject(18, deltaFile.getFiltered());
+            ps.setTimestamp(19, toTimestamp(deltaFile.getReplayed()));
+            ps.setObject(20, deltaFile.getReplayDid());
+            ps.setBoolean(21, deltaFile.isInFlight());
+            ps.setBoolean(22, deltaFile.isTerminal());
+            ps.setBoolean(23, deltaFile.isContentDeletable());
+            ps.setLong(24, deltaFile.getVersion());
+            ps.setInt(25, deltaFile.getSchemaVersion());
         });
 
         // Batch insert DeltaFileFlows
