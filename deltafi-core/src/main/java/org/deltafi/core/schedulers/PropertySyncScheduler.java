@@ -37,13 +37,11 @@ public class PropertySyncScheduler {
     private final DeltaFiPropertiesService propertyService;
 
     private final Optional<StorageConfigurationService> storageConfigurationService;
-    private final Optional<DeltaFileIndexService> deltaFileIndexService;
 
 
     @Scheduled(fixedDelay = 5000)
     public void syncProperties() {
         propertyService.refreshProperties();
         storageConfigurationService.ifPresent(StorageConfigurationService::updateAgeOffIfChanged);
-        deltaFileIndexService.ifPresent(DeltaFileIndexService::updateAgeOffIfChanged);
     }
 }

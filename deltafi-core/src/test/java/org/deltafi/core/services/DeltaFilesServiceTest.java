@@ -62,6 +62,7 @@ class DeltaFilesServiceTest {
     private final EgressFlowService egressFlowService;
     private final StateMachine stateMachine;
     private final DeltaFileRepo deltaFileRepo;
+    private final DeltaFileFlowRepo deltaFileFlowRepo;
     private final CoreEventQueue coreEventQueue;
     private final ContentStorageService contentStorageService;
     private final ResumePolicyService resumePolicyService;
@@ -105,6 +106,7 @@ class DeltaFilesServiceTest {
         this.egressFlowService = egressFlowService;
         this.stateMachine = stateMachine;
         this.deltaFileRepo = deltaFileRepo;
+        this.deltaFileFlowRepo = deltaFileFlowRepo;
         this.coreEventQueue = coreEventQueue;
         this.contentStorageService = contentStorageService;
         this.resumePolicyService = resumePolicyService;
@@ -518,10 +520,10 @@ class DeltaFilesServiceTest {
         deltaFileFlow4.getActions().getFirst().setMetadata(Map.of("e", "5"));
         deltaFileFlow4.queueAction("TransformAction3", ActionType.TRANSFORM, false, OffsetDateTime.now());
 
-        DeltaFiles deltaFiles = new DeltaFiles(0, 4, 4, List.of(deltaFile1, deltaFile2, deltaFile3, deltaFile4));
-        when(deltaFileRepo.deltaFiles(eq(0), eq(3), any(), any(), any())).thenReturn(deltaFiles);
+        List<DeltaFileFlow> deltaFileFlows = List.of(deltaFile1.getFlows().getFirst(), deltaFile2.getFlows().getFirst(), deltaFile3.getFlows().getFirst(), deltaFile4.getFlows().getFirst());
+        when(deltaFileFlowRepo.findAllByDeltaFileIds(List.of(deltaFile1.getDid(), deltaFile2.getDid(), deltaFile3.getDid(), deltaFile4.getDid()))).thenReturn(deltaFileFlows);
 
-        List<PerActionUniqueKeyValues> actionVals = deltaFilesService.errorMetadataUnion(List.of(deltaFile1.getDid(), deltaFile2.getDid(), deltaFile3.getDid()));
+        List<PerActionUniqueKeyValues> actionVals = deltaFilesService.errorMetadataUnion(List.of(deltaFile1.getDid(), deltaFile2.getDid(), deltaFile3.getDid(), deltaFile4.getDid()));
 
         assertEquals(2, actionVals.size());
         actionVals.sort(Comparator.comparing(PerActionUniqueKeyValues::getAction));

@@ -133,10 +133,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     private final MongoTemplate mongoTemplate;
-    private Duration cachedTtlDuration;
 
     public void ensureAllIndices(Duration newTtl) {
-        setExpirationIndex(newTtl);
         IndexOperations idxOps = mongoTemplate.indexOps(DeltaFile.class);
         List<IndexInfo> existingIndexes = idxOps.getIndexInfo();
 
@@ -148,27 +146,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         existingIndexes.forEach(existingIndex -> removeUnknownIndices(idxOps, existingIndex, expected));
 
         // TODO: set up shard indexes
-    }
-
-    @Override
-    public void setExpirationIndex(Duration newTtl) {
-        Duration currentTtl = getTtlExpiration();
-        if (Objects.nonNull(newTtl) && !newTtl.equals(currentTtl)) {
-            log.info("DeltaFile TTL was {}, changing it to {}", currentTtl, newTtl);
-            if (Objects.nonNull(currentTtl)) {
-                mongoTemplate.indexOps(COLLECTION).dropIndex(TTL_INDEX_NAME);
-            }
-            mongoTemplate.indexOps(COLLECTION).ensureIndex(new Index().on(CREATED, Sort.Direction.ASC).named(TTL_INDEX_NAME).expire(newTtl.getSeconds()));
-            cachedTtlDuration = newTtl;
-        }
-    }
-
-    @Override
-    public Duration getTtlExpiration() {
-        if (cachedTtlDuration == null) {
-            cachedTtlDuration = getTtlExpirationFromMongo();
-        }
-        return cachedTtlDuration;
     }
 
     private Duration getTtlExpirationFromMongo() {

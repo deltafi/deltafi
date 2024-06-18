@@ -79,7 +79,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.index.IndexInfo;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -1053,11 +1052,6 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void setDeltaFileTtl() {
-		assertEquals(Duration.ofDays(13), deltaFileRepo.getTtlExpiration());
-	}
-
-	@Test
 	void testGetTransformFlowPlan() {
 		clearForFlowTests();
 		TransformFlowPlan transformFlowPlanA = new TransformFlowPlan("transformPlan", "description");
@@ -1851,18 +1845,6 @@ class DeltaFiCoreApplicationTests {
 		matched = pluginRepository.findPluginsWithDependency(
 				new PluginCoordinates("org.deltafi", "plugin-2", "2.0.0"));
 		assertEquals(0, matched.size());
-	}
-
-	@Test
-	void testExpirationIndexUpdate() {
-		final Duration newTtlValue = Duration.ofSeconds(123456);
-
-		List<IndexInfo> oldIndexList = deltaFileRepo.getIndexes();
-		deltaFileRepo.setExpirationIndex(newTtlValue);
-		List<IndexInfo> newIndexList = deltaFileRepo.getIndexes();
-
-		assertEquals(oldIndexList.size(), newIndexList.size());
-		assertEquals(newTtlValue.getSeconds(), deltaFileRepo.getTtlExpiration().getSeconds());
 	}
 
 	@Test

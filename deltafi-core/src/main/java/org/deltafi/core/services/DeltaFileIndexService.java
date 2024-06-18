@@ -38,10 +38,6 @@ public class DeltaFileIndexService {
         this.deltaFiPropertiesService = deltaFiPropertiesService;
     }
 
-    public void updateAgeOffIfChanged() {
-        this.deltaFileRepo.setExpirationIndex(getAgeOffDays());
-    }
-
     @PostConstruct
     public void ensureAllIndices() {
         this.deltaFileRepo.ensureAllIndices(getAgeOffDays());
