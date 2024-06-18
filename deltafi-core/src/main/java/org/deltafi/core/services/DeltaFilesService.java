@@ -25,6 +25,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
@@ -72,7 +73,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.deltafi.common.constant.DeltaFiConstants.*;
-import static org.deltafi.core.repo.DeltaFileRepoImpl.*;
 
 @Service
 @RequiredArgsConstructor
@@ -676,6 +676,7 @@ public class DeltaFilesService {
 
     @Async
     public void asyncUpdatePendingAnnotationsForFlows(String flowName, Set<String> expectedAnnotations) {
+        // TODO: calling a transactional from inside an async is no good
         updatePendingAnnotationsForFlows(flowName, expectedAnnotations);
     }
 
@@ -685,6 +686,7 @@ public class DeltaFilesService {
      * @param flowName name of the flow
      * @param expectedAnnotations new set of expected annotations for the given flow
      */
+    @Transactional
     public void updatePendingAnnotationsForFlows(String flowName, Set<String> expectedAnnotations) {
         int batchSize = deltaFiPropertiesService.getDeltaFiProperties().getDelete().getPolicyBatchSize();
         List<DeltaFile> updatedDeltaFiles = new ArrayList<>();
