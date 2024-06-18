@@ -81,30 +81,19 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String NEXT_AUTO_RESUME = "nextAutoResume";
     public static final String NORMALIZED_NAME = "normalizedName";
     public static final String FLOWS_INPUT_METADATA = "flows.input.metadata";
-    public static final String FLOWS_STATE = "flows.state";
-    public static final String FLOWS_ACTIONS = "flows.actions";
-    public static final String ACTIONS_ATTEMPT = "actions.attempt";
-    public static final String ACTIONS_ERROR_CAUSE = "flows.actions.errorCause";
     public static final String ACTIONS_NAME = "flows.actions.name";
-    public static final String ACTIONS_TYPE = "flows.actions.type";
     public static final String ACTIONS_STATE = "flows.actions.state";
     private static final String COLLECTION = "deltaFiles";
     private static final String TTL_INDEX_NAME = "ttl_index";
-    private static final String SCHEMA_VERSION = "schemaVersion";
-    // Aggregation variables
     private static final String DID = "did";
     private static final String FLOWS = "flows";
     public static final String ANNOTATIONS = "annotations";
     public static final String ANNOTATION_KEYS = "annotationKeys";
-
     private static final String IN_FLIGHT = "inFlight";
-
     private static final String TERMINAL = "terminal";
     private static final String CONTENT_DELETABLE = "contentDeletable";
-
     private static final String CREATED_BEFORE_INDEX = "created_before_index";
     private static final String TERMINAL_INDEX = "terminal_index";
-
     public static final String TYPE = "type";
 
     private static final Map<String, Index> INDICES;
@@ -385,37 +374,54 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     public List<DeltaFile> findReadyForAutoResume(OffsetDateTime maxReadyTime) {
-        return mongoTemplate.find(buildReadyForAutoResume(maxReadyTime), DeltaFile.class);
+                String queryStr = """
+                SELECT df
+                FROM DeltaFile df
+                WHERE df.stage = 'ERROR'
+                AND EXISTS (
+                    SELECT 1
+                    FROM DeltaFileFlow flow
+                    JOIN flow.actions action
+                    WHERE flow.deltaFile = df
+                    AND action.nextAutoResume < :maxReadyTime
+                )
+            """;
+
+        TypedQuery<DeltaFile> query = entityManager.createQuery(queryStr, DeltaFile.class)
+                .setParameter("maxReadyTime", maxReadyTime);
+
+        return query.getResultList();
     }
 
-    private Query buildReadyForAutoResume(OffsetDateTime maxReadyTime) {
-        Query requeueQuery = new Query(Criteria.where(STAGE).is(DeltaFileStage.ERROR)
-                .and(FLOWS_ACTIONS).elemMatch(Criteria.where(NEXT_AUTO_RESUME).lt(maxReadyTime)));
-        requeueQuery.fields().include(ID, DATA_SOURCE, SCHEMA_VERSION);
-
-        return requeueQuery;
-    }
 
     @Override
     public List<DeltaFile> findResumePolicyCandidates(String dataSource) {
-        return mongoTemplate.find(buildResumePolicyCanidatesQuery(dataSource), DeltaFile.class);
-    }
-
-    private Query buildResumePolicyCanidatesQuery(String dataSource) {
-        Criteria criteria = Criteria.where(STAGE).is(DeltaFileStage.ERROR)
-                .and(FLOWS_ACTIONS).not().elemMatch(
-                        Criteria.where(NEXT_AUTO_RESUME).ne(null)
-                                .orOperator(Criteria.where(ERROR_ACKNOWLEDGED).ne(null)))
-                .and(CONTENT_DELETED).isNull();
+        StringBuilder queryBuilder = new StringBuilder("""
+                SELECT df
+                FROM DeltaFile df
+                WHERE df.stage = 'ERROR'
+                AND df.contentDeleted IS NULL
+                AND EXISTS (
+                    SELECT 1
+                    FROM DeltaFileFlow flow
+                    JOIN flow.actions action
+                    WHERE flow.deltaFile = df
+                    AND action.nextAutoResume IS NULL
+                    AND action.errorAcknowledged IS NULL
+                )
+            """);
 
         if (dataSource != null) {
-            criteria.and(DATA_SOURCE).is(dataSource);
+            queryBuilder.append("AND df.dataSource = :dataSource ");
         }
 
-        Query requeueQuery = new Query(criteria);
-        requeueQuery.fields().include(ID, DATA_SOURCE, FLOWS_STATE, ACTIONS_NAME, ACTIONS_ERROR_CAUSE, ACTIONS_STATE, ACTIONS_TYPE, ACTIONS_ATTEMPT, SCHEMA_VERSION);
+        TypedQuery<DeltaFile> query = entityManager.createQuery(queryBuilder.toString(), DeltaFile.class);
 
-        return requeueQuery;
+        if (dataSource != null) {
+            query.setParameter("dataSource", dataSource);
+        }
+
+        return query.getResultList();
     }
 
     @Override

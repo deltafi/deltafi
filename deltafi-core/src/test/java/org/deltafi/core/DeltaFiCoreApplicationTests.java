@@ -1589,9 +1589,11 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testResumePolicyDryRun() {
 		DeltaFile deltaFile = buildErrorDeltaFile(UUID.randomUUID(), "flow1", "errorCause", "context", MONGO_NOW);
+		deltaFile.setDataSource("flow1");
 		deltaFileRepo.save(deltaFile);
 
 		DeltaFile deltaFile2 = buildErrorDeltaFile(UUID.randomUUID(), "flow2", "errorCause", "context", MONGO_NOW);
+		deltaFile.setDataSource("flow2");
 		deltaFileRepo.save(deltaFile2);
 
 		Result missingName = ResumePolicyDatafetcherTestHelper.resumePolicyDryRun(dgsQueryExecutor, "", "flow1", "message");
@@ -1865,37 +1867,26 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void testFindReadyForAutoResume() {
-		Action ingress = Action.builder().name("ingress").modified(MONGO_NOW).state(ActionState.COMPLETE).build();
-		Action hit = Action.builder().name("hit").modified(MONGO_NOW).state(ActionState.ERROR).build();
-		hit.setNextAutoResume(MONGO_NOW.minusSeconds(1000));
-		Action miss = Action.builder().name("miss").modified(MONGO_NOW).state(ActionState.ERROR).build();
-		Action notSet = Action.builder().name("notSet").modified(MONGO_NOW).state(ActionState.ERROR).build();
-		Action other = Action.builder().name("other").modified(MONGO_NOW).state(ActionState.COMPLETE).build();
-
 		DeltaFile shouldResume = buildDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW_NAME, DeltaFileStage.ERROR, MONGO_NOW, MONGO_NOW);
-		shouldResume.getFlows().getFirst().setActions(Arrays.asList(ingress, other, hit));
-		deltaFileRepo.save(shouldResume);
+		shouldResume.getFlows().getFirst().setActions(Arrays.asList(autoResumeIngress(MONGO_NOW), autoResumeOther(MONGO_NOW), autoResumeHit(MONGO_NOW)));
 
-		DeltaFile shouldNotResume = buildDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW_NAME, DeltaFileStage.ERROR, MONGO_NOW, MONGO_NOW);
-		shouldNotResume.getFlows().getFirst().setActions(Arrays.asList(ingress, miss));
-		deltaFileRepo.save(shouldNotResume);
+		DeltaFile shouldNotResume = buildDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW_NAME, DeltaFileStage.ERROR, MONGO_NOW, MONGO_NOW.minusSeconds(1));
+		shouldNotResume.getFlows().getFirst().setActions(Arrays.asList(autoResumeIngress(MONGO_NOW), autoResumeMiss(MONGO_NOW)));
 
-		DeltaFile notResumable = buildDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW_NAME, DeltaFileStage.ERROR, MONGO_NOW, MONGO_NOW);
-		notResumable.getFlows().getFirst().setActions(Arrays.asList(ingress, notSet));
-		deltaFileRepo.save(notResumable);
+		DeltaFile notResumable = buildDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW_NAME, DeltaFileStage.ERROR, MONGO_NOW, MONGO_NOW.minusSeconds(2));
+		notResumable.getFlows().getFirst().setActions(Arrays.asList(autoResumeIngress(MONGO_NOW), autoResumeNotSet(MONGO_NOW)));
 
-		DeltaFile cancelled = buildDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW_NAME, DeltaFileStage.CANCELLED, MONGO_NOW, MONGO_NOW);
-		cancelled.getFlows().getFirst().setActions(Arrays.asList(ingress, other, hit));
-		deltaFileRepo.save(cancelled);
+		DeltaFile cancelled = buildDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW_NAME, DeltaFileStage.CANCELLED, MONGO_NOW, MONGO_NOW.minusSeconds(3));
+		cancelled.getFlows().getFirst().setActions(Arrays.asList(autoResumeIngress(MONGO_NOW), autoResumeOther(MONGO_NOW), autoResumeHit(MONGO_NOW)));
 
-		DeltaFile contentDeleted = buildDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW_NAME, DeltaFileStage.ERROR, MONGO_NOW, MONGO_NOW);
-		contentDeleted.getFlows().getFirst().setActions(Arrays.asList(ingress, other, hit));
+		DeltaFile contentDeleted = buildDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW_NAME, DeltaFileStage.ERROR, MONGO_NOW, MONGO_NOW.minusSeconds(4));
+		contentDeleted.getFlows().getFirst().setActions(Arrays.asList(autoResumeIngress(MONGO_NOW), autoResumeOther(MONGO_NOW),autoResumeHit(MONGO_NOW)));
 		contentDeleted.setContentDeleted(MONGO_NOW);
-		deltaFileRepo.save(contentDeleted);
 
-		DeltaFile shouldAlsoResume = buildDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW_NAME, DeltaFileStage.ERROR, MONGO_NOW, MONGO_NOW);
-		shouldAlsoResume.getFlows().getFirst().setActions(Arrays.asList(ingress, other, hit));
-		deltaFileRepo.save(shouldAlsoResume);
+		DeltaFile shouldAlsoResume = buildDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW_NAME, DeltaFileStage.ERROR, MONGO_NOW, MONGO_NOW.minusSeconds(5));
+		shouldAlsoResume.getFlows().getFirst().setActions(Arrays.asList(autoResumeIngress(MONGO_NOW), autoResumeOther(MONGO_NOW), autoResumeHit(MONGO_NOW)));
+
+		deltaFileRepo.batchInsert(List.of(shouldResume, shouldNotResume, notResumable, cancelled, contentDeleted, shouldAlsoResume));
 
 		List<DeltaFile> hits = deltaFileRepo.findReadyForAutoResume(MONGO_NOW);
 		assertEquals(3, hits.size());
