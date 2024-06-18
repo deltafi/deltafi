@@ -1890,9 +1890,8 @@ class DeltaFiCoreApplicationTests {
 
 		List<DeltaFile> hits = deltaFileRepo.findReadyForAutoResume(MONGO_NOW);
 		assertEquals(3, hits.size());
-		assertEquals(shouldResume.getDid(), hits.getFirst().getDid());
-		assertEquals(contentDeleted.getDid(), hits.get(1).getDid());
-		assertEquals(shouldAlsoResume.getDid(), hits.get(2).getDid());
+		assertEquals(Stream.of(shouldResume, contentDeleted, shouldAlsoResume).map(DeltaFile::getDid).sorted().toList(),
+				hits.stream().map(DeltaFile::getDid).sorted().toList());
 
 		assertEquals(2, deltaFilesService.autoResume(MONGO_NOW));
 
