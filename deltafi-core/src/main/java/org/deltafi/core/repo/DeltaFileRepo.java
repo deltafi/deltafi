@@ -45,7 +45,7 @@ public interface DeltaFileRepo extends MongoRepository<DeltaFile, UUID>, DeltaFi
      */
     Stream<DeltaFile> findByTerminalAndFlowsNameAndFlowsState(boolean isTerminal, String flowName, DeltaFileFlowState state);
 
-    @CountQuery("{'stage': ?0, 'flows.actions.errorAcknowledged': null}")
+    @CountQuery("{'stage': ?0, 'flows.actions': {$elemMatch: {state: ERROR, errorAcknowledged: null}}}")
     long countByStageAndErrorAcknowledgedIsNull(DeltaFileStage stage);
 
     Optional<DeltaFile> findByDidAndStageIn(UUID did, List<DeltaFileStage> stages);

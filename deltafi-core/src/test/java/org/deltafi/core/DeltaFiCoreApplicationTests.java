@@ -3449,6 +3449,25 @@ class DeltaFiCoreApplicationTests {
 		assertThat(updated.getFlows().getFirst().getState()).isEqualTo(DeltaFileFlowState.COMPLETE);
 	}
 
+	@Test
+	void countErrors() {
+		String reason = "reason";
+		OffsetDateTime time = OffsetDateTime.now(clock);
+		DeltaFile acknowledgedError = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, time, time);
+		acknowledgedError.setStage(DeltaFileStage.ERROR);
+		Action ackedAction = acknowledgedError.getFlows().getFirst().addAction("ErrorAction", ActionType.TRANSFORM, ERROR, time);
+		ackedAction.setErrorAcknowledged(time);
+		ackedAction.setErrorCause(reason);
+
+		DeltaFile unacknowledgedError = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, time, time);
+		unacknowledgedError.setStage(DeltaFileStage.ERROR);
+		Action unacknowledgedAction = unacknowledgedError.getFlows().getFirst().addAction("ErrorAction", ActionType.TRANSFORM, ERROR, time);
+		unacknowledgedAction.setErrorCause(reason);
+		deltaFileRepo.saveAll(List.of(unacknowledgedError, acknowledgedError));
+
+		assertThat(deltaFileRepo.countByStageAndErrorAcknowledgedIsNull(DeltaFileStage.ERROR)).isEqualTo(1);
+	}
+
 	private void setupPendingAnnotations(DeltaFile deltaFile, String flowName, Set<String> pendingAnnotations) {
 		DeltaFileFlow deltaFileFlow = deltaFile.getFlows().getFirst();
 		deltaFileFlow.setState(DeltaFileFlowState.PENDING_ANNOTATIONS);
