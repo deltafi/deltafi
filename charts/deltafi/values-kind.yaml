@@ -16,3 +16,5 @@ stackgres-operator:
   enabled: false
 postgres:
   enabled: false
+docker-registry:
+  enabled: false
