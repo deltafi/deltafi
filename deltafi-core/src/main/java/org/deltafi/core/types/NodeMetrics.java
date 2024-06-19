@@ -15,37 +15,25 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.services.api.model;
+package org.deltafi.core.types;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
-@AllArgsConstructor
-@Data
-public class DiskMetrics {
-    long limit;
-    long usage;
+public record NodeMetrics(String name, Map<String, Map<String, Long>> resources, List<AppName> apps) {
 
-    /**
-     * Disk % used
-     * 50.51% will be returned as 50.51, not 0.5051
-     *
-     * @return % used
-     */
-    public double percentUsed() {
-        return ((double) usage / limit) * 100;
+    public NodeMetrics(String name) {
+        this(name, new LinkedHashMap<>(), new ArrayList<>());
     }
 
-    public long bytesOverPercentage(int percent) {
-        long targetBytes = (long)((double) percent / 100 * limit);
-        return usage - targetBytes;
+    public void addMetric(String resource, String metricName, Long value) {
+        Map<String, Long> metrics = resources.computeIfAbsent(resource, r -> new LinkedHashMap<>());
+        metrics.put(metricName, value);
     }
 
-    /**
-     * Number of bytes remaining for content storage
-     * @return available space remaining in content storage (in bytes)
-     */
-    public long bytesRemaining() {
-        return limit - usage;
+    public void addApps(List<AppName> apps) {
+        this.apps.addAll(apps);
     }
 }

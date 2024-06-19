@@ -15,32 +15,37 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.services;
+package org.deltafi.core.types;
 
-import org.deltafi.core.types.AppInfo;
-import org.deltafi.core.types.AppName;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
-import java.util.List;
-import java.util.Map;
-
-public interface PlatformService {
-
-    /**
-     * Get a map of node names to the list of applications
-     * running on that node
-     * @return node to app list map
-     */
-    Map<String, List<AppName>> appsByNode();
+@AllArgsConstructor
+@Data
+public class DiskMetrics {
+    long limit;
+    long usage;
 
     /**
-     * Find all running applications with their versions
-     * @return running application info
+     * Disk % used
+     * 50.51% will be returned as 50.51, not 0.5051
+     *
+     * @return % used
      */
-    List<AppInfo> getRunningVersions();
+    public double percentUsed() {
+        return ((double) usage / limit) * 100;
+    }
+
+    public long bytesOverPercentage(int percent) {
+        long targetBytes = (long)((double) percent / 100 * limit);
+        return usage - targetBytes;
+    }
 
     /**
-     * Return the name of the node where content is stored
-     * @return node name
+     * Number of bytes remaining for content storage
+     * @return available space remaining in content storage (in bytes)
      */
-    String contentNodeName();
+    public long bytesRemaining() {
+        return limit - usage;
+    }
 }

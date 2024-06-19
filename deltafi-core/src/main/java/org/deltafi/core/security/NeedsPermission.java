@@ -193,6 +193,11 @@ public class NeedsPermission {
     @PreAuthorize(value = "hasAnyAuthority('IngressRoutingRuleUpdate'" + OR_ADMIN)
     public @interface IngressRoutingRuleUpdate {}
 
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('MetricsView'" + OR_ADMIN)
+    public @interface MetricsView {}
+
 
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)

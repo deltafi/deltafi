@@ -15,11 +15,23 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.services.api;
+package org.deltafi.core.schedulers;
 
-import org.deltafi.core.exceptions.DeltafiApiException;
-import org.deltafi.core.services.api.model.DiskMetrics;
+import lombok.RequiredArgsConstructor;
+import org.deltafi.core.services.SystemService;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
 
-public interface DeltafiApiClient {
-    DiskMetrics contentMetrics() throws DeltafiApiException;
+@Service
+@EnableScheduling
+@RequiredArgsConstructor
+public class SystemServiceScheduler {
+
+    private final SystemService systemService;
+
+    @Scheduled(fixedDelay = 60_000)
+    public void reloadSystemInfo() {
+        systemService.loadSystemInfo();
+    }
 }

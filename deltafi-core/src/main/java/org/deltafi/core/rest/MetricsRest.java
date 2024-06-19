@@ -18,38 +18,46 @@
 package org.deltafi.core.rest;
 
 import lombok.AllArgsConstructor;
+import org.deltafi.core.exceptions.StorageCheckException;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.SystemService;
-import org.deltafi.core.services.SystemService.Status;
-import org.deltafi.core.services.SystemService.Versions;
-import org.deltafi.core.types.AppName;
+import org.deltafi.core.types.NodeMetrics;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 
 @RestController
+@RequestMapping("metrics")
 @AllArgsConstructor
-public class SystemRest {
+public class MetricsRest {
 
     private final SystemService systemService;
 
-    @GetMapping("status")
-    @NeedsPermission.StatusView
-    public Status systemStatus() {
-        return systemService.systemStatus();
+    @NeedsPermission.MetricsView
+    @GetMapping("system/content")
+    public ContentMetric contentMetrics() throws StorageCheckException {
+        return new ContentMetric(systemService.contentMetrics());
     }
 
-    @GetMapping("versions")
-    @NeedsPermission.VersionsView
-    public Versions getRunningVersions() {
-        return systemService.getRunningVersions();
+    @NeedsPermission.MetricsView
+    @GetMapping("system/nodes")
+    public Nodes nodeMetrics() {
+        return new Nodes(systemService.nodeMetrics());
     }
 
-    // TODO - Remove when everything points to the v2 api. This is currently used in v1/api versions endpoint when running in compose
-    @GetMapping("appsByNode")
-    public Map<String, List<AppName>> getAppsByNode() {
-        return systemService.getAppsByNode();
+    public record ContentMetric(Map<String, Long> content, OffsetDateTime timestamp) {
+        public ContentMetric(Map<String, Long> content) {
+            this(content, OffsetDateTime.now());
+        }
+    }
+
+    public record Nodes(List<NodeMetrics> nodes, OffsetDateTime timestamp) {
+        public Nodes(List<NodeMetrics> nodes) {
+            this(nodes, OffsetDateTime.now());
+        }
     }
 }

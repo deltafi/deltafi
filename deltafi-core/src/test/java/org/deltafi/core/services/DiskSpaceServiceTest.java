@@ -20,8 +20,7 @@ package org.deltafi.core.services;
 
 import lombok.SneakyThrows;
 import org.deltafi.core.MockDeltaFiPropertiesService;
-import org.deltafi.core.services.api.DeltafiApiClient;
-import org.deltafi.core.services.api.model.DiskMetrics;
+import org.deltafi.core.types.DiskMetrics;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -42,7 +41,7 @@ class DiskSpaceServiceTest {
     DeltaFiPropertiesService deltaFiPropertiesService = new MockDeltaFiPropertiesService();
 
     @Mock
-    DeltafiApiClient deltaFiApiClient;
+    SystemService systemService;
 
     @Test
     @SneakyThrows
@@ -53,7 +52,7 @@ class DiskSpaceServiceTest {
         assertFalse(sut.isContentStorageDepleted());
 
         // fill in the metrics using the mock
-        Mockito.when(deltaFiApiClient.contentMetrics()).thenReturn(new DiskMetrics(10000000, 5000000));
+        Mockito.when(systemService.diskMetrics()).thenReturn(new DiskMetrics(10000000, 5000000));
         sut.getContentStorageDiskMetrics();
 
         diskSpaceRequirement(1);

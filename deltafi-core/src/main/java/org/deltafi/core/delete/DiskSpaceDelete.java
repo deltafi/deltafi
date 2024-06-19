@@ -20,10 +20,10 @@ package org.deltafi.core.delete;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.types.DeltaFile;
-import org.deltafi.core.exceptions.DeltafiApiException;
+import org.deltafi.core.exceptions.StorageCheckException;
 import org.deltafi.core.services.DeltaFilesService;
 import org.deltafi.core.services.DiskSpaceService;
-import org.deltafi.core.services.api.model.DiskMetrics;
+import org.deltafi.core.types.DiskMetrics;
 import org.deltafi.core.types.DiskSpaceDeletePolicy;
 
 import java.util.List;
@@ -47,7 +47,7 @@ public class DiskSpaceDelete extends DeletePolicyWorker {
         DiskMetrics contentMetrics = null;
         try {
             contentMetrics = diskSpaceService.contentMetrics();
-        } catch (DeltafiApiException e) {
+        } catch (StorageCheckException e) {
             log.warn("Unable to evaluate deletion criteria: {}", e.getMessage());
         }
 
@@ -55,9 +55,9 @@ public class DiskSpaceDelete extends DeletePolicyWorker {
             return false;
         }
 
-        log.info("Disk delete policy for " + (flow == null ? "all flows" : flow) + " executing: current used = " + String.format("%.2f", contentMetrics.percentUsed()) + "%, maximum = " + maxPercent + "%");
+        log.info("Disk delete policy for {} executing: current used = {}%, maximum = {}%", flow == null ? "all flows" : flow, String.format("%.2f", contentMetrics.percentUsed()), maxPercent);
         long bytesToDelete = contentMetrics.bytesOverPercentage(maxPercent);
-        log.info("Deleting up to " + bytesToDelete + " bytes");
+        log.info("Deleting up to {} bytes", bytesToDelete);
         while (bytesToDelete > 0) {
             List<DeltaFile> deleted = deltaFilesService.diskSpaceDelete(bytesToDelete, flow, name);
 
@@ -69,7 +69,7 @@ public class DiskSpaceDelete extends DeletePolicyWorker {
                 return false;
             }
 
-            log.info("Deleted batch of " + deleted.size() + " files, " + bytesDeleted + " bytes. Remaining: " + Math.max(0, bytesToDelete) + " bytes");
+            log.info("Deleted batch of {} files, {} bytes. Remaining: {} bytes", deleted.size(), bytesDeleted, Math.max(0, bytesToDelete));
 
             if (bytesToDelete > 0) {
                 try {
@@ -78,7 +78,7 @@ public class DiskSpaceDelete extends DeletePolicyWorker {
                         log.info("Disk space delete batching stopped early due to disk usage below threshold.");
                         break;
                     }
-                } catch (DeltafiApiException ignored) {
+                } catch (StorageCheckException ignored) {
                     // if the API is unreachable, continue deleting as planned
                 }
             }
