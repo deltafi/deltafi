@@ -34,6 +34,9 @@
       <div class="row p-2">
         <div class="col pl-2 pr-1">
           <Panel header="Subscribe" :pt="{ content: { class: 'p-1' } }">
+            <template #icons>
+              <Badge v-if="!_.isEmpty(validateSubscribe)" v-tooltip.left="{ value: `${validateSubscribe}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-exclamation-triangle pt-1'" severity="danger"></Badge>
+            </template>
             <div class="px-0">
               <dd>
                 <div class="deltafi-fieldset">
@@ -55,10 +58,9 @@
                   <span class="pi pi-plus-circle"></span>
                 </button>
               </template>
-              <div :class="`action-panel-content p-2 ${requiresActionCheck(action)}`">
+              <div class="action-panel-content p-2">
                 <template v-if="flowActionTemplateObject[flowActionTemplateMap.get(action).activeContainer].length == 0">
-                  <div v-if="flowActionTemplateMap.get(action).requiredActionMin" :class="`empty-action pt-2 mb-n3 ${requiresActionCheck(action)}`">{{ _.startCase(flowActionTemplateMap.get(action).activeContainer) }} Required</div>
-                  <div v-else class="empty-action pt-2 mb-n3">No {{ _.startCase(flowActionTemplateMap.get(action).activeContainer) }}</div>
+                  <div class="empty-action pt-2 mb-n3">No {{ _.startCase(flowActionTemplateMap.get(action).activeContainer) }}</div>
                 </template>
                 <draggable :id="action" v-model="flowActionTemplateObject[flowActionTemplateMap.get(action).activeContainer]" item-key="id" :sort="true" :group="action" ghost-class="action-transition-layout" drag-class="action-transition-layout" class="dragArea panel-horizontal-wrap pb-2 pt-3" @change="validateNewAction" @move="actionOrderChanged">
                   <template #item="{ element, index }">
@@ -90,11 +92,14 @@
       <div class="row p-2">
         <div class="col pl-2 pr-1">
           <Panel header="Publish" :pt="{ content: { class: 'p-1' } }">
+            <template #icons>
+              <Badge v-if="!_.isEmpty(validatePublish)" v-tooltip.left="{ value: `${validatePublish}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-exclamation-triangle pt-1'" severity="danger"></Badge>
+            </template>
             <div class="px-0">
               <dd>
                 <div class="deltafi-fieldset">
                   <div class="px-2">
-                    <json-forms :data="model['publish']" :renderers="renderers" :uischema="publishUISchema" :schema="publishSchema" @change="onPublishChange" />
+                    <json-forms :data="model['publish']" :renderers="renderers" :uischema="publishUISchema" :schema="publishSchema" :ajv="handleDefaultsAjv" @change="onPublishChange" />
                   </div>
                 </div>
               </dd>
@@ -158,6 +163,9 @@ import { useRouter } from "vue-router";
 
 import usePrimeVueJsonSchemaUIRenderers from "@/composables/usePrimeVueJsonSchemaUIRenderers";
 import { JsonForms } from "@jsonforms/vue";
+import { createAjv } from "@jsonforms/core";
+
+const handleDefaultsAjv = createAjv({ useDefaults: true });
 
 import Badge from "primevue/badge";
 import Button from "primevue/button";
@@ -442,14 +450,15 @@ const removeEmptyKeyValues = (queryObj) => {
 const clearEmptyObjects = (queryObj) => {
   for (const objKey in queryObj) {
     if (_.isArray(queryObj[objKey])) {
+      if (!_.every(queryObj[objKey], _.isString)) {
+        queryObj[objKey].forEach(function (item, index) {
+          queryObj[objKey][index] = removeEmptyKeyValues(item);
+        });
+      }
+      queryObj[objKey] = queryObj[objKey].filter((value) => Object.keys(value).length !== 0);
+
       if (Object.keys(queryObj[objKey]).length === 0) {
         delete queryObj[objKey];
-      } else {
-        if (!_.every(queryObj[objKey], _.isString)) {
-          queryObj[objKey].forEach(function (item, index) {
-            queryObj[objKey][index] = removeEmptyKeyValues(item);
-          });
-        }
       }
     }
 
@@ -482,16 +491,6 @@ const removeFlow = () => {
   model.value = JSON.parse(JSON.stringify(flowTemplate));
   flowActionTemplateObject.value = JSON.parse(JSON.stringify(originalFlowActionTemplateObject));
   flowActionSpecificJsPlumbInstance.value = {};
-};
-
-// Checks if there is a minimum number of actions required in the actionFlowType if there is and its not been met
-// return the css classes to turn background red
-const requiresActionCheck = (flowActionType) => {
-  if (flowActionTemplateObject.value[flowActionTemplateMap.get(flowActionType).activeContainer].length === 0 && flowActionTemplateMap.get(flowActionType).requiredActionMin) {
-    return "bg-danger text-white";
-  }
-
-  return null;
 };
 
 const connectActions = async (flowActionType) => {
@@ -563,13 +562,6 @@ const connectActions = async (flowActionType) => {
 const addAction = async (flowActionType, action) => {
   let addNewAction = JSON.parse(JSON.stringify(action));
   addNewAction["id"] = _.uniqueId(flowActionType);
-  if (flowActionTemplateMap.get(flowActionType).limit) {
-    // Hides the actionsOverlayPanel if there the max number of actions have been to the respective flow action type panel.
-    actionsOverlayPanel.value.hide();
-    if (flowActionTemplateObject.value[flowActionTemplateMap.get(flowActionType).activeContainer].length > 0) {
-      return;
-    }
-  }
 
   flowActionTemplateObject.value[flowActionTemplateMap.get(flowActionType).activeContainer].push(addNewAction);
   connectActions(flowActionType);
@@ -599,13 +591,11 @@ const isValidFlow = computed(() => {
     return false;
   }
 
-  // If there are no actions in the flow plan disable the save
-  if (Object.values(_.pick(flowActionTemplateObject.value, flowTypesMap.get(model.value.type).activeContainerList())).every((x) => _.isEmpty(x))) {
+  if (!_.isEmpty(validateSubscribe.value)) {
     return false;
   }
 
-  // If an action type has a minimum required number of actions and does not have that minimum disable the save
-  if (flowTypesMap.get(model.value.type).flowActionTypes.some((x) => _.isString(requiresActionCheck(x)))) {
+  if (!_.isEmpty(validatePublish.value)) {
     return false;
   }
 
@@ -650,6 +640,56 @@ const items = ref([
     },
   },
 ]);
+
+const validateSubscribe = computed(() => {
+  // If the subscribe field is empty return "Missing subscriptions."
+  if (_.isEmpty(model.value["subscribe"])) {
+    return "Missing subscriptions.";
+  }
+
+  let checkIfSubscribeHasTopic = (key) =>
+    model.value["subscribe"].some(
+      (obj) =>
+        Object.keys(obj).includes(key) &&
+        Object.keys(obj).some(function (key) {
+          return !_.isEmpty(obj[key]);
+        })
+    );
+
+  // If the subscribe field isn't empty but there isn't a topic return "Missing subscription topic."
+  var isKeyPresent = checkIfSubscribeHasTopic("topic");
+
+  if (!isKeyPresent) {
+    return "Missing subscription topic.";
+  }
+
+  return null;
+});
+
+const validatePublish = computed(() => {
+  // If the Publish Rules field is empty return "Missing publish rules."
+  if (_.isEmpty(model.value["publish"].rules)) {
+    return "Missing publish rules.";
+  }
+
+  let checkIfPublishRulesHasTopic = (key) =>
+    model.value["publish"].rules.some(
+      (obj) =>
+        Object.keys(obj).includes(key) &&
+        Object.keys(obj).some(function (key) {
+          return !_.isEmpty(obj[key]);
+        })
+    );
+
+  // If the Publish Rules field isn't empty but there isn't a topic return "Missing publish rule topic."
+  var isKeyPresent = checkIfPublishRulesHasTopic("topic");
+
+  if (!isKeyPresent) {
+    return "Missing publish rule topic.";
+  }
+
+  return null;
+});
 
 const validateAction = (action) => {
   // List of all missing Fields in the action
@@ -716,12 +756,6 @@ const validateNewAction = async (event) => {
   let flowActionType = "";
   if (addedEvent) {
     flowActionType = addedEvent.element.flowActionType;
-    if (flowActionTemplateMap.get(flowActionType).limit) {
-      actionsOverlayPanel.value.hide();
-      if (flowActionTemplateObject.value[flowActionTemplateMap.get(flowActionType).activeContainer].length > 1) {
-        flowActionTemplateObject.value[flowActionTemplateMap.get(flowActionType).activeContainer].pop();
-      }
-    }
   } else if (movedEvent) {
     flowActionType = movedEvent.element.flowActionType;
   }

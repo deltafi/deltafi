@@ -17,6 +17,8 @@
 */
 
 import useGraphQL from "./useGraphQL";
+import { EnumType } from "json-to-graphql-query";
+import _ from "lodash";
 import { transformFlow, transformFlowPlan, egressFlow, egressFlowPlan } from "./useFlowPlanQueryVariables";
 
 export default function useFlowQueryBuilder() {
@@ -39,10 +41,36 @@ export default function useFlowQueryBuilder() {
 
   // Save a TransformFlowPlan
   const saveTransformFlowPlan = (flowPlan: Object) => {
+    let newObject: any = null;
+    const enumKeysToKey = ["matchingPolicy", "defaultBehavior"];
+    // Function to convert certain keys values to enums
+    function graphqlQueryObjectConverter(queryObject: any) {
+      for (const [key, value] of Object.entries(queryObject)) {
+        if (_.isArray(value)) {
+          continue;
+        }
+
+        if (_.isObject(value)) {
+          graphqlQueryObjectConverter(value);
+        }
+
+        if (enumKeysToKey.includes(key)) {
+          queryObject[key] = new EnumType(value as any);
+        } else {
+          continue;
+        }
+      }
+      newObject = queryObject;
+    }
+
+    graphqlQueryObjectConverter(flowPlan);
+
+    const formattedQuery = newObject;
+
     const query = {
       saveTransformFlowPlan: {
         __args: {
-          transformFlowPlan: flowPlan,
+          transformFlowPlan: formattedQuery,
         },
         ...transformFlow,
       },
