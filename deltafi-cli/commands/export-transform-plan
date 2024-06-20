@@ -34,9 +34,12 @@ QUERY="fragment ActionFields on ActionConfiguration {
               artifactId
               version
             }
-            subscriptions {
-              topics
+            subscribe {
+              topic
               condition
+            }
+            transformActions {
+              ... ActionFields
             }
             publish {
               matchingPolicy
@@ -45,12 +48,9 @@ QUERY="fragment ActionFields on ActionConfiguration {
                 topic
               }
               rules {
-                topics
+                topic
                 condition
               }
-            }
-            transformActions {
-              ... ActionFields
             }
           }
         }
