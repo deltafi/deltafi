@@ -111,7 +111,7 @@ class XsltTransformTest {
     }
 
     private TransformInput createInput() {
-        ActionContent content = runner.saveContent("<original>value</original>", "example.xml", "application/xml");
+        ActionContent content = runner.saveContent("<original>value</original>", "example.xml", "text/xml");
         return TransformInput.builder().content(List.of(content)).build();
     }
 

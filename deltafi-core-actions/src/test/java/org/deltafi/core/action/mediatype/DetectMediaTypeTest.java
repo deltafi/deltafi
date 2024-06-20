@@ -16,6 +16,7 @@
  *    limitations under the License.
  */
 package org.deltafi.core.action.mediatype;
+
 import org.apache.tika.exception.TikaException;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
@@ -27,7 +28,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static org.deltafi.test.asserters.ActionResultAssertions.*;
+import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformResult;
 
 class DetectMediaTypeTest {
 
@@ -40,17 +41,19 @@ class DetectMediaTypeTest {
     @Test
     void testTransform() {
         TransformInput input = TransformInput.builder()
-                .content(runner.saveContentFromResource("foobar.tar", "foobar.zip", "thing1.txt"))
+                .content(runner.saveContentFromResource("foobar.tar", "foobar.zip", "thing1.txt", "stix1.xml"))
                 .build();
         input.getContent().get(0).setMediaType("application/data");
         input.getContent().get(1).setMediaType("application/data");
         input.getContent().get(2).setMediaType("*/*");
+        input.getContent().get(3).setMediaType("text/xml");
 
         TransformResultType result = action.transform(runner.actionContext(), new ActionParameters(), input);
         assertTransformResult(result)
                 .hasContentMatchingAt(0, actionContent -> contentMatches(actionContent, "foobar.tar", "application/x-tar"))
                 .hasContentMatchingAt(1, actionContent -> contentMatches(actionContent, "foobar.zip", "application/zip"))
-                .hasContentMatchingAt(2, actionContent -> contentMatches(actionContent, "thing1.txt", "text/plain"));
+                .hasContentMatchingAt(2, actionContent -> contentMatches(actionContent, "thing1.txt", "text/plain"))
+                .hasContentMatchingAt(3, actionContent -> contentMatches(actionContent, "stix1.xml", "application/xml"));
     }
 
     boolean contentMatches(ActionContent actionContent, String expectedName, String expectedMediaType) {

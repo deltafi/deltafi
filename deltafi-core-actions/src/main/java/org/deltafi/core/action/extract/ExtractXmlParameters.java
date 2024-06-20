@@ -42,9 +42,9 @@ public class ExtractXmlParameters extends ActionParameters {
     @JsonPropertyDescription("List of content indexes to consider. If empty, all content is considered.")
     public List<Integer> contentIndexes;
 
-    @JsonProperty(defaultValue = "[\"application/xml\"]")
-    @JsonPropertyDescription("List of allowed media types. Supports wildcards (*) and defaults to application/xml if empty.")
-    public List<String> mediaTypes = List.of("application/xml");
+    @JsonProperty(defaultValue = "[\"*/xml\"]")
+    @JsonPropertyDescription("List of allowed media types. Supports wildcards (*) and defaults to */xml if empty.")
+    public List<String> mediaTypes = List.of("*/xml");
 
     @JsonPropertyDescription("List of file patterns to consider. Supports wildcards (*) and if empty, all filenames are considered.")
     public List<String> filePatterns = List.of();
