@@ -128,11 +128,12 @@ public class PluginPlugin implements org.gradle.api.Plugin<Project> {
         }
 
         private String validateConditions(FlowPlan flowPlan, String fileName) {
-            List<String> errors = null;
+            List<String> errors = new ArrayList<>();
             if (flowPlan instanceof Subscriber subscriber) {
-                errors = ruleValidator.validateSubscriber(subscriber);
-            } else if (flowPlan instanceof Publisher publisher) {
-                errors = ruleValidator.validatePublisher(publisher);
+                errors.addAll(ruleValidator.validateSubscriber(subscriber));
+            }
+            if (flowPlan instanceof Publisher publisher) {
+                errors.addAll(ruleValidator.validatePublisher(publisher));
             }
 
             return errors != null && !errors.isEmpty() ? "Errors in flow plan named `" + flowPlan.getName() + "` (file: " + fileName + "): " + String.join("; ", errors) : null;

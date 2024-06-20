@@ -80,7 +80,9 @@ public class PublisherService {
 
     Set<DeltaFileFlow> publisherSubscribers(Publisher publisher, DeltaFile deltaFile, DeltaFileFlow publishingFlow) {
         PublishRules publishRules = publisher.publishRules();
-        Objects.requireNonNull(publishRules, "The publish rules cannot be null");
+        if (publishRules == null) {
+            errorDeltaFile(publishingFlow, "Flow " + publisher.getName() + " does not have publish rules");
+        }
 
         Set<String> publishTopics = getMatchingTopics(publishRules, publishingFlow);
         publishingFlow.setPublishTopics(new ArrayList<>(publishTopics));
