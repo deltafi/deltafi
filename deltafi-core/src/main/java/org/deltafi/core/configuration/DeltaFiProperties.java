@@ -47,6 +47,7 @@ public class DeltaFiProperties {
     private SystemCheckProperties checks = new SystemCheckProperties();
     private UiProperties ui = new UiProperties();
     private int inMemoryQueueSize = 5000;
+    private int maxFlowDepth = 32;
 
     private Set<String> setProperties = new HashSet<>();
 

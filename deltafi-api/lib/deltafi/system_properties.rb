@@ -74,6 +74,7 @@ module Deltafi
               backgroundColor
             }
           }
+          maxFlowDepth
           setProperties
         }
       }

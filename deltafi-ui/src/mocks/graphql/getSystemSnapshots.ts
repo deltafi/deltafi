@@ -102,6 +102,7 @@ const generateData = () => {
           contentStoragePercentThreshold: 90
         },
         inMemoryQueueSize: 5000,
+        maxFlowDepth: 10,
         setProperties: []
       },
       pluginImageRepositories: [],

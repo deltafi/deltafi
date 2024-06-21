@@ -278,6 +278,7 @@ public class SystemSnapshotDatafetcherTestHelper {
                                 }
                             }
                             inMemoryQueueSize: 10
+                            maxFlowDepth: 10
                             delete: { ageOffDays: 13, frequency: "PT30S", policyBatchSize: 5000 }
                             ingress: { enabled: true, diskSpaceRequirementInMb: 5000 }
                             metrics: { enabled: true }

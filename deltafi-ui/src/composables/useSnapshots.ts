@@ -112,6 +112,7 @@ export default function useSystemSnapshots() {
         contentStoragePercentThreshold: true
       },
       inMemoryQueueSize: true,
+      maxFlowDepth: true,
       setProperties: true
     },
     pluginImageRepositories: {

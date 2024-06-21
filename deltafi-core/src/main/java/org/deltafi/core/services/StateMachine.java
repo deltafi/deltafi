@@ -67,8 +67,8 @@ public class StateMachine {
 
     private List<WrappedActionInput> advance(StateMachineInput input, Map<String, Long> pendingQueued) {
         List<WrappedActionInput> actionInputs = updateCurrentFlow(input, pendingQueued);
-        if (actionInputs.isEmpty() &&
-                (input.flow().getState() == DeltaFileFlowState.COMPLETE || input.flow().lastActionType() == ActionType.PUBLISH)) {
+        if (actionInputs.isEmpty() && (input.flow().getState() == DeltaFileFlowState.COMPLETE ||
+                input.flow().lastActionType() == ActionType.PUBLISH)) {
             actionInputs.addAll(publishToNewFlows(input, pendingQueued));
         }
         final DeltaFileStage startingStage = input.deltaFile().getStage();
@@ -157,6 +157,11 @@ public class StateMachine {
             return Collections.emptyList();
         }
 
+        if (input.flow().getDepth() >= deltaFiPropertiesService.getDeltaFiProperties().getMaxFlowDepth()) {
+            markFlowAsCircular(input.flow());
+            return Collections.emptyList();
+        }
+
         Set<DeltaFileFlow> subscriberFlows = publisherService.subscribers(getFlow(input.flow()), input.deltaFile(), input.flow());
 
         for (DeltaFileFlow newFlow : subscriberFlows) {
@@ -169,6 +174,18 @@ public class StateMachine {
         }
 
         return actionInputs;
+    }
+
+    private void markFlowAsCircular(DeltaFileFlow flow) {
+        // grab the last content list to copy into the synthetic error action to make it available for retry
+        List<Content> lastActionContent = flow.lastActionContent();
+        Action action = flow.queueNewAction("CIRCULAR_FLOWS", ActionType.PUBLISH, false, OffsetDateTime.now(clock));
+        action.setState(ActionState.ERROR);
+        action.setErrorCause("Circular flows detected");
+        action.setErrorContext("Circular flows detected. Processing stopped at maximum depth of " +
+                deltaFiPropertiesService.getDeltaFiProperties().getMaxFlowDepth());
+        action.setContent(lastActionContent);
+        flow.setState(DeltaFileFlowState.ERROR);
     }
 
     private Flow getFlow(DeltaFileFlow flow) {
