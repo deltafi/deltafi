@@ -61,8 +61,7 @@ def make_event(content_service):
         'actionParams': {
             "thing": "theThing"
         }
-    },
-        "HOSTNAME", content_service, logger)
+    }, content_service, logger)
     return event
 
 

@@ -113,9 +113,7 @@ def test_context_json():
     unstub()
     mock_content_service = mock(ContentService)
     logger = None
-    context = Context.create(
-        make_context_dict(),
-        "HOSTNAME", mock_content_service, logger)
+    context = Context.create(make_context_dict(), mock_content_service, logger)
 
     assert context.did == TEST_DID
     assert context.delta_file_name == "FILENAME"
@@ -138,8 +136,7 @@ def test_event():
         'deltaFileMessages': [make_delta_file_message_dict()],
         'actionContext': make_context_dict(),
         'actionParams': {}
-    },
-        "HOSTNAME", mock_content_service, logger)
+    }, mock_content_service, logger)
 
     assert event.context.did == TEST_DID
     assert event.context.flow_name == "FLOW_NAME"
