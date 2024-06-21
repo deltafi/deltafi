@@ -56,7 +56,7 @@ class Context(NamedTuple):
     logger: Logger = None
 
     @classmethod
-    def create(cls, context: dict, hostname: str, content_service: ContentService, logger: Logger):
+    def create(cls, context: dict, content_service: ContentService, logger: Logger):
         did = context['did']
         if 'deltaFileName' in context:
             delta_file_name = context['deltaFileName']
@@ -344,10 +344,10 @@ class Event(NamedTuple):
     return_address: str
 
     @classmethod
-    def create(cls, event: dict, hostname: str, content_service: ContentService, logger: Logger):
+    def create(cls, event: dict, content_service: ContentService, logger: Logger):
         delta_file_messages = [DeltaFileMessage.from_dict(delta_file_message, content_service) for delta_file_message in
                                event['deltaFileMessages']]
-        context = Context.create(event['actionContext'], hostname, content_service, logger)
+        context = Context.create(event['actionContext'], content_service, logger)
         params = event['actionParams']
         queue_name = None
         if 'queueName' in event:

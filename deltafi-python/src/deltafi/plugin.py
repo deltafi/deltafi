@@ -260,7 +260,7 @@ class Plugin(object):
         while True:
             try:
                 event_string = self.queue.take(self.action_name(action))
-                event = Event.create(json.loads(event_string), self.hostname, self.content_service, action_logger)
+                event = Event.create(json.loads(event_string), self.content_service, action_logger)
                 start_time = time.time()
                 action_logger.debug(f"Processing event for did {event.context.did}")
 

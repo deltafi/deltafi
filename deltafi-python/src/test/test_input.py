@@ -32,8 +32,7 @@ def make_event(content_service):
         'deltaFileMessages': [make_delta_file_message_dict()],
         'actionContext': make_context_dict(),
         'actionParams': {}
-    },
-        "HOSTNAME", content_service, logger)
+    }, content_service, logger)
     return event
 
 
