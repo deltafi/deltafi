@@ -2644,7 +2644,7 @@ class DeltaFiCoreApplicationTests {
 						.orderBy(null)
 						.build(),
 				new DeltaFilesProjectionRoot().count().totalCount().offset().deltaFiles().did()
-						.flows().publishTopics().name().type().parent().state().getParent().created().modified()
+						.flows().id().publishTopics().name().type().parent().state().getParent().created().modified()
 						.actions().name().id().type().parent().state().parent().created().modified().attempt());
 
 		DeltaFiles deltaFiles = dgsQueryExecutor.executeAndExtractJsonPathAsObject(
