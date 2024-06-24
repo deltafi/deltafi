@@ -19,17 +19,15 @@
 <template>
   <span v-if="$hasPermission('FlowUpdate')">
     <ConfirmPopup></ConfirmPopup>
-    <ConfirmPopup :group="rowData.flowType + '_' + rowData.name">
+    <ConfirmPopup :group="rowData.flowType + '_testmode_' + rowData.name">
       <template #message="slotProps">
         <div class="flex btn-group p-4">
           <i :class="slotProps.message.icon" style="font-size: 1.5rem"></i>
-          <p class="pl-2">
-            {{ slotProps.message.message }}
-          </p>
+          <p class="pl-2" v-html="slotProps.message.message" />
         </div>
       </template>
     </ConfirmPopup>
-    <InputSwitch v-tooltip.top="tooltip" :model-value="rowData.flowStatus.testMode" class="p-button-sm" @click="confirmationPopup($event, rowData.name, rowData.flowStatus.testMode, rowData.flowType)" />
+    <InputSwitch v-tooltip.top="tooltip" :model-value="rowData.flowStatus.testMode" class="p-button-sm" @click="confirmationPopup($event, rowData.name, rowData.flowStatus.testMode)" />
   </span>
   <span v-else class="pr-2 float-left">
     <Button :label="testModeToolTip" :class="testModeButtonClass" style="width: 5.5rem" disabled />
@@ -48,7 +46,7 @@ import { useConfirm } from "primevue/useconfirm";
 import _ from "lodash";
 
 const confirm = useConfirm();
-const { enableTestTransformFlowByName, disableTestTransformFlowByName, enableTestEgressFlowByName, disableTestEgressFlowByName } = useFlowQueryBuilder();
+const { enableTestTransformFlowByName, disableTestTransformFlowByName } = useFlowQueryBuilder();
 const notify = useNotifications();
 
 const props = defineProps({
@@ -70,51 +68,39 @@ const testModeButtonClass = computed(() => {
   return _.isEqual(rowData.value.flowStatus.testMode, true) ? "p-button-primary" : "p-button-secondary";
 });
 
-const confirmationPopup = (event, name, testMode, flowType) => {
+const confirmationPopup = (event, name, testMode) => {
   if (testMode) {
     confirm.require({
       target: event.currentTarget,
-      group: `${rowData.value.flowType}_${rowData.value.name}`,
-      message: `Disable Test Mode for ${name} flow?`,
+      group: `${rowData.value.flowType}_testmode_${rowData.value.name}`,
+      message: `Disable Test Mode for <b>${name}</b> flow?`,
       acceptLabel: "Disable Test Mode",
       rejectLabel: "Cancel",
       icon: "pi pi-exclamation-triangle",
-      accept: async () => {
-        notify.info("Disabling Test Mode", `Disabling Test Mode for ${flowType} flow ${name}.`, 3000);
-        await toggleFlowState(name, testMode, flowType);
-      },
+      accept: () => toggleFlowState(name, testMode),
       reject: () => { },
     });
   } else {
     confirm.require({
       target: event.currentTarget,
-      group: `${rowData.value.flowType}_${rowData.value.name}`,
-      message: `Enable Test Mode for ${name} flow?`,
+      group: `${rowData.value.flowType}_testmode_${rowData.value.name}`,
+      message: `Enable Test Mode for <b>${name}</b> flow?`,
       acceptLabel: "Enable Test Mode",
       rejectLabel: "Cancel",
       icon: "pi pi-exclamation-triangle",
-      accept: async () => {
-        notify.info("Enable Test Mode", `Enable Test Mode for ${flowType} flow ${name}.`, 3000);
-        await toggleFlowState(name, testMode, flowType);
-      },
+      accept: () => toggleFlowState(name, testMode),
       reject: () => { },
     });
   }
 };
 
-const toggleFlowState = async (flowName, newflowTestMode, flowType) => {
-  if (_.isEqual(flowType, "transform")) {
-    if (!newflowTestMode) {
-      await enableTestTransformFlowByName(flowName);
-    } else {
-      await disableTestTransformFlowByName(flowName);
-    }
-  } else if (_.isEqual(flowType, "egress")) {
-    if (!newflowTestMode) {
-      await enableTestEgressFlowByName(flowName);
-    } else {
-      await disableTestEgressFlowByName(flowName);
-    }
+const toggleFlowState = async (flowName, newflowTestMode) => {
+  if (!newflowTestMode) {
+    notify.info("Enabling Test Mode", `Enabling Test Mode for <b>${flowName}</b> flow.`, 3000);
+    await enableTestTransformFlowByName(flowName);
+  } else {
+    notify.info("Disabling Test Mode", `Disabling Test Mode for <b>${flowName}</b> flow.`, 3000);
+    await disableTestTransformFlowByName(flowName);
   }
   rowData.value.flowStatus.testMode = !rowData.value.flowStatus.testMode;
   tooltip.value = rowData.value.flowStatus.testMode ? "Test Mode Enabled" : "Test Mode Disabled";

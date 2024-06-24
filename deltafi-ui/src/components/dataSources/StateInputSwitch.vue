@@ -23,13 +23,11 @@
       <template #message="slotProps">
         <div class="flex btn-group p-4">
           <i :class="slotProps.message.icon" style="font-size: 1.5rem"></i>
-          <p class="pl-2">
-            {{ slotProps.message.message }}
-          </p>
+          <p class="pl-2" v-html="slotProps.message.message" />
         </div>
       </template>
     </ConfirmPopup>
-    <InputSwitch v-tooltip.top="rowData.flowStatus.state" :model-value="rowData.flowStatus.state" false-value="STOPPED" true-value="RUNNING" class="p-button-sm" @click="confirmationPopup($event, rowData.name, rowData.flowStatus.state)" />
+    <InputSwitch v-tooltip.top="rowData.flowStatus.state" :model-value="rowData.flowStatus.state" false-value="STOPPED" true-value="RUNNING" class="p-button-sm" @click="confirmationPopup($event)" />
   </span>
   <span v-else class="pt-1">
     <Tag v-tooltip.left="tooltip" class="ml-2" :value="rowData.flowStatus.state" severity="info" icon="pi pi-info-circle" :rounded="true" />
@@ -39,7 +37,8 @@
 <script setup>
 import useDataSource from "@/composables/useDataSource";
 import useNotifications from "@/composables/useNotifications";
-import { computed, defineProps, toRefs } from "vue";
+import useTopics from "@/composables/useTopics";
+import { computed, defineProps, toRefs, onBeforeMount, ref } from "vue";
 
 import Tag from "primevue/tag";
 import ConfirmPopup from "primevue/confirmpopup";
@@ -47,7 +46,9 @@ import InputSwitch from "primevue/inputswitch";
 import { useConfirm } from "primevue/useconfirm";
 import _ from "lodash";
 
+const { hasActiveSubscribers } = useTopics();
 const confirm = useConfirm();
+const topicActive = ref(false);
 const { startDataSourceByName, stopDataSourceByName } = useDataSource();
 const notify = useNotifications();
 const emit = defineEmits(["change"]);
@@ -68,25 +69,41 @@ const props = defineProps({
   },
 });
 
+onBeforeMount(async () => topicActive.value = await hasActiveSubscribers(rowData.value.topic));
+
 const { rowDataProp: rowData, dataSourceType, configureDataSourceDialog } = toRefs(props);
 
-const confirmationPopup = async (event, name, state) => {
+const confirmationPopup = async (event) => {
+  const { name, state, topic } = { name: rowData.value.name, state: rowData.value.flowStatus.state, topic: rowData.value.topic }
+
   if (_.isEqual(state, "RUNNING")) {
+    // Stop
     confirm.require({
       target: event.currentTarget,
       group: `${dataSourceType.value}_${name}`,
-      message: `Stop the '${name}' data source?`,
+      message: `Stop the <b>${name}</b> data source?`,
       acceptLabel: "Stop",
       rejectLabel: "Cancel",
       icon: "pi pi-exclamation-triangle",
-      accept: async () => {
-        notify.info("Stopping Data Source", `Stopping ${name} data source.`, 3000);
-        await toggleFlowState(name, state);
-      },
-      reject: () => {},
+      accept: () => toggleFlowState(name, state),
+      reject: () => { },
     });
   } else {
-    await toggleFlowState(name, state);
+    // Start
+    if (topicActive.value) {
+      await toggleFlowState(name, state);
+    } else {
+      confirm.require({
+        target: event.currentTarget,
+        group: `${dataSourceType.value}_${name}`,
+        message: `Start the <b>${name}</b> data source? Target topic <b>${topic}</b> has no active subscribers.`,
+        acceptLabel: "Start",
+        rejectLabel: "Cancel",
+        icon: "pi pi-exclamation-triangle",
+        accept: () => toggleFlowState(name, state),
+        reject: () => { },
+      });
+    }
   }
 };
 
@@ -104,8 +121,10 @@ const toggleFlowState = async (flowName, newFlowState) => {
   if (!configureDataSourceDialog.value) {
     if (_.isEqual(dataSourceType.value, "timedDataSource")) {
       if (_.isEqual(newFlowState, "STOPPED")) {
+        notify.info("Starting Data Source", `Starting <b>${flowName}</b> data source.`, 3000);
         await startDataSourceByName(flowName);
       } else {
+        notify.info("Stopping Data Source", `Stopping <b>${flowName}</b> data source.`, 3000);
         await stopDataSourceByName(flowName);
       }
     }
