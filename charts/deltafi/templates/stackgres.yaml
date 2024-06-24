@@ -1,4 +1,5 @@
 {{- if .Values.postgres.enabled }}
+{{- if .Capabilities.APIVersions.Has "stackgres.io/v1/SGCluster" }}
 apiVersion: stackgres.io/v1
 kind: SGScript
 metadata:
@@ -22,6 +23,10 @@ kind: SGCluster
 metadata:
   name: deltafi-postgres
 spec:
+  metadata:
+    labels:
+      clusterPods:
+        group: "deltafi-db"
   instances: 1
   postgres:
     version: {{ .Values.postgres.version | default "latest" | quote }}
@@ -31,4 +36,7 @@ spec:
   managedSql:
     scripts:
     - sgScript: deltafi-postgres-create-db
+{{ else }}
+{{- required "\n  - postgres is enabled but the Stackgres Operator is not present\n  - Set DELTAFI_STACKGRES_ENABLED to 'true' in deltafi config" "" }}
+{{ end }}
 {{ end }}

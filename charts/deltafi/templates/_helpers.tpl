@@ -84,19 +84,6 @@ initContainers:
     done
 {{- end -}}
 
-{{- define "initContainersWaitForMongo" -}}
-initContainers:
-- name: wait-for-mongo
-  image: busybox:1.36.0
-  command:
-  - 'sh'
-  - '-c'
-  - >
-    until nc -z -w 2 deltafi-mongodb 27017 && echo mongodb ok;
-      do sleep 1;
-    done
-{{- end -}}
-
 {{- define "initContainersWaitForGraphite" -}}
 initContainers:
 - name: wait-for-graphite
@@ -112,7 +99,7 @@ initContainers:
 
 {{- define "initContainersWaitForDatabases" -}}
 initContainers:
-- name: wait-for-databases
+- name: wait-for-mongo
   image: busybox:1.36.0
   command:
   - 'sh'
@@ -120,10 +107,29 @@ initContainers:
   - >
     until nc -z -w 2 deltafi-mongodb 27017 && echo mongodb ok;
       do sleep 1;
-    done &&
+    done
+{{- if .Values.postgres.enabled }}
+- name: wait-for-postgres
+  image: busybox:1.36.0
+  command:
+  - 'sh'
+  - '-c'
+  - >
+    until nc -z -w 2 deltafi-postgres 5432 && echo postgres ok;
+      do sleep 1;
+    done
+{{- end -}}
+{{- if .Values.clickhouse.enabled }}
+- name: wait-for-clickhouse
+  image: busybox:1.36.0
+  command:
+  - 'sh'
+  - '-c'
+  - >
     until nc -z -w 2 deltafi-clickhouse 9000 && echo clickhouse ok;
       do sleep 1;
     done
+{{- end -}}
 {{- end -}}
 
 {{- define "defaultEnvVars" -}}

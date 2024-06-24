@@ -4,17 +4,11 @@ deltafi:
     title: DeltaFi (DinK)
   auth:
     mode: disabled
-# Postgres support is in early alpha for KinD
-# To get the operator and a postgres instance up and running:
-# - down your cluster if you are running one already
-# - stackgres-operator.enable = true (below)
-# - install your cluster (stackgres-operator and stackgres-restapi pods will come up)
-# - postgres.enable = true
-# - install your cluster (deltafi-postgres-0 pod will come up)
-# - deltafi postgres-cli -or- access postgress through deltafi-postgres service
-stackgres-operator:
-  enabled: false
 postgres:
   enabled: false
+clickhouse:
+  enabled: true
+registry-ui:
+  enabled: true
 docker-registry:
   enabled: false

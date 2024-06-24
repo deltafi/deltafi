@@ -25,7 +25,7 @@ spec:
       imagePullSecrets:
       - name: docker-secret
       containers:
-      - name: clustermonitor
+      - name: deltafi-clustermonitor
         image: {{ .Values.deltafi.clustermonitor.image }}
         env:
         {{- include "defaultEnvVars" . | nindent 12 }}

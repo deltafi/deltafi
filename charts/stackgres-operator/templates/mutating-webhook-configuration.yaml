@@ -1,0 +1,334 @@
+{{- $cert := "Cg==" }}
+{{- $certSecret := lookup "v1" "Secret" .Release.Namespace (include "cert-name" .) }}
+{{- if $certSecret }}
+{{- if (index $certSecret.data "tls.crt") }}
+{{- $cert = (index $certSecret.data "tls.crt") }}
+{{- end }}
+{{- end }}
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+{{- with .Values.clusterOwnerRefereces }}
+  ownerReferences:
+    {{- toYaml . | nindent 4 }}
+{{- end }}
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  {{- with (.Values.webhooks).annotations }}
+  annotations:
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
+webhooks:
+  - name: sgcluster.mutating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgclusters"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Release.Name }}
+        path: '/stackgres/mutation/sgcluster'
+      caBundle: {{ $cert }}
+    admissionReviewVersions: ["v1"]
+    {{- if .Values.allowedNamespaces }}
+    namespaceSelector:
+      matchLabels:
+        stackgres.io/scope: {{ .Release.Namespace }}.{{ .Release.Name }}
+    {{- else if .Values.allowedNamespaceLabelSelector }}
+    namespaceSelector:
+      matchLabels:
+        {{ toYaml .Values.allowedNamespaceLabelSelector | nindent 8 }}
+    {{- end }}
+  - name: sgpgconfig.mutating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgpgconfigs"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Release.Name }}
+        path: '/stackgres/mutation/sgpgconfig'
+      caBundle: {{ $cert }}
+    admissionReviewVersions: ["v1"]
+    {{- if .Values.allowedNamespaces }}
+    namespaceSelector:
+      matchLabels:
+        stackgres.io/scope: {{ .Release.Namespace }}.{{ .Release.Name }}
+    {{- else if .Values.allowedNamespaceLabelSelector }}
+    namespaceSelector:
+      matchLabels:
+        {{ toYaml .Values.allowedNamespaceLabelSelector | nindent 8 }}
+    {{- end }}
+  - name: sgpoolconfig.mutating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgpoolconfigs"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Release.Name }}
+        path: '/stackgres/mutation/sgpoolconfig'
+      caBundle: {{ $cert }}
+    admissionReviewVersions: ["v1"]
+    {{- if .Values.allowedNamespaces }}
+    namespaceSelector:
+      matchLabels:
+        stackgres.io/scope: {{ .Release.Namespace }}.{{ .Release.Name }}
+    {{- else if .Values.allowedNamespaceLabelSelector }}
+    namespaceSelector:
+      matchLabels:
+        {{ toYaml .Values.allowedNamespaceLabelSelector | nindent 8 }}
+    {{- end }}
+  - name: sginstanceprofile.mutating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sginstanceprofiles"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Release.Name }}
+        path: '/stackgres/mutation/sginstanceprofile'
+      caBundle: {{ $cert }}
+    admissionReviewVersions: ["v1"]
+    {{- if .Values.allowedNamespaces }}
+    namespaceSelector:
+      matchLabels:
+        stackgres.io/scope: {{ .Release.Namespace }}.{{ .Release.Name }}
+    {{- else if .Values.allowedNamespaceLabelSelector }}
+    namespaceSelector:
+      matchLabels:
+        {{ toYaml .Values.allowedNamespaceLabelSelector | nindent 8 }}
+    {{- end }}
+  - name: sgbackupconfig.mutating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgbackupconfigs"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Release.Name }}
+        path: '/stackgres/mutation/sgbackupconfig'
+      caBundle: {{ $cert }}
+    admissionReviewVersions: ["v1"]
+    {{- if .Values.allowedNamespaces }}
+    namespaceSelector:
+      matchLabels:
+        stackgres.io/scope: {{ .Release.Namespace }}.{{ .Release.Name }}
+    {{- else if .Values.allowedNamespaceLabelSelector }}
+    namespaceSelector:
+      matchLabels:
+        {{ toYaml .Values.allowedNamespaceLabelSelector | nindent 8 }}
+    {{- end }}
+  - name: sgbackup.mutating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgbackups"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Release.Name }}
+        path: '/stackgres/mutation/sgbackup'
+      caBundle: {{ $cert }}
+    admissionReviewVersions: ["v1"]
+    {{- if .Values.allowedNamespaces }}
+    namespaceSelector:
+      matchLabels:
+        stackgres.io/scope: {{ .Release.Namespace }}.{{ .Release.Name }}
+    {{- else if .Values.allowedNamespaceLabelSelector }}
+    namespaceSelector:
+      matchLabels:
+        {{ toYaml .Values.allowedNamespaceLabelSelector | nindent 8 }}
+    {{- end }}
+  - name: sgdistributedlogs.mutating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgdistributedlogs"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Release.Name }}
+        path: '/stackgres/mutation/sgdistributedlogs'
+      caBundle: {{ $cert }}
+    admissionReviewVersions: ["v1"]
+    {{- if .Values.allowedNamespaces }}
+    namespaceSelector:
+      matchLabels:
+        stackgres.io/scope: {{ .Release.Namespace }}.{{ .Release.Name }}
+    {{- else if .Values.allowedNamespaceLabelSelector }}
+    namespaceSelector:
+      matchLabels:
+        {{ toYaml .Values.allowedNamespaceLabelSelector | nindent 8 }}
+    {{- end }}
+  - name: sgdbops.mutating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgdbops"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Release.Name }}
+        path: '/stackgres/mutation/sgdbops'
+      caBundle: {{ $cert }}
+    admissionReviewVersions: ["v1"]
+    {{- if .Values.allowedNamespaces }}
+    namespaceSelector:
+      matchLabels:
+        stackgres.io/scope: {{ .Release.Namespace }}.{{ .Release.Name }}
+    {{- else if .Values.allowedNamespaceLabelSelector }}
+    namespaceSelector:
+      matchLabels:
+        {{ toYaml .Values.allowedNamespaceLabelSelector | nindent 8 }}
+    {{- end }}
+  - name: sgobjectstorage.mutating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgobjectstorages"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Release.Name }}
+        path: '/stackgres/mutation/sgobjectstorage'
+      caBundle: {{ $cert }}
+    admissionReviewVersions: ["v1"]
+    {{- if .Values.allowedNamespaces }}
+    namespaceSelector:
+      matchLabels:
+        stackgres.io/scope: {{ .Release.Namespace }}.{{ .Release.Name }}
+    {{- else if .Values.allowedNamespaceLabelSelector }}
+    namespaceSelector:
+      matchLabels:
+        {{ toYaml .Values.allowedNamespaceLabelSelector | nindent 8 }}
+    {{- end }}
+  - name: sgscripts.mutating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgscripts"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Release.Name }}
+        path: '/stackgres/mutation/sgscript'
+      caBundle: {{ $cert }}
+    admissionReviewVersions: ["v1"]
+    {{- if .Values.allowedNamespaces }}
+    namespaceSelector:
+      matchLabels:
+        stackgres.io/scope: {{ .Release.Namespace }}.{{ .Release.Name }}
+    {{- else if .Values.allowedNamespaceLabelSelector }}
+    namespaceSelector:
+      matchLabels:
+        {{ toYaml .Values.allowedNamespaceLabelSelector | nindent 8 }}
+    {{- end }}
+  - name: sgshardedclusters.mutating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgshardedclusters"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Release.Name }}
+        path: '/stackgres/mutation/sgshardedcluster'
+      caBundle: {{ $cert }}
+    admissionReviewVersions: ["v1"]
+    {{- if .Values.allowedNamespaces }}
+    namespaceSelector:
+      matchLabels:
+        stackgres.io/scope: {{ .Release.Namespace }}.{{ .Release.Name }}
+    {{- else if .Values.allowedNamespaceLabelSelector }}
+    namespaceSelector:
+      matchLabels:
+        {{ toYaml .Values.allowedNamespaceLabelSelector | nindent 8 }}
+    {{- end }}
+  - name: sgshardedbackups.mutating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgshardedbackups"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Release.Name }}
+        path: '/stackgres/mutation/sgshardedbackup'
+      caBundle: {{ $cert }}
+    admissionReviewVersions: ["v1"]
+    {{- if .Values.allowedNamespaces }}
+    namespaceSelector:
+      matchLabels:
+        stackgres.io/scope: {{ .Release.Namespace }}.{{ .Release.Name }}
+    {{- else if .Values.allowedNamespaceLabelSelector }}
+    namespaceSelector:
+      matchLabels:
+        {{ toYaml .Values.allowedNamespaceLabelSelector | nindent 8 }}
+    {{- end }}
+  - name: sgshardeddbops.mutating-webhook.stackgres.io
+    sideEffects: None
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["stackgres.io"]
+        apiVersions: ["*"]
+        resources: ["sgshardeddbops"]
+    failurePolicy: Fail
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Release.Name }}
+        path: '/stackgres/mutation/sgshardeddbops'
+      caBundle: {{ $cert }}
+    admissionReviewVersions: ["v1"]
+    {{- if .Values.allowedNamespaces }}
+    namespaceSelector:
+      matchLabels:
+        stackgres.io/scope: {{ .Release.Namespace }}.{{ .Release.Name }}
+    {{- else if .Values.allowedNamespaceLabelSelector }}
+    namespaceSelector:
+      matchLabels:
+        {{ toYaml .Values.allowedNamespaceLabelSelector | nindent 8 }}
+    {{- end }}
+    

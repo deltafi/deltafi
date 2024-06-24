@@ -19,9 +19,6 @@ version: 2.0-rc3
 # follow Semantic Versioning. They should reflect the version the application is using.
 appVersion: 2.0-rc3
 dependencies:
-  - name: stackgres-operator
-    version: 1.9.0
-    # repository: https://stackgres.io/downloads/stackgres-k8s/stackgres/helm/
   - name: docker-registry
     version: 2.2.2
     # repository: https://helm.twun.io
