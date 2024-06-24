@@ -64,6 +64,10 @@ module Deltafi
           raise "#{self.class} should override the `run` method"
         end
 
+        def self.should_run?
+          true
+        end
+
         def run_check
           debug 'Running check'
 

@@ -53,6 +53,7 @@ module Deltafi
 
         def spawn_check_threads
           @checks.each do |check|
+            next unless check.should_run?
             Thread.new do
               checker = check.new
               periodic_timer(check::INTERVAL) do

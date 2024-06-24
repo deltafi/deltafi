@@ -29,7 +29,7 @@ module Deltafi
           THRESHOLD_PROPERTY = %w[checks contentStoragePercentThreshold].freeze
 
           def initialize
-            super('Kubernetes Storage Check')
+            super('Storage Check')
           end
 
           def run

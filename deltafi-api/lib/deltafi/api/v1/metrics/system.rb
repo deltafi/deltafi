@@ -83,13 +83,19 @@ module Deltafi
               ret
             end
 
-            memoize :apps_by_node_k8s, expires_in: 60
-
-            def minio_node
+            def minio_node_k8s
               minio_pods = DF.k8s_client.api('v1').resource('pods', namespace: 'deltafi')
-                               .list(labelSelector: { 'app' => 'minio' })
+                             .list(labelSelector: { 'app' => 'minio' })
 
               minio_pods&.first&.spec&.nodeName&.to_s
+            end
+
+            def minio_node_standalone
+              ENV['HOSTNAME'] || 'UNKNOWN'
+            end
+
+            def minio_node
+              DF.cluster_mode? ? minio_node_k8s : minio_node_standalone
             end
 
             memoize :minio_node, expires_in: 60
@@ -98,11 +104,11 @@ module Deltafi
               DF.core_rest_get('appsByNode')
             end
 
-            memoize :apps_by_node_core, expires_in: 60
-
             def apps_by_node
               DF.cluster_mode? ? apps_by_node_k8s : apps_by_node_core
             end
+
+            memoize :apps_by_node, expires_in: 60
 
             def content
               all_metrics = metrics

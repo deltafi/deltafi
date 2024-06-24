@@ -25,21 +25,26 @@ module Deltafi
     module Status
       module Checks
         class K8sResourcesCheck < Status::Check
-          RESOURCES = [
+          RESOURCES = DF.cluster_mode? ? [
             DF.k8s_client.api('apps/v1').resource('deployments', namespace: DF::Common::K8S_NAMESPACE),
             DF.k8s_client.api('networking.k8s.io/v1').resource('ingresses', namespace: DF::Common::K8S_NAMESPACE),
             DF.k8s_client.api('v1').resource('pods', namespace: DF::Common::K8S_NAMESPACE),
             DF.k8s_client.api('v1').resource('services', namespace: DF::Common::K8S_NAMESPACE),
             DF.k8s_client.api('apps/v1').resource('statefulsets', namespace: DF::Common::K8S_NAMESPACE),
             DF.k8s_client.api('v1').resource('persistentvolumeclaims', namespace: DF::Common::K8S_NAMESPACE)
-          ]
+          ] : []
+
           def initialize
             super('Kubernetes Resource Check')
           end
 
+          def self.should_run?
+            DF.cluster_mode?
+          end
+
           def run
-            k8s_client = DF.k8s_client
             if DF.cluster_mode?
+              k8s_client = DF.k8s_client
               resources = k8s_client.list_resources(RESOURCES, namespace: DF::Common::K8S_NAMESPACE)
 
               check_pods(resources.select { |r| r.kind == 'Pod' })

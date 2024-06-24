@@ -4,7 +4,7 @@ set -e
 
 cli_help_command() {
   echo "
-Command: system-snapshot
+Command: compose
 
 Subcommands:
   start                       start all of the services
@@ -31,6 +31,8 @@ Usage:
   -f|--values <val>    specify values in a YAML file (can specify multiple)"
   exit 1
 }
+
+SUDO=$(which sudo)
 
 # _readlink()
 #
@@ -120,6 +122,136 @@ _readlink() {
   fi
 }
 
+normal=$(tput sgr0)
+bold=$(tput bold)
+red=$(tput setaf 1)
+green=$(tput setaf 2)
+yellow=$(tput setaf 3)
+blue=$(tput setaf 33)
+magenta=$(tput setaf 5)
+cyan=$(tput setaf 6)
+white=$(tput setaf 7)
+black=$(tput setaf 0)
+gray=$(tput setaf 8)
+orange=$(tput setaf 208)
+
+_log() {
+  local timestamp
+  timestamp=${gray}$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+  echo "${yellow}>  $timestamp${normal} $1"
+}
+
+_attention() {
+  {
+    printf "\n%s\n\n" "${gray}       ▶ ${blue}${*}${normal}"
+  } 1>&2
+}
+
+_info() {
+  {
+    local prepend="${orange} ‣ ${normal}"
+    case $1 in
+    -w)
+      prepend="${red} ‼ ${normal}"
+      shift
+      ;;
+    -h)
+      prepend="${yellow} ! ${normal}"
+      shift
+      ;;
+    -s)
+      prepend="${blue} ╭ ${normal}"
+      shift
+      ;;
+    -e)
+      prepend="${blue} ╰ ${normal}"
+      shift
+      ;;
+    -q)
+      prepend="   "
+      shift
+      ;;
+    -a)
+      prepend="${blue} │${gray} "
+      shift
+      ;;
+    esac
+    printf "      %s\n" "${prepend}${*}${normal}"
+  } 1>&2
+}
+
+_warn() {
+  _info -w "$@"
+}
+
+_message() {
+  color="$1"
+  msg="$2"
+  shift 2
+  printf "[%s%-4s%s]   %s\n" "$color" "$msg" "${normal}" "$@"
+}
+
+_ok_annotated() {
+  printf "[%s%-4s%s] ${blue}╰${normal} %s\n" "$green" " OK" "${normal}" "$@"
+}
+
+_ok() {
+  _message "${green}" " OK " "$@"
+}
+
+_down() {
+  _message "${yellow}" "DOWN" "$@"
+}
+
+_fail() {
+  _message "${red}" "FAIL" "$@"
+}
+
+_conditional() {
+  title=$1
+  shift
+
+  if "${@}"; then
+    _ok_annotated $title
+  else
+    _fail $title
+    return 1
+  fi
+}
+
+_annotated_subshell() {
+
+  local filters=()
+  while true; do
+    case $1 in
+    -h)
+      _info -s "$2"
+      shift 2
+      ;;
+    -v)
+      filters+=("$2")
+      shift 2
+      ;;
+    *)
+      break
+      ;;
+    esac
+  done
+  {
+    "${@}" 2>&1 | while read -r line; do
+      local remove=
+      for filter in "${filters[@]}"; do
+        if [[ $line =~ $filter ]]; then
+          remove=true
+          continue
+        fi
+      done
+      [[ -n "${remove}" ]] && continue
+      _info -a "$line"
+    done
+  } 2>&1
+}
+
 _tool_exists() {
   command -v "$1" &> /dev/null
 }
@@ -175,6 +307,7 @@ _setup_secrets() {
   MONGODB_SECRET_PATH="${SECRETS_DIR}/mongodb.env"
   REDIS_SECRET_PATH="${SECRETS_DIR}/redis.env"
   SSL_SECRET_PATH="${SECRETS_DIR}/ssl.env"
+  CLICKHOUSE_SECRET_PATH="${SECRETS_DIR}/clickhouse.env"
 
   if [[ ! -f "${GRAFANA_SECRET_PATH}" ]]; then
       grafana_password=$(_random_password 16)
@@ -213,6 +346,15 @@ REDIS_PASSWORD=$redis_password
 EOF
   fi
 
+  if [[ ! -f "${CLICKHOUSE_SECRET_PATH}" ]]; then
+    clickhouse_password=$(_random_password 16)
+    cat <<EOF > "${CLICKHOUSE_SECRET_PATH}"
+CLICKHOUSE_PASSWORD=$clickhouse_password
+CLICKHOUSE_ADMIN_USER=default
+CLICKHOUSE_ADMIN_PASSWORD=$clickhouse_password
+EOF
+  fi
+
   # TODO -- SSL settings need to be passed in/read
   if [[ ! -f "${SSL_SECRET_PATH}" ]]; then
     cat <<EOF > "${SSL_SECRET_PATH}"
@@ -232,6 +374,30 @@ _create_network() {
     echo "Creating deltafi network ..."
     docker network create deltafi
   fi
+}
+
+_verify_or_replace_fqdn() {
+  local FQDN=$1
+  if grep -qxF "127.0.0.1 $FQDN" /etc/hosts; then
+    _ok "Active: $FQDN"
+  else
+    echo "127.0.0.1 $FQDN" | ${SUDO} tee -a /etc/hosts > /dev/null
+    _ok "Added: $FQDN"
+  fi
+}
+
+_check_local_fqdns() {
+  _info "Checking /etc/hosts config"
+  _info -h "You may be prompted for your sudo password"
+
+  _verify_or_replace_fqdn "local.deltafi.org"
+  _verify_or_replace_fqdn "graphite.local.deltafi.org"
+  _verify_or_replace_fqdn "metrics.local.deltafi.org"
+  _verify_or_replace_fqdn "minio.local.deltafi.org"
+  _verify_or_replace_fqdn "deltafi-api-service"
+  _verify_or_replace_fqdn "deltafi-auth-service"
+  _verify_or_replace_fqdn "deltafi-core-service"
+  _verify_or_replace_fqdn "deltafi-ingress-service"
 }
 
 # creates a default values yaml using the local repo if this is a snapshot version otherwise it will use docker.io/deltafi
@@ -276,23 +442,29 @@ deltafi:
     image: ${repo}/deltafi-egress-sink:${tag}
   nodemonitor:
     image: ${repo}/deltafi-nodemonitor:${tag}
+  clickhouse_etl:
+    interval: 10
+    lag: 60
+    batch: 2000
+    delete_ttl: "1 MONTH"
 # nginx domain
 ingress:
   domain: local.deltafi.org
 dependencies:
-  grafana: grafana/grafana:9.3.2
-  graphite: graphiteapp/graphite-statsd:1.1.10-4
-  loki: grafana/loki:2.7.1
-  minio: quay.io/minio/minio:RELEASE.2023-02-10T18-48-39Z
-  nginx: docker.io/nginx:1.23.3-alpine
-  promtail: docker.io/grafana/promtail:2.7.1
-  mongodb: docker.io/bitnami/mongodb:5.0.14
-  redis: docker.io/bitnami/redis:7.0.7
+  grafana: deltafi/grafana:11.0.0-0
+  graphite: graphiteapp/graphite-statsd:1.1.10-5
+  loki: grafana/loki:2.9.3
+  minio: quay.io/minio/minio:RELEASE.2024-06-11T03-13-30Z
+  nginx: docker.io/nginx:1.27.0-alpine
+  promtail: docker.io/grafana/promtail:2.9.3
+  mongodb: docker.io/bitnami/mongodb:5.0.17
+  redis: docker.io/bitnami/redis:7.2.4
+  clickhouse: bitnami/clickhouse:24.3.3-debian-12-r2
 EOF
 
   if _is_arm; then
-    yq -i '.dependencies.mongodb = "zcube/bitnami-compat/mongodb:5.0.14"' "${VALUES_YAML}"
-    yq -i '.dependencies.redis = "zcube/bitnami-compat/redis:7.0.7"' "${VALUES_YAML}"
+    yq -i '.dependencies.mongodb = "zcube/bitnami-compat/mongodb:5.0.17"' "${VALUES_YAML}"
+    yq -i '.dependencies.redis = "zcube/bitnami-compat/redis:7.2.4"' "${VALUES_YAML}"
   fi
 }
 
@@ -330,6 +502,10 @@ _from_values() {
 
 _append_startup_from_values() {
   _append_startup "${1}" $(_from_values "${2}") "${STARTUP_SETTINGS}"
+}
+
+_append_common_from_values() {
+  _append_startup "${1}" $(_from_values "${2}") "${COMMON_SETTINGS}"
 }
 
 _append_compose_profiles() {
@@ -375,6 +551,7 @@ _write_startup_file() {
   _append_startup_from_values "DELTAFI_INGRESS" ".deltafi.ingress.image"
   _append_startup_from_values "DELTAFI_NODEMONITOR" ".deltafi.nodemonitor.image"
   _append_startup_from_values "DELTAFI_UI" ".deltafi.ui.image"
+  _append_startup_from_values "DELTAFI_CLICKHOUSE_ETL" ".deltafi.api.image"
   _append_startup_from_values "GRAFANA" ".dependencies.grafana"
   _append_startup_from_values "GRAPHITE" ".dependencies.graphite"
   _append_startup_from_values "LOKI" ".dependencies.loki"
@@ -383,6 +560,7 @@ _write_startup_file() {
   _append_startup_from_values "NGINX" ".dependencies.nginx"
   _append_startup_from_values "PROMTAIL" ".dependencies.promtail"
   _append_startup_from_values "REDIS" ".dependencies.redis"
+  _append_startup_from_values "CLICKHOUSE" ".dependencies.clickhouse"
   _append_startup_from_values "API_WORKERS" ".deltafi.api.workers"
   _append_startup_from_values "AUTH_WORKERS" ".deltafi.auth.workers"
   _append_startup_from_values "AUTH_RESOLVER_PORT" ".deltafi.auth.entityResolver.port"
@@ -406,6 +584,8 @@ MINIO_PARTSIZE="5242880"
 MINIO_URL=http://deltafi-minio:9000
 RACK_ENV=production
 REDIS_URL=http://deltafi-redis:6379
+REDIS_HOST=deltafi-redis
+REDIS_PORT=6379
 RUNNING_IN_CLUSTER=false
 STATSD_HOSTNAME=deltafi-graphite
 STATSD_PORT="8125"
@@ -433,6 +613,10 @@ _write_env_files() {
 
   _append_common "ENTITY_RESOLVER_ENABLED" "${entity_resolver_enabled}"
   _append_common "ENTITY_RESOLVER_URL" "${entity_resolver_url}"
+  _append_common_from_values "ETL_BATCH" ".deltafi.clickhouse_etl.batch"
+  _append_common_from_values "ETL_DELETE_TTL" ".deltafi.clickhouse_etl.delete_ttl"
+  _append_common_from_values "ETL_INTERVAL" ".deltafi.clickhouse_etl.interval"
+  _append_common_from_values "ETL_LAG" ".deltafi.clickhouse_etl.lag"
 
   case "${auth_mode}" in
     disabled)
@@ -462,6 +646,7 @@ _write_config() {
 
 start_compose() {
   _create_network
+  _check_local_fqdns
   docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" up -d
 }
 
@@ -474,7 +659,7 @@ stop_services() {
 }
 
 restart_service() {
-  docker-compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" up -d --force-recreate --no-deps ${1}
+  docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" up -d --force-recreate --no-deps ${1}
 }
 
 ARGS=("$@")
