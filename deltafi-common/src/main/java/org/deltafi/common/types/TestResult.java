@@ -36,6 +36,7 @@ import java.util.List;
 public class TestResult {
     @Id
     private String id;
+    private String description;
     private TestStatus status;
     private OffsetDateTime start;
     private OffsetDateTime stop;

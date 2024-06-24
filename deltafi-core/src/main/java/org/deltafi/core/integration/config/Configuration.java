@@ -25,11 +25,12 @@ import java.util.List;
 
 @Data
 public class Configuration {
+    private String description;
     private List<PluginCoordinates> plugins;
     private List<String> dataSources;
     private List<String> transformationFlows;
     private List<String> egressFlows;
     private List<Input> inputs;
     private Duration timeout;
-    private ExpectedDeltaFile expectedDeltaFile;
+    private List<ExpectedDeltaFile> expectedDeltaFiles;
 }

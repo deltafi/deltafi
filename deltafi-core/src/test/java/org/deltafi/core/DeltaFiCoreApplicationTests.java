@@ -2799,8 +2799,8 @@ class DeltaFiCoreApplicationTests {
 		OffsetDateTime start = OffsetDateTime.of(2024, 1, 31, 12, 0, 30, 0, ZoneOffset.UTC);
 		OffsetDateTime stop = OffsetDateTime.of(2024, 1, 31, 12, 1, 30, 0, ZoneOffset.UTC);
 
-		TestResult testResult1 = new TestResult("1", TestStatus.SUCCESSFUL, start, stop, Collections.emptyList());
-		TestResult testResult2 = new TestResult("2", TestStatus.FAILED, start, stop, List.of("errors"));
+		TestResult testResult1 = new TestResult("1", "d1", TestStatus.SUCCESSFUL, start, stop, Collections.emptyList());
+		TestResult testResult2 = new TestResult("2", "d2", TestStatus.FAILED, start, stop, List.of("errors"));
 		testResultRepo.saveAll(List.of(testResult1, testResult2));
 
 		List<TestResult> listResult = IntegrationDataFetcherTestHelper.getAllIntegrationTests(dgsQueryExecutor);

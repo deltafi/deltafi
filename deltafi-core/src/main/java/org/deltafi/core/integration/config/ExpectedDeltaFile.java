@@ -28,7 +28,7 @@ public class ExpectedDeltaFile {
     private DeltaFileStage stage;
     private Integer childCount;
     private Integer parentCount;
-    private List<ExpectedActions> expectedActions;
+    private List<ExpectedFlows> expectedFlows;
     private List<ExpectedDeltaFile> children;
     private ContentList expectedContent;
 
@@ -43,8 +43,8 @@ public class ExpectedDeltaFile {
             children = new ArrayList<>();
         }
 
-        if (expectedActions == null) {
-            expectedActions = new ArrayList<>();
+        if (expectedFlows == null) {
+            expectedFlows = new ArrayList<>();
         }
 
         if (childCount == null || childCount == 0) {
@@ -65,8 +65,8 @@ public class ExpectedDeltaFile {
             ++pos;
         }
 
-        for (ExpectedActions e : expectedActions) {
-            errors.addAll(e.validate());
+        for (ExpectedFlows ef : expectedFlows) {
+            errors.addAll(ef.validate());
         }
 
         if (expectedContent != null) {

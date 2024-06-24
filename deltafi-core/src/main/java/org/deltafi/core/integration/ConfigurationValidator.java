@@ -23,6 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.Plugin;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.integration.config.Configuration;
+import org.deltafi.core.integration.config.ExpectedDeltaFile;
 import org.deltafi.core.integration.config.Input;
 import org.deltafi.core.plugin.PluginRegistryService;
 import org.deltafi.core.services.DataSourceService;
@@ -51,6 +52,10 @@ public class ConfigurationValidator {
     public List<String> validateConfig(Configuration config) {
         List<String> errors = new ArrayList<>();
 
+        if (StringUtils.isEmpty(config.getDescription())) {
+            errors.add("Test configuration must specify a 'description'");
+        }
+
         if (config.getPlugins() == null || config.getPlugins().isEmpty()) {
             errors.add("Test configuration must specify at least one plugin");
         } else {
@@ -77,7 +82,7 @@ public class ConfigurationValidator {
         }
 
         errors.addAll(validateInputs(config));
-        errors.addAll(validateExpectedDeltaFile(config));
+        errors.addAll(validateExpectedDeltaFiless(config));
 
         if (errors.isEmpty() && flowsStarted) {
             try {
@@ -103,12 +108,16 @@ public class ConfigurationValidator {
         return errors;
     }
 
-    private List<String> validateExpectedDeltaFile(Configuration config) {
-        if (config.getExpectedDeltaFile() == null) {
+    private List<String> validateExpectedDeltaFiless(Configuration config) {
+        if (config.getExpectedDeltaFiles() == null || config.getExpectedDeltaFiles().isEmpty()) {
             return List.of("Test configuration is missing expectedDeltaFile");
         }
 
-        return config.getExpectedDeltaFile().validate(0);
+        List<String> errors = new ArrayList<>();
+        for (ExpectedDeltaFile expectedDeltaFile : config.getExpectedDeltaFiles()) {
+            expectedDeltaFile.validate(0);
+        }
+        return errors;
     }
 
     private Collection<String> checkPlugins(List<PluginCoordinates> plugins) {

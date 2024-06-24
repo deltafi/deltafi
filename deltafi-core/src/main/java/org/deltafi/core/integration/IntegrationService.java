@@ -121,11 +121,12 @@ public class IntegrationService {
             } else {
                 TestResult started = TestResult.builder()
                         .id(testId)
+                        .description(config.getDescription())
                         .status(TestStatus.STARTED)
                         .start(startTime)
                         .build();
                 testResultRepo.save(started);
-                evaluate(testId, ingressResults.getFirst(), config);
+                evaluate(testId, ingressResults, config);
             }
         } catch (JsonProcessingException e) {
             errors.add("Failed to parse input metadata: " + e.getMessage());
@@ -168,14 +169,17 @@ public class IntegrationService {
         return metadataMap;
     }
 
-    public void evaluate(String testId, IngressResult ingressed, Configuration config) {
+    public void evaluate(String testId, List<IngressResult> ingressResults, Configuration config) {
+        List<UUID> ingressDids = ingressResults.stream()
+                .map(IngressResult::did)
+                .toList();
         if (executor == null) {
             executor = Executors.newCachedThreadPool();
         }
         executor.submit(() -> {
             TestEvaluator testEvaluator = new TestEvaluator(deltaFilesService, contentStorageService, testResultRepo);
             try {
-                testEvaluator.waitForDeltaFile(testId, ingressed, config.getExpectedDeltaFile(), config.getTimeout());
+                testEvaluator.waitForDeltaFile(testId, config.getDescription(), ingressDids, config.getExpectedDeltaFiles(), config.getTimeout());
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 log.error("Unexpected exception caught from TestEvaluator: ", e);

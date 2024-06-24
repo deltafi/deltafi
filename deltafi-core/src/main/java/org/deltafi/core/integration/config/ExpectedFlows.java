@@ -19,26 +19,32 @@ package org.deltafi.core.integration.config;
 
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
+import org.deltafi.common.types.DeltaFileFlowState;
 import org.deltafi.common.types.FlowType;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Data
-public class ExpectedActions {
+public class ExpectedFlows {
     private String flow;
     private FlowType type;
+    private DeltaFileFlowState state;
     private List<String> actions;
 
     public List<String> validate() {
         List<String> errors = new ArrayList<>();
 
         if (StringUtils.isEmpty(flow)) {
-            errors.add("ExpectedActions missing flow");
+            errors.add("ExpectedFlows missing flow");
         }
 
         if (type == null) {
-            errors.add("ExpectedActions missing type");
+            errors.add("ExpectedFlows missing type");
+        }
+
+        if (state == null) {
+            state = DeltaFileFlowState.COMPLETE;
         }
 
         if (actions == null) {

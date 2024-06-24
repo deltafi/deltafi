@@ -67,7 +67,7 @@ class IntegrationServiceTest {
 
         assertEquals("unarchive-passthrough-rest-data-source", c.getInputs().getFirst().getFlow());
 
-        assertEquals(3, c.getExpectedDeltaFile().getChildCount());
+        assertEquals(3, c.getExpectedDeltaFiles().getFirst().getChildCount());
 
         List<String> mockErrors = new ArrayList<>();
         mockErrors.add("bad plugin");
@@ -90,7 +90,8 @@ class IntegrationServiceTest {
         assertEquals("file-1.txt", c.getInputs().get(0).getIngressFileName());
         assertEquals("file-2.txt", c.getInputs().get(1).getIngressFileName());
 
-        assertEquals(3, c.getExpectedDeltaFile().getChildCount());
+        assertEquals(3, c.getExpectedDeltaFiles().get(0).getChildCount());
+        assertEquals(1, c.getExpectedDeltaFiles().get(1).getChildCount());
 
         List<String> mockErrors = new ArrayList<>();
         mockErrors.add("bad plugin");
