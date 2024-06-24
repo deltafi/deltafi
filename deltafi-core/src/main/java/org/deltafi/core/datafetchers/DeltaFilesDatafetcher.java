@@ -20,10 +20,7 @@ package org.deltafi.core.datafetchers;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.netflix.graphql.dgs.DgsComponent;
-import com.netflix.graphql.dgs.DgsMutation;
-import com.netflix.graphql.dgs.DgsQuery;
-import com.netflix.graphql.dgs.InputArgument;
+import com.netflix.graphql.dgs.*;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.SelectedField;
@@ -57,6 +54,16 @@ public class DeltaFilesDatafetcher {
     this.deltaFilesService = deltaFilesService;
     this.contentStorageService = contentStorageService;
     this.dataSourceService = dataSourceService;
+  }
+
+  @DgsData(parentType = "DeltaFile", field = "annotations")
+  public Object getAnnotations(DgsDataFetchingEnvironment dfe) {
+    DeltaFile deltaFile = dfe.getSource();
+    if (deltaFile.getAnnotations() == null) {
+      return Collections.emptyMap();
+    }
+    return deltaFile.getAnnotations().stream()
+            .collect(Collectors.toMap(Annotation::getKey, Annotation::getValue));
   }
 
   @DgsQuery

@@ -26,7 +26,6 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -91,7 +90,7 @@ class CompletedDeltaFileEvent implements AnalyticEvent {
         this.filteredFiles = deltafile.getFiltered() ? 1L : 0L;
         this.cancelledFiles = deltafile.getStage() == DeltaFileStage.CANCELLED ? 1L : 0L;
         this.annotations = deltafile.annotationMap();
-        this.egresses = deltafile.egressFlowNames();
+        this.egresses = deltafile.getEgressFlows();
     }
 
     public void addTo(@NotNull PreparedStatement statement) {

@@ -508,7 +508,8 @@ public class DeltaFile {
     return annotations.stream().collect(Collectors.toMap(Annotation::getKey, Annotation::getValue));
   }
 
-  public List<String> egressFlowNames() {
+  @Transient
+  public List<String> getEgressFlows() {
     return flows.stream().filter(f -> f.getType() == FlowType.EGRESS).map(DeltaFileFlow::getName).distinct().toList();
   }
 }

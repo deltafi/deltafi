@@ -114,9 +114,9 @@ class StateMachineTest {
         assertThat(actionInputs.getLast().getActionContext().getFlowName()).isEqualTo(EGRESS_FLOW + "2");
         assertThat(actionInputs.getLast().getActionContext().getActionName()).isEqualTo(EGRESS_ACTION + "2");
         assertThat(deltaFile.getStage()).isEqualTo(DeltaFileStage.IN_FLIGHT);
-        assertThat(deltaFile.egressFlowNames()).hasSize(2);
-        assertThat(deltaFile.egressFlowNames().getFirst()).isEqualTo(EGRESS_FLOW + "1");
-        assertThat(deltaFile.egressFlowNames().getLast()).isEqualTo(EGRESS_FLOW + "2");
+        assertThat(deltaFile.getEgressFlows()).hasSize(2);
+        assertThat(deltaFile.getEgressFlows().getFirst()).isEqualTo(EGRESS_FLOW + "1");
+        assertThat(deltaFile.getEgressFlows().getLast()).isEqualTo(EGRESS_FLOW + "2");
     }
 
     @Test
