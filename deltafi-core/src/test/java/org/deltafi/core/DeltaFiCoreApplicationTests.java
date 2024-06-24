@@ -2156,7 +2156,10 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile2 = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, MONGO_NOW.plusSeconds(2), MONGO_NOW.plusSeconds(2));
 		deltaFileRepo.save(deltaFile2);
 
-		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 1, new DeltaFilesFilter(), null, null);
+		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 1, DeltaFilesFilter.newBuilder()
+				.modifiedAfter(MONGO_NOW.minusYears(1))
+				.modifiedBefore(MONGO_NOW.plusYears(1))
+				.build(), null, null);
 		assertEquals(1, deltaFiles.getCount());
 		assertEquals(2, deltaFiles.getTotalCount());
 

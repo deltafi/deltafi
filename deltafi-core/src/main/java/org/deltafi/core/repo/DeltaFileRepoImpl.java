@@ -80,7 +80,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String REQUEUE_COUNT = "requeueCount";
     public static final String NEXT_AUTO_RESUME = "nextAutoResume";
     public static final String NORMALIZED_NAME = "normalizedName";
-    public static final String FLOWS_INPUT_METADATA = "flows.input.metadata";
     public static final String ACTIONS_NAME = "flows.actions.name";
     public static final String ACTIONS_STATE = "flows.actions.state";
     private static final String COLLECTION = "deltaFiles";
@@ -523,7 +522,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         CriteriaQuery<DeltaFile> query = cb.createQuery(DeltaFile.class);
         Root<DeltaFile> root = query.from(DeltaFile.class);
 
-        List<Predicate> predicates = buildDeltaFilesCriteria(cb, root, query, filter);
+        List<Predicate> predicates = buildDeltaFilesCriteria(cb, root, filter);
         query.where(cb.and(predicates.toArray(new Predicate[0])));
 
         if (orderBy == null) {
@@ -556,9 +555,11 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         if (deltaFileList.size() < limit) {
             deltaFiles.setTotalCount(offset + deltaFileList.size());
         } else {
-            CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
+            CriteriaBuilder countCb = entityManager.getCriteriaBuilder();
+            CriteriaQuery<Long> countQuery = countCb.createQuery(Long.class);
             Root<DeltaFile> countRoot = countQuery.from(DeltaFile.class);
-            countQuery.select(cb.count(countRoot)).where(cb.and(predicates.toArray(new Predicate[0])));
+            List<Predicate> countPredicates = buildDeltaFilesCriteria(countCb, countRoot, filter);
+            countQuery.select(countCb.count(countRoot)).where(countCb.and(countPredicates.toArray(new Predicate[0])));
             Long total = entityManager.createQuery(countQuery).getSingleResult();
             deltaFiles.setTotalCount(total.intValue());
         }
@@ -566,7 +567,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         return deltaFiles;
     }
 
-    private List<Predicate> buildDeltaFilesCriteria(CriteriaBuilder cb, Root<DeltaFile> root, CriteriaQuery<DeltaFile> query, DeltaFilesFilter filter) {
+    private List<Predicate> buildDeltaFilesCriteria(CriteriaBuilder cb, Root<DeltaFile> root, DeltaFilesFilter filter) {
         List<Predicate> predicates = new ArrayList<>();
 
         if (filter == null) {
@@ -583,7 +584,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (filter.getEgressFlows() != null && !filter.getEgressFlows().isEmpty()) {
-            Subquery<Long> subquery = query.subquery(Long.class);
+            Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
             Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
             Join<DeltaFile, DeltaFileFlow> subFlowJoin = subRoot.join("flows");
 
@@ -613,7 +614,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         if (filter.getAnnotations() != null && !filter.getAnnotations().isEmpty()) {
             for (KeyValue keyValue : filter.getAnnotations()) {
-                Subquery<Long> subquery = query.subquery(Long.class);
+                Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
                 Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
                 Join<DeltaFile, Annotation> subAnnotationJoin = subRoot.join("annotations");
 
@@ -649,7 +650,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         if (filter.getActions() != null && !filter.getActions().isEmpty()) {
             for (String actionName : filter.getActions()) {
-                Subquery<Long> subquery = query.subquery(Long.class);
+                Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
                 Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
                 Join<DeltaFile, DeltaFileFlow> subFlowJoin = subRoot.join("flows");
                 Join<DeltaFileFlow, Action> subActionJoin = subFlowJoin.join("actions");
@@ -664,7 +665,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (filter.getPendingAnnotations() != null) {
-            Subquery<Long> subquery = query.subquery(Long.class);
+            Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
             Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
             Join<DeltaFile, DeltaFileFlow> subFlowJoin = subRoot.join("flows");
 
@@ -682,7 +683,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (filter.getErrorCause() != null) {
-            Subquery<Long> subquery = query.subquery(Long.class);
+            Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
             Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
             Join<DeltaFile, DeltaFileFlow> subFlowJoin = subRoot.join("flows");
             Join<DeltaFileFlow, Action> subActionJoin = subFlowJoin.join("actions");
@@ -696,7 +697,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (filter.getFilteredCause() != null) {
-            Subquery<Long> subquery = query.subquery(Long.class);
+            Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
             Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
             Join<DeltaFile, DeltaFileFlow> subFlowJoin = subRoot.join("flows");
             Join<DeltaFileFlow, Action> subActionJoin = subFlowJoin.join("actions");
@@ -710,7 +711,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (filter.getErrorAcknowledged() != null) {
-            Subquery<Long> subquery = query.subquery(Long.class);
+            Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
             Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
             Join<DeltaFile, DeltaFileFlow> subFlowJoin = subRoot.join("flows");
             Join<DeltaFileFlow, Action> subActionJoin = subFlowJoin.join("actions");
@@ -769,7 +770,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
 
         if (filter.getTestMode() != null) {
-            Subquery<Long> subquery = query.subquery(Long.class);
+            Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
             Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
             Join<DeltaFile, DeltaFileFlow> subFlowJoin = subRoot.join("flows");
 
