@@ -18,14 +18,11 @@
 
 <template>
   <span v-if="(_.isEqual(rowData.flowStatus.state, 'RUNNING') && $hasPermission('FlowStop')) || (_.isEqual(rowData.flowStatus.state, 'STOPPED') && $hasPermission('FlowStart'))">
-    <ConfirmPopup></ConfirmPopup>
     <ConfirmPopup :group="'egressAction__' + rowData.name">
       <template #message="slotProps">
         <div class="flex btn-group p-4">
           <i :class="slotProps.message.icon" style="font-size: 1.5rem"></i>
-          <p class="pl-2">
-            {{ slotProps.message.message }}
-          </p>
+          <p class="pl-2" v-html="slotProps.message.message" />
         </div>
       </template>
     </ConfirmPopup>
@@ -71,15 +68,12 @@ const confirmationPopup = async (event, name, state) => {
     confirm.require({
       target: event.currentTarget,
       group: `egressAction__${name}`,
-      message: `Stop the '${name}' egress?`,
+      message: `Stop the <b>${name}</b> egress?`,
       acceptLabel: "Stop",
       rejectLabel: "Cancel",
       icon: "pi pi-exclamation-triangle",
-      accept: async () => {
-        notify.info("Stopping Egress", `Stopping ${name} egress.`, 3000);
-        await toggleFlowState(name, state);
-      },
-      reject: () => {},
+      accept: () => toggleFlowState(name, state),
+      reject: () => { },
     });
   } else {
     await toggleFlowState(name, state);
@@ -99,8 +93,10 @@ const tooltip = computed(() => {
 const toggleFlowState = async (flowName, newFlowState) => {
   if (!configureEgressActionDialog.value) {
     if (_.isEqual(newFlowState, "STOPPED")) {
+      notify.info("Starting Egress", `Starting <b>${flowName}</b> egress.`, 3000);
       await startEgressFlowByName(flowName);
     } else {
+      notify.info("Stopping Egress", `Stopping <b>${flowName}</b> egress.`, 3000);
       await stopEgressFlowByName(flowName);
     }
     emit("change");

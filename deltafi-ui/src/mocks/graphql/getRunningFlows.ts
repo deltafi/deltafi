@@ -21,18 +21,43 @@ const generateData = () => {
     transform: [
       {
         name: "mock_stix1_x",
+        subscribe: [
+          {
+            topic: "mock_stix1_x",
+          }
+        ]
       },
       {
         name: "mock_passthrough",
+        subscribe: [
+          {
+            topic: "mock_passthrough",
+          }
+        ]
       },
       {
         name: "mock_smoke",
+        subscribe: [
+          {
+            topic: "mock_smoke",
+          }
+        ]
       },
       {
         name: "mock_stix2_1",
+        subscribe: [
+          {
+            topic: "mock_stix2_1",
+          }
+        ]
       },
       {
         name: "mock_decompress-passthrough",
+        subscribe: [
+          {
+            topic: "mock_decompress-passthrough",
+          }
+        ]
       },
     ],
   };

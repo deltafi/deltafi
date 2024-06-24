@@ -18,18 +18,15 @@
 
 <template>
   <span v-if="(_.isEqual(rowData.flowStatus.state, 'RUNNING') && $hasPermission('FlowStop')) || (_.isEqual(rowData.flowStatus.state, 'STOPPED') && $hasPermission('FlowStart'))">
-    <ConfirmPopup></ConfirmPopup>
     <ConfirmPopup :group="rowData.flowType + '_' + rowData.name">
       <template #message="slotProps">
         <div class="flex btn-group p-4">
           <i :class="slotProps.message.icon" style="font-size: 1.5rem"></i>
-          <p class="pl-2">
-            {{ slotProps.message.message }}
-          </p>
+          <p class="pl-2" v-html="slotProps.message.message" />
         </div>
       </template>
     </ConfirmPopup>
-    <InputSwitch v-tooltip.top="rowData.flowStatus.state" :model-value="rowData.flowStatus.state" false-value="STOPPED" true-value="RUNNING" class="p-button-sm" @click="confirmationPopup($event, rowData.name, rowData.flowStatus.state, rowData.flowType)" />
+    <InputSwitch v-tooltip.top="rowData.flowStatus.state" :model-value="rowData.flowStatus.state" false-value="STOPPED" true-value="RUNNING" class="p-button-sm" @click="confirmationPopup($event, rowData.name, rowData.flowStatus.state)" />
   </span>
   <span v-else>
     <Button :label="rowData.flowStatus.state" :class="buttonClass" style="width: 5.5rem" disabled />
@@ -48,7 +45,7 @@ import { useConfirm } from "primevue/useconfirm";
 import _ from "lodash";
 
 const confirm = useConfirm();
-const { startTransformFlowByName, stopTransformFlowByName, startEgressFlowByName, stopEgressFlowByName } = useFlowQueryBuilder();
+const { startTransformFlowByName, stopTransformFlowByName } = useFlowQueryBuilder();
 const notify = useNotifications();
 
 const props = defineProps({
@@ -64,39 +61,30 @@ const buttonClass = computed(() => {
   return _.isEqual(rowData.value.flowStatus.state, "RUNNING") ? "p-button-primary" : "p-button-secondary";
 });
 
-const confirmationPopup = async (event, name, state, flowType) => {
+const confirmationPopup = async (event, name, state) => {
   if (_.isEqual(state, "RUNNING")) {
     confirm.require({
       target: event.currentTarget,
       group: `${rowData.value.flowType}_${rowData.value.name}`,
-      message: `Stop the ${name} flow?`,
+      message: `Stop the <b>${name}</b> flow?`,
       acceptLabel: "Stop",
       rejectLabel: "Cancel",
       icon: "pi pi-exclamation-triangle",
-      accept: async () => {
-        notify.info("Stopping Flow", `Stopping ${flowType} flow ${name}.`, 3000);
-        await toggleFlowState(name, state, flowType);
-      },
+      accept: () => toggleFlowState(name, state),
       reject: () => { },
     });
   } else {
-    await toggleFlowState(name, state, flowType);
+    await toggleFlowState(name, state);
   }
 };
 
-const toggleFlowState = async (flowName, newflowState, flowType) => {
-  if (_.isEqual(flowType, "transform")) {
-    if (_.isEqual(newflowState, "STOPPED")) {
-      await startTransformFlowByName(flowName);
-    } else {
-      await stopTransformFlowByName(flowName);
-    }
-  } else if (_.isEqual(flowType, "egress")) {
-    if (_.isEqual(newflowState, "STOPPED")) {
-      await startEgressFlowByName(flowName);
-    } else {
-      await stopEgressFlowByName(flowName);
-    }
+const toggleFlowState = async (flowName, newflowState) => {
+  if (_.isEqual(newflowState, "STOPPED")) {
+    notify.info("Starting Flow", `Stopping <b>${flowName}</b> flow.`, 3000);
+    await startTransformFlowByName(flowName);
+  } else {
+    notify.info("Stopping Flow", `Stopping <b>${flowName}</b> flow.`, 3000);
+    await stopTransformFlowByName(flowName);
   }
   rowData.value.flowStatus.state = _.isEqual(rowData.value.flowStatus.state, "RUNNING") ? "STOPPED" : "RUNNING";
 };
