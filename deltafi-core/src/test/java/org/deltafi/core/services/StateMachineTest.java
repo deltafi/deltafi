@@ -47,6 +47,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.deltafi.common.constant.DeltaFiConstants.SYNTHETIC_EGRESS_ACTION_FOR_TEST;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @SuppressWarnings("unused")
@@ -78,14 +79,14 @@ class StateMachineTest {
         DeltaFile deltaFile = Util.emptyDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW);
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
 
-        Mockito.when(transformFlowService.getRunningFlowByName(TRANSFORM_FLOW)).thenReturn(TransformFlowMaker.builder()
+        when(transformFlowService.getRunningFlowByName(TRANSFORM_FLOW)).thenReturn(TransformFlowMaker.builder()
                 .name(TRANSFORM_FLOW).flowState(FlowState.RUNNING).build().makeTransformFlow());
         EgressFlow egressFlow1 = EgressFlowMaker.builder()
                 .egressActionName(EGRESS_ACTION + "1").flowState(FlowState.RUNNING).build().makeEgressFlow();
-        Mockito.when(egressFlowService.getRunningFlowByName(EGRESS_FLOW + "1")).thenReturn(egressFlow1);
+        when(egressFlowService.getRunningFlowByName(EGRESS_FLOW + "1")).thenReturn(egressFlow1);
         EgressFlow egressFlow2 = EgressFlowMaker.builder()
                 .egressActionName(EGRESS_ACTION + "2").flowState(FlowState.RUNNING).build().makeEgressFlow();
-        Mockito.when(egressFlowService.getRunningFlowByName(EGRESS_FLOW + "2")).thenReturn(egressFlow2);
+        when(egressFlowService.getRunningFlowByName(EGRESS_FLOW + "2")).thenReturn(egressFlow2);
 
         DeltaFileFlow deltaFileTransformFlow = deltaFile.getFlows().getFirst();
         deltaFileTransformFlow.setType(FlowType.TRANSFORM);
@@ -99,10 +100,10 @@ class StateMachineTest {
         TreeSet<DeltaFileFlow> deltaFileEgressFlows = new TreeSet<>(Comparator.comparing(DeltaFileFlow::getName));
         deltaFileEgressFlows.add(deltaFileEgressFlow1);
         deltaFileEgressFlows.add(deltaFileEgressFlow2);
-        Mockito.when(publisherService.subscribers(Mockito.any(), Mockito.any(), Mockito.any()))
+        when(publisherService.subscribers(Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(deltaFileEgressFlows, Collections.emptySet());
 
-        Mockito.when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(new DeltaFiProperties());
+        when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(new DeltaFiProperties());
 
         StateMachineInput stateMachineInput = new StateMachineInput(deltaFile, deltaFileTransformFlow);
         List<WrappedActionInput> actionInputs = stateMachine.advance(List.of(stateMachineInput));
@@ -130,10 +131,10 @@ class StateMachineTest {
                 .name(TRANSFORM_FLOW)
                 .testMode(true)
                 .flowState(FlowState.RUNNING).build().makeTransformFlow();
-        Mockito.when(transformFlowService.getRunningFlowByName(TRANSFORM_FLOW)).thenReturn(transformFlow);
+        when(transformFlowService.getRunningFlowByName(TRANSFORM_FLOW)).thenReturn(transformFlow);
 
         EgressFlow egressFlowConfig = EgressFlowMaker.builder().build().makeEgressFlow();
-        Mockito.when(egressFlowService.getRunningFlowByName("egressFlow"))
+        when(egressFlowService.getRunningFlowByName("egressFlow"))
                 .thenReturn(egressFlowConfig);
 
         DeltaFileFlow egressFlow = new DeltaFileFlow();
@@ -142,10 +143,10 @@ class StateMachineTest {
         egressFlow.setTestMode(true);
         egressFlow.setTestModeReason("test mode reason");
         egressFlow.setPendingActions(new ArrayList<>(egressFlowConfig.allActionConfigurations().stream().map(ActionConfiguration::getName).toList()));
-        Mockito.when(publisherService.subscribers(transformFlow, deltaFile, deltaFileFlow))
+        when(publisherService.subscribers(transformFlow, deltaFile, deltaFileFlow))
                 .thenReturn(Set.of(egressFlow));
 
-        Mockito.when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(new DeltaFiProperties());
+        when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(new DeltaFiProperties());
 
         StateMachineInput stateMachineInput = new StateMachineInput(deltaFile, deltaFileFlow);
         List<WrappedActionInput> actionInputs = stateMachine.advance(List.of(stateMachineInput));
@@ -167,18 +168,19 @@ class StateMachineTest {
 
         DeltaFileFlow deltaFileFlow = deltaFile.getFlows().getFirst();
         deltaFileFlow.setType(FlowType.TRANSFORM);
-        ActionConfiguration transformAction = new ActionConfiguration("CollectingTransformAction",
-                ActionType.TRANSFORM, "org.deltafi.action.SomeCollectingTransformAction");
+        ActionConfiguration transformAction = new ActionConfiguration("CollectingTransformAction", ActionType.TRANSFORM,
+                "org.deltafi.action.SomeCollectingTransformAction");
         transformAction.setCollect(new CollectConfiguration(Duration.parse("PT1S"), null, 3, null));
+        when(transformFlowService.findActionConfig(TRANSFORM_FLOW, transformAction.getName())).thenReturn(transformAction);
         // add the transform action as the next action config to use in the DeltaFileFlow
-        deltaFileFlow.setPendingActions(List.of(transformAction.getName()));
+        deltaFileFlow.setPendingActions(new ArrayList<>(List.of(transformAction.getName())));
 
         CollectEntry collectEntry = new CollectEntry();
         collectEntry.setCount(2);
-        Mockito.when(collectEntryService.upsertAndLock(Mockito.any(), Mockito.any(), Mockito.isNull(), Mockito.eq(3),
+        when(collectEntryService.upsertAndLock(Mockito.any(), Mockito.any(), Mockito.isNull(), Mockito.eq(3),
                 Mockito.eq(0), Mockito.eq(deltaFile.getDid()))).thenReturn(collectEntry);
 
-        Mockito.when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(new DeltaFiProperties());
+        when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(new DeltaFiProperties());
 
         StateMachineInput stateMachineInput = new StateMachineInput(deltaFile, deltaFileFlow);
         List<WrappedActionInput> actionInvocations = stateMachine.advance(List.of(stateMachineInput));
@@ -195,7 +197,7 @@ class StateMachineTest {
     @Test
     public void marksFlowAsCircularAtMaxDepth() {
         DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
-        Mockito.when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
+        when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
 
         DeltaFile deltaFile = Util.emptyDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW);
         deltaFile.setStage(DeltaFileStage.IN_FLIGHT);
