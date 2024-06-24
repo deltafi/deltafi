@@ -28,7 +28,6 @@ import org.deltafi.common.types.*;
 import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.collect.ScheduledCollectService;
-import org.deltafi.core.generated.types.DeltaFilesFilter;
 import org.deltafi.core.generated.types.RetryResult;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.repo.*;
@@ -48,7 +47,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Stream;
 
-import static org.deltafi.core.repo.DeltaFileRepoImpl.FLOWS_INPUT_METADATA;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -202,12 +200,8 @@ class DeltaFilesServiceTest {
         ingressFlow.getActions().add(action);
 
         List<UUID> dids = List.of(deltaFile1.getDid(), deltaFile2.getDid(), deltaFile3.getDid(), UUID.randomUUID());
-        DeltaFilesFilter filter = new DeltaFilesFilter();
-        filter.setDids(dids);
-
-        DeltaFiles deltaFiles = new DeltaFiles(0, 3, 3, List.of(deltaFile1, deltaFile2, deltaFile3));
-        when(deltaFileRepo.deltaFiles(0, dids.size(), filter, null,
-                List.of(FLOWS_INPUT_METADATA))).thenReturn(deltaFiles);
+        List<DeltaFileFlow> deltaFileFlows = List.of(deltaFile1.getFlows().getFirst(), deltaFile2.getFlows().getFirst(), deltaFile3.getFlows().getFirst());
+        when(deltaFileFlowRepo.findAllByDeltaFileIdsAndFlowZero(dids)).thenReturn(deltaFileFlows);
 
         List<UniqueKeyValues> uniqueMetadata = deltaFilesService.sourceMetadataUnion(dids);
         assertEquals(4, uniqueMetadata.size());
