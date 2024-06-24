@@ -139,6 +139,6 @@ public abstract class Flow {
     }
 
     public boolean nameMatches(ActionConfiguration action, String named) {
-        return named.equals(action.getName());
+        return named != null && named.equals(action.getName());
     }
 }
