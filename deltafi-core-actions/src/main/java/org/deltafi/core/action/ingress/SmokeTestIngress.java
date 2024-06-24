@@ -42,15 +42,15 @@ public class SmokeTestIngress extends TimedIngressAction<SmokeTestParameters> {
             index = 1 + Integer.parseInt(context.getMemo());
         }
 
-        boolean sleepyTime = random.nextInt(10) == 0;
+        boolean sleepyTime = params.getDelayChance() > 0 && random.nextInt(params.getDelayChance()) == 0;
         if (sleepyTime) {
             try {
-                Thread.sleep(10000);
+                Thread.sleep(Math.max(0, params.getDelayMS()));
             } catch (InterruptedException ignored) {}
         }
-        boolean executeImmediate = !sleepyTime && random.nextInt(10) == 0;
+        boolean executeImmediate = !sleepyTime && params.getTriggerImmediateChance() > 0 && random.nextInt(params.getTriggerImmediateChance()) == 0;
 
-        String filename = context.getFlowName() + "-" + index + (executeImmediate ? " (trigger immediate)" : "") + (sleepyTime ? " (sleepy)" : "");
+        String filename = context.getFlowName() + "-" + index + (executeImmediate ? " (trigger immediate)" : "") + (sleepyTime ? " (delayed)" : "");
 
         IngressResultItem resultItem = new IngressResultItem(context, filename);
 
