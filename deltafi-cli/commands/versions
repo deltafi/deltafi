@@ -35,8 +35,8 @@ ${@}
 ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
 
-API_V1=$(_api_v1)
-API_URL="${API_V1}/versions"
+API_V2=$(_api_v2)
+API_URL="${API_V2}/versions"
 
 truncate -s 0 ${TMPFILE}
 RESPONSE_CODE=$(curl -s --connect-timeout 3 -o ${TMPFILE} -w "%{http_code}" -H "Content-Type: application/json" -H "$PERMISSION" -H "$CLI_USER" "${API_URL}" 2>/dev/null)

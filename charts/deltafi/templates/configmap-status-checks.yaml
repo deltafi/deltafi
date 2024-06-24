@@ -13,7 +13,6 @@ data:
     - deltafi-valkey-master
   DeploymentCheck: |
     expected_deployments:
-    - deltafi-api
     - deltafi-core
     - deltafi-core-actions
     - deltafi-docs
@@ -34,7 +33,6 @@ data:
     - deltafi-ui-ingress
   ServiceCheck: |
     expected_services:
-    - deltafi-api-service
     - deltafi-core-service
     - deltafi-egress-sink-service
     - deltafi-grafana

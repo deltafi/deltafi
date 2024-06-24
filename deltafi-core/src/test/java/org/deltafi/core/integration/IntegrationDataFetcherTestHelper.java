@@ -29,6 +29,7 @@ public class IntegrationDataFetcherTestHelper {
 
     private static final GetAllIntegrationTestsProjectionRoot GET_ALL_PROJECTION = new GetAllIntegrationTestsProjectionRoot()
             .id()
+            .description()
             .start()
             .stop()
             .errors()
@@ -37,6 +38,7 @@ public class IntegrationDataFetcherTestHelper {
 
     private static final GetIntegrationTestProjectionRoot GET_UNT_TEST_PROJECTION = new GetIntegrationTestProjectionRoot()
             .id()
+            .description()
             .start()
             .stop()
             .errors()
@@ -45,6 +47,7 @@ public class IntegrationDataFetcherTestHelper {
 
     private static final LaunchIntegrationTestProjectionRoot LAUNCH_INT_TEST_PROJECTION = new LaunchIntegrationTestProjectionRoot()
             .id()
+            .description()
             .start()
             .stop()
             .errors()

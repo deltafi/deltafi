@@ -18,7 +18,7 @@ spec:
         app: deltafi-core
         group: deltafi-core
     spec:
-      {{- include "initContainersWaitForMongo" . | nindent 6 }}
+      {{- include "initContainersWaitForDatabases" . | nindent 6 }}
       containers:
       - name: deltafi-core
         image: {{ .Values.deltafi.core.image }}

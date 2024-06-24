@@ -17,14 +17,15 @@
  */
 package org.deltafi.common.rules;
 
+import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.Publisher;
 import org.deltafi.common.types.Rule;
 import org.deltafi.common.types.Subscriber;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 public class RuleValidator {
 
@@ -35,40 +36,64 @@ public class RuleValidator {
     }
 
     /**
-     * Validate all the publish rules can be evaluated
+     * Validate that publish rules are set and the rules can be evaluated
      * @param publisher to validate
      * @return list of errors
      */
     public List<String> validatePublisher(Publisher publisher) {
-        if (publisher == null || publisher.publishRules() == null || publisher.publishRules().getRules() == null) {
-            return List.of();
+        if (publisher == null) {
+            return List.of("Publisher was null");
+        } else if (publisher.publishRules() == null) {
+            return List.of("Publisher was missing publish section");
+        } else if (missingRules(publisher.publishRules().getRules())) {
+            return List.of("Publisher was missing publish rules");
         }
 
-        return validateRules(publisher.publishRules().getRules().stream().map(Rule::getCondition).collect(Collectors.toSet()));
+        return validateRules(publisher.publishRules().getRules());
     }
 
+    /**
+     * Validate that the subscribe rules are set and the rules can be evaluated
+     * @param subscriber to validate
+     * @return list of errors
+     */
     public List<String> validateSubscriber(Subscriber subscriber) {
-        if (subscriber == null || subscriber.subscribeRules() == null) {
-            return List.of("Missing subscribe");
+        if (subscriber == null) {
+            return List.of("Subscriber was null");
+        } else if (missingRules(subscriber.subscribeRules())) {
+            return List.of("Subscriber was missing subscribe rules");
         }
 
-        return validateRules(subscriber.subscribeRules().stream().map(Rule::getCondition).collect(Collectors.toSet()));
+        return validateRules(subscriber.subscribeRules());
+    }
+
+    private boolean missingRules(Collection<Rule> rules) {
+        return rules == null || rules.isEmpty();
+    }
+
+    private List<String> validateRules(Collection<Rule> rules) {
+        List<String> errors = new ArrayList<>();
+        for (Rule rule : rules) {
+            if (StringUtils.isBlank(rule.getTopic())) {
+                errors.add("Rules must provide a topic");
+            }
+            Optional.ofNullable(validateCondition(rule.getCondition())).ifPresent(errors::add);
+        }
+        return errors;
     }
 
     /**
      * Validate of each of the conditions
-     * @param conditions set of conditions to validate
+     * @param condition condition to validate
      * @return list of errors
      */
-    private List<String> validateRules(Set<String> conditions) {
-        List<String> errors = new ArrayList<>();
-        for (String condition : conditions) {
-            try {
-                ruleEvaluator.validateCondition(condition);
-            } catch (Exception e) {
-                errors.add(e.getMessage());
-            }
+    private String validateCondition(String condition) {
+        try {
+            ruleEvaluator.validateCondition(condition);
+        } catch (Exception e) {
+            return e.getMessage();
         }
-        return errors;
+
+        return null;
     }
 }

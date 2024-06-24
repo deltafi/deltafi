@@ -656,7 +656,7 @@ _enable_ui() {
   _conditional "Ingress operational" _annotated_subshell ${KUBECTL} wait --namespace ingress-nginx \
       --for=condition=ready pod \
       --selector=app.kubernetes.io/component=controller \
-      --timeout=90s
+      --timeout=180s
 }
 
 _verify_or_replace_fqdn() {

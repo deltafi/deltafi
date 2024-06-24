@@ -1,3 +1,4 @@
+description: This test shows multiple inputs, and multiple expected delta files
 plugins:
   - groupId: org.deltafi
     artifactId: deltafi-core-actions
@@ -20,43 +21,46 @@ inputs:
     base64Encoded: false
     data: Single line of text content
 timeout: PT3M
-expectedDeltaFile:
-  stage: COMPLETE
-  childCount: 3
-  expectedActions:
-    - flow: unarchive-passthrough-transform
-      type: TRANSFORM
-      actions: [ IngressAction, Unarchive, SplitContent ]
-  children:
+expectedDeltaFiles:
+  - stage: COMPLETE
+    childCount: 3
+    expectedFlows:
+      - flow: unarchive-passthrough-transform
+        type: TRANSFORM
+        actions: [ IngressAction, Unarchive, SplitContent ]
+    children:
 
-    - stage: COMPLETE
-      childCount: 0
-      parentCount: 1
-      expectedActions:
-        - flow: passthrough-transform
-          type: TRANSFORM
-          actions: [ Passthrough, PassthroughEgress ]
+      - stage: COMPLETE
+        childCount: 0
+        parentCount: 1
+        expectedFlows:
+          - flow: passthrough-transform
+            type: TRANSFORM
+            actions: [ Passthrough, PassthroughEgress ]
 
-    - stage: COMPLETE
-      childCount: 0
-      parentCount: 1
-      expectedActions:
-        - flow: passthrough-transform
-          type: TRANSFORM
-          actions: [ Passthrough, PassthroughEgress ]
+      - stage: COMPLETE
+        childCount: 0
+        parentCount: 1
+        expectedFlows:
+          - flow: passthrough-transform
+            type: TRANSFORM
+            actions: [ Passthrough, PassthroughEgress ]
 
-    - stage: COMPLETE
-      childCount: 0
-      parentCount: 1
-      expectedActions:
-        - flow: passthrough-transform
-          type: TRANSFORM
-          actions: [ Passthrough, PassthroughEgress ]
-      expectedContent:
-        flow: passthrough-egress
-        type: EGRESS
-        action: PassthroughEgress
-        data:
-          - name: test/c
-            value: >
-              Cccccccccccc.
+      - stage: COMPLETE
+        childCount: 0
+        parentCount: 1
+        expectedFlows:
+          - flow: passthrough-transform
+            type: TRANSFORM
+            actions: [ Passthrough, PassthroughEgress ]
+        expectedContent:
+          flow: passthrough-egress
+          type: EGRESS
+          action: PassthroughEgress
+          data:
+            - name: test/c
+              value: >
+                Cccccccccccc.
+
+  - stage: COMPLETE
+    childCount: 1

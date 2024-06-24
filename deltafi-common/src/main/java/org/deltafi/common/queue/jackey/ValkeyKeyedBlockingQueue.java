@@ -17,10 +17,7 @@
  */
 package org.deltafi.common.queue.jackey;
 
-import io.jackey.Jedis;
-import io.jackey.JedisPool;
-import io.jackey.Pipeline;
-import io.jackey.Protocol;
+import io.jackey.*;
 import io.jackey.params.ScanParams;
 import io.jackey.params.ZAddParams;
 import io.jackey.resps.ScanResult;
@@ -32,10 +29,7 @@ import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.OffsetDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * A keyed blocking queue based on the Jackey client library for Valkey.
@@ -246,6 +240,31 @@ public class ValkeyKeyedBlockingQueue {
     public String getByKey(String key) {
         try (Jedis jedis = jedisPool.getResource()) {
             return jedis.get(key);
+        }
+    }
+
+    /**
+     * Get the values for each of the given keys
+     * @param keys to get from valkey
+     * @return map of the keys to their stored values
+     */
+    public Map<String, Map<String, String>> getByKeys(List<String> keys) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            Pipeline pipeline = jedis.pipelined();
+
+            List<Response<Map<String, String>>> responses = keys.stream()
+                    .map(pipeline::hgetAll).toList();
+
+            pipeline.sync();
+
+            Map<String, Map<String, String>> results = new LinkedHashMap<>();
+
+            int i = 0;
+            for (String key : keys) {
+                results.put(key, responses.get(i).get());
+                i++;
+            }
+            return results;
         }
     }
 }

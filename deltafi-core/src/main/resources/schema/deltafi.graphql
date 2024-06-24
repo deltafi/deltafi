@@ -335,6 +335,7 @@ enum TestStatus {
 
 type TestResult {
   id: String
+  description: String
   status: TestStatus!
   start: DateTime
   stop: DateTime

@@ -1,3 +1,4 @@
+description: This test shows how to pass in binary data
 plugins:
   - groupId: org.deltafi
     artifactId: deltafi-core-actions
@@ -26,68 +27,70 @@ inputs:
       6fqvsu4Y1L9K17/Q/xj2VW9B/wAAAAAAAAAAAAAwWXcwyxBtACgAAA==
 
 timeout: PT3M
-expectedDeltaFile:
-  stage: COMPLETE
-  childCount: 3
-  expectedActions:
-    - flow: unarchive-passthrough-transform
-      type: TRANSFORM
-      actions: [ IngressAction, Unarchive, SplitContent ]
-  children:
+expectedDeltaFiles:
+  - stage: COMPLETE
+    childCount: 3
+    expectedFlows:
+      - flow: unarchive-passthrough-transform
+        type: TRANSFORM
+        actions: [ IngressAction, Unarchive, SplitContent ]
+    children:
 
-    - stage: COMPLETE
-      childCount: 0
-      parentCount: 1
-      expectedActions:
-        - flow: passthrough-transform
-          type: TRANSFORM
-          actions: [ Passthrough ]
-        - flow: passthrough-egress
+      - stage: COMPLETE
+        childCount: 0
+        parentCount: 1
+        expectedFlows:
+          - flow: passthrough-transform
+            type: TRANSFORM
+            state: COMPLETE
+            actions: [ Passthrough ]
+          - flow: passthrough-egress
+            type: EGRESS
+            state: COMPLETE
+            actions: [ PassthroughEgress ]
+        expectedContent:
+          flow: passthrough-egress
           type: EGRESS
-          actions: [ PassthroughEgress ]
-      expectedContent:
-        flow: passthrough-egress
-        type: EGRESS
-        action: PassthroughEgress
-        data:
-          - name: input/a
-            value: >
-              Aaaaaaaaaaaa;
+          action: PassthroughEgress
+          data:
+            - name: input/a
+              value: >
+                Aaaaaaaaaaaa;
 
-    - stage: COMPLETE
-      childCount: 0
-      parentCount: 1
-      expectedActions:
-        - flow: passthrough-transform
-          type: TRANSFORM
-          actions: [ Passthrough ]
-        - flow: passthrough-egress
+      - stage: COMPLETE
+        childCount: 0
+        parentCount: 1
+        expectedFlows:
+          - flow: passthrough-transform
+            type: TRANSFORM
+            actions: [ Passthrough ]
+          - flow: passthrough-egress
+            type: EGRESS
+            actions: [ PassthroughEgress ]
+        expectedContent:
+          flow: passthrough-egress
           type: EGRESS
-          actions: [ PassthroughEgress ]
-      expectedContent:
-        flow: passthrough-egress
-        type: EGRESS
-        action: PassthroughEgress
-        data:
-          - name: input/b
-            value: >
-              Bbbbbbbbbbbb,
+          action: PassthroughEgress
+          data:
+            - name: input/b
+              value: >
+                Bbbbbbbbbbbb,
 
-    - stage: COMPLETE
-      childCount: 0
-      parentCount: 1
-      expectedActions:
-        - flow: passthrough-transform
-          type: TRANSFORM
-          actions: [ Passthrough ]
-        - flow: passthrough-egress
+      - stage: COMPLETE
+        childCount: 0
+        parentCount: 1
+        expectedFlows:
+          - flow: passthrough-transform
+            type: TRANSFORM
+            actions: [ Passthrough ]
+          - flow: passthrough-egress
+            type: EGRESS
+            actions: [ PassthroughEgress ]
+        expectedContent:
+          flow: passthrough-egress
           type: EGRESS
-          actions: [ PassthroughEgress ]
-      expectedContent:
-        flow: passthrough-egress
-        type: EGRESS
-        action: PassthroughEgress
-        data:
-          - name: input/c
-            value: >
-              Cccccccccccc.
+          action: PassthroughEgress
+          data:
+            - name: input/c
+              value: >
+                Cccccccccccc.

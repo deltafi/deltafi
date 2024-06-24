@@ -1,0 +1,282 @@
+{{- if and .Values.deploy.operator .Values.serviceAccount.create }}
+{{- $allowedNamespaces := regexSplit " " (include "allowedNamespaces" .) -1 }}
+{{- range $index, $namespace := $allowedNamespaces }}
+{{- if and (eq $index 0) (not $.Values.disableClusterRole) }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $.Release.Name }}
+{{- with $.Values.clusterOwnerRefereces }}
+  ownerReferences:
+    {{- toYaml . | nindent 4 }}
+{{- end }}
+rules:
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs:
+  - get
+  - list
+- apiGroups: ["storage.k8s.io"]
+  resources: ["storageclasses"]
+  verbs: 
+  - get
+  - list
+- apiGroups: ["apiextensions.k8s.io"]
+  resources:
+  - customresourcedefinitions
+  resourceNames:
+  - sgconfigs.stackgres.io
+  - sgclusters.stackgres.io
+  - sginstanceprofiles.stackgres.io
+  - sgpgconfigs.stackgres.io
+  - sgpoolconfigs.stackgres.io
+  - sgbackups.stackgres.io
+  - sgbackupconfigs.stackgres.io
+  - sgobjectstorages.stackgres.io
+  - sgdbops.stackgres.io
+  - sgdistributedlogs.stackgres.io
+  - sgshardedclusters.stackgres.io
+  - sgshardedbackups.stackgres.io
+  - sgshardeddbops.stackgres.io
+  - sgscripts.stackgres.io
+  verbs:
+  - get
+- apiGroups: ["apiextensions.k8s.io"]
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+{{- if not $.Values.disableCrdsAndWebhooksUpdate }}
+- apiGroups:
+  - admissionregistration.k8s.io
+  resources:
+  - mutatingwebhookconfigurations
+  - validatingwebhookconfigurations
+  resourceNames:
+  - {{ $.Release.Name }}
+  verbs:
+  - get
+  - patch
+- apiGroups: ["apiextensions.k8s.io"]
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - create
+- apiGroups: ["apiextensions.k8s.io"]
+  resources:
+  - customresourcedefinitions
+  resourceNames:
+  - sgconfigs.stackgres.io
+  - sgclusters.stackgres.io
+  - sginstanceprofiles.stackgres.io
+  - sgpgconfigs.stackgres.io
+  - sgpoolconfigs.stackgres.io
+  - sgbackups.stackgres.io
+  - sgbackupconfigs.stackgres.io
+  - sgobjectstorages.stackgres.io
+  - sgdbops.stackgres.io
+  - sgdistributedlogs.stackgres.io
+  - sgshardedclusters.stackgres.io
+  - sgshardedbackups.stackgres.io
+  - sgshardeddbops.stackgres.io
+  - sgscripts.stackgres.io
+  verbs:
+  - patch
+  - update
+{{- end }}
+{{- if $.Values.prometheus.allowAutobind }}
+- apiGroups: ["apiextensions.k8s.io"]
+  resources:
+  - customresourcedefinitions
+  resourceNames:
+  - prometheuses.monitoring.coreos.com
+  verbs:
+  - get
+{{- end }}
+{{- if and $.Values.sgConfigNamespace (not (eq $.Values.sgConfigNamespace $.Release.Namespace)) }}
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources:
+  - clusterrolebindings
+  verbs:
+  - create
+  - watch
+  - list
+  - get
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - users
+  - groups
+  verbs:
+  - impersonate
+{{- end }}
+{{- end }}
+{{- if not (eq $namespace "_all_namespaces_placeholder") }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: {{ $namespace }}
+  name: {{ $.Release.Name }}
+rules:
+{{- end }}
+- apiGroups: ["", "apps", "extensions", "rbac.authorization.k8s.io", "batch"]
+  resources:
+  - pods
+  - pods/exec
+  - pods/log
+  - services
+  - endpoints
+  - endpoints/restricted
+  - persistentvolumeclaims
+  - configmaps
+  - secrets
+  - deployments
+  - statefulsets
+  - serviceaccounts
+  - namespaces
+  - roles
+  - rolebindings
+  - events
+  - cronjobs
+  - jobs
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - create
+  - delete
+  - deletecollection
+  - patch
+- apiGroups: ["stackgres.io"]
+  resources:
+  - sgclusters
+  - sgpgconfigs
+  - sginstanceprofiles
+  - sgpoolconfigs
+  - sgbackupconfigs
+  - sgbackups
+  - sgdistributedlogs
+  - sgdbops
+  - sgobjectstorages
+  - sgscripts
+  - sgshardedclusters
+  - sgshardedbackups
+  - sgshardeddbops
+  - sgconfigs
+  verbs:
+  - create
+  - watch
+  - list
+  - get
+  - update
+  - patch
+  - delete
+- apiGroups: ["stackgres.io"]
+  resources:
+  - sgconfigs/status
+  - sgclusters/status
+  - sgdistributedlogs/status
+  - sgclusters/finalizers
+  - sgpgconfigs/finalizers
+  - sginstanceprofiles/finalizers
+  - sgpoolconfigs/finalizers
+  - sgbackupconfigs/finalizers
+  - sgbackups/finalizers
+  - sgdistributedlogs/finalizers
+  - sgdbops/finalizers
+  - sgobjectstorages/finalizers
+  - sgscripts/finalizers
+  - sgshardedclusters/finalizers
+  - sgshardedbackups/finalizers
+  - sgshardeddbops/finalizers
+  - sgconfigs/finalizers
+  verbs:
+  - update
+- apiGroups: ["", "apps", "batch"]
+  resources:
+  - statefulsets/finalizers
+  - persistentvolumeclaims/finalizers
+  - deployments/finalizers
+  - services/finalizers
+  - endpoints/finalizers
+  - cronjobs/finalizers
+  - jobs/finalizers
+  - pods/finalizers
+  verbs:
+  - update
+- apiGroups: ["snapshot.storage.k8s.io"]
+  resources:
+  - volumesnapshots
+  verbs:
+  - list
+  - get
+  - watch
+  - create
+{{- if $.Values.prometheus.allowAutobind }}
+- apiGroups: ["apiextensions.k8s.io"]
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups: ["monitoring.coreos.com"]
+  resources:
+  - servicemonitors
+  - podmonitors
+  verbs:
+  - list
+  - get
+  - create
+  - delete
+  - update
+  - patch
+- apiGroups: ["monitoring.coreos.com"]
+  resources:
+  - prometheus
+  - prometheuses
+  - podmonitors
+  verbs:
+  - list
+  - get
+{{- end }}
+- apiGroups: ["shardingsphere.apache.org"]
+  resources:
+  - computenodes
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - create
+  - delete
+  - patch
+- apiGroups: ["keda.sh"]
+  resources:
+  - scaledobjects
+  - triggerauthentications
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - create
+  - delete
+  - patch
+- apiGroups: ["autoscaling.k8s.io"]
+  resources:
+  - verticalpodautoscalers
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - create
+  - delete
+  - patch
+{{- end }}
+{{- end }}

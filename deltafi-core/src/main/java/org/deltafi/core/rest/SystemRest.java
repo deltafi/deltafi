@@ -50,6 +50,6 @@ public class SystemRest {
     // TODO - Remove when everything points to the v2 api. This is currently used in v1/api versions endpoint when running in compose
     @GetMapping("appsByNode")
     public Map<String, List<AppName>> getAppsByNode() {
-        return systemService.getNodeInfo();
+        return systemService.getAppsByNode();
     }
 }

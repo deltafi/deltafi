@@ -120,7 +120,7 @@ type TransformFlowPlan {
   sourcePlugin: PluginCoordinates!
   subscribe: [Rule!]!
   transformActions: [ActionConfiguration!]
-  publish: PublishRules
+  publish: PublishRules!
 }
 
 input TransformFlowPlanInput {
@@ -129,7 +129,7 @@ input TransformFlowPlanInput {
   description: String!
   subscribe: [RuleInput!]!
   transformActions: [ActionConfigurationInput!]
-  publish: PublishRulesInput
+  publish: PublishRulesInput!
 }
 
 enum FlowState {

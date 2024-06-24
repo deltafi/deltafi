@@ -51,10 +51,10 @@ public class XmlEditorParameters extends ActionParameters {
             """)
     public List<String> xmlEditingCommands;
 
-    @JsonPropertyDescription("List of allowed media types. Supports wildcards (*) and defaults to 'application/xml'" +
+    @JsonPropertyDescription("List of allowed media types. Supports wildcards (*) and defaults to '*/xml'" +
             " if empty.")
-    @JsonProperty(defaultValue = "[\"application/xml\"]")
-    public List<String> mediaTypes = List.of("application/xml");
+    @JsonProperty(defaultValue = "[\"*/xml\"]")
+    public List<String> mediaTypes = List.of("*/xml");
 
     @JsonPropertyDescription("List of file patterns to consider. Supports wildcards (*) and if empty, all filenames" +
             " are considered.")

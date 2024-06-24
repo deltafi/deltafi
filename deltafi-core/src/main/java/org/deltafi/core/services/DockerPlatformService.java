@@ -44,7 +44,7 @@ public class DockerPlatformService implements PlatformService {
         this.dockerClient = dockerClient;
     }
 
-    public Map<String, List<AppName>> getNodeInfo() {
+    public Map<String, List<AppName>> appsByNode() {
         List<AppName> apps = getRunningContainers().stream()
                 .map(container -> new AppName(containerNameOrId(container)))
                 .toList();
@@ -55,6 +55,11 @@ public class DockerPlatformService implements PlatformService {
         return getRunningContainers().stream()
                 .map(this::containerToAppInfo)
                 .toList();
+    }
+
+    @Override
+    public String contentNodeName() {
+        return hostname;
     }
 
     private List<Container> getRunningContainers() {

@@ -184,6 +184,7 @@ type DeltaFiProperties {
     checks: SystemCheckProperties!
     ui: UiProperties!
     inMemoryQueueSize: Int!
+    maxFlowDepth: Int!
     setProperties: [String]!
 }
 
@@ -201,6 +202,7 @@ input DeltaFiPropertiesInput {
     checks: SystemCheckPropertiesInput!
     ui: UiPropertiesInput!
     inMemoryQueueSize: Int!
+    maxFlowDepth: Int!
     setProperties: [String]!
 }
 

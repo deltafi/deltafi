@@ -138,7 +138,7 @@ class DeltaFiCoreApplicationTests {
 	@Container
 	public static final MongoDBContainer MONGO_DB_CONTAINER = new MongoDBContainer("mongo:5.0.17");
 	@Container
-	public static final PostgreSQLContainer<?> POSTGRES_CONTAINER = new PostgreSQLContainer<>("postgres:16.2");
+	public static final PostgreSQLContainer<?> POSTGRES_CONTAINER = new PostgreSQLContainer<>("postgres:16.3");
 	public static final String SAMPLE_EGRESS_ACTION = "SampleEgressAction";
 	public static final String COLLECTING_TRANSFORM_ACTION = "CollectingTransformAction";
 	public static final String COLLECT_TOPIC = "collect-topic";
@@ -2783,8 +2783,8 @@ class DeltaFiCoreApplicationTests {
 		OffsetDateTime start = OffsetDateTime.of(2024, 1, 31, 12, 0, 30, 0, ZoneOffset.UTC);
 		OffsetDateTime stop = OffsetDateTime.of(2024, 1, 31, 12, 1, 30, 0, ZoneOffset.UTC);
 
-		TestResult testResult1 = new TestResult("1", TestStatus.SUCCESSFUL, start, stop, Collections.emptyList());
-		TestResult testResult2 = new TestResult("2", TestStatus.FAILED, start, stop, List.of("errors"));
+		TestResult testResult1 = new TestResult("1", "d1", TestStatus.SUCCESSFUL, start, stop, Collections.emptyList());
+		TestResult testResult2 = new TestResult("2", "d2", TestStatus.FAILED, start, stop, List.of("errors"));
 		testResultRepo.saveAll(List.of(testResult1, testResult2));
 
 		List<TestResult> listResult = IntegrationDataFetcherTestHelper.getAllIntegrationTests(dgsQueryExecutor);
@@ -3418,6 +3418,25 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile updated = deltaFilesService.getDeltaFile(completeAfterChange.getDid());
 		assertThat(updated.pendingAnnotationFlows()).isEmpty();
 		assertThat(updated.getFlows().getFirst().getState()).isEqualTo(DeltaFileFlowState.COMPLETE);
+	}
+
+	@Test
+	void countErrors() {
+		String reason = "reason";
+		OffsetDateTime time = OffsetDateTime.now(clock);
+		DeltaFile acknowledgedError = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, time, time);
+		acknowledgedError.setStage(DeltaFileStage.ERROR);
+		Action ackedAction = acknowledgedError.getFlows().getFirst().addAction("ErrorAction", ActionType.TRANSFORM, ERROR, time);
+		ackedAction.setErrorAcknowledged(time);
+		ackedAction.setErrorCause(reason);
+
+		DeltaFile unacknowledgedError = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, time, time);
+		unacknowledgedError.setStage(DeltaFileStage.ERROR);
+		Action unacknowledgedAction = unacknowledgedError.getFlows().getFirst().addAction("ErrorAction", ActionType.TRANSFORM, ERROR, time);
+		unacknowledgedAction.setErrorCause(reason);
+		deltaFileRepo.saveAll(List.of(unacknowledgedError, acknowledgedError));
+
+		assertThat(deltaFileRepo.countByStageAndErrorAcknowledgedIsNull(DeltaFileStage.ERROR.name())).isEqualTo(1);
 	}
 
 	private void setupPendingAnnotations(DeltaFile deltaFile, String flowName, Set<String> pendingAnnotations) {

@@ -6,7 +6,7 @@ DeltaFi can ingest data in any format, and provides special processing for Apach
 Data is submitted to DeltaFi's Ingress component, which turns that data and its associated metadata into a DeltaFile.
 
 To submit data to DeltaFi, you must send an HTTP POST request to the DeltaFi ingress endpoint at
-`http://<deltafi_url>/deltafile/ingress`. The data should be included in the body of the request.
+`http://<deltafi_url>/api/v2/deltafile/ingress`. The data should be included in the body of the request.
 
 In addition to the data, also provide the following headers:
 - Content-Type: (Required) Defines the type of the incoming data
@@ -26,7 +26,7 @@ curl -X POST \
   -H "Filename: example.txt" \
   -H "Flow: default" \
   -H "Metadata: {\"key\": \"value\"}" \
-  --data-binary @/path/to/example.txt http://<deltafi_url>/deltafile/ingress
+  --data-binary @/path/to/example.txt http://<deltafi_url>/api/v2/deltafile/ingress
 ```
 
 ## Apache NiFi FlowFile Ingress

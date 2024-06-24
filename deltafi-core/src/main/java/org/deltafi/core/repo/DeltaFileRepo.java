@@ -18,7 +18,6 @@
 package org.deltafi.core.repo;
 
 import org.deltafi.core.generated.types.DeltaFileStats;
-import org.deltafi.core.types.ColdQueuedActionSummary;
 import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.types.DeltaFileFlowState;
 import org.deltafi.common.types.DeltaFileStage;
@@ -26,6 +25,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -46,6 +46,17 @@ public interface DeltaFileRepo extends JpaRepository<DeltaFile, UUID>, DeltaFile
      * @return stream of matching DeltaFiles
      */
     Stream<DeltaFile> findByTerminalAndFlowsNameAndFlowsState(boolean isTerminal, String flowName, DeltaFileFlowState state);
+
+    @Query(value = """
+            SELECT COUNT(*)
+            FROM delta_files df
+            JOIN delta_file_flows dff ON df.did = dff.delta_file_id
+            JOIN actions a ON dff.id = a.delta_file_flow_id
+            WHERE df.stage = :stage
+            AND a.state = 'ERROR'
+            AND a.error_acknowledged IS NULL
+            """, nativeQuery = true)
+    long countByStageAndErrorAcknowledgedIsNull(@Param("stage") String stage);
 
     Optional<DeltaFile> findByDidAndStageIn(UUID did, List<DeltaFileStage> stages);
 

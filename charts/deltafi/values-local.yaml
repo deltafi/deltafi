@@ -25,10 +25,3 @@ deltafi:
   clustermonitor:
     enabled: true
     image: localhost:5000/deltafi-clustermonitor:latest
-
-clickhouse:
-  enabled: true
-docker-registry:
-  enabled: true
-registry-ui:
-  enabled: true

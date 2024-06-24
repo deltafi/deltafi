@@ -108,16 +108,19 @@ public abstract class FlowPlanValidator<T extends FlowPlan> {
     }
 
     private List<FlowConfigError> validateRules(FlowPlan flowPlan) {
+        List<FlowConfigError> flowConfigErrors = new ArrayList<>();
         if (flowPlan instanceof Subscriber subscriber) {
-            return ruleValidator.validateSubscriber(subscriber)
+            ruleValidator.validateSubscriber(subscriber)
                     .stream().map(message -> toFlowconfigError(flowPlan.getName(), message))
-                    .toList();
-        } else if (flowPlan instanceof Publisher publisher) {
-            return ruleValidator.validatePublisher(publisher)
-                    .stream().map(message -> toFlowconfigError(flowPlan.getName(), message))
-                    .toList();
+                    .forEach(flowConfigErrors::add);
         }
-        return List.of();
+
+        if (flowPlan instanceof Publisher publisher) {
+            ruleValidator.validatePublisher(publisher)
+                    .stream().map(message -> toFlowconfigError(flowPlan.getName(), message))
+                    .forEach(flowConfigErrors::add);
+        }
+        return flowConfigErrors;
     }
 
     private FlowConfigError toFlowconfigError(String name, String message) {

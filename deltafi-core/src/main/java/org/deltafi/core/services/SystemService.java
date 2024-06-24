@@ -17,31 +17,47 @@
  */
 package org.deltafi.core.services;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import lombok.AllArgsConstructor;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.queue.jackey.ValkeyKeyedBlockingQueue;
+import org.deltafi.core.exceptions.StorageCheckException;
 import org.deltafi.core.exceptions.SystemStatusException;
+import org.deltafi.core.types.DiskMetrics;
 import org.deltafi.core.types.AppInfo;
 import org.deltafi.core.types.AppName;
+import org.deltafi.core.types.NodeMetrics;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
+@Slf4j
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class SystemService {
 
     private static final ObjectMapper MAPPER = new ObjectMapper()
             .registerModule(new JavaTimeModule());
+    private static final List<String> METRIC_KEYS = List.of("gauge.node.memory.usage", "gauge.node.memory.limit",
+            "gauge.node.disk.usage", "gauge.node.disk.limit", "gauge.node.cpu.usage", "gauge.node.cpu.limit");
 
     private final PlatformService platformService;
     private final ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue;
+
+    private String cachedContentNodeName;
+    private Map<String, List<AppName>> cachedAppsByNode;
+
+    @PostConstruct
+    public void loadSystemInfo() {
+        this.cachedContentNodeName = platformService.contentNodeName();
+        this.cachedAppsByNode = platformService.appsByNode();
+    }
 
     public Status systemStatus() {
         String status = Optional.ofNullable(valkeyKeyedBlockingQueue.getByKey("org.deltafi.monitor.status"))
@@ -55,12 +71,110 @@ public class SystemService {
         }
     }
 
-    public Map<String, List<AppName>> getNodeInfo() {
-        return platformService.getNodeInfo();
-    }
-
     public Versions getRunningVersions() {
         return new Versions(platformService.getRunningVersions());
+    }
+
+    public Map<String, Long> contentMetrics() throws StorageCheckException {
+        Map<String, NodeMetrics> allMetrics = allMetrics();
+        String minioNode = getContentNodeName();
+
+        if (minioNode == null) {
+            throw new StorageCheckException("Could not find the node with content storage");
+        }
+
+        NodeMetrics minioMetrics = allMetrics.get(minioNode);
+
+        if (invalidMetric(minioMetrics)) {
+            throw new StorageCheckException("Unable to get content storage metrics, received metrics " + allMetrics + ", searching for node " + minioNode);
+        }
+
+        return minioMetrics.resources().get("disk");
+    }
+
+    public DiskMetrics diskMetrics() throws StorageCheckException {
+        Map<String, Long> contentMetrics = contentMetrics();
+        return new DiskMetrics(contentMetrics.get("limit"), contentMetrics.get("usage"));
+    }
+
+    public List<NodeMetrics> nodeMetrics() {
+        Map<String, List<AppName>> appsByNode = getAppsByNode();
+        Map<String, NodeMetrics> allMetrics = allMetrics();
+
+        for (Map.Entry<String, List<AppName>> apps : appsByNode.entrySet()) {
+            NodeMetrics nodeMetrics = allMetrics.computeIfAbsent(apps.getKey(), NodeMetrics::new);
+            nodeMetrics.addApps(apps.getValue());
+        }
+
+        return new ArrayList<>(allMetrics.values());
+    }
+
+    private boolean invalidMetric(NodeMetrics nodeMetrics) {
+        if (nodeMetrics == null) {
+            return true;
+        }
+
+        Map<String, Long> values = nodeMetrics.resources().get("disk");
+        if (values == null) {
+            return true;
+        }
+
+        return values.values().stream().anyMatch(this::invalidMetric);
+    }
+
+    private boolean invalidMetric(Long value) {
+        return value == null || value < 1;
+    }
+
+    private Map<String, NodeMetrics> allMetrics() {
+        Map<String, Map<String, String>> allMetrics = valkeyKeyedBlockingQueue.getByKeys(METRIC_KEYS);
+
+        Map<String, NodeMetrics> nodeMetrics = new LinkedHashMap<>();
+        for (Map.Entry<String, Map<String, String>> metricEntry : allMetrics.entrySet()) {
+            String[] splitKey = metricEntry.getKey().split("\\.");
+            String resourceName = splitKey[2];
+            String metricName = splitKey[3];
+
+            for (Map.Entry<String, String> valueHash : metricEntry.getValue().entrySet()) {
+                String hostname = valueHash.getKey();
+                NodeMetrics nodeMetric = nodeMetrics.computeIfAbsent(hostname, NodeMetrics::new);
+                List<Long> metrics = metricList(valueHash.getValue());
+                if (metrics.size() != 2 || isStale(metrics.getLast())) {
+                    continue;
+                }
+
+                nodeMetric.addMetric(resourceName, metricName, metrics.getFirst());
+            }
+        }
+        return nodeMetrics;
+    }
+
+    // ignore metrics older than 60 seconds
+    private boolean isStale(Long value) {
+        return value == null || (System.currentTimeMillis() / 1000) - value > 60;
+    }
+
+    private List<Long> metricList(String value) {
+        try {
+            return MAPPER.readValue(value, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("Bad metric data: {}", value, e);
+            return List.of();
+        }
+    }
+
+    public Map<String, List<AppName>> getAppsByNode() {
+        if (cachedAppsByNode == null) {
+            cachedAppsByNode = platformService.appsByNode();
+        }
+        return cachedAppsByNode;
+    }
+
+    private String getContentNodeName() {
+        if (cachedContentNodeName == null) {
+            cachedContentNodeName = platformService.contentNodeName();
+        }
+        return this.cachedContentNodeName;
     }
 
     public record Versions(List<AppInfo> versions, OffsetDateTime timestamp) {

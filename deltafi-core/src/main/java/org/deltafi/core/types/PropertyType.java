@@ -366,6 +366,18 @@ public enum PropertyType {
         public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
             target.setInMemoryQueueSize(source.getInMemoryQueueSize());
         }
+    },
+    MAX_FLOW_DEPTH("maxFlowDepth", "The maximum number of flows a DeltaFile may traverse",
+            DeltaFiProperties::getMaxFlowDepth) {
+        @Override
+        public Object convertValue(String value) {
+            return convertInt(value, 1);
+        }
+
+        @Override
+        public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
+            target.setMaxFlowDepth(source.getMaxFlowDepth());
+        }
     };
 
     private static final DeltaFiProperties DEFAULT = new DeltaFiProperties();

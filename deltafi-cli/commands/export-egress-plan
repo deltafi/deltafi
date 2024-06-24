@@ -34,6 +34,10 @@ QUERY="fragment ActionFields on ActionConfiguration {
               artifactId
               version
             }
+            subscribe {
+              topic
+              condition
+            }
             egressAction {
               ... ActionFields
             }

@@ -1,3 +1,5 @@
+{{ $registry_enabled := index .Values "docker-registry" "enabled" }}
+{{- if $registry_enabled -}}
 apiVersion: v1
 kind: Service
 metadata:
@@ -10,3 +12,4 @@ spec:
   - protocol: TCP
     port: 80
     targetPort: 9292
+{{- end -}}

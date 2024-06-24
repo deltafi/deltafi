@@ -99,11 +99,16 @@ public class FlowPlanDatafetcherTestHelper {
     }
 
     public static TransformFlow saveTransformFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
+        PublishRules publishRules = new PublishRules();
+        publishRules.setDefaultRule(new DefaultRule(DefaultBehavior.ERROR));
+        publishRules.setRules(List.of(new Rule("topic")));
+
         TransformFlowPlanInput input = TransformFlowPlanInput.newBuilder()
                 .name("flowPlan")
                 .type("TRANSFORM")
                 .description("description")
                 .subscribe(List.of(new Rule("topic", null)))
+                .publish(publishRules)
                 .build();
 
         return executeQuery(dgsQueryExecutor, SaveTransformFlowPlanGraphQLQuery.newRequest().transformFlowPlan(input).build(), new SaveTransformFlowPlanProjectionRoot().name().flowStatus().state().parent().parent(), TransformFlow.class);

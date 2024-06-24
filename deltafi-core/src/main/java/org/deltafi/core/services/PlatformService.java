@@ -30,11 +30,17 @@ public interface PlatformService {
      * running on that node
      * @return node to app list map
      */
-    Map<String, List<AppName>> getNodeInfo();
+    Map<String, List<AppName>> appsByNode();
 
     /**
      * Find all running applications with their versions
      * @return running application info
      */
     List<AppInfo> getRunningVersions();
+
+    /**
+     * Return the name of the node where content is stored
+     * @return node name
+     */
+    String contentNodeName();
 }

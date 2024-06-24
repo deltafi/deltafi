@@ -25,13 +25,12 @@ import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.*;
 import org.deltafi.core.integration.config.ContentData;
 import org.deltafi.core.integration.config.ContentList;
-import org.deltafi.core.integration.config.ExpectedActions;
 import org.deltafi.core.integration.config.ExpectedDeltaFile;
+import org.deltafi.core.integration.config.ExpectedFlows;
 import org.deltafi.core.services.DeltaFilesService;
 import org.deltafi.core.types.Action;
 import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.types.DeltaFileFlow;
-import org.deltafi.core.types.IngressResult;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -57,7 +56,7 @@ public class TestEvaluator {
     private final List<String> errors = new ArrayList<>();
     private boolean fatalError = false;
 
-    public void waitForDeltaFile(String testId, IngressResult ingressed, ExpectedDeltaFile expected, Duration timeout) throws InterruptedException {
+    public void waitForDeltaFile(String testId, String description, List<UUID> ingressDids, List<ExpectedDeltaFile> expectedDeltaFiles, Duration timeout) throws InterruptedException {
         OffsetDateTime startTime = OffsetDateTime.now();
         Duration maxTime;
         if (timeout == null || timeout.isZero()) {
@@ -67,10 +66,16 @@ public class TestEvaluator {
         }
         Duration timeRunning = Duration.of(0, ChronoUnit.SECONDS);
 
+        if (ingressDids.size() != expectedDeltaFiles.size()) {
+            fatalSizeError("ingressDids/expectedDeltaFiles", ingressDids.size(), expectedDeltaFiles.size());
+        }
+
         boolean done = false;
         while (!fatalError && !done) {
             errors.clear();
-            evaluate(ingressed, expected);
+            for (int i = 0; i < expectedDeltaFiles.size(); i++) {
+                evaluate(ingressDids.get(i), expectedDeltaFiles.get(i));
+            }
             if (errors.isEmpty() || timeRunning.compareTo(maxTime) >= 0) {
                 done = true;
             } else {
@@ -84,6 +89,7 @@ public class TestEvaluator {
 
             testResult = TestResult.builder()
                     .id(testId)
+                    .description(description)
                     .status(TestStatus.SUCCESSFUL)
                     .start(startTime)
                     .stop(OffsetDateTime.now())
@@ -92,6 +98,7 @@ public class TestEvaluator {
 
             testResult = TestResult.builder()
                     .id(testId)
+                    .description(description)
                     .status(TestStatus.FAILED)
                     .start(startTime)
                     .stop(OffsetDateTime.now())
@@ -129,10 +136,10 @@ public class TestEvaluator {
         fatalError("[" + label + "] Expected " + field + " size to be '" + expected + "', but was '" + actual + "'");
     }
 
-    public void evaluate(IngressResult ingressed, ExpectedDeltaFile expected) {
-        DeltaFile deltaFile = deltaFilesService.getCachedDeltaFile(ingressed.did());
+    public void evaluate(UUID did, ExpectedDeltaFile expected) {
+        DeltaFile deltaFile = deltaFilesService.getCachedDeltaFile(did);
         if (deltaFile == null) {
-            fatalError("Unable to retrieve DeltaFile, did: " + ingressed.did());
+            fatalError("Unable to retrieve DeltaFile, did: " + did.toString());
         } else {
             if (deltaFile.getStage() == expected.getStage()) {
                 deltaFileCompare("Top", 1, deltaFile, expected);
@@ -176,60 +183,66 @@ public class TestEvaluator {
     private void deltaFileCompare(String label, int depth, DeltaFile deltaFile, ExpectedDeltaFile expected) {
         if (deltaFile.getStage() != expected.getStage()) {
             fatalError(label + ":" + deltaFile.getDid(), "stage", expected.getStage().name(), deltaFile.getStage().name());
-        } else {
-            if (deltaFile.getChildDids().size() != expected.getChildCount()) {
-                maybeFatalError(
-                        deltaFile.getChildDids().size() > expected.getChildCount(),
-                        label + ": expected " +
-                                expected.getChildCount() +
-                                " children, but was " + deltaFile.getChildDids().size()
+            return;
+        }
+
+        if (deltaFile.getChildDids().size() != expected.getChildCount()) {
+            maybeFatalError(
+                    deltaFile.getChildDids().size() > expected.getChildCount(),
+                    label + ": expected " +
+                            expected.getChildCount() +
+                            " children, but was " + deltaFile.getChildDids().size()
+                            + ", " + deltaFile.getDid());
+            return;
+        }
+
+        int flowActionMatchCount = 0;
+        for (ExpectedFlows ef : expected.getExpectedFlows()) {
+            List<DeltaFileFlow> deltaFileFlows = deltaFile.getFlows()
+                    .stream()
+                    .filter(f -> flowMatch(f, ef.getFlow(), ef.getType()))
+                    .toList();
+            if (deltaFileFlows.size() != 1) {
+                // TODO: Maybe handle >1 later?
+                fatalSizeError(ef.getFlow(), "deltaFileFlows", 1, deltaFileFlows.size());
+            } else {
+                if (ef.getState() != deltaFileFlows.getFirst().getState()) {
+                    fatalError(ef.getFlow(), "state", ef.getState().name(),
+                            deltaFileFlows.getFirst().getState().name());
+                } else {
+                    List<String> actionNames = deltaFileFlows.getFirst().getActions()
+                            .stream().map(Action::getName)
+                            .toList();
+
+                    if (!actionNames.containsAll(ef.getActions())) {
+                        fatalError(label + ": expected actions " +
+                                String.join(",", ef.getActions()) +
+                                " - but were " + String.join(",", actionNames)
                                 + ", " + deltaFile.getDid());
 
-            } else {
-                int flowActionMatchCount = 0;
-                for (ExpectedActions ea : expected.getExpectedActions()) {
-                    List<DeltaFileFlow> deltaFileFlows = deltaFile.getFlows()
-                            .stream()
-                            .filter(f -> flowMatch(f, ea.getFlow(), ea.getType()))
-                            .toList();
-                    if (deltaFileFlows.size() != 1) {
-                        // TODO: Maybe handle >1 later?
-                        fatalSizeError(ea.getFlow(), "deltaFileFlows", 1, deltaFileFlows.size());
                     } else {
-                        List<String> actionNames = deltaFileFlows.getFirst().getActions()
-                                .stream().map(Action::getName)
-                                .toList();
-
-                        if (!actionNames.containsAll(ea.getActions())) {
-                            fatalError(label + ": expected actions " +
-                                    String.join(",", ea.getActions()) +
-                                    " - but were " + String.join(",", actionNames)
-                                    + ", " + deltaFile.getDid());
-
-                        } else {
-                            flowActionMatchCount++;
-                        }
+                        flowActionMatchCount++;
                     }
                 }
+            }
+        }
 
-                if (flowActionMatchCount != expected.getExpectedActions().size()) {
-                    errors.add("Expected to match " + expected.getExpectedActions().size()
-                            + " action sets, but matched only " + flowActionMatchCount);
+        if (flowActionMatchCount != expected.getExpectedFlows().size()) {
+            errors.add("Expected to match " + expected.getExpectedFlows().size()
+                    + " action sets, but matched only " + flowActionMatchCount);
+        } else {
+
+            if (expected.getParentCount() != null && expected.getParentCount() != deltaFile.getParentDids().size()) {
+                errors.add(label + ": expected " +
+                        expected.getParentCount() +
+                        " parents, but was " + deltaFile.getParentDids().size()
+                        + ", " + deltaFile.getDid());
+
+            } else {
+                if (contentMatches(deltaFile, expected.getExpectedContent())) {
+                    childCheck(depth + 1, deltaFile, expected);
                 } else {
-
-                    if (expected.getParentCount() != null && expected.getParentCount() != deltaFile.getParentDids().size()) {
-                        errors.add(label + ": expected " +
-                                expected.getParentCount() +
-                                " parents, but was " + deltaFile.getParentDids().size()
-                                + ", " + deltaFile.getDid());
-
-                    } else {
-                        if (contentMatches(deltaFile, expected.getExpectedContent())) {
-                            childCheck(depth + 1, deltaFile, expected);
-                        } else {
-                            errors.add(label + ": content does not match");
-                        }
-                    }
+                    errors.add(label + ": content does not match");
                 }
             }
         }

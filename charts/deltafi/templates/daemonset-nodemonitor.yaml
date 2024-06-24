@@ -7,14 +7,17 @@ metadata:
   namespace: deltafi
   labels:
     app: deltafi-nodemonitor
+    group: deltafi-core
 spec:
   selector:
     matchLabels:
       app: deltafi-nodemonitor
+      group: deltafi-core
   template:
     metadata:
       labels:
         app: deltafi-nodemonitor
+        group: deltafi-core
     spec:
       serviceAccountName: deltafi-nodemonitor
       terminationGracePeriodSeconds: 1
@@ -23,7 +26,7 @@ spec:
       imagePullSecrets:
       - name: docker-secret
       containers:
-      - name: nodemonitor
+      - name: deltafi-nodemonitor
         image: {{ .Values.deltafi.nodemonitor.image }}
         env:
         {{- include "defaultEnvVars" . | nindent 12 }}

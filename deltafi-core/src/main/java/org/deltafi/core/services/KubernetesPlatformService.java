@@ -39,16 +39,36 @@ public class KubernetesPlatformService implements PlatformService {
     private final KubernetesClient k8sClient;
 
     @Override
-    public Map<String, List<AppName>> getNodeInfo() {
-        return Map.of();
+    public Map<String, List<AppName>> appsByNode() {
+        Map<String, List<AppName>> nodeInfo = new LinkedHashMap<>();
+        List<Pod> runningPods = runningPods().getItems();
+        for (Pod pod : runningPods) {
+            List<AppName> apps = nodeInfo.computeIfAbsent(extractNodeName(pod), node -> new ArrayList<>());
+            apps.add(new AppName(pod.getMetadata().getName()));
+        }
+        return nodeInfo;
     }
 
     @Override
     public List<AppInfo> getRunningVersions() {
-        PodList runningPods = k8sClient.pods().withField("status.phase", "Running").list();
-        return runningPods.getItems().stream().flatMap(this::toAppInfo)
+        return runningPods().getItems().stream().flatMap(this::toAppInfo)
                 .sorted(Comparator.comparing(AppInfo::app))
                 .distinct().toList();
+    }
+
+    @Override
+    public String contentNodeName() {
+        return k8sClient.pods().withLabels(Map.of("app", "minio")).list()
+                .getItems().stream().findFirst()
+                .map(this::extractNodeName).orElse(null);
+    }
+
+    private PodList runningPods() {
+        return k8sClient.pods().withField("status.phase", "Running").list();
+    }
+
+    private String extractNodeName(Pod pod) {
+        return pod.getSpec().getNodeName();
     }
 
     private Stream<AppInfo> toAppInfo(Pod pod) {
