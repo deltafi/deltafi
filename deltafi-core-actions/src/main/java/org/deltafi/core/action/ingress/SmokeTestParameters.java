@@ -46,4 +46,16 @@ public class SmokeTestParameters extends ActionParameters {
     @JsonProperty(defaultValue = "500")
     @JsonPropertyDescription("The size in bytes of the random content to attach to the DeltaFile. Ignored if content is set")
     public int contentSize = 500;
+
+    @JsonProperty(defaultValue = "0")
+    @JsonPropertyDescription("An artificial delay will be randomly introduced one in every X times. Set to 0 to never delay or 1 to always delay")
+    public int delayChance = 0;
+
+    @JsonProperty(defaultValue = "0")
+    @JsonPropertyDescription("Amount of time to delay if delayed")
+    public int delayMS = 0;
+
+    @JsonProperty(defaultValue = "0")
+    @JsonPropertyDescription("The next deltaFile will be immediately triggered one in every X times. Set to 0 to never immediately trigger or 1 to always immediately trigger")
+    public int triggerImmediateChance = 0;
 }
