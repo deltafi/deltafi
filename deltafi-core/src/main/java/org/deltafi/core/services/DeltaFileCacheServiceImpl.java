@@ -62,7 +62,7 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
     public DeltaFile get(UUID did) {
         if (deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().isEnabled()) {
             DeltaFile deltaFile = deltaFileCache.computeIfAbsent(did, this::getFromRepo);
-            if (deltaFile.getCacheTime() == null) {
+            if (deltaFile != null && deltaFile.getCacheTime() == null) {
                 deltaFile.setCacheTime(OffsetDateTime.now(clock));
             }
             return deltaFile;
@@ -106,7 +106,10 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
                 deltaFile.inactiveStage() || deltaFile.getVersion() == 0) {
             try {
                 updateRepo(deltaFile);
-            } finally {
+                if (deltaFile.inactiveStage()) {
+                    deltaFileCache.remove(deltaFile.getDid());
+                }
+            } catch (Exception ignored) {
                 // prevent infinite loop if there are exceptions
                 // force pulling a fresh copy from mongo on next get
                 deltaFileCache.remove(deltaFile.getDid());

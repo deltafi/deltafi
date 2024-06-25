@@ -26,7 +26,6 @@ import org.deltafi.common.types.*;
 import org.deltafi.core.exceptions.UnexpectedFlowException;
 import org.hibernate.annotations.Type;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.data.annotation.Version;
 
 import java.time.OffsetDateTime;
 import java.util.*;

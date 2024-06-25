@@ -27,7 +27,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table
+@Table(name = "annotations")
 @EqualsAndHashCode(exclude = "deltaFile")
 public class Annotation {
     @Id
@@ -35,14 +35,14 @@ public class Annotation {
     private String key;
     private String value;
 
-    public Annotation(String key, String value) {
-        this.key = key;
-        this.value = value;
-    }
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "delta_file_id")
     @ToString.Exclude
     @JsonBackReference
     private DeltaFile deltaFile;
+
+    public Annotation(String key, String value) {
+        this.key = key;
+        this.value = value;
+    }
 }

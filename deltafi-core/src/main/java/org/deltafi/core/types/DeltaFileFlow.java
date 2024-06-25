@@ -339,6 +339,9 @@ public class DeltaFileFlow {
     }
 
     public void removePendingAction(String actionName) {
+        if (!(pendingActions instanceof ArrayList<String>)) {
+            pendingActions = new ArrayList<>(pendingActions);
+        }
         pendingActions.remove(actionName);
     }
 

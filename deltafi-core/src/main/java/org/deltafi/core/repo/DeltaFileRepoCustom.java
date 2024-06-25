@@ -21,7 +21,6 @@ import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.types.DeltaFiles;
 import org.springframework.data.mongodb.core.index.IndexInfo;
-import org.springframework.data.mongodb.core.query.Update;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -142,16 +141,6 @@ public interface DeltaFileRepoCustom {
      * @param reason Reason for deletion
      */
     void setContentDeletedByDidIn(List<UUID> dids, OffsetDateTime now, String reason);
-
-    /**
-     * Updates the specified version of the DeltaFile with the given update
-     *
-     * @param  did the document ID
-     * @param  version the version number of the document to update
-     * @param  update the update to apply to the document
-     * @return true if the update was successful, false otherwise
-     */
-    boolean update(UUID did, long version, Update update);
 
     void batchInsert(List<DeltaFile> deltaFiles);
     void batchedBulkDeleteByDidIn(List<UUID> dids);

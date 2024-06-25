@@ -21,7 +21,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.collect.Lists;
-import com.mongodb.client.result.UpdateResult;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
@@ -32,16 +31,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.types.*;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.UncategorizedMongoDbException;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.index.Index;
 import org.springframework.data.mongodb.core.index.IndexInfo;
 import org.springframework.data.mongodb.core.index.IndexOperations;
-import org.springframework.data.mongodb.core.index.PartialIndexFilter;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -58,43 +49,23 @@ import static org.deltafi.common.types.ActionState.*;
 @Slf4j
 @Transactional
 public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
-    public static final String ID = "_id";
-    public static final String VERSION = "version";
-    public static final String MODIFIED = "modified";
     public static final String CREATED = "created";
     public static final String STAGE = "stage";
     public static final String NAME = "name";
     public static final String CONTENT_DELETED = "contentDeleted";
     public static final String DATA_SOURCE = "dataSource";
-    public static final String ERROR_ACKNOWLEDGED = "errorAcknowledged";
     public static final String EGRESSED = "egressed";
-    public static final String EGRESS_FLOWS = "egressFlows";
     public static final String FILTERED = "filtered";
-    public static final String PENDING_ANNOTATIONS = "flows.pendingAnnotations";
-    public static final String FIRST_PENDING_ANNOTATIONS = "flows.pendingAnnotations.0";
-    public static final String TEST_MODE = "flows.testMode";
     public static final String REFERENCED_BYTES = "referencedBytes";
     public static final String TOTAL_BYTES = "totalBytes";
     public static final String INGRESS_BYTES = "ingressBytes";
     public static final String REPLAYED = "replayed";
     public static final String REQUEUE_COUNT = "requeueCount";
-    public static final String NEXT_AUTO_RESUME = "nextAutoResume";
-    public static final String NORMALIZED_NAME = "normalizedName";
-    public static final String ACTIONS_NAME = "flows.actions.name";
-    public static final String ACTIONS_STATE = "flows.actions.state";
-    private static final String COLLECTION = "deltaFiles";
-    private static final String TTL_INDEX_NAME = "ttl_index";
     private static final String DID = "did";
     private static final String FLOWS = "flows";
-    public static final String ANNOTATIONS = "annotations";
-    public static final String ANNOTATION_KEYS = "annotationKeys";
-    private static final String IN_FLIGHT = "inFlight";
     private static final String TERMINAL = "terminal";
-    private static final String CONTENT_DELETABLE = "contentDeletable";
-    private static final String CREATED_BEFORE_INDEX = "created_before_index";
-    private static final String TERMINAL_INDEX = "terminal_index";
     public static final String TYPE = "type";
-
+/*
     private static final Map<String, Index> INDICES;
     static {
         INDICES = new HashMap<>();
@@ -123,7 +94,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
         INDICES.put("cold_queued_index", new Index().named("cold_queued_index").on(IN_FLIGHT, Sort.Direction.ASC).on(ACTIONS_STATE, Sort.Direction.ASC).on(ACTIONS_NAME, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(IN_FLIGHT).is(true).and(ACTIONS_STATE).is(COLD_QUEUED.name()))));
         INDICES.put("queued_index", new Index().named("queued_index").on(IN_FLIGHT, Sort.Direction.ASC).on(ACTIONS_STATE, Sort.Direction.ASC).on(ACTIONS_NAME, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(IN_FLIGHT).is(true).and(ACTIONS_STATE).is(QUEUED.name()))));
-    }
+    }*/
 
     @PersistenceContext
     private final EntityManager entityManager;
@@ -131,10 +102,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
-    private final MongoTemplate mongoTemplate;
-
     public void ensureAllIndices(Duration newTtl) {
-        IndexOperations idxOps = mongoTemplate.indexOps(DeltaFile.class);
+        /*IndexOperations idxOps = mongoTemplate.indexOps(DeltaFile.class);
         List<IndexInfo> existingIndexes = idxOps.getIndexInfo();
 
         INDICES.forEach((indexName, indexDef) -> IndexUtils.updateIndices(idxOps, indexName, indexDef, existingIndexes));
@@ -142,14 +111,13 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         Set<String> expected = new HashSet<>(INDICES.keySet());
         expected.add("_id_");
         expected.add(TTL_INDEX_NAME);
-        existingIndexes.forEach(existingIndex -> removeUnknownIndices(idxOps, existingIndex, expected));
-
-        // TODO: set up shard indexes
+        existingIndexes.forEach(existingIndex -> removeUnknownIndices(idxOps, existingIndex, expected));*/
     }
 
     @Override
     public List<IndexInfo> getIndexes() {
-        return mongoTemplate.indexOps(COLLECTION).getIndexInfo();
+        //return mongoTemplate.indexOps(COLLECTION).getIndexInfo();
+        return Collections.emptyList();
     }
 
     @Override
@@ -203,8 +171,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         entityManager.createQuery("""
             UPDATE DeltaFile df
             SET df.requeueCount = df.requeueCount + 1,
-                df.modified = :modified,
-                df.version = df.version + 1
+                df.modified = :modified
             WHERE df.did IN :dids
             """)
                 .setParameter("modified", requeueTime)
@@ -289,8 +256,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         entityManager.createQuery("""
                 UPDATE DeltaFile df
                 SET df.requeueCount = df.requeueCount + 1,
-                    df.modified = :modified,
-                    df.version = df.version + 1
+                    df.modified = :modified
                 WHERE df.did IN :dids
                 """)
                 .setParameter("modified", modified)
@@ -824,18 +790,18 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     private void removeUnknownIndices(IndexOperations idxOps, IndexInfo existing, Set<String> knownIndices) {
-        if (!knownIndices.contains(existing.getName())) {
+        /*if (!knownIndices.contains(existing.getName())) {
             log.info("Dropping unknown index {}", existing.getName());
             dropIndex(idxOps, existing.getName());
-        }
+        }*/
     }
 
     private void dropIndex(IndexOperations idxOps, String indexName) {
-        try {
+        /*try {
             idxOps.dropIndex(indexName);
         } catch (UncategorizedMongoDbException ex) {
             log.error("Failed to remove unknown index {}", indexName, ex);
-        }
+        }*/
     }
 
     // TODO: can this happen in one shot?
@@ -1033,12 +999,5 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             entityManager.flush();
             entityManager.clear();
         }
-    }
-
-    public boolean update(UUID did, long version, Update update) {
-        Query query = new Query(Criteria.where(ID).is(did).and(VERSION).is(version));
-        UpdateResult result = mongoTemplate.updateFirst(query, update, DeltaFile.class);
-
-        return result.wasAcknowledged() && result.getMatchedCount() > 0;
     }
 }
