@@ -112,10 +112,10 @@ _stackgres_install() {
 
   if [[ -z ${DELTAFI_STACKGRES_ENABLED+x} || ${DELTAFI_STACKGRES_ENABLED} != "true" ]]; then
     if helm status --namespace stackgres stackgres-operator 2&> /dev/null; then
-      cli_error "Stackgres Operator will be uninstalled"
+      cli_log "Stackgres Operator will be uninstalled"
       helm uninstall --namespace stackgres stackgres-operator --ignore-not-found --wait --timeout 10m
     else
-      cli_error "Stackgres Operator will not be installed"
+      cli_log "Stackgres Operator will not be installed"
     fi
     return 0
   fi
