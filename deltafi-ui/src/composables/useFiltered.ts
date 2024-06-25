@@ -25,7 +25,7 @@ export default function useFiltered() {
   const data = ref(null);
   const allCauses = ref(null)
 
-  const fetchAllFiltered = async (offSet: Number, perPage: Number, sortBy: string, sortDirection: string, flowName?: string, filteredCause?: string) => {
+  const fetchAllFiltered = async (offSet: Number, perPage: Number, sortDirection: string, flowName?: string, filteredCause?: string) => {
     const searchParams = {
       deltaFiles: {
         __args: {
@@ -36,10 +36,7 @@ export default function useFiltered() {
             filtered: true,
             filteredCause: !_.isEmpty(filteredCause) ? `\\Q${filteredCause}\\E` : null,
           },
-          orderBy: {
-            direction: new EnumType(sortDirection),
-            field: sortBy,
-          },
+          direction: new EnumType(sortDirection),
         },
         offset: true,
         count: true,
@@ -71,7 +68,7 @@ export default function useFiltered() {
     data.value = response.value.data;
   };
 
-  const fetchByFlow = async (offSet: Number, perPage: Number, sortBy: string, sortDirection: string, flow: string) => {
+  const fetchByFlow = async (offSet: Number, perPage: Number, sortDirection: string, flow: string) => {
     const searchParamsFlow = {
       filteredSummaryByFlow: {
         __args: {
@@ -80,10 +77,7 @@ export default function useFiltered() {
           filter: {
             flow: flow,
           },
-          orderBy: {
-            direction: new EnumType(sortDirection),
-            field: sortBy,
-          }
+          direction: new EnumType(sortDirection),
         },
         count: true,
         totalCount: true,

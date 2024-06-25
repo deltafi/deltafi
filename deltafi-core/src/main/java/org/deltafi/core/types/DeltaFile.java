@@ -165,6 +165,11 @@ public class DeltaFile {
             Objects.equals(new ArrayList<>(annotations), new ArrayList<>(other.annotations));
   }
 
+  @Override
+  public int hashCode() {
+    return Objects.hash(did, name, normalizedName, dataSource, parentDids, collectId, childDids, requeueCount, ingressBytes, referencedBytes, totalBytes, stage, created, modified, contentDeleted, contentDeletedReason, egressed, filtered, replayed, replayDid, inFlight, terminal, contentDeletable, version, cacheTime, schemaVersion, new ArrayList<>(flows), new ArrayList<>(annotations));
+  }
+
   public void setStage(DeltaFileStage stage) {
       this.stage = stage;
       updateFlags();
@@ -480,6 +485,7 @@ public class DeltaFile {
    */
   public WrappedActionInput buildActionInput(ActionConfiguration actionConfiguration, DeltaFileFlow flow, List<UUID> collectedDids, Action action, String systemName,
                                              String returnAddress, String memo) {
+    Map<String, Object> actionParameters = actionConfiguration.getParameters() == null ? Collections.emptyMap() : actionConfiguration.getParameters();
     return WrappedActionInput.builder()
             .queueName(actionConfiguration.getType())
             .actionContext(ActionContext.builder()
@@ -496,7 +502,7 @@ public class DeltaFile {
                     .memo(memo)
                     .build())
             .deltaFile(this)
-            .actionParams(actionConfiguration.getParameters())
+            .actionParams(actionParameters)
             .returnAddress(returnAddress)
             .actionCreated(action.getCreated())
             .coldQueued(action.getState() == ActionState.COLD_QUEUED)

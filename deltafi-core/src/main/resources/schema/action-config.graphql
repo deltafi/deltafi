@@ -28,7 +28,6 @@ type ActionConfiguration {
 input ActionConfigurationInput {
     name: String!
     apiVersion: String
-    actionType: String!
     type: String!
     parameters: JSON
     collect: CollectConfigurationInput

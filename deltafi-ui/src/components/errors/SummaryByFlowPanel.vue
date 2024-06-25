@@ -72,7 +72,6 @@ const offset = ref(0);
 const perPage = ref();
 const metadataDialogResume = ref();
 const sortDirection = ref("ASC");
-const sortField = ref("flow");
 const selectedErrors = ref([]);
 const notify = useNotifications();
 const emit = defineEmits(["refreshErrors"]);
@@ -168,7 +167,7 @@ const fetchErrorsFlow = async () => {
   getPersistedParams();
   let dataSourceFlowName = props.dataSourceFlowName != null ? props.dataSourceFlowName : null;
   loading.value = true;
-  await getErrorsByFlow(props.acknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, dataSourceFlowName);
+  await getErrorsByFlow(props.acknowledged, offset.value, perPage.value, sortDirection.value, dataSourceFlowName);
   errorsFlow.value = response.value.countPerFlow;
   totalErrorsFlow.value = response.value.totalCount;
   loading.value = false;
@@ -230,7 +229,6 @@ defineExpose({
 const onSort = (event) => {
   offset.value = event.first;
   perPage.value = event.rows;
-  sortField.value = event.sortField;
   sortDirection.value = event.sortOrder > 0 ? "DESC" : "ASC";
   fetchErrorsFlow();
 };

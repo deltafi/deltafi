@@ -60,7 +60,6 @@ const filteredFlow = ref([]);
 const totalFilteredFlow = ref(0);
 const offset = ref(0);
 const perPage = ref();
-const sortField = ref("modified");
 const sortDirection = ref("DESC");
 const selectedFiltered = ref([]);
 const emit = defineEmits(["refreshFilters"]);
@@ -114,7 +113,7 @@ const fetchFilteredFlow = async () => {
   getPersistedParams();
   let dataSourceFlowName = props.dataSourceFlowName != null ? props.dataSourceFlowName : null;
   loading.value = true;
-  await getFilteredByFlow(offset.value, perPage.value, sortField.value, sortDirection.value, dataSourceFlowName);
+  await getFilteredByFlow(offset.value, perPage.value, sortDirection.value, dataSourceFlowName);
   filteredFlow.value = response.value.countPerFlow;
   totalFilteredFlow.value = response.value.totalCount;
   loading.value = false;
@@ -150,7 +149,6 @@ defineExpose({
 const onSort = (event) => {
   offset.value = event.first;
   perPage.value = event.rows;
-  sortField.value = event.sortField;
   sortDirection.value = event.sortOrder > 0 ? "DESC" : "ASC";
   fetchFilteredFlow();
 };

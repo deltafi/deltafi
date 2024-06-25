@@ -136,6 +136,11 @@ public class DeltaFileFlow {
                 Objects.equals(pendingActions, other.pendingActions);
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, name, number, type, state, created, modified, flowPlan, input, new ArrayList<>(actions), publishTopics, depth, pendingAnnotations, testMode, testModeReason, collectId, pendingActions);
+    }
+
     /**
      * Get the cumulative metadata from all actions in the flow
      *

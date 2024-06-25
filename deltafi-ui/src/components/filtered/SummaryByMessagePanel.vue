@@ -63,7 +63,6 @@ const filteresCause = ref([]);
 const totalFilteredMessage = ref(0);
 const offset = ref(0);
 const perPage = ref();
-const sortField = ref("modified");
 const sortDirection = ref("DESC");
 const selectedFilters = ref([]);
 const emit = defineEmits(["refreshFilters", "changeTab:filteredCause:flowSelected"]);
@@ -130,7 +129,7 @@ const fetchFilteresMessages = async () => {
   getPersistedParams();
   let dataSourceFlowName = props.dataSourceFlowName != null ? props.dataSourceFlowName : null;
   loading.value = true;
-  await getFilteredByMessage(offset.value, perPage.value, sortField.value, sortDirection.value, dataSourceFlowName);
+  await getFilteredByMessage(offset.value, perPage.value, sortDirection.value, dataSourceFlowName);
   filteresCause.value = response.value.countPerMessage;
   totalFilteredMessage.value = response.value.totalCount;
   loading.value = false;
@@ -157,7 +156,6 @@ defineExpose({
 const onSort = (event) => {
   offset.value = event.first;
   perPage.value = event.rows;
-  sortField.value = event.sortField;
   sortDirection.value = event.sortOrder > 0 ? "DESC" : "ASC";
   fetchFilteresMessages();
 };
