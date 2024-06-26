@@ -29,7 +29,9 @@
         </div>
       </template>
     </ConfirmPopup>
-    <Button v-tooltip.top="`Remove`" icon="pi pi-trash" class="p-button-text p-button-sm p-button-rounded p-button-secondary mx-n2" @click="confirmationPopup($event, rowData.name)" />
+    <span v-tooltip.top="'Remove'" class="cursor-pointer" @click="confirmationPopup($event, rowData.name)">
+      <i class="ml-2 text-muted fa-solid fa-trash-can" />
+    </span>
   </span>
 </template>
 
@@ -39,7 +41,6 @@ import useNotifications from "@/composables/useNotifications";
 import { defineEmits, defineProps, reactive } from "vue";
 
 import ConfirmPopup from "primevue/confirmpopup";
-import Button from "primevue/button";
 import { useConfirm } from "primevue/useconfirm";
 
 const confirm = useConfirm();
@@ -68,7 +69,7 @@ const confirmationPopup = (event, actionName) => {
       notify.info("Removing Egress", `Removing ${actionName}.`, 3000);
       confirmedRemoveEgressAction(actionName);
     },
-    reject: () => {},
+    reject: () => { },
   });
 };
 
