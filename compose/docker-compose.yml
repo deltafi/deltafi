@@ -43,6 +43,7 @@ services:
       <<: *logging-label
     networks:
       - deltafi
+    restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
   deltafi-ingress:
@@ -72,6 +73,7 @@ services:
       <<: *logging-label
     networks:
       - deltafi
+    restart: unless-stopped
   deltafi-api:
     image: ${DELTAFI_API}
     container_name: deltafi-api
@@ -93,6 +95,7 @@ services:
       <<: *logging-label
     networks:
       - deltafi
+    restart: unless-stopped
   deltafi-auth:
     image: ${DELTAFI_AUTH}
     container_name: deltafi-auth
@@ -108,6 +111,7 @@ services:
       <<: *logging-label
     networks:
       - deltafi
+    restart: unless-stopped
     volumes:
       - ${DATA_DIR}/auth:/data
   deltafi-auth-resolver:
@@ -120,6 +124,7 @@ services:
       <<: *logging-label
     networks:
       - deltafi
+    restart: unless-stopped
     profiles: ["auth-resolver"]
   deltafi-monitor:
     image: ${DELTAFI_API}
@@ -145,6 +150,7 @@ services:
       <<: *logging-label
     networks:
       - deltafi
+    restart: unless-stopped
   deltafi-ui:
     image: ${DELTAFI_UI}
     container_name: deltafi-ui
@@ -158,6 +164,7 @@ services:
       <<: *logging-label
     networks:
       - deltafi
+    restart: unless-stopped
   deltafi-core-actions:
     image: ${DELTAFI_CORE_ACTIONS}
     container_name: deltafi-core-actions
@@ -169,7 +176,7 @@ services:
       - ${SECRETS_DIR}/redis.env
       - ${SECRETS_DIR}/minio.env
     healthcheck:
-      test: cat /running
+      test: cat /tmp/running
       interval: 30s
       timeout: 30s
       retries: 2
@@ -179,6 +186,7 @@ services:
       <<: *logging-label
     networks:
       - deltafi
+    restart: unless-stopped
   deltafi-docs:
     image: ${DELTAFI_DOCS}
     container_name: deltafi-docs
@@ -188,6 +196,7 @@ services:
       deltafi-group: deltafi-core
     networks:
       - deltafi
+    restart: unless-stopped
   deltafi-nodemonitor:
     image: ${DELTAFI_NODEMONITOR}
     container_name: deltafi-nodemonitor
@@ -202,6 +211,7 @@ services:
       <<: *logging-label
     networks:
       - deltafi
+    restart: unless-stopped
     volumes:
       - ${DATA_DIR}:/data
   deltafi-egress-sink:
@@ -219,6 +229,7 @@ services:
       <<: *logging-label
     networks:
       - deltafi
+    restart: unless-stopped
     volumes:
       - ${DATA_DIR}:/data/deltafi/egress-sink
   deltafi-minio:
@@ -238,6 +249,7 @@ services:
       deltafi-group: deltafi-dependency
     networks:
       - deltafi
+    restart: unless-stopped
     volumes:
       - ${DATA_DIR}/minio:/export
   deltafi-mongodb:
@@ -265,6 +277,7 @@ services:
       - deltafi
     expose:
       - "27017"
+    restart: unless-stopped
     volumes:
       - ${DATA_DIR}/mongo:/bitnami/mongodb
   deltafi-redis:
@@ -287,6 +300,7 @@ services:
       - deltafi
     expose:
       - "6379"
+    restart: unless-stopped
   deltafi-grafana:
     image: ${GRAFANA}
     container_name: deltafi-grafana
@@ -310,6 +324,7 @@ services:
       - ${SETTINGS_DIR}/grafana/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
       - ${SETTINGS_DIR}/grafana/provider.yaml:/etc/grafana/provisioning/dashboards/provider.yaml
       - ${SETTINGS_DIR}/grafana/dashboards:/tmp/dashboards
+    restart: unless-stopped
   deltafi-graphite:
     image: ${GRAPHITE}
     container_name: deltafi-graphite
@@ -329,6 +344,7 @@ services:
       deltafi-group: deltafi-dependency
     networks:
       - deltafi
+    restart: unless-stopped
     volumes:
       - ${SETTINGS_DIR}/graphite/conf:/opt/graphite/conf/
       - ${SETTINGS_DIR}/graphite/statsd/tcp.js:/opt/statsd/config/tcp.js
@@ -349,6 +365,7 @@ services:
       deltafi-group: deltafi-dependency
     networks:
       - deltafi
+    restart: unless-stopped
     volumes:
       - ${DATA_DIR}/clickhouse:/bitnami/clickhouse/
   deltafi-clickhouse-etl:
@@ -368,6 +385,7 @@ services:
       deltafi-group: deltafi-core
     networks:
       - deltafi
+    restart: unless-stopped
   deltafi-loki:
     image: ${LOKI}
     container_name: deltafi-loki
@@ -380,6 +398,7 @@ services:
       deltafi-group: deltafi-dependency
     networks:
       - deltafi
+    restart: unless-stopped
     volumes:
       - ${SETTINGS_DIR}/loki/loki.yaml:/etc/loki/loki.yaml
       - ${DATA_DIR}/loki:/data
@@ -396,6 +415,7 @@ services:
       deltafi-group: deltafi-dependency
     networks:
       - deltafi
+    restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${SETTINGS_DIR}/promtail/promtail.yaml:/etc/promtail/promtail.yaml
@@ -422,6 +442,7 @@ services:
       deltafi-group: deltafi-dependency
     networks:
       - deltafi
+    restart: unless-stopped
     volumes:
       - ${SETTINGS_DIR}/nginx:/etc/nginx/templates
     ports:
