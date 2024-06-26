@@ -102,7 +102,7 @@ redis:
   nameOverride: valkey
   fullnameOverride: deltafi-valkey
   image:
-    repository: valkey/valkey
+    repository: bitnami/valkey
     tag: 7.2.5
   architecture: standalone
   auth:

@@ -13,7 +13,7 @@ Usage:
 
 ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
-VALKEY_PASSWORD_ENV='$VALKEY_PASSWORD'
+VALKEY_PASSWORD_ENV='$REDIS_PASSWORD'
 
 if _is_standalone; then
   docker exec -it deltafi-valkey sh -c "valkey-cli --no-auth-warning -a $VALKEY_PASSWORD_ENV"
