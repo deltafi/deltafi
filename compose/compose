@@ -541,6 +541,7 @@ _write_startup_file() {
   _append_startup "SECRETS_DIR" "${SECRETS_DIR}"
   _append_startup "ENV_DIR" "${ENV_DIR}"
   _append_startup "DATA_DIR" "${DATA_DIR}"
+  _append_startup "COMPOSE_PROJECT_NAME" "deltafi"
   _append_startup_from_values "DELTAFI_API" ".deltafi.api.image"
   _append_startup_from_values "DELTAFI_AUTH" ".deltafi.auth.image"
   _append_startup_from_values "DELTAFI_AUTH_RESOLVER" ".deltafi.auth.entityResolver.image"

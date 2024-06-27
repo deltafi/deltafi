@@ -118,6 +118,7 @@ ALL_SNAPSHOT_FIELDS="id
                   backgroundColor
                 }
               }
+              inMemoryQueueSize
               setProperties
             }
             deletePolicies {

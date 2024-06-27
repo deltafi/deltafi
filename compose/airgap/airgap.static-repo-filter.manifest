@@ -1,0 +1,8 @@
+# vim: set ft=conf:
+#
+# -----  Docker STATIC Image FILTER List
+#
+# All images listed here will be filtered out of the final distro.
+registry:2
+moby/buildkit:buildx-stable-1
+postgres:latest
