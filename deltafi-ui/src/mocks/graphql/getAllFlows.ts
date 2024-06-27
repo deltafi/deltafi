@@ -58,7 +58,7 @@ const generateFlows = () => {
             type: "org.deltafi.core.action.delay.Delay",
             parameters: null,
             apiVersion: null,
-            collect: null
+            join: null
           }
         ],
         variables: []
@@ -102,7 +102,7 @@ const generateFlows = () => {
             type: "org.deltafi.core.action.delay.Delay",
             parameters: null,
             apiVersion: null,
-            collect: null
+            join: null
           }
         ],
         variables: []
@@ -146,7 +146,7 @@ const generateFlows = () => {
             type: "org.deltafi.core.action.delay.Delay",
             parameters: null,
             apiVersion: null,
-            collect: null
+            join: null
           }
         ],
         variables: []
@@ -190,7 +190,7 @@ const generateFlows = () => {
             type: "org.deltafi.core.action.delay.Delay",
             parameters: null,
             apiVersion: null,
-            collect: null
+            join: null
           }
         ],
         variables: []

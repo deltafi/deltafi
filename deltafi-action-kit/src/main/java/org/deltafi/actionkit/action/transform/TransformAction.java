@@ -50,7 +50,7 @@ public abstract class TransformAction<P extends ActionParameters> extends Action
     }
 
     @Override
-    protected TransformInput collect(@NotNull List<TransformInput> transformInputs) {
+    protected TransformInput join(@NotNull List<TransformInput> transformInputs) {
         List<ActionContent> allContent = new ArrayList<>();
         Map<String, String> allMetadata = new HashMap<>();
         for (TransformInput transformInput : transformInputs) {

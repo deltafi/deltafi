@@ -100,12 +100,12 @@ public abstract class Action<I, P extends ActionParameters, R extends ResultType
 
     /**
      * Builds an action-specific input instance used by the execute method from a list of action-specific inputs.  This
-     * method is used when the action context includes a collect configuration.
+     * method is used when the action context includes a join configuration.
      * @param actionInputs the list of action-specific inputs
      * @return the combined action-specific input instance
      */
-    protected I collect(@NotNull List<I> actionInputs) {
-        throw new UnsupportedOperationException("Collect is not supported for " + getClassCanonicalName());
+    protected I join(@NotNull List<I> actionInputs) {
+        throw new UnsupportedOperationException("Join is not supported for " + getClassCanonicalName());
     }
 
     /**
@@ -127,8 +127,8 @@ public abstract class Action<I, P extends ActionParameters, R extends ResultType
 
         actionExecution = new ActionExecution(getClassCanonicalName(), actionInput.getActionContext().getActionName(), actionInput.getActionContext().getDid(), OffsetDateTime.now());
 
-        if (actionInput.getActionContext().getCollect() != null) {
-            return execute(actionInput.getActionContext(), collect(actionInput.getDeltaFileMessages().stream()
+        if (actionInput.getActionContext().getJoin() != null) {
+            return execute(actionInput.getActionContext(), join(actionInput.getDeltaFileMessages().stream()
                             .map(deltaFileMessage -> buildInput(actionInput.getActionContext(), deltaFileMessage)).toList()),
                     convertToParams(actionInput.getActionParams()));
         }

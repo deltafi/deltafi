@@ -50,7 +50,7 @@ public class DeltaFile {
   private String dataSource;
   @Builder.Default
   private List<UUID> parentDids = new ArrayList<>();
-  private UUID collectId;
+  private UUID joinId;
   @Builder.Default
   private List<UUID> childDids = new ArrayList<>();
   @Builder.Default
@@ -104,7 +104,7 @@ public class DeltaFile {
   public DeltaFile(DeltaFile other) {
     this.did = other.did;
     this.parentDids = other.parentDids == null ? null : new ArrayList<>(other.parentDids);
-    this.collectId = other.collectId;
+    this.joinId = other.joinId;
     this.childDids = other.childDids == null ? null : new ArrayList<>(other.childDids);
     this.requeueCount = other.requeueCount;
     this.ingressBytes = other.ingressBytes;
@@ -213,45 +213,45 @@ public class DeltaFile {
   }
 
   /**
-   * Find all flows that were collecting on the given CollectId and update the
-   * collecting actions to a state of collected. Update the state of each modified
+   * Find all flows that were joining on the given JoinId and update the
+   * joining actions to a state of joined. Update the state of each modified
    * flow and then update this DeltaFiles state.
-   * @param collectId did of the child DeltaFile that collected the data
-   * @param actionName name of the action to mark as Collected
+   * @param joinId did of the child DeltaFile that joined the data
+   * @param actionName name of the action to mark as Joined
    * @param start start time of the action
    * @param stop stop time of the action
    * @param now current time
    */
-  public void collectedAction(UUID collectId, String actionName, OffsetDateTime start, OffsetDateTime stop, OffsetDateTime now) {
-    collectingFlows(collectId).forEach(f -> collectAction(f, actionName, start, stop, now));
+  public void joinedAction(UUID joinId, String actionName, OffsetDateTime start, OffsetDateTime stop, OffsetDateTime now) {
+    joiningFlows(joinId).forEach(f -> joinAction(f, actionName, start, stop, now));
     updateState(now);
   }
 
-  private void collectAction(DeltaFileFlow deltaFileFlow, String actionName, OffsetDateTime start, OffsetDateTime stop, OffsetDateTime now) {
+  private void joinAction(DeltaFileFlow deltaFileFlow, String actionName, OffsetDateTime start, OffsetDateTime stop, OffsetDateTime now) {
     deltaFileFlow.getActions().stream()
-            .filter(a -> a.getName().equals(actionName) && a.getState() == ActionState.COLLECTING)
-            .forEach(action -> action.changeState(ActionState.COLLECTED, start, stop, now));
+            .filter(a -> a.getName().equals(actionName) && a.getState() == ActionState.JOINING)
+            .forEach(action -> action.changeState(ActionState.JOINED, start, stop, now));
     deltaFileFlow.updateState(now);
   }
 
-  public void timeoutCollectAction(UUID collectId, String actionName, OffsetDateTime now, String reason) {
-    collectingFlows(collectId).forEach(f -> timeoutCollectAction(f, actionName, now, reason));
+  public void timeoutJoinAction(UUID joinId, String actionName, OffsetDateTime now, String reason) {
+    joiningFlows(joinId).forEach(f -> timeoutJoinAction(f, actionName, now, reason));
     updateState(now);
   }
 
-  private void timeoutCollectAction(DeltaFileFlow deltaFileFlow, String actionName, OffsetDateTime now, String reason) {
+  private void timeoutJoinAction(DeltaFileFlow deltaFileFlow, String actionName, OffsetDateTime now, String reason) {
     deltaFileFlow.getActions().stream()
-            .filter(a -> a.getName().equals(actionName) && a.getState() == ActionState.COLLECTING)
-            .forEach(a -> a.error(now, now, now, "Failed collect", reason));
+            .filter(a -> a.getName().equals(actionName) && a.getState() == ActionState.JOINING)
+            .forEach(a -> a.error(now, now, now, "Failed join", reason));
     deltaFileFlow.updateState(now);
   }
 
-  private Stream<DeltaFileFlow> collectingFlows(UUID collectId) {
-    return flows.stream().filter(flow -> collectedWithId(flow, collectId));
+  private Stream<DeltaFileFlow> joiningFlows(UUID joinId) {
+    return flows.stream().filter(flow -> joinedWithId(flow, joinId));
   }
 
-  private boolean collectedWithId(DeltaFileFlow flow, UUID collectId) {
-    return collectId.equals(flow.getCollectId()) && !flow.terminal();
+  private boolean joinedWithId(DeltaFileFlow flow, UUID joinId) {
+    return joinId.equals(flow.getJoinId()) && !flow.terminal();
   }
 
   public List<DeltaFileFlow> resumeErrors(@NotNull List<ResumeMetadata> resumeMetadata, OffsetDateTime now) {
@@ -308,8 +308,8 @@ public class DeltaFile {
     return flows.stream().anyMatch(flow -> flow.getState() == DeltaFileFlowState.ERROR);
   }
 
-  public boolean hasCollectingAction() {
-    return flows.stream().anyMatch(f -> f.hasActionInState(ActionState.COLLECTING));
+  public boolean hasJoiningAction() {
+    return flows.stream().anyMatch(f -> f.hasActionInState(ActionState.JOINING));
   }
 
   public DeltaFileFlow getFlow(String flowName, int flowId) {
@@ -460,8 +460,8 @@ public class DeltaFile {
     Update update = new Update();
     boolean updated = false;
     // did, name, normalizedName, dataSource, parentDids, and created do not change
-    if (!Objects.equals(this.collectId, snapshot.collectId)) {
-      update.set("collectId", this.collectId);
+    if (!Objects.equals(this.joinId, snapshot.joinId)) {
+      update.set("joinId", this.joinId);
       updated = true;
     }
     if (!Objects.equals(this.childDids, snapshot.childDids)) {
@@ -594,7 +594,7 @@ public class DeltaFile {
    * @param memo memo to set in the context
    * @return ActionInput containing the ActionConfiguration
    */
-  public WrappedActionInput buildActionInput(ActionConfiguration actionConfiguration, DeltaFileFlow flow, List<UUID> collectedDids, Action action, String systemName,
+  public WrappedActionInput buildActionInput(ActionConfiguration actionConfiguration, DeltaFileFlow flow, List<UUID> joinedDids, Action action, String systemName,
                                              String returnAddress, String memo) {
     return WrappedActionInput.builder()
             .queueName(actionConfiguration.getType())
@@ -606,8 +606,8 @@ public class DeltaFile {
                     .actionId(action.getId())
                     .did(did)
                     .deltaFileName(name)
-                    .collectedDids(Objects.requireNonNullElseGet(collectedDids, List::of))
-                    .collect(actionConfiguration.getCollect())
+                    .joinedDids(Objects.requireNonNullElseGet(joinedDids, List::of))
+                    .join(actionConfiguration.getJoin())
                     .systemName(systemName)
                     .memo(memo)
                     .build())

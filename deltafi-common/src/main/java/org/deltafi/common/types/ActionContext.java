@@ -45,8 +45,8 @@ public class ActionContext {
     private String systemName;
     private ContentStorageService contentStorageService;
 
-    private CollectConfiguration collect;
-    private List<UUID> collectedDids;
+    private JoinConfiguration join;
+    private List<UUID> joinedDids;
 
     private String memo;
 
@@ -55,6 +55,6 @@ public class ActionContext {
      * */
     public ActionContext copy(UUID newDid) {
         return new ActionContext(newDid, deltaFileName, dataSource, flowName, flowId, actionName, actionId, hostname,
-                actionVersion, startTime, systemName, contentStorageService, collect, collectedDids, memo);
+                actionVersion, startTime, systemName, contentStorageService, join, joinedDids, memo);
     }
 }

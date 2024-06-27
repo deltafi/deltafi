@@ -65,7 +65,7 @@ generateJava {
 			"ActionDescriptorInput": "org.deltafi.common.types.ActionDescriptor",
 			"ActionState": "org.deltafi.common.types.ActionState",
 			"ActionType": "org.deltafi.common.types.ActionType",
-			"CollectConfiguration": "org.deltafi.common.types.CollectConfiguration",
+			"JoinConfiguration": "org.deltafi.common.types.JoinConfiguration",
 			"Content": "org.deltafi.common.types.Content",
 			"DataSource": "org.deltafi.core.types.DataSource",
 			"DataSourcePlan": "org.deltafi.common.types.DataSourcePlan",

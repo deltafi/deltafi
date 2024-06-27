@@ -54,7 +54,7 @@ public class DeltaFileFlow {
     private Set<String> pendingAnnotations = new HashSet<>();
     boolean testMode;
     String testModeReason;
-    private UUID collectId;
+    private UUID joinId;
 
     @JsonIgnore
     @Builder.Default
@@ -75,7 +75,7 @@ public class DeltaFileFlow {
         this.pendingAnnotations = new HashSet<>(other.pendingAnnotations);
         this.testMode = other.testMode;
         this.testModeReason = other.testModeReason;
-        this.collectId = other.collectId;
+        this.joinId = other.joinId;
         this.actionConfigurations = other.actionConfigurations;
     }
 
@@ -269,10 +269,6 @@ public class DeltaFileFlow {
         return cleared;
     }
 
-    public boolean hasCollectedAction(String name) {
-        return actions.stream().anyMatch(a -> a.getName().equals(name) && a.getState() == ActionState.COLLECTED);
-    }
-
     public boolean hasFinalAction(String name) {
         return getActions().stream().anyMatch(action -> action.getName().equals(name) &&
                 action.getState() != ActionState.RETRIED && action.terminal());
@@ -286,7 +282,7 @@ public class DeltaFileFlow {
             case ERROR -> DeltaFileFlowState.ERROR;
             case CANCELLED -> DeltaFileFlowState.CANCELLED;
             case COMPLETE -> hasPendingAnnotations() ? DeltaFileFlowState.PENDING_ANNOTATIONS : DeltaFileFlowState.COMPLETE;
-            case COLLECTED, FILTERED, SPLIT -> DeltaFileFlowState.COMPLETE;
+            case JOINED, FILTERED, SPLIT -> DeltaFileFlowState.COMPLETE;
             default -> DeltaFileFlowState.IN_FLIGHT;
         };
     }

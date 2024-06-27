@@ -1,6 +1,6 @@
 # Actions
 
-Actions are isolated units of business logic that perform a function within Transform, Normalize, Enrichment, and Egress Flows.
+Actions are isolated units of business logic that perform a function within TimedDataSources, Transform Flows, and Egressors.
 Actions receive required data from the DeltaFile on a queue, perform whatever logic is needed, and issue a response that
 augments the DeltaFile so that it can be handed off to the next Action in the flow.
 
@@ -24,17 +24,19 @@ about where the action is running and the DeltaFile(s) being processed.
 
 ```java
 // the did is the DeltaFile's id
-String did = context.getDid();
-// the flow in which the action is being invoked
-String flow = context.getFlow();
+UUID did = context.getDid();
+// the name of the DeltaFile, typically the original filename
+String deltaFileName = context.getDeltaFileName();
+// the original dataSource of this DeltaFile
+String dataSource = context.getDataSource();
+// the name of the flow in which the action is being invoked
+String flowName = context.getFlowName();
+// the id of the flow in which the action is being invoked
+String flowId = context.getFlowId();
 // name of the Action as configured in a flow
-String actionName = context.getName();
-// the original filename
-String sourceFilename = context.getSourceFilename();
-// the ingress flow name
-String ingressFlow = context.getIngressFlow();
-// the egress flow name
-String egressFlow = context.getEgressFlow();
+String actionName = context.getActionName();
+// id of the Action in the current flow
+String actionId = context.getActionId();
 // hostname where the Action is running
 String hostname = context.getHostname();
 // version of Core Actions or plugin containing the Action
@@ -43,10 +45,12 @@ String actionVersion = context.getActionVersion();
 OffsetDateTime startTime = context.getStartTime();
 // system name from DeltaFi System Properties
 String systemName = context.getSystemName();
-// the optional collect configuration in effect for the action
-CollectConfiguration collect = context.getCollect();
-// the optional collected DeltaFile ids
-List<String> collectedDids = context.getCollectedDids();
+// the optional join configuration in effect for the action
+JoinConfiguration join = context.getJoin();
+// the optional join DeltaFile ids
+List<UUID> joinedDids = context.getJoinedDids();
+// the optional memo field used to pass bookmarking info to timed ingress actions
+String memo = context.getMemo();
 ```
 
 Execution methods for each Python action type are passed a `Context`. The context gives you access to information about
@@ -55,23 +59,26 @@ where the action is running, the DeltaFile(s) being processed, and access to sup
 ```python
 class Context(NamedTuple):
     did: str
+    delta_file_name: str
+    data_source: str
+    flow_name: str
+    flow_id: str
     action_name: str
-    source_filename: str
-    ingress_flow: str
-    egress_flow: str
-    system: str
+    action_id: str
+    action_version: str
     hostname: str
+    system_name: str
     content_service: ContentService
-    collect: dict
-    collected_dids: List[str]
-    logger: Logger
-
+    join: dict = None
+    joined_dids: List[str] = None
+    memo: str = None
+    logger: Logger = None
 ```
 
 ### Input
 
-Each `Action` has a specific `Input` class passed to its execution method. For example, a Load Action receives the
-`LoadInput` in the `load()` method. Each `Input` class is unique for each Action type, with some combination of the
+Each `Action` has a specific `Input` class passed to its execution method. For example, a Transform Action receives the
+`TransformInput` in the `transform()` method. Each `Input` class is unique for each Action type, with some combination of the
 fields below.
 
 ```java
@@ -107,8 +114,8 @@ public class DecompressionTransformParameters extends ActionParameters {
 ```python
 from pydantic import BaseModel, Field
 
-class MyLoadActionParameters(BaseModel):
-    domain: str = Field(description="The domain used by the load action")
+class DecompressionTransformParameters(BaseModel):
+    myParameter: str = Field(description="Description goes here")
 ```
 
 ### Content Storage
@@ -127,9 +134,9 @@ InputStream inputStream = content.loadInputStream();
 To retrieve content as a string or byte array in a Python action execution:
 
 ```python
-    def load(self, context: Context, params: BaseModel, load_input: LoadInput):
-        string = load_input.content[0].load_str()
-        bytes = load_input.content[0].load_bytes()
+    def transform(self, context: Context, params: BaseModel, transform_input: TransformInput):
+        string = transform_input.content[0].load_str()
+        bytes = transform_input.content[0].load_bytes()
 
 ```
 
@@ -158,7 +165,7 @@ transformResult.addContent(copyOfFirstContent);
 Or in Python save content to a Result:
 
 ```python
-    result.save_content(data, content_name, media_type)
+result.save_content(data, content_name, media_type)
 ```
 
 ### Results
@@ -193,29 +200,21 @@ or
 return new FilterResult(context, "Common summary reason of why this DeltaFile was filtered", "Detailed reason");
 ```
 
-### Collect
+### Join
 
-Transform, Load, and Format actions may be configured to collect multiple DeltaFiles before executing. When the action
-is executed, the action context will include a collect configuration and a list of the DeltaFile ids that were
-collected. The collect configuration may include the following fields:
+Transform actions may be configured to join multiple DeltaFiles before executing the transform method. When a transform action
+is configured for joining, DeltaFi will collect a batch of DeltaFiles until the join criteria is met.
+Once the criteria is met, the batch is sent to the Transform action where it is joined into a single input and
+passed to the transform method.
 
-* `maxAge` the maximum duration (ISO 8601) to wait after the first DeltaFile is received for a collection before the
-  action is executed
-* `minNum` the minimum number of DeltaFiles to collect within `maxAge`. If this number is not reached, all collected
-  DeltaFiles will have the action marked in error.
-* `maxNum` the maximum number of DeltaFiles to collect before the action is executed
-* `metadataKey` an optional metadata key used to get the value to group collections by (defaults to collecting all)
+By default, Transform actions configured to join will combine content and metadata from all collected
+DeltaFiles into the `TransformInput` passed to the transform method.
 
-By default, Transform and Load actions configured to collect will combine content and metadata from all collected
-DeltaFiles into the `Input` passed to the execution method. Format actions configured to collect will default to
-combining content, metadata, and annotations from all collected DeltaFiles into the `Input` passed to the
-execution method.
-
-The `collect` method may be defined by an action to override the default behavior:
+The `join` method may be overridden by an action to change the default behavior:
 
 ```java
     @Override
-    protected TransformInput collect(List<TransformInput> transformInputs) {
+    protected TransformInput join(List<TransformInput> transformInputs) {
         List<ActionContent> allContent = new ArrayList<>();
         for (TransformInput transformInput : transformInputs) {
             allContent.addAll(transformInput.getContent());
@@ -227,15 +226,22 @@ The `collect` method may be defined by an action to override the default behavio
 ```
 
 ```python
-    def collect(self, transform_inputs: List[TransformInput]):
+    def join(self, transform_inputs: List[TransformInput]):
         all_content = []
         for transform_input in transform_inputs:
             all_content += transform_input.content
         return TransformInput(content=all_content)
 ```
 
-## Transform Flow Actions
-- [Transform Action](/actions/transform)
+The join configuration that defines the criteria for collecting DeltaFiles that will be joined may include the following fields: 
+* `maxAge` the maximum duration (ISO 8601) to wait after the first DeltaFile is received for a collection before the
+  action is executed
+* `minNum` the minimum number of DeltaFiles to collect within `maxAge`. If this number is not reached, all collected
+  DeltaFiles will have the action marked in error.
+* `maxNum` the maximum number of DeltaFiles to collect before the action is executed
+* `metadataKey` an optional metadata key used to get the value to group collections by (defaults to collecting all)
 
-## Egress Flow Actions
+## Action Pages
+- [Timed Ingress Action](/actions/timed_ingress)
+- [Transform Action](/actions/transform)
 - [Egress Action](/actions/egress)

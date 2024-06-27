@@ -50,8 +50,8 @@ class Context(NamedTuple):
     hostname: str
     system_name: str
     content_service: ContentService
-    collect: dict = None
-    collected_dids: List[str] = None
+    join: dict = None
+    joined_dids: List[str] = None
     memo: str = None
     logger: Logger = None
 
@@ -94,14 +94,14 @@ class Context(NamedTuple):
             system_name = context['systemName']
         else:
             system_name = None
-        if 'collect' in context:
-            collect = context['collect']
+        if 'join' in context:
+            join = context['join']
         else:
-            collect = None
-        if 'collectedDids' in context:
-            collected_dids = context['collectedDids']
+            join = None
+        if 'joinedDids' in context:
+            joined_dids = context['joinedDids']
         else:
-            collected_dids = None
+            joined_dids = None
         if 'memo' in context:
             memo = context['memo']
         else:
@@ -117,8 +117,8 @@ class Context(NamedTuple):
                        action_version=action_version,
                        hostname=hostname,
                        system_name=system_name,
-                       collect=collect,
-                       collected_dids=collected_dids,
+                       join=join,
+                       joined_dids=joined_dids,
                        memo=memo,
                        content_service=content_service,
                        logger=logger)

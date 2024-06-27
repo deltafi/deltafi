@@ -35,8 +35,8 @@ import org.deltafi.common.converters.KeyValueConverter;
 import org.deltafi.common.types.*;
 import org.deltafi.common.uuid.UUIDGenerator;
 import org.deltafi.core.audit.CoreAuditLogger;
-import org.deltafi.core.collect.CollectEntry;
-import org.deltafi.core.collect.ScheduledCollectService;
+import org.deltafi.core.join.JoinEntry;
+import org.deltafi.core.join.ScheduledJoinService;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.exceptions.*;
 import org.deltafi.core.generated.types.*;
@@ -118,7 +118,7 @@ public class DeltaFilesService {
     private final QueueManagementService queueManagementService;
     private final QueuedAnnotationRepo queuedAnnotationRepo;
     private final Environment environment;
-    private final ScheduledCollectService scheduledCollectService;
+    private final ScheduledJoinService scheduledJoinService;
     private final UUIDGenerator uuidGenerator;
 
     private ExecutorService executor;
@@ -139,8 +139,8 @@ public class DeltaFilesService {
             log.info("Internal queue size: {}", internalQueueSize);
         }
 
-        scheduledCollectService.registerHandlers(this::queueTimedOutCollect, this::failTimedOutCollect);
-        scheduledCollectService.scheduleNextCollectCheck();
+        scheduledJoinService.registerHandlers(this::queueTimedOutJoin, this::failTimedOutJoin);
+        scheduledJoinService.scheduleNextJoinCheck();
     }
 
     @PreDestroy
@@ -393,7 +393,7 @@ public class DeltaFilesService {
                 default -> throw new UnknownTypeException(event.getActionName(), deltaFile.getDid(), event.getType());
             }
 
-            completeCollect(event, deltaFile, flow, action, OffsetDateTime.now());
+            completeJoin(event, deltaFile, flow, action, OffsetDateTime.now());
         }
     }
 
@@ -858,7 +858,7 @@ public class DeltaFilesService {
 
                             List<UUID> parentDids = new ArrayList<>(List.of(deltaFile.getDid()));
                             Action replayAction;
-                            if (deltaFile.getCollectId() != null) {
+                            if (deltaFile.getJoinId() != null) {
                                 setNextActionsInAggregateFlow(flow, firstFlow);
                                 replayAction = flow.addAction(REPLAY_ACTION_NAME, ActionType.TRANSFORM, ActionState.COMPLETE, now);
                                 parentDids.addAll(deltaFile.getParentDids());
@@ -897,7 +897,7 @@ public class DeltaFilesService {
                                     .modified(now)
                                     .egressed(false)
                                     .filtered(false)
-                                    .collectId(deltaFile.getCollectId())
+                                    .joinId(deltaFile.getJoinId())
                                     .build();
 
                             inputs.add(new StateMachineInput(child, flow));
@@ -991,14 +991,14 @@ public class DeltaFilesService {
     private void setNextActionsInAggregateFlow(DeltaFileFlow aggregateFlow, DeltaFileFlow firstFlow) {
         List<ActionConfiguration> nextActions = new ArrayList<>();
         if (firstFlow.getType() == FlowType.TRANSFORM) {
-            String collectActionName = firstFlow.getActions().stream()
+            String joinActionName = firstFlow.getActions().stream()
                     .filter(action -> !REPLAY_ACTION_NAME.equals(action.getName()))
-                    .findFirst().orElseThrow(() -> new IllegalStateException("Could not find the collect action to replay"))
+                    .findFirst().orElseThrow(() -> new IllegalStateException("Could not find the join action to replay"))
                     .getName();
             TransformFlow flowConfig = transformFlowService.getFlowOrThrow(firstFlow.getName());
             boolean addConfig = false;
             for (ActionConfiguration actionConfiguration : flowConfig.getTransformActions()) {
-                if (actionConfiguration.getName().equals(collectActionName) && actionConfiguration.getCollect() != null) {
+                if (actionConfiguration.getName().equals(joinActionName) && actionConfiguration.getJoin() != null) {
                     addConfig = true;
                 }
                 if (addConfig) {
@@ -1006,7 +1006,7 @@ public class DeltaFilesService {
                 }
             }
             if (!addConfig) {
-                throw new IllegalStateException("Flow " + aggregateFlow.getName() + " no longer has a collect action named " + collectActionName);
+                throw new IllegalStateException("Flow " + aggregateFlow.getName() + " no longer has a join action named " + joinActionName);
             }
         } else if (firstFlow.getType() == FlowType.EGRESS) {
             EgressFlow flowConfig = egressFlowService.getFlowOrThrow(firstFlow.getName());
@@ -1139,7 +1139,7 @@ public class DeltaFilesService {
 
         List<WrappedActionInput> actionInputs = stateMachine.advance(inputs);
         inputs.stream()
-            .filter(input -> input.deltaFile().hasCollectingAction())
+            .filter(input -> input.deltaFile().hasJoiningAction())
             .forEach(input -> deltaFileCacheService.remove(input.deltaFile().getDid()));
 
         deltaFileCacheService.saveAll(inputs.stream().map(StateMachineInput::deltaFile).collect(Collectors.toSet()));
@@ -1274,7 +1274,7 @@ public class DeltaFilesService {
             return null;
         }
 
-        if (deltaFile.getCollectId() != null) {
+        if (deltaFile.getJoinId() != null) {
             return deltaFile.buildActionInput(actionConfiguration, flow, deltaFile.getParentDids(), action, getProperties().getSystemName(), null, null);
         }
 
@@ -1437,8 +1437,8 @@ public class DeltaFilesService {
 
     private void populateBatchInput(WrappedActionInput actionInput) throws MissingDeltaFilesException {
         UUID did = actionInput.getActionContext().getDid();
-        List<UUID> collectedDids = actionInput.getActionContext().getCollectedDids();
-        if (!collectedDids.isEmpty() && actionInput.getDeltaFileMessages() == null) {
+        List<UUID> joinedDids = actionInput.getActionContext().getJoinedDids();
+        if (!joinedDids.isEmpty() && actionInput.getDeltaFileMessages() == null) {
             if (!deltaFileRepo.existsById(did)) {
                 deltaFileRepo.save(actionInput.getDeltaFile());
             }
@@ -1454,12 +1454,12 @@ public class DeltaFilesService {
             }
 
             List<DeltaFileMessage> deltaFileMessages = new ArrayList<>();
-            List<DeltaFile> parents = findDeltaFiles(collectedDids);
+            List<DeltaFile> parents = findDeltaFiles(joinedDids);
 
-            UUID collectId = actionInput.getDeltaFile().getCollectId();
+            UUID joinId = actionInput.getDeltaFile().getJoinId();
             for (DeltaFile parent : parents) {
                 for (DeltaFileFlow deltaFileFlow : parent.getFlows()) {
-                    if (collectId.equals(deltaFileFlow.getCollectId())) {
+                    if (joinId.equals(deltaFileFlow.getJoinId())) {
                         if (isReplay) {
                             DeltaFileFlow tmpFlow = new DeltaFileFlow();
                             tmpFlow.setActions(new ArrayList<>(deltaFileFlow.getActions()));
@@ -1684,35 +1684,35 @@ public class DeltaFilesService {
         return dids.stream().map(deltaFileMap::get).toList();
     }
 
-    public void queueTimedOutCollect(CollectEntry collectEntry, List<UUID> collectedDids) {
-        ActionConfiguration actionConfiguration = actionConfiguration(collectEntry.getCollectDefinition().getFlow(),
-                collectEntry.getCollectDefinition().getAction());
+    public void queueTimedOutJoin(JoinEntry joinEntry, List<UUID> joinDids) {
+        ActionConfiguration actionConfiguration = actionConfiguration(joinEntry.getJoinDefinition().getFlow(),
+                joinEntry.getJoinDefinition().getAction());
 
         if (actionConfiguration == null) {
-            log.warn("Time-based collect action couldn't run because action {} in flow {} is no longer running",
-                    collectEntry.getCollectDefinition().getAction(), collectEntry.getCollectDefinition().getFlow());
+            log.warn("Time-based join action couldn't run because action {} in flow {} is no longer running",
+                    joinEntry.getJoinDefinition().getAction(), joinEntry.getJoinDefinition().getFlow());
             return;
         }
 
-        DeltaFile parent = getDeltaFile(collectedDids.getLast());
-        DeltaFileFlow deltaFileFlow = parent.getFlows().stream().filter(flow -> collectEntry.getId().equals(flow.getCollectId())).findFirst().orElse(null);
+        DeltaFile parent = getDeltaFile(joinDids.getLast());
+        DeltaFileFlow deltaFileFlow = parent.getFlows().stream().filter(flow -> joinEntry.getId().equals(flow.getJoinId())).findFirst().orElse(null);
         if (deltaFileFlow == null) {
-            log.warn("Time-based collect action couldn't run because a flow with a collectId of {} was not found in the parent with a did of {}. Failed executing action {} from flow flow {}",
-                    collectEntry.getId(), parent.getDid(), collectEntry.getCollectDefinition().getAction(), collectEntry.getCollectDefinition().getFlow());
+            log.warn("Time-based join action couldn't run because a flow with a joinId of {} was not found in the parent with a did of {}. Failed executing action {} from flow flow {}",
+                    joinEntry.getId(), parent.getDid(), joinEntry.getJoinDefinition().getAction(), joinEntry.getJoinDefinition().getFlow());
             return;
         }
 
-        WrappedActionInput input = DeltaFileUtil.createAggregateInput(actionConfiguration, deltaFileFlow, collectEntry, collectedDids, ActionState.QUEUED, getProperties().getSystemName(),  null);
+        WrappedActionInput input = DeltaFileUtil.createAggregateInput(actionConfiguration, deltaFileFlow, joinEntry, joinDids, ActionState.QUEUED, getProperties().getSystemName(),  null);
 
         enqueueActions(List.of(input));
     }
 
-    public void failTimedOutCollect(CollectEntry collectEntry, List<UUID> collectedDids, String reason) {
-        log.debug("Failing collect action");
+    public void failTimedOutJoin(JoinEntry joinEntry, List<UUID> joinedDids, String reason) {
+        log.debug("Failing join action");
 
         List<UUID> missingDids = new ArrayList<>();
 
-        for (UUID did : collectedDids) {
+        for (UUID did : joinedDids) {
             try {
                 DeltaFile deltaFile = deltaFileRepo.findById(did).orElse(null);
                 if (deltaFile == null) {
@@ -1720,26 +1720,26 @@ public class DeltaFilesService {
                     continue;
                 }
 
-                deltaFile.timeoutCollectAction(collectEntry.getId(), collectEntry.getCollectDefinition().getAction(),  OffsetDateTime.now(clock), reason);
+                deltaFile.timeoutJoinAction(joinEntry.getId(), joinEntry.getJoinDefinition().getAction(),  OffsetDateTime.now(clock), reason);
                 deltaFileRepo.save(deltaFile);
             } catch (OptimisticLockingFailureException e) {
-                log.warn("Unable to save DeltaFile with failed collect action", e);
+                log.warn("Unable to save DeltaFile with failed join action", e);
             }
         }
 
         if (!missingDids.isEmpty()) {
-            log.warn("DeltaFiles with the following ids were missing during failed collect: {}", missingDids);
+            log.warn("DeltaFiles with the following ids were missing during failed join: {}", missingDids);
         }
     }
 
-    private void completeCollect(ActionEvent event, DeltaFile deltaFile, DeltaFileFlow flow, Action action, OffsetDateTime now) {
+    private void completeJoin(ActionEvent event, DeltaFile deltaFile, DeltaFileFlow flow, Action action, OffsetDateTime now) {
         ActionConfiguration actionConfiguration = actionConfiguration(flow.getName(), action.getName());
-        if ((actionConfiguration != null) && (actionConfiguration.getCollect() != null)) {
+        if ((actionConfiguration != null) && (actionConfiguration.getJoin() != null)) {
             List<WrappedActionInput> actionInputs = new ArrayList<>();
             List<DeltaFile> parentDeltaFiles = deltaFileRepo.findAllById(deltaFile.getParentDids());
             for (DeltaFile parentDeltaFile : parentDeltaFiles) {
                 parentDeltaFile.getChildDids().add(deltaFile.getDid());
-                parentDeltaFile.collectedAction(event.getDid(), action.getName(), event.getStart(), event.getStop(), now);
+                parentDeltaFile.joinedAction(event.getDid(), action.getName(), event.getStart(), event.getStop(), now);
             }
             deltaFileRepo.saveAll(parentDeltaFiles);
             enqueueActions(actionInputs);

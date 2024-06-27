@@ -16,8 +16,8 @@ export const variableFields = {
   },
 };
 
-export const collectFields = {
-  collect: {
+export const joinFields = {
+  join: {
     maxAge: true,
     minNum: true,
     maxNum: true,
@@ -66,7 +66,7 @@ export const transformFlowFields = {
   maxErrors: true,
   transformActions: {
     ...defaultActionFields,
-    ...collectFields,
+    ...joinFields,
   },
   ...variableFields,
 };
@@ -77,7 +77,7 @@ export const transformFlowPlanFields = {
   type: true,
   transformActions: {
     ...defaultActionFields,
-    ...collectFields,
+    ...joinFields,
   },
   egressAction: {
     ...defaultActionFields,

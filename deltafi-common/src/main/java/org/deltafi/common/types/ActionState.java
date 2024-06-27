@@ -26,7 +26,7 @@ public enum ActionState {
   FILTERED,
   SPLIT,
   CANCELLED,
-  COLLECTING,
-  COLLECTED,
+  JOINING,
+  JOINED,
   INHERITED
 }

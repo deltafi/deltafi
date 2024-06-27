@@ -19,8 +19,8 @@ package org.deltafi.core.schedulers;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
-import org.deltafi.core.collect.ScheduledCollectService;
-import org.deltafi.core.schedulers.trigger.CollectEntryLockCheckTrigger;
+import org.deltafi.core.join.ScheduledJoinService;
+import org.deltafi.core.schedulers.trigger.JoinEntryLockCheckTrigger;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -30,13 +30,13 @@ import org.springframework.stereotype.Service;
 @Service
 @EnableScheduling
 @RequiredArgsConstructor
-public class CollectEntryLockCheckScheduler {
+public class JoinEntryLockCheckScheduler {
     private final TaskScheduler taskScheduler;
-    private final ScheduledCollectService scheduledCollectService;
-    private final CollectEntryLockCheckTrigger collectEntryLockCheckTrigger;
+    private final ScheduledJoinService scheduledJoinService;
+    private final JoinEntryLockCheckTrigger joinEntryLockCheckTrigger;
 
     @PostConstruct
     public void init() {
-        taskScheduler.schedule(scheduledCollectService::unlockTimedOutCollectEntryLocks, collectEntryLockCheckTrigger);
+        taskScheduler.schedule(scheduledJoinService::unlockTimedOutJoinEntryLocks, joinEntryLockCheckTrigger);
     }
 }

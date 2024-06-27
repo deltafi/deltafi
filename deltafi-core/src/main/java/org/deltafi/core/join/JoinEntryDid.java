@@ -15,20 +15,20 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.collect;
+package org.deltafi.core.join;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.deltafi.common.types.ActionType;
-import org.deltafi.common.types.DeltaFileStage;
+import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.UUID;
+
+@Document
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CollectDefinition {
-    private String flow;
-    private ActionType actionType;
-    private String action;
-    private String collectGroup;
+public class JoinEntryDid {
+    private UUID joinEntryId;
+    private UUID did;
 }

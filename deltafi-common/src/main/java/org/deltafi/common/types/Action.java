@@ -97,7 +97,7 @@ public class Action {
   boolean queued() { return state == ActionState.QUEUED || state == ActionState.COLD_QUEUED; }
 
   boolean terminal() {
-    return !queued() && state != ActionState.COLLECTING;
+    return !queued() && state != ActionState.JOINING;
   }
 
   boolean completeOrRetried() {

@@ -39,14 +39,14 @@ input TimedIngressActionConfigurationInput {
     parameters: JSON
 }
 
-type CollectConfiguration {
+type JoinConfiguration {
     maxAge: String
     minNum: Int
     maxNum: Int
     metadataKey: String
 }
 
-input CollectConfigurationInput {
+input JoinConfigurationInput {
     maxAge: String
     minNum: Int
     maxNum: Int
@@ -59,7 +59,7 @@ type TransformActionConfiguration implements ActionConfiguration {
     actionType: String!
     type: String!
     parameters: JSON
-    collect: CollectConfiguration
+    join: JoinConfiguration
 }
 
 input TransformActionConfigurationInput {
@@ -67,7 +67,7 @@ input TransformActionConfigurationInput {
     apiVersion: String
     type: String!
     parameters: JSON
-    collect: CollectConfigurationInput
+    join: JoinConfigurationInput
 }
 
 type EgressActionConfiguration implements ActionConfiguration {

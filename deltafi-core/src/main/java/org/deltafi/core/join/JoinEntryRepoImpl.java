@@ -15,7 +15,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.collect;
+package org.deltafi.core.join;
 
 import lombok.RequiredArgsConstructor;
 import org.deltafi.common.uuid.UUIDGenerator;
@@ -35,12 +35,12 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @RequiredArgsConstructor
-public class CollectEntryRepoImpl implements CollectEntryRepoCustom {
+public class JoinEntryRepoImpl implements JoinEntryRepoCustom {
     private static final String ID_FIELD = "id";
-    private static final String COLLECT_DEFINITION_FIELD = "collectDefinition";
+    private static final String JOIN_DEFINITION_FIELD = "joinDefinition";
     private static final String LOCKED_FIELD = "locked";
     private static final String LOCKED_TIME_FIELD = "lockedTime";
-    private static final String COLLECT_DATE_FIELD = "collectDate";
+    private static final String JOIN_DATE_FIELD = "joinDate";
     private static final String MIN_NUM_FIELD = "minNum";
     private static final String MAX_NUM_FIELD = "maxNum";
     private static final String COUNT_FIELD = "count";
@@ -51,20 +51,20 @@ public class CollectEntryRepoImpl implements CollectEntryRepoCustom {
     private final UUIDGenerator uuidGenerator;
 
     @Override
-    public void ensureCollectDefinitionIndex() {
-        IndexOperations indexOperations = mongoTemplate.indexOps(CollectEntry.class);
-        IndexUtils.updateIndices(indexOperations, "unique_collect_definition",
-                new Index(COLLECT_DEFINITION_FIELD, Sort.Direction.ASC).named("unique_collect_definition").unique(),
+    public void ensureJoinDefinitionIndex() {
+        IndexOperations indexOperations = mongoTemplate.indexOps(JoinEntry.class);
+        IndexUtils.updateIndices(indexOperations, "unique_join_definition",
+                new Index(JOIN_DEFINITION_FIELD, Sort.Direction.ASC).named("unique_join_definition").unique(),
                 indexOperations.getIndexInfo());
     }
 
     @Override
-    public CollectEntry upsertAndLock(CollectDefinition collectDefinition, OffsetDateTime collectDate, Integer minNum,
-            Integer maxNum, int maxFlowDepth) {
-        Query query = new Query().addCriteria(Criteria.where(COLLECT_DEFINITION_FIELD).is(collectDefinition)
+    public JoinEntry upsertAndLock(JoinDefinition joinDefinition, OffsetDateTime joinDate, Integer minNum,
+                                   Integer maxNum, int maxFlowDepth) {
+        Query query = new Query().addCriteria(Criteria.where(JOIN_DEFINITION_FIELD).is(joinDefinition)
                 .and(LOCKED_FIELD).is(false));
         UpdateDefinition updateDefinition = new Update()
-                .setOnInsert(COLLECT_DATE_FIELD, collectDate)
+                .setOnInsert(JOIN_DATE_FIELD, joinDate)
                 .setOnInsert(MIN_NUM_FIELD, minNum)
                 .setOnInsert(MAX_NUM_FIELD, maxNum)
                 .setOnInsert("_id", uuidGenerator.generate())
@@ -73,28 +73,28 @@ public class CollectEntryRepoImpl implements CollectEntryRepoCustom {
                 .max(MAX_FLOW_DEPTH, maxFlowDepth)
                 .inc(COUNT_FIELD, 1);
         FindAndModifyOptions findAndModifyOptions = FindAndModifyOptions.options().upsert(true).returnNew(true);
-        return mongoTemplate.findAndModify(query, updateDefinition, findAndModifyOptions, CollectEntry.class);
+        return mongoTemplate.findAndModify(query, updateDefinition, findAndModifyOptions, JoinEntry.class);
     }
 
     @Override
-    public CollectEntry lockOneBefore(OffsetDateTime collectDate) {
-        Query query = new Query().addCriteria(Criteria.where(COLLECT_DATE_FIELD).lte(collectDate)
+    public JoinEntry lockOneBefore(OffsetDateTime joinDate) {
+        Query query = new Query().addCriteria(Criteria.where(JOIN_DATE_FIELD).lte(joinDate)
                 .and(LOCKED_FIELD).is(false));
         UpdateDefinition updateDefinition = new Update()
                 .set(LOCKED_FIELD, true)
                 .set(LOCKED_TIME_FIELD, OffsetDateTime.now(clock));
-        return mongoTemplate.findAndModify(query, updateDefinition, CollectEntry.class);
+        return mongoTemplate.findAndModify(query, updateDefinition, JoinEntry.class);
     }
 
     @Override
     public void unlock(UUID id) {
         mongoTemplate.updateFirst(new Query().addCriteria(Criteria.where(ID_FIELD).is(id)),
-                new Update().set(LOCKED_FIELD, false).unset(LOCKED_TIME_FIELD), CollectEntry.class);
+                new Update().set(LOCKED_FIELD, false).unset(LOCKED_TIME_FIELD), JoinEntry.class);
     }
 
     @Override
     public long unlockBefore(OffsetDateTime lockDate) {
         return mongoTemplate.updateMulti(new Query().addCriteria(Criteria.where(LOCKED_TIME_FIELD).lt(lockDate)),
-                new Update().set(LOCKED_FIELD, false).unset(LOCKED_TIME_FIELD), CollectEntry.class).getModifiedCount();
+                new Update().set(LOCKED_FIELD, false).unset(LOCKED_TIME_FIELD), JoinEntry.class).getModifiedCount();
     }
 }

@@ -22,8 +22,8 @@ import org.deltafi.common.types.*;
 import org.deltafi.common.uuid.UUIDGenerator;
 import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.deltafi.core.audit.CoreAuditLogger;
-import org.deltafi.core.collect.CollectEntryService;
-import org.deltafi.core.collect.ScheduledCollectService;
+import org.deltafi.core.join.JoinEntryService;
+import org.deltafi.core.join.ScheduledJoinService;
 import org.deltafi.core.configuration.ClockConfiguration;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.repo.DeltaFileRepo;
@@ -57,7 +57,7 @@ import java.util.UUID;
         StateMachine.class, DeltaFileRepo.class, CoreEventQueue.class, ContentStorageService.class, DeltaFilesService.class,
         ResumePolicyService.class, MetricService.class, AnalyticEventService.class, CoreAuditLogger.class, DeltaFileCacheService.class,
         PublisherService.class, QueueManagementService.class, QueuedAnnotationRepo.class, Environment.class,
-        CollectEntryService.class, ScheduledCollectService.class, UUIDGenerator.class})
+        JoinEntryService.class, ScheduledJoinService.class, UUIDGenerator.class})
 @EnableRetry
 class MongoRetryTest {
 

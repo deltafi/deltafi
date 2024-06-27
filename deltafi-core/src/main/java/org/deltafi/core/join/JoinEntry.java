@@ -15,10 +15,28 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.collect;
+package org.deltafi.core.join;
 
-public class CollectException extends Exception {
-    public CollectException(String message) {
-        super(message);
-    }
+import lombok.Data;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
+@Document
+@Data
+public class JoinEntry {
+    private UUID id;
+
+    private JoinDefinition joinDefinition;
+
+    private boolean locked;
+    private OffsetDateTime lockedTime;
+
+    private OffsetDateTime joinDate;
+    private Integer minNum;
+    private Integer maxNum;
+    private int maxFlowDepth;
+
+    private int count;
 }

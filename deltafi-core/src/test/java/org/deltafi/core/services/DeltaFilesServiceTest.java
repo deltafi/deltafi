@@ -27,7 +27,7 @@ import org.deltafi.common.test.uuid.TestUUIDGenerator;
 import org.deltafi.common.types.*;
 import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.deltafi.core.audit.CoreAuditLogger;
-import org.deltafi.core.collect.ScheduledCollectService;
+import org.deltafi.core.join.ScheduledJoinService;
 import org.deltafi.core.generated.types.DeltaFilesFilter;
 import org.deltafi.core.generated.types.RetryResult;
 import org.deltafi.core.metrics.MetricService;
@@ -99,7 +99,7 @@ class DeltaFilesServiceTest {
                           @Mock MetricService metricService, @Mock AnalyticEventService analyticEventService, @Mock CoreAuditLogger coreAuditLogger,
                           @Mock DeltaFileCacheService deltaFileCacheService, @Mock DataSourceService dataSourceService,
                           @Mock QueueManagementService queueManagementService, @Mock QueuedAnnotationRepo queuedAnnotationRepo,
-                          @Mock Environment environment, @Mock ScheduledCollectService scheduledCollectService) {
+                          @Mock Environment environment, @Mock ScheduledJoinService scheduledJoinService) {
         this.transformFlowService = transformFlowService;
         this.egressFlowService = egressFlowService;
         this.stateMachine = stateMachine;
@@ -115,7 +115,7 @@ class DeltaFilesServiceTest {
         deltaFilesService = new DeltaFilesService(testClock, transformFlowService, egressFlowService, mockDeltaFiPropertiesService,
                 stateMachine, deltaFileRepo, coreEventQueue, contentStorageService, resumePolicyService,
                 metricService, analyticEventService, coreAuditLogger, new DidMutexService(), deltaFileCacheService, dataSourceService,
-                queueManagementService, queuedAnnotationRepo, environment, scheduledCollectService, new TestUUIDGenerator());
+                queueManagementService, queuedAnnotationRepo, environment, scheduledJoinService, new TestUUIDGenerator());
     }
 
     @Test
@@ -544,19 +544,19 @@ class DeltaFilesServiceTest {
     }
 
     @Test
-    void requeuesCollectedAction() {
+    void requeuesJoinedAction() {
         DeltaFile aggregate = Util.buildDeltaFile(UUID.randomUUID());
-        aggregate.setCollectId(aggregate.getDid());
+        aggregate.setJoinId(aggregate.getDid());
         DeltaFile parent1 = Util.buildDeltaFile(UUID.randomUUID());
-        parent1.getFlows().getFirst().setCollectId(aggregate.getDid());
+        parent1.getFlows().getFirst().setJoinId(aggregate.getDid());
         DeltaFile parent2 = Util.buildDeltaFile(UUID.randomUUID());
-        parent2.getFlows().getFirst().setCollectId(aggregate.getDid());
+        parent2.getFlows().getFirst().setJoinId(aggregate.getDid());
         aggregate.setParentDids(List.of(parent1.getDid(), parent2.getDid()));
 
         DeltaFileFlow flow = aggregate.getFlows().getFirst();
-        flow.queueAction("collect-transform", ActionType.TRANSFORM, false, OffsetDateTime.now());
+        flow.queueAction("join-transform", ActionType.TRANSFORM, false, OffsetDateTime.now());
 
-        testClock.setInstant(flow.actionNamed("collect-transform").orElseThrow().getModified().toInstant());
+        testClock.setInstant(flow.actionNamed("join-transform").orElseThrow().getModified().toInstant());
         when(queueManagementService.coldQueueActions()).thenReturn(Collections.emptySet());
         when(deltaFileRepo.updateForRequeue(OffsetDateTime.now(testClock),
                 mockDeltaFiPropertiesService.getDeltaFiProperties().getRequeueDuration(), Collections.emptySet(), Collections.emptySet()))
@@ -565,9 +565,9 @@ class DeltaFilesServiceTest {
                 .thenReturn(List.of(parent1, parent2));
 
         TransformActionConfiguration transformActionConfiguration =
-                new TransformActionConfiguration("collect-transform", "org.deltafi.SomeCollectingTransformAction");
-        transformActionConfiguration.setCollect(new CollectConfiguration(Duration.parse("PT1H"), null, 3, null));
-        when(transformFlowService.findActionConfig("myFlow", "collect-transform"))
+                new TransformActionConfiguration("join-transform", "org.deltafi.SomeJoiningTransformAction");
+        transformActionConfiguration.setJoin(new JoinConfiguration(Duration.parse("PT1H"), null, 3, null));
+        when(transformFlowService.findActionConfig("myFlow", "join-transform"))
                 .thenReturn(transformActionConfiguration);
 
         deltaFilesService.requeue();
@@ -575,7 +575,7 @@ class DeltaFilesServiceTest {
         verify(coreEventQueue).putActions(actionInputListCaptor.capture(), Mockito.anyBoolean());
         List<WrappedActionInput> enqueuedActions = actionInputListCaptor.getValue();
         assertEquals(1, enqueuedActions.size());
-        assertEquals(List.of(parent1.getDid(), parent2.getDid()), enqueuedActions.getFirst().getActionContext().getCollectedDids());
+        assertEquals(List.of(parent1.getDid(), parent2.getDid()), enqueuedActions.getFirst().getActionContext().getJoinedDids());
         assertEquals(2, enqueuedActions.getFirst().getDeltaFileMessages().size());
     }
 

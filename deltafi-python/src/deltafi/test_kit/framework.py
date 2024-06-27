@@ -139,8 +139,8 @@ class TestCaseBase(ABC):
         - inputs: (optional) List[IOContent]: input content to action
         - parameters: (optional) Dict: map of action input parameters
         - in_meta: (optional) Dict: map of metadata as input to action
-        - collect_meta: (optional): List[Dict]: When a List is provided, this enables the COLLECT portion of an action.
-        When using COLLECT, collect_meta must match the size of inputs, though the Dict can be empty
+        - join_meta: (optional): List[Dict]: When a List is provided, this enables the JOIN portion of an action.
+        When using JOIN, join_meta must match the size of inputs, though the Dict can be empty
         - did: (optional): str: overrides random DID
         """
         if "action" in data:
@@ -167,7 +167,7 @@ class TestCaseBase(ABC):
         self.err_or_filt_cause = None
         self.err_or_filt_context = None
         self.err_or_filt_annotations = None
-        self.collect_meta = data["collect_meta"] if "collect_meta" in data else None
+        self.join_meta = data["join_meta"] if "join_meta" in data else None
         self.expected_metrics = []
 
     def add_metric(self, metric: Metric):
@@ -253,19 +253,19 @@ class ActionTest(ABC):
 
         delta_file_messages = []
 
-        if test_case.collect_meta is None:
+        if test_case.join_meta is None:
             delta_file_messages.append(DeltaFileMessage(metadata=test_case.in_meta, content_list=content_list))
         else:
             for index, content in enumerate(content_list):
                 delta_file_messages.append(DeltaFileMessage(
-                    metadata=test_case.collect_meta[index],
+                    metadata=test_case.join_meta[index],
                     content_list=[content]))
 
         return delta_file_messages
 
     def make_context(self, test_case: TestCaseBase):
         action_name = INGRESS_FLOW + "." + test_case.action.__class__.__name__
-        collect = {} if test_case.collect_meta else None
+        join = {} if test_case.join_meta else None
         return Context(
             did=self.did,
             delta_file_name=test_case.file_name,
@@ -278,7 +278,7 @@ class ActionTest(ABC):
             hostname=HOSTNAME,
             system_name=SYSTEM,
             content_service=self.content_service,
-            collect=collect,
+            join=join,
             logger=get_logger())
 
     def make_event(self, test_case: TestCaseBase):

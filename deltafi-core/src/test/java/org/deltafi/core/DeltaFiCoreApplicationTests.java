@@ -149,8 +149,8 @@ class DeltaFiCoreApplicationTests {
 	@Container
 	public static final MongoDBContainer MONGO_DB_CONTAINER = new MongoDBContainer(MONGODB_CONTAINER);
 	public static final String SAMPLE_EGRESS_ACTION = "SampleEgressAction";
-	public static final String COLLECTING_TRANSFORM_ACTION = "CollectingTransformAction";
-	public static final String COLLECT_TOPIC = "collect-topic";
+	public static final String JOINING_TRANSFORM_ACTION = "JoiningTransformAction";
+	public static final String JOIN_TOPIC = "join-topic";
 
 	@DynamicPropertySource
 	static void setProperties(DynamicPropertyRegistry registry) {
@@ -3991,9 +3991,9 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void queuesCollectingTransformActionOnMaxNum() {
-		TransformFlow transformFlow = collectingTransformFlow("coll-max-num", new CollectConfiguration(Duration.parse("PT1H"), null, 2, null));
-		RestDataSource restDataSource = buildDataSource(COLLECT_TOPIC);
+	void queuesJoiningTransformActionOnMaxNum() {
+		TransformFlow transformFlow = joiningTransformFlow("join-max-num", new JoinConfiguration(Duration.parse("PT1H"), null, 2, null));
+		RestDataSource restDataSource = buildDataSource(JOIN_TOPIC);
 		transformFlowRepo.insert(transformFlow);
 		transformFlowService.refreshCache();
 		dataSourceRepo.insert(restDataSource);
@@ -4015,12 +4015,12 @@ class DeltaFiCoreApplicationTests {
 		assertThat(actionInputs).hasSize(1);
 
 		DeltaFile parent1 = deltaFileRepo.findById(did1).orElseThrow();
-		Action action = parent1.getFlow(actionFlow, 1).actionNamed(DeltaFiCoreApplicationTests.COLLECTING_TRANSFORM_ACTION).orElseThrow();
-		assertEquals(ActionState.COLLECTING, action.getState());
+		Action action = parent1.getFlow(actionFlow, 1).actionNamed(DeltaFiCoreApplicationTests.JOINING_TRANSFORM_ACTION).orElseThrow();
+		assertEquals(ActionState.JOINING, action.getState());
 
 		DeltaFile parent2 = deltaFileRepo.findById(did2).orElseThrow();
-		action = parent2.getFlow(actionFlow, 1).actionNamed(DeltaFiCoreApplicationTests.COLLECTING_TRANSFORM_ACTION).orElseThrow();
-		assertEquals(ActionState.COLLECTING, action.getState());
+		action = parent2.getFlow(actionFlow, 1).actionNamed(DeltaFiCoreApplicationTests.JOINING_TRANSFORM_ACTION).orElseThrow();
+		assertEquals(ActionState.JOINING, action.getState());
 
 		ActionInput actionInput = actionInputs.getFirst();
 		assertEquals(2, actionInput.getDeltaFileMessages().size());
@@ -4038,9 +4038,9 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void queuesCollectingTransformActionOnTimeout() {
-		TransformFlow transformFlow = collectingTransformFlow("coll-on-timeout", new CollectConfiguration(Duration.parse("PT3S"), null, 5, null));
-		RestDataSource restDataSource = buildDataSource(COLLECT_TOPIC);
+	void queuesJoiningTransformActionOnTimeout() {
+		TransformFlow transformFlow = joiningTransformFlow("join-on-timeout", new JoinConfiguration(Duration.parse("PT3S"), null, 5, null));
+		RestDataSource restDataSource = buildDataSource(JOIN_TOPIC);
 		transformFlowRepo.insert(transformFlow);
 		transformFlowService.refreshCache();
 		dataSourceRepo.insert(restDataSource);
@@ -4062,9 +4062,9 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void queuesCollectingTransformActionOnMaxNumGrouping() {
-		TransformFlow transformFlow = collectingTransformFlow("col-max-num-grouping", new CollectConfiguration(Duration.parse("PT1H"), null, 2, "a"));
-		RestDataSource restDataSource = buildDataSource(COLLECT_TOPIC);
+	void queuesJoiningTransformActionOnMaxNumGrouping() {
+		TransformFlow transformFlow = joiningTransformFlow("join-max-num-grouping", new JoinConfiguration(Duration.parse("PT1H"), null, 2, "a"));
+		RestDataSource restDataSource = buildDataSource(JOIN_TOPIC);
 		transformFlow.getFlowStatus().setState(FlowState.RUNNING);
 		String dataSourceName = restDataSource.getName();
 		String transformFlowName = transformFlow.getName();
@@ -4098,10 +4098,10 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void failsCollectingTransformActionOnMinNum() {
-		TransformFlow transformFlow = collectingTransformFlow("col-fail-min-num", new CollectConfiguration(Duration.parse("PT3S"), 3, 5, null));
+	void failsJoiningTransformActionOnMinNum() {
+		TransformFlow transformFlow = joiningTransformFlow("join-fail-min-num", new JoinConfiguration(Duration.parse("PT3S"), 3, 5, null));
 		String transformFlowName = transformFlow.getName();
-		RestDataSource restDataSource = buildDataSource(COLLECT_TOPIC);
+		RestDataSource restDataSource = buildDataSource(JOIN_TOPIC);
 		transformFlowRepo.insert(transformFlow);
 		transformFlowService.refreshCache();
 		dataSourceRepo.insert(restDataSource);
@@ -4116,11 +4116,11 @@ class DeltaFiCoreApplicationTests {
 				Collections.emptyList());
 		deltaFilesService.ingress(restDataSource, ingress2, OffsetDateTime.now(), OffsetDateTime.now());
 
-		await().atMost(5, TimeUnit.SECONDS).until(() -> hasErroredCollectingAction(ingress1.getDid(), transformFlowName));
-		await().atMost(5, TimeUnit.SECONDS).until(() -> hasErroredCollectingAction(ingress2.getDid(), transformFlowName));
+		await().atMost(5, TimeUnit.SECONDS).until(() -> hasErroredJoiningAction(ingress1.getDid(), transformFlowName));
+		await().atMost(5, TimeUnit.SECONDS).until(() -> hasErroredJoiningAction(ingress2.getDid(), transformFlowName));
 	}
 
-	private boolean hasErroredCollectingAction(UUID did, String actionFlow) {
+	private boolean hasErroredJoiningAction(UUID did, String actionFlow) {
 		DeltaFile deltaFile = deltaFileRepo.findById(did).orElseThrow();
 		if (deltaFile.getStage() != DeltaFileStage.ERROR) {
 			return false;
@@ -4129,35 +4129,35 @@ class DeltaFiCoreApplicationTests {
 		if (deltaFileFlow.getState() != DeltaFileFlowState.ERROR) {
 			return false;
 		}
-		Action action = deltaFileFlow.actionNamed(COLLECTING_TRANSFORM_ACTION).orElseThrow();
+		Action action = deltaFileFlow.actionNamed(JOINING_TRANSFORM_ACTION).orElseThrow();
 		return action.getState() == ActionState.ERROR;
 	}
 
 	@Test
 	void testResumeAggregate() throws IOException {
-		TransformFlow transformFlow = collectingTransformFlow("col-resume", new CollectConfiguration(Duration.parse("PT1H"), null, 2, null));
+		TransformFlow transformFlow = joiningTransformFlow("join-resume", new JoinConfiguration(Duration.parse("PT1H"), null, 2, null));
 		transformFlowRepo.insert(transformFlow);
 		transformFlowService.refreshCache();
 
 		UUID did = UUID.randomUUID();
 
 		DeltaFile parent1 = Util.emptyDeltaFile(UUID.randomUUID(), transformFlow.getName());
-		parent1.getFlows().getFirst().setCollectId(did);
+		parent1.getFlows().getFirst().setJoinId(did);
 		deltaFileRepo.save(parent1);
 		DeltaFile parent2 = Util.emptyDeltaFile(UUID.randomUUID(), transformFlow.getName());
-		parent2.getFlows().getFirst().setCollectId(did);
+		parent2.getFlows().getFirst().setJoinId(did);
 		deltaFileRepo.save(parent2);
 
 		List<UUID> parentDids = List.of(parent1.getDid(), parent2.getDid());
 		DeltaFile aggregate = Util.emptyDeltaFile(did, transformFlow.getName());
-		aggregate.setCollectId(did);
+		aggregate.setJoinId(did);
 		aggregate.setParentDids(parentDids);
 		aggregate.setStage(DeltaFileStage.ERROR);
 
 		DeltaFileFlow aggregateFlow = aggregate.getFlows().getFirst();
 		aggregateFlow.setType(FlowType.TRANSFORM);
-		aggregateFlow.queueNewAction(COLLECTING_TRANSFORM_ACTION, ActionType.TRANSFORM, false, OffsetDateTime.now(clock));
-		aggregateFlow.actionNamed(COLLECTING_TRANSFORM_ACTION).orElseThrow().error(START_TIME, STOP_TIME, OffsetDateTime.now(clock), "collect action failed", "message");
+		aggregateFlow.queueNewAction(JOINING_TRANSFORM_ACTION, ActionType.TRANSFORM, false, OffsetDateTime.now(clock));
+		aggregateFlow.actionNamed(JOINING_TRANSFORM_ACTION).orElseThrow().error(START_TIME, STOP_TIME, OffsetDateTime.now(clock), "join action failed", "message");
 		aggregateFlow.setActionConfigurations(transformFlow.allActionConfigurations());
 		deltaFileRepo.save(aggregate);
 
@@ -4175,20 +4175,20 @@ class DeltaFiCoreApplicationTests {
 		assertThat(actionInputs).hasSize(1);
 
 		ActionInput actionInput = actionInputs.getFirst();
-		assertEquals(parentDids, actionInput.getActionContext().getCollectedDids());
+		assertEquals(parentDids, actionInput.getActionContext().getJoinedDids());
 		assertEquals(forQueueHelper(parent1.getFlows().getFirst()), actionInput.getDeltaFileMessages().getFirst());
 		assertEquals(forQueueHelper(parent2.getFlows().getFirst()), actionInput.getDeltaFileMessages().get(1));
 	}
 
-	private TransformFlow collectingTransformFlow(String name, CollectConfiguration configuration) {
+	private TransformFlow joiningTransformFlow(String name, JoinConfiguration configuration) {
 		TransformFlow transformFlow = new TransformFlow();
 		transformFlow.setName(name);
-		TransformActionConfiguration transformAction = new TransformActionConfiguration(COLLECTING_TRANSFORM_ACTION,
-				"org.deltafi.action.SomeCollectingTransformAction");
-		transformAction.setCollect(configuration);
+		TransformActionConfiguration transformAction = new TransformActionConfiguration(JOINING_TRANSFORM_ACTION,
+				"org.deltafi.action.SomeJoiningTransformAction");
+		transformAction.setJoin(configuration);
 		transformFlow.getTransformActions().add(transformAction);
 		transformFlow.getFlowStatus().setState(FlowState.RUNNING);
-		transformFlow.setSubscribe(Set.of(new Rule(COLLECT_TOPIC)));
+		transformFlow.setSubscribe(Set.of(new Rule(JOIN_TOPIC)));
 		return transformFlow;
 	}
 
