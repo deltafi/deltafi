@@ -51,7 +51,7 @@
 <script setup lang="ts">
 import useSchemaComposition from "@/components/jsonSchemaRenderers/util/useSchemaComposition";
 import { computed, PropType, ref, reactive, watch } from "vue";
-import { createControlElement, createDefaultValue, encode, Generate, getI18nKey, GroupLayout, JsonSchema, JsonSchema7, UISchemaElement, validate } from "@jsonforms/core";
+import { createControlElement, encode, Generate, getI18nKey, GroupLayout, JsonSchema, JsonSchema7, UISchemaElement, validate } from "@jsonforms/core";
 import { DispatchRenderer, useJsonFormsControlWithDetail } from "@jsonforms/vue";
 import Ajv, { ValidateFunction } from "ajv";
 
@@ -261,7 +261,7 @@ watch(
           ap.schema &&
           (!keys.includes(ap.propertyName) || newData[ap.propertyName] === undefined || (newData[ap.propertyName] === null && ap.schema.type !== "null")) // createDefaultValue will return null only when the ap.schema.type is 'null'
         ) {
-          const newValue = createDefaultValue(ap.schema);
+          const newValue = null;
           hasChanges = newData[ap.propertyName] !== newValue;
           newData[ap.propertyName] = newValue;
         }
@@ -285,7 +285,7 @@ const addProperty = () => {
       additionalPropertyItems.value = [...additionalPropertyItems.value, additionalProperty];
     }
     if (typeof jsonSchema.control.data === "object" && additionalProperty.schema) {
-      jsonSchema.control.data[newPropertyName.value] = createDefaultValue(additionalProperty.schema);
+      jsonSchema.control.data[newPropertyName.value] = null;
       // we need always to preserve the key even when the value is "empty"
       jsonSchema.handleChange(jsonSchema.control.path, jsonSchema.control.data);
     }
