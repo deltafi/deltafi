@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.2.11] - 2024-07-02
+
+### Added
+- Installer Builder for standalone DeltaFi systems targeting airgapped networks (compose/airgap/airgap-inator)
+
+### Fixed
+- Fixed bug in Additional Properties Renderer where "[object Object]" appears when a new property is added 
+
 ## [1.2.10] - 2024-06-24
 
 ### Added
@@ -2973,7 +2981,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.10...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.11...main
+[1.2.11]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.10...1.2.11
 [1.2.10]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.9...1.2.10
 [1.2.9]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.8...1.2.9
 [1.2.8]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.7...1.2.8
