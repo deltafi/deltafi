@@ -101,6 +101,12 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
     }
 
     @Override
+    protected void replace(DeltaFile deltaFile) {
+        deltaFile.setCacheTime(OffsetDateTime.now(clock));
+        deltaFileCache.put(deltaFile.getDid(), deltaFile);
+    }
+
+    @Override
     public void save(DeltaFile deltaFile) {
         if (!deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().isEnabled() ||
                 deltaFile.inactiveStage() || deltaFile.getVersion() == 0) {
@@ -120,7 +126,6 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
             updateRepo(deltaFile);
         } else if (deltaFile.getCacheTime().isBefore(OffsetDateTime.now(clock).minus(
                 deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().getSyncDuration()))) {
-            deltaFile.setCacheTime(OffsetDateTime.now(clock));
             updateRepo(deltaFile);
         }
     }

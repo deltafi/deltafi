@@ -218,8 +218,8 @@ public class Action {
 
   public void error(OffsetDateTime start, OffsetDateTime stop, OffsetDateTime now, String cause, String context) {
     changeState(ActionState.ERROR, start, stop, now);
-    errorCause = cause.substring(0, Math.min(cause.length(), MAX_CAUSE_SIZE));
-    errorContext = context.substring(0, Math.min(context.length(), MAX_CAUSE_SIZE));
+    errorCause = cause == null ? "" : cause.substring(0, Math.min(cause.length(), MAX_CAUSE_SIZE));
+    errorContext = context == null ? "" : context.substring(0, Math.min(context.length(), MAX_CAUSE_SIZE));
   }
 
   public Action createChildAction() {
