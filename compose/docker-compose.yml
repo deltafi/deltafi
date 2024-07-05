@@ -4,7 +4,7 @@ x-health-probe: &health-probe
     interval: 15s
     timeout: 15s
     start_period: 5s
-    retries: 2
+    retries: 4
 
 x-logging-label: &logging-label
   logging: "promtail"
@@ -142,7 +142,7 @@ services:
       test: /monitor_probe.sh
       interval: 30s
       timeout: 30s
-      retries: 2
+      retries: 4
     expose:
       - "9292"
     labels:
@@ -179,7 +179,7 @@ services:
       test: cat /tmp/running
       interval: 30s
       timeout: 30s
-      retries: 2
+      retries: 4
       start_period: 10s
     labels:
       deltafi-group: deltafi-core
@@ -291,8 +291,8 @@ services:
     healthcheck:
       test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
       interval: 5s
-      timeout: 2s
-      retries: 5
+      timeout: 5s
+      retries: 8
       start_period: 5s
     labels:
       deltafi-group: deltafi-dependency
