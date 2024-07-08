@@ -35,6 +35,7 @@ docker {
     name "${project.name}:${project.version}"
     copySpec.from(".").exclude("**/build").exclude("Dockerfile").into(".")
     tag "local", "${localDockerRegistry}/${project.name}:latest"
+    tag "deltafi", "deltafi/${project.name}:${project.version}"
 }
 
 task copyChangelog(type: Copy) {

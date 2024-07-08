@@ -253,7 +253,7 @@ services:
     volumes:
       - ${DATA_DIR}/minio:/export
   deltafi-mongodb:
-    image: ghcr.io/zcube/bitnami-compat/mongodb:5.0.14
+    image: ${MONGODB}
     container_name: deltafi-mongodb
     environment:
       BITNAMI_DEBUG: false
@@ -281,7 +281,7 @@ services:
     volumes:
       - ${DATA_DIR}/mongo:/bitnami/mongodb
   deltafi-redis:
-    image: ghcr.io/zcube/bitnami-compat/redis:7.0.7
+    image: ${REDIS}
     container_name: deltafi-redis
     environment:
       BITNAMI_DEBUG: false

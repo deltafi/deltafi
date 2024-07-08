@@ -11,6 +11,8 @@ Subcommands:
   uninstall                   stop and remove all of the services
   restart <services>          restart the list of services (space delimited, restarts all services by default)
   stop-services <services>    stop the list of services (space delimited, stops all services by default)
+  build                       build and tag core docker images for use in compose
+  destroy                     remove all data directories for DeltaFi
 
 Usage:
   compose [SUBCOMMAND] [ARGS]
@@ -275,7 +277,9 @@ _base64() {
 }
 
 DELTAFI_COMPOSE_PATH=$(cd $(dirname $(_readlink -f $0)) && pwd)
+DELTAFI_PATH=$(cd $(dirname $(_readlink -f $0))/.. && pwd)
 COMPOSE_FILE="${DELTAFI_COMPOSE_PATH}/docker-compose.yml"
+VERSION=$(deltafi version)
 
 # TODO make the data directory configurable
 DATA_DIR="${DELTAFI_COMPOSE_PATH}/data"
@@ -424,13 +428,8 @@ _check_local_fqdns() {
 
 # creates a default values yaml using the local repo if this is a snapshot version otherwise it will use docker.io/deltafi
 _write_default_values() {
-  tag=$(deltafi version)
+  tag=${VERSION}
   repo="deltafi"
-
-  if [[ "${tag}" = *-SNAPSHOT ]]; then
-    repo="localhost:5000"
-    tag="latest"
-  fi
 
   cat <<EOF > "${VALUES_YAML}"
 deltafi:
@@ -473,20 +472,19 @@ deltafi:
 ingress:
   domain: local.deltafi.org
 dependencies:
-  grafana: deltafi/grafana:11.0.0-0
+  grafana: deltafi/grafana:11.1.0-0
   graphite: graphiteapp/graphite-statsd:1.1.10-5
-  loki: grafana/loki:2.9.3
-  minio: quay.io/minio/minio:RELEASE.2024-06-11T03-13-30Z
+  loki: grafana/loki:2.9.9
+  minio: quay.io/minio/minio:RELEASE.2024-07-04T14-25-45Z
   nginx: docker.io/nginx:1.27.0-alpine
-  promtail: docker.io/grafana/promtail:2.9.3
+  promtail: docker.io/grafana/promtail:2.9.9
   mongodb: docker.io/bitnami/mongodb:5.0.17
-  redis: docker.io/bitnami/redis:7.2.4
-  clickhouse: bitnami/clickhouse:24.3.3-debian-12-r2
+  redis: docker.io/bitnami/redis:7.2.5
+  clickhouse: bitnami/clickhouse:24.6.2-debian-12-r0
 EOF
 
   if _is_arm; then
-    yq -i '.dependencies.mongodb = "zcube/bitnami-compat/mongodb:5.0.17"' "${VALUES_YAML}"
-    yq -i '.dependencies.redis = "zcube/bitnami-compat/redis:7.2.4"' "${VALUES_YAML}"
+    yq -i '.dependencies.mongodb = "zcube/bitnami-compat-mongodb:5.0.17"' "${VALUES_YAML}"
   fi
 }
 
@@ -704,6 +702,16 @@ destroy() {
   clean
 }
 
+build() {
+  _attention "Building DeltaFi core"
+  pushd "$DELTAFI_PATH" > /dev/null
+  ./gradlew dockerTagDeltafi && _ok "DeltaFi core build successful"
+  cd deltafi-ui
+  _attention "Building DeltaFi UI"
+  docker build -t "deltafi/deltafi-ui:$VERSION" . && _ok "DeltaFi UI build successful"
+  popd > /dev/null
+} 
+
 ARGS=("$@")
 [[ ${#ARGS[@]} -lt 1 ]] && cli_help_command
 SUBCOMMAND=${ARGS[0]}
@@ -753,7 +761,11 @@ case "$SUBCOMMAND" in
     done
     stop_services "${SERVICES}"
     ;;
+  build)
+    build
+    ;;
   *)
     cli_help_command
     ;;
+
 esac

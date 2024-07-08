@@ -59,5 +59,6 @@ dockerPrepare {
 docker {
     name "${project.name}:${project.version}"
     tag "local", "${localDockerRegistry}/${project.name}:latest"
+    tag "deltafi", "deltafi/${project.name}:${project.version}"
     copySpec.from(bootJar.archiveFile).into("build/libs/")
 }
