@@ -67,8 +67,8 @@ public interface DeltaFileRepo extends JpaRepository<DeltaFile, UUID>, DeltaFile
     @Query("""
             SELECT new org.deltafi.core.generated.types.DeltaFileStats(
               (SELECT COUNT(d) FROM DeltaFile d),
-               COUNT(d) FILTER (WHERE d.inFlight = true),
-               COALESCE(SUM(d.referencedBytes) FILTER (WHERE d.inFlight = true), 0))
+               COUNT(d) FILTER (WHERE d.stage = 'IN_FLIGHT'),
+               COALESCE(SUM(d.referencedBytes) FILTER (WHERE d.stage = 'IN_FLIGHT'), 0))
             FROM DeltaFile d""")
     DeltaFileStats deltaFileStats();
 }

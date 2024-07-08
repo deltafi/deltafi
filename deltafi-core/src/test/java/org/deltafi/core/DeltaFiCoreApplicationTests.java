@@ -175,7 +175,13 @@ class DeltaFiCoreApplicationTests {
 	DeleteRunner deleteRunner;
 
 	@Autowired
+	AnnotationRepo annotationRepo;
+
+	@Autowired
 	ActionRepo actionRepo;
+
+	@Autowired
+	DeltaFileFlowRepo deltaFileFlowRepo;
 
 	@Autowired
 	DeltaFileRepo deltaFileRepo;
@@ -313,6 +319,9 @@ class DeltaFiCoreApplicationTests {
 	@SneakyThrows
 	void setup() {
 		deltaFiPropertiesRepo.save(new DeltaFiProperties());
+		annotationRepo.deleteAll();
+		actionRepo.deleteAll();
+		deltaFileFlowRepo.deleteAll();
 		deltaFileRepo.deleteAll();
 		resumePolicyRepo.deleteAll();
 		resumePolicyService.refreshCache();
@@ -3105,6 +3114,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFile.setFiltered(true);
 		deltaFile.getFlows().getFirst().getActions().add(filteredAction("filtered one", OffsetDateTime.now()));
 		deltaFile.getFlows().getFirst().getActions().add(filteredAction("filtered two", OffsetDateTime.now()));
+		deltaFile.getFlows().getFirst().getActions().forEach(a -> a.setDeltaFileFlow(deltaFile.getFlows().getFirst()));
 
 		DeltaFile tooNew = postTransformDeltaFile(UUID.randomUUID());
 		tooNew.setFiltered(true);
@@ -3118,6 +3128,7 @@ class DeltaFiCoreApplicationTests {
 		notMarkedFiltered.setModified(plusTwo);
 		notMarkedFiltered.getFlows().getFirst().getActions().add(filteredAction("another message", OffsetDateTime.now()));
 		notMarkedFiltered.getFlows().getFirst().getActions().getLast().setState(COMPLETE);
+		notMarkedFiltered.getFlows().getFirst().getActions().forEach(a -> a.setDeltaFileFlow(notMarkedFiltered.getFlows().getFirst()));
 
 		deltaFileRepo.saveAll(List.of(deltaFile, tooNew, notMarkedFiltered));
 
@@ -3475,10 +3486,10 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void annotations() {
 		deltaFileRepo.save(DeltaFile.builder()
-				.annotations(List.of(new Annotation("x", "1"), new Annotation("y", "2")))
+				.annotations(List.of(new Annotation("x", "1", null), new Annotation("y", "2", null)))
 				.build());
 		deltaFileRepo.save(DeltaFile.builder()
-				.annotations(List.of(new Annotation("y", "3"), new Annotation("z", "4")))
+				.annotations(List.of(new Annotation("y", "3", null), new Annotation("z", "4", null)))
 				.build());
 
 		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(new AnnotationKeysGraphQLQuery());
@@ -3786,20 +3797,17 @@ class DeltaFiCoreApplicationTests {
 		deltaFile1.setTotalBytes(1L);
 		deltaFile1.setReferencedBytes(2L);
 		deltaFile1.setStage(DeltaFileStage.IN_FLIGHT);
-		deltaFile1.setInFlight(true);
 
 		DeltaFile deltaFile2 = Util.emptyDeltaFile(UUID.randomUUID(), "flow", List.of());
 		deltaFile2.setTotalBytes(2L);
 		deltaFile2.setReferencedBytes(4L);
 		deltaFile2.setContentDeleted(OffsetDateTime.now());
 		deltaFile2.setStage(DeltaFileStage.IN_FLIGHT);
-		deltaFile2.setInFlight(true);
 
 		DeltaFile deltaFile3 = Util.emptyDeltaFile(UUID.randomUUID(), "flow", List.of());
 		deltaFile3.setTotalBytes(4L);
 		deltaFile3.setReferencedBytes(8L);
 		deltaFile3.setStage(DeltaFileStage.COMPLETE);
-		deltaFile3.setInFlight(false);
 
 		deltaFileRepo.saveAll(List.of(deltaFile1, deltaFile2, deltaFile3));
 

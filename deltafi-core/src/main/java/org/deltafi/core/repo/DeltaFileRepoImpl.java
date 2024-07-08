@@ -126,7 +126,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         StringBuilder filesToRequeueQuery = new StringBuilder("""
             SELECT df
             FROM DeltaFile df
-            WHERE df.inFlight = true
+            WHERE df.stage = 'IN_FLIGHT'
             AND df.modified < :requeueThreshold
             """);
 
@@ -153,7 +153,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         OffsetDateTime requeueThreshold = requeueTime.minus(requeueDuration);
         TypedQuery<DeltaFile> typedQuery = entityManager.createQuery(filesToRequeueQuery.toString(), DeltaFile.class)
                 .setParameter("requeueThreshold", requeueThreshold)
-                .setParameter("limit", limit);;
+                .setParameter("limit", limit);
+
         if (skipDids != null && !skipDids.isEmpty()) {
             typedQuery.setParameter("skipDids", skipDids);
         }
@@ -233,7 +234,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                 FROM DeltaFile df
                 JOIN df.flows flow
                 JOIN flow.actions action
-                WHERE df.inFlight = true
+                WHERE df.stage = 'IN_FLIGHT'
                 AND EXISTS (
                   SELECT action
                   FROM df.flows flow
@@ -831,11 +832,11 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public void batchInsert(List<DeltaFile> deltaFiles) {
         String sql = """
                 INSERT INTO delta_files (did, name, normalized_name, data_source, parent_dids, collect_id, child_dids,
-                                         requeue_count, ingress_bytes, referenced_bytes, total_bytes, stage, 
+                                         requeue_count, ingress_bytes, referenced_bytes, total_bytes, stage,
                                          created, modified, content_deleted, content_deleted_reason,
-                                         egressed, filtered, replayed, replay_did, in_flight, terminal,
+                                         egressed, filtered, replayed, replay_did, terminal,
                                          content_deletable, version, schema_version)
-                VALUES (?, ?, ?, ?, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
+                VALUES (?, ?, ?, ?, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
 
         jdbcTemplate.batchUpdate(sql, deltaFiles, 1000, (ps, deltaFile) -> {
             ps.setObject(1, deltaFile.getDid());
@@ -858,11 +859,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             ps.setObject(18, deltaFile.getFiltered());
             ps.setTimestamp(19, toTimestamp(deltaFile.getReplayed()));
             ps.setObject(20, deltaFile.getReplayDid());
-            ps.setBoolean(21, deltaFile.isInFlight());
-            ps.setBoolean(22, deltaFile.isTerminal());
-            ps.setBoolean(23, deltaFile.isContentDeletable());
-            ps.setLong(24, deltaFile.getVersion());
-            ps.setInt(25, deltaFile.getSchemaVersion());
+            ps.setBoolean(21, deltaFile.isTerminal());
+            ps.setBoolean(22, deltaFile.isContentDeletable());
+            ps.setLong(23, deltaFile.getVersion());
+            ps.setInt(24, deltaFile.getSchemaVersion());
         });
 
         // Batch insert DeltaFileFlows
@@ -877,8 +877,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         String deltaFileFlowSql = """
                 INSERT INTO delta_file_flows (id, name, number, type, state, created, modified, flow_plan, input,
                                               publish_topics, depth, pending_annotations, test_mode, test_mode_reason,
-                                              collect_id, pending_actions, delta_file_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?::jsonb, ?)""";
+                                              collect_id, pending_actions, delta_file_id, version)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?::jsonb, ?, ?)""";
 
         jdbcTemplate.batchUpdate(deltaFileFlowSql, deltaFileFlows, 1000, (ps, flow) -> {
             ps.setObject(1, flow.getId());
@@ -898,6 +898,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             ps.setObject(15, flow.getCollectId());
             ps.setString(16, toJson(flow.getPendingActions()));
             ps.setObject(17, flow.getDeltaFile().getDid());
+            ps.setObject(18, flow.getDeltaFile().getVersion());
         });
 
         // Batch insert Actions
@@ -913,8 +914,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                 INSERT INTO actions (id, name, number, type, state, created, queued, start, stop, modified, error_cause,
                                      error_context, error_acknowledged, error_acknowledged_reason, next_auto_resume,
                                      next_auto_resume_reason, filtered_cause, filtered_context, attempt, content,
-                                     metadata, delete_metadata_keys, replay_start, delta_file_flow_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?)""";
+                                     metadata, delete_metadata_keys, replay_start, delta_file_flow_id, version)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?)""";
 
         jdbcTemplate.batchUpdate(actionSql, actions, 1000, (ps, action) -> {
             ps.setObject(1, action.getId());
@@ -941,6 +942,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             ps.setString(22, toJson(action.getDeleteMetadataKeys()));
             ps.setBoolean(23, action.isReplayStart());
             ps.setObject(24, action.getDeltaFileFlow().getId());
+            ps.setObject(25, action.getDeltaFileFlow().getVersion());
         });
 
         // Batch insert Annotations

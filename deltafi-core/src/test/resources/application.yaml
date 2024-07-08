@@ -32,14 +32,11 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        packagesToScan: org.deltafi.core.types
+        generate_statistics: false
   sql:
     init:
       mode: never
-
-deltafi:
-  delete:
-    policyBatchSize: 1000
-    frequency: PT1S
 
 minio:
   url: http://localhost

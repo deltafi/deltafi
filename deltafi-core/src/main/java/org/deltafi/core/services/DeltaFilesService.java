@@ -291,9 +291,11 @@ public class DeltaFilesService {
                         dataSource.getSourcePlugin().getVersion()))
                 .build();
 
+        ingressAction.setDeltaFileFlow(ingressFlow);
+
         long contentSize = ContentUtil.computeContentSize(ingressEventItem.getContent());
 
-        return DeltaFile.builder()
+        DeltaFile deltaFile = DeltaFile.builder()
                 .schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
                 .did(ingressEventItem.getDid())
                 .dataSource(dataSource.getName())
@@ -305,13 +307,15 @@ public class DeltaFilesService {
                 .ingressBytes(contentSize)
                 .totalBytes(contentSize)
                 .stage(DeltaFileStage.IN_FLIGHT)
-                .inFlight(true)
                 .flows(new ArrayList<>(List.of(ingressFlow)))
                 .created(ingressStartTime)
                 .modified(now)
                 .egressed(false)
                 .filtered(false)
                 .build();
+
+        ingressFlow.setDeltaFile(deltaFile);
+        return deltaFile;
     }
 
     private DeltaFile ingress(RestDataSource restDataSource, IngressEventItem ingressEventItem, List<UUID> parentDids, OffsetDateTime ingressStartTime,
@@ -755,6 +759,7 @@ public class DeltaFilesService {
                 .testModeReason(fromFlow.getTestModeReason())
                 .pendingActions(new ArrayList<>(fromFlow.getPendingActions()))
                 .build();
+        childFlow.getActions().forEach(a -> a.setDeltaFileFlow(childFlow));
 
         DeltaFile child = DeltaFile.builder()
                 .version(0)
@@ -767,13 +772,13 @@ public class DeltaFilesService {
                 .ingressBytes(deltaFile.getIngressBytes())
                 .totalBytes(deltaFile.getTotalBytes())
                 .stage(DeltaFileStage.IN_FLIGHT)
-                .inFlight(true)
                 .flows(new ArrayList<>(List.of(childFlow)))
                 .created(now)
                 .modified(now)
                 .egressed(false)
                 .filtered(false)
                 .build();
+        childFlow.setDeltaFile(child);
 
         child.setName(transformEvent.getName());
         return new StateMachineInput(child, childFlow);
@@ -891,7 +896,6 @@ public class DeltaFilesService {
                                     .requeueCount(0)
                                     .ingressBytes(deltaFile.getIngressBytes())
                                     .stage(DeltaFileStage.IN_FLIGHT)
-                                    .inFlight(true)
                                     .terminal(false)
                                     .contentDeletable(false)
                                     .flows(new ArrayList<>(List.of(flow)))
@@ -904,6 +908,8 @@ public class DeltaFilesService {
                                     .filtered(false)
                                     .collectId(deltaFile.getCollectId())
                                     .build();
+                            flow.setDeltaFile(child);
+                            flow.getActions().forEach(a -> a.setDeltaFileFlow(flow));
 
                             inputs.add(new StateMachineInput(child, flow));
 
@@ -1216,6 +1222,7 @@ public class DeltaFilesService {
     }
 
     public void requeue() {
+        log.info("running requeue");
         Integer numFound = null;
         while (numFound == null || numFound == REQUEUE_BATCH_SIZE) {
             OffsetDateTime modified = OffsetDateTime.now(clock);
@@ -1225,6 +1232,7 @@ public class DeltaFilesService {
             List<DeltaFile> filesToRequeue = deltaFileRepo.updateForRequeue(modified,
                     getProperties().getRequeueDuration(), skipActions, longRunningDids, REQUEUE_BATCH_SIZE);
             numFound = filesToRequeue.size();
+            log.info("requeuing {}", numFound);
 
             List<WrappedActionInput> actionInputs = filesToRequeue.stream()
                     .map(deltaFile -> requeuedActionInputs(deltaFile, modified))

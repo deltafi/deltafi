@@ -60,8 +60,7 @@ public class DeltaFileFlow {
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
     private DeltaFileFlowInput input = new DeltaFileFlowInput();
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    @JoinColumn(name = "delta_file_flow_id")
+    @OneToMany(mappedBy = "deltaFileFlow", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @Builder.Default
     @JsonManagedReference
     @OrderBy("number ASC")
@@ -89,6 +88,9 @@ public class DeltaFileFlow {
     @JsonBackReference
     private DeltaFile deltaFile;
 
+    @Version
+    private long version;
+
     public DeltaFileFlow(DeltaFileFlow other) {
         this.id = other.id;
         this.name = other.name;
@@ -108,6 +110,7 @@ public class DeltaFileFlow {
         this.collectId = other.collectId;
         this.pendingActions = other.pendingActions;
         this.deltaFile = other.deltaFile;
+        this.version = other.version;
     }
 
     @Override
@@ -253,6 +256,7 @@ public class DeltaFileFlow {
                 .queued(now)
                 .modified(now)
                 .attempt(1 + getLastAttemptNum(name))
+                .deltaFileFlow(this)
                 .build();
         if (actions == null) {
             actions = new ArrayList<>();

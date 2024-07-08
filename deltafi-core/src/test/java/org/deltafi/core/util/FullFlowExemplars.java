@@ -73,6 +73,7 @@ public class FullFlowExemplars {
                 .publishTopics(List.of(TRANSFORM_TOPIC))
                 .flowPlan(new FlowPlanCoordinates(dataSource, PLUGIN_COORDINATES.groupAndArtifact(),
                         PLUGIN_COORDINATES.getVersion()))
+                .deltaFile(deltaFile)
                 .build();
         deltaFile.getFlows().add(ingressFlow);
 
@@ -86,6 +87,7 @@ public class FullFlowExemplars {
 
         transformFlow.addAction("Utf8TransformAction", ActionType.TRANSFORM, ActionState.QUEUED,
                         OffsetDateTime.now());
+        transformFlow.setDeltaFile(deltaFile);
 
         return deltaFile;
     }

@@ -54,12 +54,12 @@ public abstract class DeltaFileCacheService {
         return deltaFileRepo.findById(did).orElse(null);
     }
 
-    protected void replace(DeltaFile deltaFile) {}
+    protected void put(DeltaFile deltaFile) {}
 
     protected void updateRepo(DeltaFile deltaFile) {
         if (deltaFile == null) {
             return;
         }
-        replace(deltaFileRepo.save(deltaFile));
+        put(deltaFileRepo.save(deltaFile));
     }
 }

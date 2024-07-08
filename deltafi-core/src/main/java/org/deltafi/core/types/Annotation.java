@@ -41,8 +41,9 @@ public class Annotation {
     @JsonBackReference
     private DeltaFile deltaFile;
 
-    public Annotation(String key, String value) {
+    public Annotation(String key, String value, DeltaFile deltaFile) {
         this.key = key;
         this.value = value;
+        this.deltaFile = deltaFile;
     }
 }

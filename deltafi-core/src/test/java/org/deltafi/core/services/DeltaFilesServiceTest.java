@@ -419,7 +419,7 @@ class DeltaFilesServiceTest {
         Mockito.when(egressFlowService.getRunningFlowByName("flow")).thenReturn(egressFlow);
 
         DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
-        DeltaFileFlow flow = DeltaFileFlow.builder().name("flow").type(FlowType.EGRESS).build();
+        DeltaFileFlow flow = DeltaFileFlow.builder().name("flow").type(FlowType.EGRESS).deltaFile(deltaFile).build();
         flow.setPendingAnnotations(Set.of("a", "b"));
         Action action = flow.queueAction( "egress", ActionType.EGRESS, false, OffsetDateTime.now(testClock));
         deltaFile.getFlows().add(flow);

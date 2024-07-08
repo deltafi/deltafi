@@ -83,6 +83,9 @@ public class Action {
   private List<String> deleteMetadataKeys;
   private boolean replayStart; // marker for the starting point of a replay
 
+  @Version
+  private int version;
+
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "delta_file_flow_id")
   @ToString.Exclude
@@ -114,6 +117,7 @@ public class Action {
     this.deleteMetadataKeys = other.deleteMetadataKeys == null ? null : new ArrayList<>(other.deleteMetadataKeys);
     this.replayStart = other.replayStart;
     this.deltaFileFlow = other.deltaFileFlow;
+    this.version = other.version;
   }
 
   public List<Content> getContent() {

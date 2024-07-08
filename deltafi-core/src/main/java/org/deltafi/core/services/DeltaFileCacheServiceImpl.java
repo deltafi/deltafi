@@ -101,7 +101,7 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
     }
 
     @Override
-    protected void replace(DeltaFile deltaFile) {
+    protected void put(DeltaFile deltaFile) {
         deltaFile.setCacheTime(OffsetDateTime.now(clock));
         deltaFileCache.put(deltaFile.getDid(), deltaFile);
     }
@@ -109,24 +109,22 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
     @Override
     public void save(DeltaFile deltaFile) {
         if (!deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().isEnabled() ||
-                deltaFile.inactiveStage() || deltaFile.getVersion() == 0) {
+                deltaFile.inactiveStage() ||
+                deltaFile.getVersion() == 0 ||
+                !deltaFileCache.containsKey(deltaFile.getDid()) ||
+                deltaFile.getCacheTime().isBefore(OffsetDateTime.now(clock).minus(
+                        deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().getSyncDuration()))) {
             try {
                 updateRepo(deltaFile);
-                if (deltaFile.inactiveStage()) {
-                    deltaFileCache.remove(deltaFile.getDid());
-                }
             } catch (Exception ignored) {
                 // prevent infinite loop if there are exceptions
-                // force pulling a fresh copy from mongo on next get
+                // force pulling a fresh copy from the db on next get
                 deltaFileCache.remove(deltaFile.getDid());
             }
-        } else if (!deltaFileCache.containsKey(deltaFile.getDid())) {
-            deltaFile.setCacheTime(OffsetDateTime.now(clock));
-            deltaFileCache.put(deltaFile.getDid(), deltaFile);
-            updateRepo(deltaFile);
-        } else if (deltaFile.getCacheTime().isBefore(OffsetDateTime.now(clock).minus(
-                deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().getSyncDuration()))) {
-            updateRepo(deltaFile);
+        }
+
+        if (!deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().isEnabled() || deltaFile.inactiveStage()) {
+            deltaFileCache.remove(deltaFile.getDid());
         }
     }
 }

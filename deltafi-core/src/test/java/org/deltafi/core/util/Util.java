@@ -137,6 +137,9 @@ public class Util {
         deltaFile.setModified(modified);
         deltaFile.getFlows().add(flow);
 
+        flow.setDeltaFile(deltaFile);
+        ingressAction.setDeltaFileFlow(flow);
+
         deltaFile.updateFlags();
         return deltaFile;
     }

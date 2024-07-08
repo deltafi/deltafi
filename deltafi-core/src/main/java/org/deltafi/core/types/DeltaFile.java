@@ -55,7 +55,7 @@ public class DeltaFile {
   @Builder.Default
   private List<UUID> childDids = new ArrayList<>();
   @Builder.Default
-  @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+  @OneToMany(mappedBy = "deltaFile", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
   @JsonManagedReference
   @OrderBy("number ASC")
   private List<DeltaFileFlow> flows = new ArrayList<>();
@@ -66,7 +66,7 @@ public class DeltaFile {
   @Enumerated(EnumType.STRING)
   private DeltaFileStage stage;
   @Builder.Default
-  @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+  @OneToMany(mappedBy = "deltaFile", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
   @JsonManagedReference
   private List<Annotation> annotations = new ArrayList<>();
   private OffsetDateTime created;
@@ -78,8 +78,6 @@ public class DeltaFile {
   private OffsetDateTime replayed;
   private UUID replayDid;
 
-  @Builder.Default
-  private boolean inFlight = true;
   @Builder.Default
   private boolean terminal = false;
   @Builder.Default
@@ -118,7 +116,6 @@ public class DeltaFile {
     this.filtered = other.filtered;
     this.replayed = other.replayed;
     this.replayDid = other.replayDid;
-    this.inFlight = other.inFlight;
     this.terminal = other.terminal;
     this.contentDeletable = other.contentDeletable;
     this.version = other.version;
@@ -137,7 +134,6 @@ public class DeltaFile {
             ingressBytes == other.ingressBytes &&
             referencedBytes == other.referencedBytes &&
             totalBytes == other.totalBytes &&
-            inFlight == other.inFlight &&
             terminal == other.terminal &&
             contentDeletable == other.contentDeletable &&
             version == other.version &&
@@ -165,7 +161,7 @@ public class DeltaFile {
 
   @Override
   public int hashCode() {
-    return Objects.hash(did, name, normalizedName, dataSource, parentDids, collectId, childDids, requeueCount, ingressBytes, referencedBytes, totalBytes, stage, created, modified, contentDeleted, contentDeletedReason, egressed, filtered, replayed, replayDid, inFlight, terminal, contentDeletable, version, cacheTime, schemaVersion, new ArrayList<>(flows), new ArrayList<>(annotations));
+    return Objects.hash(did, name, normalizedName, dataSource, parentDids, collectId, childDids, requeueCount, ingressBytes, referencedBytes, totalBytes, stage, created, modified, contentDeleted, contentDeletedReason, egressed, filtered, replayed, replayDid, terminal, contentDeletable, version, cacheTime, schemaVersion, new ArrayList<>(flows), new ArrayList<>(annotations));
   }
 
   public void setStage(DeltaFileStage stage) {
@@ -174,8 +170,7 @@ public class DeltaFile {
   }
 
   public void updateFlags() {
-    inFlight = stage == DeltaFileStage.IN_FLIGHT;
-    terminal = !inFlight && unackErrorFlows().isEmpty() && pendingAnnotationFlows().isEmpty();
+    terminal = stage != DeltaFileStage.IN_FLIGHT && unackErrorFlows().isEmpty() && pendingAnnotationFlows().isEmpty();
     contentDeletable = terminal && contentDeleted == null && totalBytes > 0;
   }
 
@@ -298,7 +293,7 @@ public class DeltaFile {
       if (maybeAnnotation.isPresent()) {
         maybeAnnotation.get().setValue(newAnnotation.getValue());
       } else {
-        annotations.add(new Annotation(newAnnotation.getKey(), newAnnotation.getValue()));
+        annotations.add(new Annotation(newAnnotation.getKey(), newAnnotation.getValue(), this));
       }
     }
   }
@@ -315,7 +310,7 @@ public class DeltaFile {
     if (annotations == null) {
       annotations = new ArrayList<>();
     }
-    this.annotations.add(new Annotation(key, value));
+    this.annotations.add(new Annotation(key, value, this));
   }
 
   public boolean hasPendingActions() {
@@ -442,6 +437,7 @@ public class DeltaFile {
             .depth(previousFlow.getDepth() + 1)
             .testMode(previousFlow.isTestMode())
             .testModeReason(previousFlow.getTestModeReason())
+            .deltaFile(this)
             .build();
     flows.add(flow);
 
