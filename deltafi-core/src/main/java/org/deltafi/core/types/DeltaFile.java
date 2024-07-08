@@ -55,8 +55,7 @@ public class DeltaFile {
   @Builder.Default
   private List<UUID> childDids = new ArrayList<>();
   @Builder.Default
-  @JoinColumn(name = "delta_file_id")
-  @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+  @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
   @JsonManagedReference
   @OrderBy("number ASC")
   private List<DeltaFileFlow> flows = new ArrayList<>();
@@ -67,8 +66,7 @@ public class DeltaFile {
   @Enumerated(EnumType.STRING)
   private DeltaFileStage stage;
   @Builder.Default
-  @JoinColumn(name = "delta_file_id")
-  @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+  @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
   @JsonManagedReference
   private List<Annotation> annotations = new ArrayList<>();
   private OffsetDateTime created;

@@ -18,6 +18,7 @@
 package org.deltafi.core.services;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.repo.DeltaFileRepo;
 
@@ -26,6 +27,7 @@ import java.util.Collection;
 import java.util.UUID;
 
 @RequiredArgsConstructor
+@Slf4j
 public abstract class DeltaFileCacheService {
 
     final DeltaFileRepo deltaFileRepo;

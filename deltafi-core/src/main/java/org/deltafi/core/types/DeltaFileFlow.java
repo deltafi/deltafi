@@ -60,7 +60,7 @@ public class DeltaFileFlow {
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
     private DeltaFileFlowInput input = new DeltaFileFlowInput();
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinColumn(name = "delta_file_flow_id")
     @Builder.Default
     @JsonManagedReference
