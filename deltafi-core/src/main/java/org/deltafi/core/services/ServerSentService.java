@@ -83,6 +83,15 @@ public class ServerSentService {
         if (emitters.isEmpty()) {
             return;
         }
+
+        try {
+            doSendUpdatedData();
+        } catch (Exception e) {
+            log.error("Failed to send data to subscribers", e);
+        }
+    }
+
+    private void doSendUpdatedData() {
         Map<String, String> sseData = valkeyService.getItemsWithPrefix(SSE_VALKEY_CHANNEL_PREFIX);
         for (Map.Entry<String, String> entry : sseData.entrySet()) {
             String key = entry.getKey();
