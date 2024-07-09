@@ -109,22 +109,20 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
     @Override
     public void save(DeltaFile deltaFile) {
         if (!deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().isEnabled() ||
-                deltaFile.inactiveStage() ||
-                deltaFile.getVersion() == 0 ||
-                !deltaFileCache.containsKey(deltaFile.getDid()) ||
-                deltaFile.getCacheTime().isBefore(OffsetDateTime.now(clock).minus(
-                        deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().getSyncDuration()))) {
+                deltaFile.inactiveStage()) {
             try {
                 updateRepo(deltaFile);
-            } catch (Exception ignored) {
+            } finally {
                 // prevent infinite loop if there are exceptions
-                // force pulling a fresh copy from the db on next get
+                // force pulling a fresh copy from mongo on next get
                 deltaFileCache.remove(deltaFile.getDid());
             }
-        }
-
-        if (!deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().isEnabled() || deltaFile.inactiveStage()) {
-            deltaFileCache.remove(deltaFile.getDid());
+        } else if (!deltaFileCache.containsKey(deltaFile.getDid())) {
+            updateRepo(deltaFile);
+        } else if (deltaFile.getCacheTime().isBefore(OffsetDateTime.now(clock).minus(
+                deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().getSyncDuration()))) {
+            updateRepo(deltaFile);
         }
     }
+
 }
