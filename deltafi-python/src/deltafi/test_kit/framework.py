@@ -37,15 +37,20 @@ class IOContent:
     The IOContent class holds the details for loading input or output
      content into the test framework.
     Attributes:
-        file_name (str): The name of file in test/data.
-        content_name (str): The name of the content.
-        content_type (str): The media type of the content
-        offset (int): Offset to use in Segment
-        content_bytes (str): Bypass file read, and uses these bytes for content
+        file_name (str)    : The name of file in test/data.
+        content_name (str) : The name of the content.
+        content_type (str) : The media type of the content
+        offset (int)       : Offset to use in Segment
+        content_bytes (str): Optional.  If set to a String of length greater than zero, indicates to consumers of this
+                             IOContent that they should bypass file read and use these bytes for content.
+        no_content (bool)  : Optional.  If 'True', then consumers should not attempt to interpret content but should
+                             apply other aspects of this IOContent.  When 'True', 'content_bytes' should be ignored and
+                             loaded content, if any, should be interpreted as empty String or otherwise as documented by
+                             the consumer.
     """
 
     def __init__(self, file_name: str, content_name: str = None, content_type: str = None, offset: int = 0,
-                 content_bytes: str = ""):
+                 content_bytes: str = "", no_content: bool = False):
         self.file_name = file_name
         if content_name is None:
             self.content_name = file_name
@@ -56,7 +61,11 @@ class IOContent:
         else:
             self.content_type = content_type
         self.offset = offset
-        self.content_bytes = content_bytes
+        self.no_content = no_content
+        if no_content:
+            self.content_bytes = None
+        else:
+            self.content_bytes = content_bytes
         self.segment_uuid = uuid.uuid4()
 
     @classmethod
@@ -79,7 +88,10 @@ class LoadedContent:
         if data is not None:
             self.data = data
         else:
-            self.data = ioc.content_bytes
+            if ioc.no_content:
+                self.data = ""
+            else:
+                self.data = ioc.content_bytes
         self.segment = Segment.from_dict(
             {"uuid": str(ioc.segment_uuid), "offset": self.offset, "size": len(self.data), "did": did})
 
@@ -220,7 +232,7 @@ class ActionTest(ABC):
 
         # Load inputs
         for input_ioc in test_case.inputs:
-            if len(input_ioc.content_bytes) == 0:
+            if not input_ioc.no_content and len(input_ioc.content_bytes) == 0:
                 self.loaded_inputs.append(LoadedContent(self.did, input_ioc, self.load_file(input_ioc)))
             else:
                 self.loaded_inputs.append(LoadedContent(self.did, input_ioc, None))
@@ -325,7 +337,7 @@ class ActionTest(ABC):
     def compare_content_list(self, comparator: CompareHelper, expected_outputs: List[IOContent], content: List):
         assert_equal_len(expected_outputs, content)
         for index, expected_ioc in enumerate(expected_outputs):
-            if len(expected_ioc.content_bytes) == 0:
+            if not expected_ioc.no_content and len(expected_ioc.content_bytes) == 0:
                 expected = LoadedContent(self.did, expected_ioc, self.load_file(expected_ioc))
             else:
                 expected = LoadedContent(self.did, expected_ioc, None)
