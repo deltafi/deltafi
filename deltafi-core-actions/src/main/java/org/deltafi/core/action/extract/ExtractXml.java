@@ -64,7 +64,8 @@ public class ExtractXml extends TransformAction<ExtractXmlParameters> {
         result.addContent(input.content());
 
         Map<String, List<String>> valuesMap = new HashMap<>();
-        List<ActionContent> contentList = params.getContentIndexes() == null ? input.content() :
+        List<ActionContent> contentList = (params.getContentIndexes() == null
+                || params.getContentIndexes().isEmpty()) ? input.content() :
                 params.getContentIndexes().stream().map(input.content()::get).toList();
         contentList = contentList.stream()
                 .filter(c -> params.getMediaTypes().stream()

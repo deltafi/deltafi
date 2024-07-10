@@ -32,6 +32,8 @@ import java.util.Map;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ExtractJsonParameters extends ActionParameters {
+
+    @JsonProperty(defaultValue = "{}")
     @JsonPropertyDescription("A map of JSONPath expressions to keys. Values will be extracted using JSONPath and added to the corresponding metadata or annotation keys.")
     public Map<String, String> jsonPathToKeysMap = new HashMap<>();
 
@@ -39,12 +41,15 @@ public class ExtractJsonParameters extends ActionParameters {
     @JsonPropertyDescription("Extract to metadata or annotations.")
     public ExtractTarget extractTarget = ExtractTarget.METADATA;
 
-    @JsonPropertyDescription("List of allowed media types. Supports wildcards (*) and defaults to application/json if empty.")
+    @JsonProperty(defaultValue = "[\"application/json\"]")
+    @JsonPropertyDescription("List of allowed media types. Supports wildcards (*) and defaults to application/json.")
     public List<String> mediaTypes = List.of("application/json");
 
+    @JsonProperty(defaultValue = "[]")
     @JsonPropertyDescription("List of file patterns to consider. Supports wildcards (*) and if empty, all filenames are considered.")
     public List<String> filePatterns = List.of();
 
+    @JsonProperty(defaultValue = "ALL")
     @JsonPropertyDescription("How to handle multiple occurrences of a key. Can be 'FIRST', 'LAST', 'DISTINCT', or 'ALL'. Defaults to ALL, which writes a delimited list.")
     public HandleMultipleKeysType handleMultipleKeys = HandleMultipleKeysType.ALL;
 
@@ -52,8 +57,9 @@ public class ExtractJsonParameters extends ActionParameters {
     @JsonPropertyDescription("The delimiter to use if handleMultipleKeys is set to DISTINCT or ALL")
     public String allKeysDelimiter = ",";
 
+    @JsonProperty(defaultValue = "[]")
     @JsonPropertyDescription("List of content indexes to consider. If empty, all content is considered.")
-    public List<Integer> contentIndexes;
+    public List<Integer> contentIndexes = List.of();
 
     @JsonProperty(defaultValue = "false")
     @JsonPropertyDescription("Whether to return an error if a key is not found. Defaults to false.")

@@ -35,6 +35,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class XmlEditorParameters extends ActionParameters {
+
     @JsonProperty(required = true)
     @JsonPropertyDescription("""    
             List of XML editor commands provided as strings.  Separate arguments with (1) one or more spaces or (2) a comma and zero or

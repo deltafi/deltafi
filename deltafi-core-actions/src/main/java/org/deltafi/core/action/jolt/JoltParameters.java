@@ -30,16 +30,20 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class JoltParameters extends ActionParameters {
+
     @JsonPropertyDescription("Jolt transformation specification provided as a JSON string.")
     @JsonProperty(required = true)
     public String joltSpec;
 
+    @JsonProperty(defaultValue = "[\"application/json\"]")
     @JsonPropertyDescription("List of allowed media types. Supports wildcards (*) and defaults to 'application/json' if empty.")
     public List<String> mediaTypes = List.of("application/json");
 
+    @JsonProperty(defaultValue = "[]")
     @JsonPropertyDescription("List of file patterns to consider. Supports wildcards (*) and if empty, all filenames are considered.")
     public List<String> filePatterns = List.of();
 
+    @JsonProperty(defaultValue = "[]")
     @JsonPropertyDescription("List of content indexes to consider. If empty, all content is considered.")
-    public List<Integer> contentIndexes;
+    public List<Integer> contentIndexes = List.of();
 }
