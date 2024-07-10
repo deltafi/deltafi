@@ -40,14 +40,12 @@ import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.deltafi.common.types.ActionState.*;
 
 @Repository
 @RequiredArgsConstructor
 @Slf4j
-@Transactional
 public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String CREATED = "created";
     public static final String STAGE = "stage";
@@ -167,61 +165,22 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             return filesToRequeue;
         }
 
-        List<UUID> dids = filesToRequeue.stream().map(DeltaFile::getDid).toList();
-
-        entityManager.createQuery("""
-            UPDATE DeltaFile df
-            SET df.requeueCount = df.requeueCount + 1,
-                df.modified = :modified
-            WHERE df.did IN :dids
-            """)
-                .setParameter("modified", requeueTime)
-                .setParameter("dids", dids)
-                .executeUpdate();
-
         filesToRequeue.forEach(deltaFile -> {
             deltaFile.setRequeueCount(deltaFile.getRequeueCount() + 1);
             deltaFile.setModified(requeueTime);
-            deltaFile.setVersion(deltaFile.getVersion() + 1);
         });
 
-        List<Action> actions = filesToRequeue.stream()
+        filesToRequeue.stream()
                 .flatMap(d -> d.getFlows().stream())
                 .flatMap(f -> f.getActions().stream())
                 .filter(a -> (a.getState() == ActionState.QUEUED || a.getState() == COLD_QUEUED) &&
                         a.getModified().isBefore(requeueThreshold) && (skipActions == null || !skipActions.contains(a.getName())))
-                .toList();
-
-        List<UUID> actionIds = actions.stream().map(Action::getId).toList();
-
-        entityManager.createQuery("""
-            UPDATE Action a
-            SET a.state = 'QUEUED',
-                a.modified = :modified,
-                a.queued = :modified
-            WHERE a.id IN :actionIds
-            """)
-                .setParameter("modified", requeueTime)
-                .setParameter("actionIds", actionIds)
-                .executeUpdate();
-
-        actions.forEach(action -> {
-            action.setState(ActionState.QUEUED);
-            action.setModified(requeueTime);
-            action.setQueued(requeueTime);
-            action.getDeltaFileFlow().updateState(requeueTime);
-        });
-
-        Set<UUID> deltaFileFlowIds = actions.stream().map(a -> a.getDeltaFileFlow().getId()).collect(Collectors.toSet());
-
-        entityManager.createQuery("""
-            UPDATE DeltaFileFlow d
-            SET d.modified = :modified
-            WHERE d.id IN :deltaFileFlowIds
-            """)
-                .setParameter("modified", requeueTime)
-                .setParameter("deltaFileFlowIds", deltaFileFlowIds)
-                .executeUpdate();
+                .forEach(action -> {
+                    action.setState(ActionState.QUEUED);
+                    action.setModified(requeueTime);
+                    action.setQueued(requeueTime);
+                    action.getDeltaFileFlow().updateState(requeueTime);
+                });
 
         return filesToRequeue;
     }
@@ -253,59 +212,21 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             return filesToRequeue;
         }
 
-        List<UUID> dids = filesToRequeue.stream().map(DeltaFile::getDid).toList();
-        entityManager.createQuery("""
-                UPDATE DeltaFile df
-                SET df.requeueCount = df.requeueCount + 1,
-                    df.modified = :modified
-                WHERE df.did IN :dids
-                """)
-                .setParameter("modified", modified)
-                .setParameter("dids", dids)
-                .executeUpdate();
         filesToRequeue.forEach(deltaFile -> {
             deltaFile.setRequeueCount(deltaFile.getRequeueCount() + 1);
             deltaFile.setModified(modified);
-            deltaFile.setVersion(deltaFile.getVersion() + 1);
         });
 
-        List<Action> actions = filesToRequeue.stream()
+        filesToRequeue.stream()
                 .flatMap(d -> d.getFlows().stream())
                 .flatMap(f -> f.getActions().stream())
                 .filter(a -> a.getState() == COLD_QUEUED && actionNames.contains(a.getName()))
-                .toList();
-
-        List<UUID> actionIds = actions.stream()
-                .map(Action::getId)
-                .toList();
-
-        entityManager.createQuery("""
-                UPDATE Action a
-                SET a.state = 'QUEUED',
-                    a.modified = :modified,
-                    a.queued = :modified
-                WHERE a.id IN :actionIds
-                """)
-                .setParameter("modified", modified)
-                .setParameter("actionIds", actionIds)
-                .executeUpdate();
-
-        actions.forEach(action -> {
-            action.setState(QUEUED);
-            action.setModified(modified);
-            action.setQueued(modified);
-        });
-
-        Set<UUID> deltaFileFlowIds = actions.stream().map(a -> a.getDeltaFileFlow().getId()).collect(Collectors.toSet());
-
-        entityManager.createQuery("""
-            UPDATE DeltaFileFlow d
-            SET d.modified = :modified
-            WHERE d.id IN :deltaFileFlowIds
-            """)
-                .setParameter("modified", modified)
-                .setParameter("deltaFileFlowIds", deltaFileFlowIds)
-                .executeUpdate();
+                .forEach(action -> {
+                    action.setState(QUEUED);
+                    action.setModified(modified);
+                    action.setQueued(modified);
+                    action.getDeltaFileFlow().updateState(modified);
+                });
 
         return filesToRequeue;
     }

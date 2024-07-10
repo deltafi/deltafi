@@ -85,7 +85,12 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
     public void removeOlderThan(Duration duration) {
         OffsetDateTime threshold = OffsetDateTime.now(clock).minus(duration);
         List<DeltaFile> filesToRemove = deltaFileCache.values().stream()
-                .filter(d -> d.getCacheTime().isBefore(threshold))
+                .filter(d -> {
+                    if (d.getCacheTime() == null) {
+                        d.setCacheTime(OffsetDateTime.now(clock));
+                    }
+                    return d.getCacheTime().isBefore(threshold);
+                })
                 .toList();
 
         for (DeltaFile d : filesToRemove) {
@@ -114,7 +119,7 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
                 updateRepo(deltaFile);
             } finally {
                 // prevent infinite loop if there are exceptions
-                // force pulling a fresh copy from mongo on next get
+                // force pulling a fresh copy on next get
                 deltaFileCache.remove(deltaFile.getDid());
             }
         } else if (!deltaFileCache.containsKey(deltaFile.getDid())) {

@@ -155,7 +155,7 @@ public class DeltaFilesService {
 
         log.info("Waiting for executor threads to finish");
 
-        // give a grace period events to be assigned to executor threads
+        // give a grace period for events to be assigned to executor threads
         Thread.sleep(100);
 
         if (executor != null) {
@@ -696,9 +696,6 @@ public class DeltaFilesService {
         List<DeltaFile> updatedDeltaFiles = new ArrayList<>();
         try (Stream<DeltaFile> deltaFiles = deltaFileRepo.findByTerminalAndFlowsNameAndFlowsState(false, flowName, DeltaFileFlowState.PENDING_ANNOTATIONS)) {
             deltaFiles.forEach(deltaFile -> updatePendingAnnotationsForFlowsAndCollect(deltaFile, flowName, expectedAnnotations, updatedDeltaFiles, batchSize));
-        }
-        if (!updatedDeltaFiles.isEmpty()) {
-            deltaFileRepo.saveAll(updatedDeltaFiles);
         }
     }
 
@@ -1387,7 +1384,8 @@ public class DeltaFilesService {
                             if (count > 9) {
                                 throw e;
                             } else {
-                                log.warn("Retrying after OptimisticLockingFailureException caught processing {} for {}", event.getActionName(), event.getDid());
+                                log.warn("Retrying after OptimisticLockingFailureException caught processing {} for {}. Error: {}", event.getActionName(), event.getDid(), e.getMessage(), e);
+                                deltaFileCacheService.remove(event.getDid());
                             }
                         } catch (Throwable e) {
                             StringWriter stackWriter = new StringWriter();

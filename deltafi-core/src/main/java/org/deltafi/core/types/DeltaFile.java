@@ -332,7 +332,7 @@ public class DeltaFile {
   public DeltaFileFlow getPendingFlow(String flowName, int flowId) {
     DeltaFileFlow flow = getFlow(flowName, flowId);
     if (flow == null || flow.terminal()) {
-      throw new UnexpectedFlowException(flowName, flowId, did);
+      throw new UnexpectedFlowException(flowName, flowId, did, flow != null);
     }
 
     return flow;
