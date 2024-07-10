@@ -176,7 +176,7 @@ const generateData = () => {
         app: "valkey",
         container: "valkey",
         image: {
-          name: "docker.io/valkey/valkey",
+          name: "docker.io/bitnami/valkey",
           tag: "7.2.5",
         },
         group: null,

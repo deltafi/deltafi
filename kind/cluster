@@ -1044,7 +1044,7 @@ _setup_plugin_env() {
   REDIS_PASSWORD=$(_get_secret "valkey-password" "valkey-password")
   VALKEY_PASSWORD=$(_get_secret "valkey-password" "valkey-password")
   cat <<EOF > "${PLUGIN_ENV}"
-CORE_URL=http://localhost:8888
+CORE_URL=http://localhost:8888/api/v2
 MINIO_URL=http://localhost:9000
 REDIS_URL=http://localhost:6379
 VALKEY_URL=http://localhost:6379

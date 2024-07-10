@@ -37,15 +37,20 @@ class IOContent:
     The IOContent class holds the details for loading input or output
      content into the test framework.
     Attributes:
-        file_name (str): The name of file in test/data.
-        content_name (str): The name of the content.
-        content_type (str): The media type of the content
-        offset (int): Offset to use in Segment
-        content_bytes (str): Bypass file read, and uses these bytes for content
+        file_name (str)    : The name of file in test/data.
+        content_name (str) : The name of the content.
+        content_type (str) : The media type of the content
+        offset (int)       : Offset to use in Segment
+        content_bytes (str): Optional.  If set to a String of length greater than zero, indicates to consumers of this
+                             IOContent that they should bypass file read and use these bytes for content.
+        no_content (bool)  : Optional.  If 'True', then consumers should not attempt to interpret content but should
+                             apply other aspects of this IOContent.  When 'True', 'content_bytes' should be ignored and
+                             loaded content, if any, should be interpreted as empty String or otherwise as documented by
+                             the consumer.
     """
 
     def __init__(self, file_name: str, content_name: str = None, content_type: str = None, offset: int = 0,
-                 content_bytes: str = ""):
+                 content_bytes: str = "", no_content: bool = False):
         self.file_name = file_name
         if content_name is None:
             self.content_name = file_name
@@ -56,7 +61,11 @@ class IOContent:
         else:
             self.content_type = content_type
         self.offset = offset
-        self.content_bytes = content_bytes
+        self.no_content = no_content
+        if no_content:
+            self.content_bytes = None
+        else:
+            self.content_bytes = content_bytes
         self.segment_uuid = uuid.uuid4()
 
     @classmethod
@@ -79,7 +88,10 @@ class LoadedContent:
         if data is not None:
             self.data = data
         else:
-            self.data = ioc.content_bytes
+            if ioc.no_content:
+                self.data = ""
+            else:
+                self.data = ioc.content_bytes
         self.segment = Segment.from_dict(
             {"uuid": str(ioc.segment_uuid), "offset": self.offset, "size": len(self.data), "did": did})
 
@@ -127,6 +139,8 @@ class TestCaseBase(ABC):
         - inputs: (optional) List[IOContent]: input content to action
         - parameters: (optional) Dict: map of action input parameters
         - in_meta: (optional) Dict: map of metadata as input to action
+        - collect_meta: (optional): List[Dict]: When a List is provided, this enables the COLLECT portion of an action.
+        When using COLLECT, collect_meta must match the size of inputs, though the Dict can be empty
         - did: (optional): str: overrides random DID
         """
         if "action" in data:
@@ -153,6 +167,7 @@ class TestCaseBase(ABC):
         self.err_or_filt_cause = None
         self.err_or_filt_context = None
         self.err_or_filt_annotations = None
+        self.collect_meta = data["collect_meta"] if "collect_meta" in data else None
         self.expected_metrics = []
 
     def add_metric(self, metric: Metric):
@@ -163,7 +178,7 @@ class TestCaseBase(ABC):
         A Sets the expected output of the action to an Error Result
         :param cause: the expected error cause
         :param context: the expected error context
-        :param annotations (Optional): Dict: the expected annotations
+        :param annotations: Dict: (Optional) the expected annotations
         """
         self.expected_result_type = ErrorResult
         self.err_or_filt_cause = cause
@@ -174,8 +189,8 @@ class TestCaseBase(ABC):
         """
         A Sets the expected output of the action to a Filter Result
         :param cause: the expected filter cause (message)
-        :param context (Optional): the expected filter context
-        :param annotations (Optional): Dict: the expected annotations
+        :param context: (Optional) the expected filter context
+        :param annotations: Dict: (Optional) the expected annotations
         """
         self.expected_result_type = FilterResult
         self.err_or_filt_cause = cause
@@ -217,12 +232,12 @@ class ActionTest(ABC):
 
         # Load inputs
         for input_ioc in test_case.inputs:
-            if len(input_ioc.content_bytes) == 0:
+            if not input_ioc.no_content and len(input_ioc.content_bytes) == 0:
                 self.loaded_inputs.append(LoadedContent(self.did, input_ioc, self.load_file(input_ioc)))
             else:
                 self.loaded_inputs.append(LoadedContent(self.did, input_ioc, None))
 
-    def make_content_list(self, test_case: TestCaseBase):
+    def make_content_list(self):
         content_list = []
         for loaded_input in self.loaded_inputs:
             c = Content(name=loaded_input.name, segments=[loaded_input.segment], media_type=loaded_input.content_type,
@@ -232,15 +247,25 @@ class ActionTest(ABC):
 
         return content_list
 
-    def make_df_msg(self, test_case: TestCaseBase):
-        content_list = self.make_content_list(test_case)
+    def make_df_msgs(self, test_case: TestCaseBase):
+        content_list = self.make_content_list()
         self.content_service.load(self.loaded_inputs)
 
-        return DeltaFileMessage(metadata=test_case.in_meta,
-                                content_list=content_list)
+        delta_file_messages = []
+
+        if test_case.collect_meta is None:
+            delta_file_messages.append(DeltaFileMessage(metadata=test_case.in_meta, content_list=content_list))
+        else:
+            for index, content in enumerate(content_list):
+                delta_file_messages.append(DeltaFileMessage(
+                    metadata=test_case.collect_meta[index],
+                    content_list=[content]))
+
+        return delta_file_messages
 
     def make_context(self, test_case: TestCaseBase):
         action_name = INGRESS_FLOW + "." + test_case.action.__class__.__name__
+        collect = {} if test_case.collect_meta else None
         return Context(
             did=self.did,
             delta_file_name=test_case.file_name,
@@ -253,10 +278,11 @@ class ActionTest(ABC):
             hostname=HOSTNAME,
             system_name=SYSTEM,
             content_service=self.content_service,
+            collect=collect,
             logger=get_logger())
 
     def make_event(self, test_case: TestCaseBase):
-        return Event(delta_file_messages=[self.make_df_msg(test_case)], context=self.make_context(test_case),
+        return Event(delta_file_messages=self.make_df_msgs(test_case), context=self.make_context(test_case),
                      params=test_case.parameters, queue_name="", return_address="")
 
     def call_action(self, test_case: TestCaseBase):
@@ -311,7 +337,7 @@ class ActionTest(ABC):
     def compare_content_list(self, comparator: CompareHelper, expected_outputs: List[IOContent], content: List):
         assert_equal_len(expected_outputs, content)
         for index, expected_ioc in enumerate(expected_outputs):
-            if len(expected_ioc.content_bytes) == 0:
+            if not expected_ioc.no_content and len(expected_ioc.content_bytes) == 0:
                 expected = LoadedContent(self.did, expected_ioc, self.load_file(expected_ioc))
             else:
                 expected = LoadedContent(self.did, expected_ioc, None)
