@@ -31,6 +31,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class XsltParameters extends ActionParameters {
+
     @JsonProperty(required = true)
     @JsonPropertyDescription("XSLT transformation specification provided as a string.")
     public String xslt;
@@ -40,8 +41,10 @@ public class XsltParameters extends ActionParameters {
     public List<String> mediaTypes = List.of("*/xml");
 
     @JsonPropertyDescription("List of file patterns to consider. Supports wildcards (*) and if empty, all filenames are considered.")
+    @JsonProperty(defaultValue = "[]")
     public List<String> filePatterns = List.of();
 
     @JsonPropertyDescription("List of content indexes to consider. If empty, all content is considered.")
-    public List<Integer> contentIndexes;
+    @JsonProperty(defaultValue = "[]")
+    public List<Integer> contentIndexes = List.of();
 }

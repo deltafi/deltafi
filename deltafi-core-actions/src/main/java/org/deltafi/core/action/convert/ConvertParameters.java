@@ -30,6 +30,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ConvertParameters extends ActionParameters {
+
     @JsonPropertyDescription("Format of the input content. Supported formats are JSON, XML, and CSV.")
     private DataFormat inputFormat;
 
@@ -40,14 +41,17 @@ public class ConvertParameters extends ActionParameters {
     @JsonPropertyDescription("Boolean indicating whether the existing content should be retained or replaced by the new content. Default is false.")
     private boolean retainExistingContent = false;
 
+    @JsonProperty(defaultValue = "[]")
     @JsonPropertyDescription("List of allowed media types. Supports wildcards (*) and defaults based on the input format if empty.")
-    private List<String> mediaTypes;
+    private List<String> mediaTypes = List.of();
 
+    @JsonProperty(defaultValue = "[]")
     @JsonPropertyDescription("List of file patterns to consider. Supports wildcards (*) and if empty, all filenames are considered.")
     private List<String> filePatterns = List.of();
 
+    @JsonProperty(defaultValue = "[]")
     @JsonPropertyDescription("List of content indexes to consider. If empty, all content is considered.")
-    private List<Integer> contentIndexes;
+    private List<Integer> contentIndexes = List.of();
 
     @JsonProperty(defaultValue = "xml")
     @JsonPropertyDescription("Name of the root XML tag to use when converting to XML. Defaults to xml.")

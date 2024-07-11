@@ -32,6 +32,8 @@ import java.util.Map;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ExtractXmlParameters extends ActionParameters {
+
+    @JsonProperty(defaultValue = "{}")
     @JsonPropertyDescription("A map of XPath expressions to keys. Values will be extracted using XPath and added to the corresponding metadata or annotation keys.")
     public Map<String, String> xpathToKeysMap = new HashMap<>();
 
@@ -39,13 +41,15 @@ public class ExtractXmlParameters extends ActionParameters {
     @JsonPropertyDescription("Extract to metadata or annotations.")
     public ExtractTarget extractTarget = ExtractTarget.METADATA;
 
+    @JsonProperty(defaultValue = "[]")
     @JsonPropertyDescription("List of content indexes to consider. If empty, all content is considered.")
-    public List<Integer> contentIndexes;
+    public List<Integer> contentIndexes = List.of();
 
     @JsonProperty(defaultValue = "[\"*/xml\"]")
     @JsonPropertyDescription("List of allowed media types. Supports wildcards (*) and defaults to */xml if empty.")
     public List<String> mediaTypes = List.of("*/xml");
 
+    @JsonProperty(defaultValue = "[]")
     @JsonPropertyDescription("List of file patterns to consider. Supports wildcards (*) and if empty, all filenames are considered.")
     public List<String> filePatterns = List.of();
 

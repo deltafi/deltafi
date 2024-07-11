@@ -49,7 +49,7 @@ public class ExtractJson extends TransformAction<ExtractJsonParameters> {
 
         // Define a map to collect the values for each JSONPath expression
         Map<String, List<String>> valuesMap = new HashMap<>();
-        List<ActionContent> contentList = params.getContentIndexes() == null ? input.content() : params.getContentIndexes().stream().map(input.content()::get).toList();
+        List<ActionContent> contentList = (params.getContentIndexes() == null || params.getContentIndexes().isEmpty()) ? input.content() : params.getContentIndexes().stream().map(input.content()::get).toList();
         contentList = contentList.stream()
                 .filter(c -> params.getMediaTypes().stream()
                         .anyMatch(allowedType -> matchesPattern(c.getMediaType(), allowedType)))
