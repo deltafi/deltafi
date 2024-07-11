@@ -200,8 +200,7 @@ public class StateMachine {
     private WrappedActionInput buildActionInput(ActionConfiguration actionConfiguration, DeltaFile deltaFile,
                                                 DeltaFileFlow flow, Action action) {
         String systemName = deltaFiPropertiesService.getDeltaFiProperties().getSystemName();
-        String returnAddress = deltaFile.getVersion() > 0 &&
-                deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().isEnabled() ?
+        String returnAddress = deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().isEnabled() ?
                 identityService.getUniqueId() : null;
 
         if (actionConfiguration.getCollect() != null) {

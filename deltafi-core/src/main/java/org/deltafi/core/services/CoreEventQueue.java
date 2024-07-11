@@ -136,7 +136,7 @@ public class CoreEventQueue {
         valkeyKeyedBlockingQueue.put(actions);
     }
 
-     private String queueName(String returnAddress) {
+    private String queueName(String returnAddress) {
         String queueName = DGS_QUEUE;
         if (returnAddress != null) {
             queueName += "-" + returnAddress;
