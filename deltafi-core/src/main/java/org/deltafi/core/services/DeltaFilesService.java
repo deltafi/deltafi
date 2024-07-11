@@ -1237,6 +1237,7 @@ public class DeltaFilesService {
                         .filter(action -> action.getState().equals(ActionState.QUEUED) && action.getModified().toInstant().toEpochMilli() == modified.toInstant().toEpochMilli())
                         .map(action -> requeueActionInput(deltaFile, flow, action)))
                 .filter(Objects::nonNull)
+                .limit(deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().isEnabled() ? 1 : 9999)
                 .toList();
     }
 
@@ -1405,7 +1406,29 @@ public class DeltaFilesService {
             for (WrappedActionInput actionInput : actionInputs) {
                 populateBatchInput(actionInput);
             }
-            coreEventQueue.putActions(actionInputs, checkUnique);
+            if (deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().isEnabled()) {
+                // if this is the initial publication of a DeltaFile, and it has multiple actions to dispatch,
+                // only send to a single action until a core or worker picks it up and claims it
+                Map<UUID, List<WrappedActionInput>> groupedInputs = actionInputs.stream()
+                        .filter(input -> input.getReturnAddress() == null)
+                        .collect(Collectors.groupingBy(input -> input.getDeltaFile().getDid()));
+
+                Set<WrappedActionInput> inputsToRemove = new HashSet<>();
+
+                groupedInputs.entrySet().stream()
+                        .filter(entry -> entry.getValue().size() > 1)
+                        .forEach(entry -> inputsToRemove.addAll(entry.getValue().subList(1, entry.getValue().size())));
+
+                if (!inputsToRemove.isEmpty()) {
+                    // ensure the collection is mutable
+                    actionInputs = new ArrayList<>(actionInputs);
+                    actionInputs.removeIf(inputsToRemove::contains);
+                }
+            }
+
+            if (!actionInputs.isEmpty()) {
+                coreEventQueue.putActions(actionInputs, checkUnique);
+            }
         } catch (Exception e) {
             log.error("Failed to queue action(s)", e);
             throw new EnqueueActionException("Failed to queue action(s)", e);
