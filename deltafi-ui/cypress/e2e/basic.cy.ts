@@ -110,7 +110,7 @@ describe("Flow Plan Builder Page", () => {
 describe("Flows Page", () => {
   it("loads Flows", () => {
     cy.visit("http://localhost:8080/config/flows");
-    cy.get("span.p-panel-title").contains("Transform");
+    cy.get("span.p-panel-title").contains("deltafi-testjig");
   });
 });
 

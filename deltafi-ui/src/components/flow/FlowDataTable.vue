@@ -17,94 +17,107 @@
 -->
 
 <template>
-  <CollapsiblePanel :header="FlowTypeTitle" class="table-panel pb-3">
-    <DataTable v-model:filters="filters" :edit-mode="$hasPermission('FlowUpdate') ? 'cell' : null" :value="flowDataByType" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines flows-table" :row-class="actionRowClass" :global-filter-fields="['searchField', 'mvnCoordinates']" sort-field="name" :sort-order="1" :row-hover="true" @cell-edit-complete="onCellEditComplete">
-      <template #empty>No {{ FlowTypeTitle }} flows found.</template>
-      <template #loading>Loading {{ FlowTypeTitle }} flows. Please wait.</template>
-      <Column header="Name" field="name" class="name-column" :sortable="true">
-        <template #body="{ data }">
-          <div class="d-flex justify-content-between">
-            <span>
-              <DialogTemplate component-name="flow/FlowViewer" :header="data.name" :flow-name="data.name" :flow-type="data.flowType">
-                <span v-tooltip.right="'View Flow information' + errorTooltip(data) + ' for ' + data.name" class="cursor-pointer">
-                  {{ data.name }}
-                </span>
-              </DialogTemplate>
-            </span>
-            <span>
-              <span v-if="data.sourcePlugin.artifactId === 'system-plugin'" v-tooltip.top="'Remove'" class="cursor-pointer" @click="confirmationPopup($event, data)">
-                <i class="ml-2 text-muted fa-solid fa-trash-can" />
+  <ContextMenu ref="menu" :model="menuItems" />
+  <div v-for="(pluginFlows, pluginName) in flowDataByPlugin" :key="pluginName">
+    <CollapsiblePanel :header="pluginName" class="table-panel pb-3" @contextmenu="onPanelRightClick($event, pluginName)">
+      <template #header>
+        <span class="p-panel-title">
+          {{ pluginName }}
+          <PermissionedRouterLink :disabled="!$hasPermission('PluginsView')" :to="{ path: 'plugins/' + pluginFlows[0].mvnCoordinates }">
+            <i v-tooltip.top="pluginFlows[0].mvnCoordinates" class="ml-1 text-muted fas fa-plug fa-rotate-90 fa-fw" />
+          </PermissionedRouterLink>
+        </span>
+      </template>
+      <DataTable v-model:filters="filters" :edit-mode="$hasPermission('FlowUpdate') ? 'cell' : null" :value="pluginFlows" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines flows-table" :row-class="actionRowClass" :global-filter-fields="['searchField']" sort-field="name" :sort-order="1" :row-hover="true" @cell-edit-complete="onCellEditComplete">
+        <template #empty>No flows found.</template>
+        <Column header="Name" field="name" class="name-column" :sortable="true">
+          <template #body="{ data }">
+            <div class="d-flex justify-content-between">
+              <span>
+                <DialogTemplate component-name="flow/FlowViewer" :header="data.name" :flow-name="data.name" :flow-type="data.flowType">
+                  <span v-tooltip.right="'View Flow information' + errorTooltip(data) + ' for ' + data.name" class="cursor-pointer">
+                    {{ data.name }}
+                  </span>
+                </DialogTemplate>
               </span>
-              <PermissionedRouterLink v-if="data.sourcePlugin.artifactId === 'system-plugin'" :disabled="!$hasPermission('FlowUpdate')" :to="{ path: 'flow-plan-builder/' }" @click="setFlowPlanParams(data, true)">
-                <i v-tooltip.top="{ value: `Edit`, class: 'tooltip-width' }" class="ml-2 text-muted pi pi-pencil" />
-              </PermissionedRouterLink>
-              <PermissionedRouterLink :disabled="!$hasPermission('FlowUpdate')" :to="{ path: 'flow-plan-builder/' }" @click="setFlowPlanParams(data)">
-                <i v-tooltip.top="{ value: `Clone`, class: 'tooltip-width' }" class="ml-2 text-muted pi pi-clone" />
-              </PermissionedRouterLink>
-              <PermissionedRouterLink :disabled="!$hasPermission('PluginsView')" :to="{ path: 'plugins/' + data.mvnCoordinates }">
-                <i v-tooltip.top="data.mvnCoordinates" class="ml-1 text-muted fas fa-plug fa-rotate-90 fa-fw" />
-              </PermissionedRouterLink>
-            </span>
-          </div>
-        </template>
-      </Column>
-      <Column header="Description" field="description" class="truncateDescription">
-        <template #body="{ data, field }">
-          <div v-if="_.size(data[field]) > maxDescriptionLength" v-tooltip.bottom="data[field]">{{ displayDescription(data[field]) }}</div>
-          <span v-else>{{ data[field] }}</span>
-        </template>
-      </Column>
-      <Column header="Subscribe" field="subscribe" :style="{ width: '7%' }">
-        <template #body="{ data, field }">
-          <template v-if="!_.isEmpty(data[field])">
-            <div>
-              <i class="ml-1 text-muted fa-solid fa-right-to-bracket fa-fw" @mouseover="toggleSubscribeOverlayPanel($event, data[field])" @mouseleave="toggleSubscribeOverlayPanel($event, data[field])" />
+              <span>
+                <span v-if="data.sourcePlugin.artifactId === 'system-plugin'" v-tooltip.top="'Remove'" class="cursor-pointer" @click="confirmationPopup($event, data)">
+                  <i class="ml-2 text-muted fa-solid fa-trash-can" />
+                </span>
+                <PermissionedRouterLink v-if="data.sourcePlugin.artifactId === 'system-plugin'" :disabled="!$hasPermission('FlowUpdate')" :to="{ path: 'flow-plan-builder/' }" @click="setFlowPlanParams(data, true)">
+                  <i v-tooltip.top="{ value: `Edit`, class: 'tooltip-width' }" class="ml-2 text-muted pi pi-pencil" />
+                </PermissionedRouterLink>
+                <PermissionedRouterLink :disabled="!$hasPermission('FlowUpdate')" :to="{ path: 'flow-plan-builder/' }" @click="setFlowPlanParams(data)">
+                  <i v-tooltip.top="{ value: `Clone`, class: 'tooltip-width' }" class="ml-2 text-muted pi pi-clone" />
+                </PermissionedRouterLink>
+              </span>
             </div>
-            <OverlayPanel ref="subscribeOverlayPanel">
-              <SubscribeCell :subscribe-data="subscribeOverlayData"></SubscribeCell>
-            </OverlayPanel>
           </template>
-        </template>
-      </Column>
-      <Column header="Publish" field="publish" :style="{ width: '7%' }">
-        <template #body="{ data, field }">
-          <template v-if="!_.isEmpty(data[field])">
-            <div>
-              <i class="ml-1 text-muted fa-solid fa-right-from-bracket fa-fw" @mouseover="togglePublishOverlayPanel($event, data[field])" @mouseleave="togglePublishOverlayPanel($event, data[field])" />
-            </div>
-            <OverlayPanel ref="publishOverlayPanel">
-              <PublishCell :publish-data="publishOverlayData"></PublishCell>
-            </OverlayPanel>
+        </Column>
+        <Column header="Description" field="description" class="truncateDescription">
+          <template #body="{ data, field }">
+            <div v-if="_.size(data[field]) > maxDescriptionLength" v-tooltip.bottom="data[field]">{{ displayDescription(data[field]) }}</div>
+            <span v-else>{{ data[field] }}</span>
           </template>
-        </template>
-      </Column>
-      <Column header="Max Errors" field="maxErrors" class="max-error-column">
-        <template #body="{ data, field }">
-          <span v-if="data[field] === null">-</span>
-          <span v-else>{{ data[field] }}</span>
-        </template>
-        <template #editor="{ data, field }">
-          <InputNumber v-model="data[field]" :min="0" class="p-inputtext-sm max-error-input" autofocus />
-        </template>
-      </Column>
-      <Column header="Test Mode" class="test-mode-column">
-        <template #body="{ data }">
-          <FlowTestModeInputSwitch :row-data-prop="data" />
-        </template>
-      </Column>
-      <Column header="Active" class="flow-state-column">
-        <template #body="{ data }">
-          <template v-if="!_.isEmpty(data.flowStatus.errors)">
-            <FlowStateValidationButton :row-data-prop="data" @update-flows="emit('updateFlows')" />
+        </Column>
+        <Column header="Subscribe" field="subscribe" :style="{ width: '7%' }">
+          <template #body="{ data, field }">
+            <template v-if="!_.isEmpty(data[field])">
+              <div>
+                <i class="ml-1 text-muted fa-solid fa-right-to-bracket fa-fw" @mouseover="toggleSubscribeOverlayPanel($event, data[field])" @mouseleave="toggleSubscribeOverlayPanel($event, data[field])" />
+              </div>
+            </template>
           </template>
-          <template v-else>
-            <FlowStateInputSwitch :row-data-prop="data" />
+        </Column>
+        <Column header="Publish" field="publish" :style="{ width: '7%' }">
+          <template #body="{ data, field }">
+            <template v-if="!_.isEmpty(data[field])">
+              <div>
+                <i class="ml-1 text-muted fa-solid fa-right-from-bracket fa-fw" @mouseover="togglePublishOverlayPanel($event, data[field])" @mouseleave="togglePublishOverlayPanel($event, data[field])" />
+              </div>
+            </template>
           </template>
-        </template>
-      </Column>
-    </DataTable>
-    <ConfirmPopup></ConfirmPopup>
-  </CollapsiblePanel>
+        </Column>
+        <Column header="Max Errors" field="maxErrors" class="max-error-column">
+          <template #body="{ data, field }">
+            <span v-if="data[field] === null">-</span>
+            <span v-else>{{ data[field] }}</span>
+          </template>
+          <template #editor="{ data, field }">
+            <InputNumber v-model="data[field]" :min="0" class="p-inputtext-sm max-error-input" autofocus />
+          </template>
+        </Column>
+        <Column header="Test Mode" class="test-mode-column">
+          <template #body="{ data }">
+            <FlowTestModeInputSwitch :row-data-prop="data" />
+          </template>
+        </Column>
+        <Column header="Active" class="flow-state-column">
+          <template #body="{ data }">
+            <template v-if="!_.isEmpty(data.flowStatus.errors)">
+              <FlowStateValidationButton :row-data-prop="data" @update-flows="emit('updateFlows')" />
+            </template>
+            <template v-else>
+              <FlowStateInputSwitch :row-data-prop="data" />
+            </template>
+          </template>
+        </Column>
+      </DataTable>
+      <ConfirmPopup></ConfirmPopup>
+    </CollapsiblePanel>
+  </div>
+  <OverlayPanel ref="subscribeOverlayPanel">
+    <SubscribeCell :subscribe-data="subscribeOverlayData"></SubscribeCell>
+  </OverlayPanel>
+  <OverlayPanel ref="publishOverlayPanel">
+    <PublishCell :publish-data="publishOverlayData"></PublishCell>
+  </OverlayPanel>
+  <ConfirmDialog group="bulkActions">
+    <template #message="slotProps">
+      <span class="p-confirm-dialog-icon pi pi-exclamation-triangle"></span>
+      <span class="p-confirm-dialog-message" v-html="slotProps.message.message" />
+    </template>
+  </ConfirmDialog>
 </template>
 
 <script setup>
@@ -120,8 +133,8 @@ import useFlowQueryBuilder from "@/composables/useFlowQueryBuilder";
 import useFlowPlanQueryBuilder from "@/composables/useFlowPlanQueryBuilder";
 import useNotifications from "@/composables/useNotifications";
 import { useStorage, StorageSerializers } from "@vueuse/core";
-import { computed, defineProps, onBeforeMount, ref, onUnmounted, watch, defineEmits } from "vue";
-
+import { defineProps, onBeforeMount, ref, reactive, onUnmounted, watch, defineEmits } from "vue";
+import ContextMenu from "primevue/contextmenu";
 import Column from "primevue/column";
 import ConfirmPopup from "primevue/confirmpopup";
 import DataTable from "primevue/datatable";
@@ -129,7 +142,7 @@ import { FilterMatchMode } from "primevue/api";
 import InputNumber from "primevue/inputnumber";
 import { useConfirm } from "primevue/useconfirm";
 import OverlayPanel from "primevue/overlaypanel";
-
+import ConfirmDialog from "primevue/confirmdialog";
 import _ from "lodash";
 
 const { setMaxErrors, errors } = useFlowQueryBuilder();
@@ -140,8 +153,46 @@ const { removeTransformFlowPlanByName } = useFlowPlanQueryBuilder();
 let autoRefresh = null;
 const emit = defineEmits(["updateFlows"]);
 const flowData = ref({});
-
+const flowDataByPlugin = ref({});
 const linkedFlowPlan = useStorage("linked-flow-plan-persisted-params", {}, sessionStorage, { serializer: StorageSerializers.object });
+
+const { startTransformFlowByName, stopTransformFlowByName, enableTestTransformFlowByName, disableTestTransformFlowByName } = useFlowQueryBuilder();
+const menu = ref();
+const selectedPlugin = ref(null);
+
+const menuItems = reactive([
+  {
+    label: "Start All Plugin Flows",
+    icon: "fas fa-play fa-fw",
+    command: () => {
+      confirmAllFlows("Start", "");
+    },
+  },
+  {
+    label: "Stop All Plugin Flows",
+    icon: "fas fa-stop fa-fw",
+    command: () => {
+      confirmAllFlows("Stop", "");
+    },
+  },
+  {
+    separator: true,
+  },
+  {
+    label: "Enable Test Mode For All Plugin Flows",
+    icon: "fas fa-flask fa-fw",
+    command: () => {
+      confirmAllFlows("Enable", "Test Mode for");
+    },
+  },
+  {
+    label: "Disable Test Mode For All Plugin Flows",
+    icon: "fas fa-flask fa-fw",
+    command: () => {
+      confirmAllFlows("Disable", "Test Mode for");
+    },
+  },
+]);
 
 const props = defineProps({
   flowTypeProp: {
@@ -162,13 +213,35 @@ const props = defineProps({
     required: false,
     default: null,
   },
+  flowDataByPluginProp: {
+    type: Object,
+    required: true,
+  },
 });
 
+const runForAllFlowsForPlugin = (runType) => {
+  const pluginFlows = flowDataByPlugin.value[selectedPlugin.value];
+  pluginFlows.forEach(async (element) => {
+    if (runType === "Start") {
+      notify.info("Starting All Flow's", `Starting all <b>${selectedPlugin.value}</b> flows.`, 3000);
+      await startTransformFlowByName(element.name);
+    } else if (runType === "Stop") {
+      notify.info("Stopping All Flow's", `Stopping all <b>${selectedPlugin.value}</b> flows.`, 3000);
+      await stopTransformFlowByName(element.name);
+    } else if (runType === "Enable") {
+      notify.info("Enabling Test Mode", `Enabling Test Mode for all <b>${selectedPlugin.value}</b> flows.`, 3000);
+      await enableTestTransformFlowByName(element.name);
+    } else if (runType === "Disable") {
+      notify.info("Disabling Test Mode", `Disabling Test Mode for all <b>${selectedPlugin.value}</b> flows.`, 3000);
+      await disableTestTransformFlowByName(element.name);
+    }
+    emit("updateFlows");
+  });
+};
 const filters = ref({
   global: { value: null, matchMode: FilterMatchMode.CONTAINS },
   mvnCoordinates: { value: null, matchMode: FilterMatchMode.CONTAINS },
 });
-
 
 onUnmounted(() => {
   clearInterval(autoRefresh);
@@ -176,6 +249,7 @@ onUnmounted(() => {
 
 onBeforeMount(async () => {
   flowData.value = props.flowDataProp;
+  flowDataByPlugin.value = props.flowDataByPluginProp;
 });
 
 watch(
@@ -194,6 +268,7 @@ watch(
 watch(
   () => props.flowDataProp,
   () => {
+    flowDataByPlugin.value = props.flowDataByPluginProp;
     flowData.value = props.flowDataProp;
   }
 );
@@ -203,12 +278,18 @@ const deleteFlow = async (data) => {
   if (response) {
     notify.success(`Removed ${data.flowType} flow:`, data.name);
     removeFlowFromProp(data);
+    emit("updateFlows");
   } else {
     notify.error(`Failed to remove`, data.name);
   }
 };
 
-const maxDescriptionLength = ref(80)
+const onPanelRightClick = (event, curentPlugin) => {
+  selectedPlugin.value = curentPlugin;
+  menu.value.show(event);
+};
+
+const maxDescriptionLength = ref(80);
 const displayDescription = (data) => {
   return _.truncate(data, {
     length: maxDescriptionLength.value,
@@ -223,18 +304,6 @@ const errorTooltip = (data) => {
 const actionRowClass = (data) => {
   return !_.isEmpty(data.flowStatus.errors) ? "table-danger action-error" : null;
 };
-
-const FlowTypeTitle = computed(() => {
-  return _.startCase([props.flowTypeProp.toString()]);
-});
-
-const flowDataByType = computed(() => {
-  return (flowData.value[props.flowTypeProp] || []).map((flow) => {
-    if (flow.maxErrors === -1) flow.maxErrors = null;
-    return flow;
-  });
-});
-
 
 const confirmationPopup = (event, data) => {
   if (_.isEqual(data.flowStatus.state, "RUNNING")) {
@@ -254,6 +323,29 @@ const confirmationPopup = (event, data) => {
   });
 };
 
+const confirmAllFlows = (runType, message) => {
+  confirm.require({
+    group: "bulkActions",
+    message: `${runType} ${message} all <b>${selectedPlugin.value}</b> flows?`,
+    acceptLabel: runType,
+    rejectLabel: "Cancel",
+    icon: "pi pi-exclamation-triangle",
+    header: "Confirmation",
+    rejectProps: {
+      label: "Cancel",
+      severity: "secondary",
+      outlined: true,
+    },
+    acceptProps: {
+      label: `${runType} ${message} all <b>${selectedPlugin.value}</b> flows?`,
+    },
+    accept: () => {
+      runForAllFlowsForPlugin(runType);
+    },
+    reject: () => { },
+  });
+};
+
 const removeFlowFromProp = (data) => {
   flowData.value[props.flowTypeProp] = flowData.value[props.flowTypeProp].filter((flow) => {
     return flow.name !== data.name;
@@ -262,17 +354,18 @@ const removeFlowFromProp = (data) => {
 
 const onCellEditComplete = async (event) => {
   let { data, newValue, field } = event;
+  let sendValue = null;
 
   if (!_.isEqual(data.maxErrors, newValue)) {
-    if (_.isEqual(newValue, null)) newValue = -1;
+    sendValue = _.isEqual(newValue, null) ? -1 : newValue
     const resetValue = data.maxErrors;
     data[field] = newValue;
-    await setMaxErrors(data.name, newValue);
+    await setMaxErrors(data.name, sendValue);
     if (errors.value.length === 0) {
-      if (newValue === -1) {
-        notify.success("Max Errors Disabled", `Max errors for ${data.name} has been disabled`);
+      if (newValue === null) {
+        notify.success("Max Errors Disabled", `Max errors for <b>${data.name}</b> has been disabled`);
       } else {
-        notify.success("Max Errors Set Successfully", `Max errors for ${data.name} set to ${newValue}`);
+        notify.success("Max Errors Set Successfully", `Max errors for <b>${data.name}</b> set to <b>${newValue}</b>`);
       }
     } else {
       data[field] = resetValue;

@@ -257,9 +257,9 @@ const fetchErrors = async () => {
   errors.value = errors.value.map((deltaFile) => {
     return {
       ...deltaFile,
-      lastErroredAction: latestError(deltaFile)
-    }
-  })
+      lastErroredAction: latestError(deltaFile),
+    };
+  });
 };
 
 const toggleMenu = (event) => {
@@ -323,8 +323,7 @@ const filterSelectedDids = computed(() => {
 
 // TODO: Review for 2.0
 const latestError = (deltaFile) => {
-  return _
-    .chain(deltaFile.flows)
+  return _.chain(deltaFile.flows)
     .map((flow) => flow.actions)
     .flatten()
     .filter((action) => action.state === "ERROR")
