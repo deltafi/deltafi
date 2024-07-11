@@ -5,6 +5,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [2.0-rc5] - 2024-07-11
+
+### Added
+- compose script now has a 'build' target that will build all core docker images.  Useful for running compose with snapshots
+- Autodetect Linux and MacOS in compose script
+- Added destroy command to compose script
+- Healthcheck for plugins installed in compose, the installation is not considered complete until the container reaches a healthy state
+- Added rollback logic for failed plugin installs in compose
+- Added restart policies for compose services
+
+### Changed
+- Compose script now creates data directories with the correct permissions
+
+### Fixed
+- Fixed bug that prevented plugins from being upgraded when running in compose
+
+### Upgrade and Migration
+- Use bitnami/redis:7.2.5 in compose stack and kubernetes
+- Upgrade loki to 2.9.9
+- Upgrade promtail to 2.9.9
+- Upgrade minio to RELEASE.2024-07-04T14-25-45Z
+- Upgrade clickhouse to 24.6.2-debian-12-r0
+
 ## [1.2.11] - 2024-07-02
 
 ### Added
@@ -2981,7 +3004,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.11...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/2.0-rc5...main
+[2.0-rc5]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.11...2.0-rc5
 [1.2.11]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.10...1.2.11
 [1.2.10]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.9...1.2.10
 [1.2.9]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.8...1.2.9
