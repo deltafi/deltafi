@@ -36,7 +36,7 @@ public class DecompressTest {
     private static final String FILE1 = "thing1.txt";
     private static final String FILE2 = "thing2.txt";
     private final Decompress action = new Decompress();
-    private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action, "DecompressTest");
+    private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup("DecompressTest");
 
     @Test
     public void errorResultOnNoContent() {

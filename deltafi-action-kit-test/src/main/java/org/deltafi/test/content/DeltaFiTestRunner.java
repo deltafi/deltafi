@@ -18,7 +18,6 @@
 package org.deltafi.test.content;
 
 import org.assertj.core.api.Assertions;
-import org.deltafi.actionkit.action.Action;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.test.storage.s3.InMemoryObjectStorageService;
@@ -46,30 +45,23 @@ public class DeltaFiTestRunner {
     private String testDataFolder = null;
 
     /**
-     * Create a new DeltaFiTestRunner which has an in-memory ContentStorageService
-     * that can be interacted with. The in-memory service will be set in the
-     * action that is passed in.
+     * Create a new DeltaFiTestRunner which has an in-memory ContentStorageService that can be interacted with.
      *
-     * @param action to add the in-memory ContentStorageService to
      * @return a new instance of a DeltaFiTestRunner
      */
-    public static DeltaFiTestRunner setup(Action<?, ?, ?> action) {
-        return setup(action, "./");
+    public static DeltaFiTestRunner setup() {
+        return setup("./");
     }
 
     /**
-     * Create a new DeltaFiTestRunner which has an in-memory ContentStorageService
-     * that can be interacted with. The in-memory service will be set in the
-     * action that is passed in.
+     * Create a new DeltaFiTestRunner which has an in-memory ContentStorageService that can be interacted with.
      *
-     * @param action action to add the in-memory ContentStorageService to
      * @param testDataFolder name of the base folder to use when loading resources
      * @return a new instance of a DeltaFiTestRunner
      */
-    public static DeltaFiTestRunner setup(Action<?, ?, ?> action, String testDataFolder) {
+    public static DeltaFiTestRunner setup(String testDataFolder) {
         DeltaFiTestRunner deltaFiTestSetup = new DeltaFiTestRunner();
         deltaFiTestSetup.testDataFolder = testDataFolder;
-        action.setContentStorageService(deltaFiTestSetup.storageService);
         return deltaFiTestSetup;
     }
 

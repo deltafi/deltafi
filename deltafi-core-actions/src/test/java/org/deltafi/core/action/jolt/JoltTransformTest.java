@@ -32,7 +32,7 @@ import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformR
 class JoltTransformTest {
 
     JoltTransform action = new JoltTransform();
-    DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action);
+    DeltaFiTestRunner runner = DeltaFiTestRunner.setup();
 
     @Test
     void testJoltTransformByIndex() {

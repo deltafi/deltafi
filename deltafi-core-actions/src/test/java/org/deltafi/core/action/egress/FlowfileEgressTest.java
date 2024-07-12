@@ -56,7 +56,7 @@ public class FlowfileEgressTest {
 
     private final HttpService httpService = new HttpService(HttpClient.newHttpClient());
     private final FlowfileEgress action = new FlowfileEgress(httpService);
-    private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action, "FlowfileEgressTest");
+    private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup("FlowfileEgressTest");
 
     private static final ContentStorageService CONTENT_STORAGE_SERVICE =
             new ContentStorageService(new InMemoryObjectStorageService());

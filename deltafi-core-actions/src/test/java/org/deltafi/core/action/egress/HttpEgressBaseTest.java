@@ -65,7 +65,7 @@ public class HttpEgressBaseTest {
 
     private final HttpService httpService = new HttpService(HttpClient.newHttpClient());
     private final TestHttpEgress action = new TestHttpEgress(httpService);
-    private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action, "RestPostEgressTest");
+    private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup("RestPostEgressTest");
 
     @RegisterExtension
     static WireMockExtension wireMockHttp = WireMockExtension.newInstance()

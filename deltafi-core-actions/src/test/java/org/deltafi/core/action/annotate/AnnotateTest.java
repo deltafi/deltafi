@@ -34,7 +34,7 @@ import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformR
 class AnnotateTest {
 
     Annotate action = new Annotate();
-    DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action);
+    DeltaFiTestRunner runner = DeltaFiTestRunner.setup();
 
     @Test
     void addsAnnotations() {

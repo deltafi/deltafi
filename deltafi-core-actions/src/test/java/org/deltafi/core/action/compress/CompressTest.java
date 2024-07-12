@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class CompressTest {
     private final TestClock testClock = new TestClock();
     private final Compress action = new Compress(testClock);
-    private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action, "CompressTest");
+    private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup("CompressTest");
 
     @Test
     public void errorResultOnNoContent() {

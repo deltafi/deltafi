@@ -31,7 +31,7 @@ import java.util.Map;
 class ModifyMetadataTest {
 
     ModifyMetadata action = new ModifyMetadata();
-    DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action);
+    DeltaFiTestRunner runner = DeltaFiTestRunner.setup();
 
     @Test
     void testTransform() {

@@ -49,7 +49,7 @@ public class RestPostEgressTest {
 
     private final HttpService httpService = new HttpService(HttpClient.newHttpClient());
     private final RestPostEgress action = new RestPostEgress(httpService);
-    private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action, "RestPostEgressTest");
+    private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup("RestPostEgressTest");
 
     private static final ContentStorageService CONTENT_STORAGE_SERVICE =
             new ContentStorageService(new InMemoryObjectStorageService());

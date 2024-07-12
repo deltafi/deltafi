@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class ModifyMediaTypeTest {
 
     ModifyMediaType action = new ModifyMediaType();
-    DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action, "ModifyMediaTypeTest");
+    DeltaFiTestRunner runner = DeltaFiTestRunner.setup("ModifyMediaTypeTest");
     ActionContext context = runner.actionContext();
 
     ModifyMediaTypeTest() throws TikaException, IOException {
