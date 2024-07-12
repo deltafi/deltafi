@@ -17,22 +17,31 @@
  */
 package org.deltafi.actionkit.action;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.action.transform.TransformAction;
 import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.actionkit.action.transform.TransformResult;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.DeltaFileMessage;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 @ExtendWith(MockitoExtension.class)
 public class ActionTest {
+    @Data
+    @EqualsAndHashCode(callSuper = true)
+    private static class TestActionParameters extends ActionParameters {
+        private String testParameter;
+    }
 
-    private static class A extends TransformAction<ActionParameters> {
+    private static class A extends TransformAction<TestActionParameters> {
         public A() {
             super("Actual nothing action at all");
         }
@@ -43,7 +52,7 @@ public class ActionTest {
         }
 
         @Override
-        public TransformResult transform(@NotNull ActionContext context, @NotNull ActionParameters params, @NotNull TransformInput input) {
+        public TransformResult transform(@NotNull ActionContext context, @NotNull TestActionParameters params, @NotNull TransformInput input) {
             return null;
         }
     }
@@ -55,8 +64,10 @@ public class ActionTest {
     C action = new C();
 
     @Test
-    public void testCorrectGenericClassReturned() {
-        Assertions.assertEquals(ActionParameters.class, action.paramClass);
+    public void initializes() {
+        assertEquals("org.deltafi.actionkit.action.ActionTest.C", action.getClassCanonicalName());
+        assertEquals(ActionType.TRANSFORM, action.getActionType());
+        assertEquals("Actual nothing action at all", action.getDescription());
+        assertEquals(TestActionParameters.class, action.getParamClass());
     }
-
 }

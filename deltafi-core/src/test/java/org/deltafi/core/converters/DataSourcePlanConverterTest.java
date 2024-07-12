@@ -40,7 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Slf4j
 class DataSourcePlanConverterTest {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-            .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
+            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
             .registerModule(new JavaTimeModule());
     final DataSourcePlanConverter dataSourcePlanConverter = new DataSourcePlanConverter();
 

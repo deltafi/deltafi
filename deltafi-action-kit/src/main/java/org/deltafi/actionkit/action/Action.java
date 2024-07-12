@@ -17,16 +17,13 @@
  */
 package org.deltafi.actionkit.action;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.actionkit.action.util.ActionParameterSchemaGenerator;
 import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 
@@ -44,12 +41,17 @@ import java.util.Map;
  * @param <R> The result type
  */
 @RequiredArgsConstructor
+@Getter
 public abstract class Action<I, P extends ActionParameters, R extends ResultType> {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
                     .registerModule(new JavaTimeModule())
                     .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
 
-    @Getter
+    private final ActionType actionType;
+    private final String description;
+
+    private final Class<P> paramClass = getGenericParameterType();
+
     private ActionExecution actionExecution = null;
 
     /**
@@ -74,14 +76,6 @@ public abstract class Action<I, P extends ActionParameters, R extends ResultType
         }
         throw new RuntimeException("Cannot instantiate" + getClass());
     }
-
-    protected final Class<P> paramClass = getGenericParameterType();
-
-    private final ActionType actionType;
-    private final String description;
-
-    private ActionDescriptor actionDescriptor;
-    private Map<String, Object> definition;
 
     /**
      * Builds the action-specific input instance used by the execute method.
@@ -118,7 +112,8 @@ public abstract class Action<I, P extends ActionParameters, R extends ResultType
                     actionInput.getActionContext().getDid());
         }
 
-        actionExecution = new ActionExecution(getClassCanonicalName(), actionInput.getActionContext().getActionName(), actionInput.getActionContext().getDid(), OffsetDateTime.now());
+        actionExecution = new ActionExecution(getClassCanonicalName(), actionInput.getActionContext().getActionName(),
+                actionInput.getActionContext().getDid(), OffsetDateTime.now());
 
         if (actionInput.getActionContext().getJoin() != null) {
             return execute(actionInput.getActionContext(), join(actionInput.getDeltaFileMessages().stream()
@@ -130,36 +125,12 @@ public abstract class Action<I, P extends ActionParameters, R extends ResultType
                 actionInput.getDeltaFileMessages().getFirst()), convertToParams(actionInput.getActionParams()));
     }
 
+    private P convertToParams(@NotNull Map<String, Object> params) {
+        return OBJECT_MAPPER.convertValue(params, paramClass);
+    }
+
     public void clearActionExecution() {
         actionExecution = null;
-    }
-
-    public ActionDescriptor getActionDescriptor() {
-        if (actionDescriptor == null) {
-            actionDescriptor = buildActionDescriptor();
-        }
-        return actionDescriptor;
-    }
-
-    protected ActionDescriptor buildActionDescriptor() {
-        return ActionDescriptor.builder()
-                .name(getClassCanonicalName())
-                .description(description)
-                .type(actionType)
-                .schema(getDefinition())
-                .build();
-    }
-
-    /**
-     * Generate a key/value map for the parameter schema of this action
-     * @return Map of parameter class used to configure this action
-     */
-    public Map<String, Object> getDefinition() {
-        if (definition == null) {
-            JsonNode schemaJson = ActionParameterSchemaGenerator.generateSchema(paramClass);
-            definition = OBJECT_MAPPER.convertValue(schemaJson, new TypeReference<>() {});
-        }
-        return definition;
     }
 
     /**
@@ -168,14 +139,5 @@ public abstract class Action<I, P extends ActionParameters, R extends ResultType
      */
     public String getClassCanonicalName() {
         return getClass().getCanonicalName();
-    }
-
-    /**
-     * Convert a map of key/values to a parameter object for the Action
-     * @param params Key-value map representing the values in the parameter object
-     * @return a parameter object initialized by the params map
-     */
-    public P convertToParams(@NotNull Map<String, Object> params) {
-        return OBJECT_MAPPER.convertValue(params, paramClass);
     }
 }

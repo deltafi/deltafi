@@ -42,7 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Slf4j
 class EgressFlowPlanConverterTest {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-            .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
+            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
             .registerModule(new JavaTimeModule());
     final EgressFlowPlanConverter egressFlowPlanConverter = new EgressFlowPlanConverter();
 

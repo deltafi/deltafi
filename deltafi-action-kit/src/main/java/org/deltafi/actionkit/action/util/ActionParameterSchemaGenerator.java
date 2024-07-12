@@ -20,16 +20,13 @@ package org.deltafi.actionkit.action.util;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.victools.jsonschema.generator.*;
 import com.github.victools.jsonschema.module.jackson.JacksonModule;
 import com.github.victools.jsonschema.module.jackson.JacksonOption;
-import graphql.schema.idl.errors.TypeRedefinitionError;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 
-import java.util.List;
 import java.util.Map;
 
 /**

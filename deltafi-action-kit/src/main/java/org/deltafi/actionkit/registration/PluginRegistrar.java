@@ -18,6 +18,7 @@
 package org.deltafi.actionkit.registration;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import feign.Retryer;
@@ -25,12 +26,9 @@ import feign.jackson.JacksonDecoder;
 import feign.jackson.JacksonEncoder;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Action;
-import org.deltafi.actionkit.properties.ActionsProperties;
+import org.deltafi.actionkit.action.util.ActionParameterSchemaGenerator;
 import org.deltafi.common.http.client.feign.FeignClientFactory;
-import org.deltafi.common.types.FlowPlan;
-import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.common.types.PluginRegistration;
-import org.deltafi.common.types.Variable;
+import org.deltafi.common.types.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.info.BuildProperties;
@@ -38,17 +36,13 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.Resource;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 @Slf4j
 public class PluginRegistrar {
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
-    static {
-        OBJECT_MAPPER.registerModule(new JavaTimeModule());
-    }
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+            .registerModule(new JavaTimeModule())
+            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
 
     @Autowired(required = false)
     private final List<Action<?, ?, ?>> actions = Collections.emptyList();
@@ -59,9 +53,6 @@ public class PluginRegistrar {
     @Autowired
     ApplicationContext applicationContext;
 
-    @Autowired
-    ActionsProperties actionsProperties;
-
     @Value("${CORE_URL:http://deltafi-core-service/api/v2/}")
     private String coreUrl;
 
@@ -69,7 +60,8 @@ public class PluginRegistrar {
         PluginRegistration pluginRegistration = buildPluginRegistration();
 
         log.info("Registering plugin with core: {}", pluginRegistration.getPluginCoordinates());
-        CoreClient coreClient = FeignClientFactory.build(CoreClient.class, coreUrl, new JacksonEncoder(OBJECT_MAPPER), new JacksonDecoder(OBJECT_MAPPER), new Retryer.Default(500, 2000, 3));
+        CoreClient coreClient = FeignClientFactory.build(CoreClient.class, coreUrl, new JacksonEncoder(OBJECT_MAPPER),
+                new JacksonDecoder(OBJECT_MAPPER), new Retryer.Default(500, 2000, 3));
         coreClient.postPlugin(pluginRegistration);
     }
 
@@ -86,7 +78,7 @@ public class PluginRegistrar {
                 .description(buildProperties.get("description"))
                 .actionKitVersion(buildProperties.get("actionKitVersion"))
                 .dependencies(toPluginCoordinatesList(buildProperties.get("pluginDependencies")))
-                .actions(actions.stream().map(Action::getActionDescriptor).toList());
+                .actions(actions.stream().map(this::buildActionDescriptor).toList());
 
         Resource flowsDirectory = applicationContext.getResource("classpath:flows");
         if (flowsDirectory.exists()) {
@@ -101,6 +93,19 @@ public class PluginRegistrar {
     private List<PluginCoordinates> toPluginCoordinatesList(String pluginDependencies) {
         return pluginDependencies == null ? List.of() :
             Arrays.stream(pluginDependencies.split(",\\s?")).map(PluginCoordinates::new).toList();
+    }
+
+    private ActionDescriptor buildActionDescriptor(Action<?, ?, ?> action) {
+        Map<String, Object> schema = OBJECT_MAPPER.convertValue(
+                ActionParameterSchemaGenerator.generateSchema(action.getParamClass()),
+                new TypeReference<>() {});
+
+        return ActionDescriptor.builder()
+                .name(action.getClassCanonicalName())
+                .description(action.getDescription())
+                .type(action.getActionType())
+                .schema(schema)
+                .build();
     }
 
     private List<Variable> loadVariables() {

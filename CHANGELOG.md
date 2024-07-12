@@ -138,7 +138,7 @@ All [Unreleased] changes can be viewed in GitLab.
 ## [1.2.6] - 2024-04-25
 
 ### Changed
-- Documenation for intial install to include enabling tls in kubernetes
+- Documentation for initial install to include enabling tls in kubernetes
 
 ### Upgrade and Migration
 - Upgrade to deltafi/grafana:10.4.2-0
