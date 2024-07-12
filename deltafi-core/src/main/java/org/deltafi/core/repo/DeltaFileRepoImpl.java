@@ -31,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.types.*;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.mongodb.core.index.IndexInfo;
 import org.springframework.data.mongodb.core.index.IndexOperations;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -63,36 +64,27 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     private static final String FLOWS = "flows";
     private static final String TERMINAL = "terminal";
     public static final String TYPE = "type";
-/*
-    private static final Map<String, Index> INDICES;
-    static {
-        INDICES = new HashMap<>();
-        INDICES.put(CREATED_BEFORE_INDEX, new Index().named(CREATED_BEFORE_INDEX).on(CREATED, Sort.Direction.ASC).on(DATA_SOURCE, Sort.Direction.ASC));
-        INDICES.put("modified_before_index", new Index().named("modified_before_index").on(MODIFIED, Sort.Direction.ASC).on(DATA_SOURCE, Sort.Direction.ASC));
-        INDICES.put("auto_resume_index", new Index().named("auto_resume_index").on(NEXT_AUTO_RESUME, Sort.Direction.ASC).on(STAGE, Sort.Direction.ASC));
-        INDICES.put("flow_first_index", new Index().named("flow_first_index").on(DATA_SOURCE, Sort.Direction.ASC).on(NORMALIZED_NAME, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
-        INDICES.put("metadata_index", new Index().named("metadata_index").on(ANNOTATIONS + ".$**", Sort.Direction.ASC));
-        INDICES.put("metadata_keys_index", new Index().named("metadata_keys_index").on(ANNOTATION_KEYS, Sort.Direction.ASC).sparse());
-        INDICES.put("pending_annotations_index", new Index().named("pending_annotations_index").on(PENDING_ANNOTATIONS, Sort.Direction.ASC).sparse());
-        INDICES.put("egress_flow_index", new Index().named("egress_flow_index").on(EGRESS_FLOWS, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
-        INDICES.put("ingress_bytes_index", new Index().named("ingress_bytes_index").on(INGRESS_BYTES, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
-        INDICES.put("in_flight_index", new Index().named("in_flight_index").on(IN_FLIGHT, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(IN_FLIGHT).is(true))));
-        INDICES.put(TERMINAL_INDEX, new Index().named(TERMINAL_INDEX).on(TERMINAL, Sort.Direction.ASC).on(DATA_SOURCE, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
-        INDICES.put("content_deletable_index", new Index().named("content_deletable_index").on(CONTENT_DELETABLE, Sort.Direction.ASC).on(DATA_SOURCE, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(CONTENT_DELETABLE).is(true))));
 
-        // partial index to support finding DeltaFiles that are pending annotations
-        INDICES.put("first_pending_annotations_index", new Index().named("first_pending_annotations_index")
-                .on(FIRST_PENDING_ANNOTATIONS, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(FIRST_PENDING_ANNOTATIONS).exists(true))).on(MODIFIED, Sort.Direction.ASC));
+    private static final Map<String, String> INDICES = Map.of(
+            "idx_created", "(created, data_source, normalized_name, stage, egressed, filtered, terminal, ingress_bytes, content_deletable)",
+            "idx_modified", "(modified, data_source, normalized_name, stage, egressed, filtered, terminal, ingress_bytes, content_deletable)"
+    );
+    //INDICES.put("idx_auto_resume", new Index().named("auto_resume").on(NEXT_AUTO_RESUME, Sort.Direction.ASC).on(STAGE, Sort.Direction.ASC));
+    //INDICES.put("idx_metadata", new Index().named("metadata").on(ANNOTATIONS + ".$**", Sort.Direction.ASC));
+    //INDICES.put("idx_metadata_keys", new Index().named("metadata_keys").on(ANNOTATION_KEYS, Sort.Direction.ASC).sparse());
+    //INDICES.put("idx_pending_annotations", new Index().named("pending_annotations").on(PENDING_ANNOTATIONS, Sort.Direction.ASC).sparse());
+    // needed?
+    //INDICES.put("idx_egress_flow", new Index().named("egress_flow").on(EGRESS_FLOWS, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
 
-        // use partial indexes for boolean fields filtering on the more selective value
-        INDICES.put("egressed_index", new Index().named("egressed_index").on(EGRESSED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(EGRESSED).is(false))).on(MODIFIED, Sort.Direction.ASC));
-        INDICES.put("test_mode_index", new Index().named("test_mode_index").on(TEST_MODE, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(TEST_MODE).is(true))).on(MODIFIED, Sort.Direction.ASC));
-        INDICES.put("filtered_index", new Index().named("filtered_index").on(FILTERED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(FILTERED).is(true))).on(MODIFIED, Sort.Direction.ASC));
-        INDICES.put("error_index", new Index().named("error_index").on(STAGE, Sort.Direction.ASC).on(ERROR_ACKNOWLEDGED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(STAGE).is("ERROR"))));
+    // partial index to support finding DeltaFiles that are pending annotations
+    // INDICES.put("idx_first_pending_annotations", new Index().named("first_pending_annotations")
+    //        .on(FIRST_PENDING_ANNOTATIONS, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(FIRST_PENDING_ANNOTATIONS).exists(true))).on(MODIFIED, Sort.Direction.ASC));
 
-        INDICES.put("cold_queued_index", new Index().named("cold_queued_index").on(IN_FLIGHT, Sort.Direction.ASC).on(ACTIONS_STATE, Sort.Direction.ASC).on(ACTIONS_NAME, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(IN_FLIGHT).is(true).and(ACTIONS_STATE).is(COLD_QUEUED.name()))));
-        INDICES.put("queued_index", new Index().named("queued_index").on(IN_FLIGHT, Sort.Direction.ASC).on(ACTIONS_STATE, Sort.Direction.ASC).on(ACTIONS_NAME, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(IN_FLIGHT).is(true).and(ACTIONS_STATE).is(QUEUED.name()))));
-    }*/
+
+    //INDICES.put("idx_error", new Index().named("error").on(STAGE, Sort.Direction.ASC).on(ERROR_ACKNOWLEDGED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(STAGE).is("ERROR"))));
+
+    //INDICES.put("idx_cold_queued", new Index().named("cold_queued").on(IN_FLIGHT, Sort.Direction.ASC).on(ACTIONS_STATE, Sort.Direction.ASC).on(ACTIONS_NAME, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(IN_FLIGHT).is(true).and(ACTIONS_STATE).is(COLD_QUEUED.name()))));
+    //INDICES.put("idx_queued", new Index().named("queued").on(IN_FLIGHT, Sort.Direction.ASC).on(ACTIONS_STATE, Sort.Direction.ASC).on(ACTIONS_NAME, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(IN_FLIGHT).is(true).and(ACTIONS_STATE).is(QUEUED.name()))));
 
     @PersistenceContext
     private final EntityManager entityManager;
@@ -100,22 +92,43 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
-    public void ensureAllIndices(Duration newTtl) {
-        /*IndexOperations idxOps = mongoTemplate.indexOps(DeltaFile.class);
-        List<IndexInfo> existingIndexes = idxOps.getIndexInfo();
+    public void ensureAllIndices() {
+        List<String> existingIndexes = getExistingIndexes();
 
-        INDICES.forEach((indexName, indexDef) -> IndexUtils.updateIndices(idxOps, indexName, indexDef, existingIndexes));
+        // Create missing indexes
+        for (Map.Entry<String, String> entry : INDICES.entrySet()) {
+            if (!existingIndexes.contains(entry.getKey())) {
+                String sql = String.format("CREATE INDEX IF NOT EXISTS %s ON delta_files %s",
+                        entry.getKey(), entry.getValue());
+                log.info("Creating index: {}", entry.getKey());
+                log.info(sql);
+                jdbcTemplate.execute(sql);
+            }
+        }
 
-        Set<String> expected = new HashSet<>(INDICES.keySet());
-        expected.add("_id_");
-        expected.add(TTL_INDEX_NAME);
-        existingIndexes.forEach(existingIndex -> removeUnknownIndices(idxOps, existingIndex, expected));*/
+        // Remove unexpected indexes
+        for (String existingIndex : existingIndexes) {
+            if (!INDICES.containsKey(existingIndex) && !isSystemIndex(existingIndex)) {
+                log.info("Dropping unexpected index: {}", existingIndex);
+                try {
+                    jdbcTemplate.execute("DROP INDEX IF EXISTS " + existingIndex);
+                } catch (DataAccessException e) {
+                    log.error("Error dropping index {}: {}", existingIndex, e.getMessage());
+                }
+            }
+        }
     }
 
-    @Override
-    public List<IndexInfo> getIndexes() {
-        //return mongoTemplate.indexOps(COLLECTION).getIndexInfo();
-        return Collections.emptyList();
+    private List<String> getExistingIndexes() {
+        String sql = "SELECT indexname FROM pg_indexes WHERE tablename = 'delta_files'";
+        return jdbcTemplate.queryForList(sql, String.class);
+    }
+
+    private boolean isSystemIndex(String indexName) {
+        return indexName.startsWith("pg_") ||
+                indexName.endsWith("_pkey") ||
+                indexName.endsWith("_fkey") ||
+                indexName.contains("_fk_");
     }
 
     @Override

@@ -30,21 +30,10 @@ import java.util.UUID;
 
 public interface DeltaFileRepoCustom {
     /**
-     * Ensure the latest versions of the indices defined in the Repository
-     * are created. Ensure the TTL index has the latest expiration value.
+     * Ensure the latest versions of the indices defined in the Repository are created.
      * Remove indices that are not defined in the Repository.
-     *
-     * @param newTtl duration that a DeltaFile should be persisted
-     *
      */
-    void ensureAllIndices(Duration newTtl);
-
-    /**
-     * Get a list of all indexes on the collection.
-     *
-     * @return list of indexes.
-     */
-    List<IndexInfo> getIndexes();
+    void ensureAllIndices();
 
     /**
      * Find stale deltaFiles that may need to be requeued, and update the last modified time of the QUEUED action.

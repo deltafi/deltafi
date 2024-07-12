@@ -40,7 +40,7 @@ public class DeltaFileIndexService {
 
     @PostConstruct
     public void ensureAllIndices() {
-        this.deltaFileRepo.ensureAllIndices(getAgeOffDays());
+        this.deltaFileRepo.ensureAllIndices();
     }
 
     private Duration getAgeOffDays() {
