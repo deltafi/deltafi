@@ -66,25 +66,12 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     public static final String TYPE = "type";
 
     private static final Map<String, String> INDICES = Map.of(
-            "idx_created", "(created, data_source, normalized_name, stage, egressed, filtered, terminal, ingress_bytes, content_deletable)",
-            "idx_modified", "(modified, data_source, normalized_name, stage, egressed, filtered, terminal, ingress_bytes, content_deletable)"
+            "idx_created", "delta_files (created, data_source, normalized_name, stage, egressed, filtered, terminal, ingress_bytes, content_deletable)",
+            "idx_modified", "delta_files (modified, data_source, normalized_name, stage, egressed, filtered, terminal, ingress_bytes, content_deletable)",
+            "idx_flow", "delta_file_flows (delta_file_id, name, state, test_mode, pending_annotations)",
+            "idx_action", "actions (delta_file_flow_id, name, state, next_auto_resume, error_acknowledged)",
+            "idx_annotations", "annotations (delta_file_id, key, value)"
     );
-    //INDICES.put("idx_auto_resume", new Index().named("auto_resume").on(NEXT_AUTO_RESUME, Sort.Direction.ASC).on(STAGE, Sort.Direction.ASC));
-    //INDICES.put("idx_metadata", new Index().named("metadata").on(ANNOTATIONS + ".$**", Sort.Direction.ASC));
-    //INDICES.put("idx_metadata_keys", new Index().named("metadata_keys").on(ANNOTATION_KEYS, Sort.Direction.ASC).sparse());
-    //INDICES.put("idx_pending_annotations", new Index().named("pending_annotations").on(PENDING_ANNOTATIONS, Sort.Direction.ASC).sparse());
-    // needed?
-    //INDICES.put("idx_egress_flow", new Index().named("egress_flow").on(EGRESS_FLOWS, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
-
-    // partial index to support finding DeltaFiles that are pending annotations
-    // INDICES.put("idx_first_pending_annotations", new Index().named("first_pending_annotations")
-    //        .on(FIRST_PENDING_ANNOTATIONS, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(FIRST_PENDING_ANNOTATIONS).exists(true))).on(MODIFIED, Sort.Direction.ASC));
-
-
-    //INDICES.put("idx_error", new Index().named("error").on(STAGE, Sort.Direction.ASC).on(ERROR_ACKNOWLEDGED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(STAGE).is("ERROR"))));
-
-    //INDICES.put("idx_cold_queued", new Index().named("cold_queued").on(IN_FLIGHT, Sort.Direction.ASC).on(ACTIONS_STATE, Sort.Direction.ASC).on(ACTIONS_NAME, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(IN_FLIGHT).is(true).and(ACTIONS_STATE).is(COLD_QUEUED.name()))));
-    //INDICES.put("idx_queued", new Index().named("queued").on(IN_FLIGHT, Sort.Direction.ASC).on(ACTIONS_STATE, Sort.Direction.ASC).on(ACTIONS_NAME, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(IN_FLIGHT).is(true).and(ACTIONS_STATE).is(QUEUED.name()))));
 
     @PersistenceContext
     private final EntityManager entityManager;
@@ -98,9 +85,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         // Create missing indexes
         for (Map.Entry<String, String> entry : INDICES.entrySet()) {
             if (!existingIndexes.contains(entry.getKey())) {
-                String sql = String.format("CREATE INDEX IF NOT EXISTS %s ON delta_files %s",
+                String sql = String.format("CREATE INDEX IF NOT EXISTS %s ON %s",
                         entry.getKey(), entry.getValue());
-                log.info("Creating index: {}", entry.getKey());
+                String tableName = entry.getValue().split("\\s+")[0];
+                log.info("Creating index {} on table {}", entry.getKey(), tableName);
                 log.info(sql);
                 jdbcTemplate.execute(sql);
             }
