@@ -4,10 +4,10 @@
 
 cli_help_command() {
   echo "
-Command: list-flows
+Command: list-ingress-actions
 
 Usage:
-  list-flows
+  list-ingress-actions
 
 Options:
   -h, --help  Show help"
@@ -18,7 +18,7 @@ ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " || " ${ARGS[@]} " =~ " -h " ]] && cli_help_command
 
 FIELDS="{ name flowStatus {state}}"
-QUERY="query { getAllFlows { timedIngress $FIELDS transform $FIELDS normalize $FIELDS enrich $FIELDS egress $FIELDS}}"
+QUERY="query { getAllFlows { timedIngress $FIELDS}}"
 RESULT=$(deltafi query "$QUERY")
 
 print_flows() {
@@ -28,16 +28,8 @@ print_flows() {
 
 DGS_ERRORS=$(echo $RESULT | jq -r "select(.errors) | .errors[] | .message")
 if [[ "$DGS_ERRORS" != "" ]]; then
-  cli_log "${red}${BASENAME}: Failed to get the list of flow plans${normal}"
+  cli_log "${red}${BASENAME}: Failed to get the list of ingress actions${normal}"
   echo -e "${red}Error: ${DGS_ERRORS}${normal}"
 else
   print_flows "timedIngress"
-  echo
-  print_flows "transform"
-  echo
-  print_flows "normalize"
-  echo
-  print_flows "enrich"
-  echo
-  print_flows "egress"
 fi

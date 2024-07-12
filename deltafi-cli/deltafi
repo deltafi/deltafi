@@ -161,6 +161,7 @@ Commands:
   install-plugin         install/upgrade a DeltaFi plugin
   list-actions           list the actions registered with deltafi
   list-flows             list the flows in the system with their status
+  list-ingress-actions   list the ingress actions in the system with their status
   list-plans             list all flow plans within deltafi
   list-plugins           list all installed plugins
   list-policies          list delete policies
@@ -249,6 +250,9 @@ case "$1" in
   ingress)
     "$DELTAFICLI_WORKDIR/commands/ingress" "$@"
     ;;
+  ingress-action)
+    "$DELTAFICLI_WORKDIR/commands/ingress-action" "$@"
+    ;;
   install|update|upgrade|start)
     "$DELTAFICLI_WORKDIR/commands/install" "$@"
     ;;
@@ -260,6 +264,9 @@ case "$1" in
     ;;
   list-flows)
     "$DELTAFICLI_WORKDIR/commands/list-flows" "$@"
+    ;;
+  list-ingress-actions)
+    "$DELTAFICLI_WORKDIR/commands/list-ingress-actions" "$@"
     ;;
   list-plans)
     "$DELTAFICLI_WORKDIR/commands/list-plans" "$@" | less -XSE

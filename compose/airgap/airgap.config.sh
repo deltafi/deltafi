@@ -30,6 +30,8 @@ deltafi normalize-flow start smoke
 deltafi enrich-flow start artificial-enrichment
 deltafi load-policies airgap.delete-policy.json
 
+deltafi ingress-action start smoke-test-ingress
+
 echo "Configuring plugin variables"
 # shellcheck disable=SC2016
 deltafi mongo-eval --quiet 'db.pluginVariable.updateOne({"variables.name": "passthroughEgressUrl"}, {$set: {"variables.$.value": "http://deltafi-egress-sink:9292"}})' > /dev/null
