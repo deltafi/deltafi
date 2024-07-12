@@ -753,7 +753,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     @Transactional
     public void batchInsert(List<DeltaFile> deltaFiles) {
         String sql = """
-                INSERT INTO delta_files (did, name, normalized_name, data_source, parent_dids, collect_id, child_dids,
+                INSERT INTO delta_files (did, name, normalized_name, data_source, parent_dids, join_id, child_dids,
                                          requeue_count, ingress_bytes, referenced_bytes, total_bytes, stage,
                                          created, modified, content_deleted, content_deleted_reason,
                                          egressed, filtered, replayed, replay_did, terminal,
@@ -766,7 +766,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             ps.setString(3, deltaFile.getNormalizedName());
             ps.setString(4, deltaFile.getDataSource());
             ps.setString(5, toJson(deltaFile.getParentDids()));
-            ps.setObject(6, deltaFile.getCollectId());
+            ps.setObject(6, deltaFile.getJoinId());
             ps.setString(7, toJson(deltaFile.getChildDids()));
             ps.setInt(8, deltaFile.getRequeueCount());
             ps.setLong(9, deltaFile.getIngressBytes());
@@ -799,7 +799,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         String deltaFileFlowSql = """
                 INSERT INTO delta_file_flows (id, name, number, type, state, created, modified, flow_plan, input,
                                               publish_topics, depth, pending_annotations, test_mode, test_mode_reason,
-                                              collect_id, pending_actions, delta_file_id, version)
+                                              join_id, pending_actions, delta_file_id, version)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?::jsonb, ?, ?)""";
 
         jdbcTemplate.batchUpdate(deltaFileFlowSql, deltaFileFlows, 1000, (ps, flow) -> {
@@ -817,7 +817,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             ps.setString(12, toJson(flow.getPendingAnnotations()));
             ps.setBoolean(13, flow.isTestMode());
             ps.setString(14, flow.getTestModeReason());
-            ps.setObject(15, flow.getCollectId());
+            ps.setObject(15, flow.getJoinId());
             ps.setString(16, toJson(flow.getPendingActions()));
             ps.setObject(17, flow.getDeltaFile().getDid());
             ps.setObject(18, flow.getDeltaFile().getVersion());

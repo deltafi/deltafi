@@ -56,24 +56,24 @@
                   </div>
                 </div>
               </template>
-              <template v-if="_.isEqual(displayActionInfo, 'collect')">
+              <template v-if="_.isEqual(displayActionInfo, 'join')">
                 <div class="deltafi-fieldset">
                   <div class="px-2 pt-3">
                     <dt>maxAge</dt>
                     <dd>
-                      <InputText v-model="collectData['maxAge']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
+                      <InputText v-model="joinData['maxAge']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
                     </dd>
                     <dt>minNum</dt>
                     <dd>
-                      <InputNumber v-model="collectData['minNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" :min="0" show-buttons />
+                      <InputNumber v-model="joinData['minNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" :min="0" show-buttons />
                     </dd>
                     <dt>maxNumber</dt>
                     <dd>
-                      <InputNumber v-model="collectData['maxNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" :min="0" show-buttons />
+                      <InputNumber v-model="joinData['maxNum']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" :min="0" show-buttons />
                     </dd>
                     <dt>metadataKey</dt>
                     <dd>
-                      <InputText v-model="collectData['metadataKey']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
+                      <InputText v-model="joinData['metadataKey']" class="inputWidth" :disabled="displayMap.get(displayActionInfo).disableEdit && rowdata.disableEdit" />
                     </dd>
                   </div>
                 </div>
@@ -126,7 +126,7 @@ const props = defineProps({
   },
 });
 
-const defaultCollectTemplate = ref({
+const defaultJoinTemplate = ref({
   maxAge: null,
   minNum: null,
   maxNum: null,
@@ -139,9 +139,9 @@ const { actionIndexProp: actionIndex, closeDialogCommand } = reactive(props);
 
 const rowdata = reactive(JSON.parse(JSON.stringify(props.rowDataProp)));
 const data = ref(_.isEmpty(_.get(rowdata, "parameters", null)) ? {} : rowdata["parameters"]);
-const collectData = ref(_.isEmpty(_.get(rowdata, "collect", null)) ? defaultCollectTemplate.value : rowdata["collect"]);
+const joinData = ref(_.isEmpty(_.get(rowdata, "join", null)) ? defaultJoinTemplate.value : rowdata["join"]);
 
-const originalCollectData = JSON.parse(JSON.stringify(collectData.value));
+const originalJoinData = JSON.parse(JSON.stringify(joinData.value));
 
 const onChange = (event, element) => {
   element["parameters"] = event.data;
@@ -152,11 +152,11 @@ const displayMap = new Map([
   ["type", { header: "Type", type: "string", disableEdit: true }],
   ["displayName", { header: "Display Name", type: "string", disableEdit: true }],
   ["description", { header: "Description", type: "string", disableEdit: true }],
-  ["collect", { header: "Collect", type: "object", disableEdit: false }],
+  ["join", { header: "Join", type: "object", disableEdit: false }],
   ["schema", { header: "Parameters", type: "object", disableEdit: false }],
 ]);
 
-const displayKeysList = ["name", "type", "description", "collect", "schema"];
+const displayKeysList = ["name", "type", "description", "join", "schema"];
 
 const getDisplayValues = (obj) => {
   return _.intersection(Object.keys(obj), displayKeysList);
@@ -177,40 +177,40 @@ const clearErrors = () => {
 
 const submit = async () => {
   clearErrors();
-  // Remove any value that have not changed from the original originalCollectData value it was set at
-  let changedCollectValues = _.omitBy(collectData.value, function (v, k) {
-    return JSON.stringify(originalCollectData[k]) === JSON.stringify(v);
+  // Remove any value that have not changed from the original originalJoinData value it was set at
+  let changedJoinValues = _.omitBy(joinData.value, function (v, k) {
+    return JSON.stringify(originalJoinData[k]) === JSON.stringify(v);
   });
 
-  let newCollect = {};
-  if (!_.isEmpty(changedCollectValues)) {
-    if (!_.isEmpty(collectData.value["maxAge"])) {
+  let newJoin = {};
+  if (!_.isEmpty(changedJoinValues)) {
+    if (!_.isEmpty(joinData.value["maxAge"])) {
       const regexPattern = new RegExp("^P([0-9]+(?:[,.][0-9]+)?Y)?([0-9]+(?:[,.][0-9]+)?M)?([0-9]+(?:[,.][0-9]+)?D)?(?:T([0-9]+(?:[,.][0-9]+)?H)?([0-9]+(?:[,.][0-9]+)?M)?([0-9]+(?:[,.][0-9]+)?S)?)?$");
-      let match = regexPattern.test(collectData.value["maxAge"]);
+      let match = regexPattern.test(joinData.value["maxAge"]);
 
       if (!match) {
         errors.value.push("maxAge is not a valid ISO8601 Duration");
       } else {
-        newCollect["maxAge"] = collectData.value["maxAge"];
+        newJoin["maxAge"] = joinData.value["maxAge"];
       }
     }
 
-    if (_.isNumber(collectData.value["minNum"])) {
-      newCollect["minNum"] = collectData.value["minNum"];
+    if (_.isNumber(joinData.value["minNum"])) {
+      newJoin["minNum"] = joinData.value["minNum"];
     }
 
-    if (_.isNumber(collectData.value["maxNum"])) {
-      newCollect["maxNum"] = collectData.value["maxNum"];
+    if (_.isNumber(joinData.value["maxNum"])) {
+      newJoin["maxNum"] = joinData.value["maxNum"];
     }
 
-    if (_.isNumber(collectData.value["minNum"]) && _.isNumber(collectData.value["maxNum"])) {
-      if (!_.lt(collectData.value["minNum"], collectData.value["maxNum"])) {
+    if (_.isNumber(joinData.value["minNum"]) && _.isNumber(joinData.value["maxNum"])) {
+      if (!_.lt(joinData.value["minNum"], joinData.value["maxNum"])) {
         errors.value.push("minNum cannot be greater than maxNum");
       }
     }
 
-    if (!_.isEmpty(collectData.value["metadataKey"])) {
-      newCollect["metadataKey"] = collectData.value["metadataKey"];
+    if (!_.isEmpty(joinData.value["metadataKey"])) {
+      newJoin["metadataKey"] = joinData.value["metadataKey"];
     }
   }
 
@@ -221,8 +221,8 @@ const submit = async () => {
     return;
   }
 
-  if (!_.isEmpty(newCollect)) {
-    rowdata["collect"] = newCollect;
+  if (!_.isEmpty(newJoin)) {
+    rowdata["join"] = newJoin;
   }
 
   closeDialogCommand.command();

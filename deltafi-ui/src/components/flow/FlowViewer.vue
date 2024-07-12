@@ -46,7 +46,7 @@
                           <div v-if="!_.isEmpty(value)" class="col-6 pb-0">
                             <dl>
                               <dt>{{ _.startCase(actionInfoKey) }}</dt>
-                              <dd v-if="['parameters', 'collect'].includes(actionInfoKey)" class="d-flex">
+                              <dd v-if="['parameters', 'join'].includes(actionInfoKey)" class="d-flex">
                                 <ul>
                                   <li v-for="(pVal, pKey) in value" :key="pKey">{{ pKey }}: {{ pVal }}</li>
                                 </ul>
@@ -74,7 +74,7 @@
                         <div v-if="!_.isEmpty(value)" class="col-6 pb-0">
                           <dl>
                             <dt>{{ _.startCase(actionInfoKey) }}</dt>
-                            <dd v-if="['parameters', 'collect'].includes(actionInfoKey)" class="d-flex">
+                            <dd v-if="['parameters', 'join'].includes(actionInfoKey)" class="d-flex">
                               <ul>
                                 <li v-for="(pVal, pKey) in value" :key="pKey">{{ pKey }}: {{ pVal }}</li>
                               </ul>

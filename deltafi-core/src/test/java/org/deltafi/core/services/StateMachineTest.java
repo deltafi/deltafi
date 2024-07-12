@@ -20,9 +20,9 @@ package org.deltafi.core.services;
 import lombok.Builder;
 import org.deltafi.common.test.time.TestClock;
 import org.deltafi.common.types.*;
-import org.deltafi.core.collect.CollectEntry;
-import org.deltafi.core.collect.CollectEntryService;
-import org.deltafi.core.collect.ScheduledCollectService;
+import org.deltafi.core.join.JoinEntry;
+import org.deltafi.core.join.JoinEntryService;
+import org.deltafi.core.join.ScheduledJoinService;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
@@ -66,8 +66,8 @@ class StateMachineTest {
     @Mock private DeltaFiPropertiesService deltaFiPropertiesService;
     @Mock private IdentityService identityService;
     @Mock private QueueManagementService queueManagementService;
-    @Mock private CollectEntryService collectEntryService;
-    @Mock private ScheduledCollectService scheduledCollectService;
+    @Mock private JoinEntryService joinEntryService;
+    @Mock private ScheduledJoinService scheduledJoinService;
     @Mock private PublisherService publisherService;
     @Mock private AnalyticEventService analyticEventService;
 
@@ -163,22 +163,22 @@ class StateMachineTest {
     }
 
     @Test
-    void advancesInTransformationFlowWithCollectingTransformAction() {
+    void advancesInTransformationFlowWithJoiningTransformAction() {
         DeltaFile deltaFile = Util.emptyDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW);
 
         DeltaFileFlow deltaFileFlow = deltaFile.getFlows().getFirst();
         deltaFileFlow.setType(FlowType.TRANSFORM);
-        ActionConfiguration transformAction = new ActionConfiguration("CollectingTransformAction", ActionType.TRANSFORM,
-                "org.deltafi.action.SomeCollectingTransformAction");
-        transformAction.setCollect(new CollectConfiguration(Duration.parse("PT1S"), null, 3, null));
+        ActionConfiguration transformAction = new ActionConfiguration("JoiningTransformAction", ActionType.TRANSFORM,
+                "org.deltafi.action.SomeJoiningTransformAction");
+        transformAction.setJoin(new JoinConfiguration(Duration.parse("PT1S"), null, 3, null));
         when(transformFlowService.findActionConfig(TRANSFORM_FLOW, transformAction.getName())).thenReturn(transformAction);
         // add the transform action as the next action config to use in the DeltaFileFlow
         deltaFileFlow.setPendingActions(new ArrayList<>(List.of(transformAction.getName())));
 
-        CollectEntry collectEntry = new CollectEntry();
-        collectEntry.setCount(2);
-        when(collectEntryService.upsertAndLock(Mockito.any(), Mockito.any(), Mockito.isNull(), Mockito.eq(3),
-                Mockito.eq(0), Mockito.eq(deltaFile.getDid()))).thenReturn(collectEntry);
+        JoinEntry joinEntry = new JoinEntry();
+        joinEntry.setCount(2);
+        Mockito.when(joinEntryService.upsertAndLock(Mockito.any(), Mockito.any(), Mockito.isNull(), Mockito.eq(3),
+                Mockito.eq(0), Mockito.eq(deltaFile.getDid()))).thenReturn(joinEntry);
 
         when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(new DeltaFiProperties());
 
@@ -186,16 +186,16 @@ class StateMachineTest {
         List<WrappedActionInput> actionInvocations = stateMachine.advance(List.of(stateMachineInput));
 
         assertTrue(actionInvocations.isEmpty());
-        List<Action> collectingActions = deltaFileFlow.getActions().stream()
-                .filter(action -> action.getState().equals(ActionState.COLLECTING)).toList();
-        assertEquals(1, collectingActions.size());
-        Action collectingAction = collectingActions.getFirst();
-        assertEquals("CollectingTransformAction", collectingAction.getName());
-        assertEquals(ActionType.TRANSFORM, collectingAction.getType());
+        List<Action> joiningActions = deltaFileFlow.getActions().stream()
+                .filter(action -> action.getState().equals(ActionState.JOINING)).toList();
+        assertEquals(1, joiningActions.size());
+        Action joiningAction = joiningActions.getFirst();
+        assertEquals("JoiningTransformAction", joiningAction.getName());
+        assertEquals(ActionType.TRANSFORM, joiningAction.getType());
     }
 
     @Test
-    public void marksFlowAsCircularAtMaxDepth() {
+    void marksFlowAsCircularAtMaxDepth() {
         DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
         when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
 

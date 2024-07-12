@@ -21,7 +21,7 @@ import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.core.types.*;
 import org.deltafi.common.types.ActionState;
 import org.deltafi.common.types.DeltaFileStage;
-import org.deltafi.core.collect.CollectEntry;
+import org.deltafi.core.join.JoinEntry;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -32,19 +32,19 @@ public class DeltaFileUtil {
 
     private DeltaFileUtil() {}
 
-    public static WrappedActionInput createAggregateInput(ActionConfiguration joinAction, DeltaFileFlow currentFlow, CollectEntry collectEntry, List<UUID> collectedDids, ActionState actionState, String systemName, String returnAddress) {
+    public static WrappedActionInput createAggregateInput(ActionConfiguration joinAction, DeltaFileFlow currentFlow, JoinEntry joinEntry, List<UUID> joinedDids, ActionState actionState, String systemName, String returnAddress) {
         OffsetDateTime now = OffsetDateTime.now();
 
-        DeltaFileFlow aggregateFlow = aggregateDeltaFileFlow(currentFlow, now, collectEntry.getMaxFlowDepth());
-        Action aggregateAction = aggregateFlow.addAction(collectEntry.getCollectDefinition().getAction(), collectEntry.getCollectDefinition().getActionType(), actionState, now);
+        DeltaFileFlow aggregateFlow = aggregateDeltaFileFlow(currentFlow, now, joinEntry.getMaxFlowDepth());
+        Action aggregateAction = aggregateFlow.addAction(joinEntry.getJoinDefinition().getAction(), joinEntry.getJoinDefinition().getActionType(), actionState, now);
 
         DeltaFile aggregate = DeltaFile.builder()
                 .version(0)
                 .schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
-                .did(collectEntry.getId())
-                .parentDids(collectedDids)
+                .did(joinEntry.getId())
+                .parentDids(joinedDids)
                 .stage(DeltaFileStage.IN_FLIGHT)
-                .collectId(collectEntry.getId())
+                .joinId(joinEntry.getId())
                 .childDids(List.of())
                 .dataSource("multiple")
                 .created(now)
@@ -53,7 +53,7 @@ public class DeltaFileUtil {
 
         aggregate.setName("multiple");
 
-        return aggregate.buildActionInput(joinAction, aggregateFlow, collectedDids, aggregateAction, systemName, returnAddress, null);
+        return aggregate.buildActionInput(joinAction, aggregateFlow, joinedDids, aggregateAction, systemName, returnAddress, null);
     }
 
     private static DeltaFileFlow aggregateDeltaFileFlow(DeltaFileFlow currentFlow, OffsetDateTime now, int flowDepth) {

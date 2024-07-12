@@ -20,7 +20,7 @@ package org.deltafi.core.services;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.*;
-import org.deltafi.core.collect.*;
+import org.deltafi.core.join.*;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.services.pubsub.PublisherService;
 import org.deltafi.core.types.*;
@@ -43,8 +43,8 @@ public class StateMachine {
     private final DeltaFiPropertiesService deltaFiPropertiesService;
     private final IdentityService identityService;
     private final QueueManagementService queueManagementService;
-    private final CollectEntryService collectEntryService;
-    private final ScheduledCollectService scheduledCollectService;
+    private final JoinEntryService joinEntryService;
+    private final ScheduledJoinService scheduledJoinService;
     private final PublisherService publisherService;
     private final AnalyticEventService analyticEventService;
 
@@ -203,10 +203,10 @@ public class StateMachine {
         String returnAddress = deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().isEnabled() ?
                 identityService.getUniqueId() : null;
 
-        if (actionConfiguration.getCollect() != null) {
+        if (actionConfiguration.getJoin() != null) {
             try {
-                return collectActionInput(actionConfiguration, deltaFile, flow, action, systemName, returnAddress);
-            } catch (CollectException collectException) {
+                return joinActionInput(actionConfiguration, deltaFile, flow, action, systemName, returnAddress);
+            } catch (JoinException joinException) {
                 deltaFile.setStage(DeltaFileStage.ERROR);
                 return null;
             }
@@ -221,53 +221,53 @@ public class StateMachine {
         return coldQueued ? ActionState.COLD_QUEUED : ActionState.QUEUED;
     }
 
-    private WrappedActionInput collectActionInput(ActionConfiguration actionConfiguration, DeltaFile deltaFile,
-                                                  DeltaFileFlow currentFlow, Action action, String systemName, String returnAddress) throws CollectException {
-        if (deltaFile.getCollectId() != null) {
+    private WrappedActionInput joinActionInput(ActionConfiguration actionConfiguration, DeltaFile deltaFile,
+                                               DeltaFileFlow currentFlow, Action action, String systemName, String returnAddress) throws JoinException {
+        if (deltaFile.getJoinId() != null) {
             return deltaFile.buildActionInput(actionConfiguration, currentFlow, deltaFile.getParentDids(), action, systemName, returnAddress, null);
         }
 
-        CollectEntry collectEntry = getCollectEntry(actionConfiguration, currentFlow, deltaFile.getDid());
+        JoinEntry joinEntry = getJoinEntry(actionConfiguration, currentFlow, deltaFile.getDid());
         ActionState coldOrWarm = action.getState();
-        action.setState(ActionState.COLLECTING);
-        currentFlow.setCollectId(collectEntry.getId());
+        action.setState(ActionState.JOINING);
+        currentFlow.setJoinId(joinEntry.getId());
 
-        if (collectEntry.getCount() < actionConfiguration.getCollect().maxNum()) {
-            if (collectEntry.getCount() == 1) { // Only update collect check for new collect entries
-                scheduledCollectService.updateCollectCheck(collectEntry.getCollectDate());
+        if (joinEntry.getCount() < actionConfiguration.getJoin().maxNum()) {
+            if (joinEntry.getCount() == 1) { // Only update join check for new join entries
+                scheduledJoinService.updateJoinCheck(joinEntry.getJoinDate());
             }
-            collectEntryService.unlock(collectEntry.getId());
+            joinEntryService.unlock(joinEntry.getId());
             return null;
         }
 
-        List<UUID> collectedDids = collectEntryService.findCollectedDids(collectEntry.getId());
+        List<UUID> joinedDids = joinEntryService.findJoinedDids(joinEntry.getId());
 
-        WrappedActionInput actionInput = DeltaFileUtil.createAggregateInput(actionConfiguration, currentFlow, collectEntry, collectedDids, coldOrWarm, systemName, returnAddress);
+        WrappedActionInput actionInput = DeltaFileUtil.createAggregateInput(actionConfiguration, currentFlow, joinEntry, joinedDids, coldOrWarm, systemName, returnAddress);
 
         // TODO - is it safe to do this here before child has been sunk to disk?
-        collectEntryService.delete(collectEntry.getId());
-        scheduledCollectService.scheduleNextCollectCheck();
+        joinEntryService.delete(joinEntry.getId());
+        scheduledJoinService.scheduleNextJoinCheck();
 
         return actionInput;
     }
 
-    private CollectEntry getCollectEntry(ActionConfiguration actionConfiguration, DeltaFileFlow currentFlow, UUID parentDid) throws CollectException {
-        String collectGroup = Optional.ofNullable(actionConfiguration.getCollect().metadataKey())
+    private JoinEntry getJoinEntry(ActionConfiguration actionConfiguration, DeltaFileFlow currentFlow, UUID parentDid) throws JoinException {
+        String joinGroup = Optional.ofNullable(actionConfiguration.getJoin().metadataKey())
                 .map(metadataKey -> currentFlow.getMetadata().get(metadataKey))
                 .orElse("DEFAULT");
 
-        CollectDefinition collectDefinition = new CollectDefinition(currentFlow.getName(),
-                actionConfiguration.getActionType(), actionConfiguration.getName(), collectGroup);
+        JoinDefinition joinDefinition = new JoinDefinition(currentFlow.getName(),
+                actionConfiguration.getActionType(), actionConfiguration.getName(), joinGroup);
 
-        CollectEntry collectEntry = collectEntryService.upsertAndLock(collectDefinition,
-                OffsetDateTime.now(clock).plus(actionConfiguration.getCollect().maxAge()),
-                actionConfiguration.getCollect().minNum(), actionConfiguration.getCollect().maxNum(), currentFlow.getDepth(), parentDid);
+        JoinEntry joinEntry = joinEntryService.upsertAndLock(joinDefinition,
+                OffsetDateTime.now(clock).plus(actionConfiguration.getJoin().maxAge()),
+                actionConfiguration.getJoin().minNum(), actionConfiguration.getJoin().maxNum(), currentFlow.getDepth(), parentDid);
 
-        if (collectEntry == null) {
-            throw new CollectException("Timed out trying to lock collect entry");
+        if (joinEntry == null) {
+            throw new JoinException("Timed out trying to lock join entry");
         }
 
-        return collectEntry;
+        return joinEntry;
     }
 
 }

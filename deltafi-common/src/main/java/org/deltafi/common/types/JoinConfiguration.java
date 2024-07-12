@@ -21,18 +21,18 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
-public record CollectConfiguration(Duration maxAge, Integer minNum, Integer maxNum, String metadataKey) {
+public record JoinConfiguration(Duration maxAge, Integer minNum, Integer maxNum, String metadataKey) {
     public List<String> validate() {
         List<String> errors = new ArrayList<>();
 
         if (minNum != null && minNum < 1) {
-            errors.add("Collect: minNum (" + minNum + ") is not positive");
+            errors.add("Join: minNum (" + minNum + ") is not positive");
         }
         if (maxNum != null) {
             if (maxNum < 1) {
-                errors.add("Collect: maxNum (" + maxNum + ") is not positive");
+                errors.add("Join: maxNum (" + maxNum + ") is not positive");
             } else if (minNum != null && maxNum < minNum) {
-                errors.add("Collect: maxNum (" + maxNum + ") is < minNum (" + minNum + ")");
+                errors.add("Join: maxNum (" + maxNum + ") is < minNum (" + minNum + ")");
             }
         }
 

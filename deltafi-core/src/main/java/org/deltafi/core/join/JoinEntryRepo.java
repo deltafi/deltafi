@@ -15,28 +15,15 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.collect;
+package org.deltafi.core.join;
 
-import lombok.Data;
-import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.stereotype.Repository;
 
-import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
-@Document
-@Data
-public class CollectEntry {
-    private UUID id;
-
-    private CollectDefinition collectDefinition;
-
-    private boolean locked;
-    private OffsetDateTime lockedTime;
-
-    private OffsetDateTime collectDate;
-    private Integer minNum;
-    private Integer maxNum;
-    private int maxFlowDepth;
-
-    private int count;
+@Repository
+public interface JoinEntryRepo extends MongoRepository<JoinEntry, UUID>, JoinEntryRepoCustom {
+    List<JoinEntry> findAllByOrderByJoinDate();
 }

@@ -15,17 +15,10 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.schedulers.trigger;
+package org.deltafi.core.join;
 
-import org.deltafi.core.services.DeltaFiPropertiesService;
-import org.springframework.stereotype.Service;
-
-/**
- * Calculates the next execution time based on the collect lockCheckInterval in the DeltaFiProperties.
- */
-@Service
-public class CollectEntryLockCheckTrigger extends ConfigurableFixedDelayTrigger {
-    public CollectEntryLockCheckTrigger(DeltaFiPropertiesService deltaFiPropertiesService) {
-        super(deltaFiPropertiesService, deltaFiProperties -> deltaFiProperties.getCollect().getLockCheckInterval(), 0L);
+public class JoinException extends Exception {
+    public JoinException(String message) {
+        super(message);
     }
 }

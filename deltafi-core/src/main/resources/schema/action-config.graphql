@@ -22,7 +22,7 @@ type ActionConfiguration {
     actionType: String!
     type: String!
     parameters: JSON
-    collect: CollectConfiguration
+    join: JoinConfiguration
 }
 
 input ActionConfigurationInput {
@@ -30,17 +30,17 @@ input ActionConfigurationInput {
     apiVersion: String
     type: String!
     parameters: JSON
-    collect: CollectConfigurationInput
+    join: JoinConfigurationInput
 }
 
-type CollectConfiguration {
+type JoinConfiguration {
     maxAge: String
     minNum: Int
     maxNum: Int
     metadataKey: String
 }
 
-input CollectConfigurationInput {
+input JoinConfigurationInput {
     maxAge: String
     minNum: Int
     maxNum: Int

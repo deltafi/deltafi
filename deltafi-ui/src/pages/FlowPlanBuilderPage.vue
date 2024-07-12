@@ -298,7 +298,7 @@ const defaultActionKeys = {
 const transformActionsTemplate = {
   flowActionType: "TRANSFORM",
   ...defaultActionKeys,
-  collect: {},
+  join: {},
 };
 
 const flowPlan = ref(JSON.parse(JSON.stringify(flowTemplate)));

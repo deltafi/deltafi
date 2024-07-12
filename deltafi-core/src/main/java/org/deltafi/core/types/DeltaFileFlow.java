@@ -76,7 +76,7 @@ public class DeltaFileFlow {
     private Set<String> pendingAnnotations = new HashSet<>();
     boolean testMode;
     String testModeReason;
-    private UUID collectId;
+    private UUID joinId;
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
     @Builder.Default
@@ -107,7 +107,7 @@ public class DeltaFileFlow {
         this.pendingAnnotations = new HashSet<>(other.pendingAnnotations);
         this.testMode = other.testMode;
         this.testModeReason = other.testModeReason;
-        this.collectId = other.collectId;
+        this.joinId = other.joinId;
         this.pendingActions = other.pendingActions;
         this.deltaFile = other.deltaFile;
         this.version = other.version;
@@ -135,13 +135,13 @@ public class DeltaFileFlow {
                 Objects.equals(publishTopics, other.publishTopics) &&
                 Objects.equals(pendingAnnotations, other.pendingAnnotations) &&
                 Objects.equals(testModeReason, other.testModeReason) &&
-                Objects.equals(collectId, other.collectId) &&
+                Objects.equals(joinId, other.joinId) &&
                 Objects.equals(pendingActions, other.pendingActions);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, number, type, state, created, modified, flowPlan, input, new ArrayList<>(actions), publishTopics, depth, pendingAnnotations, testMode, testModeReason, collectId, pendingActions);
+        return Objects.hash(id, name, number, type, state, created, modified, flowPlan, input, new ArrayList<>(actions), publishTopics, depth, pendingAnnotations, testMode, testModeReason, joinId, pendingActions);
     }
 
     /**
@@ -336,7 +336,7 @@ public class DeltaFileFlow {
             case ERROR -> DeltaFileFlowState.ERROR;
             case CANCELLED -> DeltaFileFlowState.CANCELLED;
             case COMPLETE -> hasPendingAnnotations() ? DeltaFileFlowState.PENDING_ANNOTATIONS : DeltaFileFlowState.COMPLETE;
-            case COLLECTED, FILTERED, SPLIT -> DeltaFileFlowState.COMPLETE;
+            case JOINED, FILTERED, SPLIT -> DeltaFileFlowState.COMPLETE;
             default -> DeltaFileFlowState.IN_FLIGHT;
         };
     }

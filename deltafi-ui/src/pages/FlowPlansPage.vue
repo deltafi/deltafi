@@ -21,9 +21,8 @@
     <PageHeader heading="Flows">
       <div class="btn-toolbar mb-2 mb-md-0">
         <DialogTemplate component-name="flow/FlowConfiguration" header="Flow Configuration">
-          <Button v-tooltip.top.hover="'View Flow Configuration'" label="Flow Configuration" class="p-button-sm p-button-secondary p-button-outlined ml-3" />
+          <Button v-tooltip.top.hover="'View Flow Configuration'" label="Flow Configuration" class="p-button-sm p-button-secondary p-button-outlined ml-3 mr-3" />
         </DialogTemplate>
-        <Dropdown v-model="pluginNameSelected" placeholder="Select a Plugin" :options="pluginNames" option-label="name" show-clear :editable="false" class="deltafi-input-field ml-3 mr-3" />
         <span class="p-input-icon-left">
           <i class="pi pi-search" />
           <InputText v-model="filterFlowsText" type="text" placeholder="Search" class="p-inputtext-sm deltafi-input-field flow-panel-search-txt" />
@@ -32,7 +31,7 @@
     </PageHeader>
     <ProgressBar v-if="showLoading" mode="indeterminate" style="height: 0.5em" />
     <div v-else>
-      <FlowDataTable flow-type-prop="transform" :flow-data-prop="flowData" :plugin-name-selected-prop="pluginNameSelected" :filter-flows-text-prop="filterFlowsText" @update-flows="fetchFlows()"></FlowDataTable>
+      <FlowDataTable flow-type-prop="transform" :flow-data-prop="flowData" :plugin-name-selected-prop="pluginNameSelected" :filter-flows-text-prop="filterFlowsText" :flow-data-by-plugin-prop="flowDataByPlugin" @update-flows="fetchFlows()"></FlowDataTable>
     </div>
   </div>
 </template>
@@ -47,13 +46,13 @@ import { onBeforeMount, ref, computed } from "vue";
 import _ from "lodash";
 
 import Button from "primevue/button";
-import Dropdown from "primevue/dropdown";
 import InputText from "primevue/inputtext";
 
 const { getAllFlows, loaded, loading } = useFlowQueryBuilder();
 
 const allFlowData = ref("");
 const flowData = ref({});
+const flowDataByPlugin = ref({});
 const filterFlowsText = ref("");
 const pluginNames = ref([]);
 const pluginNameSelected = ref(null);
@@ -68,6 +67,14 @@ const fetchFlows = async () => {
   allFlowData.value = response.data.getAllFlows;
   pluginNames.value = pluginNamesList(allFlowData.value);
   flowData.value = formatData(allFlowData.value);
+  flowDataByPlugin.value = _.chain(flowData.value.transform)
+    .map((flow) => {
+      if (flow.maxErrors === -1) flow.maxErrors = null;
+      return flow;
+    })
+    .sortBy("artifactId")
+    .groupBy("artifactId")
+    .value();
 };
 
 const pluginNamesList = (allFlowData) => {
@@ -94,6 +101,7 @@ const formatData = (allFlowData) => {
       flow["mvnCoordinates"] = mvnCoordinates.concat(flow.sourcePlugin.groupId, ":", flow.sourcePlugin.artifactId, ":", flow.sourcePlugin.version);
       let searchableFlowKeys = (({ name, description, mvnCoordinates, publish }) => ({ name, description, mvnCoordinates, publish }))(flow);
       flow["searchField"] = JSON.stringify(Object.values(searchableFlowKeys));
+      flow["artifactId"] = flow.sourcePlugin.artifactId;
     });
   }
   return formattedFlowData;

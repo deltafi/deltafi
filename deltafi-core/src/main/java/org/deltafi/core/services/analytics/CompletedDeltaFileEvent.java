@@ -86,8 +86,8 @@ class CompletedDeltaFileEvent implements AnalyticEvent {
         this.ingressBytes = deltafile.getIngressBytes();
         this.files = 1L;
         this.totalBytes = deltafile.getTotalBytes();
-        this.egressedFiles = deltafile.getEgressed() ? 1L : 0L;
-        this.filteredFiles = deltafile.getFiltered() ? 1L : 0L;
+        this.egressedFiles = Boolean.TRUE.equals(deltafile.getEgressed()) ? 1L : 0L;
+        this.filteredFiles = Boolean.TRUE.equals(deltafile.getFiltered()) ? 1L : 0L;
         this.cancelledFiles = deltafile.getStage() == DeltaFileStage.CANCELLED ? 1L : 0L;
         this.annotations = deltafile.annotationMap();
         this.egresses = deltafile.getEgressFlows();

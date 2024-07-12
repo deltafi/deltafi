@@ -94,6 +94,12 @@ case "$SUBCOMMAND" in
                transformActions {
                  name
                  type
+                 join {
+                   maxAge
+                   minNum
+                   maxNum
+                   metadataKey
+                 }
                  parameters
                }
                publish {

@@ -23,6 +23,8 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        packagesToScan: org.deltafi.core.types
+        generate_statistics: false
   main:
     banner-mode: "off"
   sql:

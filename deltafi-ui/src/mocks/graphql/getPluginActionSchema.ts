@@ -900,7 +900,7 @@ const generateData = () => {
             }
           },
           {
-            name: "org.deltafi.helloworld.actions.HelloWorldCollectingTransformAction",
+            name: "org.deltafi.helloworld.actions.HelloWorldJoiningTransformAction",
             type: "TRANSFORM",
             description: "Transforms a list of content in reverse order into a new, single content",
             schema: {
@@ -1106,7 +1106,7 @@ const generateData = () => {
         },
         actions: [
           {
-            name: "org.deltafi.python-hello-world.HelloWorldCollectingTransformAction",
+            name: "org.deltafi.python-hello-world.HelloWorldJoiningTransformAction",
             type: "TRANSFORM",
             description: "transform N children based on the number_of_children parameter",
             schema: {
@@ -1120,7 +1120,7 @@ const generateData = () => {
               required: [
                 "index_threshold"
               ],
-              title: "HelloWorldCollectingTransformParameters",
+              title: "HelloWorldJoiningTransformParameters",
               type: "object"
             }
           },

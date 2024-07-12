@@ -67,28 +67,28 @@ public enum PropertyType {
             target.getChecks().setContentStoragePercentThreshold(source.getChecks().getContentStoragePercentThreshold());
         }
     },
-    COLLECT_LOCK_CHECK_INTERVAL("collect.lockCheckInterval", "Frequency that database locks on collect entries are " +
-            "checked against the collect.maxLockDuration", props -> props.getCollect().getLockCheckInterval()) {
+    JOIN_LOCK_CHECK_INTERVAL("join.lockCheckInterval", "Frequency that database locks on join entries are " +
+            "checked against the join.maxLockDuration", props -> props.getJoin().getLockCheckInterval()) {
         @Override
         public Object convertValue(String value) {
-            return convertDuration(value, "The collect lock check interval must be greater than 0");
+            return convertDuration(value, "The join lock check interval must be greater than 0");
         }
 
         @Override
         public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
-            target.getCollect().setLockCheckInterval(source.getCollect().getLockCheckInterval());
+            target.getJoin().setLockCheckInterval(source.getJoin().getLockCheckInterval());
         }
     },
-    COLLECT_MAX_LOCK_DURATION("collect.maxLockDuration", "Maximum duration a database lock can be held on a " +
-            "collect entry before it is automatically unlocked", props -> props.getCollect().getMaxLockDuration()) {
+    JOIN_MAX_LOCK_DURATION("join.maxLockDuration", "Maximum duration a database lock can be held on a " +
+            "join entry before it is automatically unlocked", props -> props.getJoin().getMaxLockDuration()) {
         @Override
         public Object convertValue(String value) {
-            return convertDuration(value, "The collect maximum lock duration must be greater than 0");
+            return convertDuration(value, "The join maximum lock duration must be greater than 0");
         }
 
         @Override
         public void copyValue(DeltaFiProperties target, DeltaFiProperties source) {
-            target.getCollect().setMaxLockDuration(source.getCollect().getMaxLockDuration());
+            target.getJoin().setMaxLockDuration(source.getJoin().getMaxLockDuration());
         }
     },
     CORE_SERVICE_THREADS("coreServiceThreads", "The number of threads used in core processing",

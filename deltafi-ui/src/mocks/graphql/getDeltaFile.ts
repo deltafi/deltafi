@@ -193,7 +193,7 @@ const generateData = () => {
               nextAutoResume: null,
               nextAutoResumeReason: null,
               filteredCause: "No matching subscribers were found",
-              filteredContext: "No subscribers found from flow 'hello-world-java-data-route-or-filter' because no topics matched the criteria.\nWith rules:\n---\nmatchingPolicy: \"FIRST_MATCHING\"\ndefaultRule:\n  defaultBehavior: \"FILTER\"\nrules:\n- topic: \"hello-world-java-transform\"\n  condition: \"metadata['hello'] == 'transform'\"\n- topic: \"hello-world-java-collect\"\n  condition: \"metadata['hello'] == 'collect'\"\n",
+              filteredContext: "No subscribers found from flow 'hello-world-java-data-route-or-filter' because no topics matched the criteria.\nWith rules:\n---\nmatchingPolicy: \"FIRST_MATCHING\"\ndefaultRule:\n  defaultBehavior: \"FILTER\"\nrules:\n- topic: \"hello-world-java-transform\"\n  condition: \"metadata['hello'] == 'transform'\"\n- topic: \"hello-world-java-join\"\n  condition: \"metadata['hello'] == 'join'\"\n",
               attempt: 1,
               content: [],
               metadata: {},

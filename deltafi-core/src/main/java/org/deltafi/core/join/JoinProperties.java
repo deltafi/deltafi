@@ -15,15 +15,15 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.collect;
+package org.deltafi.core.join;
 
-import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.stereotype.Repository;
+import lombok.Data;
 
-import java.util.List;
-import java.util.UUID;
+import java.time.Duration;
 
-@Repository
-public interface CollectEntryRepo extends MongoRepository<CollectEntry, UUID>, CollectEntryRepoCustom {
-    List<CollectEntry> findAllByOrderByCollectDate();
+@Data
+public class JoinProperties {
+    private long acquireLockTimeoutMs = 30000;
+    private Duration maxLockDuration = Duration.ofMinutes(1);
+    private Duration lockCheckInterval = Duration.ofMinutes(1);
 }

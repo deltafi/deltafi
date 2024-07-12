@@ -20,6 +20,7 @@ package org.deltafi.core.types;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
@@ -29,7 +30,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "annotations")
 @EqualsAndHashCode(exclude = "deltaFile")
-public class Annotation {
+public class Annotation implements Comparable<Annotation> {
     @Id
     private UUID id = UUID.randomUUID();
     private String key;
@@ -45,5 +46,14 @@ public class Annotation {
         this.key = key;
         this.value = value;
         this.deltaFile = deltaFile;
+    }
+
+    @Override
+    public int compareTo(@NotNull Annotation other) {
+        int keyComparison = this.key.compareTo(other.key);
+        if (keyComparison != 0) {
+            return keyComparison;
+        }
+        return this.value.compareTo(other.value);
     }
 }

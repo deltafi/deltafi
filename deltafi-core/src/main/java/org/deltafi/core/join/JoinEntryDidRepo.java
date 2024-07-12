@@ -15,20 +15,16 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.collect;
+package org.deltafi.core.join;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.UUID;
 
-@Document
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class CollectEntryDid {
-    private UUID collectEntryId;
-    private UUID did;
+@Repository
+public interface JoinEntryDidRepo extends MongoRepository<JoinEntryDid, UUID> {
+    List<JoinEntryDid> findByJoinEntryId(UUID joinEntryId);
+    void deleteByJoinEntryId(UUID joinEntryId);
 }

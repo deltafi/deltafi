@@ -38,8 +38,8 @@ class Action(ABC):
     def build_input(self, context: Context, delta_file_message: DeltaFileMessage):
         pass
 
-    def collect(self, action_inputs: List[Any]):
-        raise RuntimeError(f"Collect is not supported for {self.__class__.__name__}")
+    def join(self, action_inputs: List[Any]):
+        raise RuntimeError(f"Join is not supported for {self.__class__.__name__}")
 
     @abstractmethod
     def execute(self, context: Context, action_input: Any, params: BaseModel):
@@ -48,10 +48,10 @@ class Action(ABC):
     def execute_action(self, event):
         if event.delta_file_messages is None or not len(event.delta_file_messages):
             raise RuntimeError(f"Received event with no delta file messages for did {event.context.did}")
-        if event.context.collect is not None:
+        if event.context.join is not None:
             result = self.execute(
                 event.context,
-                self.collect([self.build_input(event.context, delta_file_message)
+                self.join([self.build_input(event.context, delta_file_message)
                               for delta_file_message in event.delta_file_messages]),
                 self.param_class().model_validate(event.params))
         else:
@@ -119,7 +119,7 @@ class TransformAction(Action, ABC):
     def build_input(self, context: Context, delta_file_message: DeltaFileMessage):
         return TransformInput(content=delta_file_message.content_list, metadata=delta_file_message.metadata)
 
-    def collect(self, transform_inputs: List[TransformInput]):
+    def join(self, transform_inputs: List[TransformInput]):
         all_content = []
         all_metadata = {}
         for transform_input in transform_inputs:

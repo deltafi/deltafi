@@ -15,15 +15,17 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.collect;
+package org.deltafi.core.schedulers.trigger;
 
-import lombok.Data;
+import org.deltafi.core.services.DeltaFiPropertiesService;
+import org.springframework.stereotype.Service;
 
-import java.time.Duration;
-
-@Data
-public class CollectProperties {
-    private long acquireLockTimeoutMs = 30000;
-    private Duration maxLockDuration = Duration.ofMinutes(1);
-    private Duration lockCheckInterval = Duration.ofMinutes(1);
+/**
+ * Calculates the next execution time based on the join lockCheckInterval in the DeltaFiProperties.
+ */
+@Service
+public class JoinEntryLockCheckTrigger extends ConfigurableFixedDelayTrigger {
+    public JoinEntryLockCheckTrigger(DeltaFiPropertiesService deltaFiPropertiesService) {
+        super(deltaFiPropertiesService, deltaFiProperties -> deltaFiProperties.getJoin().getLockCheckInterval(), 0L);
+    }
 }

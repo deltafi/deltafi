@@ -40,7 +40,7 @@ public class ActionConfiguration {
     private Map<String, Object> internalParameters;
     private Map<String, Object> parameters;
 
-    private CollectConfiguration collect;
+    protected JoinConfiguration join;
 
     public ActionConfiguration(String name, ActionType actionType, String type) {
         this.name = name;
@@ -60,8 +60,8 @@ public class ActionConfiguration {
         if (actionDescriptor.getType() != actionType) {
             errors.add("Action: " + type + " is not registered as an action of type " + actionType);
         }
-        if (collect != null) {
-            errors.addAll(collect.validate());
+        if (join != null) {
+            errors.addAll(join.validate());
         }
         return errors;
     }

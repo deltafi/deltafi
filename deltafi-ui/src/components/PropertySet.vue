@@ -63,7 +63,7 @@ import useNotifications from "@/composables/useNotifications";
 import usePropertySets from "@/composables/usePropertySets";
 import { computed, defineProps, defineEmits, inject, reactive } from "vue";
 
-const hasPermission = inject("hasPermission")
+const hasPermission = inject("hasPermission");
 
 const props = defineProps({
   propSet: {
@@ -120,7 +120,7 @@ const onCellEditComplete = (event) => {
   td.value-column {
     padding: 0 !important;
 
-    >span {
+    > span {
       padding: 0.5rem !important;
     }
 
@@ -130,7 +130,7 @@ const onCellEditComplete = (event) => {
       display: flex;
     }
 
-    .value-clickable>* {
+    .value-clickable > * {
       flex: 0 0 auto;
     }
   }
