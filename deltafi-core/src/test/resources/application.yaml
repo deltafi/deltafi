@@ -20,6 +20,9 @@ spring:
   data:
     mongodb:
       database: deltafi-test
+  datasource:
+    # hikari takes 60 seconds to connect to the postgres TestContainer, so disable it in test
+    type: org.springframework.jdbc.datasource.SimpleDriverDataSource
   mongodb:
     embedded:
       version: 5.0.20
