@@ -43,12 +43,6 @@ public abstract class BaseFlowRepoImpl<T extends Flow> implements FlowRepoCustom
     }
 
     @Override
-    public List<T> findRunning() {
-        Query query = Query.query(Criteria.where(FLOW_STATUS_STATE).is(FlowState.RUNNING));
-        return mongoTemplate.find(query, entityType);
-    }
-
-    @Override
     public List<String> findRunningBySourcePlugin(PluginCoordinates sourcePlugin) {
         Query runningPluginQuery = Query.query(Criteria.where(SOURCE_PLUGIN).is(sourcePlugin).and(FLOW_STATUS_STATE).is(FlowState.RUNNING));
         return mongoTemplate.find(runningPluginQuery, entityType).stream().map(Flow::getName).toList();

@@ -22,6 +22,7 @@ import org.deltafi.core.types.Event;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface EventRepoCustom {
     /**
@@ -30,7 +31,7 @@ public interface EventRepoCustom {
      * @param acknowledged new value for the acknowledged field
      * @return the updated event if it existed
      */
-    Optional<Event> updateAcknowledged(String id, boolean acknowledged);
+    Optional<Event> updateAcknowledged(UUID id, boolean acknowledged);
 
     /**
      * Find the events matching the filters

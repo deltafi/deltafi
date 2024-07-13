@@ -29,11 +29,11 @@
           <Button v-if="$hasPermission('EventAcknowledge')" label="Acknowledge All" :loading="loading" :disabled="notificationCount == 0" icon="fas fa-solid fa-thumbs-up" class="p-button-sm" @click="onAckAll()"></Button>
         </div>
         <div v-if="notifications.length > 0">
-          <div v-for="msg in notifications" :key="msg._id" :class="severityClass(msg.severity)" @click="showEvent(msg, $event)">
+          <div v-for="msg in notifications" :key="msg.id" :class="severityClass(msg.severity)" @click="showEvent(msg, $event)">
             <div class="d-flex w-100 justify-content-between">
               <strong class="mb-0">{{ msg.summary }}</strong>
               <div>
-                <i v-if="$hasPermission('EventAcknowledge')" v-tooltip.top="'Click to Acknowledge'" class="fas fa-solid fa-thumbs-up cursor-pointer notification-ack-button" @click="onAck(msg._id)" />
+                <i v-if="$hasPermission('EventAcknowledge')" v-tooltip.top="'Click to Acknowledge'" class="fas fa-solid fa-thumbs-up cursor-pointer notification-ack-button" @click="onAck(msg.id)" />
               </div>
             </div>
             <small class="mb-1 text-muted d-flex w-100 justify-content-between">

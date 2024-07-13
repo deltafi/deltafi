@@ -63,12 +63,12 @@ const markdown = (source) => {
 };
 
 const acknowledge = () => {
-  acknowledgeEvent(event.value._id);
+  acknowledgeEvent(event.value.id);
   event.value.acknowledged = true;
 };
 
 const unacknowledge = () => {
-  unacknowledgeEvent(event.value._id);
+  unacknowledgeEvent(event.value.id);
   event.value.acknowledged = false;
 };
 </script>

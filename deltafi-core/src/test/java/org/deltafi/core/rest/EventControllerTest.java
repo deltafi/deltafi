@@ -38,6 +38,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -45,6 +46,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(EventController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class EventControllerTest {
+    UUID EVENT_1 = UUID.randomUUID();
+    UUID EVENT_2 = UUID.randomUUID();
 
     public static final ObjectMapper MAPPER = new ObjectMapper()
             .registerModule(new JavaTimeModule())
@@ -58,8 +61,8 @@ class EventControllerTest {
 
     @Test
     void getEventsTest() throws Exception {
-        Event event1 = createEvent("1");
-        Event event2 = createEvent("2");
+        Event event1 = createEvent(EVENT_1);
+        Event event2 = createEvent(EVENT_2);
 
         String start = "2024-05-22T04:00:00.000Z";
         String end = "2024-05-23T03:59:59.999Z";
@@ -70,32 +73,30 @@ class EventControllerTest {
         mockMvc.perform(get("/events"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$[0]._id").value(event1.id()))
-                .andExpect(jsonPath("$[1]._id").value(event2.id()));
+                .andExpect(jsonPath("$[0].id").value(event1.getId().toString()))
+                .andExpect(jsonPath("$[1].id").value(event2.getId().toString()));
 
         mockMvc.perform(get("/events?start="+start+"&end="+end+"&acknowledged=true"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$[0]._id").value(event2.id()))
-                .andExpect(jsonPath("$[1]._id").value(event1.id()));
+                .andExpect(jsonPath("$[0].id").value(event2.getId().toString()))
+                .andExpect(jsonPath("$[1].id").value(event1.getId().toString()));
     }
 
     @Test
     void getEventTest() throws Exception {
         Event event = createEvent();
+        Mockito.when(eventService.getEvent(EVENT_1)).thenReturn(event);
 
-        Mockito.when(eventService.getEvent("1")).thenReturn(event);
-
-        mockMvc.perform(get("/events/1"))
+        mockMvc.perform(get("/events/" + EVENT_1))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$._id").value(event.id()));
+                .andExpect(jsonPath("$.id").value(event.getId().toString()));
     }
 
     @Test
     void createEventTest() throws Exception {
         Event event = createEvent();
-
         Mockito.when(eventService.createEvent(event)).thenReturn(event);
 
         mockMvc.perform(post("/events")
@@ -103,49 +104,47 @@ class EventControllerTest {
                         .content(MAPPER.writeValueAsString(event)))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$._id").value(event.id()));
+                .andExpect(jsonPath("$.id").value(event.getId().toString()));
     }
 
     @Test
     void acknowledgeEventTest() throws Exception {
         Event event = createEvent();
+        Mockito.when(eventService.updateAcknowledgement(EVENT_1, true)).thenReturn(event);
 
-        Mockito.when(eventService.updateAcknowledgement("1", true)).thenReturn(event);
-
-        mockMvc.perform(put("/events/1/acknowledge"))
+        mockMvc.perform(put("/events/" + EVENT_1 + "/acknowledge"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$._id").value(event.id()));
+                .andExpect(jsonPath("$.id").value(event.getId().toString()));
     }
 
     @Test
     void unacknowledgeEventTest() throws Exception {
         Event event = createEvent();
-        Mockito.when(eventService.updateAcknowledgement("1", false)).thenReturn(event);
+        Mockito.when(eventService.updateAcknowledgement(EVENT_1, false)).thenReturn(event);
 
-        mockMvc.perform(put("/events/1/unacknowledge"))
+        mockMvc.perform(put("/events/" + EVENT_1 + "/unacknowledge"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$._id").value(event.id()));
+                .andExpect(jsonPath("$.id").value(event.getId().toString()));
     }
 
     @Test
     void deleteEventTest() throws Exception {
         Event event = createEvent();
+        Mockito.when(eventService.deleteEvent(EVENT_1)).thenReturn(event);
 
-        Mockito.when(eventService.deleteEvent("1")).thenReturn(event);
-
-        mockMvc.perform(delete("/events/1"))
+        mockMvc.perform(delete("/events/" + EVENT_1))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$._id").value(event.id()));
+                .andExpect(jsonPath("$.id").value(event.getId().toString()));
     }
 
     @Test
     void getMissingById() throws Exception {
-        Mockito.when(eventService.getEvent("1")).thenThrow(new EntityNotFound("missing"));
+        Mockito.when(eventService.getEvent(EVENT_1)).thenThrow(new EntityNotFound("missing"));
 
-        mockMvc.perform(get("/events/1"))
+        mockMvc.perform(get("/events/" + EVENT_1))
                 .andExpect(status().isNotFound());
     }
 
@@ -160,10 +159,10 @@ class EventControllerTest {
     }
 
     private Event createEvent() {
-        return createEvent("1");
+        return createEvent(EVENT_1);
     }
 
-    private Event createEvent(String id) {
+    private Event createEvent(UUID id) {
         return Event.builder().id(id).severity(Severity.SUCCESS).content("content").summary("summary").timestamp(Instant.now().atOffset(ZoneOffset.UTC)).build();
     }
 }

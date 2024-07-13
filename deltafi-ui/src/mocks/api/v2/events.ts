@@ -19,7 +19,7 @@
 const generateData = () => {
   return [
     {
-      "_id": "e91b456e-f91f-4254-a1fb-5312tggr45",
+      "id": "e91b456e-f91f-4254-a1fb-5312tggr45",
       "severity": "success",
       "content": "This is a successful test message",
       "summary": "Successful message",
@@ -29,7 +29,7 @@ const generateData = () => {
       "acknowledged": false
     },
     {
-      "_id": "d3a4b4c6-7f8e-4d7c-a08f-e0e20f562fb5",
+      "id": "d3a4b4c6-7f8e-4d7c-a08f-e0e20f562fb5",
       "severity": "warn",
       "content": "This is a warning test message",
       "summary": "Warning message",
@@ -39,7 +39,7 @@ const generateData = () => {
       "acknowledged": false
     },
     {
-      "_id": "a6b7c8d9-e0f1-2g3h-4i5j-6k7l8m9n0o1p",
+      "id": "a6b7c8d9-e0f1-2g3h-4i5j-6k7l8m9n0o1p",
       "severity": "error",
       "content": "This is an error test message",
       "summary": "Error message",
@@ -49,7 +49,7 @@ const generateData = () => {
       "acknowledged": false
     },
     {
-      "_id": "1a2b3c4d-5e6f-7g8h-9i0j-k1l2m3n4o5p6",
+      "id": "1a2b3c4d-5e6f-7g8h-9i0j-k1l2m3n4o5p6",
       "severity": "info",
       "content": "This is an informational test message",
       "summary": "Informational message",

@@ -3705,15 +3705,18 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void testDeleteMultipleBatches() {
+		List<DeltaFile> deltaFiles = new ArrayList<>();
 		for (int i = 0; i < 1500; i++) {
 			DeltaFile deltaFile = DeltaFile.builder()
 					.did(UUID.randomUUID())
+					.stage(DeltaFileStage.COMPLETE)
 					.created(OffsetDateTime.now().minusDays(1))
 					.totalBytes(10)
 					.build();
 			deltaFile.updateFlags();
-			deltaFileRepo.save(deltaFile);
+			deltaFiles.add(deltaFile);
 		}
+		deltaFileRepo.batchInsert(deltaFiles);
 		assertEquals(1500, deltaFileRepo.count());
 		boolean moreToDelete = deltaFilesService.timedDelete(OffsetDateTime.now(), null, 0L, null, "policyName", true);
 		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.DELETED_FILES, 1000).addTag("policy", "policyName"));
@@ -4178,8 +4181,8 @@ class DeltaFiCoreApplicationTests {
         OffsetDateTime first = OffsetDateTime.now(Clock.tickMillis(ZoneOffset.UTC));
         OffsetDateTime second = first.plusMinutes(5);
 
-        Event event1 = Event.builder().id("1").severity("info").summary("first").timestamp(first).build();
-        Event event2 = Event.builder().id("2").severity("warn").summary("second").timestamp(second).acknowledged(true).build();
+        Event event1 = Event.builder().severity("info").summary("first").timestamp(first).build();
+        Event event2 = Event.builder().severity("warn").summary("second").timestamp(second).acknowledged(true).build();
 
         eventRepo.saveAll(List.of(event1, event2));
 
@@ -4204,18 +4207,17 @@ class DeltaFiCoreApplicationTests {
 
     @Test
     void updateAcknowledged() {
-        Event event1 = Event.builder().id("1").severity("info").summary("first").timestamp(OffsetDateTime.now(clock)).build();
-        Event event2 = Event.builder().id("2").severity("warn").summary("second").timestamp(OffsetDateTime.now(clock)).acknowledged(true).build();
+        Event event1 = Event.builder().severity("info").summary("first").timestamp(OffsetDateTime.now(clock)).build();
+        Event event2 = Event.builder().severity("warn").summary("second").timestamp(OffsetDateTime.now(clock)).acknowledged(true).build();
 
         eventRepo.saveAll(List.of(event1, event2));
 
-        Event updated = eventRepo.updateAcknowledged("1", true).orElseThrow();
-        assertThat(updated.acknowledged()).isTrue();
+        Event updated = eventRepo.updateAcknowledged(event1.getId(), true).orElseThrow();
+        assertThat(updated.isAcknowledged()).isTrue();
 
-        Event noChange = eventRepo.updateAcknowledged("2", true).orElseThrow();
+        Event noChange = eventRepo.updateAcknowledged(event2.getId(), true).orElseThrow();
         assertThat(noChange).isEqualTo(event2);
 
-        assertThat(eventRepo.updateAcknowledged("3", true)).isEmpty();
+        assertThat(eventRepo.updateAcknowledged(UUID.randomUUID(), true)).isEmpty();
     }
-
 }

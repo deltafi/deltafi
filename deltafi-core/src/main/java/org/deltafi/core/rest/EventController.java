@@ -35,6 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.ws.rs.Produces;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/events")
@@ -53,7 +54,7 @@ public class EventController {
     @GetMapping("/{id}")
     @NeedsPermission.EventRead
     public Event getEvent(@PathVariable String id) {
-        return eventService.getEvent(id);
+        return eventService.getEvent(UUID.fromString(id));
     }
 
     @PostMapping
@@ -65,18 +66,18 @@ public class EventController {
     @PutMapping("/{id}/acknowledge")
     @NeedsPermission.EventUpdate
     public Event acknowledgeEvent(@PathVariable String id) {
-        return eventService.updateAcknowledgement(id, true);
+        return eventService.updateAcknowledgement(UUID.fromString(id), true);
     }
 
     @PutMapping("/{id}/unacknowledge")
     @NeedsPermission.EventUpdate
     public Event unacknowledgeEvent(@PathVariable String id) {
-        return eventService.updateAcknowledgement(id, false);
+        return eventService.updateAcknowledgement(UUID.fromString(id), false);
     }
 
     @DeleteMapping("{id}")
     @NeedsPermission.EventDelete
     public Event deleteEvent(@PathVariable String id) {
-        return eventService.deleteEvent(id);
+        return eventService.deleteEvent(UUID.fromString(id));
     }
 }

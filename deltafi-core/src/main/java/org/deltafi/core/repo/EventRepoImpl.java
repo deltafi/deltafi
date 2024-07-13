@@ -17,65 +17,70 @@
  */
 package org.deltafi.core.repo;
 
-import lombok.AllArgsConstructor;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.types.Event;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.Sort.Direction;
-import org.springframework.data.mongodb.core.FindAndModifyOptions;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
 
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
-@AllArgsConstructor
 public class EventRepoImpl implements EventRepoCustom {
 
-    private static final String ID = "_id";
-    private static final String TIMESTAMP = "timestamp";
-    private static final String ACKNOWLEDGED = "acknowledged";
-    private static final String NOTIFICATION = "notification";
-    private static final String SEVERITY = "severity";
-    private static final String SUMMARY = "summary";
-    private static final String CONTENT = "content";
-    private static final String SOURCE = "source";
-
-    private final MongoTemplate mongoTemplate;
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Override
-    public Optional<Event> updateAcknowledged(String id, boolean acknowledged) {
-        return Optional.ofNullable(mongoTemplate.findAndModify(Query.query(Criteria.where(ID).is(id)),
-                Update.update(ACKNOWLEDGED, acknowledged), FindAndModifyOptions.options().returnNew(true), Event.class));
+    @Transactional
+    public Optional<Event> updateAcknowledged(UUID id, boolean acknowledged) {
+        Event event = entityManager.find(Event.class, id);
+        if (event != null) {
+            event.setAcknowledged(acknowledged);
+            entityManager.merge(event);
+            return Optional.of(event);
+        }
+        return Optional.empty();
     }
 
     @Override
     public List<Event> findEvents(Map<String, String> filters) {
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Event> query = cb.createQuery(Event.class);
+        Root<Event> root = query.from(Event.class);
+
+        Predicate predicate = cb.conjunction();
+
         OffsetDateTime end = null;
         OffsetDateTime start = null;
 
-        Criteria criteria = new Criteria();
-        for (Entry<String, String> entry : filters.entrySet()) {
+        for (Map.Entry<String, String> entry : filters.entrySet()) {
             switch (entry.getKey()) {
-                case ACKNOWLEDGED, NOTIFICATION -> criteria.and(entry.getKey()).is(Boolean.parseBoolean(entry.getValue()));
-                case ID, SEVERITY, SUMMARY, CONTENT, SOURCE -> criteria.and(entry.getKey()).is(entry.getValue());
+                case "acknowledged", "notification" -> predicate = cb.and(predicate, cb.equal(root.get(entry.getKey()), Boolean.parseBoolean(entry.getValue())));
+                case "id", "severity", "summary", "content", "source" -> predicate = cb.and(predicate, cb.equal(root.get(entry.getKey()), entry.getValue()));
                 case "start" -> start = OffsetDateTime.parse(entry.getValue());
                 case "end" -> end = OffsetDateTime.parse(entry.getValue());
                 default -> log.warn("Unexpected filter {}: {}", entry.getKey(), entry.getValue());
             }
         }
 
-        final OffsetDateTime endTime = Objects.requireNonNullElseGet(end, OffsetDateTime::now);
-        start = Objects.requireNonNullElseGet(start, () -> endTime.minusDays(1));
-        criteria.and(TIMESTAMP).gt(start).lt(endTime);
+        final OffsetDateTime endTime = end != null ? end : OffsetDateTime.now();
+        start = start != null ? start : endTime.minusDays(1);
 
-        return mongoTemplate.find(Query.query(criteria).with(Sort.by(Direction.DESC, TIMESTAMP)), Event.class);
+        predicate = cb.and(predicate, cb.greaterThan(root.get("timestamp"), start));
+        predicate = cb.and(predicate, cb.lessThan(root.get("timestamp"), endTime));
+
+        query.where(predicate);
+        query.orderBy(cb.desc(root.get("timestamp")));
+
+        return entityManager.createQuery(query).getResultList();
     }
 }

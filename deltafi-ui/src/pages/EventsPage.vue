@@ -33,7 +33,7 @@
           <InputText v-model="filters['global'].value" v-tooltip.left="'Search on Name and Flow'" placeholder="Search" />
         </span>
       </template>
-      <DataTable ref="eventsTable" v-model:filters="filters" v-model:selection="selectedEvents" filter-display="menu" :value="events" data-key="_id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-hover="true" sort-field="timestamp" :sort-order="-1" :loading="loading">
+      <DataTable ref="eventsTable" v-model:filters="filters" v-model:selection="selectedEvents" filter-display="menu" :value="events" data-key="id" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-hover="true" sort-field="timestamp" :sort-order="-1" :loading="loading">
         <template #empty> No events to display </template>
         <template #loading>Loading events. Please wait.</template>
         <Column selection-mode="multiple" header-style="width: 3rem"></Column>
@@ -251,13 +251,13 @@ const onPanelRightClick = (event) => {
 };
 
 const acknowledgeEvents = async () => {
-  await acknowledgeEvent(_.uniq(_.map(selectedEvents.value, "_id")));
+  await acknowledgeEvent(_.uniq(_.map(selectedEvents.value, "id")));
   getEvents();
   clearSelectedEvents();
 };
 
 const unacknowledgeEvents = async () => {
-  await unacknowledgeEvent(_.uniq(_.map(selectedEvents.value, "_id")));
+  await unacknowledgeEvent(_.uniq(_.map(selectedEvents.value, "id")));
   getEvents();
   clearSelectedEvents();
 };

@@ -29,6 +29,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 @Service
@@ -42,37 +43,33 @@ public class EventService {
         return eventRepo.findEvents(filters);
     }
 
-    public Event getEvent(String id) {
+    public Event getEvent(UUID id) {
         return eventRepo.findById(id).orElseThrow(notFound(id));
     }
 
     public Event createEvent(Event event) {
-        if (StringUtils.isNotBlank(event.id())) {
-            throw new ValidationException("_id cannot be specified on Event creation");
-        }
-
-        if (StringUtils.isBlank(event.summary()) || event.severity() == null) {
+        if (StringUtils.isBlank(event.getSummary()) || event.getSeverity() == null) {
             throw new ValidationException("Event summary and severity are required");
         }
 
-        if (StringUtils.isBlank(event.severity()) || !VALID_SEVERITIES.contains(event.severity())) {
-            throw new ValidationException("Severity must be info, success, warn, or error (given severity: " + event.severity() + ")");
+        if (StringUtils.isBlank(event.getSeverity()) || !VALID_SEVERITIES.contains(event.getSeverity())) {
+            throw new ValidationException("Severity must be info, success, warn, or error (given severity: " + event.getSeverity() + ")");
         }
 
-        return eventRepo.insert(event);
+        return eventRepo.save(event);
     }
 
-    public Event updateAcknowledgement(String id, boolean acknowledged) {
+    public Event updateAcknowledgement(UUID id, boolean acknowledged) {
         return eventRepo.updateAcknowledged(id, acknowledged).orElseThrow(notFound(id));
     }
 
-    public Event deleteEvent(String id) {
+    public Event deleteEvent(UUID id) {
         Event event = getEvent(id);
         eventRepo.deleteById(id);
         return event;
     }
 
-    private Supplier<EntityNotFound> notFound(String id) {
+    private Supplier<EntityNotFound> notFound(UUID id) {
         return () -> new EntityNotFound("Event with ID '" + id + "' not found.");
     }
 }

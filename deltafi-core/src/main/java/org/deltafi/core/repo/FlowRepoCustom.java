@@ -25,8 +25,6 @@ import java.util.List;
 
 public interface FlowRepoCustom<T extends Flow> {
 
-    List<T> findRunning();
-
     List<String> findRunningBySourcePlugin(PluginCoordinates sourcePlugin);
 
     boolean updateFlowState(String flowName, FlowState flowState);
