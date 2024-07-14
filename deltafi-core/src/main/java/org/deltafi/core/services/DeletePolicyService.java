@@ -25,10 +25,13 @@ import org.deltafi.core.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.snapshot.Snapshotter;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.validation.DeletePolicyValidator;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.BeanWrapperImpl;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.PostConstruct;
 import java.util.*;
 
 @Service
@@ -37,11 +40,6 @@ import java.util.*;
 public class DeletePolicyService implements Snapshotter {
 
     private final DeletePolicyRepo deletePolicyRepo;
-
-    @PostConstruct
-    public void indexCheck() {
-        deletePolicyRepo.ensureAllIndices();
-    }
 
     /**
      * Updates the enabled status of delete policy.
@@ -122,20 +120,54 @@ public class DeletePolicyService implements Snapshotter {
     public Result update(DeletePolicy policy) {
         if (policy.getId() == null) {
             return Result.builder().success(false).errors(List.of("id is missing")).build();
-        } else if (get(policy.getId()).isEmpty()) {
-            return Result.builder().success(false).errors(List.of("policy not found")).build();
         }
 
         List<String> errors = validate(List.of(policy));
-        if (errors.isEmpty()) {
+        if (!errors.isEmpty()) {
+            return Result.builder().success(false).errors(errors).build();
+        }
+
+        Optional<DeletePolicy> existingPolicyOpt = get(policy.getId());
+        if (existingPolicyOpt.isEmpty()) {
+            return Result.builder().success(false).errors(List.of("policy not found")).build();
+        }
+
+        DeletePolicy existingPolicy = existingPolicyOpt.get();
+
+        if (!existingPolicy.getClass().equals(policy.getClass())) {
+            // Types don't match, we need to delete the old one and insert the new one
+            deletePolicyRepo.delete(existingPolicy);
+            deletePolicyRepo.save(policy);
+            return Result.builder()
+                    .success(true)
+                    .info(List.of("Policy type changed and was replaced"))
+                    .build();
+        } else {
+            // Types match, we can update the existing policy
+            // Copy non-null properties from the new policy to the existing one
+            BeanUtils.copyProperties(policy, existingPolicy, getNullPropertyNames(policy));
             try {
-                deletePolicyRepo.save(policy);
-                return new Result();
-            } catch (DuplicateKeyException e) {
+                deletePolicyRepo.save(existingPolicy);
+                return Result.builder().success(true).build();
+            } catch (DataIntegrityViolationException e) {
                 errors.add("duplicate policy name");
+                return Result.builder().success(false).errors(errors).build();
             }
         }
-        return Result.builder().success(false).errors(errors).build();
+    }
+
+    private String[] getNullPropertyNames(Object source) {
+        final BeanWrapper src = new BeanWrapperImpl(source);
+        java.beans.PropertyDescriptor[] pds = src.getPropertyDescriptors();
+
+        Set<String> emptyNames = new HashSet<>();
+        for (java.beans.PropertyDescriptor pd : pds) {
+            Object srcValue = src.getPropertyValue(pd.getName());
+            if (srcValue == null) emptyNames.add(pd.getName());
+        }
+
+        String[] result = new String[emptyNames.size()];
+        return emptyNames.toArray(result);
     }
 
     /**

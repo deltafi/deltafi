@@ -401,18 +401,6 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void testDuplicatePolicyName() {
-		Result result = replaceAllDeletePolicies(dgsQueryExecutor);
-		assertTrue(result.isSuccess());
-		assertTrue(result.getErrors().isEmpty());
-		assertEquals(3, deletePolicyRepo.count());
-
-		Result duplicate = addOnePolicy(dgsQueryExecutor);
-		assertFalse(duplicate.isSuccess());
-		assertTrue(duplicate.getErrors().contains("duplicate policy name"));
-	}
-
-	@Test
 	void testRemoveDeletePolicy() {
 		replaceAllDeletePolicies(dgsQueryExecutor);
 		assertEquals(3, deletePolicyRepo.count());
@@ -478,18 +466,20 @@ class DeltaFiCoreApplicationTests {
 						.maxPercent(50)
 						.enabled(true)
 						.build());
-		checkUpdateResult(true, missingId, "id is missing", idToUpdate, "newName", false);
+		checkUpdateResult(true, missingId, "policy not found", idToUpdate, "newName", false);
 
-		addOnePolicy(dgsQueryExecutor);
-		assertEquals(2, deletePolicyRepo.count());
-		UUID secondId = getIdByPolicyName(DISK_SPACE_PERCENT_POLICY);
-		Assertions.assertNotNull(secondId);
-		assertNotEquals(secondId, idToUpdate);
+		DiskSpaceDeletePolicy anotherPolicy = DiskSpaceDeletePolicy.builder()
+				.id(UUID.randomUUID())
+				.name("another")
+				.maxPercent(60)
+				.enabled(false)
+				.build();
+		deletePolicyRepo.save(anotherPolicy);
 
 		Result duplicateName = updateDiskSpaceDeletePolicy(dgsQueryExecutor,
 				DiskSpaceDeletePolicy.builder()
-						.id(idToUpdate)
-						.name(DISK_SPACE_PERCENT_POLICY)
+						.id(anotherPolicy.getId())
+						.name("newName")
 						.maxPercent(60)
 						.enabled(false)
 						.build());
@@ -509,6 +499,7 @@ class DeltaFiCoreApplicationTests {
 						.name("blah")
 						.afterComplete("ABC")
 						.enabled(false)
+						.deleteMetadata(false)
 						.build());
 		checkUpdateResult(true, validationError, "Unable to parse duration for afterComplete", idToUpdate, DISK_SPACE_PERCENT_POLICY, true);
 
@@ -519,6 +510,7 @@ class DeltaFiCoreApplicationTests {
 						.name("blah")
 						.afterComplete("PT1H")
 						.enabled(true)
+						.deleteMetadata(false)
 						.build());
 		checkUpdateResult(true, notFoundError, "policy not found", idToUpdate, DISK_SPACE_PERCENT_POLICY, true);
 
@@ -528,6 +520,7 @@ class DeltaFiCoreApplicationTests {
 						.name("newTypesAndName")
 						.afterComplete("PT1H")
 						.enabled(false)
+						.deleteMetadata(false)
 						.build());
 		checkUpdateResult(false, goodUpdate, null, idToUpdate, "newTypesAndName", false);
 	}

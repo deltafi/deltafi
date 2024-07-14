@@ -37,6 +37,7 @@ public class DeletePolicyDatafetcherTestHelper {
 
     private static final List<DiskSpaceDeletePolicy> DISK_POLICY_LIST = List.of(
             DiskSpaceDeletePolicy.builder()
+                    .id(UUID.randomUUID())
                     .name(DISK_SPACE_PERCENT_POLICY)
                     .enabled(true)
                     .maxPercent(99)
@@ -44,16 +45,20 @@ public class DeletePolicyDatafetcherTestHelper {
 
     private static final List<TimedDeletePolicy> TIMED_POLICY_LIST = List.of(
             TimedDeletePolicy.builder()
+                    .id(UUID.randomUUID())
                     .name(AFTER_COMPLETE_POLICY)
                     .enabled(true)
                     .afterComplete("PT2S")
+                    .deleteMetadata(false)
                     .build(),
             TimedDeletePolicy.builder()
+                    .id(UUID.randomUUID())
                     .name(OFFLINE_POLICY)
                     .flow("bogus")
                     .enabled(false)
                     .afterCreate("PT2S")
                     .minBytes(1000L)
+                    .deleteMetadata(false)
                     .build());
 
     private static final GetDeletePoliciesProjectionRoot projection = new GetDeletePoliciesProjectionRoot()
@@ -75,7 +80,7 @@ public class DeletePolicyDatafetcherTestHelper {
         GetDeletePoliciesGraphQLQuery query =
                 GetDeletePoliciesGraphQLQuery.newRequest().build();
         GraphQLQueryRequest graphQLQueryRequest =
-                new GraphQLQueryRequest(query, projection);
+                new GraphQLQueryRequest(query, projection, SCALARS);
 
         TypeRef<List<DeletePolicy>> policiesListType = new TypeRef<>() {
         };
@@ -117,7 +122,7 @@ public class DeletePolicyDatafetcherTestHelper {
                 .info()
                 .errors();
 
-        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, projection);
+        GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(query, projection, SCALARS);
 
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(
                 graphQLQueryRequest.serialize(),

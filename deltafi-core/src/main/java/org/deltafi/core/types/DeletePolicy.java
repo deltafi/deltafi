@@ -19,13 +19,14 @@ package org.deltafi.core.types;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import org.springframework.data.mongodb.core.mapping.Document;
+import jakarta.persistence.*;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+
 import java.lang.String;
 import java.util.UUID;
-
-/*
- * This is the codegen generated class, except the Spring-Mongo @Document annotation is added.
- */
 
 @JsonTypeInfo(
     use = JsonTypeInfo.Id.NAME,
@@ -35,21 +36,24 @@ import java.util.UUID;
     @JsonSubTypes.Type(value = DiskSpaceDeletePolicy.class, name = "DiskSpaceDeletePolicy"),
     @JsonSubTypes.Type(value = TimedDeletePolicy.class, name = "TimedDeletePolicy")
 })
-@Document("deletePolicy")
-public interface DeletePolicy {
-  UUID getId();
+@Entity
+@Table(name = "delete_policies")
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "policy_type", discriminatorType = DiscriminatorType.STRING)
+@Data
+@SuperBuilder
+@NoArgsConstructor
+public abstract class DeletePolicy {
+  @Id
+  @Builder.Default
+  protected UUID id = UUID.randomUUID();
 
-  void setId(UUID id);
+  @Column(nullable = false, unique = true)
+  protected String name;
 
-  String getName();
+  @Column(nullable = false)
+  protected boolean enabled;
 
-  void setName(String name);
-
-  boolean isEnabled();
-
-  void setEnabled(boolean enabled);
-
-  String getFlow();
-
-  void setFlow(String flow);
+  @Column
+  protected String flow;
 }
