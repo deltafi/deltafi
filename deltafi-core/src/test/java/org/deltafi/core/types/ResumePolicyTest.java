@@ -36,7 +36,9 @@ class ResumePolicyTest {
 
     @Test
     void testMissingAll() {
-        assertTrue(new ResumePolicy().validate().containsAll(List.of(
+        ResumePolicy resumePolicy = new ResumePolicy();
+        resumePolicy.setId(null);
+        assertTrue(resumePolicy.validate().containsAll(List.of(
                 ResumePolicy.MISSING_ID,
                 ResumePolicy.MISSING_NAME,
                 ResumePolicy.MISSING_CRITERIA,

@@ -17,13 +17,46 @@
  */
 package org.deltafi.core.types;
 
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.ActionType;
+import org.deltafi.core.generated.types.BackOff;
+import org.hibernate.annotations.Type;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
-public class ResumePolicy extends org.deltafi.core.generated.types.ResumePolicy {
+@Entity
+@Table(name = "resume_policies", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"errorSubstring", "action", "actionType"})
+})
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class ResumePolicy {
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @lombok.Builder.Default
+    private UUID id = UUID.randomUUID();
+    @Column(nullable = false, unique = true)
+    private String name;
+    private String errorSubstring;
+    private String dataSource;
+    private String action;
+    private ActionType actionType;
+    private int maxAttempts;
+    private Integer priority;
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
+    private BackOff backOff;
+
     public static final String INVALID_DELAY = "delay must not be negative";
     public static final String INVALID_MAX_ATTEMPTS = "maxAttempts must be greater than 1";
     public static final String INVALID_MAX_DELAY = "maxDelay must not be negative";

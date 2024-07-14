@@ -31,6 +31,7 @@ import org.deltafi.core.snapshot.Snapshotter;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.types.ResumePolicy;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
@@ -47,7 +48,6 @@ public class ResumePolicyService implements Snapshotter {
 
     @PostConstruct
     private void init() {
-        resumePolicyRepo.ensureAllIndices();
         refreshCache();
     }
 
@@ -184,7 +184,7 @@ public class ResumePolicyService implements Snapshotter {
                 resumePolicyRepo.save(resumePolicy);
                 refreshCache();
                 return new Result();
-            } catch (DuplicateKeyException e) {
+            } catch (DataIntegrityViolationException e) {
                 errors.add("duplicate name or criteria");
             }
         }

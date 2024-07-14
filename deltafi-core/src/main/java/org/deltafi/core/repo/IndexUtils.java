@@ -28,11 +28,9 @@ import org.springframework.util.ObjectUtils;
 
 import java.util.List;
 
-@SuppressWarnings("unused")
 @Slf4j
 public class IndexUtils {
-
-    public static void updateIndices(IndexOperations idxOps, String indexName, Index index, List<IndexInfo> existingIndexes) {
+    public static void updateMongoIndices(IndexOperations idxOps, String indexName, Index index, List<IndexInfo> existingIndexes) {
         try {
             log.debug("Ensure index {}", indexName);
             idxOps.ensureIndex(index);

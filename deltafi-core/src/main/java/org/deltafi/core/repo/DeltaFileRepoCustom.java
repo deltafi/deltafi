@@ -30,12 +30,6 @@ import java.util.UUID;
 
 public interface DeltaFileRepoCustom {
     /**
-     * Ensure the latest versions of the indices defined in the Repository are created.
-     * Remove indices that are not defined in the Repository.
-     */
-    void ensureAllIndices();
-
-    /**
      * Find stale deltaFiles that may need to be requeued, and update the last modified time of the QUEUED action.
      *
      * @param requeueTime age for searching for expired actions to requeue

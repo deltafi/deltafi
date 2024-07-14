@@ -37,7 +37,10 @@ import java.util.stream.Stream;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "delta_files")
+@Table(name = "delta_files", indexes = {
+        @Index(name = "idx_created", columnList = "created, data_source, normalized_name, stage, egressed, filtered, terminal, ingress_bytes, content_deletable"),
+        @Index(name = "idx_modified", columnList = "modified, data_source, normalized_name, stage, egressed, filtered, terminal, ingress_bytes, content_deletable")
+})
 public class DeltaFile {
   @Id
   @Builder.Default

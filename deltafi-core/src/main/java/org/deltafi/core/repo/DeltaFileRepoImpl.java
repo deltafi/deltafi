@@ -31,7 +31,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.types.*;
-import org.springframework.dao.DataAccessException;
 import org.springframework.data.mongodb.core.index.IndexInfo;
 import org.springframework.data.mongodb.core.index.IndexOperations;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -65,59 +64,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     private static final String TERMINAL = "terminal";
     public static final String TYPE = "type";
 
-    private static final Map<String, String> INDICES = Map.of(
-            "idx_created", "delta_files (created, data_source, normalized_name, stage, egressed, filtered, terminal, ingress_bytes, content_deletable)",
-            "idx_modified", "delta_files (modified, data_source, normalized_name, stage, egressed, filtered, terminal, ingress_bytes, content_deletable)",
-            "idx_flow", "delta_file_flows (delta_file_id, name, state, test_mode, pending_annotations)",
-            "idx_action", "actions (delta_file_flow_id, name, state, next_auto_resume, error_acknowledged)",
-            "idx_annotations", "annotations (delta_file_id, key, value)"
-    );
-
     @PersistenceContext
     private final EntityManager entityManager;
     private final JdbcTemplate jdbcTemplate;
-
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
-
-    public void ensureAllIndices() {
-        List<String> existingIndexes = getExistingIndexes();
-
-        // Create missing indexes
-        for (Map.Entry<String, String> entry : INDICES.entrySet()) {
-            if (!existingIndexes.contains(entry.getKey())) {
-                String sql = String.format("CREATE INDEX IF NOT EXISTS %s ON %s",
-                        entry.getKey(), entry.getValue());
-                String tableName = entry.getValue().split("\\s+")[0];
-                log.info("Creating index {} on table {}", entry.getKey(), tableName);
-                log.info(sql);
-                jdbcTemplate.execute(sql);
-            }
-        }
-
-        // Remove unexpected indexes
-        for (String existingIndex : existingIndexes) {
-            if (!INDICES.containsKey(existingIndex) && !isSystemIndex(existingIndex)) {
-                log.info("Dropping unexpected index: {}", existingIndex);
-                try {
-                    jdbcTemplate.execute("DROP INDEX IF EXISTS " + existingIndex);
-                } catch (DataAccessException e) {
-                    log.error("Error dropping index {}: {}", existingIndex, e.getMessage());
-                }
-            }
-        }
-    }
-
-    private List<String> getExistingIndexes() {
-        String sql = "SELECT indexname FROM pg_indexes WHERE tablename = 'delta_files'";
-        return jdbcTemplate.queryForList(sql, String.class);
-    }
-
-    private boolean isSystemIndex(String indexName) {
-        return indexName.startsWith("pg_") ||
-                indexName.endsWith("_pkey") ||
-                indexName.endsWith("_fkey") ||
-                indexName.contains("_fk_");
-    }
 
     @Override
     @Transactional

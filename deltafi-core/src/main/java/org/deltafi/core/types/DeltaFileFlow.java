@@ -37,7 +37,9 @@ import java.util.function.Predicate;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "delta_file_flows")
+@Table(name = "delta_file_flows", indexes = {
+        @Index(name = "idx_flow", columnList = "delta_file_id, name, state, test_mode, pending_annotations")
+})
 public class DeltaFileFlow {
     @Id
     @Builder.Default

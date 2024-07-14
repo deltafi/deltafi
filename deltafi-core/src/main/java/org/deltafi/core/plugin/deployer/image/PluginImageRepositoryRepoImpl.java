@@ -45,6 +45,6 @@ public class PluginImageRepositoryRepoImpl {
         IndexOperations idxOps = mongoTemplate.indexOps(PluginImageRepository.class);
         List<IndexInfo> existingIndexes = idxOps.getIndexInfo();
 
-        INDICES.forEach((indexName, indexDef) -> IndexUtils.updateIndices(idxOps, indexName, indexDef, existingIndexes));
+        INDICES.forEach((indexName, indexDef) -> IndexUtils.updateMongoIndices(idxOps, indexName, indexDef, existingIndexes));
     }
 }

@@ -28,7 +28,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "annotations")
+@Table(name = "annotations", indexes = {
+        @Index(name= "idx_annotations", columnList = "key, value")
+})
 @EqualsAndHashCode(exclude = "deltaFile")
 public class Annotation implements Comparable<Annotation> {
     @Id

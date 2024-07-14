@@ -53,7 +53,7 @@ public class JoinEntryRepoImpl implements JoinEntryRepoCustom {
     @Override
     public void ensureJoinDefinitionIndex() {
         IndexOperations indexOperations = mongoTemplate.indexOps(JoinEntry.class);
-        IndexUtils.updateIndices(indexOperations, "unique_join_definition",
+        IndexUtils.updateMongoIndices(indexOperations, "unique_join_definition",
                 new Index(JOIN_DEFINITION_FIELD, Sort.Direction.ASC).named("unique_join_definition").unique(),
                 indexOperations.getIndexInfo());
     }

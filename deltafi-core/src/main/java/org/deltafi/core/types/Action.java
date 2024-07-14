@@ -37,7 +37,9 @@ import java.util.*;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "actions")
+@Table(name = "actions", indexes = {
+        @Index(name = "idx_action", columnList = "delta_file_flow_id, name, state, next_auto_resume, error_acknowledged")
+})
 @EqualsAndHashCode(exclude = "deltaFileFlow")
 public class Action {
   static final private int MAX_CAUSE_SIZE = 100_000;

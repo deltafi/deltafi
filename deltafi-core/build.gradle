@@ -142,6 +142,7 @@ generateJava {
 			"RestDataSourceSnapshotInput": "org.deltafi.core.snapshot.types.RestDataSourceSnapshot",
 			"Result": "org.deltafi.core.types.Result",
 			"ResumeMetadata": "org.deltafi.common.types.ResumeMetadata",
+			"ResumePolicy": "org.deltafi.core.types.ResumePolicy",
 			"Rule": "org.deltafi.common.types.Rule",
 			"RuleInput": "org.deltafi.common.types.Rule",
 			"SecurityBanner": "org.deltafi.core.configuration.ui.SecurityBanner",

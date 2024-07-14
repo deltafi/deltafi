@@ -300,11 +300,6 @@ class DeltaFiCoreApplicationTests {
 	@TestConfiguration
 	public static class Config {
 		@Bean
-		public DeltaFileIndexService deltaFileIndexService(DeltaFileRepo deltaFileRepo, DeltaFiPropertiesService deltaFiPropertiesService) {
-			return new DeltaFileIndexService(deltaFileRepo, deltaFiPropertiesService);
-		}
-
-		@Bean
 		public StorageConfigurationService storageConfigurationService(MinioClient minioClient, DeltaFiPropertiesService deltaFiPropertiesService) {
 			return new StorageConfigurationService(minioClient, deltaFiPropertiesService);
 		}

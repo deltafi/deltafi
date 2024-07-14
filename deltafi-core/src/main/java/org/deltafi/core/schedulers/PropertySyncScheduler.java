@@ -19,7 +19,6 @@ package org.deltafi.core.schedulers;
 
 import lombok.RequiredArgsConstructor;
 import org.deltafi.core.services.DeltaFiPropertiesService;
-import org.deltafi.core.services.DeltaFileIndexService;
 import org.deltafi.core.services.StorageConfigurationService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.EnableScheduling;

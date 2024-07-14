@@ -45,6 +45,6 @@ public class DeletePolicyRepoImpl implements DeletePolicyRepoCustom {
         IndexOperations idxOps = mongoTemplate.indexOps(DeletePolicy.class);
         List<IndexInfo> existingIndexes = idxOps.getIndexInfo();
 
-        INDICES.forEach((indexName, indexDef) -> IndexUtils.updateIndices(idxOps, indexName, indexDef, existingIndexes));
+        INDICES.forEach((indexName, indexDef) -> IndexUtils.updateMongoIndices(idxOps, indexName, indexDef, existingIndexes));
     }
 }
