@@ -46,7 +46,11 @@ public interface FlowPlanRepo extends JpaRepository<FlowPlanEntity, UUID> {
      */
     @Transactional
     @Modifying
-    @Query("DELETE FROM FlowPlanEntity f WHERE f.sourcePlugin = :pluginCoordinates")
+    @Query(value = "DELETE FROM flow_plan WHERE " +
+            "source_plugin->>'groupId' = :#{#pluginCoordinates.groupId} AND " +
+            "source_plugin->>'artifactId' = :#{#pluginCoordinates.artifactId} AND " +
+            "source_plugin->>'version' = :#{#pluginCoordinates.version}",
+            nativeQuery = true)
     int deleteBySourcePlugin(PluginCoordinates pluginCoordinates);
 
     /**
@@ -54,7 +58,13 @@ public interface FlowPlanRepo extends JpaRepository<FlowPlanEntity, UUID> {
      * @param sourcePlugin PluginCoordinates to search by
      * @return the flow plans with the given sourcePlugin
      */
-    List<FlowPlanEntity> findBySourcePlugin(PluginCoordinates sourcePlugin);
+    @Query(value = "SELECT * FROM flow_plan WHERE " +
+            "source_plugin->>'groupId' = :#{#sourcePlugin.groupId} AND " +
+            "source_plugin->>'artifactId' = :#{#sourcePlugin.artifactId} AND " +
+            "source_plugin->>'version' = :#{#sourcePlugin.version} AND " +
+            "type = :#{#type.name()}",
+            nativeQuery = true)
+    List<FlowPlanEntity> findBySourcePluginAndType(PluginCoordinates sourcePlugin, FlowType type);
 
     /**
      * Find the flow plans with the given groupId and artifactId

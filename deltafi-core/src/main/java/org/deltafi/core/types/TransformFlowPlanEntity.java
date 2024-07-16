@@ -55,7 +55,7 @@ public class TransformFlowPlanEntity extends FlowPlanEntity {
 
     @Override
     public List<ActionConfiguration> allActionConfigurations() {
-        return new ArrayList<>(transformActions);
+        return transformActions == null ? List.of() : new ArrayList<>(transformActions);
     }
 
     @Override

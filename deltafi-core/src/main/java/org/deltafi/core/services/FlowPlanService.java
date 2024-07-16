@@ -137,7 +137,7 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlanEntity, FlowT ex
      * @param sourcePlugin plugin whose flows should be recreated
      */
     public void rebuildFlowsForPlugin(PluginCoordinates sourcePlugin) {
-        flowService.rebuildFlows(flowPlanRepo.findBySourcePlugin(sourcePlugin), sourcePlugin);
+        flowService.rebuildFlows(flowPlanRepo.findBySourcePluginAndType(sourcePlugin, getFlowType()), sourcePlugin);
     }
 
     protected abstract Class<FlowPlanT> getFlowPlanClass();
