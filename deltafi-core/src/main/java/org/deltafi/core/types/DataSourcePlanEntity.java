@@ -15,21 +15,23 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.repo;
+package org.deltafi.core.types;
 
-import org.deltafi.common.types.IngressStatus;
-import org.deltafi.core.types.DataSource;
+import jakarta.persistence.MappedSuperclass;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import org.deltafi.common.types.FlowType;
 
-import java.time.OffsetDateTime;
-import java.util.UUID;
+@MappedSuperclass
+@EqualsAndHashCode(callSuper = true)
+@Data
+@NoArgsConstructor
+public abstract class DataSourcePlanEntity extends FlowPlanEntity {
+    private String topic;
 
-public interface DataSourceRepoCustom extends FlowRepoCustom<DataSource> {
-    boolean updateCronSchedule(String flowName, String cronSchedule, OffsetDateTime nextRun);
-
-    boolean updateLastRun(String flowName, OffsetDateTime lastRun, UUID currentDid);
-
-    boolean completeExecution(String flowName, UUID currentDid, String memo, boolean executeImmediate,
-                              IngressStatus status, String statusMessage, OffsetDateTime nextRun);
-
-    boolean updateMemo(String flowName, String memo);
+    public DataSourcePlanEntity(String name, FlowType flowType, String description, String topic) {
+        super(name, flowType, description);
+        this.topic = topic;
+    }
 }

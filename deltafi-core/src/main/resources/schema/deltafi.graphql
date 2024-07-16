@@ -357,13 +357,16 @@ input ResumeMetadata {
 
 type Query {
   getEgressFlowPlan(planName: String!): EgressFlowPlan!
-  getDataSourcePlan(planName: String!): DataSourcePlan!
+  getRestDataSourcePlan(planName: String!): RestDataSourcePlan!
+  getTimedDataSourcePlan(planName: String!): TimedDataSourcePlan!
   getTransformFlowPlan(planName: String!): TransformFlowPlan!
   getEgressFlow(flowName: String!): EgressFlow!
-  getDataSource(name: String!): DataSource!
+  getRestDataSource(name: String!): RestDataSource!
+  getTimedDataSource(name: String!): TimedDataSource!
   getTransformFlow(flowName: String!): TransformFlow!
   validateEgressFlow(flowName: String!): EgressFlow!
-  validateDataSource(name: String!): DataSource!
+  validateRestDataSource(name: String!): RestDataSource!
+  validateTimedDataSource(name: String!): TimedDataSource!
   validateTransformFlow(flowName: String!): TransformFlow!
   getFlowNames(state: FlowState): FlowNames!
   getFlows: [Flows]!
@@ -414,14 +417,17 @@ type Mutation {
   saveRestDataSourcePlan(dataSourcePlan: RestDataSourcePlanInput!) : RestDataSource!
   saveTransformFlowPlan(transformFlowPlan: TransformFlowPlanInput!) : TransformFlow!
   removeEgressFlowPlan(name: String!) : Boolean!
-  removeDataSourcePlan(name: String!) : Boolean!
+  removeRestDataSourcePlan(name: String!) : Boolean!
+  removeTimedDataSourcePlan(name: String!) : Boolean!
   removeTransformFlowPlan(name: String!) : Boolean!
 
   startEgressFlow(flowName: String!) : Boolean!
-  startDataSource(name: String!) : Boolean!
+  startRestDataSource(name: String!) : Boolean!
+  startTimedDataSource(name: String!) : Boolean!
   startTransformFlow(flowName: String!) : Boolean!
   stopEgressFlow(flowName: String!) : Boolean!
-  stopDataSource(name: String!) : Boolean!
+  stopRestDataSource(name: String!) : Boolean!
+  stopTimedDataSource(name: String!) : Boolean!
   stopTransformFlow(flowName: String!) : Boolean!
 
   setMaxErrors(flowName: String!, maxErrors: Int!) : Boolean!
@@ -429,8 +435,10 @@ type Mutation {
   disableEgressTestMode(flowName: String!) : Boolean!
   setTimedDataSourceMemo(name: String!, memo: String) : Boolean!
   setTimedDataSourceCronSchedule(name: String!, cronSchedule: String!) : Boolean!
-  enableDataSourceTestMode(name: String!) : Boolean!
-  disableDataSourceTestMode(name: String!) : Boolean!
+  enableRestDataSourceTestMode(name: String!) : Boolean!
+  enableTimedDataSourceTestMode(name: String!) : Boolean!
+  disableRestDataSourceTestMode(name: String!) : Boolean!
+  disableTimedDataSourceTestMode(name: String!) : Boolean!
   enableTransformTestMode(flowName: String!) : Boolean!
   disableTransformTestMode(flowName: String!) : Boolean!
   setEgressFlowExpectedAnnotations(flowName: String!, expectedAnnotations: [String]) : Boolean!

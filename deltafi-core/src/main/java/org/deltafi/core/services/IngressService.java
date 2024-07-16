@@ -67,7 +67,7 @@ public class IngressService {
     private final ContentStorageService contentStorageService;
     private final DeltaFilesService deltaFilesService;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
-    private final DataSourceService dataSourceService;
+    private final RestDataSourceService restDataSourceService;
     private final ErrorCountService errorCountService;
     private final UUIDGenerator uuidGenerator;
 
@@ -182,7 +182,7 @@ public class IngressService {
             Map<String, String> metadata, OffsetDateTime created) throws ObjectStorageException, IngressException {
         RestDataSource restDataSource;
         try {
-            restDataSource = dataSourceService.getRunningRestDataSource(flow);
+            restDataSource = restDataSourceService.getRunningFlowByName(flow);
         } catch (MissingFlowException e) {
             throw new IngressException(e.getMessage());
         }

@@ -30,7 +30,7 @@ import org.deltafi.core.snapshot.Snapshotter;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.snapshot.types.FlowSnapshot;
 import org.deltafi.core.types.Flow;
-import org.deltafi.common.types.FlowPlan;
+import org.deltafi.core.types.FlowPlanEntity;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.validation.FlowValidator;
 import org.springframework.boot.info.BuildProperties;
@@ -40,7 +40,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
-public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow, FlowSnapshotT extends FlowSnapshot> implements PluginUninstallCheck, Snapshotter {
+public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extends Flow, FlowSnapshotT extends FlowSnapshot> implements PluginUninstallCheck, Snapshotter {
 
     protected final FlowRepo<FlowT> flowRepo;
     protected final PluginVariableService pluginVariableService;
@@ -150,7 +150,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
      * @param flowPlans list of flow plans that need flows rebuilt
      * @param sourcePlugin PluginCoordinates used to find the variables
      */
-    public void rebuildFlows(List<FlowPlanT> flowPlans, PluginCoordinates sourcePlugin) {
+    public void rebuildFlows(List<FlowPlanEntity> flowPlans, PluginCoordinates sourcePlugin) {
         List<Variable> variables = pluginVariableService.getVariablesByPlugin(sourcePlugin);
         List<FlowT> updatedFlows = flowPlans.stream()
                 .map(flowPlan -> buildFlow(flowPlan, variables))
@@ -453,13 +453,14 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
                 .collect(Collectors.groupingBy(FlowT::getSourcePlugin));
     }
 
-    FlowT buildFlow(FlowPlanT flowPlan, List<Variable> variables) {
+    FlowT buildFlow(FlowPlanEntity flowPlan, List<Variable> variables) {
         Optional<FlowT> existing = flowRepo.findById(flowPlan.getName());
 
         boolean flowWasRunning = existing.map(Flow::isRunning).orElse(false);
         boolean flowWasInTestMode = existing.map(Flow::isTestMode).orElse(false);
 
-        FlowT flow = flowPlanConverter.convert(flowPlan, variables);
+        FlowPlanT typedFlowPlan = getFlowPlanClass().cast(flowPlan);
+        FlowT flow = flowPlanConverter.convert(typedFlowPlan, variables);
 
         flow.getFlowStatus().getErrors().addAll(validator.validate(flow));
 
@@ -517,4 +518,6 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     String runningFlowError(List<String> runningFlows) {
         return "The plugin has created the following " + flowType + " flows which are still running: " + String.join(", ", runningFlows);
     }
+
+    protected abstract Class<FlowPlanT> getFlowPlanClass();
 }

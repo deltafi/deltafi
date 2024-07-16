@@ -19,19 +19,14 @@ package org.deltafi.core.services;
 
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.ActionType;
-import org.deltafi.common.types.FlowType;
-import org.deltafi.common.types.TimedDataSourcePlan;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
-import org.deltafi.core.repo.DataSourceRepo;
+import org.deltafi.core.repo.TimedDataSourceRepo;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.snapshot.types.FlowSnapshot;
 import org.deltafi.core.snapshot.types.TimedDataSourceSnapshot;
-import org.deltafi.core.types.DataSource;
-import org.deltafi.core.types.Flow;
-import org.deltafi.core.types.Result;
-import org.deltafi.core.types.TimedDataSource;
-import org.deltafi.core.validation.DataSourceValidator;
+import org.deltafi.core.types.*;
+import org.deltafi.core.validation.TimedDataSourceValidator;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -46,60 +41,60 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(MockitoExtension.class)
-class DataSourceServiceTest {
+class TimedDataSourceServiceTest {
 
     @Mock
-    DataSourceRepo dataSourceRepo;
+    TimedDataSourceRepo timedDataSourceRepo;
 
     @Mock
-    DataSourceValidator flowValidator;
+    TimedDataSourceValidator flowValidator;
 
     @Mock
     @SuppressWarnings("unused")
     BuildProperties buildProperties;
 
     @InjectMocks
-    DataSourceService dataSourceService;
+    TimedDataSourceService timedDataSourceService;
 
     @Captor
-    ArgumentCaptor<List<DataSource>> flowCaptor;
+    ArgumentCaptor<List<TimedDataSource>> flowCaptor;
 
     @Test
     void buildFlow() {
         TimedDataSource running = timedDataSource("running", FlowState.RUNNING, true,"0 */10 * * * *");
         TimedDataSource stopped = timedDataSource("stopped", FlowState.STOPPED, false, "*/1 * * * * *");
-        Mockito.when(dataSourceRepo.findById("running")).thenReturn(Optional.of(running));
-        Mockito.when(dataSourceRepo.findById("stopped")).thenReturn(Optional.of(stopped));
+        Mockito.when(timedDataSourceRepo.findById("running")).thenReturn(Optional.of(running));
+        Mockito.when(timedDataSourceRepo.findById("stopped")).thenReturn(Optional.of(stopped));
         Mockito.when(flowValidator.validate(Mockito.any())).thenReturn(Collections.emptyList());
 
-        TimedDataSourcePlan runningFlowPlan = new TimedDataSourcePlan("running", FlowType.TIMED_DATA_SOURCE, "yep", "topic",
+        TimedDataSourcePlanEntity runningFlowPlan = new TimedDataSourcePlanEntity("running", "yep", "topic",
                 new ActionConfiguration("TimedIngressActionConfig", ActionType.TIMED_INGRESS, "TimedIngressActionConfigType"),
                 "0 */10 * * * *");
-        TimedDataSourcePlan stoppedFlowPlan = new TimedDataSourcePlan("stopped", FlowType.TIMED_DATA_SOURCE, "naw", "topic",
+        TimedDataSourcePlanEntity stoppedFlowPlan = new TimedDataSourcePlanEntity("stopped", "naw", "topic",
                 new ActionConfiguration("TimedIngressActionConfig", ActionType.TIMED_INGRESS, "TimedIngressActionConfigType"),
                 "*/1 * * * * *");
 
-        DataSource runningDataSource = dataSourceService.buildFlow(runningFlowPlan, Collections.emptyList());
-        DataSource stoppedDataSource = dataSourceService.buildFlow(stoppedFlowPlan, Collections.emptyList());
+        TimedDataSource runningDataSource = timedDataSourceService.buildFlow(runningFlowPlan, Collections.emptyList());
+        TimedDataSource stoppedDataSource = timedDataSourceService.buildFlow(stoppedFlowPlan, Collections.emptyList());
 
         assertThat(runningDataSource).isInstanceOf(TimedDataSource.class);
         assertThat(runningDataSource.isRunning()).isTrue();
         assertThat(runningDataSource.isTestMode()).isTrue();
-        assertThat(((TimedDataSource)runningDataSource).getCronSchedule()).isEqualTo("0 */10 * * * *");
+        assertThat(runningDataSource.getCronSchedule()).isEqualTo("0 */10 * * * *");
         assertThat(stoppedDataSource.isRunning()).isFalse();
         assertThat(stoppedDataSource.isTestMode()).isFalse();
     }
 
     @Test
     void updateSnapshot() {
-        List<DataSource> flows = new ArrayList<>();
+        List<TimedDataSource> flows = new ArrayList<>();
         flows.add(timedDataSource("a", FlowState.RUNNING, false, "0 */1 * * * *"));
         flows.add(timedDataSource("b", FlowState.STOPPED, false, "0 */2 * * * *"));
         flows.add(timedDataSource("c", FlowState.INVALID, true, "0 */3 * * * *"));
-        Mockito.when(dataSourceRepo.findAll()).thenReturn(flows);
+        Mockito.when(timedDataSourceRepo.findAll()).thenReturn(flows);
 
         SystemSnapshot systemSnapshot = new SystemSnapshot();
-        dataSourceService.updateSnapshot(systemSnapshot);
+        timedDataSourceService.updateSnapshot(systemSnapshot);
 
         assertThat(systemSnapshot.getTimedDataSources()).hasSize(3);
 
@@ -140,18 +135,18 @@ class DataSourceServiceTest {
         snapshots.add(snapshot("missing", false, true, "*/1 * * * * *"));
         systemSnapshot.setTimedDataSources(snapshots);
 
-        Mockito.when(dataSourceRepo.findAll()).thenReturn(List.of(running, stopped, invalid, changed));
-        Mockito.when(dataSourceRepo.findById("running")).thenReturn(Optional.of(running));
-        Mockito.when(dataSourceRepo.findById("stopped")).thenReturn(Optional.of(stopped));
-        Mockito.when(dataSourceRepo.findById("invalid")).thenReturn(Optional.of(invalid));
-        Mockito.when(dataSourceRepo.findById("missing")).thenReturn(Optional.empty());
-        Mockito.when(dataSourceRepo.findById("changed")).thenReturn(Optional.of(changed));
+        Mockito.when(timedDataSourceRepo.findAll()).thenReturn(List.of(running, stopped, invalid, changed));
+        Mockito.when(timedDataSourceRepo.findById("running")).thenReturn(Optional.of(running));
+        Mockito.when(timedDataSourceRepo.findById("stopped")).thenReturn(Optional.of(stopped));
+        Mockito.when(timedDataSourceRepo.findById("invalid")).thenReturn(Optional.of(invalid));
+        Mockito.when(timedDataSourceRepo.findById("missing")).thenReturn(Optional.empty());
+        Mockito.when(timedDataSourceRepo.findById("changed")).thenReturn(Optional.of(changed));
 
-        Result result = dataSourceService.resetFromSnapshot(systemSnapshot, true);
+        Result result = timedDataSourceService.resetFromSnapshot(systemSnapshot, true);
 
         // verify the hard reset stopped any running flows
-        Mockito.verify(dataSourceRepo).updateFlowState("running", FlowState.STOPPED);
-        Mockito.verify(dataSourceRepo).saveAll(flowCaptor.capture());
+        Mockito.verify(timedDataSourceRepo).updateFlowState("running", FlowState.STOPPED);
+        Mockito.verify(timedDataSourceRepo).saveAll(flowCaptor.capture());
 
         Map<String, DataSource> updatedFlows = flowCaptor.getValue().stream()
                 .collect(Collectors.toMap(Flow::getName, Function.identity()));

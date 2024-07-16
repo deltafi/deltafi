@@ -17,9 +17,19 @@
  */
 package org.deltafi.core.repo;
 
-import org.deltafi.core.types.DataSource;
-import org.springframework.stereotype.Repository;
+import org.deltafi.common.types.IngressStatus;
+import org.deltafi.core.types.TimedDataSource;
 
-@Repository
-public interface DataSourceRepo extends FlowRepo<DataSource>, DataSourceRepoCustom {
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
+public interface TimedDataSourceRepoCustom extends FlowRepoCustom<TimedDataSource> {
+    boolean updateCronSchedule(String flowName, String cronSchedule, OffsetDateTime nextRun);
+
+    boolean updateLastRun(String flowName, OffsetDateTime lastRun, UUID currentDid);
+
+    boolean completeExecution(String flowName, UUID currentDid, String memo, boolean executeImmediate,
+                              IngressStatus status, String statusMessage, OffsetDateTime nextRun);
+
+    boolean updateMemo(String flowName, String memo);
 }

@@ -19,19 +19,19 @@ package org.deltafi.core.converters;
 
 import org.deltafi.common.types.*;
 import org.deltafi.core.types.TransformFlow;
-import org.deltafi.common.types.TransformFlowPlan;
+import org.deltafi.core.types.TransformFlowPlanEntity;
 
 import java.util.List;
 import java.util.Objects;
 
-public class TransformFlowPlanConverter extends FlowPlanConverter<TransformFlowPlan, TransformFlow> {
+public class TransformFlowPlanConverter extends FlowPlanConverter<TransformFlowPlanEntity, TransformFlow> {
 
     @Override
-    public TransformFlow createFlow(TransformFlowPlan transformFlowPlan, FlowPlanPropertyHelper flowPlanPropertyHelper) {
+    public TransformFlow createFlow(TransformFlowPlanEntity transformFlowPlan, FlowPlanPropertyHelper flowPlanPropertyHelper) {
         TransformFlow transformFlow = new TransformFlow();
         transformFlow.setTransformActions(buildTransformActions(transformFlowPlan.getTransformActions(), flowPlanPropertyHelper));
         transformFlow.setSubscribe(transformFlowPlan.getSubscribe());
-        transformFlow.setPublish(transformFlowPlan.publishRules());
+        transformFlow.setPublish(transformFlowPlan.getPublish());
         return transformFlow;
     }
 

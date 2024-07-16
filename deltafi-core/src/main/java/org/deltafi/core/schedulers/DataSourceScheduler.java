@@ -35,7 +35,7 @@ import java.time.OffsetDateTime;
 public class DataSourceScheduler {
 
     private final DeltaFilesService deltaFilesService;
-    private final DataSourceService dataSourceService;
+    private final TimedDataSourceService timedDataSourceService;
     private final CoreEventQueue coreEventQueue;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
     private final DiskSpaceService diskSpaceService;
@@ -43,8 +43,8 @@ public class DataSourceScheduler {
 
     @Scheduled(fixedDelay = 1000)
     public void triggerTimedIngressFlows() {
-        dataSourceService.refreshCache();
-        for (TimedDataSource dataSource : dataSourceService.getRunningTimedDataSources()) {
+        timedDataSourceService.refreshCache();
+        for (TimedDataSource dataSource : timedDataSourceService.getRunningTimedDataSources()) {
             if (dataSource.due(coreEventQueue, OffsetDateTime.now(clock)) &&
                     deltaFiPropertiesService.getDeltaFiProperties().getIngress().isEnabled() &&
                     !diskSpaceService.isContentStorageDepleted()) {

@@ -17,7 +17,6 @@
  */
 package org.deltafi.core.services;
 
-import org.deltafi.common.types.TransformFlowPlan;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
 import org.deltafi.core.generated.types.IngressFlowErrorState;
@@ -28,6 +27,7 @@ import org.deltafi.core.snapshot.types.TransformFlowSnapshot;
 import org.deltafi.core.types.Flow;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.types.TransformFlow;
+import org.deltafi.core.types.TransformFlowPlanEntity;
 import org.deltafi.core.validation.TransformFlowValidator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -76,8 +76,8 @@ class TransformFlowServiceTest {
         Mockito.when(transformFlowRepo.findById("stopped")).thenReturn(Optional.of(stopped));
         Mockito.when(flowValidator.validate(Mockito.any())).thenReturn(Collections.emptyList());
 
-        TransformFlowPlan runningFlowPlan = new TransformFlowPlan("running", "yep");
-        TransformFlowPlan stoppedFlowPlan = new TransformFlowPlan("stopped", "naw");
+        TransformFlowPlanEntity runningFlowPlan = new TransformFlowPlanEntity("running", "yep");
+        TransformFlowPlanEntity stoppedFlowPlan = new TransformFlowPlanEntity("stopped", "naw");
 
         TransformFlow runningTransformFlow = transformFlowService.buildFlow(runningFlowPlan, Collections.emptyList());
         TransformFlow stoppedTransformFlow = transformFlowService.buildFlow(stoppedFlowPlan, Collections.emptyList());

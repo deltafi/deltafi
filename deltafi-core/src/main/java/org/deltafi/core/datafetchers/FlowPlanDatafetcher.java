@@ -37,7 +37,6 @@ import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.*;
 import org.deltafi.core.snapshot.types.FlowSnapshot;
 import org.deltafi.core.types.*;
-import org.deltafi.core.types.DataSource;
 
 import java.util.*;
 
@@ -53,14 +52,16 @@ public class FlowPlanDatafetcher {
 
     private final EgressFlowPlanService egressFlowPlanService;
     private final EgressFlowService egressFlowService;
-    private final DataSourcePlanService dataSourcePlanService;
-    private final DataSourceService dataSourceService;
+    private final RestDataSourcePlanService restDataSourcePlanService;
+    private final TimedDataSourcePlanService timedDataSourcePlanService;
+    private final RestDataSourceService restDataSourceService;
     private final TransformFlowPlanService transformFlowPlanService;
     private final TransformFlowService transformFlowService;
     private final AnnotationService annotationService;
     private final PluginVariableService pluginVariableService;
     private final PluginRegistryService pluginRegistryService;
     private final SystemPluginService systemPluginService;
+    private final TimedDataSourceService timedDataSourceService;
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
@@ -89,19 +90,19 @@ public class FlowPlanDatafetcher {
     @DgsMutation
     @NeedsPermission.Admin
     public boolean setTimedDataSourceMemo(@InputArgument String name, String memo) {
-        return dataSourceService.setMemo(name, memo);
+        return timedDataSourceService.setMemo(name, memo);
     }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
     public boolean setTimedDataSourceCronSchedule(@InputArgument String name, String cronSchedule) {
-        return dataSourceService.setCronSchedule(name, cronSchedule);
+        return timedDataSourceService.setCronSchedule(name, cronSchedule);
     }
 
     @DgsMutation
     @NeedsPermission.FlowPlanCreate
     public EgressFlow saveEgressFlowPlan(@InputArgument EgressFlowPlanInput egressFlowPlan) {
-        return saveFlowPlan(egressFlowPlanService, egressFlowPlan, EgressFlowPlan.class);
+        return saveFlowPlan(egressFlowPlanService, egressFlowPlan, EgressFlowPlanEntity.class);
     }
 
     @DgsMutation
@@ -124,46 +125,80 @@ public class FlowPlanDatafetcher {
 
     @DgsMutation
     @NeedsPermission.FlowPlanCreate
-    public DataSource saveTimedDataSourcePlan(@InputArgument TimedDataSourcePlanInput dataSourcePlan) {
-        return saveFlowPlan(dataSourcePlanService, dataSourcePlan, DataSourcePlan.class);
+    public TimedDataSource saveTimedDataSourcePlan(@InputArgument TimedDataSourcePlanInput dataSourcePlan) {
+        return saveFlowPlan(timedDataSourcePlanService, dataSourcePlan, TimedDataSourcePlanEntity.class);
     }
 
     @DgsMutation
     @NeedsPermission.FlowPlanCreate
-    public DataSource saveRestDataSourcePlan(@InputArgument RestDataSourcePlanInput dataSourcePlan) {
-        return saveFlowPlan(dataSourcePlanService, dataSourcePlan, DataSourcePlan.class);
+    public RestDataSource saveRestDataSourcePlan(@InputArgument RestDataSourcePlanInput dataSourcePlan) {
+        return saveFlowPlan(restDataSourcePlanService, dataSourcePlan, RestDataSourcePlanEntity.class);
     }
 
     @DgsMutation
     @NeedsPermission.FlowPlanDelete
-    public boolean removeDataSourcePlan(@InputArgument String name) {
-        return removeFlowAndFlowPlan(dataSourcePlanService, name);
+    public boolean removeRestDataSourcePlan(@InputArgument String name) {
+        return removeFlowAndFlowPlan(restDataSourcePlanService, name);
+    }
+
+    @DgsMutation
+    @NeedsPermission.FlowPlanDelete
+    public boolean removeTimedDataSourcePlan(@InputArgument String name) {
+        return removeFlowAndFlowPlan(timedDataSourcePlanService, name);
     }
 
     @DgsMutation
     @NeedsPermission.FlowStart
-    public boolean startDataSource(@InputArgument String name) {
-        return dataSourceService.startFlow(name);
+    public boolean startRestDataSource(@InputArgument String name) {
+        return restDataSourceService.startFlow(name);
+    }
+
+    @DgsMutation
+    @NeedsPermission.FlowStart
+    public boolean startTimedDataSource(@InputArgument String name) {
+        return timedDataSourceService.startFlow(name);
     }
 
     @DgsMutation
     @NeedsPermission.FlowStop
-    public boolean stopDataSource(@InputArgument String name) {
-        return dataSourceService.stopFlow(name);
+    public boolean stopRestDataSource(@InputArgument String name) {
+        return restDataSourceService.stopFlow(name);
+    }
+
+    @DgsMutation
+    @NeedsPermission.FlowStop
+    public boolean stopTimedDataSource(@InputArgument String name) {
+        return timedDataSourceService.stopFlow(name);
     }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
-    public boolean enableDataSourceTestMode(@InputArgument String name) { return dataSourceService.enableTestMode(name); }
+    public boolean enableRestDataSourceTestMode(@InputArgument String name) {
+        return restDataSourceService.enableTestMode(name);
+    }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
-    public boolean disableDataSourceTestMode(@InputArgument String name) { return dataSourceService.disableTestMode(name); }
+    public boolean enableTimedDataSourceTestMode(@InputArgument String name) {
+        return timedDataSourceService.enableTestMode(name);
+    }
+
+    @DgsMutation
+    @NeedsPermission.FlowUpdate
+    public boolean disableRestDataSourceTestMode(@InputArgument String name) {
+        return restDataSourceService.disableTestMode(name);
+    }
+
+    @DgsMutation
+    @NeedsPermission.FlowUpdate
+    public boolean disableTimedDataSourceTestMode(@InputArgument String name) {
+        return timedDataSourceService.disableTestMode(name);
+    }
 
     @DgsMutation
     @NeedsPermission.FlowPlanCreate
     public TransformFlow saveTransformFlowPlan(@InputArgument TransformFlowPlanInput transformFlowPlan) {
-        return saveFlowPlan(transformFlowPlanService, transformFlowPlan, TransformFlowPlan.class);
+        return saveFlowPlan(transformFlowPlanService, transformFlowPlan, TransformFlowPlanEntity.class);
     }
 
     @DgsMutation
@@ -213,7 +248,8 @@ public class FlowPlanDatafetcher {
         if (updated) {
             egressFlowPlanService.rebuildFlowsForPlugin(pluginCoordinates);
             transformFlowPlanService.rebuildFlowsForPlugin(pluginCoordinates);
-            dataSourcePlanService.rebuildFlowsForPlugin(pluginCoordinates);
+            restDataSourcePlanService.rebuildFlowsForPlugin(pluginCoordinates);
+            timedDataSourcePlanService.rebuildFlowsForPlugin(pluginCoordinates);
         }
         return updated;
     }
@@ -226,8 +262,14 @@ public class FlowPlanDatafetcher {
 
     @DgsQuery
     @NeedsPermission.FlowView
-    public DataSource getDataSource(@InputArgument String name) {
-        return dataSourceService.getFlowOrThrow(name);
+    public RestDataSource getRestDataSource(@InputArgument String name) {
+        return restDataSourceService.getFlowOrThrow(name);
+    }
+
+    @DgsQuery
+    @NeedsPermission.FlowView
+    public TimedDataSource getTimedDataSource(@InputArgument String name) {
+        return timedDataSourceService.getFlowOrThrow(name);
     }
 
     @DgsQuery
@@ -244,8 +286,14 @@ public class FlowPlanDatafetcher {
 
     @DgsQuery
     @NeedsPermission.FlowValidate
-    public DataSource validateDataSource(@InputArgument String name) {
-        return dataSourceService.validateAndSaveFlow(name);
+    public RestDataSource validateRestDataSource(@InputArgument String name) {
+        return restDataSourceService.validateAndSaveFlow(name);
+    }
+
+    @DgsQuery
+    @NeedsPermission.FlowValidate
+    public TimedDataSource validateTimedDataSource(@InputArgument String name) {
+        return timedDataSourceService.validateAndSaveFlow(name);
     }
 
     @DgsQuery
@@ -256,19 +304,25 @@ public class FlowPlanDatafetcher {
 
     @DgsQuery
     @NeedsPermission.FlowView
-    public EgressFlowPlan getEgressFlowPlan(@InputArgument String planName) {
+    public EgressFlowPlanEntity getEgressFlowPlan(@InputArgument String planName) {
         return egressFlowPlanService.getPlanByName(planName);
     }
 
     @DgsQuery
     @NeedsPermission.FlowView
-    public DataSourcePlan getDataSourcePlan(@InputArgument String planName) {
-        return dataSourcePlanService.getPlanByName(planName);
+    public RestDataSourcePlanEntity getRestDataSourcePlan(@InputArgument String planName) {
+        return restDataSourcePlanService.getPlanByName(planName);
     }
 
     @DgsQuery
     @NeedsPermission.FlowView
-    public TransformFlowPlan getTransformFlowPlan(@InputArgument String planName) {
+    public TimedDataSourcePlanEntity getTimedDataSourcePlan(@InputArgument String planName) {
+        return timedDataSourcePlanService.getPlanByName(planName);
+    }
+
+    @DgsQuery
+    @NeedsPermission.FlowView
+    public TransformFlowPlanEntity getTransformFlowPlan(@InputArgument String planName) {
         return transformFlowPlanService.getPlanByName(planName);
     }
 
@@ -278,7 +332,7 @@ public class FlowPlanDatafetcher {
         Map<String, List<? extends Flow>> flowMap = new HashMap<>();
         flowMap.put("egressFlows", egressFlowService.getAll());
         flowMap.put("transformFlows", transformFlowService.getAll());
-        flowMap.put("dataSources", dataSourceService.getAll());
+        flowMap.put("dataSources", restDataSourceService.getAll());
 
         return YAML_EXPORTER.writeValueAsString(flowMap);
     }
@@ -289,7 +343,8 @@ public class FlowPlanDatafetcher {
         return SystemFlows.newBuilder()
                 .egress(egressFlowService.getRunningFlows())
                 .transform(transformFlowService.getRunningFlows())
-                .dataSource(dataSourceService.getRunningFlows()).build();
+                .restDataSource(restDataSourceService.getRunningFlows())
+                .timedDataSource(timedDataSourceService.getRunningFlows()).build();
     }
 
     @DgsQuery
@@ -298,7 +353,8 @@ public class FlowPlanDatafetcher {
         return FlowNames.newBuilder()
                 .egress(egressFlowService.getFlowNamesByState(state))
                 .transform(transformFlowService.getFlowNamesByState(state))
-                .dataSource(dataSourceService.getFlowNamesByState(state)).build();
+                .restDataSource(restDataSourceService.getFlowNamesByState(state))
+                .timedDataSource(timedDataSourceService.getFlowNamesByState(state)).build();
     }
 
     @DgsQuery
@@ -307,16 +363,18 @@ public class FlowPlanDatafetcher {
         return SystemFlows.newBuilder()
                 .egress(egressFlowService.getAllUncached())
                 .transform(transformFlowService.getAllUncached())
-                .dataSource(dataSourceService.getAllUncached()).build();
+                .restDataSource(restDataSourceService.getAllUncached())
+                .timedDataSource(timedDataSourceService.getAllUncached()).build();
     }
 
     @DgsQuery
     @NeedsPermission.FlowView
     public SystemFlowPlans getAllFlowPlans() {
         return SystemFlowPlans.newBuilder()
-                .egressPlans(egressFlowPlanService.getAll())
-                .transformPlans(transformFlowPlanService.getAll())
-                .dataSources(dataSourcePlanService.getAll()).build();
+                .egressPlans(egressFlowPlanService.getAll().stream().map(f -> (EgressFlowPlan) f.toFlowPlan()).toList())
+                .transformPlans(transformFlowPlanService.getAll().stream().map(f -> (TransformFlowPlan) f.toFlowPlan()).toList())
+                .restDataSources(restDataSourcePlanService.getAll().stream().map(f -> (RestDataSourcePlan) f.toFlowPlan()).toList())
+                .timedDataSources(timedDataSourcePlanService.getAll().stream().map(f -> (TimedDataSourcePlan) f.toFlowPlan()).toList()).build();
     }
 
     @DgsQuery
@@ -332,7 +390,8 @@ public class FlowPlanDatafetcher {
         actionFamilyMap.put(ActionType.INGRESS, INGRESS_FAMILY);
         egressFlowService.getAll().forEach(flow -> flow.updateActionNamesByFamily(actionFamilyMap));
         transformFlowService.getAll().forEach(flow -> flow.updateActionNamesByFamily(actionFamilyMap));
-        dataSourceService.getAll().forEach(flow -> flow.updateActionNamesByFamily(actionFamilyMap));
+        restDataSourceService.getAll().forEach(flow -> flow.updateActionNamesByFamily(actionFamilyMap));
+        timedDataSourceService.getAll().forEach(flow -> flow.updateActionNamesByFamily(actionFamilyMap));
         return actionFamilyMap.values();
     }
 
@@ -346,7 +405,7 @@ public class FlowPlanDatafetcher {
         return flowPlanService.removePlan(flowPlanName, systemPluginService.getSystemPluginCoordinates());
     }
 
-    private <T extends FlowPlan, R extends Flow, S extends FlowSnapshot> R saveFlowPlan(FlowPlanService<T, R, S> flowPlanService, Object input, Class<T> clazz) {
+    private <T extends FlowPlanEntity, R extends Flow, S extends FlowSnapshot> R saveFlowPlan(FlowPlanService<T, R, S> flowPlanService, Object input, Class<T> clazz) {
         T flowPlan = OBJECT_MAPPER.convertValue(input, clazz);
         flowPlan.setSourcePlugin(systemPluginService.getSystemPluginCoordinates());
         return flowPlanService.saveFlowPlan(flowPlan);

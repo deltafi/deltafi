@@ -60,7 +60,7 @@ class StateMachineTest {
 
     @Spy private final Clock clock = new TestClock();
 
-    @Mock private DataSourceService dataSourceService;
+    @Mock private RestDataSourceService restDataSourceService;
     @Mock private TransformFlowService transformFlowService;
     @Mock private EgressFlowService egressFlowService;
     @Mock private DeltaFiPropertiesService deltaFiPropertiesService;

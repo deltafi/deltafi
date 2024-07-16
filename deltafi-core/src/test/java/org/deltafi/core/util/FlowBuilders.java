@@ -21,7 +21,6 @@ import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
 import org.deltafi.core.types.*;
-import org.deltafi.core.types.DataSource;
 
 import java.util.List;
 
@@ -31,7 +30,7 @@ import static org.deltafi.core.util.Constants.*;
 public class FlowBuilders {
     public static final String TRANSFORM_TOPIC = "transform-topic";
     public static final String EGRESS_TOPIC = "egress-topic";
-    public static DataSource buildRestDataSource(FlowState flowState) {
+    public static RestDataSource buildRestDataSource(FlowState flowState) {
         RestDataSource dataSource = new RestDataSource();
         dataSource.setName(REST_DATA_SOURCE_NAME);
         dataSource.getFlowStatus().setState(flowState);
@@ -40,13 +39,13 @@ public class FlowBuilders {
         return dataSource;
     }
 
-    public static DataSource buildTimedDataSource(FlowState flowState) {
+    public static TimedDataSource buildTimedDataSource(FlowState flowState) {
         ActionConfiguration tic = new ActionConfiguration("SampleTimedIngressAction", ActionType.TIMED_INGRESS, "type");
 
         return buildDataSource(TIMED_DATA_SOURCE_NAME, tic, flowState, false, "*/5 * * * * *", TRANSFORM_TOPIC);
     }
 
-    public static DataSource buildTimedDataSourceError(FlowState flowState) {
+    public static TimedDataSource buildTimedDataSourceError(FlowState flowState) {
         ActionConfiguration tic = new ActionConfiguration("SampleTimedIngressErrorAction", ActionType.TIMED_INGRESS, "type");
 
         return buildDataSource(TIMED_DATA_SOURCE_ERROR_NAME, tic, flowState, false, "*/5 * * * * *", MISSING_PUBLISH_TOPIC);
@@ -132,14 +131,14 @@ public class FlowBuilders {
         return transformFlow;
     }
 
-    public static TransformFlowPlan buildTransformFlowPlan(String name, String groupId, String artifactId, String version) {
+    public static TransformFlowPlanEntity buildTransformFlowPlan(String name, String groupId, String artifactId, String version) {
         PluginCoordinates pluginCoordinates = PluginCoordinates.builder()
                 .groupId(groupId).artifactId(artifactId).version(version).build();
         return buildTransformFlowPlan(name, pluginCoordinates);
     }
 
-    public static TransformFlowPlan buildTransformFlowPlan(String name, PluginCoordinates pluginCoordinates) {
-        TransformFlowPlan transformFlowPlan = new TransformFlowPlan(name, FlowType.TRANSFORM, "desc");
+    public static TransformFlowPlanEntity buildTransformFlowPlan(String name, PluginCoordinates pluginCoordinates) {
+        TransformFlowPlanEntity transformFlowPlan = new TransformFlowPlanEntity(name, "desc");
         transformFlowPlan.setSourcePlugin(pluginCoordinates);
         return transformFlowPlan;
     }

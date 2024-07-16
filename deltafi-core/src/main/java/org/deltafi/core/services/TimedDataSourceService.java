@@ -18,20 +18,15 @@
 package org.deltafi.core.services;
 
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.types.DataSourcePlan;
 import org.deltafi.common.types.IngressStatus;
-import org.deltafi.core.converters.DataSourcePlanConverter;
+import org.deltafi.core.converters.TimedDataSourcePlanConverter;
 import org.deltafi.core.generated.types.FlowState;
-import org.deltafi.core.repo.DataSourceRepo;
+import org.deltafi.core.repo.TimedDataSourceRepo;
 import org.deltafi.core.snapshot.SystemSnapshot;
-import org.deltafi.core.snapshot.types.DataSourceSnapshot;
 import org.deltafi.core.snapshot.types.RestDataSourceSnapshot;
 import org.deltafi.core.snapshot.types.TimedDataSourceSnapshot;
-import org.deltafi.core.types.DataSource;
-import org.deltafi.core.types.RestDataSource;
-import org.deltafi.core.types.Result;
-import org.deltafi.core.types.TimedDataSource;
-import org.deltafi.core.validation.DataSourceValidator;
+import org.deltafi.core.types.*;
+import org.deltafi.core.validation.TimedDataSourceValidator;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.scheduling.support.CronExpression;
 import org.springframework.stereotype.Service;
@@ -45,17 +40,19 @@ import java.util.UUID;
 
 @Service
 @Slf4j
-public class DataSourceService extends FlowService<DataSourcePlan, DataSource, DataSourceSnapshot> {
+public class TimedDataSourceService extends FlowService<TimedDataSourcePlanEntity, TimedDataSource, TimedDataSourceSnapshot> {
 
-    private static final DataSourcePlanConverter TIMED_DATA_SOURCE_FLOW_PLAN_CONVERTER = new DataSourcePlanConverter();
+    private static final TimedDataSourcePlanConverter TIMED_DATA_SOURCE_FLOW_PLAN_CONVERTER = new TimedDataSourcePlanConverter();
 
     private final Clock clock;
+    private final TimedDataSourceRepo timedDataSourceRepo;
 
-    public DataSourceService(DataSourceRepo dataSourceRepo, PluginVariableService pluginVariableService,
-                             DataSourceValidator dataSourceValidator, BuildProperties buildProperties, Clock clock) {
-        super("dataSource", dataSourceRepo, pluginVariableService, TIMED_DATA_SOURCE_FLOW_PLAN_CONVERTER,
-                dataSourceValidator, buildProperties);
+    public TimedDataSourceService(TimedDataSourceRepo timedDataSourceRepo, PluginVariableService pluginVariableService,
+                                  TimedDataSourceValidator restDataSourceValidator, BuildProperties buildProperties, Clock clock) {
+        super("dataSource", timedDataSourceRepo, pluginVariableService, TIMED_DATA_SOURCE_FLOW_PLAN_CONVERTER,
+                restDataSourceValidator, buildProperties);
 
+        this.timedDataSourceRepo = timedDataSourceRepo;
         this.clock = clock;
     }
 
@@ -75,40 +72,8 @@ public class DataSourceService extends FlowService<DataSourcePlan, DataSource, D
         return null;
     }
 
-    public TimedDataSource getRunningTimedDataSource(String name) {
-        return getRunningFromCache(name, TimedDataSource.class);
-    }
-
-    public TimedDataSource getTimedDataSource(String name) {
-        return getFromDataBase(name, TimedDataSource.class);
-    }
-
-    public RestDataSource getRunningRestDataSource(String name) {
-        return getRunningFromCache(name, RestDataSource.class);
-    }
-
-    public RestDataSource getRestDataSource(String name) {
-        return getFromDataBase(name, RestDataSource.class);
-    }
-
-    private <T> T getRunningFromCache(String name, Class<T> type) {
-        return castObjectToType(getRunningFlowByName(name), type);
-    }
-
-    private <T> T getFromDataBase(String name, Class<T> type) {
-        return castObjectToType(getFlowOrThrow(name), type);
-    }
-
-    private <T> T castObjectToType(DataSource dataSource, Class<T> type) {
-        if (dataSource.getClass().isAssignableFrom(type)) {
-            return type.cast(dataSource);
-        }
-
-        throw new IllegalArgumentException("Data source %s is %s instead of %s".formatted(dataSource.getName(), type.getName(), dataSource.getClass().getName()));
-    }
-
     @Override
-    void copyFlowSpecificFields(DataSource sourceFlow, DataSource targetFlow) {
+    void copyFlowSpecificFields(TimedDataSource sourceFlow, TimedDataSource targetFlow) {
         sourceFlow.copyFields(targetFlow);
     }
 
@@ -129,29 +94,24 @@ public class DataSourceService extends FlowService<DataSourcePlan, DataSource, D
     }
 
     @Override
-    public List<DataSourceSnapshot> getFlowSnapshots(SystemSnapshot systemSnapshot) {
-        List<DataSourceSnapshot> dataSourceSnapshots = new ArrayList<>();
-        dataSourceSnapshots.addAll(systemSnapshot.getRestDataSources());
-        dataSourceSnapshots.addAll(systemSnapshot.getTimedDataSources());
-        return dataSourceSnapshots;
+    public List<TimedDataSourceSnapshot> getFlowSnapshots(SystemSnapshot systemSnapshot) {
+        return systemSnapshot.getTimedDataSources();
     }
 
     @Override
-    public boolean flowSpecificUpdateFromSnapshot(DataSource flow, DataSourceSnapshot dataSourceSnapshot, Result result) {
+    protected Class<TimedDataSourcePlanEntity> getFlowPlanClass() {
+        return TimedDataSourcePlanEntity.class;
+    }
+
+    @Override
+    public boolean flowSpecificUpdateFromSnapshot(TimedDataSource flow, TimedDataSourceSnapshot dataSourceSnapshot, Result result) {
         boolean changed = false;
         if (!Objects.equals(flow.getTopic(), dataSourceSnapshot.getTopic())) {
             flow.setTopic(dataSourceSnapshot.getTopic());
             changed = true;
         }
 
-        if (flow instanceof TimedDataSource timedDataSource && dataSourceSnapshot instanceof TimedDataSourceSnapshot timedDataSourceSnapshot) {
-            return flowSpecificUpdateFromSnapshot(timedDataSource, timedDataSourceSnapshot) || changed;
-        } else if (flow instanceof RestDataSource && dataSourceSnapshot instanceof RestDataSourceSnapshot) {
-            return changed;
-        }
-
-        log.warn("Invalid flow and snapshot types ({} with {})", flow.getClass().getName(), dataSourceSnapshot.getClass().getName());
-        return false;
+        return flowSpecificUpdateFromSnapshot(flow, dataSourceSnapshot) || changed;
     }
 
     private boolean flowSpecificUpdateFromSnapshot(TimedDataSource dataSource, TimedDataSourceSnapshot timedDataSourceSnapshot) {
@@ -174,7 +134,7 @@ public class DataSourceService extends FlowService<DataSourcePlan, DataSource, D
      * @return A {@code boolean} value indicating whether the update was successful (true) or not (false).
      */
     public boolean setCronSchedule(String flowName, String cronSchedule) {
-        TimedDataSource flow = getTimedDataSource(flowName);
+        TimedDataSource flow = getFlowOrThrow(flowName);
 
         if (flow.getCronSchedule().equals(cronSchedule)) {
             log.warn("Tried to set cron schedule on timed data source {} to \"{}\" when already set", flowName, cronSchedule);
@@ -182,8 +142,7 @@ public class DataSourceService extends FlowService<DataSourcePlan, DataSource, D
         }
 
         CronExpression cronExpression = CronExpression.parse(cronSchedule);
-        if (((DataSourceRepo) flowRepo).updateCronSchedule(flowName, cronSchedule,
-                cronExpression.next(OffsetDateTime.now(clock)))) {
+        if (timedDataSourceRepo.updateCronSchedule(flowName, cronSchedule, cronExpression.next(OffsetDateTime.now(clock)))) {
             refreshCache();
             return true;
         }
@@ -202,7 +161,7 @@ public class DataSourceService extends FlowService<DataSourcePlan, DataSource, D
      * @return A {@code boolean} value indicating whether the update was successful (true) or not (false).
      */
     public boolean setMemo(String flowName, String memo) {
-        TimedDataSource flow = getTimedDataSource(flowName);
+        TimedDataSource flow = getFlowOrThrow(flowName);
 
         if ((flow.getMemo() == null && memo == null) ||
                 (flow.getMemo() != null && flow.getMemo().equals(memo))) {
@@ -215,7 +174,7 @@ public class DataSourceService extends FlowService<DataSourcePlan, DataSource, D
             return false;
         }
 
-        if (((DataSourceRepo) flowRepo).updateMemo(flowName, memo)) {
+        if (timedDataSourceRepo.updateMemo(flowName, memo)) {
             refreshCache();
             return true;
         }
@@ -223,19 +182,18 @@ public class DataSourceService extends FlowService<DataSourcePlan, DataSource, D
         return false;
     }
 
-    public boolean setLastRun(String flowName, OffsetDateTime lastRun, UUID currentDid) {
-        if (((DataSourceRepo) flowRepo).updateLastRun(flowName, lastRun, currentDid)) {
+    public void setLastRun(String flowName, OffsetDateTime lastRun, UUID currentDid) {
+        if (timedDataSourceRepo.updateLastRun(flowName, lastRun, currentDid)) {
             refreshCache();
-            return true;
         }
 
-        return false;
     }
 
     public boolean completeExecution(String flowName, UUID currentDid, String memo, boolean executeImmediate,
                                      IngressStatus status, String statusMessage, String cronSchedule) {
         CronExpression cronExpression = CronExpression.parse(cronSchedule);
-        if (((DataSourceRepo) flowRepo).completeExecution(flowName, currentDid, memo, executeImmediate,
+
+        if (timedDataSourceRepo.completeExecution(flowName, currentDid, memo, executeImmediate,
                 status == null ? IngressStatus.HEALTHY : status, statusMessage, cronExpression.next(OffsetDateTime.now(clock)))) {
             refreshCache();
             return true;

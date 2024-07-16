@@ -168,13 +168,15 @@ type Flows {
 
 type SystemFlows {
   egress: [EgressFlow]!
-  dataSource: [DataSource]!
+  restDataSource: [RestDataSource]!
+  timedDataSource: [TimedDataSource]!
   transform: [TransformFlow]!
 }
 
 type SystemFlowPlans {
   egressPlans: [EgressFlowPlan]!
-  dataSources: [DataSourcePlan]!
+  restDataSources: [RestDataSourcePlan]!
+  timedDataSources: [TimedDataSourcePlan]!
   transformPlans: [TransformFlowPlan]!
 }
 
@@ -252,7 +254,8 @@ type ActionFamily {
 type FlowNames {
   egress: [String]!
   transform: [String]!
-  dataSource: [String]!
+  restDataSource: [String]!
+  timedDataSource: [String]!
 }
 
 type IngressFlowErrorState {

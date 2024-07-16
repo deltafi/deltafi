@@ -29,6 +29,7 @@ import org.deltafi.core.snapshot.types.TransformFlowSnapshot;
 import org.deltafi.core.types.Flow;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.types.TransformFlow;
+import org.deltafi.core.types.TransformFlowPlanEntity;
 import org.deltafi.core.validation.TransformFlowValidator;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
@@ -40,7 +41,7 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
-public class TransformFlowService extends FlowService<TransformFlowPlan, TransformFlow, TransformFlowSnapshot> implements SubscriberService {
+public class TransformFlowService extends FlowService<TransformFlowPlanEntity, TransformFlow, TransformFlowSnapshot> implements SubscriberService {
 
     private static final TransformFlowPlanConverter TRANSFORM_FLOW_PLAN_CONVERTER = new TransformFlowPlanConverter();
 
@@ -63,6 +64,11 @@ public class TransformFlowService extends FlowService<TransformFlowPlan, Transfo
     @Override
     void copyFlowSpecificFields(TransformFlow sourceFlow, TransformFlow targetFlow) {
         targetFlow.setMaxErrors(sourceFlow.getMaxErrors());
+    }
+
+    @Override
+    protected Class<TransformFlowPlanEntity> getFlowPlanClass() {
+        return TransformFlowPlanEntity.class;
     }
 
     @Override

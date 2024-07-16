@@ -17,10 +17,9 @@
  */
 package org.deltafi.core.repo;
 
-import org.deltafi.common.types.EgressFlowPlan;
+import org.deltafi.core.types.TimedDataSource;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface EgressFlowPlanRepo extends FlowPlanRepo<EgressFlowPlan> {
-
+public interface TimedDataSourceRepo extends FlowRepo<TimedDataSource>, TimedDataSourceRepoCustom {
 }

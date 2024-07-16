@@ -17,26 +17,36 @@
  */
 package org.deltafi.core.repo;
 
+import jakarta.transaction.Transactional;
+import org.deltafi.common.types.FlowType;
 import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.common.types.FlowPlan;
-import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.data.mongodb.repository.Query;
-import org.springframework.data.mongodb.repository.Update;
-import org.springframework.data.repository.NoRepositoryBean;
+import org.deltafi.core.types.FlowPlanEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import static org.deltafi.core.plugin.SystemPluginService.SYSTEM_PLUGIN_ARTIFACT_ID;
 import static org.deltafi.core.plugin.SystemPluginService.SYSTEM_PLUGIN_GROUP_ID;
 
-@NoRepositoryBean
-public interface FlowPlanRepo<T extends FlowPlan> extends MongoRepository<T, String> {
+@Repository
+public interface FlowPlanRepo extends JpaRepository<FlowPlanEntity, UUID> {
+
+    List<FlowPlanEntity> findByType(final FlowType type);
+    Optional<FlowPlanEntity> findByNameAndType(final String name, final FlowType type);
 
     /**
      * Delete any flow plans where the source plugin matches the plugin coordinates
      * @param pluginCoordinates the plugin coordinates to match
      * @return - the number of flow plans deleted
      */
+    @Transactional
+    @Modifying
+    @Query("DELETE FROM FlowPlanEntity f WHERE f.sourcePlugin = :pluginCoordinates")
     int deleteBySourcePlugin(PluginCoordinates pluginCoordinates);
 
     /**
@@ -44,7 +54,7 @@ public interface FlowPlanRepo<T extends FlowPlan> extends MongoRepository<T, Str
      * @param sourcePlugin PluginCoordinates to search by
      * @return the flow plans with the given sourcePlugin
      */
-    List<T> findBySourcePlugin(PluginCoordinates sourcePlugin);
+    List<FlowPlanEntity> findBySourcePlugin(PluginCoordinates sourcePlugin);
 
     /**
      * Find the flow plans with the given groupId and artifactId
@@ -52,14 +62,19 @@ public interface FlowPlanRepo<T extends FlowPlan> extends MongoRepository<T, Str
      * @param artifactId plugin artifactId to search by
      * @return the flow plans with the given groupId and artifactId
      */
-    @Query("{ 'sourcePlugin.groupId': ?0, 'sourcePlugin.artifactId': ?1 }")
-    List<T> findByGroupIdAndArtifactId(String groupId, String artifactId);
+    @Query(value = "SELECT * FROM flow_plan WHERE source_plugin->>'groupId' = :groupId AND source_plugin->>'artifactId' = :artifactId", nativeQuery = true)
+    List<FlowPlanEntity> findByGroupIdAndArtifactId(String groupId, String artifactId);
 
     /**
      * Update the system-plugin flow plans sourcePlugin version to the current running version
      * @param version current running version
      */
-    @Query("{ 'sourcePlugin.groupId': '" + SYSTEM_PLUGIN_GROUP_ID + "', 'sourcePlugin.artifactId': '" + SYSTEM_PLUGIN_ARTIFACT_ID + "'}")
-    @Update("{ '$set' : { 'sourcePlugin.version' : ?0 } }")
+    @Transactional
+    @Modifying
+    @Query(value = "UPDATE flow_plan " +
+            "SET source_plugin = jsonb_set(source_plugin, '{version}', to_jsonb(:version)) " +
+            "WHERE source_plugin->>'groupId' = '" + SYSTEM_PLUGIN_GROUP_ID + "' " +
+            "AND source_plugin->>'artifactId' = '" + SYSTEM_PLUGIN_ARTIFACT_ID + "'",
+            nativeQuery = true)
     void updateSystemPluginFlowPlanVersions(String version);
 }

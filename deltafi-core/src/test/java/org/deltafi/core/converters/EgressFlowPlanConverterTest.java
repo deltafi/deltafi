@@ -27,6 +27,7 @@ import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.types.EgressFlow;
+import org.deltafi.core.types.EgressFlowPlanEntity;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -45,7 +46,7 @@ class EgressFlowPlanConverterTest {
 
     @Test
     void testConverter() throws IOException {
-        EgressFlowPlan flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-egress-flowplan-test.json"), EgressFlowPlan.class);
+        EgressFlowPlanEntity flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-egress-flowplan-test.json"), EgressFlowPlanEntity.class);
         EgressFlow egressFlow = egressFlowPlanConverter.convert(flowPlan, variables());
 
         assertThat(egressFlow.getName()).isEqualTo("passthrough");
@@ -56,7 +57,7 @@ class EgressFlowPlanConverterTest {
 
     @Test
     void testUnresolvedPlaceholder() throws IOException {
-        EgressFlowPlan flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-egress-flowplan-unresolved-test.json"), EgressFlowPlan.class);
+        EgressFlowPlanEntity flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-egress-flowplan-unresolved-test.json"), EgressFlowPlanEntity.class);
         EgressFlow egressFlow = egressFlowPlanConverter.convert(flowPlan, variables());
 
         assertThat(egressFlow.getFlowStatus().getState()).isEqualTo(FlowState.INVALID);

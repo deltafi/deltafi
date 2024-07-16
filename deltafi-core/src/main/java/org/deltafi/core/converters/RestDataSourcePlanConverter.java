@@ -15,16 +15,16 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.validation;
+package org.deltafi.core.converters;
 
-import org.deltafi.common.rules.RuleValidator;
-import org.deltafi.common.types.TransformFlowPlan;
-import org.deltafi.core.types.TransformFlowPlanEntity;
-import org.springframework.stereotype.Service;
+import org.deltafi.core.types.*;
 
-@Service
-public class TransformFlowPlanValidator extends FlowPlanValidator<TransformFlowPlanEntity> {
-    protected TransformFlowPlanValidator(RuleValidator ruleValidator) {
-        super(ruleValidator);
+public class RestDataSourcePlanConverter extends FlowPlanConverter<RestDataSourcePlanEntity, RestDataSource> {
+
+    @Override
+    public RestDataSource createFlow(RestDataSourcePlanEntity dataSourcePlan, FlowPlanPropertyHelper flowPlanPropertyHelper) {
+        RestDataSource restDataSource = new RestDataSource();
+        restDataSource.setTopic(dataSourcePlan.getTopic());
+        return restDataSource;
     }
 }

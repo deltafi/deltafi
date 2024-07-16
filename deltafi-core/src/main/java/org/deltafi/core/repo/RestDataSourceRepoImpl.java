@@ -17,8 +17,14 @@
  */
 package org.deltafi.core.repo;
 
-import org.deltafi.common.types.DataSourcePlan;
-import org.springframework.stereotype.Repository;
+import lombok.extern.slf4j.Slf4j;
+import org.deltafi.core.types.RestDataSource;
+import org.springframework.data.mongodb.core.MongoTemplate;
 
-@Repository
-public interface DataSourcePlanRepo extends FlowPlanRepo<DataSourcePlan> {}
+@SuppressWarnings("unused")
+@Slf4j
+public class RestDataSourceRepoImpl extends BaseFlowRepoImpl<RestDataSource> implements RestDataSourceRepoCustom {
+    public RestDataSourceRepoImpl(MongoTemplate mongoTemplate) {
+        super(mongoTemplate, RestDataSource.class);
+    }
+}

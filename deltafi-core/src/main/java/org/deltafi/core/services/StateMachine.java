@@ -37,7 +37,7 @@ import static org.deltafi.common.constant.DeltaFiConstants.SYNTHETIC_EGRESS_ACTI
 @Slf4j
 public class StateMachine {
     private final Clock clock;
-    private final DataSourceService dataSourceService;
+    private final RestDataSourceService restDataSourceService;
     private final TransformFlowService transformFlowService;
     private final EgressFlowService egressFlowService;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
@@ -191,7 +191,7 @@ public class StateMachine {
 
     private Flow getFlow(DeltaFileFlow flow) {
         return switch (flow.getType()) {
-            case REST_DATA_SOURCE, TIMED_DATA_SOURCE -> dataSourceService.getRunningFlowByName(flow.getName());
+            case REST_DATA_SOURCE, TIMED_DATA_SOURCE -> restDataSourceService.getRunningFlowByName(flow.getName());
             case TRANSFORM -> transformFlowService.getRunningFlowByName(flow.getName());
             default -> throw new IllegalArgumentException("Unexpected value: " + flow.getType());
         };

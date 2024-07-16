@@ -19,26 +19,26 @@ package org.deltafi.core.services;
 
 import org.deltafi.common.types.FlowType;
 import org.deltafi.core.repo.FlowPlanRepo;
-import org.deltafi.core.snapshot.types.TransformFlowSnapshot;
-import org.deltafi.core.types.TransformFlow;
-import org.deltafi.core.types.TransformFlowPlanEntity;
-import org.deltafi.core.validation.TransformFlowPlanValidator;
+import org.deltafi.core.snapshot.types.TimedDataSourceSnapshot;
+import org.deltafi.core.types.TimedDataSource;
+import org.deltafi.core.types.TimedDataSourcePlanEntity;
+import org.deltafi.core.validation.TimedDataSourcePlanValidator;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
 @Service
-public class TransformFlowPlanService extends FlowPlanService<TransformFlowPlanEntity, TransformFlow, TransformFlowSnapshot> {
-    public TransformFlowPlanService(TransformFlowPlanValidator transformFlowPlanValidator, FlowPlanRepo flowPlanRepo, TransformFlowService flowService, BuildProperties buildProperties) {
-        super(transformFlowPlanValidator, flowPlanRepo, flowService, buildProperties);
+public class TimedDataSourcePlanService extends FlowPlanService<TimedDataSourcePlanEntity, TimedDataSource, TimedDataSourceSnapshot> {
+    public TimedDataSourcePlanService(TimedDataSourcePlanValidator dataSourcePlanValidator, FlowPlanRepo flowPlanRepo, TimedDataSourceService flowService, BuildProperties buildProperties) {
+        super(dataSourcePlanValidator, flowPlanRepo, flowService, buildProperties);
     }
 
     @Override
     protected FlowType getFlowType() {
-        return FlowType.TRANSFORM;
+        return FlowType.TIMED_DATA_SOURCE;
     }
 
     @Override
-    protected Class<TransformFlowPlanEntity> getFlowPlanClass() {
-        return TransformFlowPlanEntity.class;
+    protected Class<TimedDataSourcePlanEntity> getFlowPlanClass() {
+        return TimedDataSourcePlanEntity.class;
     }
 }

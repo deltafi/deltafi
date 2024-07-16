@@ -24,7 +24,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
-import org.deltafi.common.types.FlowPlan;
+import org.deltafi.common.types.FlowType;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.snapshot.types.FlowSnapshot;
 import org.deltafi.core.types.*;
@@ -38,15 +38,11 @@ import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.validation.FlowPlanValidator;
 import org.springframework.boot.info.BuildProperties;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
-public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends Flow, FlowSnapshotT extends FlowSnapshot> implements PluginCleaner, Snapshotter {
+public abstract class FlowPlanService<FlowPlanT extends FlowPlanEntity, FlowT extends Flow, FlowSnapshotT extends FlowSnapshot> implements PluginCleaner, Snapshotter {
 
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .registerModule(new JavaTimeModule())
@@ -54,7 +50,7 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
             .setSerializationInclusion(JsonInclude.Include.ALWAYS);
 
     private final FlowPlanValidator<FlowPlanT> flowPlanValidator;
-    private final FlowPlanRepo<FlowPlanT> flowPlanRepo;
+    private final FlowPlanRepo flowPlanRepo;
     private final FlowService<FlowPlanT, FlowT, FlowSnapshotT> flowService;
     private final BuildProperties buildProperties;
 
@@ -72,10 +68,10 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
     public void upgradeFlowPlans(PluginCoordinates sourcePlugin, List<FlowPlanT> flowPlans) {
         flowPlanRepo.saveAll(flowPlans);
 
-        Set<String> flowPlanNames = flowPlans.stream().map(FlowPlan::getName).collect(Collectors.toSet());
-        Set<String> flowPlansToRemove = flowPlanRepo.findByGroupIdAndArtifactId(sourcePlugin.getGroupId(), sourcePlugin.getArtifactId()).stream()
-                .map(FlowPlan::getName)
-                .filter(name -> !flowPlanNames.contains(name))
+        Set<String> flowPlanNames = flowPlans.stream().map(FlowPlanEntity::getName).collect(Collectors.toSet());
+        Set<UUID> flowPlansToRemove = flowPlanRepo.findByGroupIdAndArtifactId(sourcePlugin.getGroupId(), sourcePlugin.getArtifactId()).stream()
+                .filter(flowPlan -> !flowPlanNames.contains(flowPlan.getName()))
+                .map(FlowPlanEntity::getId)
                 .collect(Collectors.toSet());
 
         if (!flowPlansToRemove.isEmpty()) {
@@ -100,8 +96,8 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
 
     public void validateFlowPlan(FlowPlanT flowPlan) {
         PluginCoordinates existingSourcePlugin = flowPlanRepo
-                .findById(flowPlan.getName())
-                .map(FlowPlan::getSourcePlugin)
+                .findByNameAndType(flowPlan.getName(), getFlowType())
+                .map(FlowPlanEntity::getSourcePlugin)
                 .orElse(flowPlan.getSourcePlugin());
 
         if (!existingSourcePlugin.equalsIgnoreVersion(flowPlan.getSourcePlugin())) {
@@ -121,13 +117,16 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
         return flowService.buildAndSaveFlow(flowPlanRepo.save(flowPlan));
     }
 
+    protected abstract FlowType getFlowType();
+
     public void rebuildInvalidFlows() {
         List<String> invalidFlows = flowService.getNamesOfInvalidFlow();
 
-        Map<PluginCoordinates, List<FlowPlanT>> flowPlans = invalidFlows.stream()
-                .map(name -> flowPlanRepo.findById(name).orElse(null))
-                .filter(Objects::nonNull)
-                .collect(Collectors.groupingBy(FlowPlanT::getSourcePlugin));
+        Map<PluginCoordinates, List<FlowPlanEntity>> flowPlans = invalidFlows.stream()
+                .map(name -> flowPlanRepo.findByNameAndType(name, getFlowType()))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.groupingBy(FlowPlanEntity::getSourcePlugin));
 
         flowPlans.forEach((pluginCoordinates, plans) -> flowService.rebuildFlows(plans, pluginCoordinates));
     }
@@ -141,12 +140,17 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
         flowService.rebuildFlows(flowPlanRepo.findBySourcePlugin(sourcePlugin), sourcePlugin);
     }
 
+    protected abstract Class<FlowPlanT> getFlowPlanClass();
+
     /**
      * Get all the flow plans
      * @return all flow plans
      */
     public List<FlowPlanT> getAll() {
-        return flowPlanRepo.findAll();
+        return flowPlanRepo.findByType(getFlowType()).stream()
+                .filter(getFlowPlanClass()::isInstance)
+                .map(getFlowPlanClass()::cast)
+                .toList();
     }
 
     /**
@@ -155,7 +159,14 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
      * @return flow plan with the given name
      */
     public FlowPlanT getPlanByName(String flowPlanName) {
-        return flowPlanRepo.findById(flowPlanName)
+        return flowPlanRepo.findByNameAndType(flowPlanName, getFlowType())
+                .map(flowPlan -> {
+                    if (getFlowPlanClass().isInstance(flowPlan)) {
+                        return getFlowPlanClass().cast(flowPlan);
+                    } else {
+                        throw new IllegalStateException("Found flow plan is not of the expected type: " + getFlowPlanClass().getSimpleName());
+                    }
+                })
                 .orElseThrow(() -> new DgsEntityNotFoundException("Could not find a flow plan named " + flowPlanName));
     }
 
@@ -175,14 +186,14 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
      * @return true if the flow plan was removed otherwise false
      */
     public boolean removePlan(String flowPlanName, PluginCoordinates systemPlugin) {
-        FlowPlanT flowPlanT = flowPlanRepo.findById(flowPlanName).orElse(null);
+        FlowPlanEntity flowPlanT = flowPlanRepo.findByNameAndType(flowPlanName, getFlowType()).orElse(null);
         if (flowPlanT != null && !systemPlugin.equalsIgnoreVersion(flowPlanT.getSourcePlugin())) {
             throw new IllegalArgumentException("Flow plan " + flowPlanName + " is not a " + systemPlugin.getArtifactId() + " flow plan and cannot be removed");
         }
 
         flowService.removeByName(flowPlanName, systemPlugin);
         if (flowPlanT != null) {
-            flowPlanRepo.deleteById(flowPlanName);
+            flowPlanRepo.deleteById(flowPlanT.getId());
             return true;
         }
         return false;

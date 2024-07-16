@@ -56,7 +56,7 @@ class DeltaFilesServiceTest {
     private final MockDeltaFiPropertiesService mockDeltaFiPropertiesService = new MockDeltaFiPropertiesService();
 
     private final TransformFlowService transformFlowService;
-    private final DataSourceService dataSourceService;
+    private final RestDataSourceService restDataSourceService;
     private final EgressFlowService egressFlowService;
     private final StateMachine stateMachine;
     private final DeltaFileRepo deltaFileRepo;
@@ -97,7 +97,8 @@ class DeltaFilesServiceTest {
                           @Mock CoreEventQueue coreEventQueue, @Mock ContentStorageService contentStorageService,
                           @Mock ResumePolicyService resumePolicyService, @Mock MetricService metricService,
                           @Mock AnalyticEventService analyticEventService, @Mock CoreAuditLogger coreAuditLogger,
-                          @Mock DeltaFileCacheService deltaFileCacheService, @Mock DataSourceService dataSourceService,
+                          @Mock DeltaFileCacheService deltaFileCacheService, @Mock RestDataSourceService restDataSourceService,
+                          @Mock TimedDataSourceService timedDataSourceService,
                           @Mock QueueManagementService queueManagementService, @Mock QueuedAnnotationRepo queuedAnnotationRepo,
                           @Mock Environment environment, @Mock ScheduledJoinService scheduledJoinService) {
         this.transformFlowService = transformFlowService;
@@ -111,18 +112,18 @@ class DeltaFilesServiceTest {
         this.deltaFileCacheService = deltaFileCacheService;
         this.queueManagementService = queueManagementService;
         this.queuedAnnotationRepo = queuedAnnotationRepo;
-        this.dataSourceService = dataSourceService;
+        this.restDataSourceService = restDataSourceService;
 
         deltaFilesService = new DeltaFilesService(testClock, transformFlowService, egressFlowService, mockDeltaFiPropertiesService,
                 stateMachine, annotationRepo, deltaFileRepo, deltaFileFlowRepo, actionRepo, coreEventQueue, contentStorageService, resumePolicyService,
-                metricService, analyticEventService, coreAuditLogger, new DidMutexService(), deltaFileCacheService, dataSourceService,
-                queueManagementService, queuedAnnotationRepo, environment, scheduledJoinService, new TestUUIDGenerator());
+                metricService, analyticEventService, coreAuditLogger, new DidMutexService(), deltaFileCacheService, restDataSourceService,
+                timedDataSourceService, queueManagementService, queuedAnnotationRepo, environment, scheduledJoinService, new TestUUIDGenerator());
     }
 
     @Test
     void setsAndGets() {
         RestDataSource dataSource = FlowBuilders.buildDataSource("theFlow");
-        when(dataSourceService.getRunningRestDataSource(dataSource.getName())).thenReturn(dataSource);
+        when(restDataSourceService.getRunningFlowByName(dataSource.getName())).thenReturn(dataSource);
 
         UUID did = UUID.randomUUID();
         List<Content> content = Collections.singletonList(new Content("name", "mediaType"));

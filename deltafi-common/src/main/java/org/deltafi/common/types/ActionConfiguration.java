@@ -31,7 +31,6 @@ import java.util.*;
 public class ActionConfiguration {
     private String name;
     private String apiVersion;
-    @JsonIgnore
     private ActionType actionType;
     private String type;
 

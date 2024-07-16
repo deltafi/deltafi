@@ -117,7 +117,8 @@ public class DeltaFilesService {
     private final CoreAuditLogger coreAuditLogger;
     private final DidMutexService didMutexService;
     private final DeltaFileCacheService deltaFileCacheService;
-    private final DataSourceService dataSourceService;
+    private final RestDataSourceService restDataSourceService;
+    private final TimedDataSourceService timedDataSourceService;
     private final QueueManagementService queueManagementService;
     private final QueuedAnnotationRepo queuedAnnotationRepo;
     private final Environment environment;
@@ -455,9 +456,9 @@ public class DeltaFilesService {
     }
 
     public void handleIngressActionEvent(ActionEvent event) {
-        TimedDataSource dataSource = dataSourceService.getRunningTimedDataSource(event.getFlowName());
+        TimedDataSource dataSource = timedDataSourceService.getRunningFlowByName(event.getFlowName());
         IngressEvent ingressEvent = event.getIngress();
-        boolean completedExecution = dataSourceService.completeExecution(dataSource.getName(),
+        boolean completedExecution = timedDataSourceService.completeExecution(dataSource.getName(),
                 event.getDid(), ingressEvent.getMemo(), ingressEvent.isExecuteImmediate(),
                 ingressEvent.getStatus(), ingressEvent.getStatusMessage(), dataSource.getCronSchedule());
         if (!completedExecution) {
@@ -1494,13 +1495,13 @@ public class DeltaFilesService {
         TimedDataSource dataSource;
         if (overrideMemo) {
             // use the stored value so the cached memo value is not overwritten
-            dataSource = dataSourceService.getTimedDataSource(flowName);
+            dataSource = timedDataSourceService.getFlowOrThrow(flowName);
             if (!dataSource.isRunning()) {
                 throw new IllegalStateException("Timed ingress flow '" + flowName + "' cannot be tasked while in a state of " + dataSource.getFlowStatus().getState());
             }
             dataSource.setMemo(memo);
         } else {
-            dataSource = dataSourceService.getRunningTimedDataSource(flowName);
+            dataSource = timedDataSourceService.getRunningFlowByName(flowName);
         }
 
         return taskTimedDataSource(dataSource);
@@ -1510,7 +1511,7 @@ public class DeltaFilesService {
         WrappedActionInput actionInput = dataSource.buildActionInput(getProperties().getSystemName(), OffsetDateTime.now(clock));
         try {
             if (!coreEventQueue.queueHasTaskingForAction(actionInput)) {
-                dataSourceService.setLastRun(dataSource.getName(), OffsetDateTime.now(clock),
+                timedDataSourceService.setLastRun(dataSource.getName(), OffsetDateTime.now(clock),
                         actionInput.getActionContext().getDid());
                 coreEventQueue.putActions(List.of(actionInput), false);
                 return true;

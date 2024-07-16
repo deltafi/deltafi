@@ -20,6 +20,7 @@ package org.deltafi.core.repo;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.IngressStatus;
 import org.deltafi.core.types.DataSource;
+import org.deltafi.core.types.TimedDataSource;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -30,7 +31,7 @@ import java.util.UUID;
 
 @SuppressWarnings("unused")
 @Slf4j
-public class DataSourceRepoImpl extends BaseFlowRepoImpl<DataSource> implements DataSourceRepoCustom {
+public class TimedDataSourceRepoImpl extends BaseFlowRepoImpl<TimedDataSource> implements TimedDataSourceRepoCustom {
 
     private static final String CURRENT_DID = "currentDid";
     private static final String EXECUTE_IMMEDIATE = "executeImmediate";
@@ -41,8 +42,8 @@ public class DataSourceRepoImpl extends BaseFlowRepoImpl<DataSource> implements 
     private static final String NEXT_RUN = "nextRun";
     private static final String MEMO = "memo";
 
-    public DataSourceRepoImpl(MongoTemplate mongoTemplate) {
-        super(mongoTemplate, DataSource.class);
+    public TimedDataSourceRepoImpl(MongoTemplate mongoTemplate) {
+        super(mongoTemplate, TimedDataSource.class);
     }
 
     @Override

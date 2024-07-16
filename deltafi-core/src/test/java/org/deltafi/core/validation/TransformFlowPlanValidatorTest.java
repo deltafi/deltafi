@@ -21,8 +21,8 @@ import org.assertj.core.api.Assertions;
 import org.deltafi.common.rules.RuleValidator;
 import org.deltafi.common.types.*;
 import org.deltafi.core.exceptions.DeltafiConfigurationException;
-import org.deltafi.core.repo.TransformFlowPlanRepo;
-import org.deltafi.common.types.TransformFlowPlan;
+import org.deltafi.core.repo.FlowPlanRepo;
+import org.deltafi.core.types.TransformFlowPlanEntity;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -36,7 +36,7 @@ class TransformFlowPlanValidatorTest {
 
     @Mock
     @SuppressWarnings("unused")
-    TransformFlowPlanRepo transformFlowPlanRepo;
+    FlowPlanRepo flowPlanRepo;
 
     @InjectMocks
     TransformFlowPlanValidator transformFlowPlanValidator;
@@ -51,7 +51,7 @@ class TransformFlowPlanValidatorTest {
         ActionConfiguration transform2 = new ActionConfiguration("transform", ActionType.TRANSFORM, "org.deltafi.transform.Action2");
         ActionConfiguration transform3 = new ActionConfiguration("transform",  ActionType.TRANSFORM, "org.deltafi.transform.Action3");
 
-        TransformFlowPlan transformFlow = new TransformFlowPlan("flow", null);
+        TransformFlowPlanEntity transformFlow = new TransformFlowPlanEntity("flow", null);
         transformFlow.setTransformActions(List.of(transform1, transform2, transform3));
 
         Assertions.assertThatThrownBy(() -> transformFlowPlanValidator.validate(transformFlow))

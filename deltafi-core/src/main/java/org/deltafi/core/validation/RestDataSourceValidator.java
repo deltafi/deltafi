@@ -15,10 +15,26 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.repo;
+package org.deltafi.core.validation;
 
-import org.deltafi.common.types.TransformFlowPlan;
-import org.springframework.stereotype.Repository;
+import lombok.extern.slf4j.Slf4j;
+import org.deltafi.core.generated.types.FlowConfigError;
+import org.deltafi.core.types.RestDataSource;
+import org.springframework.stereotype.Service;
 
-@Repository
-public interface TransformFlowPlanRepo extends FlowPlanRepo<TransformFlowPlan> {}
+import java.util.Collections;
+import java.util.List;
+
+@Slf4j
+@Service
+public class RestDataSourceValidator extends FlowValidator<RestDataSource> {
+
+    public RestDataSourceValidator(SchemaComplianceValidator schemaComplianceValidator) {
+        super(schemaComplianceValidator);
+    }
+
+    @Override
+    public List<FlowConfigError> flowSpecificValidation(RestDataSource dataSource) {
+        return Collections.emptyList();
+    }
+}

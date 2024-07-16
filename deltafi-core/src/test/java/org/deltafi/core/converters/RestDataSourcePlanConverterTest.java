@@ -24,12 +24,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.resource.Resource;
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.ActionType;
-import org.deltafi.common.types.DataSourcePlan;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
 import org.deltafi.core.generated.types.FlowState;
-import org.deltafi.core.types.DataSource;
 import org.deltafi.core.types.TimedDataSource;
+import org.deltafi.core.types.TimedDataSourcePlanEntity;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -39,30 +38,28 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
-class DataSourcePlanConverterTest {
+class RestDataSourcePlanConverterTest {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
             .registerModule(new JavaTimeModule());
-    final DataSourcePlanConverter dataSourcePlanConverter = new DataSourcePlanConverter();
+    final TimedDataSourcePlanConverter timedDataSourcePlanConverter = new TimedDataSourcePlanConverter();
 
     @Test
     void testConverter() throws IOException {
-        DataSourcePlan flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-datasource-plan-test.json"), DataSourcePlan.class);
-        DataSource rawDataSource = dataSourcePlanConverter.convert(flowPlan, Collections.emptyList());
+        TimedDataSourcePlanEntity flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-datasource-plan-test.json"), TimedDataSourcePlanEntity.class);
+        TimedDataSource timedDataSource = timedDataSourcePlanConverter.convert(flowPlan, Collections.emptyList());
 
-        assertThat(rawDataSource).isInstanceOf(TimedDataSource.class);
-        TimedDataSource dataSource = (TimedDataSource) rawDataSource;
-        assertThat(dataSource.getName()).isEqualTo("smoke-test-ingress");
-        assertThat(dataSource.getTimedIngressAction()).isEqualTo(expectedTimedIngressAction());
-        assertThat(dataSource.getCronSchedule()).isEqualTo("*/5 * * * * *");
-        assertThat(dataSource.getFlowStatus().getState()).isEqualTo(FlowState.STOPPED);
-        assertThat(dataSource.getFlowStatus().getTestMode()).isFalse();
+        assertThat(timedDataSource.getName()).isEqualTo("smoke-test-ingress");
+        assertThat(timedDataSource.getTimedIngressAction()).isEqualTo(expectedTimedIngressAction());
+        assertThat(timedDataSource.getCronSchedule()).isEqualTo("*/5 * * * * *");
+        assertThat(timedDataSource.getFlowStatus().getState()).isEqualTo(FlowState.STOPPED);
+        assertThat(timedDataSource.getFlowStatus().getTestMode()).isFalse();
     }
 
     @Test
     void testUnresolvedPlaceholder() throws IOException {
-        DataSourcePlan flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-datasource-plan-unresolved-test.json"), DataSourcePlan.class);
-        DataSource dataSource = dataSourcePlanConverter.convert(flowPlan, Collections.emptyList());
+        TimedDataSourcePlanEntity flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-datasource-plan-unresolved-test.json"), TimedDataSourcePlanEntity.class);
+        TimedDataSource dataSource = timedDataSourcePlanConverter.convert(flowPlan, Collections.emptyList());
 
         assertThat(dataSource.getFlowStatus().getState()).isEqualTo(FlowState.INVALID);
         FlowConfigError expected = FlowConfigError.newBuilder()

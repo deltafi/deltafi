@@ -19,7 +19,7 @@ package org.deltafi.core.validation;
 
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.generated.types.FlowConfigError;
-import org.deltafi.core.types.DataSource;
+import org.deltafi.core.types.TimedDataSource;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -27,14 +27,14 @@ import java.util.List;
 
 @Slf4j
 @Service
-public class DataSourceValidator extends FlowValidator<DataSource> {
+public class TimedDataSourceValidator extends FlowValidator<TimedDataSource> {
 
-    public DataSourceValidator(SchemaComplianceValidator schemaComplianceValidator) {
+    public TimedDataSourceValidator(SchemaComplianceValidator schemaComplianceValidator) {
         super(schemaComplianceValidator);
     }
 
     @Override
-    public List<FlowConfigError> flowSpecificValidation(DataSource dataSource) {
+    public List<FlowConfigError> flowSpecificValidation(TimedDataSource dataSource) {
         return Collections.emptyList();
     }
 }

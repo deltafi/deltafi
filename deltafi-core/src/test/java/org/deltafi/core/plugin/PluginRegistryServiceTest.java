@@ -70,10 +70,16 @@ class PluginRegistryServiceTest {
     TransformFlowService transformFlowService;
 
     @Mock
-    DataSourcePlanService dataSourcePlanService;
+    RestDataSourcePlanService restDataSourcePlanService;
 
     @Mock
-    DataSourceService dataSourceService;
+    TimedDataSourcePlanService timedDataSourcePlanService;
+
+    @Mock
+    RestDataSourceService restDataSourceService;
+
+    @Mock
+    TimedDataSourceService timedDataSourceService;
 
     @Mock
     PluginValidator pluginValidator;
@@ -91,11 +97,13 @@ class PluginRegistryServiceTest {
 
     @BeforeEach
     public void setup() {
-        List<PluginCleaner> cleaners = List.of(egressFlowPlanService, transformFlowPlanService, dataSourcePlanService, pluginVariableService, coreEventQueuePluginCleaner);
-        List<PluginUninstallCheck> checkers = List.of(egressFlowService, transformFlowService, dataSourceService);
-        pluginRegistryService = new PluginRegistryService(egressFlowService,
-                transformFlowService, dataSourceService, pluginRepository, pluginValidator, pluginVariableService,
-                egressFlowPlanService, transformFlowPlanService, dataSourcePlanService, systemPluginService, flowValidationService, checkers, cleaners);
+        List<PluginCleaner> cleaners = List.of(egressFlowPlanService, transformFlowPlanService, restDataSourcePlanService,
+                timedDataSourcePlanService, pluginVariableService, coreEventQueuePluginCleaner);
+        List<PluginUninstallCheck> checkers = List.of(egressFlowService, transformFlowService, restDataSourceService);
+        pluginRegistryService = new PluginRegistryService(egressFlowService, transformFlowService, restDataSourceService,
+                timedDataSourceService, pluginRepository, pluginValidator, pluginVariableService,
+                egressFlowPlanService, transformFlowPlanService, restDataSourcePlanService, timedDataSourcePlanService,
+                systemPluginService, flowValidationService, checkers, cleaners);
     }
 
     @Test
@@ -171,7 +179,7 @@ class PluginRegistryServiceTest {
         Mockito.when(pluginRepository.findById(PLUGIN_COORDINATES_1)).thenReturn(Optional.of(plugin1));
         Mockito.when(pluginRepository.findPluginsWithDependency(PLUGIN_COORDINATES_1)).thenReturn(List.of(plugin1, plugin2));
         Mockito.when(transformFlowService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following ingress flows which are still running: mockIngress");
-        Mockito.when(dataSourceService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following enrich flows which are still running: mockEnrich");
+        Mockito.when(restDataSourceService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following enrich flows which are still running: mockEnrich");
         Mockito.when(egressFlowService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following egress flows which are still running: mockEgress");
 
         List<String> errors = pluginRegistryService.canBeUninstalled(PLUGIN_COORDINATES_1);

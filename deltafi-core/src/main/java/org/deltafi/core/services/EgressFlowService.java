@@ -18,7 +18,6 @@
 package org.deltafi.core.services;
 
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.types.EgressFlowPlan;
 import org.deltafi.common.types.Subscriber;
 import org.deltafi.core.converters.EgressFlowPlanConverter;
 import org.deltafi.core.repo.EgressFlowRepo;
@@ -27,6 +26,7 @@ import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.snapshot.types.EgressFlowSnapshot;
 import org.deltafi.core.types.EgressFlow;
 
+import org.deltafi.core.types.EgressFlowPlanEntity;
 import org.deltafi.core.validation.EgressFlowValidator;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
@@ -38,7 +38,8 @@ import java.util.Set;
 
 @Slf4j
 @Service
-public class EgressFlowService extends FlowService<EgressFlowPlan, EgressFlow, EgressFlowSnapshot> implements SubscriberService {
+public
+class EgressFlowService extends FlowService<EgressFlowPlanEntity, EgressFlow, EgressFlowSnapshot> implements SubscriberService {
 
     private static final EgressFlowPlanConverter EGRESS_FLOW_PLAN_CONVERTER = new EgressFlowPlanConverter();
 
@@ -58,6 +59,11 @@ public class EgressFlowService extends FlowService<EgressFlowPlan, EgressFlow, E
     @Override
     void copyFlowSpecificFields(EgressFlow sourceFlow, EgressFlow targetFlow) {
         targetFlow.setExpectedAnnotations(sourceFlow.getExpectedAnnotations());
+    }
+
+    @Override
+    protected Class<EgressFlowPlanEntity> getFlowPlanClass() {
+        return EgressFlowPlanEntity.class;
     }
 
     /**

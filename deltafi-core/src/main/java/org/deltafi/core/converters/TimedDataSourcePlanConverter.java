@@ -17,33 +17,24 @@
  */
 package org.deltafi.core.converters;
 
-import org.deltafi.common.types.*;
-import org.deltafi.core.types.DataSource;
-import org.deltafi.core.types.RestDataSource;
-import org.deltafi.core.types.TimedDataSource;
+import org.deltafi.common.types.ActionConfiguration;
+import org.deltafi.common.types.ActionType;
+import org.deltafi.core.types.*;
 import org.springframework.scheduling.support.CronExpression;
 
 import java.time.OffsetDateTime;
 
-public class DataSourcePlanConverter extends FlowPlanConverter<DataSourcePlan, DataSource> {
+public class TimedDataSourcePlanConverter extends FlowPlanConverter<TimedDataSourcePlanEntity, TimedDataSource> {
 
     @Override
-    public DataSource createFlow(DataSourcePlan dataSourcePlan, FlowPlanPropertyHelper flowPlanPropertyHelper) {
-        if (dataSourcePlan instanceof TimedDataSourcePlan timedDataSourcePlan) {
-            TimedDataSource timedDataSource = new TimedDataSource();
-            timedDataSource.setTopic(dataSourcePlan.getTopic());
-            populateTimedDataSource(timedDataSourcePlan, timedDataSource, flowPlanPropertyHelper);
-            return timedDataSource;
-        } else if (dataSourcePlan instanceof RestDataSourcePlan restDataSourcePlan) {
-            RestDataSource restDataSource = new RestDataSource();
-            restDataSource.setTopic(dataSourcePlan.getTopic());
-            return restDataSource;
-        }
-
-        throw new IllegalArgumentException("Unexpected flow plan type: " + dataSourcePlan.getClass().getSimpleName());
+    public TimedDataSource createFlow(TimedDataSourcePlanEntity dataSourcePlan, FlowPlanPropertyHelper flowPlanPropertyHelper) {
+        TimedDataSource timedDataSource = new TimedDataSource();
+        timedDataSource.setTopic(dataSourcePlan.getTopic());
+        populateTimedDataSource(dataSourcePlan, timedDataSource, flowPlanPropertyHelper);
+        return timedDataSource;
     }
 
-    void populateTimedDataSource(TimedDataSourcePlan timedDataSourcePlan, TimedDataSource timedDataSource, FlowPlanPropertyHelper flowPlanPropertyHelper) {
+    void populateTimedDataSource(TimedDataSourcePlanEntity timedDataSourcePlan, TimedDataSource timedDataSource, FlowPlanPropertyHelper flowPlanPropertyHelper) {
         timedDataSource.setTimedIngressAction(buildTimedIngressAction(timedDataSourcePlan.getTimedIngressAction(), flowPlanPropertyHelper));
         timedDataSource.setCronSchedule(timedDataSourcePlan.getCronSchedule());
         CronExpression cronExpression = CronExpression.parse(timedDataSourcePlan.getCronSchedule());

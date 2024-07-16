@@ -22,11 +22,12 @@ import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.types.Flow;
 import org.deltafi.common.types.FlowPlan;
+import org.deltafi.core.types.FlowPlanEntity;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class FlowPlanConverter<FlowPlanT extends FlowPlan, FlowT extends Flow> {
+public abstract class FlowPlanConverter<FlowPlanT extends FlowPlanEntity, FlowT extends Flow> {
 
     public FlowT convert(FlowPlanT flowPlan, List<Variable> variables) {
         FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(variables);

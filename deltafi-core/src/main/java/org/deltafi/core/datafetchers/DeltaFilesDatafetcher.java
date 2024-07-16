@@ -32,7 +32,7 @@ import org.deltafi.common.types.*;
 import org.deltafi.core.exceptions.IngressException;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.security.NeedsPermission;
-import org.deltafi.core.services.DataSourceService;
+import org.deltafi.core.services.RestDataSourceService;
 import org.deltafi.core.services.DeltaFilesService;
 import org.deltafi.core.types.*;
 import org.deltafi.core.types.ResumePolicy;
@@ -46,14 +46,14 @@ import java.util.stream.Collectors;
 public class DeltaFilesDatafetcher {
   final DeltaFilesService deltaFilesService;
   final ContentStorageService contentStorageService;
-  final DataSourceService dataSourceService;
+  final RestDataSourceService restDataSourceService;
 
   static final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
-  DeltaFilesDatafetcher(DeltaFilesService deltaFilesService, ContentStorageService contentStorageService, DataSourceService dataSourceService) {
+  DeltaFilesDatafetcher(DeltaFilesService deltaFilesService, ContentStorageService contentStorageService, RestDataSourceService restDataSourceService) {
     this.deltaFilesService = deltaFilesService;
     this.contentStorageService = contentStorageService;
-    this.dataSourceService = dataSourceService;
+    this.restDataSourceService = restDataSourceService;
   }
 
   @DgsData(parentType = "DeltaFile", field = "annotations")
@@ -244,7 +244,7 @@ public class DeltaFilesDatafetcher {
   public int stressTest(@InputArgument String flow, @InputArgument Integer contentSize, @InputArgument Integer numFiles, @InputArgument Map<String, String> metadata, @InputArgument Integer batchSize) throws ObjectStorageException, IngressException {
     RestDataSource restDataSource;
     try {
-      restDataSource = dataSourceService.getRestDataSource(flow);
+      restDataSource = restDataSourceService.getFlowOrThrow(flow);
     } catch (Exception e) {
       throw new IngressException(e.getMessage());
     }

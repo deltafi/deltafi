@@ -1,0 +1,74 @@
+/*
+ *    DeltaFi - Data transformation and enrichment platform
+ *
+ *    Copyright 2021-2023 DeltaFi Contributors <deltafi@deltafi.org>
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+package org.deltafi.core.types;
+
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
+import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import org.deltafi.common.types.*;
+import org.hibernate.annotations.Type;
+
+import java.util.List;
+
+@EqualsAndHashCode(callSuper = true)
+@Entity
+@DiscriminatorValue("TIMED_DATA_SOURCE")
+@Data
+@NoArgsConstructor
+public class TimedDataSourcePlanEntity extends DataSourcePlanEntity {
+    public TimedDataSourcePlanEntity(String name, String description, String topic, ActionConfiguration timedIngressAction, String cronSchedule) {
+        super(name, FlowType.TIMED_DATA_SOURCE, description, topic);
+        this.timedIngressAction = timedIngressAction;
+        this.cronSchedule = cronSchedule;
+    }
+
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
+    private ActionConfiguration timedIngressAction;
+
+    private String cronSchedule;
+
+    @Override
+    public List<ActionConfiguration> allActionConfigurations() {
+        return List.of(timedIngressAction);
+    }
+
+    @Override
+    public FlowPlan toFlowPlan() {
+        return new TimedDataSourcePlan(getName(), FlowType.TIMED_DATA_SOURCE, getDescription(), getTopic(), timedIngressAction, cronSchedule);
+    }
+
+    public static TimedDataSourcePlanEntity fromFlowPlan(FlowPlan flowPlan) {
+        if (!(flowPlan instanceof TimedDataSourcePlan timedDataSourcePlan)) {
+            throw new IllegalArgumentException("Incorrect flow plan type");
+        }
+        TimedDataSourcePlanEntity flowPlanEntity = new TimedDataSourcePlanEntity();
+        flowPlanEntity.setName(timedDataSourcePlan.getName());
+        flowPlanEntity.setDescription(timedDataSourcePlan.getDescription());
+        flowPlanEntity.setTimedIngressAction(timedDataSourcePlan.getTimedIngressAction());
+        flowPlanEntity.setCronSchedule(timedDataSourcePlan.getCronSchedule());
+        flowPlanEntity.setSourcePlugin(timedDataSourcePlan.getSourcePlugin());
+        flowPlanEntity.setTopic(timedDataSourcePlan.getTopic());
+
+        return flowPlanEntity;
+    }
+}

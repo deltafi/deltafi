@@ -24,7 +24,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.SneakyThrows;
 import org.deltafi.core.integration.config.Configuration;
 import org.deltafi.core.plugin.PluginRegistryService;
-import org.deltafi.core.services.DataSourceService;
+import org.deltafi.core.services.RestDataSourceService;
 import org.deltafi.core.services.EgressFlowService;
 import org.deltafi.core.services.TransformFlowService;
 import org.junit.jupiter.api.Test;
@@ -47,24 +47,24 @@ class ConfigurationValidatorTest {
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
             .registerModule(new JavaTimeModule());
 
-    private final DataSourceService dataSourceService;
+    private final RestDataSourceService restDataSourceService;
     private final TransformFlowService transformFlowService;
     private final EgressFlowService egressFlowService;
     private final PluginRegistryService pluginRegistryService;
 
     private final ConfigurationValidator configurationValidator;
 
-    ConfigurationValidatorTest(@Mock DataSourceService dataSourceService,
+    ConfigurationValidatorTest(@Mock RestDataSourceService restDataSourceService,
                                @Mock TransformFlowService transformFlowService,
                                @Mock EgressFlowService egressFlowService,
                                @Mock PluginRegistryService pluginRegistryService) {
-        this.dataSourceService = dataSourceService;
+        this.restDataSourceService = restDataSourceService;
         this.transformFlowService = transformFlowService;
         this.egressFlowService = egressFlowService;
         this.pluginRegistryService = pluginRegistryService;
 
         this.configurationValidator = new ConfigurationValidator(
-                this.dataSourceService,
+                this.restDataSourceService,
                 this.transformFlowService,
                 this.egressFlowService,
                 this.pluginRegistryService);
@@ -76,7 +76,7 @@ class ConfigurationValidatorTest {
         Configuration c = readConfig("config-binary.yaml");
 
         Mockito.when(pluginRegistryService.getPlugins()).thenReturn(new ArrayList<>());
-        Mockito.when(dataSourceService.hasFlow("unarchive-passthrough-rest-data-source")).thenReturn(false);
+        Mockito.when(restDataSourceService.hasFlow("unarchive-passthrough-rest-data-source")).thenReturn(false);
         Mockito.when(transformFlowService.hasFlow("unarchive-passthrough-transform")).thenReturn(false);
         Mockito.when(transformFlowService.hasFlow("passthrough-transform")).thenReturn(false);
         Mockito.when(egressFlowService.hasFlow("passthrough-egress")).thenReturn(false);
