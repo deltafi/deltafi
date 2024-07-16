@@ -390,7 +390,7 @@ class DeltaFiCoreApplicationTests {
 		timedDataSourceRepo.deleteAll();
 		timedDataSourceRepo.save(buildTimedDataSource(FlowState.RUNNING));
 		timedDataSourceRepo.save(buildTimedDataSourceError(FlowState.RUNNING));
-		restDataSourceService.refreshCache();
+		timedDataSourceService.refreshCache();
 	}
 
 	@Test

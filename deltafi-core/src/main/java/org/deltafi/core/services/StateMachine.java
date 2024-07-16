@@ -38,6 +38,7 @@ import static org.deltafi.common.constant.DeltaFiConstants.SYNTHETIC_EGRESS_ACTI
 public class StateMachine {
     private final Clock clock;
     private final RestDataSourceService restDataSourceService;
+    private final TimedDataSourceService timedDataSourceService;
     private final TransformFlowService transformFlowService;
     private final EgressFlowService egressFlowService;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
@@ -191,7 +192,8 @@ public class StateMachine {
 
     private Flow getFlow(DeltaFileFlow flow) {
         return switch (flow.getType()) {
-            case REST_DATA_SOURCE, TIMED_DATA_SOURCE -> restDataSourceService.getRunningFlowByName(flow.getName());
+            case REST_DATA_SOURCE -> restDataSourceService.getRunningFlowByName(flow.getName());
+            case TIMED_DATA_SOURCE -> timedDataSourceService.getRunningFlowByName(flow.getName());
             case TRANSFORM -> transformFlowService.getRunningFlowByName(flow.getName());
             default -> throw new IllegalArgumentException("Unexpected value: " + flow.getType());
         };

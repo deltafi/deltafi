@@ -117,7 +117,6 @@ public class DeltaFilesService {
     private final CoreAuditLogger coreAuditLogger;
     private final DidMutexService didMutexService;
     private final DeltaFileCacheService deltaFileCacheService;
-    private final RestDataSourceService restDataSourceService;
     private final TimedDataSourceService timedDataSourceService;
     private final QueueManagementService queueManagementService;
     private final QueuedAnnotationRepo queuedAnnotationRepo;

@@ -116,7 +116,7 @@ class DeltaFilesServiceTest {
 
         deltaFilesService = new DeltaFilesService(testClock, transformFlowService, egressFlowService, mockDeltaFiPropertiesService,
                 stateMachine, annotationRepo, deltaFileRepo, deltaFileFlowRepo, actionRepo, coreEventQueue, contentStorageService, resumePolicyService,
-                metricService, analyticEventService, coreAuditLogger, new DidMutexService(), deltaFileCacheService, restDataSourceService,
+                metricService, analyticEventService, coreAuditLogger, new DidMutexService(), deltaFileCacheService,
                 timedDataSourceService, queueManagementService, queuedAnnotationRepo, environment, scheduledJoinService, new TestUUIDGenerator());
     }
 

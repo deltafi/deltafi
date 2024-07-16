@@ -19,7 +19,6 @@ package org.deltafi.core.repo;
 
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.IngressStatus;
-import org.deltafi.core.types.DataSource;
 import org.deltafi.core.types.TimedDataSource;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -50,21 +49,21 @@ public class TimedDataSourceRepoImpl extends BaseFlowRepoImpl<TimedDataSource> i
     public boolean updateCronSchedule(String flowName, String cronSchedule, OffsetDateTime nextRun) {
         Query idMatches = Query.query(Criteria.where(ID).is(flowName).and(CRON_SCHEDULE).ne(cronSchedule));
         Update cronScheduleUpdate = Update.update(CRON_SCHEDULE, cronSchedule).set(NEXT_RUN, nextRun);
-        return 1 == mongoTemplate.updateFirst(idMatches, cronScheduleUpdate, DataSource.class).getModifiedCount();
+        return 1 == mongoTemplate.updateFirst(idMatches, cronScheduleUpdate, TimedDataSource.class).getModifiedCount();
     }
 
     @Override
     public boolean updateLastRun(String flowName, OffsetDateTime lastRun, UUID currentDid) {
         Query idMatches = Query.query(Criteria.where(ID).is(flowName));
         Update lastRunUpdate = Update.update(LAST_RUN, lastRun).set(CURRENT_DID, currentDid).set(EXECUTE_IMMEDIATE, false);
-        return 1 == mongoTemplate.updateFirst(idMatches, lastRunUpdate, DataSource.class).getModifiedCount();
+        return 1 == mongoTemplate.updateFirst(idMatches, lastRunUpdate, TimedDataSource.class).getModifiedCount();
     }
 
     @Override
     public boolean updateMemo(String flowName, String memo) {
         Query idMatches = Query.query(Criteria.where(ID).is(flowName));
         Update memoUpdate = Update.update(MEMO, memo);
-        return 1 == mongoTemplate.updateFirst(idMatches, memoUpdate, DataSource.class).getModifiedCount();
+        return 1 == mongoTemplate.updateFirst(idMatches, memoUpdate, TimedDataSource.class).getModifiedCount();
     }
 
     @Override
@@ -73,6 +72,6 @@ public class TimedDataSourceRepoImpl extends BaseFlowRepoImpl<TimedDataSource> i
         Query idMatches = Query.query(Criteria.where(ID).is(flowName).and(CURRENT_DID).is(currentDid));
         Update update = Update.update(CURRENT_DID, null).set(MEMO, memo).set(EXECUTE_IMMEDIATE, executeImmediate)
                 .set(INGRESS_STATUS, status).set(INGRESS_STATUS_MESSAGE, statusMessage).set(NEXT_RUN, nextRun);
-        return 1 == mongoTemplate.updateFirst(idMatches, update, DataSource.class).getModifiedCount();
+        return 1 == mongoTemplate.updateFirst(idMatches, update, TimedDataSource.class).getModifiedCount();
     }
 }
