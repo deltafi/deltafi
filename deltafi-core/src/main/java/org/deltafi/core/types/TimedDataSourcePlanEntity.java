@@ -27,6 +27,7 @@ import lombok.NoArgsConstructor;
 import org.deltafi.common.types.*;
 import org.hibernate.annotations.Type;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @EqualsAndHashCode(callSuper = true)
@@ -49,7 +50,11 @@ public class TimedDataSourcePlanEntity extends DataSourcePlanEntity {
 
     @Override
     public List<ActionConfiguration> allActionConfigurations() {
-        return List.of(timedIngressAction);
+        List<ActionConfiguration> actionConfigurations = new ArrayList<>();
+        if (timedIngressAction != null) {
+            actionConfigurations.add(timedIngressAction);
+        }
+        return actionConfigurations;
     }
 
     @Override

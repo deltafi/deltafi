@@ -28,7 +28,6 @@ import org.deltafi.core.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.snapshot.Snapshotter;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.types.*;
-import org.deltafi.core.types.DataSource;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -186,16 +185,13 @@ public class PluginRegistryService implements Snapshotter {
                                 Map<PluginCoordinates, List<RestDataSource>> restDataSources,
                                 Map<PluginCoordinates, List<TimedDataSource>> timedDataSources) {
 
-        List<DataSource> dataSources = new ArrayList<>();
-        dataSources.addAll(restDataSources.getOrDefault(plugin.getPluginCoordinates(), Collections.emptyList()));
-        dataSources.addAll(timedDataSources.getOrDefault(plugin.getPluginCoordinates(), Collections.emptyList()));
-
         return Flows.newBuilder()
                 .sourcePlugin(plugin.getPluginCoordinates())
                 .variables(plugin.getVariables())
                 .egressFlows(egressFlows.getOrDefault(plugin.getPluginCoordinates(), Collections.emptyList()))
                 .transformFlows(transformFlows.getOrDefault(plugin.getPluginCoordinates(), Collections.emptyList()))
-                .dataSources(dataSources)
+                .restDataSources(restDataSources.getOrDefault(plugin.getPluginCoordinates(), Collections.emptyList()))
+                .timedDataSources(timedDataSources.getOrDefault(plugin.getPluginCoordinates(), Collections.emptyList()))
                 .build();
     }
 

@@ -27,6 +27,7 @@ import lombok.NoArgsConstructor;
 import org.deltafi.common.types.*;
 import org.hibernate.annotations.Type;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -46,7 +47,11 @@ public class EgressFlowPlanEntity extends FlowPlanEntity {
 
     @Override
     public List<ActionConfiguration> allActionConfigurations() {
-        return List.of(egressAction);
+        List<ActionConfiguration> actionConfigurations = new ArrayList<>();
+        if (egressAction != null) {
+            actionConfigurations.add(egressAction);
+        }
+        return actionConfigurations;
     }
 
     public EgressFlowPlanEntity(String name, String description, ActionConfiguration egressAction) {

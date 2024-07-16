@@ -344,6 +344,7 @@ class DeltaFiCoreApplicationTests {
 		transformFlowService.refreshCache();
 		egressFlowService.refreshCache();
 		restDataSourceService.refreshCache();
+		timedDataSourceService.refreshCache();
 	}
 
 	void loadConfig() {
@@ -1129,9 +1130,13 @@ class DeltaFiCoreApplicationTests {
 		egressFlow.setName("egress");
 		egressFlow.setSourcePlugin(pluginCoordinates);
 
-		TimedDataSource dataSource = new TimedDataSource();
-		dataSource.setName("timedIngress");
-		dataSource.setSourcePlugin(pluginCoordinates);
+		RestDataSource restDataSource = new RestDataSource();
+		restDataSource.setName("restIngress");
+		restDataSource.setSourcePlugin(pluginCoordinates);
+
+		TimedDataSource timeDataSource = new TimedDataSource();
+		timeDataSource.setName("timedIngress");
+		timeDataSource.setSourcePlugin(pluginCoordinates);
 
 		Plugin plugin = new Plugin();
 		plugin.setPluginCoordinates(pluginCoordinates);
@@ -1139,7 +1144,8 @@ class DeltaFiCoreApplicationTests {
 		pluginVariableRepo.save(variables);
 		transformFlowRepo.save(transformFlow);
 		egressFlowRepo.save(egressFlow);
-		timedDataSourceRepo.save(dataSource);
+		restDataSourceRepo.save(restDataSource)
+		timedDataSourceRepo.save(timeDataSource);
 		refreshFlowCaches();
 
 		List<Flows> flows = FlowPlanDatafetcherTestHelper.getFlows(dgsQueryExecutor);
@@ -1148,7 +1154,8 @@ class DeltaFiCoreApplicationTests {
 		assertThat(pluginFlows.getSourcePlugin().getArtifactId()).isEqualTo("test-actions");
 		assertThat(pluginFlows.getTransformFlows().getFirst().getName()).isEqualTo("transform");
 		assertThat(pluginFlows.getEgressFlows().getFirst().getName()).isEqualTo("egress");
-		assertThat(pluginFlows.getDataSources().getFirst().getName()).isEqualTo("timedIngress");
+		assertThat(pluginFlows.getRestDataSources().getFirst().getName()).isEqualTo("restIngress");
+		assertThat(pluginFlows.getTimedDataSources().getFirst().getName()).isEqualTo("timedIngress");
 	}
 
 	@Test

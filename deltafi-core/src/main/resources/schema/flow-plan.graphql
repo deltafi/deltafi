@@ -162,7 +162,8 @@ type Flows {
   sourcePlugin: PluginCoordinates!
   variables: [Variable]
   egressFlows: [EgressFlow]
-  dataSources: [DataSource]
+  restDataSources: [RestDataSource]
+  timedDataSources: [TimedDataSource]
   transformFlows: [TransformFlow]
 }
 

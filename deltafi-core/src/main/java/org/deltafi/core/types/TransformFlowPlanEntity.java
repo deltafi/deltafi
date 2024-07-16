@@ -27,6 +27,7 @@ import lombok.NoArgsConstructor;
 import org.deltafi.common.types.*;
 import org.hibernate.annotations.Type;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -54,7 +55,7 @@ public class TransformFlowPlanEntity extends FlowPlanEntity {
 
     @Override
     public List<ActionConfiguration> allActionConfigurations() {
-        return transformActions;
+        return new ArrayList<>(transformActions);
     }
 
     @Override

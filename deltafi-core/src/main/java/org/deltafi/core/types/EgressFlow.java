@@ -67,7 +67,9 @@ public class EgressFlow extends Flow implements Subscriber {
     @Override
     public List<ActionConfiguration> allActionConfigurations() {
         List<ActionConfiguration> actionConfigurations = new ArrayList<>();
-        actionConfigurations.add(egressAction);
+        if (egressAction != null) {
+            actionConfigurations.add(egressAction);
+        }
         return actionConfigurations;
     }
 

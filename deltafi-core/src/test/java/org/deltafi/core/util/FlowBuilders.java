@@ -36,6 +36,7 @@ public class FlowBuilders {
         dataSource.getFlowStatus().setState(flowState);
         dataSource.setTestMode(false);
         dataSource.setTopic(TRANSFORM_TOPIC);
+        dataSource.setSourcePlugin(PLUGIN_COORDINATES);
         return dataSource;
     }
 
