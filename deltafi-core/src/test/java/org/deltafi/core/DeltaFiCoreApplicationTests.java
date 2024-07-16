@@ -1144,7 +1144,7 @@ class DeltaFiCoreApplicationTests {
 		pluginVariableRepo.save(variables);
 		transformFlowRepo.save(transformFlow);
 		egressFlowRepo.save(egressFlow);
-		restDataSourceRepo.save(restDataSource)
+		restDataSourceRepo.save(restDataSource);
 		timedDataSourceRepo.save(timeDataSource);
 		refreshFlowCaches();
 

@@ -19,6 +19,7 @@ package org.deltafi.core.types;
 
 import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -36,10 +37,11 @@ import java.util.UUID;
         @UniqueConstraint(columnNames = {"name", "type"})
 })
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-@DiscriminatorColumn(name = "type", discriminatorType = DiscriminatorType.STRING)
+@DiscriminatorColumn(name = "discriminator", discriminatorType = DiscriminatorType.STRING)
 @Getter
 @Setter
 @NoArgsConstructor
+@EqualsAndHashCode
 public abstract class FlowPlanEntity {
     @Id
     @GeneratedValue
@@ -48,7 +50,6 @@ public abstract class FlowPlanEntity {
     private String name;
 
     @Enumerated(EnumType.STRING)
-    @Column(insertable = false, updatable = false)
     private FlowType type;
 
     @Column(length = 100_000)
