@@ -35,6 +35,8 @@ Usage:
 }
 
 SUDO=$(which sudo)
+export USER_ID
+USER_ID=$(id -u)
 
 # _readlink()
 #
@@ -668,9 +670,7 @@ _write_config() {
 _create_data_dirs() {
   mkdir -p "${DATA_DIR}"
   if _is_linux; then
-    ${SUDO} mkdir -p "${DATA_DIR}"/{mongo,clickhouse,grafana}
-    ${SUDO} chown -R 1001:1001 "${DATA_DIR}"/{mongo,clickhouse}
-    ${SUDO} chown -R 472:472 "${DATA_DIR}"/grafana
+    mkdir -p "${DATA_DIR}"/{mongo,clickhouse,grafana,auth,loki,minio}
   fi
 }
 

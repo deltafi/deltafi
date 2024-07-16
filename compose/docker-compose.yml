@@ -4,7 +4,7 @@ x-health-probe: &health-probe
     interval: 15s
     timeout: 15s
     start_period: 5s
-    retries: 4
+    retries: 15
 
 x-logging-label: &logging-label
   logging: "promtail"
@@ -114,6 +114,7 @@ services:
     restart: unless-stopped
     volumes:
       - ${DATA_DIR}/auth:/data
+    user: "${USER_ID}"
   deltafi-auth-resolver:
     image: ${DELTAFI_AUTH_RESOLVER}
     container_name: deltafi-auth-resolver
@@ -232,6 +233,7 @@ services:
     restart: unless-stopped
     volumes:
       - ${DATA_DIR}:/data/deltafi/egress-sink
+    user: "${USER_ID}"
   deltafi-minio:
     image: ${MINIO}
     command: server /export -S /etc/minio/certs/ --address :9000 --console-address :9001
@@ -252,6 +254,7 @@ services:
     restart: unless-stopped
     volumes:
       - ${DATA_DIR}/minio:/export
+    user: "${USER_ID}"
   deltafi-mongodb:
     image: ${MONGODB}
     container_name: deltafi-mongodb
@@ -280,6 +283,7 @@ services:
     restart: unless-stopped
     volumes:
       - ${DATA_DIR}/mongo:/bitnami/mongodb
+    user: "${USER_ID}"
   deltafi-redis:
     image: ${REDIS}
     container_name: deltafi-redis
@@ -325,6 +329,7 @@ services:
       - ${SETTINGS_DIR}/grafana/provider.yaml:/etc/grafana/provisioning/dashboards/provider.yaml
       - ${SETTINGS_DIR}/grafana/dashboards:/tmp/dashboards
     restart: unless-stopped
+    user: "${USER_ID}"
   deltafi-graphite:
     image: ${GRAPHITE}
     container_name: deltafi-graphite
@@ -368,6 +373,7 @@ services:
     restart: unless-stopped
     volumes:
       - ${DATA_DIR}/clickhouse:/bitnami/clickhouse/
+    user: "${USER_ID}"
   deltafi-clickhouse-etl:
     image: ${DELTAFI_CLICKHOUSE_ETL}
     command: [ 'bundle', 'exec', 'bin/clickhouse_etl.rb' ]
@@ -402,6 +408,7 @@ services:
     volumes:
       - ${SETTINGS_DIR}/loki/loki.yaml:/etc/loki/loki.yaml
       - ${DATA_DIR}/loki:/data
+    user: "${USER_ID}"
   deltafi-promtail:
     image: ${PROMTAIL}
     container_name: deltafi-promtail
