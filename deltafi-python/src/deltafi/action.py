@@ -67,6 +67,10 @@ class Action(ABC):
     def param_class():
         """Factory method to create and return an empty GenericModel instance.
 
+        All action parameter classes must inherit pydantic.BaseModel.
+        Use of complex types in custom action parameter classes must specify
+        the internal types when defined. E.g., dict[str, str], or List[str]
+
         Returns
         -------
         GenericModel

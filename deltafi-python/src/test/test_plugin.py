@@ -17,8 +17,10 @@
 #
 
 from importlib import metadata
-from deltafi.plugin import Plugin, PluginCoordinates
 from unittest import mock
+
+from deltafi.plugin import Plugin, PluginCoordinates
+
 from .sample.actions import SampleTransformAction
 
 
@@ -91,14 +93,59 @@ def get_expected_json():
                     "title": "SampleTransformParameters",
                     "type": "object",
                     "properties": {
-                        "thing": {
-                            "title": "Thing",
-                            "description": "Sample transform parameter",
+                        "a_string": {
+                            "title": "A String",
+                            "description": "this string parameter is required",
                             "type": "string"
+                        },
+                        "def_string": {
+                            "title": "Def String",
+                            "default": "default-val",
+                            "description": "str with default",
+                            "type": "string"
+                        },
+                        "a_dict": {
+                            "additionalProperties": {
+                                "type": "string"
+                            },
+                            "title": "A Dict",
+                            "description": "this dict parameter is required",
+                            "type": "object"
+                        },
+                        "def_dict": {
+                            "additionalProperties": {
+                                "type": "string"
+                            },
+                            "title": "Def Dict",
+                            "description": "dict has default",
+                            "default": ["key1:val1"],
+                            "type": "object"
+                        },
+                        "a_list": {
+                            "items": {
+                                "type": "string"
+                            },
+                            "title": "A List",
+                            "description": "list with default",
+                            "default": [],
+                            "type": "array"
+                        },
+                        "a_bool": {
+                            "title": "A Bool",
+                            "description": "this boolean parameter is required",
+                            "type": "boolean"
+                        },
+                        "def_int": {
+                            "title": "Def Int",
+                            "description": "int with default",
+                            "default": 100,
+                            "type": "integer"
                         }
                     },
                     "required": [
-                        "thing"
+                        "a_string",
+                        "a_dict",
+                        "a_bool"
                     ]
                 }
             }
