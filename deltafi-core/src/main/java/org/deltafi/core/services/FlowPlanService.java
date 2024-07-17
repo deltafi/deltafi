@@ -56,7 +56,7 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlanEntity, FlowT ex
 
     @PostConstruct
     public void updateSystemPluginFlowPlans() {
-        flowPlanRepo.updateSystemPluginFlowPlanVersions(buildProperties.getVersion());
+        flowPlanRepo.updateSystemPluginFlowPlanVersions(buildProperties.getVersion(), getFlowType());
     }
 
     /**
@@ -69,7 +69,7 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlanEntity, FlowT ex
         flowPlanRepo.saveAll(flowPlans);
 
         Set<String> flowPlanNames = flowPlans.stream().map(FlowPlanEntity::getName).collect(Collectors.toSet());
-        Set<UUID> flowPlansToRemove = flowPlanRepo.findByGroupIdAndArtifactId(sourcePlugin.getGroupId(), sourcePlugin.getArtifactId()).stream()
+        Set<UUID> flowPlansToRemove = flowPlanRepo.findByGroupIdAndArtifactIdAndType(sourcePlugin.getGroupId(), sourcePlugin.getArtifactId(), getFlowType()).stream()
                 .filter(flowPlan -> !flowPlanNames.contains(flowPlan.getName()))
                 .map(FlowPlanEntity::getId)
                 .collect(Collectors.toSet());
@@ -177,7 +177,7 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlanEntity, FlowT ex
      */
     void removeFlowsAndPlansBySourcePlugin(PluginCoordinates pluginCoordinates) {
         flowService.removeBySourcePlugin(pluginCoordinates);
-        flowPlanRepo.deleteBySourcePlugin(pluginCoordinates);
+        flowPlanRepo.deleteBySourcePluginAndType(pluginCoordinates, getFlowType());
     }
 
     /**

@@ -48,6 +48,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.deltafi.core.datafetchers.FlowPlanDatafetcherTestHelper.PLUGIN_COORDINATES;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(MockitoExtension.class)
@@ -76,8 +77,8 @@ class TransformFlowServiceTest {
         Mockito.when(transformFlowRepo.findById("stopped")).thenReturn(Optional.of(stopped));
         Mockito.when(flowValidator.validate(Mockito.any())).thenReturn(Collections.emptyList());
 
-        TransformFlowPlanEntity runningFlowPlan = new TransformFlowPlanEntity("running", "yep");
-        TransformFlowPlanEntity stoppedFlowPlan = new TransformFlowPlanEntity("stopped", "naw");
+        TransformFlowPlanEntity runningFlowPlan = new TransformFlowPlanEntity("running", "yep", PLUGIN_COORDINATES);
+        TransformFlowPlanEntity stoppedFlowPlan = new TransformFlowPlanEntity("stopped", "naw", PLUGIN_COORDINATES);
 
         TransformFlow runningTransformFlow = transformFlowService.buildFlow(runningFlowPlan, Collections.emptyList());
         TransformFlow stoppedTransformFlow = transformFlowService.buildFlow(stoppedFlowPlan, Collections.emptyList());

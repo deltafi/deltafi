@@ -39,6 +39,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.deltafi.core.datafetchers.FlowPlanDatafetcherTestHelper.PLUGIN_COORDINATES;
 
 @ExtendWith(MockitoExtension.class)
 class TimedDataSourceServiceTest {
@@ -67,10 +68,10 @@ class TimedDataSourceServiceTest {
         Mockito.when(timedDataSourceRepo.findById("stopped")).thenReturn(Optional.of(stopped));
         Mockito.when(flowValidator.validate(Mockito.any())).thenReturn(Collections.emptyList());
 
-        TimedDataSourcePlanEntity runningFlowPlan = new TimedDataSourcePlanEntity("running", "yep", "topic",
+        TimedDataSourcePlanEntity runningFlowPlan = new TimedDataSourcePlanEntity("running", "yep", PLUGIN_COORDINATES, "topic",
                 new ActionConfiguration("TimedIngressActionConfig", ActionType.TIMED_INGRESS, "TimedIngressActionConfigType"),
                 "0 */10 * * * *");
-        TimedDataSourcePlanEntity stoppedFlowPlan = new TimedDataSourcePlanEntity("stopped", "naw", "topic",
+        TimedDataSourcePlanEntity stoppedFlowPlan = new TimedDataSourcePlanEntity("stopped", "naw", PLUGIN_COORDINATES, "topic",
                 new ActionConfiguration("TimedIngressActionConfig", ActionType.TIMED_INGRESS, "TimedIngressActionConfigType"),
                 "*/1 * * * * *");
 

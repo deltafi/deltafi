@@ -23,7 +23,6 @@ import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 import org.deltafi.common.types.*;
 import org.hibernate.annotations.Type;
 
@@ -35,7 +34,6 @@ import java.util.Set;
 @Entity
 @DiscriminatorValue("TRANSFORM")
 @Data
-@NoArgsConstructor
 public class TransformFlowPlanEntity extends FlowPlanEntity {
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
@@ -49,8 +47,12 @@ public class TransformFlowPlanEntity extends FlowPlanEntity {
     @Column(columnDefinition = "jsonb")
     private PublishRules publish;
 
-    public TransformFlowPlanEntity(String name, String description) {
-        super(name, FlowType.TRANSFORM, description);
+    public TransformFlowPlanEntity() {
+        super(null, FlowType.TRANSFORM, null, null);
+    }
+
+    public TransformFlowPlanEntity(String name, String description, PluginCoordinates sourcePlugin) {
+        super(name, FlowType.TRANSFORM, description, sourcePlugin);
     }
 
     @Override

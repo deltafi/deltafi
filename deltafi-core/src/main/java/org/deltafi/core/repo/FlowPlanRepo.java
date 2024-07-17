@@ -42,23 +42,26 @@ public interface FlowPlanRepo extends JpaRepository<FlowPlanEntity, UUID> {
     /**
      * Delete any flow plans where the source plugin matches the plugin coordinates
      * @param pluginCoordinates the plugin coordinates to match
+     * @param type the flow plan type
      * @return - the number of flow plans deleted
      */
     @Transactional
     @Modifying
-    @Query(value = "DELETE FROM flow_plan WHERE " +
+    @Query(value = "DELETE FROM flow_plans WHERE " +
             "source_plugin->>'groupId' = :#{#pluginCoordinates.groupId} AND " +
             "source_plugin->>'artifactId' = :#{#pluginCoordinates.artifactId} AND " +
-            "source_plugin->>'version' = :#{#pluginCoordinates.version}",
+            "source_plugin->>'version' = :#{#pluginCoordinates.version} AND " +
+            "type = :#{#type.name}",
             nativeQuery = true)
-    int deleteBySourcePlugin(PluginCoordinates pluginCoordinates);
+    int deleteBySourcePluginAndType(PluginCoordinates pluginCoordinates, FlowType type);
 
     /**
      * Find the flow plans with the given sourcePlugin
      * @param sourcePlugin PluginCoordinates to search by
+     * @param type the flow plan type
      * @return the flow plans with the given sourcePlugin
      */
-    @Query(value = "SELECT * FROM flow_plan WHERE " +
+    @Query(value = "SELECT * FROM flow_plans WHERE " +
             "source_plugin->>'groupId' = :#{#sourcePlugin.groupId} AND " +
             "source_plugin->>'artifactId' = :#{#sourcePlugin.artifactId} AND " +
             "source_plugin->>'version' = :#{#sourcePlugin.version} AND " +
@@ -70,21 +73,24 @@ public interface FlowPlanRepo extends JpaRepository<FlowPlanEntity, UUID> {
      * Find the flow plans with the given groupId and artifactId
      * @param groupId plugin groupId to search by
      * @param artifactId plugin artifactId to search by
+     * @param type flow plan type
      * @return the flow plans with the given groupId and artifactId
      */
-    @Query(value = "SELECT * FROM flow_plan WHERE source_plugin->>'groupId' = :groupId AND source_plugin->>'artifactId' = :artifactId", nativeQuery = true)
-    List<FlowPlanEntity> findByGroupIdAndArtifactId(String groupId, String artifactId);
+    @Query(value = "SELECT * FROM flow_plans WHERE source_plugin->>'groupId' = :groupId AND source_plugin->>'artifactId' = :artifactId AND type = :#{#type.name}", nativeQuery = true)
+    List<FlowPlanEntity> findByGroupIdAndArtifactIdAndType(String groupId, String artifactId, FlowType type);
 
     /**
      * Update the system-plugin flow plans sourcePlugin version to the current running version
      * @param version current running version
+     * @param type the flow plan type
      */
     @Transactional
     @Modifying
-    @Query(value = "UPDATE flow_plan " +
+    @Query(value = "UPDATE flow_plans " +
             "SET source_plugin = jsonb_set(source_plugin, '{version}', to_jsonb(:version)) " +
             "WHERE source_plugin->>'groupId' = '" + SYSTEM_PLUGIN_GROUP_ID + "' " +
-            "AND source_plugin->>'artifactId' = '" + SYSTEM_PLUGIN_ARTIFACT_ID + "'",
+            "AND source_plugin->>'artifactId' = '" + SYSTEM_PLUGIN_ARTIFACT_ID + "'" +
+            "AND type = :#{#type.name}",
             nativeQuery = true)
-    void updateSystemPluginFlowPlanVersions(String version);
+    void updateSystemPluginFlowPlanVersions(String version, FlowType type);
 }

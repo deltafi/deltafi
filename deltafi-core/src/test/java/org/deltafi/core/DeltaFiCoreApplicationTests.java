@@ -117,6 +117,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static org.deltafi.common.constant.DeltaFiConstants.*;
 import static org.deltafi.common.types.ActionState.*;
+import static org.deltafi.core.datafetchers.FlowPlanDatafetcherTestHelper.PLUGIN_COORDINATES;
 import static org.deltafi.core.types.DeltaFile.CURRENT_SCHEMA_VERSION;
 import static org.deltafi.core.datafetchers.DeletePolicyDatafetcherTestHelper.*;
 import static org.deltafi.core.datafetchers.DeltaFilesDatafetcherTestHelper.*;
@@ -238,16 +239,10 @@ class DeltaFiCoreApplicationTests {
 	DeltaFiPropertiesRepo deltaFiPropertiesRepo;
 
 	@Autowired
-	EgressFlowPlanService egressFlowPlanService;
-
-	@Autowired
 	PluginImageRepositoryRepo pluginImageRepositoryRepo;
 
 	@Autowired
 	SystemSnapshotRepo systemSnapshotRepo;
-
-	@Autowired
-	MongoTemplate mongoTemplate;
 
 	@MockBean
 	StorageConfigurationService storageConfigurationService;
@@ -1058,8 +1053,8 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testGetTransformFlowPlan() {
 		clearForFlowTests();
-		TransformFlowPlanEntity transformFlowPlanA = new TransformFlowPlanEntity("transformPlan", "description");
-		TransformFlowPlanEntity transformFlowPlanB = new TransformFlowPlanEntity("b", "description");
+		TransformFlowPlanEntity transformFlowPlanA = new TransformFlowPlanEntity("transformPlan", "description", PLUGIN_COORDINATES);
+		TransformFlowPlanEntity transformFlowPlanB = new TransformFlowPlanEntity("b", "description", PLUGIN_COORDINATES);
 		flowPlanRepo.saveAll(List.of(transformFlowPlanA, transformFlowPlanB));
 		TransformFlowPlan plan = FlowPlanDatafetcherTestHelper.getTransformFlowPlan(dgsQueryExecutor);
 		assertThat(plan.getName()).isEqualTo("transformPlan");
@@ -1068,8 +1063,8 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testGetEgressFlowPlan() {
 		clearForFlowTests();
-		EgressFlowPlanEntity egressFlowPlanA = new EgressFlowPlanEntity("egressPlan", "description", new ActionConfiguration("egress", ActionType.EGRESS, "type"));
-		EgressFlowPlanEntity egressFlowPlanB = new EgressFlowPlanEntity("b", "description", new ActionConfiguration("egress", ActionType.EGRESS, "type"));
+		EgressFlowPlanEntity egressFlowPlanA = new EgressFlowPlanEntity("egressPlan", "description", PLUGIN_COORDINATES, new ActionConfiguration("egress", ActionType.EGRESS, "type"));
+		EgressFlowPlanEntity egressFlowPlanB = new EgressFlowPlanEntity("b", "description", PLUGIN_COORDINATES, new ActionConfiguration("egress", ActionType.EGRESS, "type"));
 		flowPlanRepo.saveAll(List.of(egressFlowPlanA, egressFlowPlanB));
 		EgressFlowPlan plan = FlowPlanDatafetcherTestHelper.getEgressFlowPlan(dgsQueryExecutor);
 		assertThat(plan.getName()).isEqualTo("egressPlan");
@@ -1078,9 +1073,9 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testGetTimedIngressDataSource() {
 		clearForFlowTests();
-		DataSourcePlanEntity dataSourcePlanA = new TimedDataSourcePlanEntity("timedIngressPlan", "description", "topic",
+		DataSourcePlanEntity dataSourcePlanA = new TimedDataSourcePlanEntity("timedIngressPlan", "description", PLUGIN_COORDINATES, "topic",
 				new ActionConfiguration("timedIngress", ActionType.TIMED_INGRESS, "type"),  "*/5 * * * * *");
-		TimedDataSourcePlanEntity dataSourcePlanB = new TimedDataSourcePlanEntity("b", "description", "topic",
+		TimedDataSourcePlanEntity dataSourcePlanB = new TimedDataSourcePlanEntity("b", "description", PLUGIN_COORDINATES, "topic",
 				new ActionConfiguration("timedIngress", ActionType.TIMED_INGRESS, "type"), "*/5 * * * * *");
 		flowPlanRepo.saveAll(List.of(dataSourcePlanA, dataSourcePlanB));
 		DataSourcePlan plan = FlowPlanDatafetcherTestHelper.getTimedIngressFlowPlan(dgsQueryExecutor);
@@ -1215,6 +1210,25 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void getAllFlowPlans() {
+		clearForFlowTests();
+
+		TransformFlowPlanEntity transformFlow = new TransformFlowPlanEntity(TRANSFORM_FLOW_NAME, "desc", PLUGIN_COORDINATES);
+		TimedDataSourcePlanEntity timedDataSource = new TimedDataSourcePlanEntity(TIMED_DATA_SOURCE_NAME, "desc", PLUGIN_COORDINATES, "topic", new ActionConfiguration("timed", ActionType.TIMED_INGRESS, "type"), "1234");
+		RestDataSourcePlanEntity restDataSource = new RestDataSourcePlanEntity(REST_DATA_SOURCE_NAME, "desc", PLUGIN_COORDINATES, "topic");
+		EgressFlowPlanEntity egressFlow = new EgressFlowPlanEntity(EGRESS_FLOW_NAME, "desc", PLUGIN_COORDINATES, new ActionConfiguration("egress", ActionType.EGRESS, "type2"));
+
+		flowPlanRepo.saveAll(List.of(transformFlow, timedDataSource, restDataSource, egressFlow));
+		refreshFlowCaches();
+
+		SystemFlowPlans flowPlans = FlowPlanDatafetcherTestHelper.getAllFlowPlans(dgsQueryExecutor);
+		assertThat(flowPlans.getTransformPlans()).hasSize(1).matches(transformFlows -> TRANSFORM_FLOW_NAME.equals(transformFlows.getFirst().getName()));
+		assertThat(flowPlans.getTimedDataSources()).hasSize(1).matches(timedIngressFlows -> TIMED_DATA_SOURCE_NAME.equals(timedIngressFlows.getFirst().getName()));
+		assertThat(flowPlans.getRestDataSources()).hasSize(1).matches(restIngressFlows -> REST_DATA_SOURCE_NAME.equals(restIngressFlows.getFirst().getName()));
+		assertThat(flowPlans.getEgressPlans()).hasSize(1).matches(egressFlows -> EGRESS_FLOW_NAME.equals(egressFlows.getFirst().getName()));
+	}
+
+	@Test
 	void getAllFlows() {
 		clearForFlowTests();
 
@@ -1340,7 +1354,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testRemoveTransformFlowPlan() {
 		clearForFlowTests();
-		TransformFlowPlanEntity transformFlowPlan = new TransformFlowPlanEntity("flowPlan", null);
+		TransformFlowPlanEntity transformFlowPlan = new TransformFlowPlanEntity("flowPlan", null, PLUGIN_COORDINATES);
 		flowPlanRepo.save(transformFlowPlan);
 		assertThatThrownBy(() -> FlowPlanDatafetcherTestHelper.removeTransformFlowPlan(dgsQueryExecutor))
 				.isInstanceOf(QueryException.class)
@@ -1354,7 +1368,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testRemoveEgressFlowPlan() {
 		clearForFlowTests();
-		EgressFlowPlanEntity egressFlowPlan = new EgressFlowPlanEntity("flowPlan", null, null);
+		EgressFlowPlanEntity egressFlowPlan = new EgressFlowPlanEntity("flowPlan", null, PLUGIN_COORDINATES, null);
 		flowPlanRepo.save(egressFlowPlan);
 		assertThatThrownBy(() -> FlowPlanDatafetcherTestHelper.removeEgressFlowPlan(dgsQueryExecutor))
 				.isInstanceOf(QueryException.class)
@@ -1369,7 +1383,7 @@ class DeltaFiCoreApplicationTests {
 	void testRemoveTimedIngressFlowPlan() {
 		clearForFlowTests();
 		TimedDataSourcePlanEntity dataSourcePlan = new TimedDataSourcePlanEntity("flowPlan",
-				null, null, null, null);
+				null, PLUGIN_COORDINATES, null, null, null);
 		flowPlanRepo.save(dataSourcePlan);
 		assertThatThrownBy(() -> FlowPlanDatafetcherTestHelper.removeTimedIngressFlowPlan(dgsQueryExecutor))
 				.isInstanceOf(QueryException.class)
@@ -1458,7 +1472,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testSetPluginVariableValues() {
 		PluginVariables variables = new PluginVariables();
-		variables.setSourcePlugin(FlowPlanDatafetcherTestHelper.PLUGIN_COORDINATES);
+		variables.setSourcePlugin(PLUGIN_COORDINATES);
 		variables.setVariables(List.of(Variable.builder().name("key").value("test").description("description").dataType(VariableDataType.STRING).build()));
 		pluginVariableRepo.save(variables);
 		assertTrue(FlowPlanDatafetcherTestHelper.setPluginVariableValues(dgsQueryExecutor));
@@ -2546,14 +2560,12 @@ class DeltaFiCoreApplicationTests {
 		clearForFlowTests();
 		PluginCoordinates pluginToDelete = PluginCoordinates.builder().groupId("group").artifactId("deltafi-actions").version("1.0.0").build();
 
-		TransformFlowPlanEntity transformFlowPlanA = new TransformFlowPlanEntity("a", null);
-		transformFlowPlanA.setSourcePlugin(pluginToDelete);
-		TransformFlowPlanEntity transformFlowPlanB = new TransformFlowPlanEntity("b", null);
-		transformFlowPlanB.setSourcePlugin(pluginToDelete);
-		TransformFlowPlanEntity transformFlowPlanC = new TransformFlowPlanEntity("c", null);
-		transformFlowPlanC.setSourcePlugin(PluginCoordinates.builder().groupId("group2").artifactId("deltafi-actions").version("1.0.0").build());
+		TransformFlowPlanEntity transformFlowPlanA = new TransformFlowPlanEntity("a", null, pluginToDelete);
+		TransformFlowPlanEntity transformFlowPlanB = new TransformFlowPlanEntity("b", null, pluginToDelete);
+		TransformFlowPlanEntity transformFlowPlanC = new TransformFlowPlanEntity("c", null,
+				PluginCoordinates.builder().groupId("group2").artifactId("deltafi-actions").version("1.0.0").build());
 		flowPlanRepo.saveAll(List.of(transformFlowPlanA, transformFlowPlanB, transformFlowPlanC));
-		assertThat(flowPlanRepo.deleteBySourcePlugin(pluginToDelete)).isEqualTo(2);
+		assertThat(flowPlanRepo.deleteBySourcePluginAndType(pluginToDelete, FlowType.TRANSFORM)).isEqualTo(2);
 		assertThat(flowPlanRepo.count()).isEqualTo(1);
 	}
 
@@ -2583,14 +2595,11 @@ class DeltaFiCoreApplicationTests {
 		clearForFlowTests();
 		PluginCoordinates pluginToDelete = PluginCoordinates.builder().groupId("group").artifactId("deltafi-actions").version("1.0.0").build();
 
-		EgressFlowPlanEntity egressFlowPlanA = new EgressFlowPlanEntity("a", null, null);
-		egressFlowPlanA.setSourcePlugin(pluginToDelete);
-		EgressFlowPlanEntity egressFlowPlanB = new EgressFlowPlanEntity("b", null, null);
-		egressFlowPlanB.setSourcePlugin(pluginToDelete);
-		EgressFlowPlanEntity egressFlowPlanC = new EgressFlowPlanEntity("c", null, null);
-		egressFlowPlanC.setSourcePlugin(PluginCoordinates.builder().groupId("group2").artifactId("deltafi-actions").version("1.0.0").build());
+		EgressFlowPlanEntity egressFlowPlanA = new EgressFlowPlanEntity("a", null, pluginToDelete, null);
+		EgressFlowPlanEntity egressFlowPlanB = new EgressFlowPlanEntity("b", null, pluginToDelete, null);
+		EgressFlowPlanEntity egressFlowPlanC = new EgressFlowPlanEntity("c", null, PluginCoordinates.builder().groupId("group2").artifactId("deltafi-actions").version("1.0.0").build(), null);
 		flowPlanRepo.saveAll(List.of(egressFlowPlanA, egressFlowPlanB, egressFlowPlanC));
-		assertThat(flowPlanRepo.deleteBySourcePlugin(pluginToDelete)).isEqualTo(2);
+		assertThat(flowPlanRepo.deleteBySourcePluginAndType(pluginToDelete, FlowType.EGRESS)).isEqualTo(2);
 		assertThat(flowPlanRepo.count()).isEqualTo(1);
 	}
 
@@ -2646,7 +2655,7 @@ class DeltaFiCoreApplicationTests {
 		flowPlanRepo.saveAll(List.of(transformFlowPlanA, transformFlowPlanB, transformFlowPlanC, diffGroup, diffArtifactId));
 		refreshFlowCaches();
 
-		List<FlowPlanEntity> found = flowPlanRepo.findByGroupIdAndArtifactId("group", "deltafi-actions");
+		List<FlowPlanEntity> found = flowPlanRepo.findByGroupIdAndArtifactIdAndType("group", "deltafi-actions", FlowType.TRANSFORM);
 		assertThat(found).hasSize(3).contains(transformFlowPlanA, transformFlowPlanB, transformFlowPlanC);
 	}
 

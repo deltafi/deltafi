@@ -23,7 +23,6 @@ import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 import org.deltafi.common.types.*;
 import org.hibernate.annotations.Type;
 
@@ -34,19 +33,22 @@ import java.util.List;
 @Entity
 @DiscriminatorValue("TIMED_DATA_SOURCE")
 @Data
-@NoArgsConstructor
 public class TimedDataSourcePlanEntity extends DataSourcePlanEntity {
-    public TimedDataSourcePlanEntity(String name, String description, String topic, ActionConfiguration timedIngressAction, String cronSchedule) {
-        super(name, FlowType.TIMED_DATA_SOURCE, description, topic);
-        this.timedIngressAction = timedIngressAction;
-        this.cronSchedule = cronSchedule;
-    }
-
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
     private ActionConfiguration timedIngressAction;
 
     private String cronSchedule;
+
+    public TimedDataSourcePlanEntity() {
+        super(null, FlowType.TIMED_DATA_SOURCE, null, null, null);
+    }
+
+    public TimedDataSourcePlanEntity(String name, String description, PluginCoordinates sourcePlugin, String topic, ActionConfiguration timedIngressAction, String cronSchedule) {
+        super(name, FlowType.TIMED_DATA_SOURCE, description, sourcePlugin, topic);
+        this.timedIngressAction = timedIngressAction;
+        this.cronSchedule = cronSchedule;
+    }
 
     @Override
     public List<ActionConfiguration> allActionConfigurations() {
@@ -59,7 +61,9 @@ public class TimedDataSourcePlanEntity extends DataSourcePlanEntity {
 
     @Override
     public FlowPlan toFlowPlan() {
-        return new TimedDataSourcePlan(getName(), FlowType.TIMED_DATA_SOURCE, getDescription(), getTopic(), timedIngressAction, cronSchedule);
+        TimedDataSourcePlan flowPlan = new TimedDataSourcePlan(getName(), FlowType.TIMED_DATA_SOURCE, getDescription(), getTopic(), timedIngressAction, cronSchedule);
+        flowPlan.setSourcePlugin(getSourcePlugin());
+        return flowPlan;
     }
 
     public static TimedDataSourcePlanEntity fromFlowPlan(FlowPlan flowPlan) {

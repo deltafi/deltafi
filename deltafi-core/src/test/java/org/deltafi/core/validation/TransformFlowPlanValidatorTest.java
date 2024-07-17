@@ -31,6 +31,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 
+import static org.deltafi.core.datafetchers.FlowPlanDatafetcherTestHelper.PLUGIN_COORDINATES;
+
 @ExtendWith(MockitoExtension.class)
 class TransformFlowPlanValidatorTest {
 
@@ -51,7 +53,7 @@ class TransformFlowPlanValidatorTest {
         ActionConfiguration transform2 = new ActionConfiguration("transform", ActionType.TRANSFORM, "org.deltafi.transform.Action2");
         ActionConfiguration transform3 = new ActionConfiguration("transform",  ActionType.TRANSFORM, "org.deltafi.transform.Action3");
 
-        TransformFlowPlanEntity transformFlow = new TransformFlowPlanEntity("flow", null);
+        TransformFlowPlanEntity transformFlow = new TransformFlowPlanEntity("flow", null, PLUGIN_COORDINATES);
         transformFlow.setTransformActions(List.of(transform1, transform2, transform3));
 
         Assertions.assertThatThrownBy(() -> transformFlowPlanValidator.validate(transformFlow))

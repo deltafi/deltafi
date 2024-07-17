@@ -21,7 +21,6 @@ import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 import org.deltafi.common.types.*;
 
 import java.util.List;
@@ -30,10 +29,13 @@ import java.util.List;
 @Entity
 @DiscriminatorValue("REST_DATA_SOURCE")
 @Data
-@NoArgsConstructor
 public class RestDataSourcePlanEntity extends DataSourcePlanEntity {
-    public RestDataSourcePlanEntity(String name, String description, String topic) {
-        super(name, FlowType.TIMED_DATA_SOURCE, description, topic);
+    public RestDataSourcePlanEntity() {
+        super(null, FlowType.REST_DATA_SOURCE, null, null, null);
+    }
+
+    public RestDataSourcePlanEntity(String name, String description, PluginCoordinates sourcePlugin, String topic) {
+        super(name, FlowType.REST_DATA_SOURCE, description, sourcePlugin, topic);
     }
 
     @Override
@@ -43,7 +45,9 @@ public class RestDataSourcePlanEntity extends DataSourcePlanEntity {
 
     @Override
     public FlowPlan toFlowPlan() {
-        return new RestDataSourcePlan(getName(), FlowType.TIMED_DATA_SOURCE, getDescription(), getTopic());
+        RestDataSourcePlan flowPlan = new RestDataSourcePlan(getName(), FlowType.REST_DATA_SOURCE, getDescription(), getTopic());
+        flowPlan.setSourcePlugin(getSourcePlugin());
+        return flowPlan;
     }
 
     public static RestDataSourcePlanEntity fromFlowPlan(FlowPlan flowPlan) {

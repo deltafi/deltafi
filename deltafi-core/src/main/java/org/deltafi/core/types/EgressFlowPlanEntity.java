@@ -23,7 +23,6 @@ import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 import org.deltafi.common.types.*;
 import org.hibernate.annotations.Type;
 
@@ -35,7 +34,6 @@ import java.util.Set;
 @Entity
 @DiscriminatorValue("EGRESS")
 @Data
-@NoArgsConstructor
 public class EgressFlowPlanEntity extends FlowPlanEntity {
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
@@ -44,6 +42,10 @@ public class EgressFlowPlanEntity extends FlowPlanEntity {
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
     private Set<Rule> subscribe;
+
+    public EgressFlowPlanEntity() {
+        super(null, FlowType.EGRESS, null, null);
+    }
 
     @Override
     public List<ActionConfiguration> allActionConfigurations() {
@@ -54,8 +56,8 @@ public class EgressFlowPlanEntity extends FlowPlanEntity {
         return actionConfigurations;
     }
 
-    public EgressFlowPlanEntity(String name, String description, ActionConfiguration egressAction) {
-        super(name, FlowType.EGRESS, description);
+    public EgressFlowPlanEntity(String name, String description, PluginCoordinates sourcePlugin, ActionConfiguration egressAction) {
+        super(name, FlowType.EGRESS, description, sourcePlugin);
         this.egressAction = egressAction;
     }
 

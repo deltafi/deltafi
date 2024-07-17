@@ -139,8 +139,6 @@ public class FlowBuilders {
     }
 
     public static TransformFlowPlanEntity buildTransformFlowPlan(String name, PluginCoordinates pluginCoordinates) {
-        TransformFlowPlanEntity transformFlowPlan = new TransformFlowPlanEntity(name, "desc");
-        transformFlowPlan.setSourcePlugin(pluginCoordinates);
-        return transformFlowPlan;
+        return new TransformFlowPlanEntity(name, "desc", pluginCoordinates);
     }
 }

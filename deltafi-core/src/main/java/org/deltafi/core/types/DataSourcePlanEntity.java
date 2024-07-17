@@ -22,6 +22,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.deltafi.common.types.FlowType;
+import org.deltafi.common.types.PluginCoordinates;
 
 @MappedSuperclass
 @EqualsAndHashCode(callSuper = true)
@@ -30,8 +31,8 @@ import org.deltafi.common.types.FlowType;
 public abstract class DataSourcePlanEntity extends FlowPlanEntity {
     private String topic;
 
-    public DataSourcePlanEntity(String name, FlowType flowType, String description, String topic) {
-        super(name, flowType, description);
+    public DataSourcePlanEntity(String name, FlowType flowType, String description, PluginCoordinates sourcePlugin, String topic) {
+        super(name, flowType, description, sourcePlugin);
         this.topic = topic;
     }
 }

@@ -18,7 +18,7 @@ ARGS=($@)
 [[ " ${ARGS[@]} " =~ " --help " || " ${ARGS[@]} " =~ " -h " ]] && cli_help_command
 
 FIELDS="{ name description sourcePlugin {groupId artifactId version}}"
-QUERY="query { getAllFlowPlans { dataSources $FIELDS transformPlans $FIELDS egressPlans $FIELDS}}"
+QUERY="query { getAllFlowPlans { restDataSources $FIELDS timedDataSources $FIELDS transformPlans $FIELDS egressPlans $FIELDS}}"
 RESULT=$(deltafi query "$QUERY")
 
 print_plans() {
@@ -31,8 +31,10 @@ if [[ "$DGS_ERRORS" != "" ]]; then
   cli_log "${red}${BASENAME}: Failed to get the list of flow plans${normal}"
   echo -e "${red}Error: ${DGS_ERRORS}${normal}"
 else
-  print_plans "dataSources"
-    echo
+  print_plans "restDataSources"
+  echo
+  print_plans "timedDataSources"
+  echo
   print_plans "transformPlans"
   echo
   print_plans "egressPlans"

@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "flow_plan", uniqueConstraints = {
+@Table(name = "flow_plans", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"name", "type"})
 })
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
@@ -59,10 +59,11 @@ public abstract class FlowPlanEntity {
     @Column(columnDefinition = "jsonb")
     private PluginCoordinates sourcePlugin;
 
-    public FlowPlanEntity(String name, FlowType type, String description) {
+    public FlowPlanEntity(String name, FlowType type, String description, PluginCoordinates sourcePlugin) {
         this.name = name;
         this.type = type;
         this.description = description;
+        this.sourcePlugin = sourcePlugin;
     }
 
     public abstract List<ActionConfiguration> allActionConfigurations();
