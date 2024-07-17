@@ -4,10 +4,10 @@
 
 cli_help_command() {
   echo "
-Command: export-data-source-plan
+Command: export-rest-data-source-plan
 
 Usage:
-  export-data-source-plan DATA_SOURCE_PLAN_NAME"
+  export-rest-data-source-plan REST_DATA_SOURCE_PLAN_NAME"
   exit 1
 }
 
@@ -17,16 +17,8 @@ ARGS=($@)
 PLANNAME=${ARGS[@]:1}
 [[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
 
-QUERY="fragment ActionFields on ActionConfiguration {
-          name
-          apiVersion
-          actionType
-          type
-          parameters
-        }
-
-        query {
-          getDataSourcePlan(planName: \"$PLANNAME\") {
+QUERY="query {
+          getRestDataSourcePlan(planName: \"$PLANNAME\") {
             name
             type
             description
@@ -36,12 +28,6 @@ QUERY="fragment ActionFields on ActionConfiguration {
               version
             }
             topic
-            ...on TimedDataSourcePlan {
-              timedIngressAction {
-                ... ActionFields
-              }
-              cronSchedule
-            }
           }
         }
         "
@@ -49,8 +35,8 @@ QUERY="fragment ActionFields on ActionConfiguration {
 RESULT=$(deltafi query "$QUERY")
 DGS_ERRORS=$(echo $RESULT | jq -r "select(.errors) | .errors[] | .message")
 if [[ "$DGS_ERRORS" != "" ]]; then
-  cli_log "${red}${BASENAME}: Failed to export data source plan: $PLANNAME${normal}"
+  cli_log "${red}${BASENAME}: Failed to export rest data source plan: $PLANNAME${normal}"
   echo -e "${red}Error: ${DGS_ERRORS}${normal}"
 else
-  echo "$RESULT" | jq '.data.getDataSourcePlan'
+  echo "$RESULT" | jq '.data.getRestDataSourcePlan'
 fi
