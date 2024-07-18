@@ -27,7 +27,6 @@ import java.util.*;
 import static org.deltafi.common.constant.DeltaFiConstants.INVALID_ACTION_EVENT_RECEIVED;
 import static org.deltafi.common.constant.DeltaFiConstants.SYNTHETIC_EGRESS_ACTION_FOR_TEST;
 import static org.deltafi.common.types.ActionState.QUEUED;
-import static org.deltafi.core.types.DeltaFile.CURRENT_SCHEMA_VERSION;
 import static org.deltafi.core.datafetchers.FlowPlanDatafetcherTestHelper.PLUGIN_COORDINATES;
 import static org.deltafi.core.services.pubsub.PublisherService.NO_SUBSCRIBERS;
 import static org.deltafi.core.services.pubsub.PublisherService.NO_SUBSCRIBER_CAUSE;
@@ -49,7 +48,6 @@ public class FullFlowExemplars {
         Map<String, String> metadata = Map.of("smoke", "test");
 
         DeltaFile deltaFile = DeltaFile.builder()
-                .schemaVersion(CURRENT_SCHEMA_VERSION)
                 .did(did)
                 .parentDids(new ArrayList<>())
                 .childDids(new ArrayList<>())
@@ -143,7 +141,6 @@ public class FullFlowExemplars {
         flow.queueAction("Utf8TransformAction", ActionType.TRANSFORM, false, OffsetDateTime.now());
         deltaFile.setName("input.txt");
         deltaFile.setDataSource(REST_DATA_SOURCE_NAME);
-        deltaFile.setSchemaVersion(CURRENT_SCHEMA_VERSION);
         return deltaFile;
     }
 

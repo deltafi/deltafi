@@ -690,8 +690,8 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                                          requeue_count, ingress_bytes, referenced_bytes, total_bytes, stage,
                                          created, modified, content_deleted, content_deleted_reason,
                                          egressed, filtered, replayed, replay_did, terminal,
-                                         content_deletable, version, schema_version)
-                VALUES (?, ?, ?, ?, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
+                                         content_deletable, version)
+                VALUES (?, ?, ?, ?, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
 
         jdbcTemplate.batchUpdate(sql, deltaFiles, 1000, (ps, deltaFile) -> {
             ps.setObject(1, deltaFile.getDid());
@@ -717,7 +717,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             ps.setBoolean(21, deltaFile.isTerminal());
             ps.setBoolean(22, deltaFile.isContentDeletable());
             ps.setLong(23, deltaFile.getVersion());
-            ps.setInt(24, deltaFile.getSchemaVersion());
         });
 
         // Batch insert DeltaFileFlows

@@ -25,6 +25,7 @@ import jakarta.persistence.AttributeConverter;
 import java.io.IOException;
 import java.util.Map;
 
+@SuppressWarnings("unused")
 public class ObjectJsonConverter implements AttributeConverter<Map<String, Object>, String> {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 

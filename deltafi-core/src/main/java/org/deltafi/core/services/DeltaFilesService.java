@@ -294,7 +294,6 @@ public class DeltaFilesService {
         long contentSize = ContentUtil.computeContentSize(ingressEventItem.getContent());
 
         DeltaFile deltaFile = DeltaFile.builder()
-                .schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
                 .did(ingressEventItem.getDid())
                 .dataSource(dataSource.getName())
                 .name(ingressEventItem.getDeltaFileName())
@@ -757,7 +756,6 @@ public class DeltaFilesService {
 
         DeltaFile child = DeltaFile.builder()
                 .version(0)
-                .schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
                 .did(uuidGenerator.generate())
                 .dataSource(deltaFile.getDataSource())
                 .parentDids(List.of(deltaFile.getDid()))
@@ -883,7 +881,6 @@ public class DeltaFilesService {
                             }
 
                             DeltaFile child = DeltaFile.builder()
-                                    .schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
                                     .did(uuidGenerator.generate())
                                     .parentDids(parentDids)
                                     .childDids(new ArrayList<>())

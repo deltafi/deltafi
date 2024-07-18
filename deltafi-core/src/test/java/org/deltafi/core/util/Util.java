@@ -146,7 +146,6 @@ public class Util {
 
     public static DeltaFile buildDeltaFile(UUID did, String dataSource) {
         DeltaFile deltaFile = DeltaFile.builder()
-                .schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
                 .did(did)
                 .parentDids(new ArrayList<>())
                 .childDids(new ArrayList<>())

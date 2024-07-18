@@ -93,9 +93,6 @@ public class DeltaFile {
   @Transient
   private OffsetDateTime cacheTime = null;
 
-  public static final int CURRENT_SCHEMA_VERSION = 1;
-  private int schemaVersion;
-
   public DeltaFile(DeltaFile other) {
     this.did = other.did;
     this.name = other.name;
@@ -123,7 +120,6 @@ public class DeltaFile {
     this.contentDeletable = other.contentDeletable;
     this.version = other.version;
     this.cacheTime = other.cacheTime;
-    this.schemaVersion = other.schemaVersion;
   }
 
   @Override
@@ -157,14 +153,13 @@ public class DeltaFile {
             Objects.equals(replayed, other.replayed) &&
             Objects.equals(replayDid, other.replayDid) &&
             Objects.equals(cacheTime, other.cacheTime) &&
-            Objects.equals(schemaVersion, other.schemaVersion) &&
             Objects.equals(new ArrayList<>(flows), new ArrayList<>(other.flows)) &&
             Objects.equals(new ArrayList<>(annotations).stream().sorted().toList(), new ArrayList<>(other.annotations).stream().sorted().toList());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(did, name, normalizedName, dataSource, parentDids, joinId, childDids, requeueCount, ingressBytes, referencedBytes, totalBytes, stage, created, modified, contentDeleted, contentDeletedReason, egressed, filtered, replayed, replayDid, terminal, contentDeletable, version, cacheTime, schemaVersion, new ArrayList<>(flows), new ArrayList<>(annotations));
+    return Objects.hash(did, name, normalizedName, dataSource, parentDids, joinId, childDids, requeueCount, ingressBytes, referencedBytes, totalBytes, stage, created, modified, contentDeleted, contentDeletedReason, egressed, filtered, replayed, replayDid, terminal, contentDeletable, version, cacheTime, new ArrayList<>(flows), new ArrayList<>(annotations));
   }
 
   public void setStage(DeltaFileStage stage) {

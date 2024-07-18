@@ -40,7 +40,6 @@ public class DeltaFileUtil {
 
         DeltaFile aggregate = DeltaFile.builder()
                 .version(0)
-                .schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
                 .did(joinEntry.getId())
                 .parentDids(joinedDids)
                 .stage(DeltaFileStage.IN_FLIGHT)
