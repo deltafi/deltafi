@@ -74,8 +74,8 @@ class TransformFlowServiceTest {
     void buildFlow() {
         TransformFlow running = transformFlow("running", FlowState.RUNNING, true, 10);
         TransformFlow stopped = transformFlow("stopped", FlowState.STOPPED, false, -1);
-        Mockito.when(transformFlowRepo.findById("running")).thenReturn(Optional.of(running));
-        Mockito.when(transformFlowRepo.findById("stopped")).thenReturn(Optional.of(stopped));
+        Mockito.when(transformFlowRepo.findByNameAndType("running", TransformFlow.class)).thenReturn(Optional.of(running));
+        Mockito.when(transformFlowRepo.findByNameAndType("stopped", TransformFlow.class)).thenReturn(Optional.of(stopped));
         Mockito.when(flowValidator.validate(Mockito.any())).thenReturn(Collections.emptyList());
 
         TransformFlowPlanEntity runningFlowPlan = new TransformFlowPlanEntity("running", "yep", PLUGIN_COORDINATES);
@@ -137,11 +137,11 @@ class TransformFlowServiceTest {
                 new TransformFlowSnapshot("invalid", true, false),
                 new TransformFlowSnapshot("missing", true, true)));
 
-        Mockito.when(transformFlowRepo.findAll()).thenReturn(List.of(running, stopped, invalid));
-        Mockito.when(transformFlowRepo.findById("running")).thenReturn(Optional.of(running));
-        Mockito.when(transformFlowRepo.findById("stopped")).thenReturn(Optional.of(stopped));
-        Mockito.when(transformFlowRepo.findById("invalid")).thenReturn(Optional.of(invalid));
-        Mockito.when(transformFlowRepo.findById("missing")).thenReturn(Optional.empty());
+        Mockito.when(transformFlowRepo.findAllByType(TransformFlow.class)).thenReturn(List.of(running, stopped, invalid));
+        Mockito.when(transformFlowRepo.findByNameAndType("running", TransformFlow.class)).thenReturn(Optional.of(running));
+        Mockito.when(transformFlowRepo.findByNameAndType("stopped", TransformFlow.class)).thenReturn(Optional.of(stopped));
+        Mockito.when(transformFlowRepo.findByNameAndType("invalid", TransformFlow.class)).thenReturn(Optional.of(invalid));
+        Mockito.when(transformFlowRepo.findByNameAndType("missing", TransformFlow.class)).thenReturn(Optional.empty());
 
         Result result = transformFlowService.resetFromSnapshot(systemSnapshot, true);
 
@@ -191,7 +191,7 @@ class TransformFlowServiceTest {
         TransformFlow flow3 = transformFlow("flow3", FlowState.RUNNING, false, 5);
         TransformFlow flow4 = transformFlow("flow4", FlowState.STOPPED, false, 5);
 
-        Mockito.when(transformFlowRepo.findAll()).thenReturn(List.of(flow1, flow2, flow3, flow4));
+        Mockito.when(transformFlowRepo.findAllByType(TransformFlow.class)).thenReturn(List.of(flow1, flow2, flow3, flow4));
         Mockito.when(errorCountService.errorsForFlow("flow1")).thenReturn(1);
         Mockito.when(errorCountService.errorsForFlow("flow2")).thenReturn(5);
         Mockito.when(errorCountService.errorsForFlow("flow3")).thenReturn(6);

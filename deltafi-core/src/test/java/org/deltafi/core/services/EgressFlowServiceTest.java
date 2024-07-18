@@ -104,11 +104,11 @@ class EgressFlowServiceTest {
                 new EgressFlowSnapshot("invalid", true, false),
                 new EgressFlowSnapshot("missing", true, true)));
 
-        Mockito.when(egressFlowRepo.findAll()).thenReturn(List.of(running, stopped, invalid));
-        Mockito.when(egressFlowRepo.findById("running")).thenReturn(Optional.of(running));
-        Mockito.when(egressFlowRepo.findById("stopped")).thenReturn(Optional.of(stopped));
-        Mockito.when(egressFlowRepo.findById("invalid")).thenReturn(Optional.of(invalid));
-        Mockito.when(egressFlowRepo.findById("missing")).thenReturn(Optional.empty());
+        Mockito.when(egressFlowRepo.findAllByType(EgressFlow.class)).thenReturn(List.of(running, stopped, invalid));
+        Mockito.when(egressFlowRepo.findByNameAndType("running", EgressFlow.class)).thenReturn(Optional.of(running));
+        Mockito.when(egressFlowRepo.findByNameAndType("stopped", EgressFlow.class)).thenReturn(Optional.of(stopped));
+        Mockito.when(egressFlowRepo.findByNameAndType("invalid", EgressFlow.class)).thenReturn(Optional.of(invalid));
+        Mockito.when(egressFlowRepo.findByNameAndType("missing", EgressFlow.class)).thenReturn(Optional.empty());
 
         Result result = egressFlowService.resetFromSnapshot(systemSnapshot, true);
 

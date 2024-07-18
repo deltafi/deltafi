@@ -65,8 +65,8 @@ class TimedDataSourceServiceTest {
     void buildFlow() {
         TimedDataSource running = timedDataSource("running", FlowState.RUNNING, true,"0 */10 * * * *");
         TimedDataSource stopped = timedDataSource("stopped", FlowState.STOPPED, false, "*/1 * * * * *");
-        Mockito.when(timedDataSourceRepo.findById("running")).thenReturn(Optional.of(running));
-        Mockito.when(timedDataSourceRepo.findById("stopped")).thenReturn(Optional.of(stopped));
+        Mockito.when(timedDataSourceRepo.findByNameAndType("running", TimedDataSource.class)).thenReturn(Optional.of(running));
+        Mockito.when(timedDataSourceRepo.findByNameAndType("stopped", TimedDataSource.class)).thenReturn(Optional.of(stopped));
         Mockito.when(flowValidator.validate(Mockito.any())).thenReturn(Collections.emptyList());
 
         TimedDataSourcePlanEntity runningFlowPlan = new TimedDataSourcePlanEntity("running", "yep", PLUGIN_COORDINATES, "topic",
@@ -137,12 +137,12 @@ class TimedDataSourceServiceTest {
         snapshots.add(snapshot("missing", false, true, "*/1 * * * * *"));
         systemSnapshot.setTimedDataSources(snapshots);
 
-        Mockito.when(timedDataSourceRepo.findAll()).thenReturn(List.of(running, stopped, invalid, changed));
-        Mockito.when(timedDataSourceRepo.findById("running")).thenReturn(Optional.of(running));
-        Mockito.when(timedDataSourceRepo.findById("stopped")).thenReturn(Optional.of(stopped));
-        Mockito.when(timedDataSourceRepo.findById("invalid")).thenReturn(Optional.of(invalid));
-        Mockito.when(timedDataSourceRepo.findById("missing")).thenReturn(Optional.empty());
-        Mockito.when(timedDataSourceRepo.findById("changed")).thenReturn(Optional.of(changed));
+        Mockito.when(timedDataSourceRepo.findAllByType(TimedDataSource.class)).thenReturn(List.of(running, stopped, invalid, changed));
+        Mockito.when(timedDataSourceRepo.findByNameAndType("running", TimedDataSource.class)).thenReturn(Optional.of(running));
+        Mockito.when(timedDataSourceRepo.findByNameAndType("stopped", TimedDataSource.class)).thenReturn(Optional.of(stopped));
+        Mockito.when(timedDataSourceRepo.findByNameAndType("invalid", TimedDataSource.class)).thenReturn(Optional.of(invalid));
+        Mockito.when(timedDataSourceRepo.findByNameAndType("missing", TimedDataSource.class)).thenReturn(Optional.empty());
+        Mockito.when(timedDataSourceRepo.findByNameAndType("changed", TimedDataSource.class)).thenReturn(Optional.of(changed));
 
         Result result = timedDataSourceService.resetFromSnapshot(systemSnapshot, true);
 
