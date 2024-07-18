@@ -117,7 +117,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static org.deltafi.common.constant.DeltaFiConstants.*;
 import static org.deltafi.common.types.ActionState.*;
-import static org.deltafi.core.types.DeltaFile.CURRENT_SCHEMA_VERSION;
 import static org.deltafi.core.datafetchers.DeletePolicyDatafetcherTestHelper.*;
 import static org.deltafi.core.datafetchers.DeltaFilesDatafetcherTestHelper.*;
 import static org.deltafi.core.metrics.MetricsUtil.extendTagsForAction;
@@ -2472,12 +2471,10 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile = new DeltaFile();
 		deltaFile.setModified(NOW.plusSeconds(1));
 		deltaFile.setName("filename");
-		deltaFile.setSchemaVersion(CURRENT_SCHEMA_VERSION);
 
 		DeltaFile deltaFile1 = new DeltaFile();
 		deltaFile1.setModified(NOW);
 		deltaFile1.setName("file");
-		deltaFile1.setSchemaVersion(CURRENT_SCHEMA_VERSION);
 
 		deltaFileRepo.saveAll(List.of(deltaFile1, deltaFile));
 
@@ -3764,7 +3761,6 @@ class DeltaFiCoreApplicationTests {
 				.created(OffsetDateTime.now())
 				.totalBytes(1)
 				.stage(DeltaFileStage.COMPLETE)
-				.schemaVersion(CURRENT_SCHEMA_VERSION)
 				.flows(List.of())
 				.build();
 		complete.updateFlags();
@@ -3775,7 +3771,6 @@ class DeltaFiCoreApplicationTests {
 				.totalBytes(2)
 				.stage(DeltaFileStage.COMPLETE)
 				.contentDeleted(OffsetDateTime.now())
-				.schemaVersion(CURRENT_SCHEMA_VERSION)
 				.flows(List.of())
 				.build();
 		contentDeleted.updateFlags();
