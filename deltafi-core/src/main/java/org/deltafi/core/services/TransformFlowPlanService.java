@@ -19,6 +19,7 @@ package org.deltafi.core.services;
 
 import org.deltafi.common.types.FlowType;
 import org.deltafi.core.repo.FlowPlanRepo;
+import org.deltafi.core.repo.TransformFlowRepo;
 import org.deltafi.core.snapshot.types.TransformFlowSnapshot;
 import org.deltafi.core.types.TransformFlow;
 import org.deltafi.core.types.TransformFlowPlanEntity;
@@ -27,7 +28,7 @@ import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
 @Service
-public class TransformFlowPlanService extends FlowPlanService<TransformFlowPlanEntity, TransformFlow, TransformFlowSnapshot> {
+public class TransformFlowPlanService extends FlowPlanService<TransformFlowPlanEntity, TransformFlow, TransformFlowSnapshot, TransformFlowRepo> {
     public TransformFlowPlanService(TransformFlowPlanValidator transformFlowPlanValidator, FlowPlanRepo flowPlanRepo, TransformFlowService flowService, BuildProperties buildProperties) {
         super(transformFlowPlanValidator, flowPlanRepo, flowService, buildProperties);
     }

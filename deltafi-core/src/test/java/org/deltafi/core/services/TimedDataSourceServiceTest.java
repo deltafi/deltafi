@@ -19,6 +19,7 @@ package org.deltafi.core.services;
 
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.ActionType;
+import org.deltafi.common.types.FlowType;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
 import org.deltafi.core.repo.TimedDataSourceRepo;
@@ -92,7 +93,7 @@ class TimedDataSourceServiceTest {
         flows.add(timedDataSource("a", FlowState.RUNNING, false, "0 */1 * * * *"));
         flows.add(timedDataSource("b", FlowState.STOPPED, false, "0 */2 * * * *"));
         flows.add(timedDataSource("c", FlowState.INVALID, true, "0 */3 * * * *"));
-        Mockito.when(timedDataSourceRepo.findAll()).thenReturn(flows);
+        Mockito.when(timedDataSourceRepo.findAllByType(TimedDataSource.class)).thenReturn(flows);
 
         SystemSnapshot systemSnapshot = new SystemSnapshot();
         timedDataSourceService.updateSnapshot(systemSnapshot);
@@ -146,7 +147,7 @@ class TimedDataSourceServiceTest {
         Result result = timedDataSourceService.resetFromSnapshot(systemSnapshot, true);
 
         // verify the hard reset stopped any running flows
-        Mockito.verify(timedDataSourceRepo).updateFlowState("running", FlowState.STOPPED);
+        Mockito.verify(timedDataSourceRepo).updateFlowStatusState("running", FlowState.STOPPED, FlowType.TIMED_DATA_SOURCE);
         Mockito.verify(timedDataSourceRepo).saveAll(flowCaptor.capture());
 
         Map<String, DataSource> updatedFlows = flowCaptor.getValue().stream()
@@ -191,7 +192,6 @@ class TimedDataSourceServiceTest {
         flowStatus.setState(flowState);
         flowStatus.setTestMode(testMode);
         dataSource.setFlowStatus(flowStatus);
-        dataSource.setSchemaVersion(DataSource.CURRENT_SCHEMA_VERSION);
         dataSource.setCronSchedule(cronSchedule);
         return dataSource;
     }

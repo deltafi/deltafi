@@ -1435,14 +1435,14 @@ class DeltaFiCoreApplicationTests {
 	void testStartTimedIngressFlow() {
 		clearForFlowTests();
 		timedDataSourceRepo.save(buildTimedDataSource(FlowState.STOPPED));
-		assertTrue(FlowPlanDatafetcherTestHelper.startTimedIngressFlow(dgsQueryExecutor));
+		assertTrue(FlowPlanDatafetcherTestHelper.startTimedDataSource(dgsQueryExecutor));
 	}
 
 	@Test
 	void testStopTimedIngressFlow() {
 		clearForFlowTests();
 		timedDataSourceRepo.save(buildTimedDataSource(FlowState.RUNNING));
-		assertTrue(FlowPlanDatafetcherTestHelper.stopTimedIngressFlow(dgsQueryExecutor));
+		assertTrue(FlowPlanDatafetcherTestHelper.stopTimedDataSource(dgsQueryExecutor));
 	}
 
 	@Test
@@ -2585,7 +2585,7 @@ class DeltaFiCoreApplicationTests {
 		transformFlowC.setName("c");
 		transformFlowC.setSourcePlugin(PluginCoordinates.builder().groupId("group2").artifactId("deltafi-actions").version("1.0.0").build());
 		transformFlowRepo.saveAll(List.of(transformFlowA, transformFlowB, transformFlowC));
-		assertThat(transformFlowRepo.deleteBySourcePlugin(pluginToDelete)).isEqualTo(2);
+		assertThat(transformFlowRepo.deleteBySourcePluginAndType(pluginToDelete, FlowType.TRANSFORM)).isEqualTo(2);
 		assertThat(transformFlowRepo.count()).isEqualTo(1);
 	}
 
@@ -2619,7 +2619,7 @@ class DeltaFiCoreApplicationTests {
 		egressFlowC.setName("c");
 		egressFlowC.setSourcePlugin(PluginCoordinates.builder().groupId("group2").artifactId("deltafi-actions").version("1.0.0").build());
 		egressFlowRepo.saveAll(List.of(egressFlowA, egressFlowB, egressFlowC));
-		assertThat(egressFlowRepo.deleteBySourcePlugin(pluginToDelete)).isEqualTo(2);
+		assertThat(egressFlowRepo.deleteBySourcePluginAndType(pluginToDelete, FlowType.EGRESS)).isEqualTo(2);
 		assertThat(egressFlowRepo.count()).isEqualTo(1);
 	}
 
@@ -2636,7 +2636,7 @@ class DeltaFiCoreApplicationTests {
 		transformFlowRepo.saveAll(List.of(transformFlowA, transformFlowB, transformFlowC, diffGroup, diffArtifactId));
 		refreshFlowCaches();
 
-		List<TransformFlow> found = transformFlowRepo.findByGroupIdAndArtifactId("group", "deltafi-actions");
+		List<Flow> found = transformFlowRepo.findBySourcePluginGroupIdAndSourcePluginArtifactIdAndType("group", "deltafi-actions", FlowType.TRANSFORM);
 		assertThat(found).hasSize(3).contains(transformFlowA, transformFlowB, transformFlowC);
 	}
 
@@ -3421,8 +3421,8 @@ class DeltaFiCoreApplicationTests {
 		egressFlow.setExpectedAnnotations(Set.of("a", "b"));
 		egressFlowRepo.save(egressFlow);
 
-		assertThat(egressFlowRepo.updateExpectedAnnotations("egress-flow", Set.of("b", "a", "c"))).isTrue();
-		assertThat(egressFlowRepo.findById("egress-flow").orElseThrow().getExpectedAnnotations()).hasSize(3).containsAll(Set.of("a", "b", "c"));
+		assertThat(egressFlowRepo.updateExpectedAnnotations("egress-flow", Set.of("b", "a", "c"))).isGreaterThan(0);
+		assertThat(egressFlowRepo.findByNameAndType("egress-flow", EgressFlow.class).orElseThrow().getExpectedAnnotations()).hasSize(3).containsAll(Set.of("a", "b", "c"));
 	}
 
 	@Test
@@ -3990,9 +3990,9 @@ class DeltaFiCoreApplicationTests {
 	void queuesJoiningTransformActionOnMaxNum() {
 		TransformFlow transformFlow = joiningTransformFlow("join-max-num", new JoinConfiguration(Duration.parse("PT1H"), null, 2, null));
 		RestDataSource restDataSource = buildDataSource(JOIN_TOPIC);
-		transformFlowRepo.insert(transformFlow);
+		transformFlowRepo.save(transformFlow);
 		transformFlowService.refreshCache();
-		restDataSourceRepo.insert(restDataSource);
+		restDataSourceRepo.save(restDataSource);
 		restDataSourceService.refreshCache();
 
 		IngressEventItem ingress1 = new IngressEventItem(UUID.randomUUID(), FILENAME, restDataSource.getName(), null,
@@ -4037,9 +4037,9 @@ class DeltaFiCoreApplicationTests {
 	void queuesJoiningTransformActionOnTimeout() {
 		TransformFlow transformFlow = joiningTransformFlow("join-on-timeout", new JoinConfiguration(Duration.parse("PT3S"), null, 5, null));
 		RestDataSource restDataSource = buildDataSource(JOIN_TOPIC);
-		transformFlowRepo.insert(transformFlow);
+		transformFlowRepo.save(transformFlow);
 		transformFlowService.refreshCache();
-		restDataSourceRepo.insert(restDataSource);
+		restDataSourceRepo.save(restDataSource);
 		restDataSourceService.refreshCache();
 		String dataSourceName = restDataSource.getName();
 
@@ -4065,9 +4065,9 @@ class DeltaFiCoreApplicationTests {
 		String dataSourceName = restDataSource.getName();
 		String transformFlowName = transformFlow.getName();
 
-		transformFlowRepo.insert(transformFlow);
+		transformFlowRepo.save(transformFlow);
 		transformFlowService.refreshCache();
-		restDataSourceRepo.insert(restDataSource);
+		restDataSourceRepo.save(restDataSource);
 		restDataSourceService.refreshCache();
 
 		IngressEventItem ingress1 = new IngressEventItem(UUID.randomUUID(),
@@ -4098,9 +4098,9 @@ class DeltaFiCoreApplicationTests {
 		TransformFlow transformFlow = joiningTransformFlow("join-fail-min-num", new JoinConfiguration(Duration.parse("PT3S"), 3, 5, null));
 		String transformFlowName = transformFlow.getName();
 		RestDataSource restDataSource = buildDataSource(JOIN_TOPIC);
-		transformFlowRepo.insert(transformFlow);
+		transformFlowRepo.save(transformFlow);
 		transformFlowService.refreshCache();
-		restDataSourceRepo.insert(restDataSource);
+		restDataSourceRepo.save(restDataSource);
 		restDataSourceService.refreshCache();
 		String dataSourceName = restDataSource.getName();
 
@@ -4132,7 +4132,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testResumeAggregate() throws IOException {
 		TransformFlow transformFlow = joiningTransformFlow("join-resume", new JoinConfiguration(Duration.parse("PT1H"), null, 2, null));
-		transformFlowRepo.insert(transformFlow);
+		transformFlowRepo.save(transformFlow);
 		transformFlowService.refreshCache();
 
 		UUID did = UUID.randomUUID();

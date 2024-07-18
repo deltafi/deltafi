@@ -18,7 +18,7 @@
 package org.deltafi.core.services;
 
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.types.TransformFlowPlan;
+import org.deltafi.common.types.FlowType;
 import org.deltafi.core.converters.TransformFlowPlanConverter;
 import org.deltafi.core.generated.types.IngressFlowErrorState;
 import org.deltafi.core.repo.TransformFlowRepo;
@@ -26,10 +26,7 @@ import org.deltafi.common.types.Subscriber;
 import org.deltafi.core.services.pubsub.SubscriberService;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.snapshot.types.TransformFlowSnapshot;
-import org.deltafi.core.types.Flow;
-import org.deltafi.core.types.Result;
-import org.deltafi.core.types.TransformFlow;
-import org.deltafi.core.types.TransformFlowPlanEntity;
+import org.deltafi.core.types.*;
 import org.deltafi.core.validation.TransformFlowValidator;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
@@ -41,7 +38,7 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
-public class TransformFlowService extends FlowService<TransformFlowPlanEntity, TransformFlow, TransformFlowSnapshot> implements SubscriberService {
+public class TransformFlowService extends FlowService<TransformFlowPlanEntity, TransformFlow, TransformFlowSnapshot, TransformFlowRepo> implements SubscriberService {
 
     private static final TransformFlowPlanConverter TRANSFORM_FLOW_PLAN_CONVERTER = new TransformFlowPlanConverter();
 
@@ -67,8 +64,18 @@ public class TransformFlowService extends FlowService<TransformFlowPlanEntity, T
     }
 
     @Override
+    protected Class<TransformFlow> getFlowClass() {
+        return TransformFlow.class;
+    }
+
+    @Override
     protected Class<TransformFlowPlanEntity> getFlowPlanClass() {
         return TransformFlowPlanEntity.class;
+    }
+
+    @Override
+    protected FlowType getFlowType() {
+        return FlowType.TRANSFORM;
     }
 
     @Override
@@ -115,7 +122,7 @@ public class TransformFlowService extends FlowService<TransformFlowPlanEntity, T
             return false;
         }
 
-        if (((TransformFlowRepo) flowRepo).updateMaxErrors(flowName, maxErrors)) {
+        if (flowRepo.updateMaxErrors(flowName, maxErrors) > 0) {
             refreshCache();
             return true;
         }

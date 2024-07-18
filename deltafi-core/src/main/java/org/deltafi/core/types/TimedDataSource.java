@@ -18,12 +18,17 @@
 package org.deltafi.core.types;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
+import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.ActionFamily;
 import org.deltafi.core.services.CoreEventQueue;
+import org.hibernate.annotations.Type;
 import org.springframework.data.annotation.PersistenceCreator;
 
 import java.time.Duration;
@@ -34,12 +39,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
+@Entity
+@DiscriminatorValue("TIMED_DATA_SOURCE")
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class TimedDataSource extends DataSource {
-    private static final Duration TASKING_TIMEOUT = Duration.ofSeconds(30);
-    private static final String TYPE = "TIMED_DATA_SOURCE";
-
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
     private ActionConfiguration timedIngressAction;
     private String cronSchedule;
 
@@ -51,16 +57,13 @@ public class TimedDataSource extends DataSource {
     private IngressStatus ingressStatus = IngressStatus.HEALTHY;
     private String ingressStatusMessage;
 
-    /**
-     * Schema versions:
-     * 2 - original
-     */
-    public static final int CURRENT_SCHEMA_VERSION = 2;
+    private static final Duration TASKING_TIMEOUT = Duration.ofSeconds(30);
+    private static final String TYPE = "TIMED_DATA_SOURCE";
 
     @JsonCreator
     @PersistenceCreator
     public TimedDataSource() {
-        super(TYPE);
+        super(FlowType.TIMED_DATA_SOURCE);
     }
 
     @Builder
@@ -82,16 +85,6 @@ public class TimedDataSource extends DataSource {
             setCurrentDid(timedDataSource.getCurrentDid());
             setExecuteImmediate(timedDataSource.isExecuteImmediate());
         }
-    }
-
-    @Override
-    public boolean migrate() {
-        if (getSchemaVersion() < CURRENT_SCHEMA_VERSION) {
-            setSchemaVersion(CURRENT_SCHEMA_VERSION);
-            return true;
-        }
-
-        return false;
     }
 
     public ActionConfiguration findActionConfigByName(String actionNamed) {
@@ -134,10 +127,10 @@ public class TimedDataSource extends DataSource {
     public WrappedActionInput buildActionInput(String systemName, OffsetDateTime now) {
         DeltaFile deltaFile = DeltaFile.builder()
                 .did(UUID.randomUUID())
-                .dataSource(name)
+                .dataSource(getName())
                 .build();
         DeltaFileFlow flow = DeltaFileFlow.builder()
-                .name(name)
+                .name(getName())
                 .number(0)
                 .build();
         Action action = Action.builder()

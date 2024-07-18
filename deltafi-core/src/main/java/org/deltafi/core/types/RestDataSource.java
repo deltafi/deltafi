@@ -17,22 +17,23 @@
  */
 package org.deltafi.core.types;
 
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.ActionType;
+import org.deltafi.common.types.FlowType;
 import org.deltafi.core.generated.types.ActionFamily;
 
 import java.util.List;
 import java.util.Map;
 
-@Data
+@Entity
+@DiscriminatorValue("REST_DATA_SOURCE")
 @EqualsAndHashCode(callSuper = true)
+@Data
 public class RestDataSource extends DataSource {
-
-    public RestDataSource() {
-        super("REST_DATA_SOURCE");
-    }
     @Override
     public ActionConfiguration findActionConfigByName(String actionName) {
         return null;
@@ -41,6 +42,10 @@ public class RestDataSource extends DataSource {
     @Override
     public List<ActionConfiguration> allActionConfigurations() {
         return List.of();
+    }
+
+    public RestDataSource() {
+        super(FlowType.REST_DATA_SOURCE);
     }
 
     @Override

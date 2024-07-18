@@ -99,8 +99,8 @@ public class FlowBuilders {
     }
 
     public static TransformFlow buildTransformFlow(FlowState flowState) {
-        ActionConfiguration tc = new ActionConfiguration("sampleTransform.Utf8TransformAction", ActionType.TRANSFORM, "type");
-        ActionConfiguration tc2 = new ActionConfiguration("sampleTransform.SampleTransformAction", ActionType.TRANSFORM, "type");
+        ActionConfiguration tc = new ActionConfiguration("Utf8TransformAction", ActionType.TRANSFORM, "type");
+        ActionConfiguration tc2 = new ActionConfiguration("SampleTransformAction", ActionType.TRANSFORM, "type");
 
         return buildFlow(TRANSFORM_FLOW_NAME, List.of(tc, tc2), flowState, false);
     }

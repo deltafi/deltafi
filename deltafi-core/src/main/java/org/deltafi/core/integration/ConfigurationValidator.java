@@ -151,7 +151,7 @@ public class ConfigurationValidator {
         return errors;
     }
 
-    private boolean checkOrStartFlow(List<String> errors, String type, FlowService<?, ?, ?> flowService, List<String> flows) {
+    private boolean checkOrStartFlow(List<String> errors, String type, FlowService<?, ?, ?, ?> flowService, List<String> flows) {
         boolean flowStarted = false;
         for (String flow : flows) {
             if (!flowService.hasFlow(flow)) {

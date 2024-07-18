@@ -33,6 +33,7 @@ import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.plugin.PluginRegistryService;
 import org.deltafi.core.plugin.SystemPluginService;
+import org.deltafi.core.repo.FlowRepo;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.*;
 import org.deltafi.core.snapshot.types.FlowSnapshot;
@@ -401,11 +402,11 @@ public class FlowPlanDatafetcher {
         return transformFlowService.ingressFlowErrorsExceeded();
     }
 
-    private boolean removeFlowAndFlowPlan(FlowPlanService<?, ?, ?> flowPlanService, String flowPlanName) {
+    private boolean removeFlowAndFlowPlan(FlowPlanService<?, ?, ?, ?> flowPlanService, String flowPlanName) {
         return flowPlanService.removePlan(flowPlanName, systemPluginService.getSystemPluginCoordinates());
     }
 
-    private <T extends FlowPlanEntity, R extends Flow, S extends FlowSnapshot> R saveFlowPlan(FlowPlanService<T, R, S> flowPlanService, Object input, Class<T> clazz) {
+    private <T extends FlowPlanEntity, R extends Flow, S extends FlowSnapshot, U extends FlowRepo> R saveFlowPlan(FlowPlanService<T, R, S, U> flowPlanService, Object input, Class<T> clazz) {
         T flowPlan = OBJECT_MAPPER.convertValue(input, clazz);
         flowPlan.setSourcePlugin(systemPluginService.getSystemPluginCoordinates());
         return flowPlanService.saveFlowPlan(flowPlan);

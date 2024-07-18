@@ -18,6 +18,7 @@
 package org.deltafi.core.services;
 
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.types.FlowType;
 import org.deltafi.common.types.IngressStatus;
 import org.deltafi.core.converters.TimedDataSourcePlanConverter;
 import org.deltafi.core.generated.types.FlowState;
@@ -40,7 +41,7 @@ import java.util.UUID;
 
 @Service
 @Slf4j
-public class TimedDataSourceService extends FlowService<TimedDataSourcePlanEntity, TimedDataSource, TimedDataSourceSnapshot> {
+public class TimedDataSourceService extends FlowService<TimedDataSourcePlanEntity, TimedDataSource, TimedDataSourceSnapshot, TimedDataSourceRepo> {
 
     private static final TimedDataSourcePlanConverter TIMED_DATA_SOURCE_FLOW_PLAN_CONVERTER = new TimedDataSourcePlanConverter();
 
@@ -99,8 +100,18 @@ public class TimedDataSourceService extends FlowService<TimedDataSourcePlanEntit
     }
 
     @Override
+    protected Class<TimedDataSource> getFlowClass() {
+        return TimedDataSource.class;
+    }
+
+    @Override
     protected Class<TimedDataSourcePlanEntity> getFlowPlanClass() {
         return TimedDataSourcePlanEntity.class;
+    }
+
+    @Override
+    protected FlowType getFlowType() {
+        return FlowType.TIMED_DATA_SOURCE;
     }
 
     @Override
@@ -142,7 +153,7 @@ public class TimedDataSourceService extends FlowService<TimedDataSourcePlanEntit
         }
 
         CronExpression cronExpression = CronExpression.parse(cronSchedule);
-        if (timedDataSourceRepo.updateCronSchedule(flowName, cronSchedule, cronExpression.next(OffsetDateTime.now(clock)))) {
+        if (timedDataSourceRepo.updateCronSchedule(flowName, cronSchedule, cronExpression.next(OffsetDateTime.now(clock))) > 0) {
             refreshCache();
             return true;
         }
@@ -174,7 +185,7 @@ public class TimedDataSourceService extends FlowService<TimedDataSourcePlanEntit
             return false;
         }
 
-        if (timedDataSourceRepo.updateMemo(flowName, memo)) {
+        if (timedDataSourceRepo.updateMemo(flowName, memo) > 0) {
             refreshCache();
             return true;
         }
@@ -183,7 +194,7 @@ public class TimedDataSourceService extends FlowService<TimedDataSourcePlanEntit
     }
 
     public void setLastRun(String flowName, OffsetDateTime lastRun, UUID currentDid) {
-        if (timedDataSourceRepo.updateLastRun(flowName, lastRun, currentDid)) {
+        if (timedDataSourceRepo.updateLastRun(flowName, lastRun, currentDid) > 0) {
             refreshCache();
         }
 
@@ -194,7 +205,7 @@ public class TimedDataSourceService extends FlowService<TimedDataSourcePlanEntit
         CronExpression cronExpression = CronExpression.parse(cronSchedule);
 
         if (timedDataSourceRepo.completeExecution(flowName, currentDid, memo, executeImmediate,
-                status == null ? IngressStatus.HEALTHY : status, statusMessage, cronExpression.next(OffsetDateTime.now(clock)))) {
+                status == null ? IngressStatus.HEALTHY : status, statusMessage, cronExpression.next(OffsetDateTime.now(clock))) > 0) {
             refreshCache();
             return true;
         }

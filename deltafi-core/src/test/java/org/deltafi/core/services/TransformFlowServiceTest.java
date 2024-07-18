@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.services;
 
+import org.deltafi.common.types.FlowType;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
 import org.deltafi.core.generated.types.IngressFlowErrorState;
@@ -97,7 +98,7 @@ class TransformFlowServiceTest {
         flows.add(transformFlow("b", FlowState.STOPPED, false, 1));
         flows.add(transformFlow("c", FlowState.INVALID, true, 1));
 
-        Mockito.when(transformFlowRepo.findAll()).thenReturn(flows);
+        Mockito.when(transformFlowRepo.findAllByType(TransformFlow.class)).thenReturn(flows);
 
         SystemSnapshot systemSnapshot = new SystemSnapshot();
         transformFlowService.updateSnapshot(systemSnapshot);
@@ -145,7 +146,7 @@ class TransformFlowServiceTest {
         Result result = transformFlowService.resetFromSnapshot(systemSnapshot, true);
 
         // verify the hard reset stopped any running flows
-        Mockito.verify(transformFlowRepo).updateFlowState("running", FlowState.STOPPED);
+        Mockito.verify(transformFlowRepo).updateFlowStatusState("running", FlowState.STOPPED, FlowType.TRANSFORM);
 
         Mockito.verify(transformFlowRepo).saveAll(flowCaptor.capture());
 

@@ -19,6 +19,7 @@ package org.deltafi.core.services;
 
 import org.deltafi.common.types.FlowType;
 import org.deltafi.core.repo.FlowPlanRepo;
+import org.deltafi.core.repo.TimedDataSourceRepo;
 import org.deltafi.core.snapshot.types.TimedDataSourceSnapshot;
 import org.deltafi.core.types.TimedDataSource;
 import org.deltafi.core.types.TimedDataSourcePlanEntity;
@@ -27,7 +28,7 @@ import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
 @Service
-public class TimedDataSourcePlanService extends FlowPlanService<TimedDataSourcePlanEntity, TimedDataSource, TimedDataSourceSnapshot> {
+public class TimedDataSourcePlanService extends FlowPlanService<TimedDataSourcePlanEntity, TimedDataSource, TimedDataSourceSnapshot, TimedDataSourceRepo> {
     public TimedDataSourcePlanService(TimedDataSourcePlanValidator dataSourcePlanValidator, FlowPlanRepo flowPlanRepo, TimedDataSourceService flowService, BuildProperties buildProperties) {
         super(dataSourcePlanValidator, flowPlanRepo, flowService, buildProperties);
     }

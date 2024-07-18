@@ -17,8 +17,8 @@
  */
 package org.deltafi.core.services;
 
-import org.deltafi.common.types.EgressFlowPlan;
 import org.deltafi.common.types.FlowType;
+import org.deltafi.core.repo.EgressFlowRepo;
 import org.deltafi.core.repo.FlowPlanRepo;
 import org.deltafi.core.snapshot.types.EgressFlowSnapshot;
 import org.deltafi.core.types.EgressFlow;
@@ -28,7 +28,7 @@ import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
 @Service
-public class EgressFlowPlanService extends FlowPlanService<EgressFlowPlanEntity, EgressFlow, EgressFlowSnapshot> {
+public class EgressFlowPlanService extends FlowPlanService<EgressFlowPlanEntity, EgressFlow, EgressFlowSnapshot, EgressFlowRepo> {
     public EgressFlowPlanService(EgressFlowPlanValidator egressFlowPlanValidator, FlowPlanRepo flowPlanRepo, EgressFlowService flowService, BuildProperties buildProperties) {
         super(egressFlowPlanValidator, flowPlanRepo, flowService, buildProperties);
     }

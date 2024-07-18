@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.services;
 
+import org.deltafi.common.types.FlowType;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
 import org.deltafi.core.repo.EgressFlowRepo;
@@ -64,7 +65,7 @@ class EgressFlowServiceTest {
         flows.add(egressFlow("b", FlowState.STOPPED, false, Set.of("a", "b")));
         flows.add(egressFlow("c", FlowState.STOPPED, true, Set.of()));
 
-        Mockito.when(egressFlowRepo.findAll()).thenReturn(flows);
+        Mockito.when(egressFlowRepo.findAllByType(EgressFlow.class)).thenReturn(flows);
 
         SystemSnapshot systemSnapshot = new SystemSnapshot();
         egressFlowService.updateSnapshot(systemSnapshot);
@@ -112,7 +113,7 @@ class EgressFlowServiceTest {
         Result result = egressFlowService.resetFromSnapshot(systemSnapshot, true);
 
         // verify the hard reset stopped any running flows
-        Mockito.verify(egressFlowRepo).updateFlowState("running", FlowState.STOPPED);
+        Mockito.verify(egressFlowRepo).updateFlowStatusState("running", FlowState.STOPPED, FlowType.EGRESS);
 
         Mockito.verify(egressFlowRepo).saveAll(flowCaptor.capture());
 

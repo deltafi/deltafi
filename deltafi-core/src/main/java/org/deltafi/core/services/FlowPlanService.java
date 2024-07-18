@@ -26,6 +26,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.common.types.PluginCoordinates;
+import org.deltafi.core.repo.FlowRepo;
 import org.deltafi.core.snapshot.types.FlowSnapshot;
 import org.deltafi.core.types.*;
 import org.deltafi.core.exceptions.DeltafiConfigurationException;
@@ -42,7 +43,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
-public abstract class FlowPlanService<FlowPlanT extends FlowPlanEntity, FlowT extends Flow, FlowSnapshotT extends FlowSnapshot> implements PluginCleaner, Snapshotter {
+public abstract class FlowPlanService<FlowPlanT extends FlowPlanEntity, FlowT extends Flow, FlowSnapshotT extends FlowSnapshot, FlowRepoT extends FlowRepo> implements PluginCleaner, Snapshotter {
 
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .registerModule(new JavaTimeModule())
@@ -51,7 +52,7 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlanEntity, FlowT ex
 
     private final FlowPlanValidator<FlowPlanT> flowPlanValidator;
     private final FlowPlanRepo flowPlanRepo;
-    private final FlowService<FlowPlanT, FlowT, FlowSnapshotT> flowService;
+    private final FlowService<FlowPlanT, FlowT, FlowSnapshotT, FlowRepoT> flowService;
     private final BuildProperties buildProperties;
 
     @PostConstruct

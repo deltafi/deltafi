@@ -18,6 +18,7 @@
 package org.deltafi.core.services;
 
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.types.FlowType;
 import org.deltafi.common.types.Subscriber;
 import org.deltafi.core.converters.EgressFlowPlanConverter;
 import org.deltafi.core.repo.EgressFlowRepo;
@@ -39,7 +40,7 @@ import java.util.Set;
 @Slf4j
 @Service
 public
-class EgressFlowService extends FlowService<EgressFlowPlanEntity, EgressFlow, EgressFlowSnapshot> implements SubscriberService {
+class EgressFlowService extends FlowService<EgressFlowPlanEntity, EgressFlow, EgressFlowSnapshot, EgressFlowRepo> implements SubscriberService {
 
     private static final EgressFlowPlanConverter EGRESS_FLOW_PLAN_CONVERTER = new EgressFlowPlanConverter();
 
@@ -62,8 +63,18 @@ class EgressFlowService extends FlowService<EgressFlowPlanEntity, EgressFlow, Eg
     }
 
     @Override
+    protected Class<EgressFlow> getFlowClass() {
+        return EgressFlow.class;
+    }
+
+    @Override
     protected Class<EgressFlowPlanEntity> getFlowPlanClass() {
         return EgressFlowPlanEntity.class;
+    }
+
+    @Override
+    protected FlowType getFlowType() {
+        return FlowType.EGRESS;
     }
 
     /**
@@ -82,7 +93,7 @@ class EgressFlowService extends FlowService<EgressFlowPlanEntity, EgressFlow, Eg
             return false;
         }
 
-        if (((EgressFlowRepo) flowRepo).updateExpectedAnnotations(flowName, expectedAnnotations)) {
+        if (flowRepo.updateExpectedAnnotations(flowName, expectedAnnotations) > 0) {
             refreshCache();
             return true;
         }

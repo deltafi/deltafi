@@ -19,6 +19,7 @@ package org.deltafi.core.services;
 
 import org.deltafi.common.types.FlowType;
 import org.deltafi.core.repo.FlowPlanRepo;
+import org.deltafi.core.repo.RestDataSourceRepo;
 import org.deltafi.core.snapshot.types.RestDataSourceSnapshot;
 import org.deltafi.core.types.RestDataSource;
 import org.deltafi.core.types.RestDataSourcePlanEntity;
@@ -27,7 +28,7 @@ import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
 @Service
-public class RestDataSourcePlanService extends FlowPlanService<RestDataSourcePlanEntity, RestDataSource, RestDataSourceSnapshot> {
+public class RestDataSourcePlanService extends FlowPlanService<RestDataSourcePlanEntity, RestDataSource, RestDataSourceSnapshot, RestDataSourceRepo> {
     public RestDataSourcePlanService(RestDataSourcePlanValidator dataSourcePlanValidator, FlowPlanRepo flowPlanRepo, RestDataSourceService flowService, BuildProperties buildProperties) {
         super(dataSourcePlanValidator, flowPlanRepo, flowService, buildProperties);
     }

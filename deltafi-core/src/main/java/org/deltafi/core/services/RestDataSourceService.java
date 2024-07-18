@@ -18,6 +18,7 @@
 package org.deltafi.core.services;
 
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.types.FlowType;
 import org.deltafi.core.converters.RestDataSourcePlanConverter;
 import org.deltafi.core.repo.RestDataSourceRepo;
 import org.deltafi.core.snapshot.SystemSnapshot;
@@ -33,7 +34,7 @@ import java.util.Objects;
 
 @Service
 @Slf4j
-public class RestDataSourceService extends FlowService<RestDataSourcePlanEntity, RestDataSource, RestDataSourceSnapshot> {
+public class RestDataSourceService extends FlowService<RestDataSourcePlanEntity, RestDataSource, RestDataSourceSnapshot, RestDataSourceRepo> {
 
     private static final RestDataSourcePlanConverter REST_DATA_SOURCE_FLOW_PLAN_CONVERTER = new RestDataSourcePlanConverter();
 
@@ -64,8 +65,18 @@ public class RestDataSourceService extends FlowService<RestDataSourcePlanEntity,
     }
 
     @Override
+    protected Class<RestDataSource> getFlowClass() {
+        return RestDataSource.class;
+    }
+
+    @Override
     protected Class<RestDataSourcePlanEntity> getFlowPlanClass() {
         return RestDataSourcePlanEntity.class;
+    }
+
+    @Override
+    protected FlowType getFlowType() {
+        return FlowType.REST_DATA_SOURCE;
     }
 
     @Override

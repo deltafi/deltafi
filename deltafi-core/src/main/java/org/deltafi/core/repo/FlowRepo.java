@@ -17,51 +17,80 @@
  */
 package org.deltafi.core.repo;
 
+import jakarta.transaction.Transactional;
+import org.deltafi.common.types.FlowType;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.generated.types.FlowState;
-import org.deltafi.core.types.Flow;
-import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.data.mongodb.repository.Query;
-import org.springframework.data.mongodb.repository.Update;
-import org.springframework.data.repository.NoRepositoryBean;
+import org.deltafi.core.types.*;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.deltafi.core.plugin.SystemPluginService.SYSTEM_PLUGIN_ARTIFACT_ID;
 import static org.deltafi.core.plugin.SystemPluginService.SYSTEM_PLUGIN_GROUP_ID;
 
-@NoRepositoryBean
-public interface FlowRepo<T extends Flow> extends MongoRepository<T, String>, FlowRepoCustom<T> {
+@Repository
+public interface FlowRepo extends JpaRepository<Flow, String> {
+    @Query("SELECT f FROM Flow f WHERE f.name = :name AND TYPE(f) = :type")
+    <T extends Flow> Optional<T> findByNameAndType(String name, Class<T> type);
 
-    /**
-     * Delete any flows where the source plugin matches the plugin coordinates
-     *
-     * @param sourcePlugin the plugin coordinates to match
-     * @return - the number of flows deleted
-     */
-    int deleteBySourcePlugin(PluginCoordinates sourcePlugin);
+    @Query("SELECT f FROM Flow f WHERE TYPE(f) = :type")
+    <T extends Flow> List<T> findAllByType(Class<T> type);
 
-    /**
-     * Find the flow with the given groupId and artifactId
-     * @param groupId plugin groupId to search by
-     * @param artifactId plugin artifactId to search by
-     * @return the flow with the given groupId and artifactId
-     */
-    @Query("{ 'sourcePlugin.groupId': ?0, 'sourcePlugin.artifactId': ?1 }")
-    List<T> findByGroupIdAndArtifactId(String groupId, String artifactId);
+    @Query(value = "SELECT f.* FROM flows f " +
+            "WHERE f.flow_status ->> 'state' = :#{#state.name} " +
+            "AND f.type = :#{#type.name}",
+            nativeQuery = true)
+    List<Flow> findByFlowStatusStateAndType(FlowState state, FlowType type);
 
-    /**
-     * Find a list of flows with the given flow state
-     * @param state to search for
-     * @return list of flows with the given flow state
-     */
-    List<T> findByFlowStatusState(FlowState state);
+    @Modifying
+    @Transactional
+    @Query(value = "DELETE FROM flows WHERE " +
+            "source_plugin->>'groupId' = :#{#sourcePlugin.groupId} AND " +
+            "source_plugin->>'artifactId' = :#{#sourcePlugin.artifactId} AND " +
+            "source_plugin->>'version' = :#{#sourcePlugin.version} AND " +
+            "type = :#{#type.name}",
+            nativeQuery = true)
+    int deleteBySourcePluginAndType(PluginCoordinates sourcePlugin, FlowType type);
 
-    /**
-     * Update the system-plugin flows sourcePlugin version to the current running version
-     * @param version current running version
-     */
-    @Query("{ 'sourcePlugin.groupId': '" + SYSTEM_PLUGIN_GROUP_ID + "', 'sourcePlugin.artifactId': '" + SYSTEM_PLUGIN_ARTIFACT_ID + "'}")
-    @Update("{ '$set' : { 'sourcePlugin.version' : ?0 } }")
-    void updateSystemPluginFlowVersions(String version);
+    @Query(value = "SELECT * FROM flows WHERE " +
+            "source_plugin->>'groupId' = :groupId AND " +
+            "source_plugin->>'artifactId' = :artifactId AND " +
+            "type = :#{#type.name()}",
+            nativeQuery = true)
+    List<Flow> findBySourcePluginGroupIdAndSourcePluginArtifactIdAndType(String groupId, String artifactId, FlowType type);
+
+    @Modifying
+    @Transactional
+    @Query(value = "UPDATE flows SET source_plugin = jsonb_set(source_plugin, '{version}', to_jsonb(:version)) " +
+            "WHERE source_plugin ->> 'groupId' = '" + SYSTEM_PLUGIN_GROUP_ID + "' " +
+            "AND source_plugin ->> 'artifactId' = '" + SYSTEM_PLUGIN_ARTIFACT_ID + "' " +
+            "AND type = :type",
+            nativeQuery = true)
+    <T extends Flow> void updateSystemPluginFlowVersions(String version, Class<T> type);
+
+    @Modifying
+    @Transactional
+    @Query(value = "UPDATE flows SET flow_status = jsonb_set(flow_status, '{state}', to_jsonb(:#{#flowState.name})) " +
+            "WHERE name = :flowName AND type = :#{#type.name}",
+            nativeQuery = true)
+    int updateFlowStatusState(String flowName, FlowState flowState, FlowType type);
+
+    @Modifying
+    @Transactional
+    @Query(value = "UPDATE flows SET flow_status = jsonb_set(flow_status, '{testMode}', to_jsonb(:testMode)) " +
+            "WHERE name = :flowName AND type = :#{#type.name}",
+            nativeQuery = true)
+    int updateFlowStatusTestMode(String flowName, boolean testMode, FlowType type);
+
+    @Query(value = "SELECT f.name FROM flows f " +
+            "WHERE f.flow_status ->> 'state' = 'RUNNING' " +
+            "AND f.source_plugin = cast(:sourcePlugin AS jsonb) " +
+            "AND f.type = :type",
+            nativeQuery = true)
+    <T extends Flow> List<String> findRunningBySourcePlugin(PluginCoordinates sourcePlugin, Class<T> type);
 }

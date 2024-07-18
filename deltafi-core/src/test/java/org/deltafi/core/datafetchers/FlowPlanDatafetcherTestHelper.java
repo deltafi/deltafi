@@ -178,11 +178,11 @@ public class FlowPlanDatafetcherTestHelper {
         return executeQuery(dgsQueryExecutor, StopEgressFlowGraphQLQuery.newRequest().flowName("sampleEgress").build());
     }
 
-    public static boolean startTimedIngressFlow(DgsQueryExecutor dgsQueryExecutor) {
+    public static boolean startTimedDataSource(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, StartTimedDataSourceGraphQLQuery.newRequest().name(TIMED_DATA_SOURCE_NAME).build());
     }
 
-    public static boolean stopTimedIngressFlow(DgsQueryExecutor dgsQueryExecutor) {
+    public static boolean stopTimedDataSource(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, StopTimedDataSourceGraphQLQuery.newRequest().name(TIMED_DATA_SOURCE_NAME).build());
     }
 
