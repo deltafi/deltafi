@@ -21,11 +21,12 @@
     <PageHeader heading="Flows">
       <div class="btn-toolbar mb-2 mb-md-0">
         <DialogTemplate component-name="flow/FlowConfiguration" header="Flow Configuration">
-          <Button v-tooltip.top.hover="'View Flow Configuration'" label="Flow Configuration" class="p-button-sm p-button-secondary p-button-outlined ml-3 mr-3" />
+          <Button v-tooltip.top.hover="'View Flow Configuration'" label="Flow Configuration" class="p-button-sm p-button-secondary p-button-outlined mx-1" />
         </DialogTemplate>
+        <Dropdown v-model="pluginNameSelected" placeholder="Select a Plugin" :options="pluginNames" option-label="name" show-clear :editable="false" class="deltafi-input-field mx-1" />
         <span class="p-input-icon-left">
           <i class="pi pi-search" />
-          <InputText v-model="filterFlowsText" type="text" placeholder="Search" class="p-inputtext-sm deltafi-input-field flow-panel-search-txt" />
+          <InputText v-model="filterFlowsText" type="text" placeholder="Search" class="p-inputtext-sm deltafi-input-field flow-panel-search-txt mx-1" />
         </span>
       </div>
     </PageHeader>

@@ -18,13 +18,13 @@
 <template>
   <div class="errors-page">
     <PageHeader heading="Errors">
-      <div class="time-range btn-toolbar mb-2 mb-md-0">
-        <Button v-tooltip.right="{ value: `Clear Filters`, disabled: !filterOptionsSelected }" rounded :class="`ml-2 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${filterOptionsSelected ? 'p-column-filter-menu-button-active' : null}`" :disabled="!filterOptionsSelected" @click="clearOptions()">
+      <div class="time-range btn-toolbar mb-2 mb-md-0 align-items-center">
+        <Button v-tooltip.right="{ value: `Clear Filters`, disabled: !filterOptionsSelected }" rounded :class="`mr-0 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${filterOptionsSelected ? 'p-column-filter-menu-button-active' : null}`" :disabled="!filterOptionsSelected" @click="clearOptions()">
           <i class="pi pi-filter" style="font-size: 1rem"></i>
         </Button>
-        <Dropdown v-model="dataSourceNameSelected" placeholder="Select a Data Source" :options="dataSourceFlowNames" show-clear :editable="false" class="deltafi-input-field ml-3 flow-dropdown" />
-        <AutoComplete v-model="selectedMessageValue" :suggestions="filteredErrorMessages" placeholder="Select Last Error" class="deltafi-input-field ml-3" force-selection @complete="messageSearch" />
-        <Dropdown v-model="selectedAckOption" :options="ackOptions" option-label="name" option-value="value" :editable="false" class="deltafi-input-field ml-3 ack-dropdown" />
+        <Dropdown v-model="dataSourceNameSelected" placeholder="Select a Data Source" :options="dataSourceFlowNames" show-clear :editable="false" class="deltafi-input-field flow-dropdown mx-1" />
+        <AutoComplete v-model="selectedMessageValue" :suggestions="filteredErrorMessages" placeholder="Select Last Error" class="deltafi-input-field mx-1" force-selection @complete="messageSearch" />
+        <Dropdown v-model="selectedAckOption" :options="ackOptions" option-label="name" option-value="value" :editable="false" class="deltafi-input-field ack-dropdown mx-1" />
         <Button v-tooltip.left="refreshButtonTooltip" :icon="refreshButtonIcon" label="Refresh" :class="refreshButtonClass" :badge="refreshButtonBadge" badge-class="p-badge-danger" @click="onRefresh" />
       </div>
     </PageHeader>
@@ -182,7 +182,7 @@ const messageSelected = (errorMsg) => {
 };
 
 const refreshButtonClass = computed(() => {
-  let classes = ["p-button", "deltafi-input-field", "ml-3"];
+  let classes = ["p-button", "deltafi-input-field", "ml-1"];
   if (newErrorsCount.value > 0) {
     classes.push("p-button-warning");
   } else {
