@@ -15,15 +15,10 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.join;
+package org.deltafi.core.exceptions;
 
-import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.stereotype.Repository;
-
-import java.util.List;
-import java.util.UUID;
-
-@Repository
-public interface JoinEntryRepo extends MongoRepository<JoinEntry, UUID>, JoinEntryRepoCustom {
-    List<JoinEntry> findAllByOrderByJoinDate();
+public class JoinException extends Exception {
+    public JoinException(String message) {
+        super(message);
+    }
 }

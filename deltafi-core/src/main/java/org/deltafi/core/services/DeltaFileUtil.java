@@ -21,7 +21,7 @@ import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.core.types.*;
 import org.deltafi.common.types.ActionState;
 import org.deltafi.common.types.DeltaFileStage;
-import org.deltafi.core.join.JoinEntry;
+import org.deltafi.core.types.JoinEntry;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;

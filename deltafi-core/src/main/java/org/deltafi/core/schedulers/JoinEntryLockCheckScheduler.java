@@ -19,7 +19,7 @@ package org.deltafi.core.schedulers;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
-import org.deltafi.core.join.ScheduledJoinService;
+import org.deltafi.core.services.ScheduledJoinService;
 import org.deltafi.core.schedulers.trigger.JoinEntryLockCheckTrigger;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.TaskScheduler;

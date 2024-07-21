@@ -15,10 +15,15 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.join;
+package org.deltafi.core.configuration;
 
-public class JoinException extends Exception {
-    public JoinException(String message) {
-        super(message);
-    }
+import lombok.Data;
+
+import java.time.Duration;
+
+@Data
+public class JoinProperties {
+    private long acquireLockTimeoutMs = 30000;
+    private Duration maxLockDuration = Duration.ofMinutes(1);
+    private Duration lockCheckInterval = Duration.ofMinutes(1);
 }

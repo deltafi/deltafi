@@ -15,12 +15,12 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.join;
+package org.deltafi.core.services;
 
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.core.services.DeltaFiPropertiesService;
+import org.deltafi.core.types.JoinEntry;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;

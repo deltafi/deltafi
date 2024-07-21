@@ -20,7 +20,7 @@ package org.deltafi.core.services;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.*;
-import org.deltafi.core.join.*;
+import org.deltafi.core.exceptions.JoinException;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.services.pubsub.PublisherService;
 import org.deltafi.core.types.*;

@@ -15,16 +15,32 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.join;
+package org.deltafi.core.types;
 
-import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.stereotype.Repository;
+import jakarta.persistence.*;
+import lombok.Data;
 
-import java.util.List;
 import java.util.UUID;
 
-@Repository
-public interface JoinEntryDidRepo extends MongoRepository<JoinEntryDid, UUID> {
-    List<JoinEntryDid> findByJoinEntryId(UUID joinEntryId);
-    void deleteByJoinEntryId(UUID joinEntryId);
+@Entity
+@Table(name = "join_entry_dids")
+@Data
+public class JoinEntryDid {
+    @Id
+    private UUID id;
+
+    private UUID joinEntryId;
+
+    @Column(nullable = false)
+    private UUID did;
+
+    public JoinEntryDid() {
+        id = UUID.randomUUID();
+    }
+
+    public JoinEntryDid(UUID joinEntryId, UUID did) {
+        id = UUID.randomUUID();
+        this.joinEntryId = joinEntryId;
+        this.did = did;
+    }
 }

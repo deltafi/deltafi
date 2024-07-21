@@ -15,11 +15,12 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.join;
+package org.deltafi.core.repo;
 
 import lombok.RequiredArgsConstructor;
 import org.deltafi.common.uuid.UUIDGenerator;
-import org.deltafi.core.repo.IndexUtils;
+import org.deltafi.core.types.JoinDefinition;
+import org.deltafi.core.types.JoinEntry;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;

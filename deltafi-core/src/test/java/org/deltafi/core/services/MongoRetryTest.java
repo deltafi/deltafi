@@ -22,8 +22,6 @@ import org.deltafi.common.types.*;
 import org.deltafi.common.uuid.UUIDGenerator;
 import org.deltafi.core.MockDeltaFiPropertiesService;
 import org.deltafi.core.audit.CoreAuditLogger;
-import org.deltafi.core.join.JoinEntryService;
-import org.deltafi.core.join.ScheduledJoinService;
 import org.deltafi.core.configuration.ClockConfiguration;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.repo.DeltaFileRepo;

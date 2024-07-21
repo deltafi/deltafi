@@ -15,20 +15,22 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.join;
+package org.deltafi.core.repo;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.springframework.data.mongodb.core.mapping.Document;
+import jakarta.transaction.Transactional;
+import org.deltafi.core.types.JoinEntryDid;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.UUID;
 
-@Document
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class JoinEntryDid {
-    private UUID joinEntryId;
-    private UUID did;
+@Repository
+public interface JoinEntryDidRepo extends JpaRepository<JoinEntryDid, UUID> {
+    List<JoinEntryDid> findByJoinEntryId(UUID joinEntryId);
+
+    @Modifying
+    @Transactional
+    void deleteByJoinEntryId(UUID joinEntryId);
 }

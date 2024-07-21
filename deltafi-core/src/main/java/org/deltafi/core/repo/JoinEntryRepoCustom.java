@@ -15,7 +15,10 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.join;
+package org.deltafi.core.repo;
+
+import org.deltafi.core.types.JoinDefinition;
+import org.deltafi.core.types.JoinEntry;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;

@@ -15,15 +15,16 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.join;
+package org.deltafi.core.repo;
 
-import lombok.Data;
+import org.deltafi.core.types.JoinEntry;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.stereotype.Repository;
 
-import java.time.Duration;
+import java.util.List;
+import java.util.UUID;
 
-@Data
-public class JoinProperties {
-    private long acquireLockTimeoutMs = 30000;
-    private Duration maxLockDuration = Duration.ofMinutes(1);
-    private Duration lockCheckInterval = Duration.ofMinutes(1);
+@Repository
+public interface JoinEntryRepo extends MongoRepository<JoinEntry, UUID>, JoinEntryRepoCustom {
+    List<JoinEntry> findAllByOrderByJoinDate();
 }

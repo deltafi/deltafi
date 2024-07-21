@@ -36,8 +36,7 @@ import org.deltafi.common.converters.KeyValueConverter;
 import org.deltafi.common.types.*;
 import org.deltafi.common.uuid.UUIDGenerator;
 import org.deltafi.core.audit.CoreAuditLogger;
-import org.deltafi.core.join.JoinEntry;
-import org.deltafi.core.join.ScheduledJoinService;
+import org.deltafi.core.types.JoinEntry;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.exceptions.*;
 import org.deltafi.core.generated.types.*;
@@ -926,7 +925,7 @@ public class DeltaFilesService {
                 .toList();
 
         advanceAndSave(inputs);
-        deltaFileRepo.batchInsert(parents);
+        deltaFileRepo.saveAll(parents);
 
         return results;
     }
@@ -1053,7 +1052,7 @@ public class DeltaFilesService {
                 })
                 .toList();
 
-        deltaFileRepo.batchInsert(changedDeltaFiles);
+        deltaFileRepo.saveAll(changedDeltaFiles);
         return results;
     }
 
@@ -1095,7 +1094,7 @@ public class DeltaFilesService {
                 })
                 .toList();
 
-        deltaFileRepo.batchInsert(changedDeltaFiles);
+        deltaFileRepo.saveAll(changedDeltaFiles);
         return results;
     }
 
