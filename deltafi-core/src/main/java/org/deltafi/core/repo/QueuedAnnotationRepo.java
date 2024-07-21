@@ -18,13 +18,15 @@
 package org.deltafi.core.repo;
 
 import org.deltafi.core.types.QueuedAnnotation;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface QueuedAnnotationRepo extends MongoRepository<QueuedAnnotation, UUID> {
+public interface QueuedAnnotationRepo extends JpaRepository<QueuedAnnotation, UUID> {
+    @Query("SELECT qa FROM QueuedAnnotation qa ORDER BY qa.time ASC")
     List<QueuedAnnotation> findAllByOrderByTimeAsc();
 }

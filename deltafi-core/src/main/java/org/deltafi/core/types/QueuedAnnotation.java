@@ -17,23 +17,36 @@
  */
 package org.deltafi.core.types;
 
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
+import jakarta.persistence.*;
 import lombok.Data;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Type;
 
 import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.UUID;
 
 @Data
-@Document
+@Entity
+@Table(name = "queued_annotations")
+@NoArgsConstructor
 public class QueuedAnnotation {
     @Id
+    @GeneratedValue
     UUID id;
 
+    @Column(nullable = false)
     UUID did;
+
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
     Map<String, String> annotations;
+
+    @Column(nullable = false)
     boolean allowOverwrites;
+
+    @Column(nullable = false)
     OffsetDateTime time;
 
     public QueuedAnnotation(UUID did, Map<String, String> annotations, boolean allowOverwrites) {

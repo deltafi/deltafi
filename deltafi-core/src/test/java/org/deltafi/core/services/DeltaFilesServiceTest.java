@@ -368,7 +368,7 @@ class DeltaFilesServiceTest {
 
         deltaFilesService.addAnnotations(did, Map.of("queued", "true"), false);
 
-        Mockito.verify(queuedAnnotationRepo).insert(queuedAnnotationCaptor.capture());
+        Mockito.verify(queuedAnnotationRepo).save(queuedAnnotationCaptor.capture());
         Mockito.verify(deltaFileCacheService, never()).save(any());
         Mockito.verify(deltaFileRepo, never()).save(any());
 

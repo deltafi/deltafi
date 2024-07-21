@@ -631,7 +631,7 @@ public class DeltaFilesService {
             if (deltaFile == null) {
                 if (deltaFileRepo.existsById(did)) {
                     QueuedAnnotation queuedAnnotation = new QueuedAnnotation(did, annotations, allowOverwrites);
-                    queuedAnnotationRepo.insert(queuedAnnotation);
+                    queuedAnnotationRepo.save(queuedAnnotation);
                     return;
                 } else {
                     throw new DgsEntityNotFoundException("DeltaFile " + did + " not found.");
@@ -706,7 +706,7 @@ public class DeltaFilesService {
         collector.add(deltaFile);
 
         if (collector.size() == batchSize) {
-            deltaFileRepo.saveAll(collector);
+            deltaFileRepo.batchInsert(collector);
             collector.clear();
         }
     }
@@ -926,7 +926,7 @@ public class DeltaFilesService {
                 .toList();
 
         advanceAndSave(inputs);
-        deltaFileRepo.saveAll(parents);
+        deltaFileRepo.batchInsert(parents);
 
         return results;
     }
@@ -1053,7 +1053,7 @@ public class DeltaFilesService {
                 })
                 .toList();
 
-        deltaFileRepo.saveAll(changedDeltaFiles);
+        deltaFileRepo.batchInsert(changedDeltaFiles);
         return results;
     }
 
@@ -1095,7 +1095,7 @@ public class DeltaFilesService {
                 })
                 .toList();
 
-        deltaFileRepo.saveAll(changedDeltaFiles);
+        deltaFileRepo.batchInsert(changedDeltaFiles);
         return results;
     }
 
@@ -1756,7 +1756,7 @@ public class DeltaFilesService {
                 parentDeltaFile.getChildDids().add(deltaFile.getDid());
                 parentDeltaFile.joinedAction(event.getDid(), action.getName(), event.getStart(), event.getStop(), now);
             }
-            deltaFileRepo.saveAll(parentDeltaFiles);
+            deltaFileRepo.batchInsert(parentDeltaFiles);
             enqueueActions(actionInputs);
         }
     }
