@@ -31,8 +31,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.types.*;
-import org.springframework.data.mongodb.core.index.IndexInfo;
-import org.springframework.data.mongodb.core.index.IndexOperations;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -660,21 +658,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         } else {
             predicates.add(cb.like(root.get("name"), "%" + name + "%"));
         }
-    }
-
-    private void removeUnknownIndices(IndexOperations idxOps, IndexInfo existing, Set<String> knownIndices) {
-        /*if (!knownIndices.contains(existing.getName())) {
-            log.info("Dropping unknown index {}", existing.getName());
-            dropIndex(idxOps, existing.getName());
-        }*/
-    }
-
-    private void dropIndex(IndexOperations idxOps, String indexName) {
-        /*try {
-            idxOps.dropIndex(indexName);
-        } catch (UncategorizedMongoDbException ex) {
-            log.error("Failed to remove unknown index {}", indexName, ex);
-        }*/
     }
 
     // TODO: can this happen in one shot?

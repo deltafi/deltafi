@@ -1463,7 +1463,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testSavePluginVariables() {
 		assertTrue(FlowPlanDatafetcherTestHelper.savePluginVariables(dgsQueryExecutor));
-		PluginVariables variables = pluginVariableRepo.findById(systemPluginService.getSystemPluginCoordinates()).orElse(null);
+		PluginVariables variables = pluginVariableRepo.findBySourcePlugin(systemPluginService.getSystemPluginCoordinates()).orElse(null);
 		assertThat(variables).isNotNull();
 		assertThat(variables.getVariables()).hasSize(1).anyMatch(v -> v.getName().equals("var"));
 	}
@@ -2700,7 +2700,7 @@ class DeltaFiCoreApplicationTests {
 
 		pluginVariableRepo.save(variables);
 
-		assertThat(pluginVariableRepo.findById(newVersion)).isEmpty();
+		assertThat(pluginVariableRepo.findBySourcePlugin(newVersion)).isEmpty();
 		assertThat(pluginVariableRepo.findIgnoringVersion(newVersion.getGroupId(), newVersion.getArtifactId())).hasSize(1).contains(variables);
 	}
 
@@ -2723,7 +2723,7 @@ class DeltaFiCoreApplicationTests {
 
 		pluginVariableRepo.resetAllUnmaskedVariableValues();
 
-		Map<String, Variable> updatedVars = pluginVariableRepo.findById(coords).orElseThrow()
+		Map<String, Variable> updatedVars = pluginVariableRepo.findBySourcePlugin(coords).orElseThrow()
 				.getVariables().stream().collect(Collectors.toMap(Variable::getName, Function.identity()));
 
 		assertThat(updatedVars)
@@ -2742,6 +2742,8 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	void testConcurrentPluginVariableRegistration(int ignoreI) {
+		pluginVariableRepo.deleteAll();
+
 		PluginCoordinates oldVersion = PluginCoordinates.builder().groupId("org").artifactId("deltafi").version("1").build();
 		PluginCoordinates newVersion = PluginCoordinates.builder().groupId("org").artifactId("deltafi").version("2").build();
 
@@ -2763,7 +2765,7 @@ class DeltaFiCoreApplicationTests {
 
 		CompletableFuture.allOf(futures.toArray(new CompletableFuture[numMockPlugins])).join();
 
-		PluginVariables afterRegistrations = pluginVariableRepo.findById(newVersion).orElse(null);
+		PluginVariables afterRegistrations = pluginVariableRepo.findBySourcePlugin(newVersion).orElse(null);
 		assertThat(afterRegistrations).isNotNull();
 		List<Variable> varsAfter = afterRegistrations.getVariables();
 		assertThat(varsAfter).hasSize(4);

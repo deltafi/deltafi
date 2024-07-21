@@ -124,6 +124,7 @@ generateJava {
 			"PluginImageRepositoryInput": "org.deltafi.core.plugin.deployer.image.PluginImageRepository",
 			"PluginProperties": "org.deltafi.core.configuration.PluginProperties",
 			"PluginPropertiesInput": "org.deltafi.core.configuration.PluginProperties",
+			"PluginVariables": "org.deltafi.core.types.PluginVariables",
 			"PublishRules": "org.deltafi.common.types.PublishRules",
 			"PublishRulesInput": "org.deltafi.common.types.PublishRules",
 			"ProcessingType": "org.deltafi.common.types.ProcessingType",

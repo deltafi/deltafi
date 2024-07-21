@@ -31,7 +31,7 @@ spring:
         - NO_HTTP_INTERFACE_ARG
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: create
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
@@ -45,9 +45,6 @@ minio:
   url: http://localhost
   access-key: minioadmin
   secret-key: minioadmin
-
-redis:
-  url: http://localhost
 
 valkey:
   url: http://localhost

@@ -401,13 +401,13 @@ class DeltaFilesServiceTest {
     }
 
     @Test
-    void testDeleteContentAndMetadata_mongoFail() {
+    void testDeleteContentAndMetadata_dbFail() {
         Content content = new Content();
         UUID did = UUID.randomUUID();
-        Mockito.doThrow(new RuntimeException("mongo fail")).when(deltaFileRepo).deleteById(did);
+        Mockito.doThrow(new RuntimeException("db fail")).when(deltaFileRepo).deleteById(did);
         deltaFilesService.deleteContentAndMetadata(did, content);
 
-        // make sure content cleanup happens after a mongo failure
+        // make sure content cleanup happens after a db failure
         Mockito.verify(contentStorageService).delete(content);
     }
 

@@ -17,16 +17,43 @@
  */
 package org.deltafi.core.types;
 
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
+import jakarta.persistence.*;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.deltafi.common.types.PluginCoordinates;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import org.deltafi.common.types.Variable;
+import org.hibernate.annotations.Type;
 
-@Document("pluginVariable")
-public class PluginVariables extends org.deltafi.core.generated.types.PluginVariables {
+import java.util.List;
+import java.util.UUID;
+
+@Entity
+@Table(name = "plugin_variables",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"group_id", "artifact_id", "version"}))
+@Data
+@EqualsAndHashCode
+public class PluginVariables {
 
     @Id
-    @Override
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private UUID id;
+    private String groupId;
+    private String artifactId;
+    private String version;
+
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
+    private List<Variable> variables;
+
+    @Transient
     public PluginCoordinates getSourcePlugin() {
-        return super.getSourcePlugin();
+        return new PluginCoordinates(groupId, artifactId, version);
+    }
+
+    public void setSourcePlugin(PluginCoordinates sourcePlugin) {
+        this.groupId = sourcePlugin.getGroupId();
+        this.artifactId = sourcePlugin.getArtifactId();
+        this.version = sourcePlugin.getVersion();
     }
 }

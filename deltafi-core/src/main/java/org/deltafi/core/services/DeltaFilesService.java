@@ -44,7 +44,6 @@ import org.deltafi.core.generated.types.*;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.metrics.MetricsUtil;
 import org.deltafi.core.repo.*;
-import org.deltafi.core.retry.MongoRetryable;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.types.ResumePolicy;
 import org.deltafi.core.types.*;
@@ -661,7 +660,6 @@ public class DeltaFilesService {
         }
     }
 
-    @MongoRetryable
     private void addAnnotations(DeltaFile deltaFile, Map<String, String> annotations, boolean allowOverwrites, OffsetDateTime annotationTime) {
         if (allowOverwrites) {
             deltaFile.addAnnotations(annotations);

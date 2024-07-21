@@ -20,7 +20,6 @@ package org.deltafi.core.repo;
 import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.types.DeltaFiles;
-import org.springframework.data.mongodb.core.index.IndexInfo;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
