@@ -22,7 +22,9 @@
 
 Provides an empty subclass of pydantic.BaseModel.
 
-Starting Pydantic v2, the BaseModel cannot be directly instantiated.  This class provides for instantiation of GenericModel objects that inherit from BaseModel.
+All action parameter classes must inherit pydantic.BaseModel.
+
+Starting Pydantic v2, the BaseModel cannot be directly instantiated. This class provides for instantiation of GenericModel objects that inherit from BaseModel.
 
 This class does not define fields for validation or any other purpose.
 """

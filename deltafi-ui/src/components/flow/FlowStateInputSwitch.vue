@@ -80,7 +80,7 @@ const confirmationPopup = async (event, name, state) => {
 
 const toggleFlowState = async (flowName, newflowState) => {
   if (_.isEqual(newflowState, "STOPPED")) {
-    notify.info("Starting Flow", `Stopping <b>${flowName}</b> flow.`, 3000);
+    notify.info("Starting Flow", `Starting <b>${flowName}</b> flow.`, 3000);
     await startTransformFlowByName(flowName);
   } else {
     notify.info("Stopping Flow", `Stopping <b>${flowName}</b> flow.`, 3000);

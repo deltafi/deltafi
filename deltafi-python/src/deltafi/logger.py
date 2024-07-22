@@ -18,7 +18,7 @@
 
 import logging
 import sys
-from datetime import datetime
+from datetime import datetime, UTC
 
 import json_logging
 
@@ -42,7 +42,7 @@ def _sanitize_log_msg(record):
 class JSONLogFormatter(json_logging.JSONLogFormatter):
 
     def _format_log_object(self, record, request_util):
-        utcnow = datetime.utcnow()
+        utcnow = datetime.now(UTC)
 
         json_log_object = {
             'timestamp': json_logging.util.iso_time_format(utcnow),

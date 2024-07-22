@@ -19,13 +19,13 @@
 <template>
   <div class="filtered-page">
     <PageHeader heading="Filtered">
-      <div class="time-range btn-toolbar mb-2 mb-md-0">
-        <Button v-tooltip.right="{ value: `Clear Filters`, disabled: !filterOptionsSelected }" rounded :class="`ml-2 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${filterOptionsSelected ? 'p-column-filter-menu-button-active' : null}`" :disabled="!filterOptionsSelected" @click="clearOptions()">
+      <div class="time-range btn-toolbar mb-2 mb-md-0 align-items-center">
+        <Button v-tooltip.right="{ value: `Clear Filters`, disabled: !filterOptionsSelected }" rounded :class="`mx-1 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${filterOptionsSelected ? 'p-column-filter-menu-button-active' : null}`" :disabled="!filterOptionsSelected" @click="clearOptions()">
           <i class="pi pi-filter" style="font-size: 1rem"></i>
         </Button>
-        <Dropdown v-model="dataSourceNameSelected" placeholder="Select a Data Source" :options="dataSourceFlowNames" show-clear :editable="false" class="deltafi-input-field ml-3 flow-dropdown" />
-        <AutoComplete v-model="selectedMessageValue" :suggestions="filteredMessages" placeholder="Select Cause" class="deltafi-input-field ml-3" force-selection @complete="messageSearch" />
-        <Button :icon="refreshButtonIcon" label="Refresh" class="p-button deltafi-input-field ml-3 p-button-outlined" @click="onRefresh" />
+        <Dropdown v-model="dataSourceNameSelected" placeholder="Select a Data Source" :options="dataSourceFlowNames" show-clear :editable="false" class="deltafi-input-field flow-dropdown mx-1" />
+        <AutoComplete v-model="selectedMessageValue" :suggestions="filteredMessages" placeholder="Select Cause" class="deltafi-input-field mx-1" force-selection @complete="messageSearch" />
+        <Button :icon="refreshButtonIcon" label="Refresh" class="p-button p-button-outlined deltafi-input-field ml-1" @click="onRefresh" />
       </div>
     </PageHeader>
     <TabView v-model:activeIndex="activeTab">

@@ -17,17 +17,25 @@
 #
 
 from abc import abstractmethod
+from typing import Dict, List
+
 from deltafi.action import TransformAction
 from deltafi.domain import Context, Content
 from deltafi.input import TransformInput
 from deltafi.result import TransformResult
 from deltafi.storage import ContentService
-from mockito import when, mock, unstub, verifyStubbedInvocationsAreUsed
+from mockito import mock
 from pydantic import BaseModel, Field
 
 
 class SampleTransformParameters(BaseModel):
-    thing: str = Field(description="Sample transform parameter")
+    a_string: str = Field(description="this string parameter is required")
+    def_string: str = Field(default="default-val", description="str with default")
+    a_dict: dict[str, str] = Field(description="this dict parameter is required")
+    def_dict: Dict[str, str] = Field(default={"key1:" "val1"}, description="dict has default")
+    a_list: List[str] = Field(default=[], description="list with default")
+    a_bool: bool = Field(description="this boolean parameter is required")
+    def_int: int = Field(default=100, description="int with default")
 
 
 class SampleTransformAction(TransformAction):
