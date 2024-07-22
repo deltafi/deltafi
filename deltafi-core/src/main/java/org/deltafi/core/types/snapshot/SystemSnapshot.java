@@ -17,6 +17,10 @@
  */
 package org.deltafi.core.types.snapshot;
 
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.deltafi.common.types.PluginCoordinates;
@@ -26,8 +30,7 @@ import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.types.DeletePolicies;
 import org.deltafi.core.types.PluginVariables;
 import org.deltafi.core.types.ResumePolicy;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import org.hibernate.annotations.Type;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -35,24 +38,46 @@ import java.util.List;
 import java.util.Set;
 
 @Data
-@Document
+@Entity
 @NoArgsConstructor
 public class SystemSnapshot {
     @Id
     private String id;
     private String reason;
     private OffsetDateTime created = OffsetDateTime.now();
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
     private List<PluginVariables> pluginVariables;
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
     private DeletePolicies deletePolicies;
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
     private DeltaFiProperties deltaFiProperties;
 
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
     private List<RestDataSourceSnapshot> restDataSources = new ArrayList<>();
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
     private List<TimedDataSourceSnapshot> timedDataSources = new ArrayList<>();
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
     private List<TransformFlowSnapshot> transformFlows = new ArrayList<>();
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
     private List<EgressFlowSnapshot> egressFlows = new ArrayList<>();
 
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
     private Set<PluginCoordinates> installedPlugins;
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
     private List<PluginCustomizationConfig> pluginCustomizationConfigs = new ArrayList<>();
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
     private List<PluginImageRepository> pluginImageRepositories = new ArrayList<>();
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
     private List<ResumePolicy> resumePolicies = new ArrayList<>();
 }

@@ -18,9 +18,9 @@
 package org.deltafi.core.repo;
 
 import org.deltafi.core.types.snapshot.SystemSnapshot;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface SystemSnapshotRepo extends MongoRepository<SystemSnapshot, String> {
+public interface SystemSnapshotRepo extends JpaRepository<SystemSnapshot, String> {
 }
