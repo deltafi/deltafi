@@ -302,7 +302,9 @@ AIRGAP_DISTRO_TREE=$BASE_PATH/deltafi
 
 DELTAFI_VERSION=$(cat "${DELTAFI_PATH}/deltafi-cli/VERSION")
 
+VALUES_FILE="${BASE_PATH}/airgap.values.yaml"
 STATIC_REPO_FILTER_FILE="${BASE_PATH}/airgap.static-repo-filter.manifest"
+STATIC_REPO_LIST_FILE="${BASE_PATH}/airgap.static-repo-list.manifest"
 REPO_FILTER_FILE="${BASE_PATH}/airgap.repo-filter.manifest"
 REPO_LIST_FILE="${AIRGAP_DISTRO_TREE}/airgap.repo.manifest"
 PLUGIN_LIST_FILE="${BASE_PATH}/airgap.plugin.manifest"
@@ -345,6 +347,46 @@ EOF
 
 function capture_airgap_repo_manifest() {
   docker images | sed 1d | awk '{ print $1 ":" $2 }' | grep -vFf "$REPO_FILTER_FILE" | grep -vFf "$STATIC_REPO_FILTER_FILE" > "$REPO_LIST_FILE"
+  grep -ve "^#" < "$STATIC_REPO_LIST_FILE" >> "$REPO_LIST_FILE"
+  repos=$(sort < "$REPO_LIST_FILE" | uniq)
+  echo "$repos" > "$REPO_LIST_FILE"
+}
+
+function curate_install_files() {
+  mkdir -p "$AIRGAP_DISTRO_TREE/bin"
+  cat <<EOF > "$AIRGAP_DISTRO_TREE/bin/lazydocker"
+#!/bin/sh
+docker run -it --rm -v /var/run/docker.sock:/var/run/docker.sock -v \$HOME/.config/lazydocker:/.config/jesseduffield/lazydocker deltafi/lazydocker:v0.23.3-0 \$@
+EOF
+
+  cat <<EOF > "$AIRGAP_DISTRO_TREE/bin/yq"
+#!/bin/sh
+docker run --rm \\
+  -v "\$PWD:\$PWD" \\
+  -w="\$PWD" \\
+  --entrypoint yq \\
+  linuxserver/yq \\
+  \$@
+EOF
+  cat <<EOF > "$AIRGAP_DISTRO_TREE/bin/jq"
+#!/bin/sh
+docker run --rm \\
+  -v "\$PWD:\$PWD" \\
+  -w="\$PWD" \\
+  --entrypoint jq \\
+  linuxserver/yq \\
+  \$@
+EOF
+  cat <<EOF > "$AIRGAP_DISTRO_TREE/bin/xq"
+#!/bin/sh
+docker run --rm \\
+  -v "\$PWD:\$PWD" \\
+  -w="\$PWD" \\
+  --entrypoint xq \\
+  linuxserver/yq \\
+  \$@
+EOF
+  chmod a+x "$AIRGAP_DISTRO_TREE"/bin/*
 }
 
 function create_distro() {
@@ -432,6 +474,11 @@ function archive_distro() {
 
 function freeze_dry_repo() {
   _info -s "Carbon freeze docker repo"
+  _info -a "Pulling required images:"
+  for repo in $(cat $REPO_LIST_FILE); do
+    _annotated_subshell docker pull "$repo"
+    _info -c "$repo"
+  done
   _info -a "Freezing the following images:"
   _annotated_subshell cat "$REPO_LIST_FILE"
   _annotated_subshell docker save $(cat "$REPO_LIST_FILE") -o "$AIRGAP_REPO_ARCHIVE"
@@ -489,7 +536,7 @@ _attention "DeltaFi will now be installed locally"
 
 _info -s "Installing DeltaFi"
 _info -a "" 
-deltafi install || _fail "Failed to install DeltaFi"
+deltafi install -f "${VALUES_FILE}" || _fail "Failed to install DeltaFi"
 _info -a "" 
 _ok_annotated "DeltaFi installed"
 
@@ -517,6 +564,7 @@ _info -c "Snapshot ID: $SNAPSHOT_ID"
 _ok_annotated "Snapshot captured"
 
 capture_airgap_repo_manifest
+curate_install_files
 freeze_dry_repo
 create_distro
 archive_distro

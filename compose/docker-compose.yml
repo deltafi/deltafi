@@ -356,6 +356,7 @@ services:
       - ${SETTINGS_DIR}/graphite/statsd/udp.js:/opt/statsd/config/udp.js
       - ${DATA_DIR}/graphite:/opt/graphite/storage/
   deltafi-clickhouse:
+    scale: ${CLICKHOUSE_SCALE}
     image: ${CLICKHOUSE}
     container_name: deltafi-clickhouse
     env_file:
@@ -375,6 +376,7 @@ services:
       - ${DATA_DIR}/clickhouse:/bitnami/clickhouse/
     user: "${USER_ID}"
   deltafi-clickhouse-etl:
+    scale: ${CLICKHOUSE_ETL_SCALE}
     image: ${DELTAFI_CLICKHOUSE_ETL}
     command: [ 'bundle', 'exec', 'bin/clickhouse_etl.rb' ]
     container_name: deltafi-clickhouse-etl

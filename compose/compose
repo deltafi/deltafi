@@ -418,10 +418,11 @@ _check_local_fqdns() {
   _info "Checking /etc/hosts config"
   _info -h "You may be prompted for your sudo password"
 
-  _verify_or_replace_fqdn "local.deltafi.org"
-  _verify_or_replace_fqdn "graphite.local.deltafi.org"
-  _verify_or_replace_fqdn "metrics.local.deltafi.org"
-  _verify_or_replace_fqdn "minio.local.deltafi.org"
+  domain=$(_from_values ".ingress.domain")
+  _verify_or_replace_fqdn "$domain"
+  _verify_or_replace_fqdn "graphite.$domain"
+  _verify_or_replace_fqdn "metrics.$domain"
+  _verify_or_replace_fqdn "minio.$domain"
   _verify_or_replace_fqdn "deltafi-api-service"
   _verify_or_replace_fqdn "deltafi-auth-service"
   _verify_or_replace_fqdn "deltafi-core-service"
@@ -465,7 +466,11 @@ deltafi:
     image: ${repo}/deltafi-egress-sink:${tag}
   nodemonitor:
     image: ${repo}/deltafi-nodemonitor:${tag}
+  clickhouse:
+    enabled: true
   clickhouse_etl:
+    enabled: true
+    image: ${repo}/deltafi-clickhouse-etl:${tag}
     interval: 10
     lag: 60
     batch: 2000
@@ -564,6 +569,16 @@ _write_startup_file() {
   _append_startup "ENV_DIR" "${ENV_DIR}"
   _append_startup "DATA_DIR" "${DATA_DIR}"
   _append_startup "COMPOSE_PROJECT_NAME" "deltafi"
+  if [[ $(_from_values ".deltafi.clickhouse.enabled") == "true" ]]; then
+    _append_startup "CLICKHOUSE_SCALE" "1"
+  else
+    _append_startup "CLICKHOUSE_SCALE" "0"
+  fi
+  if [[ $(_from_values ".deltafi.clickhouse_etl.enabled") == "true" ]]; then
+    _append_startup "CLICKHOUSE_ETL_SCALE" "1"
+  else
+    _append_startup "CLICKHOUSE_ETL_SCALE" "0"
+  fi
   _append_startup_from_values "DELTAFI_API" ".deltafi.api.image"
   _append_startup_from_values "DELTAFI_AUTH" ".deltafi.auth.image"
   _append_startup_from_values "DELTAFI_AUTH_RESOLVER" ".deltafi.auth.entityResolver.image"
@@ -641,6 +656,8 @@ _write_env_files() {
   _append_common_from_values "ETL_INTERVAL" ".deltafi.clickhouse_etl.interval"
   _append_common_from_values "ETL_LAG" ".deltafi.clickhouse_etl.lag"
 
+  _append_startup_from_values "CLICKHOUSE_ENABLED" ".deltafi.clickhouse.enabled"
+  _append_startup_from_values "CLICKHOUSE_ETL_ENABLED" ".deltafi.clickhouse_etl.enabled"
   case "${auth_mode}" in
     disabled)
       auth_request="/no-auth"

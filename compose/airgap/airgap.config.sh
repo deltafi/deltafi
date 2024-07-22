@@ -21,7 +21,18 @@
 #
 
 set -e
+echo "Configuring plugin variables..."
+plugins=$(deltafi query "query getPlugin { plugins { displayName pluginCoordinates { artifactId groupId version } } }")
+passthrough_group=$(echo "$plugins" | jq -r '.data.plugins[] | select(.pluginCoordinates.artifactId == "deltafi-passthrough") | .pluginCoordinates.groupId')
+passthrough_version=$(echo "$plugins" | jq -r '.data.plugins[] | select(.pluginCoordinates.artifactId == "deltafi-passthrough") | .pluginCoordinates.version')
 
+deltafi query "mutation updatePluginVariable { setPluginVariableValues (pluginCoordinates: {artifactId: \"deltafi-passthrough\", groupId: \"${passthrough_group}\", version: \"${passthrough_version}\"}, variables: {key: \"smokeEgressUrl\", value: \"http://deltafi-egress-sink:9292/blackhole\"}) }" > /dev/null
+deltafi query "mutation updatePluginVariable { setPluginVariableValues (pluginCoordinates: {artifactId: \"deltafi-passthrough\", groupId: \"${passthrough_group}\", version: \"${passthrough_version}\"}, variables: {key: \"passthroughEgressUrl\", value: \"http://deltafi-egress-sink:9292\"}) }" > /dev/null
+deltafi query "mutation updatePluginVariable { setPluginVariableValues (pluginCoordinates: {artifactId: \"deltafi-passthrough\", groupId: \"${passthrough_group}\", version: \"${passthrough_version}\"}, variables: {key: \"compressEgressUrl\", value: \"http://deltafi-egress-sink:9292\"}) }" > /dev/null
+
+deltafi query -c "query getPlugin { plugins { displayName variables { name value description defaultValue dataType } } }"
+
+echo "Enabling flows..."
 deltafi egress-flow start passthrough
 deltafi egress-flow start smoke
 deltafi normalize-flow start passthrough
@@ -30,11 +41,5 @@ deltafi normalize-flow start smoke
 deltafi enrich-flow start artificial-enrichment
 deltafi load-policies airgap.delete-policy.json
 
+echo "Starting smoke ingress..."
 deltafi ingress-action start smoke-test-ingress
-
-echo "Configuring plugin variables"
-# shellcheck disable=SC2016
-deltafi mongo-eval --quiet 'db.pluginVariable.updateOne({"variables.name": "passthroughEgressUrl"}, {$set: {"variables.$.value": "http://deltafi-egress-sink:9292"}})' > /dev/null
-# shellcheck disable=SC2016
-deltafi mongo-eval --quiet 'db.pluginVariable.updateOne({"variables.name": "smokeEgressUrl"}, {$set: {"variables.$.value": "http://deltafi-egress-sink:9292/blackhole"}})' > /dev/null
-

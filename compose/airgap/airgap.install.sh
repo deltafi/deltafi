@@ -127,7 +127,7 @@ PLUGIN_LIST_FILE="${DELTAFI_PATH}/airgap.plugin.manifest"
 SNAPSHOT_FILE="${DELTAFI_PATH}/airgap.snapshot.json"
 DELTAFI_VERSION=$(cat "${DELTAFI_PATH}/VERSION")
 
-export PATH=$DELTAFI_PATH/deltafi-cli:$PATH
+export PATH=$DELTAFI_PATH/deltafi-cli:$PATH:$DELTAFI_PATH/bin
 
 pushd "$DELTAFI_PATH" > /dev/null || exit
 
