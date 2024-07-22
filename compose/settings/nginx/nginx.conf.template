@@ -82,23 +82,11 @@ http {
           proxy_pass http://deltafi-ui;
         }
 
-        location /api/ {
+        location /api/v1/ {
           proxy_pass http://deltafi-api;
         }
 
-        location /graphql-core {
-          proxy_pass http://deltafi-core/graphql;
-        }
-
-        location /deltafile/ingress {
-          proxy_pass http://deltafi-ingress;
-        }
-
-        location /survey {
-          proxy_pass http://deltafi-ingress;
-        }
-
-        location ~ /deltafile/annotate/.* {
+        location /api/v2/ {
           proxy_pass http://deltafi-core;
         }
 

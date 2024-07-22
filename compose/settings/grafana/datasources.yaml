@@ -16,3 +16,14 @@ datasources:
     uid: deltafi-loki
     url: http://deltafi-loki:3100
     version: 2
+  - jsonData:
+      defaultDatabase: deltafi
+      port: 9000
+      server: deltafi-clickhouse
+      tlsSkipVerify: true
+      username: default
+    name: ClickHouse
+    secureJsonData:
+      password: $CLICKHOUSE_PASSWORD
+    type: grafana-clickhouse-datasource
+    uid: deltafi-clickhouse
