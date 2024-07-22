@@ -117,7 +117,7 @@ import Dialog from "primevue/dialog";
 const emit = defineEmits(["dataSourcesList"]);
 const editing = inject("isEditing");
 const notify = useNotifications();
-const { getAllDataSources, setTimedDataSourceCronSchedule, loaded, loading, errors } = useDataSource();
+const { getTimedDataSources, setTimedDataSourceCronSchedule, loaded, loading, errors } = useDataSource();
 const showLoading = computed(() => loading.value && !loaded.value);
 const timedDataSources = ref([]);
 const onEditInit = () => (editing.value = true);
@@ -186,10 +186,8 @@ const refresh = async () => {
   // Do not refresh data while editing.
   if (editing.value) return;
 
-  const response = await getAllDataSources();
-  timedDataSources.value = response.data.getAllFlows.dataSource.filter((ds) => {
-    return ds.type === "TIMED_DATA_SOURCE";
-  });
+  const response = await getTimedDataSources();
+  timedDataSources.value = response.data.getAllFlows.timedDataSource
 
   emit("dataSourcesList", timedDataSources.value);
 };

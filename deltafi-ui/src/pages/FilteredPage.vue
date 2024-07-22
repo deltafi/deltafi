@@ -23,9 +23,21 @@
         <Button v-tooltip.right="{ value: `Clear Filters`, disabled: !filterOptionsSelected }" rounded :class="`ml-2 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${filterOptionsSelected ? 'p-column-filter-menu-button-active' : null}`" :disabled="!filterOptionsSelected" @click="clearOptions()">
           <i class="pi pi-filter" style="font-size: 1rem"></i>
         </Button>
+<<<<<<< Updated upstream
         <Dropdown v-model="dataSourceNameSelected" placeholder="Select a Data Source" :options="dataSourceFlowNames" show-clear :editable="false" class="deltafi-input-field ml-3 flow-dropdown" />
         <AutoComplete v-model="selectedMessageValue" :suggestions="filteredMessages" placeholder="Select Cause" class="deltafi-input-field ml-3" force-selection @complete="messageSearch" />
         <Button :icon="refreshButtonIcon" label="Refresh" class="p-button deltafi-input-field ml-3 p-button-outlined" @click="onRefresh" />
+=======
+<<<<<<< Updated upstream
+        <Dropdown v-model="dataSourceNameSelected" placeholder="Select a Data Source" :options="dataSourceFlowNames" show-clear :editable="false" class="deltafi-input-field flow-dropdown mx-1" />
+        <AutoComplete v-model="selectedMessageValue" :suggestions="filteredMessages" placeholder="Select Cause" class="deltafi-input-field mx-1" force-selection @complete="messageSearch" />
+        <Button :icon="refreshButtonIcon" label="Refresh" class="p-button p-button-outlined deltafi-input-field ml-1" @click="onRefresh" />
+=======
+        <Dropdown v-model="dataSourceNameSelected" placeholder="Select a Data Source" :options="formattedDataSourceNames" option-group-label="label" option-group-children="sources" show-clear :editable="false" class="deltafi-input-field ml-3 flow-dropdown" />
+        <AutoComplete v-model="selectedMessageValue" :suggestions="filteredMessages" placeholder="Select Cause" class="deltafi-input-field ml-3" force-selection @complete="messageSearch" />
+        <Button :icon="refreshButtonIcon" label="Refresh" class="p-button deltafi-input-field ml-3 p-button-outlined" @click="onRefresh" />
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
       </div>
     </PageHeader>
     <TabView v-model:activeIndex="activeTab">
@@ -61,7 +73,8 @@ import useFiltered from "@/composables/useFiltered";
 const filterSummaryMessagePanel = ref();
 const filterSummaryFlowPanel = ref();
 const filterSummaryPanel = ref();
-const { dataSourceFlows: dataSourceFlowNames, fetchDataSourceFlowNames } = useFlows();
+const { allDataSourceFlowNames, fetchAllDataSourceFlowNames } = useFlows();
+const formattedDataSourceNames = ref([]);
 const loading = ref(false);
 const dataSourceNameSelected = ref(null);
 const filteredCauseSelected = ref(null);
@@ -156,8 +169,6 @@ const messageSelected = (cause) => {
   if (filteredCauseSelected.value !== cause) filteredCauseSelected.value = cause;
 };
 
-fetchDataSourceFlowNames();
-
 const onRefresh = () => {
   loading.value = true;
   filterSummaryPanel.value.fetchFiltered();
@@ -171,6 +182,8 @@ onBeforeMount(() => {
 });
 
 onMounted(async () => {
+  await fetchAllDataSourceFlowNames();
+  formatDataSourceNames();
   await getPersistedParams();
   await nextTick();
   await fetchAllMessage();
@@ -184,6 +197,15 @@ onMounted(async () => {
 
   setupWatchers();
 });
+
+const formatDataSourceNames = () => {
+  if (!_.isEmpty(allDataSourceFlowNames.value.restDataSource)) {
+    formattedDataSourceNames.value.push({ label: "Rest Data Sources", sources: allDataSourceFlowNames.value.restDataSource });
+  }
+  if (!_.isEmpty(allDataSourceFlowNames.value.timedDataSource)) {
+    formattedDataSourceNames.value.push({ label: "Timed Data Sources", sources: allDataSourceFlowNames.value.timedDataSource });
+  }
+};
 </script>
 
 <style lang="scss">
@@ -229,7 +251,7 @@ onMounted(async () => {
     }
   }
 
-  .p-datatable.p-datatable-striped .p-datatable-tbody>tr.p-highlight {
+  .p-datatable.p-datatable-striped .p-datatable-tbody > tr.p-highlight {
     color: #ffffff;
 
     a,

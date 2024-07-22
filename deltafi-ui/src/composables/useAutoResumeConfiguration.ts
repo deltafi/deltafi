@@ -33,10 +33,6 @@ export default function useAutoResumeConfiguration() {
       name: {
         type: ["string", "null"],
       },
-      flow: {
-        type: ["string", "null"],
-        minLength: 1,
-      },
       errorSubstring: {
         type: ["string", "null"],
         minLength: 1,
@@ -90,10 +86,6 @@ export default function useAutoResumeConfiguration() {
       {
         type: "object",
         properties: {
-          flow: {
-            type: ["string", "null"],
-            minLength: 1,
-          },
           errorSubstring: {
             type: ["string", "null"],
             minLength: 1,
@@ -106,9 +98,6 @@ export default function useAutoResumeConfiguration() {
       },
       {
         anyOf: [
-          {
-            required: ["flow"],
-          },
           {
             required: ["errorSubstring"],
           },

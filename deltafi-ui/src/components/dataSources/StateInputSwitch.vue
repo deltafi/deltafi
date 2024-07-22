@@ -49,7 +49,7 @@ import _ from "lodash";
 const { hasActiveSubscribers } = useTopics();
 const confirm = useConfirm();
 const topicActive = ref(false);
-const { startDataSourceByName, stopDataSourceByName } = useDataSource();
+const { startRestDataSourceByName, startTimedDataSourceByName, stopRestDataSourceByName, stopTimedDataSourceByName } = useDataSource();
 const notify = useNotifications();
 const emit = defineEmits(["change"]);
 
@@ -69,12 +69,12 @@ const props = defineProps({
   },
 });
 
-onBeforeMount(async () => topicActive.value = await hasActiveSubscribers(rowData.value.topic));
+onBeforeMount(async () => (topicActive.value = await hasActiveSubscribers(rowData.value.topic)));
 
 const { rowDataProp: rowData, dataSourceType, configureDataSourceDialog } = toRefs(props);
 
 const confirmationPopup = async (event) => {
-  const { name, state, topic } = { name: rowData.value.name, state: rowData.value.flowStatus.state, topic: rowData.value.topic }
+  const { name, state, topic } = { name: rowData.value.name, state: rowData.value.flowStatus.state, topic: rowData.value.topic };
 
   if (_.isEqual(state, "RUNNING")) {
     // Stop
@@ -86,7 +86,7 @@ const confirmationPopup = async (event) => {
       rejectLabel: "Cancel",
       icon: "pi pi-exclamation-triangle",
       accept: () => toggleFlowState(name, state),
-      reject: () => { },
+      reject: () => {},
     });
   } else {
     // Start
@@ -101,7 +101,7 @@ const confirmationPopup = async (event) => {
         rejectLabel: "Cancel",
         icon: "pi pi-exclamation-triangle",
         accept: () => toggleFlowState(name, state),
-        reject: () => { },
+        reject: () => {},
       });
     }
   }
@@ -119,13 +119,21 @@ const tooltip = computed(() => {
 
 const toggleFlowState = async (flowName, newFlowState) => {
   if (!configureDataSourceDialog.value) {
-    if (_.isEqual(dataSourceType.value, "timedDataSource")) {
-      if (_.isEqual(newFlowState, "STOPPED")) {
-        notify.info("Starting Data Source", `Starting <b>${flowName}</b> data source.`, 3000);
-        await startDataSourceByName(flowName);
+    if (_.isEqual(newFlowState, "STOPPED")) {
+      if (_.isEqual(dataSourceType.value, "timedDataSource")) {
+        notify.info("Starting Timed Data Source", `Starting <b>${flowName}</b> data source.`, 3000);
+        await startTimedDataSourceByName(flowName);
       } else {
-        notify.info("Stopping Data Source", `Stopping <b>${flowName}</b> data source.`, 3000);
-        await stopDataSourceByName(flowName);
+        notify.info("Starting Rest Data Source", `Starting <b>${flowName}</b> data source.`, 3000);
+        await startRestDataSourceByName(flowName);
+      }
+    } else {
+      if (_.isEqual(dataSourceType.value, "timedDataSource")) {
+        notify.info("Stopping Timed Data Source", `Stopping <b>${flowName}</b> data source.`, 3000);
+        await stopTimedDataSourceByName(flowName);
+      } else {
+        notify.info("Stopping Rest Data Source", `Stopping <b>${flowName}</b> data source.`, 3000);
+        await stopRestDataSourceByName(flowName);
       }
     }
     emit("change");
