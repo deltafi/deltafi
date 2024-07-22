@@ -89,8 +89,10 @@ public interface FlowRepo extends JpaRepository<Flow, String> {
 
     @Query(value = "SELECT f.name FROM flows f " +
             "WHERE f.flow_status ->> 'state' = 'RUNNING' " +
-            "AND f.source_plugin = cast(:sourcePlugin AS jsonb) " +
+            "AND f.source_plugin ->> 'groupId' = :groupId " +
+            "AND f.source_plugin ->> 'artifactId' = :artifactId " +
+            "AND f.source_plugin ->> 'version' = :version " +
             "AND f.type = :type",
             nativeQuery = true)
-    <T extends Flow> List<String> findRunningBySourcePlugin(PluginCoordinates sourcePlugin, Class<T> type);
+    <T extends Flow> List<String> findRunningBySourcePlugin(String groupId, String artifactId, String version, Class<T> type);
 }

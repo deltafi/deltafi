@@ -423,7 +423,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
      */
     @Override
     public String uninstallBlockers(PluginEntity plugin) {
-        List<String> runningFlows = flowRepo.findRunningBySourcePlugin(plugin.getPluginCoordinates(), getFlowClass());
+        List<String> runningFlows = flowRepo.findRunningBySourcePlugin(plugin.getPluginCoordinates().getGroupId(), plugin.getPluginCoordinates().getArtifactId(), plugin.getPluginCoordinates().getVersion(), getFlowClass());
         return runningFlows.isEmpty() ? null : runningFlowError(runningFlows);
     }
 
