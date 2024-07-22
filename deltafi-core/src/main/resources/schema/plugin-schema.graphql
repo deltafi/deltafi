@@ -102,34 +102,9 @@ input PluginImageRepositoryInput {
     imagePullSecret: String
 }
 
-type PluginCustomizationConfig {
-    "The groupId for the plugin that uses this customization"
-    groupId: String!
-    "The artifactId of the plugin that uses this customization"
-    artifactId: String!
-    "The path to the file holding the extra deployment info, version can be templated and will be replaced based on the plugin coordinates (i.e. https://gitlab.com/deltafi/deltafi-stix/-/raw/release/${version}/deltafi-stix-actions/plugin-deployment-extras.yaml)"
-    urlTemplate: String!
-    "An optional secret used if authentication is needed to read the resource"
-    secretName: String
-}
-
-input PluginCustomizationConfigInput {
-    "The groupId for the plugin that uses this customization"
-    groupId: String!
-    "The artifactId of the plugin that uses this customization"
-    artifactId: String!
-    "The path to the file holding the extra deployment info, version can be templated and will be replaced based on the plugin coordinates (i.e. https://gitlab.com/deltafi/deltafi-stix/-/raw/release/${version}/deltafi-stix-actions/plugin-deployment-extras.yaml)"
-    urlTemplate: String!
-    "An optional secret used if authentication is needed to read the resource"
-    secretName: String
-}
-
 extend type Query {
     "Get all of the configured plugin image repositories"
     getPluginImageRepositories: [PluginImageRepository]!
-
-    "Get all of the plugin customization config"
-    getPluginCustomizationConfigs: [PluginCustomizationConfig]!
 }
 
 extend type Mutation {
@@ -138,12 +113,6 @@ extend type Mutation {
 
     "Remove an image repository for one or more groups of plugins"
     removePluginImageRepository(id: String!): Result!
-
-    "Add config used to retrieve any extra deployment info needed for a plugin"
-    savePluginCustomizationConfig(pluginCustomizationConfigInput: PluginCustomizationConfigInput!): PluginCustomizationConfig!
-
-    "Remove config used to retrieve any extra deployment info needed for a plugin"
-    removePluginCustomizationConfig(id: String!): Result!
 
     "Install the plugin with the given coordinates"
     installPlugin(pluginCoordinates: PluginCoordinatesInput!): Result!

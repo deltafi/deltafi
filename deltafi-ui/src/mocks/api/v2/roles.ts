@@ -46,7 +46,6 @@ const generateData = () => {
         "DeltaFileMetadataView",
         "FlowView",
         "MetricsView",
-        "PluginCustomizationConfigView",
         "PluginImageRepoView",
         "PluginsView",
         "SnapshotRead",

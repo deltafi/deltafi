@@ -21,9 +21,6 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.plugin.PluginRegistryService;
-import org.deltafi.core.plugin.deployer.customization.PluginCustomization;
-import org.deltafi.core.plugin.deployer.customization.PluginCustomizationConfig;
-import org.deltafi.core.plugin.deployer.customization.PluginCustomizationService;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
 import org.deltafi.core.security.DeltaFiUserDetailsService;
@@ -43,7 +40,6 @@ public abstract class BaseDeployerService implements DeployerService {
 
     final PluginImageRepositoryService pluginImageRepositoryService;
     private final PluginRegistryService pluginRegistryService;
-    final PluginCustomizationService pluginCustomizationService;
     private final SystemSnapshotService systemSnapshotService;
     private final EventService eventService;
 
@@ -65,16 +61,7 @@ public abstract class BaseDeployerService implements DeployerService {
             info.add("Image pull secret override: " + imagePullSecretOverride);
         }
 
-        PluginCustomization pluginCustomization;
-        try {
-            pluginCustomization = customDeploymentOverride != null ?
-                    PluginCustomizationService.unmarshalPluginCustomization(customDeploymentOverride) :
-                    pluginCustomizationService.getPluginCustomizations(pluginCoordinates);
-        } catch (Exception e) {
-            return DeployResult.builder().success(false).info(info).errors(List.of("Could not retrieve plugin customizations: " + e.getMessage())).build();
-        }
-
-        DeployResult deployResult = deploy(pluginCoordinates, pluginImageRepository, pluginCustomization, info);
+        DeployResult deployResult = deploy(pluginCoordinates, pluginImageRepository, info);
         publishEvent(pluginCoordinates, deployResult);
         return deployResult.detailedResult();
     }
@@ -121,25 +108,9 @@ public abstract class BaseDeployerService implements DeployerService {
                 .build();
     }
 
-    abstract DeployResult deploy(PluginCoordinates pluginCoordinates, PluginImageRepository pluginImageRepository, PluginCustomization pluginCustomization, ArrayList<String> info);
+    abstract DeployResult deploy(PluginCoordinates pluginCoordinates, PluginImageRepository pluginImageRepository, ArrayList<String> info);
 
     abstract Result removePluginResources(PluginCoordinates pluginCoordinates);
-
-    @Override
-    public List<PluginCustomizationConfig> getPluginCustomizationConfigs() {
-        return pluginCustomizationService.getAllConfiguration();
-    }
-
-    @Override
-    public PluginCustomizationConfig savePluginCustomizationConfig(PluginCustomizationConfig pluginCustomizationConfigInput) {
-        pluginCustomizationConfigInput.setComputedId();
-        return pluginCustomizationService.save(pluginCustomizationConfigInput);
-    }
-
-    @Override
-    public Result removePluginCustomizationConfig(String id) {
-        return pluginCustomizationService.delete(id);
-    }
 
     private String preUpgradeMessage(PluginCoordinates pluginCoordinates) {
         String username = getUsername();

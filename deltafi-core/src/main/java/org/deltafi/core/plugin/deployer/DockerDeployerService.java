@@ -28,8 +28,6 @@ import com.github.dockerjava.api.model.Image;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.plugin.PluginRegistryService;
-import org.deltafi.core.plugin.deployer.customization.PluginCustomization;
-import org.deltafi.core.plugin.deployer.customization.PluginCustomizationService;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
 import org.deltafi.core.services.EventService;
@@ -49,14 +47,14 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
 
     private final List<String> environmentVariables;
 
-    public DockerDeployerService(DockerClient dockerClient, PluginImageRepositoryService pluginImageRepositoryService, PluginRegistryService pluginRegistryService, PluginCustomizationService pluginCustomizationService, SystemSnapshotService systemSnapshotService, EventService eventService, EnvironmentVariableHelper environmentVariableHelper) {
-        super(pluginImageRepositoryService, pluginRegistryService, pluginCustomizationService, systemSnapshotService, eventService);
+    public DockerDeployerService(DockerClient dockerClient, PluginImageRepositoryService pluginImageRepositoryService, PluginRegistryService pluginRegistryService, SystemSnapshotService systemSnapshotService, EventService eventService, EnvironmentVariableHelper environmentVariableHelper) {
+        super(pluginImageRepositoryService, pluginRegistryService, systemSnapshotService, eventService);
         this.dockerClient = dockerClient;
         this.environmentVariables = environmentVariableHelper.getEnvVars();
     }
 
     @Override
-    DeployResult deploy(PluginCoordinates pluginCoordinates, PluginImageRepository pluginImageRepository, PluginCustomization pluginCustomization, ArrayList<String> info) {
+    DeployResult deploy(PluginCoordinates pluginCoordinates, PluginImageRepository pluginImageRepository, ArrayList<String> info) {
         try {
             String image = pluginImageRepository.getImageRepositoryBase() + pluginCoordinates.getArtifactId() + ":" + pluginCoordinates.getVersion();
 

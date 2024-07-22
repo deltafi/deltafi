@@ -28,8 +28,6 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.plugin.PluginRegistryService;
-import org.deltafi.core.plugin.deployer.customization.PluginCustomization;
-import org.deltafi.core.plugin.deployer.customization.PluginCustomizationService;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
 import org.deltafi.core.services.DeltaFiPropertiesService;
@@ -64,23 +62,18 @@ public class K8sDeployerService extends BaseDeployerService {
     @Value("file:/template/action-deployment.yaml")
     private Resource baseDeployment;
 
-    public K8sDeployerService(DeltaFiPropertiesService deltaFiPropertiesService, PluginImageRepositoryService pluginImageRepositoryService, KubernetesClient k8sClient, PodService podService, PluginCustomizationService pluginCustomizationService, PluginRegistryService pluginRegistryService, SystemSnapshotService systemSnapshotService, EventService eventService) {
-        super(pluginImageRepositoryService, pluginRegistryService, pluginCustomizationService, systemSnapshotService, eventService);
+    public K8sDeployerService(DeltaFiPropertiesService deltaFiPropertiesService, PluginImageRepositoryService pluginImageRepositoryService, KubernetesClient k8sClient, PodService podService, PluginRegistryService pluginRegistryService, SystemSnapshotService systemSnapshotService, EventService eventService) {
+        super(pluginImageRepositoryService, pluginRegistryService, systemSnapshotService, eventService);
         this.k8sClient = k8sClient;
         this.deltaFiPropertiesService = deltaFiPropertiesService;
         this.podService = podService;
     }
 
     @Override
-    public DeployResult deploy(PluginCoordinates pluginCoordinates, PluginImageRepository pluginImageRepository, PluginCustomization pluginCustomization, ArrayList<String> info) {
+    public DeployResult deploy(PluginCoordinates pluginCoordinates, PluginImageRepository pluginImageRepository, ArrayList<String> info) {
         try {
-            List<Integer> ports = pluginCustomization != null && pluginCustomization.getPorts() != null ? pluginCustomization.getPorts() : List.of();
-            Deployment deployment = buildDeployment(pluginCoordinates, pluginImageRepository, pluginCustomization, ports);
+            Deployment deployment = buildDeployment(pluginCoordinates, pluginImageRepository);
             DeployResult result = createOrReplace(deployment, pluginCoordinates);
-            if (result.isSuccess() && !ports.isEmpty()) {
-                // if the deployment was successful and requires a service create it now
-                createOrReplaceService(ports, pluginCoordinates.getArtifactId());
-            }
 
             if(result.getInfo() != null) {
                 result.getInfo().addAll(info);
@@ -144,7 +137,7 @@ public class K8sDeployerService extends BaseDeployerService {
         return new DeployResult();
     }
 
-    Deployment buildDeployment(PluginCoordinates pluginCoordinates, PluginImageRepository pluginImageRepository, PluginCustomization pluginCustomization, List<Integer> ports) throws IOException {
+    Deployment buildDeployment(PluginCoordinates pluginCoordinates, PluginImageRepository pluginImageRepository) throws IOException {
         Deployment deployment = loadBaseDeployment();
 
         String applicationName = pluginCoordinates.getArtifactId();
@@ -161,14 +154,6 @@ public class K8sDeployerService extends BaseDeployerService {
         container.setName(applicationName);
         container.setImage(pluginImageRepository.getImageRepositoryBase() + pluginCoordinates.getArtifactId() + ":" + pluginCoordinates.getVersion());
 
-        if (!ports.isEmpty()) {
-            container.setPorts(ports.stream().map(this::createContainerPort).toList());
-        }
-
-        if (null != pluginCustomization.getExtraContainers()) {
-            deployment.getSpec().getTemplate().getSpec().getContainers().addAll(pluginCustomization.getExtraContainers());
-        }
-
         if (null != pluginImageRepository.getImagePullSecret()) {
             LocalObjectReference localObjectReference = new LocalObjectReferenceBuilder().withName(pluginImageRepository.getImagePullSecret()).build();
             deployment.getSpec().getTemplate().getSpec().setImagePullSecrets(List.of(localObjectReference));
@@ -177,22 +162,6 @@ public class K8sDeployerService extends BaseDeployerService {
         addConfigMounts(deployment, applicationName);
 
         return deployment;
-    }
-
-    void createOrReplaceService(List<Integer> ports, String applicationName) {
-        k8sClient.services().resource(buildService(ports, applicationName)).serverSideApply();
-    }
-
-    Service buildService(List<Integer> ports, String applicationName) {
-        return new ServiceBuilder()
-                .withNewMetadata()
-                .withName(applicationName)
-                .endMetadata()
-                .withNewSpec()
-                .withSelector(Map.of(APP_LABEL_KEY, applicationName))
-                .withPorts(ports.stream().map(this::createServicePort).toList())
-                .endSpec()
-                .build();
     }
 
     void deleteDeployment(PluginCoordinates pluginCoordinates, Result result) {
@@ -236,20 +205,6 @@ public class K8sDeployerService extends BaseDeployerService {
 
     String statusCause(StatusCause statusCause) {
         return "Field: " + statusCause.getField() + " Message: " + statusCause.getMessage() + " Reason: " + statusCause.getReason();
-    }
-
-    private ContainerPort createContainerPort(Integer port) {
-        return new ContainerPortBuilder()
-                .withContainerPort(port)
-                .withName("port-" + port)
-                .build();
-    }
-
-    private ServicePort createServicePort(Integer port) {
-        return new ServicePortBuilder()
-                .withPort(port)
-                .withTargetPort(new IntOrString(port))
-                .build();
     }
 
     /**

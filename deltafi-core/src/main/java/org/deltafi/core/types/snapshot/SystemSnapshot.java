@@ -20,13 +20,11 @@ package org.deltafi.core.types.snapshot;
 import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.configuration.DeltaFiProperties;
-import org.deltafi.core.plugin.deployer.customization.PluginCustomizationConfig;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.types.DeletePolicies;
 import org.deltafi.core.types.PluginVariables;
@@ -73,9 +71,6 @@ public class SystemSnapshot {
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
     private Set<PluginCoordinates> installedPlugins;
-    @Type(JsonBinaryType.class)
-    @Column(columnDefinition = "jsonb")
-    private List<PluginCustomizationConfig> pluginCustomizationConfigs = new ArrayList<>();
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
     private List<PluginImageRepository> pluginImageRepositories = new ArrayList<>();

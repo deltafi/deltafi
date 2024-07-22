@@ -118,8 +118,6 @@ generateJava {
 			"Plugin": "org.deltafi.common.types.Plugin",
 			"PluginCoordinates": "org.deltafi.common.types.PluginCoordinates",
 			"PluginCoordinatesInput": "org.deltafi.common.types.PluginCoordinates",
-			"PluginCustomizationConfig": "org.deltafi.core.plugin.deployer.customization.PluginCustomizationConfig",
-			"PluginCustomizationConfigInput": "org.deltafi.core.plugin.deployer.customization.PluginCustomizationConfig",
 			"PluginImageRepository": "org.deltafi.core.plugin.deployer.image.PluginImageRepository",
 			"PluginImageRepositoryInput": "org.deltafi.core.plugin.deployer.image.PluginImageRepository",
 			"PluginProperties": "org.deltafi.core.configuration.PluginProperties",

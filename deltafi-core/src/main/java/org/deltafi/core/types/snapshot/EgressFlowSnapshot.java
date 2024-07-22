@@ -20,7 +20,6 @@ package org.deltafi.core.types.snapshot;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
-import org.deltafi.common.types.FlowType;
 import org.deltafi.core.types.EgressFlow;
 
 import java.util.HashSet;
@@ -47,10 +46,5 @@ public class EgressFlowSnapshot extends FlowSnapshot implements HasExpectedAnnot
         setRunning(egressFlow.isRunning());
         setTestMode(egressFlow.isTestMode());
         setExpectedAnnotations(egressFlow.getExpectedAnnotations());
-    }
-
-    @Override
-    public FlowType getFlowType() {
-        return FlowType.EGRESS;
     }
 }

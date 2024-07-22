@@ -26,8 +26,6 @@ import org.deltafi.common.types.ActionDescriptor;
 import org.deltafi.common.types.Plugin;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.plugin.deployer.DeployerService;
-import org.deltafi.core.plugin.deployer.credential.CredentialProvider;
-import org.deltafi.core.plugin.deployer.customization.PluginCustomizationConfig;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
 import org.deltafi.core.security.NeedsPermission;
@@ -42,7 +40,6 @@ public class PluginDataFetcher {
     private final PluginRegistryService pluginRegistryService;
     private final PluginImageRepositoryService pluginImageRepositoryService;
     private final DeployerService deployerService;
-    private final CredentialProvider credentialProvider;
 
     @DgsQuery
     @NeedsPermission.PluginsView
@@ -56,22 +53,10 @@ public class PluginDataFetcher {
         return pluginImageRepositoryService.getPluginImageRepositories();
     }
 
-    @DgsQuery
-    @NeedsPermission.PluginCustomizationConfigView
-    public List<PluginCustomizationConfig> getPluginCustomizationConfigs() {
-        return deployerService.getPluginCustomizationConfigs();
-    }
-
     @DgsMutation
     @NeedsPermission.PluginImageRepoWrite
     public PluginImageRepository savePluginImageRepository(@InputArgument PluginImageRepository pluginImageRepository) {
         return pluginImageRepositoryService.savePluginImageRepository(pluginImageRepository);
-    }
-
-    @DgsMutation
-    @NeedsPermission.PluginCustomizationConfigWrite
-    public PluginCustomizationConfig savePluginCustomizationConfig(@InputArgument PluginCustomizationConfig pluginCustomizationConfigInput) {
-        return deployerService.savePluginCustomizationConfig(pluginCustomizationConfigInput);
     }
 
     @DgsMutation
@@ -93,21 +78,9 @@ public class PluginDataFetcher {
     }
 
     @DgsMutation
-    @NeedsPermission.PluginCustomizationConfigWrite
-    public Result addBasicCredential(@InputArgument String sourceName, @InputArgument String username, @InputArgument String password) {
-        return credentialProvider.createCredentials(sourceName, username, password);
-    }
-
-    @DgsMutation
     @NeedsPermission.PluginImageRepoDelete
     public Result removePluginImageRepository(@InputArgument String id) {
         return pluginImageRepositoryService.removePluginImageRepository(id);
-    }
-
-    @DgsMutation
-    @NeedsPermission.PluginCustomizationConfigDelete
-    public Result removePluginCustomizationConfig(@InputArgument String id) {
-        return deployerService.removePluginCustomizationConfig(id);
     }
 
     @DgsQuery

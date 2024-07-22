@@ -18,10 +18,7 @@
 package org.deltafi.core.plugin.deployer;
 
 import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.core.plugin.deployer.customization.PluginCustomizationConfig;
 import org.deltafi.core.types.Result;
-
-import java.util.List;
 
 public interface DeployerService {
 
@@ -41,24 +38,4 @@ public interface DeployerService {
      * @return result of the uninstallation process
      */
     Result uninstallPlugin(PluginCoordinates pluginCoordinates);
-
-    /**
-     * Get all plugin customization configs
-     * @return list of plugin customization configs
-     */
-    List<PluginCustomizationConfig> getPluginCustomizationConfigs();
-
-    /**
-     * Add the plugin customization config item
-     * @param pluginCustomizationConfigInput plugin customization config to save
-     * @return copy of the saved item
-     */
-    PluginCustomizationConfig savePluginCustomizationConfig(PluginCustomizationConfig pluginCustomizationConfigInput);
-
-    /**
-     * Remove the plugin customization config with the given id
-     * @param id of the plugin customization config to remove
-     * @return result of the operation
-     */
-    Result removePluginCustomizationConfig(String id);
 }

@@ -20,7 +20,6 @@ package org.deltafi.core.types.snapshot;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
-import org.deltafi.common.types.FlowType;
 import org.deltafi.core.types.TransformFlow;
 
 import java.util.HashSet;
@@ -50,10 +49,5 @@ public class TransformFlowSnapshot extends FlowSnapshot implements HasExpectedAn
         setRunning(transformFlow.isRunning());
         setTestMode(transformFlow.isTestMode());
         setMaxErrors(transformFlow.getMaxErrors());
-    }
-
-    @Override
-    public FlowType getFlowType() {
-        return FlowType.TRANSFORM;
     }
 }

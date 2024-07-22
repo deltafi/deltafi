@@ -240,25 +240,6 @@ public class NeedsPermission {
     @PreAuthorize(value = "hasAnyAuthority('PluginImageRepoDelete'" + OR_ADMIN)
     public @interface PluginImageRepoDelete {}
 
-
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.RUNTIME)
-    @PreAuthorize(value = "hasAnyAuthority('PluginCustomizationConfigView'" + OR_ADMIN)
-    public @interface PluginCustomizationConfigView {}
-
-
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.RUNTIME)
-    @PreAuthorize(value = "hasAnyAuthority('PluginCustomizationConfigWrite'" + OR_ADMIN)
-    public @interface PluginCustomizationConfigWrite {}
-
-
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.RUNTIME)
-    @PreAuthorize(value = "hasAnyAuthority('PluginCustomizationConfigDelete'" + OR_ADMIN)
-    public @interface PluginCustomizationConfigDelete {}
-
-
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
     @PreAuthorize(value = "hasAnyAuthority('PluginRegistration'" + OR_ADMIN)

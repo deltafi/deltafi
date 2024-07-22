@@ -372,7 +372,6 @@ public class SystemSnapshotDatafetcherTestHelper {
                                 ]
                             }
                         ]
-                        pluginCustomizationConfigs: []
                     }
                 ) {
                     $projection
@@ -494,12 +493,6 @@ public class SystemSnapshotDatafetcherTestHelper {
                 multiplier
                 random
               }
-            }
-            pluginCustomizationConfigs {
-              groupId
-              artifactId
-              urlTemplate
-              secretName
             }
             """;
 }

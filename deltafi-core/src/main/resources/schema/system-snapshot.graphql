@@ -58,7 +58,6 @@ type SystemSnapshot {
     transformFlows: [TransformFlowSnapshot]
     egressFlows: [EgressFlowSnapshot]
     pluginImageRepositories: [PluginImageRepository]!
-    pluginCustomizationConfigs: [PluginCustomizationConfig]!
     resumePolicies: [ResumePolicy]!
 }
 
@@ -107,7 +106,6 @@ input SystemSnapshotInput {
     transformFlows: [TransformFlowSnapshotInput]
     egressFlows: [EgressFlowSnapshotInput]
     pluginImageRepositories: [PluginImageRepositoryInput]!
-    pluginCustomizationConfigs: [PluginCustomizationConfigInput]!
     resumePolicies: [ResumePolicyInput]!
 }
 

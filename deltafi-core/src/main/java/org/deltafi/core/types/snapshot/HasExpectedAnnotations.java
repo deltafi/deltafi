@@ -17,8 +17,6 @@
  */
 package org.deltafi.core.types.snapshot;
 
-import org.deltafi.common.types.FlowType;
-
 import java.util.Set;
 
 public interface HasExpectedAnnotations {
@@ -34,11 +32,4 @@ public interface HasExpectedAnnotations {
      * @return the expected annotations
      */
     Set<String> getExpectedAnnotations();
-
-    /**
-     * Get the flow type
-     * @return the flow type
-     */
-    FlowType getFlowType();
-
 }
