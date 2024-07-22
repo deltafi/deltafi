@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -101,8 +102,9 @@ public class ScheduledJoinService {
     private void handleTimedOutJoins() {
         log.debug("Handling timed out joins");
 
-        JoinEntry joinEntry = joinEntryService.lockOneBefore(OffsetDateTime.now(clock));
-        while (joinEntry != null) {
+        Optional<JoinEntry> maybeJoinEntry = joinEntryService.lockOneBefore(OffsetDateTime.now(clock));
+        while (maybeJoinEntry.isPresent()) {
+            JoinEntry joinEntry = maybeJoinEntry.get();
             if ((joinEntry.getMinNum() != null) && (joinEntry.getCount() < joinEntry.getMinNum())) {
                 failJoinHandler.failJoin(joinEntry, joinEntryService.findJoinedDids(joinEntry.getId()),
                         String.format("Join incomplete: Timed out after receiving %s of %s files",
@@ -111,7 +113,7 @@ public class ScheduledJoinService {
                 joinHandler.join(joinEntry, joinEntryService.findJoinedDids(joinEntry.getId()));
             }
             joinEntryService.delete(joinEntry.getId());
-            joinEntry = joinEntryService.lockOneBefore(OffsetDateTime.now(clock));
+            maybeJoinEntry = joinEntryService.lockOneBefore(OffsetDateTime.now(clock));
         }
 
         scheduleNextJoinCheck();

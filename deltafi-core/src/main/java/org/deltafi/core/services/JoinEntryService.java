@@ -17,7 +17,9 @@
  */
 package org.deltafi.core.services;
 
-import jakarta.annotation.PostConstruct;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.types.JoinDefinition;
@@ -25,12 +27,13 @@ import org.deltafi.core.types.JoinEntry;
 import org.deltafi.core.types.JoinEntryDid;
 import org.deltafi.core.repo.JoinEntryDidRepo;
 import org.deltafi.core.repo.JoinEntryRepo;
-import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -42,10 +45,7 @@ public class JoinEntryService {
     private final JoinEntryRepo joinEntryRepo;
     private final JoinEntryDidRepo joinEntryDidRepo;
 
-    @PostConstruct
-    public void init() {
-        joinEntryRepo.ensureJoinDefinitionIndex();
-    }
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     public JoinEntry upsertAndLock(JoinDefinition joinDefinition, OffsetDateTime joinDate, Integer minNum,
                                    Integer maxNum, int flowDepth, UUID did) {
@@ -59,24 +59,38 @@ public class JoinEntryService {
 
     private JoinEntry upsertAndLock(JoinDefinition joinDefinition, OffsetDateTime joinDate, Integer minNum,
                                     Integer maxNum, int flowDepth) {
-        JoinEntry joinEntry = null;
         long endTimeMs = clock.millis() + deltaFiPropertiesService.getDeltaFiProperties().getJoin().getAcquireLockTimeoutMs();
-        while ((joinEntry == null) && (clock.millis() < endTimeMs)) {
+        while (clock.millis() < endTimeMs) {
             try {
-                joinEntry = joinEntryRepo.upsertAndLock(joinDefinition, joinDate, minNum, maxNum, flowDepth);
-            } catch (DuplicateKeyException e) {
-                // Tried to insert duplicate while other was locked. Sleep and try again.
+                JoinEntry newEntry = new JoinEntry(UUID.randomUUID(), joinDefinition, true, OffsetDateTime.now(clock), joinDate, minNum, maxNum, flowDepth, 1);
+                return joinEntryRepo.save(newEntry);
+            } catch (DataIntegrityViolationException e) {
+                Optional<JoinEntry> updated;
                 try {
-                    Thread.sleep(100);
+                    updated = joinEntryRepo.findAndUpdateUnlocked(OBJECT_MAPPER.writeValueAsString(joinDefinition), OffsetDateTime.now(clock), flowDepth);
+                } catch (JsonProcessingException ex) {
+                    return null;
+                }
+
+                if (updated.isPresent()) {
+                    return updated.get();
+                }
+
+                // If we couldn't insert or update, sleep before retrying
+                try {
+                    Thread.sleep(50);
                 } catch (InterruptedException ignored) {
                     Thread.currentThread().interrupt();
+                    return null;
                 }
             }
         }
-        return joinEntry;
+
+        // time out and give up
+        return null;
     }
 
-    public JoinEntry lockOneBefore(OffsetDateTime joinDate) {
+    public Optional<JoinEntry> lockOneBefore(OffsetDateTime joinDate) {
         return joinEntryRepo.lockOneBefore(joinDate);
     }
 

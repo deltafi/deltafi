@@ -17,17 +17,31 @@
  */
 package org.deltafi.core.types;
 
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
-import org.springframework.data.mongodb.core.mapping.Document;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Type;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-@Document
+@Entity
+@Table(name = "join_entries",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "unique_join_definition", columnNames = {"join_definition"})
+        })
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class JoinEntry {
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
     private JoinDefinition joinDefinition;
 
     private boolean locked;
