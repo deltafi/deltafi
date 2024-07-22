@@ -28,7 +28,7 @@ REDIS_RETRY_COUNT = 30
 THRESHOLD = 30 # seconds
 
 def redis_client
-  url = ENV['DELTAFI_REDIS_MASTER_PORT'].gsub('tcp://', 'redis://')
+  url = ENV['REDIS_URL'].gsub('http://', 'redis://')
   password = ENV.fetch('REDIS_PASSWORD', nil)
   retries = 0
   begin
