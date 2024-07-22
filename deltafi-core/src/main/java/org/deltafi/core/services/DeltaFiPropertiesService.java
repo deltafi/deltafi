@@ -18,25 +18,23 @@
 package org.deltafi.core.services;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.Property;
 import org.deltafi.common.types.PropertySet;
 import org.deltafi.core.configuration.DeltaFiProperties;
-import org.deltafi.core.configuration.ui.Link;
+import org.deltafi.core.configuration.PropertyInfo;
 import org.deltafi.core.repo.DeltaFiPropertiesRepo;
 import org.deltafi.core.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.snapshot.Snapshotter;
 import org.deltafi.core.snapshot.SystemSnapshot;
-import org.deltafi.core.types.*;
+import org.deltafi.core.types.Result;
+import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.lang.reflect.Field;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -44,24 +42,55 @@ public class DeltaFiPropertiesService implements Snapshotter {
 
     private final DeltaFiPropertiesRepo deltaFiPropertiesRepo;
     private DeltaFiProperties cachedDeltaFiProperties;
+    private List<Property> properties;
+    private static final Set<String> allowedProperties;
+    private static final List<Property> defaultProperties;
 
-    private final Map<String, PropertyType> propertyMap;
+    static {
+        allowedProperties = new HashSet<>();
+        defaultProperties = new ArrayList<>();
+        for (Field field : DeltaFiProperties.class.getDeclaredFields()) {
+            PropertyInfo propertyInfo = field.getAnnotation(PropertyInfo.class);
+            if (propertyInfo != null) {
+                allowedProperties.add(field.getName());
+                String value = !PropertyInfo.NULL.equals(propertyInfo.defaultValue()) ? propertyInfo.defaultValue() : null;
+
+                defaultProperties.add(Property.builder().key(field.getName()).defaultValue(value)
+                        .description(propertyInfo.description()).refreshable(propertyInfo.refreshable()).build());
+            }
+        }
+    }
 
     public DeltaFiPropertiesService(DeltaFiPropertiesRepo deltaFiPropertiesRepo) {
         this.deltaFiPropertiesRepo = deltaFiPropertiesRepo;
-        propertyMap = Arrays.stream(PropertyType.values()).collect(Collectors.toMap(PropertyType::getKey, Function.identity()));
-        if (!deltaFiPropertiesRepo.existsById(DeltaFiProperties.PROPERTY_ID)) {
-            cachedDeltaFiProperties = deltaFiPropertiesRepo.save(new DeltaFiProperties());
-        } else {
-            cachedDeltaFiProperties = getDeltaFiPropertiesFromRepo();
-        }
+
+        // make sure the latest DeltaFiProperties structure is reflected in the properties collection
+        upsertProperties();
+        refreshProperties();
+    }
+
+    /**
+     * Upsert the set of properties for this version of DeltaFi. Prune obsolete properties.
+     */
+    public void upsertProperties() {
+        deltaFiPropertiesRepo.upsertProperties(defaultProperties);
+        deltaFiPropertiesRepo.deleteByKeyNotIn(allowedProperties);
     }
 
     /**
      * Update the cached properties to the latest from storage
+     * Bind the latest properties DeltaFiProperties and cach
+     * the result
      */
     public void refreshProperties() {
-        cachedDeltaFiProperties = getDeltaFiPropertiesFromRepo();
+        this.properties = deltaFiPropertiesRepo.findAll();
+        Map<String, String> propertiesMap = new HashMap<>();
+
+        // use forEach instead stream collect to avoid NPE with null values
+        this.properties.forEach(p -> propertiesMap.put(p.getKey(), p.getValue()));
+
+        Binder bind = new Binder(new MapConfigurationPropertySource(propertiesMap));
+        cachedDeltaFiProperties = bind.bindOrCreate("", DeltaFiProperties.class);
     }
 
     public DeltaFiProperties getDeltaFiProperties(Boolean skipCache) {
@@ -75,23 +104,13 @@ public class DeltaFiPropertiesService implements Snapshotter {
         return cachedDeltaFiProperties;
     }
 
-    private DeltaFiProperties getDeltaFiPropertiesFromRepo() {
-        return deltaFiPropertiesRepo.findById(DeltaFiProperties.PROPERTY_ID).orElseThrow();
-    }
-
     /**
      * Get the properties and return them as a list of PropertySets
      * @return the list of PropertySets
      */
     public List<PropertySet> getPopulatedProperties() {
         PropertySet common = commonPropertySet();
-
-        List<Property> properties = new ArrayList<>();
-        for (PropertyType propertyType: PropertyType.values()) {
-            properties.add(propertyType.toProperty(cachedDeltaFiProperties));
-        }
-
-        common.setProperties(properties);
+        common.setProperties(this.properties);
         return List.of(common);
     }
 
@@ -100,85 +119,42 @@ public class DeltaFiPropertiesService implements Snapshotter {
      * @param updates changes to make to the properties
      * @return true if the update was successful
      */
-    public boolean updateProperties(List<PropertyUpdate> updates) {
-        Map<PropertyType, String> updateMap = new EnumMap<>(PropertyType.class);
-        for (PropertyUpdate propertyUpdate : updates) {
-            PropertyType propertyType = propertyMap.get(propertyUpdate.getKey());
-            if (propertyType != null) {
-                updateMap.put(propertyType, propertyUpdate.getValue());
-            } else {
-                warnInvalidProperty(propertyUpdate.getKey());
-            }
-        }
-
-
-        return refresh(!updateMap.isEmpty() && deltaFiPropertiesRepo.updateProperties(updateMap));
+    public boolean updateProperties(List<KeyValue> updates) {
+        List<KeyValue> allowedUpdates = updates.stream().filter(this::isValid).toList();
+        return refresh(!allowedUpdates.isEmpty() && deltaFiPropertiesRepo.updateProperties(allowedUpdates));
     }
 
     /**
      * For each property id reset the value to the default value
-     * @param propertyIds list of properties to reset
+     * @param propertyNames list of properties to reset
      * @return true if the update was successful
      */
-    public boolean unsetProperties(List<PropertyId> propertyIds) {
-        List<PropertyType> propertyTypes = propertyIds.stream().map(this::toPropertyType)
-                .filter(Objects::nonNull)
-                .toList();
-
-        return refresh(!propertyTypes.isEmpty() && deltaFiPropertiesRepo.unsetProperties(propertyTypes));
-    }
-
-    public boolean saveExternalLink(Link link) {
-        DeltaFiProperties latest = getDeltaFiPropertiesFromRepo();
-        addOrReplaceLink(latest.getUi().getExternalLinks(), link);
-        deltaFiPropertiesRepo.save(latest);
-
-        return refresh(true);
-    }
-
-    public boolean saveDeltaFileLink(Link link) {
-        DeltaFiProperties latest = getDeltaFiPropertiesFromRepo();
-        addOrReplaceLink(latest.getUi().getDeltaFileLinks(), link);
-        deltaFiPropertiesRepo.save(latest);
-
-        return refresh(true);
-    }
-
-    public boolean removeExternalLink(String linkName) {
-        return refresh(deltaFiPropertiesRepo.removeExternalLink(linkName));
-    }
-
-    public boolean removeDeltaFileLink(String linkName) {
-        return refresh(deltaFiPropertiesRepo.removeDeltaFileLink(linkName));
-    }
-
-    public boolean replaceExternalLink(String linkName, Link link) {
-        DeltaFiProperties latest = getDeltaFiPropertiesFromRepo();
-        replaceLink(latest.getUi().getExternalLinks(), linkName, link);
-        deltaFiPropertiesRepo.save(latest);
-
-        return refresh(true);
-    }
-
-    public boolean replaceDeltaFileLink(String linkName, Link link) {
-        DeltaFiProperties latest = getDeltaFiPropertiesFromRepo();
-        replaceLink(latest.getUi().getDeltaFileLinks(), linkName, link);
-        deltaFiPropertiesRepo.save(latest);
-
-        return refresh(true);
+    public boolean unsetProperties(List<String> propertyNames) {
+        List<String> toUnset = propertyNames.stream().filter(allowedProperties::contains).toList();
+        return refresh(!toUnset.isEmpty() && deltaFiPropertiesRepo.unsetProperties(toUnset));
     }
 
     @Override
     public void updateSnapshot(SystemSnapshot systemSnapshot) {
-        systemSnapshot.setDeltaFiProperties(getDeltaFiProperties());
+        List<KeyValue> snapshot = deltaFiPropertiesRepo.findAll().stream()
+                .map(this::keyValue).filter(Objects::nonNull).toList();
+
+        systemSnapshot.setDeltaFiProperties(snapshot);
+    }
+
+    private KeyValue keyValue(Property property) {
+        return property.hasValue() ? new KeyValue(property.getKey(), property.getCustomValue()) : null;
     }
 
     @Override
     public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
         if (hardReset) {
-            deltaFiPropertiesRepo.save(systemSnapshot.getDeltaFiProperties());
-        } else {
-            deltaFiPropertiesRepo.save(mergeProperties(systemSnapshot.getDeltaFiProperties()));
+            unsetProperties(new ArrayList<>(allowedProperties));
+        }
+
+        List<KeyValue> snapshotProperties = systemSnapshot.getDeltaFiProperties();
+        if (snapshotProperties != null) {
+            updateProperties(snapshotProperties);
         }
 
         refreshProperties();
@@ -198,36 +174,6 @@ public class DeltaFiPropertiesService implements Snapshotter {
         return SnapshotRestoreOrder.PROPERTIES_ORDER;
     }
 
-    /**
-     * Copy values from the source DeltaFiProperties into the current DeltaFiProperties
-     * @param source that hold the property values to copy
-     * @return latest properties with the source properties merged in
-     */
-    DeltaFiProperties mergeProperties(DeltaFiProperties source) {
-        DeltaFiProperties target = getDeltaFiPropertiesFromRepo();
-
-        for (String propertyName : source.getSetProperties()) {
-            PropertyType propertyType = propertyTypeFromName(propertyName);
-            if (propertyType != null) {
-                propertyType.copyValue(target, source);
-                target.getSetProperties().add(propertyType.name());
-            }
-        }
-
-        target.getUi().mergeLinkLists(source.getUi());
-
-        return target;
-    }
-
-    private PropertyType toPropertyType(PropertyId propertyId) {
-        PropertyType propertyType = propertyMap.get(propertyId.getKey());
-        if (propertyType == null) {
-            warnInvalidProperty(propertyId.getKey());
-        }
-
-        return propertyType;
-    }
-
     private PropertySet commonPropertySet() {
         PropertySet propertySet = new PropertySet();
         propertySet.setId("deltafi-common");
@@ -236,32 +182,24 @@ public class DeltaFiPropertiesService implements Snapshotter {
         return propertySet;
     }
 
-    /**
-     * Add or replace a link in the given list of links. If the list
-     * already contains a link with the same name as the linkToAdd
-     * remove it.
-     * @param links list of links to update
-     * @param linkToAdd link that will be added to the list
-     */
-    private void addOrReplaceLink(List<Link> links, Link linkToAdd) {
-        links.removeIf(next -> next.nameMatches(linkToAdd));
-        links.add(linkToAdd);
-    }
+    private boolean isValid(KeyValue update) {
+        String key = update.getKey();
+        String value = update.getValue();
 
-    private void replaceLink(List<Link> links, String linkToRemove, Link linkToAdd) {
-        links.removeIf(next -> linkToRemove.equals(next.getName()));
-        links.add(linkToAdd);
-    }
-
-    private void warnInvalidProperty(String key) {
-        log.warn("Invalid property update received with key of {}", key);
-    }
-
-    private PropertyType propertyTypeFromName(String name) {
-        try {
-            return PropertyType.valueOf(name);
-        } catch (IllegalStateException e) {
-            return null;
+        if (!allowedProperties.contains(key)) {
+            log.warn("Unrecognized property update received with a key of {}", key);
+            return false;
         }
+
+        Binder binder = new Binder(new MapConfigurationPropertySource(Map.of(key, value)));
+        try {
+            return binder.bind("", DeltaFiProperties.class).get() != null;
+        } catch (Exception e) {
+            Throwable root = ExceptionUtils.getRootCause(e);
+            String message = root != null ? root.getMessage() : e.getMessage();
+            log.error("Invalid property {}:{} failed with message - {}", key, value, message);
+        }
+
+        return false;
     }
 }

@@ -69,57 +69,8 @@ ALL_SNAPSHOT_FIELDS="id
             reason
             created
             deltaFiProperties {
-              systemName
-              requeueDuration
-              autoResumeCheckFrequency
-              coreServiceThreads
-              coreInternalQueueSize
-              scheduledServiceThreads
-              delete {
-                ageOffDays
-                frequency
-                policyBatchSize
-              }
-              ingress {
-                enabled
-                diskSpaceRequirementInMb
-              }
-              metrics {
-                enabled
-              }
-              plugins {
-                imageRepositoryBase
-                imagePullSecret
-              }
-              checks {
-                actionQueueSizeThreshold
-                contentStoragePercentThreshold
-              }
-              ui {
-                useUTC
-                deltaFileLinks {
-                  name
-                  url
-                  description
-                }
-                externalLinks {
-                  name
-                  url
-                  description
-                }
-                topBar {
-                  textColor
-                  backgroundColor
-                }
-                securityBanner {
-                  enabled
-                  text
-                  textColor
-                  backgroundColor
-                }
-              }
-              maxFlowDepth
-              setProperties
+              key
+              value
             }
             deletePolicies {
               timedPolicies {
@@ -139,6 +90,12 @@ ALL_SNAPSHOT_FIELDS="id
                 flow
                 maxPercent
               }
+            }
+            links {
+              name
+              description
+              url
+              linkType
             }
             pluginImageRepositories {
               imageRepositoryBase
@@ -170,10 +127,11 @@ ALL_SNAPSHOT_FIELDS="id
               id
               name
               errorSubstring
-              flow
+              dataSource
               action
               actionType
               maxAttempts
+              priority
               backOff {
                 delay
                 maxDelay
@@ -181,22 +139,24 @@ ALL_SNAPSHOT_FIELDS="id
                 random
               }
             }
+            restDataSources {
+              name
+              topic
+              running
+              testMode
+            }
+            timedDataSources {
+              name
+              topic
+              running
+              testMode
+              cronSchedule
+            }
             transformFlows {
               name
               running
               testMode
               maxErrors
-              expectedAnnotations
-            }
-            normalizeFlows {
-              name
-              running
-              testMode
-              maxErrors
-            }
-            enrichFlows {
-              name
-              running
             }
             egressFlows {
               name

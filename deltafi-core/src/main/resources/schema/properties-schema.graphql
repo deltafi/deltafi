@@ -22,6 +22,11 @@ enum PropertySource {
     DEFAULT
 }
 
+enum LinkType {
+    EXTERNAL
+    DELTAFILE_LINK
+}
+
 type Property {
     key: String!                    # property key
     description: String!            # describe what this property does
@@ -54,120 +59,20 @@ input PropertySetInput {
     properties: [PropertyInput]!
 }
 
-input PropertyUpdate {
-    propertySetId: String!
-    key: String!
-    value: String!
-}
-
-input PropertyId {
-    propertySetId: String!
-    key: String!
-}
-
-type DeleteProperties {
-    ageOffDays: Int!
-    frequency: String!
-    policyBatchSize: Int!
-}
-
-type IngressProperties {
-    enabled: Boolean!
-    diskSpaceRequirementInMb: Long!
-}
-
-type MetricsProperties {
-    enabled: Boolean!
-}
-
-type PluginProperties {
-    imageRepositoryBase: String
-    imagePullSecret: String
-    autoRollback: Boolean
-    deployTimeout: String
-}
-
-type SystemCheckProperties {
-    actionQueueSizeThreshold: Int!
-    contentStoragePercentThreshold: Int!
-}
 type Link {
+    id: String!
     name: String!
     url: String!
     description: String
-}
-
-type TopBar {
-    backgroundColor: String
-    textColor: String
-}
-
-type SecurityBanner {
-    text: String
-    backgroundColor: String
-    textColor: String
-    enabled: Boolean!
-}
-
-type UiProperties {
-    useUTC: Boolean!
-    deltaFileLinks: [Link]!
-    externalLinks: [Link]!
-    topBar: TopBar!
-    securityBanner: SecurityBanner!
-}
-
-input DeletePropertiesInput {
-    ageOffDays: Int!
-    frequency: String!
-    policyBatchSize: Int!
-}
-
-input IngressPropertiesInput {
-    enabled: Boolean!
-    diskSpaceRequirementInMb: Long!
-}
-
-input MetricsPropertiesInput {
-    enabled: Boolean!
-}
-
-input PluginPropertiesInput {
-    imageRepositoryBase: String
-    imagePullSecret: String
-    autoRollback: Boolean
-    deployTimeout: String
-}
-
-input SystemCheckPropertiesInput {
-    actionQueueSizeThreshold: Int!
-    contentStoragePercentThreshold: Int!
+    linkType: LinkType!
 }
 
 input LinkInput {
+    id: String
     name: String!
     url: String!
     description: String
-}
-
-input TopBarInput {
-    backgroundColor: String
-    textColor: String
-}
-
-input SecurityBannerInput {
-    text: String
-    backgroundColor: String
-    textColor: String
-    enabled: Boolean!
-}
-
-input UiPropertiesInput {
-    useUTC: Boolean!
-    deltaFileLinks: [LinkInput]
-    externalLinks: [LinkInput]
-    topBar: TopBarInput!
-    securityBanner: SecurityBannerInput!
+    linkType: LinkType
 }
 
 type DeltaFiProperties {
@@ -177,15 +82,33 @@ type DeltaFiProperties {
     coreServiceThreads: Int!
     coreInternalQueueSize: Int!
     scheduledServiceThreads: Int!
-    delete: DeleteProperties!
-    ingress: IngressProperties!
-    metrics: MetricsProperties!
-    plugins: PluginProperties!
-    checks: SystemCheckProperties!
-    ui: UiProperties!
+    metricsEnabled: Boolean!
+    metricsErrorAnalyticsEnabled: Boolean!
+    ageOffDays: Int!
+    deleteFrequency: String!
+    deletePolicyBatchSize: Int!
+    cacheEnabled: Boolean!
+    cacheSyncDuration: String!
+    ingressEnabled: Boolean!
+    ingressDiskSpaceRequirementInMb: Long!
+    pluginImageRepositoryBase: String
+    pluginImagePullSecret: String
+    pluginAutoRollback: Boolean
+    pluginDeployTimeout: String
+    checkActionQueueSizeThreshold: Int!
+    checkContentStoragePercentThreshold: Int!
+    uiUseUTC: Boolean!
+    topBarBackgroundColor: String
+    topBarTextColor: String
+    securityBannerText: String
+    securityBannerBackgroundColor: String
+    securityBannerTextColor: String
+    securityBannerEnabled: Boolean!
     inMemoryQueueSize: Int!
     maxFlowDepth: Int!
-    setProperties: [String]!
+    joinAcquireLockTimeoutMs: Long!
+    joinMaxLockDuration: String!
+    joinLockCheckInterval: String!
 }
 
 input DeltaFiPropertiesInput {
@@ -195,15 +118,33 @@ input DeltaFiPropertiesInput {
     coreServiceThreads: Int!
     coreInternalQueueSize: Int!
     scheduledServiceThreads: Int!
-    delete: DeletePropertiesInput!
-    ingress: IngressPropertiesInput!
-    metrics: MetricsPropertiesInput!
-    plugins: PluginPropertiesInput!
-    checks: SystemCheckPropertiesInput!
-    ui: UiPropertiesInput!
+    metricsEnabled: Boolean!
+    metricsErrorAnalyticsEnabled: Boolean!
+    ageOffDays: Int!
+    deleteFrequency: String!
+    deletePolicyBatchSize: Int!
+    cacheEnabled: Boolean!
+    cacheSyncDuration: String!
+    ingressEnabled: Boolean!
+    ingressDiskSpaceRequirementInMb: Long!
+    pluginImageRepositoryBase: String
+    pluginImagePullSecret: String
+    pluginAutoRollback: Boolean
+    pluginDeployTimeout: String
+    checkActionQueueSizeThreshold: Int!
+    checkContentStoragePercentThreshold: Int!
+    uiUseUTC: Boolean!
+    topBarBackgroundColor: String
+    topBarTextColor: String
+    securityBannerText: String
+    securityBannerBackgroundColor: String
+    securityBannerTextColor: String
+    securityBannerEnabled: Boolean!
     inMemoryQueueSize: Int!
     maxFlowDepth: Int!
-    setProperties: [String]!
+    joinAcquireLockTimeoutMs: Long!
+    joinMaxLockDuration: String!
+    joinLockCheckInterval: String!
 }
 
 extend type Query {
@@ -212,12 +153,8 @@ extend type Query {
 }
 
 extend type Mutation {
-    updateProperties(updates: [PropertyUpdate]!): Boolean!
-    removePropertyOverrides(propertyIds: [PropertyId]!): Boolean!
-    saveExternalLink(link: LinkInput!): Boolean!
-    saveDeltaFileLink(link: LinkInput!): Boolean!
-    removeExternalLink(linkName: String!): Boolean!
-    removeDeltaFileLink(linkName: String!): Boolean!
-    replaceExternalLink(linkName: String!, link: LinkInput!): Boolean!
-    replaceDeltaFileLink(linkName: String!, link: LinkInput!): Boolean!
+    updateProperties(updates: [KeyValueInput]!): Boolean!
+    removePropertyOverrides(propertyNames: [String]!): Boolean!
+    saveLink(link: LinkInput!): Link!
+    removeLink(id: String!): Boolean!
 }

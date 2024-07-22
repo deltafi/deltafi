@@ -15,14 +15,20 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.configuration.ui;
+package org.deltafi.core.repo;
 
-import lombok.Data;
+import org.deltafi.core.configuration.ui.Link;
+import org.deltafi.core.configuration.ui.Link.LinkType;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.stereotype.Repository;
 
-@Data
-public class SecurityBanner {
-    private String text;
-    private String backgroundColor;
-    private String textColor;
-    private boolean enabled = false;
+@Repository
+public interface UiLinkRepo extends MongoRepository<Link, String>, UiLinkRepoCustom {
+
+    /**
+     * Delete all links with the given names
+     * @param name name of the link to delete
+     * @param linkType type of link to delete
+     */
+    void deleteByNameAndLinkType(String name, LinkType linkType);
 }

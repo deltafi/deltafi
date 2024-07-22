@@ -19,8 +19,9 @@ package org.deltafi.core.snapshot;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.core.configuration.DeltaFiProperties;
+import org.deltafi.core.configuration.ui.Link;
 import org.deltafi.core.plugin.deployer.customization.PluginCustomizationConfig;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.snapshot.types.*;
@@ -45,7 +46,8 @@ public class SystemSnapshot {
     private OffsetDateTime created = OffsetDateTime.now();
     private List<PluginVariables> pluginVariables;
     private DeletePolicies deletePolicies;
-    private DeltaFiProperties deltaFiProperties;
+    private List<KeyValue> deltaFiProperties;
+    private List<Link> links;
 
     private List<RestDataSourceSnapshot> restDataSources = new ArrayList<>();
     private List<TimedDataSourceSnapshot> timedDataSources = new ArrayList<>();

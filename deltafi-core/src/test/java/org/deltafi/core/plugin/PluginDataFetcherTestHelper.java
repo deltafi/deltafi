@@ -40,17 +40,7 @@ public class PluginDataFetcherTestHelper {
             .dependencies()
             .groupId()
             .artifactId()
-            .version().parent()
-            .propertySets()
-            .id()
-            .displayName()
-            .description()
-            .properties()
-            .key()
-            .description()
-            .defaultValue()
-            .refreshable()
-            .value().parent().parent();
+            .version().parent();
 
     public static final UninstallPluginProjectionRoot UNINSTALL_PLUGIN_PROJECTION_ROOT = new UninstallPluginProjectionRoot()
             .success()
@@ -75,18 +65,5 @@ public class PluginDataFetcherTestHelper {
         assertEquals("plugin-2", plugin1.getDependencies().getFirst().getArtifactId());
         assertEquals("1.0.0", plugin1.getDependencies().getFirst().getVersion());
         assertEquals("plugin-3", plugin1.getDependencies().get(1).getArtifactId());
-
-        assertEquals(2, plugin1.getPropertySets().size());
-        assertEquals("propertySet1", plugin1.getPropertySets().getFirst().getId());
-        assertEquals("Property Set 1", plugin1.getPropertySets().getFirst().getDisplayName());
-        assertEquals("A description of property set 1", plugin1.getPropertySets().getFirst().getDescription());
-        assertEquals(2, plugin1.getPropertySets().getFirst().getProperties().size());
-        assertEquals("property1", plugin1.getPropertySets().getFirst().getProperties().getFirst().getKey());
-        assertEquals("A description of property 1", plugin1.getPropertySets().getFirst().getProperties().getFirst().getDescription());
-        assertEquals("property1Default", plugin1.getPropertySets().getFirst().getProperties().getFirst().getDefaultValue());
-        assertTrue(plugin1.getPropertySets().getFirst().getProperties().getFirst().isRefreshable());
-        assertEquals("property1Value", plugin1.getPropertySets().getFirst().getProperties().getFirst().getValue());
-        assertEquals("property4Value", plugin1.getPropertySets().get(1).getProperties().get(1).getValue());
-        assertEquals("propertySet2", plugin1.getPropertySets().get(1).getId());
     }
 }

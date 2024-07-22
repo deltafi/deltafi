@@ -18,16 +18,18 @@
 package org.deltafi.core.configuration.ui;
 
 import lombok.Data;
-
-import java.util.Objects;
+import org.springframework.data.annotation.Id;
 
 @Data
 public class Link {
+    @Id
+    private String id;
     private String name;
     private String url;
     private String description;
+    private LinkType linkType;
 
-    public boolean nameMatches(Link link) {
-        return Objects.equals(this.name, link.name);
+    public enum LinkType {
+        EXTERNAL, DELTAFILE_LINK
     }
 }

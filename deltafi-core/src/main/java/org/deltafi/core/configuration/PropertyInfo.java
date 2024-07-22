@@ -17,14 +17,16 @@
  */
 package org.deltafi.core.configuration;
 
-import lombok.Data;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import java.time.Duration;
-
-@Data
-public class PluginProperties {
-    private String imageRepositoryBase = "docker.io/deltafi/";
-    private String imagePullSecret;
-    private boolean autoRollback = false;
-    private Duration deployTimeout = Duration.ofMinutes(1);
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.FIELD)
+public @interface PropertyInfo {
+    String NULL = "NULL";
+    String description();
+    String defaultValue() default NULL;
+    boolean refreshable() default true;
 }

@@ -15,12 +15,12 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.configuration;
+package org.deltafi.core.repo;
 
-import lombok.Data;
+public interface UiLinkRepoCustom {
 
-@Data
-public class IngressProperties {
-    private boolean enabled = true;
-    private long diskSpaceRequirementInMb = 1000;
+    /**
+     * Ensure all indices are created.
+     */
+    void ensureAllIndices();
 }

@@ -29,7 +29,7 @@
         </div>
       </template>
     </ConfirmPopup>
-    <Button v-tooltip.left="`Remove ${rowLinkType}`" icon="pi pi-trash" class="p-button-text p-button-sm p-button-rounded p-button-danger" @click="confirmationPopup($event, rowData.name)" />
+    <Button v-tooltip.left="`Remove ${rowLinkType}`" icon="pi pi-trash" class="p-button-text p-button-sm p-button-rounded p-button-danger" @click="confirmationPopup($event, rowData.name, rowData.id)" />
   </span>
 </template>
 
@@ -45,7 +45,7 @@ import _ from "lodash";
 
 const confirm = useConfirm();
 const emit = defineEmits(["reloadExternalLinks"]);
-const { removeExternalLink, removeDeltaFileLink } = useExternalLinks();
+const { removeLink } = useExternalLinks();
 const notify = useNotifications();
 
 const props = defineProps({
@@ -61,7 +61,7 @@ const props = defineProps({
 
 const { rowDataProp: rowData, rowLinkType } = reactive(props);
 
-const confirmationPopup = (event, linkName) => {
+const confirmationPopup = (event, linkName, linkId) => {
   confirm.require({
     target: event.currentTarget,
     group: `${linkName}`,
@@ -71,24 +71,16 @@ const confirmationPopup = (event, linkName) => {
     icon: "pi pi-exclamation-triangle",
     accept: () => {
       notify.info(`Removing ${rowLinkType}`, `Removing link ${linkName}.`, 3000);
-      confirmedRemoveLink(linkName);
+      confirmedRemoveLink(linkName, linkId);
     },
     reject: () => {},
   });
 };
 
-const confirmedRemoveLink = async (linkName) => {
-  var response = "";
-  if (_.isEqual(rowLinkType, "DeltaFile Link")) {
-    response = await removeDeltaFileLink(linkName);
-    if (!_.get(response.data, "removeDeltaFileLink")) {
-      notify.error(`Removing ${rowLinkType} failed`, `Unable to remove ${linkName}.`, 4000);
-    }
-  } else if (_.isEqual(rowLinkType, "External Link")) {
-    response = await removeExternalLink(linkName);
-    if (!_.get(response.data, "removeExternalLink")) {
-      notify.error(`Removing ${rowLinkType} failed`, `Unable to remove ${linkName}.`, 4000);
-    }
+const confirmedRemoveLink = async (linkName, linkId) => {
+  let response = await removeLink(linkId);
+  if (!_.get(response.data, "removeLink")) {
+    notify.error(`Removing ${rowLinkType} failed`, `Unable to remove ${linkName}.`, 4000);
   }
   emit("reloadExternalLinks");
 };

@@ -18,18 +18,55 @@
 package org.deltafi.core.types;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import org.deltafi.core.configuration.ui.UiProperties;
+import org.deltafi.core.configuration.DeltaFiProperties;
+import org.deltafi.core.configuration.ui.Link;
+import org.deltafi.core.configuration.ui.Link.LinkType;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class UiConfig extends UiProperties {
+public class UiConfig {
     private String title;
     private String domain;
     private String authMode;
     private boolean clusterMode;
+    private boolean useUTC = true;
+    private TopBar topBar;
+    private SecurityBanner securityBanner;
+    private List<Link> deltaFileLinks = new ArrayList<>();
+    private List<Link> externalLinks = new ArrayList<>();
 
-    public UiConfig(UiProperties uiProperties) {
-        super(uiProperties);
+    public void setProperties(DeltaFiProperties properties) {
+        this.setTitle(properties.getSystemName());
+        this.topBar = new TopBar(properties);
+        this.securityBanner = new SecurityBanner(properties);
+    }
+
+    public void setLinks(List<Link> links) {
+        if (links == null) {
+            return;
+        }
+
+        for (Link link : links) {
+            if (link.getLinkType() == LinkType.DELTAFILE_LINK) {
+                this.deltaFileLinks.add(link);
+            } else if (link.getLinkType() == LinkType.EXTERNAL) {
+                this.externalLinks.add(link);
+            }
+        }
+    }
+
+    public record TopBar(String backgroundColor, String textColor) {
+        public TopBar(DeltaFiProperties deltaFiProperties) {
+            this(deltaFiProperties.getTopBarBackgroundColor(), deltaFiProperties.getTopBarTextColor());
+        }
+    }
+
+    public record SecurityBanner(String text, String backgroundColor, String textColor, boolean enabled) {
+        public SecurityBanner(DeltaFiProperties deltaFiProperties) {
+            this(deltaFiProperties.getSecurityBannerText(), deltaFiProperties.getSecurityBannerBackgroundColor(),
+                    deltaFiProperties.getSecurityBannerTextColor(), deltaFiProperties.isSecurityBannerEnabled());
+        }
     }
 }

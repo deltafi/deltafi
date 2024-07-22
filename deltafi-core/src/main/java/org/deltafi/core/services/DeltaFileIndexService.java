@@ -48,6 +48,6 @@ public class DeltaFileIndexService {
     }
 
     private Duration getAgeOffDays() {
-        return Duration.ofDays(deltaFiPropertiesService.getDeltaFiProperties().getDelete().getAgeOffDays());
+        return Duration.ofDays(deltaFiPropertiesService.getDeltaFiProperties().getAgeOffDays());
     }
 }

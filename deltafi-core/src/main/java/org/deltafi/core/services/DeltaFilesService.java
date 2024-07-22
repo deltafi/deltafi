@@ -683,7 +683,7 @@ public class DeltaFilesService {
      * @param expectedAnnotations new set of expected annotations for the given flow
      */
     public void updatePendingAnnotationsForFlows(String flowName, Set<String> expectedAnnotations) {
-        int batchSize = deltaFiPropertiesService.getDeltaFiProperties().getDelete().getPolicyBatchSize();
+        int batchSize = deltaFiPropertiesService.getDeltaFiProperties().getDeletePolicyBatchSize();
         List<DeltaFile> updatedDeltaFiles = new ArrayList<>();
         try (Stream<DeltaFile> deltaFiles = deltaFileRepo.findByTerminalAndFlowsNameAndFlowsState(false, flowName, DeltaFileFlowState.PENDING_ANNOTATIONS)) {
             deltaFiles.forEach(deltaFile -> updatePendingAnnotationsForFlowsAndCollect(deltaFile, flowName, expectedAnnotations, updatedDeltaFiles, batchSize));
@@ -1179,7 +1179,7 @@ public class DeltaFilesService {
      * @return                 true if there are more DeltaFiles to delete, false otherwise
      */
     public boolean timedDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, Long minBytes, String flow, String policy, boolean deleteMetadata) {
-        int batchSize = deltaFiPropertiesService.getDeltaFiProperties().getDelete().getPolicyBatchSize();
+        int batchSize = deltaFiPropertiesService.getDeltaFiProperties().getDeletePolicyBatchSize();
 
         logBatch(batchSize, policy);
         List<DeltaFile> deltaFiles = deltaFileRepo.findForTimedDelete(createdBefore, completedBefore, minBytes, flow, deleteMetadata, batchSize);
@@ -1189,7 +1189,7 @@ public class DeltaFilesService {
     }
 
     public List<DeltaFile> diskSpaceDelete(long bytesToDelete, String flow, String policy) {
-        int batchSize = deltaFiPropertiesService.getDeltaFiProperties().getDelete().getPolicyBatchSize();
+        int batchSize = deltaFiPropertiesService.getDeltaFiProperties().getDeletePolicyBatchSize();
 
         logBatch(batchSize, policy);
         return delete(deltaFileRepo.findForDiskSpaceDelete(bytesToDelete, flow, batchSize), policy, false);
@@ -1237,7 +1237,7 @@ public class DeltaFilesService {
                         .filter(action -> action.getState().equals(ActionState.QUEUED) && action.getModified().toInstant().toEpochMilli() == modified.toInstant().toEpochMilli())
                         .map(action -> requeueActionInput(deltaFile, flow, action)))
                 .filter(Objects::nonNull)
-                .limit(deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().isEnabled() ? 1 : 9999)
+                .limit(deltaFiPropertiesService.getDeltaFiProperties().isCacheEnabled() ? 1 : 9999)
                 .toList();
     }
 
@@ -1406,7 +1406,7 @@ public class DeltaFilesService {
             for (WrappedActionInput actionInput : actionInputs) {
                 populateBatchInput(actionInput);
             }
-            if (deltaFiPropertiesService.getDeltaFiProperties().getDeltaFileCache().isEnabled()) {
+            if (deltaFiPropertiesService.getDeltaFiProperties().isCacheEnabled()) {
                 // if this is the initial publication of a DeltaFile, and it has multiple actions to dispatch,
                 // only send to a single action until a core or worker picks it up and claims it
                 Map<UUID, List<WrappedActionInput>> groupedInputs = actionInputs.stream()

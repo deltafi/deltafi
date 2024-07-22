@@ -56,7 +56,7 @@ public class JoinEntryService {
     private JoinEntry upsertAndLock(JoinDefinition joinDefinition, OffsetDateTime joinDate, Integer minNum,
                                     Integer maxNum, int flowDepth) {
         JoinEntry joinEntry = null;
-        long endTimeMs = clock.millis() + deltaFiPropertiesService.getDeltaFiProperties().getJoin().getAcquireLockTimeoutMs();
+        long endTimeMs = clock.millis() + deltaFiPropertiesService.getDeltaFiProperties().getJoinAcquireLockTimeoutMs();
         while ((joinEntry == null) && (clock.millis() < endTimeMs)) {
             try {
                 joinEntry = joinEntryRepo.upsertAndLock(joinDefinition, joinDate, minNum, maxNum, flowDepth);
