@@ -15,7 +15,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.snapshot;
+package org.deltafi.core.types.snapshot;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -23,7 +23,6 @@ import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.plugin.deployer.customization.PluginCustomizationConfig;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
-import org.deltafi.core.snapshot.types.*;
 import org.deltafi.core.types.DeletePolicies;
 import org.deltafi.core.types.PluginVariables;
 import org.deltafi.core.types.ResumePolicy;

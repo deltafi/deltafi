@@ -28,6 +28,7 @@ import org.deltafi.core.configuration.ui.Link;
 import org.deltafi.core.generated.types.BackOff;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.types.*;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.intellij.lang.annotations.Language;
 
 import java.time.Duration;

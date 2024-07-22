@@ -15,7 +15,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.snapshot;
+package org.deltafi.core.types.snapshot;
 
 import org.springframework.core.Ordered;
 

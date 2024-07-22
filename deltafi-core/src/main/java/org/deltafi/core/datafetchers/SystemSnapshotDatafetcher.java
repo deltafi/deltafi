@@ -15,7 +15,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.snapshot;
+package org.deltafi.core.datafetchers;
 
 import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsMutation;
@@ -23,7 +23,9 @@ import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.InputArgument;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.core.security.NeedsPermission;
+import org.deltafi.core.services.SystemSnapshotService;
 import org.deltafi.core.types.Result;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
 
 import java.util.List;
 

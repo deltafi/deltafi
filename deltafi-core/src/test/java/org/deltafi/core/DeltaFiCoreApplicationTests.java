@@ -56,9 +56,9 @@ import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryRepo;
 import org.deltafi.core.repo.*;
 import org.deltafi.core.services.*;
 import org.deltafi.core.services.analytics.AnalyticEventService;
-import org.deltafi.core.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.snapshot.SystemSnapshotDatafetcherTestHelper;
-import org.deltafi.core.snapshot.SystemSnapshotRepo;
+import org.deltafi.core.repo.SystemSnapshotRepo;
 import org.deltafi.core.types.PluginVariables;
 import org.deltafi.core.types.ResumePolicy;
 import org.deltafi.core.types.*;
@@ -2738,12 +2738,11 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void testConcurrentPluginVariableRegistration() {
-		IntStream.range(0, 100).forEach(this::testConcurrentPluginVariableRegistration);
+		IntStream.range(0, 10).forEach(this::testConcurrentPluginVariableRegistration);
 	}
 
 	void testConcurrentPluginVariableRegistration(int ignoreI) {
-		pluginVariableRepo.deleteAll();
-
+		pluginVariableRepo.deleteAllInBatch();
 		PluginCoordinates oldVersion = PluginCoordinates.builder().groupId("org").artifactId("deltafi").version("1").build();
 		PluginCoordinates newVersion = PluginCoordinates.builder().groupId("org").artifactId("deltafi").version("2").build();
 

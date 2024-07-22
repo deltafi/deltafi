@@ -15,13 +15,15 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.snapshot;
+package org.deltafi.core.services;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.Variable;
+import org.deltafi.core.repo.SystemSnapshotRepo;
 import org.deltafi.core.types.PluginVariables;
 import org.deltafi.core.types.Result;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;

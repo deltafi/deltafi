@@ -20,7 +20,7 @@ package org.deltafi.core.services;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.core.repo.EgressFlowRepo;
 import org.deltafi.core.repo.FlowPlanRepo;
-import org.deltafi.core.snapshot.types.EgressFlowSnapshot;
+import org.deltafi.core.types.snapshot.EgressFlowSnapshot;
 import org.deltafi.core.types.EgressFlow;
 import org.deltafi.core.types.EgressFlowPlanEntity;
 import org.deltafi.core.validation.EgressFlowPlanValidator;

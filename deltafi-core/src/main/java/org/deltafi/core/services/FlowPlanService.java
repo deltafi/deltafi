@@ -27,15 +27,14 @@ import lombok.AllArgsConstructor;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.repo.FlowRepo;
-import org.deltafi.core.snapshot.types.FlowSnapshot;
+import org.deltafi.core.types.snapshot.FlowSnapshot;
 import org.deltafi.core.types.*;
 import org.deltafi.core.exceptions.DeltafiConfigurationException;
 import org.deltafi.common.types.Plugin;
 import org.deltafi.core.plugin.PluginCleaner;
 import org.deltafi.core.repo.FlowPlanRepo;
-import org.deltafi.core.snapshot.SnapshotRestoreOrder;
-import org.deltafi.core.snapshot.Snapshotter;
-import org.deltafi.core.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.validation.FlowPlanValidator;
 import org.springframework.boot.info.BuildProperties;
 

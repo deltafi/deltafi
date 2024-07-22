@@ -32,7 +32,7 @@ import org.deltafi.core.plugin.deployer.customization.PluginCustomizationService
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.services.EventService;
-import org.deltafi.core.snapshot.SystemSnapshotService;
+import org.deltafi.core.services.SystemSnapshotService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnCloudPlatform;
 import org.springframework.boot.cloud.CloudPlatform;
 import org.springframework.context.annotation.Bean;

@@ -20,7 +20,7 @@ package org.deltafi.core.services;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.Variable;
 import org.deltafi.core.repo.PluginVariableRepo;
-import org.deltafi.core.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.types.PluginVariables;
 import org.deltafi.core.types.Result;
 import org.junit.jupiter.api.Test;

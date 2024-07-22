@@ -18,7 +18,7 @@
 package org.deltafi.core.services;
 
 import org.deltafi.core.repo.DeletePolicyRepo;
-import org.deltafi.core.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.types.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

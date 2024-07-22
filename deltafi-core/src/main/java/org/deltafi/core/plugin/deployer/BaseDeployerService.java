@@ -28,7 +28,7 @@ import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
 import org.deltafi.core.security.DeltaFiUserDetailsService;
 import org.deltafi.core.services.EventService;
-import org.deltafi.core.snapshot.SystemSnapshotService;
+import org.deltafi.core.services.SystemSnapshotService;
 import org.deltafi.core.types.Event;
 import org.deltafi.core.types.Event.Severity;
 import org.deltafi.core.types.Result;

@@ -20,7 +20,7 @@ package org.deltafi.core.services;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.core.repo.FlowPlanRepo;
 import org.deltafi.core.repo.RestDataSourceRepo;
-import org.deltafi.core.snapshot.types.RestDataSourceSnapshot;
+import org.deltafi.core.types.snapshot.RestDataSourceSnapshot;
 import org.deltafi.core.types.RestDataSource;
 import org.deltafi.core.types.RestDataSourcePlanEntity;
 import org.deltafi.core.validation.RestDataSourcePlanValidator;

@@ -23,7 +23,7 @@ import com.netflix.graphql.dgs.internal.DefaultInputObjectMapper;
 import com.netflix.graphql.dgs.internal.InputObjectMapper;
 import kotlin.reflect.KClass;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.core.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 

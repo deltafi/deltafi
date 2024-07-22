@@ -15,42 +15,30 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.snapshot.types;
+package org.deltafi.core.types.snapshot;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
-import org.deltafi.common.types.FlowType;
-import org.deltafi.core.types.EgressFlow;
-
-import java.util.HashSet;
-import java.util.Set;
+import org.deltafi.core.types.TimedDataSource;
 
 @Data
+@NoArgsConstructor
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public class EgressFlowSnapshot extends FlowSnapshot implements HasExpectedAnnotations {
+public class TimedDataSourceSnapshot extends DataSourceSnapshot {
+    private String cronSchedule;
 
-    private Set<String> expectedAnnotations = new HashSet<>();
-
-
-    public EgressFlowSnapshot() {}
-
-    public EgressFlowSnapshot(String name) {
+    public TimedDataSourceSnapshot(String name) {
         super(name);
     }
 
-    public EgressFlowSnapshot(String name, boolean running, boolean testMode) { super(name, running, testMode); }
-
-    public EgressFlowSnapshot(EgressFlow egressFlow) {
-        this(egressFlow.getName());
-        setRunning(egressFlow.isRunning());
-        setTestMode(egressFlow.isTestMode());
-        setExpectedAnnotations(egressFlow.getExpectedAnnotations());
-    }
-
-    @Override
-    public FlowType getFlowType() {
-        return FlowType.EGRESS;
+    public TimedDataSourceSnapshot(TimedDataSource dataSource) {
+        this(dataSource.getName());
+        setRunning(dataSource.isRunning());
+        setTestMode(dataSource.isTestMode());
+        setTopic(dataSource.getTopic());
+        setCronSchedule(dataSource.getCronSchedule());
     }
 }

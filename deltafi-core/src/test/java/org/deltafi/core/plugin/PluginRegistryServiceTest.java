@@ -24,7 +24,7 @@ import org.deltafi.common.types.PluginRegistration;
 import org.deltafi.common.types.Variable;
 import org.deltafi.core.security.DeltaFiUserDetailsService;
 import org.deltafi.core.services.*;
-import org.deltafi.core.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.util.Util;
 import org.junit.jupiter.api.BeforeEach;

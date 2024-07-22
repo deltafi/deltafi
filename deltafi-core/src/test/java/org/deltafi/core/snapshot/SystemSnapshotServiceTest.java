@@ -18,7 +18,10 @@
 package org.deltafi.core.snapshot;
 
 import org.deltafi.common.types.Variable;
+import org.deltafi.core.repo.SystemSnapshotRepo;
+import org.deltafi.core.services.SystemSnapshotService;
 import org.deltafi.core.types.PluginVariables;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.util.Util;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

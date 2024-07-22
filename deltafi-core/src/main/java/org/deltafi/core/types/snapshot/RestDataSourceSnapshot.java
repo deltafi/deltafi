@@ -15,30 +15,28 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.snapshot.types;
+package org.deltafi.core.types.snapshot;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import org.deltafi.core.types.TimedDataSource;
+import org.deltafi.core.types.RestDataSource;
 
 @Data
 @NoArgsConstructor
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public class TimedDataSourceSnapshot extends DataSourceSnapshot {
-    private String cronSchedule;
+public class RestDataSourceSnapshot extends DataSourceSnapshot {
 
-    public TimedDataSourceSnapshot(String name) {
+    public RestDataSourceSnapshot(String name) {
         super(name);
     }
 
-    public TimedDataSourceSnapshot(TimedDataSource dataSource) {
+    public RestDataSourceSnapshot(RestDataSource dataSource) {
         this(dataSource.getName());
         setRunning(dataSource.isRunning());
         setTestMode(dataSource.isTestMode());
         setTopic(dataSource.getTopic());
-        setCronSchedule(dataSource.getCronSchedule());
     }
 }

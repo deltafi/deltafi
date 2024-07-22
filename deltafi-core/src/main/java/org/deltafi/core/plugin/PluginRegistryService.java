@@ -24,9 +24,9 @@ import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.Flows;
 import org.deltafi.core.security.DeltaFiUserDetailsService;
 import org.deltafi.core.services.*;
-import org.deltafi.core.snapshot.SnapshotRestoreOrder;
-import org.deltafi.core.snapshot.Snapshotter;
-import org.deltafi.core.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
+import org.deltafi.core.services.Snapshotter;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.types.*;
 import org.springframework.stereotype.Service;
 

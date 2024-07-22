@@ -15,11 +15,27 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.snapshot;
+package org.deltafi.core.types.snapshot;
 
-import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.stereotype.Repository;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
-@Repository
-public interface SystemSnapshotRepo extends MongoRepository<SystemSnapshot, String> {
+@Data
+@ToString
+@EqualsAndHashCode
+@AllArgsConstructor
+public abstract class FlowSnapshot {
+    private String name;
+    private boolean running;
+    private boolean testMode;
+
+    protected FlowSnapshot() {
+
+    }
+
+    protected FlowSnapshot(String name) {
+        this.name = name;
+    }
 }

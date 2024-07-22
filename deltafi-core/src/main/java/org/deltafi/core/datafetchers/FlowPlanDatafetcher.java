@@ -36,7 +36,7 @@ import org.deltafi.core.plugin.SystemPluginService;
 import org.deltafi.core.repo.FlowRepo;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.*;
-import org.deltafi.core.snapshot.types.FlowSnapshot;
+import org.deltafi.core.types.snapshot.FlowSnapshot;
 import org.deltafi.core.types.*;
 
 import java.util.*;

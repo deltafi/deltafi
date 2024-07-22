@@ -20,7 +20,7 @@ package org.deltafi.core.services;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.core.repo.FlowPlanRepo;
 import org.deltafi.core.repo.TransformFlowRepo;
-import org.deltafi.core.snapshot.types.TransformFlowSnapshot;
+import org.deltafi.core.types.snapshot.TransformFlowSnapshot;
 import org.deltafi.core.types.TransformFlow;
 import org.deltafi.core.types.TransformFlowPlanEntity;
 import org.deltafi.core.validation.TransformFlowPlanValidator;

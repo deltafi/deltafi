@@ -15,14 +15,13 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.snapshot.types;
+package org.deltafi.core.types.snapshot;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.deltafi.common.types.FlowType;
-import org.deltafi.core.types.TransformFlow;
+import org.deltafi.core.types.EgressFlow;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -30,31 +29,28 @@ import java.util.Set;
 @Data
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public class TransformFlowSnapshot extends FlowSnapshot implements HasExpectedAnnotations {
+public class EgressFlowSnapshot extends FlowSnapshot implements HasExpectedAnnotations {
 
-    private int maxErrors = -1;
     private Set<String> expectedAnnotations = new HashSet<>();
 
 
-    public TransformFlowSnapshot() {}
+    public EgressFlowSnapshot() {}
 
-    public TransformFlowSnapshot(String name) {
+    public EgressFlowSnapshot(String name) {
         super(name);
     }
 
-    public TransformFlowSnapshot(String name, boolean running, boolean testMode) {
-        super(name, running, testMode);
-    }
+    public EgressFlowSnapshot(String name, boolean running, boolean testMode) { super(name, running, testMode); }
 
-    public TransformFlowSnapshot(TransformFlow transformFlow) {
-        this(transformFlow.getName());
-        setRunning(transformFlow.isRunning());
-        setTestMode(transformFlow.isTestMode());
-        setMaxErrors(transformFlow.getMaxErrors());
+    public EgressFlowSnapshot(EgressFlow egressFlow) {
+        this(egressFlow.getName());
+        setRunning(egressFlow.isRunning());
+        setTestMode(egressFlow.isTestMode());
+        setExpectedAnnotations(egressFlow.getExpectedAnnotations());
     }
 
     @Override
     public FlowType getFlowType() {
-        return FlowType.TRANSFORM;
+        return FlowType.EGRESS;
     }
 }

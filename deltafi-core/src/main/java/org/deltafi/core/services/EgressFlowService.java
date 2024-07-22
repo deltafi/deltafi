@@ -23,8 +23,8 @@ import org.deltafi.common.types.Subscriber;
 import org.deltafi.core.converters.EgressFlowPlanConverter;
 import org.deltafi.core.repo.EgressFlowRepo;
 import org.deltafi.core.services.pubsub.SubscriberService;
-import org.deltafi.core.snapshot.SystemSnapshot;
-import org.deltafi.core.snapshot.types.EgressFlowSnapshot;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.EgressFlowSnapshot;
 import org.deltafi.core.types.EgressFlow;
 
 import org.deltafi.core.types.EgressFlowPlanEntity;

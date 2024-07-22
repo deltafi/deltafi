@@ -15,30 +15,20 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.snapshot.types;
+package org.deltafi.core.types.snapshot;
 
-import org.deltafi.common.types.FlowType;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 
-import java.util.Set;
-
-public interface HasExpectedAnnotations {
-
-    /**
-     * Get the name of the flow
-     * @return name of the flow
-     */
-    String getName();
-
-    /**
-     * Get the expected annotations
-     * @return the expected annotations
-     */
-    Set<String> getExpectedAnnotations();
-
-    /**
-     * Get the flow type
-     * @return the flow type
-     */
-    FlowType getFlowType();
-
+@Data
+@NoArgsConstructor
+@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true)
+public abstract class DataSourceSnapshot extends FlowSnapshot {
+    private String topic;
+    public DataSourceSnapshot(String name) {
+        super(name);
+    }
 }
