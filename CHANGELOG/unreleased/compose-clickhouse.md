@@ -8,6 +8,7 @@ Document any changes on this branch here.
 
 ### Fixed
 - Improved clickhouse CPU/RAM performance on compose stack
+- Disable redis persistence on compose stack
 
 ### Removed
 - 

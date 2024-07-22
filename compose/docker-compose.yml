@@ -305,6 +305,8 @@ services:
     expose:
       - "6379"
     restart: unless-stopped
+    volumes:
+      - ${SETTINGS_DIR}/redis/:/opt/bitnami/redis/mounted-etc/:ro
   deltafi-grafana:
     image: ${GRAFANA}
     container_name: deltafi-grafana
