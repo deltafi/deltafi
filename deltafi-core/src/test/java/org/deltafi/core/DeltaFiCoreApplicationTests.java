@@ -265,7 +265,7 @@ class DeltaFiCoreApplicationTests {
 	CoreEventQueue coreEventQueue;
 
 	@MockBean
-	ValkeyKeyedBlockingQueue vakkeyKeyedBlockingQueue;
+	ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue;
 
 	@MockBean
 	ServerSentService serverSentService;
@@ -305,14 +305,13 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@BeforeEach
-	@SneakyThrows
 	void setup() {
 		deltaFiPropertiesRepo.save(new DeltaFiProperties());
-		annotationRepo.deleteAll();
-		actionRepo.deleteAll();
-		deltaFileFlowRepo.deleteAll();
-		deltaFileRepo.deleteAll();
-		resumePolicyRepo.deleteAll();
+		annotationRepo.deleteAllInBatch();
+		actionRepo.deleteAllInBatch();
+		deltaFileFlowRepo.deleteAllInBatch();
+		deltaFileRepo.deleteAllInBatch();
+		resumePolicyRepo.deleteAllInBatch();
 		resumePolicyService.refreshCache();
 		loadConfig();
 
@@ -349,7 +348,7 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	void loadTransformConfig() {
-		transformFlowRepo.deleteAll();
+		transformFlowRepo.deleteAllInBatch();
 
 		TransformFlow sampleTransformFlow = buildRunningTransformFlow(TRANSFORM_FLOW_NAME, TRANSFORM_ACTIONS, false);
 		sampleTransformFlow.setSubscribe(Set.of(new Rule(TRANSFORM_TOPIC)));
@@ -362,7 +361,7 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	void loadEgressConfig() {
-		egressFlowRepo.deleteAll();
+		egressFlowRepo.deleteAllInBatch();
 
 		EgressFlow sampleEgressFlow = buildRunningEgressFlow(EGRESS_FLOW_NAME, EGRESS, false);
 		sampleEgressFlow.setSubscribe(Set.of(new Rule(EGRESS_TOPIC)));
@@ -375,13 +374,13 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	void loadRestDataSources() {
-		restDataSourceRepo.deleteAll();
+		restDataSourceRepo.deleteAllInBatch();
 		restDataSourceRepo.save(buildRestDataSource(FlowState.RUNNING));
 		restDataSourceService.refreshCache();
 	}
 
 	void loadTimedDataSources() {
-		timedDataSourceRepo.deleteAll();
+		timedDataSourceRepo.deleteAllInBatch();
 		timedDataSourceRepo.save(buildTimedDataSource(FlowState.RUNNING));
 		timedDataSourceRepo.save(buildTimedDataSourceError(FlowState.RUNNING));
 		timedDataSourceService.refreshCache();
@@ -3136,7 +3135,7 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	private List<UUID> loadFilteredDeltaFiles(OffsetDateTime plusTwo) {
-		deltaFileRepo.deleteAll();
+		deltaFileRepo.deleteAllInBatch();
 
 		DeltaFile deltaFile = postTransformDeltaFile(UUID.randomUUID());
 		deltaFile.setFiltered(true);
@@ -3499,14 +3498,14 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	void clearForFlowTests() {
-		flowPlanRepo.deleteAll();
-		transformFlowRepo.deleteAll();
+		flowPlanRepo.deleteAllInBatch();
+		transformFlowRepo.deleteAllInBatch();
 		transformFlowService.refreshCache();
-		egressFlowRepo.deleteAll();
+		egressFlowRepo.deleteAllInBatch();
 		egressFlowService.refreshCache();
-		timedDataSourceRepo.deleteAll();
+		timedDataSourceRepo.deleteAllInBatch();
 		restDataSourceService.refreshCache();
-		pluginVariableRepo.deleteAll();
+		pluginVariableRepo.deleteAllInBatch();
 	}
 
 	@Test
