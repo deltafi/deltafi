@@ -21,9 +21,9 @@
     <div>
       <PageHeader heading="DeltaFile Search">
         <div class="time-range btn-toolbar mb-2 mb-md-0">
-          <Button class="p-button-text p-button-sm p-button-secondary" disabled>{{ shortTimezone() }}</Button>
-          <CustomCalendar :start-time-date="model.startTimeDate" :end-time-date="model.endTimeDate" :reset-default="resetDefaultTimeDate" @update:start-time-date:end-time-date="updateInputDateTime"></CustomCalendar>
-          <Button class="p-button p-button-outlined deltafi-input-field ml-3" icon="fa fa-sync-alt" :loading="loading" label="Refresh" @click="fetchDeltaFilesData()" />
+          <Button class="p-button-text p-button-sm p-button-secondary mr-0" disabled>{{ shortTimezone() }}</Button>
+          <CustomCalendar ref="customCalendarRef" :start-time-date="model.startTimeDate" :end-time-date="model.endTimeDate" :reset-default="resetDefaultTimeDate" class="ml-0 mr-1" @update:start-time-date:end-time-date="updateInputDateTime" />
+          <Button class="p-button p-button-outlined deltafi-input-field ml-1" icon="fa fa-sync-alt" :loading="loading" label="Refresh" @click="refreshDeltaFilesData()" />
         </div>
       </PageHeader>
     </div>
@@ -181,6 +181,7 @@ const useURLSearch = ref(false);
 const uiConfig = inject("uiConfig");
 const selectedDids = ref([]);
 const menu = ref();
+const customCalendarRef = ref(null);
 const retryResumeDialog = ref();
 const annotateDialog = ref();
 const annotationsOverlay = ref(null);
@@ -497,7 +498,12 @@ const fetchDeltaFilesDataNoDebounce = async () => {
   totalRecords.value = data.data.deltaFiles.totalCount;
 };
 
-const fetchDeltaFilesData = () => {
+const refreshDeltaFilesData = async () => {
+  await customCalendarRef.value.refreshUpdateDateTime();
+  fetchDeltaFilesData();
+};
+
+const fetchDeltaFilesData = async () => {
   setPersistedParams();
   fetchDeltaFilesDataDebounce();
 };
