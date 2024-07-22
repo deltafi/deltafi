@@ -23,6 +23,7 @@ import org.deltafi.common.types.Plugin;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.Variable;
 import org.deltafi.core.plugin.PluginCleaner;
+import org.deltafi.core.plugin.PluginEntity;
 import org.deltafi.core.repo.PluginVariableRepo;
 import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.types.snapshot.SystemSnapshot;
@@ -258,7 +259,7 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
     }
 
     @Override
-    public void cleanupFor(Plugin plugin) {
+    public void cleanupFor(PluginEntity plugin) {
         removeVariables(plugin.getPluginCoordinates());
     }
 

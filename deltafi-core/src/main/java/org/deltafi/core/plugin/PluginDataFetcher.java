@@ -44,7 +44,7 @@ public class PluginDataFetcher {
     @DgsQuery
     @NeedsPermission.PluginsView
     public Collection<Plugin> plugins() {
-        return pluginRegistryService.getPluginsWithVariables();
+        return pluginRegistryService.getPluginsWithVariables().stream().map(PluginEntity::toPlugin).toList();
     }
 
     @DgsQuery

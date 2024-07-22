@@ -57,8 +57,8 @@ public class PluginRegistryService implements Snapshotter {
 
     @PostConstruct
     public void initialize() {
-        Plugin systemPlugin = systemPluginService.getSystemPlugin();
-        pluginRepository.deleteOlderVersions(systemPlugin.getPluginCoordinates().getGroupId(), systemPlugin.getPluginCoordinates().getArtifactId());
+        PluginEntity systemPlugin = systemPluginService.getSystemPlugin();
+        pluginRepository.deleteByGroupIdAndArtifactId(systemPlugin.getPluginCoordinates().getGroupId(), systemPlugin.getPluginCoordinates().getArtifactId());
         pluginRepository.save(systemPlugin);
         updateActionDescriptors();
     }
@@ -66,7 +66,7 @@ public class PluginRegistryService implements Snapshotter {
     public void updateActionDescriptors() {
         actionDescriptorMap = pluginRepository.findAll()
                 .stream()
-                .map(Plugin::getActions)
+                .map(PluginEntity::getActions)
                 .filter(Objects::nonNull)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toMap(ActionDescriptor::getName, Function.identity(), (a,b) -> a));
@@ -74,7 +74,7 @@ public class PluginRegistryService implements Snapshotter {
 
     public Result register(PluginRegistration pluginRegistration) {
         log.info("{}", pluginRegistration);
-        Plugin plugin = pluginRegistration.toPlugin();
+        PluginEntity plugin = PluginEntity.fromPlugin(pluginRegistration.toPlugin());
         GroupedFlowPlans groupedFlowPlans = groupPlansByFlowType(pluginRegistration);
 
         // Validate everything before persisting changes, the plugin should not be considered installed if validation fails
@@ -83,7 +83,7 @@ public class PluginRegistryService implements Snapshotter {
             return Result.builder().success(false).errors(validationErrors).build();
         }
 
-        pluginRepository.deleteOlderVersions(plugin.getPluginCoordinates().getGroupId(), plugin.getPluginCoordinates().getArtifactId());
+        pluginRepository.deleteByGroupIdAndArtifactId(plugin.getPluginCoordinates().getGroupId(), plugin.getPluginCoordinates().getArtifactId());
         pluginRepository.save(plugin);
         updateActionDescriptors();
         pluginVariableService.saveVariables(plugin.getPluginCoordinates(), pluginRegistration.getVariables());
@@ -98,7 +98,7 @@ public class PluginRegistryService implements Snapshotter {
      * prevent the plugin from successfully registering
      * @return the list of errors
      */
-    private List<String> validate(Plugin plugin, GroupedFlowPlans groupedFlowPlans, List<Variable> variables) {
+    private List<String> validate(PluginEntity plugin, GroupedFlowPlans groupedFlowPlans, List<Variable> variables) {
         List<String> errors = new ArrayList<>();
         errors.addAll(pluginValidator.validate(plugin));
         errors.addAll(transformFlowPlanService.validateFlowPlans(groupedFlowPlans.transformFlowPlans));
@@ -143,22 +143,22 @@ public class PluginRegistryService implements Snapshotter {
         return new GroupedFlowPlans(transformFlowPlans, egressFlowPlans, restDataSourcePlans, timedDataSourcePlans);
     }
 
-    public Optional<Plugin> getPlugin(PluginCoordinates pluginCoordinates) {
+    public Optional<PluginEntity> getPlugin(PluginCoordinates pluginCoordinates) {
         return pluginRepository.findById(pluginCoordinates);
     }
 
-    public List<Plugin> getPlugins() {
+    public List<PluginEntity> getPlugins() {
         return pluginRepository.findAll();
     }
 
     // TODO: Maybe variables should be stored with plugins???
-    public List<Plugin> getPluginsWithVariables() {
-        List<Plugin> plugins = getPlugins();
+    public List<PluginEntity> getPluginsWithVariables() {
+        List<PluginEntity> plugins = getPlugins();
         plugins.forEach(this::addVariables);
         return plugins;
     }
 
-    private void addVariables(Plugin plugin) {
+    private void addVariables(PluginEntity plugin) {
         List<Variable> variables = pluginVariableService.getVariablesByPlugin(plugin.getPluginCoordinates());
 
         if (!DeltaFiUserDetailsService.currentUserCanViewMasked()) {
@@ -179,7 +179,7 @@ public class PluginRegistryService implements Snapshotter {
                 .toList();
     }
 
-    private Flows toPluginFlows(Plugin plugin,
+    private Flows toPluginFlows(PluginEntity plugin,
                                 Map<PluginCoordinates, List<EgressFlow>> egressFlows,
                                 Map<PluginCoordinates, List<TransformFlow>> transformFlows,
                                 Map<PluginCoordinates, List<RestDataSource>> restDataSources,
@@ -195,11 +195,11 @@ public class PluginRegistryService implements Snapshotter {
                 .build();
     }
 
-    public List<Plugin> getPluginsWithDependency(PluginCoordinates pluginCoordinates) {
+    public List<PluginEntity> getPluginsWithDependency(PluginCoordinates pluginCoordinates) {
         return pluginRepository.findPluginsWithDependency(pluginCoordinates);
     }
 
-    private void removePlugin(Plugin plugin) {
+    private void removePlugin(PluginEntity plugin) {
         pluginRepository.deleteById(plugin.getPluginCoordinates());
     }
 
@@ -248,11 +248,11 @@ public class PluginRegistryService implements Snapshotter {
     }
 
     private Set<PluginCoordinates> getInstalledPluginCoordinates() {
-        return getPlugins().stream().map(Plugin::getPluginCoordinates).collect(Collectors.toSet());
+        return getPlugins().stream().map(PluginEntity::getPluginCoordinates).collect(Collectors.toSet());
     }
 
     public List<String> canBeUninstalled(PluginCoordinates pluginCoordinates) {
-        Plugin plugin = getPlugin(pluginCoordinates).orElse(null);
+        PluginEntity plugin = getPlugin(pluginCoordinates).orElse(null);
 
         if (Objects.isNull(plugin)) {
             return List.of("Plugin not found");
@@ -278,7 +278,7 @@ public class PluginRegistryService implements Snapshotter {
 
     public void uninstallPlugin(PluginCoordinates pluginCoordinates) {
         // TODO: TBD: remove plugin property sets
-        Plugin plugin = getPlugin(pluginCoordinates).orElseThrow();
+        PluginEntity plugin = getPlugin(pluginCoordinates).orElseThrow();
         pluginCleaners.forEach(pluginCleaner -> pluginCleaner.cleanupFor(plugin));
         removePlugin(plugin);
         updateActionDescriptors();

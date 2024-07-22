@@ -23,6 +23,7 @@ import org.deltafi.common.types.*;
 import org.deltafi.core.converters.FlowPlanConverter;
 import org.deltafi.core.exceptions.MissingFlowException;
 import org.deltafi.core.generated.types.*;
+import org.deltafi.core.plugin.PluginEntity;
 import org.deltafi.core.plugin.PluginUninstallCheck;
 import org.deltafi.core.repo.FlowRepo;
 import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
@@ -421,7 +422,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
      * of running flows
      */
     @Override
-    public String uninstallBlockers(Plugin plugin) {
+    public String uninstallBlockers(PluginEntity plugin) {
         List<String> runningFlows = flowRepo.findRunningBySourcePlugin(plugin.getPluginCoordinates(), getFlowClass());
         return runningFlows.isEmpty() ? null : runningFlowError(runningFlows);
     }

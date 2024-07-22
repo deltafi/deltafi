@@ -36,8 +36,8 @@ public class SystemPluginService {
 
     private final BuildProperties buildProperties;
 
-    public Plugin getSystemPlugin() {
-        Plugin plugin = new Plugin();
+    public PluginEntity getSystemPlugin() {
+        PluginEntity plugin = new PluginEntity();
         plugin.setPluginCoordinates(getSystemPluginCoordinates());
         plugin.setDisplayName(DISPLAY_NAME);
         plugin.setDescription(DESCRIPTION);

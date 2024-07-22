@@ -25,6 +25,7 @@ import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.integration.config.Configuration;
 import org.deltafi.core.integration.config.ExpectedDeltaFile;
 import org.deltafi.core.integration.config.Input;
+import org.deltafi.core.plugin.PluginEntity;
 import org.deltafi.core.plugin.PluginRegistryService;
 import org.deltafi.core.services.RestDataSourceService;
 import org.deltafi.core.services.EgressFlowService;
@@ -122,7 +123,7 @@ public class ConfigurationValidator {
 
     private Collection<String> checkPlugins(List<PluginCoordinates> plugins) {
         List<String> errors = new ArrayList<>();
-        List<Plugin> allInstalledPlugins = null;
+        List<PluginEntity> allInstalledPlugins = null;
         for (PluginCoordinates pluginCoordinates : plugins) {
             if (StringUtils.isEmpty(pluginCoordinates.getGroupId()) || StringUtils.isEmpty(pluginCoordinates.getArtifactId())) {
                 errors.add("Invalid plugin specified: " + pluginCoordinates);
@@ -133,7 +134,7 @@ public class ConfigurationValidator {
                         allInstalledPlugins = pluginRegistryService.getPlugins();
                     }
                     boolean found = false;
-                    for (Plugin p : allInstalledPlugins) {
+                    for (PluginEntity p : allInstalledPlugins) {
                         if (p.getPluginCoordinates().equalsIgnoreVersion(pluginCoordinates)) {
                             found = true;
                             break;

@@ -18,7 +18,6 @@
 package org.deltafi.core.plugin;
 
 import org.deltafi.common.types.ActionDescriptor;
-import org.deltafi.common.types.Plugin;
 import org.deltafi.common.types.PluginCoordinates;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,7 +42,7 @@ class PluginValidatorTest {
 
     @Test
     void testValidate_Coords() {
-        Plugin plugin = new Plugin();
+        PluginEntity plugin = new PluginEntity();
         List<String> errors = pluginValidator.validate(plugin);
         assertThat(errors).hasSize(1).contains("The plugin coordinates must be provided");
 
@@ -56,16 +55,16 @@ class PluginValidatorTest {
 
     @Test
     void validate() {
-        Plugin plugin1 = new Plugin();
+        PluginEntity plugin1 = new PluginEntity();
         PluginCoordinates pluginCoordinates1 = new PluginCoordinates("group", "plugin-1", "1.0.0");
         plugin1.setPluginCoordinates(pluginCoordinates1);
-        Plugin plugin2 = new Plugin();
+        PluginEntity plugin2 = new PluginEntity();
         PluginCoordinates pluginCoordinates2 = new PluginCoordinates("group", "plugin-2", "1.0.0");
         plugin2.setPluginCoordinates(pluginCoordinates2);
 
         Mockito.when(pluginRepository.findAll()).thenReturn(List.of(plugin1, plugin2));
 
-        Plugin plugin = new Plugin();
+        PluginEntity plugin = new PluginEntity();
         plugin.setPluginCoordinates(new PluginCoordinates("group", "plugin", "1.0.0"));
         plugin.setDependencies(List.of(new PluginCoordinates("group", "unregistered", "1.0.0"),
                 new PluginCoordinates("group", "plugin-1", "1.0.1")));
@@ -86,17 +85,17 @@ class PluginValidatorTest {
 
     @Test
     void validateUniqueActions() {
-        Plugin pluginOldVersion = new Plugin();
+        PluginEntity pluginOldVersion = new PluginEntity();
         PluginCoordinates olderVersion = new PluginCoordinates("group", "plugin-1", "1.0.0");
         pluginOldVersion.setPluginCoordinates(olderVersion);
         pluginOldVersion.setActions(List.of(ActionDescriptor.builder().name("org.deltafi.A1").build()));
 
-        Plugin pluginNewVersion = new Plugin();
+        PluginEntity pluginNewVersion = new PluginEntity();
         PluginCoordinates newVersion = new PluginCoordinates("group", "plugin-1", "1.0.1");
         pluginNewVersion.setPluginCoordinates(newVersion);
         pluginNewVersion.setActions(List.of(ActionDescriptor.builder().name("org.deltafi.A1").build()));
 
-        Plugin differentPlugin = new Plugin();
+        PluginEntity differentPlugin = new PluginEntity();
         PluginCoordinates differentVersion = new PluginCoordinates("group", "plugin-2", "1.0.0");
         differentPlugin.setPluginCoordinates(differentVersion);
         differentPlugin.setActions(List.of(ActionDescriptor.builder().name("org.deltafi.A1").build()));

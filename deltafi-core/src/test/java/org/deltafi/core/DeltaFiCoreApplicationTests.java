@@ -47,6 +47,7 @@ import org.deltafi.core.generated.types.*;
 import org.deltafi.core.integration.IntegrationDataFetcherTestHelper;
 import org.deltafi.core.integration.TestResultRepo;
 import org.deltafi.core.metrics.MetricService;
+import org.deltafi.core.plugin.PluginEntity;
 import org.deltafi.core.plugin.PluginRepository;
 import org.deltafi.core.plugin.SystemPluginService;
 import org.deltafi.core.plugin.deployer.DeployerService;
@@ -1135,7 +1136,7 @@ class DeltaFiCoreApplicationTests {
 		timeDataSource.setName("timedIngress");
 		timeDataSource.setSourcePlugin(pluginCoordinates);
 
-		Plugin plugin = new Plugin();
+		PluginEntity plugin = new PluginEntity();
 		plugin.setPluginCoordinates(pluginCoordinates);
 		pluginRepository.save(plugin);
 		pluginVariableRepo.save(variables);
@@ -1746,8 +1747,8 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void getsPlugins() throws IOException {
 		pluginRepository.deleteAll();
-		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-1.json"), Plugin.class));
-		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), Plugin.class));
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-1.json"), PluginEntity.class));
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), PluginEntity.class));
 
 		GraphQLQueryRequest graphQLQueryRequest = new GraphQLQueryRequest(PluginsGraphQLQuery.newRequest().build(), PLUGINS_PROJECTION_ROOT);
 
@@ -1763,18 +1764,18 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void registersPlugin() throws IOException {
 		pluginRepository.deleteAll();
-		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), Plugin.class));
-		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-3.json"), Plugin.class));
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), PluginEntity.class));
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-3.json"), PluginEntity.class));
 
-		Plugin plugin = OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-1.json"), Plugin.class);
+		PluginEntity plugin = OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-1.json"), PluginEntity.class);
 		ResponseEntity<String> response = postPluginRegistration(plugin);
 
 		assertEquals(HttpStatus.OK, response.getStatusCode());
-		List<Plugin> plugins = pluginRepository.findAll();
+		List<PluginEntity> plugins = pluginRepository.findAll();
 		assertEquals(3, plugins.size());
 	}
 
-	ResponseEntity<String> postPluginRegistration(Plugin plugin) throws JsonProcessingException {
+	ResponseEntity<String> postPluginRegistration(PluginEntity plugin) throws JsonProcessingException {
 		PluginRegistration pluginRegistration = PluginRegistration.builder()
 				.pluginCoordinates(plugin.getPluginCoordinates())
 				.displayName(plugin.getDisplayName())
@@ -1792,18 +1793,18 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void registerPluginReplacesExistingPlugin() throws IOException {
 		pluginRepository.deleteAll();
-		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), Plugin.class));
-		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-3.json"), Plugin.class));
-		Plugin existingPlugin = OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-1.json"), Plugin.class);
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), PluginEntity.class));
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-3.json"), PluginEntity.class));
+		PluginEntity existingPlugin = OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-1.json"), PluginEntity.class);
 		existingPlugin.getPluginCoordinates().setVersion("0.0.9");
 		existingPlugin.setDescription("changed");
 		pluginRepository.save(existingPlugin);
 
-		Plugin plugin = OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-1.json"), Plugin.class);
+		PluginEntity plugin = OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-1.json"), PluginEntity.class);
 		ResponseEntity<String> response = postPluginRegistration(plugin);
 
 		assertEquals(HttpStatus.OK, response.getStatusCode());
-		List<Plugin> plugins = pluginRepository.findAll();
+		List<PluginEntity> plugins = pluginRepository.findAll();
 		assertEquals(3, plugins.size());
 		assertThat(pluginRepository.findById(existingPlugin.getPluginCoordinates())).isEmpty();
 		assertThat(pluginRepository.findById(plugin.getPluginCoordinates())).isPresent();
@@ -1813,7 +1814,7 @@ class DeltaFiCoreApplicationTests {
 	void registerPluginReturnsErrorsOnMissingDependencies() throws IOException {
 		pluginRepository.deleteAll();
 
-		Plugin plugin = OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-1.json"), Plugin.class);
+		PluginEntity plugin = OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-1.json"), PluginEntity.class);
 		ResponseEntity<String> response = postPluginRegistration(plugin);
 
 		assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -1823,17 +1824,17 @@ class DeltaFiCoreApplicationTests {
 		}
 		assertTrue(response.getBody().contains("Plugin dependency not registered: org.deltafi:plugin-2:1.0.0."));
 		assertTrue(response.getBody().contains("Plugin dependency not registered: org.deltafi:plugin-3:1.0.0."));
-		List<Plugin> plugins = pluginRepository.findAll();
+		List<PluginEntity> plugins = pluginRepository.findAll();
 		assertTrue(plugins.isEmpty());
 	}
 
 	@Test
 	void uninstallPluginSuccess() throws IOException {
 		pluginRepository.deleteAll();
-		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), Plugin.class));
-		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-3.json"), Plugin.class));
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), PluginEntity.class));
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-3.json"), PluginEntity.class));
 
-		Plugin plugin = OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), Plugin.class);
+		PluginEntity plugin = OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), PluginEntity.class);
 		UninstallPluginGraphQLQuery uninstallPluginGraphQLQuery =
 				UninstallPluginGraphQLQuery.newRequest()
 						.pluginCoordinates(plugin.getPluginCoordinates()).build();
@@ -1853,12 +1854,12 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void findPluginsWithDependency() throws IOException {
 		pluginRepository.deleteAll();
-		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-1.json"), Plugin.class));
-		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), Plugin.class));
-		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-3.json"), Plugin.class));
-		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-4.json"), Plugin.class));
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-1.json"), PluginEntity.class));
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), PluginEntity.class));
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-3.json"), PluginEntity.class));
+		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-4.json"), PluginEntity.class));
 
-		List<Plugin> matched = pluginRepository.findPluginsWithDependency(
+		List<PluginEntity> matched = pluginRepository.findPluginsWithDependency(
 				new PluginCoordinates("org.deltafi", "plugin-3", "1.0.0"));
 		assertEquals(2, matched.size());
 		if (matched.getFirst().getDisplayName().equals("Test Plugin 1")) {

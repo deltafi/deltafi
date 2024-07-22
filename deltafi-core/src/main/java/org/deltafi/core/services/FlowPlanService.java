@@ -26,6 +26,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.common.types.PluginCoordinates;
+import org.deltafi.core.plugin.PluginEntity;
 import org.deltafi.core.repo.FlowRepo;
 import org.deltafi.core.types.snapshot.FlowSnapshot;
 import org.deltafi.core.types.*;
@@ -219,7 +220,7 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlanEntity, FlowT ex
     }
 
     @Override
-    public void cleanupFor(Plugin plugin) {
+    public void cleanupFor(PluginEntity plugin) {
         removeFlowsAndPlansBySourcePlugin(plugin.getPluginCoordinates());
     }
 }

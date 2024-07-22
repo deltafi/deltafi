@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.Plugin;
 import org.deltafi.core.plugin.PluginCleaner;
+import org.deltafi.core.plugin.PluginEntity;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -30,7 +31,7 @@ public class CoreEventQueuePluginCleaner implements PluginCleaner {
     private final CoreEventQueue coreEventQueue;
 
     @Override
-    public void cleanupFor(Plugin plugin) {
+    public void cleanupFor(PluginEntity plugin) {
         coreEventQueue.drop(plugin.actionNames());
     }
 }
