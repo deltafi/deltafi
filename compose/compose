@@ -471,10 +471,10 @@ deltafi:
   clickhouse_etl:
     enabled: true
     image: ${repo}/deltafi-clickhouse-etl:${tag}
-    interval: 10
-    lag: 60
+    interval: 120
+    lag: 120
     batch: 2000
-    delete_ttl: "1 MONTH"
+    delete_ttl: "7 DAY"
 # nginx domain
 ingress:
   domain: local.deltafi.org
@@ -528,11 +528,11 @@ _from_values() {
 }
 
 _append_startup_from_values() {
-  _append_startup "${1}" $(_from_values "${2}") "${STARTUP_SETTINGS}"
+  _append_startup "${1}" "$(_from_values "${2}")" "${STARTUP_SETTINGS}"
 }
 
 _append_common_from_values() {
-  _append_startup "${1}" $(_from_values "${2}") "${COMMON_SETTINGS}"
+  _append_common "${1}" "$(_from_values "${2}")" "${COMMON_SETTINGS}"
 }
 
 _append_compose_profiles() {

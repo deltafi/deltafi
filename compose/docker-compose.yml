@@ -374,6 +374,7 @@ services:
     restart: unless-stopped
     volumes:
       - ${DATA_DIR}/clickhouse:/bitnami/clickhouse/
+      - ${SETTINGS_DIR}/clickhouse/override.xml:/bitnami/clickhouse/etc/conf.d/override.xml:ro
     user: "${USER_ID}"
   deltafi-clickhouse-etl:
     scale: ${CLICKHOUSE_ETL_SCALE}

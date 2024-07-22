@@ -16,6 +16,7 @@ ingester:
   wal:
     dir: /data/loki/wal
 limits_config:
+  retention_period: 744h
   enforce_metric_name: false
   max_entries_limit_per_query: 5000
   reject_old_samples: true
