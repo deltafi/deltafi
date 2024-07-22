@@ -28,6 +28,7 @@ import org.deltafi.core.types.Result;
 import org.deltafi.core.types.snapshot.SystemSnapshot;
 
 import java.util.List;
+import java.util.UUID;
 
 @DgsComponent
 @RequiredArgsConstructor
@@ -37,7 +38,7 @@ public class SystemSnapshotDatafetcher {
 
     @DgsQuery
     @NeedsPermission.SnapshotRead
-    public SystemSnapshot getSystemSnapshot(@InputArgument String snapshotId) {
+    public SystemSnapshot getSystemSnapshot(@InputArgument UUID snapshotId) {
         return systemSnapshotService.getWithMaskedVariables(snapshotId);
     }
 
@@ -55,7 +56,7 @@ public class SystemSnapshotDatafetcher {
 
     @DgsMutation
     @NeedsPermission.SnapshotRevert
-    public Result resetFromSnapshotWithId(@InputArgument String snapshotId, @InputArgument Boolean hardReset) {
+    public Result resetFromSnapshotWithId(@InputArgument UUID snapshotId, @InputArgument Boolean hardReset) {
         boolean hard = hardReset != null ? hardReset : true;
         return systemSnapshotService.resetFromSnapshot(snapshotId, hard);
     }
@@ -68,7 +69,7 @@ public class SystemSnapshotDatafetcher {
 
     @DgsMutation
     @NeedsPermission.SnapshotDelete
-    public Result deleteSnapshot(@InputArgument String snapshotId) {
+    public Result deleteSnapshot(@InputArgument UUID snapshotId) {
         return systemSnapshotService.deleteSnapshot(snapshotId);
     }
 }

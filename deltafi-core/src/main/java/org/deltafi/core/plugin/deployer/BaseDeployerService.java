@@ -153,5 +153,4 @@ public abstract class BaseDeployerService implements DeployerService {
     private String getUsername() {
         return DeltaFiUserDetailsService.currentUsername();
     }
-
 }

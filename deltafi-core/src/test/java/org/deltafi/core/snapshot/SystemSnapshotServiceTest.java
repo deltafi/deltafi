@@ -32,6 +32,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -66,8 +67,9 @@ class SystemSnapshotServiceTest {
         SystemSnapshot originalSnapshot = new SystemSnapshot();
         originalSnapshot.setPluginVariables(List.of(pluginVariables, pluginVariables2));
 
-        Mockito.when(systemSnapshotRepo.findById("abc")).thenReturn(Optional.of(originalSnapshot));
-        SystemSnapshot systemSnapshot = systemSnapshotService.getWithMaskedVariables("abc");
+        UUID uuid = UUID.randomUUID();
+        Mockito.when(systemSnapshotRepo.findById(uuid)).thenReturn(Optional.of(originalSnapshot));
+        SystemSnapshot systemSnapshot = systemSnapshotService.getWithMaskedVariables(uuid);
 
         assertThat(systemSnapshot.getPluginVariables()).hasSize(2);
         assertThat(systemSnapshot.getPluginVariables().getFirst().getVariables()).hasSize(2);

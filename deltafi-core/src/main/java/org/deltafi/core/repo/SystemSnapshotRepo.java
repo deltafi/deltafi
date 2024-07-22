@@ -21,6 +21,8 @@ import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.UUID;
+
 @Repository
-public interface SystemSnapshotRepo extends JpaRepository<SystemSnapshot, String> {
+public interface SystemSnapshotRepo extends JpaRepository<SystemSnapshot, UUID> {
 }

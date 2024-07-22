@@ -66,7 +66,7 @@ public class SystemSnapshotDatafetcherTestHelper {
 
     public static SystemSnapshot expectedSnapshot() {
         SystemSnapshot systemSnapshot = new SystemSnapshot();
-        systemSnapshot.setId("11111111-1111-1111-1111-111111111111");
+        systemSnapshot.setId(UUID.fromString("11111111-1111-1111-1111-111111111111"));
         systemSnapshot.setReason("TEST");
         systemSnapshot.setCreated(OffsetDateTime.parse("2023-02-28T21:27:03.407Z"));
         setResumePolicies(systemSnapshot);

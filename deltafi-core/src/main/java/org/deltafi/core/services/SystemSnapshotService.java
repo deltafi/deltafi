@@ -29,6 +29,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -38,13 +39,13 @@ public class SystemSnapshotService {
     private List<Snapshotter> snapshotters;
     private SystemSnapshotRepo systemSnapshotRepo;
 
-    public SystemSnapshot getWithMaskedVariables(String snapshotId) {
+    public SystemSnapshot getWithMaskedVariables(UUID snapshotId) {
         SystemSnapshot snapshot = getById(snapshotId);
         maskAndUpgradeSnapshots(snapshot);
         return snapshot;
     }
 
-    private SystemSnapshot getById(String snapshotId) {
+    private SystemSnapshot getById(UUID snapshotId) {
         return systemSnapshotRepo.findById(snapshotId).orElseThrow(() -> new IllegalArgumentException("No system snapshot found with an id of " + snapshotId));
     }
 
@@ -77,7 +78,7 @@ public class SystemSnapshotService {
         return saveSnapshot(systemSnapshot);
     }
 
-    public Result resetFromSnapshot(String snapshotId, boolean hardReset) {
+    public Result resetFromSnapshot(UUID snapshotId, boolean hardReset) {
         SystemSnapshot systemSnapshot = getById(snapshotId);
         return resetFromSnapshot(systemSnapshot, hardReset);
     }
@@ -120,7 +121,7 @@ public class SystemSnapshotService {
         return variable != null && variable.isNotMasked();
     }
 
-    public Result deleteSnapshot(String id) {
+    public Result deleteSnapshot(UUID id) {
         if (systemSnapshotRepo.existsById(id)) {
             systemSnapshotRepo.deleteById(id);
             return new Result();

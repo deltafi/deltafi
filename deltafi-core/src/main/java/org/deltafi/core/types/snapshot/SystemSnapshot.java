@@ -20,6 +20,7 @@ package org.deltafi.core.types.snapshot;
 import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -36,13 +37,14 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 @Data
 @Entity
 @NoArgsConstructor
 public class SystemSnapshot {
     @Id
-    private String id;
+    private UUID id = UUID.randomUUID();
     private String reason;
     private OffsetDateTime created = OffsetDateTime.now();
     @Type(JsonBinaryType.class)

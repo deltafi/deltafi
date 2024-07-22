@@ -17,18 +17,27 @@
  */
 package org.deltafi.core.plugin.deployer.image;
 
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface PluginImageRepositoryRepo extends MongoRepository<PluginImageRepository, String>, PluginImageRepositoryRepoCustom {
+public interface PluginImageRepositoryRepo extends JpaRepository<PluginImageRepository, String> {
 
-    /**
-     * Find the image repository for the given plugin groupId
-     * @param groupId to search for
-     * @return PluginImageRepository if it exists
-     */
-    Optional<PluginImageRepository> findByPluginGroupIds(String groupId);
+    @Query(value = "SELECT * FROM plugin_image_repository WHERE :groupId IN (SELECT jsonb_array_elements_text(plugin_group_ids))", nativeQuery = true)
+    Optional<PluginImageRepository> findByPluginGroupId(String groupId);
+
+    @Query(value = """
+           SELECT EXISTS(
+               SELECT 1 
+               FROM plugin_image_repository, jsonb_array_elements_text(plugin_group_ids) AS group_id
+               WHERE image_repository_base != :base 
+               AND group_id = ANY(string_to_array(:groupIds, ','))
+           )
+           """, nativeQuery = true)
+    boolean otherExistsByAnyGroupId(String base, String groupIds);
 }

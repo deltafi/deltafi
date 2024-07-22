@@ -17,6 +17,8 @@
  */
 package org.deltafi.core.configuration;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.transaction.Transactional;
 import org.deltafi.common.action.EventQueueProperties;
 import org.deltafi.common.queue.jackey.ValkeyKeyedBlockingQueue;
 import org.deltafi.common.rules.RuleEvaluator;

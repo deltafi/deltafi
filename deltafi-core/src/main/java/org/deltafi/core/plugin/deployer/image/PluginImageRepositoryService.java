@@ -50,6 +50,9 @@ public class PluginImageRepositoryService implements Snapshotter {
      * @return copy of the saved item
      */
     public PluginImageRepository savePluginImageRepository(PluginImageRepository pluginImageRepository) {
+        if (imageRepositoryRepo.otherExistsByAnyGroupId(pluginImageRepository.getImageRepositoryBase(), String.join(",", pluginImageRepository.getPluginGroupIds()))) {
+            throw new RuntimeException("At least one group ID already exists in another image repository base.");
+        }
         return imageRepositoryRepo.save(pluginImageRepository);
     }
 
@@ -73,7 +76,7 @@ public class PluginImageRepositoryService implements Snapshotter {
      * @return image repository used to install the given plugin
      */
     public PluginImageRepository findByGroupId(PluginCoordinates pluginCoordinates) {
-        return imageRepositoryRepo.findByPluginGroupIds(pluginCoordinates.getGroupId())
+        return imageRepositoryRepo.findByPluginGroupId(pluginCoordinates.getGroupId())
                 .orElseGet(this::defaultPluginImageRepository);
     }
 

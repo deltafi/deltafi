@@ -53,6 +53,7 @@ import org.deltafi.core.plugin.deployer.DeployerService;
 import org.deltafi.core.plugin.deployer.credential.CredentialProvider;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryRepo;
+import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
 import org.deltafi.core.repo.*;
 import org.deltafi.core.services.*;
 import org.deltafi.core.services.analytics.AnalyticEventService;
@@ -287,6 +288,9 @@ class DeltaFiCoreApplicationTests {
 
     @MockBean
     AnalyticEventService analyticEventService;
+
+	@Autowired
+	PluginImageRepositoryService pluginImageRepositoryService;
 
 	// mongo eats microseconds, jump through hoops
 	private final OffsetDateTime NOW = OffsetDateTime.now(Clock.tickMillis(ZoneOffset.UTC));
@@ -3665,13 +3669,14 @@ class DeltaFiCoreApplicationTests {
 	void testPluginImageRepository() {
 		pluginImageRepositoryRepo.deleteAll();
 		PluginImageRepository pluginImageRepository = new PluginImageRepository();
+		pluginImageRepository.setImageRepositoryBase("base");
 		pluginImageRepository.setPluginGroupIds(List.of("a", "b"));
 
-		pluginImageRepositoryRepo.save(pluginImageRepository);
+		pluginImageRepositoryService.savePluginImageRepository(pluginImageRepository);
 
-		assertThat(pluginImageRepositoryRepo.findByPluginGroupIds("a")).isPresent().contains(pluginImageRepository);
-		assertThat(pluginImageRepositoryRepo.findByPluginGroupIds("b")).isPresent().contains(pluginImageRepository);
-		assertThat(pluginImageRepositoryRepo.findByPluginGroupIds("c")).isEmpty();
+		assertThat(pluginImageRepositoryRepo.findByPluginGroupId("a")).isPresent().contains(pluginImageRepository);
+		assertThat(pluginImageRepositoryRepo.findByPluginGroupId("b")).isPresent().contains(pluginImageRepository);
+		assertThat(pluginImageRepositoryRepo.findByPluginGroupId("c")).isEmpty();
 	}
 
 	@Test
@@ -3681,13 +3686,13 @@ class DeltaFiCoreApplicationTests {
 		pluginImageRepository.setImageRepositoryBase("docker");
 		pluginImageRepository.setPluginGroupIds(List.of("a", "b"));
 
-		pluginImageRepositoryRepo.save(pluginImageRepository);
+		pluginImageRepositoryService.savePluginImageRepository(pluginImageRepository);
 
 		PluginImageRepository pluginGroupB = new PluginImageRepository();
 		pluginGroupB.setImageRepositoryBase("gitlab");
 		pluginGroupB.setPluginGroupIds(List.of("b"));
 
-		assertThatThrownBy(() -> pluginImageRepositoryRepo.save(pluginGroupB));
+		assertThatThrownBy(() -> pluginImageRepositoryService.savePluginImageRepository(pluginGroupB));
 	}
 
 	@Test
