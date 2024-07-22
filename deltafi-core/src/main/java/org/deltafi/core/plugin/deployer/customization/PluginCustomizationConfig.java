@@ -17,12 +17,12 @@
  */
 package org.deltafi.core.plugin.deployer.customization;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import lombok.Data;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
-@Document
+@Entity
 public class PluginCustomizationConfig {
 
     @Id

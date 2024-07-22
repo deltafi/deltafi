@@ -17,9 +17,9 @@
  */
 package org.deltafi.core.plugin.deployer.customization;
 
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface PluginCustomizationConfigRepo extends MongoRepository<PluginCustomizationConfig, String> {
+public interface PluginCustomizationConfigRepo extends JpaRepository<PluginCustomizationConfig, String> {
 }
