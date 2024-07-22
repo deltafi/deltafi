@@ -19,10 +19,12 @@ package org.deltafi.core.plugin.deployer.customization;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.Data;
 
 @Data
 @Entity
+@Table(name = "plugin_customization_config")
 public class PluginCustomizationConfig {
 
     @Id

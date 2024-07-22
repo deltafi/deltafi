@@ -36,6 +36,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @AllArgsConstructor
@@ -51,13 +52,13 @@ public class PluginCustomizationService implements Snapshotter {
 
     public PluginCustomization getPluginCustomizations(PluginCoordinates pluginCoordinates) {
         // Use the cached info if this version of the plugin has been installed before
-        PluginCustomization customizations = pluginCustomizationRepo.findById(pluginCoordinates)
+        PluginCustomization customizations = pluginCustomizationRepo.findByPluginCoordinates(pluginCoordinates)
                 .map(PluginCustomizationWithId::getPluginCustomization)
                 .orElse(null);
 
         if (customizations == null) {
             customizations = doFetchPluginCustomizations(pluginCoordinates);
-            pluginCustomizationRepo.save(new PluginCustomizationWithId(pluginCoordinates, customizations));
+            pluginCustomizationRepo.save(new PluginCustomizationWithId(UUID.randomUUID(), pluginCoordinates, customizations));
         }
 
         return customizations;

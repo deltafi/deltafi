@@ -18,9 +18,13 @@
 package org.deltafi.core.plugin.deployer.customization;
 
 import org.deltafi.common.types.PluginCoordinates;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+import java.util.UUID;
+
 @Repository
-public interface PluginCustomizationRepo extends MongoRepository<PluginCustomizationWithId, PluginCoordinates> {
+public interface PluginCustomizationRepo extends JpaRepository<PluginCustomizationWithId, UUID> {
+    Optional<PluginCustomizationWithId> findByPluginCoordinates(PluginCoordinates pluginCoordinates);
 }

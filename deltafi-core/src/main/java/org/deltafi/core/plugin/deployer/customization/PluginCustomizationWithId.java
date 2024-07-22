@@ -17,17 +17,32 @@
  */
 package org.deltafi.core.plugin.deployer.customization;
 
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.deltafi.common.types.PluginCoordinates;
-import org.springframework.data.mongodb.core.mapping.Document;
+import org.hibernate.annotations.Type;
+
+import java.util.UUID;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Document(collection = "pluginCustomization")
+@Entity
+@Table(name = "plugin_customization", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"plugin_coordinates"})
+})
 public class PluginCustomizationWithId {
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    UUID id;
+
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
     private PluginCoordinates pluginCoordinates;
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
     private  PluginCustomization pluginCustomization;
 }
