@@ -46,7 +46,7 @@ public class DataSourceScheduler {
         dataSourceService.refreshCache();
         for (TimedDataSource dataSource : dataSourceService.getRunningTimedDataSources()) {
             if (dataSource.due(coreEventQueue, OffsetDateTime.now(clock)) &&
-                    deltaFiPropertiesService.getDeltaFiProperties().getIngress().isEnabled() &&
+                    deltaFiPropertiesService.getDeltaFiProperties().isIngressEnabled() &&
                     !diskSpaceService.isContentStorageDepleted()) {
                 deltaFilesService.taskTimedDataSource(dataSource);
             }

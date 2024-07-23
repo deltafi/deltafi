@@ -31,7 +31,6 @@ import org.deltafi.core.types.DeltaFileFlow;
 import org.deltafi.common.types.IngressEventItem;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.configuration.DeltaFiProperties;
-import org.deltafi.core.configuration.IngressProperties;
 import org.deltafi.core.exceptions.IngressException;
 import org.deltafi.core.exceptions.IngressMetadataException;
 import org.deltafi.core.exceptions.IngressStorageException;
@@ -129,9 +128,6 @@ class IngressServiceTest {
 
     private void mockExecution(boolean flowRunning) {
         DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
-        IngressProperties ingressProperties = new IngressProperties();
-        ingressProperties.setEnabled(true);
-        deltaFiProperties.setIngress(ingressProperties);
         Mockito.when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
         Mockito.when(diskSpaceService.isContentStorageDepleted()).thenReturn(false);
         if (flowRunning) {
@@ -217,9 +213,7 @@ class IngressServiceTest {
     @Test
     void ingressDisabled() {
         DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
-        IngressProperties ingressProperties = new IngressProperties();
-        ingressProperties.setEnabled(false);
-        deltaFiProperties.setIngress(ingressProperties);
+        deltaFiProperties.setIngressEnabled(false);
         Mockito.when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
 
         assertThrows(IngressUnavailableException.class,
@@ -231,9 +225,6 @@ class IngressServiceTest {
     @Test
     void ingressStorageDepleted() {
         DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
-        IngressProperties ingressProperties = new IngressProperties();
-        ingressProperties.setEnabled(true);
-        deltaFiProperties.setIngress(ingressProperties);
         Mockito.when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
         Mockito.when(diskSpaceService.isContentStorageDepleted()).thenReturn(true);
 
@@ -246,9 +237,6 @@ class IngressServiceTest {
     @Test
     void ingressBadHeaderMetadata() {
         DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
-        IngressProperties ingressProperties = new IngressProperties();
-        ingressProperties.setEnabled(true);
-        deltaFiProperties.setIngress(ingressProperties);
         Mockito.when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
         Mockito.when(diskSpaceService.isContentStorageDepleted()).thenReturn(false);
 

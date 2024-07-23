@@ -50,8 +50,9 @@ type SystemSnapshot {
     reason: String
     created: DateTime!
     deletePolicies: DeletePolicies!
-    deltaFiProperties: DeltaFiProperties!
+    deltaFiProperties: [KeyValue]!
     installedPlugins: [PluginCoordinates]!
+    links: [Link]!
     pluginVariables: [PluginVariables]!
     restDataSources: [RestDataSourceSnapshot]
     timedDataSources: [TimedDataSourceSnapshot]
@@ -96,8 +97,9 @@ input SystemSnapshotInput {
     reason: String
     created: DateTime!
     deletePolicies: DeletePoliciesInput!
-    deltaFiProperties: DeltaFiPropertiesInput!
+    deltaFiProperties: [KeyValueInput]!
     installedPlugins: [PluginCoordinatesInput]!
+    links: [LinkInput]!
     pluginVariables: [PluginVariablesInput]!
     testTransformFlows: [String]
     testIngressFlows: [String]

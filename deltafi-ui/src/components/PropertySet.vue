@@ -86,10 +86,9 @@ const tooltipText = (property) => {
   return parts.join(" ");
 };
 
-const updateProperty = async (setId, key, value, refreshable) => {
+const updateProperty = async (key, value, refreshable) => {
   await update([
     {
-      propertySetId: setId,
       key: key,
       value: value,
     },
@@ -109,7 +108,7 @@ const updateProperty = async (setId, key, value, refreshable) => {
 const onCellEditComplete = (event) => {
   let { data, newValue, value } = event;
   if (value !== newValue) {
-    updateProperty(propertySet.id, data.key, newValue, data.refreshable);
+    updateProperty(data.key, newValue, data.refreshable);
     data.value = newValue;
   }
 };

@@ -19,24 +19,18 @@ package org.deltafi.core.snapshot;
 
 import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
-import org.deltafi.common.types.ActionType;
-import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.common.types.Variable;
-import org.deltafi.common.types.VariableDataType;
-import org.deltafi.core.configuration.DeltaFiProperties;
+import org.deltafi.common.types.*;
 import org.deltafi.core.configuration.ui.Link;
+import org.deltafi.core.configuration.ui.Link.LinkType;
 import org.deltafi.core.generated.types.BackOff;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.types.*;
 import org.intellij.lang.annotations.Language;
 
-import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class SystemSnapshotDatafetcherTestHelper {
 
@@ -111,23 +105,21 @@ public class SystemSnapshotDatafetcherTestHelper {
     }
 
     private static void setDeltaFiProperties(SystemSnapshot systemSnapshot) {
-        DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
+        List<KeyValue> deltaFiProperties = List.of(
+                new KeyValue("uiUseUTC", "false"),
+                new KeyValue("checkActionQueueSizeThreshold", "1000"),
+                new KeyValue("ingressDiskSpaceRequirementInMb", "5000"),
+                new KeyValue("ingressEnabled", "true"),
+                new KeyValue("deleteFrequency","PT30S"),
+                new KeyValue("deletePolicyBatchSize", "1000"),
+                new KeyValue("autoResumeCheckFrequency", "PT10M"),
+                new KeyValue("inMemoryQueueSize", "10"));
 
-        deltaFiProperties.getUi().setUseUTC(false);
         Link httpBin = new Link();
         httpBin.setName("View in HTTPBin");
         httpBin.setUrl("https://httpbin.org/anything/example?did=${did}");
-        deltaFiProperties.getUi().setDeltaFileLinks(List.of(httpBin));
-        deltaFiProperties.getChecks().setActionQueueSizeThreshold(1000);
-        deltaFiProperties.getIngress().setDiskSpaceRequirementInMb(5000);
-        deltaFiProperties.getIngress().setEnabled(true);
-        deltaFiProperties.getDelete().setFrequency(Duration.ofSeconds(30));
-        deltaFiProperties.getDelete().setPolicyBatchSize(5000);
-        deltaFiProperties.setAutoResumeCheckFrequency(Duration.ofMinutes(10));
-        deltaFiProperties.setInMemoryQueueSize(10);
-        Set<String> props = Stream.of(PropertyType.AUTO_RESUME_CHECK_FREQUENCY, PropertyType.CHECKS_ACTION_QUEUE_SIZE_THRESHOLD, PropertyType.DELETE_FREQUENCY, PropertyType.DELETE_POLICY_BATCH_SIZE, PropertyType.INGRESS_DISK_SPACE_REQUIREMENT_IN_MB, PropertyType.INGRESS_ENABLED, PropertyType.UI_USE_UTC)
-                .map(Enum::name).collect(Collectors.toSet());
-        deltaFiProperties.setSetProperties(props);
+        httpBin.setLinkType(LinkType.EXTERNAL);
+        systemSnapshot.setLinks(List.of(httpBin));
 
         systemSnapshot.setDeltaFiProperties(deltaFiProperties);
     }
@@ -252,54 +244,24 @@ public class SystemSnapshotDatafetcherTestHelper {
                                     }
                             }
                         ]
-                        deltaFiProperties: {
-                            systemName: "DeltaFi"
-                            requeueDuration: "PT5M"
-                            autoResumeCheckFrequency: "PT10M"
-                            coreServiceThreads: 16
-                            coreInternalQueueSize: 64
-                            scheduledServiceThreads: 8
-                            ui: {
-                                useUTC: false
-                                deltaFileLinks: [
-                                    {
-                                        name: "View in HTTPBin"
-                                        url: "https://httpbin.org/anything/example?did=${did}"
-                                        description: null
-                                    }
-                                ]
-                                externalLinks: []
-                                topBar: { textColor: null, backgroundColor: null }
-                                securityBanner: {
-                                    enabled: false
-                                    text: null
-                                    textColor: null
-                                    backgroundColor: null
-                                }
+                        deltaFiProperties: [
+                            {key: "uiUseUTC" value: "false"}
+                            {key: "checkActionQueueSizeThreshold" value: "1000"}
+                            {key: "ingressDiskSpaceRequirementInMb" value: "5000"}
+                            {key: "ingressEnabled" value: "true"}
+                            {key: "deleteFrequency" value: "PT30S"}
+                            {key: "deletePolicyBatchSize" value: "1000"}
+                            {key: "autoResumeCheckFrequency" value: "PT10M"}
+                            {key: "inMemoryQueueSize" value: "10"}
+                        ]
+                        links: [
+                            {
+                                name: "View in HTTPBin"
+                                url: "https://httpbin.org/anything/example?did=${did}"
+                                description: null
+                                linkType: EXTERNAL
                             }
-                            inMemoryQueueSize: 10
-                            maxFlowDepth: 10
-                            delete: { ageOffDays: 13, frequency: "PT30S", policyBatchSize: 5000 }
-                            ingress: { enabled: true, diskSpaceRequirementInMb: 5000 }
-                            metrics: { enabled: true }
-                            plugins: {
-                                imageRepositoryBase: "docker.io/deltafi/"
-                                imagePullSecret: null
-                            }
-                            checks: {
-                                actionQueueSizeThreshold: 1000
-                                contentStoragePercentThreshold: 90
-                            }
-                            setProperties: [
-                                "AUTO_RESUME_CHECK_FREQUENCY"
-                                "CHECKS_ACTION_QUEUE_SIZE_THRESHOLD"
-                                "DELETE_FREQUENCY"
-                                "DELETE_POLICY_BATCH_SIZE"
-                                "INGRESS_DISK_SPACE_REQUIREMENT_IN_MB"
-                                "INGRESS_ENABLED"
-                                "UI_USE_UTC"
-                            ]
-                        }
+                        ]
                         pluginImageRepositories: [
                             {
                                 imageRepositoryBase: "registry.gitlab.com/deltafi/deltafi-passthrough/"
@@ -384,56 +346,8 @@ public class SystemSnapshotDatafetcherTestHelper {
             reason
             created
             deltaFiProperties {
-              systemName
-              requeueDuration
-              autoResumeCheckFrequency
-              coreServiceThreads
-              scheduledServiceThreads
-              delete {
-                ageOffDays
-                frequency
-                policyBatchSize
-              }
-              ingress {
-                enabled
-                diskSpaceRequirementInMb
-              }
-              metrics {
-                enabled
-              }
-              plugins {
-                imageRepositoryBase
-                imagePullSecret
-              }
-              checks {
-                actionQueueSizeThreshold
-                contentStoragePercentThreshold
-              }
-              ui {
-                useUTC
-                deltaFileLinks {
-                  name
-                  url
-                  description
-                }
-                externalLinks {
-                  name
-                  url
-                  description
-                }
-                topBar {
-                  textColor
-                  backgroundColor
-                }
-                securityBanner {
-                  enabled
-                  text
-                  textColor
-                  backgroundColor
-                }
-              }
-              inMemoryQueueSize
-              setProperties
+              key
+              value
             }
             deletePolicies {
               timedPolicies {
@@ -453,6 +367,12 @@ public class SystemSnapshotDatafetcherTestHelper {
                 flow
                 maxPercent
               }
+            }
+            links {
+              name
+              url
+              description
+              linkType
             }
             pluginImageRepositories {
               imageRepositoryBase

@@ -32,8 +32,6 @@ type Plugin {
     actions: [ActionDescriptor!]
     "The plugin coordinates of required plugins"
     dependencies: [PluginCoordinates!]
-    "The properties required"
-    propertySets: [PropertySet!]
     "Variables associated with this plugin"
     variables: [Variable]
 }
@@ -51,8 +49,6 @@ input PluginInput {
     actions: [ActionDescriptorInput!]
     "The plugin coordinates of required plugins"
     dependencies: [PluginCoordinatesInput!]
-    "The properties required"
-    propertySets: [PropertySetInput!]
 }
 
 """

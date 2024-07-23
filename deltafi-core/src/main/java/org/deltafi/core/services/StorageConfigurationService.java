@@ -151,7 +151,7 @@ public class StorageConfigurationService {
     }
     
     private int getAgeOffDays() {
-        return deltaFiPropertiesService.getDeltaFiProperties().getDelete().getAgeOffDays();
+        return deltaFiPropertiesService.getDeltaFiProperties().getAgeOffDays();
     }
 
 }

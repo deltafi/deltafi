@@ -15,14 +15,18 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.configuration.ui;
+package org.deltafi.core.configuration;
 
-import lombok.Data;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-@Data
-public class SecurityBanner {
-    private String text;
-    private String backgroundColor;
-    private String textColor;
-    private boolean enabled = false;
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.FIELD)
+public @interface PropertyInfo {
+    String NULL = "NULL";
+    String description();
+    String defaultValue() default NULL;
+    boolean refreshable() default true;
 }

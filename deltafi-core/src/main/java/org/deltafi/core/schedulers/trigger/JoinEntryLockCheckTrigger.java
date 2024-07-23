@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.schedulers.trigger;
 
+import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +27,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class JoinEntryLockCheckTrigger extends ConfigurableFixedDelayTrigger {
     public JoinEntryLockCheckTrigger(DeltaFiPropertiesService deltaFiPropertiesService) {
-        super(deltaFiPropertiesService, deltaFiProperties -> deltaFiProperties.getJoin().getLockCheckInterval(), 0L);
+        super(deltaFiPropertiesService, DeltaFiProperties::getJoinLockCheckInterval, 0L);
     }
 }

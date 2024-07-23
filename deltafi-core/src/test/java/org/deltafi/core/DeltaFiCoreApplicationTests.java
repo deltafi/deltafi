@@ -32,15 +32,14 @@ import org.deltafi.common.resource.Resource;
 import org.deltafi.common.types.*;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.core.configuration.DeltaFiProperties;
+import org.deltafi.core.configuration.ui.Link;
+import org.deltafi.core.configuration.ui.Link.LinkType;
 import org.deltafi.core.datafetchers.FlowPlanDatafetcherTestHelper;
 import org.deltafi.core.datafetchers.PropertiesDatafetcherTestHelper;
 import org.deltafi.core.datafetchers.ResumePolicyDatafetcherTestHelper;
 import org.deltafi.core.delete.DeletePolicyWorker;
 import org.deltafi.core.delete.DeleteRunner;
-import org.deltafi.core.exceptions.IngressMetadataException;
-import org.deltafi.core.exceptions.IngressStorageException;
-import org.deltafi.core.exceptions.IngressUnavailableException;
-import org.deltafi.core.exceptions.InvalidActionEventException;
+import org.deltafi.core.exceptions.*;
 import org.deltafi.core.generated.DgsConstants;
 import org.deltafi.core.generated.client.*;
 import org.deltafi.core.generated.types.*;
@@ -78,6 +77,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Bean;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -141,6 +141,7 @@ class DeltaFiCoreApplicationTests {
 	public static final String SAMPLE_EGRESS_ACTION = "SampleEgressAction";
 	public static final String JOINING_TRANSFORM_ACTION = "JoiningTransformAction";
 	public static final String JOIN_TOPIC = "join-topic";
+	public static final String SYSTEM_NAME = "systemName";
 
 	@DynamicPropertySource
 	static void setProperties(DynamicPropertyRegistry registry) {
@@ -248,6 +249,12 @@ class DeltaFiCoreApplicationTests {
 	@Autowired
 	MongoTemplate mongoTemplate;
 
+	@Autowired
+	UiLinkService uiLinkService;
+
+	@Autowired
+	UiLinkRepo uiLinkRepo;
+
 	@MockBean
 	StorageConfigurationService storageConfigurationService;
 
@@ -270,7 +277,7 @@ class DeltaFiCoreApplicationTests {
 	CoreEventQueue coreEventQueue;
 
 	@MockBean
-	ValkeyKeyedBlockingQueue vakkeyKeyedBlockingQueue;
+	ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue;
 
 	@MockBean
 	ServerSentService serverSentService;
@@ -312,7 +319,6 @@ class DeltaFiCoreApplicationTests {
 	@BeforeEach
 	@SneakyThrows
 	void setup() {
-		deltaFiPropertiesRepo.save(new DeltaFiProperties());
 		annotationRepo.deleteAll();
 		actionRepo.deleteAll();
 		deltaFileFlowRepo.deleteAll();
@@ -1284,17 +1290,15 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
-	void testAddExternalLinkMutations() {
-		assertThat(PropertiesDatafetcherTestHelper.removeExternalLink(dgsQueryExecutor)).isFalse();
-		assertThat(PropertiesDatafetcherTestHelper.addExternalLink(dgsQueryExecutor)).isTrue();
-		assertThat(PropertiesDatafetcherTestHelper.removeExternalLink(dgsQueryExecutor)).isTrue();
-	}
-
-	@Test
-	void testDeltaFileLinkMutations() {
-		assertThat(PropertiesDatafetcherTestHelper.removeDeltaFileLink(dgsQueryExecutor)).isFalse();
-		assertThat(PropertiesDatafetcherTestHelper.addDeltaFileLink(dgsQueryExecutor)).isTrue();
-		assertThat(PropertiesDatafetcherTestHelper.removeDeltaFileLink(dgsQueryExecutor)).isTrue();
+	void testLinkMutations() {
+		uiLinkRepo.deleteAll();
+		Link link = PropertiesDatafetcherTestHelper.saveLink(dgsQueryExecutor);
+		assertThat(link.getName()).isEqualTo("some link");
+		assertThat(link.getDescription()).isEqualTo("some place described");
+		assertThat(link.getUrl()).isEqualTo("www.some.place");
+		assertThat(link.getLinkType()).isEqualTo(LinkType.EXTERNAL);
+		assertThat(PropertiesDatafetcherTestHelper.removeLink(dgsQueryExecutor, link.getId())).isTrue();
+		assertThat(uiLinkRepo.findAll()).isEmpty();
 	}
 
 	@Test
@@ -3328,46 +3332,50 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void updateProperties() {
-		DeltaFiProperties current = deltaFiPropertiesService.getDeltaFiProperties();
-		assertThat(current.getSystemName()).isEqualTo("DeltaFi");
-		assertThat(current.getSetProperties()).isEmpty();
+		// verify nothing is set for systemName to start
+		deltaFiPropertiesRepo.unsetProperties(List.of(SYSTEM_NAME));
+		checkSystemNameProp("DeltaFi", false);
 
-		assertThat(deltaFiPropertiesRepo.updateProperties(Map.of(PropertyType.SYSTEM_NAME, "newName"))).isTrue();
-
+		deltaFiPropertiesService.updateProperties(List.of(new KeyValue(SYSTEM_NAME, "newName")));
 		deltaFiPropertiesService.refreshProperties();
-		current = deltaFiPropertiesService.getDeltaFiProperties();
 
-		assertThat(current.getSystemName()).isEqualTo("newName");
-		assertThat(current.getSetProperties()).hasSize(1).contains(PropertyType.SYSTEM_NAME.name());
+		// verify the property is updated
+		checkSystemNameProp("newName", true);
 
 		// already newName no changes made, return false
-		assertThat(deltaFiPropertiesRepo.updateProperties(Map.of(PropertyType.SYSTEM_NAME, "newName"))).isFalse();
+		assertThat(deltaFiPropertiesRepo.updateProperties(List.of(new KeyValue(SYSTEM_NAME, "newName")))).isFalse();
 	}
 
 	@Test
 	void unsetProperties() {
-		DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
-		deltaFiProperties.setSystemName("newName");
-		deltaFiProperties.getSetProperties().add(PropertyType.SYSTEM_NAME.name());
+		assertThat(deltaFiPropertiesRepo.unsetProperties(List.of(SYSTEM_NAME))).isFalse(); // nothing to unset
 
-		deltaFiPropertiesRepo.save(deltaFiProperties);
+		// set a custom value that will be unset
+		deltaFiPropertiesRepo.updateProperties(List.of(new KeyValue(SYSTEM_NAME, "newName")));
+		deltaFiPropertiesService.refreshProperties();
+		checkSystemNameProp("newName", true);
+
+		// unset the custom value
+		assertThat(deltaFiPropertiesRepo.unsetProperties(List.of(SYSTEM_NAME))).isTrue();
 		deltaFiPropertiesService.refreshProperties();
 
-		DeltaFiProperties current = deltaFiPropertiesService.getDeltaFiProperties();
-		assertThat(current.getSystemName()).isEqualTo("newName");
-		assertThat(current.getSetProperties()).hasSize(1).contains(PropertyType.SYSTEM_NAME.name());
-
-
-		assertThat(deltaFiPropertiesRepo.unsetProperties(List.of(PropertyType.SYSTEM_NAME))).isTrue();
-		deltaFiPropertiesService.refreshProperties();
-
-		current = deltaFiPropertiesService.getDeltaFiProperties();
-		assertThat(current.getSystemName()).isEqualTo("DeltaFi");
-		assertThat(current.getSetProperties()).isEmpty();
+		checkSystemNameProp("DeltaFi", false);
 
 		// second time no change is needed so it returns false
-		assertThat(deltaFiPropertiesRepo.unsetProperties(List.of(PropertyType.SYSTEM_NAME))).isFalse();
+		assertThat(deltaFiPropertiesRepo.unsetProperties(List.of(SYSTEM_NAME))).isFalse();
+	}
 
+	private void checkSystemNameProp(String expected, boolean hasValueSet) {
+		DeltaFiProperties current = deltaFiPropertiesService.getDeltaFiProperties();
+		assertThat(current.getSystemName()).isEqualTo(expected);
+
+		Property systemNameProp = deltaFiPropertiesService.getPopulatedProperties().getFirst().getProperties().stream()
+				.filter(p -> p.getKey().equals(SYSTEM_NAME))
+				.findFirst().orElseThrow();
+
+		assertThat(systemNameProp.hasValue()).isEqualTo(hasValueSet);
+		assertThat(systemNameProp.getValue()).isEqualTo(expected);
+		assertThat(systemNameProp.getDefaultValue()).isEqualTo("DeltaFi");
 	}
 
 	@Test
@@ -4203,4 +4211,22 @@ class DeltaFiCoreApplicationTests {
 
         assertThat(eventRepo.updateAcknowledged(UUID.randomUUID(), true)).isEmpty();
     }
+
+	@Test
+	void saveDeltaFileLink() {
+		uiLinkRepo.deleteAll();
+		assertThat(uiLinkService.saveLink(link())).isNotNull();
+		// verify duplicate link (by name/type) is rejected
+		assertThatThrownBy(() -> uiLinkService.saveLink(link()))
+				.isInstanceOf(DataIntegrityViolationException.class).hasMessageContaining("already exists");
+	}
+
+	Link link() {
+		Link link = new Link();
+		link.setName("a");
+		link.setDescription("description");
+		link.setUrl("google.com");
+		link.setLinkType(LinkType.EXTERNAL);
+		return link;
+	}
 }

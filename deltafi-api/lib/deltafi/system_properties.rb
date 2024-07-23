@@ -28,54 +28,37 @@ module Deltafi
         getDeltaFiProperties {
           systemName
           requeueDuration
+          autoResumeCheckFrequency
           coreServiceThreads
           coreInternalQueueSize
           scheduledServiceThreads
-          delete {
-            ageOffDays
-            frequency
-            policyBatchSize
-          }
-          ingress {
-            enabled
-            diskSpaceRequirementInMb
-          }
-          metrics {
-            enabled
-          }
-          plugins {
-            imageRepositoryBase
-            imagePullSecret
-          }
-          checks {
-            actionQueueSizeThreshold
-            contentStoragePercentThreshold
-          }
-          ui {
-            useUTC
-            deltaFileLinks {
-              name
-              url
-              description
-            }
-            externalLinks {
-              name
-              url
-              description
-            }
-            topBar {
-              textColor
-              backgroundColor
-            }
-            securityBanner {
-              enabled
-              text
-              textColor
-              backgroundColor
-            }
-          }
+          metricsEnabled
+          metricsErrorAnalyticsEnabled
+          ageOffDays
+          deleteFrequency
+          deletePolicyBatchSize
+          cacheEnabled
+          cacheSyncDuration
+          ingressEnabled
+          ingressDiskSpaceRequirementInMb
+          pluginImageRepositoryBase
+          pluginImagePullSecret
+          pluginAutoRollback
+          pluginDeployTimeout
+          checkActionQueueSizeThreshold
+          checkContentStoragePercentThreshold
+          uiUseUTC
+          topBarBackgroundColor
+          topBarTextColor
+          securityBannerText
+          securityBannerBackgroundColor
+          securityBannerTextColor
+          securityBannerEnabled
+          inMemoryQueueSize
           maxFlowDepth
-          setProperties
+          joinAcquireLockTimeoutMs
+          joinMaxLockDuration
+          joinLockCheckInterval
         }
       }
     QUERY

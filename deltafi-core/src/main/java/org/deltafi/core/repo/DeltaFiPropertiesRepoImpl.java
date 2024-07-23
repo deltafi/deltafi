@@ -17,69 +17,65 @@
  */
 package org.deltafi.core.repo;
 
-import com.mongodb.BasicDBObject;
+import com.mongodb.bulk.BulkWriteResult;
+import com.mongodb.client.result.UpdateResult;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.core.configuration.DeltaFiProperties;
-import org.deltafi.core.types.PropertyType;
+import org.deltafi.common.types.KeyValue;
+import org.deltafi.common.types.Property;
+import org.springframework.data.mongodb.core.BulkOperations;
+import org.springframework.data.mongodb.core.BulkOperations.BulkMode;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
+@SuppressWarnings("unused")
+@RequiredArgsConstructor
 public class DeltaFiPropertiesRepoImpl implements DeltaFiPropertiesRepoCustom {
-    private static final Query ID_QUERY = new Query(Criteria.where("_id").is(DeltaFiProperties.PROPERTY_ID));
-    private static final DeltaFiProperties DEFAULT_PROPS = new DeltaFiProperties();
-    public static final String SET_PROPERTIES = "setProperties";
+
     private final MongoTemplate mongoTemplate;
 
-    public DeltaFiPropertiesRepoImpl(MongoTemplate mongoTemplate) {
-        this.mongoTemplate = mongoTemplate;
-    }
-
     @Override
-    public boolean updateProperties(Map<PropertyType, String> updateMap) {
-        Update update = new Update();
+    public void upsertProperties(List<Property> properties) {
+        BulkOperations bulkOps = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, Property.class);
 
-        for (Map.Entry<PropertyType, String> entry : updateMap.entrySet()) {
-            PropertyType propertyType = entry.getKey();
-            update.set(propertyType.getKey(), propertyType.convertValue(entry.getValue()));
-            update.addToSet(SET_PROPERTIES, propertyType);
+        for (Property property : properties) {
+            Query query = new Query(Criteria.where("_id").is(property.getKey()));
+            Update update = new Update()
+                    .set("defaultValue", property.getDefaultValue())
+                    .set("description", property.getDescription())
+                    .set("refreshable", property.isRefreshable());
+
+            bulkOps.upsert(query, update);
         }
 
-        return executeUpdate(update);
+        bulkOps.execute();
     }
 
     @Override
-    public boolean unsetProperties(List<PropertyType> propertyTypes) {
-        Update update = new Update();
+    public boolean updateProperties(List<KeyValue> updates) {
+        BulkOperations bulkOps = mongoTemplate.bulkOps(BulkMode.UNORDERED, Property.class);
 
-        for (PropertyType propertyType : propertyTypes) {
-            update.set(propertyType.getKey(), propertyType.getProperty(DEFAULT_PROPS));
-            update.pull(SET_PROPERTIES, propertyType);
+        for (KeyValue updateKeyValue : updates) {
+            Query query = new Query(Criteria.where("_id").is(updateKeyValue.getKey()));
+            Update update = new Update().set("customValue", updateKeyValue.getValue());
+
+            bulkOps.updateOne(query, update);
         }
 
-        return executeUpdate(update);
+        BulkWriteResult results = bulkOps.execute();
+        return results.getModifiedCount() > 0;
     }
 
     @Override
-    public boolean removeExternalLink(String linkName) {
-        return removeLink("ui.externalLinks", linkName);
-    }
-
-    @Override
-    public boolean removeDeltaFileLink(String linkName) {
-        return removeLink("ui.deltaFileLinks", linkName);
-    }
-
-    private boolean removeLink(String key, String linkName) {
-        return executeUpdate(new Update().pull(key, new BasicDBObject("name", linkName)));
-    }
-
-    private boolean executeUpdate(Update update) {
-        return mongoTemplate.updateFirst(ID_QUERY, update, DeltaFiProperties.class).getModifiedCount() > 0;
+    public boolean unsetProperties(List<String> propertyNames) {
+        Update update = new Update();
+        update.unset("customValue");
+        UpdateResult result = mongoTemplate.updateMulti(Query.query(Criteria.where("_id").in(propertyNames)), update, Property.class);
+        return result.getModifiedCount() > 0;
     }
 }

@@ -21,24 +21,24 @@ import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.InputArgument;
+import lombok.RequiredArgsConstructor;
+import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.PropertySet;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.configuration.ui.Link;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.DeltaFiPropertiesService;
-import org.deltafi.core.types.PropertyId;
-import org.deltafi.core.types.PropertyUpdate;
+import org.deltafi.core.services.UiLinkService;
 
 import java.util.List;
+import java.util.UUID;
 
 @DgsComponent
+@RequiredArgsConstructor
 public class DeltaFiPropertiesDatafetcher {
 
     private final DeltaFiPropertiesService deltaFiPropertiesService;
-
-    public DeltaFiPropertiesDatafetcher(DeltaFiPropertiesService deltaFiPropertiesService) {
-        this.deltaFiPropertiesService = deltaFiPropertiesService;
-    }
+    private final UiLinkService uiLinkService;
 
     @DgsQuery
     @NeedsPermission.SystemPropertiesRead
@@ -55,49 +55,25 @@ public class DeltaFiPropertiesDatafetcher {
 
     @DgsMutation
     @NeedsPermission.SystemPropertiesUpdate
-    public boolean updateProperties(@InputArgument List<PropertyUpdate> updates) {
+    public boolean updateProperties(@InputArgument List<KeyValue> updates) {
         return deltaFiPropertiesService.updateProperties(updates);
     }
 
     @DgsMutation
     @NeedsPermission.SystemPropertiesUpdate
-    public boolean removePropertyOverrides(@InputArgument List<PropertyId> propertyIds) {
-        return deltaFiPropertiesService.unsetProperties(propertyIds);
+    public boolean removePropertyOverrides(@InputArgument List<String> propertyNames) {
+        return deltaFiPropertiesService.unsetProperties(propertyNames);
     }
 
     @DgsMutation
     @NeedsPermission.SystemPropertiesUpdate
-    public boolean saveExternalLink(@InputArgument Link link) {
-        return deltaFiPropertiesService.saveExternalLink(link);
+    public Link saveLink(@InputArgument Link link) {
+        return uiLinkService.saveLink(link);
     }
 
     @DgsMutation
     @NeedsPermission.SystemPropertiesUpdate
-    public boolean saveDeltaFileLink(@InputArgument Link link) {
-        return deltaFiPropertiesService.saveDeltaFileLink(link);
-    }
-
-    @DgsMutation
-    @NeedsPermission.SystemPropertiesUpdate
-    public boolean removeExternalLink(@InputArgument String linkName) {
-        return deltaFiPropertiesService.removeExternalLink(linkName);
-    }
-
-    @DgsMutation
-    @NeedsPermission.SystemPropertiesUpdate
-    public boolean removeDeltaFileLink(@InputArgument String linkName) {
-        return deltaFiPropertiesService.removeDeltaFileLink(linkName);
-    }
-
-    @DgsMutation
-    @NeedsPermission.SystemPropertiesUpdate
-    public boolean replaceExternalLink(@InputArgument String linkName, @InputArgument Link link) {
-        return deltaFiPropertiesService.replaceExternalLink(linkName, link);
-    }
-
-    @DgsMutation
-    @NeedsPermission.SystemPropertiesUpdate
-    public boolean replaceDeltaFileLink(@InputArgument String linkName, @InputArgument Link link) {
-        return deltaFiPropertiesService.replaceDeltaFileLink(linkName, link);
+    public boolean removeLink(@InputArgument UUID id) {
+        return uiLinkService.removeLink(id);
     }
 }

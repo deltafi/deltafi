@@ -43,7 +43,7 @@ public class MetricService {
                             @Value("${METRICS_PERIOD_SECONDS:10}") int periodSeconds,
                             DeltaFiPropertiesService deltaFiPropertiesService) {
         DeltaFiProperties deltaFiProperties = deltaFiPropertiesService.getDeltaFiProperties();
-        if (deltaFiProperties.getMetrics().isEnabled()) {
+        if (deltaFiProperties.isMetricsEnabled()) {
             log.info("Creating metric service");
             metrics = new MetricRegistry();
 

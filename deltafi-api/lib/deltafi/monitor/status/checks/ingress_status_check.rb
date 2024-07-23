@@ -28,8 +28,8 @@ module Deltafi
       module Checks
         class IngressStatusCheck < Status::Check
           DEFAULT_REQUIRED_MEGABYTES = 1
-          REQUIRED_MEGABYTES_PROPERTY = %w[ingress diskSpaceRequirementInMb].freeze
-          INGRESS_ENABLED_PROPERTY = %w[ingress enabled].freeze
+          REQUIRED_MEGABYTES_PROPERTY = %w[ingressDiskSpaceRequirementInMb].freeze
+          INGRESS_ENABLED_PROPERTY = %w[ingressEnabled].freeze
           FLOW_ERRORS_QUERY = 'query { ingressFlowErrorsExceeded { name maxErrors currErrors } }'
 
           @@ingress_disabled_by_storage = false
