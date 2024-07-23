@@ -18,90 +18,168 @@
 package org.deltafi.core.action.compress;
 
 import org.deltafi.actionkit.action.ResultType;
+import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.transform.TransformInput;
+import org.deltafi.test.asserters.ContentAssert;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
 
+import javax.ws.rs.core.MediaType;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformResult;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 public class DecompressTest {
     private final Decompress action = new Decompress();
     private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action, "DecompressTest");
 
     @Test
-    void decompressesSingleGzip() {
-        ResultType result = action.transform(runner.actionContext(),
-                new DecompressParameters(CompressType.GZIP), input("fileA.gz"));
+    public void errorResultOnNoContent() {
+        ResultType result = action.transform(runner.actionContext(), new DecompressParameters(),
+                TransformInput.builder().build());
 
-        assertTransformResult(result)
-                .contentLoadBytesEquals(List.of(runner.readResourceAsBytes("fileA")))
-                .addedMetadata("compressType", CompressType.GZIP.getValue());
+        assertInstanceOf(ErrorResult.class, result);
     }
 
     @Test
-    void decompressesMultipleGzip() {
-        ResultType result = action.transform(runner.actionContext(),
-                new DecompressParameters(CompressType.GZIP), input("fileA.gz", "fileB.gz"));
-
-        assertTransformResult(result)
-                .contentLoadBytesEquals(List.of(runner.readResourceAsBytes("fileA"),
-                        runner.readResourceAsBytes("fileB")))
-                .addedMetadata("compressType", CompressType.GZIP.getValue());
+    public void unarchivesAr() {
+        runTest(Format.AR, false);
     }
 
     @Test
-    void decompressesSingleXz() {
-        ResultType result = action.transform(runner.actionContext(),
-                new DecompressParameters(CompressType.XZ), input("fileA.xz"));
-
-        assertTransformResult(result)
-                .contentLoadBytesEquals(List.of(runner.readResourceAsBytes("fileA")))
-                .addedMetadata("compressType", CompressType.XZ.getValue());
+    public void unarchivesTar() {
+        runTest(Format.TAR, false);
     }
 
     @Test
-    void decompressesSingleZ() {
-        ResultType result = action.transform(runner.actionContext(),
-                new DecompressParameters(CompressType.Z), input("fileC.Z"));
-
-        assertTransformResult(result)
-                .contentLoadBytesEquals(List.of(runner.readResourceAsBytes("fileC")))
-                .addedMetadata("compressType", CompressType.Z.getValue());
+    public void unarchivesTarGzip() {
+        runTest(Format.TAR_GZIP, false);
     }
 
     @Test
-    void decompressesSingleGzipDetected() {
-        ResultType result = action.transform(runner.actionContext(),
-                new DecompressParameters(), input("fileA.gz"));
-
-        assertTransformResult(result)
-                .contentLoadBytesEquals(List.of(runner.readResourceAsBytes("fileA")))
-                .addedMetadata("compressType", CompressType.GZIP.getValue());
+    public void unarchivesTarXz() {
+        runTest(Format.TAR_XZ, false);
     }
 
     @Test
-    void decompressesSingleXzDetected() {
-        ResultType result = action.transform(runner.actionContext(),
-                new DecompressParameters(), input("fileA.xz"));
-
-        assertTransformResult(result)
-                .contentLoadBytesEquals(List.of(runner.readResourceAsBytes("fileA")))
-                .addedMetadata("compressType", CompressType.XZ.getValue());
+    public void unarchivesTarZ() {
+        runTest(Format.TAR_Z, false);
     }
 
     @Test
-    void decompressesSingleZDetected() {
-        ResultType result = action.transform(runner.actionContext(),
-                new DecompressParameters(), input("fileC.Z"));
+    public void unarchivesZip() {
+        runTest(Format.ZIP, false);
+    }
 
-        assertTransformResult(result)
-                .contentLoadBytesEquals(List.of(runner.readResourceAsBytes("fileC")))
-                .addedMetadata("compressType", CompressType.Z.getValue());
+    @Test
+    public void unarchivesArDetected() {
+        runTest(Format.AR, true);
+    }
+
+    @Test
+    public void unarchivesTarDetected() {
+        runTest(Format.TAR, true);
+    }
+
+    @Test
+    public void unarchivesTarGzipDetected() {
+        runTest(Format.TAR_GZIP, true);
+    }
+
+    @Test
+    public void unarchivesTarXzDetected() {
+        runTest(Format.TAR_XZ, true);
+    }
+
+    @Test
+    public void unarchivesTarZDetected() {
+        runTest(Format.TAR_Z, true);
+    }
+
+    @Test
+    public void unarchivesZipDetected() {
+        runTest(Format.ZIP, true);
+    }
+
+    private void runTest(Format archiveType, boolean detected) {
+        ResultType result = action.transform(runner.actionContext(),
+                new DecompressParameters(detected ? null : archiveType), input("compressed." + archiveType.getValue()));
+
+        verifyTransform(result, archiveType);
     }
 
     private TransformInput input(String... files) {
         return TransformInput.builder().content(runner.saveContentFromResource(files)).build();
+    }
+
+    private static final String FILE1 = "thing1.txt";
+    private static final String FILE2 = "thing2.txt";
+
+    private void verifyTransform(ResultType result, Format archiveType) {
+        assertTransformResult(result)
+                .hasContentMatchingAt(0, actionContent -> {
+                    ContentAssert.assertThat(actionContent)
+                            .hasName(FILE1)
+                            .hasMediaType(MediaType.APPLICATION_OCTET_STREAM);
+                    return true;
+                })
+                .hasContentMatchingAt(1, actionContent -> {
+                    ContentAssert.assertThat(actionContent)
+                            .hasName(FILE2)
+                            .hasMediaType(MediaType.APPLICATION_OCTET_STREAM);
+                    return true;
+                })
+                .contentLoadBytesEquals(List.of(runner.readResourceAsBytes(FILE1),
+                        runner.readResourceAsBytes(FILE2)))
+                .addedMetadata("compressFormat", archiveType.getValue());
+    }
+
+    @Test
+    public void decompressesSingleGzip() {
+        runTest(Format.GZIP, input("fileA.gz"), "fileA");
+    }
+
+    @Test
+    public void decompressesMultipleGzip() {
+        runTest(Format.GZIP, input("fileA.gz", "fileB.gz"), "fileA", "fileB");
+    }
+
+    @Test
+    public void decompressesSingleXz() {
+        runTest(Format.XZ, input("fileA.xz"), "fileA");
+    }
+
+    @Test
+    public void decompressesSingleZ() {
+        runTest(Format.Z, input("fileC.Z"), "fileC");
+    }
+
+    @Test
+    public void decompressesSingleGzipDetected() {
+        runTest(new DecompressParameters(), Format.GZIP, input("fileA.gz"), "fileA");
+    }
+
+    @Test
+    public void decompressesSingleXzDetected() {
+        runTest(new DecompressParameters(), Format.XZ, input("fileA.xz"), "fileA");
+    }
+
+   @Test
+    public void decompressesSingleZDetected() {
+        runTest(new DecompressParameters(), Format.Z, input("fileC.Z"), "fileC");
+    }
+
+    private void runTest(Format compressFormat, TransformInput input, String... outputFiles) {
+        runTest(new DecompressParameters(compressFormat), compressFormat, input, outputFiles);
+    }
+
+    private void runTest(DecompressParameters parameters, Format expectedCompressFormat, TransformInput input, String... outputFiles) {
+        ResultType result = action.transform(runner.actionContext(), parameters, input);
+
+        assertTransformResult(result)
+                .contentLoadBytesEquals(Arrays.stream(outputFiles).map(runner::readResourceAsBytes).toList())
+                .addedMetadata("compressFormat", expectedCompressFormat.getValue());
     }
 }

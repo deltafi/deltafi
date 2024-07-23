@@ -23,7 +23,14 @@ import lombok.Getter;
 
 @AllArgsConstructor
 @Getter
-public enum CompressType {
+public enum Format {
+    @JsonProperty("ar") AR("ar", "application/x-archive"),
+    @JsonProperty("tar") TAR("tar", "application/x-tar"),
+    @JsonProperty("tar.gz") TAR_GZIP("tar.gz", "application/gzip"),
+    @JsonProperty("tar.xz") TAR_XZ("tar.xz", "application/x-xz"),
+    @JsonProperty("tar.Z") TAR_Z("tar.Z", "application/x-gtar"),
+    @JsonProperty("zip") ZIP("zip", "application/zip"),
+
     @JsonProperty("gz") GZIP("gz", "application/gzip"),
     @JsonProperty("xz") XZ("xz", "application/x-xz"),
     @JsonProperty("z") Z("z", "application/x-compress");

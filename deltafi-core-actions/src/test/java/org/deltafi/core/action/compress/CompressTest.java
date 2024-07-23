@@ -18,50 +18,130 @@
 package org.deltafi.core.action.compress;
 
 import org.deltafi.actionkit.action.ResultType;
+import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.transform.TransformInput;
+import org.deltafi.common.test.time.TestClock;
 import org.deltafi.test.asserters.ContentAssert;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
 
 import javax.ws.rs.core.MediaType;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.List;
 
 import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformResult;
-import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformResults;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class CompressTest {
-    private final Compress action = new Compress();
+    private final TestClock testClock = new TestClock();
+    private final Compress action = new Compress(testClock);
     private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action, "CompressTest");
 
     @Test
-    public void compressesSingleGzip() {
+    public void errorResultOnNoContent() {
         ResultType result = action.transform(runner.actionContext(),
-                new CompressParameters(CompressType.GZIP, null), input("fileA"));
+                new CompressParameters(Format.TAR, null, null), TransformInput.builder().build());
 
-        verifySingleResult(result, CompressType.GZIP, "fileA.gz", CompressType.GZIP.getMediaType());
+        assertInstanceOf(ErrorResult.class, result);
     }
 
     @Test
-    public void compressesSingleXz() {
-        ResultType result = action.transform(runner.actionContext(),
-                new CompressParameters(CompressType.XZ, null), input("fileA"));
-
-        verifySingleResult(result, CompressType.XZ, "fileA.xz", CompressType.XZ.getMediaType());
+    public void archivesAr() {
+        runTest(Format.AR);
     }
 
     @Test
-    public void compressesSingleGzipWithMediaType() {
-        ResultType result = action.transform(runner.actionContext(),
-                new CompressParameters(CompressType.GZIP, MediaType.APPLICATION_OCTET_STREAM), input("fileA"));
+    public void archivesTar() {
+        runTest(Format.TAR);
+    }
 
-        verifySingleResult(result, CompressType.GZIP, "fileA.gz", MediaType.APPLICATION_OCTET_STREAM);
+    @Test
+    public void archivesTarGzip() {
+        runTest(Format.TAR_GZIP);
+    }
+
+    @Test
+    public void archivesTarXz() {
+        runTest(Format.TAR_XZ);
+    }
+
+    @Test
+    public void archivesZip() {
+        runTest(Format.ZIP);
+    }
+
+    private void runTest(Format format) {
+        TransformInput transformInput = input("thing1.txt", "thing2.txt");
+
+        ResultType result = action.transform(runner.actionContext(),
+                new CompressParameters(format, null, null), transformInput);
+
+        verifyFormat(result, format, transformInput, "compressed." + format.getValue(),
+                format.getMediaType());
+    }
+
+    @Test
+    public void archivesTarWithMediaType() {
+        TransformInput transformInput = input("thing1.txt", "thing2.txt");
+
+        ResultType result = action.transform(runner.actionContext(),
+                new CompressParameters(Format.TAR, null, MediaType.APPLICATION_OCTET_STREAM), transformInput);
+
+        verifyFormat(result, Format.TAR, transformInput, "compressed.tar", MediaType.APPLICATION_OCTET_STREAM);
     }
 
     private TransformInput input(String... files) {
         return TransformInput.builder().content(runner.saveContentFromResource(files)).build();
     }
 
-    private void verifySingleResult(ResultType result, CompressType compressType, String file, String mediaType) {
+    private void verifyFormat(ResultType result, Format format, TransformInput transformInput, String name,
+            String mediaType) {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        ArchiveWriter archiveWriter = new ArchiveWriter(transformInput.content(), format, testClock);
+        try {
+            archiveWriter.write(byteArrayOutputStream);
+        } catch (IOException e) {
+            fail(e.getMessage());
+        }
+
+        assertTransformResult(result)
+                .hasContentMatching(content -> {
+                    ContentAssert.assertThat(content)
+                            .hasName(name)
+                            .hasMediaType(mediaType);
+                    return true;
+                })
+                .contentLoadBytesEquals(List.of(byteArrayOutputStream.toByteArray()))
+                .addedMetadata("compressFormat", format.getValue());
+    }
+
+    @Test
+    public void compressesSingleGzip() {
+        ResultType result = action.transform(runner.actionContext(),
+                new CompressParameters(Format.GZIP, null, null), input("fileA"));
+
+        verifySingleResult(result, Format.GZIP, "fileA.gz", Format.GZIP.getMediaType());
+    }
+
+    @Test
+    public void compressesSingleXz() {
+        ResultType result = action.transform(runner.actionContext(),
+                new CompressParameters(Format.XZ, null, null), input("fileA"));
+
+        verifySingleResult(result, Format.XZ, "fileA.xz", Format.XZ.getMediaType());
+    }
+
+    @Test
+    public void compressesSingleGzipWithMediaType() {
+        ResultType result = action.transform(runner.actionContext(),
+                new CompressParameters(Format.GZIP, null, MediaType.APPLICATION_OCTET_STREAM), input("fileA"));
+
+        verifySingleResult(result, Format.GZIP, "fileA.gz", MediaType.APPLICATION_OCTET_STREAM);
+    }
+
+    private void verifySingleResult(ResultType result, Format format, String file, String mediaType) {
         assertTransformResult(result)
                 .hasContentMatching(actionContent -> {
                     ContentAssert.assertThat(actionContent)
@@ -69,41 +149,41 @@ public class CompressTest {
                             .hasMediaType(mediaType);
                     return true;
                 })
-                .addedMetadata("compressType", compressType.getValue());
+                .addedMetadata("compressFormat", format.getValue());
     }
 
     @Test
     public void compressesMultipleGzip() {
         ResultType result = action.transform(runner.actionContext(),
-                new CompressParameters(CompressType.GZIP, null), input("fileA", "fileB"));
+                new CompressParameters(Format.GZIP, null, null), input("fileA", "fileB"));
 
-        verifyMultipleResults(result, CompressType.GZIP, "fileA.gz", "fileB.gz");
+        verifyMultipleResults(result, Format.GZIP, "fileA.gz", "fileB.gz");
     }
 
     @Test
     public void compressesMultipleXz() {
         ResultType result = action.transform(runner.actionContext(),
-                new CompressParameters(CompressType.XZ, null), input("fileA", "fileB"));
+                new CompressParameters(Format.XZ, null, null), input("fileA", "fileB"));
 
-        verifyMultipleResults(result, CompressType.XZ, "fileA.xz", "fileB.xz");
+        verifyMultipleResults(result, Format.XZ, "fileA.xz", "fileB.xz");
     }
 
-    private void verifyMultipleResults(ResultType result, CompressType compressType, String fileA, String fileB) {
-        assertTransformResults(result)
-                .hasChildrenSize(2)
-                .hasChildResultAt(0, child -> {
-                    ContentAssert.assertThat(child.getContent().getFirst())
+    private void verifyMultipleResults(ResultType result, Format format, String fileA, String fileB) {
+        assertTransformResult(result)
+                .hasContentMatchingAt(0, actionContent -> {
+                    ContentAssert.assertThat(actionContent)
+                            .hasName(fileA)
                             .loadBytesIsEqualTo(runner.readResourceAsBytes(fileA))
-                            .hasMediaType(compressType.getMediaType());
-                    assertEquals(compressType.getValue(), child.getMetadata().get("compressType"));
+                            .hasMediaType(format.getMediaType());
                     return true;
                 })
-                .hasChildResultAt(1, child -> {
-                    ContentAssert.assertThat(child.getContent().getFirst())
+                .hasContentMatchingAt(1, actionContent -> {
+                    ContentAssert.assertThat(actionContent)
+                            .hasName(fileB)
                             .loadBytesIsEqualTo(runner.readResourceAsBytes(fileB))
-                            .hasMediaType(compressType.getMediaType());
-                    assertEquals(compressType.getValue(), child.getMetadata().get("compressType"));
+                            .hasMediaType(format.getMediaType());
                     return true;
-                });
-    }
+                })
+                .addedMetadata("compressFormat", format.getValue());
+   }
 }

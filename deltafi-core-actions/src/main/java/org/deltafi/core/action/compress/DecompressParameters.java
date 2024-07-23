@@ -29,6 +29,6 @@ import org.deltafi.actionkit.action.parameters.ActionParameters;
 @NoArgsConstructor
 public class DecompressParameters extends ActionParameters {
     @JsonProperty
-    @JsonPropertyDescription("Compress type: gzip, xz, Z")
-    public CompressType compressType;
+    @JsonPropertyDescription("The format to decompress. Will autodetect if not set.")
+    public Format format;
 }

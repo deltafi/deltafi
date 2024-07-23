@@ -15,7 +15,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.action.archive;
+package org.deltafi.core.action.compress;
 
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
@@ -46,24 +46,24 @@ public class ArchiveWriter extends ActionContentListWriter {
         GZIP_PARAMETERS.setOperatingSystem(3); // 3=Unix
     }
 
-    private final ArchiveType archiveType;
+    private final Format format;
     private final Clock clock;
 
-    public ArchiveWriter(List<ActionContent> contentList, ArchiveType archiveType, Clock clock) {
+    public ArchiveWriter(List<ActionContent> contentList, Format format, Clock clock) {
         super(contentList);
-        this.archiveType = archiveType;
+        this.format = format;
         this.clock = clock;
     }
 
     @Override
     public void write(OutputStream outputStream) throws IOException {
-        switch (archiveType) {
+        switch (format) {
             case TAR -> archiveTar(outputStream);
             case ZIP -> archiveZip(outputStream);
             case AR -> archiveAr(outputStream);
             case TAR_XZ -> archiveTar(new XZCompressorOutputStream(outputStream));
             case TAR_GZIP -> archiveTar(new GzipCompressorOutputStream(outputStream, GZIP_PARAMETERS));
-            case TAR_Z -> throw new UnsupportedOperationException("Archive format not supported: " + ArchiveType.TAR_Z);
+            default -> throw new UnsupportedOperationException("Archive format not supported: " + format);
         }
     }
 
