@@ -317,6 +317,8 @@ class DeltaFiCoreApplicationTests {
 
 	@BeforeEach
 	void setup() {
+		deltaFiPropertiesRepo.deleteAllInBatch();
+		deltaFiPropertiesService.upsertProperties();
 		annotationRepo.deleteAllInBatch();
 		actionRepo.deleteAllInBatch();
 		deltaFileFlowRepo.deleteAllInBatch();
@@ -3374,26 +3376,26 @@ class DeltaFiCoreApplicationTests {
 		checkSystemNameProp("newName", true);
 
 		// already newName no changes made, return false
-		assertThat(deltaFiPropertiesRepo.updateProperties(List.of(new KeyValue(SYSTEM_NAME, "newName")))).isFalse();
+		assertThat(deltaFiPropertiesRepo.updateProperty(SYSTEM_NAME, "newName")).isEqualTo(0);
 	}
 
 	@Test
 	void unsetProperties() {
-		assertThat(deltaFiPropertiesRepo.unsetProperties(List.of(SYSTEM_NAME))).isFalse(); // nothing to unset
+		assertThat(deltaFiPropertiesRepo.unsetProperties(List.of(SYSTEM_NAME))).isEqualTo(0); // nothing to unset
 
 		// set a custom value that will be unset
-		deltaFiPropertiesRepo.updateProperties(List.of(new KeyValue(SYSTEM_NAME, "newName")));
+		deltaFiPropertiesRepo.updateProperty(SYSTEM_NAME, "newName");
 		deltaFiPropertiesService.refreshProperties();
 		checkSystemNameProp("newName", true);
 
 		// unset the custom value
-		assertThat(deltaFiPropertiesRepo.unsetProperties(List.of(SYSTEM_NAME))).isTrue();
+		assertThat(deltaFiPropertiesRepo.unsetProperties(List.of(SYSTEM_NAME))).isGreaterThan(0);
 		deltaFiPropertiesService.refreshProperties();
 
 		checkSystemNameProp("DeltaFi", false);
 
 		// second time no change is needed so it returns false
-		assertThat(deltaFiPropertiesRepo.unsetProperties(List.of(SYSTEM_NAME))).isFalse();
+		assertThat(deltaFiPropertiesRepo.unsetProperties(List.of(SYSTEM_NAME))).isEqualTo(0);
 	}
 
 	private void checkSystemNameProp(String expected, boolean hasValueSet) {

@@ -20,8 +20,8 @@ package org.deltafi.core.services;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.deltafi.common.types.KeyValue;
-import org.deltafi.common.types.Property;
-import org.deltafi.common.types.PropertySet;
+import org.deltafi.core.types.Property;
+import org.deltafi.core.types.PropertySet;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.configuration.PropertyInfo;
 import org.deltafi.core.repo.DeltaFiPropertiesRepo;
@@ -72,7 +72,9 @@ public class DeltaFiPropertiesService implements Snapshotter {
      * Upsert the set of properties for this version of DeltaFi. Prune obsolete properties.
      */
     public void upsertProperties() {
-        deltaFiPropertiesRepo.upsertProperties(defaultProperties);
+        for (Property property : defaultProperties) {
+            deltaFiPropertiesRepo.upsertProperties(property);
+        }
         deltaFiPropertiesRepo.deleteByKeyNotIn(allowedProperties);
     }
 
@@ -120,7 +122,11 @@ public class DeltaFiPropertiesService implements Snapshotter {
      */
     public boolean updateProperties(List<KeyValue> updates) {
         List<KeyValue> allowedUpdates = updates.stream().filter(this::isValid).toList();
-        return refresh(!allowedUpdates.isEmpty() && deltaFiPropertiesRepo.updateProperties(allowedUpdates));
+        boolean changed = false;
+        for (KeyValue keyValue : allowedUpdates) {
+            changed = (deltaFiPropertiesRepo.updateProperty(keyValue.getKey(), keyValue.getValue()) > 0) || changed;
+        }
+        return refresh(changed);
     }
 
     /**
@@ -130,7 +136,7 @@ public class DeltaFiPropertiesService implements Snapshotter {
      */
     public boolean unsetProperties(List<String> propertyNames) {
         List<String> toUnset = propertyNames.stream().filter(allowedProperties::contains).toList();
-        return refresh(!toUnset.isEmpty() && deltaFiPropertiesRepo.unsetProperties(toUnset));
+        return refresh(!toUnset.isEmpty() && deltaFiPropertiesRepo.unsetProperties(toUnset) > 0);
     }
 
     @Override

@@ -23,7 +23,7 @@ import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.InputArgument;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.common.types.KeyValue;
-import org.deltafi.common.types.PropertySet;
+import org.deltafi.core.types.PropertySet;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.configuration.ui.Link;
 import org.deltafi.core.security.NeedsPermission;

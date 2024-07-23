@@ -18,7 +18,7 @@
 package org.deltafi.core.datafetchers;
 
 import com.netflix.graphql.dgs.DgsQueryExecutor;
-import org.deltafi.common.types.PropertySet;
+import org.deltafi.core.types.PropertySet;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.configuration.ui.Link;
 import org.deltafi.core.configuration.ui.Link.LinkType;
