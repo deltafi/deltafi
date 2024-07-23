@@ -28,7 +28,6 @@ GEM
     base64 (0.2.0)
     bcrypt (3.1.20)
     bigdecimal (3.1.7)
-    bson (5.0.0)
     bytesize (0.1.2)
     click_house (2.1.2)
       activesupport
@@ -97,13 +96,6 @@ GEM
     method_source (1.0.0)
     mini_mime (1.1.5)
     minitest (5.22.3)
-    mongo (2.20.0)
-      bson (>= 4.14.1, < 6.0.0)
-    mongoid (8.1.5)
-      activemodel (>= 5.1, < 7.2, != 7.0.0)
-      concurrent-ruby (>= 1.0.5, < 2.0)
-      mongo (>= 2.18.0, < 3.0.0)
-      ruby2_keywords (~> 0.0.5)
     multi_json (1.15.0)
     multi_xml (0.6.0)
     mustermann (3.0.0)
@@ -186,7 +178,6 @@ DEPENDENCIES
   aws-sdk-s3
   bcrypt (~> 3.1.20)
   bigdecimal (~> 3.1.7)
-  bson (~> 5.0.0)
   bytesize
   click_house
   connection_pool
@@ -196,7 +187,6 @@ DEPENDENCIES
   graphite-api
   httparty
   k8s-ruby
-  mongoid
   oj (~> 3.16.3)
   pry
   rack-test

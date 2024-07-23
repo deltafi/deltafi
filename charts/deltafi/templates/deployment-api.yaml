@@ -32,7 +32,6 @@ spec:
         - name: RUNNING_IN_CLUSTER
           value: "true"
         {{- include "commonEnvVars" . | nindent 8 }}
-        {{- include "mongoEnvVars" . | nindent 8 }}
         - name: WORKERS
           value: {{ default "4" .Values.deltafi.api.workers | quote }}
         {{- include "defaultStartupProbe" . | nindent 8 }}

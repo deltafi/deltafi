@@ -30,14 +30,6 @@ module Deltafi
         SSE_VALKEY_CHANNEL = [DF::Common::SSE_VALKEY_CHANNEL_PREFIX, 'notificationCount'].compact.join('.')
         INTERVAL = 5
 
-        def initialize
-          super
-          require 'event'
-          Mongoid::Clients.clients.each_value do |client|
-            client.reconnect if client.cluster.servers.empty?
-          end
-        end
-
         def run
           periodic_timer(INTERVAL) do
             query = {

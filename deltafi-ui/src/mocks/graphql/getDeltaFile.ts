@@ -18,7 +18,6 @@
 
 const generateData = () => {
   const data = {
-    schemaVersion: 1,
       did: "2ace8f8a-60d6-4211-894a-0cd7455bf59z",
       name: "hello-world-java-timed-data-source-28494",
       totalBytes: 0,

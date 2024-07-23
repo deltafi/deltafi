@@ -18,5 +18,5 @@
 package org.deltafi.core.types;
 
 public enum PropertySource {
-    EXTERNAL, MONGO, DEFAULT
+    CUSTOM, DEFAULT
 }

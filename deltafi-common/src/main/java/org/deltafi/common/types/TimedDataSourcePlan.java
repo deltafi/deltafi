@@ -22,13 +22,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.data.annotation.PersistenceCreator;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Document
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true)
@@ -36,7 +33,6 @@ public class TimedDataSourcePlan extends DataSourcePlan {
     private ActionConfiguration timedIngressAction;
     private String cronSchedule;
 
-    @PersistenceCreator
     @JsonCreator
     @SuppressWarnings("unused")
     public TimedDataSourcePlan(@JsonProperty(value = "name", required = true) String name,

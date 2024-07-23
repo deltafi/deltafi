@@ -22,14 +22,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.data.annotation.PersistenceCreator;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-@Document
 @Getter
 @Setter
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
@@ -43,7 +40,6 @@ public class EgressFlowPlan extends FlowPlan implements Subscriber {
         this.egressAction = egressAction;
     }
 
-    @PersistenceCreator
     @JsonCreator
     @SuppressWarnings("unused")
     public EgressFlowPlan(@JsonProperty(value = "name", required = true) String name,

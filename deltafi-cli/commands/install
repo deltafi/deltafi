@@ -133,13 +133,6 @@ _stackgres_install() {
 _k8s_prerequisites() {
   cli_log "Initializing k8s prerequisites"
   _k8s_add_namespace deltafi
-  local mongodb_password
-  mongodb_password="$(_random_password 20)"
-  _k8s_add_secret mongodb-passwords mongodb-password "${mongodb_password}" mongodb-passwords "${mongodb_password}" mongodb-root-password "$(_random_password 20)"
-  if ! ${KUBECTL_BIN} get secrets -n deltafi mongodb-passwords -o yaml | grep "mongodb-passwords:" > /dev/null; then
-    cli_log "Migrating mongodb-passwords secret"
-    ${KUBECTL_BIN} get secrets -n deltafi mongodb-passwords -o yaml | sed -e "s|\(.*\)mongodb-password:\(.*\)|\1mongodb-password:\2\n\1mongodb-passwords:\2|g" | ${KUBECTL_BIN} apply -f -
-  fi
   _k8s_add_secret minio-keys rootUser "deltafi" rootPassword "$(_random_password 40)"
   VALKEY_PASSWORD="$(_random_password 16)"
   # Keeping redis-password around for backwards chart compatibility
@@ -184,7 +177,7 @@ _k8s_install() {
   [[ "$HELM_RETURN_CODE" != "0" ]] && exit $HELM_RETURN_CODE
   cli_log "Helmchart upgrade complete"
 
-  _run_migrations
+  deltafi event create -q -s "cli" --success --notification "Installed DeltaFi version $( cat "${DELTAFICLI_WORKDIR}/VERSION")"
 }
 
 _compose_install() {
@@ -197,7 +190,7 @@ _compose_install() {
 
   "${DELTAFICLI_COMPOSE_PATH}"/compose start ${ARGS[@]:1}
 
-  _run_migrations
+  deltafi event create -q -s "cli" --success --notification "Installed DeltaFi version $( cat "${DELTAFICLI_WORKDIR}/VERSION")"
 }
 
 _pre_upgrade_tasks() {
@@ -208,16 +201,6 @@ _pre_upgrade_tasks() {
   snapshot_file="pre-upgrade-to-${version}-$(date +%s).json"
   deltafi system-snapshot create "$message" > "${snapshot_file}"
   cli_log "Snapshot complete"
-}
-
-_run_migrations() {
-  cli_log "Running migrations"
-  deltafi event create -q -s "cli" "Running Mongo migrations"
-  MONGO_RESULTS=$(deltafi mongo-migrate | sed -e 's|>>|\\n* |g')
-  echo "${MONGO_RESULTS}"
-  deltafi event create -q -s "cli" --success "Completed Mongo migrations" --content "${MONGO_RESULTS}"
-
-  deltafi event create -q -s "cli" --success --notification "Installed DeltaFi version $( cat "${DELTAFICLI_WORKDIR}/VERSION")"
 }
 
 cli_log "Installing DeltaFi"

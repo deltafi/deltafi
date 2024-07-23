@@ -24,6 +24,7 @@ import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import com.netflix.graphql.dgs.exceptions.QueryException;
 import io.minio.MinioClient;
+import jakarta.transaction.Transactional;
 import lombok.SneakyThrows;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.Segment;
@@ -91,7 +92,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -137,8 +137,6 @@ import static org.mockito.Mockito.never;
 @Testcontainers
 class DeltaFiCoreApplicationTests {
 	@Container
-	public static final MongoDBContainer MONGO_DB_CONTAINER = new MongoDBContainer("mongo:5.0.17");
-	@Container
 	public static final PostgreSQLContainer<?> POSTGRES_CONTAINER = new PostgreSQLContainer<>("postgres:16.3");
 	public static final String SAMPLE_EGRESS_ACTION = "SampleEgressAction";
 	public static final String JOINING_TRANSFORM_ACTION = "JoiningTransformAction";
@@ -147,7 +145,6 @@ class DeltaFiCoreApplicationTests {
 
 	@DynamicPropertySource
 	static void setProperties(DynamicPropertyRegistry registry) {
-		registry.add("spring.data.mongodb.uri", MONGO_DB_CONTAINER::getReplicaSetUrl);
 		registry.add("spring.datasource.url", POSTGRES_CONTAINER::getJdbcUrl);
 		registry.add("spring.datasource.username", POSTGRES_CONTAINER::getUsername);
 		registry.add("spring.datasource.password", POSTGRES_CONTAINER::getPassword);
@@ -299,7 +296,6 @@ class DeltaFiCoreApplicationTests {
 	@Autowired
 	PluginImageRepositoryService pluginImageRepositoryService;
 
-	// mongo eats microseconds, jump through hoops
 	private final OffsetDateTime NOW = OffsetDateTime.now(Clock.tickMillis(ZoneOffset.UTC));
 
 	@TestConfiguration

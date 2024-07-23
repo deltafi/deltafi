@@ -121,15 +121,6 @@ _is_linux() {
   fi
 }
 
-# Detect arm processor
-_is_arm() {
-  if [[ $(uname -p) == 'arm' || $(uname -m) == 'aarch64' ]]; then
-    return 0
-  else
-    return 1
-  fi
-}
-
 KUBECTL="kubectl"
 BASE_PATH="$( cd "$( dirname "$(_readlink -f "${BASH_SOURCE[0]}")")" &> /dev/null && pwd )"
 export BASE_PATH
@@ -172,7 +163,7 @@ if [[ "$(basename "$0")" == "deltafi" ]]; then
         cluster "$@"
         ;;
       # Commands that do not need recursive call into cluster
-      version|uninstall|did|list-actions|list-flows|list-plugins|list-plans|list-policies|mongol-cli|mongo-migrate|mongo-eval|valkey-watch|valkey-cli|valkey-stats|valkey-latency|serviceip)
+      version|uninstall|did|list-actions|list-flows|list-plugins|list-plans|list-policies|valkey-watch|valkey-cli|valkey-stats|valkey-latency|serviceip)
         "$DELTAFI_PATH/deltafi-cli/deltafi" "$@"
         ;;
       registry)
@@ -681,10 +672,7 @@ _check_local_fqdns() {
 describe install "Initialize a KinD cluster and install core DeltaFi"
 install() {
   up
-  # Detect ARM processor and load arm64 overrides
-  local EXTRA=
-  _is_arm && EXTRA="-f deltafi/charts/deltafi/values-arm64.yaml"
-  _conditional "DeltaFi core installed" _annotated_subshell -h "Install DeltaFi core" -v "admin.conf" _kind_deltafi install "$@" -f deltafi/charts/deltafi/values-kind.yaml "$EXTRA"
+  _conditional "DeltaFi core installed" _annotated_subshell -h "Install DeltaFi core" -v "admin.conf" _kind_deltafi install "$@" -f deltafi/charts/deltafi/values-kind.yaml
   _annotated_subshell -h "Set admin password" _kind_deltafi set-admin-password password
   _info -e "If basic_auth is enabled user is 'admin', password is 'password'"
   _info "Open the UI at http://local.deltafi.org"
@@ -692,7 +680,6 @@ install() {
 
 _k8s_init() {
   _k8s_add_namespace deltafi
-  _k8s_add_pv mongodb "${PV_STORAGE}" 1001
   _k8s_add_pv minio "${PV_STORAGE}" 1000
   _k8s_add_pv graphite "${PV_STORAGE}" 1000
   _k8s_add_pv grafana "${PV_STORAGE}" 472
@@ -712,11 +699,6 @@ down() {
   if kind get clusters 2>/dev/null | grep "^${CLUSTER_NAME}$" > /dev/null; then
     [[ $# -gt 0 && "$1" == '-f' ]] || _are_you_sure
     _annotated_subshell kind delete cluster --name ${CLUSTER_NAME}
-    if _is_linux; then
-      ${SUDO} rm -rf "$PV_DIR/mongodb"
-    else
-      rm -rf "$PV_DIR/mongodb"
-    fi
     _down "KinD Cluster"
   else
     _fail "No deltafi cluster instantiated"

@@ -25,9 +25,7 @@ Commands:
   load-plans              load the flow plans and variables for the given plugin
   load-policies           load delete policies from a JSON file
   minio-cli               launch the minio CLI
-  mongo-cli               launch the mongo CLI
-  mongo-eval              eval a command in mongo
-  mongo-migrate           run mongo migrations
+  postgres-cli            launch the postgres CLI
   performance-test        run performance tests against DeltaFi
   plugin-customization    manage plugin customization configuration
   plugin-image-repo       manage the image repositories that hold plugin images

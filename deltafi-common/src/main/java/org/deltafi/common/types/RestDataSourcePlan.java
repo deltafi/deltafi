@@ -22,18 +22,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.data.annotation.PersistenceCreator;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
 
-@Document
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true)
 public class RestDataSourcePlan extends DataSourcePlan {
 
-    @PersistenceCreator
     @JsonCreator
     @SuppressWarnings("unused")
     public RestDataSourcePlan(@JsonProperty(value = "name", required = true) String name,

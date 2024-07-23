@@ -17,18 +17,9 @@ spring:
       discovery:
         catalog-services-watch:
           enabled: false
-  data:
-    mongodb:
-      database: deltafi-test
   datasource:
     # hikari takes 60 seconds to connect to the postgres TestContainer, so disable it in test
     type: org.springframework.jdbc.datasource.SimpleDriverDataSource
-  mongodb:
-    embedded:
-      version: 5.0.20
-      features:
-        - SYNC_DELAY
-        - NO_HTTP_INTERFACE_ARG
   jpa:
     hibernate:
       ddl-auto: create

@@ -1,6 +1,6 @@
 # Data Retention
 
-Data stored in DeltaFi consists of content stored in MinIO and metadata stored in MongoDB.
+Data stored in DeltaFi consists of content stored in MinIO and metadata stored in PostgresSQL.
 Retention of these classes of data can be controlled through a global age-off rule as well as any number of
 customizable delete policies.
 

@@ -99,16 +99,6 @@ initContainers:
 
 {{- define "initContainersWaitForDatabases" -}}
 initContainers:
-- name: wait-for-mongo
-  image: busybox:1.36.0
-  command:
-  - 'sh'
-  - '-c'
-  - >
-    until nc -z -w 2 deltafi-mongodb 27017 && echo mongodb ok;
-      do sleep 1;
-    done
-{{- if .Values.postgres.enabled }}
 - name: wait-for-postgres
   image: busybox:1.36.0
   command:
@@ -118,7 +108,6 @@ initContainers:
     until nc -z -w 2 deltafi-postgres 5432 && echo postgres ok;
       do sleep 1;
     done
-{{- end -}}
 {{- if .Values.clickhouse.enabled }}
 - name: wait-for-clickhouse
   image: busybox:1.36.0
@@ -208,14 +197,6 @@ initContainers:
   value: {{ .Values.deltafi.ssl.trustStoreType }}
 {{- end -}}
 
-{{- define "mongoEnvVars" -}}
-- name: MONGO_PASSWORD
-  valueFrom:
-    secretKeyRef:
-      name: mongodb-passwords
-      key: mongodb-passwords
-{{- end -}}
-
 {{- define "clickhouseEnvVars" -}}
 - name: CLICKHOUSE_ENABLED
   value: "{{ .Values.clickhouse.enabled | toString }}"
@@ -276,7 +257,6 @@ volumeMounts:
   value: "10"
 {{ include "commonEnvVars" . }}
 {{ include "sslEnvVars" . }}
-{{ include "mongoEnvVars" . }}
 {{- end }}
 
 {{- define "coreVolumeMounts" -}}

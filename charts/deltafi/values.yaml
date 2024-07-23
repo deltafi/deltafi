@@ -13,7 +13,6 @@ deltafi:
     image: deltafi/deltafi-core-actions:2.0-rc6
   core:
     image: deltafi/deltafi-core:2.0-rc6
-    mongo_host: deltafi-mongodb
   docs:
     image: deltafi/deltafi-docs:2.0-rc6
     enabled: true
@@ -76,27 +75,6 @@ minio:
   metrics:
     serviceMonitor:
       public: true
-# MongoDB config
-mongodb:
-  image:
-    repository: bitnami/mongodb
-    tag: 5.0.17
-  architecture: standalone
-  useStatefulSet: true
-  auth:
-    existingSecret: mongodb-passwords
-    enabled: true
-    database: deltafi
-    username: mongouser
-  service:
-    type: NodePort
-  persistence:
-    enabled: true
-    existingClaim: deltafi-mongodb
-  volumePermissions:
-    enabled: true
-  nodeSelector:
-    node-role.deltafi.org/storage: "true"
 # Redis config
 redis:
   nameOverride: valkey
@@ -309,22 +287,6 @@ promtail:
               stages:
               - static_labels:
                   level: "ERROR"
-        # Squelch/categorize mongodb noise
-        - match:
-              selector: '{ app="mongodb" }'
-              stages:
-                - drop:
-                    expression: "Connection accepted|Connection ended|client metadata"
-        - match:
-              selector: '{ app="mongodb" } |= "WiredTiger message"'
-              stages:
-              - static_labels:
-                  level: "DEBUG"
-        - match:
-              selector: '{ app="mongodb" } |= "Slow query"'
-              stages:
-              - static_labels:
-                  level: "DEBUG"
         # Squelch nasty graphite debug logs
         - match:
             selector: '{app="graphite"}'
@@ -380,9 +342,6 @@ loki:
       - selector: '{container="deltafi-monitor"}'
         priority: 4
         period: 96h
-      - selector: '{container="mongodb"}'
-        priority: 5
-        period: 168h
       - selector: '{app="kubernetes-dashboard"}'
         priority: 6
         period: 96h

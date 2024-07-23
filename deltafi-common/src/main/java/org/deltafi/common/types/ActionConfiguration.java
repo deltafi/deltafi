@@ -19,7 +19,6 @@ package org.deltafi.common.types;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
-import org.springframework.data.annotation.Transient;
 
 import java.util.*;
 
@@ -35,7 +34,6 @@ public class ActionConfiguration {
     private String type;
 
     @JsonIgnore
-    @Transient
     private Map<String, Object> internalParameters;
     private Map<String, Object> parameters;
 
@@ -65,7 +63,6 @@ public class ActionConfiguration {
         return errors;
     }
 
-    @Transient
     public Map<String, Object> getInternalParameters() {
         if (Objects.isNull(internalParameters)) {
             // fall back to using parameters if internalParameters do not exist yet

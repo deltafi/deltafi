@@ -15,20 +15,22 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.common.types;
+package org.deltafi.core.types;
 
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import org.deltafi.common.types.TestStatus;
+import org.hibernate.annotations.Type;
 
 import java.time.OffsetDateTime;
 import java.util.List;
 
-@Document
-
+@Entity
+@Table(name = "test_results")
 @Data
 @SuperBuilder
 @NoArgsConstructor
@@ -37,8 +39,11 @@ public class TestResult {
     @Id
     private String id;
     private String description;
+    @Enumerated(EnumType.STRING)
     private TestStatus status;
     private OffsetDateTime start;
     private OffsetDateTime stop;
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
     private List<String> errors;
 }

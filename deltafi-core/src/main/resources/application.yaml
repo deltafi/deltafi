@@ -3,15 +3,6 @@ spring:
     auto: false
   application:
     name: deltafi-core
-  data:
-    mongodb:
-      host: ${MONGO_HOST:deltafi-mongodb}
-      port: ${MONGO_PORT:27017}
-      database: ${MONGO_DATABASE:deltafi}
-      username: ${MONGO_USER:mongouser}
-      password: ${MONGO_PASSWORD}
-      authentication-database: ${MONGO_DATABASE:deltafi}
-      uuid-representation: standard
   datasource:
     url: jdbc:postgresql://${DELTAFI_POSTGRES_SERVICE_HOST:deltafi-postgres}:${DELTAFI_POSTGRES_SERVICE_PORT:5432}/deltafi
     username: ${POSTGRES_USER:deltafi}

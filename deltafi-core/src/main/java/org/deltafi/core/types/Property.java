@@ -55,6 +55,6 @@ public class Property {
 
     @SuppressWarnings("unused")
     public PropertySource getPropertySource() {
-        return customValue != null ? PropertySource.MONGO : PropertySource.DEFAULT;
+        return customValue != null ? PropertySource.CUSTOM : PropertySource.DEFAULT;
     }
 }

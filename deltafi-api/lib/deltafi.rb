@@ -38,37 +38,6 @@ module Deltafi
     ENV['RUNNING_IN_CLUSTER'].nil? ? K8s::Client.config(K8s::Config.load_file(File.expand_path('~/.kube/config'))) : K8s::Client.in_cluster_config
   end
 
-  def self.configure_mongoid
-    return if defined?(@@mongo_configured) && @@mongo_configured
-
-    host = ENV['MONGO_HOST'] || 'deltafi-mongodb'
-    port = ENV['MONGO_PORT'] || '27017'
-    database = ENV['MONGO_DATABASE'] || 'deltafi'
-    user = ENV['MONGO_USER'] || 'mongouser'
-    password = ENV.fetch('MONGO_PASSWORD', nil)
-    auth_source = ENV['MONGO_AUTH_DATABASE'] || 'deltafi'
-
-    Mongoid.load_configuration(
-      {
-        clients: {
-          default: {
-            hosts: ["#{host}:#{port}"],
-            database: database,
-            options: {
-              user: user,
-              password: password,
-              auth_source: auth_source
-            }
-          }
-        }
-      }
-    )
-
-    Mongoid.raise_not_found_error = false
-
-    @@mongo_configured = true
-  end
-
   def self.graphql(query)
     debug "#{__method__} called from #{caller(1..1).first}"
     graphql_url = File.join(BASE_URL, 'graphql')
