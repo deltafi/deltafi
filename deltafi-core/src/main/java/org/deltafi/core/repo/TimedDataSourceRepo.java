@@ -27,7 +27,7 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Repository
-public interface TimedDataSourceRepo extends FlowRepo {
+public interface TimedDataSourceRepo extends FlowRepo, TimedDataSourceRepoCustom {
     @Modifying
     @Transactional
     @Query("UPDATE TimedDataSource t SET t.cronSchedule = :cronSchedule, t.nextRun = :nextRun WHERE t.name = :flowName")

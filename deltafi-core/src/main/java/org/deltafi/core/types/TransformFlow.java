@@ -67,7 +67,11 @@ public class TransformFlow extends Flow implements Subscriber, Publisher {
 
     @Override
     public List<ActionConfiguration> allActionConfigurations() {
-        return new ArrayList<>(transformActions);
+        List<ActionConfiguration> actionConfigurations = new ArrayList<>();
+        if (transformActions != null) {
+            actionConfigurations.addAll(transformActions);
+        }
+        return actionConfigurations;
     }
 
     @Override

@@ -128,7 +128,6 @@ public class FlowBuilders {
         TransformFlow transformFlow = new TransformFlow();
         transformFlow.setName(name);
         transformFlow.setSourcePlugin(pluginCoordinates);
-        transformFlow.migrate();
         return transformFlow;
     }
 

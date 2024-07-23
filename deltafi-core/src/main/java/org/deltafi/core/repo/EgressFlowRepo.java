@@ -27,7 +27,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Set;
 
 @Repository
-public interface EgressFlowRepo extends FlowRepo {
+public interface EgressFlowRepo extends FlowRepo, EgressFlowRepoCustom {
     @Modifying
     @Transactional
     @Query(value = "UPDATE flows SET expected_annotations = cast(:expectedAnnotations AS jsonb) WHERE name = :flowName AND type = 'EGRESS'",

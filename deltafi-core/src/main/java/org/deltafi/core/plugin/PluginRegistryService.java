@@ -89,7 +89,12 @@ public class PluginRegistryService implements Snapshotter {
         pluginVariableService.saveVariables(plugin.getPluginCoordinates(), pluginRegistration.getVariables());
         upgradeFlowPlans(plugin.getPluginCoordinates(), groupedFlowPlans);
 
-        flowValidationService.asyncRevalidateFlows();
+        try {
+            flowValidationService.revalidateFlows();
+        } catch (Exception ignored) {
+            // this mimics the old behavior where this happened asynchronously
+            // presumably we don't want to error if a flow from another plugin no longer validates or we hit an exception
+        }
         return Result.builder().success(true).build();
     }
 

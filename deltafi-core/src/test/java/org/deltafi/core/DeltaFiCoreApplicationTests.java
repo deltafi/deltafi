@@ -315,7 +315,6 @@ class DeltaFiCoreApplicationTests {
 
 	@BeforeEach
 	void setup() {
-//		deltaFiPropertiesService.upsertProperties();
 		resumePolicyService.refreshCache();
 		loadConfig();
 
@@ -362,7 +361,7 @@ class DeltaFiCoreApplicationTests {
 	static final TransformFlow CHILD_FLOW = buildRunningTransformFlow("transformChildFlow", List.of(TRANSFORM2), false);
 
 	void loadTransformConfig() {
-		transformFlowRepo.saveAll(List.of(SAMPLE_TRANSFORM_FLOW, RETRY_FLOW, CHILD_FLOW));
+		transformFlowRepo.batchInsert(List.of(SAMPLE_TRANSFORM_FLOW, RETRY_FLOW, CHILD_FLOW));
 		transformFlowService.refreshCache();
 	}
 
@@ -378,14 +377,14 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	void loadEgressConfig() {
-		egressFlowRepo.saveAll(List.of(SAMPLE_EGRESS_FLOW, ERROR_EGRESS_FLOW));
+		egressFlowRepo.batchInsert(List.of(SAMPLE_EGRESS_FLOW, ERROR_EGRESS_FLOW));
 		egressFlowService.refreshCache();
 	}
 
 	static final RestDataSource REST_DATA_SOURCE = buildRestDataSource(FlowState.RUNNING);
 
 	void loadRestDataSources() {
-		restDataSourceRepo.save(REST_DATA_SOURCE);
+		restDataSourceRepo.batchInsert(List.of(REST_DATA_SOURCE));
 		restDataSourceService.refreshCache();
 	}
 
@@ -393,7 +392,7 @@ class DeltaFiCoreApplicationTests {
 	static final TimedDataSource TIMED_DATA_SOURCE_ERROR = buildTimedDataSourceError(FlowState.RUNNING);
 
 	void loadTimedDataSources() {
-		timedDataSourceRepo.saveAll(List.of(TIMED_DATA_SOURCE, TIMED_DATA_SOURCE_ERROR));
+		timedDataSourceRepo.batchInsert(List.of(TIMED_DATA_SOURCE, TIMED_DATA_SOURCE_ERROR));
 		timedDataSourceService.refreshCache();
 	}
 

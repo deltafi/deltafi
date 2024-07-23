@@ -67,7 +67,8 @@ public class DeltaFile {
   private long referencedBytes;
   private long totalBytes;
   @Enumerated(EnumType.STRING)
-  private DeltaFileStage stage;
+  @Builder.Default
+  private DeltaFileStage stage = DeltaFileStage.IN_FLIGHT;
   @Builder.Default
   @OneToMany(mappedBy = "deltaFile", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
   @JsonManagedReference

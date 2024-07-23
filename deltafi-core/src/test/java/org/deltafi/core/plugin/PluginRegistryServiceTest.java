@@ -120,7 +120,7 @@ class PluginRegistryServiceTest {
         ArgumentCaptor<PluginEntity> pluginArgumentCaptor = ArgumentCaptor.forClass(PluginEntity.class);
         Mockito.verify(pluginRepository).save(pluginArgumentCaptor.capture());
         assertEquals(plugin, pluginArgumentCaptor.getValue());
-        Mockito.verify(flowValidationService).asyncRevalidateFlows();
+        Mockito.verify(flowValidationService).revalidateFlows();
     }
 
     @Test

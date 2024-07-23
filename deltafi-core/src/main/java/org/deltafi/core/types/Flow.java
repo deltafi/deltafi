@@ -30,13 +30,17 @@ import org.hibernate.annotations.Type;
 import java.util.*;
 
 @Entity
-@Table(name = "flows")
+@Table(name = "flows", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"name", "type"} )
+})
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "discriminator", discriminatorType = DiscriminatorType.STRING)
 @Data
 @NoArgsConstructor
 public abstract class Flow {
     @Id
+    UUID id = UUID.randomUUID();
+
     private String name;
 
     @Enumerated(EnumType.STRING)
@@ -63,26 +67,6 @@ public abstract class Flow {
         this.type = type;
         this.description = description;
         this.sourcePlugin = sourcePlugin;
-    }
-
-    /**
-     * Run migrations needed to upgrade to latest version
-     * This method should be overridden by child classes that support migrations
-     * @return boolean indicating whether a migration occurred
-     */
-    public boolean migrate() {
-        return false;
-    }
-
-    protected static void migrateAction(ActionConfiguration actionConfiguration) {
-        if (actionConfiguration == null) {
-            return;
-        }
-
-        int dotIndex = actionConfiguration.getName().indexOf('.');
-        if (dotIndex != -1) {
-            actionConfiguration.setName(actionConfiguration.getName().substring(dotIndex + 1));
-        }
     }
 
     /**

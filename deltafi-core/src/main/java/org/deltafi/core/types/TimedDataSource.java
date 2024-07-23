@@ -19,9 +19,7 @@ package org.deltafi.core.types;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
-import jakarta.persistence.Column;
-import jakarta.persistence.DiscriminatorValue;
-import jakarta.persistence.Entity;
+import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -54,6 +52,7 @@ public class TimedDataSource extends DataSource {
     private String memo;
     private UUID currentDid;
     private boolean executeImmediate = false;
+    @Enumerated(EnumType.STRING)
     private IngressStatus ingressStatus = IngressStatus.HEALTHY;
     private String ingressStatusMessage;
 

@@ -17,7 +17,6 @@
  */
 package org.deltafi.core.services;
 
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -39,11 +38,6 @@ public class FlowValidationService {
     public void revalidateFlows() {
         rebuildInvalidFlows();
         validateAllFlows();
-    }
-
-    @Async
-    public void asyncRevalidateFlows() {
-        revalidateFlows();
     }
 
     private void rebuildInvalidFlows() {

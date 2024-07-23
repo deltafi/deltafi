@@ -17,13 +17,10 @@
  */
 package org.deltafi.core.repo;
 
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.stereotype.Repository;
+import org.deltafi.core.types.TimedDataSource;
 
-@Repository
-public interface TransformFlowRepo extends FlowRepo, TransformFlowRepoCustom {
-    @Modifying
-    @Query("UPDATE TransformFlow t SET t.maxErrors = :maxErrors WHERE t.name = :flowName")
-    int updateMaxErrors(String flowName, int maxErrors);
+import java.util.List;
+
+public interface TimedDataSourceRepoCustom {
+    void batchInsert(List<TimedDataSource> timedDataSources);
 }
