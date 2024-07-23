@@ -24,7 +24,6 @@ import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.GraphQLQueryRequest;
 import com.netflix.graphql.dgs.exceptions.QueryException;
 import io.minio.MinioClient;
-import jakarta.transaction.Transactional;
 import lombok.SneakyThrows;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.Segment;
@@ -92,6 +91,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.jdbc.Sql;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -135,6 +135,8 @@ import static org.mockito.Mockito.never;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
+@Sql(statements = "TRUNCATE TABLE actions, annotations, delta_file_flows, delta_files, flows, properties, resume_policies CASCADE",
+		executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 class DeltaFiCoreApplicationTests {
 	@Container
 	public static final PostgreSQLContainer<?> POSTGRES_CONTAINER = new PostgreSQLContainer<>("postgres:16.3");
@@ -313,13 +315,7 @@ class DeltaFiCoreApplicationTests {
 
 	@BeforeEach
 	void setup() {
-		deltaFiPropertiesRepo.deleteAllInBatch();
-		deltaFiPropertiesService.upsertProperties();
-		annotationRepo.deleteAllInBatch();
-		actionRepo.deleteAllInBatch();
-		deltaFileFlowRepo.deleteAllInBatch();
-		deltaFileRepo.deleteAllInBatch();
-		resumePolicyRepo.deleteAllInBatch();
+//		deltaFiPropertiesService.upsertProperties();
 		resumePolicyService.refreshCache();
 		loadConfig();
 
@@ -355,42 +351,49 @@ class DeltaFiCoreApplicationTests {
 		loadTimedDataSources();
 	}
 
-	void loadTransformConfig() {
-		transformFlowRepo.deleteAllInBatch();
-
+	static final TransformFlow SAMPLE_TRANSFORM_FLOW;
+	static {
 		TransformFlow sampleTransformFlow = buildRunningTransformFlow(TRANSFORM_FLOW_NAME, TRANSFORM_ACTIONS, false);
 		sampleTransformFlow.setSubscribe(Set.of(new Rule(TRANSFORM_TOPIC)));
 		sampleTransformFlow.setPublish(publishRules(EGRESS_TOPIC));
-		TransformFlow retryFlow = buildRunningTransformFlow("theTransformFlow", null, false);
-		TransformFlow childFlow = buildRunningTransformFlow("transformChildFlow", List.of(TRANSFORM2), false);
+		SAMPLE_TRANSFORM_FLOW = sampleTransformFlow;
+	}
+	static final TransformFlow RETRY_FLOW = buildRunningTransformFlow("theTransformFlow", null, false);
+	static final TransformFlow CHILD_FLOW = buildRunningTransformFlow("transformChildFlow", List.of(TRANSFORM2), false);
 
-		transformFlowRepo.saveAll(List.of(sampleTransformFlow, retryFlow, childFlow));
-		refreshFlowCaches();
+	void loadTransformConfig() {
+		transformFlowRepo.saveAll(List.of(SAMPLE_TRANSFORM_FLOW, RETRY_FLOW, CHILD_FLOW));
+		transformFlowService.refreshCache();
+	}
+
+	static final EgressFlow SAMPLE_EGRESS_FLOW;
+	static final EgressFlow ERROR_EGRESS_FLOW;
+	static {
+		EgressFlow sampleEgressFlow = buildRunningEgressFlow(EGRESS_FLOW_NAME, EGRESS, false);
+		sampleEgressFlow.setSubscribe(Set.of(new Rule(EGRESS_TOPIC)));
+		SAMPLE_EGRESS_FLOW = sampleEgressFlow;
+
+		ActionConfiguration errorEgress = new ActionConfiguration("ErrorEgressAction", ActionType.EGRESS, "type");
+		ERROR_EGRESS_FLOW = buildRunningEgressFlow("error", errorEgress, false);
 	}
 
 	void loadEgressConfig() {
-		egressFlowRepo.deleteAllInBatch();
-
-		EgressFlow sampleEgressFlow = buildRunningEgressFlow(EGRESS_FLOW_NAME, EGRESS, false);
-		sampleEgressFlow.setSubscribe(Set.of(new Rule(EGRESS_TOPIC)));
-
-		ActionConfiguration errorEgress = new ActionConfiguration("ErrorEgressAction", ActionType.EGRESS, "type");
-		EgressFlow errorFlow = buildRunningEgressFlow("error", errorEgress, false);
-
-		egressFlowRepo.saveAll(List.of(sampleEgressFlow, errorFlow));
+		egressFlowRepo.saveAll(List.of(SAMPLE_EGRESS_FLOW, ERROR_EGRESS_FLOW));
 		egressFlowService.refreshCache();
 	}
 
+	static final RestDataSource REST_DATA_SOURCE = buildRestDataSource(FlowState.RUNNING);
+
 	void loadRestDataSources() {
-		restDataSourceRepo.deleteAllInBatch();
-		restDataSourceRepo.save(buildRestDataSource(FlowState.RUNNING));
+		restDataSourceRepo.save(REST_DATA_SOURCE);
 		restDataSourceService.refreshCache();
 	}
 
+	static final TimedDataSource TIMED_DATA_SOURCE = buildTimedDataSource(FlowState.RUNNING);
+	static final TimedDataSource TIMED_DATA_SOURCE_ERROR = buildTimedDataSourceError(FlowState.RUNNING);
+
 	void loadTimedDataSources() {
-		timedDataSourceRepo.deleteAllInBatch();
-		timedDataSourceRepo.save(buildTimedDataSource(FlowState.RUNNING));
-		timedDataSourceRepo.save(buildTimedDataSourceError(FlowState.RUNNING));
+		timedDataSourceRepo.saveAll(List.of(TIMED_DATA_SOURCE, TIMED_DATA_SOURCE_ERROR));
 		timedDataSourceService.refreshCache();
 	}
 
@@ -1318,6 +1321,7 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void testUpdateAndRemovePropertyOverrides() {
+		deltaFiPropertiesService.upsertProperties();
 		assertThat(PropertiesDatafetcherTestHelper.updateProperties(dgsQueryExecutor)).isTrue();
 		assertThat(PropertiesDatafetcherTestHelper.removePropertyOverrides(dgsQueryExecutor)).isTrue();
 	}
@@ -2744,17 +2748,23 @@ class DeltaFiCoreApplicationTests {
 		IntStream.range(0, 10).forEach(this::testConcurrentPluginVariableRegistration);
 	}
 
-	void testConcurrentPluginVariableRegistration(int ignoreI) {
-		pluginVariableRepo.deleteAllInBatch();
-		PluginCoordinates oldVersion = PluginCoordinates.builder().groupId("org").artifactId("deltafi").version("1").build();
-		PluginCoordinates newVersion = PluginCoordinates.builder().groupId("org").artifactId("deltafi").version("2").build();
-
-		// Save the original set of variables with values set
+	static final PluginCoordinates OLD_VERSION = PluginCoordinates.builder().groupId("org").artifactId("deltafi").version("1").build();
+	static final PluginCoordinates NEW_VERSION = PluginCoordinates.builder().groupId("org").artifactId("deltafi").version("2").build();
+	static final PluginVariables ORIGINAL_PLUGIN_VARIABLES;
+	static {
 		PluginVariables originalPluginVariables = new PluginVariables();
 		List<Variable> variableList = Stream.of("var1", "var2", "var3", "var4").map(Util::buildOriginalVariable).toList();
 		originalPluginVariables.setVariables(variableList);
-		originalPluginVariables.setSourcePlugin(oldVersion);
-		pluginVariableRepo.save(originalPluginVariables);
+		originalPluginVariables.setSourcePlugin(OLD_VERSION);
+		ORIGINAL_PLUGIN_VARIABLES = originalPluginVariables;
+
+	}
+
+	void testConcurrentPluginVariableRegistration(int ignoreI) {
+		pluginVariableRepo.truncate();
+
+		// Save the original set of variables with values set
+		pluginVariableRepo.save(ORIGINAL_PLUGIN_VARIABLES);
 
 		// new set of variables that need to get the set value added in
 		List<Variable> newVariables = Stream.of("var2", "var3", "var4", "var5").map(Util::buildNewVariable).toList();
@@ -2762,12 +2772,12 @@ class DeltaFiCoreApplicationTests {
 		final int numMockPlugins = 15;
 		Executor mockRegistryExecutor = Executors.newFixedThreadPool(3);
 		List<CompletableFuture<Void>> futures = IntStream.range(0, numMockPlugins)
-				.mapToObj(i -> submitNewVariables(mockRegistryExecutor, newVersion, newVariables))
+				.mapToObj(i -> submitNewVariables(mockRegistryExecutor, newVariables))
 				.toList();
 
 		CompletableFuture.allOf(futures.toArray(new CompletableFuture[numMockPlugins])).join();
 
-		PluginVariables afterRegistrations = pluginVariableRepo.findBySourcePlugin(newVersion).orElse(null);
+		PluginVariables afterRegistrations = pluginVariableRepo.findBySourcePlugin(NEW_VERSION).orElse(null);
 		assertThat(afterRegistrations).isNotNull();
 		List<Variable> varsAfter = afterRegistrations.getVariables();
 		assertThat(varsAfter).hasSize(4);
@@ -2787,8 +2797,8 @@ class DeltaFiCoreApplicationTests {
 
 	}
 
-	private CompletableFuture<Void> submitNewVariables(Executor executor, PluginCoordinates pluginCoordinates, List<Variable> variables) {
-		return CompletableFuture.runAsync(() -> pluginVariableService.saveVariables(pluginCoordinates, variables), executor);
+	private CompletableFuture<Void> submitNewVariables(Executor executor, List<Variable> variables) {
+		return CompletableFuture.runAsync(() -> pluginVariableService.saveVariables(NEW_VERSION, variables), executor);
 	}
 
 	@Test
@@ -3361,6 +3371,7 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void updateProperties() {
+		deltaFiPropertiesService.upsertProperties();
 		// verify nothing is set for systemName to start
 		deltaFiPropertiesRepo.unsetProperties(List.of(SYSTEM_NAME));
 		checkSystemNameProp("DeltaFi", false);
@@ -3377,6 +3388,7 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void unsetProperties() {
+		deltaFiPropertiesService.upsertProperties();
 		assertThat(deltaFiPropertiesRepo.unsetProperties(List.of(SYSTEM_NAME))).isEqualTo(0); // nothing to unset
 
 		// set a custom value that will be unset

@@ -96,4 +96,9 @@ public interface PluginVariableRepo extends JpaRepository<PluginVariables, UUID>
     default void deleteBySourcePlugin(PluginCoordinates sourcePlugin) {
         deleteBySourcePlugin(sourcePlugin.getGroupId(), sourcePlugin.getArtifactId(), sourcePlugin.getVersion());
     }
+
+    @Modifying
+    @Transactional
+    @Query(value = "TRUNCATE TABLE plugin_variables", nativeQuery = true)
+    void truncate();
 }
