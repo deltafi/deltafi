@@ -85,6 +85,6 @@ public class DiskSpaceService {
     }
 
     private long requiredBytes() {
-        return deltaFiPropertiesService.getDeltaFiProperties().getIngress().getDiskSpaceRequirementInMb() * 1000000;
+        return deltaFiPropertiesService.getDeltaFiProperties().getIngressDiskSpaceRequirementInMb() * 1000000;
     }
 }

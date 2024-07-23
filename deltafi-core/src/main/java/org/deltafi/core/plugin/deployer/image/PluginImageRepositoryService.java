@@ -103,11 +103,11 @@ public class PluginImageRepositoryService implements Snapshotter {
     private PluginImageRepository defaultPluginImageRepository() {
         PluginImageRepository pluginImageRepository = new PluginImageRepository();
         DeltaFiProperties deltaFiProperties = deltaFiPropertiesService.getDeltaFiProperties();
-        if (deltaFiProperties.getPlugins() != null) {
-            pluginImageRepository.setPluginGroupIds(List.of("SYSTEM_DEFAULT"));
-            pluginImageRepository.setImageRepositoryBase(deltaFiProperties.getPlugins().getImageRepositoryBase());
-            pluginImageRepository.setImagePullSecret(deltaFiProperties.getPlugins().getImagePullSecret());
-        }
+
+        pluginImageRepository.setPluginGroupIds(List.of("SYSTEM_DEFAULT"));
+        pluginImageRepository.setImageRepositoryBase(deltaFiProperties.getPluginImageRepositoryBase());
+        pluginImageRepository.setImagePullSecret(deltaFiProperties.getPluginImagePullSecret());
+
         return pluginImageRepository;
     }
 }

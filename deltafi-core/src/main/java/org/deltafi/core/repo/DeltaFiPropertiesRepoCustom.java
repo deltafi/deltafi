@@ -17,16 +17,32 @@
  */
 package org.deltafi.core.repo;
 
-import org.deltafi.core.types.PropertyType;
+import org.deltafi.common.types.KeyValue;
+import org.deltafi.common.types.Property;
 
 import java.util.List;
-import java.util.Map;
 
 public interface DeltaFiPropertiesRepoCustom {
-    boolean updateProperties(Map<PropertyType, String> updateMap);
-    boolean unsetProperties(List<PropertyType> propertyTypes);
 
-    boolean removeExternalLink(String linkName);
+    /**
+     * Insert the properties if they do not exist. If they do exist
+     * update the default values and description if necessary.
+     * @param properties list of properties to upsert
+     */
+    void upsertProperties(List<Property> properties);
 
-    boolean removeDeltaFileLink(String linkName);
+    /**
+     * Update each of the properties in the list where the key is the
+     * property name and the value is the new custom value to use.
+     * @param updates list of key value pairs
+     * @return true for success
+     */
+    boolean updateProperties(List<KeyValue> updates);
+
+    /**
+     * Null out the values for each of the given properties
+     * @param propertyNames list of properties to unset
+     * @return true for a success
+     */
+    boolean unsetProperties(List<String> propertyNames);
 }

@@ -123,7 +123,7 @@ public class K8sDeployerService extends BaseDeployerService {
                 deployResult.setLogs(logs);
             }
 
-            if (deltaFiPropertiesService.getDeltaFiProperties().getPlugins().isAutoRollback()) {
+            if (deltaFiPropertiesService.getDeltaFiProperties().isPluginAutoRollback()) {
                 if (isUpgrade) {
                     k8sClient.apps().deployments().resource(installed).rolling().undo();
                 } else {
@@ -307,7 +307,7 @@ public class K8sDeployerService extends BaseDeployerService {
     }
 
     private long getTimeoutInMillis() {
-        Duration timeout = deltaFiPropertiesService.getDeltaFiProperties().getPlugins().getDeployTimeout();
+        Duration timeout = deltaFiPropertiesService.getDeltaFiProperties().getPluginDeployTimeout();
         return timeout != null ? timeout.toMillis() : 60_000L;
     }
 }

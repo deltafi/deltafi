@@ -43,18 +43,7 @@ export default function usePlugins() {
           description: true,
           defaultValue: true,
           dataType: true,
-        },
-        propertySets: {
-          id: true,
-          description: true,
-          properties: {
-            key: true,
-            value: true,
-            defaultValue: true,
-            description: true,
-            refreshable: true,
-          },
-        },
+        }
       },
     };
     return sendGraphQLQuery(query, "getPlugin");

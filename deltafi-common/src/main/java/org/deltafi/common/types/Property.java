@@ -17,24 +17,40 @@
  */
 package org.deltafi.common.types;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Property {
+    @Id
     private String key;
-    private String value;
+    @JsonIgnore
+    private String customValue;
     private String description;
     private String defaultValue;
-    private PropertySource propertySource;
     private boolean refreshable;
 
     public boolean hasValue() {
-        return null != value;
+        return null != customValue;
+    }
+
+    @JsonProperty("value")
+    public String getValue() {
+        return customValue != null ? customValue : defaultValue;
+    }
+
+    @SuppressWarnings("unused")
+    public PropertySource getPropertySource() {
+        return customValue != null ? PropertySource.MONGO : PropertySource.DEFAULT;
     }
 }

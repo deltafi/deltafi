@@ -54,6 +54,7 @@ export default function useSystemSnapshots() {
       action: true,
       actionType: true,
       maxAttempts: true,
+      priority: true,
       backOff: {
         delay: true,
         maxDelay: true,
@@ -62,58 +63,14 @@ export default function useSystemSnapshots() {
       }
     },
     deltaFiProperties: {
-      systemName: true,
-      requeueDuration: true,
-      autoResumeCheckFrequency: true,
-      coreServiceThreads: true,
-      coreInternalQueueSize: true,
-      scheduledServiceThreads: true,
-      ui: {
-        useUTC: true,
-        deltaFileLinks: {
-          name: true,
-          url: true,
-          description: true
-        },
-        externalLinks: {
-          name: true,
-          url: true,
-          description: true
-        },
-        topBar: {
-          textColor: true,
-          backgroundColor: true
-        },
-        securityBanner: {
-          enabled: true,
-          text: true,
-          textColor: true,
-          backgroundColor: true
-        }
-      },
-      delete: {
-        ageOffDays: true,
-        frequency: true,
-        policyBatchSize: true,
-      },
-      ingress: {
-        enabled: true,
-        diskSpaceRequirementInMb: true
-      },
-      metrics: {
-        enabled: true
-      },
-      plugins: {
-        imageRepositoryBase: true,
-        imagePullSecret: true
-      },
-      checks: {
-        actionQueueSizeThreshold: true,
-        contentStoragePercentThreshold: true
-      },
-      inMemoryQueueSize: true,
-      maxFlowDepth: true,
-      setProperties: true
+      key: true,
+      value: true
+    },
+    links: {
+      name: true,
+      url: true,
+      description: true,
+      linkType: true
     },
     pluginImageRepositories: {
       imageRepositoryBase: true,
@@ -140,6 +97,19 @@ export default function useSystemSnapshots() {
         value: true,
         masked: true
       }
+    },
+    restDataSources: {
+      name: true,
+      topic: true,
+      running: true,
+      testMode: true
+    },
+    timedDataSources: {
+      name: true,
+      topic: true,
+      running: true,
+      testMode: true,
+      cronSchedule: true
     },
     transformFlows: {
       name: true,

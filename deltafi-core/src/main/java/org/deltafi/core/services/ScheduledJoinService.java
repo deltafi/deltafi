@@ -121,7 +121,7 @@ public class ScheduledJoinService {
 
     public void unlockTimedOutJoinEntryLocks() {
         long numUnlocked = joinEntryService.unlockBefore(OffsetDateTime.now(clock)
-                .minus(deltaFiPropertiesService.getDeltaFiProperties().getJoin().getMaxLockDuration()));
+                .minus(deltaFiPropertiesService.getDeltaFiProperties().getJoinMaxLockDuration()));
 
         if (numUnlocked > 0) {
             log.warn("Unlocked {} timed out join entries", numUnlocked);

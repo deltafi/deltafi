@@ -150,6 +150,10 @@ initContainers:
   value: "5242880"
 - name: REDIS_URL
   value: http://deltafi-valkey-master:6379
+- name: REDIS_HOST
+  value: deltafi-redis-master
+- name: REDIS_PORT
+  value: "6379"
 - name: REDIS_PASSWORD
   valueFrom:
     secretKeyRef:

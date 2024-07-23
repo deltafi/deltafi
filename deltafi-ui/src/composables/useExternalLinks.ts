@@ -22,77 +22,32 @@ export default function useExternalLinks() {
   const { response, queryGraphQL } = useGraphQL();
 
   // Save a DeltaFile Link
-  const saveDeltaFileLink = (link: string) => {
+  const saveLink = (link: string) => {
     const query = {
-      saveDeltaFileLink: {
+      saveLink: {
         __args: {
           link: link,
         },
+        id: true,
+        name: true,
+        description: true,
+        url: true,
+        linkType: true
       },
     };
-    return sendGraphQLQuery(query, "saveDeltaFileLink", "mutation");
-  };
-
-  // Save an External Link
-  const saveExternalLink = (link: string) => {
-    const query = {
-      saveExternalLink: {
-        __args: {
-          link: link,
-        },
-      },
-    };
-    return sendGraphQLQuery(query, "saveExternalLink", "mutation");
+    return sendGraphQLQuery(query, "saveLink", "mutation");
   };
 
   // Remove a DeltaFile Link
-  const removeDeltaFileLink = (linkName: string) => {
+  const removeLink = (linkId: string) => {
     const query = {
-      removeDeltaFileLink: {
+      removeLink: {
         __args: {
-          linkName: linkName,
+          id: linkId,
         },
       },
     };
-    return sendGraphQLQuery(query, "removeDeltaFileLink", "mutation");
-  };
-
-  // Remove an External Link
-  const removeExternalLink = (linkName: string) => {
-    const query = {
-      removeExternalLink: {
-        __args: {
-          linkName: linkName,
-        },
-      },
-    };
-    return sendGraphQLQuery(query, "removeExternalLink", "mutation");
-  };
-
-  // Replace a DeltaFile Link
-  const replaceDeltaFileLink = (linkName: string, link: Object) => {
-    const query = {
-      replaceDeltaFileLink: {
-        __args: {
-          linkName: linkName,
-          link: link,
-        },
-      },
-    };
-    return sendGraphQLQuery(query, "replaceDeltaFileLink", "mutation");
-  };
-
-  // Replace an External Link
-  const replaceExternalLink = (linkName: string, link: Object) => {
-    const query = {
-      replaceExternalLink: {
-        __args: {
-          linkName: linkName,
-          link: link,
-        },
-      },
-    };
-    return sendGraphQLQuery(query, "replaceExternalLink", "mutation");
+    return sendGraphQLQuery(query, "removeLink", "mutation");
   };
 
   const sendGraphQLQuery = async (query: any, operationName: string, queryType?: string) => {
@@ -105,11 +60,7 @@ export default function useExternalLinks() {
   };
 
   return {
-    saveDeltaFileLink,
-    saveExternalLink,
-    removeDeltaFileLink,
-    removeExternalLink,
-    replaceDeltaFileLink,
-    replaceExternalLink,
+    saveLink,
+    removeLink
   };
 }

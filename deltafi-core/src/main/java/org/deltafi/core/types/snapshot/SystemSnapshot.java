@@ -23,8 +23,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.deltafi.common.types.KeyValue;
 import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.core.configuration.DeltaFiProperties;
+import org.deltafi.core.configuration.ui.Link;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.types.DeletePolicies;
 import org.deltafi.core.types.PluginVariables;
@@ -51,9 +52,14 @@ public class SystemSnapshot {
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
     private DeletePolicies deletePolicies;
+
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
-    private DeltaFiProperties deltaFiProperties;
+    private List<KeyValue> deltaFiProperties;
+
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
+    private List<Link> links;
 
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")

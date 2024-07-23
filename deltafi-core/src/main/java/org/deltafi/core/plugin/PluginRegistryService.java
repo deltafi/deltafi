@@ -277,7 +277,6 @@ public class PluginRegistryService implements Snapshotter {
     }
 
     public void uninstallPlugin(PluginCoordinates pluginCoordinates) {
-        // TODO: TBD: remove plugin property sets
         PluginEntity plugin = getPlugin(pluginCoordinates).orElseThrow();
         pluginCleaners.forEach(pluginCleaner -> pluginCleaner.cleanupFor(plugin));
         removePlugin(plugin);

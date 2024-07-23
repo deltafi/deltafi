@@ -222,6 +222,9 @@ const cleanUpSnapshot = (snapShotData) => {
       snap.pluginVariables[x].variables[y].dataType = new EnumType(snap.pluginVariables[x].variables[y].dataType);
     }
   }
+  if (snap.links) {
+    snap.links.forEach(link => {link.linkType = new EnumType(link.linkType)})
+  }
   return snap;
 };
 

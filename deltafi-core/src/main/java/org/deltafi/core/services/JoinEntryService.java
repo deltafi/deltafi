@@ -59,7 +59,7 @@ public class JoinEntryService {
 
     private JoinEntry upsertAndLock(JoinDefinition joinDefinition, OffsetDateTime joinDate, Integer minNum,
                                     Integer maxNum, int flowDepth) {
-        long endTimeMs = clock.millis() + deltaFiPropertiesService.getDeltaFiProperties().getJoin().getAcquireLockTimeoutMs();
+        long endTimeMs = clock.millis() + deltaFiPropertiesService.getDeltaFiProperties().getJoinAcquireLockTimeoutMs();
         while (clock.millis() < endTimeMs) {
             try {
                 JoinEntry newEntry = new JoinEntry(UUID.randomUUID(), joinDefinition, true, OffsetDateTime.now(clock), joinDate, minNum, maxNum, flowDepth, 1);

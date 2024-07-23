@@ -17,17 +17,27 @@
  */
 package org.deltafi.core.configuration.ui;
 
+import jakarta.persistence.*;
 import lombok.Data;
 
-import java.util.Objects;
+import java.util.UUID;
 
 @Data
+@Entity
+@Table(name = "links", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"name", "link_type"})
+})
 public class Link {
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private UUID id;
     private String name;
     private String url;
     private String description;
+    @Enumerated(EnumType.STRING)
+    private LinkType linkType;
 
-    public boolean nameMatches(Link link) {
-        return Objects.equals(this.name, link.name);
+    public enum LinkType {
+        EXTERNAL, DELTAFILE_LINK
     }
 }

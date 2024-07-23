@@ -17,10 +17,17 @@
  */
 package org.deltafi.core.repo;
 
-import org.deltafi.core.configuration.DeltaFiProperties;
+import org.deltafi.common.types.Property;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Set;
+
 @Repository
-public interface DeltaFiPropertiesRepo extends MongoRepository<DeltaFiProperties, String>, DeltaFiPropertiesRepoCustom {
+public interface DeltaFiPropertiesRepo extends MongoRepository<Property, String>, DeltaFiPropertiesRepoCustom {
+    /**
+     * Remove any property entry whose key is not found in the given set of property names
+     * @param propertyKeys valid property names to keep
+     */
+    void deleteByKeyNotIn(Set<String> propertyKeys);
 }

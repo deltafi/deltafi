@@ -1,5 +1,3 @@
-version: '3'
-
 x-health-probe: &health-probe
   healthcheck:
     test: /probe.sh
@@ -37,6 +35,7 @@ services:
       - ${SECRETS_DIR}/valkey.env
       - ${SECRETS_DIR}/mongodb.env
       - ${SECRETS_DIR}/minio.env
+      - ${SECRETS_DIR}/clickhouse.env
       - ${SECRETS_DIR}/ssl.env
     <<: *health-probe
     labels:
@@ -63,6 +62,7 @@ services:
       - ${SECRETS_DIR}/valkey.env
       - ${SECRETS_DIR}/mongodb.env
       - ${SECRETS_DIR}/minio.env
+      - ${SECRETS_DIR}/clickhouse.env
       - ${SECRETS_DIR}/ssl.env
     expose:
       - "8080"
@@ -72,27 +72,29 @@ services:
       <<: *logging-label
     networks:
       - deltafi
-  deltafi-api:
-    image: ${DELTAFI_API}
-    container_name: deltafi-api
-    depends_on:
-      deltafi-core:
-        condition: service_healthy
-    environment:
-      WORKERS: ${API_WORKERS}
-    env_file:
-      - ${ENV_DIR}/common.env
-      - ${SECRETS_DIR}/valkey.env
-      - ${SECRETS_DIR}/mongodb.env
-      - ${SECRETS_DIR}/minio.env
-    expose:
-      - "9292"
-    <<: *health-probe
-    labels:
-      deltafi-group: deltafi-core
-      <<: *logging-label
-    networks:
-      - deltafi
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+  # deltafi-api:
+  #   image: ${DELTAFI_API}
+  #   container_name: deltafi-api
+  #   depends_on:
+  #     deltafi-core:
+  #       condition: service_healthy
+  #   environment:
+  #     WORKERS: ${API_WORKERS}
+  #   env_file:
+  #     - ${ENV_DIR}/common.env
+  #     - ${SECRETS_DIR}/valkey.env
+  #     - ${SECRETS_DIR}/mongodb.env
+  #     - ${SECRETS_DIR}/minio.env
+  #   expose:
+  #     - "9292"
+  #   <<: *health-probe
+  #   labels:
+  #     deltafi-group: deltafi-core
+  #     <<: *logging-label
+  #   networks:
+  #     - deltafi
   deltafi-auth:
     image: ${DELTAFI_AUTH}
     container_name: deltafi-auth
@@ -149,7 +151,7 @@ services:
     image: ${DELTAFI_UI}
     container_name: deltafi-ui
     depends_on:
-      deltafi-api:
+      deltafi-core:
         condition: service_healthy
     expose:
       - "80"
@@ -188,7 +190,6 @@ services:
       deltafi-group: deltafi-core
     networks:
       - deltafi
-    profiles: ["docs"]
   deltafi-nodemonitor:
     image: ${DELTAFI_NODEMONITOR}
     container_name: deltafi-nodemonitor
@@ -197,6 +198,7 @@ services:
         condition: service_started
     env_file:
       - ${ENV_DIR}/common.env
+      - ${SECRETS_DIR}/valkey.env
     labels:
       deltafi-group: deltafi-core
       <<: *logging-label
@@ -219,7 +221,6 @@ services:
       <<: *logging-label
     networks:
       - deltafi
-    profiles: ["egress-sink"]
     volumes:
       - ${DATA_DIR}:/data/deltafi/egress-sink
   deltafi-minio:
@@ -269,7 +270,7 @@ services:
     volumes:
       - ${DATA_DIR}/mongo:/bitnami/mongodb
   deltafi-valkey:
-    image: valkey/valkey:7.2.5
+    image: bitnami/valkey:7.2.5
     container_name: deltafi-valkey
     environment:
       BITNAMI_DEBUG: false
@@ -295,10 +296,11 @@ services:
     environment:
       GF_PATHS_DATA: /var/lib/grafana/
       GF_PATHS_LOGS: /var/log/grafana
-      GF_PATHS_PLUGINS: /var/lib/grafana/plugins
+      GF_PATHS_PLUGINS: /var/lib/grafana-plugins
       GF_PATHS_PROVISIONING: /etc/grafana/provisioning
     env_file:
       - ${SECRETS_DIR}/grafana.env
+      - ${SECRETS_DIR}/clickhouse.env
     expose:
       - "3000"
     labels:
@@ -335,6 +337,23 @@ services:
       - ${SETTINGS_DIR}/graphite/statsd/tcp.js:/opt/statsd/config/tcp.js
       - ${SETTINGS_DIR}/graphite/statsd/udp.js:/opt/statsd/config/udp.js
       - ${DATA_DIR}/graphite:/opt/graphite/storage/
+  deltafi-clickhouse:
+    image: ${CLICKHOUSE}
+    container_name: deltafi-clickhouse
+    env_file:
+      - ${SECRETS_DIR}/clickhouse.env
+    expose:
+      - "8123/tcp"
+      - "9000/tcp"
+      - "9004/tcp"
+      - "9005/tcp"
+      - "9009/tcp"
+    labels:
+      deltafi-group: deltafi-dependency
+    networks:
+      - deltafi
+    volumes:
+      - ${DATA_DIR}/clickhouse:/bitnami/clickhouse/
   deltafi-loki:
     image: ${LOKI}
     container_name: deltafi-loki

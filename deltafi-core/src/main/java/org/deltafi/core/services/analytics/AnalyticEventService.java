@@ -62,7 +62,7 @@ public class AnalyticEventService {
                                 @Value("${CLICKHOUSE_USER:default}") String username,
                                 @Value("${CLICKHOUSE_PASSWORD:deltafi}") String password,
                                 DeltaFiPropertiesService deltaFiPropertiesService) {
-        this.enabled = enabled && deltaFiPropertiesService.getDeltaFiProperties().getMetrics().isErrorAnalyticsEnabled();
+        this.enabled = enabled && deltaFiPropertiesService.getDeltaFiProperties().isMetricsErrorAnalyticsEnabled();
         completed = new EventPipeline<>(CompletedDeltaFileEvent.TABLE_NAME,
                 CompletedDeltaFileEvent.INSERT,
                 CompletedDeltaFileEvent::addSchema);

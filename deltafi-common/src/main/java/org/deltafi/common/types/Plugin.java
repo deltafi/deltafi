@@ -29,7 +29,5 @@ public class Plugin {
   private String actionKitVersion;
   private List<ActionDescriptor> actions;
   private List<PluginCoordinates> dependencies;
-
-  private List<PropertySet> propertySets;
   private List<Variable> variables;
 }

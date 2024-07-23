@@ -59,6 +59,7 @@
 import useExternalLinks from "@/composables/useExternalLinks";
 import { computed, defineEmits, defineProps, reactive, ref } from "vue";
 import { useMounted } from "@vueuse/core";
+import { EnumType } from "json-to-graphql-query";
 
 import Button from "primevue/button";
 import Dropdown from "primevue/dropdown";
@@ -100,7 +101,7 @@ const linkTemplate = {
 };
 
 const { viewLink, editLink, closeDialogCommand } = reactive(props);
-const { saveDeltaFileLink, saveExternalLink, replaceDeltaFileLink, replaceExternalLink } = useExternalLinks();
+const { saveLink } = useExternalLinks();
 const rowData = ref(Object.assign({}, props.rowDataProp || linkTemplate));
 const originalData = ref(Object.assign({}, props.rowDataProp || linkTemplate));
 const selectedLinkType = ref(props.rowLinkType);
@@ -160,19 +161,12 @@ const submit = () => {
     return;
   }
 
-  if (!editLink) {
-    if (_.isEqual(selectedLinkType.value, "DeltaFile Link")) {
-      saveDeltaFileLink(model.value);
-    } else if (_.isEqual(selectedLinkType.value, "External Link")) {
-      saveExternalLink(model.value);
-    }
-  } else {
-    if (_.isEqual(selectedLinkType.value, "DeltaFile Link")) {
-      replaceDeltaFileLink(originalData.value.name, model.value);
-    } else if (_.isEqual(selectedLinkType.value, "External Link")) {
-      replaceExternalLink(originalData.value.name, model.value);
-    }
+  if (_.isEqual(selectedLinkType.value, "DeltaFile Link")) {
+    model.value.linkType = new EnumType("DELTAFILE_LINK")
+  } else if (_.isEqual(selectedLinkType.value, "External Link")) {
+    model.value.linkType = new EnumType("EXTERNAL")
   }
+  saveLink(model.value);
   closeDialogCommand.command();
   emit("reloadExternalLinks");
 };

@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.schedulers.trigger;
 
+import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,6 @@ import org.springframework.stereotype.Service;
 public class DeleteTrigger extends ConfigurableFixedDelayTrigger {
 
     public DeleteTrigger(DeltaFiPropertiesService deltaFiPropertiesService) {
-        super(deltaFiPropertiesService, (props) -> props.getDelete().getFrequency(), 10_000L);
+        super(deltaFiPropertiesService, DeltaFiProperties::getDeleteFrequency, 10_000L);
     }
 }

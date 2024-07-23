@@ -47,10 +47,6 @@ public class PluginEntity {
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
-    private List<PropertySet> propertySets;
-
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb")
     private List<Variable> variables;
 
     public Plugin toPlugin() {
@@ -61,7 +57,6 @@ public class PluginEntity {
         plugin.setActionKitVersion(this.actionKitVersion);
         plugin.setActions(this.actions);
         plugin.setDependencies(this.dependencies);
-        plugin.setPropertySets(this.propertySets);
         plugin.setVariables(this.variables);
         return plugin;
     }
@@ -74,7 +69,6 @@ public class PluginEntity {
         entity.setActionKitVersion(plugin.getActionKitVersion());
         entity.setActions(plugin.getActions());
         entity.setDependencies(plugin.getDependencies());
-        entity.setPropertySets(plugin.getPropertySets());
         entity.setVariables(plugin.getVariables());
         return entity;
     }

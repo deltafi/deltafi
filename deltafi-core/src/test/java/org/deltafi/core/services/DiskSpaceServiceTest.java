@@ -80,6 +80,6 @@ class DiskSpaceServiceTest {
     void contentMetrics() {
     }
 
-    private void diskSpaceRequirement(int val) { deltaFiPropertiesService.getDeltaFiProperties().getIngress().setDiskSpaceRequirementInMb(val);
+    private void diskSpaceRequirement(int val) { deltaFiPropertiesService.getDeltaFiProperties().setIngressDiskSpaceRequirementInMb(val);
     }
 }

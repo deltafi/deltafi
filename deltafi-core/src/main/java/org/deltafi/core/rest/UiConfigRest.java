@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.DeltaFiPropertiesService;
+import org.deltafi.core.services.UiLinkService;
 import org.deltafi.core.types.UiConfig;
 import org.springframework.core.env.Environment;
 import org.springframework.http.MediaType;
@@ -35,12 +36,14 @@ import javax.ws.rs.Produces;
 public class UiConfigRest {
 
     private final DeltaFiPropertiesService propertiesService;
+    private final UiLinkService uiLinkService;
     private final String uiDomain;
     private final String authMode;
     private final boolean inCluster;
 
-    public UiConfigRest(DeltaFiPropertiesService propertiesService, Environment environment) {
+    public UiConfigRest(DeltaFiPropertiesService propertiesService, UiLinkService uiLinkService, Environment environment) {
         this.propertiesService = propertiesService;
+        this.uiLinkService = uiLinkService;
         uiDomain = environment.getProperty("DELTAFI_UI_DOMAIN");
         authMode = environment.getProperty("AUTH_MODE");
         inCluster = environment.matchesProfiles("kubernetes");
@@ -56,11 +59,13 @@ public class UiConfigRest {
             title = "DeltaFi";
         }
 
-        UiConfig uiConfig = new UiConfig(properties.getUi());
+        UiConfig uiConfig = new UiConfig();
         uiConfig.setTitle(title);
         uiConfig.setDomain(uiDomain);
         uiConfig.setAuthMode(authMode);
         uiConfig.setClusterMode(inCluster);
+        uiConfig.setProperties(properties);
+        uiConfig.setLinks(uiLinkService.getLinks());
         return uiConfig;
     }
 }
