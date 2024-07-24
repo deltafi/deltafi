@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.rest;
 
+import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.services.analytics.AnalyticEventService.DisabledAnalyticsException;
 import org.deltafi.core.services.analytics.AnalyticEventService.SurveyError;
@@ -49,6 +50,8 @@ class SurveyRestTest {
 
     @MockBean
     private AnalyticEventService analyticEventService;
+    @MockBean
+    private CoreAuditLogger auditLogger;
 
     @Captor
     ArgumentCaptor<List<SurveyEvent>> eventsCaptor;

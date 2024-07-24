@@ -28,6 +28,7 @@ import com.netflix.graphql.dgs.InputArgument;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.common.types.TestResult;
 import org.deltafi.common.types.TestStatus;
+import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.integration.config.Configuration;
 import org.deltafi.core.security.NeedsPermission;
 
@@ -40,6 +41,7 @@ public class IntegrationDataFetcher {
 
     private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory()).setSerializationInclusion(JsonInclude.Include.NON_NULL).registerModule(new JavaTimeModule());
     private final IntegrationService integrationService;
+    private final CoreAuditLogger auditLogger;
 
     @DgsQuery
     @NeedsPermission.IntegrationTestView
@@ -56,6 +58,7 @@ public class IntegrationDataFetcher {
     @DgsMutation
     @NeedsPermission.IntegrationTestDelete
     public boolean removeIntegrationTest(@InputArgument String id) {
+        auditLogger.audit("removed integration test with id {}", id);
         return integrationService.remove(id);
     }
 
@@ -65,6 +68,7 @@ public class IntegrationDataFetcher {
         List<String> errors = new ArrayList<>();
         try {
             Configuration config = YAML_MAPPER.readValue(configYaml, Configuration.class);
+            auditLogger.audit("launching integration test {}", config.getDescription());
             return integrationService.runTest(config);
         } catch (Exception e) {
             errors.add("Unable to parse YAML: " + e.getMessage());

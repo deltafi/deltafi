@@ -77,6 +77,7 @@ public class ContentRest {
         headers.add("Content-Type", contentRequest.mediaType());
         headers.add("Content-Length", "" + contentRequest.size());
 
+        // note fetchContentService handles auditing access to the content
         InputStreamResource body = new InputStreamResource(fetchContentService.streamContent(contentRequest));
         return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }

@@ -22,6 +22,7 @@ import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.InputArgument;
 import lombok.RequiredArgsConstructor;
+import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.DeletePolicyService;
 import org.deltafi.core.types.*;
@@ -34,6 +35,7 @@ import java.util.UUID;
 public class DeletePolicyDatafetcher {
 
     private final DeletePolicyService deletePolicyService;
+    private final CoreAuditLogger auditLogger;
 
     @DgsQuery
     @NeedsPermission.DeletePolicyRead
@@ -44,30 +46,40 @@ public class DeletePolicyDatafetcher {
     @DgsMutation
     @NeedsPermission.DeletePolicyCreate
     public Result loadDeletePolicies(@InputArgument Boolean replaceAll, @InputArgument DeletePolicies policies) {
+        auditLogger.audit("loaded delete policies named {}",
+            CoreAuditLogger.listToString(policies.allPolicies(), DeletePolicy::getName));
         return deletePolicyService.saveAll(replaceAll, policies);
     }
 
     @DgsMutation
     @NeedsPermission.DeletePolicyDelete
     public boolean removeDeletePolicy(@InputArgument UUID id) {
+        auditLogger.audit("removed delete policy with id {}", id);
         return deletePolicyService.remove(id);
     }
 
     @DgsMutation
     @NeedsPermission.DeletePolicyUpdate
     public boolean enablePolicy(@InputArgument UUID id, @InputArgument Boolean enabled) {
+        auditLogger.audit("enabled delete policy with id {}", id);
         return deletePolicyService.enablePolicy(id, enabled);
     }
 
     @DgsMutation
     @NeedsPermission.DeletePolicyUpdate
     public Result updateDiskSpaceDeletePolicy(@InputArgument DiskSpaceDeletePolicy policyUpdate) {
+        auditUpdate(policyUpdate, "disk space");
         return deletePolicyService.update(policyUpdate);
     }
 
     @DgsMutation
     @NeedsPermission.DeletePolicyUpdate
     public Result updateTimedDeletePolicy(@InputArgument TimedDeletePolicy policyUpdate) {
+        auditUpdate(policyUpdate, "timed");
         return deletePolicyService.update(policyUpdate);
+    }
+
+    private void auditUpdate(DeletePolicy deletePolicy, String policyType) {
+        auditLogger.audit("updated {} delete policy {} (id = {})", policyType, deletePolicy.getName(), deletePolicy.getId());
     }
 }

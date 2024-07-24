@@ -19,6 +19,7 @@ package org.deltafi.core.rest;
 
 
 import lombok.RequiredArgsConstructor;
+import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.DeltaFilesService;
 import org.springframework.http.ResponseEntity;
@@ -29,12 +30,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
 public class DeltaFileAnnotationRest {
 
     private final DeltaFilesService deltaFilesService;
+    private final CoreAuditLogger auditLogger;
 
     @NeedsPermission.DeltaFileMetadataWrite
     @PostMapping("/deltafile/annotate/{did}")
@@ -50,6 +53,9 @@ public class DeltaFileAnnotationRest {
 
     private ResponseEntity<String> annotateDeltaFile(UUID did, Map<String, String> requestParams, boolean allowOverwrites) {
         try {
+            String annotations = requestParams.entrySet().stream()
+                    .map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(", "));
+            auditLogger.audit("annotated deltafi with did {} with {}", did, annotations);
             deltaFilesService.addAnnotations(did, requestParams, allowOverwrites);
             return ResponseEntity.ok("Success");
         } catch (Exception e) {

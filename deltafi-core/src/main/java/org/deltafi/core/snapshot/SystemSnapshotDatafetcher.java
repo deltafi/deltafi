@@ -21,7 +21,9 @@ import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.InputArgument;
+import com.networknt.schema.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
+import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.types.Result;
 
@@ -32,6 +34,7 @@ import java.util.List;
 public class SystemSnapshotDatafetcher {
 
     private final SystemSnapshotService systemSnapshotService;
+    private final CoreAuditLogger auditLogger;
 
     @DgsQuery
     @NeedsPermission.SnapshotRead
@@ -48,25 +51,29 @@ public class SystemSnapshotDatafetcher {
     @DgsMutation
     @NeedsPermission.SnapshotCreate
     public SystemSnapshot snapshotSystem(@InputArgument String reason) {
+        auditLogger.audit("created system snapshot{}", StringUtils.isNotBlank(reason) ? " with a reason of " + reason : "");
         return systemSnapshotService.createSnapshot(reason);
     }
 
     @DgsMutation
     @NeedsPermission.SnapshotRevert
     public Result resetFromSnapshotWithId(@InputArgument String snapshotId, @InputArgument Boolean hardReset) {
-        boolean hard = hardReset != null ? hardReset : true;
+        boolean hard = hardReset == null || hardReset;
+        auditLogger.audit("reset to snapshot {} using hardReset {}", snapshotId, hard);
         return systemSnapshotService.resetFromSnapshot(snapshotId, hard);
     }
 
     @DgsMutation
     @NeedsPermission.SnapshotCreate
     public SystemSnapshot importSnapshot(@InputArgument SystemSnapshot snapshot) {
+        auditLogger.audit("imported system snapshot {}", snapshot.getId());
         return systemSnapshotService.importSnapshot(snapshot);
     }
 
     @DgsMutation
     @NeedsPermission.SnapshotDelete
     public Result deleteSnapshot(@InputArgument String snapshotId) {
+        auditLogger.audit("deleted system snapshot {}", snapshotId);
         return systemSnapshotService.deleteSnapshot(snapshotId);
     }
 }

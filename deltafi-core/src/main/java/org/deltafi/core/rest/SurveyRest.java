@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.services.analytics.AnalyticEventService.DisabledAnalyticsException;
@@ -51,12 +52,15 @@ public class SurveyRest {
             .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
 
     private final AnalyticEventService analyticEventService;
+    private final CoreAuditLogger auditLogger;
 
     @PostMapping
     @NeedsPermission.SurveyCreate
     public ResponseEntity<SurveyErrors> addSurveys(@RequestBody String body) throws JsonProcessingException {
         // parse string body here to support single json entry as a list
         List<SurveyEvent> surveys = OBJECT_MAPPER.readValue(body, new TypeReference<>() {});
+
+        auditLogger.audit("added {} survey events", surveys.size());
         List<SurveyError> errors = analyticEventService.recordSurveys(surveys);
         return errors.isEmpty() ? ResponseEntity.ok().body(null) :
                 ResponseEntity.badRequest().body(new SurveyErrors(errors));

@@ -20,6 +20,7 @@ package org.deltafi.core.rest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.exceptions.EntityNotFound;
 import org.deltafi.core.exceptions.ValidationException;
 import org.deltafi.core.services.EventService;
@@ -55,6 +56,9 @@ class EventControllerTest {
 
     @MockBean
     private EventService eventService;
+
+    @MockBean
+    private CoreAuditLogger auditLogger;
 
     @Test
     void getEventsTest() throws Exception {
