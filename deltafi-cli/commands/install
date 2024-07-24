@@ -145,11 +145,6 @@ _k8s_prerequisites() {
   # Keeping redis-password around for backwards chart compatibility
   _k8s_add_secret valkey-password redis-password "$VALKEY_PASSWORD" valkey-password "$VALKEY_PASSWORD"
   _k8s_add_secret config-repo-secret config-token "$(_random_password 16)"
-  _k8s_add_secret deltafi-docker-registry-secret \
-    "username" "deltafi" \
-    "password" "password" \
-    "htpasswd" 'deltafi:$2y$05$1eNSa6WKdGY7ewxd9.tJPusPaZXJ0xMEO3T/gcqMkaBKzBuyaB0NC' \
-    "haSharedSecret" "password"
   _k8s_add_secret clickhouse-password clickhouse-password "deltafi"
   local postgres_password
   postgres_password="$(_random_password 20)"

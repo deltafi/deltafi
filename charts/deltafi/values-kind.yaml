@@ -8,7 +8,3 @@ postgres:
   enabled: false
 clickhouse:
   enabled: true
-registry-ui:
-  enabled: true
-docker-registry:
-  enabled: false

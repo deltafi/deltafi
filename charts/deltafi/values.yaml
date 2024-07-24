@@ -408,33 +408,6 @@ graphite:
   statsd:
     interface: TCP
 
-docker-registry:
-  enabled: false
-  image:
-    repository: deltafi/registry
-    tag: 2.8.3-0
-  persistence:
-    enabled: true
-    existingClaim: deltafi-docker-registry
-    deleteEnabled: true
-  service:
-    type: NodePort
-    nodePort: 31333
-  serviceAccount:
-    create: true
-  garbageCollect:
-    enabled: true
-    schedule: "*/15 * * * *"
-    deleteUntagged: true
-  configData:
-    storage:
-      cache:
-        blobdescriptor: ""
-
-registry-ui:
-  enabled: false
-  registryHost: deltafi-docker-registry
-
 # Clickhouse Configuration
 clickhouse:
   enabled: false

@@ -19,14 +19,6 @@ version: 2.0-rc6
 # follow Semantic Versioning. They should reflect the version the application is using.
 appVersion: 2.0-rc6
 dependencies:
-  - name: docker-registry
-    version: 2.2.2
-    # repository: https://helm.twun.io
-    condition: enable.docker-registry
-  - name: registry-ui
-    version: 0.2.0
-    # repository: https://bryanalves.github.io/helm-charts
-    condition: enable.registry-ui
   - name: minio
     version: 5.0.9
     # repository: https://charts.min.io/
