@@ -124,6 +124,7 @@ import static org.deltafi.core.datafetchers.DeltaFilesDatafetcherTestHelper.*;
 import static org.deltafi.core.metrics.MetricsUtil.extendTagsForAction;
 import static org.deltafi.core.metrics.MetricsUtil.tagsFor;
 import static org.deltafi.core.plugin.PluginDataFetcherTestHelper.*;
+import static org.deltafi.core.services.DeletePolicyService.TTL_SYSTEM_POLICY;
 import static org.deltafi.core.util.Constants.*;
 import static org.deltafi.core.util.FlowBuilders.*;
 import static org.deltafi.core.util.FullFlowExemplars.*;
@@ -604,10 +605,9 @@ class DeltaFiCoreApplicationTests {
 		replaceAllDeletePolicies(dgsQueryExecutor);
 		assertThat(deletePolicyRepo.count()).isEqualTo(3);
 		List<DeletePolicyWorker> policiesScheduled = deleteRunner.refreshPolicies();
-		assertThat(policiesScheduled).hasSize(2); // only 2 of 3 are enabled
-		List<String> names = List.of(policiesScheduled.getFirst().getName(),
-				policiesScheduled.get(1).getName());
-		assertTrue(names.containsAll(List.of(DISK_SPACE_PERCENT_POLICY, AFTER_COMPLETE_POLICY)));
+		assertThat(policiesScheduled).hasSize(3); // only 2 of 3 are enabled + the TTL policy
+		List<String> names = policiesScheduled.stream().map(DeletePolicyWorker::getName).toList();
+		assertTrue(names.containsAll(List.of(DISK_SPACE_PERCENT_POLICY, AFTER_COMPLETE_POLICY, TTL_SYSTEM_POLICY)));
 	}
 
 	@Test

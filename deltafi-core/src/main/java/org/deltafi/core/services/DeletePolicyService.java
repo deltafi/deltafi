@@ -39,6 +39,9 @@ import java.util.*;
 public class DeletePolicyService implements Snapshotter {
 
     private final DeletePolicyRepo deletePolicyRepo;
+    private final DeltaFiPropertiesService deltaFiPropertiesService;
+
+    public static final String TTL_SYSTEM_POLICY = "ttlSystemPolicy";
 
     /**
      * Updates the enabled status of delete policy.
@@ -76,13 +79,24 @@ public class DeletePolicyService implements Snapshotter {
         return deletePolicyRepo.findAll();
     }
 
+    private DeletePolicy ttlDeletePolicy() {
+        return TimedDeletePolicy.builder()
+                .deleteMetadata(true)
+                .name(TTL_SYSTEM_POLICY)
+                .enabled(true)
+                .afterCreate("P" + deltaFiPropertiesService.getDeltaFiProperties().getAgeOffDays() + "D")
+                .build();
+    }
+
     /**
      * Get only enabled delete policies.
      *
      * @return List of DeletePolicy
      */
     public List<DeletePolicy> getEnabledPolicies() {
-        return deletePolicyRepo.findByEnabledIsTrue();
+        List<DeletePolicy> deletePolicies = deletePolicyRepo.findByEnabledIsTrue();
+        deletePolicies.add(ttlDeletePolicy());
+        return deletePolicies;
     }
 
     /**
