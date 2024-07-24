@@ -47,26 +47,36 @@ const generateData = () => {
           {
             name: "org.deltafi.core.action.compress.Compress",
             type: "TRANSFORM",
-            description: "Compresses each supplied content to .gz, or .xz",
+            description: "Compresses all content to a single content when format is .ar, .tar, .tar.gz, .tar.xz, or .zip. Compresses each content individually when format is .gz, or .xz",
             schema: {
               type: "object",
               properties: {
-                compressType: {
+                format: {
                   type: "string",
                   enum: [
+                    "ar",
+                    "tar",
+                    "tar.gz",
+                    "tar.xz",
+                    "tar.Z",
+                    "zip",
                     "gz",
                     "xz",
                     "z"
                   ],
-                  description: "Compress type: gz or xz"
+                  description: "The format to compress to"
+                },
+                name: {
+                  type: "string",
+                  description: "The name of the compressed content. Defaults to 'compressed'. The format suffix will be appended to this name."
                 },
                 mediaType: {
                   type: "string",
-                  description: "Sets the media type of the new content to the specified value. Otherwise, will be based on compressType"
+                  description: "Sets the media type of the new content to the specified value. Otherwise, will be based on format"
                 }
               },
               required: [
-                "compressType"
+                "format"
               ],
               additionalProperties: false
             }
@@ -74,18 +84,24 @@ const generateData = () => {
           {
             name: "org.deltafi.core.action.compress.Decompress",
             type: "TRANSFORM",
-            description: "Decompresses each supplied content from .gz, .xz, or .Z",
+            description: "Decompresses content from .ar, .gz, .tar, .tar.gz, .tar.xz, .tar.Z, .xz, .Z, or .zip",
             schema: {
               type: "object",
               properties: {
-                compressType: {
+                format: {
                   type: "string",
                   enum: [
+                    "ar",
+                    "tar",
+                    "tar.gz",
+                    "tar.xz",
+                    "tar.Z",
+                    "zip",
                     "gz",
                     "xz",
                     "z"
                   ],
-                  description: "Compress type: gzip, xz, Z"
+                  description: "The format to decompress. Will autodetect if not set."
                 }
               },
               additionalProperties: false
@@ -127,63 +143,6 @@ const generateData = () => {
             description: "Detect and set mediaType for each content, using Tika. In the case of detection errors, the existing mediaType is retained.",
             schema: {
               type: "object",
-              additionalProperties: false
-            }
-          },
-          {
-            name: "org.deltafi.core.action.archive.Archive",
-            type: "TRANSFORM",
-            description: "Archives content to .ar, .tar, .tar.gz, .tar.xz, or .zip",
-            schema: {
-              type: "object",
-              properties: {
-                appendSuffix: {
-                  type: "boolean",
-                  description: "Append the archiveType suffix to new content name(s)"
-                },
-                archiveType: {
-                  type: "string",
-                  enum: [
-                    "ar",
-                    "tar",
-                    "tar.gz",
-                    "tar.xz",
-                    "tar.Z",
-                    "zip"
-                  ],
-                  description: "Archive type: ar, tar, tar.gz, tar.xz, or zip"
-                },
-                mediaType: {
-                  type: "string",
-                  description: "Sets the media type of the new content to the specified value. Otherwise, will be based on archiveType"
-                }
-              },
-              required: [
-                "archiveType"
-              ],
-              additionalProperties: false
-            }
-          },
-          {
-            name: "org.deltafi.core.action.archive.Unarchive",
-            type: "TRANSFORM",
-            description: "Unarchives .ar, .tar, .tar.gz, .tar.xz, .tar.Z, or .zip",
-            schema: {
-              type: "object",
-              properties: {
-                archiveType: {
-                  type: "string",
-                  enum: [
-                    "ar",
-                    "tar",
-                    "tar.gz",
-                    "tar.xz",
-                    "tar.Z",
-                    "zip"
-                  ],
-                  description: "Archive type: ar, tar, tar.gz, tar.xz, tar.Z, or zip"
-                }
-              },
               additionalProperties: false
             }
           },

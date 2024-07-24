@@ -19,47 +19,66 @@ package org.deltafi.core.action.compress;
 
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.content.ActionContent;
-import org.deltafi.actionkit.action.transform.*;
+import org.deltafi.actionkit.action.error.ErrorResult;
+import org.deltafi.actionkit.action.transform.TransformAction;
+import org.deltafi.actionkit.action.transform.TransformInput;
+import org.deltafi.actionkit.action.transform.TransformResult;
+import org.deltafi.actionkit.action.transform.TransformResultType;
 import org.deltafi.common.types.ActionContext;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.time.Clock;
 
 @Component
 @Slf4j
 public class Compress extends TransformAction<CompressParameters> {
-    public Compress() {
-        // Note .Z (traditional Unix compress) is not supported by org.apache.commons.compress
-        super("Compresses each supplied content to .gz, or .xz");
+    private final Clock clock;
+
+    public Compress(Clock clock) {
+        // Note .tar.Z and .Z (traditional Unix compress) are not supported by org.apache.commons.compress
+        super("Compresses all content to a single content when format is .ar, .tar, .tar.gz, .tar.xz, or .zip. " +
+                "Compresses each content individually when format is .gz, or .xz.");
+
+        this.clock = clock;
     }
 
     @Override
     public TransformResultType transform(@NotNull ActionContext context, @NotNull CompressParameters params,
             @NotNull TransformInput input) {
-        List<TransformResult> results = new ArrayList<>();
+        if (input.getContent().isEmpty()) {
+            return new ErrorResult(context, "No content found");
+        }
 
+        return switch (params.getFormat()) {
+            case AR, TAR, TAR_GZIP, TAR_XZ, ZIP -> archive(context, params, input);
+            case GZIP, XZ -> compress(context, params, input);
+            default -> throw new UnsupportedOperationException("Format not supported: " + params.getFormat());
+        };
+    }
+
+    private static final String COMPRESSED_FILE_NAME = "compressed";
+
+    private TransformResultType archive(ActionContext context, CompressParameters params, TransformInput input) {
+        TransformResult result = new TransformResult(context);
+        String fileName = (params.getName() != null ? params.getName() : COMPRESSED_FILE_NAME) +
+                "." + params.getFormat().getValue();
+        result.saveContent(new ArchiveWriter(input.content(), params.getFormat(), clock), fileName,
+                params.getMediaType() != null ? params.getMediaType() : params.getFormat().getMediaType());
+        result.addMetadata(input.getMetadata());
+        result.addMetadata("compressFormat", params.getFormat().getValue());
+        return result;
+    }
+
+    private TransformResultType compress(ActionContext context, CompressParameters params, TransformInput input) {
+        TransformResult result = new TransformResult(context);
         for (ActionContent inputContent : input.content()) {
-            TransformResult result = new TransformResult(context);
-            String fileName = inputContent.getName() + "." + params.getCompressType().getValue();
-            result.saveContent(new CompressWriter(inputContent, params.getCompressType()), fileName,
-                    params.getMediaType() != null ? params.getMediaType() : params.getCompressType().getMediaType());
-            result.addMetadata(input.getMetadata());
-            result.addMetadata("compressType", params.getCompressType().getValue());
-            results.add(result);
+            String fileName = inputContent.getName() + "." + params.getFormat().getValue();
+            result.saveContent(new CompressWriter(inputContent, params.getFormat()), fileName,
+                    params.getMediaType() != null ? params.getMediaType() : params.getFormat().getMediaType());
         }
-
-        if (results.isEmpty()) {
-            throw new CompressException("No content found");
-        }
-
-        if (results.size() == 1) {
-            return results.getFirst();
-        }
-
-        TransformResults transformResults = new TransformResults(context);
-        results.forEach(transformResults::add);
-        return transformResults;
+        result.addMetadata(input.getMetadata());
+        result.addMetadata("compressFormat", params.getFormat().getValue());
+        return result;
     }
 }

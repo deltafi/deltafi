@@ -37,14 +37,14 @@ public class CompressWriter extends ActionContentWriter {
     }
 
     private final ActionContent actionContent;
-    private final CompressType compressType;
+    private final Format format;
 
     @Override
     public void write(OutputStream outputStream) throws IOException {
-        CompressorOutputStream compressorOutputStream = switch (compressType) {
+        CompressorOutputStream compressorOutputStream = switch (format) {
             case GZIP -> new GzipCompressorOutputStream(outputStream, GZIP_PARAMETERS);
             case XZ -> new XZCompressorOutputStream(outputStream);
-            case Z -> throw new UnsupportedOperationException("Compress format not supported: " + CompressType.Z);
+            default -> throw new UnsupportedOperationException("Compress format not supported: " + format);
         };
         try (compressorOutputStream) {
             writeContent(actionContent, compressorOutputStream);

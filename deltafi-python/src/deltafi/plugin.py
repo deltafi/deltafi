@@ -216,7 +216,8 @@ class Plugin(object):
         for action in self.actions:
             threading.Thread(target=self._do_action, args=(action,)).start()
 
-        threading.Thread(target=self._heartbeat).start()
+        hb_thread = threading.Thread(target=self._heartbeat)
+        hb_thread.start()
 
         self.logger.info("All threads running")
 
@@ -224,6 +225,7 @@ class Plugin(object):
         f.close()
 
         self.logger.info("Application initialization complete")
+        hb_thread.join()
 
     def _heartbeat(self):
         long_running_actions = set()
