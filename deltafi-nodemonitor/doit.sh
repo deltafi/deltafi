@@ -19,10 +19,8 @@
 
 GRAPHITE_HOST=${GRAPHITE_HOST:-deltafi-graphite}
 GRAPHITE_PORT=${GRAPHITE_PORT:-2003}
-REDIS_HOST=${REDIS_HOST:-http://deltafi-valkey-master}
-REDIS_PORT=${REDIS_PORT:-6379}
-VALKEY_HOST=${VALKEY_HOST:-http://deltafi-valkey-master}
-VALKEY_PORT=${REDIS_PORT:-6379}
+VALKEY_HOST=${VALKEY_HOST:-deltafi-valkey-master}
+VALKEY_PORT=${VALKEY_PORT:-6379}
 PERIOD=${PERIOD:-9}
 
 _log() {
