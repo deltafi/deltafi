@@ -22,7 +22,6 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.*;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @Data
@@ -31,13 +30,17 @@ import java.util.Map;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ModifyMediaTypeParameters extends ActionParameters {
-    @JsonPropertyDescription("A map of old to new media types. Supports wildcards (*) in the old media types. These will be applied before and overridden by the indexMediaTypeMap values, if present.")
-    public Map<String, String> mediaTypeMap = new HashMap<>();
+    @JsonPropertyDescription("A map of old to new media types. Supports wildcards (*) in the old media types.")
+    public Map<String, String> mediaTypeMap;
 
-    @JsonPropertyDescription("A map of indexes to media types. Used to update the media type of specific content by index.")
-    Map<Integer, String> indexMediaTypeMap = new HashMap<>();
+    @JsonPropertyDescription("A map of indexes to media types. Used to update the media type of specific content by index. Overrides mediaTypeMap.")
+    public Map<Integer, String> indexMediaTypeMap;
 
     @JsonProperty(defaultValue = "false")
-    @JsonPropertyDescription("If true, throw an exception if a content is missing an index specified in indexMediaTypeMap")
+    @JsonPropertyDescription("Whether to error if content for any index in indexMediaTypeMap is missing.")
     public boolean errorOnMissingIndex = false;
+
+    @JsonProperty(defaultValue = "true")
+    @JsonPropertyDescription("Autodetect media type if not found in mediaTypeMap or indexMediaTypeMap.")
+    public boolean autodetect = true;
 }

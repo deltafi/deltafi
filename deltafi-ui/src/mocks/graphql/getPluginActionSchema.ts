@@ -110,13 +110,18 @@ const generateData = () => {
           {
             name: "org.deltafi.core.action.mediatype.ModifyMediaType",
             type: "TRANSFORM",
-            description: "Modify content mediaTypes based on pattern or content index",
+            description: "Modifies content media types",
             schema: {
               type: "object",
               properties: {
+                autodetect: {
+                  type: "boolean",
+                  description: "Autodetect media type if not found in mediaTypeMap or indexMediaTypeMap.",
+                  default: true
+                },
                 errorOnMissingIndex: {
                   type: "boolean",
-                  description: "If true, throw an exception if a content is missing an index specified in indexMediaTypeMap",
+                  description: "Whether to error if content for any index in indexMediaTypeMap is missing.",
                   default: false
                 },
                 indexMediaTypeMap: {
@@ -124,25 +129,16 @@ const generateData = () => {
                   additionalProperties: {
                     type: "string"
                   },
-                  description: "A map of indexes to media types. Used to update the media type of specific content by index."
+                  description: "A map of indexes to media types. Used to update the media type of specific content by index. Overrides mediaTypeMap."
                 },
                 mediaTypeMap: {
                   type: "object",
                   additionalProperties: {
                     type: "string"
                   },
-                  description: "A map of old to new media types. Supports wildcards (*) in the old media types. These will be applied before and overridden by the indexMediaTypeMap values, if present."
+                  description: "A map of old to new media types. Supports wildcards (*) in the old media types."
                 }
               },
-              additionalProperties: false
-            }
-          },
-          {
-            name: "org.deltafi.core.action.mediatype.DetectMediaType",
-            type: "TRANSFORM",
-            description: "Detect and set mediaType for each content, using Tika. In the case of detection errors, the existing mediaType is retained.",
-            schema: {
-              type: "object",
               additionalProperties: false
             }
           },
