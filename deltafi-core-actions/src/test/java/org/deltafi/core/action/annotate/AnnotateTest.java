@@ -18,13 +18,17 @@
 package org.deltafi.core.action.annotate;
 
 import org.deltafi.actionkit.action.ResultType;
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.test.asserters.ActionResultAssertions;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformResult;
 
 
 class AnnotateTest {
@@ -33,7 +37,7 @@ class AnnotateTest {
     DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action);
 
     @Test
-    void testTransform() {
+    void addsAnnotations() {
         AnnotateParameters params = new AnnotateParameters();
         params.setAnnotations(new HashMap<>(Map.of("key1", "value1", "key2", "value2")));
 
@@ -46,7 +50,7 @@ class AnnotateTest {
     }
 
     @Test
-    void testKeyError() {
+    void errorsOnBlankKey() {
         AnnotateParameters params = new AnnotateParameters();
         params.setAnnotations(new HashMap<>(Map.of("key1", "value1", "", "value2")));
 
@@ -60,7 +64,7 @@ class AnnotateTest {
     }
 
     @Test
-    void testValueError() {
+    void errorsOnBlankValue() {
         AnnotateParameters params = new AnnotateParameters();
         params.setAnnotations(new HashMap<>(Map.of("key1", "", "key2", "value2")));
 
@@ -70,6 +74,85 @@ class AnnotateTest {
 
         ActionResultAssertions.assertErrorResult(result)
                 .hasCause("Invalid annotations")
-                .hasContext("Key key1 contains a blank value");
+                .hasContext("Annotations with the following keys were invalid: key1");
+    }
+
+    @Test
+    void addsAnnotationsFromMetadata() {
+        AnnotateParameters params = new AnnotateParameters();
+        params.setMetadataPatterns(List.of(".*"));
+
+        ResultType result = action.transform(runner.actionContext(), params, createInput());
+
+        assertTransformResult(result)
+                .hasContentCount(1)
+                .addedAnnotations(Map.of(
+                        "prefix.key1", "value1",
+                        "prefix.key2", "value2",
+                        "prefix.other", "value3",
+                        "other.key4", "value4",
+                        "first.prefix.second", "value5")
+                );
+    }
+
+    @Test
+    void addsAnnotationsFromMetadataFiltered() {
+        AnnotateParameters params = new AnnotateParameters();
+        params.setMetadataPatterns(List.of("prefix\\.key\\d+"));
+
+        ResultType result = action.transform(runner.actionContext(), params, createInput());
+
+        assertTransformResult(result)
+                .hasContentCount(1)
+                .addedAnnotations(Map.of(
+                        "prefix.key1", "value1",
+                        "prefix.key2", "value2")
+                );
+    }
+
+    @Test
+    void addsAnnotationsFromMetadataDiscardingPrefix() {
+        AnnotateParameters params = new AnnotateParameters();
+        params.setMetadataPatterns(List.of(".*"));
+        params.setDiscardPrefix("prefix.");
+
+        ResultType result = action.transform(runner.actionContext(), params, createInput());
+
+        assertTransformResult(result)
+                .hasContentCount(1)
+                .addedAnnotations(Map.of(
+                        "key1", "value1",
+                        "key2", "value2",
+                        "other", "value3",
+                        "other.key4", "value4",
+                        "first.prefix.second", "value5")
+                );
+    }
+
+    @Test
+    void addsAnnotationsFromMetadataFilteredDiscardingPrefix() {
+        AnnotateParameters params = new AnnotateParameters();
+        params.setMetadataPatterns(List.of("prefix\\.key\\d+"));
+        params.setDiscardPrefix("prefix.");
+
+        ResultType result = action.transform(runner.actionContext(), params, createInput());
+
+        assertTransformResult(result)
+                .hasContentCount(1)
+                .addedAnnotations(Map.of(
+                        "key1", "value1",
+                        "key2", "value2")
+                );
+    }
+
+    private TransformInput createInput() {
+        ActionContent content = runner.saveContent("{\"data\": \"value\"}", "example.json", "application/json");
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("prefix.key1", "value1");
+        metadata.put("prefix.key2", "value2");
+        metadata.put("prefix.other", "value3");
+        metadata.put("other.key4", "value4");
+        metadata.put("first.prefix.second", "value5");
+        return TransformInput.builder().content(List.of(content)).metadata(metadata).build();
     }
 }

@@ -685,22 +685,29 @@ const generateData = () => {
             }
           },
           {
-            name: "org.deltafi.core.action.metadata.MetadataToAnnotation",
+            name: "org.deltafi.core.action.annotate.Annotate",
             type: "TRANSFORM",
-            description: "Saves metadata as annotations",
+            description: "Adds annotations",
             schema: {
               type: "object",
               properties: {
-                discardPrefix: {
-                  type: "string",
-                  description: "Remove the prefix from each metadata key before adding annotation"
+                annotations: {
+                  type: "object",
+                  additionalProperties: {
+                    type: "string"
+                  },
+                  description: "Key value pairs of annotations to be added"
                 },
                 metadataPatterns: {
-                  description: "List of regex patterns to filter the metadata to include. If empty, all metadata is included.",
+                  description: "List of regex patterns matching metadata keys to include. If empty, all metadata is included.",
                   type: "array",
                   items: {
                     type: "string"
                   }
+                },
+                discardPrefix: {
+                  type: "string",
+                  description: "The prefix to remove from each metadata key before adding it as an annotation"
                 }
               },
               additionalProperties: false
