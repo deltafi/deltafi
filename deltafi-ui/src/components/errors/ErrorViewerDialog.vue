@@ -17,7 +17,7 @@
 -->
 
 <template>
-  <Dialog v-bind="$attrs" :header="header" :style="{ width: '75vw' }" :maximizable="true" :modal="true" :dismissable-mask="true" :draggable="false">
+  <Dialog v-bind="$attrs" :header="header" :style="{ width: '75vw' }" :maximizable="true" :modal="true" :dismissable-mask="true" :draggable="false" :position="modelPosition">
     <div class="error-viewer">
       <div class="error-row">
         <div class="error-col">
@@ -37,30 +37,50 @@
           <p>{{ action.state }}</p>
         </div>
       </div>
-      <div v-if="cause" class="error-row">
-        <div class="error-col">
-          <strong>Cause</strong>
-          <HighlightedCode :highlight="false" :code="cause" />
-        </div>
-      </div>
-      <div v-if="context" class="error-row">
-        <div class="error-col">
-          <strong>Context</strong>
-          <HighlightedCode :highlight="false" :code="context" />
-        </div>
-      </div>
     </div>
     <ScrollTop target="parent" :threshold="10" icon="pi pi-arrow-up" />
+    <TabView v-model:activeIndex="activeTab">
+      <TabPanel v-if="cause" header="Cause">
+        <div class="error-row">
+          <div class="error-col">
+            <strong>Cause</strong>
+            <HighlightedCode :highlight="false" :code="cause" />
+          </div>
+        </div>
+      </TabPanel>
+      <TabPanel v-else header="Cause" :disabled="true" />
+      <TabPanel v-if="context" header="Context">
+        <div class="error-row">
+          <div class="error-col">
+            <strong>Context</strong>
+            <HighlightedCode :highlight="false" :code="context" />
+          </div>
+        </div>
+      </TabPanel>
+      <TabPanel v-else header="Context" :disabled="true" />
+      <TabPanel v-if="content" header="Content">
+        <div class="error-row">
+          <div class="error-col">
+            <ContentSelector :content="content" @content-selected="content" />
+          </div>
+        </div>
+      </TabPanel>
+      <TabPanel v-else header="Content" :disabled="true" />
+    </TabView>
   </Dialog>
 </template>
 
 <script setup>
 import Dialog from "primevue/dialog";
 import HighlightedCode from "@/components/HighlightedCode.vue";
-import { computed, defineProps } from "vue";
+import { computed, defineProps, ref, useAttrs } from "vue";
 import Timestamp from "@/components/Timestamp.vue";
 import ScrollTop from "primevue/scrolltop";
-
+import TabPanel from "primevue/tabpanel";
+import TabView from "primevue/tabview";
+import ContentSelector from "@/components/ContentSelector.vue";
+const activeTab = ref(0);
+const attrs = useAttrs();
 const props = defineProps({
   action: {
     type: Object,
@@ -68,9 +88,13 @@ const props = defineProps({
   },
 });
 
+const modelPosition = computed(() => {
+  return _.get(attrs, "model-position", "top");
+});
 const header = computed(() => props.action.name);
-const cause = computed(() => ["ERROR", "RETRIED"].includes(props.action.state) ? props.action.errorCause : props.action.filteredCause);
-const context = computed(() => ["ERROR", "RETRIED"].includes(props.action.state) ? props.action.errorContext : props.action.filteredContext);
+const cause = computed(() => (["ERROR", "RETRIED"].includes(props.action.state) ? props.action.errorCause : props.action.filteredCause));
+const context = computed(() => (["ERROR", "RETRIED"].includes(props.action.state) ? props.action.errorContext : props.action.filteredContext));
+const content = computed(() => (props.action.content.length > 0 ? props.action.content : false));
 </script>
 
 <style lang="scss">

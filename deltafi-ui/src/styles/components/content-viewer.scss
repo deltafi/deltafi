@@ -17,6 +17,7 @@
 */
 
 .content-viewer {
+  height: 100%;
   .p-toolbar {
     border-radius: 4px 4px 0 0;
     padding: 0.5rem 0.75rem;
@@ -30,7 +31,7 @@
   .content-viewer-container {
     display: flex;
     flex-direction: column;
-
+    height: 100%;
     .content-viewer-section {
       flex-grow: 1;
       display: flex;

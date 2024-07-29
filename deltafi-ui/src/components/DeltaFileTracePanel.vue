@@ -99,7 +99,6 @@ const deltaFileActions = computed(() => {
     modified: actions[actions.length - 1].modifiedOrginal,
     created: deltaFile.value.createdOrginal,
   });
-  console.log("actions", actions);
   return actions;
 });
 

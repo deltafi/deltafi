@@ -121,72 +121,7 @@ export default function useDeltaFiles() {
       },
     };
   };
-  //TODO: Review for 2.0
-  // const buildGetDeltaFileQuery = (did: string) => {
-  //   return {
-  //     deltaFile: {
-  //       __args: {
-  //         did: did,
-  //       },
-  //       did: true,
-  //       parentDids: true,
-  //       childDids: true,
-  //       totalBytes: true,
-  //       ingressBytes: true,
-  //       sourceInfo: {
-  //         filename: true,
-  //         flow: true,
-  //         metadata: true,
-  //       },
-  //       stage: true,
-  //       testMode: true,
-  //       testModeReason: true,
-  //       created: true,
-  //       modified: true,
-  //       actions: {
-  //         flow: true,
-  //         name: true,
-  //         type: true,
-  //         state: true,
-  //         created: true,
-  //         modified: true,
-  //         queued: true,
-  //         start: true,
-  //         stop: true,
-  //         filteredCause: true,
-  //         filteredContext: true,
-  //         errorCause: true,
-  //         errorContext: true,
-  //         metadata: true,
-  //         content: {
-  //           name: true,
-  //           segments: {
-  //             did: true,
-  //             uuid: true,
-  //             offset: true,
-  //             size: true,
-  //           },
-  //           size: true,
-  //           mediaType: true,
-  //         },
-  //         deleteMetadataKeys: true,
-  //       },
-  //       annotations: true,
-  //       egressed: true,
-  //       filtered: true,
-  //       contentDeleted: true,
-  //       contentDeletedReason: true,
-  //       errorAcknowledged: true,
-  //       errorAcknowledgedReason: true,
-  //       replayed: true,
-  //       nextAutoResume: true,
-  //       nextAutoResumeReason: true,
-  //       metadata: true,
-  //       pendingAnnotationsForFlows: true,
-  //     },
-  //   };
-  // };
-
+  
   const getDeltaFile = async (did: string) => {
     await queryGraphQL(buildGetDeltaFileQuery(did), "getDeltaFile");
     Object.assign(data, response.value.data.deltaFile);
