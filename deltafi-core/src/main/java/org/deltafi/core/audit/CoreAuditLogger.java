@@ -17,19 +17,9 @@
  */
 package org.deltafi.core.audit;
 
-import com.netflix.graphql.dgs.context.DgsContext;
-import com.netflix.graphql.dgs.internal.DgsWebMvcRequestData;
-import graphql.execution.instrumentation.InstrumentationState;
-import graphql.execution.instrumentation.SimplePerformantInstrumentation;
-import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
-import graphql.schema.DataFetcher;
-import graphql.schema.GraphQLNonNull;
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLOutputType;
 import lombok.extern.slf4j.Slf4j;
 import org.aopalliance.intercept.MethodInvocation;
 import org.deltafi.core.security.DeltaFiUserDetailsService;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.MDC;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.AnnotationUtils;
@@ -44,52 +34,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static org.deltafi.common.constant.DeltaFiConstants.USER_NAME_HEADER;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Component
 @Slf4j(topic = "AUDIT")
-public class CoreAuditLogger extends SimplePerformantInstrumentation {
+public class CoreAuditLogger {
 
     private static final String UNKNOWN_USER = "system";
-    private static final String IGNORABLE_PATH = "registerActions";
 
     private final Map<String, String> permissionMap = new ConcurrentHashMap<>();
-
-    @Override
-    @NotNull
-    public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
-        String path = parameters.getExecutionStepInfo().getPath().getSegmentName();
-        boolean isMutation = isMutation(parameters);
-
-        return environment -> {
-            if (isMutation && !IGNORABLE_PATH.equals(path)) {
-
-                DgsWebMvcRequestData webContext = DgsContext.getCustomContext(environment);
-                List<String> id = null != webContext && null != webContext.getHeaders() ? webContext.getHeaders().getOrEmpty(USER_NAME_HEADER) : List.of();
-
-                String userName = !id.isEmpty() ? id.getFirst() : UNKNOWN_USER;
-
-                try (@SuppressWarnings("unused") MDC.MDCCloseable mdc = MDC.putCloseable("user", userName)) {
-                    log.info("called mutation {}", path);
-                }
-            }
-
-            return dataFetcher.get(environment);
-        };
-    }
-
-    private boolean isMutation(InstrumentationFieldFetchParameters parameters) {
-        GraphQLOutputType type = parameters.getExecutionStepInfo().getParent().getType();
-        GraphQLObjectType parent;
-        if (type instanceof GraphQLNonNull) {
-            parent = (GraphQLObjectType) ((GraphQLNonNull) type).getWrappedType();
-        } else {
-            parent = (GraphQLObjectType) type;
-        }
-
-        return "Mutation".equals(parent.getName());
-    }
 
     public void logIngress(String userName, String fileName) {
         try (MDC.MDCCloseable ignored = MDC.putCloseable("user", userName)) {
@@ -173,5 +127,13 @@ public class CoreAuditLogger extends SimplePerformantInstrumentation {
         }
 
         return null;
+    }
+
+    public static <T> String listToString(List<T> list) {
+        return listToString(list, T::toString);
+    }
+
+    public static <T> String listToString(List<T> list, Function<T, String> toString) {
+        return list.stream().map(toString).collect(Collectors.joining(", "));
     }
 }

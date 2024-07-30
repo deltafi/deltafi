@@ -20,6 +20,7 @@ package org.deltafi.core.datafetchers;
 import graphql.schema.DataFetchingEnvironmentImpl;
 import org.assertj.core.api.Assertions;
 import org.deltafi.common.content.ContentStorageService;
+import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.security.SecurityConfig;
 import org.deltafi.core.services.RestDataSourceService;
 import org.deltafi.core.services.DeltaFilesService;
@@ -52,6 +53,9 @@ class DeltaFilesDatafetcherSecurityTest {
 
     @MockBean
     ContentStorageService contentStorageService;
+
+    @MockBean
+    private CoreAuditLogger auditLogger;
 
     @Test
     @WithMockUser(username = "user", authorities = { "NO_MATCH" })

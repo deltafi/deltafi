@@ -18,7 +18,7 @@
 
 <template>
   <div class="content-viewer">
-    <div class="content-viewer-container" :style="`height: ${maxHeight}; max-height: ${maxHeight}`">
+    <div class="content-viewer-container">
       <div class="content-viewer-section">
         <Toolbar>
           <template #start>
@@ -77,14 +77,9 @@ const props = defineProps({
     type: Object,
     required: true,
   },
-  maxHeight: {
-    type: String,
-    required: false,
-    default: "100%",
-  },
 });
 
-const { content, maxHeight } = toRefs(props);
+const { content } = toRefs(props);
 const { downloadURL, loading: loadingContent, fetch: fetchContent, errors, data } = useContent();
 const { formattedBytes } = useUtilFunctions();
 const { copy: copyToClipboard } = useClipboard();
@@ -227,7 +222,7 @@ watch(
 
 const partialContent = computed(() => content.value.size > maxPreviewSize);
 
-const embededContent = computed(() => "content" in content.value);
+const embeddedContent = computed(() => "content" in content.value);
 
 const formattedMaxPreviewSize = computed(() => formattedBytes(maxPreviewSize));
 
@@ -243,8 +238,8 @@ const onToggleHighlightCodeClick = () => {
 };
 
 const download = () => {
-  if (embededContent.value) {
-    downloadEmbededContent();
+  if (embeddedContent.value) {
+    downloadEmbeddedContent();
   } else {
     let url = downloadURL({
       ...content.value,
@@ -256,8 +251,8 @@ const download = () => {
 
 const loadContent = async () => {
   contentLoaded.value = false;
-  if (embededContent.value) {
-    loadEmbededContent();
+  if (embeddedContent.value) {
+    loadEmbeddedContent();
     return;
   }
   let request = {
@@ -273,13 +268,13 @@ const loadContent = async () => {
   contentLoaded.value = true;
 };
 
-const loadEmbededContent = () => {
+const loadEmbeddedContent = () => {
   contentBuffer.value = encoder.encode(content.value.content);
   content.value.size = content.value.content.length;
   contentLoaded.value = true;
 };
 
-const downloadEmbededContent = () => {
+const downloadEmbeddedContent = () => {
   let link = document.createElement("a");
   let downloadFileName = content.value.filename || content.value.name;
   link.download = downloadFileName.toLowerCase();

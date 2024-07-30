@@ -29,6 +29,7 @@ import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.converters.KeyValueConverter;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.types.*;
+import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.exceptions.IngressException;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.security.NeedsPermission;
@@ -47,13 +48,15 @@ public class DeltaFilesDatafetcher {
   final DeltaFilesService deltaFilesService;
   final ContentStorageService contentStorageService;
   final RestDataSourceService restDataSourceService;
+  private final CoreAuditLogger auditLogger;
 
   static final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
-  DeltaFilesDatafetcher(DeltaFilesService deltaFilesService, ContentStorageService contentStorageService, RestDataSourceService restDataSourceService) {
+  DeltaFilesDatafetcher(DeltaFilesService deltaFilesService, ContentStorageService contentStorageService, RestDataSourceService restDataSourceService, CoreAuditLogger auditLogger) {
     this.deltaFilesService = deltaFilesService;
     this.contentStorageService = contentStorageService;
     this.restDataSourceService = restDataSourceService;
+    this.auditLogger = auditLogger;
   }
 
   @DgsData(parentType = "DeltaFile", field = "annotations")
@@ -180,30 +183,35 @@ public class DeltaFilesDatafetcher {
   @DgsMutation
   @NeedsPermission.DeltaFileResume
   public List<RetryResult> resume(@InputArgument List<UUID> dids, @InputArgument List<ResumeMetadata> resumeMetadata) {
+    auditLogger.audit("resumed {} deltaFiles", dids.size());
     return deltaFilesService.resume(dids, (resumeMetadata == null) ? Collections.emptyList() : resumeMetadata);
   }
 
   @DgsMutation
   @NeedsPermission.DeltaFileReplay
   public List<RetryResult> replay(@InputArgument List<UUID> dids, @InputArgument List<String> removeSourceMetadata, @InputArgument List<KeyValue> replaceSourceMetadata) {
+    auditLogger.audit("replayed {} deltaFiles", dids.size());
     return deltaFilesService.replay(dids, (removeSourceMetadata == null) ? Collections.emptyList() : removeSourceMetadata, (replaceSourceMetadata == null) ? Collections.emptyList() : replaceSourceMetadata);
   }
 
   @DgsMutation
   @NeedsPermission.DeltaFileAcknowledge
   public List<AcknowledgeResult> acknowledge(@InputArgument List<UUID> dids, @InputArgument String reason) {
+    auditLogger.audit("acknowledged {} deltaFiles", dids.size());
     return deltaFilesService.acknowledge(dids, reason);
   }
 
   @DgsMutation
   @NeedsPermission.DeltaFileCancel
   public List<CancelResult> cancel(@InputArgument List<UUID> dids) {
+    auditLogger.audit("canceled {} deltaFiles", dids.size());
     return deltaFilesService.cancel(dids);
   }
 
   @DgsMutation
   @NeedsPermission.DeltaFileMetadataWrite
   public boolean addAnnotations(UUID did, List<KeyValue> annotations, boolean allowOverwrites) {
+    auditLogger.audit("annotated deltafi with did {} with {}", did, CoreAuditLogger.listToString(annotations));
     deltaFilesService.addAnnotations(did, KeyValueConverter.convertKeyValues(annotations), allowOverwrites);
     return true;
   }
@@ -211,6 +219,7 @@ public class DeltaFilesDatafetcher {
   @DgsMutation
   @NeedsPermission.ResumePolicyApply
   public Result applyResumePolicies(@InputArgument List<String> names) {
+    auditLogger.audit("applied resume policies: {}", String.join(", ", names));
     return deltaFilesService.applyResumePolicies(names);
   }
 
@@ -224,8 +233,10 @@ public class DeltaFilesDatafetcher {
   @DgsMutation
   @NeedsPermission.Admin
   public boolean taskTimedDataSource(@InputArgument String name, @InputArgument String memo, DataFetchingEnvironment dataFetchingEnvironment) {
+    boolean useMemo = dataFetchingEnvironment.containsArgument("memo");
+    auditLogger.audit("tasked timed data source {} with memo {} and memo override {}", name, memo, useMemo);
     // check if the memo argument was included to differentiate between setting it to null and leaving it out
-    return deltaFilesService.taskTimedDataSource(name, memo, dataFetchingEnvironment.containsArgument("memo"));
+    return deltaFilesService.taskTimedDataSource(name, memo, useMemo);
   }
 
   @DgsQuery
@@ -242,6 +253,7 @@ public class DeltaFilesDatafetcher {
   @DgsMutation
   @NeedsPermission.StressTest
   public int stressTest(@InputArgument String flow, @InputArgument Integer contentSize, @InputArgument Integer numFiles, @InputArgument Map<String, String> metadata, @InputArgument Integer batchSize) throws ObjectStorageException, IngressException {
+    auditLogger.audit("started stress test for flow {} using contentSize {}, numFiles {}, batchSize {}", flow, contentSize, numFiles, batchSize);
     RestDataSource restDataSource;
     try {
       restDataSource = restDataSourceService.getFlowOrThrow(flow);

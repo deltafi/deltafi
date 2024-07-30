@@ -21,27 +21,16 @@
     <span @click="showDialog()">
       <slot />
     </span>
-    <Dialog v-model:visible="dialogVisible" :header="filename" :style="{ width: '75vw', height: '90vh' }" :maximizable="true" :modal="true" :dismissable-mask="true" :draggable="false" @show="onResize" @maximize="onResize" @unmaximize="onResize">
-      <div ref="dialogContainer" class="dialog-container">
-        <div class="dialog-row">
-          <div v-if="showListbox" class="dialog-column dialog-column-left" :style="`height: ${dialogContainerHeight}`">
-            <Listbox v-model="selectedItem" :list-style="`height: ${dialogContainerHeight}`" :style="`height: ${dialogContainerHeight}`" :options="listboxItems" option-label="name" />
-          </div>
-          <div class="dialog-column dialog-column-right" :style="`height: ${dialogContainerHeight}`">
-            <ContentViewer :max-height="dialogContainerHeight" :content="selectedContent" />
-          </div>
-        </div>
-      </div>
+    <Dialog v-model:visible="dialogVisible" :header="header" :style="{ width: '75vw', height: '90vh' }" :maximizable="true" :modal="true" :dismissable-mask="true" :draggable="false" @show="onResize" @maximize="onResize" @unmaximize="onResize">
+      <ContentSelector :content="content" @content-selected="handleContentSelected" />
     </Dialog>
   </div>
 </template>
 
 <script setup>
-import { computed, ref, defineProps, reactive, nextTick, watch } from "vue";
+import { ref, defineProps, reactive } from "vue";
 import Dialog from "primevue/dialog";
-import Listbox from "primevue/listbox";
-
-import ContentViewer from "@/components/ContentViewer.vue";
+import ContentSelector from "@/components/ContentSelector.vue";
 
 const props = defineProps({
   content: {
@@ -58,37 +47,10 @@ const props = defineProps({
 const { content, action } = reactive(props);
 
 const dialogVisible = ref(false);
-const showDialog = () => {
-  dialogVisible.value = true;
-};
+const showDialog = () => dialogVisible.value = true;
 
-const showListbox = computed(() => content.length > 1);
-const listboxItems = computed(() => {
-  return content.map((content, index) => {
-    return {
-      index: index,
-      name: `${index} : ${content.name}`,
-    };
-  });
-});
-
-const selectedItem = ref(listboxItems.value[0]);
-const selectedContent = computed(() => content[selectedItem.value.index]);
-
-watch(selectedItem, (newItem, oldValue) => {
-  if (newItem === null) selectedItem.value = oldValue;
-});
-
-const dialogContainer = ref();
-const dialogContainerHeight = ref();
-const onResize = async () => {
-  await nextTick();
-  dialogContainerHeight.value = `${dialogContainer.value.clientHeight}px`;
-};
-
-const filename = computed(() => {
-  return selectedContent.value.name || `${selectedContent.value.did}-${action}`;
-});
+const header = ref(content[0].name || `${content[0].did}-${action}`)
+const handleContentSelected = (content) => header.value = content.name
 </script>
 
 <style lang="scss">

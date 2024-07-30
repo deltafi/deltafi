@@ -30,6 +30,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.types.*;
+import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.plugin.PluginRegistryService;
 import org.deltafi.core.plugin.SystemPluginService;
@@ -63,11 +64,13 @@ public class FlowPlanDatafetcher {
     private final PluginRegistryService pluginRegistryService;
     private final SystemPluginService systemPluginService;
     private final TimedDataSourceService timedDataSourceService;
+    private final CoreAuditLogger auditLogger;
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
     public boolean setMaxErrors(@InputArgument String flowName, @InputArgument Integer maxErrors) {
         if (transformFlowService.hasFlow(flowName)) {
+            auditLogger.audit("set max errors to {} for flow {}", maxErrors, flowName);
             return transformFlowService.setMaxErrors(flowName, maxErrors);
         } else {
             throw new DgsEntityNotFoundException("No normalize or transform flow exists with the name: " + flowName);
@@ -77,160 +80,196 @@ public class FlowPlanDatafetcher {
     @DgsMutation
     @NeedsPermission.FlowUpdate
     public boolean setEgressFlowExpectedAnnotations(@InputArgument String flowName, @InputArgument Set<String> expectedAnnotations) {
+        auditLogger.audit("set expected annotations for flow {} to {}", flowName, expectedAnnotations);
         return annotationService.setExpectedAnnotations(flowName, expectedAnnotations);
     }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
-    public boolean enableEgressTestMode(@InputArgument String flowName) { return egressFlowService.enableTestMode(flowName); }
+    public boolean enableEgressTestMode(@InputArgument String flowName) {
+        auditLogger.audit("enabled egress test mode for flow {}", flowName);
+        return egressFlowService.enableTestMode(flowName);
+    }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
-    public boolean disableEgressTestMode(@InputArgument String flowName) { return egressFlowService.disableTestMode(flowName); }
+    public boolean disableEgressTestMode(@InputArgument String flowName) {
+        auditLogger.audit("disabled egress test mode for flow {}", flowName);
+        return egressFlowService.disableTestMode(flowName);
+    }
 
     @DgsMutation
     @NeedsPermission.Admin
     public boolean setTimedDataSourceMemo(@InputArgument String name, String memo) {
+        auditLogger.audit("set timed source memo for flow {} to {}", name, memo);
         return timedDataSourceService.setMemo(name, memo);
     }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
     public boolean setTimedDataSourceCronSchedule(@InputArgument String name, String cronSchedule) {
+        auditLogger.audit("set timed source cron schedule for flow {} to {}", name, cronSchedule);
         return timedDataSourceService.setCronSchedule(name, cronSchedule);
     }
 
     @DgsMutation
     @NeedsPermission.FlowPlanCreate
     public EgressFlow saveEgressFlowPlan(@InputArgument EgressFlowPlanInput egressFlowPlan) {
+        auditLogger.audit("saved egress flow plan {}", egressFlowPlan.getName());
         return saveFlowPlan(egressFlowPlanService, egressFlowPlan, EgressFlowPlanEntity.class);
     }
 
     @DgsMutation
     @NeedsPermission.FlowPlanDelete
     public boolean removeEgressFlowPlan(@InputArgument String name) {
+        auditLogger.audit("removed egress flow plan {}", name);
         return removeFlowAndFlowPlan(egressFlowPlanService,name);
     }
 
     @DgsMutation
     @NeedsPermission.FlowStart
     public boolean startEgressFlow(@InputArgument String flowName) {
+        auditLogger.audit("started egress flow {}", flowName);
         return egressFlowService.startFlow(flowName);
     }
 
     @DgsMutation
     @NeedsPermission.FlowStop
     public boolean stopEgressFlow(@InputArgument String flowName) {
+        auditLogger.audit("stopped egress flow {}", flowName);
         return egressFlowService.stopFlow(flowName);
     }
 
     @DgsMutation
     @NeedsPermission.FlowPlanCreate
-    public TimedDataSource saveTimedDataSourcePlan(@InputArgument TimedDataSourcePlanInput dataSourcePlan) {
+    public DataSource saveTimedDataSourcePlan(@InputArgument TimedDataSourcePlanInput dataSourcePlan) {
+        auditLogger.audit("saved timed source plan {}", dataSourcePlan.getName());
         return saveFlowPlan(timedDataSourcePlanService, dataSourcePlan, TimedDataSourcePlanEntity.class);
     }
 
     @DgsMutation
     @NeedsPermission.FlowPlanCreate
-    public RestDataSource saveRestDataSourcePlan(@InputArgument RestDataSourcePlanInput dataSourcePlan) {
+    public DataSource saveRestDataSourcePlan(@InputArgument RestDataSourcePlanInput dataSourcePlan) {
+        auditLogger.audit("saved rest source plan {}", dataSourcePlan.getName());
         return saveFlowPlan(restDataSourcePlanService, dataSourcePlan, RestDataSourcePlanEntity.class);
     }
 
     @DgsMutation
     @NeedsPermission.FlowPlanDelete
     public boolean removeRestDataSourcePlan(@InputArgument String name) {
+        auditLogger.audit("removed restDataSource plan {}", name);
         return removeFlowAndFlowPlan(restDataSourcePlanService, name);
     }
 
     @DgsMutation
     @NeedsPermission.FlowPlanDelete
     public boolean removeTimedDataSourcePlan(@InputArgument String name) {
+        auditLogger.audit("removed timedDataSource plan {}", name);
         return removeFlowAndFlowPlan(timedDataSourcePlanService, name);
     }
 
     @DgsMutation
     @NeedsPermission.FlowStart
     public boolean startRestDataSource(@InputArgument String name) {
+        auditLogger.audit("started restDataSource {}", name);
         return restDataSourceService.startFlow(name);
     }
 
     @DgsMutation
     @NeedsPermission.FlowStart
     public boolean startTimedDataSource(@InputArgument String name) {
+        auditLogger.audit("started timedDataSource {}", name);
         return timedDataSourceService.startFlow(name);
     }
 
     @DgsMutation
     @NeedsPermission.FlowStop
     public boolean stopRestDataSource(@InputArgument String name) {
+        auditLogger.audit("stopped restDataSource {}", name);
         return restDataSourceService.stopFlow(name);
     }
 
     @DgsMutation
     @NeedsPermission.FlowStop
     public boolean stopTimedDataSource(@InputArgument String name) {
+        auditLogger.audit("stopped timedDataSource {}", name);
         return timedDataSourceService.stopFlow(name);
     }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
     public boolean enableRestDataSourceTestMode(@InputArgument String name) {
+        auditLogger.audit("enabled test mode for restDataSource {}", name);
         return restDataSourceService.enableTestMode(name);
     }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
     public boolean enableTimedDataSourceTestMode(@InputArgument String name) {
+        auditLogger.audit("enabled test mode for timedDataSource {}", name);
         return timedDataSourceService.enableTestMode(name);
     }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
     public boolean disableRestDataSourceTestMode(@InputArgument String name) {
+        auditLogger.audit("disabled test mode for restDataSource {}", name);
         return restDataSourceService.disableTestMode(name);
     }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
     public boolean disableTimedDataSourceTestMode(@InputArgument String name) {
+        auditLogger.audit("disabled test mode for timedDataSource {}", name);
         return timedDataSourceService.disableTestMode(name);
     }
 
     @DgsMutation
     @NeedsPermission.FlowPlanCreate
     public TransformFlow saveTransformFlowPlan(@InputArgument TransformFlowPlanInput transformFlowPlan) {
+        auditLogger.audit("saved transform flow plan {}", transformFlowPlan.getName());
         return saveFlowPlan(transformFlowPlanService, transformFlowPlan, TransformFlowPlanEntity.class);
     }
 
     @DgsMutation
     @NeedsPermission.FlowPlanDelete
     public boolean removeTransformFlowPlan(@InputArgument String name) {
+        auditLogger.audit("removed transform flow plan {}", name);
         return removeFlowAndFlowPlan(transformFlowPlanService, name);
     }
 
     @DgsMutation
     @NeedsPermission.FlowStart
     public boolean startTransformFlow(@InputArgument String flowName) {
+        auditLogger.audit("started transform flow {}", flowName);
         return transformFlowService.startFlow(flowName);
     }
 
     @DgsMutation
     @NeedsPermission.FlowStop
     public boolean stopTransformFlow(@InputArgument String flowName) {
+        auditLogger.audit("stopped transform flow {}", flowName);
         return transformFlowService.stopFlow(flowName);
     }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
-    public boolean enableTransformTestMode(@InputArgument String flowName) { return transformFlowService.enableTestMode(flowName); }
+    public boolean enableTransformTestMode(@InputArgument String flowName) {
+        auditLogger.audit("enabled test mode for transform flow {}", flowName);
+        return transformFlowService.enableTestMode(flowName);
+    }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
-    public boolean disableTransformTestMode(@InputArgument String flowName) { return transformFlowService.disableTestMode(flowName); }
+    public boolean disableTransformTestMode(@InputArgument String flowName) {
+        auditLogger.audit("disabled test mode for transform flow {}", flowName);
+        return transformFlowService.disableTestMode(flowName);
+    }
 
     @DgsMutation
     @NeedsPermission.PluginVariableUpdate
     public boolean savePluginVariables(@InputArgument List<Variable> variables) {
+        auditLogger.audit("saved plugin variables {}", CoreAuditLogger.listToString(variables, Variable::getName));
         pluginVariableService.validateAndSaveVariables(systemPluginService.getSystemPluginCoordinates(), variables);
         return true;
     }
@@ -238,6 +277,7 @@ public class FlowPlanDatafetcher {
     @DgsMutation
     @NeedsPermission.PluginVariableUpdate
     public boolean removePluginVariables() {
+        auditLogger.audit("removed system plugin variables");
         pluginVariableService.removeVariables(systemPluginService.getSystemPluginCoordinates());
         return true;
     }
@@ -245,6 +285,7 @@ public class FlowPlanDatafetcher {
     @DgsMutation
     @NeedsPermission.PluginVariableUpdate
     public boolean setPluginVariableValues(@InputArgument PluginCoordinates pluginCoordinates, @InputArgument List<KeyValue> variables) {
+        auditLogger.audit("updated plugin variables: {}", CoreAuditLogger.listToString(variables));
         boolean updated = pluginVariableService.setVariableValues(pluginCoordinates, variables);
         if (updated) {
             egressFlowPlanService.rebuildFlowsForPlugin(pluginCoordinates);

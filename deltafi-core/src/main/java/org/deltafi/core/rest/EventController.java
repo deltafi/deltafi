@@ -18,6 +18,7 @@
 package org.deltafi.core.rest;
 
 import lombok.AllArgsConstructor;
+import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.types.Event;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.EventService;
@@ -44,6 +45,7 @@ import java.util.UUID;
 public class EventController {
 
     private final EventService eventService;
+    private final CoreAuditLogger auditLogger;
 
     @GetMapping
     @NeedsPermission.EventRead
@@ -60,24 +62,29 @@ public class EventController {
     @PostMapping
     @NeedsPermission.EventCreate
     public Event createEvent(@RequestBody Event event) {
-        return eventService.createEvent(event);
+        Event persisted = eventService.createEvent(event);
+        auditLogger.audit("created event {}", event.getId());
+        return persisted;
     }
 
     @PutMapping("/{id}/acknowledge")
     @NeedsPermission.EventUpdate
     public Event acknowledgeEvent(@PathVariable String id) {
+        auditLogger.audit("acknowledged event {}", id);
         return eventService.updateAcknowledgement(UUID.fromString(id), true);
     }
 
     @PutMapping("/{id}/unacknowledge")
     @NeedsPermission.EventUpdate
     public Event unacknowledgeEvent(@PathVariable String id) {
+        auditLogger.audit("unacknowledged event {}", id);
         return eventService.updateAcknowledgement(UUID.fromString(id), false);
     }
 
     @DeleteMapping("{id}")
     @NeedsPermission.EventDelete
     public Event deleteEvent(@PathVariable String id) {
+        auditLogger.audit("deleted event {}", id);
         return eventService.deleteEvent(UUID.fromString(id));
     }
 }

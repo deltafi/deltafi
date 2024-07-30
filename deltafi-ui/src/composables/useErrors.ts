@@ -69,6 +69,17 @@ export default function useErrors() {
               errorAcknowledgedReason: true,
               nextAutoResume: true,
               nextAutoResumeReason: true,
+              content: {
+                name: true,
+                mediaType: true,
+                size: true,
+                segments: {
+                  uuid: true,
+                  offset: true,
+                  size: true,
+                  did: true,
+                },
+              },
             }
           },
         }

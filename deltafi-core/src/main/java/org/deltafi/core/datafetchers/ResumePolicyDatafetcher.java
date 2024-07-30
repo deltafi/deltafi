@@ -24,6 +24,7 @@ import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.InputArgument;
 import lombok.RequiredArgsConstructor;
+import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.generated.types.ResumePolicyInput;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.ResumePolicyService;
@@ -33,6 +34,7 @@ import org.deltafi.core.types.ResumePolicy;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @DgsComponent
 @RequiredArgsConstructor
@@ -40,6 +42,7 @@ public class ResumePolicyDatafetcher {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     private final ResumePolicyService resumePolicyService;
+    private final CoreAuditLogger auditLogger;
 
     @DgsQuery
     @NeedsPermission.ResumePolicyRead
@@ -56,7 +59,9 @@ public class ResumePolicyDatafetcher {
     @DgsMutation
     @NeedsPermission.ResumePolicyCreate
     public List<Result> loadResumePolicies(@InputArgument Boolean replaceAll, @InputArgument List<ResumePolicyInput> policies) {
-        if (replaceAll) {
+        auditLogger.audit("loaded resume policies {} with replace all {} ",
+                CoreAuditLogger.listToString(policies, ResumePolicyInput::getName), replaceAll);
+        if (Boolean.TRUE.equals(replaceAll)) {
             resumePolicyService.removeAll();
         }
         return policies.stream().map(this::convertAndSave).toList();
@@ -65,12 +70,14 @@ public class ResumePolicyDatafetcher {
     @DgsMutation
     @NeedsPermission.ResumePolicyDelete
     public boolean removeResumePolicy(@InputArgument UUID id) {
+        auditLogger.audit("removed resume policy {}", id);
         return resumePolicyService.remove(id);
     }
 
     @DgsMutation
     @NeedsPermission.ResumePolicyUpdate
     public Result updateResumePolicy(@InputArgument ResumePolicyInput resumePolicy) {
+        auditLogger.audit("updated resume policy {} ({})", resumePolicy.getName(), resumePolicy.getId());
         ResumePolicy policy = OBJECT_MAPPER.convertValue(resumePolicy, ResumePolicy.class);
         return resumePolicyService.update(policy);
     }

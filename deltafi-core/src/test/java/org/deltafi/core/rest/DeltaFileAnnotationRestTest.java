@@ -18,6 +18,7 @@
 package org.deltafi.core.rest;
 
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
+import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.services.DeltaFilesService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,6 +50,8 @@ class DeltaFileAnnotationRestTest {
     private DeltaFileAnnotationRest deltaFileAnnotationRest;
     @Mock
     private DeltaFilesService deltaFilesService;
+    @Mock
+    private CoreAuditLogger auditLogger;
 
     @BeforeEach
     public void before() {

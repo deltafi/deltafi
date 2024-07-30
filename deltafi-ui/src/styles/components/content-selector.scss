@@ -16,9 +16,18 @@
    limitations under the License.
 */
 
-.p-dialog-content {
+.content-selector-container {
+  display: flex;
   height: 100%;
-  .dialog-container {
+  .p-listbox {
+    border-radius: 4px 4px 0 0;
     height: 100%;
+  }
+  .left-column {
+    flex: 2;
+    padding-right: 1rem;
+  }
+  .right-column {
+    flex: 5;
   }
 }

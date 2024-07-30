@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.rest;
 
+import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.plugin.generator.JavaPluginGenerator;
 import org.deltafi.core.plugin.generator.PluginGeneratorInput;
 import org.deltafi.core.plugin.generator.PluginLanguage;
@@ -35,15 +36,18 @@ import java.io.IOException;
 public class PluginGeneratorRest {
 
     private final JavaPluginGenerator javaPluginGenerator;
+    private final CoreAuditLogger auditLogger;
 
-    public PluginGeneratorRest(JavaPluginGenerator javaPluginGenerator) {
+    public PluginGeneratorRest(JavaPluginGenerator javaPluginGenerator, CoreAuditLogger auditLogger) {
         this.javaPluginGenerator = javaPluginGenerator;
+        this.auditLogger = auditLogger;
     }
 
     @NeedsPermission.PluginsView
     @PostMapping(value = "generate/plugin", consumes = MediaType.APPLICATION_JSON, produces = MediaType.APPLICATION_OCTET_STREAM)
     public @ResponseBody byte[] generatePlugin(@RequestBody PluginGeneratorInput pluginGeneratorInput) {
         try {
+            auditLogger.audit("generating plugin {}:{}", pluginGeneratorInput.getGroupId(), pluginGeneratorInput.getArtifactId());
             pluginGeneratorInput.validate();
             if (PluginLanguage.JAVA.equals(pluginGeneratorInput.getPluginLanguage())) {
                 return javaPluginGenerator.generateProject(pluginGeneratorInput).toByteArray();

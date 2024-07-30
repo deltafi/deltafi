@@ -24,6 +24,7 @@ import com.netflix.graphql.dgs.InputArgument;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.common.types.KeyValue;
 import org.deltafi.core.types.PropertySet;
+import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.configuration.ui.Link;
 import org.deltafi.core.security.NeedsPermission;
@@ -39,6 +40,7 @@ public class DeltaFiPropertiesDatafetcher {
 
     private final DeltaFiPropertiesService deltaFiPropertiesService;
     private final UiLinkService uiLinkService;
+    private final CoreAuditLogger auditLogger;
 
     @DgsQuery
     @NeedsPermission.SystemPropertiesRead
@@ -56,24 +58,28 @@ public class DeltaFiPropertiesDatafetcher {
     @DgsMutation
     @NeedsPermission.SystemPropertiesUpdate
     public boolean updateProperties(@InputArgument List<KeyValue> updates) {
+        auditLogger.audit("updated properties: {}", CoreAuditLogger.listToString(updates));
         return deltaFiPropertiesService.updateProperties(updates);
     }
 
     @DgsMutation
     @NeedsPermission.SystemPropertiesUpdate
     public boolean removePropertyOverrides(@InputArgument List<String> propertyNames) {
+        auditLogger.audit("removed property overrides from properties: {}", String.join(", ", propertyNames));
         return deltaFiPropertiesService.unsetProperties(propertyNames);
     }
 
     @DgsMutation
     @NeedsPermission.SystemPropertiesUpdate
     public Link saveLink(@InputArgument Link link) {
+        auditLogger.audit("saved link {}", link);
         return uiLinkService.saveLink(link);
     }
 
     @DgsMutation
     @NeedsPermission.SystemPropertiesUpdate
     public boolean removeLink(@InputArgument UUID id) {
+        auditLogger.audit("removed link {}", id);
         return uiLinkService.removeLink(id);
     }
 }
