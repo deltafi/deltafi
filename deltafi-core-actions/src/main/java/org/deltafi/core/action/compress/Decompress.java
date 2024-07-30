@@ -52,21 +52,26 @@ import java.util.Set;
 @Component
 @Slf4j
 public class Decompress extends TransformAction<DecompressParameters> {
-    private record DetectedFormatData(Format format, InputStream compressorInputStream,
-            ArchiveInputStream<?> archiveInputStream) {}
-
     public Decompress() {
         super("Decompresses content from .ar, .gz, .tar, .tar.gz, .tar.xz, .tar.Z, .xz, .Z, or .zip");
     }
 
+    private static String stripSuffix(String filename) {
+        int suffixIndex = filename.lastIndexOf('.');
+        return suffixIndex == -1 ? filename : filename.substring(0, suffixIndex);
+    }
+
     @Override
     public TransformResultType transform(@NotNull ActionContext context, @NotNull DecompressParameters params,
-            @NotNull TransformInput input) {
+                                         @NotNull TransformInput input) {
         if (input.getContent().isEmpty()) {
             return new ErrorResult(context, "No content found");
         }
 
         TransformResult result = new TransformResult(context);
+        if (params.preserveOriginal) {
+            result.addContent(input.getContent());
+        }
 
         for (ActionContent content : input.getContent()) {
             InputStream contentInputStream = content.loadInputStream();
@@ -200,7 +205,7 @@ public class Decompress extends TransformAction<DecompressParameters> {
     }
 
     private void extract(TransformResult result, ActionContent content, Format format,
-            InputStream compressorInputStream, ArchiveInputStream<?> archiveInputStream) throws IOException {
+                         InputStream compressorInputStream, ArchiveInputStream<?> archiveInputStream) throws IOException {
         if (archiveInputStream != null) {
             try (archiveInputStream) {
                 unarchive(result, format == Format.TAR ? content : null, archiveInputStream);
@@ -241,8 +246,7 @@ public class Decompress extends TransformAction<DecompressParameters> {
         }
     }
 
-    private static String stripSuffix(String filename) {
-        int suffixIndex = filename.lastIndexOf('.');
-        return suffixIndex == -1 ? filename : filename.substring(0, suffixIndex);
+    private record DetectedFormatData(Format format, InputStream compressorInputStream,
+                                      ArchiveInputStream<?> archiveInputStream) {
     }
 }
