@@ -53,6 +53,8 @@ import useFiltered from "@/composables/useFiltered";
 const hasPermission = inject("hasPermission");
 const hasSomePermissions = inject("hasSomePermissions");
 
+const emit = defineEmits(["refreshFilters"]);
+const { data: response, fetchFilteredSummaryByFlow } = useFiltered();
 const retryResumeDialog = ref();
 const loading = ref(true);
 const menu = ref();
@@ -60,9 +62,10 @@ const filteredFlow = ref([]);
 const totalFilteredFlow = ref(0);
 const offset = ref(0);
 const perPage = ref();
+const sortField = ref("modified");
 const sortDirection = ref("DESC");
 const selectedFiltered = ref([]);
-const emit = defineEmits(["refreshFilters"]);
+
 const props = defineProps({
   dataSourceFlowName: {
     type: String,
@@ -107,13 +110,11 @@ onMounted(async () => {
   setupWatchers();
 });
 
-const { data: response, fetchByFlow: getFilteredByFlow } = useFiltered();
-
 const fetchFilteredFlow = async () => {
   getPersistedParams();
   let dataSourceFlowName = props.dataSourceFlowName != null ? props.dataSourceFlowName : null;
   loading.value = true;
-  await getFilteredByFlow(offset.value, perPage.value, sortDirection.value, dataSourceFlowName);
+  await fetchFilteredSummaryByFlow(offset.value, perPage.value, sortDirection.value, dataSourceFlowName);
   filteredFlow.value = response.value.countPerFlow;
   totalFilteredFlow.value = response.value.totalCount;
   loading.value = false;

@@ -45,7 +45,12 @@
         </Column>
         <Column header="Description" field="description" :sortable="true"></Column>
         <Column header="Topic" field="topic" :sortable="true"></Column>
-        <Column :style="{ width: '7%' }" class="data-source-state-column">
+        <Column header="Test Mode" class="test-mode-column">
+          <template #body="{ data }">
+            <RestDataSourceTestModeInputSwitch :row-data-prop="data" />
+          </template>
+        </Column>
+        <Column header="Active" :style="{ width: '7%' }" class="data-source-state-column">
           <template #body="{ data }">
             <StateInputSwitch :row-data-prop="data" data-source-type="timedDataSource" @change="refresh" />
           </template>
@@ -87,6 +92,7 @@
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import DataSourceRemoveButton from "@/components/dataSources/DataSourceRemoveButton.vue";
+import RestDataSourceTestModeInputSwitch from "@/components/dataSources/RestDataSourceTestModeInputSwitch.vue";
 import StateInputSwitch from "@/components/dataSources/StateInputSwitch.vue";
 import PermissionedRouterLink from "@/components/PermissionedRouterLink";
 import Timestamp from "@/components/Timestamp.vue";

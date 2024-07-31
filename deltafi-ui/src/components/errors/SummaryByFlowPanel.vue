@@ -71,6 +71,7 @@ const totalErrorsFlow = ref(0);
 const offset = ref(0);
 const perPage = ref();
 const metadataDialogResume = ref();
+const sortField = ref("modified");
 const sortDirection = ref("ASC");
 const selectedErrors = ref([]);
 const notify = useNotifications();
@@ -161,13 +162,13 @@ const onRefresh = () => {
   fetchErrorsFlow();
 };
 
-const { data: response, fetchByFlow: getErrorsByFlow } = useErrorsSummary();
+const { data: response, fetchErrorSummaryByFlow } = useErrorsSummary();
 
 const fetchErrorsFlow = async () => {
   getPersistedParams();
   let dataSourceFlowName = props.dataSourceFlowName != null ? props.dataSourceFlowName : null;
   loading.value = true;
-  await getErrorsByFlow(props.acknowledged, offset.value, perPage.value, sortDirection.value, dataSourceFlowName);
+  await fetchErrorSummaryByFlow(props.acknowledged, offset.value, perPage.value, sortDirection.value, dataSourceFlowName);
   errorsFlow.value = response.value.countPerFlow;
   totalErrorsFlow.value = response.value.totalCount;
   loading.value = false;

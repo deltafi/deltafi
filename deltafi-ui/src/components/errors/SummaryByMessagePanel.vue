@@ -161,7 +161,7 @@ onMounted(async () => {
   setupWatchers();
 });
 
-const { data: response, fetchByMessage: getErrorsByMessage } = useErrorsSummary();
+const { data: response, fetchByMessage } = useErrorsSummary();
 
 const onRefresh = () => {
   selectedErrors.value = [];
@@ -185,7 +185,7 @@ const fetchErrorsMessages = async () => {
   getPersistedParams();
   let dataSourceFlowName = props.dataSourceFlowName != null ? props.dataSourceFlowName : null;
   loading.value = true;
-  await getErrorsByMessage(props.acknowledged, offset.value, perPage.value, sortDirection.value, dataSourceFlowName);
+  await fetchByMessage(props.acknowledged, offset.value, perPage.value, sortDirection.value, dataSourceFlowName);
   errorsMessage.value = response.value.countPerMessage;
   totalErrorsMessage.value = response.value.totalCount;
   loading.value = false;

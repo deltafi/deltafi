@@ -47,6 +47,7 @@ import { onBeforeMount, ref, computed } from "vue";
 import _ from "lodash";
 
 import Button from "primevue/button";
+import Dropdown from "primevue/dropdown";
 import InputText from "primevue/inputtext";
 
 const { getAllFlows, loaded, loading } = useFlowQueryBuilder();

@@ -132,7 +132,6 @@ export default function useDataSource() {
     return sendGraphQLQuery(query, "startTimedDataSourceByName", "mutation");
   };
 
-
   // Stops a Rest Data Source by name
   const stopRestDataSourceByName = (name: string) => {
     const query = {
@@ -210,6 +209,54 @@ export default function useDataSource() {
     return sendGraphQLQuery(query, "removeDataSourcePlan", "mutation");
   };
 
+  // Sets a Rest Data Source flow to test mode
+  const enableTestRestDataSourceFlowByName = (flowName: string) => {
+    const query = {
+      enableRestDataSourceTestMode: {
+        __args: {
+          name: flowName,
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "enableTestRestDataSourceFlowByName", "mutation");
+  };
+
+  // Sets a Rest Data Source flow to test mode
+  const disableTestRestDataSourceFlowByName = (flowName: string) => {
+    const query = {
+      disableRestDataSourceTestMode: {
+        __args: {
+          name: flowName,
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "disableTestRestDataSourceFlowByName", "mutation");
+  };
+
+  // Sets a Time Data Source flow to test mode
+  const enableTestTimedDataSourceFlowByName = (flowName: string) => {
+    const query = {
+      enableTimedDataSourceTestMode: {
+        __args: {
+          name: flowName,
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "enableTestTimedDataSourceFlowByName", "mutation");
+  };
+
+  // Sets a Time Data Source flow to test mode
+  const disableTestTimedDataSourceFlowByName = (flowName: string) => {
+    const query = {
+      disableTimedDataSourceTestMode: {
+        __args: {
+          name: flowName,
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "disableTestTimedDataSourceFlowByName", "mutation");
+  };
+
   const sendGraphQLQuery = async (query: any, operationName: string, queryType?: string) => {
     try {
       await queryGraphQL(query, operationName, queryType);
@@ -231,6 +278,10 @@ export default function useDataSource() {
     setTimedDataSourceCronSchedule,
     saveTimedDataSourcePlan,
     saveRestDataSourcePlan,
+    enableTestRestDataSourceFlowByName,
+    disableTestRestDataSourceFlowByName,
+    enableTestTimedDataSourceFlowByName,
+    disableTestTimedDataSourceFlowByName,
     removeDataSourcePlan,
     loaded,
     loading,

@@ -55,7 +55,12 @@
             <StatusBadge :status="data.ingressStatus" :message="data.ingressStatusMessage" />
           </template>
         </Column>
-        <Column :style="{ width: '7%' }" class="data-source-state-column">
+        <Column header="Test Mode" class="test-mode-column">
+          <template #body="{ data }">
+            <TimedDataSourceTestModeInputSwitch :row-data-prop="data" />
+          </template>
+        </Column>
+        <Column header="Active" :style="{ width: '7%' }" class="data-source-state-column">
           <template #body="{ data }">
             <StateInputSwitch :row-data-prop="data" data-source-type="timedDataSource" @change="refresh" />
           </template>
@@ -102,6 +107,7 @@ import DataSourceRemoveButton from "@/components/dataSources/DataSourceRemoveBut
 import StatusBadge from "@/components/dataSources/StatusBadge.vue";
 import StateInputSwitch from "@/components/dataSources/StateInputSwitch.vue";
 import PermissionedRouterLink from "@/components/PermissionedRouterLink";
+import TimedDataSourceTestModeInputSwitch from "@/components/dataSources/TimedDataSourceTestModeInputSwitch.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useDataSource from "@/composables/useDataSource";
 import useNotifications from "@/composables/useNotifications";
