@@ -71,7 +71,6 @@ const totalErrorsFlow = ref(0);
 const offset = ref(0);
 const perPage = ref();
 const metadataDialogResume = ref();
-const sortField = ref("modified");
 const sortDirection = ref("ASC");
 const selectedErrors = ref([]);
 const notify = useNotifications();

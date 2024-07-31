@@ -62,7 +62,6 @@ const filteredFlow = ref([]);
 const totalFilteredFlow = ref(0);
 const offset = ref(0);
 const perPage = ref();
-const sortField = ref("modified");
 const sortDirection = ref("DESC");
 const selectedFiltered = ref([]);
 
