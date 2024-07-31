@@ -209,7 +209,7 @@ onBeforeMount(async () => {
   let responseFlowAction = await getPluginActionSchema();
   allActionsData.value = responseFlowAction.data.plugins;
 
-await fetchAllDataSourceFlowNames();
+  await fetchAllDataSourceFlowNames();
   dataSourceNames.value = _.concat(dataSourceNames.value, allDataSourceFlowNames.value.restDataSource, allDataSourceFlowNames.value.timedDataSource);
 
   flattenedActionsTypes.value = await getTimedIngressActions();

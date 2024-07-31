@@ -19,12 +19,8 @@
 const generateData = () => {
   const data = {
     getFlowNames: {
-      dataSource: [
-        "devFlow1",
-        "devFlow2",
-        "devFlow4",
-        "devFlow3"
-      ],
+      restDataSource: ["devFlow1", "devFlow2"],
+      timedDataSource: ["devFlow4", "devFlow3"],
     },
   };
 
