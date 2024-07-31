@@ -588,42 +588,30 @@ const generateData = () => {
             }
           },
           {
-            name: "org.deltafi.core.action.filter.FilterByCriteria",
+            name: "org.deltafi.core.action.filter.Filter",
             type: "TRANSFORM",
-            description: "The FilterByCriteria action allows you to filter or pass DeltaFiles based on specific criteria defined using Spring Expression Language (SpEL). The action takes a list of SpEL expressions that are evaluated against the metadata and content. Depending on the configured filter behavior, the action filters if 'ANY', 'ALL', or 'NONE' of the expressions match.\nExamples:\n- To filter if metadata key 'x' is set to 'y': \"metadata['x'] == 'y'\"\n- To filter if 'x' is not 'y' or if 'x' is not present: \"metadata['x'] != 'y' || !metadata.containsKey('x')\"\n- To filter if no content is JSON: \"!content.stream().anyMatch(c -> c.getMediaType.equals('application/json'))",
+            description: "Filters by default or when optional criteria is met in content or metadata",
             schema: {
               type: "object",
               properties: {
                 filterBehavior: {
                   type: "string",
                   enum: [
-                    "ALL",
                     "ANY",
+                    "ALL",
                     "NONE"
                   ],
                   description: "Specifies the filter behavior. 'ANY' will filter if any expression matches. 'ALL' will filter if all expressions match. 'NONE' will filter if no expression matches. Defaults to ANY.",
                   default: "ANY"
                 },
                 filterExpressions: {
-                  description: "A list of SpEL expressions used to filter the content and metadata.",
+                  description: "A list of Spring Expression Language (SpEL) expressions used to filter",
                   type: "array",
                   items: {
                     type: "string"
                   }
                 }
               },
-              required: [
-                "filterExpressions"
-              ],
-              additionalProperties: false
-            }
-          },
-          {
-            name: "org.deltafi.core.action.filter.Filter",
-            type: "TRANSFORM",
-            description: "Action that always filters",
-            schema: {
-              type: "object",
               additionalProperties: false
             }
           },

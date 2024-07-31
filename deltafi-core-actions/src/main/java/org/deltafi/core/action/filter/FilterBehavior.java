@@ -24,8 +24,8 @@ import lombok.Getter;
 @AllArgsConstructor
 @Getter
 public enum FilterBehavior {
-    @JsonProperty("ALL") ALL("ALL"),
     @JsonProperty("ANY") ANY("ANY"),
+    @JsonProperty("ALL") ALL("ALL"),
     @JsonProperty("NONE") NONE("NONE");
 
     private final String value;
