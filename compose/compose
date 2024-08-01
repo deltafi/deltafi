@@ -8,11 +8,17 @@ Command: compose
 
 Subcommands:
   start                       start all of the services
-  uninstall                   stop and remove all of the services
+  uninstall                   stop and remove all of the services (destructive to mongo storage)
   restart <services>          restart the list of services (space delimited, restarts all services by default)
   stop-services <services>    stop the list of services (space delimited, stops all services by default)
   build                       build and tag core docker images for use in compose
   destroy                     remove all data directories for DeltaFi
+  images                      list a manifest of all images used by the stack
+  top                         top listing for compose stack
+  logs                        show logs for compose stack
+  ps                          show running compose stack
+  pause                       pause the compose stack
+  unpause                     unpause the compose stack
 
 Usage:
   compose [SUBCOMMAND] [ARGS]
@@ -423,6 +429,7 @@ _check_local_fqdns() {
   _verify_or_replace_fqdn "graphite.$domain"
   _verify_or_replace_fqdn "metrics.$domain"
   _verify_or_replace_fqdn "minio.$domain"
+  _verify_or_replace_fqdn "orchestration.$domain"
   _verify_or_replace_fqdn "deltafi-api-service"
   _verify_or_replace_fqdn "deltafi-auth-service"
   _verify_or_replace_fqdn "deltafi-core-service"
@@ -700,6 +707,11 @@ start_compose() {
 
 uninstall() {
   docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" down
+
+  # make sure nothing was left behind (this will sweep up any plugins that weren't part of compose)
+  docker ps -a --filter label=deltafi-group -q | xargs docker stop | xargs docker rm
+
+  rm -rf "${DATA_DIR}"/mongo
 }
 
 stop_services() {
@@ -708,6 +720,30 @@ stop_services() {
 
 restart_service() {
   docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" up -d --force-recreate --no-deps ${1}
+}
+
+images() {
+  docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" images "$@"
+}
+
+top() {
+  docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" top "$@"
+}
+
+ps() {
+  docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" ps "$@"
+}
+
+pause() {
+  docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" pause "$@"
+}
+
+unpause() {
+  docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" unpause "$@"
+}
+
+logs() {
+  docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" logs "$@"
 }
 
 clean() {
@@ -767,6 +803,24 @@ case "$SUBCOMMAND" in
     ;;
   uninstall)
     uninstall
+    ;;
+  images)
+    images "$@"
+    ;;
+  top)
+    top "$@"
+    ;;
+  logs)
+    logs "$@"
+    ;;
+  ps)
+    ps "$@"
+    ;;
+  pause)
+    pause "$@"
+    ;;
+  unpause)
+    unpause "$@"
     ;;
   destroy)
     destroy
