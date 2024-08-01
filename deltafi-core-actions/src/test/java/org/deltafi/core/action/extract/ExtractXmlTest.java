@@ -33,7 +33,7 @@ import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformR
 class ExtractXmlTest {
 
     ExtractXml action = new ExtractXml();
-    DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action);
+    DeltaFiTestRunner runner = DeltaFiTestRunner.setup();
 
     @Test
     void testNestedXml() {

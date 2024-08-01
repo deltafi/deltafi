@@ -17,32 +17,104 @@
  */
 package org.deltafi.core.action.filter;
 
-import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.actionkit.action.ResultType;
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.transform.TransformInput;
-import org.deltafi.test.content.DeltaFiTestRunner;
+import org.deltafi.common.types.ActionContext;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+import java.util.Map;
+
 import static org.deltafi.test.asserters.ActionResultAssertions.assertFilterResult;
+import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformResult;
 
 class FilterTest {
-
-    private static final ActionParameters EMPTY = new ActionParameters();
+    private static final ActionContext CONTEXT = new ActionContext();
 
     Filter action = new Filter();
-    DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action);
 
     @Test
-    void testTransform() {
-        assertFilterResult(action.transform(runner.actionContext(), EMPTY, TransformInput.builder().build()))
-                .annotationsIsEmpty()
+    void filtersWithEmptyExpressions() {
+        assertFilterResult(action.transform(CONTEXT, new FilterParameters(), createInput()))
                 .hasCause("Filtered by fiat");
     }
 
     @Test
-    void transformTest2() {
-        TransformInput input = TransformInput.builder().content(runner.saveContent("some content")).build();
-        assertFilterResult(action.transform(runner.actionContext(), EMPTY, input))
-                .hasCause("Filtered by fiat");
+    void testFilterBehaviorAny() {
+        FilterParameters params = new FilterParameters();
+        params.setFilterBehavior(FilterBehavior.ANY);
+        params.setFilterExpressions(List.of("content.isEmpty()", "metadata.containsKey('someKey')"));
+
+        ResultType result = action.transform(CONTEXT, params, createInput());
+
+        assertFilterResult(result)
+                .hasCause("Filtered because at least one of the criteria matched")
+                .hasContext(null);
     }
 
+    @Test
+    void testFilterBehaviorAnyDoesNotFilter() {
+        FilterParameters params = new FilterParameters();
+        params.setFilterBehavior(FilterBehavior.ANY);
+        params.setFilterExpressions(List.of("content.isEmpty()", "metadata.containsKey('someOtherKey')"));
+
+        ResultType result = action.transform(CONTEXT, params, createInput());
+
+        assertTransformResult(result).hasContentCount(1);
+    }
+
+    @Test
+    void testFilterBehaviorAllMatch() {
+        FilterParameters params = new FilterParameters();
+        params.setFilterBehavior(FilterBehavior.ALL);
+        params.setFilterExpressions(List.of("content.size() > 0", "metadata.containsKey('someKey')"));
+
+        ResultType result = action.transform(CONTEXT, params, createInput());
+
+        assertFilterResult(result)
+                .hasCause("Filtered because all of the criteria matched")
+                .hasContext(null);
+    }
+
+    @Test
+    void testFilterBehaviorAllMatchDoesNotFilter() {
+        FilterParameters params = new FilterParameters();
+        params.setFilterBehavior(FilterBehavior.ALL);
+        params.setFilterExpressions(List.of("content.size() == 0", "metadata.containsKey('someKey')"));
+
+        ResultType result = action.transform(CONTEXT, params, createInput());
+
+        assertTransformResult(result).hasContentCount(1);
+    }
+
+    @Test
+    void testFilterBehaviorNoneMatch() {
+        FilterParameters params = new FilterParameters();
+        params.setFilterBehavior(FilterBehavior.NONE);
+        params.setFilterExpressions(List.of("content.size() == 0", "metadata.containsKey('anotherKey')"));
+
+        ResultType result = action.transform(CONTEXT, params, createInput());
+
+        assertFilterResult(result)
+                .hasCause("Filtered because none of the criteria matched")
+                .hasContext(null);
+    }
+
+    @Test
+    void testFilterBehaviorNoneMatchDoesNotFilter() {
+        FilterParameters params = new FilterParameters();
+        params.setFilterBehavior(FilterBehavior.NONE);
+        params.setFilterExpressions(List.of("content.size() > 0", "metadata.containsKey('someKey')"));
+
+        ResultType result = action.transform(CONTEXT, params, createInput());
+
+        assertTransformResult(result).hasContentCount(1);
+    }
+
+    private TransformInput createInput() {
+        return TransformInput.builder()
+                .content(List.of(ActionContent.emptyContent(CONTEXT, "example.json", "application/json")))
+                .metadata(Map.of("someKey", "someValue")).build();
+    }
 }

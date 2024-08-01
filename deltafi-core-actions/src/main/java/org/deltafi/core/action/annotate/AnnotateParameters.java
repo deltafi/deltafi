@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.*;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Data
@@ -31,5 +31,11 @@ import java.util.Map;
 @NoArgsConstructor
 public class AnnotateParameters extends ActionParameters {
     @JsonPropertyDescription("Key value pairs of annotations to be added")
-    public Map<String, String> annotations = new HashMap<>();
+    public Map<String, String> annotations;
+
+    @JsonPropertyDescription("List of regex patterns matching metadata keys to add as annotations")
+    private List<String> metadataPatterns;
+
+    @JsonPropertyDescription("The prefix to remove from each metadata key before adding it as an annotation")
+    private String discardPrefix;
 }

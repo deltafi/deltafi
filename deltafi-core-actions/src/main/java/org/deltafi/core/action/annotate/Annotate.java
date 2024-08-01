@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.action.annotate;
 
-import org.apache.tika.utils.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.transform.TransformAction;
 import org.deltafi.actionkit.action.transform.TransformInput;
@@ -27,7 +27,10 @@ import org.deltafi.common.types.ActionContext;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Component
 public class Annotate extends TransformAction<AnnotateParameters> {
@@ -36,27 +39,47 @@ public class Annotate extends TransformAction<AnnotateParameters> {
     }
 
     @Override
-    public TransformResultType transform(@NotNull ActionContext context, @NotNull AnnotateParameters params, @NotNull TransformInput input) {
-        String error = validateAnnotations(params.annotations);
-        if (error != null) {
-            return new ErrorResult(context, "Invalid annotations", error);
+    public TransformResultType transform(@NotNull ActionContext context, @NotNull AnnotateParameters params,
+            @NotNull TransformInput input) {
+        if (params.getAnnotations() != null) {
+            if (params.getAnnotations().keySet().stream().anyMatch(StringUtils::isBlank)) {
+                return new ErrorResult(context, "Invalid annotations", "Contains a blank key");
+            }
+            List<String> blankAnnotations = params.getAnnotations().entrySet().stream()
+                    .filter(annotationEntry -> StringUtils.isBlank(annotationEntry.getValue()))
+                    .map(Map.Entry::getKey)
+                    .toList();
+            if (!blankAnnotations.isEmpty()) {
+                return new ErrorResult(context, "Invalid annotations",
+                        "Annotations with the following keys were invalid: " + String.join(", ", blankAnnotations));
+            }
+        }
+
+        Map<String, String> annotations = new HashMap<>();
+
+        if (params.getMetadataPatterns() != null) {
+            annotations.putAll(input.getMetadata().entrySet().stream()
+                    .filter(entry -> params.getMetadataPatterns().stream()
+                            .anyMatch(pattern -> entry.getKey().matches(pattern)))
+                    .collect(Collectors.toMap(entry -> updateKey(params.getDiscardPrefix(), entry.getKey()),
+                            Map.Entry::getValue)));
+        }
+
+        if (params.getAnnotations() != null) {
+            annotations.putAll(params.getAnnotations());
         }
 
         TransformResult result = new TransformResult(context);
         result.addContent(input.content());
-        result.addAnnotations(params.annotations);
+        result.addAnnotations(annotations);
         return result;
     }
 
-    private String validateAnnotations(Map<String, String> annotations) {
-        for (Map.Entry<String, String> entry : annotations.entrySet()) {
-            if (StringUtils.isBlank(entry.getKey())) {
-                return "Contains a blank key";
-            }
-            if (StringUtils.isBlank(entry.getValue())) {
-                return "Key " + entry.getKey() + " contains a blank value";
-            }
+    private String updateKey(String discardPrefix, String key) {
+        if (StringUtils.isNotEmpty(discardPrefix) && key.startsWith(discardPrefix) &&
+                key.length() > discardPrefix.length()) {
+            return key.replaceFirst(discardPrefix, "");
         }
-        return null;
+        return key;
     }
 }

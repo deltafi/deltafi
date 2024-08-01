@@ -18,6 +18,7 @@
 package org.deltafi.core.action.compress;
 
 import org.deltafi.actionkit.action.ResultType;
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.test.asserters.ContentAssert;
@@ -25,15 +26,17 @@ import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
 
 import javax.ws.rs.core.MediaType;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformResult;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 public class DecompressTest {
+    private static final String FILE1 = "thing1.txt";
+    private static final String FILE2 = "thing2.txt";
     private final Decompress action = new Decompress();
-    private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action, "DecompressTest");
+    private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup("DecompressTest");
 
     @Test
     public void errorResultOnNoContent() {
@@ -103,37 +106,63 @@ public class DecompressTest {
         runTest(Format.ZIP, true);
     }
 
-    private void runTest(Format archiveType, boolean detected) {
-        ResultType result = action.transform(runner.actionContext(),
-                new DecompressParameters(detected ? null : archiveType), input("compressed." + archiveType.getValue()));
+    @Test
+    public void preserveAndUnarchivesZipDetected() {
+        runTest(Format.ZIP, true, true);
+    }
 
-        verifyTransform(result, archiveType);
+    private void runTest(Format archiveType, boolean detected) {
+        runTest(archiveType, detected, false);
+    }
+
+    private void runTest(Format archiveType, boolean detected, boolean preserveOriginal) {
+        String inputName = "compressed." + archiveType.getValue();
+        ResultType result = action.transform(runner.actionContext(),
+                new DecompressParameters(detected ? null : archiveType, preserveOriginal),
+                input(inputName));
+
+        verifyTransform(result, archiveType, preserveOriginal, inputName);
     }
 
     private TransformInput input(String... files) {
         return TransformInput.builder().content(runner.saveContentFromResource(files)).build();
     }
 
-    private static final String FILE1 = "thing1.txt";
-    private static final String FILE2 = "thing2.txt";
+    private void verifyTransform(ResultType result, Format archiveType, boolean preserveOriginal, String originalInputName) {
+        int startIdx = preserveOriginal ? 1 : 0;
 
-    private void verifyTransform(ResultType result, Format archiveType) {
         assertTransformResult(result)
-                .hasContentMatchingAt(0, actionContent -> {
+                .hasContentMatchingAt(startIdx, actionContent -> {
                     ContentAssert.assertThat(actionContent)
                             .hasName(FILE1)
                             .hasMediaType(MediaType.APPLICATION_OCTET_STREAM);
                     return true;
                 })
-                .hasContentMatchingAt(1, actionContent -> {
+                .hasContentMatchingAt(startIdx + 1, actionContent -> {
                     ContentAssert.assertThat(actionContent)
                             .hasName(FILE2)
                             .hasMediaType(MediaType.APPLICATION_OCTET_STREAM);
                     return true;
                 })
-                .contentLoadBytesEquals(List.of(runner.readResourceAsBytes(FILE1),
-                        runner.readResourceAsBytes(FILE2)))
                 .addedMetadata("compressFormat", archiveType.getValue());
+
+        if (preserveOriginal) {
+            assertTransformResult(result)
+                    .hasContentMatchingAt(0, actionContent -> {
+                        ContentAssert.assertThat(actionContent)
+                                .hasName(originalInputName);
+                        return true;
+                    })
+                    .contentLoadBytesEquals(List.of(
+                            runner.readResourceAsBytes(originalInputName),
+                            runner.readResourceAsBytes(FILE1),
+                            runner.readResourceAsBytes(FILE2)));
+        } else {
+            assertTransformResult(result)
+                    .contentLoadBytesEquals(List.of(
+                            runner.readResourceAsBytes(FILE1),
+                            runner.readResourceAsBytes(FILE2)));
+        }
     }
 
     @Test
@@ -144,6 +173,11 @@ public class DecompressTest {
     @Test
     public void decompressesMultipleGzip() {
         runTest(Format.GZIP, input("fileA.gz", "fileB.gz"), "fileA", "fileB");
+    }
+
+    @Test
+    public void preserveAndDecompressesMultipleGzip() {
+        runTest(Format.GZIP, true, input("fileA.gz", "fileB.gz"), "fileA", "fileB");
     }
 
     @Test
@@ -166,20 +200,29 @@ public class DecompressTest {
         runTest(new DecompressParameters(), Format.XZ, input("fileA.xz"), "fileA");
     }
 
-   @Test
+    @Test
     public void decompressesSingleZDetected() {
         runTest(new DecompressParameters(), Format.Z, input("fileC.Z"), "fileC");
     }
 
     private void runTest(Format compressFormat, TransformInput input, String... outputFiles) {
-        runTest(new DecompressParameters(compressFormat), compressFormat, input, outputFiles);
+        runTest(compressFormat, false, input, outputFiles);
+    }
+
+    private void runTest(Format compressFormat, boolean preserveOriginal, TransformInput input, String... outputFiles) {
+        runTest(new DecompressParameters(compressFormat, preserveOriginal), compressFormat, input, outputFiles);
     }
 
     private void runTest(DecompressParameters parameters, Format expectedCompressFormat, TransformInput input, String... outputFiles) {
         ResultType result = action.transform(runner.actionContext(), parameters, input);
+        List<String> names = new ArrayList<>();
+        if (parameters.preserveOriginal) {
+            names.addAll(input.getContent().stream().map(ActionContent::getName).toList());
+        }
+        names.addAll(List.of(outputFiles));
 
         assertTransformResult(result)
-                .contentLoadBytesEquals(Arrays.stream(outputFiles).map(runner::readResourceAsBytes).toList())
+                .contentLoadBytesEquals(names.stream().map(runner::readResourceAsBytes).toList())
                 .addedMetadata("compressFormat", expectedCompressFormat.getValue());
     }
 }

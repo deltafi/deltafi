@@ -33,7 +33,7 @@ import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformR
 
 class MetadataToContentTest {
     MetadataToContent action = new MetadataToContent();
-    DeltaFiTestRunner testRunner = DeltaFiTestRunner.setup(action);
+    DeltaFiTestRunner testRunner = DeltaFiTestRunner.setup();
     ActionContext context = testRunner.actionContext();
 
     @Test

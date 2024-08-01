@@ -23,7 +23,6 @@ import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.transform.TransformInput;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.test.content.DeltaFiTestRunner;
-import org.json.XML;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedList;
@@ -89,7 +88,7 @@ class XmlEditorTest {
                 """.trim();
     
     XmlEditor action = new XmlEditor();
-    DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action);
+    DeltaFiTestRunner runner = DeltaFiTestRunner.setup();
     ActionContext context = runner.actionContext();
 
 

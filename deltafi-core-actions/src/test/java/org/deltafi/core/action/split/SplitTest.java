@@ -33,7 +33,7 @@ public class SplitTest {
     @Test
     public void splits() {
         Split split = new Split();
-        DeltaFiTestRunner runner = DeltaFiTestRunner.setup(split, "SplitTest");
+        DeltaFiTestRunner runner = DeltaFiTestRunner.setup("SplitTest");
 
         Map<String, String> metadata = Map.of("key1", "value1", "key2", "value2");
 

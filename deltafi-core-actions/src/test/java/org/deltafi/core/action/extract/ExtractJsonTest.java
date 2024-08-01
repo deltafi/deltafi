@@ -33,7 +33,7 @@ import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformR
 class ExtractJsonTest {
 
     ExtractJson action = new ExtractJson();
-    DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action);
+    DeltaFiTestRunner runner = DeltaFiTestRunner.setup();
 
     @Test
     void testNestedJson() {

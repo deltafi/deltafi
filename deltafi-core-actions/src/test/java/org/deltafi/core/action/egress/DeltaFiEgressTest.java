@@ -49,7 +49,7 @@ public class DeltaFiEgressTest {
 
     private final HttpService httpService = new HttpService(HttpClient.newHttpClient());
     private final DeltaFiEgress action = new DeltaFiEgress(httpService);
-    private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action, "DeltaFiEgressTest");
+    private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup("DeltaFiEgressTest");
 
     private static final ContentStorageService CONTENT_STORAGE_SERVICE =
             new ContentStorageService(new InMemoryObjectStorageService());

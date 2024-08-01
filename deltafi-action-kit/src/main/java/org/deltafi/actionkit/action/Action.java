@@ -20,18 +20,15 @@ package org.deltafi.actionkit.action;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.action.util.ActionParameterSchemaGenerator;
-import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -51,10 +48,6 @@ public abstract class Action<I, P extends ActionParameters, R extends ResultType
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
                     .registerModule(new JavaTimeModule())
                     .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
-
-    @Autowired
-    @Setter
-    protected ContentStorageService contentStorageService;
 
     @Getter
     private ActionExecution actionExecution = null;

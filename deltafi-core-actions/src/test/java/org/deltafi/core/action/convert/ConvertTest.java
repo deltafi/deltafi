@@ -30,7 +30,7 @@ import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformR
 class ConvertTest {
 
     Convert action = new Convert();
-    DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action);
+    DeltaFiTestRunner runner = DeltaFiTestRunner.setup();
 
     @Test
     void testConvertJsonToXml() {

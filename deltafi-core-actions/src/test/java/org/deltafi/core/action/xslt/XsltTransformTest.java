@@ -33,7 +33,7 @@ import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformR
 class XsltTransformTest {
     
     XsltTransform action = new XsltTransform();
-    DeltaFiTestRunner runner = DeltaFiTestRunner.setup(action);
+    DeltaFiTestRunner runner = DeltaFiTestRunner.setup();
     ActionContext context = runner.actionContext();
 
     @Test

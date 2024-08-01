@@ -32,7 +32,7 @@ public class MergeTest {
     @Test
     public void merges() {
         Merge merge = new Merge();
-        DeltaFiTestRunner runner = DeltaFiTestRunner.setup(merge, "MergeTest");
+        DeltaFiTestRunner runner = DeltaFiTestRunner.setup("MergeTest");
 
         TransformResultType transformResultType = merge.transform(runner.actionContext(),
                 new MergeParameters("merged", MediaType.TEXT_PLAIN), TransformInput.builder().content(

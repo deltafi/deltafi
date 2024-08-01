@@ -27,7 +27,6 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,12 +52,11 @@ public class ActionTest {
 
     private static class C extends B<Integer> {}
 
-    @InjectMocks
-    C mock;
+    C action = new C();
 
     @Test
     public void testCorrectGenericClassReturned() {
-        Assertions.assertEquals(ActionParameters.class, mock.paramClass);
+        Assertions.assertEquals(ActionParameters.class, action.paramClass);
     }
 
 }

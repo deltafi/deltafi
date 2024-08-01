@@ -110,13 +110,18 @@ const generateData = () => {
           {
             name: "org.deltafi.core.action.mediatype.ModifyMediaType",
             type: "TRANSFORM",
-            description: "Modify content mediaTypes based on pattern or content index",
+            description: "Modifies content media types",
             schema: {
               type: "object",
               properties: {
+                autodetect: {
+                  type: "boolean",
+                  description: "Autodetect media type if not found in mediaTypeMap or indexMediaTypeMap.",
+                  default: true
+                },
                 errorOnMissingIndex: {
                   type: "boolean",
-                  description: "If true, throw an exception if a content is missing an index specified in indexMediaTypeMap",
+                  description: "Whether to error if content for any index in indexMediaTypeMap is missing.",
                   default: false
                 },
                 indexMediaTypeMap: {
@@ -124,25 +129,16 @@ const generateData = () => {
                   additionalProperties: {
                     type: "string"
                   },
-                  description: "A map of indexes to media types. Used to update the media type of specific content by index."
+                  description: "A map of indexes to media types. Used to update the media type of specific content by index. Overrides mediaTypeMap."
                 },
                 mediaTypeMap: {
                   type: "object",
                   additionalProperties: {
                     type: "string"
                   },
-                  description: "A map of old to new media types. Supports wildcards (*) in the old media types. These will be applied before and overridden by the indexMediaTypeMap values, if present."
+                  description: "A map of old to new media types. Supports wildcards (*) in the old media types."
                 }
               },
-              additionalProperties: false
-            }
-          },
-          {
-            name: "org.deltafi.core.action.mediatype.DetectMediaType",
-            type: "TRANSFORM",
-            description: "Detect and set mediaType for each content, using Tika. In the case of detection errors, the existing mediaType is retained.",
-            schema: {
-              type: "object",
               additionalProperties: false
             }
           },
@@ -588,42 +584,30 @@ const generateData = () => {
             }
           },
           {
-            name: "org.deltafi.core.action.filter.FilterByCriteria",
+            name: "org.deltafi.core.action.filter.Filter",
             type: "TRANSFORM",
-            description: "The FilterByCriteria action allows you to filter or pass DeltaFiles based on specific criteria defined using Spring Expression Language (SpEL). The action takes a list of SpEL expressions that are evaluated against the metadata and content. Depending on the configured filter behavior, the action filters if 'ANY', 'ALL', or 'NONE' of the expressions match.\nExamples:\n- To filter if metadata key 'x' is set to 'y': \"metadata['x'] == 'y'\"\n- To filter if 'x' is not 'y' or if 'x' is not present: \"metadata['x'] != 'y' || !metadata.containsKey('x')\"\n- To filter if no content is JSON: \"!content.stream().anyMatch(c -> c.getMediaType.equals('application/json'))",
+            description: "Filters by default or when optional criteria is met in content or metadata",
             schema: {
               type: "object",
               properties: {
                 filterBehavior: {
                   type: "string",
                   enum: [
-                    "ALL",
                     "ANY",
+                    "ALL",
                     "NONE"
                   ],
                   description: "Specifies the filter behavior. 'ANY' will filter if any expression matches. 'ALL' will filter if all expressions match. 'NONE' will filter if no expression matches. Defaults to ANY.",
                   default: "ANY"
                 },
                 filterExpressions: {
-                  description: "A list of SpEL expressions used to filter the content and metadata.",
+                  description: "A list of Spring Expression Language (SpEL) expressions used to filter",
                   type: "array",
                   items: {
                     type: "string"
                   }
                 }
               },
-              required: [
-                "filterExpressions"
-              ],
-              additionalProperties: false
-            }
-          },
-          {
-            name: "org.deltafi.core.action.filter.Filter",
-            type: "TRANSFORM",
-            description: "Action that always filters",
-            schema: {
-              type: "object",
               additionalProperties: false
             }
           },
@@ -701,22 +685,29 @@ const generateData = () => {
             }
           },
           {
-            name: "org.deltafi.core.action.metadata.MetadataToAnnotation",
+            name: "org.deltafi.core.action.annotate.Annotate",
             type: "TRANSFORM",
-            description: "Saves metadata as annotations",
+            description: "Adds annotations",
             schema: {
               type: "object",
               properties: {
-                discardPrefix: {
-                  type: "string",
-                  description: "Remove the prefix from each metadata key before adding annotation"
+                annotations: {
+                  type: "object",
+                  additionalProperties: {
+                    type: "string"
+                  },
+                  description: "Key value pairs of annotations to be added"
                 },
                 metadataPatterns: {
-                  description: "List of regex patterns to filter the metadata to include. If empty, all metadata is included.",
+                  description: "List of regex patterns matching metadata keys to include. If empty, all metadata is included.",
                   type: "array",
                   items: {
                     type: "string"
                   }
+                },
+                discardPrefix: {
+                  type: "string",
+                  description: "The prefix to remove from each metadata key before adding it as an annotation"
                 }
               },
               additionalProperties: false
