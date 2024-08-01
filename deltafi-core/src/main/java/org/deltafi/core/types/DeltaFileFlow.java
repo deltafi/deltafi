@@ -33,6 +33,8 @@ import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.function.Predicate;
 
+import static jakarta.persistence.ConstraintMode.NO_CONSTRAINT;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -86,7 +88,7 @@ public class DeltaFileFlow {
     private List<String> pendingActions = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "delta_file_id")
+    @JoinColumn(name = "delta_file_id", foreignKey = @ForeignKey(NO_CONSTRAINT))
     @ToString.Exclude
     @JsonBackReference
     private DeltaFile deltaFile;

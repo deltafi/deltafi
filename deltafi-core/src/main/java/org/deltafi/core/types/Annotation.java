@@ -25,6 +25,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
+import static jakarta.persistence.ConstraintMode.NO_CONSTRAINT;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -40,7 +42,7 @@ public class Annotation implements Comparable<Annotation> {
     private String value;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "delta_file_id")
+    @JoinColumn(name = "delta_file_id", foreignKey = @ForeignKey(NO_CONSTRAINT))
     @ToString.Exclude
     @JsonBackReference
     private DeltaFile deltaFile;

@@ -33,6 +33,8 @@ import org.jetbrains.annotations.NotNull;
 import java.time.OffsetDateTime;
 import java.util.*;
 
+import static jakarta.persistence.ConstraintMode.NO_CONSTRAINT;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -90,7 +92,7 @@ public class Action {
   private int version;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "delta_file_flow_id")
+  @JoinColumn(name = "delta_file_flow_id", foreignKey = @ForeignKey(NO_CONSTRAINT))
   @ToString.Exclude
   @JsonBackReference
   private DeltaFileFlow deltaFileFlow;
