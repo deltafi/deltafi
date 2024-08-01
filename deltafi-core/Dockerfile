@@ -1,4 +1,4 @@
-FROM deltafi/deltafi-java-jre:21.0.3-alpine-0
+FROM deltafi/deltafi-java-jre:21.0.4-alpine-0
 VOLUME /tmp
 ADD /build/libs/deltafi-*.jar deltafi-app.jar
 COPY probe.sh /
