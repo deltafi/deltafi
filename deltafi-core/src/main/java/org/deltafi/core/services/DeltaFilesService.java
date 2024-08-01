@@ -1269,9 +1269,9 @@ public class DeltaFilesService {
             ActionEvent event = ActionEvent.builder()
                     .did(deltaFile.getDid())
                     .flowName(flow.getName())
-                    .flowId(flow.getNumber())
+                    .flowId(flow.getId())
                     .actionName(action.getName())
-                    .actionId(action.getNumber())
+                    .actionId(action.getId())
                     .error(ErrorEvent.builder().cause(errorMessage).build())
                     .type(ActionEventType.UNKNOWN)
                     .build();

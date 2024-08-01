@@ -33,6 +33,7 @@ import java.util.*;
 
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.deltafi.core.util.FlowBuilders.TRANSFORM_TOPIC;
+import static org.deltafi.core.util.FullFlowExemplars.UUID_0;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -276,7 +277,7 @@ public class Util {
         return CoreEventQueue.convertEvent(json);
     }
 
-    public static ActionEvent filterActionEvent(UUID did, String flow, int flowId, String filteredAction, int actionId) throws IOException {
+    public static ActionEvent filterActionEvent(UUID did, String flow, UUID flowId, String filteredAction, UUID actionId) throws IOException {
         String json = String.format(new String(Objects.requireNonNull(Util.class.getClassLoader().getResourceAsStream("full-flow/filter.json")).readAllBytes()), did, flow, flowId, filteredAction, actionId);
         return CoreEventQueue.convertEvent(json);
     }

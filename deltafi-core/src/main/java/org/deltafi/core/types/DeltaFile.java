@@ -325,11 +325,15 @@ public class DeltaFile {
     return flows.stream().anyMatch(f -> f.hasActionInState(ActionState.JOINING));
   }
 
-  public DeltaFileFlow getFlow(String flowName, int flowId) {
-    return flows.stream().filter(f -> f.getNumber() == flowId && f.getName().equals(flowName)).findFirst().orElse(null);
+  public DeltaFileFlow getFlow(String flowName) {
+    return flows.stream().filter(f -> f.getName().equals(flowName)).findFirst().orElse(null);
   }
 
-  public DeltaFileFlow getPendingFlow(String flowName, int flowId) {
+  public DeltaFileFlow getFlow(String flowName, UUID flowId) {
+    return flows.stream().filter(f -> f.getId().equals(flowId) && f.getName().equals(flowName)).findFirst().orElse(null);
+  }
+
+  public DeltaFileFlow getPendingFlow(String flowName, UUID flowId) {
     DeltaFileFlow flow = getFlow(flowName, flowId);
     if (flow == null || flow.terminal()) {
       throw new UnexpectedFlowException(flowName, flowId, did, flow != null);
@@ -485,9 +489,9 @@ public class DeltaFile {
             .actionContext(ActionContext.builder()
                     .flowName(flow.getName())
                     .dataSource(dataSource)
-                    .flowId(flow.getNumber())
+                    .flowId(flow.getId())
                     .actionName(action.getName())
-                    .actionId(action.getNumber())
+                    .actionId(action.getId())
                     .did(did)
                     .deltaFileName(name)
                     .joinedDids(Objects.requireNonNullElseGet(joinedDids, List::of))

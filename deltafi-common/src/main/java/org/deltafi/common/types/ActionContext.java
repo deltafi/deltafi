@@ -36,9 +36,9 @@ public class ActionContext {
     private String deltaFileName;
     private String dataSource;
     private String flowName;
-    private int flowId;
+    private UUID flowId;
     private String actionName;
-    private int actionId;
+    private UUID actionId;
     private String actionVersion;
     private String hostname;
     private OffsetDateTime startTime;

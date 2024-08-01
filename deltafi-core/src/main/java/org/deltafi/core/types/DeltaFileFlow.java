@@ -283,14 +283,14 @@ public class DeltaFileFlow {
         return state == DeltaFileFlowState.COMPLETE || state == DeltaFileFlowState.CANCELLED || state == DeltaFileFlowState.ERROR;
     }
 
-    public Action getAction(String actionName, int actionId) {
+    public Action getAction(String actionName, UUID actionId) {
         return getActions().stream()
-                .filter(action -> action.getName().equals(actionName) && action.getNumber() == actionId)
+                .filter(action -> action.getName().equals(actionName) && action.getId().equals(actionId))
                 .findFirst()
                 .orElse(null);
     }
 
-    public Action getPendingAction(String actionName, int actionId, UUID did) {
+    public Action getPendingAction(String actionName, UUID actionId, UUID did) {
         Action action = getAction(actionName, actionId);
         if (action == null || action.terminal()) {
             throw new UnexpectedActionException(name, number, actionName, actionId, did);

@@ -38,9 +38,9 @@ import java.util.UUID;
 public class ActionEvent {
   private UUID did;
   private String flowName;
-  private Integer flowId;
+  private UUID flowId;
   private String actionName;
-  private Integer actionId;
+  private UUID actionId;
   private OffsetDateTime start;
   private OffsetDateTime stop;
   private ActionEventType type;

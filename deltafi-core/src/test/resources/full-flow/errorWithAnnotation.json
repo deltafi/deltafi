@@ -1,9 +1,9 @@
 {
     "did": "%1$s",
     "flowName": "sampleEgress",
-    "flowId": 2,
+    "flowId": "22222222-2222-2222-2222-222222222222",
     "actionName": "SampleEgressAction",
-    "actionId": 0,
+    "actionId": "00000000-0000-0000-0000-000000000002",
     "start": "2021-07-11T13:44:22.183Z",
     "stop": "2021-07-11T13:44:22.184Z",
     "type": "ERROR",

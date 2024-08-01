@@ -790,7 +790,8 @@ class DeltaFiCoreApplicationTests {
 		if (withAnnotation) {
 			deltaFilesService.handleActionEvent(actionEvent("errorWithAnnotation", did));
 		} else {
-			deltaFilesService.handleActionEvent(actionEvent("error", did));
+			deltaFilesService.handleActionEvent(actionEvent("error", did, original.getFlows().getLast().getId(),
+					original.getFlows().getLast().getActions().getLast().getId()));
 		}
 
 		DeltaFile actual = deltaFilesService.getDeltaFile(did);
@@ -927,7 +928,7 @@ class DeltaFiCoreApplicationTests {
 	void testToEgressWithTestModeEgress() throws IOException {
 		UUID did = UUID.randomUUID();
 		DeltaFile midTransform = postTransformUtf8DeltaFile(did);
-		DeltaFileFlow transformFlow = midTransform.getFlow(TRANSFORM_FLOW_NAME, 1);
+		DeltaFileFlow transformFlow = midTransform.getFlow(TRANSFORM_FLOW_NAME);
 		transformFlow.setTestMode(true);
 		transformFlow.setTestModeReason(transformFlow.getName());
 		deltaFileRepo.save(midTransform);
@@ -1029,17 +1030,17 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testFilterTransform() throws IOException {
 		UUID did = UUID.randomUUID();
-		verifyFiltered(postIngressDeltaFile(did), TRANSFORM_FLOW_NAME, 1, "Utf8TransformAction", 0);
+		verifyFiltered(postIngressDeltaFile(did), TRANSFORM_FLOW_NAME, UUID_1, "Utf8TransformAction", ACTION_UUIDS.get("Utf8TransformAction"));
 	}
 
 	@Test
 	void testFilterEgress() throws IOException {
 		UUID did = UUID.randomUUID();
-		verifyFiltered(postTransformDeltaFile(did), EGRESS_FLOW_NAME, 2,"SampleEgressAction", 0);
+		verifyFiltered(postTransformDeltaFile(did), EGRESS_FLOW_NAME, UUID_2,"SampleEgressAction", ACTION_UUIDS.get("SampleEgressAction"));
 	}
 
 	@SuppressWarnings("SameParameterValue")
-	private void verifyFiltered(DeltaFile deltaFile, String flow, int flowId, String filteredAction, int actionId) throws IOException {
+	private void verifyFiltered(DeltaFile deltaFile, String flow, UUID flowId, String filteredAction, UUID actionId) throws IOException {
 		deltaFileRepo.save(deltaFile);
 
 		deltaFilesService.handleActionEvent(filterActionEvent(deltaFile.getDid(), flow, flowId, filteredAction, actionId));
@@ -1569,14 +1570,25 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile before1 = postTransformDeltaFile(did1);
 		deltaFileRepo.save(before1);
 		DeltaFile before2 = postTransformDeltaFile(did2);
+		before2.getFlows().forEach(f -> {
+			f.setId(UUID.randomUUID());
+			f.getActions().forEach(a -> a.setId(UUID.randomUUID()));
+		});
 		deltaFileRepo.save(before2);
 		DeltaFile before3 = postTransformDeltaFile(did3);
 		before3.setDataSource("flow3");
+		before3.getFlows().forEach(f -> {
+			f.setId(UUID.randomUUID());
+			f.getActions().forEach(a -> a.setId(UUID.randomUUID()));
+		});
 		deltaFileRepo.save(before3);
 
-		deltaFilesService.handleActionEvent(actionEvent("error", did1));
-		deltaFilesService.handleActionEvent(actionEvent("error", did2));
-		deltaFilesService.handleActionEvent(actionEvent("error", did3));
+		deltaFilesService.handleActionEvent(actionEvent("error", did1, before1.getFlows().getLast().getId(),
+				before1.getFlows().getLast().getActions().getLast().getId()));
+		deltaFilesService.handleActionEvent(actionEvent("error", did2, before2.getFlows().getLast().getId(),
+				before2.getFlows().getLast().getActions().getLast().getId()));
+		deltaFilesService.handleActionEvent(actionEvent("error", did3, before3.getFlows().getLast().getId(),
+				before3.getFlows().getLast().getActions().getLast().getId()));
 
 		DeltaFile during1 = deltaFilesService.getDeltaFile(did1);
 		DeltaFile during2 = deltaFilesService.getDeltaFile(did2);
@@ -1668,7 +1680,7 @@ class DeltaFiCoreApplicationTests {
 		DeltaFile deltaFile = buildErrorDeltaFile(UUID.randomUUID(), "flow", "errorCause", "context", NOW);
 		deltaFile.setContentDeleted(NOW);
 		deltaFile.setContentDeletedReason("contentDeletedReason");
-		Action erroredAction = deltaFile.getFlow("flow", 1).getAction("ErrorAction", 0);
+		Action erroredAction = deltaFile.getFlow("flow").getActions().getLast();
 		erroredAction.setNextAutoResume(NOW);
 		erroredAction.setNextAutoResumeReason("nextAutoResumeReason");
 		erroredAction.setCreated(NOW.minusSeconds(1));
@@ -1708,6 +1720,10 @@ class DeltaFiCoreApplicationTests {
 	void resume() {
 		DeltaFile input = postErrorDeltaFile(UUID.randomUUID());
 		DeltaFile second = postTransformDeltaFile(UUID.randomUUID());
+		second.getFlows().forEach(f -> {
+			f.setId(UUID.randomUUID());
+			f.getActions().forEach(a -> a.setId(UUID.randomUUID()));
+		});
 		deltaFileRepo.saveAll(List.of(input, second));
 
 		UUID badDid = UUID.randomUUID();
@@ -3990,7 +4006,7 @@ class DeltaFiCoreApplicationTests {
 		List<DeltaFile> deltaFiles = new ArrayList<>();
 		for (int i = 0; i < 505; i++) {
 			DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID(), List.of());
-			deltaFile.getFlow("myFlow", 0).getAction("IngressAction", 0).setState(ERROR);
+			deltaFile.getFlows().getFirst().getActions().getFirst().setState(ERROR);
 			deltaFile.setStage(DeltaFileStage.ERROR);
 
 			if (i >= 501) {
@@ -4029,11 +4045,11 @@ class DeltaFiCoreApplicationTests {
 		assertThat(actionInputs).hasSize(1);
 
 		DeltaFile parent1 = deltaFileRepo.findById(did1).orElseThrow();
-		Action action = parent1.getFlow(actionFlow, 1).actionNamed(DeltaFiCoreApplicationTests.JOINING_TRANSFORM_ACTION).orElseThrow();
+		Action action = parent1.getFlow(actionFlow).actionNamed(DeltaFiCoreApplicationTests.JOINING_TRANSFORM_ACTION).orElseThrow();
 		assertEquals(ActionState.JOINING, action.getState());
 
 		DeltaFile parent2 = deltaFileRepo.findById(did2).orElseThrow();
-		action = parent2.getFlow(actionFlow, 1).actionNamed(DeltaFiCoreApplicationTests.JOINING_TRANSFORM_ACTION).orElseThrow();
+		action = parent2.getFlow(actionFlow).actionNamed(DeltaFiCoreApplicationTests.JOINING_TRANSFORM_ACTION).orElseThrow();
 		assertEquals(ActionState.JOINING, action.getState());
 
 		ActionInput actionInput = actionInputs.getFirst();
@@ -4043,8 +4059,9 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	private DeltaFileMessage forQueueHelper(DeltaFile deltaFile, ActionContext actionContext) {
-		DeltaFileFlow deltaFileFlow = deltaFile.getFlow(actionContext.getFlowName(), actionContext.getFlowId());
-		return forQueueHelper(deltaFileFlow);
+		DeltaFileFlow deltaFileFlow = deltaFile.getFlows().stream().filter(f -> f.getName().equals(actionContext.getFlowName())).findFirst().orElse(null);
+        assert deltaFileFlow != null;
+        return forQueueHelper(deltaFileFlow);
 	}
 
 	private DeltaFileMessage forQueueHelper(DeltaFileFlow deltaFileFlow) {
@@ -4139,7 +4156,7 @@ class DeltaFiCoreApplicationTests {
 		if (deltaFile.getStage() != DeltaFileStage.ERROR) {
 			return false;
 		}
-		DeltaFileFlow deltaFileFlow = deltaFile.getFlow(actionFlow, 1);
+		DeltaFileFlow deltaFileFlow = deltaFile.getFlow(actionFlow);
 		if (deltaFileFlow.getState() != DeltaFileFlowState.ERROR) {
 			return false;
 		}
