@@ -5,6 +5,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.2.14] - 2024-08-01
+
+### Added
+- Added deltafi/docker-web-ui container to the stack
+- Compose stack: compose script has `logs`, `ps`, `top`, `pause`, and `unpause` commands
+
+### Changed
+- Compose stack: Remove mongo DB on uninstall, instead of dropping collections
+- Compose stack: Compose script will remove mongo DB on uninstall
+- Compose stack: Compose script will clean up plugin containers on uninstall
+
+### Fixed
+- [deltafi-python] Fix python 3.12 thread compatibility that was affecting the MinIO client (GitLab-300)
+- Compose stack: Removed dependency on Ruby to run CLI
+
 ## [1.2.13] - 2024-07-22
 
 ### Added
@@ -3028,7 +3043,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.13...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.14...main
+[1.2.14]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.13...1.2.14
 [1.2.13]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.12...1.2.13
 [1.2.12]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.11...1.2.12
 [1.2.11]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.10...1.2.11
