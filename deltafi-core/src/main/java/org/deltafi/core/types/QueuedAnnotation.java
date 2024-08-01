@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.types;
 
+import com.fasterxml.uuid.Generators;
 import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -50,7 +51,7 @@ public class QueuedAnnotation {
     OffsetDateTime time;
 
     public QueuedAnnotation(UUID did, Map<String, String> annotations, boolean allowOverwrites) {
-        this.id = UUID.randomUUID();
+        this.id = Generators.timeBasedEpochGenerator().generate();
         this.did = did;
         this.annotations = annotations;
         this.allowOverwrites = allowOverwrites;

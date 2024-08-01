@@ -19,6 +19,7 @@ package org.deltafi.core.repo;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.uuid.Generators;
 import jakarta.transaction.Transactional;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.Variable;
@@ -63,7 +64,7 @@ public interface PluginVariableRepo extends JpaRepository<PluginVariables, UUID>
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             String jsonVariables = objectMapper.writeValueAsString(variables);
-            upsertVariables(UUID.randomUUID(), sourcePlugin.getGroupId(), sourcePlugin.getArtifactId(), sourcePlugin.getVersion(), jsonVariables);
+            upsertVariables(Generators.timeBasedEpochGenerator().generate(), sourcePlugin.getGroupId(), sourcePlugin.getArtifactId(), sourcePlugin.getVersion(), jsonVariables);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Error converting variables to JSON", e);
         }

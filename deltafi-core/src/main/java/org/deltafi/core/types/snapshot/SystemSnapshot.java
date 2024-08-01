@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.types.snapshot;
 
+import com.fasterxml.uuid.Generators;
 import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -43,7 +44,7 @@ import java.util.UUID;
 @NoArgsConstructor
 public class SystemSnapshot {
     @Id
-    private UUID id = UUID.randomUUID();
+    private UUID id = Generators.timeBasedEpochGenerator().generate();
     private String reason;
     private OffsetDateTime created = OffsetDateTime.now();
     @Type(JsonBinaryType.class)

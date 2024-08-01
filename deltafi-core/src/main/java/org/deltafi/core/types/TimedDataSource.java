@@ -18,6 +18,7 @@
 package org.deltafi.core.types;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.uuid.Generators;
 import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
 import lombok.Builder;
@@ -125,7 +126,7 @@ public class TimedDataSource extends DataSource {
      */
     public WrappedActionInput buildActionInput(String systemName, OffsetDateTime now) {
         DeltaFile deltaFile = DeltaFile.builder()
-                .did(UUID.randomUUID())
+                .did(Generators.timeBasedEpochGenerator().generate())
                 .dataSource(getName())
                 .build();
         DeltaFileFlow flow = DeltaFileFlow.builder()

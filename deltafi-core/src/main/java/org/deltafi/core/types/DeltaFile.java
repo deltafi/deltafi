@@ -18,6 +18,7 @@
 package org.deltafi.core.types;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.uuid.Generators;
 import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
 import lombok.*;
@@ -44,7 +45,7 @@ import java.util.stream.Stream;
 public class DeltaFile {
   @Id
   @Builder.Default
-  private UUID did = UUID.randomUUID();
+  private UUID did = Generators.timeBasedEpochGenerator().generate();
   private String name;
   private String normalizedName;
   private String dataSource;

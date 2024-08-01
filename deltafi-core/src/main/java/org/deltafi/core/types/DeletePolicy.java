@@ -19,6 +19,7 @@ package org.deltafi.core.types;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.uuid.Generators;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Data;
@@ -46,7 +47,7 @@ import java.util.UUID;
 public abstract class DeletePolicy {
   @Id
   @Builder.Default
-  protected UUID id = UUID.randomUUID();
+  protected UUID id = Generators.timeBasedEpochGenerator().generate();
 
   @Column(nullable = false, unique = true)
   protected String name;

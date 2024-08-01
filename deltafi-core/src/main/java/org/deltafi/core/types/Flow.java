@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.types;
 
+import com.fasterxml.uuid.Generators;
 import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -39,7 +40,7 @@ import java.util.*;
 @NoArgsConstructor
 public abstract class Flow {
     @Id
-    UUID id = UUID.randomUUID();
+    UUID id = Generators.timeBasedEpochGenerator().generate();
 
     private String name;
 

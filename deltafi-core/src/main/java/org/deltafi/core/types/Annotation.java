@@ -18,6 +18,7 @@
 package org.deltafi.core.types;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.uuid.Generators;
 import jakarta.persistence.*;
 import lombok.*;
 import org.jetbrains.annotations.NotNull;
@@ -34,7 +35,7 @@ import java.util.UUID;
 @EqualsAndHashCode(exclude = "deltaFile")
 public class Annotation implements Comparable<Annotation> {
     @Id
-    private UUID id = UUID.randomUUID();
+    private UUID id = Generators.timeBasedEpochGenerator().generate();
     private String key;
     private String value;
 

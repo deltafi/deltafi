@@ -20,6 +20,7 @@ package org.deltafi.core.datafetchers;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.uuid.Generators;
 import com.netflix.graphql.dgs.*;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import graphql.schema.DataFetchingEnvironment;
@@ -273,7 +274,7 @@ public class DeltaFilesDatafetcher {
       List<Content> contentList = new ArrayList<>();
       for (int i = 0; i < Math.min(remainingFiles, batchSize); i++) {
         if (contentSize > 0) {
-          UUID did = UUID.randomUUID();
+          UUID did = Generators.timeBasedEpochGenerator().generate();
           log.debug("Saving content for {} ({}/{})", did, i + (numFiles - remainingFiles) + 1, numFiles);
           byte[] contentBytes = new byte[contentSize];
           random.nextBytes(contentBytes);

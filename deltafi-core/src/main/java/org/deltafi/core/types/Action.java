@@ -18,6 +18,7 @@
 package org.deltafi.core.types;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.uuid.Generators;
 import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
 import lombok.*;
@@ -46,7 +47,7 @@ public class Action {
 
   @Id
   @Builder.Default
-  private UUID id = UUID.randomUUID();
+  private UUID id = Generators.timeBasedEpochGenerator().generate();
   private String name;
   private int number;
   @Builder.Default

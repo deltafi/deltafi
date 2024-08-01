@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.types;
 
+import com.fasterxml.uuid.Generators;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -35,11 +36,11 @@ public class JoinEntryDid {
     private UUID did;
 
     public JoinEntryDid() {
-        id = UUID.randomUUID();
+        id = Generators.timeBasedEpochGenerator().generate();
     }
 
     public JoinEntryDid(UUID joinEntryId, UUID did) {
-        id = UUID.randomUUID();
+        id = Generators.timeBasedEpochGenerator().generate();
         this.joinEntryId = joinEntryId;
         this.did = did;
     }

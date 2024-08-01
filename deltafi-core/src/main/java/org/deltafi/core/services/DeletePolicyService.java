@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.services;
 
+import com.fasterxml.uuid.Generators;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.types.*;
@@ -243,7 +244,7 @@ public class DeletePolicyService implements Snapshotter {
         Set<UUID> ids = new HashSet<>();
         policies.forEach(policy -> {
             if (policy.getId() == null) {
-                policy.setId(UUID.randomUUID());
+                policy.setId(Generators.timeBasedEpochGenerator().generate());
             }
             errors.addAll(DeletePolicyValidator.validate(policy));
             UUID id = policy.getId();

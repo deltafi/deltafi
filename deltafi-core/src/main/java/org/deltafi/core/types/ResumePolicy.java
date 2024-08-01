@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.types;
 
+import com.fasterxml.uuid.Generators;
 import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -44,7 +45,7 @@ public class ResumePolicy {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @lombok.Builder.Default
-    private UUID id = UUID.randomUUID();
+    private UUID id = Generators.timeBasedEpochGenerator().generate();
     @Column(nullable = false, unique = true)
     private String name;
     private String errorSubstring;

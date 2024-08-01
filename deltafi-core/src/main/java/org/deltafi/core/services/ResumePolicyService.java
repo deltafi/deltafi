@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.services;
 
+import com.fasterxml.uuid.Generators;
 import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -175,7 +176,7 @@ public class ResumePolicyService implements Snapshotter {
      */
     public Result save(ResumePolicy resumePolicy) {
         if (resumePolicy.getId() == null) {
-            resumePolicy.setId(UUID.randomUUID());
+            resumePolicy.setId(Generators.timeBasedEpochGenerator().generate());
         }
         List<String> errors = resumePolicy.validate();
         if (errors.isEmpty()) {
@@ -234,7 +235,7 @@ public class ResumePolicyService implements Snapshotter {
         List<ResumePolicy> valid = new ArrayList<>();
         for (ResumePolicy policy : policies) {
             if (policy.getId() == null) {
-                policy.setId(UUID.randomUUID());
+                policy.setId(Generators.timeBasedEpochGenerator().generate());
             }
             List<String> errors = policy.validate();
             if (errors.isEmpty()) {

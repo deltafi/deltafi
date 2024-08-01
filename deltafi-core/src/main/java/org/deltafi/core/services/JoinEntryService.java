@@ -20,6 +20,7 @@ package org.deltafi.core.services;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.uuid.Generators;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.types.JoinDefinition;
@@ -62,7 +63,7 @@ public class JoinEntryService {
         long endTimeMs = clock.millis() + deltaFiPropertiesService.getDeltaFiProperties().getJoinAcquireLockTimeoutMs();
         while (clock.millis() < endTimeMs) {
             try {
-                JoinEntry newEntry = new JoinEntry(UUID.randomUUID(), joinDefinition, true, OffsetDateTime.now(clock), joinDate, minNum, maxNum, flowDepth, 1);
+                JoinEntry newEntry = new JoinEntry(Generators.timeBasedEpochGenerator().generate(), joinDefinition, true, OffsetDateTime.now(clock), joinDate, minNum, maxNum, flowDepth, 1);
                 return joinEntryRepo.save(newEntry);
             } catch (DataIntegrityViolationException e) {
                 Optional<JoinEntry> updated;
