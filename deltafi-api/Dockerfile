@@ -1,10 +1,10 @@
-FROM deltafi/deltafi-ruby:3.3.1-alpine3.19-0 AS build
+FROM deltafi/deltafi-ruby:3.3.4-alpine3.20-0 AS build
 WORKDIR /app
 COPY Gemfile* /app/
 RUN apk add --no-cache build-base openssl-dev
 RUN bundle install
 
-FROM deltafi/deltafi-ruby:3.3.1-alpine3.19-0
+FROM deltafi/deltafi-ruby:3.3.4-alpine3.20-0
 WORKDIR /app
 COPY --from=build /app /app
 COPY . /app/
