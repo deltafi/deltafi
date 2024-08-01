@@ -129,7 +129,6 @@ fi
 _command_check jq
 _command_check curl
 _command_check sed
-_command_check ruby
 
 if ! _is_standalone; then
   _command_check kubectl

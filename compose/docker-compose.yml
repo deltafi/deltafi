@@ -332,6 +332,18 @@ services:
       - ${SETTINGS_DIR}/grafana/dashboards:/tmp/dashboards
     restart: unless-stopped
     user: "${USER_ID}"
+  deltafi-docker-ui:
+    image: deltafi/docker-web-gui:1.0.1-0
+    container_name: deltafi-docker-ui
+    expose:
+      - "3230"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    labels:
+      deltafi-group: deltafi-dependency
+    networks:
+      - deltafi
+    restart: unless-stopped
   deltafi-graphite:
     image: ${GRAPHITE}
     container_name: deltafi-graphite

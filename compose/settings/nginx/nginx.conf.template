@@ -5,6 +5,7 @@ events {
 http {
     map $host $upstream_mapping {
         "~^metrics.*" "deltafi-grafana";
+        "~^orchestration.*" "deltafi-docker-ui";
         "~^ingress.*" "deltafi-ingress";
         "~^graphite.*" "deltafi-graphite";
         "~^minio.*" "deltafi-minio";
@@ -47,6 +48,10 @@ http {
 
     upstream deltafi-minio {
         server deltafi-minio:9000;
+    }
+
+    upstream deltafi-docker-ui {
+        server deltafi-docker-ui:3230;
     }
 
     proxy_set_header   Host $host;

@@ -2,6 +2,13 @@
 
 . "$DELTAFICLI_WORKDIR/common"
 
+_command_check() {
+  command -v $1 &> /dev/null || _exit_1 echo "Command '$@' is not installed. This command cannot execute."
+}
+
+_command_check ruby
+_command_check jq
+
 cli_help_command() {
   echo "
 Command: export-config
