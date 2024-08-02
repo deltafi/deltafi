@@ -8,9 +8,17 @@ Command: compose
 
 Subcommands:
   start                       start all of the services
-  uninstall                   stop and remove all of the services
+  uninstall                   stop and remove all of the services (destructive to mongo storage)
   restart <services>          restart the list of services (space delimited, restarts all services by default)
   stop-services <services>    stop the list of services (space delimited, stops all services by default)
+  build                       build and tag core docker images for use in compose
+  destroy                     remove all data directories for DeltaFi
+  images                      list a manifest of all images used by the stack
+  top                         top listing for compose stack
+  logs                        show logs for compose stack
+  ps                          show running compose stack
+  pause                       pause the compose stack
+  unpause                     unpause the compose stack
 
 Usage:
   compose [SUBCOMMAND] [ARGS]
@@ -33,6 +41,8 @@ Usage:
 }
 
 SUDO=$(which sudo)
+export USER_ID
+USER_ID=$(id -u)
 
 # _readlink()
 #
@@ -275,7 +285,9 @@ _base64() {
 }
 
 DELTAFI_COMPOSE_PATH=$(cd $(dirname $(_readlink -f $0)) && pwd)
+DELTAFI_PATH=$(cd $(dirname $(_readlink -f $0))/.. && pwd)
 COMPOSE_FILE="${DELTAFI_COMPOSE_PATH}/docker-compose.yml"
+VERSION=$(deltafi version)
 
 # TODO make the data directory configurable
 DATA_DIR="${DELTAFI_COMPOSE_PATH}/data"
@@ -294,6 +306,28 @@ _is_arm() {
   else
     return 1
   fi
+}
+
+OS="$(uname)"
+ARCH="$(uname -m)"
+if [[ "${OS}" == "Linux" ]]; then
+  DELTAFI_ON_LINUX=1
+  _ok "Linux environment detected"
+elif [[ "${OS}" == "Darwin" ]]; then
+  DELTAFI_ON_MACOS=1
+  _ok "MacOS environment detected"
+else
+  _fail "Compose orchestration for DeltaFi is only supported on macOS and Linux."
+fi
+
+_is_linux() {
+  [[ "${DELTAFI_ON_LINUX}" == 1 ]] && return 0
+  return 1
+}
+
+_is_macos() {
+  [[ "${DELTAFI_ON_MACOS}" == 1 ]] && return 0
+  return 1
 }
 
 _random_password() {
@@ -399,10 +433,12 @@ _check_local_fqdns() {
   _info "Checking /etc/hosts config"
   _info -h "You may be prompted for your sudo password"
 
-  _verify_or_replace_fqdn "local.deltafi.org"
-  _verify_or_replace_fqdn "graphite.local.deltafi.org"
-  _verify_or_replace_fqdn "metrics.local.deltafi.org"
-  _verify_or_replace_fqdn "minio.local.deltafi.org"
+  domain=$(_from_values ".ingress.domain")
+  _verify_or_replace_fqdn "$domain"
+  _verify_or_replace_fqdn "graphite.$domain"
+  _verify_or_replace_fqdn "metrics.$domain"
+  _verify_or_replace_fqdn "minio.$domain"
+  _verify_or_replace_fqdn "orchestration.$domain"
   _verify_or_replace_fqdn "deltafi-api-service"
   _verify_or_replace_fqdn "deltafi-auth-service"
   _verify_or_replace_fqdn "deltafi-core-service"
@@ -411,13 +447,8 @@ _check_local_fqdns() {
 
 # creates a default values yaml using the local repo if this is a snapshot version otherwise it will use docker.io/deltafi
 _write_default_values() {
-  tag=$(deltafi version)
+  tag=${VERSION}
   repo="deltafi"
-
-  if [[ "${tag}" = *-SNAPSHOT ]]; then
-    repo="localhost:5000"
-    tag="latest"
-  fi
 
   cat <<EOF > "${VALUES_YAML}"
 deltafi:
@@ -451,28 +482,32 @@ deltafi:
     image: ${repo}/deltafi-egress-sink:${tag}
   nodemonitor:
     image: ${repo}/deltafi-nodemonitor:${tag}
+  clickhouse:
+    enabled: true
   clickhouse_etl:
-    interval: 10
-    lag: 60
+    enabled: true
+    image: ${repo}/deltafi-clickhouse-etl:${tag}
+    interval: 120
+    lag: 120
     batch: 2000
-    delete_ttl: "1 MONTH"
+    delete_ttl: "7 DAY"
 # nginx domain
 ingress:
   domain: local.deltafi.org
 dependencies:
   grafana: deltafi/grafana:11.1.3-0
   graphite: graphiteapp/graphite-statsd:1.1.10-5
-  loki: grafana/loki:2.9.3
-  minio: quay.io/minio/minio:RELEASE.2024-06-11T03-13-30Z
+  loki: grafana/loki:2.9.9
+  minio: quay.io/minio/minio:RELEASE.2024-07-04T14-25-45Z
   nginx: docker.io/nginx:1.27.0-alpine
-  promtail: docker.io/grafana/promtail:2.9.3
+  promtail: docker.io/grafana/promtail:2.9.9
   mongodb: docker.io/bitnami/mongodb:5.0.17
   valkey: docker.io/bitnami/valkey:7.2.5
   clickhouse: bitnami/clickhouse:24.3.3-debian-12-r2
 EOF
 
   if _is_arm; then
-    yq -i '.dependencies.mongodb = "zcube/bitnami-compat/mongodb:5.0.17"' "${VALUES_YAML}"
+    yq -i '.dependencies.mongodb = "zcube/bitnami-compat-mongodb:5.0.17"' "${VALUES_YAML}"
   fi
 }
 
@@ -509,11 +544,11 @@ _from_values() {
 }
 
 _append_startup_from_values() {
-  _append_startup "${1}" $(_from_values "${2}") "${STARTUP_SETTINGS}"
+  _append_startup "${1}" "$(_from_values "${2}")" "${STARTUP_SETTINGS}"
 }
 
 _append_common_from_values() {
-  _append_startup "${1}" $(_from_values "${2}") "${COMMON_SETTINGS}"
+  _append_common "${1}" "$(_from_values "${2}")" "${COMMON_SETTINGS}"
 }
 
 _append_compose_profiles() {
@@ -549,6 +584,17 @@ _write_startup_file() {
   _append_startup "SECRETS_DIR" "${SECRETS_DIR}"
   _append_startup "ENV_DIR" "${ENV_DIR}"
   _append_startup "DATA_DIR" "${DATA_DIR}"
+  _append_startup "COMPOSE_PROJECT_NAME" "deltafi"
+  if [[ $(_from_values ".deltafi.clickhouse.enabled") == "true" ]]; then
+    _append_startup "CLICKHOUSE_SCALE" "1"
+  else
+    _append_startup "CLICKHOUSE_SCALE" "0"
+  fi
+  if [[ $(_from_values ".deltafi.clickhouse_etl.enabled") == "true" ]]; then
+    _append_startup "CLICKHOUSE_ETL_SCALE" "1"
+  else
+    _append_startup "CLICKHOUSE_ETL_SCALE" "0"
+  fi
   _append_startup_from_values "DELTAFI_API" ".deltafi.api.image"
   _append_startup_from_values "DELTAFI_AUTH" ".deltafi.auth.image"
   _append_startup_from_values "DELTAFI_AUTH_RESOLVER" ".deltafi.auth.entityResolver.image"
@@ -630,6 +676,8 @@ _write_env_files() {
   _append_common_from_values "ETL_INTERVAL" ".deltafi.clickhouse_etl.interval"
   _append_common_from_values "ETL_LAG" ".deltafi.clickhouse_etl.lag"
 
+  _append_startup_from_values "CLICKHOUSE_ENABLED" ".deltafi.clickhouse.enabled"
+  _append_startup_from_values "CLICKHOUSE_ETL_ENABLED" ".deltafi.clickhouse_etl.enabled"
   case "${auth_mode}" in
     disabled)
       auth_request="/no-auth"
@@ -656,7 +704,15 @@ _write_config() {
   _setup_secrets
 }
 
+_create_data_dirs() {
+  mkdir -p "${DATA_DIR}"
+  if _is_linux; then
+    mkdir -p "${DATA_DIR}"/{mongo,clickhouse,grafana,auth,loki,minio}
+  fi
+}
+
 start_compose() {
+  _create_data_dirs
   _create_network
   _check_local_fqdns
   docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" up -d
@@ -664,6 +720,11 @@ start_compose() {
 
 uninstall() {
   docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" down
+
+  # make sure nothing was left behind (this will sweep up any plugins that weren't part of compose)
+  docker ps -a --filter label=deltafi-group -q | xargs docker stop | xargs docker rm
+
+  rm -rf "${DATA_DIR}"/mongo
 }
 
 stop_services() {
@@ -673,6 +734,49 @@ stop_services() {
 restart_service() {
   docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" up -d --force-recreate --no-deps ${1}
 }
+
+images() {
+  docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" images "$@"
+}
+
+top() {
+  docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" top "$@"
+}
+
+ps() {
+  docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" ps "$@"
+}
+
+pause() {
+  docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" pause "$@"
+}
+
+unpause() {
+  docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" unpause "$@"
+}
+
+logs() {
+  docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" logs "$@"
+}
+
+clean() {
+  rm -rf "${DATA_DIR}" 2&>/dev/null || ${SUDO} rm -rf "${DATA_DIR}"
+}
+
+destroy() {
+  uninstall
+  clean
+}
+
+build() {
+  _attention "Building DeltaFi core"
+  pushd "$DELTAFI_PATH" > /dev/null
+  ./gradlew dockerTagDeltafi && _ok "DeltaFi core build successful"
+  cd deltafi-ui
+  _attention "Building DeltaFi UI"
+  docker build -t "deltafi/deltafi-ui:$VERSION" . && _ok "DeltaFi UI build successful"
+  popd > /dev/null
+} 
 
 ARGS=("$@")
 [[ ${#ARGS[@]} -lt 1 ]] && cli_help_command
@@ -713,6 +817,27 @@ case "$SUBCOMMAND" in
   uninstall)
     uninstall
     ;;
+  images)
+    images "$@"
+    ;;
+  top)
+    top "$@"
+    ;;
+  logs)
+    logs "$@"
+    ;;
+  ps)
+    ps "$@"
+    ;;
+  pause)
+    pause "$@"
+    ;;
+  unpause)
+    unpause "$@"
+    ;;
+  destroy)
+    destroy
+    ;;
   stop-services)
     SERVICES=""
     for i
@@ -720,7 +845,11 @@ case "$SUBCOMMAND" in
     done
     stop_services "${SERVICES}"
     ;;
+  build)
+    build
+    ;;
   *)
     cli_help_command
     ;;
+
 esac

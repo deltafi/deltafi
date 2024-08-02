@@ -4,7 +4,7 @@ x-health-probe: &health-probe
     interval: 15s
     timeout: 15s
     start_period: 5s
-    retries: 2
+    retries: 15
 
 x-logging-label: &logging-label
   logging: "promtail"
@@ -43,6 +43,7 @@ services:
       <<: *logging-label
     networks:
       - deltafi
+    restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
   deltafi-ingress:
@@ -72,29 +73,9 @@ services:
       <<: *logging-label
     networks:
       - deltafi
+    restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-  # deltafi-api:
-  #   image: ${DELTAFI_API}
-  #   container_name: deltafi-api
-  #   depends_on:
-  #     deltafi-core:
-  #       condition: service_healthy
-  #   environment:
-  #     WORKERS: ${API_WORKERS}
-  #   env_file:
-  #     - ${ENV_DIR}/common.env
-  #     - ${SECRETS_DIR}/valkey.env
-  #     - ${SECRETS_DIR}/mongodb.env
-  #     - ${SECRETS_DIR}/minio.env
-  #   expose:
-  #     - "9292"
-  #   <<: *health-probe
-  #   labels:
-  #     deltafi-group: deltafi-core
-  #     <<: *logging-label
-  #   networks:
-  #     - deltafi
   deltafi-auth:
     image: ${DELTAFI_AUTH}
     container_name: deltafi-auth
@@ -110,8 +91,10 @@ services:
       <<: *logging-label
     networks:
       - deltafi
+    restart: unless-stopped
     volumes:
       - ${DATA_DIR}/auth:/data
+    user: "${USER_ID}"
   deltafi-auth-resolver:
     image: ${DELTAFI_AUTH_RESOLVER}
     container_name: deltafi-auth-resolver
@@ -122,6 +105,7 @@ services:
       <<: *logging-label
     networks:
       - deltafi
+    restart: unless-stopped
     profiles: ["auth-resolver"]
   deltafi-monitor:
     image: ${DELTAFI_API}
@@ -139,7 +123,7 @@ services:
       test: /monitor_probe.sh
       interval: 30s
       timeout: 30s
-      retries: 2
+      retries: 4
     expose:
       - "9292"
     labels:
@@ -147,6 +131,7 @@ services:
       <<: *logging-label
     networks:
       - deltafi
+    restart: unless-stopped
   deltafi-ui:
     image: ${DELTAFI_UI}
     container_name: deltafi-ui
@@ -160,6 +145,7 @@ services:
       <<: *logging-label
     networks:
       - deltafi
+    restart: unless-stopped
   deltafi-core-actions:
     image: ${DELTAFI_CORE_ACTIONS}
     container_name: deltafi-core-actions
@@ -171,16 +157,17 @@ services:
       - ${SECRETS_DIR}/valkey.env
       - ${SECRETS_DIR}/minio.env
     healthcheck:
-      test: cat /running
+      test: cat /tmp/running
       interval: 30s
       timeout: 30s
-      retries: 2
+      retries: 4
       start_period: 10s
     labels:
       deltafi-group: deltafi-core
       <<: *logging-label
     networks:
       - deltafi
+    restart: unless-stopped
   deltafi-docs:
     image: ${DELTAFI_DOCS}
     container_name: deltafi-docs
@@ -190,6 +177,7 @@ services:
       deltafi-group: deltafi-core
     networks:
       - deltafi
+    restart: unless-stopped
   deltafi-nodemonitor:
     image: ${DELTAFI_NODEMONITOR}
     container_name: deltafi-nodemonitor
@@ -204,6 +192,7 @@ services:
       <<: *logging-label
     networks:
       - deltafi
+    restart: unless-stopped
     volumes:
       - ${DATA_DIR}:/data
   deltafi-egress-sink:
@@ -221,8 +210,10 @@ services:
       <<: *logging-label
     networks:
       - deltafi
+    restart: unless-stopped
     volumes:
       - ${DATA_DIR}:/data/deltafi/egress-sink
+    user: "${USER_ID}"
   deltafi-minio:
     image: ${MINIO}
     command: server /export -S /etc/minio/certs/ --address :9000 --console-address :9001
@@ -240,10 +231,12 @@ services:
       deltafi-group: deltafi-dependency
     networks:
       - deltafi
+    restart: unless-stopped
     volumes:
       - ${DATA_DIR}/minio:/export
+    user: "${USER_ID}"
   deltafi-mongodb:
-    image: ghcr.io/zcube/bitnami-compat/mongodb:5.0.14
+    image: ${MONGODB}
     container_name: deltafi-mongodb
     environment:
       BITNAMI_DEBUG: false
@@ -267,8 +260,10 @@ services:
       - deltafi
     expose:
       - "27017"
+    restart: unless-stopped
     volumes:
       - ${DATA_DIR}/mongo:/bitnami/mongodb
+    user: "${USER_ID}"
   deltafi-valkey:
     image: bitnami/valkey:7.2.5
     container_name: deltafi-valkey
@@ -281,8 +276,8 @@ services:
     healthcheck:
       test: [ "CMD", "valkey-cli", "--raw", "incr", "ping" ]
       interval: 5s
-      timeout: 2s
-      retries: 5
+      timeout: 5s
+      retries: 8
       start_period: 5s
     labels:
       deltafi-group: deltafi-dependency
@@ -290,6 +285,9 @@ services:
       - deltafi
     expose:
       - "6379"
+    restart: unless-stopped
+    volumes:
+      - ${SETTINGS_DIR}/redis/:/opt/bitnami/redis/mounted-etc/:ro
   deltafi-grafana:
     image: ${GRAFANA}
     container_name: deltafi-grafana
@@ -313,6 +311,20 @@ services:
       - ${SETTINGS_DIR}/grafana/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
       - ${SETTINGS_DIR}/grafana/provider.yaml:/etc/grafana/provisioning/dashboards/provider.yaml
       - ${SETTINGS_DIR}/grafana/dashboards:/tmp/dashboards
+    restart: unless-stopped
+    user: "${USER_ID}"
+  deltafi-docker-ui:
+    image: deltafi/docker-web-gui:1.0.1-0
+    container_name: deltafi-docker-ui
+    expose:
+      - "3230"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    labels:
+      deltafi-group: deltafi-dependency
+    networks:
+      - deltafi
+    restart: unless-stopped
   deltafi-graphite:
     image: ${GRAPHITE}
     container_name: deltafi-graphite
@@ -332,12 +344,14 @@ services:
       deltafi-group: deltafi-dependency
     networks:
       - deltafi
+    restart: unless-stopped
     volumes:
       - ${SETTINGS_DIR}/graphite/conf:/opt/graphite/conf/
       - ${SETTINGS_DIR}/graphite/statsd/tcp.js:/opt/statsd/config/tcp.js
       - ${SETTINGS_DIR}/graphite/statsd/udp.js:/opt/statsd/config/udp.js
       - ${DATA_DIR}/graphite:/opt/graphite/storage/
   deltafi-clickhouse:
+    scale: ${CLICKHOUSE_SCALE}
     image: ${CLICKHOUSE}
     container_name: deltafi-clickhouse
     env_file:
@@ -352,8 +366,11 @@ services:
       deltafi-group: deltafi-dependency
     networks:
       - deltafi
+    restart: unless-stopped
     volumes:
       - ${DATA_DIR}/clickhouse:/bitnami/clickhouse/
+      - ${SETTINGS_DIR}/clickhouse/override.xml:/bitnami/clickhouse/etc/conf.d/override.xml:ro
+    user: "${USER_ID}"
   deltafi-loki:
     image: ${LOKI}
     container_name: deltafi-loki
@@ -366,9 +383,11 @@ services:
       deltafi-group: deltafi-dependency
     networks:
       - deltafi
+    restart: unless-stopped
     volumes:
       - ${SETTINGS_DIR}/loki/loki.yaml:/etc/loki/loki.yaml
       - ${DATA_DIR}/loki:/data
+    user: "${USER_ID}"
   deltafi-promtail:
     image: ${PROMTAIL}
     container_name: deltafi-promtail
@@ -382,6 +401,7 @@ services:
       deltafi-group: deltafi-dependency
     networks:
       - deltafi
+    restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${SETTINGS_DIR}/promtail/promtail.yaml:/etc/promtail/promtail.yaml
@@ -408,6 +428,7 @@ services:
       deltafi-group: deltafi-dependency
     networks:
       - deltafi
+    restart: unless-stopped
     volumes:
       - ${SETTINGS_DIR}/nginx:/etc/nginx/templates
     ports:

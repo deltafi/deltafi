@@ -2,6 +2,8 @@
 
 . "$DELTAFICLI_WORKDIR/common"
 
+set -e
+
 cli_help_command() {
   echo "
 Command: install

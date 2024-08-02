@@ -5,13 +5,13 @@ events {
 http {
     map $host $upstream_mapping {
         "~^metrics.*" "deltafi-grafana";
+        "~^orchestration.*" "deltafi-docker-ui";
         "~^ingress.*" "deltafi-ingress";
         "~^graphite.*" "deltafi-graphite";
         "~^minio.*" "deltafi-minio";
     }
 
     map $host $internal_upstream_mapping {
-      "deltafi-api-service" "deltafi-api";
       "deltafi-auth-service" "deltafi-auth";
       "deltafi-core-service" "deltafi-core";
       "deltafi-ingress-service" "deltafi-ingress";
@@ -19,10 +19,6 @@ http {
 
     upstream deltafi-auth {
         server deltafi-auth:9292;
-    }
-
-    upstream deltafi-api {
-        server deltafi-api:9292;
     }
 
     upstream deltafi-core {
@@ -47,6 +43,10 @@ http {
 
     upstream deltafi-minio {
         server deltafi-minio:9000;
+    }
+
+    upstream deltafi-docker-ui {
+        server deltafi-docker-ui:3230;
     }
 
     proxy_set_header   Host $host;
@@ -80,10 +80,6 @@ http {
 
         location / {
           proxy_pass http://deltafi-ui;
-        }
-
-        location /api/v1/ {
-          proxy_pass http://deltafi-api;
         }
 
         location /api/v2/ {

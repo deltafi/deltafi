@@ -1,0 +1,7 @@
+# vim: set ft=conf:
+#
+# -----  Docker STATIC Image List
+#
+# All images listed here will be included in the final distro.
+deltafi/lazydocker:v0.23.3-0
+linuxserver/yq:3.4.3
