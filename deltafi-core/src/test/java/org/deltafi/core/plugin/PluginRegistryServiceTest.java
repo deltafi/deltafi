@@ -36,6 +36,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.env.Environment;
 
 import java.util.Collection;
 import java.util.List;
@@ -96,6 +97,9 @@ class PluginRegistryServiceTest {
 
     PluginRegistryService pluginRegistryService;
 
+    @Mock
+    Environment environment;
+
     @BeforeEach
     public void setup() {
         List<PluginCleaner> cleaners = List.of(egressFlowPlanService, transformFlowPlanService, restDataSourcePlanService,
@@ -104,7 +108,7 @@ class PluginRegistryServiceTest {
         pluginRegistryService = new PluginRegistryService(egressFlowService, transformFlowService, restDataSourceService,
                 timedDataSourceService, pluginRepository, pluginValidator, pluginVariableService,
                 egressFlowPlanService, transformFlowPlanService, restDataSourcePlanService, timedDataSourcePlanService,
-                systemPluginService, flowValidationService, checkers, cleaners);
+                systemPluginService, flowValidationService, checkers, cleaners, environment);
     }
 
     @Test

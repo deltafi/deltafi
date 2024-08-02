@@ -28,7 +28,7 @@ import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.services.Snapshotter;
 import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.types.*;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -55,14 +55,16 @@ public class PluginRegistryService implements Snapshotter {
     private final List<PluginUninstallCheck> pluginUninstallChecks;
     private final List<PluginCleaner> pluginCleaners;
     private Map<String, ActionDescriptor> actionDescriptorMap;
+    private final Environment environment;
 
     @PostConstruct
-    @ConditionalOnProperty(value = "schedule.maintenance", havingValue = "true", matchIfMissing = true)
     public void initialize() {
-        PluginEntity systemPlugin = systemPluginService.getSystemPlugin();
-        pluginRepository.deleteByGroupIdAndArtifactId(systemPlugin.getPluginCoordinates().getGroupId(), systemPlugin.getPluginCoordinates().getArtifactId());
-        pluginRepository.save(systemPlugin);
-        updateActionDescriptors();
+        if (environment.getProperty("schedule.maintenance", Boolean.class, true)) {
+            PluginEntity systemPlugin = systemPluginService.getSystemPlugin();
+            pluginRepository.deleteByGroupIdAndArtifactId(systemPlugin.getPluginCoordinates().getGroupId(), systemPlugin.getPluginCoordinates().getArtifactId());
+            pluginRepository.save(systemPlugin);
+            updateActionDescriptors();
+        }
     }
 
     public void updateActionDescriptors() {
