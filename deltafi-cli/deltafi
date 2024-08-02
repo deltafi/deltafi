@@ -151,6 +151,7 @@ Commands:
   plugin-image-repo             manage the image repositories that hold plugin images
   plugin-init                   create a new plugin project
   postgres-cli                  launch the Postgres CLI
+  postgres-eval                 run SQL in Postgres
   query                         send a query to graphql
   reenable                      reenable all DeltaFi processes
   scale                         edit the replica counts for all deployments and statefulsets
@@ -286,6 +287,9 @@ case "$1" in
     ;;
   postgres-cli)
     "$DELTAFICLI_WORKDIR/commands/postgres-cli" "$@"
+    ;;
+  postgres-eval)
+    "$DELTAFICLI_WORKDIR/commands/postgres-eval" "$@"
     ;;
   query)
     "$DELTAFICLI_WORKDIR/commands/query" "$@"

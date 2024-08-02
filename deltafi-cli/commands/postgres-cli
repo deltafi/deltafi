@@ -11,9 +11,9 @@ Usage:
   exit 1
 }
 
-ARGS=($@)
 shift
 PARAMS="${*@Q}"
+echo "ARGS: $ARGS PARAMS: $PARAMS"
 if _is_standalone; then
   echo "Not implemented for standalone mode"
 else

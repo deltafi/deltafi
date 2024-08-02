@@ -16,7 +16,9 @@ ARGS=($@)
 
 _k8s_uninstall() {
   # remove the core first so that database tables are not recreated
-  $KUBECTL_BIN delete deployments,pods -l group=deltafi-core --grace-period=0 --force 2>/dev/null || :
+  $KUBECTL_BIN delete deployments,pods,statefulsets -l group=deltafi-core --grace-period=0 --force 2>/dev/null || :
+
+  _drop_postgres_tables
 
   # perform a helm uninstall
   helm uninstall $DELTAFICLI_PROJECT_NAME
@@ -27,25 +29,30 @@ _k8s_uninstall() {
 
 _compose_uninstall() {
   "${DELTAFICLI_COMPOSE_PATH}"/compose stop-services deltafi-core deltafi-ingress
-  # TODO: make a postgres version
-  #_drop_mongo_collections
+  _drop_postgres_tables
   "${DELTAFICLI_COMPOSE_PATH}"/compose uninstall
 
   # make sure nothing was left behind (this will sweep up any plugins that weren't part of compose)
   docker ps -a --filter label=deltafi-group -q | xargs docker stop | xargs docker rm
 }
 
-# TODO: make a postgres version
-_drop_mongo_collections() {
-  # drop all collections in the deltafi database
-  CMDS=$(deltafi mongo-eval "db.getCollectionNames()" 2>/dev/null | tail -n +8 | sed "s/'/\"/g" | jq '.[]' | sed 's/"/db./' | sed 's/"/.drop();/')
+_drop_postgres_tables() {
+  # Get list of tables in the public schema
+  TABLES=$(deltafi postgres-eval "SELECT tablename FROM pg_tables WHERE schemaname = 'public';" | sed '1d;2d;$d' | sed '$d' | sed 's/^ *//; s/ *$//' | tr -d '\r')
 
-  if [ -n "$CMDS" ]; then
-    for CMD in $CMDS
+  if [ -n "$TABLES" ]; then
+    for TABLE in $TABLES
     do
+      CMD="DROP TABLE IF EXISTS \"$TABLE\" CASCADE;"
       echo "  $CMD"
-      deltafi mongo-eval "$CMD" >/dev/null 2>&1
+      if ! deltafi postgres-eval "$CMD" >/dev/null 2>&1; then
+        echo "    Error dropping table $TABLE"
+      else
+        echo "    Table $TABLE dropped successfully"
+      fi
     done
+  else
+    echo "No tables found in the public schema."
   fi
 }
 
