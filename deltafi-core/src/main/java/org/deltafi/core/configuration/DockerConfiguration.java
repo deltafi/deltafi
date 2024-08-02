@@ -30,6 +30,7 @@ import org.deltafi.core.plugin.deployer.EnvironmentVariableHelper;
 import org.deltafi.core.plugin.deployer.credential.CredentialProvider;
 import org.deltafi.core.plugin.deployer.credential.EnvVarCredentialProvider;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
+import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.services.EventService;
 import org.deltafi.core.services.SystemSnapshotService;
 import org.springframework.context.annotation.Bean;
@@ -53,7 +54,8 @@ public class DockerConfiguration {
     }
 
     @Bean
-    public DeployerService dockerDeployerService(DockerClient dockerClient, PluginImageRepositoryService pluginImageRepositoryService, PluginRegistryService pluginRegistryService, SystemSnapshotService systemSnapshotService, EventService eventService, EnvironmentVariableHelper environmentVariableHelper) {
-        return new DockerDeployerService(dockerClient, pluginImageRepositoryService, pluginRegistryService, systemSnapshotService, eventService, environmentVariableHelper);
+    public DeployerService dockerDeployerService(DockerClient dockerClient, PluginImageRepositoryService pluginImageRepositoryService, PluginRegistryService pluginRegistryService,
+                                                 SystemSnapshotService systemSnapshotService, EventService eventService, EnvironmentVariableHelper environmentVariableHelper, DeltaFiPropertiesService deltaFiPropertiesService) {
+        return new DockerDeployerService(dockerClient, pluginImageRepositoryService, pluginRegistryService, systemSnapshotService, eventService, environmentVariableHelper, deltaFiPropertiesService);
     }
 }

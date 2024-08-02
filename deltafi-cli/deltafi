@@ -104,15 +104,35 @@ _command_check() {
 export DELTAFICLI_WORKDIR=$(cd $(dirname $(_readlink -f $0)) && pwd)
 export DELTAFI_DIR=$(dirname "$DELTAFICLI_WORKDIR")
 
+# shellcheck source=common
+. "$DELTAFICLI_WORKDIR/common"
+
+[ ! -f "$DELTAFICLI_WORKDIR/config" ] \
+  && echo "ERROR: No $DELTAFICLI_WORKDIR/config file found. " \
+  && echo "cp $DELTAFICLI_WORKDIR/config.template $DELTAFICLI_WORKDIR/config and adjust." \
+  && exit 1
+
+. "$DELTAFICLI_WORKDIR/config"
+
+if [ "$2" == "-v" ]; then
+  cli_log "ENV variables"
+  env | grep "DELTAFICLI_*"
+fi
+
+if [ -f "$DELTAFICLI_DISABLED_STATE_PATH" ]; then
+  if [[ "$1" != "reenable" && "$1" != "version" ]]; then
+    echo "The system is currently disabled, 'deltafi reenable' must be run prior to executing other commands"
+    exit
+  fi
+fi
 
 _command_check jq
 _command_check curl
 _command_check sed
-_command_check kubectl
-_command_check ruby
 
-# shellcheck source=common
-. "$DELTAFICLI_WORKDIR/common"
+if ! _is_standalone; then
+  _command_check kubectl
+fi
 
 cli_help() {
   cli_name=${0##*/}
@@ -184,25 +204,6 @@ Flags:
   exit 1
 }
 
-[ ! -f "$DELTAFICLI_WORKDIR/config" ] \
-  && echo "ERROR: No $DELTAFICLI_WORKDIR/config file found. " \
-  && echo "cp $DELTAFICLI_WORKDIR/config.template $DELTAFICLI_WORKDIR/config and adjust." \
-  && exit 1
-
-. "$DELTAFICLI_WORKDIR/config"
-
-if [ "$2" == "-v" ]; then
-  cli_log "ENV variables"
-  env | grep "DELTAFICLI_*"
-fi
-
-if [ -f "$DELTAFICLI_DISABLED_STATE_PATH" ]; then
-  if [[ "$1" != "reenable" && "$1" != "version" ]]; then
-    echo "The system is currently disabled, 'deltafi reenable' must be run prior to executing other commands"
-    exit
-  fi
-fi
-
 case "$1" in
   clickhouse-cli)
     "$DELTAFICLI_WORKDIR/commands/clickhouse-cli" "$@"
@@ -240,6 +241,9 @@ case "$1" in
   ingress)
     "$DELTAFICLI_WORKDIR/commands/ingress" "$@"
     ;;
+  ingress-action)
+    "$DELTAFICLI_WORKDIR/commands/ingress-action" "$@"
+    ;;
   install|update|upgrade|start)
     "$DELTAFICLI_WORKDIR/commands/install" "$@"
     ;;
@@ -254,6 +258,9 @@ case "$1" in
     ;;
   list-flows)
     "$DELTAFICLI_WORKDIR/commands/list-flows" "$@"
+    ;;
+  list-ingress-actions)
+    "$DELTAFICLI_WORKDIR/commands/list-ingress-actions" "$@"
     ;;
   list-plans)
     "$DELTAFICLI_WORKDIR/commands/list-plans" "$@" | less -XSE

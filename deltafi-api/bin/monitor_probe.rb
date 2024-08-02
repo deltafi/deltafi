@@ -28,7 +28,7 @@ VALKEY_RETRY_COUNT = 30
 THRESHOLD = 30 # seconds
 
 def valkey_client
-  url = ENV['DELTAFI_VALKEY_MASTER_PORT'].gsub('tcp://', 'redis://')
+  url = ENV['VALKEY_URL'].gsub('http://', 'redis://')
   password = ENV.fetch('VALKEY_PASSWORD', nil)
   retries = 0
   begin

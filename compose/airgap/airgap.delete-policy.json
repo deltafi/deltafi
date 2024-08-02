@@ -1,0 +1,21 @@
+{
+  "timedPolicies": [
+    {
+      "name": "oneHourAfterComplete",
+      "enabled": true,
+      "afterCreate": "PT1H",
+      "afterComplete": null,
+      "flow": null,
+      "minBytes": null,
+      "deleteMetadata": false
+    }
+  ],
+  "diskSpacePolicies": [
+    {
+      "name": "over80Percent",
+      "enabled": true,
+      "maxPercent": 80,
+      "flow": null
+    }
+  ]
+}

@@ -31,13 +31,9 @@ _compose_uninstall() {
   "${DELTAFICLI_COMPOSE_PATH}"/compose stop-services deltafi-core deltafi-ingress
   _drop_postgres_tables
   "${DELTAFICLI_COMPOSE_PATH}"/compose uninstall
-
-  # make sure nothing was left behind (this will sweep up any plugins that weren't part of compose)
-  docker ps -a --filter label=deltafi-group -q | xargs docker stop | xargs docker rm
 }
 
 _drop_postgres_tables() {
-  # Get list of tables in the public schema
   TABLES=$(deltafi postgres-eval "SELECT tablename FROM pg_tables WHERE schemaname = 'public';" | sed '1d;2d;$d' | sed '$d' | sed 's/^ *//; s/ *$//' | tr -d '\r')
 
   if [ -n "$TABLES" ]; then

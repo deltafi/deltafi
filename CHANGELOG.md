@@ -5,6 +5,76 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.2.14] - 2024-08-01
+
+### Added
+- Added deltafi/docker-web-ui container to the stack
+- Compose stack: compose script has `logs`, `ps`, `top`, `pause`, and `unpause` commands
+
+### Changed
+- Compose stack: Remove mongo DB on uninstall, instead of dropping collections
+- Compose stack: Compose script will remove mongo DB on uninstall
+- Compose stack: Compose script will clean up plugin containers on uninstall
+
+### Fixed
+- [deltafi-python] Fix python 3.12 thread compatibility that was affecting the MinIO client (GitLab-300)
+- Compose stack: Removed dependency on Ruby to run CLI
+
+## [1.2.13] - 2024-07-22
+
+### Added
+- Limit to 31 days of Loki logs on compose stack
+- Compose install can disable clickhouse with values.yaml config
+- Airgap install uses an airgap specific values.yaml for additional configuration
+- Airgap includes yq and jq dockerized tool and execution scripts
+- Airgap includes lazydocker for on box docker diagnostics and monitoring without UI
+- Added mandatory static list of docker images to airgap docker manifest generator
+
+### Fixed
+- Search Page Calendar Helper now base times off of current time not the time when the calendar dialog was opened.
+- Search Page Calendar now shows the time being used every time the dialog is reopened instead of whatever values it was previously closed with. 
+- Values selected in the dropdowns in the JSON Renderers can now be cleared out 
+- Improved clickhouse CPU/RAM performance on compose stack
+- Disable redis persistence on compose stack
+- Compose: Timeouts on startup fixed for slower VMs
+- Compose: Changed docker user execution to local user for most pods that mount local volumes to resolve permission issues on some Linux configurations
+- Fixed an issue with the monitor healthcheck in compose environments.
+
+## [1.2.12] - 2024-07-12
+
+### Added
+- CLI: list-ingress-actions command added
+- CLI: ingress-action command added
+- compose script now has a 'build' target that will build all core docker images.  Useful for running compose with snapshots
+- Autodetect Linux and MacOS in compose script
+- Added destroy command to compose script
+- Healthcheck for plugins installed in compose, the installation is not considered complete until the container reaches a healthy state
+- Added rollback logic for failed plugin installs in compose
+- Added restart policies for compose services
+
+### Changed
+- CLI: Modified list-flows to list timedIngress flows
+- Compose script now creates data directories with the correct permissions
+
+### Fixed
+- Fixed bug that prevented plugins from being upgraded when running in compose
+- CLI: `deltafi install` will return an error when it fails
+
+### Upgrade and Migration
+- Use bitnami/redis:7.2.5 in compose stack and kubernetes
+- Upgrade loki to 2.9.9
+- Upgrade promtail to 2.9.9
+- Upgrade minio to RELEASE.2024-07-04T14-25-45Z
+- Upgrade clickhouse to 24.6.2-debian-12-r0
+
+## [1.2.11] - 2024-07-02
+
+### Added
+- Installer Builder for standalone DeltaFi systems targeting airgapped networks (compose/airgap/airgap-inator)
+
+### Fixed
+- Fixed bug in Additional Properties Renderer where "[object Object]" appears when a new property is added 
+
 ## [1.2.10] - 2024-06-24
 
 ### Added
@@ -2973,7 +3043,11 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.10...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.14...main
+[1.2.14]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.13...1.2.14
+[1.2.13]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.12...1.2.13
+[1.2.12]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.11...1.2.12
+[1.2.11]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.10...1.2.11
 [1.2.10]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.9...1.2.10
 [1.2.9]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.8...1.2.9
 [1.2.8]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.7...1.2.8
