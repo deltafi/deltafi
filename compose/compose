@@ -355,6 +355,15 @@ CLICKHOUSE_ADMIN_PASSWORD=$clickhouse_password
 EOF
   fi
 
+  if [[ ! -f "${CLICKHOUSE_SECRET_PATH}" ]]; then
+    clickhouse_password=$(_random_password 16)
+    cat <<EOF > "${CLICKHOUSE_SECRET_PATH}"
+CLICKHOUSE_PASSWORD=$clickhouse_password
+CLICKHOUSE_ADMIN_USER=default
+CLICKHOUSE_ADMIN_PASSWORD=$clickhouse_password
+EOF
+  fi
+
   # TODO -- SSL settings need to be passed in/read
   if [[ ! -f "${SSL_SECRET_PATH}" ]]; then
     cat <<EOF > "${SSL_SECRET_PATH}"
@@ -442,6 +451,11 @@ deltafi:
     image: ${repo}/deltafi-egress-sink:${tag}
   nodemonitor:
     image: ${repo}/deltafi-nodemonitor:${tag}
+  clickhouse_etl:
+    interval: 10
+    lag: 60
+    batch: 2000
+    delete_ttl: "1 MONTH"
 # nginx domain
 ingress:
   domain: local.deltafi.org
@@ -545,6 +559,7 @@ _write_startup_file() {
   _append_startup_from_values "DELTAFI_INGRESS" ".deltafi.ingress.image"
   _append_startup_from_values "DELTAFI_NODEMONITOR" ".deltafi.nodemonitor.image"
   _append_startup_from_values "DELTAFI_UI" ".deltafi.ui.image"
+  _append_startup_from_values "DELTAFI_CLICKHOUSE_ETL" ".deltafi.api.image"
   _append_startup_from_values "GRAFANA" ".dependencies.grafana"
   _append_startup_from_values "GRAPHITE" ".dependencies.graphite"
   _append_startup_from_values "LOKI" ".dependencies.loki"
@@ -610,6 +625,10 @@ _write_env_files() {
 
   _append_common "ENTITY_RESOLVER_ENABLED" "${entity_resolver_enabled}"
   _append_common "ENTITY_RESOLVER_URL" "${entity_resolver_url}"
+  _append_common_from_values "ETL_BATCH" ".deltafi.clickhouse_etl.batch"
+  _append_common_from_values "ETL_DELETE_TTL" ".deltafi.clickhouse_etl.delete_ttl"
+  _append_common_from_values "ETL_INTERVAL" ".deltafi.clickhouse_etl.interval"
+  _append_common_from_values "ETL_LAG" ".deltafi.clickhouse_etl.lag"
 
   case "${auth_mode}" in
     disabled)
