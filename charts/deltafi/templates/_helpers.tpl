@@ -100,14 +100,22 @@ initContainers:
 {{- define "initContainersWaitForDatabases" -}}
 initContainers:
 - name: wait-for-postgres
-  image: busybox:1.36.0
+  image: postgres:{{ .Values.postgres.version }}-alpine
+  env:
+  - name: PGUSER
+    value: deltafi
+  - name: PGPASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: postgres
+        key: deltafi-password
   command:
-  - 'sh'
-  - '-c'
-  - >
-    until nc -z -w 2 deltafi-postgres 5432 && echo postgres ok;
-      do sleep 1;
-    done
+    - 'sh'
+    - '-c'
+    - >
+      until PGPASSWORD=$PGPASSWORD psql -h deltafi-postgres -U $PGUSER -d deltafi -c '\q' && echo PostgreSQL is up and ready;
+        do sleep 1;
+      done
 {{- if .Values.clickhouse.enabled }}
 - name: wait-for-clickhouse
   image: busybox:1.36.0
