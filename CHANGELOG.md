@@ -5,6 +5,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.2.14] - 2024-08-01
+
+### Added
+- Added deltafi/docker-web-ui container to the stack
+- Compose stack: compose script has `logs`, `ps`, `top`, `pause`, and `unpause` commands
+
+### Changed
+- Compose stack: Remove mongo DB on uninstall, instead of dropping collections
+- Compose stack: Compose script will remove mongo DB on uninstall
+- Compose stack: Compose script will clean up plugin containers on uninstall
+
+### Fixed
+- [deltafi-python] Fix python 3.12 thread compatibility that was affecting the MinIO client (GitLab-300)
+- Compose stack: Removed dependency on Ruby to run CLI
+
+## [1.2.13] - 2024-07-22
+
+### Added
+- Limit to 31 days of Loki logs on compose stack
+- Compose install can disable clickhouse with values.yaml config
+- Airgap install uses an airgap specific values.yaml for additional configuration
+- Airgap includes yq and jq dockerized tool and execution scripts
+- Airgap includes lazydocker for on box docker diagnostics and monitoring without UI
+- Added mandatory static list of docker images to airgap docker manifest generator
+
+### Fixed
+- Search Page Calendar Helper now base times off of current time not the time when the calendar dialog was opened.
+- Search Page Calendar now shows the time being used every time the dialog is reopened instead of whatever values it was previously closed with. 
+- Values selected in the dropdowns in the JSON Renderers can now be cleared out 
+- Improved clickhouse CPU/RAM performance on compose stack
+- Disable redis persistence on compose stack
+- Compose: Timeouts on startup fixed for slower VMs
+- Compose: Changed docker user execution to local user for most pods that mount local volumes to resolve permission issues on some Linux configurations
+- Fixed an issue with the monitor healthcheck in compose environments.
+
 ## [1.2.12] - 2024-07-12
 
 ### Added
@@ -3008,7 +3043,9 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.12...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.14...main
+[1.2.14]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.13...1.2.14
+[1.2.13]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.12...1.2.13
 [1.2.12]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.11...1.2.12
 [1.2.11]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.10...1.2.11
 [1.2.10]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.9...1.2.10
