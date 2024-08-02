@@ -24,7 +24,7 @@
         <span class="fas fa-bars" />
       </Button>
       <Menu ref="menu" :model="menuItems" :popup="true" />
-      <Paginator v-if="errorsMessage.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalErrorsMessage" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)"></Paginator>
+      <Paginator v-if="errorsMessage.length > 0" :rows="perPage" :first="getPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalErrorsMessage" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)"></Paginator>
     </template>
     <DataTable id="errorsSummaryTable" v-model:selection="selectedErrors" responsive-layout="scroll" selection-mode="multiple" data-key="dids" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="errorsMessage" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalErrorsMessage" :row-hover="true" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
       <template #empty>No results to display.</template>
@@ -75,6 +75,7 @@ const errorsMessage = ref([]);
 const totalErrorsMessage = ref(0);
 const offset = ref(0);
 const perPage = ref();
+const page = ref(null);
 const metadataDialogResume = ref();
 const sortDirection = ref("ASC");
 const sortField = ref("flow");
@@ -263,21 +264,29 @@ const setupWatchers = () => {
 const onPage = async (event) => {
   offset.value = event.first;
   perPage.value = event.rows;
+  page.value = event.page + 1;
   setPersistedParams();
   await nextTick();
   fetchErrorsMessages();
   emit("refreshErrors");
 };
 
+const getPage = computed(() => {
+  return page.value === null || page.value === undefined ? 0 : (page.value - 1) * perPage.value;
+});
+
 const getPersistedParams = async () => {
-  let state = useStorage("errors-page-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
+  let state = useStorage("errors-page-by-message-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
   perPage.value = state.value.perPage || 20;
+  page.value = state.value.page || 1;
+  offset.value = getPage.value;
 };
 
 const setPersistedParams = () => {
-  let state = useStorage("errors-page-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
+  let state = useStorage("errors-page-by-message-session-storage", {}, sessionStorage, { serializer: StorageSerializers.object });
   state.value = {
     perPage: perPage.value,
+    page: page.value,
   };
 };
 </script>

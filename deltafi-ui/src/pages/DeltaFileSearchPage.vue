@@ -97,7 +97,7 @@
           <span class="fas fa-bars" />
         </Button>
         <Menu ref="menu" :model="menuItems" :popup="true" />
-        <Paginator v-if="results.length > 0" :rows="model.perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :current-page-report-template="pageReportTemplate" :total-records="totalRecords" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)"></Paginator>
+        <Paginator v-if="results.length > 0" :rows="model.perPage" :first="getPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :current-page-report-template="pageReportTemplate" :total-records="totalRecords" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)"></Paginator>
       </template>
       <DataTable v-model:selection="selectedDids" :value="results" data-key="did" selection-mode="multiple" responsive-layout="scroll" class="p-datatable p-datatable-sm p-datatable-gridlines" striped-rows :loading="loading" loading-icon="pi pi-spinner" :rows="model.perPage" :lazy="true" :total-records="totalRecords" :row-class="actionRowClass" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
         <template #empty>No DeltaFiles match the provided search criteria.</template>
@@ -317,6 +317,10 @@ const resetDefaultTimeDate = computed(() => {
   return [new Date(defaultStartTimeDate.value.format(timestampFormat)), new Date(defaultEndTimeDate.value.format(timestampFormat))];
 });
 
+const getPage = computed(() => {
+  return model.value.page === null || model.value.page === undefined ? 0 : (model.value.page - 1) * model.value.perPage;
+});
+
 const updateInputDateTime = async (startDate, endDate) => {
   model.value.startTimeDate = startDate;
   model.value.endTimeDate = endDate;
@@ -528,6 +532,7 @@ const actionRowClass = (data) => {
 };
 
 const onPage = (event) => {
+  model.value.page = event.page + 1;
   model.value.offset = event.first;
   model.value.perPage = event.rows;
   fetchDeltaFilesDataNoDebounce();
@@ -541,7 +546,7 @@ const decodePersistedParams = (obj) =>
       r[k] = isoStringToDate(v);
     } else if (["egressed", "filtered", "testMode", "replayable", "terminalStage", "pendingAnnotations"].includes(k)) {
       r[k] = JSON.parse(v);
-    } else if (["requeueMin", "sizeMin", "sizeMax", "perPage"].includes(k)) {
+    } else if (["requeueMin", "sizeMin", "sizeMax", "perPage", "page"].includes(k)) {
       r[k] = Number(v);
     } else if (["dataSources", "egressFlows"].includes(k)) {
       r[k] = v.split(",");
@@ -563,6 +568,7 @@ const getPersistedParams = () => {
   model.value = _.merge(model.value, getPersistedState);
 
   collapsedSearchOption.value = !activeAdvancedOptions.value;
+  model.value.offset = getPage.value;
 };
 
 const queryState = useStorage("search-page-persisted-params", {}, sessionStorage, { serializer: StorageSerializers.object });
@@ -573,7 +579,7 @@ const encodePersistedParams = (obj) =>
       r[k] = dateToISOString(v);
     } else if (["egressed", "filtered", "testMode", "replayable", "terminalStage", "pendingAnnotations"].includes(k)) {
       r[k] = Boolean(v);
-    } else if (["requeueMin", "sizeMin", "sizeMax", "perPage"].includes(k)) {
+    } else if (["requeueMin", "sizeMin", "sizeMax", "perPage", "page"].includes(k)) {
       r[k] = Number(v);
     } else if (["dataSources", "egressFlows"].includes(k)) {
       r[k] = String(v);
