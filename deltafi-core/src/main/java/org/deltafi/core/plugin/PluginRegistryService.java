@@ -28,6 +28,7 @@ import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.services.Snapshotter;
 import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.types.*;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -56,6 +57,7 @@ public class PluginRegistryService implements Snapshotter {
     private Map<String, ActionDescriptor> actionDescriptorMap;
 
     @PostConstruct
+    @ConditionalOnProperty(value = "schedule.maintenance", havingValue = "true", matchIfMissing = true)
     public void initialize() {
         PluginEntity systemPlugin = systemPluginService.getSystemPlugin();
         pluginRepository.deleteByGroupIdAndArtifactId(systemPlugin.getPluginCoordinates().getGroupId(), systemPlugin.getPluginCoordinates().getArtifactId());
