@@ -5,6 +5,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.2.10] - 2024-06-24
+
+### Added
+- Added clickhouse to compose
+
+### Changed
+- Update the monitor k8s resource check to only execute when it is running in a cluster
+
+### Upgrade and Migration
+- Updated to the following images in compose:
+    - grafana: deltafi/grafana:11.0.0-0
+    - graphite: graphiteapp/graphite-statsd:1.1.10-5
+    - loki: grafana/loki:2.9.3
+    - minio: quay.io/minio/minio:RELEASE.2024-06-11T03-13-30Z
+    - nginx: docker.io/nginx:1.27.0-alpine
+    - promtail: docker.io/grafana/promtail:2.9.3
+    - mongodb: docker.io/bitnami/mongodb:5.0.17
+    - redis: docker.io/bitnami/redis:7.2.4 
+    - clickhouse: bitnami/clickhouse:24.3.3-debian-12-r2
+
 ## [1.2.9] - 2024-06-14
 
 ### Changed
@@ -2953,7 +2973,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.9...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.10...main
+[1.2.10]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.9...1.2.10
 [1.2.9]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.8...1.2.9
 [1.2.8]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.7...1.2.8
 [1.2.7]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.6...1.2.7
