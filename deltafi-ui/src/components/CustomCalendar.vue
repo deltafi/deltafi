@@ -110,7 +110,7 @@ const resetDateTime = async () => {
     emit("update:startTimeDate:endTimeDate", new Date(defaultStartTimeDate.value.format(timestampFormat)), new Date(defaultEndTimeDate.value.format(timestampFormat)));
   }
   randomKey.value = Math.random();
-  showCalendar()
+  showCalendar();
 };
 
 const computedKey = computed(() => {
@@ -136,7 +136,7 @@ const updateInputDateTime = async (startDate, endDate) => {
   helperButtonText.value = helperButtonSelected.value ? tmpHelperButtonText.value : null;
   startTimeDate.value = startDate;
   endTimeDate.value = endDate;
-  showCalendar()
+  showCalendar();
   emit("update:startTimeDate:endTimeDate", startDate, endDate);
 };
 
@@ -150,17 +150,24 @@ $("body").on("click", "table.vdpr-datepicker__calendar-table > tbody > tr", func
 
 const helperButtonText = ref(null);
 const tmpHelperButtonText = ref(null);
+// This JQuery code is used to watch for click events of the helper buttons. If the helper buttons are clicked
+// the helper buttons display text is shown over the search pages date picker field when applied.
 $("body").on("click", "button.vdpr-datepicker__button.vdpr-datepicker__button--block.vdpr-datepicker__button-default", function (e) {
   tmpHelperButtonSelected.value = true;
   tmpHelperButtonText.value = e.currentTarget.textContent;
 });
 
+// This JQuery code is used to watch for click events in the time control input fields. If the time control input are clicked
+// the helper buttons time provided has changed so we remove the helper button displayed text displayed text shown over the search
+// pages date picker field when applied.
 $("body").on("click", ".vdpr-datepicker__calendar-input-time-control", function () {
   tmpHelperButtonSelected.value = false;
 });
 
+// This JQuery code is used to watch for click events on the isAllDay switch. If the switch is clicked off,
+// the selectedEndDate is taken and the time of that date is set to the end of the day(23:59).
 $("body").on("change", ".vdpr-datepicker__switch", function () {
-  if(!calendarDialogRef.value.isAllDay){
+  if (!calendarDialogRef.value.isAllDay) {
     calendarDialogRef.value.$data.selectedEndDate = dayjs(calendarDialogRef.value.$data.selectedEndDate).endOf("day").toDate();
   }
 });
@@ -172,7 +179,7 @@ const dateSelected = (newStartDate, newEndDate) => {
 };
 
 const showCalendar = () => {
-  if(showCalendarDialog.value){
+  if (showCalendarDialog.value) {
     tmpHelperButtonSelected.value = helperButtonSelected.value ? true : false;
     randomKey.value = Math.random();
   }
@@ -183,7 +190,6 @@ const refreshUpdateDateTime = () => {
   let refreshValue = _.find(helperButtons.value, { name: helperButtonText.value });
 
   if (refreshValue) {
-    //calendarDialogRef.value.onApply(refreshValue.from, refreshValue.to);
     emit("update:startTimeDate:endTimeDate", refreshValue.from, refreshValue.to);
   }
 };
