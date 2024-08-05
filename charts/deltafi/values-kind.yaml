@@ -1,5 +1,7 @@
 # DeltaFi config
 deltafi:
+  local_path_prvisioner:
+    enabled: false
   ui:
     title: DeltaFi (DinK)
   auth:
