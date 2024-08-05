@@ -21,8 +21,8 @@
     <PageHeader heading="Events">
       <div class="time-range btn-toolbar mb-2 mb-md-0">
         <Button class="p-button-text p-button-sm p-button-secondary" disabled>{{ shortTimezone() }}</Button>
-        <CustomCalendar @update:start-time-date:end-time-date="updateInputDateTime"></CustomCalendar>
-        <Button class="p-button p-button-outlined deltafi-input-field ml-3" icon="fa fa-sync-alt" :loading="loading" label="Refresh" @click="getEvents()" />
+        <CustomCalendar ref="customCalendarRef" @update:start-time-date:end-time-date="updateInputDateTime"></CustomCalendar>
+        <Button class="p-button p-button-outlined deltafi-input-field ml-3" icon="fa fa-sync-alt" :loading="loading" label="Refresh" @click="refreshEventsData()" />
       </div>
     </PageHeader>
     <Panel :header="'Events' + eventCount" class="events-panel table-panel" @contextmenu="onPanelRightClick">
@@ -148,6 +148,7 @@ const loading = ref(true);
 const selectedEvents = ref([]);
 const activeEvent = ref({});
 const showEventDialog = ref(false);
+const customCalendarRef = ref(null);
 const eventsTable = ref(null);
 const { data: events, fetch: fetchEvents, acknowledgeEvent, unacknowledgeEvent } = useEvents();
 const { shortTimezone } = useUtilFunctions();
@@ -269,6 +270,11 @@ const showEvent = (event) => {
 
 const clearSelectedEvents = () => {
   selectedEvents.value = [];
+};
+
+const refreshEventsData = async () => {
+  await customCalendarRef.value.refreshUpdateDateTime();
+  getEvents();
 };
 
 const getEvents = async () => {
