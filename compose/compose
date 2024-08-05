@@ -8,7 +8,7 @@ Command: compose
 
 Subcommands:
   start                       start all of the services
-  uninstall                   stop and remove all of the services (destructive to mongo storage)
+  uninstall                   stop and remove all of the services (destructive to postgres storage)
   restart <services>          restart the list of services (space delimited, restarts all services by default)
   stop-services <services>    stop the list of services (space delimited, stops all services by default)
   build                       build and tag core docker images for use in compose
@@ -338,7 +338,7 @@ _random_password() {
 _setup_secrets() {
   GRAFANA_SECRET_PATH="${SECRETS_DIR}/grafana.env"
   MINIO_SECRET_PATH="${SECRETS_DIR}/minio.env"
-  MONGODB_SECRET_PATH="${SECRETS_DIR}/mongodb.env"
+  POSTGRES_SECRET_PATH="${SECRETS_DIR}/postgres.env"
   VALKEY_SECRET_PATH="${SECRETS_DIR}/valkey.env"
   SSL_SECRET_PATH="${SECRETS_DIR}/ssl.env"
   CLICKHOUSE_SECRET_PATH="${SECRETS_DIR}/clickhouse.env"
@@ -361,15 +361,13 @@ MINIO_SECRETKEY=$minio_password
 EOF
   fi
 
-  if [[ ! -f "${MONGODB_SECRET_PATH}" ]]; then
-    mongo_password=$(_random_password 20)
-    mongo_root_password=$(_random_password 20)
-    cat <<EOF > "${MONGODB_SECRET_PATH}"
-MONGODB_USERNAME=mongouser
-MONGODB_DATABASE=deltafi
-MONGO_PASSWORD=$mongo_password
-MONGODB_PASSWORD=$mongo_password
-MONGODB_ROOT_PASSWORD=$mongo_root_password
+  if [[ ! -f "${POSTGRES_SECRET_PATH}" ]]; then
+    postgres_password=$(_random_password 20)
+    cat <<EOF > "${POSTGRES_SECRET_PATH}"
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=$postgres_password
+POSTGRES_DB=deltafi
+PGUSER=postgres
 EOF
   fi
 
@@ -501,14 +499,10 @@ dependencies:
   minio: quay.io/minio/minio:RELEASE.2024-07-04T14-25-45Z
   nginx: docker.io/nginx:1.27.0-alpine
   promtail: docker.io/grafana/promtail:2.9.9
-  mongodb: docker.io/bitnami/mongodb:5.0.17
+  postgres: docker.io/postgres:12.19-alpine3.18
   valkey: docker.io/bitnami/valkey:7.2.5
   clickhouse: bitnami/clickhouse:24.3.3-debian-12-r2
 EOF
-
-  if _is_arm; then
-    yq -i '.dependencies.mongodb = "zcube/bitnami-compat-mongodb:5.0.17"' "${VALUES_YAML}"
-  fi
 }
 
 # overlay the values that were passed on top of the default values
@@ -610,7 +604,7 @@ _write_startup_file() {
   _append_startup_from_values "GRAPHITE" ".dependencies.graphite"
   _append_startup_from_values "LOKI" ".dependencies.loki"
   _append_startup_from_values "MINIO" ".dependencies.minio"
-  _append_startup_from_values "MONGODB" ".dependencies.mongodb"
+  _append_startup_from_values "POSTGRES" ".dependencies.postgres"
   _append_startup_from_values "NGINX" ".dependencies.nginx"
   _append_startup_from_values "PROMTAIL" ".dependencies.promtail"
   _append_startup_from_values "VALKEY" ".dependencies.valkey"
@@ -707,7 +701,7 @@ _write_config() {
 _create_data_dirs() {
   mkdir -p "${DATA_DIR}"
   if _is_linux; then
-    mkdir -p "${DATA_DIR}"/{mongo,clickhouse,grafana,auth,loki,minio}
+    mkdir -p "${DATA_DIR}"/{postgres,clickhouse,grafana,auth,loki,minio}
   fi
 }
 
@@ -724,7 +718,7 @@ uninstall() {
   # make sure nothing was left behind (this will sweep up any plugins that weren't part of compose)
   docker ps -a --filter label=deltafi-group -q | xargs docker stop | xargs docker rm
 
-  rm -rf "${DATA_DIR}"/mongo
+  rm -rf "${DATA_DIR}"/postgres
 }
 
 stop_services() {
