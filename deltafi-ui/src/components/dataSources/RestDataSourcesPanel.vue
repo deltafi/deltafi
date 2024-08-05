@@ -52,7 +52,7 @@
         </Column>
         <Column header="Active" :style="{ width: '7%' }" class="data-source-state-column">
           <template #body="{ data }">
-            <StateInputSwitch :row-data-prop="data" data-source-type="timedDataSource" @change="refresh" />
+            <StateInputSwitch :row-data-prop="data" data-source-type="restDataSource" @change="refresh" />
           </template>
         </Column>
       </DataTable>
@@ -80,7 +80,7 @@
         <div class="d-flex justify-content-between">
           <span></span>
           <div>
-            <StateInputSwitch :row-data-prop="activeAction" data-source-type="timedDataSource" @change="refresh" />
+            <StateInputSwitch :row-data-prop="activeAction" data-source-type="restDataSource" @change="refresh" />
           </div>
         </div>
       </template>
