@@ -20,11 +20,11 @@ type Metadata struct {
 }
 
 func main() {
-    logger.Info("Starting server on :9292")
+    logger.Info("Starting server on :80")
     http.HandleFunc("/probe", func(w http.ResponseWriter, r *http.Request) {})
     http.HandleFunc("/blackhole", blackholeHandler)
     http.HandleFunc("/", fileSinkHandler)
-    err := http.ListenAndServe(":9292", nil)
+    err := http.ListenAndServe(":80", nil)
     if err != nil {
         logger.Error("Failed to start server: %v", err)
     }

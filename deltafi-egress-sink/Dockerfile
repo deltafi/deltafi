@@ -12,5 +12,5 @@ RUN mkdir -p /data/deltafi/out && \
     chown -R 1000 /app
 COPY --from=builder /app/egress-sink-server .
 USER 1000
-EXPOSE 9292
+EXPOSE 80
 CMD ["./egress-sink-server"]

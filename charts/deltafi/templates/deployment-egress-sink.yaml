@@ -27,7 +27,7 @@ spec:
         image: {{ .Values.deltafi.egress_sink.image }}
         imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 9292
+        - containerPort: 80
         env:
         - name: WORKERS
           value: {{ default "8" .Values.deltafi.egress_sink.workers | quote }}
