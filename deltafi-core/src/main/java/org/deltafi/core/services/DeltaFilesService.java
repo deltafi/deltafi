@@ -1752,7 +1752,7 @@ public class DeltaFilesService {
                 parentDeltaFile.getChildDids().add(deltaFile.getDid());
                 parentDeltaFile.joinedAction(event.getDid(), action.getName(), event.getStart(), event.getStop(), now);
             }
-            deltaFileRepo.batchInsert(parentDeltaFiles);
+            deltaFileRepo.saveAll(parentDeltaFiles);
             enqueueActions(actionInputs);
         }
     }

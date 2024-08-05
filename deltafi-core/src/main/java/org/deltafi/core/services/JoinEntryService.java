@@ -63,27 +63,27 @@ public class JoinEntryService {
         long endTimeMs = clock.millis() + deltaFiPropertiesService.getDeltaFiProperties().getJoinAcquireLockTimeoutMs();
         while (clock.millis() < endTimeMs) {
             try {
-                JoinEntry newEntry = new JoinEntry(Generators.timeBasedEpochGenerator().generate(), joinDefinition, true, OffsetDateTime.now(clock), joinDate, minNum, maxNum, flowDepth, 1);
-                return joinEntryRepo.save(newEntry);
-            } catch (DataIntegrityViolationException e) {
-                Optional<JoinEntry> updated;
-                try {
-                    updated = joinEntryRepo.findAndUpdateUnlocked(OBJECT_MAPPER.writeValueAsString(joinDefinition), OffsetDateTime.now(clock), flowDepth);
-                } catch (JsonProcessingException ex) {
-                    return null;
-                }
+                UUID id = Generators.timeBasedEpochGenerator().generate();
+                OffsetDateTime lockedTime = OffsetDateTime.now(clock);
+                String joinDefinitionJson = OBJECT_MAPPER.writeValueAsString(joinDefinition);
 
-                if (updated.isPresent()) {
-                    return updated.get();
-                }
+                int updatedRows = joinEntryRepo.upsertAndLock(id, joinDefinitionJson, lockedTime,
+                        joinDate, minNum, maxNum, flowDepth);
 
-                // If we couldn't insert or update, sleep before retrying
-                try {
-                    Thread.sleep(50);
-                } catch (InterruptedException ignored) {
-                    Thread.currentThread().interrupt();
-                    return null;
+                if (updatedRows > 0) {
+                    return joinEntryRepo.findByJoinDefinition(joinDefinitionJson).orElse(null);
                 }
+            } catch (JsonProcessingException e) {
+                log.error("Failed to serialize join definition", e);
+                return null;
+            }
+
+            // If we couldn't insert or update, sleep before retrying
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return null;
             }
         }
 
