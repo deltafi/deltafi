@@ -105,9 +105,9 @@
     <AnnotateDialog ref="annotateDialog" :dids="filterSelectedDids" @refresh-page="onRefresh()" />
     <MetadataDialogResume ref="metadataDialogResume" :did="filterSelectedDids" />
     <!-- TODO: Review for 2.0 -->
-    <!-- <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="autoResumeSelected">
+    <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="autoResumeSelected">
       <span id="allPanelAutoResumeDialog" />
-    </DialogTemplate> -->
+    </DialogTemplate>
   </div>
 </template>
 
@@ -135,6 +135,7 @@ import { useStorage, StorageSerializers } from "@vueuse/core";
 import AnnotateDialog from "@/components/AnnotateDialog.vue";
 import ErrorAcknowledgedBadge from "@/components/errors/AcknowledgedBadge.vue";
 import AutoResumeBadge from "@/components/errors/AutoResumeBadge.vue";
+import DialogTemplate from "@/components/DialogTemplate.vue";
 
 const hasPermission = inject("hasPermission");
 const hasSomePermissions = inject("hasSomePermissions");
@@ -297,20 +298,18 @@ const onAcknowledged = (dids, reason) => {
   fetchErrorCount();
   emit("refreshErrors");
 };
-// TODO: Review for 2.0
-// const autoResumeSelected = computed(() => {
-//   let newResumeRule = {};
-//   if (!_.isEmpty(selectedErrors.value)) {
-//     let rowInfo = JSON.parse(JSON.stringify(selectedErrors.value[0]));
-//     let errorInfo = _.find(selectedErrors.value[0]["actions"], ["state", "ERROR"]);
-//     newResumeRule["flow"] = rowInfo.sourceInfo.flow;
-//     newResumeRule["action"] = errorInfo.name;
-//     newResumeRule["errorSubstring"] = errorInfo.errorCause;
-//     return newResumeRule;
-//   } else {
-//     return selectedErrors.value;
-//   }
-// });
+const autoResumeSelected = computed(() => {
+  let newResumeRule = {};
+  if (!_.isEmpty(selectedErrors.value)) {
+    let rowInfo = JSON.parse(JSON.stringify(selectedErrors.value[0]));
+    newResumeRule["dataSource"] = rowInfo.dataSource;
+    newResumeRule["action"] = rowInfo.lastErroredAction.name;
+    newResumeRule["errorSubstring"] = rowInfo.lastErroredAction.errorCause;
+    return newResumeRule;
+  } else {
+    return selectedErrors.value;
+  }
+});
 
 const filterSelectedDids = computed(() => {
   let dids = selectedErrors.value.map((selectedError) => {
@@ -319,14 +318,6 @@ const filterSelectedDids = computed(() => {
   return dids;
 });
 
-// TODO: Review for 2.0
-// const filterErrors = (actions) => {
-//   return actions.filter((action) => {
-//     return action.state === "ERROR";
-//   });
-// };
-
-// TODO: Review for 2.0
 const latestError = (deltaFile) => {
   return _.chain(deltaFile.flows)
     .map((flow) => flow.actions)
