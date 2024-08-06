@@ -203,7 +203,7 @@ const autoResumeSelected = computed(() => {
   let newResumeRule = {};
   if (!_.isEmpty(selectedErrors.value)) {
     let rowInfo = JSON.parse(JSON.stringify(selectedErrors.value[0]));
-    newResumeRule["flow"] = rowInfo.flow;
+    newResumeRule["dataSource"] = rowInfo.flow;
     return newResumeRule;
   } else {
     return selectedErrors.value;
