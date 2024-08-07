@@ -450,12 +450,20 @@ const removeEmptyKeyValues = (queryObj) => {
 const clearEmptyObjects = (queryObj) => {
   for (const objKey in queryObj) {
     if (_.isArray(queryObj[objKey])) {
-      if (!_.every(queryObj[objKey], _.isString)) {
+      if (_.some(queryObj[objKey], _.isNil)) {
         queryObj[objKey].forEach(function (item, index) {
           queryObj[objKey][index] = removeEmptyKeyValues(item);
         });
       }
-      queryObj[objKey] = queryObj[objKey].filter((value) => Object.keys(value).length !== 0);
+
+      if (queryObj[objKey].every((value) => typeof value === "object")) {
+        queryObj[objKey] = queryObj[objKey].filter((value) => Object.keys(value).length !== 0);
+      }
+
+      if (_.isEmpty(queryObj[objKey])) {
+        delete queryObj[objKey];
+        continue;
+      }
 
       if (Object.keys(queryObj[objKey]).length === 0) {
         delete queryObj[objKey];
@@ -470,6 +478,7 @@ const clearEmptyObjects = (queryObj) => {
       delete queryObj[objKey];
     }
   }
+
   return queryObj;
 };
 
@@ -795,6 +804,8 @@ const getLoadedActions = () => {
           }
         }
       }
+
+      action["join"] = {};
 
       // Adding an flowActionType key to the actionTypesTree. Each root flowActionType key will hold the tree structure for that actionType.
       if (!Object.prototype.hasOwnProperty.call(actionTypesTree.value, action["flowActionType"])) {
