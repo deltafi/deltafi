@@ -17,25 +17,26 @@
  */
 package org.deltafi.core.action.xml;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import lombok.*;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+import org.deltafi.core.action.ContentSelectionParameters;
 
 import java.util.List;
 
 
 /**
  * Defines the parameters for the XmlEditor action.
- *
  */
 @Data
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-@AllArgsConstructor
 @NoArgsConstructor
-public class XmlEditorParameters extends ActionParameters {
-
+public class XmlEditorParameters extends ContentSelectionParameters {
     @JsonProperty(required = true)
     @JsonPropertyDescription("""    
             List of XML editor commands provided as strings.  Separate arguments with (1) one or more spaces or (2) a comma and zero or
@@ -52,17 +53,15 @@ public class XmlEditorParameters extends ActionParameters {
             """)
     public List<String> xmlEditingCommands;
 
-    @JsonPropertyDescription("List of allowed media types. Supports wildcards (*) and defaults to '*/xml'" +
-            " if empty.")
     @JsonProperty(defaultValue = "[\"*/xml\"]")
-    public List<String> mediaTypes = List.of("*/xml");
+    @JsonPropertyDescription("List of allowed media types. Supports wildcards (*) and defaults to */xml.")
+    @Override
+    public List<String> getMediaTypes() {
+        return super.getMediaTypes();
+    }
 
-    @JsonPropertyDescription("List of file patterns to consider. Supports wildcards (*) and if empty, all filenames" +
-            " are considered.")
-    @JsonProperty(defaultValue = "[]")
-    public List<String> filePatterns = List.of();
-
-    @JsonPropertyDescription("List of content indexes to consider. If empty, all content is considered.")
-    @JsonProperty(defaultValue = "[]")
-    public List<Integer> contentIndexes = List.of();
+    @JsonCreator
+    public XmlEditorParameters(List<String> mediaTypes) {
+        super(mediaTypes);
+    }
 }

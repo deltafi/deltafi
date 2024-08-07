@@ -64,18 +64,13 @@ public class ExtractXml extends TransformAction<ExtractXmlParameters> {
         result.addContent(input.content());
 
         Map<String, List<String>> valuesMap = new HashMap<>();
-        List<ActionContent> contentList = (params.getContentIndexes() == null
-                || params.getContentIndexes().isEmpty()) ? input.content() :
-                params.getContentIndexes().stream().map(input.content()::get).toList();
-        contentList = contentList.stream()
-                .filter(c -> params.getMediaTypes().stream()
-                        .anyMatch(allowedType -> matchesPattern(c.getMediaType(), allowedType)))
-                .filter(c -> params.getFilePatterns() == null || params.getFilePatterns().isEmpty() ||
-                        params.getFilePatterns().stream()
-                                .anyMatch(pattern -> matchesPattern(c.getName(), pattern)))
-                .toList();
+        for (int i = 0; i < input.getContent().size(); i++) {
+            ActionContent content = input.content(i);
 
-        for (ActionContent content : contentList) {
+            if (!params.contentMatches(content.getName(), content.getMediaType(), i)) {
+                continue;
+            }
+
             Document document;
             try {
                 document = DocumentBuilderFactory.newInstance()
@@ -95,8 +90,8 @@ public class ExtractXml extends TransformAction<ExtractXmlParameters> {
                 }
 
                 List<String> values = new ArrayList<>();
-                for (int i = 0; i < nodes.getLength(); i++) {
-                    values.add(nodes.item(i).getTextContent());
+                for (int j = 0; j < nodes.getLength(); j++) {
+                    values.add(nodes.item(j).getTextContent());
                 }
                 valuesMap.computeIfAbsent(entry.getKey(), k -> new ArrayList<>()).addAll(values);
             }
@@ -139,9 +134,5 @@ public class ExtractXml extends TransformAction<ExtractXmlParameters> {
                 throw new RuntimeException(e);
             }
         });
-    }
-
-    private boolean matchesPattern(String value, String pattern) {
-        return value.matches(pattern.replace("*", ".*"));
     }
 }

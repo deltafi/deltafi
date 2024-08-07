@@ -284,84 +284,53 @@ public class XmlEditor extends TransformAction<XmlEditorParameters> {
 
             ActionContent content = input.getContent().get(i);
 
-            if (shouldTransform(content, i, params)) {
-
-                String xmlContent = content.loadString();
-                int operationIndex = -1;
-
-                XmlEditorOperation operation;
-
-                for (operationIndex = 0; operationIndex < operationList.size(); operationIndex++) {
-
-                    operation = operationList.get(operationIndex);
-
-                    if (operation.getOperationType() == XmlEditorOperation.OperationType.MODIFY) {
-                        try {
-                            xmlContent = ((XmlEditorModifyOperation) operation).apply(xmlContent);
-                        } catch (Exception e) {
-                            return new ErrorResult(context,
-                                    "Error applying 'modify' operation to content at index " + i
-                                    + " using XML command expression at index " + operationIndex
-                                    + " with command '"
-                                    + commandExpressionList.get(operationIndex).getFirst() + "'", e);
-                        }
-                    } else if (operation.getOperationType() == XmlEditorOperation.OperationType.SCREEN) {
-
-                        try {
-                            resultOperation = ((XmlEditorScreenOperation) operation).apply(context, xmlContent);
-                        } catch (Exception e) {
-                            return new ErrorResult(context,
-                                    "Error applying 'screen' operation to content at index " + i
-                                    + " using XML command expression at index " + operationIndex
-                                    + " with command '"
-                                    + commandExpressionList.get(operationIndex).getFirst() + "'", e);
-                        }
-
-                        if (resultOperation != null) {
-                            return resultOperation;
-                        }
-
-                    }
-                }
-
-                result.addContent(ActionContent.saveContent(context, xmlContent, content.getName(),
-                        MediaType.APPLICATION_XML));
-            } else {
+            if (!params.contentMatches(content.getName(), content.getMediaType(), i)) {
                 result.addContent(content);
+                continue;
             }
+
+            String xmlContent = content.loadString();
+
+            XmlEditorOperation operation;
+
+            for (int operationIndex = 0; operationIndex < operationList.size(); operationIndex++) {
+
+                operation = operationList.get(operationIndex);
+
+                if (operation.getOperationType() == XmlEditorOperation.OperationType.MODIFY) {
+                    try {
+                        xmlContent = ((XmlEditorModifyOperation) operation).apply(xmlContent);
+                    } catch (Exception e) {
+                        return new ErrorResult(context,
+                                "Error applying 'modify' operation to content at index " + i
+                                        + " using XML command expression at index " + operationIndex
+                                        + " with command '"
+                                        + commandExpressionList.get(operationIndex).getFirst() + "'", e);
+                    }
+                } else if (operation.getOperationType() == XmlEditorOperation.OperationType.SCREEN) {
+
+                    try {
+                        resultOperation = ((XmlEditorScreenOperation) operation).apply(context, xmlContent);
+                    } catch (Exception e) {
+                        return new ErrorResult(context,
+                                "Error applying 'screen' operation to content at index " + i
+                                        + " using XML command expression at index " + operationIndex
+                                        + " with command '"
+                                        + commandExpressionList.get(operationIndex).getFirst() + "'", e);
+                    }
+
+                    if (resultOperation != null) {
+                        return resultOperation;
+                    }
+
+                }
+            }
+
+            result.addContent(ActionContent.saveContent(context, xmlContent, content.getName(),
+                    MediaType.APPLICATION_XML));
         }
 
         return result;
-    }
-
-    /**
-     * Returns 'true' if the content 'content' should be transformed and 'false' otherwise.
-     *
-     * @param content the content to evaluate
-     * @param index the index of the content
-     * @param params the parameters for this action
-     * @return 'true' if the content 'content' should be transformed and 'false' otherwise
-     */
-    private boolean shouldTransform(ActionContent content, int index, XmlEditorParameters params) {
-        return (params.getContentIndexes() == null || params.getContentIndexes().isEmpty()
-                || params.getContentIndexes().contains(index)) &&
-                (params.getFilePatterns() == null ||  params.getFilePatterns().isEmpty()
-                        || params.getFilePatterns().stream()
-                        .anyMatch(pattern -> matchesPattern(content.getName(), pattern))) &&
-                (params.getMediaTypes() == null || params.getMediaTypes().isEmpty() || params.getMediaTypes().stream()
-                        .anyMatch(allowedType -> matchesPattern(content.getMediaType(), allowedType)));
-    }
-
-    /**
-     * Returns 'true' if the value 'value' matches the pattern 'pattern'.
-     *
-     * @param value the value to evaluate
-     * @param pattern the pattern to evaluate against
-     * @return 'true' if the value 'value' matches the pattern 'pattern'
-     */
-    private boolean matchesPattern(final String value, final String pattern) {
-        String regexPattern = pattern.replace("*", ".*");
-        return value.matches(regexPattern);
     }
 
     /**

@@ -15,9 +15,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.action.jolt;
+package org.deltafi.core.action.extract;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.*;
@@ -29,20 +28,24 @@ import java.util.List;
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
-public class JoltParameters extends ContentSelectionParameters {
-    @JsonPropertyDescription("Jolt transformation specification provided as a JSON string.")
-    @JsonProperty(required = true)
-    public String joltSpec;
+public class ExtractParameters extends ContentSelectionParameters {
+    @JsonProperty(defaultValue = "METADATA")
+    @JsonPropertyDescription("Extract to metadata or annotations.")
+    public ExtractTarget extractTarget = ExtractTarget.METADATA;
 
-    @JsonProperty(defaultValue = "[\"application/json\"]")
-    @JsonPropertyDescription("List of allowed media types. Supports wildcards (*) and defaults to application/json.")
-    @Override
-    public List<String> getMediaTypes() {
-        return super.getMediaTypes();
-    }
+    @JsonProperty(defaultValue = "ALL")
+    @JsonPropertyDescription("How to handle multiple occurrences of a key. Can be 'FIRST', 'LAST', 'DISTINCT', or 'ALL'. Defaults to ALL, which writes a delimited list.")
+    public HandleMultipleKeysType handleMultipleKeys = HandleMultipleKeysType.ALL;
 
-    @JsonCreator
-    public JoltParameters(List<String> mediaTypes) {
+    @JsonProperty(defaultValue = ",")
+    @JsonPropertyDescription("The delimiter to use if handleMultipleKeys is set to DISTINCT or ALL")
+    public String allKeysDelimiter = ",";
+
+    @JsonProperty(defaultValue = "false")
+    @JsonPropertyDescription("Whether to return an error if a key is not found. Defaults to false.")
+    public boolean errorOnKeyNotFound = false;
+
+    public ExtractParameters(List<String> mediaTypes) {
         super(mediaTypes);
     }
 }

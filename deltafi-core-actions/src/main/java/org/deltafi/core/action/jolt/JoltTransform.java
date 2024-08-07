@@ -20,13 +20,8 @@ package org.deltafi.core.action.jolt;
 import com.bazaarvoice.jolt.Chainr;
 import com.bazaarvoice.jolt.JsonUtils;
 import org.deltafi.actionkit.action.content.ActionContent;
-import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.actionkit.action.transform.TransformAction;
-import org.deltafi.actionkit.action.transform.TransformInput;
-import org.deltafi.actionkit.action.transform.TransformResult;
-import org.deltafi.actionkit.action.transform.TransformResultType;
 import org.deltafi.common.types.ActionContext;
-import org.jetbrains.annotations.NotNull;
+import org.deltafi.core.action.ContentSelectingTransformAction;
 import org.springframework.stereotype.Component;
 
 import javax.ws.rs.core.MediaType;
@@ -35,7 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Component
-public class JoltTransform extends TransformAction<JoltParameters> {
+public class JoltTransform extends ContentSelectingTransformAction<JoltParameters> {
     private static final int MAX_CACHE_SIZE = 1000;
 
     // use an LRU cache to avoid recomputing the chainr each time but control memory usage
@@ -53,55 +48,12 @@ public class JoltTransform extends TransformAction<JoltParameters> {
     }
 
     @Override
-    public TransformResultType transform(@NotNull ActionContext context,
-                                         @NotNull JoltParameters params,
-                                         @NotNull TransformInput input) {
-        TransformResult result = new TransformResult(context);
-        Chainr chainr;
+    protected ActionContent transform(ActionContext context, JoltParameters params, ActionContent content) throws Exception {
+        Chainr chainr = chainrCache.computeIfAbsent(params.getJoltSpec(), key -> Chainr.fromSpec(JsonUtils.jsonToList(key)));
 
-        try {
-            chainr = getChainr(params.getJoltSpec());
-        } catch (Exception e) {
-            return new ErrorResult(context, "Error parsing Jolt specification", "Could not parse " + params.getJoltSpec() + ": " + e.getMessage());
-        }
+        Object transformedJson = chainr.transform(JsonUtils.jsonToObject(content.loadString()));
+        String newJson = JsonUtils.toJsonString(transformedJson);
 
-        for (int i=0; i < input.getContent().size(); i++) {
-            ActionContent content = input.getContent().get(i);
-
-            if (shouldTransform(content, i, params)) {
-                String json = content.loadString();
-                String newJson;
-                try {
-                    Object inputJson = JsonUtils.jsonToObject(json);
-                    Object transformedJson = chainr.transform(inputJson);
-                    newJson = JsonUtils.toJsonString(transformedJson);
-                } catch (Exception e) {
-                    return new ErrorResult(context, "Error transforming content at index " + i, e);
-                }
-
-                result.addContent(ActionContent.saveContent(context, newJson, content.getName(), MediaType.APPLICATION_JSON));
-            } else {
-                result.addContent(content);
-            }
-        }
-
-        return result;
-    }
-
-    private Chainr getChainr(String spec) {
-        return chainrCache.computeIfAbsent(spec, key -> Chainr.fromSpec(JsonUtils.jsonToList(spec)));
-    }
-
-    private boolean shouldTransform(ActionContent content, int index, JoltParameters params) {
-        return (params.getContentIndexes() == null || params.getContentIndexes().isEmpty() || params.getContentIndexes().contains(index)) &&
-                (params.getFilePatterns() == null || params.getFilePatterns().isEmpty() || params.getFilePatterns().stream()
-                        .anyMatch(pattern -> matchesPattern(content.getName(), pattern))) &&
-                (params.getMediaTypes() == null || params.getMediaTypes().isEmpty() || params.getMediaTypes().stream()
-                        .anyMatch(allowedType -> matchesPattern(content.getMediaType(), allowedType)));
-    }
-
-    private boolean matchesPattern(final String value, final String pattern) {
-        String regexPattern = pattern.replace("*", ".*");
-        return value.matches(regexPattern);
+        return ActionContent.saveContent(context, newJson, content.getName(), MediaType.APPLICATION_JSON);
     }
 }

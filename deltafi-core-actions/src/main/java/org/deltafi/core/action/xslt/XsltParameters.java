@@ -17,34 +17,35 @@
  */
 package org.deltafi.core.action.xslt;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import lombok.*;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+import org.deltafi.core.action.ContentSelectionParameters;
 
 import java.util.List;
-
 
 @Data
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-@AllArgsConstructor
 @NoArgsConstructor
-public class XsltParameters extends ActionParameters {
-
+public class XsltParameters extends ContentSelectionParameters {
     @JsonProperty(required = true)
     @JsonPropertyDescription("XSLT transformation specification provided as a string.")
     public String xslt;
 
     @JsonProperty(defaultValue = "[\"*/xml\"]")
-    @JsonPropertyDescription("List of allowed media types. Supports wildcards (*) and defaults to '*/xml' if empty.")
-    public List<String> mediaTypes = List.of("*/xml");
+    @JsonPropertyDescription("List of allowed media types. Supports wildcards (*) and defaults to */xml.")
+    @Override
+    public List<String> getMediaTypes() {
+        return super.getMediaTypes();
+    }
 
-    @JsonPropertyDescription("List of file patterns to consider. Supports wildcards (*) and if empty, all filenames are considered.")
-    @JsonProperty(defaultValue = "[]")
-    public List<String> filePatterns = List.of();
-
-    @JsonPropertyDescription("List of content indexes to consider. If empty, all content is considered.")
-    @JsonProperty(defaultValue = "[]")
-    public List<Integer> contentIndexes = List.of();
+    @JsonCreator
+    public XsltParameters(List<String> mediaTypes) {
+        super(mediaTypes);
+    }
 }

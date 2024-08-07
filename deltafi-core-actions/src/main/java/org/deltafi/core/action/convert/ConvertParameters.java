@@ -19,18 +19,17 @@ package org.deltafi.core.action.convert;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import lombok.*;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
-
-import java.util.List;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+import org.deltafi.core.action.ContentSelectionParameters;
 
 @Data
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-@AllArgsConstructor
 @NoArgsConstructor
-public class ConvertParameters extends ActionParameters {
-
+public class ConvertParameters extends ContentSelectionParameters {
     @JsonPropertyDescription("Format of the input content. Supported formats are JSON, XML, and CSV.")
     private DataFormat inputFormat;
 
@@ -40,18 +39,6 @@ public class ConvertParameters extends ActionParameters {
     @JsonProperty(defaultValue = "false")
     @JsonPropertyDescription("Boolean indicating whether the existing content should be retained or replaced by the new content. Default is false.")
     private boolean retainExistingContent = false;
-
-    @JsonProperty(defaultValue = "[]")
-    @JsonPropertyDescription("List of allowed media types. Supports wildcards (*) and defaults based on the input format if empty.")
-    private List<String> mediaTypes = List.of();
-
-    @JsonProperty(defaultValue = "[]")
-    @JsonPropertyDescription("List of file patterns to consider. Supports wildcards (*) and if empty, all filenames are considered.")
-    private List<String> filePatterns = List.of();
-
-    @JsonProperty(defaultValue = "[]")
-    @JsonPropertyDescription("List of content indexes to consider. If empty, all content is considered.")
-    private List<Integer> contentIndexes = List.of();
 
     @JsonProperty(defaultValue = "xml")
     @JsonPropertyDescription("Name of the root XML tag to use when converting to XML. Defaults to xml.")
