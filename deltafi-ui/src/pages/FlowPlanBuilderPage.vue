@@ -547,14 +547,23 @@ const removeEmptyKeyValues = (queryObj) => {
 const clearEmptyObjects = (queryObj) => {
   for (const objKey in queryObj) {
     if (_.isArray(queryObj[objKey])) {
+      if (_.some(queryObj[objKey], _.isNil)) {
+        queryObj[objKey].forEach(function (item, index) {
+          queryObj[objKey][index] = removeEmptyKeyValues(item);
+        });
+      }
+
+      if (queryObj[objKey].every((value) => typeof value === "object")) {
+        queryObj[objKey] = queryObj[objKey].filter((value) => Object.keys(value).length !== 0);
+      }
+
+      if (_.isEmpty(queryObj[objKey])) {
+        delete queryObj[objKey];
+        continue;
+      }
+
       if (Object.keys(queryObj[objKey]).length === 0) {
         delete queryObj[objKey];
-      } else {
-        if (!_.every(queryObj[objKey], _.isString)) {
-          queryObj[objKey].forEach(function (item, index) {
-            queryObj[objKey][index] = removeEmptyKeyValues(item);
-          });
-        }
       }
     }
 
@@ -566,6 +575,7 @@ const clearEmptyObjects = (queryObj) => {
       delete queryObj[objKey];
     }
   }
+
   return queryObj;
 };
 
