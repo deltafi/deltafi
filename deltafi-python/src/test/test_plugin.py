@@ -89,6 +89,7 @@ def get_expected_json():
                 "name": "plugin-group.SampleTransformAction",
                 "description": "Transform action description",
                 "type": "TRANSFORM",
+                "supportsJoin": False,
                 "schema": {
                     "title": "SampleTransformParameters",
                     "type": "object",

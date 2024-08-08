@@ -38,7 +38,7 @@ from deltafi.exception import ExpectedContentException, MissingMetadataException
 from deltafi.logger import get_logger
 from deltafi.result import ErrorResult
 from deltafi.storage import ContentService
-from deltafi.action import Action
+from deltafi.action import Action, Join
 
 
 def _coordinates():
@@ -164,6 +164,7 @@ class Plugin(object):
             'name': self.action_name(action),
             'description': action.description,
             'type': action.action_type.name,
+            'supportsJoin': isinstance(action, Join),
             'schema': action.param_class().model_json_schema()
         }
 

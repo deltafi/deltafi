@@ -30,7 +30,6 @@ import org.jetbrains.annotations.NotNull;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -86,16 +85,6 @@ public abstract class Action<I, P extends ActionParameters, R extends ResultType
     protected abstract I buildInput(@NotNull ActionContext actionContext, @NotNull DeltaFileMessage deltaFileMessage);
 
     /**
-     * Builds an action-specific input instance used by the execute method from a list of action-specific inputs.  This
-     * method is used when the action context includes a join configuration.
-     * @param actionInputs the list of action-specific inputs
-     * @return the combined action-specific input instance
-     */
-    protected I join(@NotNull List<I> actionInputs) {
-        throw new UnsupportedOperationException("Join is not supported for " + getClassCanonicalName());
-    }
-
-    /**
      * This is the action entry point where all specific action functionality is implemented.
      * @param context The context for the specific instance of the action being executed.  This includes the name
      * of the action, the flow to which it is attached, the version of the action, and the hostname.
@@ -116,17 +105,19 @@ public abstract class Action<I, P extends ActionParameters, R extends ResultType
                 actionInput.getActionContext().getDid(), OffsetDateTime.now());
 
         if (actionInput.getActionContext().getJoin() != null) {
-            return execute(actionInput.getActionContext(), join(actionInput.getDeltaFileMessages().stream()
-                            .map(deltaFileMessage -> buildInput(actionInput.getActionContext(), deltaFileMessage)).toList()),
-                    convertToParams(actionInput.getActionParams()));
+            return executeJoinAction(actionInput);
         }
 
         return execute(actionInput.getActionContext(), buildInput(actionInput.getActionContext(),
                 actionInput.getDeltaFileMessages().getFirst()), convertToParams(actionInput.getActionParams()));
     }
 
-    private P convertToParams(@NotNull Map<String, Object> params) {
+    protected P convertToParams(@NotNull Map<String, Object> params) {
         return OBJECT_MAPPER.convertValue(params, paramClass);
+    }
+
+    public R executeJoinAction(@NotNull ActionInput actionInput) {
+        throw new UnsupportedOperationException("Join is not supported for " + getClassCanonicalName());
     }
 
     public void clearActionExecution() {

@@ -74,6 +74,14 @@ public class SchemaComplianceValidator {
     public List<FlowConfigError> validateAgainstSchema(ActionDescriptor actionDescriptor, ActionConfiguration actionConfiguration) {
         List<FlowConfigError> errors = new ArrayList<>();
 
+        if (!actionDescriptor.isSupportsJoin() && actionConfiguration.getJoin() != null) {
+            errors.add(FlowConfigError.newBuilder()
+                    .configName(actionConfiguration.getName())
+                    .errorType(FlowErrorType.INVALID_CONFIG)
+                    .message("Attempted to configure join in an action that does not support join")
+                    .build());
+        }
+
         validateParameters(actionConfiguration, actionDescriptor).ifPresent(errors::add);
 
         actionConfiguration.validate(actionDescriptor).stream()

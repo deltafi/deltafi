@@ -18,16 +18,13 @@
 package org.deltafi.core.action.merge;
 
 import org.deltafi.actionkit.action.content.ActionContent;
-import org.deltafi.actionkit.action.transform.TransformAction;
-import org.deltafi.actionkit.action.transform.TransformInput;
-import org.deltafi.actionkit.action.transform.TransformResult;
-import org.deltafi.actionkit.action.transform.TransformResultType;
+import org.deltafi.actionkit.action.transform.*;
 import org.deltafi.common.types.ActionContext;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 @Component
-public class Merge extends TransformAction<MergeParameters> {
+public class Merge extends TransformAction<MergeParameters> implements Join {
     static final String FILENAME_REPLACEMENT = "{{filename}}";
 
     public Merge() {

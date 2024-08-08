@@ -26,6 +26,7 @@ import feign.jackson.JacksonDecoder;
 import feign.jackson.JacksonEncoder;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Action;
+import org.deltafi.actionkit.action.transform.Join;
 import org.deltafi.actionkit.action.util.ActionParameterSchemaGenerator;
 import org.deltafi.common.http.client.feign.FeignClientFactory;
 import org.deltafi.common.types.*;
@@ -104,6 +105,7 @@ public class PluginRegistrar {
                 .name(action.getClassCanonicalName())
                 .description(action.getDescription())
                 .type(action.getActionType())
+                .supportsJoin(action instanceof Join)
                 .schema(schema)
                 .build();
     }

@@ -34,5 +34,6 @@ public class ActionDescriptor {
   private String name;
   private String description;
   private ActionType type;
+  private boolean supportsJoin = false;
   private Map<String, Object> schema;
 }
