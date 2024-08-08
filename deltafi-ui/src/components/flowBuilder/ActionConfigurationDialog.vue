@@ -156,10 +156,15 @@ const displayMap = new Map([
   ["schema", { header: "Parameters", type: "object", disableEdit: false }],
 ]);
 
-const displayKeysList = ["name", "type", "description", "join", "schema"];
+const displayKeysList = ["name", "type", "description", "schema"];
 
 const getDisplayValues = (obj) => {
-  return _.intersection(Object.keys(obj), displayKeysList);
+  let displayValues = _.intersection(Object.keys(obj), displayKeysList);
+  if (obj.supportsJoin) {
+    displayValues.push("join");
+  }
+
+  return displayValues;
 };
 
 const displayFieldTest = (displayActionInfo) => {
