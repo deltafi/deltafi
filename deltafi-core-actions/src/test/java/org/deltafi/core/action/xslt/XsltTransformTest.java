@@ -76,7 +76,8 @@ class XsltTransformTest {
 
         TransformInput input = createInput();
         assertErrorResult(action.transform(context, params, input))
-                .hasCause("Error parsing XSLT");
+                .hasCause("Error transforming content at index 0")
+                .hasContextLike("[\\s\\S]*Content is not allowed in prolog[\\s\\S]*");
     }
 
     @Test

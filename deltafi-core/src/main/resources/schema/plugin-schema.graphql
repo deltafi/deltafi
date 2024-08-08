@@ -70,6 +70,7 @@ type ActionDescriptor {
     name: String!
     description: String
     type: String!
+    supportsJoin: Boolean!
     schema: JSON
 }
 
@@ -77,6 +78,7 @@ input ActionDescriptorInput {
     name: String!
     description: String
     type: String!
+    supportsJoin: Boolean!
     schema: JSON
 }
 

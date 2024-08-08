@@ -17,7 +17,10 @@
  */
 package org.deltafi.core.action.extract;
 
-import com.jayway.jsonpath.*;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.Option;
+import com.jayway.jsonpath.ReadContext;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.transform.TransformAction;
@@ -41,34 +44,26 @@ public class ExtractJson extends TransformAction<ExtractJsonParameters> {
     }
 
     @Override
-    public TransformResultType transform(@NotNull ActionContext context,
-                                         @NotNull ExtractJsonParameters params,
+    public TransformResultType transform(@NotNull ActionContext context, @NotNull ExtractJsonParameters params,
                                          @NotNull TransformInput input) {
         TransformResult result = new TransformResult(context);
         result.addContent(input.content());
 
-        // Define a map to collect the values for each JSONPath expression
-        Map<String, List<String>> valuesMap = new HashMap<>();
-        List<ActionContent> contentList = (params.getContentIndexes() == null || params.getContentIndexes().isEmpty()) ? input.content() : params.getContentIndexes().stream().map(input.content()::get).toList();
-        contentList = contentList.stream()
-                .filter(c -> params.getMediaTypes().stream()
-                        .anyMatch(allowedType -> matchesPattern(c.getMediaType(), allowedType)))
-                .filter(c -> params.getFilePatterns() == null || params.getFilePatterns().isEmpty() ||
-                        params.getFilePatterns().stream()
-                                .anyMatch(pattern -> matchesPattern(c.getName(), pattern)))
-                .toList();
+        Map<String, List<String>> extractedValuesMap = new HashMap<>();
+        for (int i = 0; i < input.getContent().size(); i++) {
+            ActionContent content = input.content(i);
 
-        // Iterate through content and extract values using JSONPath
-        for (ActionContent content : contentList) {
-            String json = content.loadString();
+            if (!params.contentMatches(content.getName(), content.getMediaType(), i)) {
+                continue;
+            }
 
-            ReadContext ctx = JsonPath.using(CONFIGURATION).parse(json);
+            ReadContext ctx = JsonPath.using(CONFIGURATION).parse(content.loadString());
             for (Map.Entry<String, String> entry : params.getJsonPathToKeysMap().entrySet()) {
                 String jsonPath = entry.getKey();
                 Object readResult = ctx.read(jsonPath);
 
                 List<String> values = ((List<?>) readResult).stream().filter(Objects::nonNull).map(Object::toString).toList();
-                valuesMap.computeIfAbsent(jsonPath, k -> new ArrayList<>()).addAll(values);
+                extractedValuesMap.computeIfAbsent(jsonPath, k -> new ArrayList<>()).addAll(values);
             }
         }
 
@@ -76,7 +71,7 @@ public class ExtractJson extends TransformAction<ExtractJsonParameters> {
         for (Map.Entry<String, String> entry : params.getJsonPathToKeysMap().entrySet()) {
             String jsonPath = entry.getKey();
             String mappedKey = entry.getValue();
-            List<String> values = valuesMap.getOrDefault(jsonPath, Collections.emptyList());
+            List<String> values = extractedValuesMap.getOrDefault(jsonPath, Collections.emptyList());
 
             if (values.isEmpty()) {
                 if (params.isErrorOnKeyNotFound()) {
@@ -88,8 +83,7 @@ public class ExtractJson extends TransformAction<ExtractJsonParameters> {
             String value = switch (params.getHandleMultipleKeys()) {
                 case FIRST -> values.getFirst();
                 case LAST -> values.getLast();
-                case DISTINCT -> String.join(params.getAllKeysDelimiter(),
-                        values.stream().distinct().toList());
+                case DISTINCT -> String.join(params.getAllKeysDelimiter(), values.stream().distinct().toList());
                 default -> String.join(params.getAllKeysDelimiter(), values);
             };
 
@@ -101,9 +95,5 @@ public class ExtractJson extends TransformAction<ExtractJsonParameters> {
         }
 
         return result;
-    }
-
-    private boolean matchesPattern(String value, String pattern) {
-        return value.matches(pattern.replace("*", ".*"));
     }
 }

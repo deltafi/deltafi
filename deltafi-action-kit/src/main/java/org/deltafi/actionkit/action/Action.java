@@ -17,23 +17,19 @@
  */
 package org.deltafi.actionkit.action;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.actionkit.action.util.ActionParameterSchemaGenerator;
 import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -44,12 +40,17 @@ import java.util.Map;
  * @param <R> The result type
  */
 @RequiredArgsConstructor
+@Getter
 public abstract class Action<I, P extends ActionParameters, R extends ResultType> {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
                     .registerModule(new JavaTimeModule())
                     .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
 
-    @Getter
+    private final ActionType actionType;
+    private final String description;
+
+    private final Class<P> paramClass = getGenericParameterType();
+
     private ActionExecution actionExecution = null;
 
     /**
@@ -75,14 +76,6 @@ public abstract class Action<I, P extends ActionParameters, R extends ResultType
         throw new RuntimeException("Cannot instantiate" + getClass());
     }
 
-    protected final Class<P> paramClass = getGenericParameterType();
-
-    private final ActionType actionType;
-    private final String description;
-
-    private ActionDescriptor actionDescriptor;
-    private Map<String, Object> definition;
-
     /**
      * Builds the action-specific input instance used by the execute method.
      * @param actionContext the context for the specific instance of the action being executed
@@ -90,16 +83,6 @@ public abstract class Action<I, P extends ActionParameters, R extends ResultType
      * @return the action-specific input instance
      */
     protected abstract I buildInput(@NotNull ActionContext actionContext, @NotNull DeltaFileMessage deltaFileMessage);
-
-    /**
-     * Builds an action-specific input instance used by the execute method from a list of action-specific inputs.  This
-     * method is used when the action context includes a join configuration.
-     * @param actionInputs the list of action-specific inputs
-     * @return the combined action-specific input instance
-     */
-    protected I join(@NotNull List<I> actionInputs) {
-        throw new UnsupportedOperationException("Join is not supported for " + getClassCanonicalName());
-    }
 
     /**
      * This is the action entry point where all specific action functionality is implemented.
@@ -118,48 +101,27 @@ public abstract class Action<I, P extends ActionParameters, R extends ResultType
                     actionInput.getActionContext().getDid());
         }
 
-        actionExecution = new ActionExecution(getClassCanonicalName(), actionInput.getActionContext().getActionName(), actionInput.getActionContext().getDid(), OffsetDateTime.now());
+        actionExecution = new ActionExecution(getClassCanonicalName(), actionInput.getActionContext().getActionName(),
+                actionInput.getActionContext().getDid(), OffsetDateTime.now());
 
         if (actionInput.getActionContext().getJoin() != null) {
-            return execute(actionInput.getActionContext(), join(actionInput.getDeltaFileMessages().stream()
-                            .map(deltaFileMessage -> buildInput(actionInput.getActionContext(), deltaFileMessage)).toList()),
-                    convertToParams(actionInput.getActionParams()));
+            return executeJoinAction(actionInput);
         }
 
         return execute(actionInput.getActionContext(), buildInput(actionInput.getActionContext(),
                 actionInput.getDeltaFileMessages().getFirst()), convertToParams(actionInput.getActionParams()));
     }
 
+    protected P convertToParams(@NotNull Map<String, Object> params) {
+        return OBJECT_MAPPER.convertValue(params, paramClass);
+    }
+
+    public R executeJoinAction(@NotNull ActionInput actionInput) {
+        throw new UnsupportedOperationException("Join is not supported for " + getClassCanonicalName());
+    }
+
     public void clearActionExecution() {
         actionExecution = null;
-    }
-
-    public ActionDescriptor getActionDescriptor() {
-        if (actionDescriptor == null) {
-            actionDescriptor = buildActionDescriptor();
-        }
-        return actionDescriptor;
-    }
-
-    protected ActionDescriptor buildActionDescriptor() {
-        return ActionDescriptor.builder()
-                .name(getClassCanonicalName())
-                .description(description)
-                .type(actionType)
-                .schema(getDefinition())
-                .build();
-    }
-
-    /**
-     * Generate a key/value map for the parameter schema of this action
-     * @return Map of parameter class used to configure this action
-     */
-    public Map<String, Object> getDefinition() {
-        if (definition == null) {
-            JsonNode schemaJson = ActionParameterSchemaGenerator.generateSchema(paramClass);
-            definition = OBJECT_MAPPER.convertValue(schemaJson, new TypeReference<>() {});
-        }
-        return definition;
     }
 
     /**
@@ -168,14 +130,5 @@ public abstract class Action<I, P extends ActionParameters, R extends ResultType
      */
     public String getClassCanonicalName() {
         return getClass().getCanonicalName();
-    }
-
-    /**
-     * Convert a map of key/values to a parameter object for the Action
-     * @param params Key-value map representing the values in the parameter object
-     * @return a parameter object initialized by the params map
-     */
-    public P convertToParams(@NotNull Map<String, Object> params) {
-        return OBJECT_MAPPER.convertValue(params, paramClass);
     }
 }

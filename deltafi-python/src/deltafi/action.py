@@ -27,6 +27,16 @@ from deltafi.result import *
 from pydantic import BaseModel
 
 
+class Join(ABC):
+    def join(self, transform_inputs: List[TransformInput]):
+        all_content = []
+        all_metadata = {}
+        for transform_input in transform_inputs:
+            all_content += transform_input.content
+            all_metadata.update(transform_input.metadata)
+        return TransformInput(content=all_content, metadata=all_metadata)
+
+
 class Action(ABC):
     def __init__(self, action_type: ActionType, description: str, valid_result_types: tuple):
         self.action_type = action_type
@@ -38,7 +48,7 @@ class Action(ABC):
     def build_input(self, context: Context, delta_file_message: DeltaFileMessage):
         pass
 
-    def join(self, action_inputs: List[Any]):
+    def execute_join_action(self, event):
         raise RuntimeError(f"Join is not supported for {self.__class__.__name__}")
 
     @abstractmethod
@@ -49,11 +59,7 @@ class Action(ABC):
         if event.delta_file_messages is None or not len(event.delta_file_messages):
             raise RuntimeError(f"Received event with no delta file messages for did {event.context.did}")
         if event.context.join is not None:
-            result = self.execute(
-                event.context,
-                self.join([self.build_input(event.context, delta_file_message)
-                              for delta_file_message in event.delta_file_messages]),
-                self.param_class().model_validate(event.params))
+            result = self.execute_join_action(event)
         else:
             result = self.execute(
                 event.context,
@@ -123,13 +129,15 @@ class TransformAction(Action, ABC):
     def build_input(self, context: Context, delta_file_message: DeltaFileMessage):
         return TransformInput(content=delta_file_message.content_list, metadata=delta_file_message.metadata)
 
-    def join(self, transform_inputs: List[TransformInput]):
-        all_content = []
-        all_metadata = {}
-        for transform_input in transform_inputs:
-            all_content += transform_input.content
-            all_metadata.update(transform_input.metadata)
-        return TransformInput(content=all_content, metadata=all_metadata)
+    def execute_join_action(self, event):
+        if (isinstance(self, Join)):
+            return self.execute(
+                event.context,
+                self.join([self.build_input(event.context, delta_file_message)
+                           for delta_file_message in event.delta_file_messages]),
+                self.param_class().model_validate(event.params))
+        else:
+            super().execute_join_action(event)
 
     @abstractmethod
     def transform(self, context: Context, params: BaseModel, transform_input: TransformInput):

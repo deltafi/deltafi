@@ -17,7 +17,6 @@
  */
 package org.deltafi.core.action.convert;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.MappingIterator;
@@ -28,20 +27,15 @@ import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import org.deltafi.actionkit.action.content.ActionContent;
-import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.actionkit.action.transform.TransformAction;
-import org.deltafi.actionkit.action.transform.TransformInput;
-import org.deltafi.actionkit.action.transform.TransformResult;
-import org.deltafi.actionkit.action.transform.TransformResultType;
 import org.deltafi.common.types.ActionContext;
-import org.jetbrains.annotations.NotNull;
+import org.deltafi.core.action.ContentSelectingTransformAction;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.*;
 
 @Component
-public class Convert extends TransformAction<ConvertParameters> {
+public class Convert extends ContentSelectingTransformAction<ConvertParameters> {
 
     private static final CsvMapper CSV_MAPPER = new CsvMapper();
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -53,48 +47,24 @@ public class Convert extends TransformAction<ConvertParameters> {
     }
 
     @Override
-    public TransformResultType transform(@NotNull ActionContext context, @NotNull ConvertParameters params, @NotNull TransformInput input) {
-        TransformResult result = new TransformResult(context);
+    protected ActionContent transform(ActionContext context, ConvertParameters params, ActionContent content)
+            throws Exception {
+        String newContentString = convertContent(content.loadString(), params.getInputFormat(),
+                params.getOutputFormat(), params);
 
-        for (int index = 0; index < input.getContent().size(); index++) {
-            ActionContent content = input.getContent().get(index);
-
-            if (params.getContentIndexes() != null && !params.getContentIndexes().contains(index)) {
-                result.addContent(content);
-                continue;
-            }
-
-            if (matchesPatterns(content, params)) {
-                String newContentString;
-                try {
-                    newContentString = convertContent(content.loadString(), params.getInputFormat(), params.getOutputFormat(), params);
-                } catch (JsonProcessingException e) {
-                    return new ErrorResult(context, "Unable to convert content", e);
-                } catch (IOException e) {
-                    return new ErrorResult(context, "Unable to read content", e);
-                }
-
-                if (params.isRetainExistingContent()) {
-                    result.addContent(content);
-                }
-
-                String newFilename = getNewFilename(content.getName(), params.getOutputFormat());
-                result.saveContent(newContentString, newFilename, params.getOutputFormat().getMediaType());
-            } else {
-                result.addContent(content);
-            }
-        }
-
-        return result;
+        return ActionContent.saveContent(context, newContentString,
+                getNewFilename(content.getName(), params.getOutputFormat()), params.getOutputFormat().getMediaType());
     }
 
-    private String convertContent(String content, DataFormat inputFormat, DataFormat outputFormat, ConvertParameters params) throws IOException {
+    private String convertContent(String content, DataFormat inputFormat, DataFormat outputFormat,
+            ConvertParameters params) throws IOException {
         ObjectMapper inputMapper = getMapper(inputFormat);
 
         JsonNode jsonNode;
         if (inputFormat == DataFormat.CSV) {
             CsvSchema schema = CsvSchema.emptySchema().withHeader(); // Use the first row as headers
-            try (MappingIterator<Map<String, String>> it = CSV_MAPPER.readerFor(Map.class).with(schema).readValues(content)) {
+            try (MappingIterator<Map<String, String>> it =
+                    CSV_MAPPER.readerFor(Map.class).with(schema).readValues(content)) {
                 List<Map<String, String>> rows = it.readAll();
                 jsonNode = OBJECT_MAPPER.valueToTree(rows);
             }
@@ -148,13 +118,6 @@ public class Convert extends TransformAction<ConvertParameters> {
         }
 
         return outputMapper.writeValueAsString(jsonNode);
-    }
-
-    private boolean matchesPatterns(ActionContent content, ConvertParameters params) {
-        return (params.getMediaTypes() == null || params.getMediaTypes().isEmpty() ||
-                params.getMediaTypes().stream().anyMatch(type -> content.getMediaType().matches(type.replace("*", ".*")))) &&
-                (params.getFilePatterns() == null || params.getFilePatterns().isEmpty() ||
-                        params.getFilePatterns().stream().anyMatch(pattern -> content.getName().matches(pattern.replace("*", ".*"))));
     }
 
     private ObjectMapper getMapper(DataFormat format) {

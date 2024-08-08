@@ -18,12 +18,8 @@
 package org.deltafi.core.action.xslt;
 
 import org.deltafi.actionkit.action.content.ActionContent;
-import org.deltafi.actionkit.action.error.ErrorResult;
-import org.deltafi.actionkit.action.transform.TransformAction;
-import org.deltafi.actionkit.action.transform.TransformInput;
-import org.deltafi.actionkit.action.transform.TransformResult;
-import org.deltafi.actionkit.action.transform.TransformResultType;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.core.action.ContentSelectingTransformAction;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -41,7 +37,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Component
-public class XsltTransform extends TransformAction<XsltParameters> {
+public class XsltTransform extends ContentSelectingTransformAction<XsltParameters> {
     private static final int MAX_CACHE_SIZE = 1000;
 
     private final Map<String, Transformer> transformerCache = Collections.synchronizedMap(
@@ -57,42 +53,16 @@ public class XsltTransform extends TransformAction<XsltParameters> {
         super("Apply XML transformation using XSLT");
     }
 
+
     @Override
-    public TransformResultType transform(@NotNull ActionContext context,
-                                         @NotNull XsltParameters params,
-                                         @NotNull TransformInput input) {
-        TransformResult result = new TransformResult(context);
-        Transformer transformer;
+    public ActionContent transform(@NotNull ActionContext context, @NotNull XsltParameters params,
+            ActionContent content) throws Exception {
+        StringWriter writer = new StringWriter();
 
-        try {
-            transformer = getTransformer(params.getXslt());
-        } catch (Exception e) {
-            return new ErrorResult(context, "Error parsing XSLT", e);
-        }
+        Transformer transformer = getTransformer(params.getXslt());
+        transformer.transform(new StreamSource(new StringReader(content.loadString())), new StreamResult(writer));
 
-        for (int i = 0; i < input.getContent().size(); i++) {
-            ActionContent content = input.getContent().get(i);
-
-            if (shouldTransform(content, i, params)) {
-                String xml = content.loadString();
-                String newXml;
-                try {
-                    Source xmlSource = new StreamSource(new StringReader(xml));
-                    StringWriter writer = new StringWriter();
-                    StreamResult transformedXml = new StreamResult(writer);
-                    transformer.transform(xmlSource, transformedXml);
-                    newXml = writer.toString();
-                } catch (Exception e) {
-                    return new ErrorResult(context, "Error transforming content at index " + i, e);
-                }
-
-                result.addContent(ActionContent.saveContent(context, newXml, content.getName(), MediaType.APPLICATION_XML));
-            } else {
-                result.addContent(content);
-            }
-        }
-
-        return result;
+        return ActionContent.saveContent(context, writer.toString(), content.getName(), MediaType.APPLICATION_XML);
     }
 
     private Transformer getTransformer(String xslt) {
@@ -105,18 +75,5 @@ public class XsltTransform extends TransformAction<XsltParameters> {
                 throw new RuntimeException(e);
             }
         });
-    }
-
-    private boolean shouldTransform(ActionContent content, int index, XsltParameters params) {
-        return (params.getContentIndexes() == null || params.getContentIndexes().isEmpty() || params.getContentIndexes().contains(index)) &&
-                (params.getFilePatterns() == null || params.getFilePatterns().isEmpty() || params.getFilePatterns().stream()
-                        .anyMatch(pattern -> matchesPattern(content.getName(), pattern))) &&
-                (params.getMediaTypes() == null || params.getMediaTypes().isEmpty() || params.getMediaTypes().stream()
-                        .anyMatch(allowedType -> matchesPattern(content.getMediaType(), allowedType)));
-    }
-
-    private boolean matchesPattern(final String value, final String pattern) {
-        String regexPattern = pattern.replace("*", ".*");
-        return value.matches(regexPattern);
     }
 }
