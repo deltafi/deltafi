@@ -18,18 +18,18 @@
 
 <template>
   <CollapsiblePanel header="Actions" class="table-panel">
-    <DataTable :value="props.actions" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines">
+    <DataTable :value="props.actions" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines" sort-field="name" :sort-order="1">
       <template #empty>No actions included</template>
-      <Column field="name" header="Name"></Column>
+      <Column field="name" header="Name" sortable></Column>
       <Column field="description" header="Description"></Column>
       <Column field="requiresDomains" header="Requires Domains">
         <template #body="{ data }">
-          <span v-if="data.requiresDomains !== null">{{ data.requiresDomains.join(', ') }}</span>
+          <span v-if="data.requiresDomains !== null">{{ data.requiresDomains.join(", ") }}</span>
         </template>
       </Column>
       <Column field="requiresEnrichments" header="Requires Enrichments">
         <template #body="{ data }">
-          <span v-if="data.requiresEnrichments !== null">{{ data.requiresEnrichments.join(', ') }}</span>
+          <span v-if="data.requiresEnrichments !== null">{{ data.requiresEnrichments.join(", ") }}</span>
         </template>
       </Column>
     </DataTable>
