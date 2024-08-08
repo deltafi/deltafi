@@ -18,9 +18,9 @@
 
 <template>
   <CollapsiblePanel :header="header" class="property-set table-panel">
-    <DataTable :value="variables" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines table-striped plugin-variables-table" :row-hover="true">
+    <DataTable :value="variables" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines table-striped plugin-variables-table" :row-hover="true" sort-field="name" :sort-order="1">
       <template #empty>No variables included </template>
-      <Column field="name" header="Name" :style="{ width: '50%' }">
+      <Column field="name" header="Name" :style="{ width: '50%' }" sortable>
         <template #body="{ data }">
           {{ data.name }}
           <i v-if="data.description" v-tooltip.right="data.description" class="ml-2 text-muted fas fa-info-circle fa-fw" />
