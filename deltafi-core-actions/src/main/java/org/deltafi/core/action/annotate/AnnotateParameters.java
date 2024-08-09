@@ -31,7 +31,7 @@ import java.util.Map;
 @NoArgsConstructor
 public class AnnotateParameters extends ActionParameters {
     @JsonPropertyDescription("Key value pairs of annotations to be added")
-    public Map<String, String> annotations;
+    private Map<String, String> annotations;
 
     @JsonPropertyDescription("List of regex patterns matching metadata keys to add as annotations")
     private List<String> metadataPatterns;

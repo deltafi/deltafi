@@ -29,5 +29,5 @@ import lombok.ToString;
 public class RestPostEgressParameters extends HttpEgressParameters {
     @JsonProperty(required = true)
     @JsonPropertyDescription("Send metadata as JSON in this HTTP header field")
-    public String metadataKey;
+    private String metadataKey;
 }

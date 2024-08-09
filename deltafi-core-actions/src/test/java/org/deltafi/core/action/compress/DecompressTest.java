@@ -573,7 +573,7 @@ public class DecompressTest {
     private void runTest(DecompressParameters parameters, Format expectedCompressFormat, TransformInput input, String... outputFiles) {
         ResultType result = action.transform(runner.actionContext(), parameters, input);
         List<String> names = new ArrayList<>();
-        if (parameters.retainExistingContent) {
+        if (parameters.isRetainExistingContent()) {
             names.addAll(input.getContent().stream().map(ActionContent::getName).toList());
         }
         names.addAll(List.of(outputFiles));

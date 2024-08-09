@@ -33,11 +33,11 @@ import java.util.Map;
 @NoArgsConstructor
 public class ModifyMetadataParameters extends ActionParameters {
     @JsonPropertyDescription("Key value pairs of metadata to be added or modified")
-    public Map<String, String> addOrModifyMetadata = new HashMap<>();
+    private Map<String, String> addOrModifyMetadata = new HashMap<>();
 
     @JsonPropertyDescription("Map of old metadata key names to new metadata key names to copy. The new metadata key names can be a comma-separated list to make multiple copies.")
-    public Map<String, String> copyMetadata = new HashMap<>();
+    private Map<String, String> copyMetadata = new HashMap<>();
 
     @JsonPropertyDescription("List of metadata keys to delete")
-    public List<String> deleteMetadataKeys = new ArrayList<>();
+    private List<String> deleteMetadataKeys = new ArrayList<>();
 }

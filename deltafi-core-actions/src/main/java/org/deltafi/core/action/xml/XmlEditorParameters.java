@@ -39,7 +39,7 @@ import java.util.List;
 public class XmlEditorParameters extends ContentSelectionParameters {
     @JsonProperty(required = true)
     @JsonPropertyDescription("List of XML editing commands to be applied in order")
-    public List<String> xmlEditingCommands;
+    private List<String> xmlEditingCommands;
 
     @JsonProperty(defaultValue = "[\"*/xml\"]")
     @JsonPropertyDescription("List of media types to consider, supporting wildcards (*)")

@@ -37,7 +37,7 @@ public class XsltParameters extends ContentSelectionParameters {
     @JsonProperty(required = true)
     @JsonPropertyDescription("XSLT transformation specification")
     @Size(maxLength = 5000)
-    public String xslt;
+    private String xslt;
 
     @JsonProperty(defaultValue = "[\"*/xml\"]")
     @JsonPropertyDescription("List of media types to consider, supporting wildcards (*)")

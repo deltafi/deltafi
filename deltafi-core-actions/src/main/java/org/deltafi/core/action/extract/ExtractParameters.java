@@ -31,19 +31,19 @@ import java.util.List;
 public class ExtractParameters extends ContentSelectionParameters {
     @JsonProperty(defaultValue = "METADATA")
     @JsonPropertyDescription("Extract to metadata or annotations.")
-    public ExtractTarget extractTarget = ExtractTarget.METADATA;
+    private ExtractTarget extractTarget = ExtractTarget.METADATA;
 
     @JsonProperty(defaultValue = "ALL")
     @JsonPropertyDescription("Concatenate all or distinct values extracted from multiple content, or just use the first or last content.")
-    public HandleMultipleKeysType handleMultipleKeys = HandleMultipleKeysType.ALL;
+    private HandleMultipleKeysType handleMultipleKeys = HandleMultipleKeysType.ALL;
 
     @JsonProperty(defaultValue = ",")
     @JsonPropertyDescription("Delimiter to use if handleMultipleKeys is ALL or DISTINCT")
-    public String allKeysDelimiter = ",";
+    private String allKeysDelimiter = ",";
 
     @JsonProperty(defaultValue = "false")
     @JsonPropertyDescription("Error if a key is not found.")
-    public boolean errorOnKeyNotFound = false;
+    private boolean errorOnKeyNotFound = false;
 
     public ExtractParameters(List<String> mediaTypes) {
         super(mediaTypes);

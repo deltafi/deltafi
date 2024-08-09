@@ -119,20 +119,20 @@ public class Decompress extends TransformAction<DecompressParameters> {
         }
 
         LineageMap lineage = new LineageMap();
-        TransformResultType result = (params.maxRecursionLevels == 0)
+        TransformResultType result = (params.getMaxRecursionLevels() == 0)
                 ? basicDecompress(context, params, input, lineage)
                 : recursiveDecompress(context, params, input, lineage);
 
         if (result instanceof TransformResult) {
             // Generate the lineage
-            if (!lineage.isEmpty() && StringUtils.isNoneEmpty(params.lineageFilename)) {
+            if (!lineage.isEmpty() && StringUtils.isNoneEmpty(params.getLineageFilename())) {
                 String jsonLineage;
                 try {
                     jsonLineage = lineage.writeMapAsString();
                 } catch (JsonProcessingException e) {
                     return new ErrorResult(context, "Cannot write lineage JSON", e);
                 }
-                ((TransformResult) result).saveContent(jsonLineage, params.lineageFilename, MediaType.APPLICATION_JSON);
+                ((TransformResult) result).saveContent(jsonLineage, params.getLineageFilename(), MediaType.APPLICATION_JSON);
             }
         }
         return result;
@@ -141,7 +141,7 @@ public class Decompress extends TransformAction<DecompressParameters> {
     private TransformResultType basicDecompress(@NotNull ActionContext context, @NotNull DecompressParameters params,
                                                 @NotNull TransformInput input, LineageMap lineage) {
         TransformResult result = new TransformResult(context);
-        if (params.retainExistingContent) {
+        if (params.isRetainExistingContent()) {
             result.addContent(input.getContent());
         }
 
@@ -185,12 +185,12 @@ public class Decompress extends TransformAction<DecompressParameters> {
         int recursionLevel = 0;
         boolean recursionNeeded = true;
 
-        if (params.maxRecursionLevels > MAX_LEVELS_SAFEGUARD) {
+        if (params.getMaxRecursionLevels() > MAX_LEVELS_SAFEGUARD) {
             return new ErrorResult(context, "The 'maxLevelsCheck' must not exceed the system limit of: "
                     + MAX_LEVELS_SAFEGUARD);
         }
 
-        if (params.getFormat() != null || params.retainExistingContent) {
+        if (params.getFormat() != null || params.isRetainExistingContent()) {
             return new ErrorResult(context, "The 'format' and 'retainExistingContent'"
                     + " parameters may not be used in recursive mode");
         }
@@ -198,7 +198,7 @@ public class Decompress extends TransformAction<DecompressParameters> {
         TransformResult finalResult = new TransformResult(context);
         List<ActionContent> processingList = input.getContent();
 
-        while (recursionNeeded && (recursionLevel <= params.maxRecursionLevels)) {
+        while (recursionNeeded && (recursionLevel <= params.getMaxRecursionLevels())) {
             recursionLevel++;
             recursionNeeded = false;
 
@@ -418,7 +418,6 @@ public class Decompress extends TransformAction<DecompressParameters> {
         try (compressorInputStream) {
             String withoutSuffix = stripSuffix(content.getName());
             String newContentName = lineage.add(withoutSuffix, "", content.getName());
-
             result.saveContent(compressorInputStream, newContentName, MediaType.APPLICATION_OCTET_STREAM);
         }
     }

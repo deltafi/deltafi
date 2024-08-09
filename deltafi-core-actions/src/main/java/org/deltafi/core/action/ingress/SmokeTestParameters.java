@@ -34,28 +34,28 @@ import java.util.Map;
 @NoArgsConstructor
 public class SmokeTestParameters extends ActionParameters {
     @JsonPropertyDescription("Metadata to add to each smoke-generated DeltaFile")
-    public Map<String, String> metadata = new HashMap<>();
+    private Map<String, String> metadata = new HashMap<>();
 
     @JsonProperty(defaultValue = "application/text")
     @JsonPropertyDescription("The content's mediaType. If null, the default is application/text.")
-    public String mediaType = "application/text";
+    private String mediaType = "application/text";
 
     @JsonPropertyDescription("The content to attach to the DeltaFile. If null, random data of size contentSize will be added to the deltaFile")
-    public String content;
+    private String content;
 
     @JsonProperty(defaultValue = "500")
     @JsonPropertyDescription("The size in bytes of the random content to attach to the DeltaFile. Ignored if content is set")
-    public int contentSize = 500;
+    private int contentSize = 500;
 
     @JsonProperty(defaultValue = "0")
     @JsonPropertyDescription("An artificial delay will be randomly introduced one in every X times. Set to 0 to never delay or 1 to always delay")
-    public int delayChance = 0;
+    private int delayChance = 0;
 
     @JsonProperty(defaultValue = "0")
     @JsonPropertyDescription("Amount of time to delay if delayed")
-    public int delayMS = 0;
+    private int delayMS = 0;
 
     @JsonProperty(defaultValue = "0")
     @JsonPropertyDescription("The next deltaFile will be immediately triggered one in every X times. Set to 0 to never immediately trigger or 1 to always immediately trigger")
-    public int triggerImmediateChance = 0;
+    private int triggerImmediateChance = 0;
 }

@@ -33,7 +33,7 @@ import java.util.Map;
 public class ExtractXmlParameters extends ExtractParameters {
     @JsonProperty(required = true)
     @JsonPropertyDescription("Map of XPath expressions to keys. Values will be extracted using XPath and added to the corresponding metadata or annotation keys.")
-    public Map<String, String> xpathToKeysMap = new HashMap<>();
+    private Map<String, String> xpathToKeysMap = new HashMap<>();
 
     @JsonProperty(defaultValue = "[\"*/xml\"]")
     @JsonPropertyDescription("List of media types to consider, supporting wildcards (*)")

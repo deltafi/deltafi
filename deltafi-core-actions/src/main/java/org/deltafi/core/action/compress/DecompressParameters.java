@@ -29,16 +29,16 @@ import org.deltafi.actionkit.action.parameters.ActionParameters;
 @NoArgsConstructor
 public class DecompressParameters extends ActionParameters {
     @JsonPropertyDescription("Format to decompress, overriding autodetection")
-    public Format format;
+    private Format format;
 
     @JsonProperty(defaultValue = "false")
     @JsonPropertyDescription("Retain the existing content")
-    public boolean retainExistingContent = false;
+    private boolean retainExistingContent = false;
 
     @JsonPropertyDescription("If set, will save a JSON lineage of each file and its parent")
-    public String lineageFilename;
+    private String lineageFilename;
 
     @JsonProperty(defaultValue = "0")
     @JsonPropertyDescription("Enables recursive decryption/un-archiving of embedded content by checking filename extensions")
-    public int maxRecursionLevels = 0;
+    private int maxRecursionLevels = 0;
 }

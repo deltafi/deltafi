@@ -34,7 +34,7 @@ public class JoltParameters extends ContentSelectionParameters {
     @JsonProperty(required = true)
     @JsonPropertyDescription("Jolt transformation specification provided as a JSON string")
     @Size(maxLength = 5000)
-    public String joltSpec;
+    private String joltSpec;
 
     @JsonProperty(defaultValue = "[\"application/json\"]")
     @JsonPropertyDescription("List of media types to consider, supporting wildcards (*)")

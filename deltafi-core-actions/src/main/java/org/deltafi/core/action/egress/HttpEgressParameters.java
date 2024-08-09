@@ -30,13 +30,13 @@ import org.deltafi.actionkit.action.parameters.ActionParameters;
 public class HttpEgressParameters extends ActionParameters {
     @JsonProperty(required = true)
     @JsonPropertyDescription("The URL to post the DeltaFile to")
-    public String url;
+    private String url;
 
     @JsonProperty(defaultValue = "3")
     @JsonPropertyDescription("Number of times to retry a failing HTTP request")
-    public Integer retryCount = 3;
+    private Integer retryCount = 3;
 
     @JsonProperty(defaultValue = "150")
     @JsonPropertyDescription("Number milliseconds to wait for an HTTP retry")
-    public Integer retryDelayMs = 150;
+    private Integer retryDelayMs = 150;
 }

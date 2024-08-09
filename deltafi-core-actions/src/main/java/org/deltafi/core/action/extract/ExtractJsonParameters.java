@@ -33,7 +33,7 @@ import java.util.Map;
 public class ExtractJsonParameters extends ExtractParameters {
     @JsonProperty(required = true)
     @JsonPropertyDescription("Map of JSONPath expressions to keys. Values will be extracted using JSONPath and added to the corresponding metadata or annotation keys.")
-    public Map<String, String> jsonPathToKeysMap = new HashMap<>();
+    private Map<String, String> jsonPathToKeysMap = new HashMap<>();
 
     @JsonProperty(defaultValue = "[\"application/json\"]")
     @JsonPropertyDescription("List of media types to consider, supporting wildcards (*)")

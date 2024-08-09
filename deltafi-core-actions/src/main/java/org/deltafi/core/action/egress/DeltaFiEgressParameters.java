@@ -27,5 +27,5 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 public class DeltaFiEgressParameters extends HttpEgressParameters {
     @JsonPropertyDescription("Name of the flow on the receiving DeltaFi")
-    public String flow;
+    private String flow;
 }
