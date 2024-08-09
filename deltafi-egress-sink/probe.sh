@@ -17,6 +17,6 @@
 #    limitations under the License.
 #
 
-URL=http://127.0.0.1:9292/probe
+URL=http://127.0.0.1:80/probe
 TIMEOUT=5
 curl -m ${TIMEOUT} --connect-timeout ${TIMEOUT} -s -o /dev/null ${URL}

@@ -2,7 +2,7 @@
 
 . "$DELTAFICLI_WORKDIR/common"
 
-set -e
+# set -e
 
 cli_help_command() {
   echo "

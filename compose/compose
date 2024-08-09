@@ -486,7 +486,7 @@ deltafi:
 ingress:
   domain: local.deltafi.org
 dependencies:
-  grafana: deltafi/grafana:11.1.0-0
+  grafana: deltafi/grafana:11.1.3-0
   graphite: graphiteapp/graphite-statsd:1.1.10-5
   loki: grafana/loki:2.9.9
   minio: quay.io/minio/minio:RELEASE.2024-07-04T14-25-45Z

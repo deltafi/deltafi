@@ -27,7 +27,7 @@ spec:
         image: {{ .Values.deltafi.egress_sink.image }}
         imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 9292
+        - containerPort: 80
         env:
         - name: WORKERS
           value: {{ default "8" .Values.deltafi.egress_sink.workers | quote }}
@@ -45,6 +45,9 @@ spec:
         fsGroup: 1000
         runAsGroup: 1000
         runAsUser: 1000
+        sysctls:
+        - name: "net.ipv4.ip_unprivileged_port_start"
+          value: "0"
   strategy:
     type: Recreate
 {{- end -}}

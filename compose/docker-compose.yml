@@ -224,15 +224,17 @@ services:
     env_file:
       - ${ENV_DIR}/common.env
     expose:
-      - "9292"
+      - "80"
     labels:
       deltafi-group: deltafi-core
       <<: *logging-label
     networks:
-      - deltafi
+      deltafi:
+        aliases:
+          - "deltafi-egress-sink-service"
     restart: unless-stopped
     volumes:
-      - ${DATA_DIR}:/data/deltafi/egress-sink
+      - ${DATA_DIR}/egress-sink:/data/deltafi/egress-sink
     user: "${USER_ID}"
   deltafi-minio:
     image: ${MINIO}
