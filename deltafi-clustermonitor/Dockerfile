@@ -1,5 +1,5 @@
 # Scab kubectl from this bitnami image...
-FROM bitnami/kubectl:1.29.3 as kubectl
+FROM bitnami/kubectl:1.30.3 as kubectl
 
 FROM ubuntu:noble
 RUN apt-get -y update && apt-get -y install bash netcat-openbsd && apt-get clean && rm -rf /var/lib/apt/lists/*

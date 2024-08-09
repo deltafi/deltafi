@@ -1,4 +1,4 @@
-FROM deltafi/deltafi-ruby:3.3.1-alpine3.19-0
+FROM deltafi/deltafi-ruby:3.3.4-alpine3.20-0
 WORKDIR /app
 RUN apk add --no-cache sqlite-libs
 COPY . /app
