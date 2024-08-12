@@ -1,6 +1,6 @@
 # DeltaFi config
 deltafi:
-  local_path_prvisioner:
+  local_path_provisioner:
     enabled: false
   ui:
     title: DeltaFi (DinK)
