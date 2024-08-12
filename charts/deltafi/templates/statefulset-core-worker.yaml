@@ -29,6 +29,8 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
+        - name: SPRING_PROFILES_ACTIVE
+          value: kubernetes
         {{- include "coreEnvVars" . | nindent 8 }}
         {{- include "clickhouseEnvVars" . | nindent 8 }}
         envFrom:

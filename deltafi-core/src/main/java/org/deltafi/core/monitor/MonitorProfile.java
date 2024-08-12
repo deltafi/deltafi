@@ -15,28 +15,20 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.schedulers;
+package org.deltafi.core.monitor;
 
-import lombok.RequiredArgsConstructor;
-import org.deltafi.core.services.SystemService;
-import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Target({ ElementType.TYPE })
+@Retention(RetentionPolicy.RUNTIME)
+@Profile(MonitorProfile.MONITOR)
 @Service
-@EnableScheduling
-@RequiredArgsConstructor
-public class SystemServiceScheduler {
-
-    private final SystemService systemService;
-
-    @Scheduled(fixedDelay = 60_000)
-    public void reloadSystemInfo() {
-        systemService.refreshSystemInfo();
-    }
-
-    @Scheduled(fixedDelay = 5_000)
-    public void reloadMetrics() {
-        systemService.refreshNodeMetrics();
-    }
+public @interface MonitorProfile {
+    String MONITOR = "monitor";
 }

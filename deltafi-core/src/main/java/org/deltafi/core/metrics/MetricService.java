@@ -18,6 +18,7 @@
 package org.deltafi.core.metrics;
 
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.graphite.Graphite;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.Metric;
 import org.deltafi.core.configuration.DeltaFiProperties;
@@ -27,6 +28,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -37,10 +39,12 @@ public class MetricService {
     private final MetricRegistry metrics;
     @SuppressWarnings("FieldCanBeLocal")
     private final StatsdDeltaReporter reporter;
+    private final Graphite graphite;
 
     public MetricService(@Value("${STATSD_HOSTNAME:deltafi-graphite}") String statsdHostname,
                             @Value("${STATSD_PORT:8125}") int statsdPort,
                             @Value("${METRICS_PERIOD_SECONDS:10}") int periodSeconds,
+                            @Value("${GRAPHITE_PORT:2003}") int graphitePort,
                             DeltaFiPropertiesService deltaFiPropertiesService) {
         DeltaFiProperties deltaFiProperties = deltaFiPropertiesService.getDeltaFiProperties();
         if (deltaFiProperties.isMetricsEnabled()) {
@@ -52,11 +56,14 @@ public class MetricService {
                     .builder(statsdHostname, statsdPort, metrics)
                     .build();
             reporter.start(periodSeconds, TimeUnit.SECONDS);
+
+            graphite = new Graphite(statsdHostname, graphitePort);
             log.info("MetricService initialized.");
         } else {
             log.warn("Metrics are disabled");
             metrics = null;
             reporter = null;
+            graphite = null;
         }
     }
 
@@ -69,5 +76,19 @@ public class MetricService {
         org.deltafi.common.types.Metric metric = new org.deltafi.common.types.Metric(name, value, tags);
         if (metrics != null) { metrics.counter(metric.metricName()).inc(value); }
         log.debug("{}", metric);
+    }
+
+    public synchronized void sendGauges(Map<String, Long> metrics) {
+        if (graphite != null) {
+            try (Graphite client = graphite) {
+                long epochSeconds = Instant.now().getEpochSecond();
+                client.connect();
+                for (Map.Entry<String, Long> entry : metrics.entrySet()) {
+                    client.send(entry.getKey(), "" + entry.getValue(), epochSeconds);
+                }
+            } catch (Exception e) {
+                log.error("Could not send gauge metrics {}", metrics, e);
+            }
+        }
     }
 }

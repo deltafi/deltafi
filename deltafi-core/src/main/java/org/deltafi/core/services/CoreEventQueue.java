@@ -195,7 +195,7 @@ public class CoreEventQueue {
                     String action = keyParts[1];
                     UUID did = UUID.fromString(keyParts[2]);
 
-                    longRunningTasks.add(new ActionExecution(clazz, action, did, startTime));
+                    longRunningTasks.add(new ActionExecution(clazz, action, did, startTime, heartbeatTime));
                 }
             } catch (JsonProcessingException e) {
                 log.error("Unable to deserialize long running task information from JSON: {} = {}", key, value, e);

@@ -78,4 +78,15 @@ public class EventRepoImpl implements EventRepoCustom {
 
         return mongoTemplate.find(Query.query(criteria).with(Sort.by(Direction.DESC, TIMESTAMP)), Event.class);
     }
+
+    @Override
+    public long notificationCount() {
+        OffsetDateTime endTime = OffsetDateTime.now();
+
+        Criteria criteria = Criteria.where(ACKNOWLEDGED).is(false)
+                .and(NOTIFICATION).is(Boolean.TRUE)
+                .and(TIMESTAMP).gt(endTime.minusDays(7)).lt(endTime);
+
+        return mongoTemplate.count(Query.query(criteria), Event.class);
+    }
 }

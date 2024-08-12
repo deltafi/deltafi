@@ -6,5 +6,7 @@ rules:
 - apiGroups:
   - ""
   - apps
+  - metrics.k8s.io
+  - networking.k8s.io
   resources: ["*"]
   verbs: ["*"]

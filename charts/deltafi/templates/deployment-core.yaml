@@ -28,6 +28,8 @@ spec:
           value: "-Dcom.redhat.fips=false"
         - name: UNIQUE_ID
           value: core
+        - name: SPRING_PROFILES_ACTIVE
+          value: kubernetes
         {{- include "coreEnvVars" . | nindent 8 }}
         {{- include "clickhouseEnvVars" . | nindent 8 }}
         envFrom:

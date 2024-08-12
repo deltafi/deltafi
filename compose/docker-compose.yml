@@ -30,6 +30,7 @@ services:
     environment:
       JDK_JAVA_OPTIONS: "-Dcom.redhat.fips=false -Dschedule.diskSpace=false"
       UNIQUE_ID: deltafi-core
+      SPRING_PROFILES_ACTIVE: monitor
     env_file:
       - ${ENV_DIR}/common.env
       - ${SECRETS_DIR}/valkey.env
@@ -107,31 +108,6 @@ services:
       - deltafi
     restart: unless-stopped
     profiles: ["auth-resolver"]
-  deltafi-monitor:
-    image: ${DELTAFI_API}
-    container_name: deltafi-monitor
-    command: [ 'bundle', 'exec', 'bin/monitor.rb' ]
-    depends_on:
-      deltafi-core:
-        condition: service_healthy
-    env_file:
-      - ${ENV_DIR}/common.env
-      - ${SECRETS_DIR}/valkey.env
-      - ${SECRETS_DIR}/mongodb.env
-      - ${SECRETS_DIR}/minio.env
-    healthcheck:
-      test: /monitor_probe.sh
-      interval: 30s
-      timeout: 30s
-      retries: 4
-    expose:
-      - "9292"
-    labels:
-      deltafi-group: deltafi-core
-      <<: *logging-label
-    networks:
-      - deltafi
-    restart: unless-stopped
   deltafi-ui:
     image: ${DELTAFI_UI}
     container_name: deltafi-ui

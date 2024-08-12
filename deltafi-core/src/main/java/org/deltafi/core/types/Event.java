@@ -49,5 +49,15 @@ public record Event(@Id @JsonProperty("_id") String id, String severity, String 
         public static final String SUCCESS = "success";
 
         private Severity() {}
+
+        public static String mapSeverity(String severity) {
+            String downcased = severity != null ? severity.toLowerCase() : "";
+            return switch (downcased) {
+                case ERROR, "failure", "red" -> ERROR;
+                case WARN, "warning", "yellow" -> WARN;
+                case SUCCESS, "successful", "green" -> SUCCESS;
+                default -> INFO;
+            };
+        }
     }
 }

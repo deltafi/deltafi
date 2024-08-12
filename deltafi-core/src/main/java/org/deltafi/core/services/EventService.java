@@ -47,6 +47,30 @@ public class EventService {
     }
 
     public Event createEvent(Event event) {
+        validateNewEvent(event);
+        return eventRepo.insert(event);
+    }
+
+    public List<Event> createEvents(List<Event> events) {
+        events.forEach(this::validateNewEvent);
+        return eventRepo.insert(events);
+    }
+
+    public Event updateAcknowledgement(String id, boolean acknowledged) {
+        return eventRepo.updateAcknowledged(id, acknowledged).orElseThrow(notFound(id));
+    }
+
+    public Event deleteEvent(String id) {
+        Event event = getEvent(id);
+        eventRepo.deleteById(id);
+        return event;
+    }
+
+    public long notificationCount() {
+        return eventRepo.notificationCount();
+    }
+
+    private void validateNewEvent(Event event) {
         if (StringUtils.isNotBlank(event.id())) {
             throw new ValidationException("_id cannot be specified on Event creation");
         }
@@ -58,18 +82,6 @@ public class EventService {
         if (StringUtils.isBlank(event.severity()) || !VALID_SEVERITIES.contains(event.severity())) {
             throw new ValidationException("Severity must be info, success, warn, or error (given severity: " + event.severity() + ")");
         }
-
-        return eventRepo.insert(event);
-    }
-
-    public Event updateAcknowledgement(String id, boolean acknowledged) {
-        return eventRepo.updateAcknowledged(id, acknowledged).orElseThrow(notFound(id));
-    }
-
-    public Event deleteEvent(String id) {
-        Event event = getEvent(id);
-        eventRepo.deleteById(id);
-        return event;
     }
 
     private Supplier<EntityNotFound> notFound(String id) {

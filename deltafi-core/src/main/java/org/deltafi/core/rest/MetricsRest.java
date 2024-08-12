@@ -40,13 +40,13 @@ public class MetricsRest {
     @NeedsPermission.MetricsView
     @GetMapping("system/content")
     public ContentMetric contentMetrics() throws StorageCheckException {
-        return new ContentMetric(systemService.contentMetrics());
+        return new ContentMetric(systemService.contentNodeMetrics());
     }
 
     @NeedsPermission.MetricsView
     @GetMapping("system/nodes")
-    public Nodes nodeMetrics() {
-        return new Nodes(systemService.nodeMetrics());
+    public Nodes nodeAppsAndMetrics() {
+        return new Nodes(systemService.nodeAppsAndMetrics());
     }
 
     public record ContentMetric(Map<String, Long> content, OffsetDateTime timestamp) {

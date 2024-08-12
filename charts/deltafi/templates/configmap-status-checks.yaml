@@ -4,15 +4,13 @@ metadata:
   name: deltafi-status-checks
   namespace: deltafi
 data:
-  StatefulSetCheck: |
-    expected_stateful_sets:
+  StatefulSet: |
     - deltafi-core-worker
     - deltafi-graphite
     - deltafi-loki
     - deltafi-mongodb
     - deltafi-valkey-master
-  DeploymentCheck: |
-    expected_deployments:
+  Deployment: |
     - deltafi-core
     - deltafi-core-actions
     - deltafi-docs
@@ -23,16 +21,14 @@ data:
     - deltafi-minio
     - deltafi-monitor
     - deltafi-ui
-  IngressCheck: |
-    expected_ingresses:
+  Ingress: |
     - deltafi-grafana
     - deltafi-graphite
     - deltafi-ingress
     - deltafi-kubernetes-dashboard
     - deltafi-minio
     - deltafi-ui-ingress
-  ServiceCheck: |
-    expected_services:
+  Service: |
     - deltafi-core-service
     - deltafi-egress-sink-service
     - deltafi-grafana
@@ -47,8 +43,7 @@ data:
     - deltafi-valkey-headless
     - deltafi-valkey-master
     - deltafi-ui-service
-  StorageCheck: |
-    expected_volume_claims:
+  PersistentVolumeClaim: |
     - deltafi-auth
     - deltafi-egress-sink
     - deltafi-grafana

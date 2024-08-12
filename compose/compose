@@ -380,6 +380,7 @@ EOF
   if [[ ! -f "${VALKEY_SECRET_PATH}" ]]; then
     valkey_password=$(_random_password 16)
     cat <<EOF > "${VALKEY_SECRET_PATH}"
+REDIS_PASSWORD=$valkey_password
 VALKEY_PASSWORD=$valkey_password
 EOF
   fi
@@ -629,7 +630,6 @@ _write_startup_file() {
 # write the static common settings
 _write_common_base() {
   cat <<EOF > "${COMMON_SETTINGS}"
-API_URL=http://deltafi-api:9292
 CORE_URL=http://deltafi-core:8080/api/v2/
 DELTAFI_AUTH_URL=http://deltafi-auth:9292
 DELTAFI_GRAFANA_URL=http://deltafi-grafana:3000

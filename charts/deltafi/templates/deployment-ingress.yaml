@@ -24,6 +24,8 @@ spec:
         env:
         - name: JDK_JAVA_OPTIONS
           value: "-Dcom.redhat.fips=false -Dschedule.actionEvents=false -Dschedule.maintenance=false -Dschedule.propertySync=true"
+        - name: SPRING_PROFILES_ACTIVE
+          value: kubernetes
         {{- include "coreEnvVars" . | nindent 8 }}
         {{- include "clickhouseEnvVars" . | nindent 8 }}
         envFrom:

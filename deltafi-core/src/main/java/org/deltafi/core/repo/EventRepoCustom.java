@@ -38,4 +38,10 @@ public interface EventRepoCustom {
      * @return list of matching events
      */
     List<Event> findEvents(Map<String, String> filters);
+
+    /**
+     * Count unacknowledged notifications over the last 7 days
+     * @return count of events matching the criteria
+     */
+    long notificationCount();
 }
