@@ -5,6 +5,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.2.15] - 2024-08-12
+
+### Added
+- Added Helper buttons calender refresh to Events page 
+- New RecursiveDecompress transform action, which recursively decompresses content, drops compression file suffixes, and catalogs file lineage
+
+### Changed
+- Egress sink runs on port 80 instead of 9292
+- Airgap no longer needs to override defaults for passthrough
+
+### Fixed
+- Fixed issue in search page calendar looking for data not available on prod builds
+- Arrays of integers are no longer being removed from flows on save. 
+
+### Upgrade and Migration
+- Grafana -> 11.1.3
+- Java -> 21.0.4
+- Ruby -> 3.3.4
+
 ## [1.2.14] - 2024-08-01
 
 ### Added
@@ -3043,7 +3062,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.14...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.15...main
+[1.2.15]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.14...1.2.15
 [1.2.14]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.13...1.2.14
 [1.2.13]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.12...1.2.13
 [1.2.12]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.11...1.2.12
