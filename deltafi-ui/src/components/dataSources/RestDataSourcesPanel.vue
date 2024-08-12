@@ -119,7 +119,7 @@ import InputNumber from "primevue/inputnumber";
 const emit = defineEmits(["dataSourcesList"]);
 const editing = inject("isEditing");
 const notify = useNotifications();
-const { getRestDataSources, setTimedDataSourceCronSchedule, setMaxErrors, loaded, loading, errors } = useDataSource();
+const { getRestDataSources, setMaxErrors, loaded, loading, errors } = useDataSource();
 const showLoading = computed(() => loading.value && !loaded.value);
 const restDataSources = ref([]);
 const onEditInit = () => (editing.value = true);

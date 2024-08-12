@@ -15,19 +15,20 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.repo;
+package org.deltafi.core.monitor;
 
-import org.deltafi.core.types.Event;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Service;
 
-import java.time.OffsetDateTime;
-import java.util.UUID;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-@Repository
-public interface EventRepo extends JpaRepository<Event, UUID>, EventRepoCustom {
-    @Query("SELECT COUNT(e) FROM Event e WHERE e.acknowledged = false AND e.notification = true AND e.timestamp > :startTime")
-    long notificationCount(OffsetDateTime startTime);
+@Target({ ElementType.TYPE })
+@Retention(RetentionPolicy.RUNTIME)
+@Profile(MonitorProfile.MONITOR)
+@Service
+public @interface MonitorProfile {
+    String MONITOR = "monitor";
 }

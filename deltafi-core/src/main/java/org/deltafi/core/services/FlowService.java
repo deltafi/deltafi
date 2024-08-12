@@ -282,6 +282,11 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
         return new ArrayList<>(flowCache.values());
     }
 
+    public List<FlowT> getAllInvalidFlows() {
+        return flowCache.values().stream()
+                .filter(FlowT::isInvalid).toList();
+    }
+
     /**
      * Get all flows in the system without caching
      * @return all flows

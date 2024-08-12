@@ -36,6 +36,16 @@ public class DiskMetrics {
         return ((double) usage / limit) * 100;
     }
 
+    /**
+     * Disk % used, rounded down
+     * 50.51% will be returned as 50, not 0.50
+     *
+     * @return % used
+     */
+    public int percentUsedFloor() {
+        return (int) Math.floor(this.percentUsed());
+    }
+
     public long bytesOverPercentage(int percent) {
         long targetBytes = (long)((double) percent / 100 * limit);
         return usage - targetBytes;

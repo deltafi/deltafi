@@ -361,31 +361,22 @@ EOF
 
   cat <<EOF > "$AIRGAP_DISTRO_TREE/bin/yq"
 #!/bin/sh
-docker run --rm \\
+docker run --rm -i \\
   -v "\$PWD:\$PWD" \\
-  -w="\$PWD" \\
-  --entrypoint yq \\
-  linuxserver/yq \\
-  \$@
+  -w "\$PWD" \\
+  mikefarah/yq:4.44.3 \\
+  "\$@"
 EOF
+
   cat <<EOF > "$AIRGAP_DISTRO_TREE/bin/jq"
 #!/bin/sh
-docker run --rm \\
+docker run --rm -i \\
   -v "\$PWD:\$PWD" \\
-  -w="\$PWD" \\
-  --entrypoint jq \\
-  linuxserver/yq \\
-  \$@
+  -w "\$PWD" \\
+  ghcr.io/jqlang/jq:1.7.1 \\
+  "\$@"
 EOF
-  cat <<EOF > "$AIRGAP_DISTRO_TREE/bin/xq"
-#!/bin/sh
-docker run --rm \\
-  -v "\$PWD:\$PWD" \\
-  -w="\$PWD" \\
-  --entrypoint xq \\
-  linuxserver/yq \\
-  \$@
-EOF
+
   chmod a+x "$AIRGAP_DISTRO_TREE"/bin/*
 }
 
@@ -412,6 +403,7 @@ function create_distro() {
   rm -rf "$AIRGAP_DISTRO_TREE/*/*/logs" "$AIRGAP_DISTRO_TREE/*/logs" "$AIRGAP_DISTRO_TREE/compose/data"
   cp -f "$PLUGIN_LIST_FILE" "$AIRGAP_DISTRO_TREE"
   mv "$SNAPSHOT_FILE" "$AIRGAP_DISTRO_TREE"
+  cp -f "$VALUES_FILE" "$AIRGAP_DISTRO_TREE/values.yaml"
   _annotated_subshell tree -CA "$AIRGAP_DISTRO_TREE"
   _ok_annotated "Air-gapped distro created"
 
@@ -434,12 +426,12 @@ function install_plugins() {
     if [[ $line =~ ^# ]]; then
       continue
     fi
-    
+
     # Token replacement
     line="${line//\{\{VERSION\}\}/$DELTAFI_VERSION}"
 
     # Dark incantation.  Matches everything after the last '/'
-    image_tag=${line##*/}  
+    image_tag=${line##*/}
     registry=${line%/"$image_tag"}
     if [[ "$registry" == "$line" ]]; then
       registry="docker.io"
@@ -447,7 +439,7 @@ function install_plugins() {
 
     _info -s "Installing plugin: $line"
     _annotated_subshell deltafi install-plugin -i "$registry" "org.deltafi:$image_tag"
-    while ! deltafi list-plugins | grep "$image_tag" > /dev/null; do 
+    while ! deltafi list-plugins | grep "$image_tag" > /dev/null; do
       sleep 1
       _info -a "Waiting for ${image_tag} plugin"
     done
@@ -488,7 +480,7 @@ function freeze_dry_repo() {
 
 function clean() {
   rm -f "$BASE_PATH/archive.tar.gz"
-  rm -rf "$AIRGAP_DISTRO_TREE"
+  rm -rf "$AIRGAP_DISTRO_TREE" || sudo rm -rf "$AIRGAP_DISTRO_TREE"
   rm -f ./*90m20*
   rm -f airgap.repo-filter.manifest
   _ok "Cleanup completed"
@@ -514,7 +506,9 @@ function initial_setup() {
 
   if [[ -d $COMPOSE_PATH/data ]]; then
     _info -w "The compose data directory exists.  Prior configuration could affect the operation of this script."
-    _confirm "Would you like to delete the data directory?" && rm -rf "$COMPOSE_PATH/data"
+    if _confirm "Would you like to delete the data directory?"; then
+      rm -rf "$COMPOSE_PATH/data" || sudo rm -rf "$COMPOSE_PATH/data" || echo "Unable to remove $COMPOSE_PATH/data..."
+    fi
   fi
 
   if [[ -d $COMPOSE_PATH/data ]]; then
@@ -535,9 +529,9 @@ capture_starting_docker_repo
 _attention "DeltaFi will now be installed locally"
 
 _info -s "Installing DeltaFi"
-_info -a "" 
+_info -a ""
 deltafi install -f "${VALUES_FILE}" || _fail "Failed to install DeltaFi"
-_info -a "" 
+_info -a ""
 _ok_annotated "DeltaFi installed"
 
 _info -s "Checking DeltaFi status"

@@ -34,12 +34,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static org.deltafi.common.queue.jackey.ValkeyKeyedBlockingQueue.SSE_VALKEY_CHANNEL_PREFIX;
+
 @Slf4j
 @Service
 public class ServerSentService {
-
-    private static final String SSE_VALKEY_CHANNEL_PREFIX = "org.deltafi.ui.sse";
-
     private final Map<String, String> channelToDataMap = new HashMap<>();
     private final Map<UUID, SseEmitter> emitters = new ConcurrentHashMap<>();
     private final ScheduledExecutorService heartbeatExecutor = Executors.newSingleThreadScheduledExecutor();

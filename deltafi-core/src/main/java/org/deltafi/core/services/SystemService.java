@@ -50,13 +50,23 @@ public class SystemService {
     private final PlatformService platformService;
     private final ValkeyKeyedBlockingQueue valkeyKeyedBlockingQueue;
 
+    private Map<String, NodeMetrics> cachedNodeMetrics;
     private String cachedContentNodeName;
     private Map<String, List<AppName>> cachedAppsByNode;
 
     @PostConstruct
-    public void loadSystemInfo() {
+    public void init() {
+        refreshSystemInfo();
+        refreshNodeMetrics();
+    }
+
+    public void refreshSystemInfo() {
         this.cachedContentNodeName = platformService.contentNodeName();
         this.cachedAppsByNode = platformService.appsByNode();
+    }
+
+    public void refreshNodeMetrics() {
+        this.cachedNodeMetrics = fetchAllNodeMetrics();
     }
 
     public Status systemStatus() {
@@ -75,8 +85,8 @@ public class SystemService {
         return new Versions(platformService.getRunningVersions());
     }
 
-    public Map<String, Long> contentMetrics() throws StorageCheckException {
-        Map<String, NodeMetrics> allMetrics = allMetrics();
+    public Map<String, Long> contentNodeMetrics() throws StorageCheckException {
+        Map<String, NodeMetrics> allMetrics = getNodeMetrics();
         String minioNode = getContentNodeName();
 
         if (minioNode == null) {
@@ -85,21 +95,43 @@ public class SystemService {
 
         NodeMetrics minioMetrics = allMetrics.get(minioNode);
 
-        if (invalidMetric(minioMetrics)) {
+        if (!hasValidDiskMetric(minioMetrics)) {
             throw new StorageCheckException("Unable to get content storage metrics, received metrics " + allMetrics + ", searching for node " + minioNode);
         }
 
         return minioMetrics.resources().get("disk");
     }
 
-    public DiskMetrics diskMetrics() throws StorageCheckException {
-        Map<String, Long> contentMetrics = contentMetrics();
+    public DiskMetrics contentNodeDiskMetrics() throws StorageCheckException {
+        Map<String, Long> contentMetrics = contentNodeMetrics();
         return new DiskMetrics(contentMetrics.get("limit"), contentMetrics.get("usage"));
     }
 
-    public List<NodeMetrics> nodeMetrics() {
+    public Map<String, DiskMetrics> allDiskMetrics() {
+        Map<String, DiskMetrics> allDiskMetrics = new HashMap<>();
+        Map<String, NodeMetrics> allMetrics = getNodeMetrics();
+        for (NodeMetrics nodeMetrics : allMetrics.values()) {
+            DiskMetrics diskMetrics = toDiskMetrics(nodeMetrics);
+            if (diskMetrics != null) {
+                allDiskMetrics.put(nodeMetrics.name(), diskMetrics);
+            }
+        }
+
+        return allDiskMetrics;
+    }
+
+    private DiskMetrics toDiskMetrics(NodeMetrics nodeMetrics) {
+        if (hasValidDiskMetric(nodeMetrics)) {
+            Map<String, Long> diskResources = nodeMetrics.resources().get("disk");
+            return new DiskMetrics(diskResources.get("limit"), diskResources.get("usage"));
+        }
+
+        return null;
+    }
+
+    public List<NodeMetrics> nodeAppsAndMetrics() {
         Map<String, List<AppName>> appsByNode = getAppsByNode();
-        Map<String, NodeMetrics> allMetrics = allMetrics();
+        Map<String, NodeMetrics> allMetrics = getNodeMetrics();
 
         for (Map.Entry<String, List<AppName>> apps : appsByNode.entrySet()) {
             NodeMetrics nodeMetrics = allMetrics.computeIfAbsent(apps.getKey(), NodeMetrics::new);
@@ -109,24 +141,24 @@ public class SystemService {
         return new ArrayList<>(allMetrics.values());
     }
 
-    private boolean invalidMetric(NodeMetrics nodeMetrics) {
+    private boolean hasValidDiskMetric(NodeMetrics nodeMetrics) {
         if (nodeMetrics == null) {
-            return true;
+            return false;
         }
 
         Map<String, Long> values = nodeMetrics.resources().get("disk");
         if (values == null) {
-            return true;
+            return false;
         }
 
-        return values.values().stream().anyMatch(this::invalidMetric);
+        return values.values().stream().allMatch(this::isValid);
     }
 
-    private boolean invalidMetric(Long value) {
-        return value == null || value < 1;
+    private boolean isValid(Long value) {
+        return value != null && value > 0;
     }
 
-    private Map<String, NodeMetrics> allMetrics() {
+    private Map<String, NodeMetrics> fetchAllNodeMetrics() {
         Map<String, Map<String, String>> allMetrics = valkeyKeyedBlockingQueue.getByKeys(METRIC_KEYS);
 
         Map<String, NodeMetrics> nodeMetrics = new LinkedHashMap<>();
@@ -163,7 +195,14 @@ public class SystemService {
         }
     }
 
-    public Map<String, List<AppName>> getAppsByNode() {
+    private Map<String, NodeMetrics> getNodeMetrics() {
+        if (cachedNodeMetrics == null) {
+            cachedNodeMetrics = fetchAllNodeMetrics();
+        }
+        return cachedNodeMetrics;
+    }
+
+    private Map<String, List<AppName>> getAppsByNode() {
         if (cachedAppsByNode == null) {
             cachedAppsByNode = platformService.appsByNode();
         }

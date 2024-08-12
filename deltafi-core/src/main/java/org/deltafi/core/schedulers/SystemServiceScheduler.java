@@ -32,6 +32,11 @@ public class SystemServiceScheduler {
 
     @Scheduled(fixedDelay = 60_000)
     public void reloadSystemInfo() {
-        systemService.loadSystemInfo();
+        systemService.refreshSystemInfo();
+    }
+
+    @Scheduled(fixedDelay = 5_000)
+    public void reloadMetrics() {
+        systemService.refreshNodeMetrics();
     }
 }

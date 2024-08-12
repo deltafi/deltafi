@@ -22,13 +22,6 @@ spec:
             name: deltafi-ui-service
             port:
               number: 80
-      - path: /(api/v1/.*)
-        pathType: Prefix
-        backend:
-          service:
-            name: deltafi-api-service
-            port:
-              number: 80
       - path: /(api/v2/deltafile/ingress)
         pathType: Prefix
         backend:

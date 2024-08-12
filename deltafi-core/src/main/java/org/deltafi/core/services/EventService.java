@@ -26,6 +26,7 @@ import org.deltafi.core.types.Event;
 import org.deltafi.core.types.Event.Severity;
 import org.springframework.stereotype.Service;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -48,15 +49,13 @@ public class EventService {
     }
 
     public Event createEvent(Event event) {
-        if (StringUtils.isBlank(event.getSummary()) || event.getSeverity() == null) {
-            throw new ValidationException("Event summary and severity are required");
-        }
-
-        if (StringUtils.isBlank(event.getSeverity()) || !VALID_SEVERITIES.contains(event.getSeverity())) {
-            throw new ValidationException("Severity must be info, success, warn, or error (given severity: " + event.getSeverity() + ")");
-        }
-
+        validateNewEvent(event);
         return eventRepo.save(event);
+    }
+
+    public void createEvents(List<Event> events) {
+        events.forEach(this::validateNewEvent);
+        eventRepo.saveAll(events);
     }
 
     public Event updateAcknowledgement(UUID id, boolean acknowledged) {
@@ -67,6 +66,20 @@ public class EventService {
         Event event = getEvent(id);
         eventRepo.deleteById(id);
         return event;
+    }
+
+    public long notificationCount() {
+        return eventRepo.notificationCount(OffsetDateTime.now().minusDays(7));
+    }
+
+    private void validateNewEvent(Event event) {
+        if (StringUtils.isBlank(event.getSummary()) || event.getSeverity() == null) {
+            throw new ValidationException("Event summary and severity are required");
+        }
+
+        if (StringUtils.isBlank(event.getSeverity()) || !VALID_SEVERITIES.contains(event.getSeverity())) {
+            throw new ValidationException("Severity must be info, success, warn, or error (given severity: " + event.getSeverity() + ")");
+        }
     }
 
     private Supplier<EntityNotFound> notFound(UUID id) {

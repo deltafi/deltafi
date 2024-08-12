@@ -31,8 +31,6 @@ public class DiskSpaceService {
 
     private final SystemService systemService;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
-
-    private DiskMetrics contentStorageMetrics = null;
     private boolean diskSpaceAPIReachable = true;
 
     /**
@@ -63,28 +61,15 @@ public class DiskSpaceService {
     }
 
     /**
-     * This method is a blocking call to the API to retrieve content storage disk metrics
-     */
-    public void getContentStorageDiskMetrics() {
-        try {
-            contentStorageMetrics = systemService.diskMetrics();
-        } catch (StorageCheckException e) {
-            contentStorageMetrics = null;
-        }
-    }
-
-    /**
-     * Get DiskMetrics for content storage with cache
+     * Get DiskMetrics for content storage, caching is handled in the SystemService
      * @return Disk metrics
      * @throws StorageCheckException when API is unavailable
      */
     public @NotNull DiskMetrics contentMetrics() throws StorageCheckException {
-        DiskMetrics retval = contentStorageMetrics;
-        if (retval == null) throw new StorageCheckException("Content Storage disk metrics unavailable from API");
-        return retval;
+        return systemService.contentNodeDiskMetrics();
     }
 
     private long requiredBytes() {
-        return deltaFiPropertiesService.getDeltaFiProperties().getIngressDiskSpaceRequirementInMb() * 1000000;
+        return deltaFiPropertiesService.getDeltaFiProperties().getIngressDiskSpaceRequirementInBytes();
     }
 }

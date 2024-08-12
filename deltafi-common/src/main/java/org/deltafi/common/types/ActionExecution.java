@@ -21,7 +21,12 @@ import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-public record ActionExecution(String clazz, String action, UUID did, OffsetDateTime startTime) {
+public record ActionExecution(String clazz, String action, UUID did, OffsetDateTime startTime, OffsetDateTime heartbeatTime) {
+
+    public ActionExecution(String clazz, String action, UUID did, OffsetDateTime startTime) {
+        this(clazz, action, did, startTime, null);
+    }
+
     public boolean exceedsDuration(Duration duration) {
         return startTime.plus(duration).isBefore(OffsetDateTime.now());
     }

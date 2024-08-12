@@ -17,27 +17,34 @@ spec:
         app: deltafi-monitor
         group: deltafi-core
     spec:
-      {{- include "initContainersWaitForCore" . | nindent 6 }}
+      {{- include "initContainersWaitForDatabases" . | nindent 6 }}
       containers:
       - name: deltafi-monitor
-        image: {{ .Values.deltafi.api.image }}
+        image: {{ .Values.deltafi.core.image }}
         imagePullPolicy: IfNotPresent
-        command: [ 'bundle', 'exec', 'bin/monitor.rb' ]
         env:
-        - name: RUNNING_IN_CLUSTER
-          value: "true"
-        {{- include "commonEnvVars" . | nindent 8 }}
-        - name: PROBE_DIR
-          value: "/tmp/probe"
-        livenessProbe:
-          exec:
-            command: ["/monitor_probe.sh"]
-          initialDelaySeconds: 5
-          periodSeconds: 30
-          timeoutSeconds: 30
-          failureThreshold: 2
+        - name: JDK_JAVA_OPTIONS
+          value: "-Dcom.redhat.fips=false -Dschedule.actionEvents=false -Dschedule.maintenance=false -Dschedule.propertySync=true"
+        - name: UNIQUE_ID
+          value: core-monitor
+        - name: SPRING_PROFILES_ACTIVE
+          value: kubernetes,monitor
+        {{- include "coreEnvVars" . | nindent 8 }}
+        {{- include "clickhouseEnvVars" . | nindent 8 }}
+        envFrom:
+        {{- include "keyStorePasswordSecret" . | nindent 8 }}
+        ports:
+        - containerPort: 8080
+{{/*        TODO - add monitor valkey probe */}}
+        {{- include "defaultStartupProbe" . | nindent 8 }}
+        {{- include "defaultReadinessProbe" . | nindent 8 }}
+        {{- include "defaultLivenessProbe" . | nindent 8 }}
+        volumeMounts:
+        {{- include "coreVolumeMounts" . | nindent 8 }}
+      volumes:
+      {{- include "coreVolumes" . | nindent 6 }}
       imagePullSecrets:
       - name: docker-secret
-      serviceAccountName: deltafi-api
+      serviceAccountName: deltafi-core
       nodeSelector:
         node-role.deltafi.org/compute: "true"

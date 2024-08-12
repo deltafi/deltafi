@@ -62,7 +62,7 @@
             </template>
           </template>
         </Column>
-        <Column :style="{ width: '7%' }" class="egress-action-state-column">
+        <Column header="Active" :style="{ width: '7%' }" class="egress-action-state-column">
           <template #body="{ data }">
             <StateInputSwitch :row-data-prop="data" @change="refresh" />
           </template>

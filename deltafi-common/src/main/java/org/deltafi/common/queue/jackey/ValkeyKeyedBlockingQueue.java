@@ -36,8 +36,10 @@ import java.util.*;
  */
 @Slf4j
 public class ValkeyKeyedBlockingQueue {
-    private static final String HEARTBEAT_HASH = "org.deltafi.action-queue.heartbeat";
-    private static final String LONG_RUNNING_TASKS_HASH = "org.deltafi.action-queue.long-running-tasks";
+    public static final String SSE_VALKEY_CHANNEL_PREFIX = "org.deltafi.ui.sse";
+    public static final String HEARTBEAT_HASH = "org.deltafi.action-queue.heartbeat";
+    public static final String LONG_RUNNING_TASKS_HASH = "org.deltafi.action-queue.long-running-tasks";
+    public static final String MONITOR_STATUS_HASH = "org.deltafi.monitor.status";
 
     private final JedisPool jedisPool;
 
@@ -122,6 +124,17 @@ public class ValkeyKeyedBlockingQueue {
     }
 
     /**
+     * Set a key value pair in valkey
+     * @param key to use
+     * @param value to use
+     */
+    public void set(String key, String value) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            jedis.set(key, value);
+        }
+    }
+
+    /**
      * Publish a heartbeat in the form of a timestamp
      *
      * @param key the name of the component publishing the heartbeat
@@ -129,6 +142,27 @@ public class ValkeyKeyedBlockingQueue {
     public void setHeartbeat(String key) {
         try (Jedis jedis = jedisPool.getResource()) {
             jedis.hset(HEARTBEAT_HASH, key, OffsetDateTime.now().toString());
+        }
+    }
+
+    /**
+     * Get the list of action queue names that have a heartbeat
+     * older than 1 minute
+     * @return list of
+     */
+    public Set<String> getRecentQueues() {
+        try (Jedis jedis = jedisPool.getResource()) {
+            OffsetDateTime staleMarker = OffsetDateTime.now().minusMinutes(1);
+            Set<String> queueNames = new HashSet<>();
+            Map<String,String> heartbeats = jedis.hgetAll(HEARTBEAT_HASH);
+            for (Map.Entry<String,String> entry : heartbeats.entrySet()) {
+                OffsetDateTime heartbeat = OffsetDateTime.parse(entry.getValue());
+                if (heartbeat.isAfter(staleMarker)) {
+                    queueNames.add(entry.getKey());
+                }
+            }
+
+            return queueNames;
         }
     }
 
@@ -265,6 +299,24 @@ public class ValkeyKeyedBlockingQueue {
                 i++;
             }
             return results;
+        }
+    }
+
+    /**
+     * Get the count of elements in set for each of the given keys
+     * @param keys to get counts for
+     * @return map of keys to their counts
+     */
+    public Map<String, Long> queuesCounts(Collection<String> keys) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            Map<String, Long> queueCnts = new HashMap<>();
+
+            for (String key : keys) {
+                long count = jedis.zcount(key, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
+                queueCnts.put(key, count);
+            }
+
+            return queueCnts;
         }
     }
 }

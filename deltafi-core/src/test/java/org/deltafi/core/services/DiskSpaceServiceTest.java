@@ -20,6 +20,7 @@ package org.deltafi.core.services;
 
 import lombok.SneakyThrows;
 import org.deltafi.core.MockDeltaFiPropertiesService;
+import org.deltafi.core.exceptions.StorageCheckException;
 import org.deltafi.core.types.DiskMetrics;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -48,12 +49,8 @@ class DiskSpaceServiceTest {
     void isContentStorageDepleted() {
         diskSpaceRequirement(1);
 
-        // When the API is unreachable storage is not considered depleted (contentMetrics is null at this point mimicking an unreachable API)
-        assertFalse(sut.isContentStorageDepleted());
-
         // fill in the metrics using the mock
-        Mockito.when(systemService.diskMetrics()).thenReturn(new DiskMetrics(10000000, 5000000));
-        sut.getContentStorageDiskMetrics();
+        Mockito.when(systemService.contentNodeDiskMetrics()).thenReturn(new DiskMetrics(10000000, 5000000));
 
         diskSpaceRequirement(1);
         assertFalse(sut.isContentStorageDepleted());
@@ -77,9 +74,14 @@ class DiskSpaceServiceTest {
     }
 
     @Test
-    void contentMetrics() {
+    void failToGeMetrics() throws StorageCheckException {
+        diskSpaceRequirement(1);
+        Mockito.when(systemService.contentNodeDiskMetrics()).thenThrow(new StorageCheckException("Failed"));
+        // When the API is unreachable storage is not considered depleted (contentMetrics is null at this point mimicking an unreachable API)
+        assertFalse(sut.isContentStorageDepleted());
     }
 
-    private void diskSpaceRequirement(int val) { deltaFiPropertiesService.getDeltaFiProperties().setIngressDiskSpaceRequirementInMb(val);
+    private void diskSpaceRequirement(int val) {
+        deltaFiPropertiesService.getDeltaFiProperties().setIngressDiskSpaceRequirementInMb(val);
     }
 }

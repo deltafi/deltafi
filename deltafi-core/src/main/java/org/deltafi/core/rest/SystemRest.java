@@ -22,12 +22,8 @@ import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.SystemService;
 import org.deltafi.core.services.SystemService.Status;
 import org.deltafi.core.services.SystemService.Versions;
-import org.deltafi.core.types.AppName;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
-import java.util.Map;
 
 @RestController
 @AllArgsConstructor
@@ -45,11 +41,5 @@ public class SystemRest {
     @NeedsPermission.VersionsView
     public Versions getRunningVersions() {
         return systemService.getRunningVersions();
-    }
-
-    // TODO - Remove when everything points to the v2 api. This is currently used in v1/api versions endpoint when running in compose
-    @GetMapping("appsByNode")
-    public Map<String, List<AppName>> getAppsByNode() {
-        return systemService.getAppsByNode();
     }
 }

@@ -137,8 +137,6 @@ initContainers:
 {{- end -}}
 
 {{- define "commonEnvVars" -}}
-- name: SPRING_PROFILES_ACTIVE
-  value: kubernetes
 - name: CORE_URL
   value: http://deltafi-core-service/api/v2
 - name: MINIO_URL
@@ -245,6 +243,8 @@ env:
     valueFrom:
       fieldRef:
         fieldPath: spec.nodeName
+  - name: SPRING_PROFILES_ACTIVE
+    value: kubernetes
 {{- include "commonEnvVars" . | nindent 2 }}
 {{- include "sslEnvVars" . | nindent 2 }}
 envFrom:
@@ -255,8 +255,6 @@ volumeMounts:
 {{- end -}}
 
 {{- define "coreEnvVars" -}}
-- name: API_URL
-  value: "http://deltafi-api-service"
 - name: STATSD_HOSTNAME
   value: "deltafi-graphite"
 - name: STATSD_PORT

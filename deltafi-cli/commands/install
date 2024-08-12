@@ -153,9 +153,9 @@ _k8s_install() {
 
   if [[ ! -f "${DELTAFICLI_CHART_PATH}/Chart.lock" ]]; then
     cli_log "Executing helm dependencies"
-    pushd "$DELTAFICLI_CHART_PATH" > /dev/null || return 1
+    pushd "$DELTAFICLI_CHART_PATH" > /dev/null || exit $?
     helm dependencies build
-    popd || return 1
+    popd > /dev/null || exit $?
   fi
 
   ORIG_CORE_POD=$(${KUBECTL_BIN} get pods | grep "^deltafi-core-[a-f0-9]\{10\}-" | head -n 1 | cut -d' ' -f1)
@@ -185,7 +185,9 @@ _compose_install() {
     _pre_upgrade_tasks
   fi
 
-  "${DELTAFICLI_COMPOSE_PATH}"/compose start ${ARGS[@]:1}
+  if ! "${DELTAFICLI_COMPOSE_PATH}"/compose start ${ARGS[@]:1}; then
+    _exit_1
+  fi
 
   deltafi event create -q -s "cli" --success --notification "Installed DeltaFi version $( cat "${DELTAFICLI_WORKDIR}/VERSION")"
 }
