@@ -54,7 +54,7 @@
             <InputNumber v-model="data[field]" :min="0" class="p-inputtext-sm max-error-input" autofocus />
           </template>
         </Column>
-        <Column :style="{ width: '7%' }" class="data-source-state-column">
+        <Column header="Active" :style="{ width: '7%' }" class="data-source-state-column">
           <template #body="{ data }">
             <StateInputSwitch :row-data-prop="data" data-source-type="timedDataSource" @change="refresh" />
           </template>

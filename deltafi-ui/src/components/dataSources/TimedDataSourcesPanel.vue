@@ -64,7 +64,7 @@
             <StatusBadge :status="data.ingressStatus" :message="data.ingressStatusMessage" />
           </template>
         </Column>
-        <Column :style="{ width: '7%' }" class="data-source-state-column">
+        <Column header="Active" :style="{ width: '7%' }" class="data-source-state-column">
           <template #body="{ data }">
             <StateInputSwitch :row-data-prop="data" data-source-type="timedDataSource" @change="refresh" />
           </template>
