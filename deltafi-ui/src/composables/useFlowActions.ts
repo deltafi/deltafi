@@ -35,6 +35,7 @@ export default function useFlowActions() {
           type: true,
           description: true,
           schema: true,
+          supportsJoin: true,
         },
         actionKitVersion: true,
       },

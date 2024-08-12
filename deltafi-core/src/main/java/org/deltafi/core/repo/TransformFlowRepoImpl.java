@@ -42,8 +42,8 @@ public class TransformFlowRepoImpl implements TransformFlowRepoCustom {
     public void batchInsert(List<TransformFlow> transformFlows) {
         String sql = """
             INSERT INTO flows (name, type, description, source_plugin, flow_status, variables,
-                               transform_actions, max_errors, subscribe, publish, discriminator, id)
-            VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?::jsonb, ?, ?)
+                               transform_actions, subscribe, publish, discriminator, id)
+            VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?)
         """;
 
         jdbcTemplate.batchUpdate(sql, transformFlows, 1000, (ps, transformFlow) -> {
@@ -54,11 +54,10 @@ public class TransformFlowRepoImpl implements TransformFlowRepoCustom {
             ps.setString(5, toJson(transformFlow.getFlowStatus()));
             ps.setString(6, toJson(transformFlow.getVariables()));
             ps.setString(7, toJson(transformFlow.getTransformActions()));
-            ps.setInt(8, transformFlow.getMaxErrors());
-            ps.setString(9, toJson(transformFlow.getSubscribe()));
-            ps.setString(10, toJson(transformFlow.getPublish()));
-            ps.setString(11, "TRANSFORM");
-            ps.setObject(12, transformFlow.getId());
+            ps.setString(8, toJson(transformFlow.getSubscribe()));
+            ps.setString(9, toJson(transformFlow.getPublish()));
+            ps.setString(10, "TRANSFORM");
+            ps.setObject(11, transformFlow.getId());
         });
     }
 

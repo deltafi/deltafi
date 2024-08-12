@@ -17,8 +17,9 @@
  */
 package org.deltafi.core.schedulers;
 
+import org.deltafi.core.services.RestDataSourceService;
+import org.deltafi.core.services.TimedDataSourceService;
 import org.deltafi.core.services.ErrorCountService;
-import org.deltafi.core.services.TransformFlowService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -36,15 +37,20 @@ class ErrorCountSchedulerTest {
     private ErrorCountScheduler errorCountScheduler;
 
     @Mock
-    private TransformFlowService transformFlowService;
+    private RestDataSourceService restDataSourceService;
+
+    @Mock
+    private TimedDataSourceService timedDataSourceService;
 
     @Mock
     private ErrorCountService errorCountService;
 
     @Test
     void populateErrorCounts() {
-        Mockito.when(transformFlowService.maxErrorsPerFlow()).thenReturn(Map.of("a", 1, "b", 1));
+        Mockito.when(restDataSourceService.maxErrorsPerFlow()).thenReturn(Map.of("a", 1, "b", 1));
+        Mockito.when(timedDataSourceService.maxErrorsPerFlow()).thenReturn(Map.of("c", 1));
+
         errorCountScheduler.populateErrorCounts();
-        Mockito.verify(errorCountService).populateErrorCounts(Set.of("a", "b"));
+        Mockito.verify(errorCountService).populateErrorCounts(Set.of("a", "b", "c"));
     }
 }

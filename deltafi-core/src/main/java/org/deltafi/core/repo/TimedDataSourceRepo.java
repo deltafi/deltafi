@@ -47,4 +47,9 @@ public interface TimedDataSourceRepo extends FlowRepo, TimedDataSourceRepoCustom
     @Transactional
     @Query("UPDATE TimedDataSource t SET t.currentDid = null, t.memo = :memo, t.executeImmediate = :executeImmediate, t.ingressStatus = :status, t.ingressStatusMessage = :statusMessage, t.nextRun = :nextRun WHERE t.name = :flowName AND t.currentDid = :currentDid")
     int completeExecution(String flowName, UUID currentDid, String memo, boolean executeImmediate, IngressStatus status, String statusMessage, OffsetDateTime nextRun);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE TimedDataSource t SET t.maxErrors = :maxErrors WHERE t.name = :flowName")
+    int updateMaxErrors(String flowName, int maxErrors);
 }

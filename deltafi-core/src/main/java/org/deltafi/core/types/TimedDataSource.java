@@ -67,12 +67,13 @@ public class TimedDataSource extends DataSource {
     }
 
     @Builder
-    public TimedDataSource(String name, String topic, String description, ActionConfiguration timedIngressAction, String cronSchedule) {
+    public TimedDataSource(String name, String topic, String description, ActionConfiguration timedIngressAction, String cronSchedule, int maxErrors) {
         this.setTopic(topic);
         this.setName(name);
         this.setDescription(description);
         this.timedIngressAction = timedIngressAction;
         this.cronSchedule = cronSchedule;
+        this.setMaxErrors(maxErrors);
     }
 
     @Override
@@ -84,6 +85,7 @@ public class TimedDataSource extends DataSource {
             setMemo(timedDataSource.getMemo());
             setCurrentDid(timedDataSource.getCurrentDid());
             setExecuteImmediate(timedDataSource.isExecuteImmediate());
+            setMaxErrors(sourceFlow.getMaxErrors());
         }
     }
 

@@ -45,8 +45,6 @@ public class TransformFlow extends Flow implements Subscriber, Publisher {
     @Column(columnDefinition = "jsonb")
     private List<ActionConfiguration> transformActions = new ArrayList<>();
 
-    private int maxErrors = -1;
-
     @JsonProperty(required = true)
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")

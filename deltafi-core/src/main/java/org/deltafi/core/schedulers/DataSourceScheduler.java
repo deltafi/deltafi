@@ -18,6 +18,7 @@
 package org.deltafi.core.schedulers;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.services.*;
 import org.deltafi.core.types.TimedDataSource;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -28,6 +29,7 @@ import org.springframework.stereotype.Service;
 import java.time.Clock;
 import java.time.OffsetDateTime;
 
+@Slf4j
 @ConditionalOnProperty(value = "schedule.maintenance", havingValue = "true", matchIfMissing = true)
 @Service
 @EnableScheduling
@@ -39,6 +41,7 @@ public class DataSourceScheduler {
     private final CoreEventQueue coreEventQueue;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
     private final DiskSpaceService diskSpaceService;
+    private final ErrorCountService errorCountService;
     private final Clock clock;
 
     @Scheduled(fixedDelay = 1000)
@@ -48,6 +51,12 @@ public class DataSourceScheduler {
             if (dataSource.due(coreEventQueue, OffsetDateTime.now(clock)) &&
                     deltaFiPropertiesService.getDeltaFiProperties().isIngressEnabled() &&
                     !diskSpaceService.isContentStorageDepleted()) {
+                String errorsExceededMessage = errorCountService.generateErrorMessage(dataSource.getName());
+
+                if (errorsExceededMessage != null) {
+                    log.error(errorsExceededMessage);
+                    continue;
+                }
                 deltaFilesService.taskTimedDataSource(dataSource);
             }
         }

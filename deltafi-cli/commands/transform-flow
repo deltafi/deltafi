@@ -90,7 +90,6 @@ case "$SUBCOMMAND" in
                  topic
                  condition
                }
-               maxErrors
                transformActions {
                  name
                  type

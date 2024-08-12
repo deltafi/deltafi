@@ -144,6 +144,7 @@ ALL_SNAPSHOT_FIELDS="id
               topic
               running
               testMode
+              maxErrors
             }
             timedDataSources {
               name
@@ -151,12 +152,12 @@ ALL_SNAPSHOT_FIELDS="id
               running
               testMode
               cronSchedule
+              maxErrors
             }
             transformFlows {
               name
               running
               testMode
-              maxErrors
             }
             egressFlows {
               name

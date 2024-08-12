@@ -1,5 +1,8 @@
 # DeltaFi config
 deltafi:
+  local_path_provisioner:
+    enabled: false
+    path: /data/deltafi/local
   ssl:
     secret: keystore-secret
     passwordSecret: keystore-password-secret

@@ -457,7 +457,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
 
         flow.getFlowStatus().getErrors().addAll(validator.validate(flow));
 
-        existing.ifPresent(sourceFlow -> copyFlowSpecificFields( sourceFlow, flow));
+        existing.ifPresent(sourceFlow -> copyFlowSpecificFields(sourceFlow, flow));
 
         if (flow.hasErrors()) {
             flow.getFlowStatus().setState(FlowState.INVALID);
@@ -476,9 +476,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
      * @param sourceFlow existing flow that contains fields that should be copied into the targetFlow
      * @param targetFlow flow that is being recreated and should have the fields set from the sourceFlow values
      */
-    void copyFlowSpecificFields(FlowT sourceFlow, FlowT targetFlow) {
-
-    }
+    void copyFlowSpecificFields(FlowT sourceFlow, FlowT targetFlow) {}
 
     private FlowT save(FlowT flow) {
         FlowT persistedFlow = flowRepo.save(flow);

@@ -89,6 +89,7 @@ case "$SUBCOMMAND" in
                    }
                    testMode
                  }
+                 maxErrors
                  topic
                  ... on TimedDataSource {
                    cronSchedule

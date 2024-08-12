@@ -28,7 +28,8 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 public abstract class DataSourceSnapshot extends FlowSnapshot {
     private String topic;
-    public DataSourceSnapshot(String name) {
+    private int maxErrors = -1;
+    protected DataSourceSnapshot(String name) {
         super(name);
     }
 }

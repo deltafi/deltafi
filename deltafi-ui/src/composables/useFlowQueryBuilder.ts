@@ -203,19 +203,6 @@ export default function useFlowQueryBuilder() {
     return sendGraphQLQuery(query, "disableEgressTestModeFlowByName", "mutation");
   };
 
-  // sets max errors for a transform flow
-  const setMaxErrors = (flowName: string, maxErrors: number) => {
-    const query = {
-      setMaxErrors: {
-        __args: {
-          flowName: flowName,
-          maxErrors: maxErrors,
-        },
-      },
-    };
-    return sendGraphQLQuery(query, "setMaxErrors", "mutation");
-  };
-
   // sets expected annotations for an egress flow
   const setEgressFlowExpectedAnnotations = (flowName: string, expectedAnnotations: Array<string>) => {
     const query = {
@@ -254,7 +241,6 @@ export default function useFlowQueryBuilder() {
     disableTestTransformFlowByName,
     enableTestEgressFlowByName,
     disableTestEgressFlowByName,
-    setMaxErrors,
     setEgressFlowExpectedAnnotations,
     loaded,
     loading,

@@ -203,6 +203,7 @@ interface DataSource {
   type: String!
   description: String!
   sourcePlugin: PluginCoordinates!
+  maxErrors: Int!
   flowStatus: FlowStatus!
   topic: String!
 }
@@ -212,6 +213,7 @@ type TimedDataSource implements DataSource {
   type: String!
   description: String!
   sourcePlugin: PluginCoordinates!
+  maxErrors: Int!
   flowStatus: FlowStatus!
   topic: String!
   cronSchedule: String
@@ -231,6 +233,7 @@ type RestDataSource implements DataSource {
   type: String!
   description: String!
   sourcePlugin: PluginCoordinates!
+  maxErrors: Int!
   flowStatus: FlowStatus!
   topic: String!
 }
@@ -259,7 +262,7 @@ type FlowNames {
   timedDataSource: [String]!
 }
 
-type IngressFlowErrorState {
+type DataSourceErrorState {
   name: String!
   currErrors: Int!
   maxErrors: Int!

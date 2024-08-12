@@ -34,6 +34,7 @@ import org.deltafi.common.types.FlowType;
 })
 public abstract class DataSource extends Flow {
     private String topic;
+    private int maxErrors = -1;
 
     protected DataSource() {}
 

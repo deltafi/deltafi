@@ -70,10 +70,6 @@ const fetchFlows = async () => {
   pluginNames.value = pluginNamesList(allFlowData.value);
   flowData.value = formatData(allFlowData.value);
   flowDataByPlugin.value = _.chain(flowData.value.transform)
-    .map((flow) => {
-      if (flow.maxErrors === -1) flow.maxErrors = null;
-      return flow;
-    })
     .sortBy("artifactId")
     .groupBy("artifactId")
     .value();

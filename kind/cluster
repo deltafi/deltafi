@@ -533,6 +533,8 @@ nodes:
     containerPath: /usr/dev
   - hostPath: "${PV_DIR}"
     containerPath: /data/deltafi
+  - hostPath: "${PV_DIR}/local"
+    containerPath: /var/local-path-provisioner
 containerdConfigPatches:
 - |-
   [plugins."io.containerd.grpc.v1.cri".registry.mirrors."docker.io"]

@@ -22,6 +22,7 @@ type TimedDataSourceSnapshot {
     running: Boolean!
     testMode: Boolean!
     cronSchedule: String
+    maxErrors: Int
 }
 
 type RestDataSourceSnapshot {
@@ -29,13 +30,13 @@ type RestDataSourceSnapshot {
     topic: String!
     running: Boolean!
     testMode: Boolean!
+    maxErrors: Int
 }
 
 type TransformFlowSnapshot {
     name: String!
     running: Boolean!
     testMode: Boolean!
-    maxErrors: Int
 }
 
 type EgressFlowSnapshot {
@@ -68,6 +69,7 @@ input TimedDataSourceSnapshotInput {
     running: Boolean!
     testMode: Boolean!
     cronSchedule: String
+    maxErrors: Int
 }
 
 input RestDataSourceSnapshotInput {
@@ -75,13 +77,13 @@ input RestDataSourceSnapshotInput {
     topic: String!
     running: Boolean!
     testMode: Boolean!
+    maxErrors: Int
 }
 
 input TransformFlowSnapshotInput {
     name: String!
     running: Boolean!
     testMode: Boolean!
-    maxErrors: Int
 }
 
 input EgressFlowSnapshotInput {
