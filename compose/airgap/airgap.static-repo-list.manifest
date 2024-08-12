@@ -4,4 +4,5 @@
 #
 # All images listed here will be included in the final distro.
 deltafi/lazydocker:v0.23.3-0
-linuxserver/yq:3.4.3
+mikefarah/yq:4.44.3
+ghcr.io/jqlang/jq:1.7.1

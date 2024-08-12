@@ -24,7 +24,8 @@ Usage:
   compose [SUBCOMMAND] [ARGS]
 
 Options:
-  -h, --help        Show help"
+  -h, --help                          Show help
+  "
   exit 1
 }
 
@@ -36,7 +37,10 @@ Usage:
   compose start <arguments>
 
   Arguments:
-  -f|--values <val>    specify values in a YAML file (can specify multiple)"
+  -f|--values <val>                  specify values in a YAML file (can specify multiple)
+  -p|--plugin <PLUGIN NAME>          install plugin (can specify multiple)
+  -s|--post-install-script <SCRIPT>  run post-install script (can specify multiple)
+  "
   exit 1
 }
 
@@ -507,7 +511,7 @@ dependencies:
 EOF
 
   if _is_arm; then
-    yq -i '.dependencies.mongodb = "zcube/bitnami-compat-mongodb:5.0.17"' "${VALUES_YAML}"
+    yq -r -i '.dependencies.mongodb = "zcube/bitnami-compat-mongodb:5.0.17"' "${VALUES_YAML}"
   fi
 }
 
@@ -522,7 +526,7 @@ _merge_values_yaml() {
         echo "${i}: No such file"
         exit 1
       fi
-      yq -i '. *= load("'"${i}"'")' "${VALUES_YAML}"
+      yq -r -i '. *= load("'"${i}"'")' "${VALUES_YAML}"
     done
   fi
 }
@@ -540,7 +544,7 @@ _append_startup() {
 }
 
 _from_values() {
-  yq "${1}" ${VALUES_YAML}
+  yq -r "${1}" ${VALUES_YAML}
 }
 
 _append_startup_from_values() {
@@ -704,6 +708,40 @@ _write_config() {
   _setup_secrets
 }
 
+_install_plugins() {
+  while [[ $# -gt 0 ]]; do
+    plugin="$1"
+    shift
+    image_tag=${plugin##*/}
+    registry=${plugin%/"$image_tag"}
+    if [[ "$registry" == "$plugin" ]]; then
+      registry="docker.io"
+    fi
+
+    echo "Installing plugin: $plugin"
+    deltafi install-plugin -i "$registry" "org.deltafi:$image_tag"
+    while ! deltafi list-plugins | grep "$image_tag" > /dev/null; do
+      echo "- Waiting for ${image_tag} plugin"
+      sleep 0.5
+    done
+
+    echo "Installed plugin: $plugin"
+  done
+}
+
+_post_install() {
+  while [[ $# -gt 0 ]]; do
+    file="$1"
+    shift
+    if [[ -x "$file" ]]; then
+      pwd
+      "$file"
+    else
+      echo "* '${file}' is not an executable file"
+    fi
+  done
+}
+
 _create_data_dirs() {
   mkdir -p "${DATA_DIR}"
   if _is_linux; then
@@ -793,12 +831,24 @@ case "$SUBCOMMAND" in
     ;;
   start)
     config_files=()
+    post_install_files=()
+    plugins=()
     while [[ $# -gt 0 ]]; do
       key="$1"
       case $key in
         -f|--values)
           shift
           config_files+=("$1")
+          shift
+          ;;
+        -p|--plugin)
+          shift
+          plugins+=("$1")
+          shift
+          ;;
+        -s|--post-install-script)
+          shift
+          post_install_files+=("$1")
           shift
           ;;
         -h|--help)
@@ -813,6 +863,8 @@ case "$SUBCOMMAND" in
 
     _write_config "${config_files[@]}"
     start_compose
+    _install_plugins "${plugins[@]}"
+    _post_install "${post_install_files[@]}"
     ;;
   uninstall)
     uninstall
