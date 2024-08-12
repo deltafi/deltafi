@@ -135,9 +135,9 @@ _k8s_install() {
 
   if [[ ! -f "${DELTAFICLI_CHART_PATH}/Chart.lock" ]]; then
     cli_log "Executing helm dependencies"
-    cd $DELTAFICLI_CHART_PATH
+    pushd "$DELTAFICLI_CHART_PATH" > /dev/null || exit $?
     helm dependencies build
-    cd - > /dev/null
+    popd > /dev/null || exit $?
   fi
 
   ORIG_CORE_POD=$(${KUBECTL_BIN} get pods | grep "^deltafi-core-[a-f0-9]\{10\}-" | head -n 1 | cut -d' ' -f1)
@@ -147,8 +147,8 @@ _k8s_install() {
   fi
   cli_log "Starting helmchart upgrade"
   helm upgrade --install --wait \
-    --values $DELTAFICLI_CHART_PATH/values.yaml \
-    --namespace $DELTAFICLI_K8S_NAMESPACE $DELTAFICLI_PROJECT_NAME $DELTAFICLI_CHART_PATH \
+    --values "$DELTAFICLI_CHART_PATH/values.yaml" \
+    --namespace "$DELTAFICLI_K8S_NAMESPACE" "$DELTAFICLI_PROJECT_NAME" "$DELTAFICLI_CHART_PATH" \
     --create-namespace --timeout 10m ${ARGS[@]:1}
   HELM_RETURN_CODE=$?
   [[ "$HELM_RETURN_CODE" != "0" ]] && exit $HELM_RETURN_CODE
@@ -165,7 +165,9 @@ _compose_install() {
     _pre_upgrade_tasks
   fi
 
-  "${DELTAFICLI_COMPOSE_PATH}"/compose start ${ARGS[@]:1}
+  if ! "${DELTAFICLI_COMPOSE_PATH}"/compose start ${ARGS[@]:1}; then
+    _exit_1
+  fi
 
   _run_migrations
 }

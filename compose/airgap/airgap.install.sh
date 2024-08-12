@@ -135,11 +135,21 @@ DELTAFI_CLI=${DELTAFI_PATH}/deltafi-cli/deltafi
 
 ${DELTAFI_CLI} status > /dev/null || echo "No running DeltaFi detected."
 
-echo "Loading the following docker images:"
-cat airgap.repo.manifest
-docker load -i airgap.repo.tar
+if [[ -f airgap.repo.tar ]]; then
+  docker load -i airgap.repo.tar
+else
+  echo "** No repositories to load **"
+  echo "The following docker images should be loaded or loadable in order for"
+  echo "DeltaFi to start up and run:"
+  cat airgap.repo.manifest
+fi
 
-${DELTAFI_CLI} install
+if [[ -f "${DELTAFI_PATH}/values.yaml" ]]; then
+  ${DELTAFI_CLI} install -f "${DELTAFI_PATH}/values.yaml"
+else
+  echo "** WARNING: NO values.yaml in this distribution.  DeltaFi will be launched with default values"
+  ${DELTAFI_CLI} install
+fi
 
 echo "The following plugins will be installed:"
 grep -ve "^#" "$PLUGIN_LIST_FILE" | sed 's|{{VERSION}}|'"$DELTAFI_VERSION"'|g'
