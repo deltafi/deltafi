@@ -30,7 +30,7 @@ module Deltafi
           DEFAULT_REQUIRED_MEGABYTES = 1
           REQUIRED_MEGABYTES_PROPERTY = %w[ingressDiskSpaceRequirementInMb].freeze
           INGRESS_ENABLED_PROPERTY = %w[ingressEnabled].freeze
-          FLOW_ERRORS_QUERY = 'query { ingressFlowErrorsExceeded { name maxErrors currErrors } }'
+          FLOW_ERRORS_QUERY = 'query { dataSourceErrorsExceeded { name maxErrors currErrors } }'
 
           @@ingress_disabled_by_storage = false
           @@disabled_flows = []
@@ -165,7 +165,7 @@ module Deltafi
             parsed_response = JSON.parse(response.body, symbolize_names: true)
             raise StandardError, parsed_response[:errors]&.first&.dig(:message) if parsed_response.key?(:errors)
 
-            flow_errors = parsed_response.dig(:data, :ingressFlowErrorsExceeded) || []
+            flow_errors = parsed_response.dig(:data, :dataSourceErrorsExceeded) || []
             flow_errors.to_h do |r|
               [ r[:name], { maxErrors: r[:maxErrors], currErrors: r[:currErrors] } ]
             end

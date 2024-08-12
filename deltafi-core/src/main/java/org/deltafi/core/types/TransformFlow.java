@@ -38,7 +38,6 @@ import java.util.Set;
 @EqualsAndHashCode(callSuper = true)
 public class TransformFlow extends Flow implements Subscriber, Publisher {
     private List<TransformActionConfiguration> transformActions = new ArrayList<>();
-    private int maxErrors = -1;
     @JsonProperty(required = true)
     private Set<Rule> subscribe;
     private PublishRules publish;

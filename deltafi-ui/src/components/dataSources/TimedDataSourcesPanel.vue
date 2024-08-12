@@ -50,6 +50,15 @@
             <span v-if="data[field]" v-tooltip.top="cronString.toString(data[field], { verbose: false })">{{ data[field] }} </span>
           </template>
         </Column>
+        <Column header="Max Errors" field="maxErrors" class="max-error-column">
+          <template #body="{ data, field }">
+            <span v-if="data[field] === null">-</span>
+            <span v-else>{{ data[field] }}</span>
+          </template>
+          <template #editor="{ data, field }">
+            <InputNumber v-model="data[field]" :min="0" class="p-inputtext-sm max-error-input" autofocus />
+          </template>
+        </Column>
         <Column header="Status" field="ingressStatus" :sortable="true">
           <template #body="{ data }">
             <StatusBadge :status="data.ingressStatus" :message="data.ingressStatusMessage" />
@@ -113,11 +122,12 @@ import _ from "lodash";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
 import Dialog from "primevue/dialog";
+import InputNumber from "primevue/inputnumber";
 
 const emit = defineEmits(["dataSourcesList"]);
 const editing = inject("isEditing");
 const notify = useNotifications();
-const { getAllDataSources, setTimedDataSourceCronSchedule, loaded, loading, errors } = useDataSource();
+const { getAllDataSources, setTimedDataSourceCronSchedule, setMaxErrors, loaded, loading, errors } = useDataSource();
 const showLoading = computed(() => loading.value && !loaded.value);
 const timedDataSources = ref([]);
 const onEditInit = () => (editing.value = true);
@@ -127,12 +137,26 @@ const updateDataSourceDialog = ref(null);
 const onEditComplete = async (event) => {
   const { data, newValue, field } = event;
 
-  if (data.cronSchedule !== newValue && newValue !== "") {
+  if (field === "cronSchedule" && data.cronSchedule !== newValue && newValue !== "") {
     const resetValue = data.cronSchedule;
     data[field] = newValue;
     await setTimedDataSourceCronSchedule(data.name, newValue);
     if (errors.value.length === 0) {
       notify.success("Cron Schedule Set Successfully", `Cron Schedule for ${data.name} set to ${newValue}`);
+    } else {
+      data[field] = resetValue;
+    }
+  } else if (field === "maxErrors" && !_.isEqual(data.maxErrors, newValue)) {
+    let sendValue = _.isEqual(newValue, null) ? -1 : newValue
+    const resetValue = data.maxErrors;
+    data[field] = newValue;
+    await setMaxErrors(data.name, sendValue);
+    if (errors.value.length === 0) {
+      if (newValue === null) {
+        notify.success("Max Errors Disabled", `Max errors for <b>${data.name}</b> has been disabled`);
+      } else {
+        notify.success("Max Errors Set Successfully", `Max errors for <b>${data.name}</b> set to <b>${newValue}</b>`);
+      }
     } else {
       data[field] = resetValue;
     }
@@ -189,6 +213,9 @@ const refresh = async () => {
   const response = await getAllDataSources();
   timedDataSources.value = response.data.getAllFlows.dataSource.filter((ds) => {
     return ds.type === "TIMED_DATA_SOURCE";
+  }).map((ds) => {
+    ds.maxErrors = ds.maxErrors !== -1 ? ds.maxErrors : null;
+    return ds;
   });
 
   emit("dataSourcesList", timedDataSources.value);
@@ -216,6 +243,33 @@ defineExpose({ refresh });
         .p-button {
           padding: 0.25rem !important;
           margin: 0 0 0 0.25rem !important;
+        }
+      }
+      td.max-error-column {
+        width: 7rem;
+        padding: 0 !important;
+
+        >span {
+          padding: 0.5rem !important;
+        }
+
+        .value-clickable {
+          cursor: pointer;
+          width: 100%;
+          display: flex;
+        }
+
+        .value-clickable>* {
+          flex: 0 0 auto;
+        }
+
+        .p-inputnumber {
+          padding: 0 !important;
+          margin: 0;
+
+          .p-inputtext {
+            width: 6.5rem;
+          }
         }
       }
     }

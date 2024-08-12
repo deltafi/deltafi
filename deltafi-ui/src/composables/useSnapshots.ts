@@ -102,20 +102,21 @@ export default function useSystemSnapshots() {
       name: true,
       topic: true,
       running: true,
-      testMode: true
+      testMode: true,
+      maxErrors: true
     },
     timedDataSources: {
       name: true,
       topic: true,
       running: true,
       testMode: true,
-      cronSchedule: true
+      cronSchedule: true,
+      maxErrors: true
     },
     transformFlows: {
       name: true,
       running: true,
       testMode: true,
-      maxErrors: true,
     },
     egressFlows: {
       name: true,

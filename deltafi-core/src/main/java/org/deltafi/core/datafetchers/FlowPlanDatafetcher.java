@@ -66,12 +66,12 @@ public class FlowPlanDatafetcher {
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
-    public boolean setMaxErrors(@InputArgument String flowName, @InputArgument Integer maxErrors) {
-        if (transformFlowService.hasFlow(flowName)) {
-            auditLogger.audit("set max errors to {} for flow {}", maxErrors, flowName);
-            return transformFlowService.setMaxErrors(flowName, maxErrors);
+    public boolean setMaxErrors(@InputArgument String name, @InputArgument Integer maxErrors) {
+        if (dataSourceService.hasFlow(name)) {
+            auditLogger.audit("set max errors to {} for data source {}", maxErrors, name);
+            return dataSourceService.setMaxErrors(name, maxErrors);
         } else {
-            throw new DgsEntityNotFoundException("No normalize or transform flow exists with the name: " + flowName);
+            throw new DgsEntityNotFoundException("No DataSource exists with the name: " + name);
         }
     }
 
@@ -378,8 +378,8 @@ public class FlowPlanDatafetcher {
 
     @DgsQuery
     @NeedsPermission.FlowView
-    public List<IngressFlowErrorState> ingressFlowErrorsExceeded() {
-        return transformFlowService.ingressFlowErrorsExceeded();
+    public List<DataSourceErrorState> dataSourceErrorsExceeded() {
+        return dataSourceService.dataSourceErrorsExceeded();
     }
 
     private boolean removeFlowAndFlowPlan(FlowPlanService<?, ?, ?> flowPlanService, String flowPlanName) {

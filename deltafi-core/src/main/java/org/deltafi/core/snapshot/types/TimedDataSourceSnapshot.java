@@ -40,5 +40,6 @@ public class TimedDataSourceSnapshot extends DataSourceSnapshot {
         setTestMode(dataSource.isTestMode());
         setTopic(dataSource.getTopic());
         setCronSchedule(dataSource.getCronSchedule());
+        setMaxErrors(dataSource.getMaxErrors());
     }
 }

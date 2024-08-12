@@ -81,6 +81,7 @@ public class TimedDataSource extends DataSource {
             setMemo(timedDataSource.getMemo());
             setCurrentDid(timedDataSource.getCurrentDid());
             setExecuteImmediate(timedDataSource.isExecuteImmediate());
+            setMaxErrors(sourceFlow.getMaxErrors());
         }
     }
 

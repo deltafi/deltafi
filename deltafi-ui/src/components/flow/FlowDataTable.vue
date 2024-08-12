@@ -28,7 +28,7 @@
           </PermissionedRouterLink>
         </span>
       </template>
-      <DataTable v-model:filters="filters" :edit-mode="$hasPermission('FlowUpdate') ? 'cell' : null" :value="pluginFlows" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines flows-table" :row-class="actionRowClass" :global-filter-fields="['searchField']" sort-field="name" :sort-order="1" :row-hover="true" @cell-edit-complete="onCellEditComplete">
+      <DataTable v-model:filters="filters" :edit-mode="$hasPermission('FlowUpdate') ? 'cell' : null" :value="pluginFlows" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines flows-table" :row-class="actionRowClass" :global-filter-fields="['searchField']" sort-field="name" :sort-order="1" :row-hover="true">
         <template #empty>No flows found.</template>
         <Column header="Name" field="name" class="name-column" :sortable="true">
           <template #body="{ data }">
@@ -76,15 +76,6 @@
                 <i class="ml-1 text-muted fa-solid fa-right-from-bracket fa-fw" @mouseover="togglePublishOverlayPanel($event, data[field])" @mouseleave="togglePublishOverlayPanel($event, data[field])" />
               </div>
             </template>
-          </template>
-        </Column>
-        <Column header="Max Errors" field="maxErrors" class="max-error-column">
-          <template #body="{ data, field }">
-            <span v-if="data[field] === null">-</span>
-            <span v-else>{{ data[field] }}</span>
-          </template>
-          <template #editor="{ data, field }">
-            <InputNumber v-model="data[field]" :min="0" class="p-inputtext-sm max-error-input" autofocus />
           </template>
         </Column>
         <Column header="Test Mode" class="test-mode-column">
@@ -139,13 +130,11 @@ import Column from "primevue/column";
 import ConfirmPopup from "primevue/confirmpopup";
 import DataTable from "primevue/datatable";
 import { FilterMatchMode } from "primevue/api";
-import InputNumber from "primevue/inputnumber";
 import { useConfirm } from "primevue/useconfirm";
 import OverlayPanel from "primevue/overlaypanel";
 import ConfirmDialog from "primevue/confirmdialog";
 import _ from "lodash";
 
-const { setMaxErrors, errors } = useFlowQueryBuilder();
 const notify = useNotifications();
 const confirm = useConfirm();
 const { removeTransformFlowPlanByName } = useFlowPlanQueryBuilder();
@@ -350,27 +339,6 @@ const removeFlowFromProp = (data) => {
   flowData.value[props.flowTypeProp] = flowData.value[props.flowTypeProp].filter((flow) => {
     return flow.name !== data.name;
   });
-};
-
-const onCellEditComplete = async (event) => {
-  let { data, newValue, field } = event;
-  let sendValue = null;
-
-  if (!_.isEqual(data.maxErrors, newValue)) {
-    sendValue = _.isEqual(newValue, null) ? -1 : newValue
-    const resetValue = data.maxErrors;
-    data[field] = newValue;
-    await setMaxErrors(data.name, sendValue);
-    if (errors.value.length === 0) {
-      if (newValue === null) {
-        notify.success("Max Errors Disabled", `Max errors for <b>${data.name}</b> has been disabled`);
-      } else {
-        notify.success("Max Errors Set Successfully", `Max errors for <b>${data.name}</b> set to <b>${newValue}</b>`);
-      }
-    } else {
-      data[field] = resetValue;
-    }
-  }
 };
 
 // Overlay Panels

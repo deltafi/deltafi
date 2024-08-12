@@ -28,13 +28,13 @@ import java.util.Set;
 @Service
 public class ErrorCountService {
     private final DeltaFileRepo deltaFileRepo;
-    private final TransformFlowService transformFlowService;
+    private final DataSourceService dataSourceService;
 
     private volatile Map<String, Integer> errorCounts = Collections.emptyMap();
 
-    public ErrorCountService(DeltaFileRepo deltaFileRepo, @Lazy TransformFlowService transformFlowService) {
+    public ErrorCountService(DeltaFileRepo deltaFileRepo, @Lazy DataSourceService dataSourceService) {
         this.deltaFileRepo = deltaFileRepo;
-        this.transformFlowService = transformFlowService;
+        this.dataSourceService = dataSourceService;
     }
 
     public synchronized void populateErrorCounts(Set<String> flowNames) {
@@ -56,8 +56,8 @@ public class ErrorCountService {
     }
 
     private Integer maxErrorsForFlow(String flow) {
-        if (transformFlowService.hasRunningFlow(flow)) {
-            return transformFlowService.maxErrorsPerFlow().get(flow);
+        if (dataSourceService.hasRunningFlow(flow)) {
+            return dataSourceService.maxErrorsPerFlow().get(flow);
         }
 
         return null;
@@ -71,7 +71,7 @@ public class ErrorCountService {
      */
     public boolean flowErrorsExceeded(String flow) {
         Integer maxErrors = maxErrorsForFlow(flow);
-        if (maxErrors == null || maxErrors == 0) {
+        if (maxErrors == null) {
             return false;
         }
         return  maxErrors < errorsForFlow(flow);

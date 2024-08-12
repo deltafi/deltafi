@@ -63,7 +63,6 @@ export const transformFlowFields = {
     ...flowStatusFields,
     testMode: true,
   },
-  maxErrors: true,
   transformActions: {
     ...defaultActionFields,
     ...joinFields,

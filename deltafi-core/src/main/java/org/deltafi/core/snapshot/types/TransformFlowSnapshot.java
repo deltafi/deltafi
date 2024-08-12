@@ -17,24 +17,15 @@
  */
 package org.deltafi.core.snapshot.types;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
-import org.deltafi.common.types.FlowType;
 import org.deltafi.core.types.TransformFlow;
-
-import java.util.HashSet;
-import java.util.Set;
 
 @Data
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public class TransformFlowSnapshot extends FlowSnapshot implements HasExpectedAnnotations {
-
-    private int maxErrors = -1;
-    private Set<String> expectedAnnotations = new HashSet<>();
-
+public class TransformFlowSnapshot extends FlowSnapshot {
 
     public TransformFlowSnapshot() {}
 
@@ -50,11 +41,5 @@ public class TransformFlowSnapshot extends FlowSnapshot implements HasExpectedAn
         this(transformFlow.getName());
         setRunning(transformFlow.isRunning());
         setTestMode(transformFlow.isTestMode());
-        setMaxErrors(transformFlow.getMaxErrors());
-    }
-
-    @Override
-    public FlowType getFlowType() {
-        return FlowType.TRANSFORM;
     }
 }

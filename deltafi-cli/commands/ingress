@@ -58,7 +58,7 @@ ARGS=($@)
 
 FLOW=$2
 INGRESS_HOST=$(deltafi serviceip deltafi-ingress-service)
-INGRESS_PATH="/deltafile/ingress"
+INGRESS_PATH="/api/v2/deltafile/ingress"
 INGRESS_URL="http://${INGRESS_HOST}${INGRESS_PATH}"
 
 get_stage() {

@@ -40,6 +40,7 @@ public class DataSourceRepoImpl extends BaseFlowRepoImpl<DataSource> implements 
     private static final String LAST_RUN = "lastRun";
     private static final String NEXT_RUN = "nextRun";
     private static final String MEMO = "memo";
+    private static final String MAX_ERRORS = "maxErrors";
 
     public DataSourceRepoImpl(MongoTemplate mongoTemplate) {
         super(mongoTemplate, DataSource.class);
@@ -73,5 +74,12 @@ public class DataSourceRepoImpl extends BaseFlowRepoImpl<DataSource> implements 
         Update update = Update.update(CURRENT_DID, null).set(MEMO, memo).set(EXECUTE_IMMEDIATE, executeImmediate)
                 .set(INGRESS_STATUS, status).set(INGRESS_STATUS_MESSAGE, statusMessage).set(NEXT_RUN, nextRun);
         return 1 == mongoTemplate.updateFirst(idMatches, update, DataSource.class).getModifiedCount();
+    }
+
+    @Override
+    public boolean updateMaxErrors(String flowName, int maxErrors) {
+        Query idMatches = Query.query(Criteria.where(ID).is(flowName).and(MAX_ERRORS).ne(maxErrors));
+        Update maxErrorsUpdate = Update.update(MAX_ERRORS, maxErrors);
+        return 1 == mongoTemplate.updateFirst(idMatches, maxErrorsUpdate, DataSource.class).getModifiedCount();
     }
 }

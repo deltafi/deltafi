@@ -32,4 +32,6 @@ public interface DataSourceRepoCustom extends FlowRepoCustom<DataSource> {
                               IngressStatus status, String statusMessage, OffsetDateTime nextRun);
 
     boolean updateMemo(String flowName, String memo);
+
+    boolean updateMaxErrors(String flowName, int maxErrors);
 }

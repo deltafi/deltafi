@@ -52,6 +52,7 @@ public class RestDataSource extends DataSource {
     public void copyFields(DataSource sourceDataSource) {
         if (sourceDataSource instanceof RestDataSource restDataSource) {
             setTopic(restDataSource.getTopic());
+            setMaxErrors(sourceDataSource.getMaxErrors());
         }
     }
 }

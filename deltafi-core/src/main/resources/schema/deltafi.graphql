@@ -371,7 +371,7 @@ type Query {
   getAllFlows: SystemFlows!
   getAllFlowPlans: SystemFlowPlans!
   getActionNamesByFamily: [ActionFamily]!
-  ingressFlowErrorsExceeded: [IngressFlowErrorState]!
+  dataSourceErrorsExceeded: [DataSourceErrorState]!
 
   deltaFiles(offset: Int, limit: Int, filter: DeltaFilesFilter, orderBy: DeltaFileOrder): DeltaFiles!
   deltaFile(did: UUID!): DeltaFile
@@ -424,7 +424,7 @@ type Mutation {
   stopDataSource(name: String!) : Boolean!
   stopTransformFlow(flowName: String!) : Boolean!
 
-  setMaxErrors(flowName: String!, maxErrors: Int!) : Boolean!
+  setMaxErrors(name: String!, maxErrors: Int!) : Boolean!
   enableEgressTestMode(flowName: String!) : Boolean!
   disableEgressTestMode(flowName: String!) : Boolean!
   setTimedDataSourceMemo(name: String!, memo: String) : Boolean!

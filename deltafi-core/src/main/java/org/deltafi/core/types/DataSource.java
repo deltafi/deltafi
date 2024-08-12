@@ -34,6 +34,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public abstract class DataSource extends Flow {
     private String topic;
     private String type;
+    private int maxErrors = -1;
 
     /**
      * Schema versions:

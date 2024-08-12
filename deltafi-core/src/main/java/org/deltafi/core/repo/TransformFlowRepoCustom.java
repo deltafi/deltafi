@@ -19,8 +19,6 @@ package org.deltafi.core.repo;
 
 import org.deltafi.core.types.TransformFlow;
 
-import java.util.Set;
-
 public interface TransformFlowRepoCustom extends FlowRepoCustom<TransformFlow> {
-    boolean updateMaxErrors(String flowName, int maxErrors);
+
 }

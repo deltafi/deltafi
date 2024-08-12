@@ -22,15 +22,13 @@ import org.deltafi.common.types.DataSourcePlan;
 import org.deltafi.common.types.IngressStatus;
 import org.deltafi.core.converters.DataSourcePlanConverter;
 import org.deltafi.core.generated.types.FlowState;
+import org.deltafi.core.generated.types.DataSourceErrorState;
 import org.deltafi.core.repo.DataSourceRepo;
 import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.snapshot.types.DataSourceSnapshot;
 import org.deltafi.core.snapshot.types.RestDataSourceSnapshot;
 import org.deltafi.core.snapshot.types.TimedDataSourceSnapshot;
-import org.deltafi.core.types.DataSource;
-import org.deltafi.core.types.RestDataSource;
-import org.deltafi.core.types.Result;
-import org.deltafi.core.types.TimedDataSource;
+import org.deltafi.core.types.*;
 import org.deltafi.core.validation.DataSourceValidator;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.scheduling.support.CronExpression;
@@ -38,10 +36,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -49,13 +45,15 @@ public class DataSourceService extends FlowService<DataSourcePlan, DataSource, D
 
     private static final DataSourcePlanConverter TIMED_DATA_SOURCE_FLOW_PLAN_CONVERTER = new DataSourcePlanConverter();
 
+    private final ErrorCountService errorCountService;
     private final Clock clock;
 
     public DataSourceService(DataSourceRepo dataSourceRepo, PluginVariableService pluginVariableService,
-                             DataSourceValidator dataSourceValidator, BuildProperties buildProperties, Clock clock) {
+                             DataSourceValidator dataSourceValidator, BuildProperties buildProperties,
+                             ErrorCountService errorCountService, Clock clock) {
         super("dataSource", dataSourceRepo, pluginVariableService, TIMED_DATA_SOURCE_FLOW_PLAN_CONVERTER,
                 dataSourceValidator, buildProperties);
-
+        this.errorCountService = errorCountService;
         this.clock = clock;
     }
 
@@ -109,7 +107,7 @@ public class DataSourceService extends FlowService<DataSourcePlan, DataSource, D
 
     @Override
     void copyFlowSpecificFields(DataSource sourceFlow, DataSource targetFlow) {
-        sourceFlow.copyFields(targetFlow);
+        targetFlow.copyFields(sourceFlow);
     }
 
     @Override
@@ -141,6 +139,11 @@ public class DataSourceService extends FlowService<DataSourcePlan, DataSource, D
         boolean changed = false;
         if (!Objects.equals(flow.getTopic(), dataSourceSnapshot.getTopic())) {
             flow.setTopic(dataSourceSnapshot.getTopic());
+            changed = true;
+        }
+
+        if (flow.getMaxErrors() != dataSourceSnapshot.getMaxErrors()) {
+            flow.setMaxErrors(dataSourceSnapshot.getMaxErrors());
             changed = true;
         }
 
@@ -242,5 +245,57 @@ public class DataSourceService extends FlowService<DataSourcePlan, DataSource, D
         }
 
         return false;
+    }
+
+    /**
+     * Sets the maximum number of errors allowed for a given flow, identified by its name.
+     * If the maximum errors for the flow are already set to the specified value, the method
+     * logs a warning and returns false. If the update is successful, the method refreshes the
+     * cache and returns true.
+     *
+     * @param flowName  The name of the flow to update, represented as a {@code String}.
+     * @param maxErrors The new maximum number of errors to be set for the specified flow, as an {@code int}.
+     * @return A {@code boolean} value indicating whether the update was successful (true) or not (false).
+     */
+    public boolean setMaxErrors(String flowName, int maxErrors) {
+        DataSource flow = getFlowOrThrow(flowName);
+
+        if (flow.getMaxErrors() == maxErrors) {
+            log.warn("Tried to set max errors on transform flow {} to {} when already set", flowName, maxErrors);
+            return false;
+        }
+
+        if (((DataSourceRepo) flowRepo).updateMaxErrors(flowName, maxErrors)) {
+            refreshCache();
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Retrieves a map containing the maximum number of errors allowed per flow.
+     * This method filters out flows with a maximum error count of 0, only including
+     * those with a positive maximum error count.
+     *
+     * @return A {@code Map<String, Integer>} where each key represents a flow name,
+     * and the corresponding value is the maximum number of errors allowed for that flow.
+     */
+    public Map<String, Integer> maxErrorsPerFlow() {
+        return getRunningFlows().stream()
+                .filter(e -> e.getMaxErrors() >= 0)
+                .collect(Collectors.toMap(Flow::getName, DataSource::getMaxErrors));
+    }
+
+    /**
+     * Get a list of DataSourceErrorStates for data sources that have
+     * exceeded their max allowed errors
+     * @return list of IngressFlowErrorStates
+     */
+    public List<DataSourceErrorState> dataSourceErrorsExceeded() {
+        return getRunningFlows().stream()
+                .map(f -> new DataSourceErrorState(f.getName(), errorCountService.errorsForFlow(f.getName()), f.getMaxErrors()))
+                .filter(s -> s.getMaxErrors() >= 0 && s.getCurrErrors() > s.getMaxErrors())
+                .toList();
     }
 }

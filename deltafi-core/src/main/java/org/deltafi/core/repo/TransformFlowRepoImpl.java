@@ -20,28 +20,15 @@ package org.deltafi.core.repo;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.types.TransformFlow;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
-
-import java.util.Set;
-import java.util.TreeSet;
 
 @SuppressWarnings("unused")
 @Slf4j
 public class TransformFlowRepoImpl extends BaseFlowRepoImpl<TransformFlow> implements TransformFlowRepoCustom {
 
     private static final String MAX_ERRORS = "maxErrors";
-    private static final String EXPECTED_ANNOTATIONS = "expectedAnnotations";
 
     public TransformFlowRepoImpl(MongoTemplate mongoTemplate) {
         super(mongoTemplate, TransformFlow.class);
     }
 
-    @Override
-    public boolean updateMaxErrors(String flowName, int maxErrors) {
-        Query idMatches = Query.query(Criteria.where(ID).is(flowName).and(MAX_ERRORS).ne(maxErrors));
-        Update maxErrorsUpdate = Update.update(MAX_ERRORS, maxErrors);
-        return 1 == mongoTemplate.updateFirst(idMatches, maxErrorsUpdate, TransformFlow.class).getModifiedCount();
-    }
 }
