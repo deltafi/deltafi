@@ -18,6 +18,7 @@
 package org.deltafi.core.plugin;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import jakarta.persistence.EntityManager;
 import org.deltafi.common.types.ActionDescriptor;
 import org.deltafi.common.types.Plugin;
 import org.deltafi.common.types.PluginCoordinates;
@@ -100,6 +101,9 @@ class PluginRegistryServiceTest {
     @Mock
     Environment environment;
 
+    @Mock
+    EntityManager entityManager;
+
     @BeforeEach
     public void setup() {
         List<PluginCleaner> cleaners = List.of(egressFlowPlanService, transformFlowPlanService, restDataSourcePlanService,
@@ -108,7 +112,7 @@ class PluginRegistryServiceTest {
         pluginRegistryService = new PluginRegistryService(egressFlowService, transformFlowService, restDataSourceService,
                 timedDataSourceService, pluginRepository, pluginValidator, pluginVariableService,
                 egressFlowPlanService, transformFlowPlanService, restDataSourcePlanService, timedDataSourcePlanService,
-                systemPluginService, flowValidationService, checkers, cleaners, environment);
+                systemPluginService, flowValidationService, checkers, cleaners, environment, entityManager);
     }
 
     @Test
@@ -122,7 +126,7 @@ class PluginRegistryServiceTest {
 
         assertTrue(result.isSuccess());
         ArgumentCaptor<PluginEntity> pluginArgumentCaptor = ArgumentCaptor.forClass(PluginEntity.class);
-        Mockito.verify(pluginRepository).save(pluginArgumentCaptor.capture());
+        Mockito.verify(entityManager).persist(pluginArgumentCaptor.capture());
         assertEquals(plugin, pluginArgumentCaptor.getValue());
         Mockito.verify(flowValidationService).revalidateFlows();
     }

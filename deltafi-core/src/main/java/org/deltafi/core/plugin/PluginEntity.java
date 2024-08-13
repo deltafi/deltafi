@@ -19,6 +19,7 @@ package org.deltafi.core.plugin;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.deltafi.common.types.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -29,6 +30,7 @@ import java.util.Objects;
 @Entity
 @Table(name = "plugins")
 @Data
+@NoArgsConstructor
 public class PluginEntity {
     @EmbeddedId
     private PluginCoordinates pluginCoordinates;
@@ -49,6 +51,16 @@ public class PluginEntity {
     @Column(columnDefinition = "jsonb")
     private List<Variable> variables;
 
+    public PluginEntity(Plugin plugin) {
+        this.pluginCoordinates = plugin.getPluginCoordinates();
+        this.displayName = plugin.getDisplayName();
+        this.description = plugin.getDescription();
+        this.actionKitVersion = plugin.getActionKitVersion();
+        this.actions = plugin.getActions();
+        this.dependencies = plugin.getDependencies();
+        this.variables = plugin.getVariables();
+    }
+
     public Plugin toPlugin() {
         Plugin plugin = new Plugin();
         plugin.setPluginCoordinates(this.pluginCoordinates);
@@ -59,18 +71,6 @@ public class PluginEntity {
         plugin.setDependencies(this.dependencies);
         plugin.setVariables(this.variables);
         return plugin;
-    }
-
-    public static PluginEntity fromPlugin(Plugin plugin) {
-        PluginEntity entity = new PluginEntity();
-        entity.setPluginCoordinates(plugin.getPluginCoordinates());
-        entity.setDisplayName(plugin.getDisplayName());
-        entity.setDescription(plugin.getDescription());
-        entity.setActionKitVersion(plugin.getActionKitVersion());
-        entity.setActions(plugin.getActions());
-        entity.setDependencies(plugin.getDependencies());
-        entity.setVariables(plugin.getVariables());
-        return entity;
     }
 
     public List<String> actionNames() {

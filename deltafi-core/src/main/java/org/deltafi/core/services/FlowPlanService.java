@@ -24,6 +24,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.plugin.PluginEntity;
@@ -31,7 +32,6 @@ import org.deltafi.core.repo.FlowRepo;
 import org.deltafi.core.types.snapshot.FlowSnapshot;
 import org.deltafi.core.types.*;
 import org.deltafi.core.exceptions.DeltafiConfigurationException;
-import org.deltafi.common.types.Plugin;
 import org.deltafi.core.plugin.PluginCleaner;
 import org.deltafi.core.repo.FlowPlanRepo;
 import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
@@ -43,6 +43,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
+@Slf4j
 public abstract class FlowPlanService<FlowPlanT extends FlowPlanEntity, FlowT extends Flow, FlowSnapshotT extends FlowSnapshot, FlowRepoT extends FlowRepo> implements PluginCleaner, Snapshotter {
 
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
@@ -67,19 +68,9 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlanEntity, FlowT ex
      * @param flowPlans flow plans to save
      */
     public void upgradeFlowPlans(PluginCoordinates sourcePlugin, List<FlowPlanT> flowPlans) {
+        flowPlanRepo.deleteBySourcePluginGroupIdAndSourcePluginArtifactIdAndType(sourcePlugin.getGroupId(), sourcePlugin.getArtifactId(), getFlowType());
         flowPlanRepo.saveAll(flowPlans);
-
-        Set<String> flowPlanNames = flowPlans.stream().map(FlowPlanEntity::getName).collect(Collectors.toSet());
-        Set<UUID> flowPlansToRemove = flowPlanRepo.findByGroupIdAndArtifactIdAndType(sourcePlugin.getGroupId(), sourcePlugin.getArtifactId(), getFlowType()).stream()
-                .filter(flowPlan -> !flowPlanNames.contains(flowPlan.getName()))
-                .map(FlowPlanEntity::getId)
-                .collect(Collectors.toSet());
-
-        if (!flowPlansToRemove.isEmpty()) {
-            flowPlanRepo.deleteAllById(flowPlansToRemove);
-        }
-
-        flowService.upgradeFlows(sourcePlugin, flowPlans, flowPlanNames);
+        flowService.upgradeFlows(sourcePlugin, flowPlans);
     }
 
     public List<String> validateFlowPlans(List<FlowPlanT> flowPlans) {
@@ -121,7 +112,7 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlanEntity, FlowT ex
     protected abstract FlowType getFlowType();
 
     public void rebuildInvalidFlows() {
-        List<String> invalidFlows = flowService.getNamesOfInvalidFlow();
+        List<String> invalidFlows = flowService.getNamesOfInvalidFlows();
 
         Map<PluginCoordinates, List<FlowPlanEntity>> flowPlans = invalidFlows.stream()
                 .map(name -> flowPlanRepo.findByNameAndType(name, getFlowType()))

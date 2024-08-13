@@ -50,7 +50,7 @@ public class TimedDataSourceService extends FlowService<TimedDataSourcePlanEntit
     public TimedDataSourceService(TimedDataSourceRepo timedDataSourceRepo, PluginVariableService pluginVariableService,
                                   TimedDataSourceValidator restDataSourceValidator, BuildProperties buildProperties,
                                   ErrorCountService errorCountService, Clock clock) {
-        super("timedDataSource", timedDataSourceRepo, pluginVariableService, TIMED_DATA_SOURCE_FLOW_PLAN_CONVERTER,
+        super(FlowType.TIMED_DATA_SOURCE, timedDataSourceRepo, pluginVariableService, TIMED_DATA_SOURCE_FLOW_PLAN_CONVERTER,
                 restDataSourceValidator, buildProperties);
 
         this.timedDataSourceRepo = timedDataSourceRepo;

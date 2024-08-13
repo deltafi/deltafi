@@ -18,6 +18,7 @@
 package org.deltafi.core.plugin;
 
 import jakarta.annotation.PostConstruct;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.*;
@@ -30,6 +31,7 @@ import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.types.*;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.function.Function;
@@ -56,6 +58,7 @@ public class PluginRegistryService implements Snapshotter {
     private final List<PluginCleaner> pluginCleaners;
     private Map<String, ActionDescriptor> actionDescriptorMap;
     private final Environment environment;
+    private final EntityManager entityManager;
 
     @PostConstruct
     public void initialize() {
@@ -76,9 +79,10 @@ public class PluginRegistryService implements Snapshotter {
                 .collect(Collectors.toMap(ActionDescriptor::getName, Function.identity(), (a,b) -> a));
     }
 
+    @Transactional
     public Result register(PluginRegistration pluginRegistration) {
         log.info("{}", pluginRegistration);
-        PluginEntity plugin = PluginEntity.fromPlugin(pluginRegistration.toPlugin());
+        PluginEntity plugin = new PluginEntity(pluginRegistration.toPlugin());
         GroupedFlowPlans groupedFlowPlans = groupPlansByFlowType(pluginRegistration);
 
         // Validate everything before persisting changes, the plugin should not be considered installed if validation fails
@@ -88,7 +92,10 @@ public class PluginRegistryService implements Snapshotter {
         }
 
         pluginRepository.deleteByGroupIdAndArtifactId(plugin.getPluginCoordinates().getGroupId(), plugin.getPluginCoordinates().getArtifactId());
-        pluginRepository.save(plugin);
+        entityManager.flush();
+        entityManager.clear();
+        entityManager.persist(plugin);
+
         updateActionDescriptors();
         pluginVariableService.saveVariables(plugin.getPluginCoordinates(), pluginRegistration.getVariables());
         upgradeFlowPlans(plugin.getPluginCoordinates(), groupedFlowPlans);
@@ -99,6 +106,7 @@ public class PluginRegistryService implements Snapshotter {
             // this mimics the old behavior where this happened asynchronously
             // presumably we don't want to error if a flow from another plugin no longer validates or we hit an exception
         }
+
         return Result.builder().success(true).build();
     }
 

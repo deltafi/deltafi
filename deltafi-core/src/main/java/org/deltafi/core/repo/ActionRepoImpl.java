@@ -20,7 +20,7 @@ package org.deltafi.core.repo;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.common.types.ActionState;
 import org.deltafi.core.generated.types.CountPerFlow;

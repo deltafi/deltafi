@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.repo;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.types.FlowPlanEntity;
@@ -68,6 +68,21 @@ public interface FlowPlanRepo extends JpaRepository<FlowPlanEntity, UUID> {
             "type = :#{#type.name()}",
             nativeQuery = true)
     List<FlowPlanEntity> findBySourcePluginAndType(PluginCoordinates sourcePlugin, FlowType type);
+
+    /**
+     * Remove flow plans with the given groupId and artifactId
+     * @param groupId plugin groupId to search by
+     * @param artifactId plugin artifactId to search by
+     * @param type flow plan type
+     */
+    @Transactional
+    @Modifying
+    @Query(value = "DELETE FROM flow_plans WHERE " +
+            "source_plugin->>'groupId' = :#{#groupId} AND " +
+            "source_plugin->>'artifactId' = :#{#artifactId} " +
+            "AND type = :#{#type.name()}",
+            nativeQuery = true)
+    void deleteBySourcePluginGroupIdAndSourcePluginArtifactIdAndType(String groupId, String artifactId, FlowType type);
 
     /**
      * Find the flow plans with the given groupId and artifactId

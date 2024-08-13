@@ -44,14 +44,14 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
 
     protected final FlowRepoT flowRepo;
     protected final PluginVariableService pluginVariableService;
-    private final String flowType;
+    private final FlowType flowType;
     private final FlowPlanConverter<FlowPlanT, FlowT> flowPlanConverter;
     private final FlowValidator<FlowT> validator;
     private final BuildProperties buildProperties;
 
     protected volatile Map<String, FlowT> flowCache = Collections.emptyMap();
 
-    protected FlowService(String flowType, FlowRepoT flowRepo, PluginVariableService pluginVariableService, FlowPlanConverter<FlowPlanT, FlowT> flowPlanConverter, FlowValidator<FlowT> validator, BuildProperties buildProperties) {
+    protected FlowService(FlowType flowType, FlowRepoT flowRepo, PluginVariableService pluginVariableService, FlowPlanConverter<FlowPlanT, FlowT> flowPlanConverter, FlowValidator<FlowT> validator, BuildProperties buildProperties) {
         this.flowType = flowType;
         this.flowRepo = flowRepo;
         this.pluginVariableService = pluginVariableService;
@@ -71,7 +71,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
                 .collect(Collectors.toMap(Flow::getName, Function.identity()));
     }
 
-    public List<String> getNamesOfInvalidFlow() {
+    public List<String> getNamesOfInvalidFlows() {
         return flowCache.values().stream()
                 .filter(FlowT::isInvalid)
                 .map(FlowT::getName).toList();
@@ -148,23 +148,23 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
                 .map(flowPlan -> buildFlow(flowPlan, variables))
                 .toList();
 
+        updatedFlows.forEach(f -> flowRepo.deleteByNameAndType(f.getName(), f.getType()));
         flowRepo.saveAll(updatedFlows);
 
         refreshCache();
     }
 
-    public void upgradeFlows(PluginCoordinates sourcePlugin, List<FlowPlanT> flowPlans, Set<String> flowNames) {
+    public void upgradeFlows(PluginCoordinates sourcePlugin, List<FlowPlanT> flowPlans) {
+        List<Flow> existingFlows = flowRepo.findBySourcePluginGroupIdAndSourcePluginArtifactIdAndType(
+                sourcePlugin.getGroupId(), sourcePlugin.getArtifactId(), getFlowType());
+        List<String> existingFlowNames = existingFlows.stream().map(Flow::getName).toList();
         List<FlowT> flows = flowPlans.stream().map(this::buildFlow).toList();
-        saveAll(flows);
+        List<String> incomingFlowNames = flows.stream().map(Flow::getName).toList();
+        List<FlowT> newFlows = flows.stream().filter(f -> !existingFlowNames.contains(f.getName())).toList();
+        saveAll(newFlows);
 
-        Set<String> flowsToRemove = flowRepo.findBySourcePluginGroupIdAndSourcePluginArtifactIdAndType(sourcePlugin.getGroupId(), sourcePlugin.getArtifactId(), getFlowType()).stream()
-                .map(Flow::getName)
-                .filter(name -> !flowNames.contains(name))
-                .collect(Collectors.toSet());
-
-        if (!flowsToRemove.isEmpty()) {
-            flowRepo.deleteAllById(flowsToRemove);
-        }
+        List<Flow> deleteFlows = existingFlows.stream().filter(e -> !incomingFlowNames.contains(e.getName())).toList();
+        flowRepo.deleteAll(deleteFlows);
 
         refreshCache();
     }

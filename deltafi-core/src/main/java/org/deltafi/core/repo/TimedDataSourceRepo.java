@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.repo;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import org.deltafi.common.types.IngressStatus;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

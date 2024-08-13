@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.repo;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.generated.types.FlowState;
@@ -56,6 +56,10 @@ public interface FlowRepo extends JpaRepository<Flow, String> {
             "type = :#{#type.name}",
             nativeQuery = true)
     int deleteBySourcePluginAndType(PluginCoordinates sourcePlugin, FlowType type);
+
+    @Transactional
+    @Modifying
+    void deleteByNameAndType(String name, FlowType type);
 
     @Query(value = "SELECT * FROM flows WHERE " +
             "source_plugin->>'groupId' = :groupId AND " +

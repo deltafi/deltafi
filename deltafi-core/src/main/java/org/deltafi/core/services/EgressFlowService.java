@@ -47,7 +47,7 @@ class EgressFlowService extends FlowService<EgressFlowPlanEntity, EgressFlow, Eg
     private Map<String, Set<Subscriber>> topicSubscribers;
 
     public EgressFlowService(EgressFlowRepo flowRepo, PluginVariableService pluginVariableService, EgressFlowValidator egressFlowValidator, BuildProperties buildProperties) {
-        super("egress", flowRepo, pluginVariableService, EGRESS_FLOW_PLAN_CONVERTER, egressFlowValidator, buildProperties);
+        super(FlowType.EGRESS, flowRepo, pluginVariableService, EGRESS_FLOW_PLAN_CONVERTER, egressFlowValidator, buildProperties);
         refreshCache();
     }
 
