@@ -36,6 +36,6 @@ public class AnnotateParameters extends ActionParameters {
     @JsonPropertyDescription("List of regex patterns matching metadata keys to add as annotations")
     private List<String> metadataPatterns;
 
-    @JsonPropertyDescription("The prefix to remove from each metadata key before adding it as an annotation")
+    @JsonPropertyDescription("Prefix to remove from each metadata key before adding it as an annotation")
     private String discardPrefix;
 }

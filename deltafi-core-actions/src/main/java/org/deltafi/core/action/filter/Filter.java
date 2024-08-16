@@ -33,7 +33,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class Filter extends TransformAction<FilterParameters> {
     public Filter() {
-        super ("Filters by default or when optional criteria is met in content or metadata");
+        super ("Filters by default or when optional criteria is met in content or metadata.");
     }
 
     @Override

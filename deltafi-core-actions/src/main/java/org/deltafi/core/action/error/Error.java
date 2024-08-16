@@ -29,7 +29,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class Error extends TransformAction<ErrorParameters> {
     public Error() {
-        super("Action that errors, optionally when a configurable metadata key is present");
+        super("Errors by default or when optional criteria is met in metadata.");
     }
 
     @Override

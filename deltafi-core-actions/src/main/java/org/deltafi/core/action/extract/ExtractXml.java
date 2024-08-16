@@ -54,7 +54,7 @@ public class ExtractXml extends TransformAction<ExtractXmlParameters> {
     );
 
     public ExtractXml() {
-        super("Extract XML keys based on XPath and write them to metadata or annotations");
+        super("Extract values from XML content and write them to metadata or annotations.");
     }
 
     @Override

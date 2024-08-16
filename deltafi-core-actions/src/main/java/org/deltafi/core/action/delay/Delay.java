@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class Delay extends TransformAction<DelayParameters> {
     public Delay() {
-        super("Introduce a set or random delay to a flow");
+        super("Introduces a set or random delay to a flow.");
     }
 
     @Override

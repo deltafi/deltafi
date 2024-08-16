@@ -31,10 +31,10 @@ import org.deltafi.actionkit.action.parameters.ActionParameters;
 @EqualsAndHashCode(callSuper = true)
 public class DelayParameters extends ActionParameters {
     @JsonProperty(defaultValue = "0")
-    @JsonPropertyDescription("Minimum time to delay processing in ms")
+    @JsonPropertyDescription("Minimum time to delay processing in ms. Set equal to maxDelayMS for a fixed delay.")
     private int minDelayMS = 0;
 
     @JsonProperty(defaultValue = "0")
-    @JsonPropertyDescription("Maximum time to delay processing in ms")
+    @JsonPropertyDescription("Maximum time to delay processing in ms. Set equal to minDelayMS for a fixed delay.")
     private int maxDelayMS = 0;
 }

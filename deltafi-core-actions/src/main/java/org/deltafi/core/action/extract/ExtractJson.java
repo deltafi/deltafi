@@ -40,7 +40,7 @@ public class ExtractJson extends TransformAction<ExtractJsonParameters> {
             .build();
 
     public ExtractJson() {
-        super("Extract JSON keys based on JSONPath and write them to metadata or annotations");
+        super("Extract values from JSON content and write them to metadata or annotations.");
     }
 
     @Override
@@ -67,7 +67,6 @@ public class ExtractJson extends TransformAction<ExtractJsonParameters> {
             }
         }
 
-        // Handle values according to the specified behavior
         for (Map.Entry<String, String> entry : params.getJsonPathToKeysMap().entrySet()) {
             String jsonPath = entry.getKey();
             String mappedKey = entry.getValue();

@@ -1,6 +1,6 @@
 # DeltaFi Documentation
 
-The DeltaFi docs are built with [Docute](https://docute.egoist.sh/).
+The DeltaFi docs are built with [Docute](https://docute.egoist.dev/).
 
 Markdown files are located in `public/docs`.
 

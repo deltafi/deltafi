@@ -29,14 +29,13 @@ import org.deltafi.actionkit.action.parameters.ActionParameters;
 @NoArgsConstructor
 public class CompressParameters extends ActionParameters {
     @JsonProperty(required = true)
-    @JsonPropertyDescription("The format to compress to")
+    @JsonPropertyDescription("Format to compress to")
     public Format format;
 
-    @JsonProperty
-    @JsonPropertyDescription("The name of the compressed content. Defaults to 'compressed'. The format suffix will be appended to this name.")
-    public String name;
+    @JsonProperty(defaultValue = "compressed")
+    @JsonPropertyDescription("Name of the compressed content")
+    public String name = "compressed";
 
-    @JsonProperty
-    @JsonPropertyDescription("Sets the media type of the new content to the specified value. Otherwise, will be based on format")
+    @JsonPropertyDescription("Media type of the compressed content, overriding the default for the configured format")
     public String mediaType;
 }

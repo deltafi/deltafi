@@ -31,12 +31,12 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 public class ExtractJsonParameters extends ExtractParameters {
-    @JsonProperty(defaultValue = "{}")
-    @JsonPropertyDescription("A map of JSONPath expressions to keys. Values will be extracted using JSONPath and added to the corresponding metadata or annotation keys.")
+    @JsonProperty(required = true)
+    @JsonPropertyDescription("Map of JSONPath expressions to keys. Values will be extracted using JSONPath and added to the corresponding metadata or annotation keys.")
     public Map<String, String> jsonPathToKeysMap = new HashMap<>();
 
     @JsonProperty(defaultValue = "[\"application/json\"]")
-    @JsonPropertyDescription("List of allowed media types. Supports wildcards (*) and defaults to application/json.")
+    @JsonPropertyDescription("List of media types to consider, supporting wildcards (*)")
     @Override
     public List<String> getMediaTypes() {
         return super.getMediaTypes();

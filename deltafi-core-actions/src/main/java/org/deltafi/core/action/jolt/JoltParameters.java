@@ -30,12 +30,12 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 public class JoltParameters extends ContentSelectionParameters {
-    @JsonPropertyDescription("Jolt transformation specification provided as a JSON string.")
     @JsonProperty(required = true)
+    @JsonPropertyDescription("Jolt transformation specification provided as a JSON string")
     public String joltSpec;
 
     @JsonProperty(defaultValue = "[\"application/json\"]")
-    @JsonPropertyDescription("List of allowed media types. Supports wildcards (*) and defaults to application/json.")
+    @JsonPropertyDescription("List of media types to consider, supporting wildcards (*)")
     @Override
     public List<String> getMediaTypes() {
         return super.getMediaTypes();

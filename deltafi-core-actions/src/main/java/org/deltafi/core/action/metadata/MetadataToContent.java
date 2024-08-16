@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.action.metadata;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.error.ErrorResult;
@@ -31,14 +32,13 @@ import org.springframework.stereotype.Component;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Component
 public class MetadataToContent extends TransformAction<MetadataToContentParameters> {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     public MetadataToContent() {
-        super("Convert metadata to JSON content");
+        super("Converts metadata to JSON content.");
     }
 
     @Override
@@ -47,7 +47,7 @@ public class MetadataToContent extends TransformAction<MetadataToContentParamete
                                          @NotNull TransformInput input) {
         TransformResult result = new TransformResult(context);
 
-        if (!params.isReplaceExistingContent()) {
+        if (params.isRetainExistingContent()) {
             result.addContent(input.getContent());
         }
 
@@ -56,7 +56,7 @@ public class MetadataToContent extends TransformAction<MetadataToContentParamete
             String jsonMetadata = OBJECT_MAPPER.writeValueAsString(filteredMetadata);
             ActionContent newContent = ActionContent.saveContent(context, jsonMetadata, params.getFilename(), MediaType.APPLICATION_JSON);
             result.addContent(newContent);
-        } catch (Exception e) {
+        } catch (JsonProcessingException e) {
             return new ErrorResult(context, "Error transforming metadata to content", e);
         }
 
@@ -68,7 +68,7 @@ public class MetadataToContent extends TransformAction<MetadataToContentParamete
             return metadata;
         }
         return metadata.entrySet().stream()
-                .filter(entry -> patterns.stream().anyMatch(pattern -> Pattern.matches(pattern, entry.getKey())))
+                .filter(entry -> patterns.stream().anyMatch(pattern -> entry.getKey().matches(pattern)))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 }

@@ -17,7 +17,6 @@
  */
 package org.deltafi.core.action.merge;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.*;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
@@ -28,11 +27,9 @@ import org.deltafi.actionkit.action.parameters.ActionParameters;
 @AllArgsConstructor
 @NoArgsConstructor
 public class MergeParameters extends ActionParameters {
-    @JsonProperty
-    @JsonPropertyDescription("Name of the merged file. Use of {{filename}} will be dynamically replaced with the filename of the first file merged. If blank, filename of the first file merged is used")
+    @JsonPropertyDescription("Name of the merged file. Embed {{filename}} to have it replaced with the filename of the first file merged. If not set, will use the filename of the first file merged.")
     public String mergedFilename;
 
-    @JsonProperty
-    @JsonPropertyDescription("Optional mediaType to apply to the merged file. If blank, will use the mediaType of the first file merged")
+    @JsonPropertyDescription("Media type to apply to the merged file. If not set, will use the media type of the first file merged.")
     public String mediaType;
 }

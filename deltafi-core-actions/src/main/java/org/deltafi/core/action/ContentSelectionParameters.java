@@ -31,19 +31,17 @@ import java.util.List;
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 public class ContentSelectionParameters extends ActionParameters {
-    @JsonProperty(defaultValue = "[]")
-    @JsonPropertyDescription("List of content indexes to consider. If empty, all content is considered.")
-    private List<Integer> contentIndexes = List.of();
-
-    @JsonProperty(defaultValue = "[]")
-    @JsonPropertyDescription("List of file patterns to consider. Supports wildcards (*) and if empty, all filenames are considered.")
-    private List<String> filePatterns = List.of();
+    @JsonPropertyDescription("List of content indexes to consider")
+    private List<Integer> contentIndexes;
 
     // Annotated on getter so it can be overridden
     private List<String> mediaTypes;
 
+    @JsonPropertyDescription("List of file patterns to consider, supporting wildcards (*)")
+    private List<String> filePatterns;
+
     @JsonProperty(defaultValue = "false")
-    @JsonPropertyDescription("Boolean indicating whether the existing content should be retained or replaced by the new content. Default is false.")
+    @JsonPropertyDescription("Retain the existing content")
     private boolean retainExistingContent = false;
 
     public ContentSelectionParameters() {
@@ -54,8 +52,7 @@ public class ContentSelectionParameters extends ActionParameters {
         this.mediaTypes = mediaTypes;
     }
 
-    @JsonProperty(defaultValue = "[]")
-    @JsonPropertyDescription("List of allowed media types. Supports wildcards (*) and defaults based on the input format.")
+    @JsonPropertyDescription("List of media types to consider, supporting wildcards (*)")
     public List<String> getMediaTypes() {
         return mediaTypes;
     }

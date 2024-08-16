@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 @Component
 public class Annotate extends TransformAction<AnnotateParameters> {
     public Annotate() {
-        super("Adds annotations");
+        super("Adds annotations to a DeltaFile.");
     }
 
     @Override

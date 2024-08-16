@@ -24,9 +24,9 @@ import lombok.Getter;
 @AllArgsConstructor
 @Getter
 public enum DataFormat {
+    @JsonProperty("CSV") CSV("CSV", "text/csv"),
     @JsonProperty("JSON") JSON("JSON", "application/json"),
-    @JsonProperty("XML") XML("XML", "application/xml"),
-    @JsonProperty("CSV") CSV("CSV", "text/csv");
+    @JsonProperty("XML") XML("XML", "application/xml");
 
     private final String value;
     private final String mediaType;

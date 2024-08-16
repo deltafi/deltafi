@@ -107,7 +107,7 @@ public class DecompressTest {
     }
 
     @Test
-    public void preserveAndUnarchivesZipDetected() {
+    public void retainAndUnarchivesZipDetected() {
         runTest(Format.ZIP, true, true);
     }
 
@@ -115,21 +115,21 @@ public class DecompressTest {
         runTest(archiveType, detected, false);
     }
 
-    private void runTest(Format archiveType, boolean detected, boolean preserveOriginal) {
+    private void runTest(Format archiveType, boolean detected, boolean retainExistingContent) {
         String inputName = "compressed." + archiveType.getValue();
         ResultType result = action.transform(runner.actionContext(),
-                new DecompressParameters(detected ? null : archiveType, preserveOriginal),
+                new DecompressParameters(detected ? null : archiveType, retainExistingContent),
                 input(inputName));
 
-        verifyTransform(result, archiveType, preserveOriginal, inputName);
+        verifyTransform(result, archiveType, retainExistingContent, inputName);
     }
 
     private TransformInput input(String... files) {
         return TransformInput.builder().content(runner.saveContentFromResource(files)).build();
     }
 
-    private void verifyTransform(ResultType result, Format archiveType, boolean preserveOriginal, String originalInputName) {
-        int startIdx = preserveOriginal ? 1 : 0;
+    private void verifyTransform(ResultType result, Format archiveType, boolean retainExistingContent, String originalInputName) {
+        int startIdx = retainExistingContent ? 1 : 0;
 
         assertTransformResult(result)
                 .hasContentMatchingAt(startIdx, actionContent -> {
@@ -146,7 +146,7 @@ public class DecompressTest {
                 })
                 .addedMetadata("compressFormat", archiveType.getValue());
 
-        if (preserveOriginal) {
+        if (retainExistingContent) {
             assertTransformResult(result)
                     .hasContentMatchingAt(0, actionContent -> {
                         ContentAssert.assertThat(actionContent)
@@ -176,7 +176,7 @@ public class DecompressTest {
     }
 
     @Test
-    public void preserveAndDecompressesMultipleGzip() {
+    public void retainAndDecompressesMultipleGzip() {
         runTest(Format.GZIP, true, input("fileA.gz", "fileB.gz"), "fileA", "fileB");
     }
 
@@ -209,14 +209,14 @@ public class DecompressTest {
         runTest(compressFormat, false, input, outputFiles);
     }
 
-    private void runTest(Format compressFormat, boolean preserveOriginal, TransformInput input, String... outputFiles) {
-        runTest(new DecompressParameters(compressFormat, preserveOriginal), compressFormat, input, outputFiles);
+    private void runTest(Format compressFormat, boolean retainExistingContent, TransformInput input, String... outputFiles) {
+        runTest(new DecompressParameters(compressFormat, retainExistingContent), compressFormat, input, outputFiles);
     }
 
     private void runTest(DecompressParameters parameters, Format expectedCompressFormat, TransformInput input, String... outputFiles) {
         ResultType result = action.transform(runner.actionContext(), parameters, input);
         List<String> names = new ArrayList<>();
-        if (parameters.preserveOriginal) {
+        if (parameters.retainExistingContent) {
             names.addAll(input.getContent().stream().map(ActionContent::getName).toList());
         }
         names.addAll(List.of(outputFiles));

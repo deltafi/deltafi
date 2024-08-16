@@ -44,7 +44,7 @@ public class JoltTransform extends ContentSelectingTransformAction<JoltParameter
     );
 
     public JoltTransform() {
-        super("Apply Jolt transformation to JSON content");
+        super("Transforms JSON content using Jolt.");
     }
 
     @Override

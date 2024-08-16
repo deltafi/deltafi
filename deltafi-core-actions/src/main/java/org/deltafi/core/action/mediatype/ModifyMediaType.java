@@ -41,7 +41,7 @@ public class ModifyMediaType extends TransformAction<ModifyMediaTypeParameters> 
     private final TikaConfig tika = new TikaConfig();
 
     public ModifyMediaType() throws TikaException, IOException {
-        super("Modifies content media types");
+        super("Modifies content media types.");
     }
 
     @Override

@@ -3,6 +3,7 @@ node_modules
 /graphiql/build
 /dist
 public/docs/CHANGELOG.md
+public/docs/core-actions/*
 
 
 # local env files

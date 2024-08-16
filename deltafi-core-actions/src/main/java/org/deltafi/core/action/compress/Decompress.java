@@ -53,7 +53,7 @@ import java.util.Set;
 @Slf4j
 public class Decompress extends TransformAction<DecompressParameters> {
     public Decompress() {
-        super("Decompresses content from .ar, .gz, .tar, .tar.gz, .tar.xz, .tar.Z, .xz, .Z, or .zip");
+        super("Decompresses content from .ar, .gz, .tar, .tar.gz, .tar.xz, .tar.Z, .xz, .Z, or .zip.");
     }
 
     private static String stripSuffix(String filename) {
@@ -69,7 +69,7 @@ public class Decompress extends TransformAction<DecompressParameters> {
         }
 
         TransformResult result = new TransformResult(context);
-        if (params.preserveOriginal) {
+        if (params.retainExistingContent) {
             result.addContent(input.getContent());
         }
 

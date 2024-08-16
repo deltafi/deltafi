@@ -31,13 +31,13 @@ import java.util.List;
 @NoArgsConstructor
 public class MetadataToContentParameters extends ActionParameters {
     @JsonProperty(defaultValue = "metadata.json")
-    @JsonPropertyDescription("Filename for the new content containing the metadata.")
+    @JsonPropertyDescription("Filename for the new JSON content")
     private String filename = "metadata.json";
 
-    @JsonPropertyDescription("List of regex patterns to filter the metadata to include. If empty, all metadata is included.")
+    @JsonPropertyDescription("List of regex patterns matching metadata keys to include. If empty, all metadata is included.")
     private List<String> metadataPatterns;
 
-    @JsonProperty(defaultValue = "false")
-    @JsonPropertyDescription("Boolean indicating whether the existing content should remain or be replaced by the new content.")
-    private boolean replaceExistingContent = false;
+    @JsonProperty(defaultValue = "true")
+    @JsonPropertyDescription("Retain the existing content")
+    private boolean retainExistingContent = true;
 }

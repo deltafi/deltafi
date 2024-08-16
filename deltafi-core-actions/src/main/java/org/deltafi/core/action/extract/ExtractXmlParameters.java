@@ -31,12 +31,12 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 public class ExtractXmlParameters extends ExtractParameters {
-    @JsonProperty(defaultValue = "{}")
-    @JsonPropertyDescription("A map of XPath expressions to keys. Values will be extracted using XPath and added to the corresponding metadata or annotation keys.")
+    @JsonProperty(required = true)
+    @JsonPropertyDescription("Map of XPath expressions to keys. Values will be extracted using XPath and added to the corresponding metadata or annotation keys.")
     public Map<String, String> xpathToKeysMap = new HashMap<>();
 
     @JsonProperty(defaultValue = "[\"*/xml\"]")
-    @JsonPropertyDescription("List of allowed media types. Supports wildcards (*) and defaults to */xml.")
+    @JsonPropertyDescription("List of media types to consider, supporting wildcards (*)")
     @Override
     public List<String> getMediaTypes() {
         return super.getMediaTypes();
