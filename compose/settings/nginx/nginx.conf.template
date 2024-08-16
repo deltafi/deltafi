@@ -110,6 +110,10 @@ http {
         location /docs/ {
           proxy_pass http://deltafi-docs;
         }
+
+        location /visualization {
+          proxy_pass http://deltafi-grafana;
+        }
     }
 
     server {
