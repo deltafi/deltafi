@@ -44,7 +44,7 @@
           </template>
         </Column>
         <Column header="Description" field="description" :sortable="true"></Column>
-        <Column header="Topic" field="topic" :sortable="true"></Column>
+        <Column header="Publish" field="topic" :sortable="true"></Column>
         <Column header="Cron Schedule" field="cronSchedule" :sortable="true" class="inline-edit-column" style="width: 10rem">
           <template #body="{ data, field }">
             <span v-if="data[field]" v-tooltip.top="cronString.toString(data[field], { verbose: false })">{{ data[field] }} </span>
@@ -249,6 +249,7 @@ defineExpose({ refresh });
           margin: 0 0 0 0.25rem !important;
         }
       }
+
       td.max-error-column {
         width: 7rem;
         padding: 0 !important;

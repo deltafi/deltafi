@@ -33,13 +33,15 @@ plugins=$(deltafi query "query getPlugin { plugins { displayName pluginCoordinat
 deltafi query -c "query getPlugin { plugins { displayName variables { name value description defaultValue dataType } } }"
 
 echo "Enabling flows..."
-deltafi egress-flow start passthrough
-deltafi egress-flow start smoke
-deltafi normalize-flow start passthrough
-deltafi normalize-flow start decompress-passthrough
-deltafi normalize-flow start smoke
-deltafi enrich-flow start artificial-enrichment
+deltafi egress-flow start passthrough-egress
+deltafi egress-flow start smoke-test-egress
+deltafi transform-flow start passthrough-transform
+deltafi transform-flow start smoke-test-transform
 deltafi load-policies airgap.delete-policy.json
 
 echo "Starting smoke ingress..."
-deltafi ingress-action start smoke-test-ingress
+deltafi data-source start smoke-timed-data-source
+deltafi data-source start smoke-rest-data-source
+deltafi data-source start passthrough-rest-data-source
+
+deltafi event list

@@ -44,7 +44,7 @@
           </template>
         </Column>
         <Column header="Description" field="description" :sortable="true"></Column>
-        <Column header="Topic" field="topic" :sortable="true"></Column>
+        <Column header="Publish" field="topic" :sortable="true"></Column>
         <Column header="Test Mode" class="test-mode-column">
           <template #body="{ data }">
             <RestDataSourceTestModeInputSwitch :row-data-prop="data" />
@@ -221,6 +221,7 @@ defineExpose({ refresh });
           margin: 0 0 0 0.25rem !important;
         }
       }
+
       td.max-error-column {
         width: 7rem;
         padding: 0 !important;

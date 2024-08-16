@@ -60,20 +60,20 @@
             <span v-else>{{ data[field] }}</span>
           </template>
         </Column>
-        <Column header="Subscribe" field="subscribe" :style="{ width: '7%' }">
+        <Column header="Subscribe" field="subscribe" :style="{ width: '15%' }">
           <template #body="{ data, field }">
             <template v-if="!_.isEmpty(data[field])">
               <div>
-                <i class="ml-1 text-muted fa-solid fa-right-to-bracket fa-fw" @mouseover="toggleSubscribeOverlayPanel($event, data[field])" @mouseleave="toggleSubscribeOverlayPanel($event, data[field])" />
+                <SubscribeCell :subscribe-data="data[field]"></SubscribeCell>
               </div>
             </template>
           </template>
         </Column>
-        <Column header="Publish" field="publish" :style="{ width: '7%' }">
+        <Column header="Publish" field="publish" :style="{ width: '15%' }">
           <template #body="{ data, field }">
             <template v-if="!_.isEmpty(data[field])">
               <div>
-                <i class="ml-1 text-muted fa-solid fa-right-from-bracket fa-fw" @mouseover="togglePublishOverlayPanel($event, data[field])" @mouseleave="togglePublishOverlayPanel($event, data[field])" />
+                <PublishCell :publish-data="data[field]"></PublishCell>
               </div>
             </template>
           </template>
@@ -97,12 +97,6 @@
       <ConfirmPopup></ConfirmPopup>
     </CollapsiblePanel>
   </div>
-  <OverlayPanel ref="subscribeOverlayPanel">
-    <SubscribeCell :subscribe-data="subscribeOverlayData"></SubscribeCell>
-  </OverlayPanel>
-  <OverlayPanel ref="publishOverlayPanel">
-    <PublishCell :publish-data="publishOverlayData"></PublishCell>
-  </OverlayPanel>
   <ConfirmDialog group="bulkActions">
     <template #message="slotProps">
       <span class="p-confirm-dialog-icon pi pi-exclamation-triangle"></span>
@@ -131,7 +125,6 @@ import ConfirmPopup from "primevue/confirmpopup";
 import DataTable from "primevue/datatable";
 import { FilterMatchMode } from "primevue/api";
 import { useConfirm } from "primevue/useconfirm";
-import OverlayPanel from "primevue/overlaypanel";
 import ConfirmDialog from "primevue/confirmdialog";
 import _ from "lodash";
 
@@ -339,21 +332,6 @@ const removeFlowFromProp = (data) => {
   flowData.value[props.flowTypeProp] = flowData.value[props.flowTypeProp].filter((flow) => {
     return flow.name !== data.name;
   });
-};
-
-// Overlay Panels
-const subscribeOverlayData = ref({});
-const subscribeOverlayPanel = ref();
-const toggleSubscribeOverlayPanel = (event, data) => {
-  subscribeOverlayData.value = data;
-  subscribeOverlayPanel.value.toggle(event);
-};
-
-const publishOverlayData = ref({});
-const publishOverlayPanel = ref();
-const togglePublishOverlayPanel = (event, data) => {
-  publishOverlayData.value = data;
-  publishOverlayPanel.value.toggle(event);
 };
 
 const setFlowPlanParams = (data, editExistingFlow) => {

@@ -50,15 +50,10 @@
           </template>
         </Column>
         <Column header="Description" field="description" :sortable="true"></Column>
-        <Column header="Subscribe" field="subscribe" :style="{ width: '7%' }">
+        <Column header="Subscribe" field="subscribe" :style="{ width: '20%' }">
           <template #body="{ data, field }">
             <template v-if="!_.isEmpty(data[field])">
-              <div>
-                <i class="ml-1 text-muted fa-solid fa-right-to-bracket fa-fw" @mouseover="toggleSubscribeOverlayPanel($event, data[field])" @mouseleave="toggleSubscribeOverlayPanel($event, data[field])" />
-              </div>
-              <OverlayPanel ref="subscribeOverlayPanel">
-                <SubscribeCell :subscribe-data="subscribeOverlayData"></SubscribeCell>
-              </OverlayPanel>
+              <SubscribeCell :subscribe-data="data[field]"></SubscribeCell>
             </template>
           </template>
         </Column>
@@ -87,7 +82,6 @@ import _ from "lodash";
 import { FilterMatchMode } from "primevue/api";
 import Column from "primevue/column";
 import DataTable from "primevue/datatable";
-import OverlayPanel from "primevue/overlaypanel";
 
 const emit = defineEmits(["egressActionsList"]);
 const editing = inject("isEditing");
@@ -124,12 +118,6 @@ watch(
   }
 );
 
-const subscribeOverlayData = ref({});
-const subscribeOverlayPanel = ref();
-const toggleSubscribeOverlayPanel = (event, data) => {
-  subscribeOverlayData.value = data;
-  subscribeOverlayPanel.value.toggle(event);
-};
 
 const errorTooltip = (data) => {
   return _.isEmpty(data.flowStatus.errors) ? "" : " and errors";

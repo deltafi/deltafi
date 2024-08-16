@@ -17,6 +17,8 @@
  */
 package org.deltafi.common.types;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.List;
 import java.util.Set;
 
@@ -49,6 +51,7 @@ public interface Subscriber {
      *
      * @return if the subscriber is in test mode
      */
+    @JsonIgnore
     default boolean isTestMode() {
         return false;
     }
