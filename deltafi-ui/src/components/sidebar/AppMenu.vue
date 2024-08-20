@@ -143,7 +143,7 @@ const staticMenuItems = ref([
       {
         name: "Grafana Dashboards",
         icon: "icomoon grafana",
-        url: computed(() => buildURL("metrics", "/dashboards")),
+        url: "/visualization/dashboards",
         visible: computed(() => hasPermission("MetricsView")),
       },
     ],
