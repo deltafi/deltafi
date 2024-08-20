@@ -123,6 +123,12 @@ public class PluginRegistryService implements Snapshotter {
         errors.addAll(timedDataSourcePlanService.validateFlowPlans(groupedFlowPlans.timedDataSourcePlans));
         errors.addAll(egressFlowPlanService.validateFlowPlans(groupedFlowPlans.egressFlowPlans));
         errors.addAll(pluginVariableService.validateVariables(variables));
+
+        List<String> duplicateNames = findDuplicateDataSourceNames(groupedFlowPlans, plugin.getPluginCoordinates());
+        if (!duplicateNames.isEmpty()) {
+            errors.add("Duplicate data source names found: " + String.join(", ", duplicateNames));
+        }
+
         return errors;
     }
 
@@ -311,5 +317,37 @@ public class PluginRegistryService implements Snapshotter {
     }
 
     private record GroupedFlowPlans(List<TransformFlowPlanEntity> transformFlowPlans, List<EgressFlowPlanEntity> egressFlowPlans, List<RestDataSourcePlanEntity> restDataSourcePlans, List<TimedDataSourcePlanEntity> timedDataSourcePlans){}
+
+    private List<String> findDuplicateDataSourceNames(GroupedFlowPlans groupedFlowPlans, PluginCoordinates incomingPluginCoordinates) {
+        Map<String, String> dataSourceNames = new HashMap<>();
+
+        // Check incoming plugin's data sources
+        for (RestDataSourcePlanEntity plan : groupedFlowPlans.restDataSourcePlans) {
+            dataSourceNames.put(plan.getName(), "REST");
+        }
+        for (TimedDataSourcePlanEntity plan : groupedFlowPlans.timedDataSourcePlans) {
+            if (dataSourceNames.containsKey(plan.getName())) {
+                return List.of(plan.getName()); // Duplicate within incoming plugin
+            }
+            dataSourceNames.put(plan.getName(), "TIMED");
+        }
+
+        // Check against existing data sources, excluding those from the same plugin
+        List<String> conflictingNames = new ArrayList<>();
+        for (RestDataSource existing : restDataSourceService.getAll()) {
+            if (!existing.getSourcePlugin().equalsIgnoreVersion(incomingPluginCoordinates) &&
+                    dataSourceNames.containsKey(existing.getName())) {
+                conflictingNames.add(existing.getName());
+            }
+        }
+        for (TimedDataSource existing : timedDataSourceService.getAll()) {
+            if (!existing.getSourcePlugin().equalsIgnoreVersion(incomingPluginCoordinates) &&
+                    dataSourceNames.containsKey(existing.getName())) {
+                conflictingNames.add(existing.getName());
+            }
+        }
+
+        return conflictingNames;
+    }
 
 }
