@@ -36,9 +36,11 @@ class AuthApi < Sinatra::Application
   raise 'DOMAIN environment variable must be set.' if DOMAIN.nil?
 
   DOMAIN_PERMISSIONS = {
+    'graphite' => 'MetricsView',
     "graphite.#{DOMAIN}" => 'MetricsView',
+    'ingress' => 'DeltaFileIngress',
     "ingress.#{DOMAIN}" => 'DeltaFileIngress',
-    "k8s.#{DOMAIN}" => 'Admin',
+    'metrics' => 'MetricsView',
     "metrics.#{DOMAIN}" => 'MetricsView',
     DOMAIN => 'UIAccess'
   }.freeze
@@ -99,6 +101,10 @@ class AuthApi < Sinatra::Application
 
   def build_error_response(message)
     build_response({ error: message })
+  end
+
+  def permission_lookup(domain)
+    DOMAIN_PERMISSIONS[domain] || 'Admin'
   end
 
   run! if app_file == $PROGRAM_NAME
