@@ -22,9 +22,6 @@
 
 <script setup>
 import { computed, defineProps } from "vue";
-import useUtilFunctions from "@/composables/useUtilFunctions";
-
-const { buildURL } = useUtilFunctions();
 
 const props = defineProps({
   panelId: {
@@ -94,6 +91,6 @@ const src = computed(() => {
   } else {
     params = new URLSearchParams(props);
   }
-  return buildURL("metrics", `/d-solo/${props.dashboardId}?${params}`);
+  return `/visualization/d-solo/${props.dashboardId}?${params}`;
 });
 </script>

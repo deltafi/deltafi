@@ -64,3 +64,10 @@ spec:
             name: deltafi-docs-service
             port:
               number: 80
+      - path: /(visualization.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: deltafi-grafana
+            port:
+              number: 3000

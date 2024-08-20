@@ -143,7 +143,7 @@ const staticMenuItems = ref([
       {
         name: "Grafana Dashboards",
         icon: "icomoon grafana",
-        url: computed(() => uiConfig.clusterMode ? buildURL("metrics", "/dashboards") : "/visualization/dashboards"),
+        url: "/visualization/dashboards",
         visible: computed(() => hasPermission("MetricsView")),
       },
     ],
