@@ -34,15 +34,15 @@ public class ExtractParameters extends ContentSelectionParameters {
     public ExtractTarget extractTarget = ExtractTarget.METADATA;
 
     @JsonProperty(defaultValue = "ALL")
-    @JsonPropertyDescription("How to handle multiple occurrences of a key. Can be 'FIRST', 'LAST', 'DISTINCT', or 'ALL'. Defaults to ALL, which writes a delimited list.")
+    @JsonPropertyDescription("Concatenate all or distinct values extracted from multiple content, or just use the first or last content.")
     public HandleMultipleKeysType handleMultipleKeys = HandleMultipleKeysType.ALL;
 
     @JsonProperty(defaultValue = ",")
-    @JsonPropertyDescription("The delimiter to use if handleMultipleKeys is set to DISTINCT or ALL")
+    @JsonPropertyDescription("Delimiter to use if handleMultipleKeys is ALL or DISTINCT")
     public String allKeysDelimiter = ",";
 
     @JsonProperty(defaultValue = "false")
-    @JsonPropertyDescription("Whether to return an error if a key is not found. Defaults to false.")
+    @JsonPropertyDescription("Error if a key is not found.")
     public boolean errorOnKeyNotFound = false;
 
     public ExtractParameters(List<String> mediaTypes) {

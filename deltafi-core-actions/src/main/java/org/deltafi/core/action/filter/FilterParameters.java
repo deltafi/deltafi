@@ -32,10 +32,10 @@ import static org.deltafi.core.action.filter.FilterBehavior.ANY;
 @AllArgsConstructor
 @NoArgsConstructor
 public class FilterParameters extends ActionParameters {
-    @JsonPropertyDescription("A list of Spring Expression Language (SpEL) expressions used to filter")
+    @JsonPropertyDescription("List of Spring Expression Language (SpEL) expressions used to filter")
     private List<String> filterExpressions;
 
     @JsonProperty(defaultValue = "ANY")
-    @JsonPropertyDescription("Specifies the filter behavior. 'ANY' will filter if any expression matches. 'ALL' will filter if all expressions match. 'NONE' will filter if no expressions match. Defaults to ANY.")
+    @JsonPropertyDescription("Filter if any, all, or no expression(s) match")
     private FilterBehavior filterBehavior = ANY;
 }

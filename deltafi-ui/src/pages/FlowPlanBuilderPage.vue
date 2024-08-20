@@ -122,6 +122,11 @@
                   <i :class="actionTemplateClass(element)" @click="addAction(flowActionTypeGroup, element)"></i>
                   <div>{{ element.displayName }}</div>
                 </div>
+                <div v-if="element.coordinateGrouping.startsWith('org.deltafi.core.action')">
+                  <a :href="'/docs/#/core-actions/' + element.coordinateGrouping + '.' + element.displayName" target="_blank" class="align-middle">
+                    <i class="pi pi-question-circle text-muted" />
+                  </a>
+                </div>
               </div>
             </template>
           </draggable>

@@ -34,11 +34,11 @@ import java.util.List;
 @NoArgsConstructor
 public class XsltParameters extends ContentSelectionParameters {
     @JsonProperty(required = true)
-    @JsonPropertyDescription("XSLT transformation specification provided as a string.")
+    @JsonPropertyDescription("XSLT transformation specification")
     public String xslt;
 
     @JsonProperty(defaultValue = "[\"*/xml\"]")
-    @JsonPropertyDescription("List of allowed media types. Supports wildcards (*) and defaults to */xml.")
+    @JsonPropertyDescription("List of media types to consider, supporting wildcards (*)")
     @Override
     public List<String> getMediaTypes() {
         return super.getMediaTypes();

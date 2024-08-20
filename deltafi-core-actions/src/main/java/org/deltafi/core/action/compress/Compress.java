@@ -37,8 +37,7 @@ public class Compress extends TransformAction<CompressParameters> {
 
     public Compress(Clock clock) {
         // Note .tar.Z and .Z (traditional Unix compress) are not supported by org.apache.commons.compress
-        super("Compresses all content to a single content when format is .ar, .tar, .tar.gz, .tar.xz, or .zip. " +
-                "Compresses each content individually when format is .gz, or .xz.");
+        super("Compresses content using ar, gz, tar, tar.gz, tar.xz, xz, or zip.");
 
         this.clock = clock;
     }
@@ -57,12 +56,9 @@ public class Compress extends TransformAction<CompressParameters> {
         };
     }
 
-    private static final String COMPRESSED_FILE_NAME = "compressed";
-
     private TransformResultType archive(ActionContext context, CompressParameters params, TransformInput input) {
         TransformResult result = new TransformResult(context);
-        String fileName = (params.getName() != null ? params.getName() : COMPRESSED_FILE_NAME) +
-                "." + params.getFormat().getValue();
+        String fileName = String.join(".", params.getName(), params.getFormat().getValue());
         result.saveContent(new ArchiveWriter(input.content(), params.getFormat(), clock), fileName,
                 params.getMediaType() != null ? params.getMediaType() : params.getFormat().getMediaType());
         result.addMetadata(input.getMetadata());

@@ -28,11 +28,10 @@ import org.deltafi.actionkit.action.parameters.ActionParameters;
 @AllArgsConstructor
 @NoArgsConstructor
 public class DecompressParameters extends ActionParameters {
-    @JsonPropertyDescription("The format to decompress. Will autodetect if not set.")
+    @JsonPropertyDescription("Format to decompress, overriding autodetection")
     public Format format;
 
     @JsonProperty(defaultValue = "false")
-    @JsonPropertyDescription("If TRUE, the input content will be preserved first, and carried forward in the output.")
-    public boolean preserveOriginal = false;
-
+    @JsonPropertyDescription("Retain the existing content")
+    public boolean retainExistingContent = false;
 }

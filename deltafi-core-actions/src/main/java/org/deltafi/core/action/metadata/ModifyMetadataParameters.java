@@ -35,7 +35,7 @@ public class ModifyMetadataParameters extends ActionParameters {
     @JsonPropertyDescription("Key value pairs of metadata to be added or modified")
     public Map<String, String> addOrModifyMetadata = new HashMap<>();
 
-    @JsonPropertyDescription("Copy existing metadata values. Expressed as a map of old key names to new key names. The new names can be a comma-separated list, to make multiple copies. If the original key does not exist, this will be ignored. Copies will overwrite existing values. Copies are always performed before deletes.")
+    @JsonPropertyDescription("Map of old metadata key names to new metadata key names to copy. The new metadata key names can be a comma-separated list to make multiple copies.")
     public Map<String, String> copyMetadata = new HashMap<>();
 
     @JsonPropertyDescription("List of metadata keys to delete")

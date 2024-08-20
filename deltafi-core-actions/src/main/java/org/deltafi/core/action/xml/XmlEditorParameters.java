@@ -38,23 +38,11 @@ import java.util.List;
 @NoArgsConstructor
 public class XmlEditorParameters extends ContentSelectionParameters {
     @JsonProperty(required = true)
-    @JsonPropertyDescription("""    
-            List of XML editor commands provided as strings.  Separate arguments with (1) one or more spaces or (2) a comma and zero or
-            more spaces.  Don't escape content.  See documentation on the Internet at https://docs.deltafi.org/#/core-actions/xml-editor
-            or on your local DeltaFi at http://local.deltafi.org/docs/#/core-actions/xml-editor.
-            Commands:
-               - Add and Replace commands: appendChild|prependChild|replaceTag|replaceTagContent <search pattern> <new content>
-               - Remove commands: removeTag <search pattern>
-               - Rename commands: renameTag <search pattern> <new tag name>
-               - Filter and Error commands, with message length more than two characters:
-                  - filterOnTag|errorOnTag <search xpath> "<message>"
-                  - filterOnTag|errorOnTag not <search xpath> "<message>"
-                  - filterOnTag|errorOnTag and|nand|or|nor|xor|xnor <search xpath 1> ... <search xpath n> "<message>"
-            """)
+    @JsonPropertyDescription("List of XML editing commands to be applied in order")
     public List<String> xmlEditingCommands;
 
     @JsonProperty(defaultValue = "[\"*/xml\"]")
-    @JsonPropertyDescription("List of allowed media types. Supports wildcards (*) and defaults to */xml.")
+    @JsonPropertyDescription("List of media types to consider, supporting wildcards (*)")
     @Override
     public List<String> getMediaTypes() {
         return super.getMediaTypes();

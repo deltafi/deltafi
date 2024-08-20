@@ -31,22 +31,6 @@ license {
     mapping('java', 'SLASHSTAR_STYLE')
 }
 
-docker {
-    name "${project.name}:${project.version}"
-    copySpec.from(".").exclude("**/build").exclude("Dockerfile").into(".")
-    tag "local", "${localDockerRegistry}/${project.name}:latest"
-    tag "deltafi", "deltafi/${project.name}:${project.version}"
-}
-
-task copyChangelog(type: Copy) {
-    from('../CHANGELOG.md')
-    into('public/docs')
-}
-
-docker.dependsOn assemble
-
-assemble.dependsOn copyChangelog
-
 task licenseLocal(type: LicenseCheck) {
     source = fileTree(dir: ".")
 }
@@ -57,7 +41,25 @@ task licenseFormatLocal(type: LicenseFormat) {
 }
 licenseFormat.dependsOn licenseFormatLocal
 
+task copyChangelog(type: Copy) {
+    from('../CHANGELOG.md')
+    into('public/docs')
+}
+licenseLocal.dependsOn copyChangelog
+
+task copyCoreActionDocs(type: Copy) {
+    from('../deltafi-core-actions/src/main/resources/docs')
+    into('public/docs/core-actions')
+}
+licenseLocal.dependsOn copyCoreActionDocs
+
 dockerPrepare {
-  dependsOn copyChangelog
-  dependsOn licenseLocal
+    dependsOn licenseLocal
+}
+
+docker {
+    name "${project.name}:${project.version}"
+    copySpec.from(".").exclude("**/build").exclude("Dockerfile").into(".")
+    tag "local", "${localDockerRegistry}/${project.name}:latest"
+    tag "deltafi", "deltafi/${project.name}:${project.version}"
 }

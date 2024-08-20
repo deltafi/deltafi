@@ -50,7 +50,7 @@ public class XsltTransform extends ContentSelectingTransformAction<XsltParameter
     );
 
     public XsltTransform() {
-        super("Apply XML transformation using XSLT");
+        super("Transforms XML using XSLT.");
     }
 
 

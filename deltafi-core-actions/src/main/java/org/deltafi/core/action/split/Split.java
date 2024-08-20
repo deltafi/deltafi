@@ -27,7 +27,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class Split extends TransformAction<ActionParameters> {
     public Split() {
-        super("Splits a DeltaFile with multiple pieces of content into multiple DeltaFiles");
+        super("Splits content into multiple DeltaFiles.");
     }
 
     @Override

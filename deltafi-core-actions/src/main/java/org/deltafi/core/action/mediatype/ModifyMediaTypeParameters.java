@@ -30,14 +30,14 @@ import java.util.Map;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ModifyMediaTypeParameters extends ActionParameters {
-    @JsonPropertyDescription("A map of old to new media types. Supports wildcards (*) in the old media types.")
+    @JsonPropertyDescription("Map of old to new media types, supporting wildcards (*) in the old media types")
     public Map<String, String> mediaTypeMap;
 
-    @JsonPropertyDescription("A map of indexes to media types. Used to update the media type of specific content by index. Overrides mediaTypeMap.")
+    @JsonPropertyDescription("Map of indexes to media types. Used to update the media type of specific content by index. Overrides mediaTypeMap.")
     public Map<Integer, String> indexMediaTypeMap;
 
     @JsonProperty(defaultValue = "false")
-    @JsonPropertyDescription("Whether to error if content for any index in indexMediaTypeMap is missing.")
+    @JsonPropertyDescription("Error if content for any index in indexMediaTypeMap is missing.")
     public boolean errorOnMissingIndex = false;
 
     @JsonProperty(defaultValue = "true")

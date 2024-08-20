@@ -195,7 +195,7 @@ public class XmlEditor extends TransformAction<XmlEditorParameters> {
      * Instantiates a new XmlEditor.
      */
     public XmlEditor() {
-        super("Apply XML editor transformation using configured parameters");
+        super("Transforms XML content.");
     }
 
     /**

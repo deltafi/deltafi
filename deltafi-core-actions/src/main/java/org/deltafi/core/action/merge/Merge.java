@@ -28,7 +28,7 @@ public class Merge extends TransformAction<MergeParameters> implements Join {
     static final String FILENAME_REPLACEMENT = "{{filename}}";
 
     public Merge() {
-        super("Merge multiple pieces of content into one blob");
+        super("Merges multiple content into a single content.");
     }
 
     @Override

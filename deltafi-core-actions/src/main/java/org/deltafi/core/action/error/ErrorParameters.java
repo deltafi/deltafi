@@ -31,9 +31,9 @@ public class ErrorParameters extends ActionParameters {
     private static final String DEFAULT_MESSAGE = "Errored by fiat";
 
     @JsonProperty(defaultValue = DEFAULT_MESSAGE)
-    @JsonPropertyDescription("The error message")
+    @JsonPropertyDescription("Error message")
     private String message = DEFAULT_MESSAGE;
 
-    @JsonPropertyDescription("If set, will only trigger an error when the metadata key is present. The error message will be the metadata value.")
+    @JsonPropertyDescription("Metadata key on which to trigger an error. The error message will be the metadata value.")
     private String metadataTrigger;
 }

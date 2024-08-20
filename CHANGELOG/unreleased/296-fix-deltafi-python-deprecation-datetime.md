@@ -7,7 +7,7 @@ Document any changes on this branch here.
 - 
 
 ### Fixed
-- [deltafi-python] Fix deprecration warning concerning datetime (#296)
+- [deltafi-python] Fix deprecation warning concerning datetime (#296)
 
 ### Removed
 - 

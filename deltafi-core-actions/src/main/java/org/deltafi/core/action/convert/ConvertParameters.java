@@ -30,25 +30,23 @@ import org.deltafi.core.action.ContentSelectionParameters;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 public class ConvertParameters extends ContentSelectionParameters {
-    @JsonPropertyDescription("Format of the input content. Supported formats are JSON, XML, and CSV.")
+    @JsonProperty(required = true)
+    @JsonPropertyDescription("Format of the input content")
     private DataFormat inputFormat;
 
-    @JsonPropertyDescription("Format of the output content. Supported formats are JSON, XML, and CSV.")
+    @JsonProperty(required = true)
+    @JsonPropertyDescription("Format of the output content")
     private DataFormat outputFormat;
 
-    @JsonProperty(defaultValue = "false")
-    @JsonPropertyDescription("Boolean indicating whether the existing content should be retained or replaced by the new content. Default is false.")
-    private boolean retainExistingContent = false;
+    @JsonProperty(defaultValue = "true")
+    @JsonPropertyDescription("Write a header row when converting to CSV")
+    private boolean csvWriteHeader = true;
 
     @JsonProperty(defaultValue = "xml")
-    @JsonPropertyDescription("Name of the root XML tag to use when converting to XML. Defaults to xml.")
+    @JsonPropertyDescription("Name of the root XML tag to use when converting to XML")
     private String xmlRootTag = "xml";
 
     @JsonProperty(defaultValue = "listEntry")
-    @JsonPropertyDescription("Name of the XML tag to use for list entries when converting to XML. Defaults to listEntry.")
+    @JsonPropertyDescription("Name of the XML tag to use for list entries when converting to XML")
     private String xmlListEntryTag = "listEntry";
-
-    @JsonProperty(defaultValue = "true")
-    @JsonPropertyDescription("Whether to write a header row when converting to CSV. Defaults to true.")
-    private boolean csvWriteHeader = true;
 }

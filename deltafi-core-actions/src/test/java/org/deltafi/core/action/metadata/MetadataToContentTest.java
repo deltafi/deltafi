@@ -64,9 +64,9 @@ class MetadataToContentTest {
     }
 
     @Test
-    void testMetadataToContentReplaceExistingContent() {
+    void testMetadataToContentNotRetainingExistingContent() {
         MetadataToContentParameters params = new MetadataToContentParameters();
-        params.setReplaceExistingContent(true);
+        params.setRetainExistingContent(false);
 
         ResultType result = action.transform(context, params, createInput());
 

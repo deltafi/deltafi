@@ -29,7 +29,7 @@ import org.springframework.stereotype.Component;
 public class ModifyMetadata extends TransformAction<ModifyMetadataParameters> {
 
     public ModifyMetadata() {
-        super("Add, modify, copy, and remove metadata");
+        super("Adds, modifies, copies, or removes metadata.");
     }
 
     @Override

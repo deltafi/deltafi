@@ -153,12 +153,72 @@ new Docute({
       title: 'Core Actions',
       children: [
         {
-          title: 'Core Actions Overview',
-          link: '/core-actions-overview'
+          title: 'Annotate',
+          link: '/core-actions/org.deltafi.core.action.annotate.Annotate'
+        },
+        {
+          title: 'Compress',
+          link: '/core-actions/org.deltafi.core.action.compress.Compress'
+        },
+        {
+          title: 'Convert',
+          link: '/core-actions/org.deltafi.core.action.convert.Convert'
+        },
+        {
+          title: 'Decompress',
+          link: '/core-actions/org.deltafi.core.action.compress.Decompress'
+        },
+        {
+          title: 'Delay',
+          link: '/core-actions/org.deltafi.core.action.delay.Delay'
+        },
+        {
+          title: 'Error',
+          link: '/core-actions/org.deltafi.core.action.error.Error'
+        },
+        {
+          title: 'ExtractJson',
+          link: '/core-actions/org.deltafi.core.action.extract.ExtractJson'
+        },
+        {
+          title: 'ExtractXml',
+          link: '/core-actions/org.deltafi.core.action.extract.ExtractXml'
+        },
+        {
+          title: 'Filter',
+          link: '/core-actions/org.deltafi.core.action.filter.Filter'
+        },
+        {
+          title: 'JoltTransform',
+          link: '/core-actions/org.deltafi.core.action.jolt.JoltTransform'
+        },
+        {
+          title: 'Merge',
+          link: '/core-actions/org.deltafi.core.action.merge.Merge'
+        },
+        {
+          title: 'MetadataToContent',
+          link: '/core-actions/org.deltafi.core.action.metadata.MetadataToContent'
+        },
+        {
+          title: 'ModifyMediaType',
+          link: '/core-actions/org.deltafi.core.action.mediatype.ModifyMediaType'
+        },
+        {
+          title: 'ModifyMetadata',
+          link: '/core-actions/org.deltafi.core.action.metadata.ModifyMetadata'
+        },
+        {
+          title: 'Split',
+          link: '/core-actions/org.deltafi.core.action.split.Split'
         },
         {
           title: 'XmlEditor',
-          link: '/core-actions/xml-editor'
+          link: '/core-actions/org.deltafi.core.action.xml.XmlEditor'
+        },
+        {
+          title: 'XsltTransform',
+          link: '/core-actions/org.deltafi.core.action.xslt.XsltTransform'
         }
       ]
     },

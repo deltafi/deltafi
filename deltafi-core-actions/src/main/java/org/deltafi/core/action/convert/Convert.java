@@ -42,8 +42,7 @@ public class Convert extends ContentSelectingTransformAction<ConvertParameters> 
     private static final XmlMapper XML_MAPPER = new XmlMapper();
 
     public Convert() {
-        super("Converts content between different formats. JSON, XML, and CSV are currently supported. " +
-                "Provides a best effort conversion as there is not a reliable canonical way to convert between these formats.");
+        super("Converts content between CSV, JSON, or XML.");
     }
 
     @Override
@@ -128,12 +127,6 @@ public class Convert extends ContentSelectingTransformAction<ConvertParameters> 
         };
     }
 
-    private String getNewFilename(String originalFilename, DataFormat outputFormat) {
-        int lastDotIndex = originalFilename.lastIndexOf('.');
-        String baseFilename = lastDotIndex > -1 ? originalFilename.substring(0, lastDotIndex) : originalFilename;
-        return baseFilename + "." + outputFormat.name().toLowerCase();
-    }
-
     private Set<String> getKeys(JsonNode jsonNode) {
         Set<String> keys = new HashSet<>();
         Iterator<String> fieldNames = jsonNode.fieldNames();
@@ -141,5 +134,11 @@ public class Convert extends ContentSelectingTransformAction<ConvertParameters> 
             keys.add(fieldNames.next());
         }
         return keys;
+    }
+
+    private String getNewFilename(String originalFilename, DataFormat outputFormat) {
+        int lastDotIndex = originalFilename.lastIndexOf('.');
+        String baseFilename = lastDotIndex > -1 ? originalFilename.substring(0, lastDotIndex) : originalFilename;
+        return baseFilename + "." + outputFormat.name().toLowerCase();
     }
 }
