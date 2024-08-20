@@ -55,7 +55,7 @@ public class AnnotationService implements Snapshotter {
         boolean updated = egressFlowService.setExpectedAnnotations(flowName, expectedAnnotations);
 
         if (updated) {
-            deltaFilesService.asyncUpdatePendingAnnotationsForFlows(flowName, expectedAnnotations);
+            deltaFilesService.updatePendingAnnotationsForFlows(flowName, expectedAnnotations);
         }
 
         return updated;

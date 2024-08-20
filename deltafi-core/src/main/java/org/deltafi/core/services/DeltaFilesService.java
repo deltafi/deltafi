@@ -50,7 +50,6 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.core.env.Environment;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -320,7 +319,7 @@ public class DeltaFilesService {
         DeltaFile deltaFile = buildIngressDeltaFile(restDataSource, ingressEventItem, parentDids, ingressStartTime, ingressStopTime,
                 INGRESS_ACTION, FlowType.REST_DATA_SOURCE);
 
-        advanceAndSave(List.of(new StateMachineInput(deltaFile, deltaFile.getFlows().getFirst())));
+        advanceAndSave(List.of(new StateMachineInput(deltaFile, deltaFile.getFlows().getFirst())), true);
         return deltaFile;
     }
 
@@ -470,7 +469,7 @@ public class DeltaFilesService {
                 .map((deltaFile) -> new StateMachineInput(deltaFile, deltaFile.getFlows().getFirst()))
                 .toList();
 
-        advanceAndSave(stateMachineInputs);
+        advanceAndSave(stateMachineInputs, true);
 
         for (DeltaFile deltaFile : deltaFiles) {
             counter.byteCount += deltaFile.getIngressBytes();
@@ -521,7 +520,7 @@ public class DeltaFilesService {
             deltaFile.addAnnotations(transformEvent.getAnnotations());
             action.complete(event.getStart(), event.getStop(), transformEvent.getContent(),
                     transformEvent.getMetadata(), transformEvent.getDeleteMetadataKeys(), now);
-            advanceAndSave(List.of(new StateMachineInput(deltaFile, flow)));
+            advanceAndSave(List.of(new StateMachineInput(deltaFile, flow)), false);
         } else {
             action.changeState(ActionState.SPLIT, event.getStart(), event.getStop(), now);
             List<StateMachineInput> inputs = new ArrayList<>();
@@ -530,7 +529,7 @@ public class DeltaFilesService {
                     createChildren(transformEvents, event.getStart(), event.getStop(), deltaFile, flow);
             inputs.addAll(childInputs);
             deltaFile.getChildDids().addAll(childInputs.stream().map(input -> input.deltaFile().getDid()).toList());
-            advanceAndSave(inputs);
+            advanceAndSave(inputs, false);
         }
     }
 
@@ -557,7 +556,7 @@ public class DeltaFilesService {
         action.setStart(start);
         action.setStop(stop);
 
-        advanceAndSave(List.of(new StateMachineInput(deltaFile, flow)));
+        advanceAndSave(List.of(new StateMachineInput(deltaFile, flow)), false);
     }
 
     public void filter(DeltaFile deltaFile, DeltaFileFlow flow, Action action, ActionEvent event, OffsetDateTime now) {
@@ -567,7 +566,7 @@ public class DeltaFilesService {
         action.setFilteredActionState(event.getStart(), event.getStop(), now, event.getFilter().getMessage(),
                 event.getFilter().getContext());
 
-        advanceAndSave(List.of(new StateMachineInput(deltaFile, flow)));
+        advanceAndSave(List.of(new StateMachineInput(deltaFile, flow)), false);
     }
 
     private void error(DeltaFile deltaFile, DeltaFileFlow flow, Action action, ActionEvent event) {
@@ -584,7 +583,7 @@ public class DeltaFilesService {
             deltaFileCacheService.save(deltaFile);
         } else {
             processErrorEvent(deltaFile, flow, action, event);
-            advanceAndSave(List.of(new StateMachineInput(deltaFile, flow)));
+            advanceAndSave(List.of(new StateMachineInput(deltaFile, flow)), false);
         }
     }
 
@@ -672,12 +671,6 @@ public class DeltaFilesService {
         }
 
         deltaFileCacheService.save(deltaFile);
-    }
-
-    @Async
-    public void asyncUpdatePendingAnnotationsForFlows(String flowName, Set<String> expectedAnnotations) {
-        // TODO: calling a transactional from inside an async is no good
-        updatePendingAnnotationsForFlows(flowName, expectedAnnotations);
     }
 
     /**
@@ -817,7 +810,7 @@ public class DeltaFilesService {
                 })
                 .toList();
 
-        advanceAndSave(advanceAndSaveInputs);
+        advanceAndSave(advanceAndSaveInputs, false);
         return retryResults;
     }
 
@@ -921,7 +914,7 @@ public class DeltaFilesService {
                 })
                 .toList();
 
-        advanceAndSave(inputs);
+        advanceAndSave(inputs, true);
         deltaFileRepo.saveAll(parents);
 
         return results;
@@ -1128,7 +1121,7 @@ public class DeltaFilesService {
         return new ArrayList<>(keyValues.values());
     }
 
-    private void advanceAndSave(List<StateMachineInput> inputs) {
+    private void advanceAndSave(List<StateMachineInput> inputs, boolean insertAndForget) {
         if (inputs.isEmpty()) {
             return;
         }
@@ -1138,7 +1131,12 @@ public class DeltaFilesService {
             .filter(input -> input.deltaFile().hasJoiningAction())
             .forEach(input -> deltaFileCacheService.remove(input.deltaFile().getDid()));
 
-        deltaFileCacheService.saveAll(inputs.stream().map(StateMachineInput::deltaFile).collect(Collectors.toSet()));
+        Set<DeltaFile> deltaFiles = inputs.stream().map(StateMachineInput::deltaFile).collect(Collectors.toSet());
+        if (insertAndForget) {
+            deltaFileRepo.batchInsert(new ArrayList<>(deltaFiles));
+        } else {
+            deltaFileCacheService.saveAll(deltaFiles);
+        }
         enqueueActions(actionInputs);
     }
 
