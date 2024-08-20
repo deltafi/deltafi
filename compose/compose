@@ -431,7 +431,6 @@ _check_local_fqdns() {
   domain=$(_from_values ".ingress.domain")
   _verify_or_replace_fqdn "$domain"
   _verify_or_replace_fqdn "graphite.$domain"
-  _verify_or_replace_fqdn "metrics.$domain"
   _verify_or_replace_fqdn "minio.$domain"
   _verify_or_replace_fqdn "orchestration.$domain"
   _verify_or_replace_fqdn "deltafi-api-service"
@@ -517,7 +516,10 @@ _merge_values_yaml() {
         echo "${i}: No such file"
         exit 1
       fi
-      yq -r -i '. *= load("'"${i}"'")' "${VALUES_YAML}"
+      temp=$(dirname "${VALUES_YAML}")/override.$(basename "${i}")
+      cp "${i}" "${temp}"
+      yq -r -i '. *= load("'"${temp}"'")' "${VALUES_YAML}"
+      rm -f "${temp}"
     done
   fi
 }

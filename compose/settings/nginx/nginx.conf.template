@@ -4,7 +4,6 @@ events {
 
 http {
     map $host $upstream_mapping {
-        "~^metrics.*" "deltafi-grafana";
         "~^orchestration.*" "deltafi-docker-ui";
         "~^ingress.*" "deltafi-ingress";
         "~^graphite.*" "deltafi-graphite";
@@ -16,6 +15,7 @@ http {
       "deltafi-auth-service" "deltafi-auth";
       "deltafi-core-service" "deltafi-core";
       "deltafi-ingress-service" "deltafi-ingress";
+      "ingress" "deltafi-ingress";
     }
 
     upstream deltafi-auth {
