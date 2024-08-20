@@ -34,7 +34,10 @@ public class DatabaseInitializer {
     @PostConstruct
     @Transactional
     public void initializeDatabase() {
-        String createIndexSql = "CREATE INDEX IF NOT EXISTS idx_delta_files_stage_in_flight ON delta_files ((stage = 'IN_FLIGHT'))";
-        jdbcTemplate.execute(createIndexSql);
+        String createDeltaFileIndexSql = "CREATE INDEX IF NOT EXISTS idx_delta_files_stage_in_flight ON delta_files ((stage = 'IN_FLIGHT'))";
+        jdbcTemplate.execute(createDeltaFileIndexSql);
+
+        String createActionIndexSql = "CREATE INDEX IF NOT EXISTS idx_actions_error_count ON actions (state, error_acknowledged) WHERE state = 'ERROR' AND error_acknowledged IS NULL";
+        jdbcTemplate.execute(createActionIndexSql);
     }
 }
