@@ -7,6 +7,7 @@ kind: Ingress
 metadata:
   name: deltafi-registry-ui
   annotations:
+  {{- include "defaultIngressAnnotations" . | nindent 4 }}
   {{- include "authAnnotations" . | nindent 4 }}
 spec:
   {{- if eq .Values.ingress.tls.enabled true }}

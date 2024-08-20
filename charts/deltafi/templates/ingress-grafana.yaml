@@ -3,6 +3,7 @@ kind: Ingress
 metadata:
   name: deltafi-grafana
   annotations:
+  {{- include "defaultIngressAnnotations" . | nindent 4 }}
   {{- include "authAnnotations" . | nindent 4 }}
 spec:
   {{- if eq .Values.ingress.tls.enabled true }}
