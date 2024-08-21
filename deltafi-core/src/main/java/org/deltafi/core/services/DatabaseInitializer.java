@@ -37,6 +37,9 @@ public class DatabaseInitializer {
         String deltaFilesInFlight = "CREATE INDEX IF NOT EXISTS idx_delta_files_stage_in_flight ON delta_files ((stage = 'IN_FLIGHT'))";
         jdbcTemplate.execute(deltaFilesInFlight);
 
+        String deltaFilesError = "CREATE INDEX IF NOT EXISTS idx_delta_files_stage_error ON delta_files ((stage = 'ERROR'))";
+        jdbcTemplate.execute(deltaFilesError);
+
         String actionsErrorCount = "CREATE INDEX IF NOT EXISTS idx_actions_error_count ON actions (state, error_acknowledged) WHERE state = 'ERROR' AND error_acknowledged IS NULL";
         jdbcTemplate.execute(actionsErrorCount);
 
