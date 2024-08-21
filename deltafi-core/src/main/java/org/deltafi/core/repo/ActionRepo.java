@@ -31,7 +31,7 @@ import java.util.UUID;
 public interface ActionRepo extends JpaRepository<Action, UUID>, ActionRepoCustom {
     long countByStateAndErrorAcknowledgedIsNull(ActionState stage);
 
-    @Query("SELECT new org.deltafi.core.types.ColdQueuedActionSummary(a.name, a.type, COUNT(a)) " +
+    @Query("SELECT new org.deltafi.core.types.ColdQueuedActionSummary(a.name, a.type, COUNT(*)) " +
             "FROM Action a " +
             "WHERE a.state = 'COLD_QUEUED' " +
             "GROUP BY a.name, a.type")
