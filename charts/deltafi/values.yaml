@@ -51,6 +51,7 @@ ingress:
   domain: local.deltafi.org
   tls:
     enabled: false
+    # ssl_ciphers: "ECDHE-RSA-AES256-GCM-SHA384"
     secrets:
       default: local-deltafi-org
 # MinIO config

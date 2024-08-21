@@ -46,11 +46,12 @@ ingress:
   domain: deltafi.example.com
   tls:
     enabled: true
+    ssl_ciphers: "ECDHE-RSA-AES256-GCM-SHA384"
     secrets:
       default: deltafi-example-com
 ```
 
-Create a [kubernetes tls secret](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_create/kubectl_create_secret_tls/) named deltafi-example-com.  
+Create a [kubernetes tls secret](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_create/kubectl_create_secret_tls/) named deltafi-example-com.
 
 This will configure the web UI to be available at deltafi.example.com and to display "Example DeltaFi" as the site title.
 
