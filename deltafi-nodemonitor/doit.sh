@@ -21,7 +21,7 @@ GRAPHITE_HOST=${GRAPHITE_HOST:-deltafi-graphite}
 GRAPHITE_PORT=${GRAPHITE_PORT:-2003}
 REDIS_HOST=${REDIS_HOST:-http://deltafi-redis-master}
 REDIS_PORT=${REDIS_PORT:-6379}
-PERIOD=${PERIOD:-9}
+PERIOD=${PERIOD:-5}
 
 _log() {
     local log_level="$1"
@@ -46,6 +46,10 @@ _info "Starting up on ${NODE_NAME}"
 _info "Graphite: ${GRAPHITE_HOST}:${GRAPHITE_PORT}"
 _info "Redis: ${REDIS_HOST}:${REDIS_PORT}"
 _info "Reporting period: ${PERIOD} seconds"
+
+if [ -S /var/run/docker.sock ]; then
+    _info "Docker detected.  Container stats enabled."
+fi
 
 exterminate() {
     _warn "Terminating the nodemonitor."
@@ -121,6 +125,7 @@ report_disk_metrics() {
 }
 
 report_memory_metrics() {
+    TIMESTAMP=$(date +%s)
     TOTAL=$(grep ^MemTotal: < /proc/meminfo | awk '{print $2}')
     AVAILABLE=$(grep ^MemAvailable: < /proc/meminfo | awk '{print $2}')
     LIMIT=$((TOTAL * 1000))
@@ -135,6 +140,53 @@ report_memory_metrics() {
     _debug "$NODE_NAME: Using $USAGE of $LIMIT bytes of Memory"
 }
 
+convert_to_mbytes() {
+    local value
+    value=$(echo "$1" | sed -E 's/([KMG]i?B)//')  # Extract numeric value
+    local unit
+    unit=$(echo "$1" | sed -E 's/[0-9.]+//g')  # Extract the unit (e.g., KiB, MiB, GiB)
+
+    case $unit in
+        "KiB")
+            result=$(echo "$value * 1024 / 1000000" | bc)  # 1 KiB = 1024 bytes
+            ;;
+        "MiB")
+            result=$(echo "$value * 1024 * 1024 / 1000000" | bc)  # 1 MiB = 1024 * 1024 bytes
+            ;;
+        "GiB")
+            result=$(echo "$value * 1024 * 1024 * 1024 / 1000000" | bc)  # 1 GiB = 1024 * 1024 * 1024 bytes
+            ;;
+        *)
+            result=$value
+            ;;
+    esac
+    printf "%.0f\n" "$result"
+}
+
+report_container_metrics() {
+    if [ -S /var/run/docker.sock ]; then
+
+        TIMESTAMP=$(date +%s)
+
+        stats_output=$(docker stats --no-stream $(docker ps --format '{{.Names}}' --filter 'label=com.docker.compose.project=deltafi') --format '{{.Name}} {{.CPUPerc}} {{.MemUsage}}')
+
+        if [ -z "$stats_output" ]; then
+            _warn "No containers for the 'deltafi' project"
+        else
+          metric_list=$(echo "$stats_output" | while read -r line; do
+            read -r name cpu_perc mem_usage <<< "$line"
+
+            cpu=$(echo "$cpu_perc" | sed 's/%//' | awk '{printf "%.0f", ($1 *100)/10}')
+            mem_value=$(echo "$mem_usage" | awk '{ print $1 }')
+            mem_bytes=$(convert_to_mbytes "$mem_value")
+            echo -n "gauge.app.memory;app=${name};namespace=deltafi;node=${NODE_NAME%.local} ${mem_bytes} ${TIMESTAMP}\n"
+            echo -n "gauge.app.cpu;app=${name};namespace=deltafi;node=${NODE_NAME%.local} ${cpu} ${TIMESTAMP}\n"
+        done)
+        metrics+=$metric_list
+        fi
+    fi
+}
+
 # Report system metrics to graphite roughly every $PERIOD seconds
 while true; do
 
@@ -142,6 +194,8 @@ while true; do
     report_cpu_metrics
     report_disk_metrics
     report_memory_metrics
+    report_container_metrics
+
     printf "%b" "${metrics}" | nc -N "$GRAPHITE_HOST" "$GRAPHITE_PORT"
 
     sleep "$PERIOD"
