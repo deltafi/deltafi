@@ -171,6 +171,7 @@ services:
     restart: unless-stopped
     volumes:
       - ${DATA_DIR}:/data
+      - /var/run/docker.sock:/var/run/docker.sock
   deltafi-egress-sink:
     image: ${DELTAFI_EGRESS_SINK}
     container_name: deltafi-egress-sink
