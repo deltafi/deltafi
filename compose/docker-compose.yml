@@ -282,7 +282,10 @@ services:
     labels:
       deltafi-group: deltafi-dependency
     networks:
-      - deltafi
+      deltafi:
+        aliases:
+          - "visualization"
+          - "grafana"
     volumes:
       - ${DATA_DIR}/grafana:/var/lib/grafana
       - ${SETTINGS_DIR}/grafana/grafana.ini:/etc/grafana/grafana.ini
@@ -301,7 +304,9 @@ services:
     labels:
       deltafi-group: deltafi-dependency
     networks:
-      - deltafi
+      deltafi:
+        aliases:
+          - "orchestration"
     restart: unless-stopped
   deltafi-graphite:
     image: ${GRAPHITE}
@@ -405,7 +410,9 @@ services:
     labels:
       deltafi-group: deltafi-dependency
     networks:
-      - deltafi
+      deltafi:
+        aliases:
+          - "ingress"
     restart: unless-stopped
     volumes:
       - ${SETTINGS_DIR}/nginx:/etc/nginx/templates
