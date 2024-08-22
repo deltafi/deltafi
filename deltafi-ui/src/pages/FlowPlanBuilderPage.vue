@@ -165,6 +165,7 @@ import useNotifications from "@/composables/useNotifications";
 import { computed, nextTick, onBeforeMount, provide, ref, watch } from "vue";
 import { StorageSerializers, useClipboard, useMagicKeys, useResizeObserver, useStorage } from "@vueuse/core";
 import { useRouter } from "vue-router";
+import useTopics from "@/composables/useTopics";
 
 import usePrimeVueJsonSchemaUIRenderers from "@/composables/usePrimeVueJsonSchemaUIRenderers";
 import { JsonForms } from "@jsonforms/vue";
@@ -186,6 +187,7 @@ import { jsPlumb } from "jsplumb";
 import $ from "jquery";
 import _ from "lodash";
 
+const { getAllTopics } = useTopics();
 const { getAllFlows } = useFlowQueryBuilder();
 const { getPluginActionSchema } = useFlowActions();
 const { saveTransformFlowPlan } = useFlowPlanQueryBuilder();
@@ -196,8 +198,8 @@ const notify = useNotifications();
 const router = useRouter();
 const actionsOverlayPanel = ref();
 const actionsTreeRef = ref(null);
-
-const { rendererList, myStyles } = usePrimeVueJsonSchemaUIRenderers();
+const allTopics = ref(["default"]);
+const { myStyles, rendererList } = usePrimeVueJsonSchemaUIRenderers();
 provide("style", myStyles);
 const renderers = ref(Object.freeze(rendererList));
 const subscribeUISchema = ref(undefined);
@@ -329,7 +331,14 @@ const flowActionTemplateObject = ref({
 const originalFlowActionTemplateObject = JSON.parse(JSON.stringify(flowActionTemplateObject.value));
 
 onBeforeMount(async () => {
-  await fetchData();
+  let topics = await getAllTopics();
+  allTopics.value.length = 0;
+  topics.forEach((topic) => allTopics.value.push(topic));
+
+  let responseFlowAction = await getPluginActionSchema();
+  allActionsData.value = responseFlowAction.data.plugins;
+
+  getLoadedActions();
 
   let response = await getAllFlows();
   allFlowPlanData.value = response.data.getAllFlows;
@@ -360,13 +369,6 @@ onBeforeMount(async () => {
     document.getElementById("CreateFlowPlan").click();
   }
 });
-
-const fetchData = async () => {
-  let responseFlowAction = await getPluginActionSchema();
-  allActionsData.value = responseFlowAction.data.plugins;
-
-  getLoadedActions();
-};
 
 const model = computed({
   get() {
@@ -939,6 +941,7 @@ const subscribeSchema = {
       },
       topic: {
         type: "string",
+        enum: allTopics.value,
       },
     },
   },
@@ -962,6 +965,7 @@ const publishSchema = {
         },
         topic: {
           type: "string",
+          enum: allTopics.value,
         },
       },
     },
@@ -980,6 +984,7 @@ const publishSchema = {
           },
           topic: {
             type: "string",
+            enum: allTopics.value,
           },
         },
       },

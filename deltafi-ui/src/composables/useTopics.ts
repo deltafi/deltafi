@@ -16,7 +16,9 @@
    limitations under the License.
 */
 
-import useGraphQL from './useGraphQL'
+import useGraphQL from "./useGraphQL";
+
+import _ from "lodash";
 
 export default function useTopics() {
   const { response, queryGraphQL, loading, loaded, errors } = useGraphQL();
@@ -26,10 +28,10 @@ export default function useTopics() {
       transform: {
         subscribe: {
           topic: true,
-        }
-      }
-    }
-  }
+        },
+      },
+    },
+  };
 
   const hasActiveSubscribers = async (topic: string) => {
     await queryGraphQL(getRunningFlowsQuery, "getRunningFlows");
@@ -41,7 +43,62 @@ export default function useTopics() {
       }
     }
     return false;
-  }
+  };
 
-  return { response, hasActiveSubscribers, loading, loaded, errors };
+  const getAllTopicsQuery = {
+    getAllFlows: {
+      egress: {
+        subscribe: {
+          topic: true,
+        },
+      },
+      dataSource: {
+        topic: true,
+      },
+      transform: {
+        subscribe: {
+          topic: true,
+        },
+        publish: {
+          rules: {
+            topic: true,
+          },
+        },
+      },
+    },
+  };
+
+  const getAllTopics = async () => {
+    await queryGraphQL(getAllTopicsQuery, "getAllTopicsQuery");
+    let topicsArray: any[] = [];
+
+    // Gets egress topics
+    const egressTopics: any[] = response.value.data.getAllFlows.egress?.flatMap((e: any) => e.subscribe?.map((s: any) => s.topic));
+    topicsArray = topicsArray.concat(egressTopics);
+
+    // Gets dataSource topics
+    const dataSourceTopics: any[] = response.value.data.getAllFlows.dataSource?.map((e: any) => e.topic);
+    topicsArray = topicsArray.concat(dataSourceTopics);
+
+    // Gets transform subscribe topics
+    const transformSubscribeTopics: any[] = response.value.data.getAllFlows.transform?.flatMap((e: any) => e.subscribe?.map((s: any) => s.topic));
+    topicsArray = topicsArray.concat(transformSubscribeTopics);
+
+    // Gets transform publish topics
+    const transformPublishTopics: any[] = response.value.data.getAllFlows.transform.flatMap((e: any) => e.publish?.rules?.map((s: any) => s.topic));
+    topicsArray = topicsArray.concat(transformPublishTopics);
+
+    // Removes all falsey values from array
+    topicsArray = _.compact(topicsArray);
+
+    // Removes duplicates from array
+    topicsArray = _.uniq(topicsArray);
+
+    // Sorts array
+    topicsArray = topicsArray.sort();
+
+    return topicsArray;
+  };
+
+  return { response, hasActiveSubscribers, getAllTopics, loading, loaded, errors };
 }

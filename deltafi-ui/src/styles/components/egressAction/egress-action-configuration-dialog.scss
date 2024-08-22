@@ -54,6 +54,13 @@
     }
   }
 
+  .auto-complete-input-width {
+    width: 90% !important;
+    > .p-inputtext {
+      width: 100% !important;
+    }
+  }
+
   .inputWidth {
     width: 90% !important;
   }

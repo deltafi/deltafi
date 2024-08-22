@@ -21,7 +21,7 @@
     <PageHeader heading="Data Sources">
       <div class="mb-2">
         <DialogTemplate component-name="dataSources/DataSourceConfigurationDialog" header="Add New Data Source" dialog-width="50vw" @reload-data-sources="refresh">
-          <Button v-has-permission:DeletePolicyCreate label="Add Data Source" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
+          <Button v-has-permission:FlowUpdate label="Add Data Source" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
         </DialogTemplate>
       </div>
     </PageHeader>

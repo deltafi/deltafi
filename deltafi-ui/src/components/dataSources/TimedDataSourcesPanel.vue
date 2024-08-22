@@ -19,7 +19,7 @@
 <template>
   <div class="timed-data-source-panel">
     <CollapsiblePanel header="Timed Data Sources" class="table-panel pb-3">
-      <DataTable :loading="showLoading" :value="timedDataSources" edit-mode="cell" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines data-sources-table" :global-filter-fields="['searchField']" sort-field="name" :sort-order="1" :row-hover="true" @cell-edit-init="onEditInit" @cell-edit-complete="onEditComplete" @cell-edit-cancel="onEditCancel">
+      <DataTable :loading="showLoading" :value="timedDataSources" data-key="name" edit-mode="cell" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines data-sources-table" :global-filter-fields="['searchField']" sort-field="name" :sort-order="1" :row-hover="true" @cell-edit-init="onEditInit" @cell-edit-complete="onEditComplete" @cell-edit-cancel="onEditCancel">
         <template #empty>No Timed Data Sources found.</template>
         <template #loading>Loading Timed Data Sources. Please wait.</template>
         <Column header="Name" field="name" :style="{ width: '25%' }" :sortable="true">
@@ -147,7 +147,7 @@ const onEditComplete = async (event) => {
       data[field] = resetValue;
     }
   } else if (field === "maxErrors" && !_.isEqual(data.maxErrors, newValue)) {
-    let sendValue = _.isEqual(newValue, null) ? -1 : newValue
+    let sendValue = _.isEqual(newValue, null) ? -1 : newValue;
     const resetValue = data.maxErrors;
     data[field] = newValue;
     await setMaxErrors(data.name, sendValue);
@@ -211,12 +211,14 @@ const refresh = async () => {
   if (editing.value) return;
 
   const response = await getAllDataSources();
-  timedDataSources.value = response.data.getAllFlows.dataSource.filter((ds) => {
-    return ds.type === "TIMED_DATA_SOURCE";
-  }).map((ds) => {
-    ds.maxErrors = ds.maxErrors !== -1 ? ds.maxErrors : null;
-    return ds;
-  });
+  timedDataSources.value = response.data.getAllFlows.dataSource
+    .filter((ds) => {
+      return ds.type === "TIMED_DATA_SOURCE";
+    })
+    .map((ds) => {
+      ds.maxErrors = ds.maxErrors !== -1 ? ds.maxErrors : null;
+      return ds;
+    });
 
   emit("dataSourcesList", timedDataSources.value);
 };
@@ -250,7 +252,7 @@ defineExpose({ refresh });
         width: 7rem;
         padding: 0 !important;
 
-        >span {
+        > span {
           padding: 0.5rem !important;
         }
 
@@ -260,7 +262,7 @@ defineExpose({ refresh });
           display: flex;
         }
 
-        .value-clickable>* {
+        .value-clickable > * {
           flex: 0 0 auto;
         }
 
