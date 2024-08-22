@@ -499,15 +499,16 @@ deltafi:
 ingress:
   domain: local.deltafi.org
 dependencies:
-  grafana: deltafi/grafana:11.1.3-0
+  grafana: deltafi/grafana:11.1.4-0
   graphite: graphiteapp/graphite-statsd:1.1.10-5
-  loki: grafana/loki:2.9.9
-  minio: quay.io/minio/minio:RELEASE.2024-07-04T14-25-45Z
-  nginx: docker.io/nginx:1.27.0-alpine
-  promtail: docker.io/grafana/promtail:2.9.9
-  mongodb: docker.io/bitnami/mongodb:5.0.17
-  valkey: docker.io/bitnami/valkey:7.2.5
-  clickhouse: bitnami/clickhouse:24.3.3-debian-12-r2
+  loki: grafana/loki:2.9.10
+  minio: quay.io/minio/minio:RELEASE.2024-08-17T01-24-54Z
+  nginx: nginx:1.27.1-alpine3.20
+  promtail: grafana/promtail:2.9.10
+  mongodb: bitnami/mongodb:5.0.17
+  valkey: bitnami/valkey:7.2.6
+  clickhouse: bitnami/clickhouse:24.8.1-debian-12-r0
+  docker_web_gui: deltafi/docker-web-gui:1.0.1-0
 EOF
 
   if _is_arm; then
@@ -623,6 +624,7 @@ _write_startup_file() {
   _append_startup_from_values "VALKEY" ".dependencies.valkey"
   _append_startup_from_values "REDIS" ".dependencies.valkey"
   _append_startup_from_values "CLICKHOUSE" ".dependencies.clickhouse"
+  _append_startup_from_values "DOCKER_WEB_GUI" ".dependencies.docker_web_gui"
   _append_startup_from_values "API_WORKERS" ".deltafi.api.workers"
   _append_startup_from_values "AUTH_WORKERS" ".deltafi.auth.workers"
   _append_startup_from_values "AUTH_RESOLVER_PORT" ".deltafi.auth.entityResolver.port"

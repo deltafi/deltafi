@@ -243,7 +243,7 @@ services:
       - ${DATA_DIR}/mongo:/bitnami/mongodb
     user: "${USER_ID}"
   deltafi-valkey:
-    image: bitnami/valkey:7.2.5
+    image: ${VALKEY}
     container_name: deltafi-valkey
     environment:
       BITNAMI_DEBUG: false
@@ -295,7 +295,7 @@ services:
     restart: unless-stopped
     user: "${USER_ID}"
   deltafi-docker-ui:
-    image: deltafi/docker-web-gui:1.0.1-0
+    image: ${DOCKER_WEB_GUI}
     container_name: deltafi-docker-ui
     expose:
       - "3230"
