@@ -76,6 +76,7 @@ http {
         server_name ${DOMAIN};
 
         location ~ ^/(no-auth|basic-auth|cert-auth)  {
+            client_max_body_size 10G;
             internal;
             proxy_pass              http://deltafi-auth;
             proxy_pass_request_body off;
@@ -84,27 +85,33 @@ http {
         }
 
         location / {
+          client_max_body_size 10G;
           proxy_pass http://deltafi-ui;
         }
 
         location /api/ {
           proxy_pass http://deltafi-api;
+          client_max_body_size 10G;
         }
 
         location /graphql-core {
           proxy_pass http://deltafi-core/graphql;
+          client_max_body_size 10G;
         }
 
         location /deltafile/ingress {
           proxy_pass http://deltafi-ingress;
+          client_max_body_size 10G;
         }
 
         location /survey {
           proxy_pass http://deltafi-ingress;
+          client_max_body_size 10G;
         }
 
         location ~ /deltafile/annotate/.* {
           proxy_pass http://deltafi-core;
+          client_max_body_size 10G;
         }
 
         location /docs/ {
@@ -112,6 +119,7 @@ http {
         }
 
         location /visualization {
+          client_max_body_size 10G;
           proxy_pass http://deltafi-grafana;
         }
     }
@@ -122,11 +130,13 @@ http {
         server_name *.${DOMAIN};
 
         location / {
+          client_max_body_size 10G;
           proxy_pass http://$upstream_mapping;
         }
 
         location ~ ^/(no-auth|basic-auth|cert-auth)  {
             internal;
+            client_max_body_size 10G;
             proxy_pass              http://deltafi-auth;
             proxy_pass_request_body off;
             proxy_set_header        Content-Length "";
@@ -145,6 +155,7 @@ http {
         auth_request "off";
 
         location / {
+          client_max_body_size 10G;
           proxy_pass http://$internal_upstream_mapping;
         }
     }

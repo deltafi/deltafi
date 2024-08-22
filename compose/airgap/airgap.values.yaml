@@ -1,9 +1,6 @@
 deltafi:
   docs:
     enabled: true
-  ingress:
-    envVar:
-      HTTP_MAX_BODY_SIZE: 5G
   auth:
     mode: disabled # basic, cert, or disabled
   egress_sink:
