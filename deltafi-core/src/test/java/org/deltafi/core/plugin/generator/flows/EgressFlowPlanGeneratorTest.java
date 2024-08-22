@@ -41,7 +41,8 @@ class EgressFlowPlanGeneratorTest {
 
     @Test
     void testExtraFormatAction() {
-        List<ActionGeneratorInput> egress = List.of(new ActionGeneratorInput("e1", "org.e1"), new ActionGeneratorInput("e2", "org.e2"));
+        List<ActionGeneratorInput> egress = List.of(new ActionGeneratorInput("e1", "org.e1"),
+                new ActionGeneratorInput("e2", "org.e2"));
 
         List<FlowPlan> flowPlans = egressFlowPlanGenerator.generateEgressFlowPlans("base", egress);
         assertThat(flowPlans).hasSize(2);
@@ -52,7 +53,9 @@ class EgressFlowPlanGeneratorTest {
 
     @Test
     void testExtraEgressAction() {
-        List<ActionGeneratorInput> egress = List.of(new ActionGeneratorInput("e1", "org.e1"), new ActionGeneratorInput("e2", "org.e2"), new ActionGeneratorInput("e3", "org.e3"));
+        List<ActionGeneratorInput> egress = List.of(new ActionGeneratorInput("e1", "org.e1"),
+                new ActionGeneratorInput("e2", "org.e2"),
+                new ActionGeneratorInput("e3", "org.e3"));
 
         List<FlowPlan> flowPlans = egressFlowPlanGenerator.generateEgressFlowPlans("base", egress);
         assertThat(flowPlans).hasSize(3);

@@ -72,14 +72,19 @@ public class FlowPlanGeneratorService {
             .defaultValue("http://deltafi-egress-sink-service")
             .build();
 
-    private static final List<Variable> SAMPLE_VARS = List.of(SAMPLE_STRING_VAR, SAMPLE_NUMBER_VAR, SAMPLE_BOOLEAN_VAR, SAMPLE_LIST_VAR, SAMPLE_MAP_VAR);
+    private static final List<Variable> SAMPLE_VARS = List.of(SAMPLE_STRING_VAR, SAMPLE_NUMBER_VAR, SAMPLE_BOOLEAN_VAR,
+            SAMPLE_LIST_VAR, SAMPLE_MAP_VAR);
 
     private final TransformFlowPlanGenerator transformFlowPlanGenerator;
     private final EgressFlowPlanGenerator egressFlowPlanGenerator;
+    private final RestDataSourceFlowPlanGenerator restDataSourceFlowPlanGenerator;
 
-    public FlowPlanGeneratorService(TransformFlowPlanGenerator transformFlowPlanGenerator, EgressFlowPlanGenerator egressFlowPlanGenerator) {
+    public FlowPlanGeneratorService(TransformFlowPlanGenerator transformFlowPlanGenerator,
+                                    EgressFlowPlanGenerator egressFlowPlanGenerator,
+                                    RestDataSourceFlowPlanGenerator restDataSourceFlowPlanGenerator) {
         this.transformFlowPlanGenerator = transformFlowPlanGenerator;
         this.egressFlowPlanGenerator = egressFlowPlanGenerator;
+        this.restDataSourceFlowPlanGenerator = restDataSourceFlowPlanGenerator;
     }
 
     /**
@@ -95,8 +100,12 @@ public class FlowPlanGeneratorService {
         List<FlowPlan> flowPlans = new ArrayList<>();
 
         // TODO: timed ingress
-        flowPlans.addAll(transformFlowPlanGenerator.generateTransformFlows(baseFlowName, pluginGeneratorInput.getTransformActions()));
-        flowPlans.addAll(egressFlowPlanGenerator.generateEgressFlowPlans(baseFlowName, pluginGeneratorInput.getEgressActions()));
+        flowPlans.addAll(transformFlowPlanGenerator
+                .generateTransformFlows(baseFlowName, pluginGeneratorInput.getTransformActions()));
+        flowPlans.addAll(egressFlowPlanGenerator
+                .generateEgressFlowPlans(baseFlowName, pluginGeneratorInput.getEgressActions()));
+        flowPlans.add(restDataSourceFlowPlanGenerator
+                .generateRestDataSourceFlowPlan(baseFlowName));
 
         return flowPlans;
     }

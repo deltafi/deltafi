@@ -36,18 +36,23 @@ class TransformFlowPlanGeneratorTest {
 
     @Test
     void testDefaults() {
-        List<FlowPlan> flowPlans = transformFlowPlanGenerator.generateTransformFlows("my-plugin", null);
+        List<FlowPlan> flowPlans = transformFlowPlanGenerator
+                .generateTransformFlows("my-plugin", null);
         assertThat(flowPlans).hasSize(1);
         matches(flowPlans.getFirst(), null);
     }
 
     @Test
     void testMultipleEgressActions() {
-        List<ActionGeneratorInput> transforms = List.of(new ActionGeneratorInput("t1", "org.t1"), new ActionGeneratorInput("t2", "org.t2"));
-        List<FlowPlan> flowPlans = transformFlowPlanGenerator.generateTransformFlows("my-plugin", transforms);
+        List<ActionGeneratorInput> transforms =
+                List.of(new ActionGeneratorInput("t1", "org.t1"),
+                        new ActionGeneratorInput("t2", "org.t2"));
+        List<FlowPlan> flowPlans =
+                transformFlowPlanGenerator.generateTransformFlows("my-plugin", transforms);
 
         assertThat(flowPlans).hasSize(1);
-        List<ActionConfigMatcher> transformMatchers = List.of(new ActionConfigMatcher("t1", "org.t1"), new ActionConfigMatcher("t2", "org.t2"));
+        List<ActionConfigMatcher> transformMatchers = List.of(new ActionConfigMatcher("t1", "org.t1"),
+                new ActionConfigMatcher("t2", "org.t2"));
         matches(flowPlans.getFirst(), transformMatchers);
     }
 
