@@ -417,7 +417,7 @@ clickhouse:
   enabled: false
   image:
     repository: bitnami/clickhouse
-    tag: bitnami/clickhouse:24.8.1-debian-12-r0
+    tag: 24.8.1-debian-12-r0
   shards: 1
   replicaCount: 1
   keeper:
