@@ -18,7 +18,9 @@
     "parameter" : {
       "type" : "string",
       "description" : "my great property",
-      "default" : "defaultString"
+      "default" : "defaultString",
+      "minLength" : 0,
+      "maxLength" : 5000
     }
   },
   "additionalProperties" : false

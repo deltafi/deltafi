@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.*;
+import org.deltafi.actionkit.action.parameters.annotation.Size;
 import org.deltafi.core.action.ContentSelectionParameters;
 
 import java.util.List;
@@ -32,6 +33,7 @@ import java.util.List;
 public class JoltParameters extends ContentSelectionParameters {
     @JsonProperty(required = true)
     @JsonPropertyDescription("Jolt transformation specification provided as a JSON string")
+    @Size(maxLength = 5000)
     public String joltSpec;
 
     @JsonProperty(defaultValue = "[\"application/json\"]")

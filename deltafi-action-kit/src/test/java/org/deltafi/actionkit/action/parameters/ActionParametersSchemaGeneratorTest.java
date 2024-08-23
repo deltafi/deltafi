@@ -15,13 +15,13 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.actionkit.action.util;
+package org.deltafi.actionkit.action.parameters;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Getter;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.actionkit.action.parameters.annotation.Size;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -30,21 +30,21 @@ import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class ActionParameterSchemaGeneratorTest {
+class ActionParametersSchemaGeneratorTest {
     @Test
     void testGetSchema() throws IOException {
-        JsonNode schemaJson = ActionParameterSchemaGenerator.generateSchema(TestActionParameters.class);
+        JsonNode schemaJson = ActionParametersSchemaGenerator.generateSchema(TestActionParameters.class);
         String expectedSchema = new String(Objects.requireNonNull(getClass().getResourceAsStream("/expectedParamSchema.json")).readAllBytes());
         assertEquals(expectedSchema, schemaJson.toPrettyString());
     }
 
+    @SuppressWarnings("unused")
     private static class ComplexParam {
         @JsonPropertyDescription("first field")
         @SuppressWarnings("unused")
         String firstField;
 
         @JsonPropertyDescription("first field")
-        @SuppressWarnings("unused")
         String secondField;
     }
 
@@ -52,6 +52,7 @@ class ActionParameterSchemaGeneratorTest {
     private static class TestActionParameters extends ActionParameters {
         @JsonProperty(defaultValue = "defaultString")
         @JsonPropertyDescription("my great property")
+        @Size(maxLength = 5000)
         String parameter = "defaultString";
 
         @JsonProperty(defaultValue = "[\"abc\",\"123\"]")
@@ -59,6 +60,6 @@ class ActionParameterSchemaGeneratorTest {
         List<String> listParameter = List.of("abc", "123");
 
         @JsonPropertyDescription("complex type should not allow additional properties")
-        ActionParameterSchemaGeneratorTest.ComplexParam complexParam;
+        ActionParametersSchemaGeneratorTest.ComplexParam complexParam;
     }
 }
