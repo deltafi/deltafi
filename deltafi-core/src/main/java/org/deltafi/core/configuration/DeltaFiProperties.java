@@ -21,6 +21,7 @@ import com.networknt.schema.utils.StringUtils;
 import lombok.Data;
 
 import java.time.Duration;
+import java.util.Objects;
 
 /**
  * Holds the system properties. To add a new property that will be exposed
@@ -192,8 +193,7 @@ public class DeltaFiProperties {
     }
 
     public void setPluginImageRepositoryBase(String pluginImageRepositoryBase) {
-        notBlankCheck(pluginImageRepositoryBase, "pluginImageRepositoryBase");
-        this.pluginImageRepositoryBase = pluginImageRepositoryBase;
+        this.pluginImageRepositoryBase = Objects.requireNonNullElse(pluginImageRepositoryBase, "");
     }
 
     public void setPluginDeployTimeout(Duration pluginDeployTimeout) {
