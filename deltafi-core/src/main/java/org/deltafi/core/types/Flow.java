@@ -141,4 +141,23 @@ public abstract class Flow {
     public boolean nameMatches(ActionConfiguration action, String named) {
         return named.equals(action.getName());
     }
+
+    /**
+     * Copy the running and testMode state from the sourceFlow.
+     * Calls the flow specific copyFlowState method to copy additional state.
+     * @param sourceFlow to copy state and settings from
+     */
+    public final void copyFlowState(Flow sourceFlow) {
+        this.flowStatus.setState(sourceFlow.getFlowStatus().getState());
+        this.flowStatus.setTestMode(sourceFlow.getFlowStatus().getTestMode());
+        copyFlowSpecificState(sourceFlow);
+    }
+
+    /**
+     * Copy state fields from the source flow into the current flow
+     * These should be fields that do not come from the FlowPlan
+     * @param sourceFlow to copy state from
+     */
+    public void copyFlowSpecificState(Flow sourceFlow) {
+    }
 }

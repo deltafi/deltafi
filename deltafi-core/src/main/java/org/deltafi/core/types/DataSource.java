@@ -48,8 +48,6 @@ public abstract class DataSource extends Flow {
         this.type = type;
     }
 
-    public abstract void copyFields(DataSource sourceDataSource);
-
     @Override
     public boolean migrate() {
         if (schemaVersion < CURRENT_SCHEMA_VERSION) {

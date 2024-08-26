@@ -49,10 +49,9 @@ public class RestDataSource extends DataSource {
     }
 
     @Override
-    public void copyFields(DataSource sourceDataSource) {
-        if (sourceDataSource instanceof RestDataSource restDataSource) {
-            setTopic(restDataSource.getTopic());
-            setMaxErrors(sourceDataSource.getMaxErrors());
+    public void copyFlowSpecificState(Flow sourceFlow) {
+        if (sourceFlow instanceof RestDataSource restDataSource) {
+            setMaxErrors(restDataSource.getMaxErrors());
         }
     }
 }

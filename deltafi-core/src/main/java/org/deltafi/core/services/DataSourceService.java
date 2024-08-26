@@ -106,11 +106,6 @@ public class DataSourceService extends FlowService<DataSourcePlan, DataSource, D
     }
 
     @Override
-    void copyFlowSpecificFields(DataSource sourceFlow, DataSource targetFlow) {
-        targetFlow.copyFields(sourceFlow);
-    }
-
-    @Override
     public void updateSnapshot(SystemSnapshot systemSnapshot) {
         refreshCache();
         List<RestDataSourceSnapshot> restDataSourceSnapshots = new ArrayList<>();

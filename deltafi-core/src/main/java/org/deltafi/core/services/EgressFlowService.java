@@ -55,11 +55,6 @@ public class EgressFlowService extends FlowService<EgressFlowPlan, EgressFlow, E
         topicSubscribers = buildSubsriberMap();
     }
 
-    @Override
-    void copyFlowSpecificFields(EgressFlow sourceFlow, EgressFlow targetFlow) {
-        targetFlow.setExpectedAnnotations(sourceFlow.getExpectedAnnotations());
-    }
-
     /**
      * Sets the expected set of annotations for a given flow, identified by its name. If the update is successful,
      * the method refreshes the cache and returns true.

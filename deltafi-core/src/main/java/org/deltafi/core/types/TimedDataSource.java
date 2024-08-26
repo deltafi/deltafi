@@ -73,15 +73,14 @@ public class TimedDataSource extends DataSource {
     }
 
     @Override
-    public void copyFields(DataSource sourceFlow) {
+    public void copyFlowSpecificState(Flow sourceFlow) {
         if (sourceFlow instanceof TimedDataSource timedDataSource) {
-            setCronSchedule(timedDataSource.getCronSchedule());
             setLastRun(timedDataSource.getLastRun());
             setNextRun(timedDataSource.getNextRun());
             setMemo(timedDataSource.getMemo());
             setCurrentDid(timedDataSource.getCurrentDid());
             setExecuteImmediate(timedDataSource.isExecuteImmediate());
-            setMaxErrors(sourceFlow.getMaxErrors());
+            setMaxErrors(timedDataSource.getMaxErrors());
         }
     }
 
