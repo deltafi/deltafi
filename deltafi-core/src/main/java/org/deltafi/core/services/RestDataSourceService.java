@@ -44,9 +44,9 @@ public class RestDataSourceService extends FlowService<RestDataSourcePlanEntity,
 
     public RestDataSourceService(RestDataSourceRepo restDataSourceRepo, PluginVariableService pluginVariableService,
                                  RestDataSourceValidator restDataSourceValidator, BuildProperties buildProperties,
-                                 ErrorCountService errorCountService) {
+                                 ErrorCountService errorCountService, FlowCacheService flowCacheService) {
         super(FlowType.REST_DATA_SOURCE, restDataSourceRepo, pluginVariableService, REST_DATA_SOURCE_FLOW_PLAN_CONVERTER,
-                restDataSourceValidator, buildProperties);
+                restDataSourceValidator, buildProperties, flowCacheService, RestDataSource.class, RestDataSourcePlanEntity.class);
 
         this.errorCountService = errorCountService;
     }
@@ -58,7 +58,6 @@ public class RestDataSourceService extends FlowService<RestDataSourcePlanEntity,
 
     @Override
     public void updateSnapshot(SystemSnapshot systemSnapshot) {
-        refreshCache();
         List<RestDataSourceSnapshot> restDataSourceSnapshots = new ArrayList<>();
         for (RestDataSource dataSource : getAll()) {
             restDataSourceSnapshots.add(new RestDataSourceSnapshot(dataSource));
@@ -69,21 +68,6 @@ public class RestDataSourceService extends FlowService<RestDataSourcePlanEntity,
     @Override
     public List<RestDataSourceSnapshot> getFlowSnapshots(SystemSnapshot systemSnapshot) {
         return systemSnapshot.getRestDataSources();
-    }
-
-    @Override
-    protected Class<RestDataSource> getFlowClass() {
-        return RestDataSource.class;
-    }
-
-    @Override
-    protected Class<RestDataSourcePlanEntity> getFlowPlanClass() {
-        return RestDataSourcePlanEntity.class;
-    }
-
-    @Override
-    protected FlowType getFlowType() {
-        return FlowType.REST_DATA_SOURCE;
     }
 
     @Override
@@ -121,7 +105,7 @@ public class RestDataSourceService extends FlowService<RestDataSourcePlanEntity,
         }
 
         if (flowRepo.updateMaxErrors(flowName, maxErrors) > 0) {
-            refreshCache();
+            flowCacheService.refreshCache();
             return true;
         }
 

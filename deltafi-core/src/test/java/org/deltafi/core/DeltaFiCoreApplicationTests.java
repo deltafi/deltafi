@@ -291,13 +291,19 @@ class DeltaFiCoreApplicationTests {
     EventRepo eventRepo;
 
     @Autowired
-    private Clock clock;
+    Clock clock;
 
     @MockBean
     AnalyticEventService analyticEventService;
 
 	@Autowired
 	PluginImageRepositoryService pluginImageRepositoryService;
+
+	@Autowired
+	FlowCacheService flowCacheService;
+
+	@Autowired
+	List<FlowService<?, ?, ?, ?>> flowServices;
 
 	private final OffsetDateTime NOW = OffsetDateTime.now(Clock.tickMillis(ZoneOffset.UTC));
 
@@ -338,10 +344,10 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	void refreshFlowCaches() {
-		transformFlowService.refreshCache();
-		egressFlowService.refreshCache();
-		restDataSourceService.refreshCache();
-		timedDataSourceService.refreshCache();
+		flowCacheService.refreshCache();
+		for (FlowService<?, ?, ?, ?> flowService : flowServices) {
+			flowService.onRefreshCache();
+		}
 	}
 
 	void loadConfig() {
@@ -349,6 +355,7 @@ class DeltaFiCoreApplicationTests {
 		loadEgressConfig();
 		loadRestDataSources();
 		loadTimedDataSources();
+		refreshFlowCaches();
 	}
 
 	static final TransformFlow SAMPLE_TRANSFORM_FLOW;
@@ -363,7 +370,6 @@ class DeltaFiCoreApplicationTests {
 
 	void loadTransformConfig() {
 		transformFlowRepo.batchInsert(List.of(SAMPLE_TRANSFORM_FLOW, RETRY_FLOW, CHILD_FLOW));
-		transformFlowService.refreshCache();
 	}
 
 	static final EgressFlow SAMPLE_EGRESS_FLOW;
@@ -379,14 +385,12 @@ class DeltaFiCoreApplicationTests {
 
 	void loadEgressConfig() {
 		egressFlowRepo.batchInsert(List.of(SAMPLE_EGRESS_FLOW, ERROR_EGRESS_FLOW));
-		egressFlowService.refreshCache();
 	}
 
 	static final RestDataSource REST_DATA_SOURCE = buildRestDataSource(FlowState.RUNNING);
 
 	void loadRestDataSources() {
 		restDataSourceRepo.batchInsert(List.of(REST_DATA_SOURCE));
-		restDataSourceService.refreshCache();
 	}
 
 	static final TimedDataSource TIMED_DATA_SOURCE = buildTimedDataSource(FlowState.RUNNING);
@@ -394,7 +398,6 @@ class DeltaFiCoreApplicationTests {
 
 	void loadTimedDataSources() {
 		timedDataSourceRepo.batchInsert(List.of(TIMED_DATA_SOURCE, TIMED_DATA_SOURCE_ERROR));
-		timedDataSourceService.refreshCache();
 	}
 
 	@Test
@@ -1095,6 +1098,7 @@ class DeltaFiCoreApplicationTests {
 	void testValidateTransformFlow() {
 		clearForFlowTests();
 		transformFlowRepo.save(buildTransformFlow(FlowState.STOPPED));
+		refreshFlowCaches();
 		TransformFlow transformFlow = FlowPlanDatafetcherTestHelper.validateTransformFlow(dgsQueryExecutor);
 		assertThat(transformFlow.getFlowStatus()).isNotNull();
 	}
@@ -1103,6 +1107,7 @@ class DeltaFiCoreApplicationTests {
 	void testValidateTimedIngressFlow() {
 		clearForFlowTests();
 		timedDataSourceRepo.save(buildTimedDataSource(FlowState.STOPPED));
+		refreshFlowCaches();
 		DataSource dataSource = FlowPlanDatafetcherTestHelper.validateTimedIngressFlow(dgsQueryExecutor);
 		assertThat(dataSource.getFlowStatus()).isNotNull();
 	}
@@ -1111,6 +1116,7 @@ class DeltaFiCoreApplicationTests {
 	void testValidateEgressFlow() {
 		clearForFlowTests();
 		egressFlowRepo.save(buildEgressFlow(FlowState.STOPPED));
+		refreshFlowCaches();
 		EgressFlow egressFlow = FlowPlanDatafetcherTestHelper.validateEgressFlow(dgsQueryExecutor);
 		assertThat(egressFlow.getFlowStatus()).isNotNull();
 	}
@@ -1202,9 +1208,11 @@ class DeltaFiCoreApplicationTests {
 		clearForFlowTests();
 
 		transformFlowRepo.save(buildTransformFlow(FlowState.STOPPED));
+		refreshFlowCaches();
 		assertTrue(FlowPlanDatafetcherTestHelper.startTransformFlow(dgsQueryExecutor));
 
 		egressFlowRepo.save(buildEgressFlow(FlowState.STOPPED));
+		refreshFlowCaches();
 		assertTrue(FlowPlanDatafetcherTestHelper.startEgressFlow(dgsQueryExecutor));
 
 		SystemFlows flows = FlowPlanDatafetcherTestHelper.getRunningFlows(dgsQueryExecutor);
@@ -1271,6 +1279,7 @@ class DeltaFiCoreApplicationTests {
 		TransformFlow transformFlow = new TransformFlow();
 		transformFlow.setName(TRANSFORM_FLOW_NAME);
 		transformFlowRepo.save(transformFlow);
+		refreshFlowCaches();
 
 		TransformFlow foundFlow = FlowPlanDatafetcherTestHelper.getTransformFlow(dgsQueryExecutor);
 		assertThat(foundFlow).isNotNull();
@@ -1283,6 +1292,7 @@ class DeltaFiCoreApplicationTests {
 		EgressFlow egressFlow = new EgressFlow();
 		egressFlow.setName(EGRESS_FLOW_NAME);
 		egressFlowRepo.save(egressFlow);
+		refreshFlowCaches();
 		EgressFlow foundFlow = FlowPlanDatafetcherTestHelper.getEgressFlow(dgsQueryExecutor);
 		assertThat(foundFlow).isNotNull();
 		assertThat(foundFlow.getName()).isEqualTo(EGRESS_FLOW_NAME);
@@ -1415,6 +1425,7 @@ class DeltaFiCoreApplicationTests {
 	void testStartTransformFlow() {
 		clearForFlowTests();
 		transformFlowRepo.save(buildTransformFlow(FlowState.STOPPED));
+		refreshFlowCaches();
 		assertTrue(FlowPlanDatafetcherTestHelper.startTransformFlow(dgsQueryExecutor));
 	}
 
@@ -1422,6 +1433,7 @@ class DeltaFiCoreApplicationTests {
 	void testStopTransformFlow() {
 		clearForFlowTests();
 		transformFlowRepo.save(buildTransformFlow(FlowState.RUNNING));
+		refreshFlowCaches();
 		assertTrue(FlowPlanDatafetcherTestHelper.stopTransformFlow(dgsQueryExecutor));
 	}
 
@@ -1429,6 +1441,7 @@ class DeltaFiCoreApplicationTests {
 	void testStartEgressFlow() {
 		clearForFlowTests();
 		egressFlowRepo.save(buildEgressFlow(FlowState.STOPPED));
+		refreshFlowCaches();
 		assertTrue(FlowPlanDatafetcherTestHelper.startEgressFlow(dgsQueryExecutor));
 	}
 
@@ -1436,6 +1449,7 @@ class DeltaFiCoreApplicationTests {
 	void testStopEgressFlow() {
 		clearForFlowTests();
 		egressFlowRepo.save(buildEgressFlow(FlowState.RUNNING));
+		refreshFlowCaches();
 		assertTrue(FlowPlanDatafetcherTestHelper.stopEgressFlow(dgsQueryExecutor));
 	}
 
@@ -1443,6 +1457,7 @@ class DeltaFiCoreApplicationTests {
 	void testStartTimedIngressFlow() {
 		clearForFlowTests();
 		timedDataSourceRepo.save(buildTimedDataSource(FlowState.STOPPED));
+		refreshFlowCaches();
 		assertTrue(FlowPlanDatafetcherTestHelper.startTimedDataSource(dgsQueryExecutor));
 	}
 
@@ -1450,6 +1465,7 @@ class DeltaFiCoreApplicationTests {
 	void testStopTimedIngressFlow() {
 		clearForFlowTests();
 		timedDataSourceRepo.save(buildTimedDataSource(FlowState.RUNNING));
+		refreshFlowCaches();
 		assertTrue(FlowPlanDatafetcherTestHelper.stopTimedDataSource(dgsQueryExecutor));
 	}
 
@@ -1457,6 +1473,7 @@ class DeltaFiCoreApplicationTests {
 	void testSetMemoTimedIngressWhenStopped() {
 		clearForFlowTests();
 		timedDataSourceRepo.save(buildTimedDataSource(FlowState.STOPPED));
+		refreshFlowCaches();
 		assertFalse(FlowPlanDatafetcherTestHelper.setTimedDataSourceMemo(dgsQueryExecutor, null));
 		assertTrue(FlowPlanDatafetcherTestHelper.setTimedDataSourceMemo(dgsQueryExecutor, "100"));
 	}
@@ -1465,6 +1482,7 @@ class DeltaFiCoreApplicationTests {
 	void testSetMemoTimedIngressWhenRunning() {
 		clearForFlowTests();
 		timedDataSourceRepo.save(buildTimedDataSource(FlowState.RUNNING));
+		refreshFlowCaches();
 		assertFalse(FlowPlanDatafetcherTestHelper.setTimedDataSourceMemo(dgsQueryExecutor, "100"));
 	}
 
@@ -3553,12 +3571,10 @@ class DeltaFiCoreApplicationTests {
 	void clearForFlowTests() {
 		flowPlanRepo.deleteAllInBatch();
 		transformFlowRepo.deleteAllInBatch();
-		transformFlowService.refreshCache();
 		egressFlowRepo.deleteAllInBatch();
-		egressFlowService.refreshCache();
 		timedDataSourceRepo.deleteAllInBatch();
-		restDataSourceService.refreshCache();
 		pluginVariableRepo.deleteAllInBatch();
+		refreshFlowCaches();
 	}
 
 	@Test
@@ -4043,9 +4059,8 @@ class DeltaFiCoreApplicationTests {
 		TransformFlow transformFlow = joiningTransformFlow("join-max-num", new JoinConfiguration(Duration.parse("PT1H"), null, 2, null));
 		RestDataSource restDataSource = buildDataSource(JOIN_TOPIC);
 		transformFlowRepo.save(transformFlow);
-		transformFlowService.refreshCache();
 		restDataSourceRepo.save(restDataSource);
-		restDataSourceService.refreshCache();
+		refreshFlowCaches();
 
 		IngressEventItem ingress1 = new IngressEventItem(UUID.randomUUID(), FILENAME, restDataSource.getName(), null,
 				Collections.emptyList());
@@ -4091,9 +4106,8 @@ class DeltaFiCoreApplicationTests {
 		TransformFlow transformFlow = joiningTransformFlow("join-on-timeout", new JoinConfiguration(Duration.parse("PT3S"), null, 5, null));
 		RestDataSource restDataSource = buildDataSource(JOIN_TOPIC);
 		transformFlowRepo.save(transformFlow);
-		transformFlowService.refreshCache();
 		restDataSourceRepo.save(restDataSource);
-		restDataSourceService.refreshCache();
+		refreshFlowCaches();
 		String dataSourceName = restDataSource.getName();
 
 		IngressEventItem ingress1 = new IngressEventItem(UUID.randomUUID(), FILENAME, dataSourceName, null,
@@ -4119,9 +4133,8 @@ class DeltaFiCoreApplicationTests {
 		String transformFlowName = transformFlow.getName();
 
 		transformFlowRepo.save(transformFlow);
-		transformFlowService.refreshCache();
 		restDataSourceRepo.save(restDataSource);
-		restDataSourceService.refreshCache();
+		refreshFlowCaches();
 
 		IngressEventItem ingress1 = new IngressEventItem(UUID.randomUUID(),
 				FILENAME, dataSourceName, Map.of("a", "1"), Collections.emptyList());
@@ -4152,9 +4165,8 @@ class DeltaFiCoreApplicationTests {
 		String transformFlowName = transformFlow.getName();
 		RestDataSource restDataSource = buildDataSource(JOIN_TOPIC);
 		transformFlowRepo.save(transformFlow);
-		transformFlowService.refreshCache();
 		restDataSourceRepo.save(restDataSource);
-		restDataSourceService.refreshCache();
+		refreshFlowCaches();
 		String dataSourceName = restDataSource.getName();
 
 		IngressEventItem ingress1 = new IngressEventItem(UUID.randomUUID(), FILENAME, dataSourceName, null,
@@ -4186,7 +4198,7 @@ class DeltaFiCoreApplicationTests {
 	void testResumeAggregate() throws IOException {
 		TransformFlow transformFlow = joiningTransformFlow("join-resume", new JoinConfiguration(Duration.parse("PT1H"), null, 2, null));
 		transformFlowRepo.save(transformFlow);
-		transformFlowService.refreshCache();
+		refreshFlowCaches();
 
 		UUID did = UUID.randomUUID();
 

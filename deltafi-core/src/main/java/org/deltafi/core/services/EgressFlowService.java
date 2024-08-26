@@ -46,35 +46,18 @@ class EgressFlowService extends FlowService<EgressFlowPlanEntity, EgressFlow, Eg
 
     private Map<String, Set<Subscriber>> topicSubscribers;
 
-    public EgressFlowService(EgressFlowRepo flowRepo, PluginVariableService pluginVariableService, EgressFlowValidator egressFlowValidator, BuildProperties buildProperties) {
-        super(FlowType.EGRESS, flowRepo, pluginVariableService, EGRESS_FLOW_PLAN_CONVERTER, egressFlowValidator, buildProperties);
-        refreshCache();
+    public EgressFlowService(EgressFlowRepo flowRepo, PluginVariableService pluginVariableService, EgressFlowValidator egressFlowValidator, BuildProperties buildProperties, FlowCacheService flowCacheService) {
+        super(FlowType.EGRESS, flowRepo, pluginVariableService, EGRESS_FLOW_PLAN_CONVERTER, egressFlowValidator, buildProperties, flowCacheService, EgressFlow.class, EgressFlowPlanEntity.class);
     }
 
     @Override
-    public synchronized void refreshCache() {
-        super.refreshCache();
-        topicSubscribers = buildSubsriberMap();
+    public void onRefreshCache() {
+        topicSubscribers = buildSubscriberMap();
     }
 
     @Override
     void copyFlowSpecificFields(EgressFlow sourceFlow, EgressFlow targetFlow) {
         targetFlow.setExpectedAnnotations(sourceFlow.getExpectedAnnotations());
-    }
-
-    @Override
-    protected Class<EgressFlow> getFlowClass() {
-        return EgressFlow.class;
-    }
-
-    @Override
-    protected Class<EgressFlowPlanEntity> getFlowPlanClass() {
-        return EgressFlowPlanEntity.class;
-    }
-
-    @Override
-    protected FlowType getFlowType() {
-        return FlowType.EGRESS;
     }
 
     /**
@@ -103,7 +86,6 @@ class EgressFlowService extends FlowService<EgressFlowPlanEntity, EgressFlow, Eg
 
     @Override
     public void updateSnapshot(SystemSnapshot systemSnapshot) {
-        refreshCache();
         systemSnapshot.setEgressFlows(getAll().stream().map(EgressFlowSnapshot::new).toList());
     }
 

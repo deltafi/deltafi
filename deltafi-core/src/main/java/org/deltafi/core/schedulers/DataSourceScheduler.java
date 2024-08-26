@@ -46,7 +46,6 @@ public class DataSourceScheduler {
 
     @Scheduled(fixedDelay = 1000)
     public void triggerTimedIngressFlows() {
-        timedDataSourceService.refreshCache();
         for (TimedDataSource dataSource : timedDataSourceService.getRunningTimedDataSources()) {
             if (dataSource.due(coreEventQueue, OffsetDateTime.now(clock)) &&
                     deltaFiPropertiesService.getDeltaFiProperties().isIngressEnabled() &&

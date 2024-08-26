@@ -58,14 +58,17 @@ class EgressFlowServiceTest {
     @Captor
     ArgumentCaptor<List<EgressFlow>> flowCaptor;
 
+    @Mock
+    FlowCacheService flowCacheService;
+
     @Test
     void updateSnapshot() {
-        List<EgressFlow> flows = new ArrayList<>();
+        List<Flow> flows = new ArrayList<>();
         flows.add(egressFlow("a", FlowState.RUNNING, false, null));
         flows.add(egressFlow("b", FlowState.STOPPED, false, Set.of("a", "b")));
         flows.add(egressFlow("c", FlowState.STOPPED, true, Set.of()));
 
-        Mockito.when(egressFlowRepo.findAllByType(EgressFlow.class)).thenReturn(flows);
+        Mockito.when(flowCacheService.flowsOfType(FlowType.EGRESS)).thenReturn(flows);
 
         SystemSnapshot systemSnapshot = new SystemSnapshot();
         egressFlowService.updateSnapshot(systemSnapshot);
@@ -104,7 +107,8 @@ class EgressFlowServiceTest {
                 new EgressFlowSnapshot("invalid", true, false),
                 new EgressFlowSnapshot("missing", true, true)));
 
-        Mockito.when(egressFlowRepo.findAllByType(EgressFlow.class)).thenReturn(List.of(running, stopped, invalid));
+        Mockito.when(flowCacheService.flowsOfType(FlowType.EGRESS)).thenReturn(List.of(running, stopped, invalid));
+        Mockito.when(flowCacheService.getFlowOrThrow(FlowType.EGRESS, "running")).thenReturn(running);
         Mockito.when(egressFlowRepo.findByNameAndType("running", EgressFlow.class)).thenReturn(Optional.of(running));
         Mockito.when(egressFlowRepo.findByNameAndType("stopped", EgressFlow.class)).thenReturn(Optional.of(stopped));
         Mockito.when(egressFlowRepo.findByNameAndType("invalid", EgressFlow.class)).thenReturn(Optional.of(invalid));

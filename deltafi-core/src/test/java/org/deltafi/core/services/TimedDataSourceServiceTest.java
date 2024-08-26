@@ -67,6 +67,9 @@ class TimedDataSourceServiceTest {
     @Captor
     ArgumentCaptor<List<TimedDataSource>> flowCaptor;
 
+    @Mock
+    FlowCacheService flowCacheService;
+
     @Test
     void buildFlow() {
         TimedDataSource running = timedDataSource("running", FlowState.RUNNING, true,"0 */10 * * * *", 10);
@@ -96,11 +99,12 @@ class TimedDataSourceServiceTest {
 
     @Test
     void updateSnapshot() {
-        List<TimedDataSource> flows = new ArrayList<>();
+        List<Flow> flows = new ArrayList<>();
         flows.add(timedDataSource("a", FlowState.RUNNING, false, "0 */1 * * * *", -1));
         flows.add(timedDataSource("b", FlowState.STOPPED, false, "0 */2 * * * *", 1));
         flows.add(timedDataSource("c", FlowState.INVALID, true, "0 */3 * * * *", 1));
-        Mockito.when(timedDataSourceRepo.findAllByType(TimedDataSource.class)).thenReturn(flows);
+
+        Mockito.when(flowCacheService.flowsOfType(FlowType.TIMED_DATA_SOURCE)).thenReturn(flows);
 
         SystemSnapshot systemSnapshot = new SystemSnapshot();
         timedDataSourceService.updateSnapshot(systemSnapshot);
@@ -147,7 +151,8 @@ class TimedDataSourceServiceTest {
         snapshots.add(snapshot("missing", false, true, "*/1 * * * * *", 3));
         systemSnapshot.setTimedDataSources(snapshots);
 
-        Mockito.when(timedDataSourceRepo.findAllByType(TimedDataSource.class)).thenReturn(List.of(running, stopped, invalid, changed));
+        Mockito.when(flowCacheService.flowsOfType(FlowType.TIMED_DATA_SOURCE)).thenReturn(List.of(running, stopped, invalid));
+        Mockito.when(flowCacheService.getFlowOrThrow(FlowType.TIMED_DATA_SOURCE, "running")).thenReturn(running);
         Mockito.when(timedDataSourceRepo.findByNameAndType("running", TimedDataSource.class)).thenReturn(Optional.of(running));
         Mockito.when(timedDataSourceRepo.findByNameAndType("stopped", TimedDataSource.class)).thenReturn(Optional.of(stopped));
         Mockito.when(timedDataSourceRepo.findByNameAndType("invalid", TimedDataSource.class)).thenReturn(Optional.of(invalid));
@@ -202,7 +207,8 @@ class TimedDataSourceServiceTest {
         TimedDataSource flow3 = timedDataSource("flow3", FlowState.RUNNING, false, "0 */4 * * * *", 5);
         TimedDataSource flow4 = timedDataSource("flow4", FlowState.STOPPED, false, "0 */4 * * * *", 5);
 
-        Mockito.when(timedDataSourceRepo.findAllByType(TimedDataSource.class)).thenReturn(List.of(flow1, flow2, flow3, flow4));
+        Mockito.when(flowCacheService.flowsOfType(FlowType.TIMED_DATA_SOURCE)).thenReturn(List.of(flow1, flow2, flow3, flow4));
+
         Mockito.when(errorCountService.errorsForFlow("flow1")).thenReturn(1);
         Mockito.when(errorCountService.errorsForFlow("flow2")).thenReturn(5);
         Mockito.when(errorCountService.errorsForFlow("flow3")).thenReturn(6);

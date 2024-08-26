@@ -49,9 +49,9 @@ public class TimedDataSourceService extends FlowService<TimedDataSourcePlanEntit
 
     public TimedDataSourceService(TimedDataSourceRepo timedDataSourceRepo, PluginVariableService pluginVariableService,
                                   TimedDataSourceValidator restDataSourceValidator, BuildProperties buildProperties,
-                                  ErrorCountService errorCountService, Clock clock) {
+                                  ErrorCountService errorCountService, Clock clock, FlowCacheService flowCacheService) {
         super(FlowType.TIMED_DATA_SOURCE, timedDataSourceRepo, pluginVariableService, TIMED_DATA_SOURCE_FLOW_PLAN_CONVERTER,
-                restDataSourceValidator, buildProperties);
+                restDataSourceValidator, buildProperties, flowCacheService, TimedDataSource.class, TimedDataSourcePlanEntity.class);
 
         this.timedDataSourceRepo = timedDataSourceRepo;
         this.errorCountService = errorCountService;
@@ -81,7 +81,6 @@ public class TimedDataSourceService extends FlowService<TimedDataSourcePlanEntit
 
     @Override
     public void updateSnapshot(SystemSnapshot systemSnapshot) {
-        refreshCache();
         List<TimedDataSourceSnapshot> timedDataSourceSnapshots = new ArrayList<>();
         for (TimedDataSource timedDataSource : getAll()) {
             timedDataSourceSnapshots.add(new TimedDataSourceSnapshot(timedDataSource));
@@ -92,21 +91,6 @@ public class TimedDataSourceService extends FlowService<TimedDataSourcePlanEntit
     @Override
     public List<TimedDataSourceSnapshot> getFlowSnapshots(SystemSnapshot systemSnapshot) {
         return systemSnapshot.getTimedDataSources();
-    }
-
-    @Override
-    protected Class<TimedDataSource> getFlowClass() {
-        return TimedDataSource.class;
-    }
-
-    @Override
-    protected Class<TimedDataSourcePlanEntity> getFlowPlanClass() {
-        return TimedDataSourcePlanEntity.class;
-    }
-
-    @Override
-    protected FlowType getFlowType() {
-        return FlowType.TIMED_DATA_SOURCE;
     }
 
     @Override
@@ -154,7 +138,7 @@ public class TimedDataSourceService extends FlowService<TimedDataSourcePlanEntit
 
         CronExpression cronExpression = CronExpression.parse(cronSchedule);
         if (timedDataSourceRepo.updateCronSchedule(flowName, cronSchedule, cronExpression.next(OffsetDateTime.now(clock))) > 0) {
-            refreshCache();
+            flowCacheService.refreshCache();
             return true;
         }
 
@@ -186,7 +170,7 @@ public class TimedDataSourceService extends FlowService<TimedDataSourcePlanEntit
         }
 
         if (timedDataSourceRepo.updateMemo(flowName, memo) > 0) {
-            refreshCache();
+            flowCacheService.refreshCache();
             return true;
         }
 
@@ -195,7 +179,7 @@ public class TimedDataSourceService extends FlowService<TimedDataSourcePlanEntit
 
     public void setLastRun(String flowName, OffsetDateTime lastRun, UUID currentDid) {
         if (timedDataSourceRepo.updateLastRun(flowName, lastRun, currentDid) > 0) {
-            refreshCache();
+            flowCacheService.refreshCache();
         }
 
     }
@@ -206,7 +190,7 @@ public class TimedDataSourceService extends FlowService<TimedDataSourcePlanEntit
 
         if (timedDataSourceRepo.completeExecution(flowName, currentDid, memo, executeImmediate,
                 status == null ? IngressStatus.HEALTHY : status, statusMessage, cronExpression.next(OffsetDateTime.now(clock))) > 0) {
-            refreshCache();
+            flowCacheService.refreshCache();
             return true;
         }
 
@@ -232,7 +216,7 @@ public class TimedDataSourceService extends FlowService<TimedDataSourcePlanEntit
         }
 
         if (flowRepo.updateMaxErrors(flowName, maxErrors) > 0) {
-            refreshCache();
+            flowCacheService.refreshCache();
             return true;
         }
 

@@ -46,7 +46,7 @@ public interface SubscriberService {
      * using the running flows
      * @return map of topicIds to the set of subscribers of that topic
      */
-    default Map<String, Set<Subscriber>> buildSubsriberMap() {
+    default Map<String, Set<Subscriber>> buildSubscriberMap() {
         Map<String, Set<Subscriber>> updatedMap = new HashMap<>();
         for (Subscriber subscriber : getRunningFlows()) {
             if (subscriber.subscribeRules() != null) {

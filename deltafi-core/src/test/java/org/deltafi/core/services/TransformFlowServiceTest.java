@@ -56,6 +56,9 @@ class TransformFlowServiceTest {
     @Captor
     ArgumentCaptor<List<TransformFlow>> flowCaptor;
 
+    @Mock
+    FlowCacheService flowCacheService;
+
     @Test
     void buildFlow() {
         TransformFlow running = transformFlow("running", FlowState.RUNNING, true);
@@ -78,12 +81,12 @@ class TransformFlowServiceTest {
 
     @Test
     void updateSnapshot() {
-        List<TransformFlow> flows = new ArrayList<>();
+        List<Flow> flows = new ArrayList<>();
         flows.add(transformFlow("a", FlowState.RUNNING, false));
         flows.add(transformFlow("b", FlowState.STOPPED, false));
         flows.add(transformFlow("c", FlowState.INVALID, true));
 
-        Mockito.when(transformFlowRepo.findAllByType(TransformFlow.class)).thenReturn(flows);
+        Mockito.when(flowCacheService.flowsOfType(FlowType.TRANSFORM)).thenReturn(flows);
 
         SystemSnapshot systemSnapshot = new SystemSnapshot();
         transformFlowService.updateSnapshot(systemSnapshot);
@@ -119,7 +122,8 @@ class TransformFlowServiceTest {
                 new TransformFlowSnapshot("invalid", true, false),
                 new TransformFlowSnapshot("missing", true, true)));
 
-        Mockito.when(transformFlowRepo.findAllByType(TransformFlow.class)).thenReturn(List.of(running, stopped, invalid));
+        Mockito.when(flowCacheService.flowsOfType(FlowType.TRANSFORM)).thenReturn(List.of(running, stopped, invalid));
+        Mockito.when(flowCacheService.getFlowOrThrow(FlowType.TRANSFORM, "running")).thenReturn(running);
         Mockito.when(transformFlowRepo.findByNameAndType("running", TransformFlow.class)).thenReturn(Optional.of(running));
         Mockito.when(transformFlowRepo.findByNameAndType("stopped", TransformFlow.class)).thenReturn(Optional.of(stopped));
         Mockito.when(transformFlowRepo.findByNameAndType("invalid", TransformFlow.class)).thenReturn(Optional.of(invalid));

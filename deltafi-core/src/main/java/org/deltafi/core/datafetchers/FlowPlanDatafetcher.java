@@ -65,6 +65,7 @@ public class FlowPlanDatafetcher {
     private final SystemPluginService systemPluginService;
     private final TimedDataSourceService timedDataSourceService;
     private final CoreAuditLogger auditLogger;
+    private final FlowCacheService flowCacheService;
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
@@ -405,11 +406,12 @@ public class FlowPlanDatafetcher {
     @DgsQuery
     @NeedsPermission.FlowView
     public SystemFlows getAllFlows() {
+        flowCacheService.refreshCache();
         return SystemFlows.newBuilder()
-                .egress(egressFlowService.getAllUncached())
-                .transform(transformFlowService.getAllUncached())
-                .restDataSource(restDataSourceService.getAllUncached())
-                .timedDataSource(timedDataSourceService.getAllUncached()).build();
+                .egress(egressFlowService.getAll())
+                .transform(transformFlowService.getAll())
+                .restDataSource(restDataSourceService.getAll())
+                .timedDataSource(timedDataSourceService.getAll()).build();
     }
 
     @DgsQuery

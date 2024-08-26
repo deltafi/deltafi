@@ -43,30 +43,13 @@ public class TransformFlowService extends FlowService<TransformFlowPlanEntity, T
 
     private Map<String, Set<Subscriber>> topicSubscribers;
 
-    public TransformFlowService(TransformFlowRepo transformFlowRepo, PluginVariableService pluginVariableService, TransformFlowValidator transformFlowValidator, BuildProperties buildProperties) {
-        super(FlowType.TRANSFORM, transformFlowRepo, pluginVariableService, TRANSFORM_FLOW_PLAN_CONVERTER, transformFlowValidator, buildProperties);
-        refreshCache();
+    public TransformFlowService(TransformFlowRepo transformFlowRepo, PluginVariableService pluginVariableService, TransformFlowValidator transformFlowValidator, BuildProperties buildProperties, FlowCacheService flowCacheService) {
+        super(FlowType.TRANSFORM, transformFlowRepo, pluginVariableService, TRANSFORM_FLOW_PLAN_CONVERTER, transformFlowValidator, buildProperties, flowCacheService, TransformFlow.class, TransformFlowPlanEntity.class);
     }
 
     @Override
-    public synchronized void refreshCache() {
-        super.refreshCache();
-        topicSubscribers = buildSubsriberMap();
-    }
-
-    @Override
-    protected Class<TransformFlow> getFlowClass() {
-        return TransformFlow.class;
-    }
-
-    @Override
-    protected Class<TransformFlowPlanEntity> getFlowPlanClass() {
-        return TransformFlowPlanEntity.class;
-    }
-
-    @Override
-    protected FlowType getFlowType() {
-        return FlowType.TRANSFORM;
+    public void onRefreshCache() {
+        topicSubscribers = buildSubscriberMap();
     }
 
     @Override

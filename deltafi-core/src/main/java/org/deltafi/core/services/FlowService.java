@@ -36,7 +36,6 @@ import org.deltafi.core.validation.FlowValidator;
 import org.springframework.boot.info.BuildProperties;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -48,33 +47,30 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
     private final FlowPlanConverter<FlowPlanT, FlowT> flowPlanConverter;
     private final FlowValidator<FlowT> validator;
     private final BuildProperties buildProperties;
+    protected final FlowCacheService flowCacheService;
+    private final Class<FlowT> flowClass;
+    private final Class<FlowPlanT> flowPlanClass;
 
-    protected volatile Map<String, FlowT> flowCache = Collections.emptyMap();
-
-    protected FlowService(FlowType flowType, FlowRepoT flowRepo, PluginVariableService pluginVariableService, FlowPlanConverter<FlowPlanT, FlowT> flowPlanConverter, FlowValidator<FlowT> validator, BuildProperties buildProperties) {
+    protected FlowService(FlowType flowType, FlowRepoT flowRepo, PluginVariableService pluginVariableService, FlowPlanConverter<FlowPlanT, FlowT> flowPlanConverter, FlowValidator<FlowT> validator, BuildProperties buildProperties, FlowCacheService flowCacheService, Class<FlowT> flowClass, Class<FlowPlanT> flowPlanClass) {
         this.flowType = flowType;
         this.flowRepo = flowRepo;
         this.pluginVariableService = pluginVariableService;
         this.flowPlanConverter = flowPlanConverter;
         this.validator = validator;
         this.buildProperties = buildProperties;
+        this.flowCacheService = flowCacheService;
+        this.flowClass = flowClass;
+        this.flowPlanClass = flowPlanClass;
     }
 
     @PostConstruct
     public void postConstruct() {
-        flowRepo.updateSystemPluginFlowVersions(buildProperties.getVersion(), getFlowClass());
+        flowRepo.updateSystemPluginFlowVersions(buildProperties.getVersion(), flowClass);
         refreshCache();
     }
 
-    public synchronized void refreshCache() {
-        flowCache = flowRepo.findAllByType(getFlowClass()).stream()
-                .collect(Collectors.toMap(Flow::getName, Function.identity()));
-    }
-
     public List<String> getNamesOfInvalidFlows() {
-        return flowCache.values().stream()
-                .filter(FlowT::isInvalid)
-                .map(FlowT::getName).toList();
+        return flowCacheService.getNamesOfInvalidFlows(flowType);
     }
 
     /**
@@ -137,6 +133,14 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
 
         return updateAndRefreshTestMode(flowName, false);
     }
+
+    public void onRefreshCache() {}
+
+    protected void refreshCache() {
+        flowCacheService.refreshCache();
+        onRefreshCache();
+    }
+
     /**
      * For each of the given flow plans, rebuild the flow from the plan and latest variables
      * @param flowPlans list of flow plans that need flows rebuilt
@@ -156,7 +160,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
 
     public void upgradeFlows(PluginCoordinates sourcePlugin, List<FlowPlanT> flowPlans) {
         List<Flow> existingFlows = flowRepo.findBySourcePluginGroupIdAndSourcePluginArtifactIdAndType(
-                sourcePlugin.getGroupId(), sourcePlugin.getArtifactId(), getFlowType());
+                sourcePlugin.getGroupId(), sourcePlugin.getArtifactId(), flowType);
         List<String> existingFlowNames = existingFlows.stream().map(Flow::getName).toList();
         List<FlowT> flows = flowPlans.stream().map(this::buildFlow).toList();
         List<String> incomingFlowNames = flows.stream().map(Flow::getName).toList();
@@ -226,7 +230,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
      * @return whether it is a flow
      */
     public boolean hasFlow(String flowName) {
-        return flowCache.get(flowName) != null;
+        return flowCacheService.getFlow(flowType, flowName) != null;
     }
 
     /**
@@ -235,8 +239,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
      * @return whether it is a running flow
      */
     public boolean hasRunningFlow(String flowName) {
-        FlowT flow = flowCache.get(flowName);
-        return flow != null && flow.isRunning();
+        return flowCacheService.getRunningFlow(flowType, flowName) != null;
     }
 
     /**
@@ -247,14 +250,14 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
      * @return the flow with the given name
      */
     public FlowT getRunningFlowByName(String flowName) {
-        FlowT flow = flowCache.get(flowName);
+        Flow flow = flowCacheService.getFlow(flowType, flowName);
         if (flow == null) {
             throw new MissingFlowException("Flow of type " + flowType + " named " + flowName + " is not installed");
         } else if (!flow.isRunning()){
             throw new MissingFlowException("Flow of type " + flowType + " named " + flowName + " is not running");
         }
 
-        return flow;
+        return flowClass.cast(flow);
     }
 
     /**
@@ -265,8 +268,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
      * @return the flow with the given name
      */
     public FlowT getFlowOrThrow(String flowName) {
-        return flowRepo.findByNameAndType(flowName, getFlowClass())
-                .orElseThrow(() -> new IllegalArgumentException("No " + flowType + " flow exists with the name: " + flowName));
+        return flowClass.cast(flowCacheService.getFlowOrThrow(flowType, flowName));
     }
 
     /**
@@ -275,25 +277,11 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
      * @return all flows
      */
     public List<FlowT> getAll() {
-        if (flowCache == null) {
-            refreshCache();
-        }
-
-        return new ArrayList<>(flowCache.values());
+        return new ArrayList<>(flowCacheService.flowsOfType(flowType).stream().map(flowClass::cast).toList());
     }
 
     public List<FlowT> getAllInvalidFlows() {
-        return flowCache.values().stream()
-                .filter(FlowT::isInvalid).toList();
-    }
-
-    /**
-     * Get all flows in the system without caching
-     * @return all flows
-     */
-    public List<FlowT> getAllUncached() {
-        refreshCache();
-        return new ArrayList<>(flowCache.values());
+        return new ArrayList<>(flowCacheService.flowsOfType(flowType).stream().filter(Flow::isInvalid).map(flowClass::cast).toList());
     }
 
     /**
@@ -306,7 +294,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
 
     public List<String> getFlowNamesByState(FlowState state) {
         List<Flow> flows = state == null ? getAll().stream().map(f -> (Flow) f).toList() :
-                flowRepo.findByFlowStatusStateAndType(state, getFlowType());
+                flowRepo.findByFlowStatusStateAndType(state, flowType);
 
         return flows.stream().map(Flow::getName).toList();
     }
@@ -340,7 +328,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
 
         List<FlowT> updatedFlows = new ArrayList<>();
         for (FlowSnapshotT snapshot : flowSnapshots) {
-            FlowT existing = flowRepo.findByNameAndType(snapshot.getName(), getFlowClass()).orElse(null);
+            FlowT existing = flowRepo.findByNameAndType(snapshot.getName(), flowClass).orElse(null);
 
             if (existing == null) {
                 result.getErrors().add("Flow " + snapshot.getName() + " is no longer installed");
@@ -397,7 +385,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
      * @param flowName name of the flow to remove
      */
     public void removeByName(String flowName, PluginCoordinates systemPlugin) {
-        FlowT flow = flowRepo.findByNameAndType(flowName, getFlowClass()).orElse(null);
+        FlowT flow = flowRepo.findByNameAndType(flowName, flowClass).orElse(null);
         if (flow != null) {
             if (flow.isRunning()) {
                 throw new IllegalStateException("Flow " + flowName + " cannot be removed while it is running");
@@ -407,7 +395,6 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
             flowRepo.deleteById(flowName);
             refreshCache();
         }
-
     }
 
     /**
@@ -416,7 +403,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
      * @param pluginCoordinates sourcePlugin whose FlowPlans should be removed
      */
     public void removeBySourcePlugin(PluginCoordinates pluginCoordinates) {
-        flowRepo.deleteBySourcePluginAndType(pluginCoordinates, getFlowType());
+        flowRepo.deleteBySourcePluginAndType(pluginCoordinates, flowType);
         refreshCache();
     }
 
@@ -428,12 +415,12 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
      */
     @Override
     public String uninstallBlockers(PluginEntity plugin) {
-        List<String> runningFlows = flowRepo.findRunningBySourcePlugin(plugin.getPluginCoordinates().getGroupId(), plugin.getPluginCoordinates().getArtifactId(), plugin.getPluginCoordinates().getVersion(), getFlowClass());
+        List<String> runningFlows = flowRepo.findRunningBySourcePlugin(plugin.getPluginCoordinates().getGroupId(), plugin.getPluginCoordinates().getArtifactId(), plugin.getPluginCoordinates().getVersion(), flowClass);
         return runningFlows.isEmpty() ? null : runningFlowError(runningFlows);
     }
 
     public ActionConfiguration findActionConfig(String flowName, String actionName) {
-        FlowT flow = flowCache.get(flowName);
+        Flow flow = flowCacheService.getFlow(flowType, flowName);
 
         if (flow == null || !flow.isRunning()) {
             return null;
@@ -452,12 +439,12 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
     }
 
     FlowT buildFlow(FlowPlanEntity flowPlan, List<Variable> variables) {
-        Optional<FlowT> existing = flowRepo.findByNameAndType(flowPlan.getName(), getFlowClass());
+        Optional<FlowT> existing = flowRepo.findByNameAndType(flowPlan.getName(), flowClass);
 
         boolean flowWasRunning = existing.map(Flow::isRunning).orElse(false);
         boolean flowWasInTestMode = existing.map(Flow::isTestMode).orElse(false);
 
-        FlowPlanT typedFlowPlan = getFlowPlanClass().cast(flowPlan);
+        FlowPlanT typedFlowPlan = flowPlanClass.cast(flowPlan);
         FlowT flow = flowPlanConverter.convert(typedFlowPlan, variables);
 
         flow.getFlowStatus().getErrors().addAll(validator.validate(flow));
@@ -494,7 +481,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
     }
 
     private boolean updateAndRefresh(String flowName, FlowState flowState) {
-        if (flowRepo.updateFlowStatusState(flowName, flowState, getFlowType()) > 0) {
+        if (flowRepo.updateFlowStatusState(flowName, flowState, flowType) > 0) {
             refreshCache();
             return true;
         }
@@ -503,7 +490,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
     }
 
     private boolean updateAndRefreshTestMode(String flowName, boolean testMode) {
-        if (flowRepo.updateFlowStatusTestMode(flowName, testMode, getFlowType()) > 0) {
+        if (flowRepo.updateFlowStatusTestMode(flowName, testMode, flowType) > 0) {
             refreshCache();
             return true;
         }
@@ -514,8 +501,4 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
     String runningFlowError(List<String> runningFlows) {
         return "The plugin has created the following " + flowType + " flows which are still running: " + String.join(", ", runningFlows);
     }
-
-    protected abstract Class<FlowPlanT> getFlowPlanClass();
-    protected abstract Class<FlowT> getFlowClass();
-    protected abstract FlowType getFlowType();
 }
