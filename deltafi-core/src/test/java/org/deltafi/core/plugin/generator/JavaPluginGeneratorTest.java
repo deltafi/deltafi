@@ -22,6 +22,7 @@ import org.assertj.core.api.Assertions;
 import org.deltafi.common.types.ActionType;
 import org.deltafi.core.plugin.generator.flows.EgressFlowPlanGenerator;
 import org.deltafi.core.plugin.generator.flows.FlowPlanGeneratorService;
+import org.deltafi.core.plugin.generator.flows.RestDataSourceFlowPlanGenerator;
 import org.deltafi.core.plugin.generator.flows.TransformFlowPlanGenerator;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -43,7 +44,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @SpringBootTest(classes = {JavaPluginGenerator.class, FlowPlanGeneratorService.class, TransformFlowPlanGenerator.class,
-        EgressFlowPlanGenerator.class, ProjectInfoAutoConfiguration.class})
+        EgressFlowPlanGenerator.class, RestDataSourceFlowPlanGenerator.class, ProjectInfoAutoConfiguration.class})
 class JavaPluginGeneratorTest {
 
     @Autowired

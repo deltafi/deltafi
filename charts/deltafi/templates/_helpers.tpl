@@ -32,6 +32,12 @@ nginx.ingress.kubernetes.io/auth-url: http://deltafi-auth-service.deltafi.svc.cl
 nginx.ingress.kubernetes.io/auth-cache-key: $ssl_client_s_dn$http_authorization
 {{- end -}}
 
+{{- define "defaultIngressAnnotations" -}}
+{{- if .Values.ingress.tls.ssl_ciphers }}
+nginx.ingress.kubernetes.io/ssl-ciphers: {{ .Values.ingress.tls.ssl_ciphers }}
+{{- end -}}
+{{- end -}}
+
 {{- define "defaultStartupProbe" -}}
 startupProbe:
   exec:

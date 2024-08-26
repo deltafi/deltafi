@@ -17,18 +17,18 @@
  */
 package org.deltafi.core.plugin.generator.flows;
 
-import org.deltafi.common.types.ActionConfiguration;
-import org.deltafi.common.types.FlowPlan;
-import org.deltafi.common.types.TransformFlowPlan;
+import org.deltafi.common.types.*;
 import org.deltafi.core.plugin.generator.ActionGeneratorInput;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class TransformFlowPlanGenerator {
 
+    static final String FLOW_NAME_POSTFIX = "-transform";
 
     /**
      * Create a list of transform flow plans using the given action input
@@ -38,18 +38,30 @@ public class TransformFlowPlanGenerator {
      */
     public List<FlowPlan> generateTransformFlows(String baseFlowName, List<ActionGeneratorInput> transformActions) {
         List<ActionConfiguration> transformActionConfigs = ActionUtil.transformActionConfigurations(transformActions);
-
         List<FlowPlan> flowPlans = new ArrayList<>();
 
-        String planName = baseFlowName + "-transform";
-        flowPlans.add(generateTransformFlowPlan(planName, transformActionConfigs));
+        String planName = baseFlowName + FLOW_NAME_POSTFIX;
+
+        Rule subscribeRule = new Rule(baseFlowName + FLOW_NAME_POSTFIX);
+
+        PublishRules publishRules = new PublishRules();
+        publishRules.setMatchingPolicy(MatchingPolicy.FIRST_MATCHING);
+        publishRules.setDefaultRule(new DefaultRule(DefaultBehavior.ERROR));
+        List<Rule> publishRulesList = List.of(new Rule(baseFlowName + EgressFlowPlanGenerator.FLOW_NAME_POSTFIX));
+        publishRules.setRules(publishRulesList);
+
+        flowPlans.add(generateTransformFlowPlan(planName, transformActionConfigs, Set.of(subscribeRule), publishRules));
 
         return flowPlans;
     }
 
-    private FlowPlan generateTransformFlowPlan(String planName, List<ActionConfiguration> transformActions) {
+    private FlowPlan generateTransformFlowPlan(String planName, List<ActionConfiguration> transformActions,
+                                               Set<Rule> subscribeRuleSet, PublishRules publishRules) {
         TransformFlowPlan transformFlowPlan = new TransformFlowPlan(planName, "Sample transform flow");
         transformFlowPlan.setTransformActions(transformActions);
+        transformFlowPlan.setSubscribe(subscribeRuleSet);
+        transformFlowPlan.setPublish(publishRules);
+
         return transformFlowPlan;
     }
 }

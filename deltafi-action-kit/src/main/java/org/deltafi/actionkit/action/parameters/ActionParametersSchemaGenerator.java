@@ -15,7 +15,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.actionkit.action.util;
+package org.deltafi.actionkit.action.parameters;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -25,7 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.victools.jsonschema.generator.*;
 import com.github.victools.jsonschema.module.jackson.JacksonModule;
 import com.github.victools.jsonschema.module.jackson.JacksonOption;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
+import org.deltafi.actionkit.action.parameters.annotation.Size;
 
 import java.util.Map;
 
@@ -35,19 +35,30 @@ import java.util.Map;
  *
  * @see ActionParameters
  */
-public class ActionParameterSchemaGenerator {
+public class ActionParametersSchemaGenerator {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private static final SchemaGenerator SCHEMA_GENERATOR;
 
     static {
-        SchemaGeneratorConfigBuilder configBuilder = new SchemaGeneratorConfigBuilder(SchemaVersion.DRAFT_2020_12, OptionPreset.PLAIN_JSON)
-                .without(Option.SCHEMA_VERSION_INDICATOR)
-                .with(Option.FORBIDDEN_ADDITIONAL_PROPERTIES_BY_DEFAULT)
-                .with(Option.INLINE_ALL_SCHEMAS)
-                .with(new JacksonModule(JacksonOption.RESPECT_JSONPROPERTY_REQUIRED, JacksonOption.IGNORE_TYPE_INFO_TRANSFORM, JacksonOption.FLATTENED_ENUMS_FROM_JSONPROPERTY));
+        SchemaGeneratorConfigBuilder configBuilder =
+                new SchemaGeneratorConfigBuilder(SchemaVersion.DRAFT_2020_12, OptionPreset.PLAIN_JSON)
+                        .without(Option.SCHEMA_VERSION_INDICATOR)
+                        .with(Option.FORBIDDEN_ADDITIONAL_PROPERTIES_BY_DEFAULT)
+                        .with(Option.INLINE_ALL_SCHEMAS)
+                        .with(new JacksonModule(JacksonOption.RESPECT_JSONPROPERTY_REQUIRED,
+                                JacksonOption.IGNORE_TYPE_INFO_TRANSFORM,
+                                JacksonOption.FLATTENED_ENUMS_FROM_JSONPROPERTY));
 
         configBuilder.forFields()
+                .withStringMinLengthResolver(fieldScope -> {
+                    Size size = fieldScope.getAnnotationConsideringFieldAndGetter(Size.class);
+                    return size == null ? null : size.minLength();
+                })
+                .withStringMaxLengthResolver(fieldScope -> {
+                    Size size = fieldScope.getAnnotationConsideringFieldAndGetter(Size.class);
+                    return size == null ? null : size.maxLength();
+                })
                 .withDefaultResolver(fieldScope -> {
                     JsonProperty jsonProperty = fieldScope.getAnnotationConsideringFieldAndGetter(JsonProperty.class);
                     if ((jsonProperty == null) || jsonProperty.defaultValue().isEmpty()) {
@@ -61,17 +72,13 @@ public class ActionParameterSchemaGenerator {
                 });
 
         configBuilder.forTypesInGeneral()
-                .withAdditionalPropertiesResolver(scope -> {
-                    if (scope.getType().isInstanceOf(Map.class)) {
-                        return scope.getTypeParameterFor(Map.class, 1);
-                    }
-                    return null;
-                });
+                .withAdditionalPropertiesResolver(scope ->
+                        scope.getType().isInstanceOf(Map.class) ? scope.getTypeParameterFor(Map.class, 1) : null);
 
         SCHEMA_GENERATOR = new SchemaGenerator(configBuilder.build());
     }
 
-    private ActionParameterSchemaGenerator() {
+    private ActionParametersSchemaGenerator() {
     }
 
     public static JsonNode generateSchema(Class<?> clazz) {

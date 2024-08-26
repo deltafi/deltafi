@@ -3,6 +3,7 @@ kind: Ingress
 metadata:
   name: deltafi-ingress
   annotations:
+  {{- include "defaultIngressAnnotations" . | nindent 4 }}
   {{- include "authAnnotations" . | nindent 4 }}
     nginx.ingress.kubernetes.io/proxy-body-size: {{ .Values.deltafi.ingress.envVar.HTTP_MAX_BODY_SIZE }}
 spec:

@@ -62,7 +62,7 @@ const statValues = computed(() => {
   ]
 })
 
-serverSentEvents.addEventListener('deltaFileStats', (event) => {
+serverSentEvents.addEventListener('deltafiStats', (event) => {
   try {
     deltaFileStats.value = JSON.parse(event.data);
   } catch (error) {

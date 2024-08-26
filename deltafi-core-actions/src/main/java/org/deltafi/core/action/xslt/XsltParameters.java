@@ -24,6 +24,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import org.deltafi.actionkit.action.parameters.annotation.Size;
 import org.deltafi.core.action.ContentSelectionParameters;
 
 import java.util.List;
@@ -35,6 +36,7 @@ import java.util.List;
 public class XsltParameters extends ContentSelectionParameters {
     @JsonProperty(required = true)
     @JsonPropertyDescription("XSLT transformation specification")
+    @Size(maxLength = 5000)
     public String xslt;
 
     @JsonProperty(defaultValue = "[\"*/xml\"]")

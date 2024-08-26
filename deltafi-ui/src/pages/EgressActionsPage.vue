@@ -24,7 +24,7 @@
           <i class="pi pi-search" />
           <InputText v-model="filterFlowsText" type="text" placeholder="Search" class="p-inputtext-sm deltafi-input-field flow-panel-search-txt mx-1" />
         </span>
-        <DialogTemplate component-name="egressActions/EgressActionConfigurationDialog" header="Add New Egress" dialog-width="50vw" @reload-egress-action="refresh">
+        <DialogTemplate component-name="egressActions/EgressActionConfigurationDialog" header="Add New Egress" dialog-width="50vw" @reload-egress-actions="refresh">
           <Button v-has-permission:FlowUpdate label="Add Egress" icon="pi pi-plus" class="p-button-sm p-button-outlined mx-1" />
         </DialogTemplate>
       </div>
@@ -54,7 +54,7 @@ const refresh = async () => {
   egressActionsPanel.value.refresh();
 };
 
-onMounted(async () => {
+onMounted(() => {
   autoRefresh = setInterval(() => {
     if (!isIdle.value) {
       refresh();

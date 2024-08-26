@@ -71,8 +71,8 @@ public class StatsService {
     private void sendMetrics(DeltaFileStats stats) {
         metricService.sendGauges(Map.of(
                 "gauge.deltafile.totalCount", stats.getTotalCount(),
-                "gauge.deltafile.flightCount", stats.getInFlightCount(),
-                "gauge.deltafile.flightBytes", stats.getInFlightBytes()
+                "gauge.deltafile.inFlightCount", stats.getInFlightCount(),
+                "gauge.deltafile.inFlightBytes", stats.getInFlightBytes()
         ));
     }
 

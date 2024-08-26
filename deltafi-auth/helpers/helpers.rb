@@ -39,7 +39,7 @@ class AuthApi < Sinatra::Application
 
     def authorized?
       domain = @original_url&.split('/')&.dig(2)&.split(':')&.first
-      permission = DOMAIN_PERMISSIONS[domain]
+      permission = permission_lookup(domain)
       return false if permission.nil?
 
       @user.permission?(permission)

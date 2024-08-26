@@ -70,9 +70,9 @@
               </dd>
             </template>
           </template>
-          <dt>Topic</dt>
+          <dt>Topic*</dt>
           <dd>
-            <InputText v-model="model['topic']" placeholder="Publish to Topic" :disabled="editDataSource" class="inputWidth" />
+            <AutoComplete v-model="model['topic']" placeholder="Publish to Topic" class="auto-complete-input-width" :suggestions="topicList" @complete="search" />
           </dd>
         </dl>
       </div>
@@ -87,14 +87,16 @@
 
 <script setup>
 import useFlows from "@/composables/useFlows";
-import useFlowActions from "@/composables/useFlowActions";
 import useDataSource from "@/composables/useDataSource";
+import useFlowActions from "@/composables/useFlowActions";
+import useTopics from "@/composables/useTopics";
 import { useMounted } from "@vueuse/core";
 import { computed, defineEmits, defineProps, inject, nextTick, onMounted, onBeforeMount, onUnmounted, provide, reactive, ref } from "vue";
 
 import usePrimeVueJsonSchemaUIRenderers from "@/composables/usePrimeVueJsonSchemaUIRenderers";
 import { JsonForms } from "@jsonforms/vue";
 
+import AutoComplete from "primevue/autocomplete";
 import Button from "primevue/button";
 import Dropdown from "primevue/dropdown";
 import InputText from "primevue/inputtext";
@@ -124,6 +126,7 @@ const props = defineProps({
   },
 });
 
+const { getAllTopics } = useTopics();
 const { editDataSource, closeDialogCommand } = reactive(props);
 const emit = defineEmits(["reloadDataSources"]);
 const { getPluginActionSchema } = useFlowActions();
@@ -134,6 +137,8 @@ const { rendererList, myStyles } = usePrimeVueJsonSchemaUIRenderers();
 provide("style", myStyles);
 const renderers = ref(Object.freeze(rendererList));
 const parametersSchema = ref(undefined);
+const allTopics = ref(["default"]);
+const topicList = ref(undefined);
 
 const errors = ref([]);
 
@@ -206,6 +211,10 @@ const getTimedIngressActions = async () => {
 const isMounted = ref(useMounted());
 
 onBeforeMount(async () => {
+  let topics = await getAllTopics();
+  allTopics.value.length = 0;
+  topics.forEach((topic) => allTopics.value.push(topic));
+
   let responseFlowAction = await getPluginActionSchema();
   allActionsData.value = responseFlowAction.data.plugins;
 
@@ -248,6 +257,18 @@ const onParametersChange = (event, element) => {
 
 const schemaProvided = (schema) => {
   return !_.isEmpty(_.get(schema, "properties", null));
+};
+
+const search = async (event) => {
+  setTimeout(() => {
+    if (!event.query.trim().length) {
+      topicList.value = allTopics.value;
+    } else {
+      topicList.value = allTopics.value.filter((topic) => {
+        return topic.toLowerCase().includes(event.query.toLowerCase());
+      });
+    }
+  }, 300);
 };
 
 const removeEmptyKeyValues = (queryObj) => {

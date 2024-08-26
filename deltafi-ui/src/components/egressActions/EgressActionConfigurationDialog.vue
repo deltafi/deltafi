@@ -38,9 +38,14 @@
           <dd>
             <TextArea v-model="model['description']" placeholder="Egress Action Description." class="inputWidth" rows="5" />
           </dd>
-          <dt>Subcribe</dt>
+          <dt class="d-flex inputWidth justify-content-between">
+            <div>Subcribe*</div>
+            <div>
+              <Badge v-if="!_.isEmpty(validateSubscribe)" v-tooltip.left="{ value: `${validateSubscribe}`, class: 'tooltip-width', showDelay: 300 }" value=" " :class="'pi pi-exclamation-triangle pt-1'" severity="danger"></Badge>
+            </div>
+          </dt>
           <dd>
-            <div class="deltafi-fieldset inputWidth">
+            <div class="deltafi-fieldset inputWidth pl-1 py-0">
               <div class="px-2">
                 <json-forms :data="model['subscribe']" :renderers="renderers" :uischema="subscribeUISchema" :schema="subscribeSchema" @change="onSubscribeChange" />
               </div>
@@ -48,7 +53,7 @@
           </dd>
           <dt>Action*</dt>
           <dd>
-            <Dropdown v-model="model['egressActionOption']" :options="flattenedActionsTypes" option-label="name" placeholder="Select a flow" show-clear class="inputWidth" />
+            <Dropdown v-model="model['egressActionOption']" :options="flattenedActionsTypes" option-label="name" placeholder="Select an action" show-clear class="inputWidth" />
           </dd>
           <template v-if="!_.isEmpty(model['egressActionOption'])">
             <template v-if="schemaProvided(model['egressActionOption']['schema'])">
@@ -79,14 +84,16 @@
 </template>
 
 <script setup>
-import useFlowActions from "@/composables/useFlowActions";
 import useEgressActions from "@/composables/useEgressActions";
+import useFlowActions from "@/composables/useFlowActions";
+import useTopics from "@/composables/useTopics";
 import { useMounted } from "@vueuse/core";
 import { computed, defineEmits, defineProps, inject, nextTick, onMounted, onBeforeMount, onUnmounted, provide, reactive, ref } from "vue";
 
 import usePrimeVueJsonSchemaUIRenderers from "@/composables/usePrimeVueJsonSchemaUIRenderers";
 import { JsonForms } from "@jsonforms/vue";
 
+import Badge from "primevue/badge";
 import Button from "primevue/button";
 import Dropdown from "primevue/dropdown";
 import InputText from "primevue/inputtext";
@@ -113,6 +120,7 @@ const props = defineProps({
   },
 });
 
+const { getAllTopics } = useTopics();
 const { editEgressAction, closeDialogCommand } = reactive(props);
 const emit = defineEmits(["reloadEgressActions"]);
 const { getPluginActionSchema } = useFlowActions();
@@ -123,6 +131,7 @@ provide("style", myStyles);
 const renderers = ref(Object.freeze(rendererList));
 const subscribeUISchema = ref(undefined);
 const parametersSchema = ref(undefined);
+const allTopics = ref(["default"]);
 
 const errors = ref([]);
 
@@ -187,9 +196,11 @@ const getEgressActions = async () => {
   return tmpFlattenedActionsTypes;
 };
 
-const isMounted = ref(useMounted());
-
 onBeforeMount(async () => {
+  let topics = await getAllTopics();
+  allTopics.value.length = 0;
+  topics.forEach((topic) => allTopics.value.push(topic));
+
   let responseFlowAction = await getPluginActionSchema();
   allActionsData.value = responseFlowAction.data.plugins;
 
@@ -207,6 +218,8 @@ onBeforeMount(async () => {
     }
   }
 });
+
+const isMounted = ref(useMounted());
 
 onMounted(async () => {
   editing.value = true;
@@ -288,6 +301,31 @@ const scrollToErrors = async () => {
   errorMessages.scrollIntoView();
 };
 
+const validateSubscribe = computed(() => {
+  // If the subscribe field is empty return "Missing subscriptions."
+  if (_.isEmpty(model.value["subscribe"])) {
+    return "Missing subscriptions.";
+  }
+
+  let checkIfSubscribeHasTopic = (key) =>
+    model.value["subscribe"].some(
+      (obj) =>
+        Object.keys(obj).includes(key) &&
+        Object.keys(obj).some(function (key) {
+          return !_.isEmpty(obj[key]);
+        })
+    );
+
+  // If the subscribe field isn't empty but there isn't a topic return "Missing subscription topic."
+  var isKeyPresent = checkIfSubscribeHasTopic("topic");
+
+  if (!isKeyPresent) {
+    return "Missing subscription topic.";
+  }
+
+  return null;
+});
+
 const submit = async () => {
   let egressActionObject = _.cloneDeepWith(model.value);
   egressActionObject = formatData(egressActionObject);
@@ -349,6 +387,7 @@ const subscribeSchema = {
       },
       topic: {
         type: "string",
+        enum: allTopics.value,
       },
     },
   },

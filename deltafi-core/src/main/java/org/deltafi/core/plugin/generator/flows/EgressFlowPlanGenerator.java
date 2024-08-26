@@ -20,41 +20,53 @@ package org.deltafi.core.plugin.generator.flows;
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.EgressFlowPlan;
 import org.deltafi.common.types.FlowPlan;
+import org.deltafi.common.types.Rule;
 import org.deltafi.core.plugin.generator.ActionGeneratorInput;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class EgressFlowPlanGenerator {
 
+    static final String FLOW_NAME_POSTFIX = "-egress";
+
     /**
      * Generate egress flow plans using the given actions
      * @param baseFlowName prefix to use for the flow plan name
-     * @param egressActions egress actions to use in the flow plans, a default egress action will be used if this is null or empty
+     * @param egressActions egress actions to use in the flow plans, a default egress action will be used if this is
+     *                      null or empty
      * @return list of flow plans built using the given actions
      */
     List<FlowPlan> generateEgressFlowPlans(String baseFlowName, List<ActionGeneratorInput> egressActions) {
         List<ActionConfiguration> egressActionConfigs = ActionUtil.egressActionConfigurations(egressActions);
 
-        String planName = baseFlowName + "-egress";
+        String planName = baseFlowName + FLOW_NAME_POSTFIX;
         List<FlowPlan> egressFlowPlans = new ArrayList<>();
 
         if (egressActionConfigs.size() == 1) {
-            egressFlowPlans.add(generateEgressFlow(planName, egressActionConfigs.getFirst()));
+            Rule subscribeRule = new Rule(baseFlowName + FLOW_NAME_POSTFIX);
+            egressFlowPlans.add(generateEgressFlow(planName, egressActionConfigs.getFirst(), Set.of(subscribeRule)));
         } else {
             for (int i = 0; i < egressActionConfigs.size(); i++) {
-                ActionConfiguration egressActionConfiguration = egressActionConfigs.get(i);
                 int planNum = i + 1;
-                egressFlowPlans.add(generateEgressFlow(planName + "-" + planNum, egressActionConfiguration));
+                Rule subscribeRule = new Rule(baseFlowName + FLOW_NAME_POSTFIX + "-" + planNum);
+                ActionConfiguration egressActionConfiguration = egressActionConfigs.get(i);
+                egressFlowPlans.add(generateEgressFlow(planName + "-" + planNum, egressActionConfiguration,
+                        Set.of(subscribeRule)));
             }
         }
+
         return egressFlowPlans;
     }
 
-    private FlowPlan generateEgressFlow(String planName, ActionConfiguration egressAction) {
-        return new EgressFlowPlan(planName, "Sample egress flow", egressAction);
+    private FlowPlan generateEgressFlow(String planName, ActionConfiguration egressAction,
+                                        Set<Rule> subscribeRuleSet) {
+        EgressFlowPlan egressFlowPlan = new EgressFlowPlan(planName, "Sample egress flow", egressAction);
+        egressFlowPlan.setSubscribe(subscribeRuleSet);
+        return egressFlowPlan;
     }
 
 }

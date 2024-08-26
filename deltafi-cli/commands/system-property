@@ -7,15 +7,14 @@ cli_help_command() {
 Command: system-property
 
 Subcommands:
-  set [PROPERTY_NAME] [NEW_VALUE] [OPTIONS]
+  set [PROPERTY_NAME] [NEW_VALUE]
   list
 
 Usage:
-  system-property [SUBCOMMAND] [OPTIONS]
+  system-property [SUBCOMMAND]
 
 Options:
-  -h, --help          Show help
-  -p, --property-set  Specify the property set that holds the property, defaults to deltafi-common"
+  -h, --help          Show help"
   exit 1
 }
 
@@ -33,8 +32,6 @@ log_failed() {
 
 trap cleanup INT
 
-PROPERTY_SET="deltafi-common"
-
 POSITIONAL=()
 while [[ $# -gt 0 ]]; do
   key="$1"
@@ -43,11 +40,6 @@ while [[ $# -gt 0 ]]; do
     -h|--help)
       cli_help_command
       shift # past argument
-      ;;
-    -p|--property-set)
-      shift
-      PROPERTY_SET="$1"
-      shift
       ;;
     *)    # unknown option
       POSITIONAL+=("$1") # save it in an array for later
@@ -79,13 +71,13 @@ case "$SUBCOMMAND" in
     PROPERTY_KEY=${ARGS[2]}
     PROPERTY_VALUE=${ARGS[3]}
 
-    if [[ -z "$PROPERTY_KEY" || -z "$PROPERTY_VALUE" ]]; then
-      cli_log "${red}The property key and property value must be provided${normal}"
+    if [[ -z "$PROPERTY_KEY" ]]; then
+      cli_log "${red}The property key must be provided${normal}"
       exit
     fi
 
     EXTRACT_PATH=".data.updateProperties"
-    QUERY="mutation { updateProperties(updates: { propertySetId: \"$PROPERTY_SET\" key: \"$PROPERTY_KEY\" value: \"$PROPERTY_VALUE\" })}"
+    QUERY="mutation { updateProperties(updates: { key: \"$PROPERTY_KEY\" value: \"$PROPERTY_VALUE\" })}"
     ;;
   list)
     EXTRACT_PATH=".data.getPropertySets"
@@ -114,9 +106,9 @@ else
     UPDATED=$(cat ${TMPFILE} | jq -r "${EXTRACT_PATH}")
 
     if [[ "$UPDATED" == "true" ]]; then
-      cli_log "${green}Successfully set ${bold}$PROPERTY_SET:$PROPERTY_KEY${normal}${green} to ${bold}$PROPERTY_VALUE${normal}"
+      cli_log "${green}Successfully set ${bold}$PROPERTY_KEY${normal}${green} to ${bold}\"$PROPERTY_VALUE\"${normal}"
     else
-      cli_log "${yellow}Property $PROPERTY_KEY in property set $PROPERTY_SET was not updated${normal}"
+      cli_log "${yellow}Property $PROPERTY_KEY was not updated${normal}"
     fi
   else
     cat ${TMPFILE} | jq -r "${EXTRACT_PATH}"

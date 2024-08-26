@@ -26,8 +26,8 @@ import feign.jackson.JacksonDecoder;
 import feign.jackson.JacksonEncoder;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.actionkit.action.Action;
+import org.deltafi.actionkit.action.parameters.ActionParametersSchemaGenerator;
 import org.deltafi.actionkit.action.transform.Join;
-import org.deltafi.actionkit.action.util.ActionParameterSchemaGenerator;
 import org.deltafi.common.http.client.feign.FeignClientFactory;
 import org.deltafi.common.types.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -98,7 +98,7 @@ public class PluginRegistrar {
 
     private ActionDescriptor buildActionDescriptor(Action<?, ?, ?> action) {
         Map<String, Object> schema = OBJECT_MAPPER.convertValue(
-                ActionParameterSchemaGenerator.generateSchema(action.getParamClass()),
+                ActionParametersSchemaGenerator.generateSchema(action.getParamClass()),
                 new TypeReference<>() {});
 
         return ActionDescriptor.builder()

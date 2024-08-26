@@ -171,7 +171,8 @@ services:
     restart: unless-stopped
     volumes:
       - ${DATA_DIR}:/data
-  deltafi-egress-sink-service:
+      - /var/run/docker.sock:/var/run/docker.sock
+  deltafi-egress-sink:
     image: ${DELTAFI_EGRESS_SINK}
     container_name: deltafi-egress-sink-service
     depends_on:
@@ -237,7 +238,7 @@ services:
       - ${DATA_DIR}/postgres:/var/lib/postgresql/data/
     user: "${USER_ID}"
   deltafi-valkey:
-    image: bitnami/valkey:7.2.5
+    image: ${VALKEY}
     container_name: deltafi-valkey
     environment:
       BITNAMI_DEBUG: false
@@ -276,7 +277,10 @@ services:
     labels:
       deltafi-group: deltafi-dependency
     networks:
-      - deltafi
+      deltafi:
+        aliases:
+          - "visualization"
+          - "grafana"
     volumes:
       - ${DATA_DIR}/grafana:/var/lib/grafana
       - ${SETTINGS_DIR}/grafana/grafana.ini:/etc/grafana/grafana.ini
@@ -286,7 +290,7 @@ services:
     restart: unless-stopped
     user: "${USER_ID}"
   deltafi-docker-ui:
-    image: deltafi/docker-web-gui:1.0.1-0
+    image: ${DOCKER_WEB_GUI}
     container_name: deltafi-docker-ui
     expose:
       - "3230"
@@ -295,7 +299,9 @@ services:
     labels:
       deltafi-group: deltafi-dependency
     networks:
-      - deltafi
+      deltafi:
+        aliases:
+          - "orchestration"
     restart: unless-stopped
   deltafi-graphite:
     image: ${GRAPHITE}
@@ -399,7 +405,9 @@ services:
     labels:
       deltafi-group: deltafi-dependency
     networks:
-      - deltafi
+      deltafi:
+        aliases:
+          - "ingress"
     restart: unless-stopped
     volumes:
       - ${SETTINGS_DIR}/nginx:/etc/nginx/templates

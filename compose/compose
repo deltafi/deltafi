@@ -439,7 +439,6 @@ _check_local_fqdns() {
   domain=$(_from_values ".ingress.domain")
   _verify_or_replace_fqdn "$domain"
   _verify_or_replace_fqdn "graphite.$domain"
-  _verify_or_replace_fqdn "metrics.$domain"
   _verify_or_replace_fqdn "minio.$domain"
   _verify_or_replace_fqdn "orchestration.$domain"
   _verify_or_replace_fqdn "deltafi-api-service"
@@ -498,15 +497,16 @@ deltafi:
 ingress:
   domain: local.deltafi.org
 dependencies:
-  grafana: deltafi/grafana:11.1.3-0
+  grafana: deltafi/grafana:11.1.4-0
   graphite: graphiteapp/graphite-statsd:1.1.10-5
-  loki: grafana/loki:2.9.9
-  minio: quay.io/minio/minio:RELEASE.2024-07-04T14-25-45Z
-  nginx: docker.io/nginx:1.27.0-alpine
-  promtail: docker.io/grafana/promtail:2.9.9
-  postgres: docker.io/postgres:12.19-alpine3.18
-  valkey: docker.io/bitnami/valkey:7.2.5
-  clickhouse: bitnami/clickhouse:24.3.3-debian-12-r2
+  loki: grafana/loki:2.9.10
+  minio: quay.io/minio/minio:RELEASE.2024-08-17T01-24-54Z
+  nginx: nginx:1.27.1-alpine3.20
+  promtail: grafana/promtail:2.9.10
+  mongodb: bitnami/mongodb:5.0.17
+  valkey: bitnami/valkey:7.2.6
+  clickhouse: bitnami/clickhouse:24.8.1-debian-12-r0
+  docker_web_gui: deltafi/docker-web-gui:1.0.1-0
 EOF
 }
 
@@ -521,7 +521,10 @@ _merge_values_yaml() {
         echo "${i}: No such file"
         exit 1
       fi
-      yq -r -i '. *= load("'"${i}"'")' "${VALUES_YAML}"
+      temp=$(dirname "${VALUES_YAML}")/override.$(basename "${i}")
+      cp "${i}" "${temp}"
+      yq -r -i '. *= load("'"${temp}"'")' "${VALUES_YAML}"
+      rm -f "${temp}"
     done
   fi
 }
@@ -615,6 +618,7 @@ _write_startup_file() {
   _append_startup_from_values "VALKEY" ".dependencies.valkey"
   _append_startup_from_values "REDIS" ".dependencies.valkey"
   _append_startup_from_values "CLICKHOUSE" ".dependencies.clickhouse"
+  _append_startup_from_values "DOCKER_WEB_GUI" ".dependencies.docker_web_gui"
   _append_startup_from_values "API_WORKERS" ".deltafi.api.workers"
   _append_startup_from_values "AUTH_WORKERS" ".deltafi.auth.workers"
   _append_startup_from_values "AUTH_RESOLVER_PORT" ".deltafi.auth.entityResolver.port"
@@ -631,7 +635,7 @@ DELTAFI_MODE=STANDALONE
 GRAPHITE_HOST=deltafi-graphite
 GRAPHITE_PORT="2003"
 INGRESS_URL=http://deltafi-ingress:8080
-PERIOD="9"
+PERIOD="5"
 METRICS_PERIOD_SECONDS="10"
 MINIO_PARTSIZE="5242880"
 MINIO_URL=http://deltafi-minio:9000
@@ -724,6 +728,9 @@ _install_plugins() {
 }
 
 _post_install() {
+
+  _apply_settings
+
   while [[ $# -gt 0 ]]; do
     file="$1"
     shift
@@ -743,7 +750,24 @@ _create_data_dirs() {
   fi
 }
 
+_set_state() {
+  local compose_projects
+  compose_projects=$(docker compose ls -q)
+  if [[ $compose_projects == *"deltafi"* ]]; then
+    PREVIOUS_COMPOSE_RUNNING=true
+  else
+    PREVIOUS_COMPOSE_RUNNING=false
+  fi
+}
+
+_apply_settings() {
+  if [ "$PREVIOUS_COMPOSE_RUNNING" = "false" ]; then
+    deltafi system-property set pluginImageRepositoryBase "" >/dev/null
+  fi
+}
+
 start_compose() {
+  _set_state
   _create_data_dirs
   _create_network
   _check_local_fqdns

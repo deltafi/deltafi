@@ -19,10 +19,10 @@ public class {{className}} extends EgressAction<{{paramClassName}}> {
     @Override
     public EgressResultType egress(@NotNull ActionContext context, @NotNull {{paramClassName}} params, @NotNull EgressInput egressInput) {
         String destination = "";
-        byte[] formattedData = egressInput.content().loadBytes();
+        byte[] formattedData = egressInput.getContent().loadBytes();
 
         // TODO: add logic to egress the data
 
-        return new EgressResult(context, destination, egressInput.content().getSize());
+        return new EgressResult(context, destination, egressInput.getContent().getSize());
     }
 }

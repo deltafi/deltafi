@@ -364,6 +364,7 @@ EOF
 docker run --rm -i \\
   -v "\$PWD:\$PWD" \\
   -w "\$PWD" \\
+  -u "\$USER_ID" \\
   mikefarah/yq:4.44.3 \\
   "\$@"
 EOF
@@ -373,6 +374,7 @@ EOF
 docker run --rm -i \\
   -v "\$PWD:\$PWD" \\
   -w "\$PWD" \\
+  -u "\$USER_ID" \\
   ghcr.io/jqlang/jq:1.7.1 \\
   "\$@"
 EOF
