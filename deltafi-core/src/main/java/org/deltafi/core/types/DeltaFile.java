@@ -39,8 +39,8 @@ import java.util.stream.Stream;
 @Builder
 @Entity
 @Table(name = "delta_files", indexes = {
-        @Index(name = "idx_created", columnList = "created, data_source, normalized_name, stage, egressed, filtered, terminal, ingress_bytes, content_deletable"),
-        @Index(name = "idx_modified", columnList = "modified, data_source, normalized_name, stage, egressed, filtered, terminal, ingress_bytes, content_deletable")
+        @Index(name = "idx_created", columnList = "content_deletable, created, stage, data_source, normalized_name, egressed, filtered, terminal, ingress_bytes"),
+        @Index(name = "idx_modified", columnList = "content_deletable, modified, stage, data_source, normalized_name, egressed, filtered, terminal, ingress_bytes")
 })
 public class DeltaFile {
   @Id

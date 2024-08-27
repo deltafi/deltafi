@@ -61,12 +61,12 @@ public interface DeltaFileRepo extends JpaRepository<DeltaFile, UUID>, DeltaFile
     Optional<DeltaFile> findByDidAndStageIn(UUID did, List<DeltaFileStage> stages);
 
     /**
-     * Get count and sizes of deltaFiles in the system
+     * Get estimated count and sizes of deltaFiles in the system
      * @return stats
      */
     @Query("""
             SELECT new org.deltafi.core.generated.types.DeltaFileStats(
-              (SELECT COUNT(*) FROM DeltaFile df),
+              (SELECT reltuples AS estimate FROM pg_class WHERE relname = 'delta_files'),
               COUNT(*),
               COALESCE(SUM(d.referencedBytes), 0L))
             FROM DeltaFile d
