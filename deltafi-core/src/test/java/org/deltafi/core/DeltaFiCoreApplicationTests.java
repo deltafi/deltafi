@@ -3908,7 +3908,8 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.saveAll(List.of(deltaFile1, deltaFile2, deltaFile3));
 
 		DeltaFileStats all = deltaFilesService.deltaFileStats();
-		assertEquals(3, all.getTotalCount());
+		// stats returns an estimate, so this may still be 0 if pulled from the deltaFileStats
+		assertEquals(3, deltaFileRepo.count());
 		assertEquals(6L, all.getInFlightBytes());
 		assertEquals(2L, all.getInFlightCount());
 	}

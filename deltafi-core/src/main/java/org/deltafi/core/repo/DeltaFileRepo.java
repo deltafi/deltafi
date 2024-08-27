@@ -60,10 +60,6 @@ public interface DeltaFileRepo extends JpaRepository<DeltaFile, UUID>, DeltaFile
 
     Optional<DeltaFile> findByDidAndStageIn(UUID did, List<DeltaFileStage> stages);
 
-    /**
-     * Get estimated count and sizes of deltaFiles in the system
-     * @return stats
-     */
     @Query(value = """
         SELECT CAST(
           (SELECT reltuples FROM pg_class WHERE relname = 'delta_files') AS BIGINT) AS estimate,
@@ -72,5 +68,22 @@ public interface DeltaFileRepo extends JpaRepository<DeltaFile, UUID>, DeltaFile
         FROM delta_files
         WHERE stage = 'IN_FLIGHT'
         """, nativeQuery = true)
-    DeltaFileStats deltaFileStats();
+    List<Object[]> getRawDeltaFileStats();
+
+    /**
+     * Get estimated count and sizes of deltaFiles in the system
+     * @return stats
+     */
+    default DeltaFileStats deltaFileStats() {
+        List<Object[]> rawStats = getRawDeltaFileStats();
+        if (rawStats.isEmpty()) {
+            return new DeltaFileStats(0L, 0L, 0L);  // or however you want to handle no results
+        }
+        Object[] row = rawStats.getFirst();
+        return new DeltaFileStats(
+                Math.max(0, ((Number) row[0]).longValue()),
+                Math.max(0, ((Number) row[1]).longValue()),
+                Math.max(0, ((Number) row[2]).longValue())
+        );
+    }
 }
