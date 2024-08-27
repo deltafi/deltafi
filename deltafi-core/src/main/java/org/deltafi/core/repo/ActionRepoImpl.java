@@ -204,7 +204,7 @@ public class ActionRepoImpl implements ActionRepoCustom {
 
     private Long totalCountByFlowAndMessage(SummaryFilter filter, ActionState actionState, String causeField) {
         StringBuilder sql = new StringBuilder("""
-            SELECT COUNT(1)
+            SELECT COUNT(*)
             FROM (
               SELECT DISTINCT a.%s, df.name
               FROM actions a JOIN delta_file_flows df ON a.delta_file_flow_id = df.id

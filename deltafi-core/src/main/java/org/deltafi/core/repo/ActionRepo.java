@@ -29,7 +29,7 @@ import java.util.UUID;
 
 @Repository
 public interface ActionRepo extends JpaRepository<Action, UUID>, ActionRepoCustom {
-    long countByStateAndErrorAcknowledgedIsNull(ActionState stage);
+    long countByStateAndErrorAcknowledgedIsNull(ActionState state);
 
     @Query("SELECT new org.deltafi.core.types.ColdQueuedActionSummary(a.name, a.type, COUNT(*)) " +
             "FROM Action a " +
