@@ -40,13 +40,6 @@ public interface DeltaFileRepo extends JpaRepository<DeltaFile, UUID>, DeltaFile
     Page<DeltaFile> findByStageOrderByModifiedDesc(DeltaFileStage stage, Pageable pageable);
     Page<DeltaFile> findByNameOrderByCreatedDesc(String filename, Pageable pageable);
 
-    /**
-     * Find the DeltaFiles that include the given flowName in their pendingAnnotationsForFlows set
-     * @param flowName name of flow to search for
-     * @return stream of matching DeltaFiles
-     */
-    Stream<DeltaFile> findByTerminalAndFlowsNameAndFlowsState(boolean isTerminal, String flowName, DeltaFileFlowState state);
-
     @Query(value = """
             SELECT COUNT(*)
             FROM delta_files df
@@ -58,19 +51,26 @@ public interface DeltaFileRepo extends JpaRepository<DeltaFile, UUID>, DeltaFile
             """, nativeQuery = true)
     long countByStageAndErrorAcknowledgedIsNull(@Param("stage") String stage);
 
+    /**
+     * Find the DeltaFiles that include the given flowName in their pendingAnnotationsForFlows set
+     * @param flowName name of flow to search for
+     * @return stream of matching DeltaFiles
+     */
+    Stream<DeltaFile> findByTerminalAndFlowsNameAndFlowsState(boolean isTerminal, String flowName, DeltaFileFlowState state);
+
     Optional<DeltaFile> findByDidAndStageIn(UUID did, List<DeltaFileStage> stages);
 
     /**
      * Get estimated count and sizes of deltaFiles in the system
      * @return stats
      */
-    @Query("""
-            SELECT new org.deltafi.core.generated.types.DeltaFileStats(
-              (SELECT reltuples AS estimate FROM pg_class WHERE relname = 'delta_files'),
-              COUNT(*),
-              COALESCE(SUM(d.referencedBytes), 0L))
-            FROM DeltaFile d
-            WHERE d.stage = 'IN_FLIGHT'
-            """)
+    @Query(value = """
+        SELECT CAST(
+          (SELECT reltuples FROM pg_class WHERE relname = 'delta_files') AS BIGINT) AS estimate,
+        COUNT(*) AS count,
+        COALESCE(SUM(referenced_bytes), 0) AS total_bytes
+        FROM delta_files
+        WHERE stage = 'IN_FLIGHT'
+        """, nativeQuery = true)
     DeltaFileStats deltaFileStats();
 }
