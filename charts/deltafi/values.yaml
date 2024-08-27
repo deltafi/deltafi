@@ -13,37 +13,37 @@ deltafi:
     trustStoreName: trustStore.jks
     trustStoreType: JKS
   core_actions:
-    image: deltafi/deltafi-core-actions:2.0-rc10
+    image: deltafi/deltafi-core-actions:2.0-rc11
   core:
-    image: deltafi/deltafi-core:2.0-rc10
+    image: deltafi/deltafi-core:2.0-rc11
     mongo_host: deltafi-mongodb
   docs:
-    image: deltafi/deltafi-docs:2.0-rc10
+    image: deltafi/deltafi-docs:2.0-rc11
     enabled: true
   ingress:
     envVar:
       HTTP_MAX_BODY_SIZE: 5G
   auth:
-    image: deltafi/deltafi-auth:2.0-rc10
+    image: deltafi/deltafi-auth:2.0-rc11
     mode: basic # basic, cert, or disabled
     secret: auth-secret
     entityResolver:
       enabled: false
-      image: deltafi/deltafi-entity-resolver:2.0-rc10
+      image: deltafi/deltafi-entity-resolver:2.0-rc11
       url: http://127.0.0.1:8080/
   api:
-    image: deltafi/deltafi-api:2.0-rc10
+    image: deltafi/deltafi-api:2.0-rc11
   ui:
-    image: deltafi/deltafi-ui:2.0-rc10
+    image: deltafi/deltafi-ui:2.0-rc11
   egress_sink:
     enabled: true
-    image: deltafi/deltafi-egress-sink:2.0-rc10
+    image: deltafi/deltafi-egress-sink:2.0-rc11
   nodemonitor:
-    image: deltafi/deltafi-nodemonitor:2.0-rc10
+    image: deltafi/deltafi-nodemonitor:2.0-rc11
     period: 9
   clustermonitor:
     enabled: true
-    image: deltafi/deltafi-clustermonitor:2.0-rc10
+    image: deltafi/deltafi-clustermonitor:2.0-rc11
     period: 9
 
 # Kubernetes ingress config
