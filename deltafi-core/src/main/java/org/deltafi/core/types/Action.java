@@ -154,8 +154,8 @@ public class Action {
   }
 
   public void setFilteredActionState(OffsetDateTime start, OffsetDateTime stop, OffsetDateTime now, String filteredCause, String filteredContext) {
-    this.filteredCause = filteredCause.substring(0, Math.min(filteredCause.length(), MAX_CAUSE_SIZE));
-    this.filteredContext = filteredContext.substring(0, Math.min(filteredContext.length(), MAX_CAUSE_SIZE));
+    this.filteredCause = filteredCause == null ? "" : filteredCause.substring(0, Math.min(filteredCause.length(), MAX_CAUSE_SIZE));
+    this.filteredContext = filteredContext == null ? "" : filteredContext.substring(0, Math.min(filteredContext.length(), MAX_CAUSE_SIZE));
     changeState(ActionState.FILTERED, start, stop, now);
   }
 
