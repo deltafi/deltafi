@@ -19,7 +19,7 @@
 <template>
   <div class="egress-actions-panel">
     <CollapsiblePanel header="Egress Actions" class="table-panel pb-3">
-      <DataTable v-model:filters="filters" :loading="showLoading" :value="egressActionsList" edit-mode="cell" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines egress-action-table" :global-filter-fields="['name', 'description']" sort-field="name" :sort-order="1" :row-hover="true">
+      <DataTable v-model:filters="filters" :loading="showLoading" :value="egressActionsList" edit-mode="cell" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines egress-action-table" :global-filter-fields="['name', 'description']" sort-field="name" :sort-order="1" :row-hover="true" data-key="name">
         <template #empty>No Egress Actions found.</template>
         <template #loading>Loading Egress Actions. Please wait.</template>
         <Column header="Name" field="name" :style="{ width: '25%' }" :sortable="true">
@@ -117,7 +117,6 @@ watch(
     filters.value["global"].value = props.filterFlowsTextProp;
   }
 );
-
 
 const errorTooltip = (data) => {
   return _.isEmpty(data.flowStatus.errors) ? "" : " and errors";

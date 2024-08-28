@@ -83,7 +83,7 @@
             </Button>
             <Menu id="config_menu" ref="deltaFilesMenu" :model="deltaFilesMenuItems" :popup="true" />
           </template>
-          <DataTable responsive-layout="scroll" sort-field="uploadedTimestamp" :sort-order="-1" :value="deltaFiles" striped-rows class="p-datatable-sm p-datatable-gridlines deltafiles" :row-class="uploadsRowClass">
+          <DataTable responsive-layout="scroll" sort-field="uploadedTimestamp" :sort-order="-1" :value="deltaFiles" striped-rows class="p-datatable-sm p-datatable-gridlines deltafiles" :row-class="uploadsRowClass" data-key="filename">
             <Column field="dids" header="DID(s)" class="did-column">
               <template #body="file">
                 <span v-if="file.data.loading">
@@ -91,9 +91,7 @@
                 </span>
                 <span v-else-if="file.data.error"> <i class="fas fa-times" /> Error </span>
                 <span v-else>
-                  <span v-for="(did, index) in file.data.dids" :key="did">
-                    <DidLink :did="did" /><br v-if="index != file.data.dids.length - 1" />
-                  </span>
+                  <span v-for="(did, index) in file.data.dids" :key="did"> <DidLink :did="did" /><br v-if="index != file.data.dids.length - 1" /> </span>
                 </span>
               </template>
             </Column>
@@ -184,7 +182,7 @@ const deltaFilesMenuItems = ref([
 ]);
 
 const dataSourceDropdownClass = computed(() => {
-  return (selectedDataSource.value == null && uploadClicked.value) ? 'invalid' : null;
+  return selectedDataSource.value == null && uploadClicked.value ? "invalid" : null;
 });
 
 const showImportDialog = () => {
@@ -243,7 +241,7 @@ const onUpload = (event) => {
     ingressFiles(event);
   } else {
     uploadClicked.value = true;
-    notify.warn("Please Select Data Source", "A data source is required to upload files.")
+    notify.warn("Please Select Data Source", "A data source is required to upload files.");
   }
 };
 

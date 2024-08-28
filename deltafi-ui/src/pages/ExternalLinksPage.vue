@@ -30,7 +30,7 @@
       </div>
     </PageHeader>
     <Panel header="External links" class="external-links-panel table-panel">
-      <DataTable v-model:filters="filters" :value="externalLinks" :loading="loading" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :global-filter-fields="['name', 'description']" :row-hover="true">
+      <DataTable v-model:filters="filters" :value="externalLinks" :loading="loading" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :global-filter-fields="['name', 'description']" :row-hover="true" data-key="name">
         <template #empty>No External Links found</template>
         <template #loading>Loading External Links. Please wait.</template>
         <Column field="name" header="Name" :sortable="true" :style="{ width: '15rem' }">
@@ -131,7 +131,7 @@ const reloadUIConfigs = async () => {
       clearInterval(interval);
     }
     tries += 1;
-  }, 500)
+  }, 500);
 };
 </script>
 

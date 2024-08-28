@@ -35,7 +35,7 @@
 import GrafanaChartWrapper from "@/components/dashboard/GrafanaChartWrapper.vue";
 import Dropdown from "primevue/dropdown";
 import Panel from "primevue/panel";
-import {ref, onBeforeMount, watch } from "vue";
+import { ref, onBeforeMount, watch } from "vue";
 import { useStorage, StorageSerializers } from "@vueuse/core";
 
 const refreshKey = ref(0);
@@ -61,7 +61,7 @@ const grafanaPanelIdMap = {
   "Ingress Flows": 1,
   "Content Storage": 3,
   "Egress Flows": 2,
-  "Delete Policy Activity": 4,
+  "Content Removed": 4,
 }
 
 onBeforeMount(async () => {
@@ -78,11 +78,14 @@ watch(timeFrame, () => { setPersistedParams() });
     padding-bottom: 0.25rem !important;
     padding-top: 0.25rem !important;
   }
+
   .p-panel-header {
     height: 44px !important;
   }
+
   .row {
     padding: 0 0.4rem;
+
     .chart {
       padding: 0.5rem;
     }

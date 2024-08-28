@@ -28,7 +28,7 @@
           </PermissionedRouterLink>
         </span>
       </template>
-      <DataTable v-model:filters="filters" :edit-mode="$hasPermission('FlowUpdate') ? 'cell' : null" :value="pluginFlows" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines flows-table" :row-class="actionRowClass" :global-filter-fields="['searchField']" sort-field="name" :sort-order="1" :row-hover="true">
+      <DataTable v-model:filters="filters" :edit-mode="$hasPermission('FlowUpdate') ? 'cell' : null" :value="pluginFlows" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines flows-table" :row-class="actionRowClass" :global-filter-fields="['searchField']" sort-field="name" :sort-order="1" :row-hover="true" data-key="name">
         <template #empty>No flows found.</template>
         <Column header="Name" field="name" class="name-column" :sortable="true">
           <template #body="{ data }">
@@ -301,7 +301,7 @@ const confirmationPopup = (event, data) => {
     accept: () => {
       deleteFlow(data);
     },
-    reject: () => { },
+    reject: () => {},
   });
 };
 
@@ -324,7 +324,7 @@ const confirmAllFlows = (runType, message) => {
     accept: () => {
       runForAllFlowsForPlugin(runType);
     },
-    reject: () => { },
+    reject: () => {},
   });
 };
 
