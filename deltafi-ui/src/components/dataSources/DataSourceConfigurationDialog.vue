@@ -344,7 +344,6 @@ const scrollToErrors = async () => {
 const submit = async () => {
   let dataSourceObject = _.cloneDeepWith(model.value);
   dataSourceObject = formatData(dataSourceObject);
-
   errors.value = [];
   if (_.isEmpty(dataSourceObject["name"])) {
     errors.value.push("Name is a required field.");
@@ -401,7 +400,6 @@ const submit = async () => {
     scrollToErrors();
     return;
   }
-
   closeDialogCommand.command();
   emit("reloadDataSources");
 };

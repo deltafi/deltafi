@@ -47,7 +47,7 @@
         <Column header="Publish" field="topic" :sortable="true"></Column>
         <Column header="Cron Schedule" field="cronSchedule" :sortable="true" class="inline-edit-column" style="width: 10rem">
           <template #body="{ data, field }">
-            <span v-if="data[field]" v-tooltip.top="cronString.toString(data[field], { verbose: false })">{{ data[field] }} </span>
+            <span v-if="data[field]" v-tooltip.top="cronString.toString(data[field], { verbose: false }) + '\n\nClick to edit'" class="cursor-pointer" @click="editCronSchedule(data)">{{ data[field] }} </span>
           </template>
         </Column>
         <Column header="Max Errors" field="maxErrors" class="max-error-column">
@@ -106,6 +106,7 @@
         </div>
       </template>
     </Dialog>
+    <CronScheduleEditDialog v-model:visible="cronEditView.visible" :data="cronEditView.data" @reload-data-sources="refresh" @close="cronEditView.visible = false" />
   </div>
 </template>
 
@@ -121,7 +122,12 @@ import Timestamp from "@/components/Timestamp.vue";
 import useDataSource from "@/composables/useDataSource";
 import useNotifications from "@/composables/useNotifications";
 import { computed, defineEmits, onMounted, inject, ref } from "vue";
+import CronScheduleEditDialog from "@/components/dataSources/CronScheduleEditDialog.vue";
 
+const cronEditView = ref({
+  visible: false,
+  data: {},
+});
 const cronString = require("cronstrue");
 import _ from "lodash";
 
@@ -170,6 +176,11 @@ const onEditComplete = async (event) => {
 
   editing.value = false;
   refresh();
+};
+
+const editCronSchedule = (data) => {
+  cronEditView.value.data = data;
+  cronEditView.value.visible = true;
 };
 
 // Start Dialog
@@ -254,7 +265,7 @@ defineExpose({ refresh });
         width: 7rem;
         padding: 0 !important;
 
-        > span {
+        >span {
           padding: 0.5rem !important;
         }
 
@@ -264,7 +275,7 @@ defineExpose({ refresh });
           display: flex;
         }
 
-        .value-clickable > * {
+        .value-clickable>* {
           flex: 0 0 auto;
         }
 
