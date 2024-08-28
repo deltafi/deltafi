@@ -183,12 +183,14 @@ const refresh = async () => {
   if (editing.value) return;
 
   const response = await getAllDataSources();
-  restDataSources.value = response.data.getAllFlows.dataSource.filter((ds) => {
-    return ds.type === "REST_DATA_SOURCE";
-  }).map((ds) => {
-    ds.maxErrors = ds.maxErrors !== -1 ? ds.maxErrors : null;
-    return ds;
-  });
+  restDataSources.value = response.data.getAllFlows.dataSource
+    .filter((ds) => {
+      return ds.type === "REST_DATA_SOURCE";
+    })
+    .map((ds) => {
+      ds.maxErrors = ds.maxErrors !== -1 ? ds.maxErrors : null;
+      return ds;
+    });
 
   emit("dataSourcesList", restDataSources.value);
 };
