@@ -41,7 +41,8 @@ import static jakarta.persistence.ConstraintMode.NO_CONSTRAINT;
 @Builder
 @Entity
 @Table(name = "actions", indexes = {
-        @Index(name = "idx_action", columnList = "delta_file_flow_id, state, type, name, next_auto_resume, error_acknowledged")
+        @Index(name = "idx_action", columnList = "delta_file_flow_id, state, type, name, next_auto_resume, error_acknowledged"),
+        @Index(name = "idx_action_state", columnList = "state, delta_file_flow_id")
 })
 @EqualsAndHashCode(exclude = "deltaFileFlow")
 public class Action {
