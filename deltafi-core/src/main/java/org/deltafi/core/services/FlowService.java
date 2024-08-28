@@ -440,35 +440,19 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
 
     FlowT buildFlow(FlowPlanEntity flowPlan, List<Variable> variables) {
         Optional<FlowT> existing = flowRepo.findByNameAndType(flowPlan.getName(), flowClass);
-
-        boolean flowWasRunning = existing.map(Flow::isRunning).orElse(false);
-        boolean flowWasInTestMode = existing.map(Flow::isTestMode).orElse(false);
-
         FlowPlanT typedFlowPlan = flowPlanClass.cast(flowPlan);
         FlowT flow = flowPlanConverter.convert(typedFlowPlan, variables);
 
         flow.getFlowStatus().getErrors().addAll(validator.validate(flow));
 
-        existing.ifPresent(sourceFlow -> copyFlowSpecificFields(sourceFlow, flow));
+        existing.ifPresent(flow::copyFlowState);
 
         if (flow.hasErrors()) {
             flow.getFlowStatus().setState(FlowState.INVALID);
-        } else if (flowWasRunning) {
-            flow.getFlowStatus().setState(FlowState.RUNNING);
         }
-
-        flow.getFlowStatus().setTestMode(flowWasInTestMode);
 
         return flow;
     }
-
-    /**
-     * Hook to copy fields from an existing flow into the new flow
-     * that is getting created from a flow plan
-     * @param sourceFlow existing flow that contains fields that should be copied into the targetFlow
-     * @param targetFlow flow that is being recreated and should have the fields set from the sourceFlow values
-     */
-    void copyFlowSpecificFields(FlowT sourceFlow, FlowT targetFlow) {}
 
     private FlowT save(FlowT flow) {
         FlowT persistedFlow = flowRepo.save(flow);

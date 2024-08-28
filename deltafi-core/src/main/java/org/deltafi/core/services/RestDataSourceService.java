@@ -52,11 +52,6 @@ public class RestDataSourceService extends FlowService<RestDataSourcePlanEntity,
     }
 
     @Override
-    void copyFlowSpecificFields(RestDataSource sourceFlow, RestDataSource targetFlow) {
-        targetFlow.copyFields(sourceFlow);
-    }
-
-    @Override
     public void updateSnapshot(SystemSnapshot systemSnapshot) {
         List<RestDataSourceSnapshot> restDataSourceSnapshots = new ArrayList<>();
         for (RestDataSource dataSource : getAll()) {

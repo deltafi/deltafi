@@ -75,11 +75,6 @@ public class TimedDataSourceService extends FlowService<TimedDataSourcePlanEntit
     }
 
     @Override
-    void copyFlowSpecificFields(TimedDataSource sourceFlow, TimedDataSource targetFlow) {
-        targetFlow.copyFields(sourceFlow);
-    }
-
-    @Override
     public void updateSnapshot(SystemSnapshot systemSnapshot) {
         List<TimedDataSourceSnapshot> timedDataSourceSnapshots = new ArrayList<>();
         for (TimedDataSource timedDataSource : getAll()) {

@@ -80,4 +80,11 @@ public class EgressFlow extends Flow implements Subscriber {
     public FlowType flowType() {
         return FlowType.EGRESS;
     }
+
+    @Override
+    public void copyFlowSpecificState(Flow sourceFlow) {
+        if (sourceFlow instanceof EgressFlow egressFlow) {
+            this.setExpectedAnnotations(egressFlow.getExpectedAnnotations());
+        }
+    }
 }

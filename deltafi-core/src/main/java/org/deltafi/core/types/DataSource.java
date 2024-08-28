@@ -41,6 +41,4 @@ public abstract class DataSource extends Flow {
     protected DataSource(FlowType type) {
         super(null, type, null, null);
     }
-
-    public abstract void copyFields(DataSource sourceDataSource);
 }
