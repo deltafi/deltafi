@@ -79,7 +79,6 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Bean;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -4305,7 +4304,7 @@ class DeltaFiCoreApplicationTests {
 		assertThat(uiLinkService.saveLink(link())).isNotNull();
 		// verify duplicate link (by name/type) is rejected
 		assertThatThrownBy(() -> uiLinkService.saveLink(link()))
-				.isInstanceOf(DataIntegrityViolationException.class).hasMessageContaining("already exists");
+				.isInstanceOf(ValidationException.class).hasMessageContaining("already exists");
 	}
 
 	Link link() {

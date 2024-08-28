@@ -29,7 +29,6 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -118,7 +117,7 @@ public class DeletePolicyService implements Snapshotter {
             try {
                 deletePolicyRepo.saveAll(policies);
                 return new Result();
-            } catch (DuplicateKeyException e) {
+            } catch (DataIntegrityViolationException e) {
                 errors.add("duplicate policy name");
             }
         }

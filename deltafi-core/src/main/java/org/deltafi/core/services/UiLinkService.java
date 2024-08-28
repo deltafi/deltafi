@@ -24,7 +24,7 @@ import org.deltafi.core.repo.UiLinkRepo;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.types.snapshot.SystemSnapshot;
-import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -40,7 +40,7 @@ public class UiLinkService implements Snapshotter {
     public Link saveLink(Link link) {
         try {
             return uiLinkRepo.save(link);
-        } catch (DuplicateKeyException e) {
+        } catch (DataIntegrityViolationException e) {
             throw new ValidationException("A link of type '" + link.getLinkType() + "' with a name of '" + link.getName() + "' already exists");
         }
     }

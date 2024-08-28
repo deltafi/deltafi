@@ -32,7 +32,6 @@ import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.types.ResumePolicy;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -250,7 +249,7 @@ public class ResumePolicyService implements Snapshotter {
             try {
                 resumePolicyRepo.saveAll(valid);
                 refreshCache();
-            } catch (DuplicateKeyException e) {
+            } catch (DataIntegrityViolationException e) {
                 result.getErrors().add("duplicate name or criteria");
             }
         }
