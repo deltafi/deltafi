@@ -41,7 +41,8 @@ import static jakarta.persistence.ConstraintMode.NO_CONSTRAINT;
 @Builder
 @Entity
 @Table(name = "delta_file_flows", indexes = {
-        @Index(name = "idx_flow", columnList = "delta_file_id, name, state, test_mode, pending_annotations")
+        @Index(name = "idx_flow", columnList = "state, delta_file_id, name, test_mode, pending_annotations"),
+        @Index(name = "idx_flow_state", columnList = "state")
 })
 public class DeltaFileFlow {
     @Id

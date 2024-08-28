@@ -660,7 +660,6 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
     }
 
-    // TODO: can this happen in one shot?
     @Override
     @Transactional
     public void setContentDeletedByDidIn(List<UUID> dids, OffsetDateTime now, String reason) {
@@ -838,22 +837,20 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             return;
         }
 
-        for (List<UUID> batch : Lists.partition(dids, 500)) {
-            entityManager.createQuery("DELETE FROM Action a WHERE a.deltaFileFlow.id IN " +
-                            "(SELECT f.id FROM DeltaFileFlow f WHERE f.deltaFile.id in :dids)")
-                    .setParameter("dids", batch)
-                    .executeUpdate();
-            entityManager.createQuery("DELETE FROM DeltaFileFlow f WHERE f.deltaFile.id in :dids")
-                    .setParameter("dids", batch)
-                    .executeUpdate();
-            entityManager.createQuery("DELETE FROM Annotation a WHERE a.deltaFile.id in :dids")
-                    .setParameter("dids", batch)
-                    .executeUpdate();
-            entityManager.createQuery("DELETE FROM DeltaFile d WHERE d.did IN :dids")
-                    .setParameter("dids", batch)
-                    .executeUpdate();
-            entityManager.flush();
-            entityManager.clear();
-        }
+        entityManager.createQuery("DELETE FROM Action a WHERE a.deltaFileFlow.id IN " +
+                        "(SELECT f.id FROM DeltaFileFlow f WHERE f.deltaFile.id in :dids)")
+                .setParameter("dids", dids)
+                .executeUpdate();
+        entityManager.createQuery("DELETE FROM DeltaFileFlow f WHERE f.deltaFile.id in :dids")
+                .setParameter("dids", dids)
+                .executeUpdate();
+        entityManager.createQuery("DELETE FROM Annotation a WHERE a.deltaFile.id in :dids")
+                .setParameter("dids", dids)
+                .executeUpdate();
+        entityManager.createQuery("DELETE FROM DeltaFile d WHERE d.did IN :dids")
+                .setParameter("dids", dids)
+                .executeUpdate();
+        entityManager.flush();
+        entityManager.clear();
     }
 }

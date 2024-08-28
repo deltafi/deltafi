@@ -22,6 +22,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.common.collect.Lists;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -1537,8 +1538,9 @@ public class DeltaFilesService {
     }
 
     private void deleteMetadata(List<DeltaFile> deltaFiles) {
-        deltaFileRepo.batchedBulkDeleteByDidIn(deltaFiles.stream().map(DeltaFile::getDid).distinct().toList());
-
+        for (List<DeltaFile> batch : Lists.partition(deltaFiles, 1000)) {
+            deltaFileRepo.batchedBulkDeleteByDidIn(batch.stream().map(DeltaFile::getDid).distinct().toList());
+        }
     }
 
     public SummaryByFlow getErrorSummaryByFlow(Integer offset, Integer limit, ErrorSummaryFilter filter, DeltaFileDirection direction) {

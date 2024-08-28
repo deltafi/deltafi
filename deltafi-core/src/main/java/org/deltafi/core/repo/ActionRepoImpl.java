@@ -20,7 +20,6 @@ package org.deltafi.core.repo;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
-import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.common.types.ActionState;
 import org.deltafi.core.generated.types.CountPerFlow;
@@ -34,7 +33,6 @@ import java.util.stream.Collectors;
 
 @Repository
 @RequiredArgsConstructor
-@Transactional
 public class ActionRepoImpl implements ActionRepoCustom {
     @PersistenceContext
     private EntityManager entityManager;
@@ -61,15 +59,15 @@ public class ActionRepoImpl implements ActionRepoCustom {
 
     @Override
     public Map<String, Integer> errorCountsByFlow(Set<String> flows) {
-        StringBuilder sql = new StringBuilder("""
+        String sql = """
                 SELECT df.name, COUNT(a.id) AS count
                 FROM actions a JOIN delta_file_flows df ON a.delta_file_flow_id = df.id
                 WHERE a.state = :state
                 AND a.error_acknowledged IS NULL
                 AND df.name IN (:flows)
-                GROUP BY df.name""");
+                GROUP BY df.name""";
 
-        Query query = entityManager.createNativeQuery(sql.toString())
+        Query query = entityManager.createNativeQuery(sql)
                 .setParameter("state", ActionState.ERROR.toString())
                 .setParameter("flows", flows);
 
