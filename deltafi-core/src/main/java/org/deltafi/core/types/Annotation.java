@@ -32,7 +32,8 @@ import static jakarta.persistence.ConstraintMode.NO_CONSTRAINT;
 @AllArgsConstructor
 @Entity
 @Table(name = "annotations", indexes = {
-        @Index(name= "idx_annotations", columnList = "key, value")
+        @Index(name= "idx_annotations", columnList = "key, value"),
+        @Index(name="idx_annotations_did", columnList = "delta_file_id")
 })
 @EqualsAndHashCode(exclude = "deltaFile")
 public class Annotation implements Comparable<Annotation> {
