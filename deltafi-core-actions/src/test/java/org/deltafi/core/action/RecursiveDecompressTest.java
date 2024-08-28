@@ -187,14 +187,15 @@ class RecursiveDecompressTest {
         String expectedManifest = mapToJson(lineage);
 
         assertTransformResult(resultType)
+                .hasContentCount(8)
                 .hasContentMatchingAt(0, actionContent -> contentMatches(actionContent, MANIFEST, expectedManifest, 0))
                 .hasContentMatchingAt(1, actionContent -> contentMatches(actionContent, "top-dir/dir2/sub2/b.txt", "bbb\n", 0))
-                .hasContentMatchingAt(2, actionContent -> contentMatches(actionContent, "top-dir/dir3/z.txt", "zzz\n", 0))
-                .hasContentMatchingAt(3, actionContent -> contentMatches(actionContent, "top-dir/dir3/y.txt", "yyy\n", 0))
-                .hasContentMatchingAt(4, actionContent -> contentMatches(actionContent, "top-dir/dir1/1", "111\n", 0))
-                .hasContentMatchingAt(5, actionContent -> contentMatches(actionContent, "top-dir/dir1/2", "222\n", 0))
-                .hasContentMatchingAt(6, actionContent -> contentMatches(actionContent, "top-dir/dir1/3", "333\n", 0))
-                .hasContentMatchingAt(7, actionContent -> contentMatches(actionContent, "top-dir/a.txt", "aaa\n", 0));
+                .hasContentMatchingAt(2, actionContent -> contentMatches(actionContent, "top-dir/dir1/1", "111\n", 0))
+                .hasContentMatchingAt(3, actionContent -> contentMatches(actionContent, "top-dir/dir1/2", "222\n", 0))
+                .hasContentMatchingAt(4, actionContent -> contentMatches(actionContent, "top-dir/dir1/3", "333\n", 0))
+                .hasContentMatchingAt(5, actionContent -> contentMatches(actionContent, "top-dir/a.txt", "aaa\n", 0))
+                .hasContentMatchingAt(6, actionContent -> contentMatches(actionContent, "top-dir/dir3/z.txt", "zzz\n", 0))
+                .hasContentMatchingAt(7, actionContent -> contentMatches(actionContent, "top-dir/dir3/y.txt", "yyy\n", 0));
     }
 
     @Test
@@ -217,6 +218,7 @@ class RecursiveDecompressTest {
         String expectedManifest = mapToJson(lineage);
 
         assertTransformResult(resultType)
+                .hasContentCount(8)
                 .hasContentMatchingAt(0, actionContent -> contentMatches(actionContent, MANIFEST, expectedManifest, 0))
                 .hasContentMatchingAt(1, actionContent -> contentMatches(actionContent, "top-dir/dir2/sub2/b.txt", "bbb\n", 0))
                 .hasContentMatchingAt(2, actionContent -> contentMatches(actionContent, "top-dir/dir3/z.txt.zip", null, 0))
@@ -232,13 +234,14 @@ class RecursiveDecompressTest {
         ResultType resultType = runAction("recursive/multi-layers.tgz", DecompressionType.TAR_GZIP, 5, null);
 
         assertTransformResult(resultType)
+                .hasContentCount(7)
                 .hasContentMatchingAt(0, actionContent -> contentMatches(actionContent, "top-dir/dir2/sub2/b.txt", "bbb\n", 0))
-                .hasContentMatchingAt(1, actionContent -> contentMatches(actionContent, "top-dir/dir3/z.txt", "zzz\n", 0))
-                .hasContentMatchingAt(2, actionContent -> contentMatches(actionContent, "top-dir/dir3/y.txt", "yyy\n", 0))
-                .hasContentMatchingAt(3, actionContent -> contentMatches(actionContent, "top-dir/dir1/1", "111\n", 0))
-                .hasContentMatchingAt(4, actionContent -> contentMatches(actionContent, "top-dir/dir1/2", "222\n", 0))
-                .hasContentMatchingAt(5, actionContent -> contentMatches(actionContent, "top-dir/dir1/3", "333\n", 0))
-                .hasContentMatchingAt(6, actionContent -> contentMatches(actionContent, "top-dir/a.txt", "aaa\n", 0));
+                .hasContentMatchingAt(1, actionContent -> contentMatches(actionContent, "top-dir/dir1/1", "111\n", 0))
+                .hasContentMatchingAt(2, actionContent -> contentMatches(actionContent, "top-dir/dir1/2", "222\n", 0))
+                .hasContentMatchingAt(3, actionContent -> contentMatches(actionContent, "top-dir/dir1/3", "333\n", 0))
+                .hasContentMatchingAt(4, actionContent -> contentMatches(actionContent, "top-dir/a.txt", "aaa\n", 0))
+                .hasContentMatchingAt(5, actionContent -> contentMatches(actionContent, "top-dir/dir3/z.txt", "zzz\n", 0))
+                .hasContentMatchingAt(6, actionContent -> contentMatches(actionContent, "top-dir/dir3/y.txt", "yyy\n", 0));
     }
 
     @Test

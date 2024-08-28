@@ -64,6 +64,8 @@ public class RecursiveDecompress extends TransformAction<RecursiveDecompressPara
     }
 
     final int MAX_LEVELS_SAFEGUARD = 100;
+    final private int BATCH_FILES = 250;
+    final private int BATCH_BYTES = 100 * 1024 * 1024;
 
     public RecursiveDecompress() {
         super("Recursively decompresses and un-archive");
@@ -97,97 +99,110 @@ public class RecursiveDecompress extends TransformAction<RecursiveDecompressPara
             }
         }
 
-        for (int i = 0; i < params.maxLevelsCheck; ++i) {
-            boolean allFilesWerePlain = true;
-            List<SaveManyContent> newContentList = new ArrayList<>();
+        List<SaveManyContent> filesToProcess = contentList;
+        List<SaveManyContent> ordinaryFiles = new ArrayList<>();
 
-            for (SaveManyContent content : contentList) {
-                boolean plainFileType = false;
+        boolean continueLoop = true;
+        int level = 0;
+        while (continueLoop) {
+            boolean allFilesWereOrdinary = true;
+            List<SaveManyContent> nextSetOfFiles = new ArrayList<>();
+
+            for (SaveManyContent content : filesToProcess) {
+                boolean ordinaryFileType = false;
                 TransformResultType tempResult = null;
 
                 String parentName = content.name();
                 String parentLC = parentName.toLowerCase(Locale.ROOT);
 
-                List<SaveManyContent> addPrefixList = new ArrayList<>();
-                List<SaveManyContent> decompressedContentList = new ArrayList<>();
+                List<SaveManyContent> unarchivedFiles = new ArrayList<>();
+                List<SaveManyContent> decompressedFiles = new ArrayList<>();
 
                 // Un-archive cases (e.g. TAR) that will the parent prefix path added
                 if (parentLC.endsWith(".zip")) {
-                    tempResult = doDecompress(context, addPrefixList, DecompressionType.ZIP,
+                    tempResult = doDecompress(context, unarchivedFiles, DecompressionType.ZIP,
                             content.name(), content.content());
                 } else if (parentLC.endsWith(".ar")) {
-                    tempResult = doDecompress(context, addPrefixList, DecompressionType.AR,
+                    tempResult = doDecompress(context, unarchivedFiles, DecompressionType.AR,
                             content.name(), content.content());
                 } else if (parentLC.endsWith(".tar")) {
-                    tempResult = doDecompress(context, addPrefixList, DecompressionType.TAR,
+                    tempResult = doDecompress(context, unarchivedFiles, DecompressionType.TAR,
                             content.name(), content.content());
                 } else if (parentLC.endsWith(".tgz") || parentLC.endsWith(".tar.gz")) {
-                    tempResult = doDecompress(context, addPrefixList, DecompressionType.TAR_GZIP,
+                    tempResult = doDecompress(context, unarchivedFiles, DecompressionType.TAR_GZIP,
                             content.name(), content.content());
                 } else if (parentLC.endsWith(".tar.xz")) {
-                    tempResult = doDecompress(context, addPrefixList, DecompressionType.TAR_XZ,
+                    tempResult = doDecompress(context, unarchivedFiles, DecompressionType.TAR_XZ,
                             content.name(), content.content());
                 } else if (parentLC.endsWith(".tar.z")) {
-                    tempResult = doDecompress(context, addPrefixList, DecompressionType.TAR_Z,
+                    tempResult = doDecompress(context, unarchivedFiles, DecompressionType.TAR_Z,
                             content.name(), content.content());
                 }
                 // decompress only cases:
                 else if (parentLC.endsWith(".gz")) {
-                    tempResult = doDecompress(context, decompressedContentList, DecompressionType.GZIP,
+                    tempResult = doDecompress(context, decompressedFiles, DecompressionType.GZIP,
                             content.name(), content.content());
                 } else if (parentLC.endsWith(".xz")) {
-                    tempResult = doDecompress(context, decompressedContentList, DecompressionType.XZ,
+                    tempResult = doDecompress(context, decompressedFiles, DecompressionType.XZ,
                             content.name(), content.content());
                 } else if (parentLC.endsWith(".z")) {
-                    tempResult = doDecompress(context, decompressedContentList, DecompressionType.Z,
+                    tempResult = doDecompress(context, decompressedFiles, DecompressionType.Z,
                             content.name(), content.content());
                 } else {
-                    plainFileType = true;
-                    newContentList.add(content);
+                    ordinaryFileType = true;
+                    ordinaryFiles.add(content);
                 }
 
                 if (tempResult != null) {
                     return tempResult; // error result
                 }
 
-                if (!decompressedContentList.isEmpty()) {
-                    for (SaveManyContent decomContent : decompressedContentList) {
+                if (!decompressedFiles.isEmpty()) {
+                    for (SaveManyContent decomContent : decompressedFiles) {
                         lineage.put(decomContent.name(), content.name());
                     }
-                    newContentList.addAll(decompressedContentList);
-
+                    nextSetOfFiles.addAll(decompressedFiles);
                 }
 
-                if (!addPrefixList.isEmpty()) {
+                if (!unarchivedFiles.isEmpty()) {
                     String parentDir = "";
                     int lastSlash = parentName.lastIndexOf('/');
                     if (lastSlash > 0) {
                         parentDir = content.name().substring(0, lastSlash + 1);
                     }
 
-                    for (SaveManyContent slContent : addPrefixList) {
+                    for (SaveManyContent slContent : unarchivedFiles) {
                         String fullName = parentDir + slContent.name();
                         lineage.put(fullName, parentName);
-                        newContentList.add(new SaveManyContent(fullName,
+                        nextSetOfFiles.add(new SaveManyContent(fullName,
                                 slContent.mediaType(),
                                 slContent.content()));
                     }
                 }
 
-                if (!plainFileType) {
-                    allFilesWerePlain = false;
+                if (!ordinaryFileType) {
+                    allFilesWereOrdinary = false;
                 }
             }
 
-            if (allFilesWerePlain) {
+            filesToProcess.clear();
+
+            level++;
+            if (allFilesWereOrdinary) {
                 // no additional recursion necessary
-                break;
+                continueLoop = false;
+            } else if (level >= params.maxLevelsCheck) {
+                // hit the limit
+                continueLoop = false;
+                // treat any remaining files as "ordinary"
+                ordinaryFiles.addAll(nextSetOfFiles);
+            } else {
+                filesToProcess = nextSetOfFiles;
             }
-            contentList = newContentList;
         }
 
         TransformResult transformResult = new TransformResult(context);
-
+        // Generate the manifest
         if (!lineage.isEmpty() && StringUtils.isNoneEmpty(params.manifestFilename)) {
             String jsonManifest;
             try {
@@ -197,7 +212,30 @@ public class RecursiveDecompress extends TransformAction<RecursiveDecompressPara
             }
             transformResult.saveContent(jsonManifest, params.manifestFilename, MediaType.APPLICATION_JSON);
         }
-        transformResult.saveContent(contentList);
+
+        // Save all the content to storage - in batches
+        if (!ordinaryFiles.isEmpty()) {
+            List<SaveManyContent> batch = new ArrayList<>();
+            int currentBatchSize = 0;
+            for (SaveManyContent file : ordinaryFiles) {
+                int fileSize = file.content().length;
+                if ((batch.size() + 1 > BATCH_FILES) || (currentBatchSize + fileSize > BATCH_BYTES)) {
+                    // save the existing batch
+                    transformResult.saveContent(batch);
+                    batch.clear();
+                    currentBatchSize = 0;
+                }
+
+                batch.add(file);
+                currentBatchSize += fileSize;
+            }
+
+            if (!batch.isEmpty()) {
+                // save remaining items
+                transformResult.saveContent(batch);
+            }
+        }
+
         return transformResult;
     }
 
