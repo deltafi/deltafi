@@ -19,7 +19,7 @@
 <template>
   <div class="timed-ingress-actions-panel">
     <CollapsiblePanel header="Timed Ingress Actions" class="table-panel pb-3">
-      <DataTable :loading="showLoading" :value="timedIngressActions" edit-mode="cell" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines ingress-actions-table" :global-filter-fields="['searchField']" sort-field="name" :sort-order="1" :row-hover="true" @cell-edit-init="onEditInit" @cell-edit-complete="onEditComplete" @cell-edit-cancel="onEditCancel">
+      <DataTable :loading="showLoading" :value="timedIngressActions" edit-mode="cell" data-key="name" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines ingress-actions-table" :global-filter-fields="['searchField']" sort-field="name" :sort-order="1" :row-hover="true" @cell-edit-init="onEditInit" @cell-edit-complete="onEditComplete" @cell-edit-cancel="onEditCancel">
         <template #empty>No Timed Ingress Actions found.</template>
         <template #loading>Loading Timed Ingress Actions. Please wait.</template>
         <Column header="Name" field="name" :style="{ width: '25%' }" :sortable="true">

@@ -19,7 +19,7 @@
 <template>
   <div class="flow-variable-viewer">
     <CollapsiblePanel :header="header" class="table-panel mb-3">
-      <DataTable :value="variables" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows>
+      <DataTable :value="variables" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" data-key="name" striped-rows>
         <template #empty> No Variables Included </template>
         <Column field="name" header="Name"></Column>
         <Column field="value" header="Value"> </Column>

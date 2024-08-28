@@ -30,7 +30,7 @@
       </div>
     </PageHeader>
     <Panel header="External links" class="external-links-panel table-panel">
-      <DataTable v-model:filters="filters" :value="externalLinks" :loading="loading" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :global-filter-fields="['name', 'description']" :row-hover="true">
+      <DataTable v-model:filters="filters" :value="externalLinks" :loading="loading" responsive-layout="scroll" data-key="name" class="p-datatable-sm p-datatable-gridlines" striped-rows :global-filter-fields="['name', 'description']" :row-hover="true">
         <template #empty>No External Links found</template>
         <template #loading>Loading External Links. Please wait.</template>
         <Column field="name" header="Name" :sortable="true" :style="{ width: '15rem' }">
@@ -55,7 +55,7 @@
       </DataTable>
     </Panel>
     <Panel header="DeltaFile Links" class="external-links-panel table-panel mt-3">
-      <DataTable v-model:filters="filters" :value="deltaFileLinks" :loading="loading" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :global-filter-fields="['name', 'description']" :row-hover="true">
+      <DataTable v-model:filters="filters" :value="deltaFileLinks" :loading="loading" data-key="name" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :global-filter-fields="['name', 'description']" :row-hover="true">
         <template #empty>No DeltaFile Links found.</template>
         <template #loading>Loading DeltaFile Links. Please wait.</template>
         <Column field="name" header="Name" :sortable="true" :style="{ width: '15rem' }">
@@ -131,7 +131,7 @@ const reloadUIConfigs = async () => {
       clearInterval(interval);
     }
     tries += 1;
-  }, 500)
+  }, 500);
 };
 </script>
 

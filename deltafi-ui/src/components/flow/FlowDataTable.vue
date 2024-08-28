@@ -18,7 +18,7 @@
 
 <template>
   <CollapsiblePanel :header="FlowTypeTitle" class="table-panel pb-3">
-    <DataTable v-model:filters="filters" :edit-mode="$hasPermission('FlowUpdate') ? 'cell' : null" :value="flowDataByType" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines flows-table" :row-class="actionRowClass" :global-filter-fields="['searchField', 'mvnCoordinates']" sort-field="name" :sort-order="1" :row-hover="true" @cell-edit-complete="onCellEditComplete">
+    <DataTable v-model:filters="filters" :edit-mode="$hasPermission('FlowUpdate') ? 'cell' : null" :value="flowDataByType" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines flows-table" :row-class="actionRowClass" :global-filter-fields="['searchField', 'mvnCoordinates']" sort-field="name" :sort-order="1" :row-hover="true" data-key="name" @cell-edit-complete="onCellEditComplete">
       <template #empty>No {{ FlowTypeTitle }} flows found.</template>
       <template #loading>Loading {{ FlowTypeTitle }} flows. Please wait.</template>
       <Column header="Name" field="name" class="name-column" :sortable="true">

@@ -22,7 +22,7 @@
     <div class="row">
       <div class="col-12">
         <Panel header="Queues" class="table-panel">
-          <DataTable responsive-layout="scroll" :value="queueMetrics" striped-rows row-hover class="p-datatable-sm p-datatable-gridlines" sort-field="name" :sort-order="1" :loading="showLoading">
+          <DataTable responsive-layout="scroll" :value="queueMetrics" striped-rows row-hover class="p-datatable-sm p-datatable-gridlines" sort-field="name" data-key="name" :sort-order="1" :loading="showLoading">
             <template #empty>No action queue metrics available.</template>
             <template #loading>Loading action queue metrics data. Please wait.</template>
             <Column header="Queue Name" field="name" :sortable="true" />

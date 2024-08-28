@@ -25,11 +25,11 @@
           <i v-if="propertySet.description" v-tooltip.right="propertySet.description" class="ml-2 text-muted fas fa-info-circle fa-fw" />
         </span>
       </template>
-      <DataTable responsive-layout="scroll" sort-field="key" :sort-order="1" :value="visibleProperties" edit-mode="cell" class="p-datatable-sm table-striped p-datatable-gridlines" :row-hover="true" @cell-edit-complete="onCellEditComplete">
+      <DataTable responsive-layout="scroll" sort-field="key" :sort-order="1" :value="visibleProperties" edit-mode="cell" class="p-datatable-sm table-striped p-datatable-gridlines" :row-hover="true" data-key="key" @cell-edit-complete="onCellEditComplete">
         <template #empty>No properties in this property set.</template>
         <Column header="Key" field="key" :sortable="true">
           <template #body="property">
-            <span :class="{ 'text-muted': (!property.data.editable || !$hasPermission('SystemPropertiesUpdate')) }">{{ property.data.key }}</span>
+            <span :class="{ 'text-muted': !property.data.editable || !$hasPermission('SystemPropertiesUpdate') }">{{ property.data.key }}</span>
             <i v-if="tooltipText(property.data)" v-tooltip.right="tooltipText(property.data)" class="ml-2 text-muted fas fa-info-circle fa-fw" />
           </template>
         </Column>
@@ -64,7 +64,7 @@ import useNotifications from "@/composables/useNotifications";
 import usePropertySets from "@/composables/usePropertySets";
 import { computed, defineProps, defineEmits, inject, reactive } from "vue";
 
-const hasPermission = inject("hasPermission")
+const hasPermission = inject("hasPermission");
 
 const props = defineProps({
   propSet: {
@@ -121,7 +121,7 @@ const onCellEditComplete = (event) => {
   td.value-column {
     padding: 0 !important;
 
-    >span {
+    > span {
       padding: 0.5rem !important;
     }
 
@@ -131,7 +131,7 @@ const onCellEditComplete = (event) => {
       display: flex;
     }
 
-    .value-clickable>* {
+    .value-clickable > * {
       flex: 0 0 auto;
     }
   }

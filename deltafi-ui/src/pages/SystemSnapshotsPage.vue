@@ -32,7 +32,7 @@
         </span>
         <Paginator template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :first="pageFirst" :rows="pageRows" :total-records="totalSnaps" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage"></Paginator>
       </template>
-      <DataTable v-model:filters="filters" :value="snapshots" :paginator="true" :first="pageFirst" :rows="pageRows" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :row-hover="true" :loading="loading">
+      <DataTable v-model:filters="filters" :value="snapshots" :paginator="true" :first="pageFirst" :rows="pageRows" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :row-hover="true" data-key="id" :loading="loading">
         <template #empty>No snapshots to display.</template>
         <template #loading>Loading. Please wait...</template>
         <Column field="id" header="ID">
@@ -173,7 +173,7 @@ const onRevertClick = (snapshotData) => {
     accept: () => {
       onRevert(snapshotData.id);
     },
-    reject: () => { },
+    reject: () => {},
   });
 };
 
@@ -187,7 +187,7 @@ const onDeleteClick = (snapshotData) => {
     accept: () => {
       onDelete(snapshotData.id);
     },
-    reject: () => { },
+    reject: () => {},
   });
 };
 

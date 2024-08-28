@@ -19,7 +19,7 @@
 <template>
   <div>
     <CollapsiblePanel header="Actions" class="actions-panel table-panel">
-      <DataTable responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="actions" :row-class="rowClass" @row-click="rowClick">
+      <DataTable responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="actions" :row-class="rowClass" data-key="name" @row-click="rowClick">
         <Column field="name" header="Action" :sortable="true" />
         <Column field="flow" header="Flow" :sortable="true" />
         <Column field="state" header="State" class="state-column" :sortable="true" />

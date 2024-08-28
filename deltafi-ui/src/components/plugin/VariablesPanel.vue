@@ -18,7 +18,7 @@
 
 <template>
   <CollapsiblePanel :header="header" class="table-panel">
-    <DataTable :value="variables" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines plugin-variables-table" striped-rows :row-hover="true" sort-field="name" :sort-order="1">
+    <DataTable :value="variables" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines plugin-variables-table" striped-rows :row-hover="true" sort-field="name" data-key="name" :sort-order="1">
       <template #empty>No variables included </template>
       <Column field="name" header="Name" :style="{ width: '50%' }" sortable>
         <template #body="{ data }">
