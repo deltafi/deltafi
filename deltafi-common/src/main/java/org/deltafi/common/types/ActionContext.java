@@ -54,7 +54,7 @@ public class ActionContext {
      * @param newDid the new DID
      * */
     public ActionContext copy(UUID newDid) {
-        return new ActionContext(newDid, deltaFileName, dataSource, flowName, flowId, actionName, actionId, hostname,
-                actionVersion, startTime, systemName, contentStorageService, join, joinedDids, memo);
+        return new ActionContext(newDid, deltaFileName, dataSource, flowName, flowId, actionName, actionId,
+                actionVersion, hostname, startTime, systemName, contentStorageService, join, joinedDids, memo);
     }
 }
