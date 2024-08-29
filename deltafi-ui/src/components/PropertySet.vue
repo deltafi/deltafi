@@ -25,7 +25,7 @@
           <i v-if="propertySet.description" v-tooltip.right="propertySet.description" class="ml-2 text-muted fas fa-info-circle fa-fw" />
         </span>
       </template>
-      <DataTable responsive-layout="scroll" sort-field="key" :sort-order="1" :value="visibleProperties" edit-mode="cell" class="p-datatable-sm table-striped p-datatable-gridlines" :row-hover="true" @cell-edit-complete="onCellEditComplete">
+      <DataTable responsive-layout="scroll" sort-field="key" :sort-order="1" :value="visibleProperties" edit-mode="cell" class="p-datatable-sm table-striped p-datatable-gridlines" :row-hover="true" data-key="key" @cell-edit-complete="onCellEditComplete">
         <template #empty>No properties in this property set.</template>
         <Column header="Key" field="key" :sortable="true">
           <template #body="property">

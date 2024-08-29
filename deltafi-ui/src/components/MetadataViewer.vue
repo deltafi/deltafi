@@ -20,13 +20,13 @@
   <div class="metadata-viewer">
     <div v-for="(metadataArray, actionName) in props.metadata" :key="actionName">
       <CollapsiblePanel v-if="metadataArray.length > 0" :header="actionName" class="table-panel">
-        <DataTable responsive-layout="scroll" :value="metadataArray" striped-rows sort-field="key" :sort-order="1" class="p-datatable-sm" scroll-height="500px">
+        <DataTable responsive-layout="scroll" :value="metadataArray" striped-rows sort-field="key" :sort-order="1" class="p-datatable-sm" scroll-height="500px" data-key="key">
           <Column field="key" header="Key" :style="{ width: '25%' }" :sortable="true" />
           <Column field="value" header="Value" :style="{ width: '75%' }" :sortable="true" />
         </DataTable>
       </CollapsiblePanel>
       <CollapsiblePanel v-if="!_.isEmpty(props.deletedMetadata)" header="Deleted Metadata" class="table-panel mt-3">
-        <DataTable responsive-layout="scroll" :value="deletedMetadata" striped-rows sort-field="key" :sort-order="1" class="p-datatable-sm" scroll-height="500px">
+        <DataTable responsive-layout="scroll" :value="deletedMetadata" striped-rows sort-field="key" :sort-order="1" class="p-datatable-sm" scroll-height="500px" data-key="name">
           <template #empty>No Deleted Metadata found.</template>
           <Column field="name" header="Action" :style="{ width: '25%' }" :sortable="true" />
           <Column field="deleteMetadataKeys" header="Deleted Metadata Keys" :style="{ width: '75%' }" :sortable="true">

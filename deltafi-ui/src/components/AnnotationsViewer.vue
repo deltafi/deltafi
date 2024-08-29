@@ -22,7 +22,7 @@
       <Message severity="warn" :closable="false" class="mb-2 mt-0"> Expected Read Receipts: {{ pendingAnnotations }}</Message>
     </div>
     <div v-for="(annotationsArray, actionName) in props.annotations" :key="actionName">
-      <DataTable responsive-layout="scroll" :value="annotationsArray" striped-rows sort-field="key" :sort-order="1" class="p-datatable-sm" scroll-height="500px">
+      <DataTable responsive-layout="scroll" :value="annotationsArray" striped-rows sort-field="key" :sort-order="1" class="p-datatable-sm" scroll-height="500px" data-key="key">
         <Column header="Key" field="key" :style="{ width: '25%' }" :sortable="true" />
         <Column header="Value" field="value" :style="{ width: '65%' }" :sortable="true">
           <template #body="{ data }">

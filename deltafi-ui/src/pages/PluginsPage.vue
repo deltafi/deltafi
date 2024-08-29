@@ -29,7 +29,7 @@
     <Panel v-else header="Plugins" class="table-panel">
       <Splitter style="height: 77vh" layout="vertical" :gutter-size="10" @resizeend="customSpitterSize">
         <SplitterPanel id="splitterPanelId" :size="startingPanelOneSize" class="flex align-items-center justify-content-center" :style="`overflow-y: auto; ${panelOneSize}`">
-          <DataTable id="dataTableId" ref="dataTableIdRef" v-model:selection="selectedPlugin" :value="pluginsList" selection-mode="single" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines plugin-table" sort-field="displayName" :sort-order="1" :row-hover="true" :meta-key-selection="false">
+          <DataTable id="dataTableId" ref="dataTableIdRef" v-model:selection="selectedPlugin" :value="pluginsList" selection-mode="single" responsive-layout="scroll" striped-rows class="p-datatable-sm p-datatable-gridlines plugin-table" sort-field="displayName" :sort-order="1" :row-hover="true" :meta-key-selection="false" data-key="displayName">
             <template #empty>No Plugins found.</template>
             <template #loading>Loading Plugins. Please wait.</template>
             <Column header="Name" field="displayName" :sortable="true" />

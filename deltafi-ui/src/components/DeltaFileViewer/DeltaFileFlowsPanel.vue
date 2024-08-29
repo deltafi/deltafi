@@ -19,7 +19,7 @@
 <template>
   <div>
     <CollapsiblePanel header="Flows" class="actions-panel table-panel">
-      <DataTable v-model:expandedRows="expandedRows" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="flows" :row-class="rowClass">
+      <DataTable v-model:expandedRows="expandedRows" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="flows" :row-class="rowClass" data-key="name">
         <Column class="expander-column" :expander="true" />
         <Column field="name" header="Name" :sortable="true" />
         <Column field="type" header="Type" :sortable="true" />
