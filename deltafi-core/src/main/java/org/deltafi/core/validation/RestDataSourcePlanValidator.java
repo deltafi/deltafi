@@ -47,7 +47,7 @@ public class RestDataSourcePlanValidator extends FlowPlanValidator<RestDataSourc
         if (StringUtils.isBlank(flowPlan.getTopic())) {
             FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG)
                     .configName(flowPlan.getName())
-                    .message("Cannot add rest data source plan, flow is missing").build();
+                    .message("Cannot add rest data source plan, topic is missing").build();
         }
         return errors;
     }
