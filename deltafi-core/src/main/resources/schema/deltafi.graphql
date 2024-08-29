@@ -430,7 +430,8 @@ type Mutation {
   stopTimedDataSource(name: String!) : Boolean!
   stopTransformFlow(flowName: String!) : Boolean!
 
-  setMaxErrors(name: String!, maxErrors: Int!) : Boolean!
+  setRestDataSourceMaxErrors(name: String!, maxErrors: Int!) : Boolean!
+  setTimedDataSourceMaxErrors(name: String!, maxErrors: Int!) : Boolean!
   enableEgressTestMode(flowName: String!) : Boolean!
   disableEgressTestMode(flowName: String!) : Boolean!
   setTimedDataSourceMemo(name: String!, memo: String) : Boolean!

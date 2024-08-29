@@ -258,17 +258,30 @@ export default function useDataSource() {
     return sendGraphQLQuery(query, "disableTestTimedDataSourceFlowByName", "mutation");
   };
 
-    // sets max errors for a DataSource
-  const setMaxErrors = (name: string, maxErrors: number) => {
+  // sets max errors for a DataSource
+  const setRestDataSourceMaxErrors = (name: string, maxErrors: number) => {
     const query = {
-      setMaxErrors: {
+      setRestDataSourceMaxErrors: {
         __args: {
           name: name,
           maxErrors: maxErrors,
         },
       },
     };
-    return sendGraphQLQuery(query, "setMaxErrors", "mutation");
+    return sendGraphQLQuery(query, "setRestDataSourceMaxErrors", "mutation");
+  };
+
+  // sets max errors for a DataSource
+  const setTimedDataSourceMaxErrors = (name: string, maxErrors: number) => {
+    const query = {
+      setTimedDataSourceMaxErrors: {
+        __args: {
+          name: name,
+          maxErrors: maxErrors,
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "setTimedDataSourceMaxErrors", "mutation");
   };
 
   const sendGraphQLQuery = async (query: any, operationName: string, queryType?: string) => {
@@ -297,7 +310,8 @@ export default function useDataSource() {
     enableTestTimedDataSourceFlowByName,
     disableTestTimedDataSourceFlowByName,
     removeDataSourcePlan,
-    setMaxErrors,
+    setRestDataSourceMaxErrors,
+    setTimedDataSourceMaxErrors,
     loaded,
     loading,
     errors,

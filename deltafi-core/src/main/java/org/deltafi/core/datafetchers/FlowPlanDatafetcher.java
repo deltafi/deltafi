@@ -69,15 +69,23 @@ public class FlowPlanDatafetcher {
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
-    public boolean setMaxErrors(@InputArgument String name, @InputArgument Integer maxErrors) {
+    public boolean setRestDataSourceMaxErrors(@InputArgument String name, @InputArgument Integer maxErrors) {
         if (restDataSourceService.hasFlow(name)) {
             auditLogger.audit("set max errors to {} for data source {}", maxErrors, name);
             return restDataSourceService.setMaxErrors(name, maxErrors);
-        } if (timedDataSourceService.hasFlow(name)) {
+        } else {
+            throw new DgsEntityNotFoundException("No RestDataSource exists with the name: " + name);
+        }
+    }
+
+    @DgsMutation
+    @NeedsPermission.FlowUpdate
+    public boolean setTimedDataSourceMaxErrors(@InputArgument String name, @InputArgument Integer maxErrors) {
+        if (timedDataSourceService.hasFlow(name)) {
             auditLogger.audit("set max errors to {} for data source {}", maxErrors, name);
             return timedDataSourceService.setMaxErrors(name, maxErrors);
         } else {
-            throw new DgsEntityNotFoundException("No DataSource exists with the name: " + name);
+            throw new DgsEntityNotFoundException("No TimedDataSource exists with the name: " + name);
         }
     }
 

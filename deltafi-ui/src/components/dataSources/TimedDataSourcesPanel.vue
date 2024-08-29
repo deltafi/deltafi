@@ -139,7 +139,7 @@ import InputNumber from "primevue/inputnumber";
 const emit = defineEmits(["dataSourcesList"]);
 const editing = inject("isEditing");
 const notify = useNotifications();
-const { getTimedDataSources, setTimedDataSourceCronSchedule, setMaxErrors, loaded, loading, errors } = useDataSource();
+const { getTimedDataSources, setTimedDataSourceCronSchedule, setTimedDataSourceMaxErrors, loaded, loading, errors } = useDataSource();
 const showLoading = computed(() => loading.value && !loaded.value);
 const timedDataSources = ref([]);
 const onEditInit = () => (editing.value = true);
@@ -162,7 +162,7 @@ const onEditComplete = async (event) => {
     let sendValue = _.isEqual(newValue, null) ? -1 : newValue;
     const resetValue = data.maxErrors;
     data[field] = newValue;
-    await setMaxErrors(data.name, sendValue);
+    await setTimedDataSourceMaxErrors(data.name, sendValue);
     if (errors.value.length === 0) {
       if (newValue === null) {
         notify.success("Max Errors Disabled", `Max errors for <b>${data.name}</b> has been disabled`);
