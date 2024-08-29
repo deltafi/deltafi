@@ -30,6 +30,7 @@ Commands:
   plugin-image-repo       manage the image repositories that hold plugin images
   plugin-init             create a new plugin project
   postgres-cli            launch the Postgres CLI
+  postgres-eval           run SQL in Postgres
   query                   send a query to graphql
   reenable                reenable all DeltaFi processes
   registry                manage local Docker registry
