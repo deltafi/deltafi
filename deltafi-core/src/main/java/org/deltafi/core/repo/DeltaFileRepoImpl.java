@@ -62,6 +62,9 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     private static final String TERMINAL = "terminal";
     public static final String TYPE = "type";
 
+    // a magic number known by the GUI that says there are "many" total results
+    private static final int MANY_RESULTS = 10_000;
+
     @PersistenceContext
     private final EntityManager entityManager;
     private final JdbcTemplate jdbcTemplate;
@@ -392,13 +395,22 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         if (deltaFileList.size() < limit) {
             deltaFiles.setTotalCount(offset + deltaFileList.size());
         } else {
+            // this makes me sad. JPA does not support limiting a subquery, so we can't do something like
+            // SELECT COUNT(*) FROM (SELECT 1 FROM delta_files WHERE /* criteria */ LIMIT /* limit */)
+            // building the criteria string manually would be hairy
+            // so return an array of 1s -- a bunch of unfortunately wasted bytes over the wire, and count them
             CriteriaBuilder countCb = entityManager.getCriteriaBuilder();
-            CriteriaQuery<Long> countQuery = countCb.createQuery(Long.class);
-            Root<DeltaFile> countRoot = countQuery.from(DeltaFile.class);
+            CriteriaQuery<Integer> criteriaQuery = countCb.createQuery(Integer.class);
+            Root<DeltaFile> countRoot = criteriaQuery.from(DeltaFile.class);
+
             List<Predicate> countPredicates = buildDeltaFilesCriteria(countCb, countRoot, filter);
-            countQuery.select(countCb.count(countRoot)).where(countCb.and(countPredicates.toArray(new Predicate[0])));
-            Long total = entityManager.createQuery(countQuery).getSingleResult();
-            deltaFiles.setTotalCount(total.intValue());
+            criteriaQuery.select(countCb.literal(1))
+                    .where(countCb.and(countPredicates.toArray(new Predicate[0])));
+
+            TypedQuery<Integer> countQuery = entityManager.createQuery(criteriaQuery)
+                    .setMaxResults(MANY_RESULTS);
+
+            deltaFiles.setTotalCount(countQuery.getResultList().size());
         }
 
         return deltaFiles;

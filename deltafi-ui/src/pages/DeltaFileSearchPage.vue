@@ -399,7 +399,7 @@ const model = computed({
 });
 
 const pageReportTemplate = computed(() => {
-  const total = totalRecords.value == 50000 ? "many" : "{totalRecords}";
+  const total = totalRecords.value == 10000 ? "many" : "{totalRecords}";
   return `{first} - {last} of ${total}`;
 });
 
