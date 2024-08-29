@@ -52,7 +52,10 @@ export default function useTopics() {
           topic: true,
         },
       },
-      dataSource: {
+      restDataSource: {
+        topic: true,
+      },
+      timedDataSource: {
         topic: true,
       },
       transform: {
@@ -76,9 +79,13 @@ export default function useTopics() {
     const egressTopics: any[] = response.value.data.getAllFlows.egress?.flatMap((e: any) => e.subscribe?.map((s: any) => s.topic));
     topicsArray = topicsArray.concat(egressTopics);
 
-    // Gets dataSource topics
-    const dataSourceTopics: any[] = response.value.data.getAllFlows.dataSource?.map((e: any) => e.topic);
-    topicsArray = topicsArray.concat(dataSourceTopics);
+    // Gets restDataSource topics
+    const restDataSourceTopics: any[] = response.value.data.getAllFlows.restDataSource?.map((e: any) => e.topic);
+    topicsArray = topicsArray.concat(restDataSourceTopics);
+
+    // Gets timedDataSource topics
+    const timedDataSourceTopics: any[] = response.value.data.getAllFlows.timedDataSource?.map((e: any) => e.topic);
+    topicsArray = topicsArray.concat(timedDataSourceTopics);
 
     // Gets transform subscribe topics
     const transformSubscribeTopics: any[] = response.value.data.getAllFlows.transform?.flatMap((e: any) => e.subscribe?.map((s: any) => s.topic));
