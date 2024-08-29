@@ -17,5 +17,5 @@ echo "ARGS: $ARGS PARAMS: $PARAMS"
 if _is_standalone; then
   echo "Not implemented for standalone mode"
 else
-  ${KUBECTL_BIN} exec -it "$(${KUBECTL_BIN} get pod --selector app=StackGresCluster,stackgres.io/cluster=true,role=master -o name)" -c postgres-util -- psql ${PARAMS} deltafi
+  ${KUBECTL_BIN} exec -it "$(${KUBECTL_BIN} get pod --selector application=spilo,spilo-role=master -o name)" -c postgres -- psql ${PARAMS} -U deltafi deltafi
 fi
