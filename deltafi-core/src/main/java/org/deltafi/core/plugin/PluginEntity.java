@@ -47,8 +47,7 @@ public class PluginEntity {
     @Column(columnDefinition = "jsonb")
     private List<PluginCoordinates> dependencies;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb")
+    @Transient
     private List<Variable> variables;
 
     public PluginEntity(Plugin plugin) {

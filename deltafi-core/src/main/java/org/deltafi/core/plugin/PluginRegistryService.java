@@ -174,7 +174,6 @@ public class PluginRegistryService implements Snapshotter {
         return pluginRepository.findAll();
     }
 
-    // TODO: Maybe variables should be stored with plugins???
     public List<PluginEntity> getPluginsWithVariables() {
         List<PluginEntity> plugins = getPlugins();
         plugins.forEach(this::addVariables);
