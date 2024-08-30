@@ -38,6 +38,7 @@ import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.validation.FlowPlanValidator;
 import org.springframework.boot.info.BuildProperties;
+import org.springframework.security.core.parameters.P;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -86,17 +87,24 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlanEntity, FlowT ex
         return errors;
     }
 
-    public void validateFlowPlan(FlowPlanT flowPlan) {
-        PluginCoordinates existingSourcePlugin = flowPlanRepo
+    public FlowPlanEntity validateFlowPlan(FlowPlanT flowPlan) {
+        FlowPlanEntity existingFlowPlan = flowPlanRepo
                 .findByNameAndType(flowPlan.getName(), getFlowType())
-                .map(FlowPlanEntity::getSourcePlugin)
-                .orElse(flowPlan.getSourcePlugin());
+                .orElse(null);
 
-        if (!existingSourcePlugin.equalsIgnoreVersion(flowPlan.getSourcePlugin())) {
-            throw new DeltafiConfigurationException("A flow plan with the name: " + flowPlan.getName() + " already exists from another source plugin: " + existingSourcePlugin);
+        if (existingFlowPlan != null) {
+            log.info("no existing flow plan found");
+        } else {
+            log.info("existing flow plan found");
+        }
+
+        if (existingFlowPlan != null && !existingFlowPlan.getSourcePlugin().equalsIgnoreVersion(flowPlan.getSourcePlugin())) {
+            throw new DeltafiConfigurationException("A flow plan with the name: " + flowPlan.getName() + " already exists from another source plugin: " + existingFlowPlan);
         }
 
         flowPlanValidator.validate(flowPlan);
+
+        return existingFlowPlan;
     }
 
     /**
@@ -105,7 +113,11 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlanEntity, FlowT ex
      * @return Flow that was created from the plan
      */
     public FlowT saveFlowPlan(FlowPlanT flowPlan) {
-        validateFlowPlan(flowPlan);
+        FlowPlanEntity existingFlowPlan = validateFlowPlan(flowPlan);
+        if (existingFlowPlan != null) {
+            log.info("setting ID");
+            flowPlan.setId(existingFlowPlan.getId());
+        }
         return flowService.buildAndSaveFlow(flowPlanRepo.save(flowPlan));
     }
 

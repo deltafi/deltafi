@@ -465,6 +465,10 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
     }
 
     private FlowT save(FlowT flow) {
+        Flow existingFlow = flowCacheService.getFlow(flowType, flow.getName());
+        if (existingFlow != null) {
+            flow.setId(existingFlow.getId());
+        }
         FlowT persistedFlow = flowRepo.save(flow);
         refreshCache();
         return persistedFlow;
