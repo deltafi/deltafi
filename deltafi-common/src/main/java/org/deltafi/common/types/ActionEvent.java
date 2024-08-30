@@ -51,6 +51,8 @@ public class ActionEvent {
   private List<Metric> metrics;
   private IngressEvent ingress;
 
+  private List<Content> savedContent;
+
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
           .registerModule(new JavaTimeModule())
           .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);

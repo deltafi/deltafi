@@ -383,17 +383,31 @@ public class DeltaFilesService {
                 }
                 case ERROR -> {
                     generateMetrics(metrics, event, deltaFile, flow, action);
+                    deleteUnusedContent(event);
                     error(deltaFile, flow, action, event);
                 }
                 case FILTER -> {
                     metrics.add(new Metric(DeltaFiConstants.FILES_FILTERED, 1));
                     generateMetrics(metrics, event, deltaFile, flow, action);
+                    deleteUnusedContent(event);
                     filter(deltaFile, flow, action, event, OffsetDateTime.now());
                 }
                 default -> throw new UnknownTypeException(event.getActionName(), deltaFile.getDid(), event.getType());
             }
 
             completeJoin(event, deltaFile, flow, action, OffsetDateTime.now());
+        }
+    }
+
+    void deleteUnusedContent(ActionEvent event) {
+        // Any content saved by an action that ultimately returns an
+        // error or filter result should be deleted.
+        if ((event.getType() == ActionEventType.ERROR || event.getType() == ActionEventType.FILTER) &&
+                event.getSavedContent() != null && !event.getSavedContent().isEmpty()) {
+            for (Content content : event.getSavedContent()) {
+                contentStorageService.delete(content);
+            }
+            log.warn("Deleted unused content: {}", event.getSavedContent().size());
         }
     }
 

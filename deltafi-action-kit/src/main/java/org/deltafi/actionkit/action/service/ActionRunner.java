@@ -28,10 +28,12 @@ import org.deltafi.actionkit.exception.MissingMetadataException;
 import org.deltafi.actionkit.exception.StartupException;
 import org.deltafi.actionkit.properties.ActionsProperties;
 import org.deltafi.actionkit.registration.PluginRegistrar;
-import org.deltafi.actionkit.service.HostnameService;
 import org.deltafi.actionkit.service.ActionEventQueue;
+import org.deltafi.actionkit.service.HostnameService;
+import org.deltafi.common.content.ActionContentStorageService;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.common.types.ActionContext;
+import org.deltafi.common.types.ActionEvent;
 import org.deltafi.common.types.ActionInput;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -103,14 +105,16 @@ public class ActionRunner {
     private void listen(Action<?, ?, ?> action, long delayMs) {
         try {
             Thread.sleep(delayMs);
+            ActionContentStorageService actionContentStorageService = new ActionContentStorageService(contentStorageService);
             while (!Thread.currentThread().isInterrupted()) {
                 log.trace("{} listening", action.getClassCanonicalName());
                 ActionInput actionInput = actionEventQueue.takeAction(action.getClassCanonicalName());
                 actionInput.getActionContext().setActionVersion(buildProperties.getVersion());
                 actionInput.getActionContext().setHostname(hostnameService.getHostname());
                 actionInput.getActionContext().setStartTime(OffsetDateTime.now());
-                actionInput.getActionContext().setContentStorageService(contentStorageService);
+                actionInput.getActionContext().setContentStorageService(actionContentStorageService);
                 executeAction(action, actionInput, actionInput.getReturnAddress());
+                actionContentStorageService.clear();
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -122,7 +126,7 @@ public class ActionRunner {
         log.warn("Shutting down action thread: {}", action.getClassCanonicalName());
     }
 
-    private void executeAction(Action<?, ?, ?> action, ActionInput actionInput, String returnAddress) {
+    void executeAction(Action<?, ?, ?> action, ActionInput actionInput, String returnAddress) {
         ActionContext context = actionInput.getActionContext();
         log.trace("Running action {} with input {}", action.getClassCanonicalName(), actionInput);
         ResultType result;
@@ -145,7 +149,9 @@ public class ActionRunner {
         action.clearActionExecution();
 
         try {
-            actionEventQueue.putResult(result.toEvent(), returnAddress);
+            ActionEvent event = result.toEvent();
+            context.getContentStorageService().publishSavedContent(event);
+            actionEventQueue.putResult(event, returnAddress);
         } catch (Throwable e) {
             log.error("Error sending result to valkey for did " + context.getDid(), e);
         }

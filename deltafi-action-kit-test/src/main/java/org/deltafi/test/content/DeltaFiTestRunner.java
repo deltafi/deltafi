@@ -19,7 +19,7 @@ package org.deltafi.test.content;
 
 import org.assertj.core.api.Assertions;
 import org.deltafi.actionkit.action.content.ActionContent;
-import org.deltafi.common.content.ContentStorageService;
+import org.deltafi.common.content.ActionContentStorageService;
 import org.deltafi.common.test.storage.s3.InMemoryObjectStorageService;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.Content;
@@ -41,7 +41,7 @@ public class DeltaFiTestRunner {
 
     protected static final UUID DID = UUID.randomUUID();
     protected static final String HOSTNAME = "hostname";
-    private final ContentStorageService storageService = new ContentStorageService(new InMemoryObjectStorageService());
+    private final ActionContentStorageService storageService = new ActionContentStorageService(new InMemoryObjectStorageService());
     private String testDataFolder = null;
 
     /**

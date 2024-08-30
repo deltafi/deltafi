@@ -25,7 +25,7 @@ import org.apache.nifi.util.FlowFileUnpackagerV1;
 import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.egress.EgressResultType;
-import org.deltafi.common.content.ContentStorageService;
+import org.deltafi.common.content.ActionContentStorageService;
 import org.deltafi.common.http.HttpService;
 import org.deltafi.common.test.storage.s3.InMemoryObjectStorageService;
 import org.deltafi.common.types.ActionContext;
@@ -58,8 +58,8 @@ public class FlowfileEgressTest {
     private final FlowfileEgress action = new FlowfileEgress(httpService);
     private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup("FlowfileEgressTest");
 
-    private static final ContentStorageService CONTENT_STORAGE_SERVICE =
-            new ContentStorageService(new InMemoryObjectStorageService());
+    private static final ActionContentStorageService CONTENT_STORAGE_SERVICE =
+            new ActionContentStorageService(new InMemoryObjectStorageService());
 
     @RegisterExtension
     static WireMockExtension wireMockHttp = WireMockExtension.newInstance()

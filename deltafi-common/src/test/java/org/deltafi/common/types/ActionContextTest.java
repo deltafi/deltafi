@@ -17,7 +17,7 @@
  */
 package org.deltafi.common.types;
 
-import org.deltafi.common.content.ContentStorageService;
+import org.deltafi.common.content.ActionContentStorageService;
 import org.deltafi.common.storage.s3.ObjectReference;
 import org.deltafi.common.storage.s3.ObjectStorageService;
 import org.junit.jupiter.api.Test;
@@ -55,8 +55,8 @@ class ActionContextTest {
     private static final String HOSTNAME = "the-hostname";
     private static final OffsetDateTime START_TIME = OffsetDateTime.parse("2019-08-31T15:20:30+08:00");
     private static final String SYSTEM_NAME = "the-system-name";
-    private static final ContentStorageService CONTENT_STORAGE_SERVICE =
-            new ContentStorageService(new MyObjectStorageService());
+    private static final ActionContentStorageService CONTENT_STORAGE_SERVICE =
+            new ActionContentStorageService(new MyObjectStorageService());
     private static final JoinConfiguration JOIN = new JoinConfiguration(Duration.between(
             Instant.parse("2017-10-03T10:15:30.00Z"), Instant.parse("2017-10-03T10:16:30.00Z")),
             0, 1, "the-key");
