@@ -28,7 +28,7 @@ import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.types.snapshot.FlowSnapshot;
 import org.deltafi.core.types.snapshot.TimedDataSourceSnapshot;
 import org.deltafi.core.types.*;
-import org.deltafi.core.validation.TimedDataSourceValidator;
+import org.deltafi.core.validation.FlowValidator;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -52,7 +52,7 @@ class TimedDataSourceServiceTest {
     TimedDataSourceRepo timedDataSourceRepo;
 
     @Mock
-    TimedDataSourceValidator flowValidator;
+    FlowValidator flowValidator;
 
     @Mock
     @SuppressWarnings("unused")

@@ -28,7 +28,7 @@ import org.deltafi.core.types.snapshot.EgressFlowSnapshot;
 import org.deltafi.core.types.EgressFlow;
 
 import org.deltafi.core.types.EgressFlowPlanEntity;
-import org.deltafi.core.validation.EgressFlowValidator;
+import org.deltafi.core.validation.FlowValidator;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
@@ -46,8 +46,8 @@ class EgressFlowService extends FlowService<EgressFlowPlanEntity, EgressFlow, Eg
 
     private Map<String, Set<Subscriber>> topicSubscribers;
 
-    public EgressFlowService(EgressFlowRepo flowRepo, PluginVariableService pluginVariableService, EgressFlowValidator egressFlowValidator, BuildProperties buildProperties, FlowCacheService flowCacheService) {
-        super(FlowType.EGRESS, flowRepo, pluginVariableService, EGRESS_FLOW_PLAN_CONVERTER, egressFlowValidator, buildProperties, flowCacheService, EgressFlow.class, EgressFlowPlanEntity.class);
+    public EgressFlowService(EgressFlowRepo flowRepo, PluginVariableService pluginVariableService, FlowValidator flowValidator, BuildProperties buildProperties, FlowCacheService flowCacheService) {
+        super(FlowType.EGRESS, flowRepo, pluginVariableService, EGRESS_FLOW_PLAN_CONVERTER, flowValidator, buildProperties, flowCacheService, EgressFlow.class, EgressFlowPlanEntity.class);
     }
 
     @Override

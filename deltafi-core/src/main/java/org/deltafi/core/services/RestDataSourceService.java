@@ -25,7 +25,7 @@ import org.deltafi.core.repo.RestDataSourceRepo;
 import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.types.snapshot.RestDataSourceSnapshot;
 import org.deltafi.core.types.*;
-import org.deltafi.core.validation.RestDataSourceValidator;
+import org.deltafi.core.validation.FlowValidator;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
@@ -43,10 +43,10 @@ public class RestDataSourceService extends FlowService<RestDataSourcePlanEntity,
     private final ErrorCountService errorCountService;
 
     public RestDataSourceService(RestDataSourceRepo restDataSourceRepo, PluginVariableService pluginVariableService,
-                                 RestDataSourceValidator restDataSourceValidator, BuildProperties buildProperties,
+                                 FlowValidator flowValidator, BuildProperties buildProperties,
                                  ErrorCountService errorCountService, FlowCacheService flowCacheService) {
         super(FlowType.REST_DATA_SOURCE, restDataSourceRepo, pluginVariableService, REST_DATA_SOURCE_FLOW_PLAN_CONVERTER,
-                restDataSourceValidator, buildProperties, flowCacheService, RestDataSource.class, RestDataSourcePlanEntity.class);
+                flowValidator, buildProperties, flowCacheService, RestDataSource.class, RestDataSourcePlanEntity.class);
 
         this.errorCountService = errorCountService;
     }

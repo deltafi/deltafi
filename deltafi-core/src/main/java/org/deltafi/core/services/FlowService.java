@@ -45,13 +45,13 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
     protected final PluginVariableService pluginVariableService;
     private final FlowType flowType;
     private final FlowPlanConverter<FlowPlanT, FlowT> flowPlanConverter;
-    private final FlowValidator<FlowT> validator;
+    private final FlowValidator validator;
     private final BuildProperties buildProperties;
     protected final FlowCacheService flowCacheService;
     private final Class<FlowT> flowClass;
     private final Class<FlowPlanT> flowPlanClass;
 
-    protected FlowService(FlowType flowType, FlowRepoT flowRepo, PluginVariableService pluginVariableService, FlowPlanConverter<FlowPlanT, FlowT> flowPlanConverter, FlowValidator<FlowT> validator, BuildProperties buildProperties, FlowCacheService flowCacheService, Class<FlowT> flowClass, Class<FlowPlanT> flowPlanClass) {
+    protected FlowService(FlowType flowType, FlowRepoT flowRepo, PluginVariableService pluginVariableService, FlowPlanConverter<FlowPlanT, FlowT> flowPlanConverter, FlowValidator validator, BuildProperties buildProperties, FlowCacheService flowCacheService, Class<FlowT> flowClass, Class<FlowPlanT> flowPlanClass) {
         this.flowType = flowType;
         this.flowRepo = flowRepo;
         this.pluginVariableService = pluginVariableService;

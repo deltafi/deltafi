@@ -27,7 +27,7 @@ import org.deltafi.core.repo.TimedDataSourceRepo;
 import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.types.snapshot.TimedDataSourceSnapshot;
 import org.deltafi.core.types.*;
-import org.deltafi.core.validation.TimedDataSourceValidator;
+import org.deltafi.core.validation.FlowValidator;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.scheduling.support.CronExpression;
 import org.springframework.stereotype.Service;
@@ -48,10 +48,10 @@ public class TimedDataSourceService extends FlowService<TimedDataSourcePlanEntit
     private final TimedDataSourceRepo timedDataSourceRepo;
 
     public TimedDataSourceService(TimedDataSourceRepo timedDataSourceRepo, PluginVariableService pluginVariableService,
-                                  TimedDataSourceValidator restDataSourceValidator, BuildProperties buildProperties,
+                                  FlowValidator flowValidator, BuildProperties buildProperties,
                                   ErrorCountService errorCountService, Clock clock, FlowCacheService flowCacheService) {
         super(FlowType.TIMED_DATA_SOURCE, timedDataSourceRepo, pluginVariableService, TIMED_DATA_SOURCE_FLOW_PLAN_CONVERTER,
-                restDataSourceValidator, buildProperties, flowCacheService, TimedDataSource.class, TimedDataSourcePlanEntity.class);
+                flowValidator, buildProperties, flowCacheService, TimedDataSource.class, TimedDataSourcePlanEntity.class);
 
         this.timedDataSourceRepo = timedDataSourceRepo;
         this.errorCountService = errorCountService;

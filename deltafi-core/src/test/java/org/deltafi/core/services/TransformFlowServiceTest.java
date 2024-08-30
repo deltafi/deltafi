@@ -28,7 +28,7 @@ import org.deltafi.core.types.Flow;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.types.TransformFlow;
 import org.deltafi.core.types.TransformFlowPlanEntity;
-import org.deltafi.core.validation.TransformFlowValidator;
+import org.deltafi.core.validation.FlowValidator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -48,7 +48,7 @@ class TransformFlowServiceTest {
     TransformFlowRepo transformFlowRepo;
 
     @Mock
-    TransformFlowValidator flowValidator;
+    FlowValidator flowValidator;
 
     @InjectMocks
     TransformFlowService transformFlowService;

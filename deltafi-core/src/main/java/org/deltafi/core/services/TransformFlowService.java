@@ -27,7 +27,7 @@ import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.types.snapshot.TransformFlowSnapshot;
 import org.deltafi.core.types.*;
 import org.deltafi.core.types.TransformFlow;
-import org.deltafi.core.validation.TransformFlowValidator;
+import org.deltafi.core.validation.FlowValidator;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
@@ -43,8 +43,8 @@ public class TransformFlowService extends FlowService<TransformFlowPlanEntity, T
 
     private Map<String, Set<Subscriber>> topicSubscribers;
 
-    public TransformFlowService(TransformFlowRepo transformFlowRepo, PluginVariableService pluginVariableService, TransformFlowValidator transformFlowValidator, BuildProperties buildProperties, FlowCacheService flowCacheService) {
-        super(FlowType.TRANSFORM, transformFlowRepo, pluginVariableService, TRANSFORM_FLOW_PLAN_CONVERTER, transformFlowValidator, buildProperties, flowCacheService, TransformFlow.class, TransformFlowPlanEntity.class);
+    public TransformFlowService(TransformFlowRepo transformFlowRepo, PluginVariableService pluginVariableService, FlowValidator flowValidator, BuildProperties buildProperties, FlowCacheService flowCacheService) {
+        super(FlowType.TRANSFORM, transformFlowRepo, pluginVariableService, TRANSFORM_FLOW_PLAN_CONVERTER, flowValidator, buildProperties, flowCacheService, TransformFlow.class, TransformFlowPlanEntity.class);
     }
 
     @Override
