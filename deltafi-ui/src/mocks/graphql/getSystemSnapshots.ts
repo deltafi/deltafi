@@ -83,8 +83,8 @@ const generateData = () => {
         },
         delete: {
           ageOffDays: 13,
-          frequency: "PT10M",
-          policyBatchSize: 1000
+          frequency: "PT5M",
+          policyBatchSize: 10000
         },
         ingress: {
           enabled: true,
