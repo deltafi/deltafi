@@ -36,6 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -318,35 +319,25 @@ public class PluginRegistryService implements Snapshotter {
     private record GroupedFlowPlans(List<TransformFlowPlanEntity> transformFlowPlans, List<EgressFlowPlanEntity> egressFlowPlans, List<RestDataSourcePlanEntity> restDataSourcePlans, List<TimedDataSourcePlanEntity> timedDataSourcePlans){}
 
     private List<String> findDuplicateDataSourceNames(GroupedFlowPlans groupedFlowPlans, PluginCoordinates incomingPluginCoordinates) {
-        Map<String, String> dataSourceNames = new HashMap<>();
+        Set<String> incomingNames = new HashSet<>();
+        Set<String> conflictingNames = new HashSet<>();
 
         // Check incoming plugin's data sources
-        for (RestDataSourcePlanEntity plan : groupedFlowPlans.restDataSourcePlans) {
-            dataSourceNames.put(plan.getName(), "REST");
-        }
-        for (TimedDataSourcePlanEntity plan : groupedFlowPlans.timedDataSourcePlans) {
-            if (dataSourceNames.containsKey(plan.getName())) {
-                return List.of(plan.getName()); // Duplicate within incoming plugin
-            }
-            dataSourceNames.put(plan.getName(), "TIMED");
-        }
+        Stream.concat(groupedFlowPlans.restDataSourcePlans.stream(), groupedFlowPlans.timedDataSourcePlans.stream())
+                .map(DataSourcePlanEntity::getName)
+                .forEach(name -> {
+                    if (!incomingNames.add(name)) {
+                        conflictingNames.add(name);
+                    }
+                });
 
         // Check against existing data sources, excluding those from the same plugin
-        List<String> conflictingNames = new ArrayList<>();
-        for (RestDataSource existing : restDataSourceService.getAll()) {
-            if (!existing.getSourcePlugin().equalsIgnoreVersion(incomingPluginCoordinates) &&
-                    dataSourceNames.containsKey(existing.getName())) {
-                conflictingNames.add(existing.getName());
-            }
-        }
-        for (TimedDataSource existing : timedDataSourceService.getAll()) {
-            if (!existing.getSourcePlugin().equalsIgnoreVersion(incomingPluginCoordinates) &&
-                    dataSourceNames.containsKey(existing.getName())) {
-                conflictingNames.add(existing.getName());
-            }
-        }
+        Stream.concat(restDataSourceService.getAll().stream(), timedDataSourceService.getAll().stream())
+                .filter(existing -> !existing.getSourcePlugin().equalsIgnoreVersion(incomingPluginCoordinates))
+                .map(DataSource::getName)
+                .filter(incomingNames::contains)
+                .forEach(conflictingNames::add);
 
-        return conflictingNames;
+        return new ArrayList<>(conflictingNames);
     }
-
 }
