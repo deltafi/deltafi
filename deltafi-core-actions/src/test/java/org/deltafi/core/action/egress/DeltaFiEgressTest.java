@@ -23,7 +23,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import org.deltafi.actionkit.action.egress.EgressInput;
 import org.deltafi.actionkit.action.egress.EgressResult;
 import org.deltafi.actionkit.action.egress.EgressResultType;
-import org.deltafi.common.content.ContentStorageService;
+import org.deltafi.common.content.ActionContentStorageService;
 import org.deltafi.common.http.HttpService;
 import org.deltafi.common.test.storage.s3.InMemoryObjectStorageService;
 import org.deltafi.common.types.ActionContext;
@@ -51,8 +51,8 @@ public class DeltaFiEgressTest {
     private final DeltaFiEgress action = new DeltaFiEgress(httpService);
     private final DeltaFiTestRunner runner = DeltaFiTestRunner.setup("DeltaFiEgressTest");
 
-    private static final ContentStorageService CONTENT_STORAGE_SERVICE =
-            new ContentStorageService(new InMemoryObjectStorageService());
+    private static final ActionContentStorageService CONTENT_STORAGE_SERVICE =
+            new ActionContentStorageService(new InMemoryObjectStorageService());
 
     @RegisterExtension
     static WireMockExtension wireMockHttp = WireMockExtension.newInstance()

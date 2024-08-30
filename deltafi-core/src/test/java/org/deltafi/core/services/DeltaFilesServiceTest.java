@@ -390,6 +390,55 @@ class DeltaFilesServiceTest {
     }
 
     @Test
+    void testDeleteUnusedContentError() {
+        Content content = new Content();
+        content.setName("namne");
+        Content content2 = new Content();
+        content2.setName("name2");
+        ActionEvent event = new ActionEvent();
+        event.setType(ActionEventType.ERROR);
+        event.setSavedContent(List.of(content, content2));
+        deltaFilesService.deleteUnusedContent(event);
+        // Deletes the saved content of an Error result
+        Mockito.verify(contentStorageService).delete(content);
+        Mockito.verify(contentStorageService).delete(content2);
+    }
+
+    @Test
+    void testDeleteUnusedContentFilter() {
+        Content content = new Content();
+        content.setName("namne");
+        ActionEvent event = new ActionEvent();
+        event.setType(ActionEventType.FILTER);
+        event.setSavedContent(List.of(content));
+        deltaFilesService.deleteUnusedContent(event);
+        // Deletes the saved content of a Filter result
+        Mockito.verify(contentStorageService).delete(content);
+    }
+
+    @Test
+    void testDeleteUnusedContentFilterNoContent() {
+        ActionEvent event = new ActionEvent();
+        event.setType(ActionEventType.FILTER);
+        event.setSavedContent(Collections.emptyList());
+        deltaFilesService.deleteUnusedContent(event);
+        // Nothing to delete
+        Mockito.verifyNoInteractions(contentStorageService);
+    }
+
+    @Test
+    void testDeleteUnusedContentTransform() {
+        Content content = new Content();
+        content.setName("namne");
+        ActionEvent event = new ActionEvent();
+        event.setType(ActionEventType.TRANSFORM);
+        event.setSavedContent(List.of(content));
+        deltaFilesService.deleteUnusedContent(event);
+        // Do not act upon Transform results
+        Mockito.verifyNoInteractions(contentStorageService);
+    }
+
+    @Test
     void testDeleteContentAndMetadata() {
         Content content = new Content();
         UUID did = UUID.randomUUID();

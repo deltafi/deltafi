@@ -21,7 +21,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.deltafi.common.content.ContentStorageService;
+import org.deltafi.common.content.ActionContentStorageService;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -43,7 +43,7 @@ public class ActionContext {
     private String hostname;
     private OffsetDateTime startTime;
     private String systemName;
-    private ContentStorageService contentStorageService;
+    private ActionContentStorageService contentStorageService;
 
     private JoinConfiguration join;
     private List<UUID> joinedDids;

@@ -1,0 +1,31 @@
+{
+  "did": "%1$s",
+  "flowName": "sampleEgress",
+  "flowId": "22222222-2222-2222-2222-222222222222",
+  "actionName": "SampleEgressAction",
+  "actionId": "00000000-0000-0000-0000-000000000002",
+  "start": "2021-07-11T13:44:22.183Z",
+  "stop": "2021-07-11T13:44:22.184Z",
+  "type": "ERROR",
+  "error": {
+    "cause": "Authority XYZ not recognized",
+    "context": "Dead beef feed face cafe",
+    "annotations": {
+      "errorKey": "error metadata"
+    }
+  },
+  "savedContent": [
+    {
+      "name": "savedBeforeError",
+      "segments": [
+        {
+          "uuid": "11111111-2222-1111-1111-111111111111",
+          "offset": 0,
+          "size": 500,
+          "did": "%1$s"
+        }
+      ],
+      "mediaType": "application/octet-stream"
+    }
+  ]
+}

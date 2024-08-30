@@ -19,15 +19,15 @@ package org.deltafi.test.action;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.ContentResult;
 import org.deltafi.actionkit.action.Result;
 import org.deltafi.actionkit.action.ResultType;
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.converters.ContentConverter;
 import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.filter.FilterResult;
 import org.deltafi.actionkit.properties.ActionsProperties;
-import org.deltafi.common.content.ContentStorageService;
+import org.deltafi.common.content.ActionContentStorageService;
 import org.deltafi.common.test.storage.s3.InMemoryObjectStorageService;
 import org.deltafi.common.types.*;
 import org.junit.jupiter.api.Assertions;
@@ -38,7 +38,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.*;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -56,7 +59,7 @@ public abstract class ActionTest {
     @Mock
     protected ActionsProperties actionsProperties;
 
-    protected final ContentStorageService contentStorageService = new ContentStorageService(new InMemoryObjectStorageService());
+    protected final ActionContentStorageService contentStorageService = new ActionContentStorageService(new InMemoryObjectStorageService());
 
     protected String convertUTCDateToLocal(String utcDateString) {
         final DateTimeFormatter javaStdDateToStringFormatter = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss z yyyy", Locale.ENGLISH);

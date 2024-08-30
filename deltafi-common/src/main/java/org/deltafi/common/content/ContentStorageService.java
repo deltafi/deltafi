@@ -32,7 +32,7 @@ import java.util.*;
 public class ContentStorageService {
     public static final String CONTENT_BUCKET = "storage";
 
-    private final ObjectStorageService objectStorageService;
+    final ObjectStorageService objectStorageService;
 
     public InputStream load(Content content) throws ObjectStorageException {
         if (content.getSize() == 0) {

@@ -24,7 +24,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import org.deltafi.actionkit.action.ingress.IngressResult;
 import org.deltafi.actionkit.action.ingress.IngressResultType;
 import org.deltafi.common.constant.DeltaFiConstants;
-import org.deltafi.common.content.ContentStorageService;
+import org.deltafi.common.content.ActionContentStorageService;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.test.storage.s3.InMemoryObjectStorageService;
 import org.deltafi.common.types.ActionContext;
@@ -48,8 +48,8 @@ public class RestIngressTest {
     private static final String URL_CONTEXT = "/endpoint?param1=x&param2=y";
     private static final String TEST_FILE = "file.txt";
 
-    private static final ContentStorageService CONTENT_STORAGE_SERVICE =
-            new ContentStorageService(new InMemoryObjectStorageService());
+    private static final ActionContentStorageService CONTENT_STORAGE_SERVICE =
+            new ActionContentStorageService(new InMemoryObjectStorageService());
 
     @RegisterExtension
     static WireMockExtension wireMockHttp = WireMockExtension.newInstance()
