@@ -25,7 +25,7 @@ export default function useDataSource() {
     name: true,
     type: true,
     description: true,
-    maxErrors:true,
+    maxErrors: true,
     flowStatus: {
       state: true,
       errors: {
@@ -199,14 +199,25 @@ export default function useDataSource() {
     return sendGraphQLQuery(query, "saveRestDataSourcePlan", "mutation");
   };
 
-  const removeDataSourcePlan = (flowName: string) => {
-    const query = {
-      removeDataSourcePlan: {
-        __args: {
-          name: flowName,
+  const removeDataSourcePlan = (name: string, dataSourceType: string) => {
+    let query = {};
+    if (dataSourceType === 'REST_DATA_SOURCE') {
+      query = {
+        removeRestDataSourcePlan: {
+          __args: {
+            name: name,
+          },
         },
-      },
-    };
+      };
+    } else if (dataSourceType === 'TIMED_DATA_SOURCE') {
+      query = {
+        removeTimedDataSourcePlan: {
+          __args: {
+            name: name,
+          },
+        },
+      };
+    }
     return sendGraphQLQuery(query, "removeDataSourcePlan", "mutation");
   };
 
