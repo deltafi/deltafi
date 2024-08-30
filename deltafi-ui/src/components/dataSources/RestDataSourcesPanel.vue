@@ -45,7 +45,7 @@
         </Column>
         <Column header="Description" field="description" :sortable="true"></Column>
         <Column header="Publish" field="topic" :sortable="true"></Column>
-        <Column header="Test Mode" class="test-mode-column">
+        <Column header="Test Mode" class="switch-column">
           <template #body="{ data }">
             <RestDataSourceTestModeInputSwitch :row-data-prop="data" />
           </template>
@@ -59,7 +59,7 @@
             <InputNumber v-model="data[field]" :min="0" class="p-inputtext-sm max-error-input" autofocus />
           </template>
         </Column>
-        <Column header="Active" :style="{ width: '7%' }" class="data-source-state-column">
+        <Column header="Active" :style="{ width: '7%' }" class="switch-column">
           <template #body="{ data }">
             <StateInputSwitch :row-data-prop="data" data-source-type="restDataSource" @change="refresh" />
           </template>
@@ -208,7 +208,7 @@ defineExpose({ refresh });
 .rest-data-source-panel {
   .table-panel {
     .data-sources-table {
-      td.data-source-state-column {
+      td.switch-column {
         padding: 0 !important;
 
         .p-inputswitch {
@@ -226,7 +226,7 @@ defineExpose({ refresh });
         width: 7rem;
         padding: 0 !important;
 
-        > span {
+        >span {
           padding: 0.5rem !important;
         }
 
@@ -236,7 +236,7 @@ defineExpose({ refresh });
           display: flex;
         }
 
-        .value-clickable > * {
+        .value-clickable>* {
           flex: 0 0 auto;
         }
 

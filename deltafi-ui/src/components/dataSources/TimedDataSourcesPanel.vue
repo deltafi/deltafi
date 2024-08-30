@@ -64,12 +64,12 @@
             <StatusBadge :status="data.ingressStatus" :message="data.ingressStatusMessage" />
           </template>
         </Column>
-        <Column header="Test Mode" class="test-mode-column">
+        <Column header="Test Mode" class="switch-column">
           <template #body="{ data }">
             <TimedDataSourceTestModeInputSwitch :row-data-prop="data" />
           </template>
         </Column>
-        <Column header="Active" :style="{ width: '7%' }" class="data-source-state-column">
+        <Column header="Active" :style="{ width: '7%' }" class="switch-column">
           <template #body="{ data }">
             <StateInputSwitch :row-data-prop="data" data-source-type="timedDataSource" @change="refresh" />
           </template>
@@ -247,7 +247,7 @@ defineExpose({ refresh });
 .timed-data-source-panel {
   .table-panel {
     .data-sources-table {
-      td.data-source-state-column {
+      td.switch-column {
         padding: 0 !important;
 
         .p-inputswitch {
