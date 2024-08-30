@@ -170,6 +170,16 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
         List<Flow> deleteFlows = existingFlows.stream().filter(e -> !incomingFlowNames.contains(e.getName())).toList();
         flowRepo.deleteAll(deleteFlows);
 
+        List<FlowT> incomingExistingFlows = flows.stream().filter(f -> existingFlowNames.contains(f.getName())).toList();
+        for (Flow incomingExistingFlow : incomingExistingFlows) {
+            Flow existingFlow = existingFlows.stream().filter(f -> f.getName().equals(incomingExistingFlow.getName())).findFirst().orElse(null);
+            if (existingFlow != null) {
+                incomingExistingFlow.setId(existingFlow.getId());
+                incomingExistingFlow.copyFlowState(existingFlow);
+            }
+            flowRepo.save(incomingExistingFlow);
+        }
+
         refreshCache();
     }
 
