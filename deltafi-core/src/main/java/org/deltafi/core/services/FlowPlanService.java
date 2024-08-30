@@ -92,14 +92,23 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlanEntity, FlowT ex
                 .findByNameAndType(flowPlan.getName(), getFlowType())
                 .orElse(null);
 
-        if (existingFlowPlan != null) {
-            log.info("no existing flow plan found");
-        } else {
-            log.info("existing flow plan found");
-        }
-
         if (existingFlowPlan != null && !existingFlowPlan.getSourcePlugin().equalsIgnoreVersion(flowPlan.getSourcePlugin())) {
             throw new DeltafiConfigurationException("A flow plan with the name: " + flowPlan.getName() + " already exists from another source plugin: " + existingFlowPlan);
+        }
+
+        FlowType otherDataSourceType = null;
+        if (flowPlan.getType() == FlowType.TIMED_DATA_SOURCE) {
+            otherDataSourceType = FlowType.REST_DATA_SOURCE;
+        } else if (flowPlan.getType() == FlowType.REST_DATA_SOURCE) {
+            otherDataSourceType = FlowType.TIMED_DATA_SOURCE;
+        }
+        if (otherDataSourceType != null) {
+            FlowPlanEntity existingFlowPlanOfOtherType = flowPlanRepo
+                    .findByNameAndType(flowPlan.getName(), otherDataSourceType)
+                    .orElse(null);
+            if (existingFlowPlanOfOtherType != null) {
+                throw new DeltafiConfigurationException("A flow plan with the name: " + flowPlan.getName() + " of type: " + otherDataSourceType + " already exists -- two data sources of the same name cannot exist");
+            }
         }
 
         flowPlanValidator.validate(flowPlan);

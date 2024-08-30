@@ -402,7 +402,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
             } else if(!systemPlugin.equalsIgnoreVersion(flow.getSourcePlugin())) {
                 throw new IllegalArgumentException("Flow " + flowName + " is not a " + systemPlugin.getArtifactId() + " flow and cannot be removed");
             }
-            flowRepo.deleteById(flowName);
+            flowRepo.deleteById(flow.getId());
             refreshCache();
         }
     }

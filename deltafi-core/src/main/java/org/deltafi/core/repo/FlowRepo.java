@@ -29,17 +29,15 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.deltafi.core.plugin.SystemPluginService.SYSTEM_PLUGIN_ARTIFACT_ID;
 import static org.deltafi.core.plugin.SystemPluginService.SYSTEM_PLUGIN_GROUP_ID;
 
 @Repository
-public interface FlowRepo extends JpaRepository<Flow, String> {
+public interface FlowRepo extends JpaRepository<Flow, UUID> {
     @Query("SELECT f FROM Flow f WHERE f.name = :name AND TYPE(f) = :type")
     <T extends Flow> Optional<T> findByNameAndType(String name, Class<T> type);
-
-    @Query("SELECT f FROM Flow f WHERE TYPE(f) = :type")
-    <T extends Flow> List<T> findAllByType(Class<T> type);
 
     @Query(value = "SELECT f.* FROM flows f " +
             "WHERE f.flow_status ->> 'state' = :#{#state.name} " +
