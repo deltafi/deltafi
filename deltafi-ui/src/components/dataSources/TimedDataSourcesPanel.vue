@@ -88,6 +88,12 @@
           <span v-if="activeAction[fieldName] === null">-</span>
           <pre>{{ activeAction[fieldName] }}</pre>
         </span>
+        <span v-else-if="fieldName == 'action'">
+          <pre>{{ activeAction.timedIngressAction.type || "-" }}</pre>
+        </span>
+        <span v-else-if="fieldName == 'actionParameters'">
+          <pre>{{ activeAction.timedIngressAction.parameters || "-" }}</pre>
+        </span>
         <span v-else>{{ activeAction[fieldName] || "-" }}</span>
       </div>
       <template #footer>
@@ -199,6 +205,8 @@ const fields = {
   memo: "Memo",
   executeImmediate: "Execute Immediate",
   topic: "Topic",
+  action: "Action",
+  actionParameters: "Action Parameters",
 };
 
 const showAction = (actionName) => {
