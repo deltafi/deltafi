@@ -88,7 +88,7 @@ public class DeltaFileFlow {
     @Builder.Default
     private List<String> pendingActions = new ArrayList<>();
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "delta_file_id", foreignKey = @ForeignKey(NO_CONSTRAINT))
     @ToString.Exclude
     @JsonBackReference

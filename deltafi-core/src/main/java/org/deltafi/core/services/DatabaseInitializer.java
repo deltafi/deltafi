@@ -46,7 +46,7 @@ public class DatabaseInitializer {
         String actionsColdQueued = "CREATE INDEX IF NOT EXISTS idx_actions_cold_queued ON actions (name, type) WHERE state = 'COLD_QUEUED'";
         jdbcTemplate.execute(actionsColdQueued);
 
-        String actionsNextResume = "CREATE INDEX idx_actions_auto_resume_flow_sparse ON public.actions (next_auto_resume, delta_file_flow_id)\n" +
+        String actionsNextResume = "CREATE INDEX IF NOT EXISTS idx_actions_auto_resume_flow_sparse ON public.actions (next_auto_resume, delta_file_flow_id)\n" +
                 "WHERE next_auto_resume IS NOT NULL";
         jdbcTemplate.execute(actionsNextResume);
     }

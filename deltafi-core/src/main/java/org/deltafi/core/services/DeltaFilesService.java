@@ -1106,7 +1106,6 @@ public class DeltaFilesService {
     public List<PerActionUniqueKeyValues> errorMetadataUnion(List<UUID> dids) {
         // TODO: limit fields returned
         List<DeltaFileFlow> deltaFileFlows = deltaFileFlowRepo.findAllByDeltaFileIds(dids);
-        //deltaFiles(0, dids.size(), filter, null, List.of(FLOWS_INPUT_METADATA, FLOWS_NAME, FLOWS_ACTIONS_NAME, FLOWS_ACTIONS_TYPE, FLOWS_ACTIONS_STATE, FLOWS_ACTIONS_METADATA, FLOWS_ACTIONS_DELETE_METADATA_KEYS));
 
         Map<Pair<String, String>, PerActionUniqueKeyValues> actionKeyValues = new HashMap<>();
         for (DeltaFileFlow flow : deltaFileFlows) {
