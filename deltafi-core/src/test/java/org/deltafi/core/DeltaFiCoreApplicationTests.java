@@ -321,6 +321,7 @@ class DeltaFiCoreApplicationTests {
 
 	@BeforeEach
 	void setup() {
+		deltaFiPropertiesService.upsertProperties();
 		resumePolicyService.refreshCache();
 		loadConfig();
 
@@ -3809,6 +3810,7 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void testDeleteMultipleBatches() {
+		deltaFiPropertiesService.updateProperties(List.of(new KeyValue("deletePolicyBatchSize", "1000")));
 		List<DeltaFile> deltaFiles = new ArrayList<>();
 		for (int i = 0; i < 1500; i++) {
 			DeltaFile deltaFile = DeltaFile.builder()

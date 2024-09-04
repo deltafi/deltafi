@@ -185,18 +185,14 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     public List<DeltaFile> findReadyForAutoResume(OffsetDateTime maxReadyTime) {
-                String queryStr = """
-                SELECT df
-                FROM DeltaFile df
-                WHERE df.stage = 'ERROR'
-                AND EXISTS (
-                    SELECT 1
-                    FROM DeltaFileFlow flow
-                    JOIN flow.actions action
-                    WHERE flow.deltaFile = df
-                    AND action.nextAutoResume < :maxReadyTime
-                )
-            """;
+        String queryStr = """
+            SELECT DISTINCT df
+            FROM Action action
+            JOIN action.deltaFileFlow flow
+            JOIN flow.deltaFile df
+            WHERE action.nextAutoResume < :maxReadyTime
+            AND df.stage = 'ERROR'
+        """;
 
         TypedQuery<DeltaFile> query = entityManager.createQuery(queryStr, DeltaFile.class)
                 .setParameter("maxReadyTime", maxReadyTime);
