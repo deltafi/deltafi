@@ -59,11 +59,11 @@ public class DeltaFiProperties {
     @PropertyInfo(description = "Number of days that a DeltaFile should live, any records older will be removed", defaultValue = "13")
     private int ageOffDays = 13;
 
-    @PropertyInfo(description = "Frequency that the delete action is triggered", defaultValue = "PT10M")
-    private Duration deleteFrequency = Duration.ofMinutes(10);
+    @PropertyInfo(description = "Frequency that the delete action is triggered", defaultValue = "PT5M")
+    private Duration deleteFrequency = Duration.ofMinutes(5);
 
-    @PropertyInfo(description = "Maximum deletes per policy iteration loop", defaultValue = "1000")
-    private int deletePolicyBatchSize = 1000;
+    @PropertyInfo(description = "Maximum deletes per policy iteration loop", defaultValue = "10000")
+    private int deletePolicyBatchSize = 10000;
 
     @PropertyInfo(description = "Enables or disables local caching of DeltaFiles", defaultValue = "true")
     private boolean cacheEnabled = true;
