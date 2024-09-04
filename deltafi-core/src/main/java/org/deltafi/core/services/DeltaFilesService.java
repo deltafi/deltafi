@@ -407,7 +407,7 @@ public class DeltaFilesService {
             for (Content content : event.getSavedContent()) {
                 contentStorageService.delete(content);
             }
-            log.warn("Deleted unused content: {}", event.getSavedContent().size());
+            log.warn("Deleted {} unused content entries for did {} due to a {} event", event.getSavedContent().size(), event.getDid(), event.getType());
         }
     }
 
