@@ -16,29 +16,30 @@
 #    limitations under the License.
 #
 
+import importlib
+import inspect
 import json
 import os
+import pkgutil
 import sys
 import threading
 import time
 import traceback
 from datetime import datetime, timezone, timedelta
+from importlib import metadata
 from os.path import isdir, isfile, join
 from pathlib import Path
 from typing import List
-import importlib
-import inspect
-import pkgutil
 
-from importlib import metadata
 import requests
+
+from deltafi.action import Action, Join
 from deltafi.actioneventqueue import ActionEventQueue
 from deltafi.domain import Event, ActionExecution
 from deltafi.exception import ExpectedContentException, MissingMetadataException
 from deltafi.logger import get_logger
 from deltafi.result import ErrorResult
 from deltafi.storage import ContentService
-from deltafi.action import Action, Join
 
 
 def _coordinates():
@@ -185,15 +186,15 @@ class Plugin(object):
         actions = [self._action_json(action) for action in self.actions]
 
         return {
-                'pluginCoordinates': self.coordinates.__json__(),
-                'displayName': self.display_name,
-                'description': self.description,
-                'actionKitVersion': metadata.version('deltafi'),
-                'dependencies': [],
-                'actions': actions,
-                'variables': variables,
-                'flowPlans': flows
-            }
+            'pluginCoordinates': self.coordinates.__json__(),
+            'displayName': self.display_name,
+            'description': self.description,
+            'actionKitVersion': metadata.version('deltafi'),
+            'dependencies': [],
+            'actions': actions,
+            'variables': variables,
+            'flowPlans': flows
+        }
 
     def _register(self):
         url = f"{self.core_url}/plugins"
@@ -256,6 +257,24 @@ class Plugin(object):
             finally:
                 time.sleep(10)
 
+    @staticmethod
+    def to_response(event, start_time, stop_time, result):
+        response = {
+            'did': event.context.did,
+            'flowName': event.context.flow_name,
+            'flowId': event.context.flow_id,
+            'actionName': event.context.action_name,
+            'actionId': event.context.action_id,
+            'start': start_time,
+            'stop': stop_time,
+            'type': result.result_type,
+            'metrics': [metric.json() for metric in result.metrics],
+            'savedContent': [content.json() for content in event.context.saved_content]
+        }
+        if result.result_key is not None:
+            response[result.result_key] = result.response()
+        return response
+
     def _do_action(self, action):
         action_logger = get_logger(self.action_name(action))
 
@@ -287,19 +306,8 @@ class Plugin(object):
 
                 action.action_execution = None
 
-                response = {
-                    'did': event.context.did,
-                    'flowName': event.context.flow_name,
-                    'flowId': event.context.flow_id,
-                    'actionName': event.context.action_name,
-                    'actionId': event.context.action_id,
-                    'start': start_time,
-                    'stop': time.time(),
-                    'type': result.result_type,
-                    'metrics': [metric.json() for metric in result.metrics]
-                }
-                if result.result_key is not None:
-                    response[result.result_key] = result.response()
+                response = Plugin.to_response(
+                    event, start_time, time.time(), result)
 
                 topic = 'dgs'
                 if event.return_address:

@@ -17,23 +17,12 @@
 #
 
 import pytest
-from deltafi.domain import Event
+from mockito import mock, unstub
+
 from deltafi.exception import MissingMetadataException
 from deltafi.input import TransformInput
 from deltafi.storage import ContentService
-from mockito import mock, unstub
-
 from .helperutils import *
-
-
-def make_event(content_service):
-    logger = None
-    event = Event.create({
-        'deltaFileMessages': [make_delta_file_message_dict()],
-        'actionContext': make_context_dict(),
-        'actionParams': {}
-    }, content_service, logger)
-    return event
 
 
 def test_transform_input():

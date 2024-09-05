@@ -118,15 +118,17 @@ class IngressResultItem:
         return self
 
     def save_string_content(self, string_data: str, name: str, media_type: str):
-        segment = self.context.content_service.put_str(self.context.did, string_data)
-        self.content.append(
-            Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service))
+        segment = self.context.content_service.put_str(self._did, string_data)
+        c = Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service)
+        self.content.append(c)
+        self.context.saved_content.append(c)
         return self
 
     def save_byte_content(self, byte_data: bytes, name: str, media_type: str):
-        segment = self.context.content_service.put_bytes(self.context.did, byte_data)
-        self.content.append(
-            Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service))
+        segment = self.context.content_service.put_bytes(self._did, byte_data)
+        c = Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service)
+        self.content.append(c)
+        self.context.saved_content.append(c)
         return self
 
     def set_metadata(self, metadata: dict):
@@ -195,14 +197,16 @@ class TransformResult(Result):
 
     def save_string_content(self, string_data: str, name: str, media_type: str):
         segment = self.context.content_service.put_str(self.context.did, string_data)
-        self.content.append(
-            Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service))
+        c = Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service)
+        self.content.append(c)
+        self.context.saved_content.append(c)
         return self
 
     def save_byte_content(self, byte_data: bytes, name: str, media_type: str):
         segment = self.context.content_service.put_bytes(self.context.did, byte_data)
-        self.content.append(
-            Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service))
+        c = Content(name=name, segments=[segment], media_type=media_type, content_service=self.context.content_service)
+        self.content.append(c)
+        self.context.saved_content.append(c)
         return self
 
     def set_metadata(self, metadata: dict):

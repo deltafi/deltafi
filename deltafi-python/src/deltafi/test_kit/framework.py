@@ -26,7 +26,6 @@ from deltafi.logger import get_logger
 from deltafi.metric import Metric
 from deltafi.result import ErrorResult, FilterResult
 from deltafi.storage import Segment
-
 from .assertions import *
 from .compare_helpers import GenericCompareHelper, CompareHelper
 from .constants import *
@@ -210,6 +209,7 @@ class ActionTest(ABC):
         self.loaded_inputs = []
         self.package_name = package_name
         self.res_path = ""
+        self.context = None
 
     def __reset__(self, did: str):
         self.content_service = InternalContentService()
@@ -219,6 +219,7 @@ class ActionTest(ABC):
             self.did = did
         self.loaded_inputs = []
         self.res_path = ""
+        self.context = None
 
     def load_file(self, ioc: IOContent):
         file_res = self.res_path.joinpath(ioc.file_name)
@@ -266,7 +267,7 @@ class ActionTest(ABC):
     def make_context(self, test_case: TestCaseBase):
         action_name = INGRESS_FLOW + "." + test_case.action.__class__.__name__
         join = {} if test_case.join_meta else None
-        return Context(
+        self.context = Context(
             did=self.did,
             delta_file_name=test_case.file_name,
             data_source="DATASRC",
@@ -278,8 +279,10 @@ class ActionTest(ABC):
             hostname=HOSTNAME,
             system_name=SYSTEM,
             content_service=self.content_service,
+            saved_content=[],
             join=join,
             logger=get_logger())
+        return self.context
 
     def make_event(self, test_case: TestCaseBase):
         return Event(delta_file_messages=self.make_df_msgs(test_case), context=self.make_context(test_case),
@@ -354,3 +357,7 @@ class ActionTest(ABC):
             assert_equal_len(expected_metrics, results)
             for index, expected in enumerate(expected_metrics):
                 self.compare_one_metric(expected, results[index])
+
+    def has_saved_content__size(self, count: int):
+        assert_equal_with_label(
+            count, len(self.context.saved_content), "savedContent")
