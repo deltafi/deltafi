@@ -45,6 +45,12 @@ import static jakarta.persistence.ConstraintMode.NO_CONSTRAINT;
         @Index(name = "idx_flow", columnList = "state, delta_file_id, name, test_mode, pending_annotations"),
         @Index(name = "idx_flow_state", columnList = "state")
 })
+@NamedEntityGraph(
+        name = "deltaFileFlow.withActions",
+        attributeNodes = {
+                @NamedAttributeNode("actions")
+        }
+)
 @DynamicUpdate
 public class DeltaFileFlow {
     @Id
