@@ -21,9 +21,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.collect.Lists;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.TypedQuery;
+import jakarta.persistence.*;
 import jakarta.persistence.criteria.*;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.jdbc.core.PreparedStatementCallback;
@@ -42,7 +40,9 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.*;
 
 import static org.deltafi.common.types.ActionState.*;
@@ -261,101 +261,158 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
-    public List<DeltaFile> findForTimedDelete(OffsetDateTime createdBeforeDate, OffsetDateTime completedBeforeDate,
-                                              long minBytes, String flow, boolean deleteMetadata, int batchSize) {
+    public List<DeltaFileDeleteDTO> findForTimedDelete(OffsetDateTime createdBeforeDate, OffsetDateTime completedBeforeDate,
+                                                       long minBytes, String flow, boolean deleteMetadata, int batchSize) {
         if (createdBeforeDate == null && completedBeforeDate == null) {
             return Collections.emptyList();
         }
 
-        StringBuilder queryBuilder = new StringBuilder("SELECT d FROM DeltaFile d WHERE ");
-        boolean hasPreviousCondition = false;
+        StringBuilder queryBuilder = new StringBuilder(
+                "WITH eligible_files AS ( " +
+                        "    SELECT df.did, df.content_deleted, df.total_bytes, df.modified " +
+                        "    FROM delta_files df " +
+                        "    WHERE ");
+
+        List<String> conditions = new ArrayList<>();
+        Map<String, Object> parameters = new HashMap<>();
 
         if (createdBeforeDate != null) {
-            queryBuilder.append("d.created < :createdBeforeDate ");
-            hasPreviousCondition = true;
+            conditions.add("df.created < :createdBeforeDate");
+            parameters.put("createdBeforeDate", createdBeforeDate);
         }
 
         if (completedBeforeDate != null) {
-            if (hasPreviousCondition) queryBuilder.append("AND ");
-            queryBuilder.append("d.modified < :completedBeforeDate AND d.terminal = true ");
+            conditions.add("df.modified < :completedBeforeDate");
+            conditions.add("df.terminal = true");
+            parameters.put("completedBeforeDate", completedBeforeDate);
         }
 
         if (flow != null) {
-            queryBuilder.append("AND d.dataSource = :flow ");
+            conditions.add("df.data_source = :flow");
+            parameters.put("flow", flow);
         }
 
         if (minBytes > 0L) {
-            queryBuilder.append("AND d.totalBytes >= :minBytes ");
+            conditions.add("df.total_bytes >= :minBytes");
+            parameters.put("minBytes", minBytes);
         }
 
         if (!deleteMetadata) {
-            queryBuilder.append("AND d.contentDeletable = true ");
+            conditions.add("df.content_deletable = true");
         }
 
-        queryBuilder.append("ORDER BY ");
-        if (createdBeforeDate != null) {
-            queryBuilder.append("d.created ASC");
-        } else {
-            queryBuilder.append("d.modified ASC");
+        queryBuilder.append(String.join(" AND ", conditions));
+        queryBuilder.append(" ORDER BY ");
+        queryBuilder.append(createdBeforeDate != null ? "df.created" : "df.modified");
+        queryBuilder.append(" ASC LIMIT :batchSize ) ");
+
+        queryBuilder.append(
+                "SELECT ef.did, ef.content_deleted, ef.total_bytes, " +
+                        "       array_agg(a.content) as content_list " +
+                        "FROM eligible_files ef " +
+                        "LEFT JOIN delta_file_flows f ON ef.did = f.delta_file_id " +
+                        "LEFT JOIN actions a ON f.id = a.delta_file_flow_id " +
+                        "GROUP BY ef.did, ef.content_deleted, ef.total_bytes, ef.modified " +
+                        "ORDER BY ef.modified " +
+                        "LIMIT :batchSize");
+
+        Query query = entityManager.createNativeQuery(queryBuilder.toString());
+
+        for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+            query.setParameter(entry.getKey(), entry.getValue());
         }
+        query.setParameter("batchSize", batchSize);
 
-        TypedQuery<DeltaFile> query = entityManager.createQuery(queryBuilder.toString(), DeltaFile.class);
+        List<Object[]> results = query.getResultList();
 
-        if (createdBeforeDate != null) {
-            query.setParameter("createdBeforeDate", createdBeforeDate);
-        }
-
-        if (completedBeforeDate != null) {
-            query.setParameter("completedBeforeDate", completedBeforeDate);
-        }
-
-        if (flow != null) {
-            query.setParameter("flow", flow);
-        }
-
-        if (minBytes > 0L) {
-            query.setParameter("minBytes", minBytes);
-        }
-
-        query.setMaxResults(batchSize);
-
-        return query.getResultList();
+        return results.stream()
+                .map(row -> {
+                    UUID did = (UUID) row[0];
+                    OffsetDateTime contentDeleted = row[1] != null
+                            ? ((Instant) row[1]).atZone(ZoneId.systemDefault()).toOffsetDateTime()
+                            : null;
+                    long totalBytes = ((Number) row[2]).longValue();
+                    List<Content> contentList = new ArrayList<>();
+                    if (row[3] instanceof Object[]) {
+                        for (Object content : (Object[]) row[3]) {
+                            if (content instanceof Content) {
+                                contentList.add((Content) content);
+                            }
+                        }
+                    }
+                    return new DeltaFileDeleteDTO(did, contentDeleted, totalBytes, contentList);
+                })
+                .toList();
     }
 
-    // TODO: do this in one shot
     @Override
-    public List<DeltaFile> findForDiskSpaceDelete(long bytesToDelete, String dataSource, int batchSize) {
+    public List<DeltaFileDeleteDTO> findForDiskSpaceDelete(long bytesToDelete, String dataSource, int batchSize) {
         if (bytesToDelete < 1) {
             throw new IllegalArgumentException("bytesToDelete (%s) must be positive".formatted(bytesToDelete));
         }
 
-        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
-        CriteriaQuery<DeltaFile> query = cb.createQuery(DeltaFile.class);
-        Root<DeltaFile> root = query.from(DeltaFile.class);
-
-        List<Predicate> predicates = new ArrayList<>();
-        predicates.add(cb.equal(root.get("contentDeletable"), true));
+        Query nativeQuery = entityManager.createNativeQuery(diskSpaceDeleteQuery(dataSource));
 
         if (dataSource != null) {
-            predicates.add(cb.equal(root.get("dataSource"), dataSource));
+            nativeQuery.setParameter("dataSource", dataSource);
         }
+        nativeQuery.setParameter("batchSize", batchSize);
 
-        query.select(root)
-                .where(predicates.toArray(new Predicate[0]))
-                .orderBy(cb.asc(root.get("modified")));
-
-        TypedQuery<DeltaFile> typedQuery = entityManager.createQuery(query);
-        typedQuery.setMaxResults(batchSize);
-        List<DeltaFile> deltaFiles = typedQuery.getResultList();
+        List<Object[]> results = nativeQuery.getResultList();
 
         long[] sum = {0};
-        return deltaFiles.stream()
-                .filter(d -> {
+        return results.stream()
+                .filter(row -> {
+                    long totalBytes = ((Number) row[2]).longValue();
                     boolean over = sum[0] <= bytesToDelete;
-                    sum[0] += d.getTotalBytes();
+                    sum[0] += totalBytes;
                     return over;
                 })
+                .map(row -> {
+                    UUID did = (UUID) row[0];
+                    OffsetDateTime contentDeleted = row[1] != null
+                            ? ((Instant) row[1]).atZone(ZoneId.systemDefault()).toOffsetDateTime()
+                            : null;
+                    long totalBytes = ((Number) row[2]).longValue();
+                    List<Content> contentList = new ArrayList<>();
+                    if (row[3] instanceof Object[]) {
+                        for (Object content : (Object[]) row[3]) {
+                            if (content instanceof Content) {
+                                contentList.add((Content) content);
+                            }
+                        }
+                    }
+                    return new DeltaFileDeleteDTO(did, contentDeleted, totalBytes, contentList);
+                })
                 .toList();
+    }
+
+    private static String diskSpaceDeleteQuery(String dataSource) {
+        StringBuilder queryBuilder = new StringBuilder("""
+        WITH eligible_files AS (
+            SELECT df.did, df.content_deleted, df.total_bytes, df.modified
+            FROM delta_files df
+            WHERE df.content_deletable = true
+        """);
+
+        if (dataSource != null) {
+            queryBuilder.append("AND df.data_source = :dataSource ");
+        }
+
+        queryBuilder.append("""
+            ORDER BY df.modified ASC
+            LIMIT :batchSize
+        )
+        SELECT ef.did, ef.content_deleted, ef.total_bytes, 
+               array_agg(a.content) as content_list
+        FROM eligible_files ef
+        LEFT JOIN delta_file_flows f ON ef.did = f.delta_file_id
+        LEFT JOIN actions a ON f.id = a.delta_file_flow_id
+        GROUP BY ef.did, ef.content_deleted, ef.total_bytes, ef.modified
+        ORDER BY ef.modified
+    """);
+
+        return queryBuilder.toString();
     }
 
     @Override

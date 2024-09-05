@@ -19,10 +19,10 @@ package org.deltafi.core.delete;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.exceptions.StorageCheckException;
 import org.deltafi.core.services.DeltaFilesService;
 import org.deltafi.core.services.DiskSpaceService;
+import org.deltafi.core.types.DeltaFileDeleteDTO;
 import org.deltafi.core.types.DiskMetrics;
 import org.deltafi.core.types.DiskSpaceDeletePolicy;
 
@@ -59,9 +59,9 @@ public class DiskSpaceDelete extends DeletePolicyWorker {
         long bytesToDelete = contentMetrics.bytesOverPercentage(maxPercent);
         log.info("Deleting up to {} bytes", bytesToDelete);
         while (bytesToDelete > 0) {
-            List<DeltaFile> deleted = deltaFilesService.diskSpaceDelete(bytesToDelete, flow, name);
+            List<DeltaFileDeleteDTO> deleted = deltaFilesService.diskSpaceDelete(bytesToDelete, flow, name);
 
-            long bytesDeleted = deleted.stream().map(DeltaFile::getTotalBytes).reduce(0L, Long::sum);
+            long bytesDeleted = deleted.stream().map(DeltaFileDeleteDTO::getTotalBytes).reduce(0L, Long::sum);
             bytesToDelete -= bytesDeleted;
 
             if (deleted.isEmpty()) {

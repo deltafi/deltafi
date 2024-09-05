@@ -27,6 +27,7 @@ import org.deltafi.common.types.ActionState;
 import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.Content;
 import org.deltafi.common.types.ResumeMetadata;
+import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.Type;
 import org.jetbrains.annotations.NotNull;
 
@@ -45,6 +46,7 @@ import static jakarta.persistence.ConstraintMode.NO_CONSTRAINT;
         @Index(name = "idx_action_state", columnList = "state, delta_file_flow_id")
 })
 @EqualsAndHashCode(exclude = "deltaFileFlow")
+@DynamicUpdate
 public class Action {
   static final private int MAX_CAUSE_SIZE = 100_000;
 

@@ -1190,13 +1190,13 @@ public class DeltaFilesService {
         int batchSize = deltaFiPropertiesService.getDeltaFiProperties().getDeletePolicyBatchSize();
 
         logBatch(batchSize, policy);
-        List<DeltaFile> deltaFiles = deltaFileRepo.findForTimedDelete(createdBefore, completedBefore, minBytes, flow, deleteMetadata, batchSize);
+        List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForTimedDelete(createdBefore, completedBefore, minBytes, flow, deleteMetadata, batchSize);
         delete(deltaFiles, policy, deleteMetadata);
 
         return deltaFiles.size() == batchSize;
     }
 
-    public List<DeltaFile> diskSpaceDelete(long bytesToDelete, String flow, String policy) {
+    public List<DeltaFileDeleteDTO> diskSpaceDelete(long bytesToDelete, String flow, String policy) {
         int batchSize = deltaFiPropertiesService.getDeltaFiProperties().getDeletePolicyBatchSize();
 
         logBatch(batchSize, policy);
@@ -1207,14 +1207,14 @@ public class DeltaFilesService {
         log.info("Searching for batch of up to {} deltaFiles to delete for policy {}", batchSize, policy);
     }
 
-    public List<DeltaFile> delete(List<DeltaFile> deltaFiles, String policy, boolean deleteMetadata) {
+    public List<DeltaFileDeleteDTO> delete(List<DeltaFileDeleteDTO> deltaFiles, String policy, boolean deleteMetadata) {
         if (deltaFiles.isEmpty()) {
             log.info("No deltaFiles found to delete for policy {}", policy);
             return deltaFiles;
         }
 
         log.info("Deleting {} deltaFiles for policy {}", deltaFiles.size(), policy);
-        long totalBytes = deltaFiles.stream().filter(d -> d.getContentDeleted() == null).mapToLong(DeltaFile::getTotalBytes).sum();
+        long totalBytes = deltaFiles.stream().filter(d -> d.getContentDeleted() == null).mapToLong(DeltaFileDeleteDTO::getTotalBytes).sum();
 
         deleteContent(deltaFiles, policy, deleteMetadata);
         metricService.increment(new Metric(DELETED_FILES, deltaFiles.size()).addTag("policy", policy));
@@ -1531,10 +1531,12 @@ public class DeltaFilesService {
         }
     }
 
-    private void deleteContent(List<DeltaFile> deltaFiles, String policy, boolean deleteMetadata) {
-        List<DeltaFile> deltaFilesWithContent = deltaFiles.stream().filter(d -> d.getContentDeleted() == null).toList();
+    private void deleteContent(List<DeltaFileDeleteDTO> deltaFiles, String policy, boolean deleteMetadata) {
+        List<DeltaFileDeleteDTO> deltaFilesWithContent = deltaFiles.stream().filter(d -> d.getContentDeleted() == null).toList();
         contentStorageService.deleteAll(deltaFilesWithContent.stream()
-                .map(DeltaFile::storedSegments)
+                .map(DeltaFileDeleteDTO::getContent)
+                .flatMap(Collection::stream)
+                .map(Content::getSegments)
                 .flatMap(Collection::stream)
                 .toList());
 
@@ -1542,17 +1544,17 @@ public class DeltaFilesService {
             deleteMetadata(deltaFiles);
         } else {
             deltaFileRepo.setContentDeletedByDidIn(
-                    deltaFilesWithContent.stream().map(DeltaFile::getDid).distinct().toList(),
+                    deltaFilesWithContent.stream().map(DeltaFileDeleteDTO::getDid).distinct().toList(),
                     OffsetDateTime.now(clock),
                     policy);
         }
 
-        coreAuditLogger.logDelete(policy, deltaFiles.stream().map(DeltaFile::getDid).toList(), deleteMetadata);
+        coreAuditLogger.logDelete(policy, deltaFiles.stream().map(DeltaFileDeleteDTO::getDid).toList(), deleteMetadata);
     }
 
-    private void deleteMetadata(List<DeltaFile> deltaFiles) {
-        for (List<DeltaFile> batch : Lists.partition(deltaFiles, 1000)) {
-            deltaFileRepo.batchedBulkDeleteByDidIn(batch.stream().map(DeltaFile::getDid).distinct().toList());
+    private void deleteMetadata(List<DeltaFileDeleteDTO> deltaFiles) {
+        for (List<DeltaFileDeleteDTO> batch : Lists.partition(deltaFiles, 1000)) {
+            deltaFileRepo.batchedBulkDeleteByDidIn(batch.stream().map(DeltaFileDeleteDTO::getDid).distinct().toList());
         }
     }
 
