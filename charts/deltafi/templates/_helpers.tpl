@@ -106,15 +106,15 @@ initContainers:
 {{- define "initContainersWaitForDatabases" -}}
 initContainers:
 - name: wait-for-postgres
-  image: postgres:{{ .Values.postgres.version }}-alpine
+  image: postgres:{{ .Values.postgres.version }}-alpine3.20
   env:
   - name: PGUSER
     value: deltafi
   - name: PGPASSWORD
     valueFrom:
       secretKeyRef:
-        name: postgres
-        key: deltafi-password
+        name: deltafi.deltafi-postgres
+        key: password
   command:
     - 'sh'
     - '-c'
@@ -184,8 +184,8 @@ initContainers:
 - name: POSTGRES_PASSWORD
   valueFrom:
     secretKeyRef:
-      name: postgres
-      key: deltafi-password
+      name: deltafi.deltafi-postgres
+      key: password
 {{- end -}}
 {{- end -}}
 

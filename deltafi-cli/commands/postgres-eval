@@ -2,6 +2,8 @@
 
 . "$DELTAFICLI_WORKDIR/common"
 
+set -f
+
 cli_help_command() {
   echo "
 Command: postgres-eval
@@ -20,5 +22,5 @@ PARAMS="$*"
 if _is_standalone; then
   echo "Not implemented for standalone mode"
 else
-  ${KUBECTL_BIN} exec -i "$(${KUBECTL_BIN} get pod --selector app=StackGresCluster,stackgres.io/cluster=true,role=master -o name)" -c postgres-util -- sh -c "psql -d deltafi -t -c \"$PARAMS\""
+  ${KUBECTL_BIN} exec -i "$(${KUBECTL_BIN} get pod --selector application=spilo,spilo-role=master -o name)" -c postgres -- psql -U deltafi -d deltafi -t -c "$PARAMS"
 fi
