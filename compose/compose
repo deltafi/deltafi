@@ -742,7 +742,7 @@ start_compose() {
   _create_data_dirs
   _create_network
   _check_local_fqdns
-  docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" up -d
+  docker compose --env-file "${STARTUP_SETTINGS}" -f "${COMPOSE_FILE}" up -d --wait --remove-orphans
 }
 
 uninstall() {
