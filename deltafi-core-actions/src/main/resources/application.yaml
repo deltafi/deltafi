@@ -13,4 +13,6 @@ logging:
 
 actions:
   actionThreads:
-    org.deltafi.core.action.FilterEgressAction: 2
+    org.deltafi.core.action.egress.FlowfileEgress: 4
+    org.deltafi.core.action.egress.RestPostEgress: 4
+    org.deltafi.core.action.filter.Filter: 2

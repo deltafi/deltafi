@@ -93,8 +93,8 @@ public class ActionRunner {
             ExecutorService executor = Executors.newFixedThreadPool(numThreads);
             executors.put(actionName, executor);
 
-            log.info("Starting action: {}", actionName);
             for (int i = 0; i < numThreads; i++) {
+                log.info("Starting action: {}{}", actionName, numThreads > 1 ? " (thread {})".formatted(i + 1) : "");
                 executor.submit(() -> listen(action, actionsProperties.getActionPollingInitialDelayMs()));
             }
         }
