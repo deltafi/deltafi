@@ -918,19 +918,29 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             return;
         }
 
-        entityManager.createQuery("DELETE FROM Action a WHERE a.deltaFileFlow.id IN " +
-                        "(SELECT f.id FROM DeltaFileFlow f WHERE f.deltaFile.id in :dids)")
-                .setParameter("dids", dids)
-                .executeUpdate();
-        entityManager.createQuery("DELETE FROM DeltaFileFlow f WHERE f.deltaFile.id in :dids")
-                .setParameter("dids", dids)
-                .executeUpdate();
-        entityManager.createQuery("DELETE FROM Annotation a WHERE a.deltaFile.id in :dids")
-                .setParameter("dids", dids)
-                .executeUpdate();
-        entityManager.createQuery("DELETE FROM DeltaFile d WHERE d.did IN :dids")
-                .setParameter("dids", dids)
-                .executeUpdate();
+        String sql = """
+        WITH deleted_delta_file_flows AS (
+            DELETE FROM delta_file_flows
+            WHERE delta_file_id IN (:dids)
+            RETURNING id
+        )
+        DELETE FROM actions
+        WHERE delta_file_flow_id IN (
+            SELECT id FROM deleted_delta_file_flows
+        );
+
+        DELETE FROM annotations
+        WHERE delta_file_id IN (:dids);
+
+        DELETE FROM delta_files
+        WHERE did IN (:dids);
+
+    """;
+
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("dids", dids);
+        query.executeUpdate();
+
         entityManager.flush();
         entityManager.clear();
     }

@@ -30,26 +30,43 @@ import java.util.Set;
 @Repository
 public interface DeltaFiPropertiesRepo extends JpaRepository<Property, String> {
     /**
-     * Remove any property entry whose key is not found in the given set of property names
-     * @param propertyKeys valid property names to keep
-     */
-    void deleteByKeyNotIn(Set<String> propertyKeys);
-
-    /**
-     * Insert the properties if they do not exist. If they do exist
-     * update the default values and description if necessary.
-     * @param properties list of properties to upsert
+     * Performs a batch upsert of properties and deletes properties not in the input or allowed list, all in a single database operation.
+     *
+     * @param keys Array of property keys to upsert.
+     * @param defaultValues Array of default values corresponding to the keys.
+     * @param descriptions Array of descriptions corresponding to the keys.
+     * @param refreshables Array of boolean flags indicating if each property is refreshable.
+     * @param allowedKeys Set of keys that are allowed to exist in the database. Properties with keys not in this set or in the input arrays will be deleted.
+     *
+     * @throws IllegalArgumentException if the lengths of keys, defaultValues, descriptions, and refreshables arrays are not equal.
+     * @throws org.springframework.dao.DataAccessException if there's an issue executing the SQL query.
+     *
+     * @implNote This method assumes that the order of elements in keys, defaultValues, descriptions, and refreshables arrays correspond to each other.
+     * @implNote The operation is executed within a transaction, ensuring atomicity of the entire operation.
      */
     @Modifying
     @Transactional
-    @Query(value = "INSERT INTO properties (key, default_value, description, refreshable) " +
-            "VALUES (:#{#prop.key}, :#{#prop.defaultValue}, :#{#prop.description}, :#{#prop.refreshable}) " +
-            "ON CONFLICT (key) DO UPDATE SET " +
-            "default_value = :#{#prop.defaultValue}, " +
-            "description = :#{#prop.description}, " +
-            "refreshable = :#{#prop.refreshable}",
-            nativeQuery = true)
-    void upsertProperties(Property prop);
+    @Query(nativeQuery = true, value =
+            "WITH input_rows(key, default_value, description, refreshable) AS ( " +
+                    "    SELECT * FROM UNNEST(:keys, :defaultValues, :descriptions, :refreshables) " +
+                    "), " +
+                    "upsert AS ( " +
+                    "    INSERT INTO properties (key, default_value, description, refreshable) " +
+                    "    SELECT * FROM input_rows " +
+                    "    ON CONFLICT (key) DO UPDATE SET " +
+                    "        default_value = EXCLUDED.default_value, " +
+                    "        description = EXCLUDED.description, " +
+                    "        refreshable = EXCLUDED.refreshable " +
+                    "    RETURNING key " +
+                    ") " +
+                    "DELETE FROM properties WHERE key NOT IN (SELECT key FROM upsert) AND key NOT IN :allowedKeys")
+    void batchUpsertAndDeleteProperties(
+            String[] keys,
+            String[] defaultValues,
+            String[] descriptions,
+            Boolean[] refreshables,
+            Set<String> allowedKeys
+    );
 
     /**
      * Update each of the properties in the list where the key is the

@@ -68,6 +68,7 @@ import org.deltafi.core.util.Util;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -2065,13 +2066,24 @@ class DeltaFiCoreApplicationTests {
 	void batchedBulkDeleteByDidIn() {
 		List<DeltaFile> deltaFiles = Stream.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID()).map(Util::buildDeltaFile).toList();
 		deltaFileRepo.saveAll(deltaFiles);
+		deltaFileFlowRepo.saveAll(deltaFiles.stream().map(DeltaFile::getFlows).flatMap(Collection::stream).toList());
+		actionRepo.saveAll(deltaFiles.stream().map(DeltaFile::getFlows).flatMap(Collection::stream).map(DeltaFileFlow::getActions).flatMap(Collection::stream).toList());
+		annotationRepo.save(new Annotation("key1", "val1", deltaFiles.get(0)));
+		annotationRepo.save(new Annotation("key2", "val2", deltaFiles.get(1)));
+		annotationRepo.save(new Annotation("key3", "val3", deltaFiles.get(2)));
 
 		assertEquals(3, deltaFileRepo.count());
+		assertEquals(3, deltaFileFlowRepo.count());
+		assertEquals(3, actionRepo.count());
+		assertEquals(3, annotationRepo.count());
 
 		deltaFileRepo.batchedBulkDeleteByDidIn(Arrays.asList(deltaFiles.getFirst().getDid(), deltaFiles.getLast().getDid()));
 
 		assertEquals(1, deltaFileRepo.count());
 		assertEquals(deltaFiles.get(1).getDid(), deltaFileRepo.findAll().getFirst().getDid());
+		assertEquals(1, deltaFileFlowRepo.count());
+		assertEquals(1, actionRepo.count());
+		assertEquals(1, annotationRepo.count());
 	}
 
 	@Test

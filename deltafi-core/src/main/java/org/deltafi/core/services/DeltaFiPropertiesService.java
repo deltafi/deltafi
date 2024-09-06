@@ -72,10 +72,22 @@ public class DeltaFiPropertiesService implements Snapshotter {
      * Upsert the set of properties for this version of DeltaFi. Prune obsolete properties.
      */
     public void upsertProperties() {
-        for (Property property : defaultProperties) {
-            deltaFiPropertiesRepo.upsertProperties(property);
+        String[] keys = new String[defaultProperties.size()];
+        String[] defaultValues = new String[defaultProperties.size()];
+        String[] descriptions = new String[defaultProperties.size()];
+        Boolean[] refreshables = new Boolean[defaultProperties.size()];
+
+        for (int i = 0; i < defaultProperties.size(); i++) {
+            Property prop = defaultProperties.get(i);
+            keys[i] = prop.getKey();
+            defaultValues[i] = prop.getDefaultValue();
+            descriptions[i] = prop.getDescription();
+            refreshables[i] = prop.isRefreshable();
         }
-        deltaFiPropertiesRepo.deleteByKeyNotIn(allowedProperties);
+
+        deltaFiPropertiesRepo.batchUpsertAndDeleteProperties(
+                keys, defaultValues, descriptions, refreshables, allowedProperties
+        );
     }
 
     /**
