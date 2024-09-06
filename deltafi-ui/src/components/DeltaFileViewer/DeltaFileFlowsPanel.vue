@@ -19,7 +19,7 @@
 <template>
   <div>
     <CollapsiblePanel header="Flows" class="actions-panel table-panel">
-      <DataTable v-model:expandedRows="expandedRows" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="flows" :row-class="rowClass" data-key="name">
+      <DataTable v-model:expandedRows="expandedRows" responsive-layout="scroll" class="p-datatable-sm p-datatable-gridlines" striped-rows :value="flows" :row-class="rowClass" data-key="name" @row-click="rowClick">
         <Column class="expander-column" :expander="true" />
         <Column field="name" header="Name" :sortable="true" />
         <Column field="type" header="Type" :sortable="true" />
@@ -128,8 +128,19 @@ const contentDeleted = computed(() => {
 });
 
 const rowClass = (flow) => {
-  if (flow.state === "ERROR") return "table-danger";
-  if (flow.state === "COMPLETE" && lastAction(flow.actions)?.state === "FILTERED") return "table-warning";
+  if (flow.state === "ERROR") return "table-danger cursor-pointer";
+  if (flow.state === "COMPLETE" && lastAction(flow.actions)?.state === "FILTERED") return "table-warning cursor-pointer";
+};
+
+const rowClick = (event) => {
+  // Don't interfere with expander
+  if (event.originalEvent.target.nodeName === "svg") return;
+
+  let action = event.data.actions.length > 0 ? event.data.actions[0] : event.data;
+  if (!["ERROR", "RETRIED", "FILTERED"].includes(action.state)) return;
+
+  errorViewer.visible = true;
+  errorViewer.action = action;
 };
 </script>
 

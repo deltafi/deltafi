@@ -62,7 +62,7 @@
         </Column>
         <template #expansion="error">
           <div class="errors-Subtable">
-            <DataTable v-model:expandedRows="expandedRows" responsive-layout="scroll" :value="error.data.flows" :row-hover="false" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-class="actionRowClass">
+            <DataTable v-model:expandedRows="expandedRows" responsive-layout="scroll" :value="error.data.flows" :row-hover="false" striped-rows class="p-datatable-sm p-datatable-gridlines" :row-class="actionRowClass" @row-click="actionRowClick">
               <Column class="expander-column" :expander="true" />
               <Column field="name" header="Name" />
               <Column field="state" header="State" />
@@ -333,7 +333,7 @@ const actionRowClass = (action) => {
 };
 
 const actionRowClick = (event) => {
-  let action = event.data;
+  let action = event.data.actions ? event.data.actions[0] : event.data;
   if (["ERROR", "RETRIED"].includes(action.state)) {
     errorViewer.value.action = action;
     errorViewer.value.visible = true;
