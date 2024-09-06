@@ -18,19 +18,32 @@
 package org.deltafi.common.storage.s3.minio;
 
 import io.minio.MinioClient;
+import okhttp3.ConnectionPool;
+import okhttp3.OkHttpClient;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
+import java.util.concurrent.TimeUnit;
+
 @AutoConfiguration
 @EnableConfigurationProperties(MinioProperties.class)
 public class MinioAutoConfiguration {
     @Bean
-    public MinioClient minioClient(MinioProperties minioProperties) {
+    public OkHttpClient okHttpClient() {
+        return new OkHttpClient.Builder()
+                .connectionPool(new ConnectionPool(32, 5, TimeUnit.MINUTES))
+                .build();
+    }
+
+    @Bean
+    public MinioClient minioClient(MinioProperties minioProperties, OkHttpClient okHttpClient) {
         return MinioClient.builder()
                 .endpoint(minioProperties.getUrl())
-                .credentials(minioProperties.getAccessKey(), minioProperties.getSecretKey()).build();
+                .credentials(minioProperties.getAccessKey(), minioProperties.getSecretKey())
+                .httpClient(okHttpClient)
+                .build();
     }
 
     @Bean
