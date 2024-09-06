@@ -295,6 +295,11 @@ services:
       - ${SETTINGS_DIR}/grafana/dashboards:/tmp/dashboards
     restart: unless-stopped
     user: "${USER_ID}"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
   deltafi-docker-ui:
     image: ${DOCKER_WEB_GUI}
     container_name: deltafi-docker-ui
@@ -372,6 +377,11 @@ services:
       - ${SETTINGS_DIR}/loki/loki.yaml:/etc/loki/loki.yaml
       - ${DATA_DIR}/loki:/data
     user: "${USER_ID}"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 20
   deltafi-promtail:
     image: ${PROMTAIL}
     container_name: deltafi-promtail
@@ -390,6 +400,11 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${SETTINGS_DIR}/promtail/promtail.yaml:/etc/promtail/promtail.yaml
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    healthcheck:
+      test: ["CMD-SHELL", "/usr/bin/promtail --dry-run --config.file=/etc/promtail/config.yml || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 20
   deltafi-nginx:
     image: ${NGINX}
     container_name: deltafi-nginx
