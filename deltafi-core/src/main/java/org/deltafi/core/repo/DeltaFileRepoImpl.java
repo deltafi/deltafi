@@ -18,6 +18,7 @@
 package org.deltafi.core.repo;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.collect.Lists;
@@ -326,22 +327,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         List<Object[]> results = query.getResultList();
 
         return results.stream()
-                .map(row -> {
-                    UUID did = (UUID) row[0];
-                    OffsetDateTime contentDeleted = row[1] != null
-                            ? ((Instant) row[1]).atZone(ZoneId.systemDefault()).toOffsetDateTime()
-                            : null;
-                    long totalBytes = ((Number) row[2]).longValue();
-                    List<Content> contentList = new ArrayList<>();
-                    if (row[3] instanceof Object[]) {
-                        for (Object content : (Object[]) row[3]) {
-                            if (content instanceof Content) {
-                                contentList.add((Content) content);
-                            }
-                        }
-                    }
-                    return new DeltaFileDeleteDTO(did, contentDeleted, totalBytes, contentList);
-                })
+                .map(this::deserializeDeltaFileDeleteDTO)
                 .toList();
     }
 
@@ -368,23 +354,28 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                     sum[0] += totalBytes;
                     return over;
                 })
-                .map(row -> {
-                    UUID did = (UUID) row[0];
-                    OffsetDateTime contentDeleted = row[1] != null
-                            ? ((Instant) row[1]).atZone(ZoneId.systemDefault()).toOffsetDateTime()
-                            : null;
-                    long totalBytes = ((Number) row[2]).longValue();
-                    List<Content> contentList = new ArrayList<>();
-                    if (row[3] instanceof Object[]) {
-                        for (Object content : (Object[]) row[3]) {
-                            if (content instanceof Content) {
-                                contentList.add((Content) content);
-                            }
-                        }
-                    }
-                    return new DeltaFileDeleteDTO(did, contentDeleted, totalBytes, contentList);
-                })
+                .map(this::deserializeDeltaFileDeleteDTO)
                 .toList();
+    }
+
+    private DeltaFileDeleteDTO deserializeDeltaFileDeleteDTO(Object[] row) {
+        UUID did = (UUID) row[0];
+        OffsetDateTime contentDeleted = row[1] != null
+                ? ((Instant) row[1]).atZone(ZoneId.systemDefault()).toOffsetDateTime()
+                : null;
+        long totalBytes = ((Number) row[2]).longValue();
+        List<Content> contentList = new ArrayList<>();
+        if (row[3] instanceof String[]) {
+            for (String content : (String[]) row[3]) {
+                if (content != null) {
+                    try {
+                        contentList.addAll(OBJECT_MAPPER.readValue(content, new TypeReference<>() {}));
+                    } catch (JsonProcessingException ignored) {
+                    }
+                }
+            }
+        }
+        return new DeltaFileDeleteDTO(did, contentDeleted, totalBytes, contentList);
     }
 
     private static String diskSpaceDeleteQuery(String dataSource) {

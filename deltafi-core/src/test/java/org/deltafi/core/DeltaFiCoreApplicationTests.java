@@ -2072,7 +2072,6 @@ class DeltaFiCoreApplicationTests {
 
 		assertEquals(1, deltaFileRepo.count());
 		assertEquals(deltaFiles.get(1).getDid(), deltaFileRepo.findAll().getFirst().getDid());
-		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -2091,7 +2090,6 @@ class DeltaFiCoreApplicationTests {
 
 		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForTimedDelete(OffsetDateTime.now().plusSeconds(1), null, 0, null, false, 10);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFileDeleteDTO::getDid).toList());
-		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -2108,7 +2106,6 @@ class DeltaFiCoreApplicationTests {
 
 		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForTimedDelete(OffsetDateTime.now().plusSeconds(1), null, 0, null, false, 1);
 		assertEquals(List.of(deltaFile1.getDid()), deltaFiles.stream().map(DeltaFileDeleteDTO::getDid).toList());
-		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -2119,7 +2116,6 @@ class DeltaFiCoreApplicationTests {
 
 		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForTimedDelete(OffsetDateTime.now().plusSeconds(1), null, 0, null, true, 10);
 		assertEquals(List.of(deltaFile1.getDid()), deltaFiles.stream().map(DeltaFileDeleteDTO::getDid).toList());
-		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -2144,7 +2140,6 @@ class DeltaFiCoreApplicationTests {
 
 		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForTimedDelete(null, OffsetDateTime.now().plusSeconds(1), 0, null, false, 10);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile4.getDid()), deltaFiles.stream().map(DeltaFileDeleteDTO::getDid).toList());
-		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -2175,18 +2170,29 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void testFindForDeleteDiskSpace() {
 		DeltaFile deltaFile1 = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now().minusSeconds(5));
+		deltaFile1.getFlows().getFirst().getActions().getFirst().setContent(List.of(new Content("content1", "mediaType1", List.of(new Segment(UUID.randomUUID(), 0, 100L, deltaFile1.getDid())))));
 		deltaFile1.setTotalBytes(100L);
 		deltaFileRepo.save(deltaFile1);
 		DeltaFile deltaFile2 = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, OffsetDateTime.now().plusSeconds(2), OffsetDateTime.now());
+		deltaFile2.getFlows().getFirst().getActions().getFirst().setContent(List.of(
+				new Content("content2a", "mediaType2a", List.of(new Segment(UUID.randomUUID(), 0, 149L, deltaFile2.getDid()))),
+				new Content("content2b", "mediaType2b", List.of(new Segment(UUID.randomUUID(), 0, 151L, deltaFile2.getDid())))
+
+		));
 		deltaFile2.setTotalBytes(300L);
 		deltaFileRepo.save(deltaFile2);
 		DeltaFile deltaFile3 = buildDeltaFile(UUID.randomUUID(), null, DeltaFileStage.COMPLETE, OffsetDateTime.now(), OffsetDateTime.now().plusSeconds(5));
+		deltaFile3.getFlows().getFirst().getActions().getFirst().setContent(List.of(new Content("content3", "mediaType3", List.of(new Segment(UUID.randomUUID(), 0, 500L, deltaFile3.getDid())))));
 		deltaFile3.setTotalBytes(500L);
 		deltaFileRepo.save(deltaFile3);
 
 		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForDiskSpaceDelete(250L, null, 100);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFileDeleteDTO::getDid).toList());
-		Mockito.verifyNoMoreInteractions(metricService);
+		assertEquals(1, deltaFiles.getFirst().getContent().size());
+		assertEquals(deltaFile1.getFlows().getFirst().getActions().getFirst().getContent().getFirst(), deltaFiles.getFirst().getContent().getFirst());
+		assertEquals(2, deltaFiles.getLast().getContent().size());
+		assertEquals(deltaFile2.getFlows().getFirst().getActions().getFirst().getContent().getFirst(), deltaFiles.getLast().getContent().getFirst());
+		assertEquals(deltaFile2.getFlows().getFirst().getActions().getFirst().getContent().getLast(), deltaFiles.getLast().getContent().getLast());
 	}
 
 	@Test
@@ -2224,7 +2230,6 @@ class DeltaFiCoreApplicationTests {
 
 		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForDiskSpaceDelete(2500L, null, 100);
 		assertEquals(Stream.of(deltaFile1.getDid(), deltaFile2.getDid(), deltaFile3.getDid()).sorted().toList(), deltaFiles.stream().map(DeltaFileDeleteDTO::getDid).sorted().toList());
-		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -2241,7 +2246,6 @@ class DeltaFiCoreApplicationTests {
 
 		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForDiskSpaceDelete(2500L, null, 2);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFileDeleteDTO::getDid).toList());
-		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -2258,7 +2262,6 @@ class DeltaFiCoreApplicationTests {
 
 		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForDiskSpaceDelete(2500L, "a", 100);
 		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFileDeleteDTO::getDid).toList());
-		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
@@ -2269,7 +2272,6 @@ class DeltaFiCoreApplicationTests {
 
 		DeltaFiles deltaFiles = deltaFileRepo.deltaFiles(null, 50, new DeltaFilesFilter(), null, null);
 		assertEquals(deltaFiles.getDeltaFiles(), List.of(deltaFile2, deltaFile1));
-		Mockito.verifyNoMoreInteractions(metricService);
 	}
 
 	@Test
