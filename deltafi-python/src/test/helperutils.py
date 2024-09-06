@@ -16,7 +16,7 @@
 #    limitations under the License.
 #
 
-from deltafi.domain import Context
+from deltafi.domain import Context, Event
 from deltafi.storage import Segment
 
 SEG_ID = "1"
@@ -69,3 +69,15 @@ def make_context():
                    hostname='HOSTNAME',
                    system_name='SYSTEM_NAME',
                    content_service=None)
+
+
+def make_event(content_service):
+    logger = None
+    event = Event.create({
+        'deltaFileMessages': [make_delta_file_message_dict()],
+        'actionContext': make_context_dict(),
+        'actionParams': {
+            "thing": "theThing"
+        }
+    }, content_service, logger)
+    return event

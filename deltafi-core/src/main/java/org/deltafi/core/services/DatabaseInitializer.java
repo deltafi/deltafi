@@ -40,10 +40,17 @@ public class DatabaseInitializer {
         String deltaFilesError = "CREATE INDEX IF NOT EXISTS idx_delta_files_stage_error ON delta_files ((stage = 'ERROR'))";
         jdbcTemplate.execute(deltaFilesError);
 
+        String deltaFilesContentDeletable = "CREATE INDEX IF NOT EXISTS idx_delta_files_content_deletable ON public.delta_files USING btree (modified, data_source) WHERE (content_deletable = true)";
+        jdbcTemplate.execute(deltaFilesContentDeletable);
+
         String actionsErrorCount = "CREATE INDEX IF NOT EXISTS idx_actions_error_count ON actions (state, error_acknowledged) WHERE state = 'ERROR' AND error_acknowledged IS NULL";
         jdbcTemplate.execute(actionsErrorCount);
 
         String actionsColdQueued = "CREATE INDEX IF NOT EXISTS idx_actions_cold_queued ON actions (name, type) WHERE state = 'COLD_QUEUED'";
         jdbcTemplate.execute(actionsColdQueued);
+
+        String actionsNextResume = "CREATE INDEX IF NOT EXISTS idx_actions_auto_resume_flow_sparse ON public.actions (next_auto_resume, delta_file_flow_id)\n" +
+                "WHERE next_auto_resume IS NOT NULL";
+        jdbcTemplate.execute(actionsNextResume);
     }
 }

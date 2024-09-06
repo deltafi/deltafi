@@ -25,6 +25,7 @@ import lombok.*;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.*;
 import org.deltafi.core.exceptions.UnexpectedFlowException;
+import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.Type;
 import org.jetbrains.annotations.NotNull;
 
@@ -39,9 +40,25 @@ import java.util.stream.Stream;
 @Builder
 @Entity
 @Table(name = "delta_files", indexes = {
-        @Index(name = "idx_created", columnList = "content_deletable, created, stage, data_source, normalized_name, egressed, filtered, terminal, ingress_bytes"),
-        @Index(name = "idx_modified", columnList = "content_deletable, modified, stage, data_source, normalized_name, egressed, filtered, terminal, ingress_bytes")
+        @Index(name = "idx_created", columnList = "created, stage, data_source, normalized_name, egressed, filtered, terminal, ingress_bytes"),
+        @Index(name = "idx_modified", columnList = "modified, stage, data_source, normalized_name, egressed, filtered, terminal, ingress_bytes")
 })
+@NamedEntityGraph(
+        name = "deltaFile.withFlowsAndActions",
+        attributeNodes = {
+                @NamedAttributeNode(value = "flows", subgraph = "flows"),
+                @NamedAttributeNode("annotations")
+        },
+        subgraphs = {
+                @NamedSubgraph(
+                        name = "flows",
+                        attributeNodes = {
+                                @NamedAttributeNode("actions")
+                        }
+                )
+        }
+)
+@DynamicUpdate
 public class DeltaFile {
   @Id
   @Builder.Default

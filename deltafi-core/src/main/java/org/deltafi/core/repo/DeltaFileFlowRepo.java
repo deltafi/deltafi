@@ -18,16 +18,23 @@
 package org.deltafi.core.repo;
 
 import org.deltafi.core.types.DeltaFileFlow;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface DeltaFileFlowRepo extends JpaRepository<DeltaFileFlow, UUID> {
+    @NotNull
+    @EntityGraph(value = "deltaFile.withActions")
+    Optional<DeltaFileFlow> findById(@NotNull UUID did);
+
     @Query("SELECT df FROM DeltaFileFlow df WHERE df.deltaFile.did IN :deltaFileIds")
     List<DeltaFileFlow> findAllByDeltaFileIds(@Param("deltaFileIds") List<UUID> deltaFileIds);
 

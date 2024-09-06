@@ -26,6 +26,7 @@ import lombok.*;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.*;
 import org.deltafi.core.exceptions.UnexpectedActionException;
+import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.Type;
 import org.jetbrains.annotations.NotNull;
 
@@ -41,9 +42,16 @@ import static jakarta.persistence.ConstraintMode.NO_CONSTRAINT;
 @Builder
 @Entity
 @Table(name = "delta_file_flows", indexes = {
-        @Index(name = "idx_flow", columnList = "state, delta_file_id, name, test_mode, pending_annotations"),
-        @Index(name = "idx_flow_state", columnList = "state")
+        @Index(name = "idx_flow", columnList = "delta_file_id, state, name, test_mode, pending_annotations"),
+        @Index(name = "idx_flow_state", columnList = "state, delta_file_id")
 })
+@NamedEntityGraph(
+        name = "deltaFileFlow.withActions",
+        attributeNodes = {
+                @NamedAttributeNode("actions")
+        }
+)
+@DynamicUpdate
 public class DeltaFileFlow {
     @Id
     @Builder.Default

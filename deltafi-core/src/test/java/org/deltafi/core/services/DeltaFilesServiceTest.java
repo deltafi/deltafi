@@ -249,10 +249,10 @@ class DeltaFilesServiceTest {
     void testDelete() {
         UUID did1 = UUID.randomUUID();
         Content content1 = new Content("name", "mediaType", new Segment(UUID.randomUUID(), did1));
-        DeltaFile deltaFile1 = Util.buildDeltaFile(did1, List.of(content1));
+        DeltaFileDeleteDTO deltaFile1 = new DeltaFileDeleteDTO(did1, null, 0, List.of(content1));
         UUID did2 = UUID.randomUUID();
         Content content2 = new Content("name", "mediaType", new Segment(UUID.randomUUID(), did2));
-        DeltaFile deltaFile2 = Util.buildDeltaFile(did2, List.of(content2));
+        DeltaFileDeleteDTO deltaFile2 = new DeltaFileDeleteDTO(did2, null, 0, List.of(content2));
         when(deltaFileRepo.findForTimedDelete(any(), any(), anyLong(), any(), anyBoolean(), anyInt())).thenReturn(List.of(deltaFile1, deltaFile2));
 
         deltaFilesService.timedDelete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", false);
@@ -267,10 +267,10 @@ class DeltaFilesServiceTest {
     void testDeleteMetadata() {
         UUID did1 = UUID.randomUUID();
         Content content1 = new Content("name", "mediaType", new Segment(UUID.randomUUID(), did1));
-        DeltaFile deltaFile1 = Util.buildDeltaFile(did1, List.of(content1));
+        DeltaFileDeleteDTO deltaFile1 = new DeltaFileDeleteDTO(did1, null, 0, List.of(content1));
         UUID did2 = UUID.randomUUID();
         Content content2 = new Content("name", "mediaType", new Segment(UUID.randomUUID(), did2));
-        DeltaFile deltaFile2 = Util.buildDeltaFile(did2, List.of(content2));
+        DeltaFileDeleteDTO deltaFile2 = new DeltaFileDeleteDTO(did2, null, 0, List.of(content2));
         when(deltaFileRepo.findForTimedDelete(any(), any(), anyLong(), any(), anyBoolean(), anyInt())).thenReturn(List.of(deltaFile1, deltaFile2));
 
         deltaFilesService.timedDelete(OffsetDateTime.now().plusSeconds(1), null, 0L, null, "policy", true);

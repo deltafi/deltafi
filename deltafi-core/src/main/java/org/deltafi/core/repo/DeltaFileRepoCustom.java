@@ -19,6 +19,7 @@ package org.deltafi.core.repo;
 
 import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.generated.types.*;
+import org.deltafi.core.types.DeltaFileDeleteDTO;
 import org.deltafi.core.types.DeltaFiles;
 
 import java.time.Duration;
@@ -88,9 +89,9 @@ public interface DeltaFileRepoCustom {
      * @param flow - if non-null the DeltaFiles must have this flow set in the source info
      * @param deleteMetadata - whether we are finding files to be finally deleted.  if this is false, DeltaFiles that have already had their content deleted will not be selected
      * @param batchSize - maximum number to delete
-     * @return the list of DeltaFiles marked for deletion
+     * @return the list of DeltaFile information marked for deletion
      */
-    List<DeltaFile> findForTimedDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, long minBytes, String flow, boolean deleteMetadata, int batchSize);
+    List<DeltaFileDeleteDTO> findForTimedDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, long minBytes, String flow, boolean deleteMetadata, int batchSize);
 
     /**
      * Find the oldest DeltaFiles up to bytesToDelete size that match the flow (if given).
@@ -100,9 +101,9 @@ public interface DeltaFileRepoCustom {
      * @param bytesToDelete - the number of bytes that must be deleted
      * @param flow - if non-null the DeltaFiles must have this flow set in the source info
      * @param batchSize - maximum number to delete
-     * @return the list of DeltaFiles marked for deletion
+     * @return the list of DeltaFile information marked for deletion
      */
-    List<DeltaFile> findForDiskSpaceDelete(long bytesToDelete, String flow, int batchSize);
+    List<DeltaFileDeleteDTO> findForDiskSpaceDelete(long bytesToDelete, String flow, int batchSize);
 
     /** Return a list of DeltaFiles matching the given criteria
      *

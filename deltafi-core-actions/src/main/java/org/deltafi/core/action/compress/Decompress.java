@@ -52,6 +52,9 @@ import java.util.Set;
 @Component
 @Slf4j
 public class Decompress extends TransformAction<DecompressParameters> {
+    final private int BATCH_FILES = 250;
+    final private int BATCH_BYTES = 100 * 1024 * 1024;
+
     public Decompress() {
         super("Decompresses content from .ar, .gz, .tar, .tar.gz, .tar.xz, .tar.Z, .xz, .Z, or .zip.");
     }
@@ -218,7 +221,8 @@ public class Decompress extends TransformAction<DecompressParameters> {
 
     private void unarchive(TransformResult result, ActionContent content, ArchiveInputStream<?> archiveInputStream)
             throws IOException {
-        ArrayList<SaveManyContent> saveManyContents = new ArrayList<>();
+        ArrayList<SaveManyContent> saveManyBatch = new ArrayList<>();
+        int currentBatchSize = 0;
 
         ArchiveEntry entry;
         while ((entry = archiveInputStream.getNextEntry()) != null) {
@@ -229,13 +233,25 @@ public class Decompress extends TransformAction<DecompressParameters> {
                 result.addContent(content.subcontent(archiveInputStream.getBytesRead(), entry.getSize(),
                         entry.getName(), MediaType.APPLICATION_OCTET_STREAM));
             } else {
-                saveManyContents.add(new SaveManyContent(entry.getName(), MediaType.APPLICATION_OCTET_STREAM,
-                        archiveInputStream.readAllBytes()));
+                SaveManyContent file = new SaveManyContent(entry.getName(), MediaType.APPLICATION_OCTET_STREAM,
+                        archiveInputStream.readAllBytes());
+                int fileSize = file.content().length;
+
+                if ((saveManyBatch.size() + 1 > BATCH_FILES) || (currentBatchSize + fileSize > BATCH_BYTES)) {
+                    // save the existing batch
+                    result.saveContent(saveManyBatch);
+                    saveManyBatch.clear();
+                    currentBatchSize = 0;
+                }
+
+                saveManyBatch.add(file);
+                currentBatchSize += fileSize;
             }
         }
 
-        if (!saveManyContents.isEmpty()) {
-            result.saveContent(saveManyContents);
+        if (!saveManyBatch.isEmpty()) {
+            // save remaining items
+            result.saveContent(saveManyBatch);
         }
     }
 

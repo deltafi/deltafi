@@ -17,15 +17,15 @@
 #
 
 import pytest
-from deltafi.action import TransformAction
-from deltafi.actiontype import ActionType
-from deltafi.domain import Event
-from deltafi.input import TransformInput
-from deltafi.result import TransformResult, EgressResult
-from deltafi.storage import ContentService
-from mockito import mock, unstub
+from mockito import when, mock, unstub
 from pydantic import BaseModel, Field
 
+from deltafi.action import TransformAction
+from deltafi.actiontype import ActionType
+from deltafi.input import TransformInput
+from deltafi.plugin import Plugin
+from deltafi.result import TransformResult, EgressResult, ErrorResult
+from deltafi.storage import ContentService
 from .helperutils import *
 
 
@@ -53,25 +53,76 @@ class InvalidResult(TransformAction):
         return EgressResult(context, 'destination', 42)
 
 
-def make_event(content_service):
-    logger = None
-    event = Event.create({
-        'deltaFileMessages': [make_delta_file_message_dict()],
-        'actionContext': make_context_dict(),
-        'actionParams': {
-            "thing": "theThing"
-        }
-    }, content_service, logger)
-    return event
+class SampleErrorAction(TransformAction):
+    def __init__(self):
+        super().__init__('Create content but return error')
+
+    def transform(self, context: Context, params: SampleTransformParameters, transform_input: TransformInput):
+        result = (TransformResult(context)
+                  .save_string_content('saved_content', 'saved_content', 'text/plan'))
+
+        return ErrorResult(context, 'Something bad happened', '')
 
 
-def test_transform_action():
+def test_action_returns_error():
+    unstub()
+    mock_content_service = mock(ContentService)
+
+    when(mock_content_service).put_str(...).thenReturn(make_segment('222'))
+
+    action = SampleErrorAction()
+    event = make_event(mock_content_service)
+    result = action.execute_action(event)
+    assert type(result) == ErrorResult
+
+    expected_response = {
+        'annotations': {},
+        'cause': 'Something bad happened',
+        'context': ''
+    }
+    assert result.response() == expected_response
+
+    plugin_to_response = Plugin.to_response(event, '12:00', '12:01', result)
+    assert len(plugin_to_response['savedContent']) == 1
+
+    expected_plugin_to_response = {
+        'actionId': 'ACTION_ID',
+        'actionName': 'ACTION_NAME',
+        'did': '123',
+        'error': {
+            'annotations': {},
+            'cause': 'Something bad happened',
+            'context': ''
+        },
+        'flowId': 'FLOW_ID',
+        'flowName': 'FLOW_NAME',
+        'metrics': [],
+        'savedContent': [
+            {
+                'mediaType': 'text/plan',
+                'name': 'saved_content',
+                'segments': [{'did': '123',
+                              'offset': 0,
+                              'size': 100,
+                              'uuid': '222'}]
+            }
+        ],
+        'start': '12:00',
+        'stop': '12:01',
+        'type': 'ERROR'
+    }
+
+    assert plugin_to_response == expected_plugin_to_response
+
+
+def test_action_returns_transform():
     unstub()
     mock_content_service = mock(ContentService)
 
     action = SampleTransformAction()
     assert action.action_type.value == ActionType.TRANSFORM.value
-    result = action.execute_action(make_event(mock_content_service))
+    event = make_event(mock_content_service)
+    result = action.execute_action(event)
     assert type(result) == TransformResult
 
     expected_response = [{
@@ -85,6 +136,9 @@ def test_transform_action():
         'deleteMetadataKeys': []
     }]
     assert result.response() == expected_response
+
+    plugin_to_response = Plugin.to_response(event, '12:00', '12:01', result)
+    assert len(plugin_to_response['savedContent']) == 0
 
 
 def test_invalid_result():

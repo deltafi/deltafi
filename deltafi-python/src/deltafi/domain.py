@@ -54,6 +54,7 @@ class Context(NamedTuple):
     joined_dids: List[str] = None
     memo: str = None
     logger: Logger = None
+    saved_content: List = []
 
     @classmethod
     def create(cls, context: dict, content_service: ContentService, logger: Logger):
@@ -121,6 +122,7 @@ class Context(NamedTuple):
                        joined_dids=joined_dids,
                        memo=memo,
                        content_service=content_service,
+                       saved_content=[],
                        logger=logger)
 
 

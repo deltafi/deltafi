@@ -21,10 +21,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.collect.Lists;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.TypedQuery;
+import jakarta.persistence.*;
 import jakarta.persistence.criteria.*;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.jdbc.core.PreparedStatementCallback;
+import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,9 +35,14 @@ import org.deltafi.core.types.*;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.*;
 
 import static org.deltafi.common.types.ActionState.*;
@@ -125,10 +131,10 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         filesToRequeue.stream()
                 .flatMap(d -> d.getFlows().stream())
                 .flatMap(f -> f.getActions().stream())
-                .filter(a -> (a.getState() == ActionState.QUEUED || a.getState() == COLD_QUEUED) &&
+                .filter(a -> (a.getState() == QUEUED || a.getState() == COLD_QUEUED) &&
                         a.getModified().isBefore(requeueThreshold) && (skipActions == null || !skipActions.contains(a.getName())))
                 .forEach(action -> {
-                    action.setState(ActionState.QUEUED);
+                    action.setState(QUEUED);
                     action.setModified(requeueTime);
                     action.setQueued(requeueTime);
                     action.getDeltaFileFlow().updateState(requeueTime);
@@ -185,18 +191,14 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
 
     @Override
     public List<DeltaFile> findReadyForAutoResume(OffsetDateTime maxReadyTime) {
-                String queryStr = """
-                SELECT df
-                FROM DeltaFile df
-                WHERE df.stage = 'ERROR'
-                AND EXISTS (
-                    SELECT 1
-                    FROM DeltaFileFlow flow
-                    JOIN flow.actions action
-                    WHERE flow.deltaFile = df
-                    AND action.nextAutoResume < :maxReadyTime
-                )
-            """;
+        String queryStr = """
+            SELECT DISTINCT df
+            FROM Action action
+            JOIN action.deltaFileFlow flow
+            JOIN flow.deltaFile df
+            WHERE action.nextAutoResume < :maxReadyTime
+            AND df.stage = 'ERROR'
+        """;
 
         TypedQuery<DeltaFile> query = entityManager.createQuery(queryStr, DeltaFile.class)
                 .setParameter("maxReadyTime", maxReadyTime);
@@ -251,7 +253,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
                     .set("nextAutoResumeReason", policyName)
                     .where(cb.and(
                             root.get("deltaFileFlow").get("deltaFile").get("did").in(batch),
-                            cb.equal(root.get("state"), ActionState.ERROR)
+                            cb.equal(root.get("state"), ERROR)
                     ));
 
             entityManager.createQuery(update).executeUpdate();
@@ -259,101 +261,158 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
-    public List<DeltaFile> findForTimedDelete(OffsetDateTime createdBeforeDate, OffsetDateTime completedBeforeDate,
-                                              long minBytes, String flow, boolean deleteMetadata, int batchSize) {
+    public List<DeltaFileDeleteDTO> findForTimedDelete(OffsetDateTime createdBeforeDate, OffsetDateTime completedBeforeDate,
+                                                       long minBytes, String flow, boolean deleteMetadata, int batchSize) {
         if (createdBeforeDate == null && completedBeforeDate == null) {
             return Collections.emptyList();
         }
 
-        StringBuilder queryBuilder = new StringBuilder("SELECT d FROM DeltaFile d WHERE ");
-        boolean hasPreviousCondition = false;
+        StringBuilder queryBuilder = new StringBuilder(
+                "WITH eligible_files AS ( " +
+                        "    SELECT df.did, df.content_deleted, df.total_bytes, df.modified " +
+                        "    FROM delta_files df " +
+                        "    WHERE ");
+
+        List<String> conditions = new ArrayList<>();
+        Map<String, Object> parameters = new HashMap<>();
 
         if (createdBeforeDate != null) {
-            queryBuilder.append("d.created < :createdBeforeDate ");
-            hasPreviousCondition = true;
+            conditions.add("df.created < :createdBeforeDate");
+            parameters.put("createdBeforeDate", createdBeforeDate);
         }
 
         if (completedBeforeDate != null) {
-            if (hasPreviousCondition) queryBuilder.append("AND ");
-            queryBuilder.append("d.modified < :completedBeforeDate AND d.terminal = true ");
+            conditions.add("df.modified < :completedBeforeDate");
+            conditions.add("df.terminal = true");
+            parameters.put("completedBeforeDate", completedBeforeDate);
         }
 
         if (flow != null) {
-            queryBuilder.append("AND d.dataSource = :flow ");
+            conditions.add("df.data_source = :flow");
+            parameters.put("flow", flow);
         }
 
         if (minBytes > 0L) {
-            queryBuilder.append("AND d.totalBytes >= :minBytes ");
+            conditions.add("df.total_bytes >= :minBytes");
+            parameters.put("minBytes", minBytes);
         }
 
         if (!deleteMetadata) {
-            queryBuilder.append("AND d.contentDeletable = true ");
+            conditions.add("df.content_deletable = true");
         }
 
-        queryBuilder.append("ORDER BY ");
-        if (createdBeforeDate != null) {
-            queryBuilder.append("d.created ASC");
-        } else {
-            queryBuilder.append("d.modified ASC");
+        queryBuilder.append(String.join(" AND ", conditions));
+        queryBuilder.append(" ORDER BY ");
+        queryBuilder.append(createdBeforeDate != null ? "df.created" : "df.modified");
+        queryBuilder.append(" ASC LIMIT :batchSize ) ");
+
+        queryBuilder.append(
+                "SELECT ef.did, ef.content_deleted, ef.total_bytes, " +
+                        "       array_agg(a.content) as content_list " +
+                        "FROM eligible_files ef " +
+                        "LEFT JOIN delta_file_flows f ON ef.did = f.delta_file_id " +
+                        "LEFT JOIN actions a ON f.id = a.delta_file_flow_id " +
+                        "GROUP BY ef.did, ef.content_deleted, ef.total_bytes, ef.modified " +
+                        "ORDER BY ef.modified " +
+                        "LIMIT :batchSize");
+
+        Query query = entityManager.createNativeQuery(queryBuilder.toString());
+
+        for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+            query.setParameter(entry.getKey(), entry.getValue());
         }
+        query.setParameter("batchSize", batchSize);
 
-        TypedQuery<DeltaFile> query = entityManager.createQuery(queryBuilder.toString(), DeltaFile.class);
+        List<Object[]> results = query.getResultList();
 
-        if (createdBeforeDate != null) {
-            query.setParameter("createdBeforeDate", createdBeforeDate);
-        }
-
-        if (completedBeforeDate != null) {
-            query.setParameter("completedBeforeDate", completedBeforeDate);
-        }
-
-        if (flow != null) {
-            query.setParameter("flow", flow);
-        }
-
-        if (minBytes > 0L) {
-            query.setParameter("minBytes", minBytes);
-        }
-
-        query.setMaxResults(batchSize);
-
-        return query.getResultList();
+        return results.stream()
+                .map(row -> {
+                    UUID did = (UUID) row[0];
+                    OffsetDateTime contentDeleted = row[1] != null
+                            ? ((Instant) row[1]).atZone(ZoneId.systemDefault()).toOffsetDateTime()
+                            : null;
+                    long totalBytes = ((Number) row[2]).longValue();
+                    List<Content> contentList = new ArrayList<>();
+                    if (row[3] instanceof Object[]) {
+                        for (Object content : (Object[]) row[3]) {
+                            if (content instanceof Content) {
+                                contentList.add((Content) content);
+                            }
+                        }
+                    }
+                    return new DeltaFileDeleteDTO(did, contentDeleted, totalBytes, contentList);
+                })
+                .toList();
     }
 
-    // TODO: do this in one shot
     @Override
-    public List<DeltaFile> findForDiskSpaceDelete(long bytesToDelete, String dataSource, int batchSize) {
+    public List<DeltaFileDeleteDTO> findForDiskSpaceDelete(long bytesToDelete, String dataSource, int batchSize) {
         if (bytesToDelete < 1) {
             throw new IllegalArgumentException("bytesToDelete (%s) must be positive".formatted(bytesToDelete));
         }
 
-        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
-        CriteriaQuery<DeltaFile> query = cb.createQuery(DeltaFile.class);
-        Root<DeltaFile> root = query.from(DeltaFile.class);
-
-        List<Predicate> predicates = new ArrayList<>();
-        predicates.add(cb.equal(root.get("contentDeletable"), true));
+        Query nativeQuery = entityManager.createNativeQuery(diskSpaceDeleteQuery(dataSource));
 
         if (dataSource != null) {
-            predicates.add(cb.equal(root.get("dataSource"), dataSource));
+            nativeQuery.setParameter("dataSource", dataSource);
         }
+        nativeQuery.setParameter("batchSize", batchSize);
 
-        query.select(root)
-                .where(predicates.toArray(new Predicate[0]))
-                .orderBy(cb.asc(root.get("modified")));
-
-        TypedQuery<DeltaFile> typedQuery = entityManager.createQuery(query);
-        typedQuery.setMaxResults(batchSize);
-        List<DeltaFile> deltaFiles = typedQuery.getResultList();
+        List<Object[]> results = nativeQuery.getResultList();
 
         long[] sum = {0};
-        return deltaFiles.stream()
-                .filter(d -> {
+        return results.stream()
+                .filter(row -> {
+                    long totalBytes = ((Number) row[2]).longValue();
                     boolean over = sum[0] <= bytesToDelete;
-                    sum[0] += d.getTotalBytes();
+                    sum[0] += totalBytes;
                     return over;
                 })
+                .map(row -> {
+                    UUID did = (UUID) row[0];
+                    OffsetDateTime contentDeleted = row[1] != null
+                            ? ((Instant) row[1]).atZone(ZoneId.systemDefault()).toOffsetDateTime()
+                            : null;
+                    long totalBytes = ((Number) row[2]).longValue();
+                    List<Content> contentList = new ArrayList<>();
+                    if (row[3] instanceof Object[]) {
+                        for (Object content : (Object[]) row[3]) {
+                            if (content instanceof Content) {
+                                contentList.add((Content) content);
+                            }
+                        }
+                    }
+                    return new DeltaFileDeleteDTO(did, contentDeleted, totalBytes, contentList);
+                })
                 .toList();
+    }
+
+    private static String diskSpaceDeleteQuery(String dataSource) {
+        StringBuilder queryBuilder = new StringBuilder("""
+        WITH eligible_files AS (
+            SELECT df.did, df.content_deleted, df.total_bytes, df.modified
+            FROM delta_files df
+            WHERE df.content_deletable = true
+        """);
+
+        if (dataSource != null) {
+            queryBuilder.append("AND df.data_source = :dataSource ");
+        }
+
+        queryBuilder.append("""
+            ORDER BY df.modified ASC
+            LIMIT :batchSize
+        )
+        SELECT ef.did, ef.content_deleted, ef.total_bytes, 
+               array_agg(a.content) as content_list
+        FROM eligible_files ef
+        LEFT JOIN delta_file_flows f ON ef.did = f.delta_file_id
+        LEFT JOIN actions a ON f.id = a.delta_file_flow_id
+        GROUP BY ef.did, ef.content_deleted, ef.total_bytes, ef.modified
+        ORDER BY ef.modified
+    """);
+
+        return queryBuilder.toString();
     }
 
     @Override
@@ -693,142 +752,161 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         }
     }
 
+    private static final String INSERT_DELTA_FILES = """
+            INSERT INTO delta_files (did, name, normalized_name, data_source, parent_dids, join_id, child_dids,
+                                     requeue_count, ingress_bytes, referenced_bytes, total_bytes, stage,
+                                     created, modified, content_deleted, content_deleted_reason,
+                                     egressed, filtered, replayed, replay_did, terminal,
+                                     content_deletable, version)
+            VALUES (?, ?, ?, ?, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
+
+    private static final String INSERT_DELTA_FILE_FLOWS = """
+            INSERT INTO delta_file_flows (id, name, number, type, state, created, modified, flow_plan, input,
+                                          publish_topics, depth, pending_annotations, test_mode, test_mode_reason,
+                                          join_id, pending_actions, delta_file_id, version)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?::jsonb, ?, ?)""";
+
+    private static final String INSERT_ACTIONS = """
+            INSERT INTO actions (id, name, number, type, state, created, queued, start, stop, modified, error_cause,
+                                 error_context, error_acknowledged, error_acknowledged_reason, next_auto_resume,
+                                 next_auto_resume_reason, filtered_cause, filtered_context, attempt, content,
+                                 metadata, delete_metadata_keys, replay_start, delta_file_flow_id, version)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?)""";
+
+    private static final String INSERT_ANNOTATIONS = """
+            INSERT INTO annotations (id, key, value, delta_file_id)
+            VALUES (?, ?, ?, ?)""";
+
     @Override
     @Transactional
     public void batchInsert(List<DeltaFile> deltaFiles) {
-        String sql = """
-                INSERT INTO delta_files (did, name, normalized_name, data_source, parent_dids, join_id, child_dids,
-                                         requeue_count, ingress_bytes, referenced_bytes, total_bytes, stage,
-                                         created, modified, content_deleted, content_deleted_reason,
-                                         egressed, filtered, replayed, replay_did, terminal,
-                                         content_deletable, version)
-                VALUES (?, ?, ?, ?, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
-
-        jdbcTemplate.batchUpdate(sql, deltaFiles, 1000, (ps, deltaFile) -> {
-            ps.setObject(1, deltaFile.getDid());
-            ps.setString(2, deltaFile.getName());
-            ps.setString(3, deltaFile.getNormalizedName());
-            ps.setString(4, deltaFile.getDataSource());
-            ps.setString(5, toJson(deltaFile.getParentDids()));
-            ps.setObject(6, deltaFile.getJoinId());
-            ps.setString(7, toJson(deltaFile.getChildDids()));
-            ps.setInt(8, deltaFile.getRequeueCount());
-            ps.setLong(9, deltaFile.getIngressBytes());
-            ps.setLong(10, deltaFile.getReferencedBytes());
-            ps.setLong(11, deltaFile.getTotalBytes());
-            ps.setString(12, deltaFile.getStage().name());
-            ps.setTimestamp(13, toTimestamp(deltaFile.getCreated()));
-            ps.setTimestamp(14, toTimestamp(deltaFile.getModified()));
-            ps.setTimestamp(15, toTimestamp(deltaFile.getContentDeleted()));
-            ps.setString(16, deltaFile.getContentDeletedReason());
-            ps.setObject(17, deltaFile.getEgressed());
-            ps.setObject(18, deltaFile.getFiltered());
-            ps.setTimestamp(19, toTimestamp(deltaFile.getReplayed()));
-            ps.setObject(20, deltaFile.getReplayDid());
-            ps.setBoolean(21, deltaFile.isTerminal());
-            ps.setBoolean(22, deltaFile.isContentDeletable());
-            ps.setLong(23, deltaFile.getVersion());
-        });
-
-        // Batch insert DeltaFileFlows
-        List<DeltaFileFlow> deltaFileFlows = new ArrayList<>();
-        for (DeltaFile deltaFile : deltaFiles) {
-            for (DeltaFileFlow flow : deltaFile.getFlows()) {
-                flow.setDeltaFile(deltaFile);  // Ensure relationship is set
-                deltaFileFlows.add(flow);
+        jdbcTemplate.execute(new PreparedStatementCreator() {
+            @NotNull
+            @Override
+            public PreparedStatement createPreparedStatement(@NotNull Connection connection) throws SQLException {
+                connection.setAutoCommit(false);
+                return connection.prepareStatement("SELECT 1"); // Dummy statement
             }
-        }
+        }, (PreparedStatementCallback<Void>) ps -> {
+            try (PreparedStatement psDeltaFile = ps.getConnection().prepareStatement(INSERT_DELTA_FILES);
+                 PreparedStatement psDeltaFileFlow = ps.getConnection().prepareStatement(INSERT_DELTA_FILE_FLOWS);
+                 PreparedStatement psAction = ps.getConnection().prepareStatement(INSERT_ACTIONS);
+                 PreparedStatement psAnnotation = ps.getConnection().prepareStatement(INSERT_ANNOTATIONS)) {
 
-        String deltaFileFlowSql = """
-                INSERT INTO delta_file_flows (id, name, number, type, state, created, modified, flow_plan, input,
-                                              publish_topics, depth, pending_annotations, test_mode, test_mode_reason,
-                                              join_id, pending_actions, delta_file_id, version)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?::jsonb, ?, ?)""";
+                for (DeltaFile deltaFile : deltaFiles) {
+                    setDeltaFileParameters(psDeltaFile, deltaFile);
+                    psDeltaFile.addBatch();
 
-        jdbcTemplate.batchUpdate(deltaFileFlowSql, deltaFileFlows, 1000, (ps, flow) -> {
-            ps.setObject(1, flow.getId());
-            ps.setString(2, flow.getName());
-            ps.setInt(3, flow.getNumber());
-            ps.setString(4, flow.getType().name());
-            ps.setString(5, flow.getState().name());
-            ps.setTimestamp(6, toTimestamp(flow.getCreated()));
-            ps.setTimestamp(7, toTimestamp(flow.getModified()));
-            ps.setString(8, toJson(flow.getFlowPlan()));
-            ps.setString(9, toJson(flow.getInput()));
-            ps.setString(10, toJson(flow.getPublishTopics()));
-            ps.setInt(11, flow.getDepth());
-            ps.setString(12, toJson(flow.getPendingAnnotations()));
-            ps.setBoolean(13, flow.isTestMode());
-            ps.setString(14, flow.getTestModeReason());
-            ps.setObject(15, flow.getJoinId());
-            ps.setString(16, toJson(flow.getPendingActions()));
-            ps.setObject(17, flow.getDeltaFile().getDid());
-            ps.setObject(18, flow.getDeltaFile().getVersion());
-        });
+                    for (DeltaFileFlow flow : deltaFile.getFlows()) {
+                        setDeltaFileFlowParameters(psDeltaFileFlow, flow, deltaFile);
+                        psDeltaFileFlow.addBatch();
 
-        // Batch insert Actions
-        List<Action> actions = new ArrayList<>();
-        for (DeltaFileFlow flow : deltaFileFlows) {
-            for (Action action : flow.getActions()) {
-                action.setDeltaFileFlow(flow);  // Ensure relationship is set
-                actions.add(action);
+                        for (Action action : flow.getActions()) {
+                            setActionParameters(psAction, action, flow);
+                            psAction.addBatch();
+                        }
+                    }
+
+                    if (!deltaFile.getAnnotations().isEmpty()) {
+                        for (Annotation annotation : deltaFile.getAnnotations()) {
+                            setAnnotationParameters(psAnnotation, annotation, deltaFile);
+                            psAnnotation.addBatch();
+                        }
+                    }
+                }
+
+                psDeltaFile.executeBatch();
+                psDeltaFileFlow.executeBatch();
+                psAction.executeBatch();
+                if (deltaFiles.stream().anyMatch(df -> !df.getAnnotations().isEmpty())) {
+                    psAnnotation.executeBatch();
+                }
+
+                return null;
             }
-        }
-
-        String actionSql = """
-                INSERT INTO actions (id, name, number, type, state, created, queued, start, stop, modified, error_cause,
-                                     error_context, error_acknowledged, error_acknowledged_reason, next_auto_resume,
-                                     next_auto_resume_reason, filtered_cause, filtered_context, attempt, content,
-                                     metadata, delete_metadata_keys, replay_start, delta_file_flow_id, version)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?)""";
-
-        jdbcTemplate.batchUpdate(actionSql, actions, 1000, (ps, action) -> {
-            ps.setObject(1, action.getId());
-            ps.setString(2, action.getName());
-            ps.setInt(3, action.getNumber());
-            ps.setString(4, action.getType().name());
-            ps.setString(5, action.getState().name());
-            ps.setTimestamp(6, toTimestamp(action.getCreated()));
-            ps.setTimestamp(7, toTimestamp(action.getQueued()));
-            ps.setTimestamp(8, toTimestamp(action.getStart()));
-            ps.setTimestamp(9, toTimestamp(action.getStop()));
-            ps.setTimestamp(10, toTimestamp(action.getModified()));
-            ps.setString(11, action.getErrorCause());
-            ps.setString(12, action.getErrorContext());
-            ps.setTimestamp(13, toTimestamp(action.getErrorAcknowledged()));
-            ps.setString(14, action.getErrorAcknowledgedReason());
-            ps.setTimestamp(15, toTimestamp(action.getNextAutoResume()));
-            ps.setString(16, action.getNextAutoResumeReason());
-            ps.setString(17, action.getFilteredCause());
-            ps.setString(18, action.getFilteredContext());
-            ps.setInt(19, action.getAttempt());
-            ps.setString(20, toJson(action.getContent()));
-            ps.setString(21, toJson(action.getMetadata()));
-            ps.setString(22, toJson(action.getDeleteMetadataKeys()));
-            ps.setBoolean(23, action.isReplayStart());
-            ps.setObject(24, action.getDeltaFileFlow().getId());
-            ps.setObject(25, action.getDeltaFileFlow().getVersion());
         });
+    }
 
-        // Batch insert Annotations
-        List<Annotation> annotations = new ArrayList<>();
-        for (DeltaFile deltaFile : deltaFiles) {
-            for (Annotation annotation : deltaFile.getAnnotations()) {
-                annotation.setDeltaFile(deltaFile);  // Ensure relationship is set
-                annotations.add(annotation);
-            }
-        }
+    private void setDeltaFileParameters(PreparedStatement ps, DeltaFile deltaFile) throws SQLException {
+        ps.setObject(1, deltaFile.getDid());
+        ps.setString(2, deltaFile.getName());
+        ps.setString(3, deltaFile.getNormalizedName());
+        ps.setString(4, deltaFile.getDataSource());
+        ps.setString(5, toJson(deltaFile.getParentDids()));
+        ps.setObject(6, deltaFile.getJoinId());
+        ps.setString(7, toJson(deltaFile.getChildDids()));
+        ps.setInt(8, deltaFile.getRequeueCount());
+        ps.setLong(9, deltaFile.getIngressBytes());
+        ps.setLong(10, deltaFile.getReferencedBytes());
+        ps.setLong(11, deltaFile.getTotalBytes());
+        ps.setString(12, deltaFile.getStage().name());
+        ps.setTimestamp(13, toTimestamp(deltaFile.getCreated()));
+        ps.setTimestamp(14, toTimestamp(deltaFile.getModified()));
+        ps.setTimestamp(15, toTimestamp(deltaFile.getContentDeleted()));
+        ps.setString(16, deltaFile.getContentDeletedReason());
+        ps.setObject(17, deltaFile.getEgressed());
+        ps.setObject(18, deltaFile.getFiltered());
+        ps.setTimestamp(19, toTimestamp(deltaFile.getReplayed()));
+        ps.setObject(20, deltaFile.getReplayDid());
+        ps.setBoolean(21, deltaFile.isTerminal());
+        ps.setBoolean(22, deltaFile.isContentDeletable());
+        ps.setLong(23, deltaFile.getVersion());
+    }
 
-        String annotationSql = """
-                INSERT INTO annotations (id, key, value, delta_file_id)
-                VALUES (?, ?, ?, ?)""";
+    private void setDeltaFileFlowParameters(PreparedStatement ps, DeltaFileFlow flow, DeltaFile deltaFile) throws SQLException {
+        ps.setObject(1, flow.getId());
+        ps.setString(2, flow.getName());
+        ps.setInt(3, flow.getNumber());
+        ps.setString(4, flow.getType().name());
+        ps.setString(5, flow.getState().name());
+        ps.setTimestamp(6, toTimestamp(flow.getCreated()));
+        ps.setTimestamp(7, toTimestamp(flow.getModified()));
+        ps.setString(8, toJson(flow.getFlowPlan()));
+        ps.setString(9, toJson(flow.getInput()));
+        ps.setString(10, toJson(flow.getPublishTopics()));
+        ps.setInt(11, flow.getDepth());
+        ps.setString(12, toJson(flow.getPendingAnnotations()));
+        ps.setBoolean(13, flow.isTestMode());
+        ps.setString(14, flow.getTestModeReason());
+        ps.setObject(15, flow.getJoinId());
+        ps.setString(16, toJson(flow.getPendingActions()));
+        ps.setObject(17, deltaFile.getDid());
+        ps.setLong(18, deltaFile.getVersion());
+    }
 
-        jdbcTemplate.batchUpdate(annotationSql, annotations, 1000, (ps, annotation) -> {
-            ps.setObject(1, annotation.getId());
-            ps.setString(2, annotation.getKey());
-            ps.setString(3, annotation.getValue());
-            ps.setObject(4, annotation.getDeltaFile().getDid());
-        });
+    private void setActionParameters(PreparedStatement ps, Action action, DeltaFileFlow flow) throws SQLException {
+        ps.setObject(1, action.getId());
+        ps.setString(2, action.getName());
+        ps.setInt(3, action.getNumber());
+        ps.setString(4, action.getType().name());
+        ps.setString(5, action.getState().name());
+        ps.setTimestamp(6, toTimestamp(action.getCreated()));
+        ps.setTimestamp(7, toTimestamp(action.getQueued()));
+        ps.setTimestamp(8, toTimestamp(action.getStart()));
+        ps.setTimestamp(9, toTimestamp(action.getStop()));
+        ps.setTimestamp(10, toTimestamp(action.getModified()));
+        ps.setString(11, action.getErrorCause());
+        ps.setString(12, action.getErrorContext());
+        ps.setTimestamp(13, toTimestamp(action.getErrorAcknowledged()));
+        ps.setString(14, action.getErrorAcknowledgedReason());
+        ps.setTimestamp(15, toTimestamp(action.getNextAutoResume()));
+        ps.setString(16, action.getNextAutoResumeReason());
+        ps.setString(17, action.getFilteredCause());
+        ps.setString(18, action.getFilteredContext());
+        ps.setInt(19, action.getAttempt());
+        ps.setString(20, toJson(action.getContent()));
+        ps.setString(21, toJson(action.getMetadata()));
+        ps.setString(22, toJson(action.getDeleteMetadataKeys()));
+        ps.setBoolean(23, action.isReplayStart());
+        ps.setObject(24, flow.getId());
+        ps.setLong(25, flow.getVersion());
+    }
+
+    private void setAnnotationParameters(PreparedStatement ps, Annotation annotation, DeltaFile deltaFile) throws SQLException {
+        ps.setObject(1, annotation.getId());
+        ps.setString(2, annotation.getKey());
+        ps.setString(3, annotation.getValue());
+        ps.setObject(4, deltaFile.getDid());
     }
 
     private String toJson(Object object) {

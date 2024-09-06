@@ -132,7 +132,14 @@
       <ScrollTop target="window" :threshold="150" icon="pi pi-arrow-up" />
     </Panel>
   </div>
+  <ConfirmDialog />
   <RetryResumeDialog ref="retryResumeDialog" :did="filterSelectedDids" @update="fetchDeltaFilesData()" />
+  <Dialog v-model:visible="displayCancelBatchingDialog" :breakpoints="{ '960px': '75vw', '940px': '90vw' }" :style="{ width: '30vw' }" :modal="true" :closable="false" :close-on-escape="false" :draggable="false" header="Canceling">
+    <div>
+      <p>Cancel in progress. Please do not refresh the page!</p>
+      <ProgressBar :value="batchCompleteValue" />
+    </div>
+  </Dialog>
   <AnnotateDialog ref="annotateDialog" :dids="filterSelectedDids" @refresh-page="fetchDeltaFilesData()" />
 </template>
 
@@ -146,6 +153,7 @@ import PageHeader from "@/components/PageHeader.vue";
 import RetryResumeDialog from "@/components/MetadataDialogReplay.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useDeltaFilesQueryBuilder from "@/composables/useDeltaFilesQueryBuilder";
+import useDeltaFiles from "@/composables/useDeltaFiles";
 import useFlows from "@/composables/useFlows";
 import useUtilFunctions from "@/composables/useUtilFunctions";
 import { computed, inject, nextTick, onBeforeMount, ref, watch } from "vue";
@@ -154,6 +162,8 @@ import { useStorage, StorageSerializers, useUrlSearchParams } from "@vueuse/core
 import _ from "lodash";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
+import Dialog from "primevue/dialog";
+import ProgressBar from "@/components/deprecatedPrimeVue/ProgressBar";
 
 import Button from "primevue/button";
 import Chip from "primevue/chip";
@@ -169,7 +179,18 @@ import Paginator from "primevue/paginator";
 import Panel from "primevue/panel";
 import OverlayPanel from "primevue/overlaypanel";
 import ScrollTop from "primevue/scrolltop";
+import { useConfirm } from "primevue/useconfirm";
+import ConfirmDialog from "primevue/confirmdialog";
+import useNotifications from "@/composables/useNotifications";
 
+const { pluralize } = useUtilFunctions();
+const notify = useNotifications();
+const { cancelDeltaFile } = useDeltaFiles();
+const batchCompleteValue = ref(0);
+const displayCancelBatchingDialog = ref(false);
+const batchSize = 500;
+const maxToastDidDisplay = 10;
+const confirm = useConfirm();
 dayjs.extend(utc);
 const hasPermission = inject("hasPermission");
 const params = useUrlSearchParams("history");
@@ -471,27 +492,6 @@ const addAnnotationItemEvent = () => {
   }
 };
 
-// TODO: Review for 2.0
-// const validatedAnnotationsArray = () => {
-//   const validKeys = annotationsKeysOptions.value.map((i) => i.key);
-//   for (const index of model.value.validatedAnnotations.keys()) {
-//     const key = model.value.validatedAnnotations[index].key;
-//     model.value.validatedAnnotations[index].valid = validKeys.includes(key);
-//   }
-// };
-// TODO: Review for 2.0
-//const invalidAnnotationTooltip = (key) => {
-/*if (model.value.domains) {
-    return `${key} is not a valid annotation key for the ${model.value.domains} domain.`;
-  }*/
-//};
-// TODO: Review for 2.0
-// const fetchAnnotationKeys = async () => {
-//   annotationsKeysOptions.value = keys.map((key) => {
-//     return { key: key };
-//   });
-// };
-
 const fetchDeltaFilesDataNoDebounce = async () => {
   model.value = _.merge(model.value, calculatedAggregateParams.value);
   setPersistedParams();
@@ -703,6 +703,15 @@ const menuItems = ref([
       annotateDialog.value.showDialog();
     },
   },
+  {
+    label: "Cancel Selected",
+    icon: "fas fa-power-off fa-fw",
+    command: () => {
+      onCancelClick();
+    },
+    visible: computed(() => hasPermission("DeltaFileCancel")),
+    disabled: computed(() => selectedDids.value.length == 0),
+  },
 ]);
 
 const filterSelectedDids = computed(() => {
@@ -719,6 +728,58 @@ const activeAdvancedOptions = computed(() => {
   });
   return !_.isEmpty(advancedOptionsState);
 });
+
+const onCancelClick = () => {
+  let pluralized = pluralize(selectedDids.value.length, "DeltaFile");
+  confirm.require({
+    message: `Are you sure you want to cancel ${pluralized}?`,
+    header: "Confirm Cancel",
+    icon: "pi pi-exclamation-triangle",
+    acceptLabel: "Yes",
+    rejectLabel: "Cancel",
+    accept: () => {
+      onCancel();
+    },
+    reject: () => { },
+  });
+};
+
+const onCancel = async () => {
+  let batchedDids = getBatchDids(filterSelectedDids.value);
+  displayCancelBatchingDialog.value = selectedDids.value.length > batchSize ? true : false;
+  batchCompleteValue.value = 0;
+  let completedBatches = 0;
+  let cancelResponses = [];
+  for (const dids of batchedDids) {
+    const cancelResponse = await cancelDeltaFile(dids);
+    cancelResponses = cancelResponses.concat(cancelResponse);
+    completedBatches += dids.length;
+    batchCompleteValue.value = Math.round((completedBatches / selectedDids.value.length) * 100);
+  }
+  displayCancelBatchingDialog.value = false;
+  const results = Object.groupBy(cancelResponses, ({ success }) => success);
+  if (results.true) {
+    const theDids = results.true.map(({ did }) => did);
+    const pluralized = pluralize(theDids.length, "DeltaFile");
+    const links = theDids.slice(0, maxToastDidDisplay).map((did) => `<a href="/deltafile/viewer/${did}" class="monospace">${did}</a>`);
+    notify.success(`Successfully Cancelled ${pluralized}`, links.join(", "));
+  }
+  if (results.false) {
+    const theDids = results.false.map(({ did }) => did);
+    const pluralized = pluralize(theDids.length, "DeltaFile");
+    const links = theDids.slice(0, maxToastDidDisplay).map((did) => `<a href="/deltafile/viewer/${did}" class="monospace">${did}</a>`);
+    notify.error(`Failed to Cancel ${pluralized}`, links.join(", "));
+  }
+};
+
+const getBatchDids = (allDids) => {
+  const res = [];
+  for (let i = 0; i < allDids.length; i += batchSize) {
+    const chunk = allDids.slice(i, i + batchSize);
+    res.push(chunk);
+  }
+  return res;
+};
 </script>
 
 <style lang="scss">
