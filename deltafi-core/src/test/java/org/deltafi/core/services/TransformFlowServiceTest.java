@@ -17,17 +17,18 @@
  */
 package org.deltafi.core.services;
 
-import org.deltafi.common.types.TransformFlowPlan;
+import org.deltafi.common.types.FlowType;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
 import org.deltafi.core.repo.TransformFlowRepo;
-import org.deltafi.core.snapshot.SystemSnapshot;
-import org.deltafi.core.snapshot.types.FlowSnapshot;
-import org.deltafi.core.snapshot.types.TransformFlowSnapshot;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.FlowSnapshot;
+import org.deltafi.core.types.snapshot.TransformFlowSnapshot;
 import org.deltafi.core.types.Flow;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.types.TransformFlow;
-import org.deltafi.core.validation.TransformFlowValidator;
+import org.deltafi.core.types.TransformFlowPlanEntity;
+import org.deltafi.core.validation.FlowValidator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -38,6 +39,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.deltafi.core.datafetchers.FlowPlanDatafetcherTestHelper.PLUGIN_COORDINATES;
 
 @ExtendWith(MockitoExtension.class)
 class TransformFlowServiceTest {
@@ -46,7 +48,7 @@ class TransformFlowServiceTest {
     TransformFlowRepo transformFlowRepo;
 
     @Mock
-    TransformFlowValidator flowValidator;
+    FlowValidator flowValidator;
 
     @InjectMocks
     TransformFlowService transformFlowService;
@@ -54,16 +56,19 @@ class TransformFlowServiceTest {
     @Captor
     ArgumentCaptor<List<TransformFlow>> flowCaptor;
 
+    @Mock
+    FlowCacheService flowCacheService;
+
     @Test
     void buildFlow() {
         TransformFlow running = transformFlow("running", FlowState.RUNNING, true);
         TransformFlow stopped = transformFlow("stopped", FlowState.STOPPED, false);
-        Mockito.when(transformFlowRepo.findById("running")).thenReturn(Optional.of(running));
-        Mockito.when(transformFlowRepo.findById("stopped")).thenReturn(Optional.of(stopped));
+        Mockito.when(transformFlowRepo.findByNameAndType("running", TransformFlow.class)).thenReturn(Optional.of(running));
+        Mockito.when(transformFlowRepo.findByNameAndType("stopped", TransformFlow.class)).thenReturn(Optional.of(stopped));
         Mockito.when(flowValidator.validate(Mockito.any())).thenReturn(Collections.emptyList());
 
-        TransformFlowPlan runningFlowPlan = new TransformFlowPlan("running", "yep");
-        TransformFlowPlan stoppedFlowPlan = new TransformFlowPlan("stopped", "naw");
+        TransformFlowPlanEntity runningFlowPlan = new TransformFlowPlanEntity("running", "yep", PLUGIN_COORDINATES);
+        TransformFlowPlanEntity stoppedFlowPlan = new TransformFlowPlanEntity("stopped", "naw", PLUGIN_COORDINATES);
 
         TransformFlow runningTransformFlow = transformFlowService.buildFlow(runningFlowPlan, Collections.emptyList());
         TransformFlow stoppedTransformFlow = transformFlowService.buildFlow(stoppedFlowPlan, Collections.emptyList());
@@ -76,12 +81,12 @@ class TransformFlowServiceTest {
 
     @Test
     void updateSnapshot() {
-        List<TransformFlow> flows = new ArrayList<>();
+        List<Flow> flows = new ArrayList<>();
         flows.add(transformFlow("a", FlowState.RUNNING, false));
         flows.add(transformFlow("b", FlowState.STOPPED, false));
         flows.add(transformFlow("c", FlowState.INVALID, true));
 
-        Mockito.when(transformFlowRepo.findAll()).thenReturn(flows);
+        Mockito.when(flowCacheService.flowsOfType(FlowType.TRANSFORM)).thenReturn(flows);
 
         SystemSnapshot systemSnapshot = new SystemSnapshot();
         transformFlowService.updateSnapshot(systemSnapshot);
@@ -117,16 +122,17 @@ class TransformFlowServiceTest {
                 new TransformFlowSnapshot("invalid", true, false),
                 new TransformFlowSnapshot("missing", true, true)));
 
-        Mockito.when(transformFlowRepo.findAll()).thenReturn(List.of(running, stopped, invalid));
-        Mockito.when(transformFlowRepo.findById("running")).thenReturn(Optional.of(running));
-        Mockito.when(transformFlowRepo.findById("stopped")).thenReturn(Optional.of(stopped));
-        Mockito.when(transformFlowRepo.findById("invalid")).thenReturn(Optional.of(invalid));
-        Mockito.when(transformFlowRepo.findById("missing")).thenReturn(Optional.empty());
+        Mockito.when(flowCacheService.flowsOfType(FlowType.TRANSFORM)).thenReturn(List.of(running, stopped, invalid));
+        Mockito.when(flowCacheService.getFlowOrThrow(FlowType.TRANSFORM, "running")).thenReturn(running);
+        Mockito.when(transformFlowRepo.findByNameAndType("running", TransformFlow.class)).thenReturn(Optional.of(running));
+        Mockito.when(transformFlowRepo.findByNameAndType("stopped", TransformFlow.class)).thenReturn(Optional.of(stopped));
+        Mockito.when(transformFlowRepo.findByNameAndType("invalid", TransformFlow.class)).thenReturn(Optional.of(invalid));
+        Mockito.when(transformFlowRepo.findByNameAndType("missing", TransformFlow.class)).thenReturn(Optional.empty());
 
         Result result = transformFlowService.resetFromSnapshot(systemSnapshot, true);
 
         // verify the hard reset stopped any running flows
-        Mockito.verify(transformFlowRepo).updateFlowState("running", FlowState.STOPPED);
+        Mockito.verify(transformFlowRepo).updateFlowStatusState("running", FlowState.STOPPED, FlowType.TRANSFORM);
 
         Mockito.verify(transformFlowRepo).saveAll(flowCaptor.capture());
 

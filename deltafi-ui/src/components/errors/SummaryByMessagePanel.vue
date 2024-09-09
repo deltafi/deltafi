@@ -78,7 +78,6 @@ const perPage = ref();
 const page = ref(null);
 const metadataDialogResume = ref();
 const sortDirection = ref("ASC");
-const sortField = ref("flow");
 const selectedErrors = ref([]);
 const emit = defineEmits(["refreshErrors", "changeTab:errorMessage:flowSelected"]);
 const notify = useNotifications();
@@ -163,7 +162,7 @@ onMounted(async () => {
   setupWatchers();
 });
 
-const { data: response, fetchByMessage: getErrorsByMessage } = useErrorsSummary();
+const { data: response, fetchByMessage } = useErrorsSummary();
 
 const onRefresh = () => {
   selectedErrors.value = [];
@@ -187,7 +186,7 @@ const fetchErrorsMessages = async () => {
   getPersistedParams();
   let dataSourceFlowName = props.dataSourceFlowName != null ? props.dataSourceFlowName : null;
   loading.value = true;
-  await getErrorsByMessage(props.acknowledged, offset.value, perPage.value, sortField.value, sortDirection.value, dataSourceFlowName);
+  await fetchByMessage(props.acknowledged, offset.value, perPage.value, sortDirection.value, dataSourceFlowName);
   errorsMessage.value = response.value.countPerMessage;
   totalErrorsMessage.value = response.value.totalCount;
   loading.value = false;
@@ -214,7 +213,6 @@ defineExpose({
 const onSort = (event) => {
   offset.value = event.first;
   perPage.value = event.rows;
-  sortField.value = event.sortField;
   sortDirection.value = event.sortOrder > 0 ? "DESC" : "ASC";
   fetchErrorsMessages();
 };

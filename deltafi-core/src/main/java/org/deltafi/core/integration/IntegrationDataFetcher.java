@@ -26,7 +26,7 @@ import com.netflix.graphql.dgs.DgsMutation;
 import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.InputArgument;
 import lombok.RequiredArgsConstructor;
-import org.deltafi.common.types.TestResult;
+import org.deltafi.core.types.TestResult;
 import org.deltafi.common.types.TestStatus;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.integration.config.Configuration;

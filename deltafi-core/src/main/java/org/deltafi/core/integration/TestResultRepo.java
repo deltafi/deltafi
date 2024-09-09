@@ -17,10 +17,10 @@
  */
 package org.deltafi.core.integration;
 
-import org.deltafi.common.types.TestResult;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.deltafi.core.types.TestResult;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface TestResultRepo extends MongoRepository<TestResult, String> {
+public interface TestResultRepo extends JpaRepository<TestResult, String> {
 }

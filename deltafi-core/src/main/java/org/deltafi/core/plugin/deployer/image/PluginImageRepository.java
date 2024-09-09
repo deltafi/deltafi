@@ -17,18 +17,25 @@
  */
 package org.deltafi.core.plugin.deployer.image;
 
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
+import jakarta.persistence.*;
 import lombok.Data;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import org.hibernate.annotations.Type;
 
 import java.util.List;
+import java.util.Set;
 
 @Data
-@Document
+@Entity
+@Table(name = "plugin_image_repository", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"plugin_group_ids"})
+})
 public class PluginImageRepository {
-
     @Id
     private String imageRepositoryBase;
+
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
     private List<String> pluginGroupIds;
     private String imagePullSecret;
 

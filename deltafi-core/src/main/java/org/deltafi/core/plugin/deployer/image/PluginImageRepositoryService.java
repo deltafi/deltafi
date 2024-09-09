@@ -21,9 +21,9 @@ import lombok.AllArgsConstructor;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.services.DeltaFiPropertiesService;
-import org.deltafi.core.snapshot.SnapshotRestoreOrder;
-import org.deltafi.core.snapshot.Snapshotter;
-import org.deltafi.core.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
+import org.deltafi.core.services.Snapshotter;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.types.Result;
 import org.springframework.stereotype.Service;
 
@@ -50,6 +50,9 @@ public class PluginImageRepositoryService implements Snapshotter {
      * @return copy of the saved item
      */
     public PluginImageRepository savePluginImageRepository(PluginImageRepository pluginImageRepository) {
+        if (imageRepositoryRepo.otherExistsByAnyGroupId(pluginImageRepository.getImageRepositoryBase(), String.join(",", pluginImageRepository.getPluginGroupIds()))) {
+            throw new RuntimeException("At least one group ID already exists in another image repository base.");
+        }
         return imageRepositoryRepo.save(pluginImageRepository);
     }
 
@@ -73,7 +76,7 @@ public class PluginImageRepositoryService implements Snapshotter {
      * @return image repository used to install the given plugin
      */
     public PluginImageRepository findByGroupId(PluginCoordinates pluginCoordinates) {
-        return imageRepositoryRepo.findByPluginGroupIds(pluginCoordinates.getGroupId())
+        return imageRepositoryRepo.findByPluginGroupId(pluginCoordinates.getGroupId())
                 .orElseGet(this::defaultPluginImageRepository);
     }
 

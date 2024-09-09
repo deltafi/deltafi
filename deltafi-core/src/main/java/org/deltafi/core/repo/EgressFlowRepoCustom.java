@@ -19,9 +19,8 @@ package org.deltafi.core.repo;
 
 import org.deltafi.core.types.EgressFlow;
 
-import java.util.Set;
+import java.util.List;
 
-public interface EgressFlowRepoCustom extends FlowRepoCustom<EgressFlow> {
-
-    boolean updateExpectedAnnotations(String flowName, Set<String> expectedAnnotations);
+public interface EgressFlowRepoCustom {
+    void batchInsert(List<EgressFlow> egressFlows);
 }

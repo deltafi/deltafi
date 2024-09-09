@@ -105,26 +105,23 @@ initContainers:
 
 {{- define "initContainersWaitForDatabases" -}}
 initContainers:
-- name: wait-for-mongo
-  image: busybox:1.36.0
-  command:
-  - 'sh'
-  - '-c'
-  - >
-    until nc -z -w 2 deltafi-mongodb 27017 && echo mongodb ok;
-      do sleep 1;
-    done
-{{- if .Values.postgres.enabled }}
 - name: wait-for-postgres
-  image: busybox:1.36.0
+  image: postgres:{{ .Values.postgres.version }}-alpine3.20
+  env:
+  - name: PGUSER
+    value: deltafi
+  - name: PGPASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: deltafi.deltafi-postgres
+        key: password
   command:
-  - 'sh'
-  - '-c'
-  - >
-    until nc -z -w 2 deltafi-postgres 5432 && echo postgres ok;
-      do sleep 1;
-    done
-{{- end -}}
+    - 'sh'
+    - '-c'
+    - >
+      until PGPASSWORD=$PGPASSWORD psql -h deltafi-postgres -U $PGUSER -d deltafi -c '\q' && echo PostgreSQL is up and ready;
+        do sleep 1;
+      done
 {{- if .Values.clickhouse.enabled }}
 - name: wait-for-clickhouse
   image: busybox:1.36.0
@@ -158,18 +155,28 @@ initContainers:
   value: deltafi-redis-master
 - name: REDIS_PORT
   value: "6379"
-- name: REDIS_PASSWORD
-  valueFrom:
-    secretKeyRef:
-      name: valkey-password
-      key: valkey-password
 - name: VALKEY_URL
   value: http://deltafi-valkey-master:6379
+- name: DELTAFI_UI_DOMAIN
+  value: {{ .Values.ingress.domain }}
+- name: AUTH_MODE
+  value: {{ .Values.deltafi.auth.mode | quote }}
+{{- end -}}
+
+{{- define "valkeyEnvVars" -}}
 - name: VALKEY_PASSWORD
   valueFrom:
     secretKeyRef:
       name: valkey-password
       key: valkey-password
+- name: REDIS_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: valkey-password
+      key: valkey-password
+{{- end -}}
+
+{{- define "minioEnvVars" -}}
 - name: MINIO_ACCESSKEY
   value: deltafi
 - name: MINIO_SECRETKEY
@@ -177,19 +184,16 @@ initContainers:
     secretKeyRef:
       name: minio-keys
       key: rootPassword
-- name: DELTAFI_UI_DOMAIN
-  value: {{ .Values.ingress.domain }}
-- name: AUTH_MODE
-  value: {{ .Values.deltafi.auth.mode | quote }}
-{{- if .Values.postgres.enabled }}
+{{- end -}}
+
+{{- define "postgresEnvVars" -}}
 - name: POSTGRES_USER
   value: deltafi
 - name: POSTGRES_PASSWORD
   valueFrom:
     secretKeyRef:
-      name: postgres
-      key: deltafi-password
-{{- end -}}
+      name: deltafi.deltafi-postgres
+      key: password
 {{- end -}}
 
 {{- define "graphiteEnvVars" -}}
@@ -210,14 +214,6 @@ initContainers:
   value: "{{ .Values.deltafi.ssl.mountPath }}/{{ .Values.deltafi.ssl.trustStoreName }}"
 - name: SSL_TRUSTSTORETYPE
   value: {{ .Values.deltafi.ssl.trustStoreType }}
-{{- end -}}
-
-{{- define "mongoEnvVars" -}}
-- name: MONGO_PASSWORD
-  valueFrom:
-    secretKeyRef:
-      name: mongodb-passwords
-      key: mongodb-passwords
 {{- end -}}
 
 {{- define "clickhouseEnvVars" -}}
@@ -263,6 +259,8 @@ env:
   - name: SPRING_PROFILES_ACTIVE
     value: kubernetes
 {{- include "commonEnvVars" . | nindent 2 }}
+{{- include "valkeyEnvVars" . | nindent 2 }}
+{{- include "minioEnvVars" . | nindent 2 }}
 {{- include "sslEnvVars" . | nindent 2 }}
 envFrom:
 {{- include "keyStorePasswordSecret" . | nindent 2 }}
@@ -279,8 +277,10 @@ volumeMounts:
 - name: METRICS_PERIOD_SECONDS
   value: "10"
 {{ include "commonEnvVars" . }}
+{{ include "postgresEnvVars" . }}
+{{ include "minioEnvVars" . }}
+{{ include "valkeyEnvVars" . }}
 {{ include "sslEnvVars" . }}
-{{ include "mongoEnvVars" . }}
 {{- end }}
 
 {{- define "coreVolumeMounts" -}}

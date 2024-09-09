@@ -17,8 +17,6 @@
  */
 package org.deltafi.core.types;
 
-import org.deltafi.common.types.DeltaFileFlow;
-
 /**
  * the deltaFile, flow, and action that were most recently processed and require next steps
  * @param deltaFile the deltaFile for which an event was received

@@ -19,6 +19,8 @@ package org.deltafi.core.repo;
 
 import org.deltafi.core.types.TransformFlow;
 
-public interface TransformFlowRepoCustom extends FlowRepoCustom<TransformFlow> {
+import java.util.List;
 
+public interface TransformFlowRepoCustom {
+    void batchInsert(List<TransformFlow> transformFlows);
 }

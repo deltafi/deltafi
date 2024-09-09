@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+set -f
+
+cli_help_command() {
+  echo "
+Command: postgres-eval
+
+Usage:
+  postgres-eval <sql_command>
+
+Example:
+  postgres-eval 'SELECT * FROM my_table WHERE x = 2;'
+"
+  exit 1
+}
+
+shift
+PARAMS="$*"
+if _is_standalone; then
+  echo "Not implemented for standalone mode"
+else
+  ${KUBECTL_BIN} exec -i "$(${KUBECTL_BIN} get pod --selector application=spilo,spilo-role=master -o name)" -c postgres -- psql -U deltafi -d deltafi -t -c "$PARAMS"
+fi

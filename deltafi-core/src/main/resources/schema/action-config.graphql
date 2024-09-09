@@ -16,27 +16,21 @@
 #    limitations under the License.
 #
 
-interface ActionConfiguration {
+type ActionConfiguration {
     name: String!
     apiVersion: String
     actionType: String!
     type: String!
     parameters: JSON
+    join: JoinConfiguration
 }
 
-type TimedIngressActionConfiguration implements ActionConfiguration {
-    name: String!
-    apiVersion: String
-    actionType: String!
-    type: String!
-    parameters: JSON
-}
-
-input TimedIngressActionConfigurationInput {
+input ActionConfigurationInput {
     name: String!
     apiVersion: String
     type: String!
     parameters: JSON
+    join: JoinConfigurationInput
 }
 
 type JoinConfiguration {
@@ -51,36 +45,4 @@ input JoinConfigurationInput {
     minNum: Int
     maxNum: Int
     metadataKey: String
-}
-
-type TransformActionConfiguration implements ActionConfiguration {
-    name: String!
-    apiVersion: String
-    actionType: String!
-    type: String!
-    parameters: JSON
-    join: JoinConfiguration
-}
-
-input TransformActionConfigurationInput {
-    name: String!
-    apiVersion: String
-    type: String!
-    parameters: JSON
-    join: JoinConfigurationInput
-}
-
-type EgressActionConfiguration implements ActionConfiguration {
-    name: String!
-    apiVersion: String
-    actionType: String!
-    type: String!
-    parameters: JSON
-}
-
-input EgressActionConfigurationInput {
-    name: String!
-    apiVersion: String
-    type: String!
-    parameters: JSON
 }

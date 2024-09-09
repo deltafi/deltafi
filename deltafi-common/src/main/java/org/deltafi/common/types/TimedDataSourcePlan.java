@@ -22,28 +22,24 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.data.annotation.PersistenceCreator;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Document
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true)
 public class TimedDataSourcePlan extends DataSourcePlan {
-    private TimedIngressActionConfiguration timedIngressAction;
+    private ActionConfiguration timedIngressAction;
     private String cronSchedule;
 
-    @PersistenceCreator
     @JsonCreator
     @SuppressWarnings("unused")
     public TimedDataSourcePlan(@JsonProperty(value = "name", required = true) String name,
             @JsonProperty(value = "type") FlowType type,
             @JsonProperty(value = "description", required = true) String description,
             @JsonProperty(value = "topic", required = true) String topic,
-            @JsonProperty(value = "timedIngressAction", required = true) TimedIngressActionConfiguration timedIngressAction,
+            @JsonProperty(value = "timedIngressAction", required = true) ActionConfiguration timedIngressAction,
             @JsonProperty(value = "cronSchedule", required = true) String cronSchedule) {
         super(name, FlowType.TIMED_DATA_SOURCE, description, topic);
         this.timedIngressAction = timedIngressAction;

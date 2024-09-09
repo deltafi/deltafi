@@ -144,59 +144,57 @@ Version: $(cat $DELTAFICLI_WORKDIR/VERSION)
 Usage: $cli_name [command]
 
 Commands:
-  clickhouse-cli          launch the clickhouse CLI
-  data-source             start, stop, show or validate a data source flow
-  did                     show did for filename
-  disable                 stop all DeltaFi processes
-  egress-flow             start, stop, show or validate an egress flow
-  export-config           export all the loaded flow configurations as yaml
-  export-data-source-plan export a single egress flow plan by name as JSON
-  export-egress-plan      export a single egress flow plan by name as JSON
-  export-transform-plan   export a single transform flow plan by name as JSON
-  ingress                 ingress one or more files to a flow
-  install                 install/upgrade the DeltaFi core
-  install-plugin          install/upgrade a DeltaFi plugin
-  integration-test        run an integration test
-  list-actions            list the actions registered with deltafi
-  list-flows              list the flows in the system with their status
-  list-plans              list all flow plans within deltafi
-  list-plugins            list all installed plugins
-  list-policies           list delete policies
-  load-plans              load the flow plans and variables for the given plugin
-  load-policies           load delete policies from a JSON file
-  minio-cli               launch the minio CLI
-  mongo-cli               launch the mongo CLI
-  mongo-eval              eval a command in mongo
-  mongo-migrate           run mongo migrations
-  performance-test        run performance tests against DeltaFi
-  plugin-customization    manage plugin customization configuration
-  plugin-image-repo       manage the image repositories that hold plugin images
-  plugin-init             create a new plugin project
-  postgres-cli            launch the Postgres CLI
-  query                   send a query to graphql
-  reenable                reenable all DeltaFi processes
-  scale                   edit the replica counts for all deployments and statefulsets
-  secrets                 show k8s secrets
-  serviceip               show service IP
-  set-admin-password      set the admin password
-  start                   (alias for install)
-  status                  show status of system
-  system-snapshot         manage system state snapshots
-  system-property         manage system properties
-  timed-data-source       start, stop, show and other controls for a timed data source
-  trace                   show trace data for a DID
-  transform-flow          start, stop or validate a transform flow
-  update                  (alias for install)
-  upgrade                 (alias for install)
-  uninstall               uninstall the DeltaFi core
-  uninstall-plugin        uninstall a DeltaFi plugin
-  valkey-cli              launch the valkey CLI
-  valkey-latency          monitor valkey latency
-  valkey-stats            monitor valkey connection stats
-  valkey-watch            watch every command issued to valkey
-  version                 print the current core version of DeltaFi
-  versions                show running versions
-  *                       show help
+  clickhouse-cli                launch the clickhouse CLI
+  data-source                   start, stop, show or validate a data source flow
+  did                           show did for filename
+  disable                       stop all DeltaFi processes
+  egress-flow                   start, stop, show or validate an egress flow
+  export-config                 export all the loaded flow configurations as yaml
+  export-egress-plan            export a single egress flow plan by name as JSON
+  export-rest-data-source-plan  export a single rest data source plan by name as JSON
+  export-timed-data-source-plan export a single timed data source flow plan by name as JSON
+  export-transform-plan         export a single transform flow plan by name as JSON
+  ingress                       ingress one or more files to a flow
+  install                       install/upgrade the DeltaFi core
+  install-plugin                install/upgrade a DeltaFi plugin
+  integration-test              run an integration test
+  list-actions                  list the actions registered with deltafi
+  list-flows                    list the flows in the system with their status
+  list-plans                    list all flow plans within deltafi
+  list-plugins                  list all installed plugins
+  list-policies                 list delete policies
+  load-plans                    load the flow plans and variables for the given plugin
+  load-policies                 load delete policies from a JSON file
+  minio-cli                     launch the minio CLI
+  performance-test              run performance tests against DeltaFi
+  plugin-image-repo             manage the image repositories that hold plugin images
+  plugin-init                   create a new plugin project
+  postgres-cli                  launch the Postgres CLI
+  postgres-eval                 run SQL in Postgres
+  query                         send a query to graphql
+  reenable                      reenable all DeltaFi processes
+  scale                         edit the replica counts for all deployments and statefulsets
+  secrets                       show k8s secrets
+  serviceip                     show service IP
+  set-admin-password            set the admin password
+  start                         (alias for install)
+  status                        show status of system
+  system-snapshot               manage system state snapshots
+  system-property               manage system properties
+  timed-data-source             start, stop, show and other controls for a timed data source
+  trace                         show trace data for a DID
+  transform-flow                start, stop or validate a transform flow
+  update                        (alias for install)
+  upgrade                       (alias for install)
+  uninstall                     uninstall the DeltaFi core
+  uninstall-plugin              uninstall a DeltaFi plugin
+  valkey-cli                    launch the valkey CLI
+  valkey-latency                monitor valkey latency
+  valkey-stats                  monitor valkey connection stats
+  valkey-watch                  watch every command issued to valkey
+  version                       print the current core version of DeltaFi
+  versions                      show running versions
+  *                             show help
 
 Flags:
   --help            show help for a specific command
@@ -227,8 +225,11 @@ case "$1" in
   export-config)
     "$DELTAFICLI_WORKDIR/commands/export-config" "$@"
     ;;
-  export-data-source-plan)
-    "$DELTAFICLI_WORKDIR/commands/export-data-source-plan" "$@"
+  export-rest-data-source-plan)
+    "$DELTAFICLI_WORKDIR/commands/export-rest-data-source-plan" "$@"
+    ;;
+  export-timed-data-source-plan)
+    "$DELTAFICLI_WORKDIR/commands/export-timed-data-source-plan" "$@"
     ;;
   export-egress-plan)
     "$DELTAFICLI_WORKDIR/commands/export-egress-plan" "$@"
@@ -278,20 +279,8 @@ case "$1" in
   minio-cli)
     "$DELTAFICLI_WORKDIR/commands/minio-cli" "$@"
     ;;
-  mongo-cli)
-    "$DELTAFICLI_WORKDIR/commands/mongo-cli" "$@"
-    ;;
-  mongo-eval)
-      "$DELTAFICLI_WORKDIR/commands/mongo-eval" "$@"
-      ;;
-  mongo-migrate)
-    "$DELTAFICLI_WORKDIR/commands/mongo-migrate" "$@"
-    ;;
   performance-test)
     BUNDLE_GEMFILE=$DELTAFICLI_WORKDIR/Gemfile bundle exec "$DELTAFICLI_WORKDIR/commands/performance-test" "$@"
-    ;;
-  plugin-customization)
-    "$DELTAFICLI_WORKDIR/commands/plugin-customization" "$@"
     ;;
   plugin-image-repo)
     "$DELTAFICLI_WORKDIR/commands/plugin-image-repo" "$@"
@@ -301,6 +290,9 @@ case "$1" in
     ;;
   postgres-cli)
     "$DELTAFICLI_WORKDIR/commands/postgres-cli" "$@"
+    ;;
+  postgres-eval)
+    "$DELTAFICLI_WORKDIR/commands/postgres-eval" "$@"
     ;;
   query)
     "$DELTAFICLI_WORKDIR/commands/query" "$@"

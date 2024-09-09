@@ -17,8 +17,6 @@
  */
 package org.deltafi.core.plugin;
 
-import org.deltafi.common.types.Plugin;
-
 public interface PluginUninstallCheck {
 
     /**
@@ -29,5 +27,5 @@ public interface PluginUninstallCheck {
      * @param plugin that will be removed if there are no blockers
      * @return reason this plugin cannot be uninstalled
      */
-    String uninstallBlockers(Plugin plugin);
+    String uninstallBlockers(PluginEntity plugin);
 }

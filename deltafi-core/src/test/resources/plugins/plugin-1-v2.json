@@ -1,0 +1,29 @@
+{
+  "pluginCoordinates": {
+    "groupId": "org.deltafi",
+    "artifactId": "plugin-1",
+    "version": "2.0.0"
+  },
+  "displayName": "Test Plugin 1",
+  "description": "This is a test plugin",
+  "actionKitVersion": "1.1.0",
+  "actions" : [ {
+    "name" : "org.deltafi.test.actions1.TestAction1",
+    "type" : "TRANSFORM"
+  }, {
+    "name" : "org.deltafi.test.actions1.TestAction2",
+    "description" : "TestAction2",
+    "type" : "TRANSFORM"
+  } ],
+  "dependencies": [
+    {
+      "groupId": "org.deltafi",
+      "artifactId": "plugin-2",
+      "version": "1.0.0"
+    },{
+      "groupId": "org.deltafi",
+      "artifactId": "plugin-3",
+      "version": "1.0.0"
+    }
+  ]
+}

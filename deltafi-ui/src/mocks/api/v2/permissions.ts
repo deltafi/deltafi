@@ -144,21 +144,6 @@ const generateData = () => {
       description: "Grants the ability to delete Plugin Image Repo Configuration"
     },
     {
-      category: "Plugins",
-      name: "PluginCustomizationConfigView",
-      description: "Grants the ability to view Plugin Customization Configuration"
-    },
-    {
-      category: "Plugins",
-      name: "PluginCustomizationConfigWrite",
-      description: "Grants the ability to create or update Plugin Customization Configuration"
-    },
-    {
-      category: "Plugins",
-      name: "PluginCustomizationConfigDelete",
-      description: "Grants the ability to delete Plugin Customization Configuration"
-    },
-    {
       category: "System Properties",
       name: "SystemPropertiesRead",
       description: "Grants the ability to view System Properties"

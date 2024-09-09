@@ -61,13 +61,13 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
     @Override
     public DeltaFile get(UUID did) {
         if (deltaFiPropertiesService.getDeltaFiProperties().isCacheEnabled()) {
-            DeltaFile deltaFile = deltaFileCache.computeIfAbsent(did, d -> getFromRepo(d, true));
-            if (deltaFile.getCacheTime() == null) {
+            DeltaFile deltaFile = deltaFileCache.computeIfAbsent(did, this::getFromRepo);
+            if (deltaFile != null && deltaFile.getCacheTime() == null) {
                 deltaFile.setCacheTime(OffsetDateTime.now(clock));
             }
             return deltaFile;
         } else {
-            return getFromRepo(did, false);
+            return getFromRepo(did);
         }
     }
 
@@ -85,13 +85,18 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
     public void removeOlderThan(Duration duration) {
         OffsetDateTime threshold = OffsetDateTime.now(clock).minus(duration);
         List<DeltaFile> filesToRemove = deltaFileCache.values().stream()
-                .filter(d -> d.getCacheTime().isBefore(threshold))
+                .filter(d -> {
+                    if (d.getCacheTime() == null) {
+                        d.setCacheTime(OffsetDateTime.now(clock));
+                    }
+                    return d.getCacheTime().isBefore(threshold);
+                })
                 .toList();
 
         for (DeltaFile d : filesToRemove) {
             synchronized (didMutexService.getMutex(d.getDid())) {
                 try {
-                    updateRepo(d, false);
+                    updateRepo(d);
                 } catch (Exception ignored) {
                 } finally {
                     remove(d.getDid());
@@ -101,24 +106,28 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
     }
 
     @Override
+    protected void put(DeltaFile deltaFile) {
+        deltaFile.setCacheTime(OffsetDateTime.now(clock));
+        deltaFileCache.put(deltaFile.getDid(), deltaFile);
+    }
+
+    @Override
     public void save(DeltaFile deltaFile) {
         if (!deltaFiPropertiesService.getDeltaFiProperties().isCacheEnabled() ||
-                deltaFile.inactiveStage() || deltaFile.getVersion() == 0) {
+                deltaFile.inactiveStage()) {
             try {
-                updateRepo(deltaFile, false);
+                updateRepo(deltaFile);
             } finally {
                 // prevent infinite loop if there are exceptions
-                // force pulling a fresh copy from mongo on next get
+                // force pulling a fresh copy on next get
                 deltaFileCache.remove(deltaFile.getDid());
             }
         } else if (!deltaFileCache.containsKey(deltaFile.getDid())) {
-            deltaFile.setCacheTime(OffsetDateTime.now(clock));
-            deltaFileCache.put(deltaFile.getDid(), deltaFile);
-            updateRepo(deltaFile, true);
+            updateRepo(deltaFile);
         } else if (deltaFile.getCacheTime().isBefore(OffsetDateTime.now(clock).minus(
                 deltaFiPropertiesService.getDeltaFiProperties().getCacheSyncDuration()))) {
-            deltaFile.setCacheTime(OffsetDateTime.now(clock));
-            updateRepo(deltaFile, true);
+            updateRepo(deltaFile);
         }
     }
+
 }

@@ -17,16 +17,24 @@
  */
 package org.deltafi.core.configuration.ui;
 
+import jakarta.persistence.*;
 import lombok.Data;
-import org.springframework.data.annotation.Id;
+
+import java.util.UUID;
 
 @Data
+@Entity
+@Table(name = "links", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"name", "link_type"})
+})
 public class Link {
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private UUID id;
     private String name;
     private String url;
     private String description;
+    @Enumerated(EnumType.STRING)
     private LinkType linkType;
 
     public enum LinkType {

@@ -8,7 +8,6 @@ data:
     - deltafi-core-worker
     - deltafi-graphite
     - deltafi-loki
-    - deltafi-mongodb
     - deltafi-valkey-master
   Deployment: |
     - deltafi-core
@@ -39,7 +38,6 @@ data:
     - deltafi-loki-headless
     - deltafi-loki-memberlist
     - deltafi-minio
-    - deltafi-mongodb
     - deltafi-valkey-headless
     - deltafi-valkey-master
     - deltafi-ui-service
@@ -50,4 +48,3 @@ data:
     - deltafi-graphite
     - deltafi-loki
     - deltafi-minio
-    - deltafi-mongodb

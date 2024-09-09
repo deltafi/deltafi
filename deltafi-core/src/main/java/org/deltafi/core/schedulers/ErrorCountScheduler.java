@@ -20,8 +20,9 @@ package org.deltafi.core.schedulers;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
-import org.deltafi.core.services.DataSourceService;
 import org.deltafi.core.services.ErrorCountService;
+import org.deltafi.core.services.RestDataSourceService;
+import org.deltafi.core.services.TimedDataSourceService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -29,6 +30,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
 
 @ConditionalOnProperty(value = "schedule.errorCount", havingValue = "true", matchIfMissing = true)
 @Service
@@ -37,7 +40,8 @@ import java.time.Instant;
 public class ErrorCountScheduler {
 
     private final ErrorCountService errorCountService;
-    private final DataSourceService dataSourceService;
+    private final RestDataSourceService restDataSourceService;
+    private final TimedDataSourceService timedDataSourceService;
     private final TaskScheduler taskScheduler;
 
     private static final long INITIAL_DELAY = 5L;
@@ -49,6 +53,8 @@ public class ErrorCountScheduler {
     }
 
     public void populateErrorCounts() {
-        errorCountService.populateErrorCounts(dataSourceService.maxErrorsPerFlow().keySet());
+        Set<String> flowNames = new HashSet<>(restDataSourceService.maxErrorsPerFlow().keySet());
+        flowNames.addAll(timedDataSourceService.maxErrorsPerFlow().keySet());
+        errorCountService.populateErrorCounts(flowNames);
     }
 }

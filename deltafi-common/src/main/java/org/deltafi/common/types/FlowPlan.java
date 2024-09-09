@@ -20,7 +20,6 @@ package org.deltafi.common.types;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Data;
-import org.springframework.data.annotation.Id;
 
 import java.util.List;
 
@@ -33,7 +32,6 @@ import java.util.List;
         @JsonSubTypes.Type(value = RestDataSourcePlan.class, name = "REST_DATA_SOURCE")
 })
 public abstract class FlowPlan {
-    @Id
     private final String name;
     private final FlowType type;
     private final String description;

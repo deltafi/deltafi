@@ -17,18 +17,17 @@
  */
 package org.deltafi.core.types;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.uuid.Generators;
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
+import jakarta.persistence.*;
 import lombok.*;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.types.*;
 import org.deltafi.core.exceptions.UnexpectedFlowException;
+import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.Type;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.Transient;
-import org.springframework.data.annotation.Version;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.Sharded;
-import org.springframework.data.mongodb.core.query.Update;
 
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -39,33 +38,59 @@ import java.util.stream.Stream;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Document("deltaFiles")
-@Sharded
+@Entity
+@Table(name = "delta_files", indexes = {
+        @Index(name = "idx_created", columnList = "created, stage, data_source, normalized_name, egressed, filtered, terminal, ingress_bytes"),
+        @Index(name = "idx_modified", columnList = "modified, stage, data_source, normalized_name, egressed, filtered, terminal, ingress_bytes")
+})
+@NamedEntityGraph(
+        name = "deltaFile.withFlowsAndActions",
+        attributeNodes = {
+                @NamedAttributeNode(value = "flows", subgraph = "flows"),
+                @NamedAttributeNode("annotations")
+        },
+        subgraphs = {
+                @NamedSubgraph(
+                        name = "flows",
+                        attributeNodes = {
+                                @NamedAttributeNode("actions")
+                        }
+                )
+        }
+)
+@DynamicUpdate
 public class DeltaFile {
   @Id
   @Builder.Default
-  private UUID did = UUID.randomUUID();
+  private UUID did = Generators.timeBasedEpochGenerator().generate();
   private String name;
   private String normalizedName;
   private String dataSource;
+  @Type(JsonBinaryType.class)
+  @Column(columnDefinition = "jsonb")
   @Builder.Default
   private List<UUID> parentDids = new ArrayList<>();
   private UUID joinId;
+  @Type(JsonBinaryType.class)
+  @Column(columnDefinition = "jsonb")
   @Builder.Default
   private List<UUID> childDids = new ArrayList<>();
   @Builder.Default
+  @OneToMany(mappedBy = "deltaFile", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+  @JsonManagedReference
+  @OrderBy("number ASC")
   private List<DeltaFileFlow> flows = new ArrayList<>();
   private int requeueCount;
   private long ingressBytes;
   private long referencedBytes;
   private long totalBytes;
-  private DeltaFileStage stage;
+  @Enumerated(EnumType.STRING)
   @Builder.Default
-  private Map<String, String> annotations = new HashMap<>();
+  private DeltaFileStage stage = DeltaFileStage.IN_FLIGHT;
   @Builder.Default
-  private Set<String> annotationKeys = new HashSet<>();
-  @Builder.Default
-  private List<String> egressFlows = new ArrayList<>();
+  @OneToMany(mappedBy = "deltaFile", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+  @JsonManagedReference
+  private List<Annotation> annotations = new ArrayList<>();
   private OffsetDateTime created;
   private OffsetDateTime modified;
   private OffsetDateTime contentDeleted;
@@ -76,33 +101,22 @@ public class DeltaFile {
   private UUID replayDid;
 
   @Builder.Default
-  private boolean inFlight = true;
-  @Builder.Default
   private boolean terminal = false;
   @Builder.Default
   private boolean contentDeletable = false;
 
   @Version
-  @Getter
-  @Setter
-  @JsonIgnore
   private long version;
 
-  @Getter
-  @JsonIgnore
-  @Setter
   @Builder.Default
-  private OffsetDateTime cacheTime = null;
-
   @Transient
-  @Builder.Default
-  private DeltaFile snapshot = null;
-
-  public static final int CURRENT_SCHEMA_VERSION = 1;
-  private int schemaVersion;
+  private OffsetDateTime cacheTime = null;
 
   public DeltaFile(DeltaFile other) {
     this.did = other.did;
+    this.name = other.name;
+    this.normalizedName = other.normalizedName;
+    this.dataSource = other.dataSource;
     this.parentDids = other.parentDids == null ? null : new ArrayList<>(other.parentDids);
     this.joinId = other.joinId;
     this.childDids = other.childDids == null ? null : new ArrayList<>(other.childDids);
@@ -112,9 +126,7 @@ public class DeltaFile {
     this.totalBytes = other.totalBytes;
     this.stage = other.stage;
     this.flows = other.flows == null ? null : other.flows.stream().map(DeltaFileFlow::new).toList();
-    this.annotations = other.annotations == null ? null : new HashMap<>(other.annotations);
-    this.annotationKeys = other.annotationKeys == null ? null :new HashSet<>(other.annotationKeys);
-    this.egressFlows = other.egressFlows == null ? null : new ArrayList<>(other.egressFlows);
+    this.annotations = other.annotations == null ? null : new ArrayList<>(other.annotations);
     this.created = other.created;
     this.modified = other.modified;
     this.contentDeleted = other.contentDeleted;
@@ -123,25 +135,50 @@ public class DeltaFile {
     this.filtered = other.filtered;
     this.replayed = other.replayed;
     this.replayDid = other.replayDid;
-    this.inFlight = other.inFlight;
     this.terminal = other.terminal;
     this.contentDeletable = other.contentDeletable;
     this.version = other.version;
     this.cacheTime = other.cacheTime;
-    this.schemaVersion = other.schemaVersion;
-    this.snapshot = null;
   }
 
-  public void snapshot() {
-    this.snapshot = new DeltaFile(this);
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    
+    DeltaFile other = (DeltaFile) o;
+
+    return requeueCount == other.requeueCount &&
+            ingressBytes == other.ingressBytes &&
+            referencedBytes == other.referencedBytes &&
+            totalBytes == other.totalBytes &&
+            terminal == other.terminal &&
+            contentDeletable == other.contentDeletable &&
+            version == other.version &&
+            Objects.equals(did, other.did) &&
+            Objects.equals(name, other.name) &&
+            Objects.equals(normalizedName, other.normalizedName) &&
+            Objects.equals(dataSource, other.dataSource) &&
+            Objects.equals(parentDids, other.parentDids) &&
+            Objects.equals(joinId, other.joinId) &&
+            Objects.equals(childDids, other.childDids) &&
+            Objects.equals(stage, other.stage) &&
+            Objects.equals(created, other.created) &&
+            Objects.equals(modified, other.modified) &&
+            Objects.equals(contentDeleted, other.contentDeleted) &&
+            Objects.equals(contentDeletedReason, other.contentDeletedReason) &&
+            Objects.equals(egressed, other.egressed) &&
+            Objects.equals(filtered, other.filtered) &&
+            Objects.equals(replayed, other.replayed) &&
+            Objects.equals(replayDid, other.replayDid) &&
+            Objects.equals(cacheTime, other.cacheTime) &&
+            Objects.equals(new ArrayList<>(flows), new ArrayList<>(other.flows)) &&
+            Objects.equals(new ArrayList<>(annotations).stream().sorted().toList(), new ArrayList<>(other.annotations).stream().sorted().toList());
   }
 
-  public Map<String, String> getAnnotations() {
-    return annotations == null ? Collections.emptyMap() : annotations;
-  }
-
-  public Set<String> getAnnotationKeys() {
-    return annotationKeys == null ? Collections.emptySet() : annotationKeys;
+  @Override
+  public int hashCode() {
+    return Objects.hash(did, name, normalizedName, dataSource, parentDids, joinId, childDids, requeueCount, ingressBytes, referencedBytes, totalBytes, stage, created, modified, contentDeleted, contentDeletedReason, egressed, filtered, replayed, replayDid, terminal, contentDeletable, version, cacheTime, new ArrayList<>(flows), new ArrayList<>(annotations));
   }
 
   public void setStage(DeltaFileStage stage) {
@@ -150,8 +187,7 @@ public class DeltaFile {
   }
 
   public void updateFlags() {
-    inFlight = stage == DeltaFileStage.IN_FLIGHT;
-    terminal = !inFlight && unackErrorFlows().isEmpty() && pendingAnnotationFlows().isEmpty();
+    terminal = stage != DeltaFileStage.IN_FLIGHT && unackErrorFlows().isEmpty() && pendingAnnotationFlows().isEmpty();
     contentDeletable = terminal && contentDeleted == null && totalBytes > 0;
   }
 
@@ -177,7 +213,7 @@ public class DeltaFile {
     List<DeltaFileFlow> pendingAnnotations = pendingAnnotationFlows();
 
     if (!pendingAnnotations.isEmpty()) {
-      pendingAnnotations.forEach(deltaFileFlow -> deltaFileFlow.removePendingAnnotations(this.annotationKeys));
+      pendingAnnotations.forEach(deltaFileFlow -> deltaFileFlow.removePendingAnnotations(this.annotations.stream().map(Annotation::getKey).collect(Collectors.toSet())));
       updateFlags();
     }
   }
@@ -191,12 +227,11 @@ public class DeltaFile {
     updateFlags();
   }
 
+  @Transient
   public Set<String> getPendingAnnotations(Set<String> expectedAnnotations) {
     Set<String> pendingAnnotations = expectedAnnotations != null ? new HashSet<>(expectedAnnotations) : new HashSet<>();
 
-    if (annotationKeys != null) {
-      pendingAnnotations.removeAll(annotationKeys);
-    }
+    pendingAnnotations.removeAll(this.annotations.stream().map(Annotation::getKey).collect(Collectors.toSet()));
 
     return pendingAnnotations;
   }
@@ -266,19 +301,18 @@ public class DeltaFile {
     return retries;
   }
 
-  public void addAnnotations(Map<String, String> metadata) {
-    if (null == metadata) {
-      return;
-    }
-
+  public void addAnnotations(Map<String, String> newAnnotations) {
     if (annotations == null) {
-      annotations = new HashMap<>();
+      annotations = new ArrayList<>();
     }
-    this.annotations.putAll(metadata);
-    if (annotationKeys == null) {
-      annotationKeys = new HashSet<>();
+    for (Map.Entry<String, String> newAnnotation : newAnnotations.entrySet()) {
+      Optional<Annotation> maybeAnnotation = annotations.stream().filter(a -> a.getKey().equals(newAnnotation.getKey())).findFirst();
+      if (maybeAnnotation.isPresent()) {
+        maybeAnnotation.get().setValue(newAnnotation.getValue());
+      } else {
+        annotations.add(new Annotation(newAnnotation.getKey(), newAnnotation.getValue(), this));
+      }
     }
-    this.annotationKeys.addAll(metadata.keySet());
   }
 
   public void addAnnotationsIfAbsent(Map<String, String> metadata) {
@@ -286,18 +320,14 @@ public class DeltaFile {
   }
 
   public void addAnnotationIfAbsent(String key, String value) {
-    if (null == key || (annotations != null && annotations.containsKey(key))) {
+    if (key == null || (annotations != null && annotations.stream().anyMatch(a -> a.getKey().equals(key)))) {
       return;
     }
 
     if (annotations == null) {
-      annotations = new HashMap<>();
+      annotations = new ArrayList<>();
     }
-    this.annotations.put(key, value);
-    if (annotationKeys == null) {
-      annotationKeys = new HashSet<>();
-    }
-    this.annotationKeys.add(key);
+    this.annotations.add(new Annotation(key, value, this));
   }
 
   public boolean hasPendingActions() {
@@ -312,14 +342,18 @@ public class DeltaFile {
     return flows.stream().anyMatch(f -> f.hasActionInState(ActionState.JOINING));
   }
 
-  public DeltaFileFlow getFlow(String flowName, int flowId) {
-    return flows.stream().filter(f -> f.getId() == flowId && f.getName().equals(flowName)).findFirst().orElse(null);
+  public DeltaFileFlow getFlow(String flowName) {
+    return flows.stream().filter(f -> f.getName().equals(flowName)).findFirst().orElse(null);
   }
 
-  public DeltaFileFlow getPendingFlow(String flowName, int flowId) {
+  public DeltaFileFlow getFlow(String flowName, UUID flowId) {
+    return flows.stream().filter(f -> f.getId().equals(flowId) && f.getName().equals(flowName)).findFirst().orElse(null);
+  }
+
+  public DeltaFileFlow getPendingFlow(String flowName, UUID flowId) {
     DeltaFileFlow flow = getFlow(flowName, flowId);
     if (flow == null || flow.terminal()) {
-      throw new UnexpectedFlowException(flowName, flowId, did);
+      throw new UnexpectedFlowException(flowName, flowId, did, flow != null);
     }
 
     return flow;
@@ -334,7 +368,7 @@ public class DeltaFile {
     // make sure the expectedAnnotations set is modifiable
     expectedAnnotations = expectedAnnotations != null ? new HashSet<>(expectedAnnotations) : new HashSet<>();
 
-    Set<String> indexedKeys = getAnnotationKeys();
+    Set<String> indexedKeys = annotations.stream().map(Annotation::getKey).collect(Collectors.toSet());
     indexedKeys.forEach(expectedAnnotations::remove);
 
     return expectedAnnotations;
@@ -389,16 +423,6 @@ public class DeltaFile {
     }
   }
 
-  public void clearErrorAcknowledged(OffsetDateTime now) {
-    boolean found = flows.stream()
-            .map(f -> f.clearErrorAcknowledged(now))
-            .reduce(false, (a, b) -> a || b);
-    if (found) {
-      modified = now;
-      updateFlags();
-    }
-  }
-
   public void updateState(OffsetDateTime now) {
     modified = now;
     if (!hasPendingActions()) {
@@ -417,7 +441,7 @@ public class DeltaFile {
   public DeltaFileFlow addFlow(String name, FlowType type, DeltaFileFlow previousFlow, Set<String> subscribedTopics, OffsetDateTime now) {
     DeltaFileFlow flow = DeltaFileFlow.builder()
             .name(name)
-            .id(flows.stream().mapToInt(DeltaFileFlow::getId).max().orElse(0) + 1)
+            .number(flows.stream().mapToInt(DeltaFileFlow::getNumber).max().orElse(0) + 1)
             .type(type)
             .state(DeltaFileFlowState.IN_FLIGHT)
             .created(now)
@@ -434,20 +458,11 @@ public class DeltaFile {
             .depth(previousFlow.getDepth() + 1)
             .testMode(previousFlow.isTestMode())
             .testModeReason(previousFlow.getTestModeReason())
+            .deltaFile(this)
             .build();
     flows.add(flow);
 
-    if (type == FlowType.EGRESS) {
-      egressFlows.add(name);
-    }
-
     return flow;
-  }
-
-  public void removeFlowsNotDescendedFrom(int flowId) {
-    flows.removeIf(f -> !f.getInput().getAncestorIds().contains(flowId));
-    List<Integer> remainingFlowIds = flows.stream().map(DeltaFileFlow::getId).toList();
-    flows.forEach(f -> f.getInput().getAncestorIds().retainAll(remainingFlowIds));
   }
 
   public void setName(String name) {
@@ -455,147 +470,37 @@ public class DeltaFile {
     this.normalizedName = name != null ? name.toLowerCase() : null;
   }
 
-  public Update generateUpdate() {
-    // only update fields that are modified after creation in Java code
-    Update update = new Update();
-    boolean updated = false;
-    // did, name, normalizedName, dataSource, parentDids, and created do not change
-    if (!Objects.equals(this.joinId, snapshot.joinId)) {
-      update.set("joinId", this.joinId);
-      updated = true;
-    }
-    if (!Objects.equals(this.childDids, snapshot.childDids)) {
-      update.set("childDids", this.childDids);
-      updated = true;
-    }
-    if (!Objects.equals(this.flows, snapshot.flows)) {
-      if (flows.size() == snapshot.flows.size()) {
-        for (int i = 0; i < snapshot.flows.size(); i++) {
-          if (!Objects.equals(this.flows.get(i), snapshot.flows.get(i))) {
-            update.set(String.format("flows.%d", i), this.flows.get(i));
-          }
-        }
-      } else {
-        // mongo does not support both sets and pushes in the same update, so we have to send the whole object
-        update.set("flows", this.flows);
-      }
-      updated = true;
-    }
-    if (!Objects.equals(this.requeueCount, snapshot.requeueCount)) {
-      update.set("requeueCount", this.requeueCount);
-      updated = true;
-    }
-    if (!Objects.equals(this.ingressBytes, snapshot.ingressBytes)) {
-      update.set("ingressBytes", this.ingressBytes);
-      updated = true;
-    }
-    if (!Objects.equals(this.referencedBytes, snapshot.referencedBytes)) {
-      update.set("referencedBytes", this.referencedBytes);
-      updated = true;
-    }
-    if (!Objects.equals(this.totalBytes, snapshot.totalBytes)) {
-      update.set("totalBytes", this.totalBytes);
-      updated = true;
-    }
-    if (!Objects.equals(this.stage, snapshot.stage)) {
-      update.set("stage", this.stage);
-      updated = true;
-    }
-    if (!Objects.equals(this.annotations, snapshot.annotations)) {
-      update.set("annotations", this.annotations);
-      updated = true;
-    }
-    if (!Objects.equals(this.annotationKeys, snapshot.annotationKeys)) {
-      update.set("annotationKeys", this.annotationKeys);
-      updated = true;
-    }
-    if (!Objects.equals(this.egressFlows, snapshot.egressFlows)) {
-      update.set("egressFlows", this.egressFlows);
-      updated = true;
-    }
-    if (!Objects.equals(this.modified, snapshot.modified)) {
-      update.set("modified", this.modified);
-      updated = true;
-    }
-    if (!Objects.equals(this.contentDeleted, snapshot.contentDeleted)) {
-      update.set("contentDeleted", this.contentDeleted);
-      updated = true;
-    }
-    if (!Objects.equals(this.contentDeletedReason, snapshot.contentDeletedReason)) {
-      update.set("contentDeletedReason", this.contentDeletedReason);
-      updated = true;
-    }
-    if (!Objects.equals(this.egressed, snapshot.egressed)) {
-      update.set("egressed", this.egressed);
-      updated = true;
-    }
-    if (!Objects.equals(this.filtered, snapshot.filtered)) {
-      update.set("filtered", this.filtered);
-      updated = true;
-    }
-    if (!Objects.equals(this.replayed, snapshot.replayed)) {
-      update.set("replayed", this.replayed);
-      updated = true;
-    }
-    if (!Objects.equals(this.replayDid, snapshot.replayDid)) {
-      update.set("replayDid", this.replayDid);
-      updated = true;
-    }
-    if (!Objects.equals(this.inFlight, snapshot.inFlight)) {
-      update.set("inFlight", this.inFlight);
-      updated = true;
-    }
-    if (!Objects.equals(this.terminal, snapshot.terminal)) {
-      update.set("terminal", this.terminal);
-      updated = true;
-    }
-    if (!Objects.equals(this.contentDeletable, snapshot.contentDeletable)) {
-      update.set("contentDeletable", this.contentDeletable);
-      updated = true;
-    }
-    if (!Objects.equals(this.schemaVersion, snapshot.schemaVersion)) {
-      update.set("schemaVersion", this.schemaVersion);
-      updated = true;
-    }
-
-    if (!updated) {
-      return null;
-    }
-
-    update.set("version", this.version + 1);
-
-    return update;
-  }
-
   /**
    * Create the ActionInput that should be sent to an Action
-   * @param flow the flow on which the Action is specified
    * @param actionConfiguration Configured action
+   * @param flow the flow on which the Action is specified
+   * @param action the action
    * @param systemName system name to set in context
    * @param returnAddress the unique address of this core instance
-   * @param action the action
    * @param memo memo to set in the context
    * @return ActionInput containing the ActionConfiguration
    */
   public WrappedActionInput buildActionInput(ActionConfiguration actionConfiguration, DeltaFileFlow flow, Action action, String systemName,
                                              String returnAddress, String memo) {
     WrappedActionInput actionInput = buildActionInput(actionConfiguration, flow, List.of(), action, systemName, returnAddress, memo);
-    actionInput.setDeltaFileMessages(List.of(new DeltaFileMessage(flow.getMetadata(), flow.lastContent())));
+    actionInput.setDeltaFileMessages(List.of(new DeltaFileMessage(flow.getMetadata(), flow.lastContent().stream().map(c -> new Content(c.getName(), c.getMediaType(), c.getSegments())).toList())));
     return actionInput;
   }
 
   /**
    * Create the ActionInput that should be sent to an Action
-   * @param flow the flow on which the Action is specified
    * @param actionConfiguration Configured action
+   * @param flow the flow on which the Action is specified
+   * @param joinedDids the list of dids that were combined to create the child, or an empty list
+   * @param action the action
    * @param systemName system name to set in context
    * @param returnAddress the unique address of this core instance
-   * @param action the action
    * @param memo memo to set in the context
    * @return ActionInput containing the ActionConfiguration
    */
   public WrappedActionInput buildActionInput(ActionConfiguration actionConfiguration, DeltaFileFlow flow, List<UUID> joinedDids, Action action, String systemName,
                                              String returnAddress, String memo) {
+    Map<String, Object> actionParameters = actionConfiguration.getParameters() == null ? Collections.emptyMap() : actionConfiguration.getParameters();
     return WrappedActionInput.builder()
             .queueName(actionConfiguration.getType())
             .actionContext(ActionContext.builder()
@@ -612,10 +517,19 @@ public class DeltaFile {
                     .memo(memo)
                     .build())
             .deltaFile(this)
-            .actionParams(actionConfiguration.getInternalParameters())
+            .actionParams(actionParameters)
             .returnAddress(returnAddress)
             .actionCreated(action.getCreated())
             .coldQueued(action.getState() == ActionState.COLD_QUEUED)
             .build();
+  }
+
+  public Map<String, String> annotationMap() {
+    return annotations.stream().collect(Collectors.toMap(Annotation::getKey, Annotation::getValue));
+  }
+
+  @Transient
+  public List<String> getEgressFlows() {
+    return flows.stream().filter(f -> f.getType() == FlowType.EGRESS).map(DeltaFileFlow::getName).distinct().toList();
   }
 }

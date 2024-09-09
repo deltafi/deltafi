@@ -13,37 +13,36 @@ deltafi:
     trustStoreName: trustStore.jks
     trustStoreType: JKS
   core_actions:
-    image: deltafi/deltafi-core-actions:2.0-rc11
+    image: deltafi/deltafi-core-actions:2.0-beta21
   core:
-    image: deltafi/deltafi-core:2.0-rc11
-    mongo_host: deltafi-mongodb
+    image: deltafi/deltafi-core:2.0-beta21
   docs:
-    image: deltafi/deltafi-docs:2.0-rc11
+    image: deltafi/deltafi-docs:2.0-beta21
     enabled: true
   ingress:
     envVar:
       HTTP_MAX_BODY_SIZE: 5G
   auth:
-    image: deltafi/deltafi-auth:2.0-rc11
+    image: deltafi/deltafi-auth:2.0-beta21
     mode: basic # basic, cert, or disabled
     secret: auth-secret
     entityResolver:
       enabled: false
-      image: deltafi/deltafi-entity-resolver:2.0-rc11
+      image: deltafi/deltafi-entity-resolver:2.0-beta21
       url: http://127.0.0.1:8080/
   api:
-    image: deltafi/deltafi-api:2.0-rc11
+    image: deltafi/deltafi-api:2.0-beta21
   ui:
-    image: deltafi/deltafi-ui:2.0-rc11
+    image: deltafi/deltafi-ui:2.0-beta21
   egress_sink:
     enabled: true
-    image: deltafi/deltafi-egress-sink:2.0-rc11
+    image: deltafi/deltafi-egress-sink:2.0-beta21
   nodemonitor:
-    image: deltafi/deltafi-nodemonitor:2.0-rc11
+    image: deltafi/deltafi-nodemonitor:2.0-beta21
     period: 9
   clustermonitor:
     enabled: true
-    image: deltafi/deltafi-clustermonitor:2.0-rc11
+    image: deltafi/deltafi-clustermonitor:2.0-beta21
     period: 9
 
 # Kubernetes ingress config
@@ -80,27 +79,6 @@ minio:
   metrics:
     serviceMonitor:
       public: true
-# MongoDB config
-mongodb:
-  image:
-    repository: bitnami/mongodb
-    tag: 5.0.17
-  architecture: standalone
-  useStatefulSet: true
-  auth:
-    existingSecret: mongodb-passwords
-    enabled: true
-    database: deltafi
-    username: mongouser
-  service:
-    type: NodePort
-  persistence:
-    enabled: true
-    existingClaim: deltafi-mongodb
-  volumePermissions:
-    enabled: true
-  nodeSelector:
-    node-role.deltafi.org/storage: "true"
 # Redis config
 redis:
   nameOverride: valkey
@@ -313,22 +291,6 @@ promtail:
               stages:
               - static_labels:
                   level: "ERROR"
-        # Squelch/categorize mongodb noise
-        - match:
-              selector: '{ app="mongodb" }'
-              stages:
-                - drop:
-                    expression: "Connection accepted|Connection ended|client metadata"
-        - match:
-              selector: '{ app="mongodb" } |= "WiredTiger message"'
-              stages:
-              - static_labels:
-                  level: "DEBUG"
-        - match:
-              selector: '{ app="mongodb" } |= "Slow query"'
-              stages:
-              - static_labels:
-                  level: "DEBUG"
         # Squelch nasty graphite debug logs
         - match:
             selector: '{app="graphite"}'
@@ -384,9 +346,6 @@ loki:
       - selector: '{container="deltafi-monitor"}'
         priority: 4
         period: 96h
-      - selector: '{container="mongodb"}'
-        priority: 5
-        period: 168h
       - selector: '{app="kubernetes-dashboard"}'
         priority: 6
         period: 96h
@@ -438,6 +397,14 @@ clickhouse:
   auth:
     existingSecret: clickhouse-password
     existingSecretKey: clickhouse-password
+
+# Postgres Configuration
 postgres:
-  version: 16.3
-  enabled: false
+  version: 16
+  resources:
+    requests:
+     cpu:
+     memory:
+    limits:
+     cpu:
+     memory:

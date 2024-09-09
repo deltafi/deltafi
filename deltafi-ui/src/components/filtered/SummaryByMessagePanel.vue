@@ -24,9 +24,9 @@
         <span class="fas fa-bars" />
       </Button>
       <Menu ref="menu" :model="menuItems" :popup="true" />
-      <Paginator v-if="filteresCause.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalFilteredMessage" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)"></Paginator>
+      <Paginator v-if="filteredCause.length > 0" :rows="perPage" template="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" current-page-report-template="{first} - {last} of {totalRecords}" :total-records="totalFilteredMessage" :rows-per-page-options="[10, 20, 50, 100, 1000]" style="float: left" @page="onPage($event)"></Paginator>
     </template>
-    <DataTable id="filteredSummaryTable" v-model:selection="selectedFilters" responsive-layout="scroll" selection-mode="multiple" data-key="dids" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="filteresCause" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalFilteredMessage" :row-hover="true" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
+    <DataTable id="filteredSummaryTable" v-model:selection="selectedFilters" responsive-layout="scroll" selection-mode="multiple" data-key="dids" class="p-datatable-gridlines p-datatable-sm" striped-rows :meta-key-selection="false" :value="filteredCause" :loading="loading" :rows="perPage" :lazy="true" :total-records="totalFilteredMessage" :row-hover="true" @row-contextmenu="onRowContextMenu" @sort="onSort($event)">
       <template #empty>No results to display.</template>
       <template #loading>Loading. Please wait...</template>
       <Column field="flow" header="Data Source" :sortable="true" class="filename-column"> </Column>
@@ -59,11 +59,10 @@ const hasSomePermissions = inject("hasSomePermissions");
 const retryResumeDialog = ref();
 const loading = ref(true);
 const menu = ref();
-const filteresCause = ref([]);
+const filteredCause = ref([]);
 const totalFilteredMessage = ref(0);
 const offset = ref(0);
 const perPage = ref();
-const sortField = ref("modified");
 const sortDirection = ref("DESC");
 const selectedFilters = ref([]);
 const emit = defineEmits(["refreshFilters", "changeTab:filteredCause:flowSelected"]);
@@ -87,7 +86,7 @@ const menuItems = ref([
     label: "Select All Visible",
     icon: "fas fa-check-double fa-fw",
     command: () => {
-      selectedFilters.value = filteresCause.value;
+      selectedFilters.value = filteredCause.value;
     },
   },
   {
@@ -111,10 +110,10 @@ onMounted(async () => {
   setupWatchers();
 });
 
-const { data: response, fetchByMessage: getFilteredByMessage } = useFiltered();
+const { data: response, fetchFilteredSummaryByMessage } = useFiltered();
 
-const showAll = (filteredCause, flowSel) => {
-  emit("changeTab:filteredCause:flowSelected", filteredCause, flowSel);
+const showAll = (filteredMessage, flowSelected) => {
+  emit("changeTab:filteredCause:flowSelected", filteredMessage, flowSelected);
 };
 
 const filterSelectedDids = computed(() => {
@@ -130,8 +129,8 @@ const fetchFilteresMessages = async () => {
   getPersistedParams();
   let dataSourceFlowName = props.dataSourceFlowName != null ? props.dataSourceFlowName : null;
   loading.value = true;
-  await getFilteredByMessage(offset.value, perPage.value, sortField.value, sortDirection.value, dataSourceFlowName);
-  filteresCause.value = response.value.countPerMessage;
+  await fetchFilteredSummaryByMessage(offset.value, perPage.value, sortDirection.value, dataSourceFlowName);
+  filteredCause.value = response.value.countPerMessage;
   totalFilteredMessage.value = response.value.totalCount;
   loading.value = false;
 };
@@ -157,7 +156,6 @@ defineExpose({
 const onSort = (event) => {
   offset.value = event.first;
   perPage.value = event.rows;
-  sortField.value = event.sortField;
   sortDirection.value = event.sortOrder > 0 ? "DESC" : "ASC";
   fetchFilteresMessages();
 };

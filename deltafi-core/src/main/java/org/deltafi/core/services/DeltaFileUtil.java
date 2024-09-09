@@ -17,15 +17,11 @@
  */
 package org.deltafi.core.services;
 
-import org.deltafi.common.types.Action;
 import org.deltafi.common.types.ActionConfiguration;
+import org.deltafi.core.types.*;
 import org.deltafi.common.types.ActionState;
-import org.deltafi.core.types.WrappedActionInput;
-import org.deltafi.core.types.DeltaFile;
-import org.deltafi.common.types.DeltaFileFlow;
-import org.deltafi.common.types.DeltaFileFlowState;
 import org.deltafi.common.types.DeltaFileStage;
-import org.deltafi.core.join.JoinEntry;
+import org.deltafi.core.types.JoinEntry;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -44,8 +40,8 @@ public class DeltaFileUtil {
 
         DeltaFile aggregate = DeltaFile.builder()
                 .version(0)
-                .schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
                 .did(joinEntry.getId())
+                .name("multiple")
                 .parentDids(joinedDids)
                 .stage(DeltaFileStage.IN_FLIGHT)
                 .joinId(joinEntry.getId())
@@ -54,27 +50,24 @@ public class DeltaFileUtil {
                 .created(now)
                 .modified(now)
                 .flows(List.of(aggregateFlow)).build();
-
-        aggregate.setName("multiple");
+        aggregateFlow.setDeltaFile(aggregate);
 
         return aggregate.buildActionInput(joinAction, aggregateFlow, joinedDids, aggregateAction, systemName, returnAddress, null);
     }
 
     private static DeltaFileFlow aggregateDeltaFileFlow(DeltaFileFlow currentFlow, OffsetDateTime now, int flowDepth) {
-        DeltaFileFlow aggregateFlow = new DeltaFileFlow();
-        aggregateFlow.setName(currentFlow.getName());
-        aggregateFlow.setId(0);
-        aggregateFlow.setDepth(flowDepth);
-        aggregateFlow.setState(DeltaFileFlowState.IN_FLIGHT);
-        aggregateFlow.setType(currentFlow.getType());
-        aggregateFlow.setCreated(now);
-        aggregateFlow.setModified(now);
-        aggregateFlow.setFlowPlan(currentFlow.getFlowPlan());
-        aggregateFlow.setTestMode(currentFlow.isTestMode());
-        String testModeReason = currentFlow.isTestMode() ? currentFlow.getName() : currentFlow.getTestModeReason();
-        aggregateFlow.setTestModeReason(testModeReason);
-        aggregateFlow.setActionConfigurations(new ArrayList<>(currentFlow.getActionConfigurations()));
-        currentFlow.getActionConfigurations().clear();
-        return aggregateFlow;
+        return DeltaFileFlow.builder()
+                .name(currentFlow.getName())
+                .number(0)
+                .depth(flowDepth)
+                .state(DeltaFileFlowState.IN_FLIGHT)
+                .type(currentFlow.getType())
+                .created(now)
+                .modified(now)
+                .flowPlan(currentFlow.getFlowPlan())
+                .testMode(currentFlow.isTestMode())
+                .testModeReason(currentFlow.isTestMode() ? currentFlow.getName() : currentFlow.getTestModeReason())
+                .pendingActions(new ArrayList<>(currentFlow.getPendingActions()))
+                .build();
     }
 }

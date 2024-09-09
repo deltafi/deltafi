@@ -18,51 +18,44 @@
 package org.deltafi.core.types;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
+import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.ActionFamily;
 import org.deltafi.common.types.Rule;
 import org.deltafi.common.types.Subscriber;
-import org.deltafi.common.types.TransformActionConfiguration;
-import org.deltafi.core.generated.types.ActionFamily;
-import org.springframework.data.mongodb.core.mapping.Document;
+import org.deltafi.common.types.ActionConfiguration;
+import org.hibernate.annotations.Type;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-@Document
+@Entity
+@DiscriminatorValue("TRANSFORM")
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class TransformFlow extends Flow implements Subscriber, Publisher {
-    private List<TransformActionConfiguration> transformActions = new ArrayList<>();
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
+    private List<ActionConfiguration> transformActions = new ArrayList<>();
+
     @JsonProperty(required = true)
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
     private Set<Rule> subscribe;
+
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
     private PublishRules publish;
 
-    /**
-     * Schema versions:
-     * 0 - original
-     * 1 - skipped
-     * 2 - separate flow and action name
-     */
-    public static final int CURRENT_SCHEMA_VERSION = 2;
-    private int schemaVersion;
-
-    @Override
-    public boolean migrate() {
-        if (schemaVersion < 2) {
-            transformActions.forEach(this::migrateAction);
-        }
-
-        if (schemaVersion < CURRENT_SCHEMA_VERSION) {
-            schemaVersion = CURRENT_SCHEMA_VERSION;
-            return true;
-        }
-
-        return false;
+    public TransformFlow() {
+        super(null, FlowType.TRANSFORM, null, null);
     }
 
     @Override
@@ -72,7 +65,11 @@ public class TransformFlow extends Flow implements Subscriber, Publisher {
 
     @Override
     public List<ActionConfiguration> allActionConfigurations() {
-        return new ArrayList<>(transformActions);
+        List<ActionConfiguration> actionConfigurations = new ArrayList<>();
+        if (transformActions != null) {
+            actionConfigurations.addAll(transformActions);
+        }
+        return actionConfigurations;
     }
 
     @Override

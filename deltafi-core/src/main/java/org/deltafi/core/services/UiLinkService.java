@@ -17,21 +17,19 @@
  */
 package org.deltafi.core.services;
 
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.core.configuration.ui.Link;
 import org.deltafi.core.exceptions.ValidationException;
 import org.deltafi.core.repo.UiLinkRepo;
-import org.deltafi.core.snapshot.SnapshotRestoreOrder;
-import org.deltafi.core.snapshot.Snapshotter;
-import org.deltafi.core.snapshot.SystemSnapshot;
 import org.deltafi.core.types.Result;
-import org.springframework.dao.DuplicateKeyException;
+import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Objects;
-
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -39,20 +37,15 @@ public class UiLinkService implements Snapshotter {
 
     private final UiLinkRepo uiLinkRepo;
 
-    @PostConstruct
-    public void init() {
-        uiLinkRepo.ensureAllIndices();
-    }
-
     public Link saveLink(Link link) {
         try {
             return uiLinkRepo.save(link);
-        } catch (DuplicateKeyException e) {
+        } catch (DataIntegrityViolationException e) {
             throw new ValidationException("A link of type '" + link.getLinkType() + "' with a name of '" + link.getName() + "' already exists");
         }
     }
 
-    public boolean removeLink(String id) {
+    public boolean removeLink(UUID id) {
         if (uiLinkRepo.existsById(id)) {
             uiLinkRepo.deleteById(id);
             return true;

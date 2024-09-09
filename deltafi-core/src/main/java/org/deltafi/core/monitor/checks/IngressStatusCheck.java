@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.monitor.checks;
 
+import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.exceptions.StorageCheckException;
 import org.deltafi.core.generated.types.DataSourceErrorState;
 import org.deltafi.core.monitor.MonitorProfile;
@@ -25,28 +26,33 @@ import org.deltafi.core.services.*;
 import org.deltafi.core.types.Event;
 import org.deltafi.core.types.Event.Severity;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @MonitorProfile
+@Slf4j
 public class IngressStatusCheck extends StatusCheck {
 
     private final EventService eventService;
     private final SystemService systemService;
-    private final DataSourceService dataSourceService;
+    private final RestDataSourceService restDataSourceService;
+    private final TimedDataSourceService timedDataSourceService;
     private final DeltaFiPropertiesService propertiesService;
 
     private boolean ingressDisabledByStorage = false;
     private Set<String> disabledFlows = new HashSet<>();
 
     public IngressStatusCheck(EventService eventService, SystemService systemService,
-                              DataSourceService dataSourceService, DeltaFiPropertiesService deltaFiPropertiesService) {
+                              RestDataSourceService restDataSourceService, TimedDataSourceService timedDataSourceService,
+                              DeltaFiPropertiesService deltaFiPropertiesService) {
         super("Ingress Status Check");
         this.eventService = eventService;
         this.systemService = systemService;
-        this.dataSourceService = dataSourceService;
+        this.restDataSourceService = restDataSourceService;
+        this.timedDataSourceService = timedDataSourceService;
         this.propertiesService = deltaFiPropertiesService;
     }
 
@@ -97,7 +103,8 @@ public class IngressStatusCheck extends StatusCheck {
     }
 
     private void checkForDisabledFlows(ResultBuilder resultBuilder) {
-        List<DataSourceErrorState> errorsExceededFlows = dataSourceService.dataSourceErrorsExceeded();
+        List<DataSourceErrorState> errorsExceededFlows = new ArrayList<>(restDataSourceService.dataSourceErrorsExceeded());
+        errorsExceededFlows.addAll(timedDataSourceService.dataSourceErrorsExceeded());
         Set<String> errorsExceededFlowNames = errorsExceededFlows.stream()
                 .map(DataSourceErrorState::getName).collect(Collectors.toSet());
 

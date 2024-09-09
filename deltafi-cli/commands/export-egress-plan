@@ -19,7 +19,6 @@ PLANNAME=${ARGS[@]:1}
 
 QUERY="fragment ActionFields on ActionConfiguration {
           name
-          actionType
           type
           parameters
         }

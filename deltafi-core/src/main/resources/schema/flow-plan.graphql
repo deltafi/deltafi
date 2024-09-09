@@ -60,7 +60,7 @@ type EgressFlowPlan {
   description: String!
   sourcePlugin: PluginCoordinates!
   subscribe: [Rule!]!
-  egressAction: EgressActionConfiguration!
+  egressAction: ActionConfiguration!
 }
 
 input EgressFlowPlanInput {
@@ -68,7 +68,7 @@ input EgressFlowPlanInput {
   type: String!
   description: String!
   subscribe: [RuleInput!]!
-  egressAction: EgressActionConfigurationInput!
+  egressAction: ActionConfigurationInput!
 }
 
 interface DataSourcePlan {
@@ -85,7 +85,7 @@ type TimedDataSourcePlan implements DataSourcePlan {
   description: String!
   sourcePlugin: PluginCoordinates!
   topic: String!
-  timedIngressAction: TimedIngressActionConfiguration!
+  timedIngressAction: ActionConfiguration!
   cronSchedule: String
 }
 
@@ -102,7 +102,7 @@ input TimedDataSourcePlanInput {
   type: String!
   description: String!
   topic: String!
-  timedIngressAction: TimedIngressActionConfigurationInput!
+  timedIngressAction: ActionConfigurationInput!
   cronSchedule: String
 }
 
@@ -119,7 +119,7 @@ type TransformFlowPlan {
   description: String!
   sourcePlugin: PluginCoordinates!
   subscribe: [Rule!]!
-  transformActions: [TransformActionConfiguration!]
+  transformActions: [ActionConfiguration!]
   publish: PublishRules!
 }
 
@@ -128,7 +128,7 @@ input TransformFlowPlanInput {
   type: String!
   description: String!
   subscribe: [RuleInput!]!
-  transformActions: [TransformActionConfigurationInput!]
+  transformActions: [ActionConfigurationInput!]
   publish: PublishRulesInput!
 }
 
@@ -162,19 +162,22 @@ type Flows {
   sourcePlugin: PluginCoordinates!
   variables: [Variable]
   egressFlows: [EgressFlow]
-  dataSources: [DataSource]
+  restDataSources: [RestDataSource]
+  timedDataSources: [TimedDataSource]
   transformFlows: [TransformFlow]
 }
 
 type SystemFlows {
   egress: [EgressFlow]!
-  dataSource: [DataSource]!
+  restDataSource: [RestDataSource]!
+  timedDataSource: [TimedDataSource]!
   transform: [TransformFlow]!
 }
 
 type SystemFlowPlans {
   egressPlans: [EgressFlowPlan]!
-  dataSources: [DataSourcePlan]!
+  restDataSources: [RestDataSourcePlan]!
+  timedDataSources: [TimedDataSourcePlan]!
   transformPlans: [TransformFlowPlan]!
 }
 
@@ -185,7 +188,7 @@ type EgressFlow {
   flowStatus: FlowStatus!
   subscribe: [Rule!]!
   expectedAnnotations: [String]
-  egressAction: EgressActionConfiguration!
+  egressAction: ActionConfiguration!
   variables: [Variable]!
 }
 
@@ -221,7 +224,7 @@ type TimedDataSource implements DataSource {
   executeImmediate: Boolean
   ingressStatus: IngressStatus
   ingressStatusMessage: String
-  timedIngressAction: TimedIngressActionConfiguration!
+  timedIngressAction: ActionConfiguration!
   variables: [Variable]!
 }
 
@@ -241,7 +244,8 @@ type TransformFlow {
   sourcePlugin: PluginCoordinates!
   subscribe: [Rule!]!
   flowStatus: FlowStatus!
-  transformActions: [TransformActionConfiguration!]
+  maxErrors: Int!
+  transformActions: [ActionConfiguration!]
   publish: PublishRules
   variables: [Variable]!
 }
@@ -254,7 +258,8 @@ type ActionFamily {
 type FlowNames {
   egress: [String]!
   transform: [String]!
-  dataSource: [String]!
+  restDataSource: [String]!
+  timedDataSource: [String]!
 }
 
 type DataSourceErrorState {

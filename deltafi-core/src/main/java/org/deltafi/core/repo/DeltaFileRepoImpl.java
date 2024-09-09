@@ -17,1113 +17,931 @@
  */
 package org.deltafi.core.repo;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.collect.Lists;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.result.UpdateResult;
+import jakarta.persistence.*;
+import jakarta.persistence.criteria.*;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.jdbc.core.PreparedStatementCallback;
+import org.springframework.jdbc.core.PreparedStatementCreator;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.bson.BsonValue;
-import org.bson.Document;
-import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.types.*;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.UncategorizedMongoDbException;
-import org.springframework.data.mongodb.core.BulkOperations;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.*;
-import org.springframework.data.mongodb.core.index.Index;
-import org.springframework.data.mongodb.core.index.IndexInfo;
-import org.springframework.data.mongodb.core.index.IndexOperations;
-import org.springframework.data.mongodb.core.index.PartialIndexFilter;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
-import org.springframework.util.StringUtils;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.*;
 
-import static org.apache.commons.lang3.BooleanUtils.isFalse;
-import static org.apache.commons.lang3.BooleanUtils.isTrue;
 import static org.deltafi.common.types.ActionState.*;
-import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 
-@SuppressWarnings("unused")
+@Repository
 @RequiredArgsConstructor
 @Slf4j
 public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
-    public static final String ID = "_id";
-    public static final String VERSION = "version";
-    public static final String PARENT_DIDS = "parentDids";
-    public static final String MODIFIED = "modified";
     public static final String CREATED = "created";
     public static final String STAGE = "stage";
-    public static final String STATE = "state";
     public static final String NAME = "name";
-    public static final String ACTIONS_METADATA = "actions.metadata";
-    public static final String ACTIONS_DELETE_METADATA_KEYS = "actions.deleteMetadataKeys";
     public static final String CONTENT_DELETED = "contentDeleted";
-    public static final String CONTENT_DELETED_REASON = "contentDeletedReason";
-    public static final String KEY = "key";
-    public static final String VALUE = "value";
     public static final String DATA_SOURCE = "dataSource";
-    public static final String ERROR_CAUSE = "errorCause";
-    public static final String FILTERED_CAUSE = "filteredCause";
-    public static final String ERROR_ACKNOWLEDGED = "errorAcknowledged";
     public static final String EGRESSED = "egressed";
-    public static final String EGRESS_FLOWS = "egressFlows";
     public static final String FILTERED = "filtered";
-    public static final String PENDING_ANNOTATIONS = "flows.pendingAnnotations";
-    public static final String FIRST_PENDING_ANNOTATIONS = "flows.pendingAnnotations.0";
-    public static final String TEST_MODE = "flows.testMode";
     public static final String REFERENCED_BYTES = "referencedBytes";
     public static final String TOTAL_BYTES = "totalBytes";
     public static final String INGRESS_BYTES = "ingressBytes";
     public static final String REPLAYED = "replayed";
     public static final String REQUEUE_COUNT = "requeueCount";
-    public static final String NEXT_AUTO_RESUME = "nextAutoResume";
-    public static final String NORMALIZED_NAME = "normalizedName";
-    public static final String FORMATTED_DATA_FILENAME = "formattedData.content.name";
-    public static final String FORMATTED_DATA_FORMAT_ACTION = "formattedData.formatAction";
-    public static final String FORMATTED_DATA_METADATA = "formattedData.metadata";
-    public static final String FORMATTED_DATA_EGRESS_ACTIONS = "formattedData.egressActions";
-    public static final String FLOWS_INPUT_METADATA = "flows.input.metadata";
-    public static final String FLOWS_NAME = "flows.name";
-    public static final String FLOWS_STATE = "flows.state";
-    public static final String FLOWS_ACTIONS = "flows.actions";
-    public static final String FLOWS_ACTIONS_NAME = "flows.actions.name";
-    public static final String FLOWS_ACTIONS_STATE = "flows.actions.state";
-    public static final String FLOWS_ACTIONS_TYPE = "flows.actions.type";
-    public static final String FLOWS_ACTIONS_METADATA = "flows.actions.metadata";
-    public static final String FLOWS_ACTIONS_DELETE_METADATA_KEYS = "flows.actions.deleteMetadataKeys";
-    public static final String ACTIONS_ATTEMPT = "actions.attempt";
-    public static final String ACTIONS_ERROR_CAUSE = "flows.actions.errorCause";
-    public static final String ACTIONS_FILTERED_CAUSE = "flows.actions.filteredCause";
-    public static final String ACTIONS_NAME = "flows.actions.name";
-    public static final String ACTIONS_TYPE = "flows.actions.type";
-    public static final String ACTIONS_STATE = "flows.actions.state";
-    public static final String ACTIONS_MODIFIED = "flows.actions.modified";
-    public static final String ACTION_MODIFIED = "action.modified";
-    public static final String ACTION_STATE = "action.state";
-    public static final String ACTIONS_UPDATE_STATE = "flows.$[flow].actions.$[action].state";
-    public static final String ACTIONS_UPDATE_MODIFIED = "flows.$[flow].actions.$[action].modified";
-    public static final String ACTIONS_UPDATE_QUEUED = "flows.$[flow].actions.$[action].queued";
-    public static final String ACTIONS_UPDATE_ERROR = "flows.$[flow].actions.$[action].errorCause";
-    public static final String ACTIONS_UPDATE_ERROR_CONTEXT = "flows.$[flow].actions.$[action].errorContext";
-    public static final String ACTIONS_UPDATE_HISTORY = "flows.$[flow].actions.$[action].history";
-    private static final String COLLECTION = "deltaFiles";
-    private static final String TTL_INDEX_NAME = "ttl_index";
-    private static final String SCHEMA_VERSION = "schemaVersion";
-    // Aggregation variables
-    private static final String COUNT_FOR_PAGING = "countForPaging";
-    private static final String COUNT_LOWER_CASE = "count";
     private static final String DID = "did";
-    private static final String DIDS = "dids";
-    private static final String ERROR_MESSAGE = "errorMessage";
-    private static final String FLOW_LOWER_CASE = "flow";
     private static final String FLOWS = "flows";
-    private static final String FLOW_STATE = "flow.state";
-    private static final String GROUP_COUNT = "groupCount";
-    private static final String ID_ERROR_MESSAGE = ID + "." + ERROR_MESSAGE;
-    private static final String ID_DATA_SOURCE = ID + "." + DATA_SOURCE;
-    private static final String UNWIND_STATE = "unwindState";
-    public static final String ANNOTATIONS = "annotations";
-    public static final String ANNOTATION_KEYS = "annotationKeys";
-
-    private static final String ACTION_SEGMENTS = "flows.actions.content.segments";
-
-    private static final String CUMULATIVE_BYTES = "cumulativeBytes";
-    private static final String OVER = "over";
-    private static final String CUMULATIVE_OVER = "cumulativeOver";
-
-    private static final String IN_FLIGHT = "inFlight";
-    private static final String IN_FLIGHT_COUNT = "inFlightCount";
-    private static final String IN_FLIGHT_BYTES = "inFlightBytes";
-
     private static final String TERMINAL = "terminal";
-    private static final String CONTENT_DELETABLE = "contentDeletable";
-
-    private static final String CREATED_BEFORE_INDEX = "created_before_index";
-    private static final String TERMINAL_INDEX = "terminal_index";
-
-    public static final int MAX_COUNT = 50_000;
     public static final String TYPE = "type";
 
-    static class FlowCountAndDids {
-        String dataSource;
-        int groupCount;
-        List<UUID> dids;
-    }
+    // a magic number known by the GUI that says there are "many" total results
+    private static final int MANY_RESULTS = 10_000;
 
-    static class MessageFlowGroup {
-        TempGroupId id;
-        int groupCount;
-        List<UUID> dids;
-
-        static class TempGroupId {
-            String errorMessage;
-            String dataSource;
-        }
-    }
-
-    private static final Map<String, Index> INDICES;
-    static {
-        INDICES = new HashMap<>();
-        INDICES.put(CREATED_BEFORE_INDEX, new Index().named(CREATED_BEFORE_INDEX).on(CREATED, Sort.Direction.ASC).on(DATA_SOURCE, Sort.Direction.ASC));
-        INDICES.put("modified_before_index", new Index().named("modified_before_index").on(MODIFIED, Sort.Direction.ASC).on(DATA_SOURCE, Sort.Direction.ASC));
-        INDICES.put("auto_resume_index", new Index().named("auto_resume_index").on(NEXT_AUTO_RESUME, Sort.Direction.ASC).on(STAGE, Sort.Direction.ASC));
-        INDICES.put("flow_first_index", new Index().named("flow_first_index").on(DATA_SOURCE, Sort.Direction.ASC).on(NORMALIZED_NAME, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
-        INDICES.put("metadata_index", new Index().named("metadata_index").on(ANNOTATIONS + ".$**", Sort.Direction.ASC));
-        INDICES.put("metadata_keys_index", new Index().named("metadata_keys_index").on(ANNOTATION_KEYS, Sort.Direction.ASC).sparse());
-        INDICES.put("pending_annotations_index", new Index().named("pending_annotations_index").on(PENDING_ANNOTATIONS, Sort.Direction.ASC).sparse());
-        INDICES.put("egress_flow_index", new Index().named("egress_flow_index").on(EGRESS_FLOWS, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
-        INDICES.put("ingress_bytes_index", new Index().named("ingress_bytes_index").on(INGRESS_BYTES, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
-        INDICES.put("in_flight_index", new Index().named("in_flight_index").on(IN_FLIGHT, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(IN_FLIGHT).is(true))));
-        INDICES.put(TERMINAL_INDEX, new Index().named(TERMINAL_INDEX).on(TERMINAL, Sort.Direction.ASC).on(DATA_SOURCE, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC));
-        INDICES.put("content_deletable_index", new Index().named("content_deletable_index").on(CONTENT_DELETABLE, Sort.Direction.ASC).on(DATA_SOURCE, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(CONTENT_DELETABLE).is(true))));
-
-        // partial index to support finding DeltaFiles that are pending annotations
-        INDICES.put("first_pending_annotations_index", new Index().named("first_pending_annotations_index")
-                .on(FIRST_PENDING_ANNOTATIONS, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(FIRST_PENDING_ANNOTATIONS).exists(true))).on(MODIFIED, Sort.Direction.ASC));
-
-        // use partial indexes for boolean fields filtering on the more selective value
-        INDICES.put("egressed_index", new Index().named("egressed_index").on(EGRESSED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(EGRESSED).is(false))).on(MODIFIED, Sort.Direction.ASC));
-        INDICES.put("test_mode_index", new Index().named("test_mode_index").on(TEST_MODE, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(TEST_MODE).is(true))).on(MODIFIED, Sort.Direction.ASC));
-        INDICES.put("filtered_index", new Index().named("filtered_index").on(FILTERED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(FILTERED).is(true))).on(MODIFIED, Sort.Direction.ASC));
-        INDICES.put("error_index", new Index().named("error_index").on(STAGE, Sort.Direction.ASC).on(ERROR_ACKNOWLEDGED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(STAGE).is("ERROR"))));
-
-        INDICES.put("cold_queued_index", new Index().named("cold_queued_index").on(IN_FLIGHT, Sort.Direction.ASC).on(ACTIONS_STATE, Sort.Direction.ASC).on(ACTIONS_NAME, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(IN_FLIGHT).is(true).and(ACTIONS_STATE).is(COLD_QUEUED.name()))));
-        INDICES.put("queued_index", new Index().named("queued_index").on(IN_FLIGHT, Sort.Direction.ASC).on(ACTIONS_STATE, Sort.Direction.ASC).on(ACTIONS_NAME, Sort.Direction.ASC).on(MODIFIED, Sort.Direction.ASC).partial(PartialIndexFilter.of(Criteria.where(IN_FLIGHT).is(true).and(ACTIONS_STATE).is(QUEUED.name()))));
-    }
-
-    private final MongoTemplate mongoTemplate;
-    private Duration cachedTtlDuration;
-
-    public void ensureAllIndices(Duration newTtl) {
-        setExpirationIndex(newTtl);
-        IndexOperations idxOps = mongoTemplate.indexOps(DeltaFile.class);
-        List<IndexInfo> existingIndexes = idxOps.getIndexInfo();
-
-        INDICES.forEach((indexName, indexDef) -> IndexUtils.updateIndices(idxOps, indexName, indexDef, existingIndexes));
-
-        Set<String> expected = new HashSet<>(INDICES.keySet());
-        expected.add("_id_");
-        expected.add(TTL_INDEX_NAME);
-        existingIndexes.forEach(existingIndex -> removeUnknownIndices(idxOps, existingIndex, expected));
-
-        // TODO: set up shard indexes
-    }
+    @PersistenceContext
+    private final EntityManager entityManager;
+    private final JdbcTemplate jdbcTemplate;
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     @Override
-    public void setExpirationIndex(Duration newTtl) {
-        Duration currentTtl = getTtlExpiration();
-        if (Objects.nonNull(newTtl) && !newTtl.equals(currentTtl)) {
-            log.info("DeltaFile TTL was {}, changing it to {}", currentTtl, newTtl);
-            if (Objects.nonNull(currentTtl)) {
-                mongoTemplate.indexOps(COLLECTION).dropIndex(TTL_INDEX_NAME);
-            }
-            mongoTemplate.indexOps(COLLECTION).ensureIndex(new Index().on(CREATED, Sort.Direction.ASC).named(TTL_INDEX_NAME).expire(newTtl.getSeconds()));
-            cachedTtlDuration = newTtl;
-        }
-    }
+    @Transactional
+    public List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, Duration requeueDuration, Set<String> skipActions, Set<UUID> skipDids, int limit) {
+        StringBuilder filesToRequeueQuery = new StringBuilder("""
+            SELECT df
+            FROM DeltaFile df
+            WHERE df.stage = 'IN_FLIGHT'
+            AND df.modified < :requeueThreshold
+            """);
 
-    @Override
-    public Duration getTtlExpiration() {
-        if (cachedTtlDuration == null) {
-            cachedTtlDuration = getTtlExpirationFromMongo();
-        }
-        return cachedTtlDuration;
-    }
-
-    private Duration getTtlExpirationFromMongo() {
-        return getIndexes().stream().filter(index -> index.getName().equals(TTL_INDEX_NAME)).findFirst()
-                .flatMap(IndexInfo::getExpireAfter).orElse(null);
-    }
-
-    @Override
-    public List<IndexInfo> getIndexes() {
-        return mongoTemplate.indexOps(COLLECTION).getIndexInfo();
-    }
-
-    @Override
-    public List<DeltaFile> updateForRequeue(OffsetDateTime requeueTime, Duration requeueDuration, Set<String> skipActions, Set<UUID> skipDids) {
-        List<DeltaFile> filesToRequeue = mongoTemplate.find(buildReadyForRequeueQuery(requeueTime, requeueDuration, skipActions, skipDids), DeltaFile.class);
-        List<DeltaFile> requeuedDeltaFiles = new ArrayList<>();
-        for (List<DeltaFile> batch : Lists.partition(filesToRequeue, 1000)) {
-            List<UUID> dids = batch.stream().map(DeltaFile::getDid).toList();
-            Query query = new Query().addCriteria(Criteria.where(ID).in(dids));
-            mongoTemplate.updateMulti(query, buildRequeueUpdate(requeueTime, requeueDuration), DeltaFile.class);
-            requeuedDeltaFiles.addAll(mongoTemplate.find(query, DeltaFile.class));
+        if (skipDids != null && !skipDids.isEmpty()) {
+            filesToRequeueQuery.append("AND df.did NOT IN :skipDids\n");
         }
 
-        return requeuedDeltaFiles;
+        filesToRequeueQuery.append("""
+            AND EXISTS (
+                SELECT action
+                FROM df.flows flow
+                JOIN flow.actions action
+                WHERE flow.state = 'IN_FLIGHT'
+                AND action.modified < :requeueThreshold
+                AND action.state IN ('QUEUED', 'COLD_QUEUED')
+            """);
+
+        if (skipActions != null && !skipActions.isEmpty()) {
+            filesToRequeueQuery.append("AND action.name NOT IN :skipActions\n");
+        }
+
+        filesToRequeueQuery.append(") ORDER BY df.modified ASC LIMIT :limit");
+
+        OffsetDateTime requeueThreshold = requeueTime.minus(requeueDuration);
+        TypedQuery<DeltaFile> typedQuery = entityManager.createQuery(filesToRequeueQuery.toString(), DeltaFile.class)
+                .setParameter("requeueThreshold", requeueThreshold)
+                .setParameter("limit", limit);
+
+        if (skipDids != null && !skipDids.isEmpty()) {
+            typedQuery.setParameter("skipDids", skipDids);
+        }
+        if (skipActions != null && !skipActions.isEmpty()) {
+            typedQuery.setParameter("skipActions", skipActions);
+        }
+        List<DeltaFile> filesToRequeue = typedQuery.getResultList();
+
+        if (filesToRequeue.isEmpty()) {
+            return filesToRequeue;
+        }
+
+        filesToRequeue.forEach(deltaFile -> {
+            deltaFile.setRequeueCount(deltaFile.getRequeueCount() + 1);
+            deltaFile.setModified(requeueTime);
+        });
+
+        filesToRequeue.stream()
+                .flatMap(d -> d.getFlows().stream())
+                .flatMap(f -> f.getActions().stream())
+                .filter(a -> (a.getState() == QUEUED || a.getState() == COLD_QUEUED) &&
+                        a.getModified().isBefore(requeueThreshold) && (skipActions == null || !skipActions.contains(a.getName())))
+                .forEach(action -> {
+                    action.setState(QUEUED);
+                    action.setModified(requeueTime);
+                    action.setQueued(requeueTime);
+                    action.getDeltaFileFlow().updateState(requeueTime);
+                });
+
+        return filesToRequeue;
     }
 
     @Override
+    @Transactional
     public List<DeltaFile> updateColdQueuedForRequeue(List<String> actionNames, int maxFiles, OffsetDateTime modified) {
-        List<DeltaFile> filesToRequeue = mongoTemplate.find(buildReadyForColdRequeueQuery(actionNames, maxFiles), DeltaFile.class);
-        List<DeltaFile> requeuedDeltaFiles = new ArrayList<>();
-        for (List<DeltaFile> batch : Lists.partition(filesToRequeue, 1000)) {
-            List<UUID> dids = batch.stream().map(DeltaFile::getDid).toList();
-            Query query = new Query().addCriteria(Criteria.where(ID).in(dids));
-            mongoTemplate.updateMulti(query, buildColdRequeueUpdate(modified), DeltaFile.class);
-            requeuedDeltaFiles.addAll(mongoTemplate.find(query, DeltaFile.class));
+        List<DeltaFile> filesToRequeue = entityManager.createQuery("""
+                SELECT df
+                FROM DeltaFile df
+                JOIN df.flows flow
+                JOIN flow.actions action
+                WHERE df.stage = 'IN_FLIGHT'
+                AND EXISTS (
+                  SELECT action
+                  FROM df.flows flow
+                  JOIN flow.actions action
+                  WHERE  action.state = 'COLD_QUEUED'
+                  AND action.name IN :actionNames
+                )
+                ORDER BY df.modified ASC
+                LIMIT :limit
+                """, DeltaFile.class)
+                .setParameter("actionNames", actionNames)
+                .setParameter("limit", maxFiles)
+                .getResultList();
+
+        if (filesToRequeue.isEmpty()) {
+            return filesToRequeue;
         }
 
-        return requeuedDeltaFiles;
+        filesToRequeue.forEach(deltaFile -> {
+            deltaFile.setRequeueCount(deltaFile.getRequeueCount() + 1);
+            deltaFile.setModified(modified);
+        });
+
+        filesToRequeue.stream()
+                .flatMap(d -> d.getFlows().stream())
+                .flatMap(f -> f.getActions().stream())
+                .filter(a -> a.getState() == COLD_QUEUED && actionNames.contains(a.getName()))
+                .forEach(action -> {
+                    action.setState(QUEUED);
+                    action.setModified(modified);
+                    action.setQueued(modified);
+                    action.getDeltaFileFlow().updateState(modified);
+                });
+
+        return filesToRequeue;
     }
 
     @Override
     public List<DeltaFile> findReadyForAutoResume(OffsetDateTime maxReadyTime) {
-        return mongoTemplate.find(buildReadyForAutoResume(maxReadyTime), DeltaFile.class);
+        String queryStr = """
+            SELECT DISTINCT df
+            FROM Action action
+            JOIN action.deltaFileFlow flow
+            JOIN flow.deltaFile df
+            WHERE action.nextAutoResume < :maxReadyTime
+            AND df.stage = 'ERROR'
+        """;
+
+        TypedQuery<DeltaFile> query = entityManager.createQuery(queryStr, DeltaFile.class)
+                .setParameter("maxReadyTime", maxReadyTime);
+
+        return query.getResultList();
     }
 
-    private Query buildReadyForAutoResume(OffsetDateTime maxReadyTime) {
-        Query requeueQuery = new Query(Criteria.where(STAGE).is(DeltaFileStage.ERROR)
-                .and(FLOWS_ACTIONS).elemMatch(Criteria.where(NEXT_AUTO_RESUME).lt(maxReadyTime)));
-        requeueQuery.fields().include(ID, DATA_SOURCE, SCHEMA_VERSION);
-
-        return requeueQuery;
-    }
 
     @Override
     public List<DeltaFile> findResumePolicyCandidates(String dataSource) {
-        return mongoTemplate.find(buildResumePolicyCanidatesQuery(dataSource), DeltaFile.class);
-    }
-
-    private Query buildResumePolicyCanidatesQuery(String dataSource) {
-        Criteria criteria = Criteria.where(STAGE).is(DeltaFileStage.ERROR)
-                .and(FLOWS_ACTIONS).not().elemMatch(
-                        Criteria.where(NEXT_AUTO_RESUME).ne(null)
-                                .orOperator(Criteria.where(ERROR_ACKNOWLEDGED).ne(null)))
-                .and(CONTENT_DELETED).isNull();
+        StringBuilder queryBuilder = new StringBuilder("""
+                SELECT df
+                FROM DeltaFile df
+                WHERE df.stage = 'ERROR'
+                AND df.contentDeleted IS NULL
+                AND EXISTS (
+                    SELECT 1
+                    FROM DeltaFileFlow flow
+                    JOIN flow.actions action
+                    WHERE flow.deltaFile = df
+                    AND action.nextAutoResume IS NULL
+                    AND action.errorAcknowledged IS NULL
+                )
+            """);
 
         if (dataSource != null) {
-            criteria.and(DATA_SOURCE).is(dataSource);
+            queryBuilder.append("AND df.dataSource = :dataSource ");
         }
 
-        Query requeueQuery = new Query(criteria);
-        requeueQuery.fields().include(ID, DATA_SOURCE, FLOWS_STATE, ACTIONS_NAME, ACTIONS_ERROR_CAUSE, ACTIONS_STATE, ACTIONS_TYPE, ACTIONS_ATTEMPT, SCHEMA_VERSION);
+        TypedQuery<DeltaFile> query = entityManager.createQuery(queryBuilder.toString(), DeltaFile.class);
 
-        return requeueQuery;
+        if (dataSource != null) {
+            query.setParameter("dataSource", dataSource);
+        }
+
+        return query.getResultList();
     }
 
     @Override
+    @Transactional
     public void updateForAutoResume(List<UUID> dids, String policyName, OffsetDateTime nextAutoResume) {
-        Update update = new Update()
-                .set("flows.$[].actions.$[action].nextAutoResume", nextAutoResume)
-                .set("flows.$[].actions.$[action].nextAutoResumeReason", policyName)
-                .filterArray(Criteria.where(ACTION_STATE).is(ERROR));
-        batchedBulkUpdateByIds(dids, update);
+        if (dids == null || dids.isEmpty()) {
+            return;
+        }
+
+        for (List<UUID> batch : Lists.partition(dids, 500)) {
+            CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+            CriteriaUpdate<Action> update = cb.createCriteriaUpdate(Action.class);
+            Root<Action> root = update.from(Action.class);
+
+            update.set("nextAutoResume", nextAutoResume)
+                    .set("nextAutoResumeReason", policyName)
+                    .where(cb.and(
+                            root.get("deltaFileFlow").get("deltaFile").get("did").in(batch),
+                            cb.equal(root.get("state"), ERROR)
+                    ));
+
+            entityManager.createQuery(update).executeUpdate();
+        }
     }
 
     @Override
-    public List<DeltaFile> findForTimedDelete(OffsetDateTime createdBeforeDate, OffsetDateTime completedBeforeDate,
-                                              long minBytes, String flow, boolean deleteMetadata, int batchSize) {
-        // one of these must be set for any matches to occur
+    public List<DeltaFileDeleteDTO> findForTimedDelete(OffsetDateTime createdBeforeDate, OffsetDateTime completedBeforeDate,
+                                                       long minBytes, String flow, boolean deleteMetadata, int batchSize) {
         if (createdBeforeDate == null && completedBeforeDate == null) {
             return Collections.emptyList();
         }
 
-        Criteria criteria;
+        StringBuilder queryBuilder = new StringBuilder(
+                "WITH eligible_files AS ( " +
+                        "    SELECT df.did, df.content_deleted, df.total_bytes, df.modified " +
+                        "    FROM delta_files df " +
+                        "    WHERE ");
 
-        String indexHint;
+        List<String> conditions = new ArrayList<>();
+        Map<String, Object> parameters = new HashMap<>();
+
         if (createdBeforeDate != null) {
-            criteria = Criteria.where(CREATED).lt(createdBeforeDate);
-            indexHint = CREATED_BEFORE_INDEX;
-        } else {
-            criteria = Criteria.where(MODIFIED).lt(completedBeforeDate);
-            criteria.and(TERMINAL).is(true);
-            indexHint = TERMINAL_INDEX;
+            conditions.add("df.created < :createdBeforeDate");
+            parameters.put("createdBeforeDate", createdBeforeDate);
+        }
+
+        if (completedBeforeDate != null) {
+            conditions.add("df.modified < :completedBeforeDate");
+            conditions.add("df.terminal = true");
+            parameters.put("completedBeforeDate", completedBeforeDate);
         }
 
         if (flow != null) {
-            criteria.and(DATA_SOURCE).is(flow);
+            conditions.add("df.data_source = :flow");
+            parameters.put("flow", flow);
         }
 
         if (minBytes > 0L) {
-            criteria.and(TOTAL_BYTES).gte(minBytes);
+            conditions.add("df.total_bytes >= :minBytes");
+            parameters.put("minBytes", minBytes);
         }
 
         if (!deleteMetadata) {
-            criteria.and(CONTENT_DELETABLE).is(true);
+            conditions.add("df.content_deletable = true");
         }
 
-        Query query = new Query(criteria);
-        query.limit(batchSize);
+        queryBuilder.append(String.join(" AND ", conditions));
+        queryBuilder.append(" ORDER BY ");
+        queryBuilder.append(createdBeforeDate != null ? "df.created" : "df.modified");
+        queryBuilder.append(" ASC LIMIT :batchSize ) ");
 
-        if (createdBeforeDate != null) {
-            query.with(Sort.by(Sort.Direction.ASC, CREATED));
-        } else {
-            query.with(Sort.by(Sort.Direction.ASC, MODIFIED));
+        queryBuilder.append(
+                "SELECT ef.did, ef.content_deleted, ef.total_bytes, " +
+                        "       array_agg(a.content) as content_list " +
+                        "FROM eligible_files ef " +
+                        "LEFT JOIN delta_file_flows f ON ef.did = f.delta_file_id " +
+                        "LEFT JOIN actions a ON f.id = a.delta_file_flow_id " +
+                        "GROUP BY ef.did, ef.content_deleted, ef.total_bytes, ef.modified " +
+                        "ORDER BY ef.modified " +
+                        "LIMIT :batchSize");
+
+        Query query = entityManager.createNativeQuery(queryBuilder.toString());
+
+        for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+            query.setParameter(entry.getKey(), entry.getValue());
         }
-        query.fields().include(ID, TOTAL_BYTES, ACTION_SEGMENTS, ACTIONS_NAME, CONTENT_DELETED, SCHEMA_VERSION);
-        query.withHint(indexHint);
+        query.setParameter("batchSize", batchSize);
 
-        return mongoTemplate.find(query, DeltaFile.class);
-    }
+        List<Object[]> results = query.getResultList();
 
-    @Override
-    public List<DeltaFile> findForDiskSpaceDelete(long bytesToDelete, String dataSource, int batchSize) {
-        if (bytesToDelete < 1) {
-            throw new IllegalArgumentException("bytesToDelete (" + bytesToDelete + ") must be positive");
-        }
-
-        Criteria criteria = Criteria.where(CONTENT_DELETABLE).is(true);
-
-        if (dataSource != null) {
-            criteria.and(DATA_SOURCE).is(dataSource);
-        }
-
-        Query query = new Query(criteria);
-        query.limit(batchSize);
-        query.with(Sort.by(Sort.Direction.ASC, MODIFIED));
-        query.fields().include(ID, TOTAL_BYTES, ACTION_SEGMENTS, ACTIONS_NAME, SCHEMA_VERSION);
-
-        List<DeltaFile> deltaFiles = mongoTemplate.find(query, DeltaFile.class);
-        long[] sum = {0};
-        return deltaFiles.stream()
-                .filter(d -> {
-                    boolean over = sum[0] <= bytesToDelete;
-                    sum[0] += d.getTotalBytes();
-                    return over;
-                })
+        return results.stream()
+                .map(this::deserializeDeltaFileDeleteDTO)
                 .toList();
     }
 
     @Override
+    public List<DeltaFileDeleteDTO> findForDiskSpaceDelete(long bytesToDelete, String dataSource, int batchSize) {
+        if (bytesToDelete < 1) {
+            throw new IllegalArgumentException("bytesToDelete (%s) must be positive".formatted(bytesToDelete));
+        }
+
+        Query nativeQuery = entityManager.createNativeQuery(diskSpaceDeleteQuery(dataSource));
+
+        if (dataSource != null) {
+            nativeQuery.setParameter("dataSource", dataSource);
+        }
+        nativeQuery.setParameter("batchSize", batchSize);
+
+        List<Object[]> results = nativeQuery.getResultList();
+
+        long[] sum = {0};
+        return results.stream()
+                .filter(row -> {
+                    long totalBytes = ((Number) row[2]).longValue();
+                    boolean over = sum[0] <= bytesToDelete;
+                    sum[0] += totalBytes;
+                    return over;
+                })
+                .map(this::deserializeDeltaFileDeleteDTO)
+                .toList();
+    }
+
+    private DeltaFileDeleteDTO deserializeDeltaFileDeleteDTO(Object[] row) {
+        UUID did = (UUID) row[0];
+        OffsetDateTime contentDeleted = row[1] != null
+                ? ((Instant) row[1]).atZone(ZoneId.systemDefault()).toOffsetDateTime()
+                : null;
+        long totalBytes = ((Number) row[2]).longValue();
+        List<Content> contentList = new ArrayList<>();
+        if (row[3] instanceof String[]) {
+            for (String content : (String[]) row[3]) {
+                if (content != null) {
+                    try {
+                        contentList.addAll(OBJECT_MAPPER.readValue(content, new TypeReference<>() {}));
+                    } catch (JsonProcessingException ignored) {
+                    }
+                }
+            }
+        }
+        return new DeltaFileDeleteDTO(did, contentDeleted, totalBytes, contentList);
+    }
+
+    private static String diskSpaceDeleteQuery(String dataSource) {
+        StringBuilder queryBuilder = new StringBuilder("""
+        WITH eligible_files AS (
+            SELECT df.did, df.content_deleted, df.total_bytes, df.modified
+            FROM delta_files df
+            WHERE df.content_deletable = true
+        """);
+
+        if (dataSource != null) {
+            queryBuilder.append("AND df.data_source = :dataSource ");
+        }
+
+        queryBuilder.append("""
+            ORDER BY df.modified ASC
+            LIMIT :batchSize
+        )
+        SELECT ef.did, ef.content_deleted, ef.total_bytes, 
+               array_agg(a.content) as content_list
+        FROM eligible_files ef
+        LEFT JOIN delta_file_flows f ON ef.did = f.delta_file_id
+        LEFT JOIN actions a ON f.id = a.delta_file_flow_id
+        GROUP BY ef.did, ef.content_deleted, ef.total_bytes, ef.modified
+        ORDER BY ef.modified
+    """);
+
+        return queryBuilder.toString();
+    }
+
+    @Override
     public DeltaFiles deltaFiles(Integer offset, int limit, DeltaFilesFilter filter, DeltaFileOrder orderBy, List<String> includeFields) {
-        Criteria filterCriteria = buildDeltaFilesCriteria(filter);
-        Query query = new Query(filterCriteria);
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<DeltaFile> query = cb.createQuery(DeltaFile.class);
+        Root<DeltaFile> root = query.from(DeltaFile.class);
+
+        List<Predicate> predicates = buildDeltaFilesCriteria(cb, root, filter);
+        query.where(cb.and(predicates.toArray(new Predicate[0])));
+
+        if (orderBy == null) {
+            orderBy = new DeltaFileOrder();
+            orderBy.setField("modified");
+            orderBy.setDirection(DeltaFileDirection.DESC);
+        }
+
+        query.orderBy(orderBy.getDirection() == DeltaFileDirection.ASC ?
+                cb.asc(root.get(orderBy.getField())) :
+                cb.desc(root.get(orderBy.getField())));
+
+        TypedQuery<DeltaFile> typedQuery = entityManager.createQuery(query);
 
         if (offset != null && offset > 0) {
-            query.skip(offset);
+            typedQuery.setFirstResult(offset);
         } else {
             offset = 0;
         }
 
-        query.limit(limit);
+        typedQuery.setMaxResults(limit);
 
-        if (includeFields != null) {
-            query.fields().include(SCHEMA_VERSION);
-            for (String includeField : includeFields) {
-                query.fields().include(includeField);
-            }
-        }
-
-        if (orderBy == null) {
-            orderBy = DeltaFileOrder.newBuilder().field(MODIFIED).direction(DeltaFileDirection.DESC).build();
-        }
-
-        query.with(Sort.by(Sort.Direction.fromString(orderBy.getDirection().name()), orderBy.getField()));
+        List<DeltaFile> deltaFileList = typedQuery.getResultList();
 
         DeltaFiles deltaFiles = new DeltaFiles();
         deltaFiles.setOffset(offset);
-        if (includeFields != null && includeFields.isEmpty()) {
-            deltaFiles.setDeltaFiles(Collections.emptyList());
+        deltaFiles.setDeltaFiles(deltaFileList);
+        deltaFiles.setCount(deltaFileList.size());
+
+        if (deltaFileList.size() < limit) {
+            deltaFiles.setTotalCount(offset + deltaFileList.size());
         } else {
-            deltaFiles.setDeltaFiles(mongoTemplate.find(query, DeltaFile.class));
-        }
-        deltaFiles.setCount(deltaFiles.getDeltaFiles().size());
-        if ((includeFields == null || !includeFields.isEmpty()) && deltaFiles.getCount() < limit) {
-            deltaFiles.setTotalCount(deltaFiles.getOffset() + deltaFiles.getCount());
-        } else {
-            int total = (int) mongoTemplate.count(new Query(filterCriteria).limit(MAX_COUNT), DeltaFile.class);
-            deltaFiles.setTotalCount(total);
+            // this makes me sad. JPA does not support limiting a subquery, so we can't do something like
+            // SELECT COUNT(*) FROM (SELECT 1 FROM delta_files WHERE /* criteria */ LIMIT /* limit */)
+            // building the criteria string manually would be hairy
+            // so return an array of 1s -- a bunch of unfortunately wasted bytes over the wire, and count them
+            CriteriaBuilder countCb = entityManager.getCriteriaBuilder();
+            CriteriaQuery<Integer> criteriaQuery = countCb.createQuery(Integer.class);
+            Root<DeltaFile> countRoot = criteriaQuery.from(DeltaFile.class);
+
+            List<Predicate> countPredicates = buildDeltaFilesCriteria(countCb, countRoot, filter);
+            criteriaQuery.select(countCb.literal(1))
+                    .where(countCb.and(countPredicates.toArray(new Predicate[0])));
+
+            TypedQuery<Integer> countQuery = entityManager.createQuery(criteriaQuery)
+                    .setMaxResults(MANY_RESULTS);
+
+            deltaFiles.setTotalCount(countQuery.getResultList().size());
         }
 
         return deltaFiles;
     }
 
-    Update buildRequeueUpdate(OffsetDateTime modified, Duration requeueDuration) {
-        if (modified == null) {
-            modified = OffsetDateTime.now();
-        }
-
-        Update update = new Update();
-
-        long epochMs = requeueThreshold(modified, requeueDuration);
-        update.filterArray(Criteria.where(FLOW_STATE).is(DeltaFileFlowState.IN_FLIGHT.name()));
-        update.filterArray(Criteria.where(ACTION_STATE).is(ActionState.QUEUED.name())
-                .and(ACTION_MODIFIED).lt(new Date(epochMs)));
-
-        update.inc(REQUEUE_COUNT, 1);
-
-        // clear out any old error messages
-        update.set(ACTIONS_UPDATE_ERROR, null);
-        update.set(ACTIONS_UPDATE_ERROR_CONTEXT, null);
-
-        update.set(ACTIONS_UPDATE_MODIFIED, modified);
-        update.set(ACTIONS_UPDATE_QUEUED, modified);
-
-        update.set(MODIFIED, modified);
-
-        update.inc(VERSION, 1);
-
-        return update;
-    }
-
-    Update buildColdRequeueUpdate(OffsetDateTime modified) {
-        Update update = new Update();
-        update.inc(REQUEUE_COUNT, 1);
-
-        // clear out any old error messages
-        update.set(ACTIONS_UPDATE_ERROR, null);
-        update.set(ACTIONS_UPDATE_ERROR_CONTEXT, null);
-        update.set(ACTIONS_UPDATE_MODIFIED, modified);
-        update.set(ACTIONS_UPDATE_QUEUED, modified);
-
-        update.set(ACTIONS_UPDATE_STATE, ActionState.QUEUED.name());
-        update.filterArray(Criteria.where(FLOW_STATE).is(DeltaFileFlowState.IN_FLIGHT.name()));
-        update.filterArray(Criteria.where(ACTION_STATE).is(COLD_QUEUED.name()));
-        update.set(MODIFIED, modified);
-
-        update.inc(VERSION, 1);
-
-        return update;
-    }
-
-    private Query buildReadyForRequeueQuery(OffsetDateTime requeueTime, Duration requeueDuration, Set<String> skipActions, Set<UUID> skipDids) {
-        Criteria criteria = Criteria.where(IN_FLIGHT).is(true);
-        long epochMs = requeueThreshold(requeueTime, requeueDuration);
-        criteria.and(MODIFIED).lt(new Date(epochMs));
-
-        if (skipDids != null && !skipDids.isEmpty()) {
-            criteria.and(DID).not().in(skipDids);
-        }
-
-        if (skipActions != null && !skipActions.isEmpty()) {
-            Criteria actionsCriteria = new Criteria().orOperator(
-                    Criteria.where(STATE).is(QUEUED.toString()).and(NAME).in(skipActions),
-                    Criteria.where(STATE).is(COLD_QUEUED.name())
-            );
-            criteria.and(FLOWS_ACTIONS).not().elemMatch(actionsCriteria);
-        } else {
-            criteria.and(FLOWS_ACTIONS).not().elemMatch(Criteria.where(STATE).is(COLD_QUEUED.name()));
-        }
-
-        Query requeueQuery = new Query(criteria);
-        requeueQuery.fields().include(ID);
-
-        return requeueQuery;
-    }
-
-    private Query buildReadyForColdRequeueQuery(List<String> actionNames, int maxFiles) {
-        Criteria notComplete = Criteria.where(IN_FLIGHT).is(true)
-                .and(FLOWS_ACTIONS_STATE).is(COLD_QUEUED)
-                .and(FLOWS_ACTIONS_NAME).in(actionNames);
-
-        Criteria coldQueuedCriteria = new Criteria().andOperator(
-                Criteria.where(NAME).in(actionNames),
-                Criteria.where(STATE).is(COLD_QUEUED.name())
-        );
-
-        Criteria actionMatch = Criteria.where(FLOWS_ACTIONS).elemMatch(coldQueuedCriteria);
-
-        Query requeueQuery = new Query(new Criteria().andOperator(notComplete, actionMatch));
-        requeueQuery.fields().include(ID);
-        requeueQuery.limit(maxFiles);
-
-        return requeueQuery;
-    }
-
-    private Criteria buildDeltaFilesCriteria(DeltaFilesFilter filter) {
-        final Criteria criteria = new Criteria();
+    private List<Predicate> buildDeltaFilesCriteria(CriteriaBuilder cb, Root<DeltaFile> root, DeltaFilesFilter filter) {
+        List<Predicate> predicates = new ArrayList<>();
 
         if (filter == null) {
-            return criteria;
+            return predicates;
         }
 
         if (filter.getDataSources() != null && !filter.getDataSources().isEmpty()) {
-            criteria.and(DATA_SOURCE).in(filter.getDataSources());
+            predicates.add(root.get(DATA_SOURCE).in(filter.getDataSources()));
         }
 
         if (filter.getTransformFlows() != null && !filter.getTransformFlows().isEmpty()) {
-            criteria.and(FLOWS).elemMatch(Criteria.where(NAME).in(filter.getTransformFlows()).and(TYPE).is(FlowType.TRANSFORM));
+            Join<DeltaFile, DeltaFileFlow> flowJoin = root.join(FLOWS);
+            predicates.add(cb.and(flowJoin.get(NAME).in(filter.getTransformFlows()), cb.equal(flowJoin.get(TYPE), FlowType.TRANSFORM)));
         }
 
         if (filter.getEgressFlows() != null && !filter.getEgressFlows().isEmpty()) {
-            criteria.and(EGRESS_FLOWS).in(filter.getEgressFlows());
+            Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
+            Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
+            Join<DeltaFile, DeltaFileFlow> subFlowJoin = subRoot.join("flows");
+
+            subquery.select(cb.literal(1L)).where(
+                    cb.equal(subRoot.get("did"), root.get("did")),
+                    subFlowJoin.get("name").in(filter.getEgressFlows())
+            );
+
+            predicates.add(cb.exists(subquery));
         }
 
         if (filter.getDids() != null && !filter.getDids().isEmpty()) {
-            criteria.and(ID).in(filter.getDids());
+            predicates.add(root.get(DID).in(filter.getDids()));
         }
 
         if (filter.getParentDid() != null) {
-            criteria.and(PARENT_DIDS).in(filter.getParentDid());
+            predicates.add(cb.isMember(filter.getParentDid(), root.get("parentDids")));
         }
 
-        if (filter.getCreatedAfter() != null && filter.getCreatedBefore() != null) {
-            criteria.and(CREATED).gt(filter.getCreatedAfter()).lt(filter.getCreatedBefore());
-        } else if (filter.getCreatedAfter() != null) {
-            criteria.and(CREATED).gt(filter.getCreatedAfter());
-        } else if (filter.getCreatedBefore() != null) {
-            criteria.and(CREATED).lt(filter.getCreatedBefore());
+        if (filter.getCreatedAfter() != null) {
+            predicates.add(cb.greaterThan(root.get(CREATED), filter.getCreatedAfter()));
         }
 
-        if (filter.getAnnotations() != null) {
-            filter.getAnnotations()
-                    .forEach(e -> addAnnotationCriteria(e.getKey(), e.getValue(), criteria));
+        if (filter.getCreatedBefore() != null) {
+            predicates.add(cb.lessThan(root.get(CREATED), filter.getCreatedBefore()));
         }
 
-        if (filter.getContentDeleted() != null) {
-            if (isTrue(filter.getContentDeleted())) {
-                criteria.and(CONTENT_DELETED).ne(null);
-            } else {
-                criteria.and(CONTENT_DELETED).is(null);
+        if (filter.getAnnotations() != null && !filter.getAnnotations().isEmpty()) {
+            for (KeyValue keyValue : filter.getAnnotations()) {
+                Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
+                Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
+                Join<DeltaFile, Annotation> subAnnotationJoin = subRoot.join("annotations");
+
+                subquery.select(cb.literal(1L)).where(
+                        cb.equal(subRoot.get("did"), root.get("did")),
+                        cb.equal(subAnnotationJoin.get("key"), keyValue.getKey()),
+                        cb.equal(subAnnotationJoin.get("value"), keyValue.getValue())
+                );
+
+                predicates.add(cb.exists(subquery));
             }
         }
 
-        addModifiedDateCriteria(criteria, filter.getModifiedAfter(), filter.getModifiedBefore());
+        if (filter.getModifiedAfter() != null) {
+            predicates.add(cb.greaterThan(root.get("modified"), filter.getModifiedAfter()));
+        }
+
+        if (filter.getModifiedBefore() != null) {
+            predicates.add(cb.lessThan(root.get("modified"), filter.getModifiedBefore()));
+        }
 
         if (filter.getTerminalStage() != null) {
-            criteria.and(TERMINAL).is(isTrue(filter.getTerminalStage()));
+            predicates.add(cb.equal(root.get(TERMINAL), filter.getTerminalStage()));
         }
 
         if (filter.getStage() != null) {
-            criteria.and(STAGE).is(filter.getStage().name());
+            predicates.add(cb.equal(root.get(STAGE), filter.getStage().name()));
         }
 
         if (filter.getNameFilter() != null) {
-            addNameCriteria(filter.getNameFilter(), criteria);
+            addNameCriteria(cb, root, filter.getNameFilter(), predicates);
         }
 
         if (filter.getActions() != null && !filter.getActions().isEmpty()) {
-            criteria.and(ACTIONS_NAME).all(filter.getActions());
-        }
+            for (String actionName : filter.getActions()) {
+                Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
+                Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
+                Join<DeltaFile, DeltaFileFlow> subFlowJoin = subRoot.join("flows");
+                Join<DeltaFileFlow, Action> subActionJoin = subFlowJoin.join("actions");
 
-        addErrorAndFilterCriteria(filter, criteria);
+                subquery.select(cb.literal(1L)).where(
+                        cb.equal(subRoot.get("did"), root.get("did")),
+                        cb.equal(subActionJoin.get("name"), actionName)
+                );
 
-        if (filter.getRequeueCountMin() != null) {
-            criteria.and(REQUEUE_COUNT).gte(filter.getRequeueCountMin());
-        }
-
-        if (filter.getIngressBytesMin() != null && filter.getIngressBytesMax() != null) {
-            criteria.and(INGRESS_BYTES).gte(filter.getIngressBytesMin()).lte(filter.getIngressBytesMax());
-        } else if (filter.getIngressBytesMin() != null) {
-            criteria.and(INGRESS_BYTES).gte(filter.getIngressBytesMin());
-        } else if (filter.getIngressBytesMax() != null) {
-            criteria.and(INGRESS_BYTES).lte(filter.getIngressBytesMax());
-        }
-
-        if (filter.getReferencedBytesMin() != null && filter.getReferencedBytesMax() != null) {
-            criteria.and(REFERENCED_BYTES).gte(filter.getReferencedBytesMin()).lte(filter.getReferencedBytesMax());
-        } else if (filter.getReferencedBytesMin() != null) {
-            criteria.and(REFERENCED_BYTES).gte(filter.getReferencedBytesMin());
-        } else if (filter.getReferencedBytesMax() != null) {
-            criteria.and(REFERENCED_BYTES).lte(filter.getReferencedBytesMax());
-        }
-
-        if (filter.getTotalBytesMin() != null && filter.getTotalBytesMax() != null) {
-            criteria.and(TOTAL_BYTES).gte(filter.getTotalBytesMin()).lte(filter.getTotalBytesMax());
-        } else if (filter.getTotalBytesMin() != null) {
-            criteria.and(TOTAL_BYTES).gte(filter.getTotalBytesMin());
-        } else if (filter.getTotalBytesMax() != null) {
-            criteria.and(TOTAL_BYTES).lte(filter.getTotalBytesMax());
-        }
-
-        if (filter.getEgressed() != null) {
-            criteria.and(EGRESSED).is(filter.getEgressed());
-        }
-
-        if (filter.getTestMode() != null) {
-            if (isTrue(filter.getTestMode())) {
-                criteria.and(TEST_MODE).is(true);
-            } else {
-                criteria.and(TEST_MODE).ne(true);
-            }
-        }
-
-        if (filter.getReplayable() != null) {
-            if (isTrue(filter.getReplayable())) {
-                criteria.and(REPLAYED).isNull();
-                criteria.and(CONTENT_DELETED).isNull();
-            } else {
-                criteria.orOperator(Criteria.where(REPLAYED).ne(null), Criteria.where(CONTENT_DELETED).ne(null));
-            }
-        }
-
-        if (filter.getReplayed() != null) {
-            if (isTrue(filter.getReplayed())) {
-                criteria.and(REPLAYED).ne(null);
-            } else {
-                criteria.and(REPLAYED).isNull();
+                predicates.add(cb.exists(subquery));
             }
         }
 
         if (filter.getPendingAnnotations() != null) {
-            criteria.and(FIRST_PENDING_ANNOTATIONS).exists(filter.getPendingAnnotations());
-        }
+            Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
+            Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
+            Join<DeltaFile, DeltaFileFlow> subFlowJoin = subRoot.join("flows");
 
-        return criteria;
-    }
-
-    private void addModifiedDateCriteria(Criteria criteria, OffsetDateTime modifiedAfter, OffsetDateTime modifiedBefore) {
-        if (modifiedAfter != null && modifiedBefore != null) {
-            criteria.and(MODIFIED).gt(modifiedAfter).lt(modifiedBefore);
-        } else if (modifiedAfter != null) {
-            criteria.and(MODIFIED).gt(modifiedAfter);
-        } else if (modifiedBefore != null) {
-            criteria.and(MODIFIED).lt(modifiedBefore);
-        }
-    }
-
-    private void addErrorAndFilterCriteria(DeltaFilesFilter filter, Criteria criteria) {
-        Criteria erroredActionCriteria = getErroredActionsCriteria(filter.getErrorCause(), filter.getErrorAcknowledged());
-        Criteria filteredActionCriteria = getFilteredActionsCriteria(filter.getFilteredCause());
-
-        if (erroredActionCriteria != null && filteredActionCriteria != null) {
-            Criteria errorOrFilteredCriteria = new Criteria().orOperator(erroredActionCriteria, filteredActionCriteria);
-            criteria.and(FLOWS_ACTIONS).elemMatch(errorOrFilteredCriteria);
-        } else if (erroredActionCriteria != null) {
-            criteria.and(FLOWS_ACTIONS).elemMatch(erroredActionCriteria);
-        } else if (filteredActionCriteria != null) {
-            boolean filtered = filter.getFiltered() == null || filter.getFiltered();
-            criteria.and(FILTERED).is(filtered);
-            criteria.and(FLOWS_ACTIONS).elemMatch(filteredActionCriteria);
-        } else if (filter.getFiltered() != null) {
-            criteria.and(FILTERED).is(filter.getFiltered());
-        }
-    }
-
-    private Criteria getErroredActionsCriteria(String errorCause, Boolean acknowledged) {
-        if (errorCause == null && acknowledged == null) {
-            return null;
-        }
-        List<Criteria> elemCriteria = new ArrayList<>();
-        elemCriteria.add(Criteria.where(STATE).is(ERROR.name()));
-        if (errorCause != null) {
-            elemCriteria.add(Criteria.where(ERROR_CAUSE).regex(errorCause));
-        }
-
-        if (acknowledged != null) {
-            if (acknowledged) {
-                elemCriteria.add(Criteria.where(ERROR_ACKNOWLEDGED).ne(null));
+            if (filter.getPendingAnnotations()) {
+                subquery.select(cb.literal(1L)).where(
+                        cb.equal(subRoot.get("did"), root.get("did")),
+                        cb.greaterThan(cb.function("jsonb_array_length", Integer.class, subFlowJoin.get("pendingAnnotations")), 0));
             } else {
-                elemCriteria.add(Criteria.where(ERROR_ACKNOWLEDGED).isNull());
+                subquery.select(cb.literal(1L)).where(
+                        cb.equal(subRoot.get("did"), root.get("did")),
+                        cb.equal(cb.function("jsonb_array_length", Integer.class, subFlowJoin.get("pendingAnnotations")), 0));
             }
-        }
-        return new Criteria().andOperator(elemCriteria);
-    }
 
-    private Criteria getFilteredActionsCriteria(String filteredCause) {
-        return filteredCause != null ? new Criteria().andOperator(
-                Criteria.where(STATE).is(ActionState.FILTERED.name()), Criteria.where(FILTERED_CAUSE).regex(filteredCause)) : null;
-    }
-
-    private void addAnnotationCriteria(String key, String value, Criteria criteria) {
-        if (null == key || null == value) {
-            return;
+            predicates.add(cb.exists(subquery));
         }
 
-        if (key.contains(".")) {
-            key = StringUtils.replace(key, ".", DeltaFiConstants.MONGO_MAP_KEY_DOT_REPLACEMENT);
+        if (filter.getErrorCause() != null) {
+            Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
+            Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
+            Join<DeltaFile, DeltaFileFlow> subFlowJoin = subRoot.join("flows");
+            Join<DeltaFileFlow, Action> subActionJoin = subFlowJoin.join("actions");
+
+            subquery.select(cb.literal(1L)).where(
+                    cb.equal(subRoot.get("did"), root.get("did")),
+                    cb.equal(subActionJoin.get("state"), "ERROR"),
+                    cb.like(cb.lower(subActionJoin.get("errorCause")), "%" + filter.getErrorCause().toLowerCase() + "%")
+            );
+            predicates.add(cb.exists(subquery));
         }
 
-        criteria.and(ANNOTATIONS + "." + key).is(value);
-    }
+        if (filter.getFilteredCause() != null) {
+            Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
+            Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
+            Join<DeltaFile, DeltaFileFlow> subFlowJoin = subRoot.join("flows");
+            Join<DeltaFileFlow, Action> subActionJoin = subFlowJoin.join("actions");
 
-    private long requeueThreshold(OffsetDateTime requeueTime, Duration requeueDuration) {
-        return requeueTime.minus(requeueDuration).toInstant().toEpochMilli();
-    }
-
-
-    private void removeUnknownIndices(IndexOperations idxOps, IndexInfo existing, Set<String> knownIndices) {
-        if (!knownIndices.contains(existing.getName())) {
-            log.info("Dropping unknown index {}", existing.getName());
-            dropIndex(idxOps, existing.getName());
+            subquery.select(cb.literal(1L)).where(
+                    cb.equal(subRoot.get("did"), root.get("did")),
+                    cb.equal(subActionJoin.get("state"), "FILTERED"),
+                    cb.like(cb.lower(subActionJoin.get("filteredCause")), "%" + filter.getFilteredCause().toLowerCase() + "%")
+            );
+            predicates.add(cb.exists(subquery));
         }
-    }
-
-    private void dropIndex(IndexOperations idxOps, String indexName) {
-        try {
-            idxOps.dropIndex(indexName);
-        } catch (UncategorizedMongoDbException ex) {
-            log.error("Failed to remove unknown index {}", indexName, ex);
-        }
-    }
-
-    @Override
-    public SummaryByFlow getErrorSummaryByFlow(Integer offset, int limit, ErrorSummaryFilter filter, DeltaFileOrder orderBy) {
-        return getSummaryByFlow(offset, limit, buildErrorSummaryCriteria(filter), orderBy);
-    }
-
-    @Override
-    public SummaryByFlow getFilteredSummaryByFlow(Integer offset, int limit, FilteredSummaryFilter filter, DeltaFileOrder orderBy) {
-        return getSummaryByFlow(offset, limit, buildFilterSummaryCriteria(filter), orderBy);
-    }
-
-    private SummaryByFlow getSummaryByFlow(Integer offset, int limit, Criteria filter, DeltaFileOrder orderBy) {
-        long elementsToSkip = (offset != null && offset > 0) ? offset : 0;
-
-        MatchOperation matchesErrorStage = Aggregation.match(filter);
-
-        Aggregation countAggregation = Aggregation.newAggregation(
-                matchesErrorStage,
-                group(DATA_SOURCE).count().as(GROUP_COUNT),
-                count().as(COUNT_FOR_PAGING))
-                .withOptions(AggregationOptions.builder().allowDiskUse(true).build());
-
-        final Long countForPaging = Optional
-                .ofNullable(mongoTemplate.aggregate(countAggregation, COLLECTION,
-                        Document.class).getUniqueMappedResult())
-                .map(doc -> ((Integer) doc.get(COUNT_FOR_PAGING)).longValue())
-                .orElse(0L);
-
-        List<CountPerFlow> countPerFlow = new ArrayList<>();
-        if (countForPaging > 0) {
-            Aggregation pagingAggregation = Aggregation.newAggregation(
-                    matchesErrorStage,
-                    group(DATA_SOURCE).count().as(GROUP_COUNT).addToSet(ID).as(DIDS),
-                    project(DIDS, GROUP_COUNT).and(DATA_SOURCE).previousOperation(),
-                    errorSummaryByFlowSort(orderBy),
-                    skip(elementsToSkip),
-                    limit(limit))
-                    .withOptions(AggregationOptions.builder().allowDiskUse(true).build());
-
-            AggregationResults<FlowCountAndDids> aggResults = mongoTemplate.aggregate(
-                    pagingAggregation, COLLECTION, FlowCountAndDids.class);
-
-            for (FlowCountAndDids r : aggResults.getMappedResults()) {
-                countPerFlow.add(CountPerFlow.newBuilder()
-                        .flow(r.dataSource)
-                        .count(r.dids.size())
-                        .dids(r.dids)
-                        .build()
-                );
-            }
-        }
-
-        return new SummaryByFlow((int)elementsToSkip, countPerFlow.size(), countForPaging.intValue(), countPerFlow);
-    }
-
-    public SummaryByFlowAndMessage getErrorSummaryByMessage(Integer offset, int limit, ErrorSummaryFilter filter, DeltaFileOrder orderBy) {
-        return getSummaryByMessage(ACTIONS_ERROR_CAUSE, ERROR, offset, limit, buildErrorSummaryCriteria(filter), orderBy);
-    }
-
-    public SummaryByFlowAndMessage getFilteredSummaryByMessage(Integer offset, int limit, FilteredSummaryFilter filter, DeltaFileOrder orderBy) {
-        return getSummaryByMessage(ACTIONS_FILTERED_CAUSE, ActionState.FILTERED, offset, limit, buildFilterSummaryCriteria(filter), orderBy);
-    }
-
-    private SummaryByFlowAndMessage getSummaryByMessage(String messageField, ActionState actionState, Integer offset, int limit, Criteria filter, DeltaFileOrder orderBy) {
-        long elementsToSkip = (offset != null && offset > 0) ? offset : 0;
-
-        MatchOperation matchesErrorStage = Aggregation.match(filter);
-
-        GroupOperation groupByCauseAndFlow = Aggregation.group(ERROR_MESSAGE, DATA_SOURCE)
-                .count().as(GROUP_COUNT)
-                .addToSet(DID).as(DIDS);
-
-        List<AggregationOperation> mainStages = Arrays.asList(
-                matchesErrorStage,
-                unwind(FLOWS),
-                unwind(FLOWS_ACTIONS),
-                project()
-                        .and(DATA_SOURCE).as(DATA_SOURCE)
-                        .and(ID).as(DID)
-                        .and(messageField).as(ERROR_MESSAGE)
-                        .and(FLOWS_ACTIONS_STATE).as(UNWIND_STATE),
-                match(Criteria.where(UNWIND_STATE).is(actionState)),
-                groupByCauseAndFlow
-        );
-
-        List<AggregationOperation> aggregationWithCount = new ArrayList<>(mainStages);
-        aggregationWithCount.add(count().as(COUNT_FOR_PAGING));
-        Aggregation countAggregation = Aggregation.newAggregation(aggregationWithCount)
-                .withOptions(AggregationOptions.builder().allowDiskUse(true).build());
-
-        final Long countForPaging = Optional
-                .ofNullable(mongoTemplate.aggregate(countAggregation, COLLECTION,
-                        Document.class).getUniqueMappedResult())
-                .map(doc -> ((Integer) doc.get(COUNT_FOR_PAGING)).longValue())
-                .orElse(0L);
-
-        List<CountPerMessage> messageList = new ArrayList<>();
-        if (countForPaging > 0) {
-            List<AggregationOperation> stagesWithPaging = new ArrayList<>(mainStages);
-            stagesWithPaging.add(errorSummaryByMessageSort(orderBy));
-            stagesWithPaging.add(skip(elementsToSkip));
-            stagesWithPaging.add(limit(limit));
-            Aggregation pagingAggregation = Aggregation.newAggregation(stagesWithPaging)
-                    .withOptions(AggregationOptions.builder().allowDiskUse(true).build());
-
-            AggregationResults<MessageFlowGroup> aggResults = mongoTemplate.aggregate(
-                    pagingAggregation, COLLECTION, MessageFlowGroup.class);
-
-            for (MessageFlowGroup groupResult : aggResults.getMappedResults()) {
-                messageList.add(CountPerMessage.newBuilder()
-                        .message(groupResult.id.errorMessage)
-                        .flow(groupResult.id.dataSource)
-                        .count(groupResult.dids.size())
-                        .dids(groupResult.dids)
-                        .build());
-            }
-        }
-
-        return new SummaryByFlowAndMessage((int) elementsToSkip, messageList.size(), countForPaging.intValue(), messageList);
-    }
-
-    public Map<String, Integer> errorCountsByFlow(Set<String> flows) {
-        // Match flows in the given set, ERROR_ACKNOWLEDGED is null, and STAGE is DeltaFileStage.ERROR
-        Criteria flowsCriteria = Criteria.where(DATA_SOURCE).in(flows)
-                .and(FLOWS_ACTIONS).not().elemMatch(Criteria.where(ERROR_ACKNOWLEDGED).ne(null))
-                .and(STAGE).is(DeltaFileStage.ERROR);
-
-        MatchOperation matchFlowsStage = Aggregation.match(flowsCriteria);
-
-        // Group by flow and count errors
-        GroupOperation groupByFlowAndCountErrorsStage = Aggregation.group(DATA_SOURCE).count().as("errorCount");
-
-        // clean up field names to match the FlowErrorCount class
-        ProjectionOperation projectStage = Aggregation.project("errorCount").and("_id").as("flow");
-
-        // Build the aggregation pipeline
-        Aggregation aggregation = Aggregation.newAggregation(
-                        matchFlowsStage,
-                        groupByFlowAndCountErrorsStage,
-                        projectStage)
-                .withOptions(AggregationOptions.builder().allowDiskUse(true).build());
-
-        // Execute the aggregation and map results to FlowErrorCount objects
-        AggregationResults<FlowErrorCount> aggResults = mongoTemplate.aggregate(
-                aggregation, COLLECTION, FlowErrorCount.class);
-
-        // Convert the list of FlowErrorCount objects to a Map<String, Integer>
-        Map<String, Integer> errorCountsByFlow = new HashMap<>();
-        for (FlowErrorCount result : aggResults.getMappedResults()) {
-            errorCountsByFlow.put(result.getFlow(), result.getErrorCount());
-        }
-
-        return errorCountsByFlow;
-    }
-
-    private SortOperation errorSummaryByFlowSort(DeltaFileOrder orderBy) {
-        String sortField = DATA_SOURCE;
-        Sort.Direction direction = Sort.Direction.ASC;
-
-        if (orderBy != null) {
-            direction = Sort.Direction.fromString(orderBy.getDirection().name());
-            if (orderBy.getField().toLowerCase(Locale.ROOT).contains(COUNT_LOWER_CASE)) {
-                sortField = GROUP_COUNT;
-            }
-        }
-
-        return Aggregation.sort(direction, sortField);
-    }
-
-    private SortOperation errorSummaryByMessageSort(DeltaFileOrder orderBy) {
-        String sortField = ID_ERROR_MESSAGE;
-        String secondaryField = ID_DATA_SOURCE;
-        Sort.Direction direction = Sort.Direction.ASC;
-
-        if (orderBy != null) {
-            direction = Sort.Direction.fromString(orderBy.getDirection().name());
-
-            String requestedField = orderBy.getField().toLowerCase(Locale.ROOT);
-            if (requestedField.contains(FLOW_LOWER_CASE)) {
-                sortField = ID_DATA_SOURCE;
-                secondaryField = ID_ERROR_MESSAGE;
-            } else if (requestedField.contains(COUNT_LOWER_CASE)) {
-                sortField = GROUP_COUNT;
-                secondaryField = ID_ERROR_MESSAGE;
-            }
-        }
-
-        return Aggregation.sort(direction, sortField).and(direction, secondaryField);
-    }
-
-    private Criteria buildErrorSummaryCriteria(ErrorSummaryFilter filter) {
-        Criteria criteria = Criteria.where(STAGE).is(DeltaFileStage.ERROR);
-
-        if (filter == null) {
-            return criteria;
-        }
-
-        applySummaryCriteria(filter, criteria);
 
         if (filter.getErrorAcknowledged() != null) {
-            if (isTrue(filter.getErrorAcknowledged())) {
-                criteria.and(FLOWS).elemMatch(Criteria.where("actions").elemMatch(Criteria.where(ERROR_ACKNOWLEDGED).ne(null)));
+            Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
+            Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
+            Join<DeltaFile, DeltaFileFlow> subFlowJoin = subRoot.join("flows");
+            Join<DeltaFileFlow, Action> subActionJoin = subFlowJoin.join("actions");
+
+            if (filter.getErrorAcknowledged()) {
+                subquery.select(cb.literal(1L)).where(
+                        cb.equal(subRoot.get("did"), root.get("did")),
+                        cb.equal(subActionJoin.get("state"), "ERROR"),
+                        cb.isNotNull((subActionJoin.get("errorAcknowledged"))));
+
+                predicates.add(cb.exists(subquery));
             } else {
-                criteria.and(FLOWS).not().elemMatch(Criteria.where("actions").elemMatch(Criteria.where(ERROR_ACKNOWLEDGED).ne(null)));
+                subquery.select(cb.literal(1L)).where(
+                        cb.equal(subRoot.get("did"), root.get("did")),
+                        cb.equal(subActionJoin.get("state"), "ERROR"),
+                        cb.isNull((subActionJoin.get("errorAcknowledged"))));
+            }
+
+            predicates.add(cb.exists(subquery));
+        }
+
+        if (filter.getFiltered() != null) {
+            predicates.add(cb.equal(root.get("filtered"), filter.getFiltered()));
+        }
+
+        if (filter.getRequeueCountMin() != null) {
+            predicates.add(cb.greaterThanOrEqualTo(root.get(REQUEUE_COUNT), filter.getRequeueCountMin()));
+        }
+
+        if (filter.getIngressBytesMin() != null) {
+            predicates.add(cb.greaterThanOrEqualTo(root.get(INGRESS_BYTES), filter.getIngressBytesMin()));
+        }
+
+        if (filter.getIngressBytesMax() != null) {
+            predicates.add(cb.lessThanOrEqualTo(root.get(INGRESS_BYTES), filter.getIngressBytesMax()));
+        }
+
+        if (filter.getReferencedBytesMin() != null) {
+            predicates.add(cb.greaterThanOrEqualTo(root.get(REFERENCED_BYTES), filter.getReferencedBytesMin()));
+        }
+
+        if (filter.getReferencedBytesMax() != null) {
+            predicates.add(cb.lessThanOrEqualTo(root.get(REFERENCED_BYTES), filter.getReferencedBytesMax()));
+        }
+
+        if (filter.getTotalBytesMin() != null) {
+            predicates.add(cb.greaterThanOrEqualTo(root.get(TOTAL_BYTES), filter.getTotalBytesMin()));
+        }
+
+        if (filter.getTotalBytesMax() != null) {
+            predicates.add(cb.lessThanOrEqualTo(root.get(TOTAL_BYTES), filter.getTotalBytesMax()));
+        }
+
+        if (filter.getEgressed() != null) {
+            predicates.add(cb.equal(root.get(EGRESSED), filter.getEgressed()));
+        }
+
+        if (filter.getTestMode() != null) {
+            Subquery<Long> subquery = cb.createQuery().subquery(Long.class);
+            Root<DeltaFile> subRoot = subquery.from(DeltaFile.class);
+            Join<DeltaFile, DeltaFileFlow> subFlowJoin = subRoot.join("flows");
+
+            subquery.select(cb.literal(1L)).where(
+                    cb.equal(subRoot.get("did"), root.get("did")),
+                    cb.equal(subFlowJoin.get("testMode"), true));
+
+            if (filter.getTestMode()) {
+                predicates.add(cb.exists(subquery));
+            } else {
+                predicates.add(cb.not(cb.exists(subquery)));
             }
         }
 
-        return criteria;
-    }
-
-    private Criteria buildFilterSummaryCriteria(FilteredSummaryFilter filter) {
-        Criteria criteria = Criteria.where(FILTERED).is(true);
-
-        if (filter == null) {
-            return criteria;
+        if (filter.getReplayable() != null) {
+            if (filter.getReplayable()) {
+                predicates.add(cb.isNull(root.get(REPLAYED)));
+                predicates.add(cb.isNull(root.get(CONTENT_DELETED)));
+            } else {
+                predicates.add(cb.or(cb.isNotNull(root.get(REPLAYED)), cb.isNotNull(root.get(CONTENT_DELETED))));
+            }
         }
 
-        applySummaryCriteria(filter, criteria);
+        if (filter.getContentDeleted() != null) {
+            if (filter.getContentDeleted()) {
+                predicates.add(cb.isNotNull(root.get(CONTENT_DELETED)));
+            } else {
+                predicates.add(cb.isNull(root.get(CONTENT_DELETED)));
+            }
+        }
 
-        return criteria;
+        if (filter.getReplayed() != null) {
+            if (filter.getReplayed()) {
+                predicates.add(cb.isNotNull(root.get(REPLAYED)));
+            } else {
+                predicates.add(cb.isNull(root.get(REPLAYED)));
+            }
+        }
+
+        return predicates;
     }
 
-    private void applySummaryCriteria(SummaryFilter filter, Criteria criteria) {
-        addModifiedDateCriteria(criteria, filter.getModifiedAfter(), filter.getModifiedBefore());
-
-        if (filter.getFlow() != null) {
-            criteria.and(DATA_SOURCE).is(filter.getFlow());
+    private void addNameCriteria(CriteriaBuilder cb, Root<DeltaFile> root, NameFilter nameFilter, List<Predicate> predicates) {
+        String name = nameFilter.getName();
+        if (nameFilter.getCaseSensitive() != null && !nameFilter.getCaseSensitive()) {
+            name = name.toLowerCase();
+            predicates.add(cb.like(cb.lower(root.get("name")), "%" + name + "%"));
+        } else {
+            predicates.add(cb.like(root.get("name"), "%" + name + "%"));
         }
     }
 
     @Override
-    public List<String> annotationKeys() {
-        return mongoTemplate.findDistinct(new Query(), ANNOTATION_KEYS, DeltaFile.class, BsonValue.class).stream()
-                .filter(this::filterStrings)
-                .map(this::bsonValueAsString)
-                .toList();
-    }
-
-    private boolean filterStrings(BsonValue bsonValue) {
-        return bsonValue != null && bsonValue.isString();
-    }
-
-    private String bsonValueAsString(BsonValue bsonValue) {
-        return bsonValue.asString().getValue();
-    }
-
-    @Override
+    @Transactional
     public void setContentDeletedByDidIn(List<UUID> dids, OffsetDateTime now, String reason) {
-        batchedBulkUpdateByIds(dids, new Update().set(CONTENT_DELETED, now)
-                .set(CONTENT_DELETED_REASON, reason)
-                .set(CONTENT_DELETABLE, false));
-    }
-
-    @Override
-    public Long estimatedCount() {
-        return mongoTemplate.execute(COLLECTION, MongoCollection::estimatedDocumentCount);
-    }
-
-    @Override
-    public DeltaFileStats deltaFileStats() {
-        List<AggregationOperation> aggregationOps = new ArrayList<>();
-        Criteria inFlightCriteria = Criteria.where(IN_FLIGHT).is(true);
-        aggregationOps.add(Aggregation.match(inFlightCriteria));
-
-        ProjectionOperation project = Aggregation.project()
-                .andExclude("_id")
-                .andInclude(REFERENCED_BYTES);
-        aggregationOps.add(project);
-
-        aggregationOps.add(group("null").count().as(IN_FLIGHT_COUNT)
-                .sum(REFERENCED_BYTES).as(IN_FLIGHT_BYTES));
-
-        Aggregation aggregation = Aggregation.newAggregation(aggregationOps)
-                .withOptions(AggregationOptions.builder().allowDiskUse(true).build());
-
-        AggregationResults<DeltaFileStats> aggResults = mongoTemplate.aggregate(
-                aggregation, COLLECTION, DeltaFileStats.class);
-
-        if (aggResults.getMappedResults().isEmpty()) {
-            return new DeltaFileStats(estimatedCount(), 0L, 0L);
-        }
-
-        DeltaFileStats deltaFileStats = aggResults.getMappedResults().getFirst();
-        deltaFileStats.setTotalCount(estimatedCount());
-        return deltaFileStats;
-    }
-
-    @Override
-    public List<ColdQueuedActionSummary> coldQueuedActionsSummary() {
-        Criteria stageCriteria = Criteria.where(IN_FLIGHT).is(true);
-        MatchOperation matchStage = Aggregation.match(stageCriteria);
-
-        UnwindOperation unwindFlows = Aggregation.unwind(FLOWS);
-        UnwindOperation unwindActions = Aggregation.unwind(FLOWS_ACTIONS);
-
-        Criteria actionStateCriteria = Criteria.where(ACTIONS_STATE).is("COLD_QUEUED");
-        MatchOperation matchActionState = Aggregation.match(actionStateCriteria);
-
-        ProjectionOperation projectFields = Aggregation.project()
-                .and(ACTIONS_NAME).as(NAME)
-                .and(ACTIONS_TYPE).as(TYPE);
-
-        GroupOperation groupByActionNameAndType = Aggregation.group(NAME, TYPE).count().as(COUNT_LOWER_CASE);
-
-        Aggregation aggregation = Aggregation.newAggregation(
-                matchStage,
-                unwindFlows,
-                unwindActions,
-                matchActionState,
-                projectFields,
-                groupByActionNameAndType
-        ).withOptions(AggregationOptions.builder().allowDiskUse(true).build());
-
-        AggregationResults<Document> aggResults = mongoTemplate.aggregate(aggregation, COLLECTION, Document.class);
-
-        return aggResults.getMappedResults().stream()
-                .map(doc -> {
-                    String actionName = ((Document) doc.get("_id")).getString(NAME);
-                    String actionType = ((Document) doc.get("_id")).getString(TYPE);
-                    Integer count = doc.getInteger(COUNT_LOWER_CASE);
-                    return new ColdQueuedActionSummary(actionName, ActionType.valueOf(actionType), count);
-                })
-                .toList();
-    }
-
-    private void batchedBulkUpdateByIds(List<UUID> dids, Update update) {
         if (dids == null || dids.isEmpty()) {
             return;
         }
 
-        BulkOperations bulkOps = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, DeltaFile.class);
         for (List<UUID> batch : Lists.partition(dids, 500)) {
-            Query query = new Query().addCriteria(Criteria.where(ID).in(batch));
-            bulkOps.updateMulti(query, update);
+            CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+            CriteriaUpdate<DeltaFile> update = cb.createCriteriaUpdate(DeltaFile.class);
+            Root<DeltaFile> root = update.from(DeltaFile.class);
+
+            update.set("contentDeleted", now)
+                    .set("contentDeletedReason", reason)
+                    .set("contentDeletable", false)
+                    .where(root.get("did").in(batch));
+
+            entityManager.createQuery(update).executeUpdate();
         }
-        bulkOps.execute();
     }
 
+    private static final String INSERT_DELTA_FILES = """
+            INSERT INTO delta_files (did, name, normalized_name, data_source, parent_dids, join_id, child_dids,
+                                     requeue_count, ingress_bytes, referenced_bytes, total_bytes, stage,
+                                     created, modified, content_deleted, content_deleted_reason,
+                                     egressed, filtered, replayed, replay_did, terminal,
+                                     content_deletable, version)
+            VALUES (?, ?, ?, ?, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
+
+    private static final String INSERT_DELTA_FILE_FLOWS = """
+            INSERT INTO delta_file_flows (id, name, number, type, state, created, modified, flow_plan, input,
+                                          publish_topics, depth, pending_annotations, test_mode, test_mode_reason,
+                                          join_id, pending_actions, delta_file_id, version)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?::jsonb, ?, ?)""";
+
+    private static final String INSERT_ACTIONS = """
+            INSERT INTO actions (id, name, number, type, state, created, queued, start, stop, modified, error_cause,
+                                 error_context, error_acknowledged, error_acknowledged_reason, next_auto_resume,
+                                 next_auto_resume_reason, filtered_cause, filtered_context, attempt, content,
+                                 metadata, delete_metadata_keys, replay_start, delta_file_flow_id, version)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?, ?)""";
+
+    private static final String INSERT_ANNOTATIONS = """
+            INSERT INTO annotations (id, key, value, delta_file_id)
+            VALUES (?, ?, ?, ?)""";
+
+    @Override
+    @Transactional
+    public void batchInsert(List<DeltaFile> deltaFiles) {
+        jdbcTemplate.execute(new PreparedStatementCreator() {
+            @NotNull
+            @Override
+            public PreparedStatement createPreparedStatement(@NotNull Connection connection) throws SQLException {
+                connection.setAutoCommit(false);
+                return connection.prepareStatement("SELECT 1"); // Dummy statement
+            }
+        }, (PreparedStatementCallback<Void>) ps -> {
+            try (PreparedStatement psDeltaFile = ps.getConnection().prepareStatement(INSERT_DELTA_FILES);
+                 PreparedStatement psDeltaFileFlow = ps.getConnection().prepareStatement(INSERT_DELTA_FILE_FLOWS);
+                 PreparedStatement psAction = ps.getConnection().prepareStatement(INSERT_ACTIONS);
+                 PreparedStatement psAnnotation = ps.getConnection().prepareStatement(INSERT_ANNOTATIONS)) {
+
+                for (DeltaFile deltaFile : deltaFiles) {
+                    setDeltaFileParameters(psDeltaFile, deltaFile);
+                    psDeltaFile.addBatch();
+
+                    for (DeltaFileFlow flow : deltaFile.getFlows()) {
+                        setDeltaFileFlowParameters(psDeltaFileFlow, flow, deltaFile);
+                        psDeltaFileFlow.addBatch();
+
+                        for (Action action : flow.getActions()) {
+                            setActionParameters(psAction, action, flow);
+                            psAction.addBatch();
+                        }
+                    }
+
+                    if (!deltaFile.getAnnotations().isEmpty()) {
+                        for (Annotation annotation : deltaFile.getAnnotations()) {
+                            setAnnotationParameters(psAnnotation, annotation, deltaFile);
+                            psAnnotation.addBatch();
+                        }
+                    }
+                }
+
+                psDeltaFile.executeBatch();
+                psDeltaFileFlow.executeBatch();
+                psAction.executeBatch();
+                if (deltaFiles.stream().anyMatch(df -> !df.getAnnotations().isEmpty())) {
+                    psAnnotation.executeBatch();
+                }
+
+                return null;
+            }
+        });
+    }
+
+    private void setDeltaFileParameters(PreparedStatement ps, DeltaFile deltaFile) throws SQLException {
+        ps.setObject(1, deltaFile.getDid());
+        ps.setString(2, deltaFile.getName());
+        ps.setString(3, deltaFile.getNormalizedName());
+        ps.setString(4, deltaFile.getDataSource());
+        ps.setString(5, toJson(deltaFile.getParentDids()));
+        ps.setObject(6, deltaFile.getJoinId());
+        ps.setString(7, toJson(deltaFile.getChildDids()));
+        ps.setInt(8, deltaFile.getRequeueCount());
+        ps.setLong(9, deltaFile.getIngressBytes());
+        ps.setLong(10, deltaFile.getReferencedBytes());
+        ps.setLong(11, deltaFile.getTotalBytes());
+        ps.setString(12, deltaFile.getStage().name());
+        ps.setTimestamp(13, toTimestamp(deltaFile.getCreated()));
+        ps.setTimestamp(14, toTimestamp(deltaFile.getModified()));
+        ps.setTimestamp(15, toTimestamp(deltaFile.getContentDeleted()));
+        ps.setString(16, deltaFile.getContentDeletedReason());
+        ps.setObject(17, deltaFile.getEgressed());
+        ps.setObject(18, deltaFile.getFiltered());
+        ps.setTimestamp(19, toTimestamp(deltaFile.getReplayed()));
+        ps.setObject(20, deltaFile.getReplayDid());
+        ps.setBoolean(21, deltaFile.isTerminal());
+        ps.setBoolean(22, deltaFile.isContentDeletable());
+        ps.setLong(23, deltaFile.getVersion());
+    }
+
+    private void setDeltaFileFlowParameters(PreparedStatement ps, DeltaFileFlow flow, DeltaFile deltaFile) throws SQLException {
+        ps.setObject(1, flow.getId());
+        ps.setString(2, flow.getName());
+        ps.setInt(3, flow.getNumber());
+        ps.setString(4, flow.getType().name());
+        ps.setString(5, flow.getState().name());
+        ps.setTimestamp(6, toTimestamp(flow.getCreated()));
+        ps.setTimestamp(7, toTimestamp(flow.getModified()));
+        ps.setString(8, toJson(flow.getFlowPlan()));
+        ps.setString(9, toJson(flow.getInput()));
+        ps.setString(10, toJson(flow.getPublishTopics()));
+        ps.setInt(11, flow.getDepth());
+        ps.setString(12, toJson(flow.getPendingAnnotations()));
+        ps.setBoolean(13, flow.isTestMode());
+        ps.setString(14, flow.getTestModeReason());
+        ps.setObject(15, flow.getJoinId());
+        ps.setString(16, toJson(flow.getPendingActions()));
+        ps.setObject(17, deltaFile.getDid());
+        ps.setLong(18, deltaFile.getVersion());
+    }
+
+    private void setActionParameters(PreparedStatement ps, Action action, DeltaFileFlow flow) throws SQLException {
+        ps.setObject(1, action.getId());
+        ps.setString(2, action.getName());
+        ps.setInt(3, action.getNumber());
+        ps.setString(4, action.getType().name());
+        ps.setString(5, action.getState().name());
+        ps.setTimestamp(6, toTimestamp(action.getCreated()));
+        ps.setTimestamp(7, toTimestamp(action.getQueued()));
+        ps.setTimestamp(8, toTimestamp(action.getStart()));
+        ps.setTimestamp(9, toTimestamp(action.getStop()));
+        ps.setTimestamp(10, toTimestamp(action.getModified()));
+        ps.setString(11, action.getErrorCause());
+        ps.setString(12, action.getErrorContext());
+        ps.setTimestamp(13, toTimestamp(action.getErrorAcknowledged()));
+        ps.setString(14, action.getErrorAcknowledgedReason());
+        ps.setTimestamp(15, toTimestamp(action.getNextAutoResume()));
+        ps.setString(16, action.getNextAutoResumeReason());
+        ps.setString(17, action.getFilteredCause());
+        ps.setString(18, action.getFilteredContext());
+        ps.setInt(19, action.getAttempt());
+        ps.setString(20, toJson(action.getContent()));
+        ps.setString(21, toJson(action.getMetadata()));
+        ps.setString(22, toJson(action.getDeleteMetadataKeys()));
+        ps.setBoolean(23, action.isReplayStart());
+        ps.setObject(24, flow.getId());
+        ps.setLong(25, flow.getVersion());
+    }
+
+    private void setAnnotationParameters(PreparedStatement ps, Annotation annotation, DeltaFile deltaFile) throws SQLException {
+        ps.setObject(1, annotation.getId());
+        ps.setString(2, annotation.getKey());
+        ps.setString(3, annotation.getValue());
+        ps.setObject(4, deltaFile.getDid());
+    }
+
+    private String toJson(Object object) {
+        try {
+            return object == null ? null : OBJECT_MAPPER.writeValueAsString(object);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Timestamp toTimestamp(OffsetDateTime offsetDateTime) {
+        return offsetDateTime == null ? null : Timestamp.from(offsetDateTime.toInstant());
+    }
+
+    @Transactional
     public void batchedBulkDeleteByDidIn(List<UUID> dids) {
         if (dids == null || dids.isEmpty()) {
             return;
         }
 
-        BulkOperations bulkOps = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, DeltaFile.class);
+        String sql = """
+        WITH deleted_delta_file_flows AS (
+            DELETE FROM delta_file_flows
+            WHERE delta_file_id IN (:dids)
+            RETURNING id
+        )
+        DELETE FROM actions
+        WHERE delta_file_flow_id IN (
+            SELECT id FROM deleted_delta_file_flows
+        );
 
-        for (List<UUID> batch : Lists.partition(dids, 500)) {
-            Query query = new Query().addCriteria(Criteria.where(ID).in(batch));
-            bulkOps.remove(query);
-        }
+        DELETE FROM annotations
+        WHERE delta_file_id IN (:dids);
 
-        bulkOps.execute();
-    }
+        DELETE FROM delta_files
+        WHERE did IN (:dids);
 
+    """;
 
-    private void addNameCriteria(NameFilter filenameFilter, Criteria criteria) {
-        String filename = filenameFilter.getName();
-        Objects.requireNonNull(filename, "The filename must be provided in the FilenameFilter");
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("dids", dids);
+        query.executeUpdate();
 
-        String searchField = NORMALIZED_NAME;
-
-        if (isFalse(filenameFilter.getCaseSensitive())) {
-            filename =  filename.toLowerCase();
-        } else {
-            searchField = NAME;
-        }
-
-        // use the exact match criteria by default
-        if (isTrue(filenameFilter.getRegex())) {
-            criteria.and(searchField).regex(filename);
-        } else {
-            criteria.and(searchField).is(filename);
-        }
-    }
-
-    public boolean update(UUID did, long version, Update update) {
-        Query query = new Query(Criteria.where(ID).is(did).and(VERSION).is(version));
-        UpdateResult result = mongoTemplate.updateFirst(query, update, DeltaFile.class);
-
-        return result.wasAcknowledged() && result.getMatchedCount() > 0;
+        entityManager.flush();
+        entityManager.clear();
     }
 }

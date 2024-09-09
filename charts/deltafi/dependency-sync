@@ -18,6 +18,5 @@ sync graphite https://gitlab.com/deltafi/helmcharts/graphite.git 1.1.0-deltafi1
 sync kubernetes-dashboard https://gitlab.com/deltafi/helmcharts/kubernetes-dashboard.git 5.7.0
 sync loki https://gitlab.com/deltafi/helmcharts/loki.git 2.12.2
 sync minio https://gitlab.com/deltafi/helmcharts/minio.git 5.0.7
-sync mongodb https://gitlab.com/deltafi/helmcharts/mongodb.git 10.28.7
 sync promtail https://gitlab.com/deltafi/helmcharts/promtail.git 6.10.0
 sync redis https://gitlab.com/deltafi/helmcharts/redis.git 17.1.2

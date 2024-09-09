@@ -34,9 +34,9 @@
           <dd>
             <InputText v-model="selectedDeleteName" :placeholder="deletePolicyConfigurationMap.get('name').placeholder" :disabled="deletePolicyConfigurationMap.get('name').disabled" class="inputWidth" />
           </dd>
-          <dt>{{ deletePolicyConfigurationMap.get("flow").header }}</dt>
+          <dt>{{ deletePolicyConfigurationMap.get("dataSource").header }}</dt>
           <dd>
-            <Dropdown v-model="selectedDeleteFlow" :options="dataSourceFlowNames" :placeholder="deletePolicyConfigurationMap.get('flow').placeholder" :disabled="deletePolicyConfigurationMap.get('flow').disabled" show-clear class="inputWidth" />
+            <Dropdown v-model="selectedDeleteFlow" :options="formattedDataSourceNames" option-group-label="label" option-group-children="sources" :placeholder="deletePolicyConfigurationMap.get('dataSource').placeholder" :disabled="deletePolicyConfigurationMap.get('dataSource').disabled" show-clear class="inputWidth" />
           </dd>
           <dt>{{ deletePolicyConfigurationMap.get("__typename").header }}</dt>
           <dd>
@@ -143,19 +143,18 @@ const { rowDataProp: rowData, editDeletePolicy, viewDeletePolicy, closeDialogCom
 const emit = defineEmits(["reloadDeletePolicies"]);
 const { validateDeletePolicyFile } = useDeletePolicyConfiguration();
 const { loadDeletePolicies } = useDeletePolicyQueryBuilder();
-const { dataSourceFlows: dataSourceFlowNames, fetchDataSourceFlowNames } = useFlows();
+const { allDataSourceFlowNames, fetchAllDataSourceFlowNames } = useFlows();
 const notify = useNotifications();
 
 const deletePolicyTypes = ref(["TimedDeletePolicy", "DiskSpaceDeletePolicy"]);
-
 const newDeletePolicyUpload = ref({});
-
+const formattedDataSourceNames = ref([]);
 const errorsList = ref([]);
 
 const deletePolicyConfigurationMap = new Map([
   ["name", { header: "Name*", placeholder: "e.g. oneHourAfterComplete, over98PerCent", type: "string", disabled: viewDeletePolicy }],
   ["__typename", { header: "Type*", placeholder: "e.g. TimedDeletePolicy, DiskSpaceDeletePolicy", type: "select", disabled: viewDeletePolicy || editDeletePolicy }],
-  ["flow", { header: "Data Source", placeholder: "e.g. smoke, passthrough", type: "string", disabled: viewDeletePolicy }],
+  ["dataSource", { header: "Data Source", placeholder: "e.g. smoke, passthrough", type: "string", disabled: viewDeletePolicy }],
   ["enabled", { header: "Enabled", type: "boolean", disabled: viewDeletePolicy }],
   ["afterCreate", { header: "After Create", placeholder: "Duration in ISO 1806 notation. e.g. PT1H, P23DT23H, P4Y", type: "string", disabled: viewDeletePolicy }],
   ["afterComplete", { header: "After Complete", placeholder: "Duration in ISO 1806 notation. e.g. PT1H, P23DT23H, P4Y", type: "string", disabled: viewDeletePolicy }],
@@ -177,8 +176,18 @@ const selectedMaxPercent = ref(_.get(rowData, "maxPercent", null));
 const isMounted = ref(useMounted());
 
 onMounted(async () => {
-  await fetchDataSourceFlowNames();
+  await fetchAllDataSourceFlowNames();
+  formatDataSourceNames();
 });
+
+const formatDataSourceNames = () => {
+  if (!_.isEmpty(allDataSourceFlowNames.value.restDataSource)) {
+    formattedDataSourceNames.value.push({ label: "Rest Data Sources", sources: allDataSourceFlowNames.value.restDataSource });
+  }
+  if (!_.isEmpty(allDataSourceFlowNames.value.timedDataSource)) {
+    formattedDataSourceNames.value.push({ label: "Timed Data Sources", sources: allDataSourceFlowNames.value.timedDataSource });
+  }
+};
 
 const createNewPolicy = () => {
   let newDeletePolicy = {};

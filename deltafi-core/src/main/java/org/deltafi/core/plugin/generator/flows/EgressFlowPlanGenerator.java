@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.plugin.generator.flows;
 
-import org.deltafi.common.types.EgressActionConfiguration;
+import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.EgressFlowPlan;
 import org.deltafi.common.types.FlowPlan;
 import org.deltafi.common.types.Rule;
@@ -41,7 +41,7 @@ public class EgressFlowPlanGenerator {
      * @return list of flow plans built using the given actions
      */
     List<FlowPlan> generateEgressFlowPlans(String baseFlowName, List<ActionGeneratorInput> egressActions) {
-        List<EgressActionConfiguration> egressActionConfigs = ActionUtil.egressActionConfigurations(egressActions);
+        List<ActionConfiguration> egressActionConfigs = ActionUtil.egressActionConfigurations(egressActions);
 
         String planName = baseFlowName + FLOW_NAME_POSTFIX;
         List<FlowPlan> egressFlowPlans = new ArrayList<>();
@@ -53,7 +53,7 @@ public class EgressFlowPlanGenerator {
             for (int i = 0; i < egressActionConfigs.size(); i++) {
                 int planNum = i + 1;
                 Rule subscribeRule = new Rule(baseFlowName + FLOW_NAME_POSTFIX + "-" + planNum);
-                EgressActionConfiguration egressActionConfiguration = egressActionConfigs.get(i);
+                ActionConfiguration egressActionConfiguration = egressActionConfigs.get(i);
                 egressFlowPlans.add(generateEgressFlow(planName + "-" + planNum, egressActionConfiguration,
                         Set.of(subscribeRule)));
             }
@@ -62,7 +62,7 @@ public class EgressFlowPlanGenerator {
         return egressFlowPlans;
     }
 
-    private FlowPlan generateEgressFlow(String planName, EgressActionConfiguration egressAction,
+    private FlowPlan generateEgressFlow(String planName, ActionConfiguration egressAction,
                                         Set<Rule> subscribeRuleSet) {
         EgressFlowPlan egressFlowPlan = new EgressFlowPlan(planName, "Sample egress flow", egressAction);
         egressFlowPlan.setSubscribe(subscribeRuleSet);

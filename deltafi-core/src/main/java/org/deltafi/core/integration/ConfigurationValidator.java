@@ -25,8 +25,9 @@ import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.integration.config.Configuration;
 import org.deltafi.core.integration.config.ExpectedDeltaFile;
 import org.deltafi.core.integration.config.Input;
+import org.deltafi.core.plugin.PluginEntity;
 import org.deltafi.core.plugin.PluginRegistryService;
-import org.deltafi.core.services.DataSourceService;
+import org.deltafi.core.services.RestDataSourceService;
 import org.deltafi.core.services.EgressFlowService;
 import org.deltafi.core.services.FlowService;
 import org.deltafi.core.services.TransformFlowService;
@@ -44,7 +45,7 @@ public class ConfigurationValidator {
     // 1 second longer then the refresh in FlowConfigurationCacheEvictScheduler:
     private static final Long FLOW_START_DELAY_MILLIS = 6000L;
 
-    private final DataSourceService dataSourceService;
+    private final RestDataSourceService restDataSourceService;
     private final TransformFlowService transformFlowService;
     private final EgressFlowService egressFlowService;
     private final PluginRegistryService pluginRegistryService;
@@ -64,7 +65,7 @@ public class ConfigurationValidator {
 
         boolean flowsStarted = false;
         if (config.getDataSources() != null) {
-            if (checkOrStartFlow(errors, "dataSource", dataSourceService, config.getDataSources())) {
+            if (checkOrStartFlow(errors, "dataSource", restDataSourceService, config.getDataSources())) {
                 flowsStarted = true;
             }
         }
@@ -122,7 +123,7 @@ public class ConfigurationValidator {
 
     private Collection<String> checkPlugins(List<PluginCoordinates> plugins) {
         List<String> errors = new ArrayList<>();
-        List<Plugin> allInstalledPlugins = null;
+        List<PluginEntity> allInstalledPlugins = null;
         for (PluginCoordinates pluginCoordinates : plugins) {
             if (StringUtils.isEmpty(pluginCoordinates.getGroupId()) || StringUtils.isEmpty(pluginCoordinates.getArtifactId())) {
                 errors.add("Invalid plugin specified: " + pluginCoordinates);
@@ -133,7 +134,7 @@ public class ConfigurationValidator {
                         allInstalledPlugins = pluginRegistryService.getPlugins();
                     }
                     boolean found = false;
-                    for (Plugin p : allInstalledPlugins) {
+                    for (PluginEntity p : allInstalledPlugins) {
                         if (p.getPluginCoordinates().equalsIgnoreVersion(pluginCoordinates)) {
                             found = true;
                             break;
@@ -151,7 +152,7 @@ public class ConfigurationValidator {
         return errors;
     }
 
-    private boolean checkOrStartFlow(List<String> errors, String type, FlowService<?, ?, ?> flowService, List<String> flows) {
+    private boolean checkOrStartFlow(List<String> errors, String type, FlowService<?, ?, ?, ?> flowService, List<String> flows) {
         boolean flowStarted = false;
         for (String flow : flows) {
             if (!flowService.hasFlow(flow)) {

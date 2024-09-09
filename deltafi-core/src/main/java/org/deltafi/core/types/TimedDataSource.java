@@ -18,12 +18,16 @@
 package org.deltafi.core.types;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.uuid.Generators;
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
+import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.ActionFamily;
 import org.deltafi.core.services.CoreEventQueue;
+import org.hibernate.annotations.Type;
 import org.springframework.data.annotation.PersistenceCreator;
 
 import java.time.Duration;
@@ -34,13 +38,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
+@Entity
+@DiscriminatorValue("TIMED_DATA_SOURCE")
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class TimedDataSource extends DataSource {
-    private static final Duration TASKING_TIMEOUT = Duration.ofSeconds(30);
-    private static final String TYPE = "TIMED_DATA_SOURCE";
-
-    private TimedIngressActionConfiguration timedIngressAction;
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
+    private ActionConfiguration timedIngressAction;
     private String cronSchedule;
 
     private OffsetDateTime lastRun;
@@ -48,28 +53,27 @@ public class TimedDataSource extends DataSource {
     private String memo;
     private UUID currentDid;
     private boolean executeImmediate = false;
+    @Enumerated(EnumType.STRING)
     private IngressStatus ingressStatus = IngressStatus.HEALTHY;
     private String ingressStatusMessage;
 
-    /**
-     * Schema versions:
-     * 2 - original
-     */
-    public static final int CURRENT_SCHEMA_VERSION = 2;
+    private static final Duration TASKING_TIMEOUT = Duration.ofSeconds(30);
+    private static final String TYPE = "TIMED_DATA_SOURCE";
 
     @JsonCreator
     @PersistenceCreator
     public TimedDataSource() {
-        super(TYPE);
+        super(FlowType.TIMED_DATA_SOURCE);
     }
 
     @Builder
-    public TimedDataSource(String name, String topic, String description, TimedIngressActionConfiguration timedIngressAction, String cronSchedule) {
+    public TimedDataSource(String name, String topic, String description, ActionConfiguration timedIngressAction, String cronSchedule, int maxErrors) {
         this.setTopic(topic);
         this.setName(name);
         this.setDescription(description);
         this.timedIngressAction = timedIngressAction;
         this.cronSchedule = cronSchedule;
+        this.setMaxErrors(maxErrors);
     }
 
     @Override
@@ -82,16 +86,6 @@ public class TimedDataSource extends DataSource {
             setExecuteImmediate(timedDataSource.isExecuteImmediate());
             setMaxErrors(timedDataSource.getMaxErrors());
         }
-    }
-
-    @Override
-    public boolean migrate() {
-        if (getSchemaVersion() < CURRENT_SCHEMA_VERSION) {
-            setSchemaVersion(CURRENT_SCHEMA_VERSION);
-            return true;
-        }
-
-        return false;
     }
 
     public ActionConfiguration findActionConfigByName(String actionNamed) {
@@ -133,16 +127,16 @@ public class TimedDataSource extends DataSource {
      */
     public WrappedActionInput buildActionInput(String systemName, OffsetDateTime now) {
         DeltaFile deltaFile = DeltaFile.builder()
-                .did(UUID.randomUUID())
-                .dataSource(name)
+                .did(Generators.timeBasedEpochGenerator().generate())
+                .dataSource(getName())
                 .build();
         DeltaFileFlow flow = DeltaFileFlow.builder()
-                .name(name)
-                .id(0)
+                .name(getName())
+                .number(0)
                 .build();
         Action action = Action.builder()
                 .name(timedIngressAction.getName())
-                .id(0)
+                .number(0)
                 .created(now)
                 .state(ActionState.QUEUED)
                 .build();

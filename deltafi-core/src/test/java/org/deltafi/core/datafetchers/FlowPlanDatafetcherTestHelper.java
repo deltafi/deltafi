@@ -26,10 +26,7 @@ import org.deltafi.common.types.*;
 import org.deltafi.core.converters.DurationScalar;
 import org.deltafi.core.generated.client.*;
 import org.deltafi.core.generated.types.*;
-import org.deltafi.core.types.EgressFlow;
-import org.deltafi.core.types.DataSource;
-import org.deltafi.core.types.TimedDataSource;
-import org.deltafi.core.types.TransformFlow;
+import org.deltafi.core.types.*;
 
 import java.time.Duration;
 import java.util.List;
@@ -49,22 +46,22 @@ public class FlowPlanDatafetcherTestHelper {
         return executeQuery(dgsQueryExecutor, GetEgressFlowPlanGraphQLQuery.newRequest().planName("egressPlan").build(), new GetEgressFlowPlanProjectionRoot().name().type().description().egressAction().name().actionType().type(), EgressFlowPlan.class);
     }
 
-    public static DataSourcePlan getTimedIngressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, GetDataSourcePlanGraphQLQuery.newRequest().planName("timedIngressPlan").build(), new GetDataSourcePlanProjectionRoot().name().type().description().topic()
-                .onRestDataSourcePlan().parent().onTimedDataSourcePlan().name().timedIngressAction().name().actionType().type().parent().cronSchedule(), DataSourcePlan.class);
+    public static TimedDataSourcePlan getTimedIngressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, GetTimedDataSourcePlanGraphQLQuery.newRequest().planName("timedIngressPlan").build(), new GetTimedDataSourcePlanProjectionRoot().name().type().description().topic()
+                .name().timedIngressAction().name().actionType().type().parent().cronSchedule(), TimedDataSourcePlan.class);
     }
 
     public static TransformFlow validateTransformFlow(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, ValidateTransformFlowGraphQLQuery.newRequest().flowName("sampleTransform").build(), new ValidateTransformFlowProjectionRoot().name(), TransformFlow.class);
     }
 
-    public static DataSource validateTimedIngressFlow(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, ValidateDataSourceGraphQLQuery.newRequest().name(TIMED_DATA_SOURCE_NAME).build(), new ValidateDataSourceProjectionRoot().name().type(), TimedDataSource.class);
+    public static TimedDataSource validateTimedIngressFlow(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, ValidateTimedDataSourceGraphQLQuery.newRequest().name(TIMED_DATA_SOURCE_NAME).build(), new ValidateTimedDataSourceProjectionRoot().name().type(), TimedDataSource.class);
     }
 
     public static FlowNames getFlowNames(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetFlowNamesGraphQLQuery.newRequest().build(),
-                new GetFlowNamesProjectionRoot().transform().egress().dataSource(), FlowNames.class);
+                new GetFlowNamesProjectionRoot().transform().egress().timedDataSource().restDataSource(), FlowNames.class);
     }
 
     public static EgressFlow validateEgressFlow(DgsQueryExecutor dgsQueryExecutor) {
@@ -73,7 +70,7 @@ public class FlowPlanDatafetcherTestHelper {
 
     public static List<Flows> getFlows(DgsQueryExecutor dgsQueryExecutor) {
         TypeRef<List<Flows>> typeRef = new TypeRef<>() {};
-        return executeQuery(dgsQueryExecutor, GetFlowsGraphQLQuery.newRequest().build(), new GetFlowsProjectionRoot().sourcePlugin().artifactId().parent().transformFlows().name().parent().egressFlows().name().parent().dataSources().name().type().root(), typeRef);
+        return executeQuery(dgsQueryExecutor, GetFlowsGraphQLQuery.newRequest().build(), new GetFlowsProjectionRoot().sourcePlugin().artifactId().parent().transformFlows().name().parent().egressFlows().name().parent().restDataSources().name().type().parent().timedDataSources().name().type().root(), typeRef);
     }
 
     public static SystemFlows getRunningFlows(DgsQueryExecutor dgsQueryExecutor) {
@@ -81,9 +78,19 @@ public class FlowPlanDatafetcherTestHelper {
                 new GetRunningFlowsProjectionRoot().transform().name().parent().egress().name().root(), SystemFlows.class);
     }
 
+    public static SystemFlowPlans getAllFlowPlans(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, GetAllFlowPlansGraphQLQuery.newRequest().build(),
+                new GetAllFlowPlansProjectionRoot()
+                        .timedDataSources().type().name().description().topic().timedIngressAction().name().type().actionType().parent().cronSchedule().parent()
+                        .restDataSources().type().name().description().topic().parent()
+                        .transformPlans().name().description().parent()
+                        .egressPlans().name().description().egressAction().name().type().actionType()
+                        .root(), SystemFlowPlans.class);
+    }
+
     public static SystemFlows getAllFlows(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetAllFlowsGraphQLQuery.newRequest().build(),
-                new GetAllFlowsProjectionRoot().dataSource().type().name().parent().transform().name().parent().egress().name().root(), SystemFlows.class);
+                new GetAllFlowsProjectionRoot().timedDataSource().type().name().parent().restDataSource().type().name().parent().transform().name().parent().egress().name().root(), SystemFlows.class);
     }
 
     public static TransformFlow getTransformFlow(DgsQueryExecutor dgsQueryExecutor) {
@@ -118,7 +125,7 @@ public class FlowPlanDatafetcherTestHelper {
     }
 
     public static EgressFlow saveEgressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
-        EgressActionConfigurationInput egress = EgressActionConfigurationInput.newBuilder().name("egress").type("org.deltafi.actions.EgressAction").build();
+        ActionConfigurationInput egress = ActionConfigurationInput.newBuilder().name("egress").type("org.deltafi.actions.EgressAction").build();
         EgressFlowPlanInput input = EgressFlowPlanInput.newBuilder()
                 .name("flowPlan")
                 .type("EGRESS")
@@ -130,7 +137,7 @@ public class FlowPlanDatafetcherTestHelper {
     }
 
     public static TimedDataSource saveTimedIngressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
-        TimedIngressActionConfigurationInput timedIngress = TimedIngressActionConfigurationInput.newBuilder().name("timedIngress").type("org.deltafi.actions.TimedIngress").build();
+        ActionConfigurationInput timedIngress = ActionConfigurationInput.newBuilder().name("timedIngress").type("org.deltafi.actions.TimedIngress").build();
 
         TimedDataSourcePlanInput input = TimedDataSourcePlanInput.newBuilder()
                 .name("flowPlan")
@@ -152,7 +159,7 @@ public class FlowPlanDatafetcherTestHelper {
     }
 
     public static boolean removeTimedIngressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, RemoveDataSourcePlanGraphQLQuery.newRequest().name("flowPlan").build());
+        return executeQuery(dgsQueryExecutor, RemoveTimedDataSourcePlanGraphQLQuery.newRequest().name("flowPlan").build());
     }
 
     public static boolean startTransformFlow(DgsQueryExecutor dgsQueryExecutor) {
@@ -171,12 +178,12 @@ public class FlowPlanDatafetcherTestHelper {
         return executeQuery(dgsQueryExecutor, StopEgressFlowGraphQLQuery.newRequest().flowName("sampleEgress").build());
     }
 
-    public static boolean startTimedIngressFlow(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, StartDataSourceGraphQLQuery.newRequest().name(TIMED_DATA_SOURCE_NAME).build());
+    public static boolean startTimedDataSource(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, StartTimedDataSourceGraphQLQuery.newRequest().name(TIMED_DATA_SOURCE_NAME).build());
     }
 
-    public static boolean stopTimedIngressFlow(DgsQueryExecutor dgsQueryExecutor) {
-        return executeQuery(dgsQueryExecutor, StopDataSourceGraphQLQuery.newRequest().name(TIMED_DATA_SOURCE_NAME).build());
+    public static boolean stopTimedDataSource(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, StopTimedDataSourceGraphQLQuery.newRequest().name(TIMED_DATA_SOURCE_NAME).build());
     }
 
     public static boolean setTimedDataSourceMemo(DgsQueryExecutor dgsQueryExecutor, String memo) {

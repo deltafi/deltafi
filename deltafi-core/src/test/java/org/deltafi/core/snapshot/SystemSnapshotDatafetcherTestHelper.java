@@ -25,6 +25,7 @@ import org.deltafi.core.configuration.ui.Link.LinkType;
 import org.deltafi.core.generated.types.BackOff;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.types.*;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.intellij.lang.annotations.Language;
 
 import java.time.OffsetDateTime;
@@ -59,7 +60,7 @@ public class SystemSnapshotDatafetcherTestHelper {
 
     public static SystemSnapshot expectedSnapshot() {
         SystemSnapshot systemSnapshot = new SystemSnapshot();
-        systemSnapshot.setId("11111111-1111-1111-1111-111111111111");
+        systemSnapshot.setId(UUID.fromString("11111111-1111-1111-1111-111111111111"));
         systemSnapshot.setReason("TEST");
         systemSnapshot.setCreated(OffsetDateTime.parse("2023-02-28T21:27:03.407Z"));
         setResumePolicies(systemSnapshot);
@@ -333,7 +334,6 @@ public class SystemSnapshotDatafetcherTestHelper {
                                 ]
                             }
                         ]
-                        pluginCustomizationConfigs: []
                     }
                 ) {
                     $projection
@@ -413,12 +413,6 @@ public class SystemSnapshotDatafetcherTestHelper {
                 multiplier
                 random
               }
-            }
-            pluginCustomizationConfigs {
-              groupId
-              artifactId
-              urlTemplate
-              secretName
             }
             """;
 }

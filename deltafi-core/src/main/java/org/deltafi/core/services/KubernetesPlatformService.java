@@ -73,7 +73,9 @@ public class KubernetesPlatformService implements PlatformService {
 
     private Stream<AppInfo> toAppInfo(Pod pod) {
         String appName = pod.getMetadata().getLabels().getOrDefault("app",
-                pod.getMetadata().getLabels().get("app.kubernetes.io/name"));
+                pod.getMetadata().getLabels().getOrDefault("app.kubernetes.io/name",
+                        pod.getMetadata().getAnnotations().getOrDefault("application",
+                                pod.getMetadata().getName())));
         String group = pod.getMetadata().getLabels().get("group");
         return pod.getSpec().getContainers().stream()
                 .map(container -> toAppInfo(container, appName, group));

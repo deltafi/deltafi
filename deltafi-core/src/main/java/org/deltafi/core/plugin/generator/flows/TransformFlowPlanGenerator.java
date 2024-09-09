@@ -37,8 +37,7 @@ public class TransformFlowPlanGenerator {
      * @return list of transform flow plans
      */
     public List<FlowPlan> generateTransformFlows(String baseFlowName, List<ActionGeneratorInput> transformActions) {
-        List<TransformActionConfiguration> transformActionConfigs =
-                ActionUtil.transformActionConfigurations(transformActions);
+        List<ActionConfiguration> transformActionConfigs = ActionUtil.transformActionConfigurations(transformActions);
         List<FlowPlan> flowPlans = new ArrayList<>();
 
         String planName = baseFlowName + FLOW_NAME_POSTFIX;
@@ -56,7 +55,7 @@ public class TransformFlowPlanGenerator {
         return flowPlans;
     }
 
-    private FlowPlan generateTransformFlowPlan(String planName, List<TransformActionConfiguration> transformActions,
+    private FlowPlan generateTransformFlowPlan(String planName, List<ActionConfiguration> transformActions,
                                                Set<Rule> subscribeRuleSet, PublishRules publishRules) {
         TransformFlowPlan transformFlowPlan = new TransformFlowPlan(planName, "Sample transform flow");
         transformFlowPlan.setTransformActions(transformActions);

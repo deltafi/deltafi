@@ -7,6 +7,6 @@ deltafi:
   auth:
     mode: disabled
 postgres:
-  enabled: false
+  enabled: true
 clickhouse:
   enabled: true

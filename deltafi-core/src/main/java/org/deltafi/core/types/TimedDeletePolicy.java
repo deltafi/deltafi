@@ -19,12 +19,10 @@ package org.deltafi.core.types;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-import java.util.UUID;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,
@@ -34,15 +32,13 @@ import java.util.UUID;
 @JsonSubTypes({
         @JsonSubTypes.Type(value = TimedDeletePolicy.class, name = "TimedDeletePolicy")
 })
+@Entity
+@DiscriminatorValue("TIMED")
 @Data
+@EqualsAndHashCode(callSuper = true)
+@SuperBuilder
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class TimedDeletePolicy implements DeletePolicy {
-    private UUID id;
-    private String name;
-    private boolean enabled;
-    private String flow;
+public class TimedDeletePolicy extends DeletePolicy {
     private String afterCreate;
     private String afterComplete;
     private Long minBytes;

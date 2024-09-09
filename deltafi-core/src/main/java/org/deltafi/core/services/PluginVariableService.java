@@ -23,10 +23,10 @@ import org.deltafi.common.types.Plugin;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.Variable;
 import org.deltafi.core.plugin.PluginCleaner;
+import org.deltafi.core.plugin.PluginEntity;
 import org.deltafi.core.repo.PluginVariableRepo;
-import org.deltafi.core.snapshot.SnapshotRestoreOrder;
-import org.deltafi.core.snapshot.Snapshotter;
-import org.deltafi.core.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.types.PluginVariables;
 import org.deltafi.core.types.Result;
 import org.springframework.stereotype.Service;
@@ -46,7 +46,7 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
      * @return variables for the given plugin
      */
     public List<Variable> getVariablesByPlugin(PluginCoordinates pluginCoordinates) {
-        return pluginVariableRepo.findById(pluginCoordinates)
+        return pluginVariableRepo.findBySourcePlugin(pluginCoordinates)
                 .map(PluginVariables::getVariables)
                 .orElse(Collections.emptyList());
     }
@@ -116,7 +116,7 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
 
         // remove the old variables if they weren't replaced by the save above
         if (!existing.getSourcePlugin().equals(pluginCoordinates)) {
-            pluginVariableRepo.deleteById(existing.getSourcePlugin());
+            pluginVariableRepo.deleteBySourcePlugin(existing.getSourcePlugin());
         }
     }
 
@@ -148,10 +148,7 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
     }
 
     private void insertVariables(PluginCoordinates pluginCoordinates, List<Variable> variables) {
-        PluginVariables incoming = new PluginVariables();
-        incoming.setSourcePlugin(pluginCoordinates);
-        incoming.setVariables(variables);
-        pluginVariableRepo.save(incoming);
+        pluginVariableRepo.upsertVariables(pluginCoordinates, variables);
     }
 
     /**
@@ -159,7 +156,7 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
      * @param pluginCoordinates plugin coordinates of the plugin whose variables should be removed
      */
     public void removeVariables(PluginCoordinates pluginCoordinates) {
-        pluginVariableRepo.deleteById(pluginCoordinates);
+        pluginVariableRepo.deleteBySourcePlugin(pluginCoordinates);
     }
 
     /**
@@ -172,7 +169,7 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
             return false;
         }
 
-        PluginVariables pluginVariables = pluginVariableRepo.findById(pluginCoordinates).orElseThrow();
+        PluginVariables pluginVariables = pluginVariableRepo.findBySourcePlugin(pluginCoordinates).orElseThrow();
 
         values.forEach(keyValue -> setVariable(pluginVariables, keyValue));
 
@@ -262,7 +259,7 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
     }
 
     @Override
-    public void cleanupFor(Plugin plugin) {
+    public void cleanupFor(PluginEntity plugin) {
         removeVariables(plugin.getPluginCoordinates());
     }
 

@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.services;
 
+import com.fasterxml.uuid.Generators;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.queue.jackey.ValkeyKeyedBlockingQueue;
@@ -57,7 +58,7 @@ public class ServerSentService {
     }
 
     public SseEmitter createSseEmitter() {
-        UUID uuid = UUID.randomUUID();
+        UUID uuid = Generators.timeBasedEpochGenerator().generate();
         SseEmitter sseEmitter = new SseEmitter(0L); // timeout of 0 to disable timeouts
         emitters.put(uuid, sseEmitter);
         sseEmitter.onCompletion(() -> onCompete(uuid));

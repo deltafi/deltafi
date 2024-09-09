@@ -18,7 +18,7 @@
 package org.deltafi.core.plugin.generator.flows;
 
 import org.deltafi.common.types.FlowPlan;
-import org.deltafi.common.types.TransformActionConfiguration;
+import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.TransformFlowPlan;
 import org.deltafi.core.plugin.generator.ActionGeneratorInput;
 import org.deltafi.core.plugin.generator.flows.ActionConfigMatchers.ActionConfigMatcher;
@@ -60,7 +60,7 @@ class TransformFlowPlanGeneratorTest {
         if (flowPlan instanceof TransformFlowPlan transformFlowPlan) {
             assertThat(transformFlowPlan.getName()).isEqualTo(MY_PLUGIN_TRANSFORM);
             assertThat(transformFlowPlan.getDescription()).isEqualTo("Sample transform flow");
-            List<TransformActionConfiguration> transformActions = transformFlowPlan.getTransformActions();
+            List<ActionConfiguration> transformActions = transformFlowPlan.getTransformActions();
             if (transformActionMatchers == null) {
                 assertThat(transformActions).isNull();
             } else {

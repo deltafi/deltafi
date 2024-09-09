@@ -16,16 +16,27 @@
    limitations under the License.
 */
 
-import { ref, Ref } from 'vue'
-import { EnumType } from 'json-to-graphql-query';
-import useGraphQL from './useGraphQL'
+import { ref, Ref } from "vue";
+import { EnumType } from "json-to-graphql-query";
+import useGraphQL from "./useGraphQL";
 
 export default function useFlows() {
   const { response, queryGraphQL, loading, loaded, errors } = useGraphQL();
-  const dataSourceFlows: Ref<Array<Record<string, string>>> = ref([]);
   const egressFlows: Ref<Array<Record<string, string>>> = ref([]);
+  const restDataSourceFlowNames: Ref<Array<Record<string, string>>> = ref([]);
+  const timedDataSourceFlowNames: Ref<Array<Record<string, string>>> = ref([]);
 
-  const buildQuery = (egress: Boolean, transform: Boolean, dataSource: Boolean, state?: string) => {
+  interface getFlowNames {
+    restDataSource: Array<string>;
+    timedDataSource: Array<string>;
+  }
+
+  const allDataSourceFlowNames = ref<getFlowNames>({
+    restDataSource: [],
+    timedDataSource: [],
+  });
+
+  const buildQuery = (egress: Boolean, transform: Boolean, restDataSource: Boolean, timedDataSource: Boolean, state?: string) => {
     return {
       getFlowNames: {
         __args: {
@@ -33,20 +44,33 @@ export default function useFlows() {
         },
         egress: egress,
         transform: transform,
-        dataSource: dataSource,
-      }
+        restDataSource: restDataSource,
+        timedDataSource: timedDataSource,
+      },
     };
   };
 
-  const fetchDataSourceFlowNames = async (state?: string) => {
-    await queryGraphQL(buildQuery(false, false, true, state), "getDataSourceFlowNames");
-    dataSourceFlows.value = response.value.data.getFlowNames.dataSource.sort();
-  }
+  const fetchAllDataSourceFlowNames = async (state?: string) => {
+    await queryGraphQL(buildQuery(false, false, true, true, state), "getAllDataSourceFlowNames");
+    allDataSourceFlowNames.value = response.value.data.getFlowNames;
+    allDataSourceFlowNames.value["restDataSource"] = response.value.data.getFlowNames.restDataSource.sort();
+    allDataSourceFlowNames.value["timedDataSource"] = response.value.data.getFlowNames.timedDataSource.sort();
+  };
+
+  const fetchRestDataSourceFlowNames = async (state?: string) => {
+    await queryGraphQL(buildQuery(false, false, true, false, state), "getRestDataSourceFlowNames");
+    restDataSourceFlowNames.value = response.value.data.getFlowNames.restDataSource.sort();
+  };
+
+  const fetchTimedDataSourceFlowNames = async (state?: string) => {
+    await queryGraphQL(buildQuery(false, false, false, true, state), "getTimedDataSourceFlowNames");
+    timedDataSourceFlowNames.value = response.value.data.getFlowNames.timedDataSource.sort();
+  };
 
   const fetchEgressFlowNames = async (state?: string) => {
-    await queryGraphQL(buildQuery(true, false, false, state), "getEgressFlowNames");
+    await queryGraphQL(buildQuery(true, false, false, false, state), "getEgressFlowNames");
     egressFlows.value = response.value.data.getFlowNames.egress.sort();
-  }
+  };
 
-  return { dataSourceFlows, egressFlows, fetchDataSourceFlowNames, fetchEgressFlowNames, loading, loaded, errors };
+  return { egressFlows, allDataSourceFlowNames, restDataSourceFlowNames, timedDataSourceFlowNames, fetchEgressFlowNames, fetchAllDataSourceFlowNames, fetchRestDataSourceFlowNames, fetchTimedDataSourceFlowNames, loading, loaded, errors };
 }

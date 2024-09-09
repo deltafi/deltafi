@@ -18,9 +18,9 @@
 package org.deltafi.core.services;
 
 import org.deltafi.common.types.KeyValue;
-import org.deltafi.common.types.Property;
+import org.deltafi.core.types.Property;
 import org.deltafi.core.repo.DeltaFiPropertiesRepo;
-import org.deltafi.core.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -84,7 +84,7 @@ class DeltaFiPropertiesServiceTest {
         systemSnapshot.setDeltaFiProperties(List.of(unrecognizedKey, invalidDataType, valueOutOfRange, validValue));
 
         deltaFiPropertiesService.resetFromSnapshot(systemSnapshot, true);
-        Mockito.verify(deltaFiPropertiesRepo).updateProperties(List.of(validValue));
+        Mockito.verify(deltaFiPropertiesRepo).updateProperty(validValue.getKey(), validValue.getValue());
     }
 
 }

@@ -1,8 +1,0 @@
-mongodb:
-  image:
-    registry: ghcr.io
-    repository: zcube/bitnami-compat/mongodb
-  volumePermissions:
-    image:
-      repository: zcube/bitnami-compat-bitnami-shell
-      tag: 11

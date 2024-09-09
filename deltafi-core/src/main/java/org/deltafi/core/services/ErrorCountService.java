@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.services;
 
-import org.deltafi.core.repo.DeltaFileRepo;
+import org.deltafi.core.repo.ActionRepo;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
@@ -27,21 +27,24 @@ import java.util.Set;
 
 @Service
 public class ErrorCountService {
-    private final DeltaFileRepo deltaFileRepo;
-    private final DataSourceService dataSourceService;
+    private final ActionRepo actionRepo;
+    private final RestDataSourceService restDataSourceService;
+    private final TimedDataSourceService timedDataSourceService;
 
     private volatile Map<String, Integer> errorCounts = Collections.emptyMap();
 
-    public ErrorCountService(DeltaFileRepo deltaFileRepo, @Lazy DataSourceService dataSourceService) {
-        this.deltaFileRepo = deltaFileRepo;
-        this.dataSourceService = dataSourceService;
+    public ErrorCountService(ActionRepo actionRepo, @Lazy RestDataSourceService restDataSourceService,
+                             @Lazy TimedDataSourceService timedDataSourceService) {
+        this.actionRepo = actionRepo;
+        this.restDataSourceService = restDataSourceService;
+        this.timedDataSourceService = timedDataSourceService;
     }
 
     public synchronized void populateErrorCounts(Set<String> flowNames) {
         if (flowNames.isEmpty()) {
             errorCounts = Collections.emptyMap();
         } else {
-            errorCounts = deltaFileRepo.errorCountsByFlow(flowNames);
+            errorCounts = actionRepo.errorCountsByFlow(flowNames);
         }
     }
 
@@ -56,8 +59,10 @@ public class ErrorCountService {
     }
 
     private Integer maxErrorsForFlow(String flow) {
-        if (dataSourceService.hasRunningFlow(flow)) {
-            return dataSourceService.maxErrorsPerFlow().get(flow);
+        if (restDataSourceService.hasRunningFlow(flow)) {
+            return restDataSourceService.maxErrorsPerFlow().get(flow);
+        } else if (timedDataSourceService.hasRunningFlow(flow)) {
+            return timedDataSourceService.maxErrorsPerFlow().get(flow);
         }
 
         return null;

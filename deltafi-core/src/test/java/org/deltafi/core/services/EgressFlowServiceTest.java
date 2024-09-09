@@ -17,12 +17,13 @@
  */
 package org.deltafi.core.services;
 
+import org.deltafi.common.types.FlowType;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
 import org.deltafi.core.repo.EgressFlowRepo;
-import org.deltafi.core.snapshot.SystemSnapshot;
-import org.deltafi.core.snapshot.types.EgressFlowSnapshot;
-import org.deltafi.core.snapshot.types.FlowSnapshot;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.EgressFlowSnapshot;
+import org.deltafi.core.types.snapshot.FlowSnapshot;
 import org.deltafi.core.types.EgressFlow;
 import org.deltafi.core.types.Flow;
 import org.deltafi.core.types.Result;
@@ -57,14 +58,17 @@ class EgressFlowServiceTest {
     @Captor
     ArgumentCaptor<List<EgressFlow>> flowCaptor;
 
+    @Mock
+    FlowCacheService flowCacheService;
+
     @Test
     void updateSnapshot() {
-        List<EgressFlow> flows = new ArrayList<>();
+        List<Flow> flows = new ArrayList<>();
         flows.add(egressFlow("a", FlowState.RUNNING, false, null));
         flows.add(egressFlow("b", FlowState.STOPPED, false, Set.of("a", "b")));
         flows.add(egressFlow("c", FlowState.STOPPED, true, Set.of()));
 
-        Mockito.when(egressFlowRepo.findAll()).thenReturn(flows);
+        Mockito.when(flowCacheService.flowsOfType(FlowType.EGRESS)).thenReturn(flows);
 
         SystemSnapshot systemSnapshot = new SystemSnapshot();
         egressFlowService.updateSnapshot(systemSnapshot);
@@ -103,16 +107,17 @@ class EgressFlowServiceTest {
                 new EgressFlowSnapshot("invalid", true, false),
                 new EgressFlowSnapshot("missing", true, true)));
 
-        Mockito.when(egressFlowRepo.findAll()).thenReturn(List.of(running, stopped, invalid));
-        Mockito.when(egressFlowRepo.findById("running")).thenReturn(Optional.of(running));
-        Mockito.when(egressFlowRepo.findById("stopped")).thenReturn(Optional.of(stopped));
-        Mockito.when(egressFlowRepo.findById("invalid")).thenReturn(Optional.of(invalid));
-        Mockito.when(egressFlowRepo.findById("missing")).thenReturn(Optional.empty());
+        Mockito.when(flowCacheService.flowsOfType(FlowType.EGRESS)).thenReturn(List.of(running, stopped, invalid));
+        Mockito.when(flowCacheService.getFlowOrThrow(FlowType.EGRESS, "running")).thenReturn(running);
+        Mockito.when(egressFlowRepo.findByNameAndType("running", EgressFlow.class)).thenReturn(Optional.of(running));
+        Mockito.when(egressFlowRepo.findByNameAndType("stopped", EgressFlow.class)).thenReturn(Optional.of(stopped));
+        Mockito.when(egressFlowRepo.findByNameAndType("invalid", EgressFlow.class)).thenReturn(Optional.of(invalid));
+        Mockito.when(egressFlowRepo.findByNameAndType("missing", EgressFlow.class)).thenReturn(Optional.empty());
 
         Result result = egressFlowService.resetFromSnapshot(systemSnapshot, true);
 
         // verify the hard reset stopped any running flows
-        Mockito.verify(egressFlowRepo).updateFlowState("running", FlowState.STOPPED);
+        Mockito.verify(egressFlowRepo).updateFlowStatusState("running", FlowState.STOPPED, FlowType.EGRESS);
 
         Mockito.verify(egressFlowRepo).saveAll(flowCaptor.capture());
 

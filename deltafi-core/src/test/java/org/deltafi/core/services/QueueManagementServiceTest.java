@@ -19,9 +19,8 @@ package org.deltafi.core.services;
 
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.ActionType;
-import org.deltafi.common.types.TransformActionConfiguration;
 import org.deltafi.core.configuration.DeltaFiProperties;
-import org.deltafi.core.repo.DeltaFileRepo;
+import org.deltafi.core.repo.ActionRepo;
 import org.deltafi.core.types.ColdQueuedActionSummary;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,13 +40,13 @@ class QueueManagementServiceTest {
     private static final String QUEUE_NAME = "queueName";
     private static final String ACTION_NAME = "actionName";
     private static final ColdQueuedActionSummary COLD_QUEUED_ACTION_SUMMARY = new ColdQueuedActionSummary(ACTION_NAME, ActionType.TRANSFORM, 1);
-    private static final ActionConfiguration ACTION_CONFIGURATION = new TransformActionConfiguration(ACTION_NAME, QUEUE_NAME);
+    private static final ActionConfiguration ACTION_CONFIGURATION = new ActionConfiguration(ACTION_NAME, ActionType.TRANSFORM, QUEUE_NAME);
 
     @Mock
     CoreEventQueue coreEventQueue;
 
     @Mock
-    DeltaFileRepo deltaFileRepo;
+    ActionRepo actionRepo;
 
     @Mock
     UnifiedFlowService unifiedFlowService;
@@ -132,7 +131,7 @@ class QueueManagementServiceTest {
     void testColdToWarmWithoutCheckedQueues() {
         queueManagementService.getCheckedQueues().set(false);
         queueManagementService.coldToWarm();
-        verify(deltaFileRepo, times(0)).coldQueuedActionsSummary();
+        verify(actionRepo, times(0)).coldQueuedActionsSummary();
     }
 
     @Test
@@ -141,7 +140,7 @@ class QueueManagementServiceTest {
         queueManagementService.getColdQueues().put(QUEUE_NAME, 8L);
         when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
         when(deltaFiProperties.getInMemoryQueueSize()).thenReturn(10);
-        when(deltaFileRepo.coldQueuedActionsSummary()).thenReturn(List.of(COLD_QUEUED_ACTION_SUMMARY));
+        when(actionRepo.coldQueuedActionsSummary()).thenReturn(List.of(COLD_QUEUED_ACTION_SUMMARY));
         when(unifiedFlowService.runningAction(ACTION_NAME, ActionType.TRANSFORM)).thenReturn(ACTION_CONFIGURATION);
         when(env.getProperty("schedule.maintenance")).thenReturn("true");
         queueManagementService.scheduleColdToWarm();

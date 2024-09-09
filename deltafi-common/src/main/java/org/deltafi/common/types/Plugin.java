@@ -18,16 +18,11 @@
 package org.deltafi.common.types;
 
 import lombok.Data;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
-import java.util.Objects;
 
-@Document
 @Data
 public class Plugin {
-  @Id
   private PluginCoordinates pluginCoordinates;
   private String displayName;
   private String description;
@@ -35,9 +30,4 @@ public class Plugin {
   private List<ActionDescriptor> actions;
   private List<PluginCoordinates> dependencies;
   private List<Variable> variables;
-
-  public List<String> actionNames() {
-    return Objects.nonNull(getActions()) ?
-            getActions().stream().map(ActionDescriptor::getName).toList() : List.of();
-  }
 }

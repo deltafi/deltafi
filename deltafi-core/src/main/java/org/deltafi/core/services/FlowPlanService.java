@@ -24,29 +24,28 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
-import org.deltafi.common.types.FlowPlan;
+import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.types.FlowType;
 import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.core.snapshot.types.FlowSnapshot;
+import org.deltafi.core.plugin.PluginEntity;
+import org.deltafi.core.repo.FlowRepo;
+import org.deltafi.core.types.snapshot.FlowSnapshot;
 import org.deltafi.core.types.*;
 import org.deltafi.core.exceptions.DeltafiConfigurationException;
-import org.deltafi.common.types.Plugin;
 import org.deltafi.core.plugin.PluginCleaner;
 import org.deltafi.core.repo.FlowPlanRepo;
-import org.deltafi.core.snapshot.SnapshotRestoreOrder;
-import org.deltafi.core.snapshot.Snapshotter;
-import org.deltafi.core.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.validation.FlowPlanValidator;
 import org.springframework.boot.info.BuildProperties;
+import org.springframework.security.core.parameters.P;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
-public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends Flow, FlowSnapshotT extends FlowSnapshot> implements PluginCleaner, Snapshotter {
+@Slf4j
+public abstract class FlowPlanService<FlowPlanT extends FlowPlanEntity, FlowT extends Flow, FlowSnapshotT extends FlowSnapshot, FlowRepoT extends FlowRepo> implements PluginCleaner, Snapshotter {
 
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .registerModule(new JavaTimeModule())
@@ -54,13 +53,13 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
             .setSerializationInclusion(JsonInclude.Include.ALWAYS);
 
     private final FlowPlanValidator<FlowPlanT> flowPlanValidator;
-    private final FlowPlanRepo<FlowPlanT> flowPlanRepo;
-    private final FlowService<FlowPlanT, FlowT, FlowSnapshotT> flowService;
+    private final FlowPlanRepo flowPlanRepo;
+    private final FlowService<FlowPlanT, FlowT, FlowSnapshotT, FlowRepoT> flowService;
     private final BuildProperties buildProperties;
 
     @PostConstruct
     public void updateSystemPluginFlowPlans() {
-        flowPlanRepo.updateSystemPluginFlowPlanVersions(buildProperties.getVersion());
+        flowPlanRepo.updateSystemPluginFlowPlanVersions(buildProperties.getVersion(), getFlowType());
     }
 
     /**
@@ -70,19 +69,9 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
      * @param flowPlans flow plans to save
      */
     public void upgradeFlowPlans(PluginCoordinates sourcePlugin, List<FlowPlanT> flowPlans) {
+        flowPlanRepo.deleteBySourcePluginGroupIdAndSourcePluginArtifactIdAndType(sourcePlugin.getGroupId(), sourcePlugin.getArtifactId(), getFlowType());
         flowPlanRepo.saveAll(flowPlans);
-
-        Set<String> flowPlanNames = flowPlans.stream().map(FlowPlan::getName).collect(Collectors.toSet());
-        Set<String> flowPlansToRemove = flowPlanRepo.findByGroupIdAndArtifactId(sourcePlugin.getGroupId(), sourcePlugin.getArtifactId()).stream()
-                .map(FlowPlan::getName)
-                .filter(name -> !flowPlanNames.contains(name))
-                .collect(Collectors.toSet());
-
-        if (!flowPlansToRemove.isEmpty()) {
-            flowPlanRepo.deleteAllById(flowPlansToRemove);
-        }
-
-        flowService.upgradeFlows(sourcePlugin, flowPlans, flowPlanNames);
+        flowService.upgradeFlows(sourcePlugin, flowPlans);
     }
 
     public List<String> validateFlowPlans(List<FlowPlanT> flowPlans) {
@@ -98,17 +87,33 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
         return errors;
     }
 
-    public void validateFlowPlan(FlowPlanT flowPlan) {
-        PluginCoordinates existingSourcePlugin = flowPlanRepo
-                .findById(flowPlan.getName())
-                .map(FlowPlan::getSourcePlugin)
-                .orElse(flowPlan.getSourcePlugin());
+    public FlowPlanEntity validateFlowPlan(FlowPlanT flowPlan) {
+        FlowPlanEntity existingFlowPlan = flowPlanRepo
+                .findByNameAndType(flowPlan.getName(), getFlowType())
+                .orElse(null);
 
-        if (!existingSourcePlugin.equalsIgnoreVersion(flowPlan.getSourcePlugin())) {
-            throw new DeltafiConfigurationException("A flow plan with the name: " + flowPlan.getName() + " already exists from another source plugin: " + existingSourcePlugin);
+        if (existingFlowPlan != null && !existingFlowPlan.getSourcePlugin().equalsIgnoreVersion(flowPlan.getSourcePlugin())) {
+            throw new DeltafiConfigurationException("A flow plan with the name: " + flowPlan.getName() + " already exists from another source plugin: " + existingFlowPlan);
+        }
+
+        FlowType otherDataSourceType = null;
+        if (flowPlan.getType() == FlowType.TIMED_DATA_SOURCE) {
+            otherDataSourceType = FlowType.REST_DATA_SOURCE;
+        } else if (flowPlan.getType() == FlowType.REST_DATA_SOURCE) {
+            otherDataSourceType = FlowType.TIMED_DATA_SOURCE;
+        }
+        if (otherDataSourceType != null) {
+            FlowPlanEntity existingFlowPlanOfOtherType = flowPlanRepo
+                    .findByNameAndType(flowPlan.getName(), otherDataSourceType)
+                    .orElse(null);
+            if (existingFlowPlanOfOtherType != null) {
+                throw new DeltafiConfigurationException("A flow plan with the name: " + flowPlan.getName() + " of type: " + otherDataSourceType + " already exists -- two data sources of the same name cannot exist");
+            }
         }
 
         flowPlanValidator.validate(flowPlan);
+
+        return existingFlowPlan;
     }
 
     /**
@@ -117,17 +122,24 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
      * @return Flow that was created from the plan
      */
     public FlowT saveFlowPlan(FlowPlanT flowPlan) {
-        validateFlowPlan(flowPlan);
+        FlowPlanEntity existingFlowPlan = validateFlowPlan(flowPlan);
+        if (existingFlowPlan != null) {
+            log.info("setting ID");
+            flowPlan.setId(existingFlowPlan.getId());
+        }
         return flowService.buildAndSaveFlow(flowPlanRepo.save(flowPlan));
     }
 
-    public void rebuildInvalidFlows() {
-        List<String> invalidFlows = flowService.getNamesOfInvalidFlow();
+    protected abstract FlowType getFlowType();
 
-        Map<PluginCoordinates, List<FlowPlanT>> flowPlans = invalidFlows.stream()
-                .map(name -> flowPlanRepo.findById(name).orElse(null))
-                .filter(Objects::nonNull)
-                .collect(Collectors.groupingBy(FlowPlanT::getSourcePlugin));
+    public void rebuildInvalidFlows() {
+        List<String> invalidFlows = flowService.getNamesOfInvalidFlows();
+
+        Map<PluginCoordinates, List<FlowPlanEntity>> flowPlans = invalidFlows.stream()
+                .map(name -> flowPlanRepo.findByNameAndType(name, getFlowType()))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.groupingBy(FlowPlanEntity::getSourcePlugin));
 
         flowPlans.forEach((pluginCoordinates, plans) -> flowService.rebuildFlows(plans, pluginCoordinates));
     }
@@ -138,15 +150,20 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
      * @param sourcePlugin plugin whose flows should be recreated
      */
     public void rebuildFlowsForPlugin(PluginCoordinates sourcePlugin) {
-        flowService.rebuildFlows(flowPlanRepo.findBySourcePlugin(sourcePlugin), sourcePlugin);
+        flowService.rebuildFlows(flowPlanRepo.findBySourcePluginAndType(sourcePlugin, getFlowType()), sourcePlugin);
     }
+
+    protected abstract Class<FlowPlanT> getFlowPlanClass();
 
     /**
      * Get all the flow plans
      * @return all flow plans
      */
     public List<FlowPlanT> getAll() {
-        return flowPlanRepo.findAll();
+        return flowPlanRepo.findByType(getFlowType()).stream()
+                .filter(getFlowPlanClass()::isInstance)
+                .map(getFlowPlanClass()::cast)
+                .toList();
     }
 
     /**
@@ -155,7 +172,14 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
      * @return flow plan with the given name
      */
     public FlowPlanT getPlanByName(String flowPlanName) {
-        return flowPlanRepo.findById(flowPlanName)
+        return flowPlanRepo.findByNameAndType(flowPlanName, getFlowType())
+                .map(flowPlan -> {
+                    if (getFlowPlanClass().isInstance(flowPlan)) {
+                        return getFlowPlanClass().cast(flowPlan);
+                    } else {
+                        throw new IllegalStateException("Found flow plan is not of the expected type: " + getFlowPlanClass().getSimpleName());
+                    }
+                })
                 .orElseThrow(() -> new DgsEntityNotFoundException("Could not find a flow plan named " + flowPlanName));
     }
 
@@ -166,7 +190,7 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
      */
     void removeFlowsAndPlansBySourcePlugin(PluginCoordinates pluginCoordinates) {
         flowService.removeBySourcePlugin(pluginCoordinates);
-        flowPlanRepo.deleteBySourcePlugin(pluginCoordinates);
+        flowPlanRepo.deleteBySourcePluginAndType(pluginCoordinates, getFlowType());
     }
 
     /**
@@ -175,14 +199,14 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
      * @return true if the flow plan was removed otherwise false
      */
     public boolean removePlan(String flowPlanName, PluginCoordinates systemPlugin) {
-        FlowPlanT flowPlanT = flowPlanRepo.findById(flowPlanName).orElse(null);
+        FlowPlanEntity flowPlanT = flowPlanRepo.findByNameAndType(flowPlanName, getFlowType()).orElse(null);
         if (flowPlanT != null && !systemPlugin.equalsIgnoreVersion(flowPlanT.getSourcePlugin())) {
             throw new IllegalArgumentException("Flow plan " + flowPlanName + " is not a " + systemPlugin.getArtifactId() + " flow plan and cannot be removed");
         }
 
         flowService.removeByName(flowPlanName, systemPlugin);
         if (flowPlanT != null) {
-            flowPlanRepo.deleteById(flowPlanName);
+            flowPlanRepo.deleteById(flowPlanT.getId());
             return true;
         }
         return false;
@@ -208,7 +232,7 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
     }
 
     @Override
-    public void cleanupFor(Plugin plugin) {
+    public void cleanupFor(PluginEntity plugin) {
         removeFlowsAndPlansBySourcePlugin(plugin.getPluginCoordinates());
     }
 }

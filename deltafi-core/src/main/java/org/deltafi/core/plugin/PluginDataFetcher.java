@@ -28,7 +28,6 @@ import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.plugin.deployer.DeployerService;
 import org.deltafi.core.plugin.deployer.credential.CredentialProvider;
-import org.deltafi.core.plugin.deployer.customization.PluginCustomizationConfig;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
 import org.deltafi.core.security.NeedsPermission;
@@ -49,7 +48,7 @@ public class PluginDataFetcher {
     @DgsQuery
     @NeedsPermission.PluginsView
     public Collection<Plugin> plugins() {
-        return pluginRegistryService.getPluginsWithVariables();
+        return pluginRegistryService.getPluginsWithVariables().stream().map(PluginEntity::toPlugin).toList();
     }
 
     @DgsQuery
@@ -58,24 +57,11 @@ public class PluginDataFetcher {
         return pluginImageRepositoryService.getPluginImageRepositories();
     }
 
-    @DgsQuery
-    @NeedsPermission.PluginCustomizationConfigView
-    public List<PluginCustomizationConfig> getPluginCustomizationConfigs() {
-        return deployerService.getPluginCustomizationConfigs();
-    }
-
     @DgsMutation
     @NeedsPermission.PluginImageRepoWrite
     public PluginImageRepository savePluginImageRepository(@InputArgument PluginImageRepository pluginImageRepository) {
         auditLogger.audit("saved plugin image repository {}", pluginImageRepository);
         return pluginImageRepositoryService.savePluginImageRepository(pluginImageRepository);
-    }
-
-    @DgsMutation
-    @NeedsPermission.PluginCustomizationConfigWrite
-    public PluginCustomizationConfig savePluginCustomizationConfig(@InputArgument PluginCustomizationConfig pluginCustomizationConfigInput) {
-        auditLogger.audit("saved plugin customization config {}", pluginCustomizationConfigInput);
-        return deployerService.savePluginCustomizationConfig(pluginCustomizationConfigInput);
     }
 
     @DgsMutation
@@ -100,24 +86,10 @@ public class PluginDataFetcher {
     }
 
     @DgsMutation
-    @NeedsPermission.PluginCustomizationConfigWrite
-    public Result addBasicCredential(@InputArgument String sourceName, @InputArgument String username, @InputArgument String password) {
-        auditLogger.audit("add credentials with a secret name of {}", sourceName);
-        return credentialProvider.createCredentials(sourceName, username, password);
-    }
-
-    @DgsMutation
     @NeedsPermission.PluginImageRepoDelete
     public Result removePluginImageRepository(@InputArgument String id) {
         auditLogger.audit("removed plugin image repository {}", id);
         return pluginImageRepositoryService.removePluginImageRepository(id);
-    }
-
-    @DgsMutation
-    @NeedsPermission.PluginCustomizationConfigDelete
-    public Result removePluginCustomizationConfig(@InputArgument String id) {
-        auditLogger.audit("removed plugin customization config {}", id);
-        return deployerService.removePluginCustomizationConfig(id);
     }
 
     @DgsQuery

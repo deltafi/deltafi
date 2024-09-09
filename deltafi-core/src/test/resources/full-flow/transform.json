@@ -1,9 +1,9 @@
 {
     "did": "%1$s",
     "flowName": "sampleTransform",
-    "flowId": 1,
+    "flowId": "11111111-1111-1111-1111-111111111111",
     "actionName": "SampleTransformAction",
-    "actionId": 1,
+    "actionId": "00000000-0000-0000-0000-000000000001",
     "start": "2021-07-11T13:44:22.183Z",
     "stop": "2021-07-11T13:44:22.184Z",
     "type": "TRANSFORM",

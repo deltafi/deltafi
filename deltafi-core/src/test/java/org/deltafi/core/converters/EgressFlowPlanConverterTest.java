@@ -22,14 +22,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.resource.Resource;
-import org.deltafi.common.types.Variable;
-import org.deltafi.common.types.VariableDataType;
-import org.deltafi.common.types.EgressActionConfiguration;
+import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.types.EgressFlow;
-import org.deltafi.common.types.EgressFlowPlan;
+import org.deltafi.core.types.EgressFlowPlanEntity;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -48,7 +46,7 @@ class EgressFlowPlanConverterTest {
 
     @Test
     void testConverter() throws IOException {
-        EgressFlowPlan flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-egress-flowplan-test.json"), EgressFlowPlan.class);
+        EgressFlowPlanEntity flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-egress-flowplan-test.json"), EgressFlowPlanEntity.class);
         EgressFlow egressFlow = egressFlowPlanConverter.convert(flowPlan, variables());
 
         assertThat(egressFlow.getName()).isEqualTo("passthrough");
@@ -59,7 +57,7 @@ class EgressFlowPlanConverterTest {
 
     @Test
     void testUnresolvedPlaceholder() throws IOException {
-        EgressFlowPlan flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-egress-flowplan-unresolved-test.json"), EgressFlowPlan.class);
+        EgressFlowPlanEntity flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-egress-flowplan-unresolved-test.json"), EgressFlowPlanEntity.class);
         EgressFlow egressFlow = egressFlowPlanConverter.convert(flowPlan, variables());
 
         assertThat(egressFlow.getFlowStatus().getState()).isEqualTo(FlowState.INVALID);
@@ -99,11 +97,11 @@ class EgressFlowPlanConverterTest {
         assertThat(output).isNull();
     }
 
-    EgressActionConfiguration expectedEgressAction() {
-        EgressActionConfiguration egressActionConfiguration = new EgressActionConfiguration("PassthroughEgressAction", "org.deltafi.core.action.RestPostEgressAction");
-        egressActionConfiguration.setInternalParameters(Map.of("egressFlow", "egressFlow", "metadataKey", "deltafiMetadata", "url", "http://deltafi-egress-sink-service"));
-        egressActionConfiguration.setParameters(Map.of("egressFlow", "egressFlow", "metadataKey", "deltafiMetadata", "url", "http://deltafi-egress-sink-service"));
-        return egressActionConfiguration;
+    ActionConfiguration expectedEgressAction() {
+        ActionConfiguration ActionConfiguration = new ActionConfiguration("PassthroughEgressAction", ActionType.EGRESS, "org.deltafi.core.action.RestPostEgressAction");
+        ActionConfiguration.setInternalParameters(Map.of("egressFlow", "egressFlow", "metadataKey", "deltafiMetadata", "url", "http://deltafi-egress-sink-service"));
+        ActionConfiguration.setParameters(Map.of("egressFlow", "egressFlow", "metadataKey", "deltafiMetadata", "url", "http://deltafi-egress-sink-service"));
+        return ActionConfiguration;
     }
 
     List<Variable> variables() {

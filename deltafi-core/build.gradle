@@ -20,7 +20,7 @@ dependencies {
 
 	implementation 'org.apache.commons:commons-collections4:4.4'
 
-	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 
@@ -37,7 +37,9 @@ dependencies {
 	implementation 'com.clickhouse:clickhouse-http-client:0.6.0-patch4'
 	implementation 'com.clickhouse:clickhouse-jdbc:0.6.0-patch4'
 	implementation 'org.lz4:lz4-java:1.8.0'
-	implementation 'com.zaxxer:HikariCP:5.1.0'
+	implementation 'org.postgresql:postgresql:42.7.3'
+	implementation 'io.hypersistence:hypersistence-utils-hibernate-63:3.8.2'
+	implementation 'com.fasterxml.uuid:java-uuid-generator:5.1.0'
 
 	testImplementation project(':deltafi-common-test')
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -45,8 +47,8 @@ dependencies {
 	testImplementation 'org.apache.nifi:nifi-flowfile-packager:1.24.0'
 	testImplementation 'org.awaitility:awaitility:4.2.0'
 
-	testImplementation "org.testcontainers:mongodb:${testContainersVersion}"
 	testImplementation "org.testcontainers:junit-jupiter:${testContainersVersion}"
+	testImplementation "org.testcontainers:postgresql:${testContainersVersion}"
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
@@ -60,7 +62,7 @@ generateJava {
 			"Metadata": "java.util.Map<String, String>",
 			"UUID": "java.util.UUID",
 
-			"Action": "org.deltafi.common.types.Action",
+			"Action": "org.deltafi.core.types.Action",
 			"ActionConfiguration": "org.deltafi.common.types.ActionConfiguration",
 			"ActionDescriptor": "org.deltafi.common.types.ActionDescriptor",
 			"ActionDescriptorInput": "org.deltafi.common.types.ActionDescriptor",
@@ -78,22 +80,21 @@ generateJava {
 			"DeletePolicies": "org.deltafi.core.types.DeletePolicies",
 			"DeletePoliciesInput": "org.deltafi.core.types.DeletePolicies",
 			"DeltaFiConfiguration": "org.deltafi.common.types.DeltaFiConfiguration",
-			"DeltaFile": "org.deltafi.common.types.DeltaFile",
-			"DeltaFileFlow": "org.deltafi.common.types.DeltaFileFlow",
-			"DeltaFileFlowInput": "org.deltafi.common.types.DeltaFileFlowInput",
-			"DeltaFileFlowState": "org.deltafi.common.types.DeltaFileFlowState",
+			"DeltaFile": "org.deltafi.core.types.DeltaFile",
+			"DeltaFileFlow": "org.deltafi.core.types.DeltaFileFlow",
+			"DeltaFileFlowInput": "org.deltafi.core.types.DeltaFileFlowInput",
+			"DeltaFileFlowState": "org.deltafi.core.types.DeltaFileFlowState",
 			"DeltaFiles": "org.deltafi.core.types.DeltaFiles",
 			"DeltaFileStage": "org.deltafi.common.types.DeltaFileStage",
 			"DeltaFiProperties": "org.deltafi.core.configuration.DeltaFiProperties",
 			"DeltaFiPropertiesInput": "org.deltafi.core.configuration.DeltaFiProperties",
 			"DiskSpaceDeletePolicy": "org.deltafi.core.types.DiskSpaceDeletePolicy",
 			"DiskSpaceDeletePolicyInput": "org.deltafi.core.types.DiskSpaceDeletePolicy",
-			"EgressActionConfiguration": "org.deltafi.common.types.EgressActionConfiguration",
 			"EgressFlow": "org.deltafi.core.types.EgressFlow",
 			"EgressFlowConfiguration": "org.deltafi.common.types.EgressFlowConfiguration",
 			"EgressFlowPlan": "org.deltafi.common.types.EgressFlowPlan",
-			"EgressFlowSnapshot": "org.deltafi.core.snapshot.types.EgressFlowSnapshot",
-			"EgressFlowSnapshotInput": "org.deltafi.core.snapshot.types.EgressFlowSnapshot",
+			"EgressFlowSnapshot": "org.deltafi.core.types.snapshot.EgressFlowSnapshot",
+			"EgressFlowSnapshotInput": "org.deltafi.core.types.snapshot.EgressFlowSnapshot",
 			"ErrorsByFlow": "org.deltafi.common.types.SummaryByFlow",
 			"ErrorsByMessage": "org.deltafi.core.types.SummaryByFlowAndMessage",
 			"ErrorSummaryFilter": "org.deltafi.core.types.ErrorSummaryFilter",
@@ -112,10 +113,11 @@ generateJava {
 			"Plugin": "org.deltafi.common.types.Plugin",
 			"PluginCoordinates": "org.deltafi.common.types.PluginCoordinates",
 			"PluginCoordinatesInput": "org.deltafi.common.types.PluginCoordinates",
-			"PluginCustomizationConfig": "org.deltafi.core.plugin.deployer.customization.PluginCustomizationConfig",
-			"PluginCustomizationConfigInput": "org.deltafi.core.plugin.deployer.customization.PluginCustomizationConfig",
 			"PluginImageRepository": "org.deltafi.core.plugin.deployer.image.PluginImageRepository",
 			"PluginImageRepositoryInput": "org.deltafi.core.plugin.deployer.image.PluginImageRepository",
+			"PluginProperties": "org.deltafi.core.configuration.PluginProperties",
+			"PluginPropertiesInput": "org.deltafi.core.configuration.PluginProperties",
+			"PluginVariables": "org.deltafi.core.types.PluginVariables",
 			"PublishRules": "org.deltafi.common.types.PublishRules",
 			"PublishRulesInput": "org.deltafi.common.types.PublishRules",
 			"ProcessingType": "org.deltafi.common.types.ProcessingType",
@@ -128,10 +130,11 @@ generateJava {
 			"RestDataSource": "org.deltafi.core.types.RestDataSource",
 			"RestDataSourceConfiguration": "org.deltafi.common.types.RestDataSourceConfiguration",
 			"RestDataSourcePlan": "org.deltafi.common.types.RestDataSourcePlan",
-			"RestDataSourceSnapshot": "org.deltafi.core.snapshot.types.RestDataSourceSnapshot",
-			"RestDataSourceSnapshotInput": "org.deltafi.core.snapshot.types.RestDataSourceSnapshot",
+			"RestDataSourceSnapshot": "org.deltafi.core.types.snapshot.RestDataSourceSnapshot",
+			"RestDataSourceSnapshotInput": "org.deltafi.core.types.snapshot.RestDataSourceSnapshot",
 			"Result": "org.deltafi.core.types.Result",
 			"ResumeMetadata": "org.deltafi.common.types.ResumeMetadata",
+			"ResumePolicy": "org.deltafi.core.types.ResumePolicy",
 			"Rule": "org.deltafi.common.types.Rule",
 			"RuleInput": "org.deltafi.common.types.Rule",
 			"Segment": "org.deltafi.common.content.Segment",
@@ -140,18 +143,22 @@ generateJava {
 			"TimedDataSource": "org.deltafi.core.types.TimedDataSource",
 			"TimedDataSourceConfiguration": "org.deltafi.common.types.TimedDataSourceConfiguration",
 			"TimedDataSourcePlan": "org.deltafi.common.types.TimedDataSourcePlan",
-			"TimedDataSourceSnapshot": "org.deltafi.core.snapshot.types.TimedDataSourceSnapshot",
-			"TimedDataSourceSnapshotInput": "org.deltafi.core.snapshot.types.TimedDataSourceSnapshot",
+			"TimedDataSourceSnapshot": "org.deltafi.core.types.snapshot.TimedDataSourceSnapshot",
+			"TimedDataSourceSnapshotInput": "org.deltafi.core.types.snapshot.TimedDataSourceSnapshot",
 			"TransformFlow": "org.deltafi.core.types.TransformFlow",
 			"TransformFlowConfiguration": "org.deltafi.common.types.TransformFlowConfiguration",
 			"TransformFlowPlan": "org.deltafi.common.types.TransformFlowPlan",
-			"TransformFlowSnapshot": "org.deltafi.core.snapshot.types.TransformFlowSnapshot",
-			"TransformFlowSnapshotInput": "org.deltafi.core.snapshot.types.TransformFlowSnapshot",
+			"TransformFlowSnapshot": "org.deltafi.core.types.snapshot.TransformFlowSnapshot",
+			"TransformFlowSnapshotInput": "org.deltafi.core.types.snapshot.TransformFlowSnapshot",
 			"SourceInfo": "org.deltafi.common.types.SourceInfo",
 			"TimedDeletePolicy": "org.deltafi.core.types.TimedDeletePolicy",
 			"TimedDeletePolicyInput": "org.deltafi.core.types.TimedDeletePolicy",
 			"TimedIngressActionConfiguration": "org.deltafi.common.types.TimedIngressActionConfiguration",
+			"TopBar": "org.deltafi.core.configuration.ui.TopBar",
+			"TopBarInput": "org.deltafi.core.configuration.ui.TopBar",
 			"TransformActionConfiguration": "org.deltafi.common.types.TransformActionConfiguration",
+			"UiProperties": "org.deltafi.core.configuration.ui.UiProperties",
+			"UiPropertiesInput": "org.deltafi.core.configuration.ui.UiProperties",
 			"UniqueKeyValues": "org.deltafi.core.types.UniqueKeyValues",
 			"Variable": "org.deltafi.common.types.Variable",
 			"VariableInput": "org.deltafi.common.types.Variable"

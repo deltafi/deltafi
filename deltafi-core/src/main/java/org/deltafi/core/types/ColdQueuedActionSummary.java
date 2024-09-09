@@ -24,9 +24,9 @@ import org.deltafi.common.types.ActionType;
 public class ColdQueuedActionSummary {
     private String actionName;
     private ActionType actionType;
-    private int count;
+    private long count;
 
-    public ColdQueuedActionSummary(String actionName, ActionType actionType, int count) {
+    public ColdQueuedActionSummary(String actionName, ActionType actionType, long count) {
         this.actionName = actionName;
         this.actionType = actionType;
         this.count = count;

@@ -17,18 +17,55 @@
  */
 package org.deltafi.core.repo;
 
-import lombok.extern.slf4j.Slf4j;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.transaction.annotation.Transactional;
 import org.deltafi.core.types.TransformFlow;
-import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
 
-@SuppressWarnings("unused")
-@Slf4j
-public class TransformFlowRepoImpl extends BaseFlowRepoImpl<TransformFlow> implements TransformFlowRepoCustom {
+import java.util.List;
 
-    private static final String MAX_ERRORS = "maxErrors";
+@Repository
+public class TransformFlowRepoImpl implements TransformFlowRepoCustom {
 
-    public TransformFlowRepoImpl(MongoTemplate mongoTemplate) {
-        super(mongoTemplate, TransformFlow.class);
+    private final JdbcTemplate jdbcTemplate;
+    private final ObjectMapper objectMapper;
+
+    public TransformFlowRepoImpl(JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
+        this.jdbcTemplate = jdbcTemplate;
+        this.objectMapper = objectMapper;
     }
 
+    @Override
+    @Transactional
+    public void batchInsert(List<TransformFlow> transformFlows) {
+        String sql = """
+            INSERT INTO flows (name, type, description, source_plugin, flow_status, variables,
+                               transform_actions, subscribe, publish, discriminator, id)
+            VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?)
+        """;
+
+        jdbcTemplate.batchUpdate(sql, transformFlows, 1000, (ps, transformFlow) -> {
+            ps.setString(1, transformFlow.getName());
+            ps.setString(2, transformFlow.getType().name());
+            ps.setString(3, transformFlow.getDescription());
+            ps.setString(4, toJson(transformFlow.getSourcePlugin()));
+            ps.setString(5, toJson(transformFlow.getFlowStatus()));
+            ps.setString(6, toJson(transformFlow.getVariables()));
+            ps.setString(7, toJson(transformFlow.getTransformActions()));
+            ps.setString(8, toJson(transformFlow.getSubscribe()));
+            ps.setString(9, toJson(transformFlow.getPublish()));
+            ps.setString(10, "TRANSFORM");
+            ps.setObject(11, transformFlow.getId());
+        });
+    }
+
+    private String toJson(Object object) {
+        try {
+            return object == null ? null : objectMapper.writeValueAsString(object);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Error converting object to JSON", e);
+        }
+    }
 }

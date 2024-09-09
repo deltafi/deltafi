@@ -18,7 +18,7 @@
 package org.deltafi.core.datafetchers;
 
 import com.netflix.graphql.dgs.DgsQueryExecutor;
-import org.deltafi.common.types.PropertySet;
+import org.deltafi.core.types.PropertySet;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.configuration.ui.Link;
 import org.deltafi.core.configuration.ui.Link.LinkType;
@@ -26,6 +26,7 @@ import org.intellij.lang.annotations.Language;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 
 public class PropertiesDatafetcherTestHelper {
@@ -62,7 +63,7 @@ public class PropertiesDatafetcherTestHelper {
         return dgsQueryExecutor.executeAndExtractJsonPathAsObject(SAVE_LINK, "data.saveLink", linkArgs(LinkType.EXTERNAL.name()), Link.class);
     }
 
-    public static boolean removeLink(DgsQueryExecutor dgsQueryExecutor, String linkId) {
+    public static boolean removeLink(DgsQueryExecutor dgsQueryExecutor, UUID linkId) {
         return dgsQueryExecutor.executeAndExtractJsonPath("mutation {removeLink(id: \"" + linkId + "\")}", "data.removeLink");
     }
 

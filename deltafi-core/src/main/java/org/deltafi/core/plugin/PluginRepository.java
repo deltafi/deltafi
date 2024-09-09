@@ -17,16 +17,32 @@
  */
 package org.deltafi.core.plugin;
 
-import org.deltafi.common.types.Plugin;
 import org.deltafi.common.types.PluginCoordinates;
-import org.springframework.data.mongodb.repository.DeleteQuery;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Optional;
 
 @Repository
-public interface PluginRepository extends MongoRepository<Plugin, PluginCoordinates>, PluginRepositoryCustom {
+public interface PluginRepository extends JpaRepository<PluginEntity, PluginCoordinates> {
+    Optional<PluginEntity> findByPluginCoordinatesGroupIdAndPluginCoordinatesArtifactId(String groupId, String artifactId);
 
-    @DeleteQuery("{ 'pluginCoordinates.groupId': ?0, 'pluginCoordinates.artifactId' : ?1 }")
-    void deleteOlderVersions(String groupId, String artifactId);
+    @Modifying
+    @Transactional
+    @Query(value = "DELETE FROM plugins p " +
+            "WHERE p.group_id = :groupId " +
+            "AND p.artifact_id = :artifactId", nativeQuery = true)
+    void deleteByGroupIdAndArtifactId(String groupId, String artifactId);
 
+    @Query(value = "SELECT * FROM plugins WHERE EXISTS (" +
+            "SELECT 1 FROM jsonb_array_elements(dependencies) AS dep " +
+            "WHERE dep->>'groupId' = :#{#coords.groupId} " +
+            "AND dep->>'artifactId' = :#{#coords.artifactId} " +
+            "AND dep->>'version' = :#{#coords.version}" +
+            ")", nativeQuery = true)
+    List<PluginEntity> findPluginsWithDependency(PluginCoordinates coords);
 }

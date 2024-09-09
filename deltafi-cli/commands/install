@@ -110,53 +110,41 @@ _random_password() {
   printf '%s%s%s' "$(printf '%s' $RANDOM | md5sum | head -c 20)" "$(printf '%s' $RANDOM | md5sum | head -c 20)" "$(printf '%s' $RANDOM | md5sum | head -c 20)" | _base64 | head -c "$size"
 }
 
-_stackgres_install() {
-
-  if [[ -z ${DELTAFI_STACKGRES_ENABLED+x} || ${DELTAFI_STACKGRES_ENABLED} != "true" ]]; then
-    if helm status --namespace stackgres stackgres-operator 2&> /dev/null; then
-      cli_log "Stackgres Operator will be uninstalled"
-      helm uninstall --namespace stackgres stackgres-operator --ignore-not-found --wait --timeout 10m
-    else
-      cli_log "Stackgres Operator will not be installed"
-    fi
-    return 0
-  fi
-
-  cli_log "Initializing Stackgres Operator"
-  pushd "${DELTAFICLI_CHART_PATH}/../stackgres-operator" > /dev/null || return 1
+_postgres_operator_install() {
+  cli_log "Initializing Postgres Operator"
+  pushd "${DELTAFICLI_CHART_PATH}/../postgres-operator" > /dev/null || return 1
   helm upgrade --install --wait \
-    --namespace stackgres stackgres-operator . \
-    --create-namespace --timeout 10m
-  cli_log "Waiting for Stackgres Operator availability..."
-  kubectl wait -n stackgres --for=condition=ready pod --selector=app=stackgres-operator --timeout=180s
-  popd || return 1
+    --namespace deltafi --create-namespace postgres-operator . \
+    --timeout 10m > /dev/null
+  cli_log "Waiting for Postgres Operator availability..."
+  kubectl wait -n deltafi --for=condition=ready pod --selector=app.kubernetes.io/name=postgres-operator --timeout=180s > /dev/null
+  _success "Postgres Operator is ready"
+  popd > /dev/null || return 1
+
+  # Operator UI for postgres cluster debuggery
+#  pushd "${DELTAFICLI_CHART_PATH}/../postgres-operator-ui" > /dev/null || return 1
+#  helm upgrade --install --wait \
+#    --namespace deltafi --create-namespace postgres-operator-ui . \
+#    --create-namespace --timeout 10m
+#  cli_log "Waiting for Postgres Operator UI availability..."
+#  kubectl wait -n deltafi --for=condition=ready pod --selector=app.kubernetes.io/name=postgres-operator-ui --timeout=180s
+#  popd || return 1
 }
 
 _k8s_prerequisites() {
   cli_log "Initializing k8s prerequisites"
   _k8s_add_namespace deltafi
-  local mongodb_password
-  mongodb_password="$(_random_password 20)"
-  _k8s_add_secret mongodb-passwords mongodb-password "${mongodb_password}" mongodb-passwords "${mongodb_password}" mongodb-root-password "$(_random_password 20)"
-  if ! ${KUBECTL_BIN} get secrets -n deltafi mongodb-passwords -o yaml | grep "mongodb-passwords:" > /dev/null; then
-    cli_log "Migrating mongodb-passwords secret"
-    ${KUBECTL_BIN} get secrets -n deltafi mongodb-passwords -o yaml | sed -e "s|\(.*\)mongodb-password:\(.*\)|\1mongodb-password:\2\n\1mongodb-passwords:\2|g" | ${KUBECTL_BIN} apply -f -
-  fi
   _k8s_add_secret minio-keys rootUser "deltafi" rootPassword "$(_random_password 40)"
   VALKEY_PASSWORD="$(_random_password 16)"
   # Keeping redis-password around for backwards chart compatibility
   _k8s_add_secret valkey-password redis-password "$VALKEY_PASSWORD" valkey-password "$VALKEY_PASSWORD"
   _k8s_add_secret config-repo-secret config-token "$(_random_password 16)"
   _k8s_add_secret clickhouse-password clickhouse-password "deltafi"
-  local postgres_password
-  postgres_password="$(_random_password 20)"
-  local create_user_sql="CREATE USER deltafi PASSWORD '${postgres_password}';"
-  _k8s_add_secret postgres deltafi-password "${postgres_password}" create-user.sql "${create_user_sql}"
 }
 
 _k8s_install() {
   _k8s_prerequisites
-  _stackgres_install
+  _postgres_operator_install
 
   if [[ ! -f "${DELTAFICLI_CHART_PATH}/Chart.lock" ]]; then
     cli_log "Executing helm dependencies"
@@ -176,12 +164,12 @@ _k8s_install() {
     --create-namespace \
     --values "$DELTAFICLI_CHART_PATH/values.yaml" \
     "${DELTAFICLI_PROJECT_NAME}" "${DELTAFICLI_CHART_PATH}" \
-    ${ARGS[@]:1}
+    ${ARGS[@]:1} > /dev/null
   HELM_RETURN_CODE=$?
   [[ "$HELM_RETURN_CODE" != "0" ]] && exit $HELM_RETURN_CODE
   cli_log "Helmchart upgrade complete"
 
-  _run_migrations
+  deltafi event create -q -s "cli" --success --notification "Installed DeltaFi version $( cat "${DELTAFICLI_WORKDIR}/VERSION")"
 }
 
 _compose_install() {
@@ -196,7 +184,7 @@ _compose_install() {
     _exit_1
   fi
 
-  _run_migrations
+  deltafi event create -q -s "cli" --success --notification "Installed DeltaFi version $( cat "${DELTAFICLI_WORKDIR}/VERSION")"
 }
 
 _pre_upgrade_tasks() {
@@ -207,16 +195,6 @@ _pre_upgrade_tasks() {
   snapshot_file="pre-upgrade-to-${version}-$(date +%s).json"
   deltafi system-snapshot create "$message" > "${snapshot_file}"
   cli_log "Snapshot complete"
-}
-
-_run_migrations() {
-  cli_log "Running migrations"
-  deltafi event create -q -s "cli" "Running Mongo migrations"
-  MONGO_RESULTS=$(deltafi mongo-migrate | sed -e 's|>>|\\n* |g')
-  echo "${MONGO_RESULTS}"
-  deltafi event create -q -s "cli" --success "Completed Mongo migrations" --content "${MONGO_RESULTS}"
-
-  deltafi event create -q -s "cli" --success --notification "Installed DeltaFi version $( cat "${DELTAFICLI_WORKDIR}/VERSION")"
 }
 
 cli_log "Installing DeltaFi"

@@ -18,16 +18,17 @@
 package org.deltafi.core.services;
 
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.types.EgressFlowPlan;
+import org.deltafi.common.types.FlowType;
 import org.deltafi.common.types.Subscriber;
 import org.deltafi.core.converters.EgressFlowPlanConverter;
 import org.deltafi.core.repo.EgressFlowRepo;
 import org.deltafi.core.services.pubsub.SubscriberService;
-import org.deltafi.core.snapshot.SystemSnapshot;
-import org.deltafi.core.snapshot.types.EgressFlowSnapshot;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.EgressFlowSnapshot;
 import org.deltafi.core.types.EgressFlow;
 
-import org.deltafi.core.validation.EgressFlowValidator;
+import org.deltafi.core.types.EgressFlowPlanEntity;
+import org.deltafi.core.validation.FlowValidator;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
@@ -38,21 +39,20 @@ import java.util.Set;
 
 @Slf4j
 @Service
-public class EgressFlowService extends FlowService<EgressFlowPlan, EgressFlow, EgressFlowSnapshot> implements SubscriberService {
+public
+class EgressFlowService extends FlowService<EgressFlowPlanEntity, EgressFlow, EgressFlowSnapshot, EgressFlowRepo> implements SubscriberService {
 
     private static final EgressFlowPlanConverter EGRESS_FLOW_PLAN_CONVERTER = new EgressFlowPlanConverter();
 
     private Map<String, Set<Subscriber>> topicSubscribers;
 
-    public EgressFlowService(EgressFlowRepo flowRepo, PluginVariableService pluginVariableService, EgressFlowValidator egressFlowValidator, BuildProperties buildProperties) {
-        super("egress", flowRepo, pluginVariableService, EGRESS_FLOW_PLAN_CONVERTER, egressFlowValidator, buildProperties);
-        refreshCache();
+    public EgressFlowService(EgressFlowRepo flowRepo, PluginVariableService pluginVariableService, FlowValidator flowValidator, BuildProperties buildProperties, FlowCacheService flowCacheService) {
+        super(FlowType.EGRESS, flowRepo, pluginVariableService, EGRESS_FLOW_PLAN_CONVERTER, flowValidator, buildProperties, flowCacheService, EgressFlow.class, EgressFlowPlanEntity.class);
     }
 
     @Override
-    public synchronized void refreshCache() {
-        super.refreshCache();
-        topicSubscribers = buildSubsriberMap();
+    public void onRefreshCache() {
+        topicSubscribers = buildSubscriberMap();
     }
 
     /**
@@ -71,7 +71,7 @@ public class EgressFlowService extends FlowService<EgressFlowPlan, EgressFlow, E
             return false;
         }
 
-        if (((EgressFlowRepo) flowRepo).updateExpectedAnnotations(flowName, expectedAnnotations)) {
+        if (flowRepo.updateExpectedAnnotations(flowName, expectedAnnotations) > 0) {
             refreshCache();
             return true;
         }
@@ -81,7 +81,6 @@ public class EgressFlowService extends FlowService<EgressFlowPlan, EgressFlow, E
 
     @Override
     public void updateSnapshot(SystemSnapshot systemSnapshot) {
-        refreshCache();
         systemSnapshot.setEgressFlows(getAll().stream().map(EgressFlowSnapshot::new).toList());
     }
 

@@ -37,13 +37,13 @@ export default function useEventsNotifications() {
 
   const ackNotification = async (id: string) => {
     notifications.value = notifications.value.filter((notification) => {
-      return notification._id !== id;
+      return notification.id !== id;
     });
     await acknowledgeEvent(id);
   }
 
   const ackAllNotifications = async () => {
-    const ids = notifications.value.map((n) => n._id);
+    const ids = notifications.value.map((n) => n.id);
     await acknowledgeEvent(ids);
     notifications.value = [];
   }

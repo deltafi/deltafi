@@ -21,7 +21,7 @@ services:
     depends_on:
       deltafi-valkey:
         condition: service_healthy
-      deltafi-mongodb:
+      deltafi-postgres:
         condition: service_healthy
       deltafi-minio:
         condition: service_started
@@ -34,7 +34,7 @@ services:
     env_file:
       - ${ENV_DIR}/common.env
       - ${SECRETS_DIR}/valkey.env
-      - ${SECRETS_DIR}/mongodb.env
+      - ${SECRETS_DIR}/postgres.env
       - ${SECRETS_DIR}/minio.env
       - ${SECRETS_DIR}/clickhouse.env
       - ${SECRETS_DIR}/ssl.env
@@ -53,7 +53,7 @@ services:
     depends_on:
       deltafi-valkey:
         condition: service_healthy
-      deltafi-mongodb:
+      deltafi-postgres:
         condition: service_healthy
       deltafi-minio:
         condition: service_started
@@ -62,7 +62,7 @@ services:
     env_file:
       - ${ENV_DIR}/common.env
       - ${SECRETS_DIR}/valkey.env
-      - ${SECRETS_DIR}/mongodb.env
+      - ${SECRETS_DIR}/postgres.env
       - ${SECRETS_DIR}/minio.env
       - ${SECRETS_DIR}/clickhouse.env
       - ${SECRETS_DIR}/ssl.env
@@ -174,7 +174,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
   deltafi-egress-sink:
     image: ${DELTAFI_EGRESS_SINK}
-    container_name: deltafi-egress-sink
+    container_name: deltafi-egress-sink-service
     depends_on:
       deltafi-core:
         condition: service_started
@@ -214,34 +214,28 @@ services:
     volumes:
       - ${DATA_DIR}/minio:/export
     user: "${USER_ID}"
-  deltafi-mongodb:
-    image: ${MONGODB}
-    container_name: deltafi-mongodb
+  deltafi-postgres:
+    image: ${POSTGRES}
+    container_name: deltafi-postgres
     environment:
-      BITNAMI_DEBUG: false
-      ALLOW_EMPTY_PASSWORD: no
-      MONGODB_SYSTEM_LOG_VERBOSITY: 0
-      MONGODB_DISABLE_SYSTEM_LOG: no
-      MONGODB_DISABLE_JAVASCRIPT: no
-      MONGODB_ENABLE_IPV6: no
-      MONGODB_ENABLE_DIRECTORY_PER_DB: no
+      POSTGRES_HOST_AUTH_METHOD: trust
     env_file:
-      - ${SECRETS_DIR}/mongodb.env
+      - ${SECRETS_DIR}/postgres.env
     healthcheck:
-      test: mongo --disableImplicitSessions --eval 'db.hello().isWritablePrimary || db.hello().secondary' | grep -q 'true'
-      start_period: 5s
-      timeout: 5s
-      interval: 10s
-      retries: 6
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 5s
+      timeout: 15s
+      retries: 20
     labels:
       deltafi-group: deltafi-dependency
     networks:
       - deltafi
     expose:
-      - "27017"
+      - "8001"
+      - "5432"
     restart: unless-stopped
     volumes:
-      - ${DATA_DIR}/mongo:/bitnami/mongodb
+      - ${DATA_DIR}/postgres:/var/lib/postgresql/data/
     user: "${USER_ID}"
   deltafi-valkey:
     image: ${VALKEY}

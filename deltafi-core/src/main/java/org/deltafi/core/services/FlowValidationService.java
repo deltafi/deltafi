@@ -17,17 +17,16 @@
  */
 package org.deltafi.core.services;
 
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 public class FlowValidationService {
-    private final List<FlowPlanService<?, ?, ?>> flowPlanServices;
-    private final List<FlowService<?, ?, ?>> flowServices;
+    private final List<FlowPlanService<?, ?, ?, ?>> flowPlanServices;
+    private final List<FlowService<?, ?, ?, ?>> flowServices;
 
-    public FlowValidationService(List<FlowPlanService<?, ?, ?>> flowPlanServices, List<FlowService<?, ?, ?>> flowServices) {
+    public FlowValidationService(List<FlowPlanService<?, ?, ?, ?>> flowPlanServices, List<FlowService<?, ?, ?, ?>> flowServices) {
         this.flowPlanServices = flowPlanServices;
         this.flowServices = flowServices;
     }
@@ -39,11 +38,6 @@ public class FlowValidationService {
     public void revalidateFlows() {
         rebuildInvalidFlows();
         validateAllFlows();
-    }
-
-    @Async
-    public void asyncRevalidateFlows() {
-        revalidateFlows();
     }
 
     private void rebuildInvalidFlows() {

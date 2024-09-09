@@ -22,9 +22,9 @@
         <Button v-tooltip.right="{ value: `Clear Filters`, disabled: !filterOptionsSelected }" rounded :class="`mr-0 p-column-filter-menu-button p-link p-column-filter-menu-button-open ${filterOptionsSelected ? 'p-column-filter-menu-button-active' : null}`" :disabled="!filterOptionsSelected" @click="clearOptions()">
           <i class="pi pi-filter" style="font-size: 1rem"></i>
         </Button>
-        <Dropdown v-model="dataSourceNameSelected" placeholder="Select a Data Source" :options="dataSourceFlowNames" show-clear :editable="false" class="deltafi-input-field flow-dropdown mx-1" />
-        <AutoComplete v-model="selectedMessageValue" :suggestions="filteredErrorMessages" placeholder="Select Last Error" class="deltafi-input-field mx-1" force-selection @complete="messageSearch" />
-        <Dropdown v-model="selectedAckOption" :options="ackOptions" option-label="name" option-value="value" :editable="false" class="deltafi-input-field ack-dropdown mx-1" />
+        <Dropdown v-model="dataSourceNameSelected" placeholder="Select a Data Source" :options="formattedDataSourceNames" option-group-label="label" option-group-children="sources" show-clear :editable="false" class="deltafi-input-field ml-3 flow-dropdown" />
+        <AutoComplete v-model="selectedMessageValue" :suggestions="filteredErrorMessages" placeholder="Select Last Error" class="deltafi-input-field ml-3" force-selection @complete="messageSearch" />
+        <Dropdown v-model="selectedAckOption" :options="ackOptions" option-label="name" option-value="value" :editable="false" class="deltafi-input-field ml-3 ack-dropdown" />
         <Button v-tooltip.left="refreshButtonTooltip" :icon="refreshButtonIcon" label="Refresh" :class="refreshButtonClass" :badge="refreshButtonBadge" badge-class="p-badge-danger" @click="onRefresh" />
       </div>
     </PageHeader>
@@ -68,7 +68,7 @@ const isIdle = inject("isIdle");
 const errorSummaryMessagePanel = ref();
 const errorSummaryFlowPanel = ref();
 const errorsSummaryPanel = ref();
-const { dataSourceFlows: dataSourceFlowNames, fetchDataSourceFlowNames } = useFlows();
+const { allDataSourceFlowNames, fetchAllDataSourceFlowNames } = useFlows();
 const { pluralize } = useUtilFunctions();
 const { fetchErrorCountSince } = useErrorCount();
 const loading = ref(false);
@@ -82,6 +82,7 @@ const useURLSearch = ref(false);
 const route = useRoute();
 const errorPanelState = useStorage("error-store", {}, sessionStorage, { serializer: StorageSerializers.object });
 const { data: errorsMessages, fetchAllMessage: getAllErrorsMessage } = useErrorsSummary();
+const formattedDataSourceNames = ref([]);
 
 const ackOptions = [
   { name: "Errors", value: 0 },
@@ -203,8 +204,6 @@ const refreshButtonBadge = computed(() => {
   return newErrorsCount.value > 0 ? newErrorsCount.value.toString() : null;
 });
 
-fetchDataSourceFlowNames();
-
 const onRefresh = () => {
   loading.value = true;
   newErrorsCount.value = 0;
@@ -232,6 +231,8 @@ onBeforeMount(() => {
 });
 
 onMounted(async () => {
+  await fetchAllDataSourceFlowNames();
+  formatDataSourceNames();
   await getPersistedParams();
   await nextTick();
   pollNewErrors();
@@ -250,6 +251,15 @@ onMounted(async () => {
   }, refreshInterval);
   setupWatchers();
 });
+
+const formatDataSourceNames = () => {
+  if (!_.isEmpty(allDataSourceFlowNames.value.restDataSource)) {
+    formattedDataSourceNames.value.push({ label: "Rest Data Sources", sources: allDataSourceFlowNames.value.restDataSource });
+  }
+  if (!_.isEmpty(allDataSourceFlowNames.value.timedDataSource)) {
+    formattedDataSourceNames.value.push({ label: "Timed Data Sources", sources: allDataSourceFlowNames.value.timedDataSource });
+  }
+};
 </script>
 
 <style lang="scss">

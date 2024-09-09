@@ -17,8 +17,8 @@
  */
 package org.deltafi.core.services;
 
-import org.deltafi.core.snapshot.SystemSnapshot;
-import org.deltafi.core.snapshot.types.EgressFlowSnapshot;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.EgressFlowSnapshot;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -62,7 +62,7 @@ class AnnotationServiceTest {
     void testClearRemovedAnnotations() {
         Mockito.when(egressFlowService.setExpectedAnnotations(FLOW, null)).thenReturn(true);
         annotationService.setExpectedAnnotations(FLOW, Set.of());
-        Mockito.verify(deltaFilesService).asyncUpdatePendingAnnotationsForFlows(FLOW, null);
+        Mockito.verify(deltaFilesService).updatePendingAnnotationsForFlows(FLOW, null);
     }
 
     @Test
@@ -85,7 +85,7 @@ class AnnotationServiceTest {
         annotationService.resetFromSnapshot(systemSnapshot, true);
 
         Mockito.verify(egressFlowService, Mockito.times(3)).setExpectedAnnotations(Mockito.any(), Mockito.any());
-        Mockito.verify(deltaFilesService).asyncUpdatePendingAnnotationsForFlows("egressChanged", ANNOTATION_KEYS);
+        Mockito.verify(deltaFilesService).updatePendingAnnotationsForFlows("egressChanged", ANNOTATION_KEYS);
     }
 
     EgressFlowSnapshot egressFlowSnapshot(String name, Set<String> expectedAnnotations) {

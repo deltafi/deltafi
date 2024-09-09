@@ -45,6 +45,11 @@
         </Column>
         <Column header="Description" field="description" :sortable="true"></Column>
         <Column header="Publish" field="topic" :sortable="true"></Column>
+        <Column header="Test Mode" class="switch-column">
+          <template #body="{ data }">
+            <RestDataSourceTestModeInputSwitch :row-data-prop="data" />
+          </template>
+        </Column>
         <Column header="Max Errors" field="maxErrors" class="max-error-column">
           <template #body="{ data, field }">
             <span v-if="data[field] === null">-</span>
@@ -54,9 +59,9 @@
             <InputNumber v-model="data[field]" :min="0" class="p-inputtext-sm max-error-input" autofocus />
           </template>
         </Column>
-        <Column header="Active" :style="{ width: '7%' }" class="data-source-state-column">
+        <Column header="Active" :style="{ width: '7%' }" class="switch-column">
           <template #body="{ data }">
-            <StateInputSwitch :row-data-prop="data" data-source-type="timedDataSource" @change="refresh" />
+            <StateInputSwitch :row-data-prop="data" data-source-type="restDataSource" @change="refresh" />
           </template>
         </Column>
       </DataTable>
@@ -84,7 +89,7 @@
         <div class="d-flex justify-content-between">
           <span></span>
           <div>
-            <StateInputSwitch :row-data-prop="activeAction" data-source-type="timedDataSource" @change="refresh" />
+            <StateInputSwitch :row-data-prop="activeAction" data-source-type="restDataSource" @change="refresh" />
           </div>
         </div>
       </template>
@@ -96,6 +101,7 @@
 import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import DataSourceRemoveButton from "@/components/dataSources/DataSourceRemoveButton.vue";
+import RestDataSourceTestModeInputSwitch from "@/components/dataSources/RestDataSourceTestModeInputSwitch.vue";
 import StateInputSwitch from "@/components/dataSources/StateInputSwitch.vue";
 import PermissionedRouterLink from "@/components/PermissionedRouterLink";
 import Timestamp from "@/components/Timestamp.vue";
@@ -113,7 +119,7 @@ import InputNumber from "primevue/inputnumber";
 const emit = defineEmits(["dataSourcesList"]);
 const editing = inject("isEditing");
 const notify = useNotifications();
-const { getAllDataSources, setMaxErrors, loaded, loading, errors } = useDataSource();
+const { getRestDataSources, setRestDataSourceMaxErrors, loaded, loading, errors } = useDataSource();
 const showLoading = computed(() => loading.value && !loaded.value);
 const restDataSources = ref([]);
 const onEditInit = () => (editing.value = true);
@@ -127,7 +133,7 @@ const onEditComplete = async (event) => {
     let sendValue = _.isEqual(newValue, null) ? -1 : newValue;
     const resetValue = data.maxErrors;
     data[field] = newValue;
-    await setMaxErrors(data.name, sendValue);
+    await setRestDataSourceMaxErrors(data.name, sendValue);
     if (errors.value.length === 0) {
       if (newValue === null) {
         notify.success("Max Errors Disabled", `Max errors for <b>${data.name}</b> has been disabled`);
@@ -182,15 +188,11 @@ const refresh = async () => {
   // Do not refresh data while editing.
   if (editing.value) return;
 
-  const response = await getAllDataSources();
-  restDataSources.value = response.data.getAllFlows.dataSource
-    .filter((ds) => {
-      return ds.type === "REST_DATA_SOURCE";
-    })
-    .map((ds) => {
-      ds.maxErrors = ds.maxErrors !== -1 ? ds.maxErrors : null;
-      return ds;
-    });
+  const response = await getRestDataSources();
+  restDataSources.value = response.data.getAllFlows.restDataSource.map((ds) => {
+    ds.maxErrors = ds.maxErrors !== -1 ? ds.maxErrors : null;
+    return ds;
+  });
 
   emit("dataSourcesList", restDataSources.value);
 };
@@ -206,7 +208,7 @@ defineExpose({ refresh });
 .rest-data-source-panel {
   .table-panel {
     .data-sources-table {
-      td.data-source-state-column {
+      td.switch-column {
         padding: 0 !important;
 
         .p-inputswitch {
@@ -224,7 +226,7 @@ defineExpose({ refresh });
         width: 7rem;
         padding: 0 !important;
 
-        > span {
+        >span {
           padding: 0.5rem !important;
         }
 
@@ -234,7 +236,7 @@ defineExpose({ refresh });
           display: flex;
         }
 
-        .value-clickable > * {
+        .value-clickable>* {
           flex: 0 0 auto;
         }
 

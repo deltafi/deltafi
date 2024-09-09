@@ -52,8 +52,6 @@ spec:
               name: keystore
               readOnly: true
               subPath: trustStore.p12
-        - name: test
-          image: docker.io/sidecar:latest
       volumes:
         - name: keystore
           secret:

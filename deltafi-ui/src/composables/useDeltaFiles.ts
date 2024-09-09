@@ -30,7 +30,6 @@ export default function useDeltaFiles() {
         __args: {
           did: did,
         },
-        schemaVersion: true,
         did: true,
         name: true,
         dataSource: true,

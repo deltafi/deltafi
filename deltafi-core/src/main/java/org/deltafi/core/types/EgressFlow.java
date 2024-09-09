@@ -17,46 +17,39 @@
  */
 package org.deltafi.core.types;
 
-
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
+import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.ActionFamily;
-import org.springframework.data.mongodb.core.mapping.Document;
+import org.hibernate.annotations.Type;
 
 import java.util.*;
 
-@Document
+@Entity
+@DiscriminatorValue("EGRESS")
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class EgressFlow extends Flow implements Subscriber {
-    private EgressActionConfiguration egressAction;
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
+    private ActionConfiguration egressAction;
+
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
     private Set<String> expectedAnnotations;
+
     @JsonProperty(required = true)
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
     private Set<Rule> subscribe;
 
-    /**
-     * Schema versions:
-     * 0 - original
-     * 1 - skipped
-     * 2 - separate flow and action name
-     */
-    public static final int CURRENT_SCHEMA_VERSION = 2;
-    private int schemaVersion;
-
-    @Override
-    public boolean migrate() {
-        if (schemaVersion < 2) {
-            migrateAction(egressAction);
-        }
-
-        if (schemaVersion < CURRENT_SCHEMA_VERSION) {
-            schemaVersion = CURRENT_SCHEMA_VERSION;
-            return true;
-        }
-
-        return false;
+    public EgressFlow() {
+        super(null, FlowType.EGRESS, null, null);
     }
 
     @Override
@@ -67,7 +60,9 @@ public class EgressFlow extends Flow implements Subscriber {
     @Override
     public List<ActionConfiguration> allActionConfigurations() {
         List<ActionConfiguration> actionConfigurations = new ArrayList<>();
-        actionConfigurations.add(egressAction);
+        if (egressAction != null) {
+            actionConfigurations.add(egressAction);
+        }
         return actionConfigurations;
     }
 

@@ -17,8 +17,7 @@
 #
 
 enum PropertySource {
-    EXTERNAL
-    MONGO
+    CUSTOM
     DEFAULT
 }
 
@@ -30,18 +29,18 @@ enum LinkType {
 type Property {
     key: String!                    # property key
     description: String!            # describe what this property does
-    defaultValue: String            # value used if no value is set in git or mongo
+    defaultValue: String            # value used if no value is set in git or db
     refreshable: Boolean!           # will apps automatically pick up changes to this property
-    value: String                   # value as set in git/file-system or mongo
-    propertySource: PropertySource! # where the property was set (external for git/filesystem or mongo)
+    value: String                   # value as set in git/file-system or db
+    propertySource: PropertySource! # where the property was set (external for git/filesystem or db)
 }
 
 input PropertyInput {
     key: String!                    # property key
     description: String!            # describe what this property does
-    defaultValue: String            # value used if no value is set in git or mongo
+    defaultValue: String            # value used if no value is set in git or db
     refreshable: Boolean!           # will apps automatically pick up changes to this property
-    value: String                   # value as set in git/file-system or mongo
+    value: String                   # value as set in git/file-system or db
     propertySource: PropertySource  # not needed here but allows the Property class to be reused for input
 }
 
@@ -60,7 +59,7 @@ input PropertySetInput {
 }
 
 type Link {
-    id: String!
+    id: UUID!
     name: String!
     url: String!
     description: String
@@ -68,7 +67,7 @@ type Link {
 }
 
 input LinkInput {
-    id: String
+    id: UUID
     name: String!
     url: String!
     description: String
@@ -156,5 +155,5 @@ extend type Mutation {
     updateProperties(updates: [KeyValueInput]!): Boolean!
     removePropertyOverrides(propertyNames: [String]!): Boolean!
     saveLink(link: LinkInput!): Link!
-    removeLink(id: String!): Boolean!
+    removeLink(id: UUID!): Boolean!
 }

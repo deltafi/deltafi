@@ -36,28 +36,27 @@ class RuleEvaluatorTest {
 
     @Test
     void testEvaluation_metadataChecks() {
-        DeltaFileFlow flow = testDeltaFileFlow();
-        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata.containsKey('a')", flow)).isTrue();
-        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata['a'] == 'b'", flow)).isTrue();
-        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata.containsKey('b')", flow)).isFalse();
-        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata['a'] == 'c'", flow)).isFalse();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata.containsKey('a')", testMetadata(), testContent())).isTrue();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata['a'] == 'b'", testMetadata(), testContent())).isTrue();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata.containsKey('b')", testMetadata(), testContent())).isFalse();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("metadata['a'] == 'c'", testMetadata(), testContent())).isFalse();
     }
 
     @Test
     void testEvaluation_contentChecks() {
-        DeltaFileFlow flow = testDeltaFileFlow();
-        Assertions.assertThat(ruleEvaluator.evaluateCondition("hasMediaType('plain/text')", flow)).isTrue();
-        Assertions.assertThat(ruleEvaluator.evaluateCondition("hasMediaType('application/json')", flow)).isFalse();
-        Assertions.assertThat(ruleEvaluator.evaluateCondition("content.?[getSize() > 2].isEmpty()", flow)).isFalse();
-        Assertions.assertThat(ruleEvaluator.evaluateCondition("content.?[getSize() > 10].isEmpty()", flow)).isTrue();
-        Assertions.assertThat(ruleEvaluator.evaluateCondition("content.?[getName() == 'test.txt'].isEmpty()", flow)).isFalse();
-        Assertions.assertThat(ruleEvaluator.evaluateCondition("content.?[getName() == 'test2.txt'].isEmpty()", flow)).isTrue();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("hasMediaType('plain/text')", testMetadata(), testContent())).isTrue();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("hasMediaType('application/json')", testMetadata(), testContent())).isFalse();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("content.?[getSize() > 2].isEmpty()", testMetadata(), testContent())).isFalse();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("content.?[getSize() > 10].isEmpty()", testMetadata(), testContent())).isTrue();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("content.?[getName() == 'test.txt'].isEmpty()", testMetadata(), testContent())).isFalse();
+        Assertions.assertThat(ruleEvaluator.evaluateCondition("content.?[getName() == 'test2.txt'].isEmpty()", testMetadata(), testContent())).isTrue();
     }
 
     @Test
     void testImmutableDeltaFile() {
-        DeltaFileFlow originalDeltaFileFlow = testDeltaFileFlow();
-        RuleEvaluator.ImmutableDeltaFileFlow deltaFile = new RuleEvaluator.ImmutableDeltaFileFlow(originalDeltaFileFlow);
+        Map<String, String> originalMetadata = testMetadata();
+        List<Content> originalContent = testContent();
+        RuleEvaluator.ImmutableDeltaFileFlow deltaFile = new RuleEvaluator.ImmutableDeltaFileFlow(originalMetadata, originalContent);
         // cannot rewrite value for key 'a'
         Assertions.assertThatThrownBy(() -> ruleEvaluator.doEvaluateCondition("metadata['a'] = 'c'", deltaFile))
                 .isInstanceOf(UnsupportedOperationException.class);
@@ -67,20 +66,17 @@ class RuleEvaluatorTest {
 
         //
         ruleEvaluator.doEvaluateCondition("content[0].setName('c')", deltaFile);
-        Assertions.assertThat(originalDeltaFileFlow.lastContent().getFirst().getName()).isEqualTo("test.txt");
-        Assertions.assertThat(deltaFile.content().getFirst().getName()).isEqualTo("c");
+        Assertions.assertThat(originalContent.getFirst().getName()).isEqualTo("test.txt");
+        Assertions.assertThat(deltaFile.content.getFirst().getName()).isEqualTo("c");
+    }
+
+    private Map<String, String> testMetadata() {
+        return Map.of("a", "b");
     }
 
     @SneakyThrows
-    private DeltaFileFlow testDeltaFileFlow() {
+    private List<Content> testContent() {
         Content content = contentStorageService.save(UUID.randomUUID(), "test input".getBytes(StandardCharsets.UTF_8), "test.txt", "plain/text");
-        Action action = new Action();
-        action.setContent(List.of(content));
-        action.setMetadata(Map.of("a", "b"));
-        action.setType(ActionType.TRANSFORM);
-        action.setState(ActionState.COMPLETE);
-        DeltaFileFlow flow = new DeltaFileFlow();
-        flow.getActions().add(action);
-        return flow;
+        return List.of(content);
     }
 }

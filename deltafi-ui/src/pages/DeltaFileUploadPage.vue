@@ -45,7 +45,7 @@
               <InputText type="text" value="Data Source" disabled />
             </div>
             <div class="col-5">
-              <Dropdown v-model="selectedDataSource" :options="activeDataSourceFlows" placeholder="Select a Data Source" show-clear :class="dataSourceDropdownClass" />
+              <Dropdown v-model="selectedDataSource" :options="formattedDataSourceNames" option-group-label="label" option-group-children="sources" placeholder="Select a Data Source" show-clear :class="dataSourceDropdownClass" />
             </div>
           </div>
           <div v-for="field in metadata" :key="field" class="row mt-4 p-fluid">
@@ -105,7 +105,7 @@
             <Column field="uploadedMetadata" header="Metadata" class="metadata-column">
               <template #body="file">
                 <span v-if="!_.isEmpty(file.data.uploadedMetadata)" class="btn-group">
-                  <DialogTemplate component-name="MetadataViewer" header="Metadata" :metadata="formatMetadataforViewer(file.data.filename, file.data.uploadedMetadata)">
+                  <DialogTemplate component-name="MetadataViewer" header="Metadata" :metadata="formatMetadataForViewer(file.data.filename, file.data.uploadedMetadata)">
                     <Button v-tooltip.top.hover="'View Metadata'" icon="fas fa-table" class="content-button p-button-link p-0" />
                   </DialogTemplate>
                   <Button id="replayMetadata" v-tooltip.top.hover="'Reuse Metadata'" icon="fas fa-redo" class="content-button p-button-link button2 p-0" @click="replayMetadata(file.data)" />
@@ -155,7 +155,7 @@ const selectedDataSource = ref(null);
 const metadata = ref([]);
 const fileUploader = ref();
 const deltaFiles = ref([]);
-const { fetchDataSourceFlowNames, dataSourceFlows: activeDataSourceFlows } = useFlows();
+const { allDataSourceFlowNames, fetchAllDataSourceFlowNames } = useFlows();
 const { ingressFile } = useIngress();
 const notify = useNotifications();
 const { validateMetadataFile } = useMetadataConfiguration();
@@ -165,6 +165,7 @@ const validUpload = ref({});
 const errorOverlayPanel = ref(null);
 const overlayPanelPosition = ref({});
 const uploadClicked = ref(false);
+const formattedDataSourceNames = ref([]);
 
 const deltaFilesMenuItems = ref([
   {
@@ -197,7 +198,7 @@ const onMetaImport = (importData) => {
 };
 
 onBeforeMount(() => {
-  getselectedDataSourceSession();
+  getSelectedDataSourceSession();
   getMetadataSession();
   getDeltaFileSession();
 });
@@ -312,7 +313,7 @@ const getMetadataSession = () => {
   }
 };
 
-const getselectedDataSourceSession = () => {
+const getSelectedDataSourceSession = () => {
   if (!_.isEmpty(selectedDataSourceStorage.value)) {
     selectedDataSource.value = selectedDataSourceStorage.value;
   }
@@ -336,15 +337,25 @@ const uploadsRowClass = (data) => {
 
 // Created
 onMounted(async () => {
-  await fetchDataSourceFlowNames("RUNNING");
+  await fetchAllDataSourceFlowNames("RUNNING");
+  formatDataSourceNames();
   checkActiveFlows();
 });
 
-const checkActiveFlows = () => {
-  selectedDataSource.value = activeDataSourceFlows.value.includes(selectedDataSource.value) ? selectedDataSource.value : null;
+const formatDataSourceNames = () => {
+  if (!_.isEmpty(allDataSourceFlowNames.value.restDataSource)) {
+    formattedDataSourceNames.value.push({ label: "Rest Data Sources", sources: allDataSourceFlowNames.value.restDataSource });
+  }
+  if (!_.isEmpty(allDataSourceFlowNames.value.timedDataSource)) {
+    formattedDataSourceNames.value.push({ label: "Timed Data Sources", sources: allDataSourceFlowNames.value.timedDataSource });
+  }
 };
 
-const formatMetadataforViewer = (filename, uploadedMetadata) => {
+const checkActiveFlows = () => {
+  selectedDataSource.value = _.flattenDeep([allDataSourceFlowNames.value.restDataSource, allDataSourceFlowNames.value.timedDataSource ]).includes(selectedDataSource.value) ? selectedDataSource.value : null;
+};
+
+const formatMetadataForViewer = (filename, uploadedMetadata) => {
   let metaDataObject = {};
   metaDataObject[filename] = uploadedMetadata;
   return JSON.parse(JSON.stringify(metaDataObject));
@@ -404,7 +415,7 @@ const uploadMetadataFile = async (file) => {
   let dataSourceSelected = {};
   if (!_.isEmpty(_.get(parseMetadataUpload, "dataSource"))) {
     dataSourceSelected = _.get(parseMetadataUpload, "dataSource");
-    if (activeDataSourceFlows.value.includes(dataSourceSelected)) {
+    if (allDataSourceFlowNames.value.includes(dataSourceSelected)) {
       selectedDataSource.value = dataSourceSelected;
     } else {
       notify.warn("Ignoring Invalid Data Source", `The uploaded metadata included an invalid Data Source: ${dataSourceSelected}`);

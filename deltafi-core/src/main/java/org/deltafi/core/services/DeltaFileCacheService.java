@@ -18,15 +18,16 @@
 package org.deltafi.core.services;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.repo.DeltaFileRepo;
-import org.springframework.data.mongodb.core.query.Update;
 
 import java.time.Duration;
 import java.util.Collection;
 import java.util.UUID;
 
 @RequiredArgsConstructor
+@Slf4j
 public abstract class DeltaFileCacheService {
 
     final DeltaFileRepo deltaFileRepo;
@@ -49,35 +50,16 @@ public abstract class DeltaFileCacheService {
         }
     }
 
-    protected DeltaFile getFromRepo(UUID did, boolean updateSnapshot) {
-        DeltaFile deltaFile = deltaFileRepo.findById(did).orElse(null);
-        if (deltaFile != null && updateSnapshot) {
-            deltaFile.snapshot();
-        }
-        return deltaFile;
+    protected DeltaFile getFromRepo(UUID did) {
+        return deltaFileRepo.findById(did).orElse(null);
     }
 
-    protected void updateRepo(DeltaFile deltaFile, boolean updateSnapshot) {
+    protected void put(DeltaFile deltaFile) {}
+
+    protected void updateRepo(DeltaFile deltaFile) {
         if (deltaFile == null) {
             return;
         }
-        if (deltaFile.getVersion() == 0) {
-            deltaFileRepo.insert(deltaFile);
-        } else if (deltaFile.getSnapshot() != null) {
-            Update update = deltaFile.generateUpdate();
-            if (update != null) {
-                boolean updated = deltaFileRepo.update(deltaFile.getDid(), deltaFile.getVersion(), deltaFile.generateUpdate());
-                if (updated) {
-                    deltaFile.setVersion(deltaFile.getVersion() + 1);
-                } else {
-                    remove(deltaFile.getDid());
-                }
-                if (updateSnapshot) {
-                    deltaFile.snapshot();
-                }
-            }
-        } else {
-            deltaFileRepo.save(deltaFile);
-        }
+        put(deltaFileRepo.saveAndFlush(deltaFile));
     }
 }

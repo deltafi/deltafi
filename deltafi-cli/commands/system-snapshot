@@ -164,12 +164,6 @@ ALL_SNAPSHOT_FIELDS="id
               running
               testMode
               expectedAnnotations
-            }
-            pluginCustomizationConfigs {
-              groupId
-              artifactId
-              urlTemplate
-              secretName
             }"
 
 ALL_RESULT_FIELDS="success info errors"
@@ -190,7 +184,7 @@ case "$SUBCOMMAND" in
   restore)
     VARIABLES="{\"snapshotId\": \"$ID_OR_FILE\", \"hardReset\": $HARD_RESET}"
     EXTRACT_PATH=".data.resetFromSnapshotWithId"
-    QUERY="mutation(\$snapshotId: String!, \$hardReset: Boolean) { resetFromSnapshotWithId(snapshotId: \$snapshotId, hardReset: \$hardReset) { $ALL_RESULT_FIELDS } }"
+    QUERY="mutation(\$snapshotId: UUID!, \$hardReset: Boolean) { resetFromSnapshotWithId(snapshotId: \$snapshotId, hardReset: \$hardReset) { $ALL_RESULT_FIELDS } }"
     ;;
   import)
     if [ ! -f "$ID_OR_FILE" ]; then
@@ -210,7 +204,7 @@ case "$SUBCOMMAND" in
   show)
     VARIABLES="{\"snapshotId\": \"$ID_OR_FILE\"}"
     EXTRACT_PATH=".data.getSystemSnapshot"
-    QUERY="query(\$snapshotId: String!) { getSystemSnapshot(snapshotId: \$snapshotId) { $ALL_SNAPSHOT_FIELDS } }"
+    QUERY="query(\$snapshotId: UUID!) { getSystemSnapshot(snapshotId: \$snapshotId) { $ALL_SNAPSHOT_FIELDS } }"
     ;;
   *)
     cli_help_command

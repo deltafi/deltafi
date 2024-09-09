@@ -23,7 +23,7 @@ import com.netflix.graphql.dgs.DgsQuery;
 import com.netflix.graphql.dgs.InputArgument;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.common.types.KeyValue;
-import org.deltafi.common.types.PropertySet;
+import org.deltafi.core.types.PropertySet;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.configuration.ui.Link;
@@ -32,6 +32,7 @@ import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.services.UiLinkService;
 
 import java.util.List;
+import java.util.UUID;
 
 @DgsComponent
 @RequiredArgsConstructor
@@ -77,7 +78,7 @@ public class DeltaFiPropertiesDatafetcher {
 
     @DgsMutation
     @NeedsPermission.SystemPropertiesUpdate
-    public boolean removeLink(@InputArgument String id) {
+    public boolean removeLink(@InputArgument UUID id) {
         auditLogger.audit("removed link {}", id);
         return uiLinkService.removeLink(id);
     }

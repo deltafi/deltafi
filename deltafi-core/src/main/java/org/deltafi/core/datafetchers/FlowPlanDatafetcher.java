@@ -34,11 +34,11 @@ import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.plugin.PluginRegistryService;
 import org.deltafi.core.plugin.SystemPluginService;
+import org.deltafi.core.repo.FlowRepo;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.*;
-import org.deltafi.core.snapshot.types.FlowSnapshot;
+import org.deltafi.core.types.snapshot.FlowSnapshot;
 import org.deltafi.core.types.*;
-import org.deltafi.core.types.DataSource;
 
 import java.util.*;
 
@@ -54,24 +54,38 @@ public class FlowPlanDatafetcher {
 
     private final EgressFlowPlanService egressFlowPlanService;
     private final EgressFlowService egressFlowService;
-    private final DataSourcePlanService dataSourcePlanService;
-    private final DataSourceService dataSourceService;
+    private final RestDataSourcePlanService restDataSourcePlanService;
+    private final TimedDataSourcePlanService timedDataSourcePlanService;
+    private final RestDataSourceService restDataSourceService;
     private final TransformFlowPlanService transformFlowPlanService;
     private final TransformFlowService transformFlowService;
     private final AnnotationService annotationService;
     private final PluginVariableService pluginVariableService;
     private final PluginRegistryService pluginRegistryService;
     private final SystemPluginService systemPluginService;
+    private final TimedDataSourceService timedDataSourceService;
     private final CoreAuditLogger auditLogger;
+    private final FlowCacheService flowCacheService;
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
-    public boolean setMaxErrors(@InputArgument String name, @InputArgument Integer maxErrors) {
-        if (dataSourceService.hasFlow(name)) {
+    public boolean setRestDataSourceMaxErrors(@InputArgument String name, @InputArgument Integer maxErrors) {
+        if (restDataSourceService.hasFlow(name)) {
             auditLogger.audit("set max errors to {} for data source {}", maxErrors, name);
-            return dataSourceService.setMaxErrors(name, maxErrors);
+            return restDataSourceService.setMaxErrors(name, maxErrors);
         } else {
-            throw new DgsEntityNotFoundException("No DataSource exists with the name: " + name);
+            throw new DgsEntityNotFoundException("No RestDataSource exists with the name: " + name);
+        }
+    }
+
+    @DgsMutation
+    @NeedsPermission.FlowUpdate
+    public boolean setTimedDataSourceMaxErrors(@InputArgument String name, @InputArgument Integer maxErrors) {
+        if (timedDataSourceService.hasFlow(name)) {
+            auditLogger.audit("set max errors to {} for data source {}", maxErrors, name);
+            return timedDataSourceService.setMaxErrors(name, maxErrors);
+        } else {
+            throw new DgsEntityNotFoundException("No TimedDataSource exists with the name: " + name);
         }
     }
 
@@ -100,21 +114,21 @@ public class FlowPlanDatafetcher {
     @NeedsPermission.Admin
     public boolean setTimedDataSourceMemo(@InputArgument String name, String memo) {
         auditLogger.audit("set timed source memo for flow {} to {}", name, memo);
-        return dataSourceService.setMemo(name, memo);
+        return timedDataSourceService.setMemo(name, memo);
     }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
     public boolean setTimedDataSourceCronSchedule(@InputArgument String name, String cronSchedule) {
         auditLogger.audit("set timed source cron schedule for flow {} to {}", name, cronSchedule);
-        return dataSourceService.setCronSchedule(name, cronSchedule);
+        return timedDataSourceService.setCronSchedule(name, cronSchedule);
     }
 
     @DgsMutation
     @NeedsPermission.FlowPlanCreate
     public EgressFlow saveEgressFlowPlan(@InputArgument EgressFlowPlanInput egressFlowPlan) {
         auditLogger.audit("saved egress flow plan {}", egressFlowPlan.getName());
-        return saveFlowPlan(egressFlowPlanService, egressFlowPlan, EgressFlowPlan.class);
+        return saveFlowPlan(egressFlowPlanService, egressFlowPlan, EgressFlowPlanEntity.class);
     }
 
     @DgsMutation
@@ -142,56 +156,91 @@ public class FlowPlanDatafetcher {
     @NeedsPermission.FlowPlanCreate
     public DataSource saveTimedDataSourcePlan(@InputArgument TimedDataSourcePlanInput dataSourcePlan) {
         auditLogger.audit("saved timed source plan {}", dataSourcePlan.getName());
-        return saveFlowPlan(dataSourcePlanService, dataSourcePlan, DataSourcePlan.class);
+        return saveFlowPlan(timedDataSourcePlanService, dataSourcePlan, TimedDataSourcePlanEntity.class);
     }
 
     @DgsMutation
     @NeedsPermission.FlowPlanCreate
     public DataSource saveRestDataSourcePlan(@InputArgument RestDataSourcePlanInput dataSourcePlan) {
         auditLogger.audit("saved rest source plan {}", dataSourcePlan.getName());
-        return saveFlowPlan(dataSourcePlanService, dataSourcePlan, DataSourcePlan.class);
+        return saveFlowPlan(restDataSourcePlanService, dataSourcePlan, RestDataSourcePlanEntity.class);
     }
 
     @DgsMutation
     @NeedsPermission.FlowPlanDelete
-    public boolean removeDataSourcePlan(@InputArgument String name) {
-        auditLogger.audit("removed dataSource plan {}", name);
-        return removeFlowAndFlowPlan(dataSourcePlanService, name);
+    public boolean removeRestDataSourcePlan(@InputArgument String name) {
+        auditLogger.audit("removed restDataSource plan {}", name);
+        return removeFlowAndFlowPlan(restDataSourcePlanService, name);
+    }
+
+    @DgsMutation
+    @NeedsPermission.FlowPlanDelete
+    public boolean removeTimedDataSourcePlan(@InputArgument String name) {
+        auditLogger.audit("removed timedDataSource plan {}", name);
+        return removeFlowAndFlowPlan(timedDataSourcePlanService, name);
     }
 
     @DgsMutation
     @NeedsPermission.FlowStart
-    public boolean startDataSource(@InputArgument String name) {
-        auditLogger.audit("started dataSource {}", name);
-        return dataSourceService.startFlow(name);
+    public boolean startRestDataSource(@InputArgument String name) {
+        auditLogger.audit("started restDataSource {}", name);
+        return restDataSourceService.startFlow(name);
+    }
+
+    @DgsMutation
+    @NeedsPermission.FlowStart
+    public boolean startTimedDataSource(@InputArgument String name) {
+        auditLogger.audit("started timedDataSource {}", name);
+        return timedDataSourceService.startFlow(name);
     }
 
     @DgsMutation
     @NeedsPermission.FlowStop
-    public boolean stopDataSource(@InputArgument String name) {
-        auditLogger.audit("stopped dataSource {}", name);
-        return dataSourceService.stopFlow(name);
+    public boolean stopRestDataSource(@InputArgument String name) {
+        auditLogger.audit("stopped restDataSource {}", name);
+        return restDataSourceService.stopFlow(name);
+    }
+
+    @DgsMutation
+    @NeedsPermission.FlowStop
+    public boolean stopTimedDataSource(@InputArgument String name) {
+        auditLogger.audit("stopped timedDataSource {}", name);
+        return timedDataSourceService.stopFlow(name);
     }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
-    public boolean enableDataSourceTestMode(@InputArgument String name) {
-        auditLogger.audit("enabled test mode for dataSource {}", name);
-        return dataSourceService.enableTestMode(name);
+    public boolean enableRestDataSourceTestMode(@InputArgument String name) {
+        auditLogger.audit("enabled test mode for restDataSource {}", name);
+        return restDataSourceService.enableTestMode(name);
     }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
-    public boolean disableDataSourceTestMode(@InputArgument String name) {
-        auditLogger.audit("disabled test mode for dataSource {}", name);
-        return dataSourceService.disableTestMode(name);
+    public boolean enableTimedDataSourceTestMode(@InputArgument String name) {
+        auditLogger.audit("enabled test mode for timedDataSource {}", name);
+        return timedDataSourceService.enableTestMode(name);
+    }
+
+    @DgsMutation
+    @NeedsPermission.FlowUpdate
+    public boolean disableRestDataSourceTestMode(@InputArgument String name) {
+        auditLogger.audit("disabled test mode for restDataSource {}", name);
+        return restDataSourceService.disableTestMode(name);
+    }
+
+    @DgsMutation
+    @NeedsPermission.FlowUpdate
+    public boolean disableTimedDataSourceTestMode(@InputArgument String name) {
+        auditLogger.audit("disabled test mode for timedDataSource {}", name);
+        return timedDataSourceService.disableTestMode(name);
     }
 
     @DgsMutation
     @NeedsPermission.FlowPlanCreate
     public TransformFlow saveTransformFlowPlan(@InputArgument TransformFlowPlanInput transformFlowPlan) {
         auditLogger.audit("saved transform flow plan {}", transformFlowPlan.getName());
-        return saveFlowPlan(transformFlowPlanService, transformFlowPlan, TransformFlowPlan.class);
+        return saveFlowPlan(transformFlowPlanService, transformFlowPlan, TransformFlowPlanEntity.class);
     }
 
     @DgsMutation
@@ -253,7 +302,8 @@ public class FlowPlanDatafetcher {
         if (updated) {
             egressFlowPlanService.rebuildFlowsForPlugin(pluginCoordinates);
             transformFlowPlanService.rebuildFlowsForPlugin(pluginCoordinates);
-            dataSourcePlanService.rebuildFlowsForPlugin(pluginCoordinates);
+            restDataSourcePlanService.rebuildFlowsForPlugin(pluginCoordinates);
+            timedDataSourcePlanService.rebuildFlowsForPlugin(pluginCoordinates);
         }
         return updated;
     }
@@ -266,8 +316,14 @@ public class FlowPlanDatafetcher {
 
     @DgsQuery
     @NeedsPermission.FlowView
-    public DataSource getDataSource(@InputArgument String name) {
-        return dataSourceService.getFlowOrThrow(name);
+    public RestDataSource getRestDataSource(@InputArgument String name) {
+        return restDataSourceService.getFlowOrThrow(name);
+    }
+
+    @DgsQuery
+    @NeedsPermission.FlowView
+    public TimedDataSource getTimedDataSource(@InputArgument String name) {
+        return timedDataSourceService.getFlowOrThrow(name);
     }
 
     @DgsQuery
@@ -284,8 +340,14 @@ public class FlowPlanDatafetcher {
 
     @DgsQuery
     @NeedsPermission.FlowValidate
-    public DataSource validateDataSource(@InputArgument String name) {
-        return dataSourceService.validateAndSaveFlow(name);
+    public RestDataSource validateRestDataSource(@InputArgument String name) {
+        return restDataSourceService.validateAndSaveFlow(name);
+    }
+
+    @DgsQuery
+    @NeedsPermission.FlowValidate
+    public TimedDataSource validateTimedDataSource(@InputArgument String name) {
+        return timedDataSourceService.validateAndSaveFlow(name);
     }
 
     @DgsQuery
@@ -296,19 +358,25 @@ public class FlowPlanDatafetcher {
 
     @DgsQuery
     @NeedsPermission.FlowView
-    public EgressFlowPlan getEgressFlowPlan(@InputArgument String planName) {
+    public EgressFlowPlanEntity getEgressFlowPlan(@InputArgument String planName) {
         return egressFlowPlanService.getPlanByName(planName);
     }
 
     @DgsQuery
     @NeedsPermission.FlowView
-    public DataSourcePlan getDataSourcePlan(@InputArgument String planName) {
-        return dataSourcePlanService.getPlanByName(planName);
+    public RestDataSourcePlanEntity getRestDataSourcePlan(@InputArgument String planName) {
+        return restDataSourcePlanService.getPlanByName(planName);
     }
 
     @DgsQuery
     @NeedsPermission.FlowView
-    public TransformFlowPlan getTransformFlowPlan(@InputArgument String planName) {
+    public TimedDataSourcePlanEntity getTimedDataSourcePlan(@InputArgument String planName) {
+        return timedDataSourcePlanService.getPlanByName(planName);
+    }
+
+    @DgsQuery
+    @NeedsPermission.FlowView
+    public TransformFlowPlanEntity getTransformFlowPlan(@InputArgument String planName) {
         return transformFlowPlanService.getPlanByName(planName);
     }
 
@@ -318,7 +386,7 @@ public class FlowPlanDatafetcher {
         Map<String, List<? extends Flow>> flowMap = new HashMap<>();
         flowMap.put("egressFlows", egressFlowService.getAll());
         flowMap.put("transformFlows", transformFlowService.getAll());
-        flowMap.put("dataSources", dataSourceService.getAll());
+        flowMap.put("dataSources", restDataSourceService.getAll());
 
         return YAML_EXPORTER.writeValueAsString(flowMap);
     }
@@ -329,7 +397,8 @@ public class FlowPlanDatafetcher {
         return SystemFlows.newBuilder()
                 .egress(egressFlowService.getRunningFlows())
                 .transform(transformFlowService.getRunningFlows())
-                .dataSource(dataSourceService.getRunningFlows()).build();
+                .restDataSource(restDataSourceService.getRunningFlows())
+                .timedDataSource(timedDataSourceService.getRunningFlows()).build();
     }
 
     @DgsQuery
@@ -338,25 +407,29 @@ public class FlowPlanDatafetcher {
         return FlowNames.newBuilder()
                 .egress(egressFlowService.getFlowNamesByState(state))
                 .transform(transformFlowService.getFlowNamesByState(state))
-                .dataSource(dataSourceService.getFlowNamesByState(state)).build();
+                .restDataSource(restDataSourceService.getFlowNamesByState(state))
+                .timedDataSource(timedDataSourceService.getFlowNamesByState(state)).build();
     }
 
     @DgsQuery
     @NeedsPermission.FlowView
     public SystemFlows getAllFlows() {
+        flowCacheService.refreshCache();
         return SystemFlows.newBuilder()
-                .egress(egressFlowService.getAllUncached())
-                .transform(transformFlowService.getAllUncached())
-                .dataSource(dataSourceService.getAllUncached()).build();
+                .egress(egressFlowService.getAll())
+                .transform(transformFlowService.getAll())
+                .restDataSource(restDataSourceService.getAll())
+                .timedDataSource(timedDataSourceService.getAll()).build();
     }
 
     @DgsQuery
     @NeedsPermission.FlowView
     public SystemFlowPlans getAllFlowPlans() {
         return SystemFlowPlans.newBuilder()
-                .egressPlans(egressFlowPlanService.getAll())
-                .transformPlans(transformFlowPlanService.getAll())
-                .dataSources(dataSourcePlanService.getAll()).build();
+                .egressPlans(egressFlowPlanService.getAll().stream().map(f -> (EgressFlowPlan) f.toFlowPlan()).toList())
+                .transformPlans(transformFlowPlanService.getAll().stream().map(f -> (TransformFlowPlan) f.toFlowPlan()).toList())
+                .restDataSources(restDataSourcePlanService.getAll().stream().map(f -> (RestDataSourcePlan) f.toFlowPlan()).toList())
+                .timedDataSources(timedDataSourcePlanService.getAll().stream().map(f -> (TimedDataSourcePlan) f.toFlowPlan()).toList()).build();
     }
 
     @DgsQuery
@@ -372,21 +445,24 @@ public class FlowPlanDatafetcher {
         actionFamilyMap.put(ActionType.INGRESS, INGRESS_FAMILY);
         egressFlowService.getAll().forEach(flow -> flow.updateActionNamesByFamily(actionFamilyMap));
         transformFlowService.getAll().forEach(flow -> flow.updateActionNamesByFamily(actionFamilyMap));
-        dataSourceService.getAll().forEach(flow -> flow.updateActionNamesByFamily(actionFamilyMap));
+        restDataSourceService.getAll().forEach(flow -> flow.updateActionNamesByFamily(actionFamilyMap));
+        timedDataSourceService.getAll().forEach(flow -> flow.updateActionNamesByFamily(actionFamilyMap));
         return actionFamilyMap.values();
     }
 
     @DgsQuery
     @NeedsPermission.FlowView
     public List<DataSourceErrorState> dataSourceErrorsExceeded() {
-        return dataSourceService.dataSourceErrorsExceeded();
+        List<DataSourceErrorState> errors = restDataSourceService.dataSourceErrorsExceeded();
+        errors.addAll(timedDataSourceService.dataSourceErrorsExceeded());
+        return errors;
     }
 
-    private boolean removeFlowAndFlowPlan(FlowPlanService<?, ?, ?> flowPlanService, String flowPlanName) {
+    private boolean removeFlowAndFlowPlan(FlowPlanService<?, ?, ?, ?> flowPlanService, String flowPlanName) {
         return flowPlanService.removePlan(flowPlanName, systemPluginService.getSystemPluginCoordinates());
     }
 
-    private <T extends FlowPlan, R extends Flow, S extends FlowSnapshot> R saveFlowPlan(FlowPlanService<T, R, S> flowPlanService, Object input, Class<T> clazz) {
+    private <T extends FlowPlanEntity, R extends Flow, S extends FlowSnapshot, U extends FlowRepo> R saveFlowPlan(FlowPlanService<T, R, S, U> flowPlanService, Object input, Class<T> clazz) {
         T flowPlan = OBJECT_MAPPER.convertValue(input, clazz);
         flowPlan.setSourcePlugin(systemPluginService.getSystemPluginCoordinates());
         return flowPlanService.saveFlowPlan(flowPlan);

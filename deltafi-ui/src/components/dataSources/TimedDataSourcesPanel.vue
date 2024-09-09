@@ -64,7 +64,12 @@
             <StatusBadge :status="data.ingressStatus" :message="data.ingressStatusMessage" />
           </template>
         </Column>
-        <Column header="Active" :style="{ width: '7%' }" class="data-source-state-column">
+        <Column header="Test Mode" class="switch-column">
+          <template #body="{ data }">
+            <TimedDataSourceTestModeInputSwitch :row-data-prop="data" />
+          </template>
+        </Column>
+        <Column header="Active" :style="{ width: '7%' }" class="switch-column">
           <template #body="{ data }">
             <StateInputSwitch :row-data-prop="data" data-source-type="timedDataSource" @change="refresh" />
           </template>
@@ -118,6 +123,7 @@ import DataSourceRemoveButton from "@/components/dataSources/DataSourceRemoveBut
 import StatusBadge from "@/components/dataSources/StatusBadge.vue";
 import StateInputSwitch from "@/components/dataSources/StateInputSwitch.vue";
 import PermissionedRouterLink from "@/components/PermissionedRouterLink";
+import TimedDataSourceTestModeInputSwitch from "@/components/dataSources/TimedDataSourceTestModeInputSwitch.vue";
 import Timestamp from "@/components/Timestamp.vue";
 import useDataSource from "@/composables/useDataSource";
 import useNotifications from "@/composables/useNotifications";
@@ -139,7 +145,7 @@ import InputNumber from "primevue/inputnumber";
 const emit = defineEmits(["dataSourcesList"]);
 const editing = inject("isEditing");
 const notify = useNotifications();
-const { getAllDataSources, setMaxErrors, loaded, loading, errors } = useDataSource();
+const { getTimedDataSources, setTimedDataSourceCronSchedule, setTimedDataSourceMaxErrors, loaded, loading, errors } = useDataSource();
 const showLoading = computed(() => loading.value && !loaded.value);
 const timedDataSources = ref([]);
 const onEditInit = () => (editing.value = true);
@@ -162,7 +168,7 @@ const onEditComplete = async (event) => {
     let sendValue = _.isEqual(newValue, null) ? -1 : newValue;
     const resetValue = data.maxErrors;
     data[field] = newValue;
-    await setMaxErrors(data.name, sendValue);
+    await setTimedDataSourceMaxErrors(data.name, sendValue);
     if (errors.value.length === 0) {
       if (newValue === null) {
         notify.success("Max Errors Disabled", `Max errors for <b>${data.name}</b> has been disabled`);
@@ -229,15 +235,11 @@ const refresh = async () => {
   // Do not refresh data while editing.
   if (editing.value) return;
 
-  const response = await getAllDataSources();
-  timedDataSources.value = response.data.getAllFlows.dataSource
-    .filter((ds) => {
-      return ds.type === "TIMED_DATA_SOURCE";
-    })
-    .map((ds) => {
-      ds.maxErrors = ds.maxErrors !== -1 ? ds.maxErrors : null;
-      return ds;
-    });
+  const response = await getTimedDataSources();
+  timedDataSources.value = response.data.getAllFlows.timedDataSource.map((ds) => {
+    ds.maxErrors = ds.maxErrors !== -1 ? ds.maxErrors : null;
+    return ds;
+  });
 
   emit("dataSourcesList", timedDataSources.value);
 };
@@ -253,7 +255,7 @@ defineExpose({ refresh });
 .timed-data-source-panel {
   .table-panel {
     .data-sources-table {
-      td.data-source-state-column {
+      td.switch-column {
         padding: 0 !important;
 
         .p-inputswitch {

@@ -57,8 +57,6 @@ spec:
             - mountPath: "/config"
               name: "config"
               readOnly: true
-        - name: test
-          image: docker.io/sidecar:latest
       volumes:
         - name: keystore
           secret:

@@ -17,19 +17,16 @@
  */
 package org.deltafi.core.plugin.deployer;
 
-import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import org.assertj.core.api.Assertions;
 import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.core.plugin.deployer.customization.PluginCustomization;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ClassPathResource;
 
 import java.io.IOException;
-import java.util.List;
 
 class K8sDeployerServiceTest {
 
@@ -40,7 +37,7 @@ class K8sDeployerServiceTest {
             .build();
 
 
-    final K8sDeployerService k8sDeployerService = new K8sDeployerService(null, null, null, null, null, null, null, null);
+    final K8sDeployerService k8sDeployerService = new K8sDeployerService(null, null, null, null, null, null, null);
 
     @BeforeEach
     public void setDeploymentTemplate() {
@@ -51,15 +48,7 @@ class K8sDeployerServiceTest {
     void testCreateDeployment() throws IOException {
         PluginImageRepository pluginImageRepository = getPluginImageRepository();
 
-        PluginCustomization pluginCustomization = new PluginCustomization();
-
-        Container container = new Container();
-        container.setName("test");
-        container.setImage("docker.io/sidecar:latest");
-
-        pluginCustomization.setExtraContainers(List.of(container));
-
-        Deployment deployment = k8sDeployerService.buildDeployment(PLUGIN_COORDINATES, pluginImageRepository, pluginCustomization, List.of());
+        Deployment deployment = k8sDeployerService.buildDeployment(PLUGIN_COORDINATES, pluginImageRepository);
 
         Assertions.assertThat(deployment).isEqualTo(expectedDeployment());
     }
@@ -69,7 +58,7 @@ class K8sDeployerServiceTest {
         Deployment withReplicas = expectedDeployment();
         withReplicas.getSpec().setReplicas(2);
 
-        Deployment deployment = k8sDeployerService.buildDeployment(PLUGIN_COORDINATES, getPluginImageRepository(), new PluginCustomization(), List.of());
+        Deployment deployment = k8sDeployerService.buildDeployment(PLUGIN_COORDINATES, getPluginImageRepository());
 
         Assertions.assertThat(deployment.getSpec().getReplicas()).isNull();
         k8sDeployerService.preserveValues(deployment, withReplicas);

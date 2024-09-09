@@ -27,7 +27,7 @@ import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.test.storage.s3.InMemoryObjectStorageService;
 import org.deltafi.common.test.uuid.TestUUIDGenerator;
 import org.deltafi.core.types.DeltaFile;
-import org.deltafi.common.types.DeltaFileFlow;
+import org.deltafi.core.types.DeltaFileFlow;
 import org.deltafi.common.types.IngressEventItem;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.configuration.DeltaFiProperties;
@@ -78,7 +78,7 @@ class IngressServiceTest {
     private final DiskSpaceService diskSpaceService;
     private final DeltaFilesService deltaFilesService;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
-    private  final DataSourceService dataSourceService;
+    private  final RestDataSourceService restDataSourceService;
     private final ErrorCountService errorCountService;
 
     private final IngressService ingressService;
@@ -94,18 +94,18 @@ class IngressServiceTest {
     IngressServiceTest(@Mock MetricService metricService, @Mock CoreAuditLogger coreAuditLogger,
                        @Mock DiskSpaceService diskSpaceService, @Mock DeltaFilesService deltaFilesService,
                        @Mock DeltaFiPropertiesService deltaFiPropertiesService,
-                       @Mock DataSourceService dataSourceService,
+                       @Mock RestDataSourceService restDataSourceService,
                        @Mock ErrorCountService errorCountService) {
         this.metricService = metricService;
         this.coreAuditLogger = coreAuditLogger;
         this.diskSpaceService = diskSpaceService;
         this.deltaFilesService = deltaFilesService;
         this.deltaFiPropertiesService = deltaFiPropertiesService;
-        this.dataSourceService = dataSourceService;
+        this.restDataSourceService = restDataSourceService;
         this.errorCountService = errorCountService;
 
         ingressService = new IngressService(metricService, coreAuditLogger, diskSpaceService, CONTENT_STORAGE_SERVICE,
-                deltaFilesService, deltaFiPropertiesService, dataSourceService, errorCountService, UUID_GENERATOR);
+                deltaFilesService, deltaFiPropertiesService, restDataSourceService, errorCountService, UUID_GENERATOR);
     }
 
     @Test
@@ -131,9 +131,9 @@ class IngressServiceTest {
         Mockito.when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
         Mockito.when(diskSpaceService.isContentStorageDepleted()).thenReturn(false);
         if (flowRunning) {
-            Mockito.when(dataSourceService.getRunningRestDataSource(any())).thenReturn(REST_DATA_SOURCE);
+            Mockito.when(restDataSourceService.getRunningFlowByName(any())).thenReturn(REST_DATA_SOURCE);
         } else {
-            Mockito.when(dataSourceService.getRunningRestDataSource(any())).thenThrow(new MissingFlowException("Flow flow is not running"));
+            Mockito.when(restDataSourceService.getRunningFlowByName(any())).thenThrow(new MissingFlowException("Flow flow is not running"));
         }
         Mockito.when(errorCountService.generateErrorMessage("flow")).thenReturn(null);
         DeltaFileFlow flow = DeltaFileFlow.builder().name("flow").build();

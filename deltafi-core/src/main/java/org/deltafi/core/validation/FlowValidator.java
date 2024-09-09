@@ -21,29 +21,19 @@ import lombok.AllArgsConstructor;
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.types.Flow;
+import org.springframework.stereotype.Service;
 
 import java.util.*;
 
 @AllArgsConstructor
-public abstract class FlowValidator<T extends Flow> {
+@Service
+public class FlowValidator {
 
     private final SchemaComplianceValidator schemaComplianceValidator;
 
-    public List<FlowConfigError> validate(T flow) {
-        List<FlowConfigError> errors = new ArrayList<>();
-
-        errors.addAll(validateActions(flow.allActionConfigurations()));
-        errors.addAll(flowSpecificValidation(flow));
-
-        return errors;
+    public List<FlowConfigError> validate(Flow flow) {
+        return new ArrayList<>(validateActions(flow.allActionConfigurations()));
     }
-
-    /**
-     * Run any extra validation specific to the flow type
-     * @param flow to validate
-     * @return list of configuration errors
-     */
-    public abstract List<FlowConfigError> flowSpecificValidation(T flow);
 
     List<FlowConfigError> validateActions(List<? extends ActionConfiguration> actionConfigurations) {
         if (Objects.isNull(actionConfigurations)) {

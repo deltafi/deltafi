@@ -255,7 +255,7 @@ class FlowPlanPropertyHelperTest {
         FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(variables());
         Map<String, Object> mappedParameters = flowPlanPropertyHelper.replaceMapPlaceholders(parameters, "");
 
-        ActionConfiguration actionConfiguration = new EgressActionConfiguration(null, null);
+        ActionConfiguration actionConfiguration = new ActionConfiguration(null, ActionType.EGRESS, null);
         actionConfiguration.setInternalParameters(mappedParameters);
 
         ActionDescriptor egressActionDescriptor = Util.egressActionDescriptor("config-test/complex-parameter-action-descriptor.json");
@@ -270,8 +270,8 @@ class FlowPlanPropertyHelperTest {
         masked.setMasked(true);
         List<Variable> variables = List.of(notMasked, masked);
         FlowPlanPropertyHelper flowPlanPropertyHelper = new FlowPlanPropertyHelper(variables);
-        ActionConfiguration toPopulate = new TransformActionConfiguration("", ActionType.TRANSFORM.name());
-        ActionConfiguration template = new TransformActionConfiguration("Loader", ActionType.TRANSFORM.name());
+        ActionConfiguration toPopulate = new ActionConfiguration("", ActionType.TRANSFORM, ActionType.TRANSFORM.name());
+        ActionConfiguration template = new ActionConfiguration("Loader", ActionType.TRANSFORM, ActionType.TRANSFORM.name());
         template.setParameters(Map.of("notMasked", "${notMasked}", "masked", "${masked}"));
         flowPlanPropertyHelper.replaceCommonActionPlaceholders(toPopulate, template);
 

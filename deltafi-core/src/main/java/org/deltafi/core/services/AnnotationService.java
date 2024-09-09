@@ -19,10 +19,9 @@ package org.deltafi.core.services;
 
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.core.snapshot.SnapshotRestoreOrder;
-import org.deltafi.core.snapshot.Snapshotter;
-import org.deltafi.core.snapshot.SystemSnapshot;
-import org.deltafi.core.snapshot.types.HasExpectedAnnotations;
+import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.HasExpectedAnnotations;
 import org.deltafi.core.types.Result;
 import org.springframework.stereotype.Service;
 
@@ -56,7 +55,7 @@ public class AnnotationService implements Snapshotter {
         boolean updated = egressFlowService.setExpectedAnnotations(flowName, expectedAnnotations);
 
         if (updated) {
-            deltaFilesService.asyncUpdatePendingAnnotationsForFlows(flowName, expectedAnnotations);
+            deltaFilesService.updatePendingAnnotationsForFlows(flowName, expectedAnnotations);
         }
 
         return updated;

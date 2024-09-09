@@ -17,30 +17,37 @@
  */
 package org.deltafi.core.types;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.uuid.Generators;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.OffsetDateTime;
-import java.util.Objects;
+import java.util.UUID;
 
 @Builder
-@Document(collection = "events")
-public record Event(@Id @JsonProperty("_id") String id, String severity, String summary, String content, String source,
-                    OffsetDateTime timestamp, boolean notification, boolean acknowledged) {
+@Entity
+@Table(name = "events")
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class Event {
+    @Id
+    @Builder.Default
+    private UUID id = Generators.timeBasedEpochGenerator().generate();
 
-    public Event(String id, String severity, String summary, String content, String source,
-                 OffsetDateTime timestamp, boolean notification, boolean acknowledged) {
-        this.id = id;
-        this.severity = severity;
-        this.summary = summary;
-        this.content = content;
-        this.source = source;
-        this.timestamp = Objects.requireNonNullElseGet(timestamp, OffsetDateTime::now);
-        this.notification = notification;
-        this.acknowledged = acknowledged;
-    }
+    private String severity;
+    private String summary;
+
+    @Column(length = 100_000)
+    private String content;
+
+    private String source;
+    private OffsetDateTime timestamp;
+    private boolean notification;
+    private boolean acknowledged;
 
     public static class Severity {
         public static final String ERROR = "error";

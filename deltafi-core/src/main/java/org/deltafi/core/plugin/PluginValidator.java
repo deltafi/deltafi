@@ -21,7 +21,6 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.maven.VersionMatcher;
 import org.deltafi.common.types.ActionDescriptor;
-import org.deltafi.common.types.Plugin;
 import org.deltafi.common.types.PluginCoordinates;
 import org.springframework.stereotype.Service;
 
@@ -36,11 +35,14 @@ import java.util.Optional;
 public class PluginValidator {
     private final PluginRepository pluginRepository;
 
-    public List<String> validate(Plugin plugin) {
+    private final static int MAX_NAME_LEN = 256;
+
+    public List<String> validate(PluginEntity plugin) {
         List<String> validationErrors = new ArrayList<>(validateCoordinates(plugin.getPluginCoordinates()));
-        List<Plugin> existingPlugins = pluginRepository.findAll().stream().toList();
+        List<PluginEntity> existingPlugins = pluginRepository.findAll().stream().toList();
         validationErrors.addAll(validateDependencies(plugin.getDependencies(), existingPlugins));
         validationErrors.addAll(validateUniqueActions(plugin, existingPlugins));
+        validationErrors.addAll(validateActionDescriptors(plugin.getActions()));
         return validationErrors;
     }
 
@@ -67,7 +69,7 @@ public class PluginValidator {
         return errors;
     }
 
-    private List<String> validateDependencies(List<PluginCoordinates> dependencies, List<Plugin> existingPlugins) {
+    private List<String> validateDependencies(List<PluginCoordinates> dependencies, List<PluginEntity> existingPlugins) {
         if (dependencies == null) {
             return List.of();
         }
@@ -75,7 +77,7 @@ public class PluginValidator {
         List<String> dependencyErrors = new ArrayList<>();
 
         List<PluginCoordinates> registeredPluginCoordinates = existingPlugins.stream()
-                .map(Plugin::getPluginCoordinates)
+                .map(PluginEntity::getPluginCoordinates)
                 .toList();
 
         dependencies.forEach(dependency -> {
@@ -96,13 +98,13 @@ public class PluginValidator {
         return dependencyErrors;
     }
 
-    List<String> validateUniqueActions(Plugin newPlugin, List<Plugin> existingPlugins) {
+    List<String> validateUniqueActions(PluginEntity newPlugin, List<PluginEntity> existingPlugins) {
         if (newPlugin.getActions() == null || newPlugin.getActions().isEmpty()) {
             return List.of();
         }
 
         Map<String, String> actionMap = new HashMap<>();
-        for (Plugin existingPlugin : existingPlugins) {
+        for (PluginEntity existingPlugin : existingPlugins) {
             if (existingPlugin.getActions() != null && !existingPlugin.getPluginCoordinates().equalsIgnoreVersion(newPlugin.getPluginCoordinates())) {
                 for (ActionDescriptor existingAction : existingPlugin.getActions()) {
                     actionMap.put(existingAction.getName(), existingPlugin.getPluginCoordinates().toString());
@@ -120,5 +122,14 @@ public class PluginValidator {
         return errors;
     }
 
+    private List<String> validateActionDescriptors(List<ActionDescriptor> actionDescriptors) {
+        if (actionDescriptors == null) {
+            return List.of();
+        }
 
+        return actionDescriptors.stream()
+                .filter(ad -> ad.getName().length() > MAX_NAME_LEN)
+                .map(ad -> String.format("Action name %s exceeds maximum length %d", ad.getName(), MAX_NAME_LEN))
+                .toList();
+    }
 }

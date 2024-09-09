@@ -48,7 +48,7 @@
                 <template v-for="[i, formInfo] of _.orderBy(_.filter(advanceOptionsPanelInfo, ['column', columnNumber]), ['order'], ['asc']).entries()" :key="formInfo">
                   <label :for="`${formInfo.field}` + 'Id'" :class="!_.isEqual(i, 0) ? 'mt-2' : ''">{{ formInfo.label }}</label>
                   <InputText v-if="_.isEqual(formInfo.componentType, 'InputText')" :id="`${formInfo.field}` + 'Id'" v-model.trim="model[formInfo.field]" :placeholder="formInfo.placeholder" :class="formInfo.class" />
-                  <MultiSelect v-if="_.isEqual(formInfo.componentType, 'MultiSelect')" :id="`${formInfo.field}` + 'Id'" v-model="model[formInfo.field]" :options="formInfo.options" :placeholder="formInfo.placeholder" :class="formInfo.class" display="chip" />
+                  <MultiSelect v-if="_.isEqual(formInfo.componentType, 'MultiSelect')" :id="`${formInfo.field}` + 'Id'" v-model="model[formInfo.field]" :options="formInfo.options" :placeholder="formInfo.placeholder" :option-group-label="formInfo.optionGroupLabel" :option-group-children="formInfo.optionGroupChildren" :option-label="formInfo.optionLabel" :option-value="formInfo.optionValue" :filter="formInfo.filter" :class="formInfo.class" display="chip" />
                   <div v-if="_.isEqual(formInfo.componentType, 'SizeUnit')" class="size-container">
                     <Dropdown v-model="model.sizeType" :options="sizeTypesOptions" style="width: 8rem" class="deltafi-input-field mr-2" />
                     <InputNumber v-model="model.sizeMin" class="p-inputnumber input-area-height" :input-style="{ width: '6rem' }" placeholder="Min" /> -
@@ -196,7 +196,7 @@ const hasPermission = inject("hasPermission");
 const params = useUrlSearchParams("history");
 const { getDeltaFileSearchData, getEnumValuesByEnumType } = useDeltaFilesQueryBuilder();
 const { duration, shortTimezone } = useUtilFunctions();
-const { dataSourceFlows: dataSourceFlowOptions, fetchDataSourceFlowNames, egressFlows: egressFlowOptions, fetchEgressFlowNames } = useFlows();
+const { allDataSourceFlowNames, fetchAllDataSourceFlowNames, egressFlows: egressFlowOptions, fetchEgressFlowNames } = useFlows();
 const route = useRoute();
 const useURLSearch = ref(false);
 const uiConfig = inject("uiConfig");
@@ -212,6 +212,7 @@ const loading = ref(true);
 const totalRecords = ref(0);
 const collapsedSearchOption = ref(true);
 const tableData = ref([]);
+const formattedDataSourceNames = ref([]);
 
 // Advanced Options Dropdown Variables
 const annotationsKeysOptions = ref([]);
@@ -314,9 +315,19 @@ onBeforeMount(async () => {
 
 // Fetches all the options used in the dropdown
 const fetchDropdownOptions = async () => {
-  fetchDataSourceFlowNames();
+  await fetchAllDataSourceFlowNames();
+  formatDataSourceNames();
   fetchEgressFlowNames();
   fetchStages();
+};
+
+const formatDataSourceNames = () => {
+  if (!_.isEmpty(allDataSourceFlowNames.value.restDataSource)) {
+    formattedDataSourceNames.value.push({ group: "Rest Data Sources", sources: allDataSourceFlowNames.value.restDataSource.map((s) => ({ label: s })) });
+  }
+  if (!_.isEmpty(allDataSourceFlowNames.value.timedDataSource)) {
+    formattedDataSourceNames.value.push({ group: "Timed Data Sources", sources: allDataSourceFlowNames.value.timedDataSource.map((s) => ({ label: s })) });
+  }
 };
 
 const fetchStages = async () => {
@@ -409,7 +420,7 @@ const model = computed({
 });
 
 const pageReportTemplate = computed(() => {
-  const total = totalRecords.value == 50000 ? "many" : "{totalRecords}";
+  const total = totalRecords.value == 10000 ? "many" : "{totalRecords}";
   return `{first} - {last} of ${total}`;
 });
 
@@ -419,7 +430,7 @@ const advanceOptionsPanelInfo = computed(() => {
     // The Advanced Options fields are broken up into three columns. The fields are sorted in ascending order in each column by the 'order' field.
     // First Column fields
     { field: "fileName", column: 1, order: 1, componentType: "InputText", label: "Filename:", placeholder: "Filename", class: "p-inputtext input-area-height responsive-width" },
-    { field: "dataSources", column: 1, order: 2, componentType: "MultiSelect", label: "Data Sources:", placeholder: "Select a Data Source", options: dataSourceFlowOptions.value, class: "deltafi-input-field responsive-width" },
+    { field: "dataSources", column: 1, order: 2, componentType: "MultiSelect", label: "Data Sources:", placeholder: "Select a Data Source", options: formattedDataSourceNames.value, optionGroupLabel: "group", optionGroupChildren: "sources", optionLabel: "label", optionValue: "label", filter: true, class: "deltafi-input-field responsive-width" },
     { field: "egressFlows", column: 1, order: 3, componentType: "MultiSelect", label: "Egress Flow:", placeholder: "Select an Egress Flow", options: egressFlowOptions.value, class: "deltafi-input-field responsive-width" },
     { field: "size", column: 1, order: 4, componentType: "SizeUnit", label: "Size:" },
     // 2nd Column fields

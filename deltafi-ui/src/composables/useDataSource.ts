@@ -21,87 +21,140 @@ import useGraphQL from "./useGraphQL";
 export default function useDataSource() {
   const { response, errors, queryGraphQL, loaded, loading } = useGraphQL();
 
+  const defaultDataSourceFields = {
+    name: true,
+    type: true,
+    description: true,
+    maxErrors: true,
+    flowStatus: {
+      state: true,
+      errors: {
+        configName: true,
+        errorType: true,
+        message: true,
+      },
+      testMode: true,
+    },
+    sourcePlugin: {
+      groupId: true,
+      artifactId: true,
+      version: true,
+    },
+    __typename: true,
+    topic: true,
+  };
+
+  const timeDataSourceFields = {
+    cronSchedule: true,
+    lastRun: true,
+    nextRun: true,
+    memo: true,
+    currentDid: true,
+    executeImmediate: true,
+    ingressStatus: true,
+    ingressStatusMessage: true,
+    timedIngressAction: {
+      name: true,
+      apiVersion: true,
+      actionType: true,
+      type: true,
+      parameters: true,
+    },
+    variables: {
+      name: true,
+      description: true,
+      dataType: true,
+      required: true,
+      defaultValue: true,
+      value: true,
+      masked: true,
+    },
+  };
+
   const getAllDataSources = () => {
     const query = {
       getAllFlows: {
-        dataSource: {
-          name: true,
-          type: true,
-          description: true,
-          maxErrors: true,
-          flowStatus: {
-            state: true,
-            errors: {
-              configName: true,
-              errorType: true,
-              message: true,
-            },
-            testMode: true,
-          },
-          __typename: true,
-          __on: [
-            {
-              __typeName: "TimedDataSource",
-              cronSchedule: true,
-              lastRun: true,
-              nextRun: true,
-              memo: true,
-              currentDid: true,
-              executeImmediate: true,
-              ingressStatus: true,
-              ingressStatusMessage: true,
-              timedIngressAction: {
-                name: true,
-                apiVersion: true,
-                actionType: true,
-                type: true,
-                parameters: true,
-              },
-              variables: {
-                name: true,
-                description: true,
-                dataType: true,
-                required: true,
-                defaultValue: true,
-                value: true,
-                masked: true,
-              }
-            }
-          ],
-          topic: true,
-          sourcePlugin: {
-            groupId: true,
-            artifactId: true,
-            version: true,
-          },
+        restDataSource: {
+          ...defaultDataSourceFields,
+        },
+        timedDataSource: {
+          ...defaultDataSourceFields,
+          ...timeDataSourceFields,
         },
       },
     };
     return sendGraphQLQuery(query, "getAllDataSources");
   };
 
-  // Starts a DataSource
-  const startDataSourceByName = (name: string) => {
+  const getRestDataSources = () => {
     const query = {
-      startDataSource: {
-        __args: {
-          name: name,
+      getAllFlows: {
+        restDataSource: {
+          ...defaultDataSourceFields,
         },
       },
     };
-    return sendGraphQLQuery(query, "startDataSourceFlowByName", "mutation");
+    return sendGraphQLQuery(query, "getRestDataSources");
   };
 
-  // Stops a DataSource
-  const stopDataSourceByName = (name: string) => {
+  const getTimedDataSources = () => {
     const query = {
-      stopDataSource: {
+      getAllFlows: {
+        timedDataSource: {
+          ...defaultDataSourceFields,
+          ...timeDataSourceFields,
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "getTimedDataSources");
+  };
+
+  // Starts a Rest Data Source by name
+  const startRestDataSourceByName = (name: string) => {
+    const query = {
+      startRestDataSource: {
         __args: {
           name: name,
         },
       },
     };
-    return sendGraphQLQuery(query, "stopDataSourceByName", "mutation");
+    return sendGraphQLQuery(query, "startRestDataSourceByName", "mutation");
+  };
+
+  // Starts a Timed Data Source by name
+  const startTimedDataSourceByName = (name: string) => {
+    const query = {
+      startTimedDataSource: {
+        __args: {
+          name: name,
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "startTimedDataSourceByName", "mutation");
+  };
+
+  // Stops a Rest Data Source by name
+  const stopRestDataSourceByName = (name: string) => {
+    const query = {
+      stopRestDataSource: {
+        __args: {
+          name: name,
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "stopRestDataSourceByName", "mutation");
+  };
+
+  // Stops a Timed Data Source by name
+  const stopTimedDataSourceByName = (name: string) => {
+    const query = {
+      stopTimedDataSource: {
+        __args: {
+          name: name,
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "stopTimedDataSourceByName", "mutation");
   };
 
   const setTimedDataSourceCronSchedule = (name: string, cronSchedule: string) => {
@@ -122,7 +175,7 @@ export default function useDataSource() {
         __args: {
           dataSourcePlan: {
             type: "TIMED_DATA_SOURCE",
-            ...timedDataSourceFlowPlan
+            ...timedDataSourceFlowPlan,
           },
         },
         name: true,
@@ -137,7 +190,7 @@ export default function useDataSource() {
         __args: {
           dataSourcePlan: {
             type: "REST_DATA_SOURCE",
-            ...restDataSourceFlowPlan
+            ...restDataSourceFlowPlan,
           },
         },
         name: true,
@@ -146,28 +199,100 @@ export default function useDataSource() {
     return sendGraphQLQuery(query, "saveRestDataSourcePlan", "mutation");
   };
 
-  const removeDataSourcePlan = (flowName: string) => {
+  const removeDataSourcePlan = (name: string, dataSourceType: string) => {
+    let query = {};
+    if (dataSourceType === 'REST_DATA_SOURCE') {
+      query = {
+        removeRestDataSourcePlan: {
+          __args: {
+            name: name,
+          },
+        },
+      };
+    } else if (dataSourceType === 'TIMED_DATA_SOURCE') {
+      query = {
+        removeTimedDataSourcePlan: {
+          __args: {
+            name: name,
+          },
+        },
+      };
+    }
+    return sendGraphQLQuery(query, "removeDataSourcePlan", "mutation");
+  };
+
+  // Sets a Rest Data Source flow to test mode
+  const enableTestRestDataSourceFlowByName = (flowName: string) => {
     const query = {
-      removeDataSourcePlan: {
+      enableRestDataSourceTestMode: {
         __args: {
           name: flowName,
         },
       },
     };
-    return sendGraphQLQuery(query, "removeDataSourcePlan", "mutation");
+    return sendGraphQLQuery(query, "enableTestRestDataSourceFlowByName", "mutation");
+  };
+
+  // Sets a Rest Data Source flow to test mode
+  const disableTestRestDataSourceFlowByName = (flowName: string) => {
+    const query = {
+      disableRestDataSourceTestMode: {
+        __args: {
+          name: flowName,
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "disableTestRestDataSourceFlowByName", "mutation");
+  };
+
+  // Sets a Time Data Source flow to test mode
+  const enableTestTimedDataSourceFlowByName = (flowName: string) => {
+    const query = {
+      enableTimedDataSourceTestMode: {
+        __args: {
+          name: flowName,
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "enableTestTimedDataSourceFlowByName", "mutation");
+  };
+
+  // Sets a Time Data Source flow to test mode
+  const disableTestTimedDataSourceFlowByName = (flowName: string) => {
+    const query = {
+      disableTimedDataSourceTestMode: {
+        __args: {
+          name: flowName,
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "disableTestTimedDataSourceFlowByName", "mutation");
   };
 
   // sets max errors for a DataSource
-  const setMaxErrors = (name: string, maxErrors: number) => {
+  const setRestDataSourceMaxErrors = (name: string, maxErrors: number) => {
     const query = {
-      setMaxErrors: {
+      setRestDataSourceMaxErrors: {
         __args: {
           name: name,
           maxErrors: maxErrors,
         },
       },
     };
-    return sendGraphQLQuery(query, "setMaxErrors", "mutation");
+    return sendGraphQLQuery(query, "setRestDataSourceMaxErrors", "mutation");
+  };
+
+  // sets max errors for a DataSource
+  const setTimedDataSourceMaxErrors = (name: string, maxErrors: number) => {
+    const query = {
+      setTimedDataSourceMaxErrors: {
+        __args: {
+          name: name,
+          maxErrors: maxErrors,
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "setTimedDataSourceMaxErrors", "mutation");
   };
 
   const sendGraphQLQuery = async (query: any, operationName: string, queryType?: string) => {
@@ -182,13 +307,22 @@ export default function useDataSource() {
 
   return {
     getAllDataSources,
-    startDataSourceByName,
-    stopDataSourceByName,
+    getRestDataSources,
+    getTimedDataSources,
+    startRestDataSourceByName,
+    startTimedDataSourceByName,
+    stopRestDataSourceByName,
+    stopTimedDataSourceByName,
     setTimedDataSourceCronSchedule,
     saveTimedDataSourcePlan,
     saveRestDataSourcePlan,
+    enableTestRestDataSourceFlowByName,
+    disableTestRestDataSourceFlowByName,
+    enableTestTimedDataSourceFlowByName,
+    disableTestTimedDataSourceFlowByName,
     removeDataSourcePlan,
-    setMaxErrors,
+    setRestDataSourceMaxErrors,
+    setTimedDataSourceMaxErrors,
     loaded,
     loading,
     errors,

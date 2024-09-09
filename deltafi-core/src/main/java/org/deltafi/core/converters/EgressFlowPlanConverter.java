@@ -18,20 +18,22 @@
 package org.deltafi.core.converters;
 
 import org.apache.commons.lang3.StringUtils;
-import org.deltafi.common.types.EgressActionConfiguration;
+import org.deltafi.common.types.ActionConfiguration;
+import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.VariableDataType;
 import org.deltafi.core.types.EgressFlow;
 import org.deltafi.common.types.EgressFlowPlan;
+import org.deltafi.core.types.EgressFlowPlanEntity;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class EgressFlowPlanConverter extends FlowPlanConverter<EgressFlowPlan, EgressFlow> {
+public class EgressFlowPlanConverter extends FlowPlanConverter<EgressFlowPlanEntity, EgressFlow> {
 
     @Override
-    public EgressFlow createFlow(EgressFlowPlan egressFlowPlan, FlowPlanPropertyHelper flowPlanPropertyHelper) {
+    public EgressFlow createFlow(EgressFlowPlanEntity egressFlowPlan, FlowPlanPropertyHelper flowPlanPropertyHelper) {
         EgressFlow egressFlow = new EgressFlow();
         egressFlow.setEgressAction(buildEgressAction(egressFlowPlan.getEgressAction(), flowPlanPropertyHelper));
         egressFlow.setSubscribe(egressFlowPlan.getSubscribe());
@@ -44,9 +46,9 @@ public class EgressFlowPlanConverter extends FlowPlanConverter<EgressFlowPlan, E
      * @param egressActionTemplate template of the EgressActionConfiguration that should be created
      * @return EgressActionConfiguration with variable values substituted in
      */
-    EgressActionConfiguration buildEgressAction(EgressActionConfiguration egressActionTemplate, FlowPlanPropertyHelper flowPlanPropertyHelper) {
-        EgressActionConfiguration egressActionConfiguration = new EgressActionConfiguration(
-                flowPlanPropertyHelper.getReplacedName(egressActionTemplate), egressActionTemplate.getType());
+    ActionConfiguration buildEgressAction(ActionConfiguration egressActionTemplate, FlowPlanPropertyHelper flowPlanPropertyHelper) {
+        ActionConfiguration egressActionConfiguration = new ActionConfiguration(
+                flowPlanPropertyHelper.getReplacedName(egressActionTemplate), ActionType.EGRESS, egressActionTemplate.getType());
         flowPlanPropertyHelper.replaceCommonActionPlaceholders(egressActionConfiguration, egressActionTemplate);
         return egressActionConfiguration;
     }

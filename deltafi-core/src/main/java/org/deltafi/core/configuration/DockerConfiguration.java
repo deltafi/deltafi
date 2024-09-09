@@ -29,19 +29,13 @@ import org.deltafi.core.plugin.deployer.DockerDeployerService;
 import org.deltafi.core.plugin.deployer.EnvironmentVariableHelper;
 import org.deltafi.core.plugin.deployer.credential.CredentialProvider;
 import org.deltafi.core.plugin.deployer.credential.EnvVarCredentialProvider;
-import org.deltafi.core.plugin.deployer.customization.PluginCustomizationConfigRepo;
-import org.deltafi.core.plugin.deployer.customization.PluginCustomizationRepo;
-import org.deltafi.core.plugin.deployer.customization.PluginCustomizationService;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.services.EventService;
-import org.deltafi.core.snapshot.SystemSnapshotService;
+import org.deltafi.core.services.SystemSnapshotService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-
-import java.net.http.HttpClient;
-
 
 @Configuration
 @Profile("!kubernetes")
@@ -60,16 +54,8 @@ public class DockerConfiguration {
     }
 
     @Bean
-    public PluginCustomizationService pluginCustomizationsFetchService(PluginCustomizationConfigRepo pluginCustomizationConfigRepo,
-                                                                       PluginCustomizationRepo pluginCustomizationRepo,
-                                                                       CredentialProvider credentialProvider,
-                                                                       HttpClient httpClient) {
-        return new PluginCustomizationService(pluginCustomizationConfigRepo, pluginCustomizationRepo, credentialProvider, httpClient);
-    }
-
-    @Bean
-    public DeployerService dockerDeployerService(DockerClient dockerClient, PluginImageRepositoryService pluginImageRepositoryService, PluginRegistryService pluginRegistryService, PluginCustomizationService pluginCustomizationService,
+    public DeployerService dockerDeployerService(DockerClient dockerClient, PluginImageRepositoryService pluginImageRepositoryService, PluginRegistryService pluginRegistryService,
                                                  SystemSnapshotService systemSnapshotService, EventService eventService, EnvironmentVariableHelper environmentVariableHelper, DeltaFiPropertiesService deltaFiPropertiesService) {
-        return new DockerDeployerService(dockerClient, pluginImageRepositoryService, pluginRegistryService, pluginCustomizationService, systemSnapshotService, eventService, environmentVariableHelper, deltaFiPropertiesService);
+        return new DockerDeployerService(dockerClient, pluginImageRepositoryService, pluginRegistryService, systemSnapshotService, eventService, environmentVariableHelper, deltaFiPropertiesService);
     }
 }

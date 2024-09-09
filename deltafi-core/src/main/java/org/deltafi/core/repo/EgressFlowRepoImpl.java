@@ -17,31 +17,55 @@
  */
 package org.deltafi.core.repo;
 
-import jakarta.annotation.PostConstruct;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.transaction.annotation.Transactional;
 import org.deltafi.core.types.EgressFlow;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
 
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.List;
 
-@SuppressWarnings("unused")
-public class EgressFlowRepoImpl extends BaseFlowRepoImpl<EgressFlow> implements EgressFlowRepoCustom {
+@Repository
+public class EgressFlowRepoImpl implements EgressFlowRepoCustom {
 
-    private static final String EXPECTED_ANNOTATIONS = "expectedAnnotations";
+    private final JdbcTemplate jdbcTemplate;
+    private final ObjectMapper objectMapper;
 
-    public EgressFlowRepoImpl(MongoTemplate mongoTemplate) {
-        super(mongoTemplate, EgressFlow.class);
+    public EgressFlowRepoImpl(JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
+        this.jdbcTemplate = jdbcTemplate;
+        this.objectMapper = objectMapper;
     }
 
     @Override
-    public boolean updateExpectedAnnotations(String flowName, Set<String> expectedAnnotations) {
-        // sort before storing so the `ne` can be used in the query
-        TreeSet<String> sortedAnnotations = expectedAnnotations != null ? new TreeSet<>(expectedAnnotations) : null;
-        Query idMatches = Query.query(Criteria.where(ID).is(flowName).and(EXPECTED_ANNOTATIONS).ne(sortedAnnotations));
-        Update expectedAnnotationsUpdate = Update.update(EXPECTED_ANNOTATIONS, sortedAnnotations);
-        return 1 == mongoTemplate.updateFirst(idMatches, expectedAnnotationsUpdate, EgressFlow.class).getModifiedCount();
+    @Transactional
+    public void batchInsert(List<EgressFlow> egressFlows) {
+        String sql = """
+            INSERT INTO flows (name, type, description, source_plugin, flow_status, variables,
+                               egress_action, expected_annotations, subscribe, discriminator, id)
+            VALUES (?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?::jsonb, ?, ?)
+        """;
+
+        jdbcTemplate.batchUpdate(sql, egressFlows, 1000, (ps, egressFlow) -> {
+            ps.setString(1, egressFlow.getName());
+            ps.setString(2, egressFlow.getType().name());
+            ps.setString(3, egressFlow.getDescription());
+            ps.setString(4, toJson(egressFlow.getSourcePlugin()));
+            ps.setString(5, toJson(egressFlow.getFlowStatus()));
+            ps.setString(6, toJson(egressFlow.getVariables()));
+            ps.setString(7, toJson(egressFlow.getEgressAction()));
+            ps.setString(8, toJson(egressFlow.getExpectedAnnotations()));
+            ps.setString(9, toJson(egressFlow.getSubscribe()));
+            ps.setString(10, "EGRESS");
+            ps.setObject(11, egressFlow.getId());
+        });
+    }
+
+    private String toJson(Object object) {
+        try {
+            return object == null ? null : objectMapper.writeValueAsString(object);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Error converting object to JSON", e);
+        }
     }
 }

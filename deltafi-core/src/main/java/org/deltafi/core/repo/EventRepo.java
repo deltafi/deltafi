@@ -18,9 +18,16 @@
 package org.deltafi.core.repo;
 
 import org.deltafi.core.types.Event;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
 @Repository
-public interface EventRepo extends MongoRepository<Event, String>, EventRepoCustom {
+public interface EventRepo extends JpaRepository<Event, UUID>, EventRepoCustom {
+    @Query("SELECT COUNT(e) FROM Event e WHERE e.acknowledged = false AND e.notification = true AND e.timestamp > :startTime")
+    long notificationCount(OffsetDateTime startTime);
 }

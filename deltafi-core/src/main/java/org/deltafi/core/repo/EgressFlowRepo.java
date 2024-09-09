@@ -17,10 +17,30 @@
  */
 package org.deltafi.core.repo;
 
-import org.deltafi.core.types.EgressFlow;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Set;
 
 @Repository
-public interface EgressFlowRepo extends FlowRepo<EgressFlow>, EgressFlowRepoCustom {
+@Transactional
+public interface EgressFlowRepo extends FlowRepo, EgressFlowRepoCustom {
+    @Modifying
+    @Query(value = "UPDATE flows SET expected_annotations = cast(:expectedAnnotations AS jsonb) WHERE name = :flowName AND type = 'EGRESS'",
+            nativeQuery = true)
+    int updateExpectedAnnotations(String flowName, String expectedAnnotations);
 
+    default int updateExpectedAnnotations(String flowName, Set<String> expectedAnnotations) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            String jsonExpectedAnnotations = objectMapper.writeValueAsString(expectedAnnotations);
+            return updateExpectedAnnotations(flowName, jsonExpectedAnnotations);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Error converting expectedAnnotations to JSON", e);
+        }
+    }
 }

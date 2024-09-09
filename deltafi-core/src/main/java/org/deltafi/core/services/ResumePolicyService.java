@@ -17,21 +17,21 @@
  */
 package org.deltafi.core.services;
 
+import com.fasterxml.uuid.Generators;
 import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.types.Action;
+import org.deltafi.core.types.Action;
 import org.deltafi.common.types.ActionType;
 import org.deltafi.core.types.DeltaFile;
-import org.deltafi.common.types.DeltaFileFlow;
+import org.deltafi.core.types.DeltaFileFlow;
 import org.deltafi.core.generated.types.BackOff;
 import org.deltafi.core.repo.ResumePolicyRepo;
-import org.deltafi.core.snapshot.SnapshotRestoreOrder;
-import org.deltafi.core.snapshot.Snapshotter;
-import org.deltafi.core.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.types.ResumePolicy;
-import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -47,7 +47,6 @@ public class ResumePolicyService implements Snapshotter {
 
     @PostConstruct
     private void init() {
-        resumePolicyRepo.ensureAllIndices();
         refreshCache();
     }
 
@@ -176,7 +175,7 @@ public class ResumePolicyService implements Snapshotter {
      */
     public Result save(ResumePolicy resumePolicy) {
         if (resumePolicy.getId() == null) {
-            resumePolicy.setId(UUID.randomUUID());
+            resumePolicy.setId(Generators.timeBasedEpochGenerator().generate());
         }
         List<String> errors = resumePolicy.validate();
         if (errors.isEmpty()) {
@@ -184,7 +183,7 @@ public class ResumePolicyService implements Snapshotter {
                 resumePolicyRepo.save(resumePolicy);
                 refreshCache();
                 return new Result();
-            } catch (DuplicateKeyException e) {
+            } catch (DataIntegrityViolationException e) {
                 errors.add("duplicate name or criteria");
             }
         }
@@ -235,7 +234,7 @@ public class ResumePolicyService implements Snapshotter {
         List<ResumePolicy> valid = new ArrayList<>();
         for (ResumePolicy policy : policies) {
             if (policy.getId() == null) {
-                policy.setId(UUID.randomUUID());
+                policy.setId(Generators.timeBasedEpochGenerator().generate());
             }
             List<String> errors = policy.validate();
             if (errors.isEmpty()) {
@@ -250,7 +249,7 @@ public class ResumePolicyService implements Snapshotter {
             try {
                 resumePolicyRepo.saveAll(valid);
                 refreshCache();
-            } catch (DuplicateKeyException e) {
+            } catch (DataIntegrityViolationException e) {
                 result.getErrors().add("duplicate name or criteria");
             }
         }

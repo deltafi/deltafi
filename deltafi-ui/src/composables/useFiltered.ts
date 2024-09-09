@@ -23,7 +23,7 @@ import _ from "lodash";
 export default function useFiltered() {
   const { response, queryGraphQL, loading, loaded, errors } = useGraphQL();
   const data = ref(null);
-  const allCauses = ref(null)
+  const allCauses = ref(null);
 
   const fetchAllFiltered = async (offSet: Number, perPage: Number, sortBy: string, sortDirection: string, flowName?: string, filteredCause?: string) => {
     const searchParams = {
@@ -32,7 +32,7 @@ export default function useFiltered() {
           limit: perPage,
           offset: offSet,
           filter: {
-            dataSources:  !_.isEmpty(flowName) ? [flowName] : null,
+            dataSources: !_.isEmpty(flowName) ? [flowName] : null,
             filtered: true,
             filteredCause: !_.isEmpty(filteredCause) ? `\\Q${filteredCause}\\E` : null,
           },
@@ -56,14 +56,14 @@ export default function useFiltered() {
             state: true,
             created: true,
             modified: true,
-          actions: {
-            name: true,
-            created: true,
-            modified: true,
-            filteredCause: true,
-            state: true,
+            actions: {
+              name: true,
+              created: true,
+              modified: true,
+              filteredCause: true,
+              state: true,
+            },
           },
-        },
         },
       },
     };
@@ -71,7 +71,7 @@ export default function useFiltered() {
     data.value = response.value.data;
   };
 
-  const fetchByFlow = async (offSet: Number, perPage: Number, sortBy: string, sortDirection: string, flow: string) => {
+  const fetchFilteredSummaryByFlow = async (offSet: Number, perPage: Number, sortDirection: string, flow: string) => {
     const searchParamsFlow = {
       filteredSummaryByFlow: {
         __args: {
@@ -80,10 +80,7 @@ export default function useFiltered() {
           filter: {
             flow: flow,
           },
-          orderBy: {
-            direction: new EnumType(sortDirection),
-            field: sortBy,
-          }
+          direction: new EnumType(sortDirection),
         },
         count: true,
         totalCount: true,
@@ -92,23 +89,25 @@ export default function useFiltered() {
           flow: true,
           dids: true,
         },
-      }
-    }
+      },
+    };
     await queryGraphQL(searchParamsFlow, "getFilteredByFlow");
     data.value = response.value.data.filteredSummaryByFlow;
   };
+
   const fetchAllMessage = async () => {
     const searchParams = {
       filteredSummaryByMessage: {
         countPerMessage: {
           message: true,
         },
-      }
-    }
+      },
+    };
     await queryGraphQL(searchParams, "getFilteredByMessage");
     allCauses.value = response.value.data.filteredSummaryByMessage.countPerMessage;
   };
-  const fetchByMessage = async (offSet: Number, perPage: Number, sortBy: string, sortDirection: string, flow: string) => {
+
+  const fetchFilteredSummaryByMessage = async (offSet: Number, perPage: Number, sortDirection: string, flow: string) => {
     const searchParams = {
       filteredSummaryByMessage: {
         __args: {
@@ -117,10 +116,7 @@ export default function useFiltered() {
           filter: {
             flow: flow,
           },
-          orderBy: {
-            direction: new EnumType(sortDirection),
-            field: sortBy,
-          }
+          direction: new EnumType(sortDirection),
         },
         count: true,
         totalCount: true,
@@ -130,11 +126,11 @@ export default function useFiltered() {
           flow: true,
           dids: true,
         },
-      }
-    }
+      },
+    };
     await queryGraphQL(searchParams, "getFilteredByMessage");
     data.value = response.value.data.filteredSummaryByMessage;
   };
 
-  return { data, allCauses, loading, loaded, fetchAllFiltered, fetchByFlow, fetchByMessage, fetchAllMessage, errors };
+  return { data, allCauses, loading, loaded, fetchAllFiltered, fetchFilteredSummaryByFlow, fetchFilteredSummaryByMessage, fetchAllMessage, errors };
 }

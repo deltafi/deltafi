@@ -124,12 +124,6 @@ export default function useSystemSnapshots() {
       testMode: true,
       expectedAnnotations: true
     },
-    pluginCustomizationConfigs: {
-      groupId: true,
-      artifactId: true,
-      urlTemplate: true,
-      secretName: true
-    }
   }
 
   const fetch = async () => {

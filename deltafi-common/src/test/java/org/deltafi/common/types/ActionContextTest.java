@@ -48,9 +48,9 @@ class ActionContextTest {
     private static final String DELTA_FILE_NAME = "the-delta-file-name";
     private static final String DATA_SOURCE = "the-data-source";
     private static final String FLOW_NAME = "the-flow-name";
-    private static final int FLOW_ID = 10;
+    private static final UUID FLOW_ID = UUID.fromString("d5b41c6b-7fce-43b7-b6bf-5cd0a3aa1111");
     private static final String ACTION_NAME = "the-action-name";
-    private static final int ACTION_ID = 20;
+    private static final UUID ACTION_ID = UUID.fromString("d5b41c6b-7fce-43b7-b6bf-5cd0a3aa2222");
     private static final String ACTION_VERSION = "the-action-version";
     private static final String HOSTNAME = "the-hostname";
     private static final OffsetDateTime START_TIME = OffsetDateTime.parse("2019-08-31T15:20:30+08:00");

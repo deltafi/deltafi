@@ -63,7 +63,6 @@ export default function useDeltaFilesQueryBuilder() {
           limit: queryParams.perPage,
           filter: {
             nameFilter: queryParams.fileName ? {
-              regex: true,
               name: queryParams.fileName
             } : null,
             egressed: queryParams.egressed,

@@ -23,20 +23,17 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.data.annotation.PersistenceCreator;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-@Document
 @Getter
 @Setter
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 @EqualsAndHashCode(callSuper = true)
 public class TransformFlowPlan extends FlowPlan implements Publisher, Subscriber {
-    private List<TransformActionConfiguration> transformActions;
+    private List<ActionConfiguration> transformActions;
     @JsonProperty(required = true)
     private Set<Rule> subscribe;
     private PublishRules publish;
@@ -45,7 +42,6 @@ public class TransformFlowPlan extends FlowPlan implements Publisher, Subscriber
         super(name, FlowType.TRANSFORM, description);
     }
 
-    @PersistenceCreator
     @JsonCreator
     @SuppressWarnings("unused")
     public TransformFlowPlan(@JsonProperty(value = "name", required = true) String name,

@@ -21,7 +21,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
 
 import java.util.Map;
 
@@ -30,10 +29,9 @@ import java.util.Map;
 @AllArgsConstructor
 @Builder
 public class ActionDescriptor {
-  @Id
   private String name;
   private String description;
   private ActionType type;
-  private boolean supportsJoin = false;
+  private boolean supportsJoin;
   private Map<String, Object> schema;
 }

@@ -17,47 +17,57 @@
  */
 package org.deltafi.core.types;
 
+import com.fasterxml.uuid.Generators;
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
+import jakarta.persistence.*;
 import lombok.Data;
-import org.deltafi.common.types.ActionType;
-import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.common.types.Variable;
-import org.deltafi.common.types.ActionConfiguration;
+import lombok.NoArgsConstructor;
+import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.ActionFamily;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
-import org.springframework.data.annotation.Id;
+import org.hibernate.annotations.Type;
 
 import java.util.*;
 
+@Entity
+@Table(name = "flows", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"name", "type"} )
+})
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "discriminator", discriminatorType = DiscriminatorType.STRING)
 @Data
+@NoArgsConstructor
 public abstract class Flow {
-
     @Id
-    protected String name;
+    UUID id = Generators.timeBasedEpochGenerator().generate();
+
+    private String name;
+
+    @Enumerated(EnumType.STRING)
+    private FlowType type;
+
+    @Column(length = 100_000)
     protected String description;
+
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
     protected PluginCoordinates sourcePlugin;
+
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
     protected FlowStatus flowStatus = new FlowStatus(FlowState.STOPPED, new ArrayList<>(), false);
+
     // list of variables that are applicable to this flow
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
     protected Set<Variable> variables = new HashSet<>();
 
-    /**
-     * Run migrations needed to upgrade to latest version
-     * This method should be overridden by child classes that support migrations
-     * @return boolean indicating whether a migration occurred
-     */
-    public boolean migrate() {
-        return false;
-    }
-
-    protected void migrateAction(ActionConfiguration actionConfiguration) {
-        if (actionConfiguration == null) {
-            return;
-        }
-
-        int dotIndex = actionConfiguration.getName().indexOf('.');
-        if (dotIndex != -1) {
-            actionConfiguration.setName(actionConfiguration.getName().substring(dotIndex + 1));
-        }
+    public Flow(String name, FlowType type, String description, PluginCoordinates sourcePlugin) {
+        this.name = name;
+        this.type = type;
+        this.description = description;
+        this.sourcePlugin = sourcePlugin;
     }
 
     /**
@@ -67,7 +77,7 @@ public abstract class Flow {
      * @param actionType type of action i.e. load, transform ... egress
      * @param actionNames list of action names to add
      */
-    public void updateActionNamesByFamily(Map<ActionType, ActionFamily> actionFamilyMap, ActionType actionType, List<String> actionNames) {
+    public static void updateActionNamesByFamily(Map<ActionType, ActionFamily> actionFamilyMap, ActionType actionType, List<String> actionNames) {
         if (actionFamilyMap.containsKey(actionType)) {
             actionFamilyMap.get(actionType).getActionNames().addAll(actionNames);
         } else {
@@ -139,7 +149,7 @@ public abstract class Flow {
     }
 
     public boolean nameMatches(ActionConfiguration action, String named) {
-        return named.equals(action.getName());
+        return named != null && named.equals(action.getName());
     }
 
     /**

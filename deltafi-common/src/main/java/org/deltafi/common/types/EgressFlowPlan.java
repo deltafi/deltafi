@@ -22,34 +22,30 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.data.annotation.PersistenceCreator;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-@Document
 @Getter
 @Setter
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 public class EgressFlowPlan extends FlowPlan implements Subscriber {
-    private final EgressActionConfiguration egressAction;
+    private final ActionConfiguration egressAction;
     @JsonProperty(required = true)
     private Set<Rule> subscribe;
 
-    public EgressFlowPlan(String name, String description, EgressActionConfiguration egressAction) {
+    public EgressFlowPlan(String name, String description, ActionConfiguration egressAction) {
         super(name, FlowType.EGRESS, description);
         this.egressAction = egressAction;
     }
 
-    @PersistenceCreator
     @JsonCreator
     @SuppressWarnings("unused")
     public EgressFlowPlan(@JsonProperty(value = "name", required = true) String name,
             @JsonProperty(value = "type") FlowType type,
             @JsonProperty(value = "description", required = true) String description,
-            @JsonProperty(value = "egressAction", required = true) EgressActionConfiguration egressAction) {
+            @JsonProperty(value = "egressAction", required = true) ActionConfiguration egressAction) {
         this(name, description, egressAction);
     }
 

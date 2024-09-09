@@ -19,8 +19,8 @@ package org.deltafi.core.integration.config;
 
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
-import org.deltafi.common.types.DeltaFileFlowState;
 import org.deltafi.common.types.FlowType;
+import org.deltafi.core.types.DeltaFileFlowState;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -17,14 +17,12 @@
  */
 package org.deltafi.core.plugin;
 
-import org.deltafi.common.types.Plugin;
-
 public interface PluginCleaner {
 
     /**
      * Cleanup method that will be executed when a plugin is uninstalled.
      * @param plugin plugin to clean up
      */
-    void cleanupFor(Plugin plugin);
+    void cleanupFor(PluginEntity plugin);
 
 }

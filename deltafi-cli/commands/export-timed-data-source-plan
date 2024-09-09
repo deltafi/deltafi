@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: export-timed-data-source-plan
+
+Usage:
+  export-timed-data-source-plan TIMED_DATA_SOURCE_PLAN_NAME"
+  exit 1
+}
+
+ARGS=($@)
+[[ " ${ARGS[@]} " =~ " --help " ]] && cli_help_command
+
+PLANNAME=${ARGS[@]:1}
+[[ ${#ARGS[@]} -lt 2 ]] && cli_help_command
+
+QUERY="fragment ActionFields on ActionConfiguration {
+          name
+          apiVersion
+          type
+          parameters
+        }
+
+        query {
+          getTimedDataSourcePlan(planName: \"$PLANNAME\") {
+            name
+            type
+            description
+            sourcePlugin {
+              groupId
+              artifactId
+              version
+            }
+            topic
+            timedIngressAction {
+              ... ActionFields
+            }
+            cronSchedule
+          }
+        }
+        "
+
+RESULT=$(deltafi query "$QUERY")
+DGS_ERRORS=$(echo $RESULT | jq -r "select(.errors) | .errors[] | .message")
+if [[ "$DGS_ERRORS" != "" ]]; then
+  cli_log "${red}${BASENAME}: Failed to export timed data source plan: $PLANNAME${normal}"
+  echo -e "${red}Error: ${DGS_ERRORS}${normal}"
+else
+  echo "$RESULT" | jq '.data.getTimedDataSourcePlan'
+fi

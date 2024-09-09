@@ -20,10 +20,8 @@ package org.deltafi.core.datafetchers;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.netflix.graphql.dgs.DgsComponent;
-import com.netflix.graphql.dgs.DgsMutation;
-import com.netflix.graphql.dgs.DgsQuery;
-import com.netflix.graphql.dgs.InputArgument;
+import com.fasterxml.uuid.Generators;
+import com.netflix.graphql.dgs.*;
 import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.SelectedField;
@@ -36,7 +34,7 @@ import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.exceptions.IngressException;
 import org.deltafi.core.generated.types.*;
 import org.deltafi.core.security.NeedsPermission;
-import org.deltafi.core.services.DataSourceService;
+import org.deltafi.core.services.RestDataSourceService;
 import org.deltafi.core.services.DeltaFilesService;
 import org.deltafi.core.types.*;
 import org.deltafi.core.types.ResumePolicy;
@@ -50,16 +48,26 @@ import java.util.stream.Collectors;
 public class DeltaFilesDatafetcher {
   final DeltaFilesService deltaFilesService;
   final ContentStorageService contentStorageService;
-  final DataSourceService dataSourceService;
+  final RestDataSourceService restDataSourceService;
   private final CoreAuditLogger auditLogger;
 
   static final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
-  DeltaFilesDatafetcher(DeltaFilesService deltaFilesService, ContentStorageService contentStorageService, DataSourceService dataSourceService, CoreAuditLogger auditLogger) {
+  DeltaFilesDatafetcher(DeltaFilesService deltaFilesService, ContentStorageService contentStorageService, RestDataSourceService restDataSourceService, CoreAuditLogger auditLogger) {
     this.deltaFilesService = deltaFilesService;
     this.contentStorageService = contentStorageService;
-    this.dataSourceService = dataSourceService;
+    this.restDataSourceService = restDataSourceService;
     this.auditLogger = auditLogger;
+  }
+
+  @DgsData(parentType = "DeltaFile", field = "annotations")
+  public Object getAnnotations(DgsDataFetchingEnvironment dfe) {
+    DeltaFile deltaFile = dfe.getSource();
+    if (deltaFile.getAnnotations() == null) {
+      return Collections.emptyMap();
+    }
+    return deltaFile.getAnnotations().stream()
+            .collect(Collectors.toMap(Annotation::getKey, Annotation::getValue));
   }
 
   @DgsQuery
@@ -139,8 +147,8 @@ public class DeltaFilesDatafetcher {
           @InputArgument Integer offset,
           @InputArgument Integer limit,
           @InputArgument ErrorSummaryFilter filter,
-          @InputArgument DeltaFileOrder orderBy) {
-    return deltaFilesService.getErrorSummaryByFlow(offset, limit, filter, orderBy);
+          @InputArgument DeltaFileDirection direction) {
+    return deltaFilesService.getErrorSummaryByFlow(offset, limit, filter, direction);
   }
 
   @DgsQuery
@@ -149,8 +157,8 @@ public class DeltaFilesDatafetcher {
           @InputArgument Integer offset,
           @InputArgument Integer limit,
           @InputArgument ErrorSummaryFilter filter,
-          @InputArgument DeltaFileOrder orderBy) {
-    return deltaFilesService.getErrorSummaryByMessage(offset, limit, filter, orderBy);
+          @InputArgument DeltaFileDirection direction) {
+    return deltaFilesService.getErrorSummaryByMessage(offset, limit, filter, direction);
   }
 
   @DgsQuery
@@ -159,8 +167,8 @@ public class DeltaFilesDatafetcher {
           @InputArgument Integer offset,
           @InputArgument Integer limit,
           @InputArgument FilteredSummaryFilter filter,
-          @InputArgument DeltaFileOrder orderBy) {
-    return deltaFilesService.getFilteredSummaryByFlow(offset, limit, filter, orderBy);
+          @InputArgument DeltaFileDirection direction) {
+    return deltaFilesService.getFilteredSummaryByFlow(offset, limit, filter, direction);
   }
 
   @DgsQuery
@@ -169,8 +177,8 @@ public class DeltaFilesDatafetcher {
           @InputArgument Integer offset,
           @InputArgument Integer limit,
           @InputArgument FilteredSummaryFilter filter,
-          @InputArgument DeltaFileOrder orderBy) {
-    return deltaFilesService.getFilteredSummaryByMessage(offset, limit, filter, orderBy);
+          @InputArgument DeltaFileDirection direction) {
+    return deltaFilesService.getFilteredSummaryByMessage(offset, limit, filter, direction);
   }
 
   @DgsMutation
@@ -249,7 +257,7 @@ public class DeltaFilesDatafetcher {
     auditLogger.audit("started stress test for flow {} using contentSize {}, numFiles {}, batchSize {}", flow, contentSize, numFiles, batchSize);
     RestDataSource restDataSource;
     try {
-      restDataSource = dataSourceService.getRestDataSource(flow);
+      restDataSource = restDataSourceService.getFlowOrThrow(flow);
     } catch (Exception e) {
       throw new IngressException(e.getMessage());
     }
@@ -266,7 +274,7 @@ public class DeltaFilesDatafetcher {
       List<Content> contentList = new ArrayList<>();
       for (int i = 0; i < Math.min(remainingFiles, batchSize); i++) {
         if (contentSize > 0) {
-          UUID did = UUID.randomUUID();
+          UUID did = Generators.timeBasedEpochGenerator().generate();
           log.debug("Saving content for {} ({}/{})", did, i + (numFiles - remainingFiles) + 1, numFiles);
           byte[] contentBytes = new byte[contentSize];
           random.nextBytes(contentBytes);

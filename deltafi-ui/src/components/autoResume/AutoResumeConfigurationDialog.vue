@@ -36,7 +36,7 @@
           </dd>
           <dt>{{ autoResumeConfigurationMap.get("dataSource").header }}</dt>
           <dd>
-            <Dropdown v-model="selectedRuleDataSource" :options="dataSourceNames" :placeholder="autoResumeConfigurationMap.get('dataSource').placeholder" :disabled="autoResumeConfigurationMap.get('dataSource').disabled" show-clear class="inputWidth" />
+            <Dropdown v-model="selectedRuleDataSource" :options="formattedDataSourceNames" option-group-label="label" option-group-children="sources" :placeholder="autoResumeConfigurationMap.get('dataSource').placeholder" :disabled="autoResumeConfigurationMap.get('dataSource').disabled" show-clear class="inputWidth" />
           </dd>
           <dt>{{ autoResumeConfigurationMap.get("action").header }}</dt>
           <dd>
@@ -156,7 +156,7 @@ const confirmApply = (event) => {
     accept: () => {
       submitApply();
     },
-    reject: () => { },
+    reject: () => {},
   });
 };
 
@@ -165,10 +165,10 @@ const { viewAutoResumeRule, closeDialogCommand } = reactive(props);
 const emit = defineEmits(["reloadResumeRules", "applyChanges"]);
 const { validateAutoResumeFile, validateAutoResumeRule } = useAutoResumeConfiguration();
 const { loadResumePolicies, updateResumePolicy, applyResumePolicies } = useAutoResumeQueryBuilder();
-const { dataSourceFlows: dataSourceNames, fetchDataSourceFlowNames: fetchDataSourceNames } = useFlows();
+const { allDataSourceFlowNames, fetchAllDataSourceFlowNames } = useFlows();
 const notify = useNotifications();
 const isMounted = ref(useMounted());
-
+const formattedDataSourceNames = ref([]);
 const autoResumeRuleUpload = ref(null);
 const errorsList = ref([]);
 
@@ -198,8 +198,18 @@ const selectedRuleMultiplier = ref(_.get(rowData, "backOff.multiplier", null));
 const selectedRuleRandom = ref(_.get(rowData, "backOff.random", false));
 
 onMounted(async () => {
-  fetchDataSourceNames();
+  await fetchAllDataSourceFlowNames();
+  formatDataSourceNames();
 });
+
+const formatDataSourceNames = () => {
+  if (!_.isEmpty(allDataSourceFlowNames.value.restDataSource)) {
+    formattedDataSourceNames.value.push({ label: "Rest Data Sources", sources: allDataSourceFlowNames.value.restDataSource });
+  }
+  if (!_.isEmpty(allDataSourceFlowNames.value.timedDataSource)) {
+    formattedDataSourceNames.value.push({ label: "Timed Data Sources", sources: allDataSourceFlowNames.value.timedDataSource });
+  }
+};
 
 const clearErrors = () => {
   errorsList.value = [];

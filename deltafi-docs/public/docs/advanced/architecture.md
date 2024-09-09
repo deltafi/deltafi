@@ -2,7 +2,7 @@
 
 ## Database
 
-DeltaFiles and system configuration are stored in MongoDB. The DeltaFile collection is updated each time a DeltaFile is
+DeltaFiles and system configuration are stored in PostgreSQL. The DeltaFile collection is updated each time a DeltaFile is
 created, queued for Action, has an Action completed, or reaches a new stage.
 
 ## Content Storage

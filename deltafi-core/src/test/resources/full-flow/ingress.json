@@ -1,9 +1,9 @@
 {
     "did": "%1$s",
     "flowName": "sampleTimedDataSource",
-    "flowId": 0,
+    "flowId": "00000000-0000-0000-0000-000000000000",
     "actionName": "SampleTimedIngressAction",
-    "actionId": 0,
+    "actionId": "00000000-0000-0000-0000-000000000000",
     "start": "3021-07-11T13:44:22.183Z",
     "stop": "3021-07-11T13:44:22.184Z",
     "type": "INGRESS",

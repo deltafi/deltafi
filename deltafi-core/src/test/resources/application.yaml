@@ -17,31 +17,25 @@ spring:
       discovery:
         catalog-services-watch:
           enabled: false
-  data:
-    mongodb:
-      database: deltafi-test
-  mongodb:
-    embedded:
-      version: 5.0.20
-      features:
-        - SYNC_DELAY
-        - NO_HTTP_INTERFACE_ARG
+  datasource:
+    # hikari takes 60 seconds to connect to the postgres TestContainer, so disable it in test
+    type: org.springframework.jdbc.datasource.SimpleDriverDataSource
+  jpa:
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        packagesToScan: org.deltafi.core.types
+        generate_statistics: false
   sql:
     init:
       mode: never
-
-deltafi:
-  delete:
-    policyBatchSize: 1000
-    frequency: PT1S
 
 minio:
   url: http://localhost
   access-key: minioadmin
   secret-key: minioadmin
-
-redis:
-  url: http://localhost
 
 valkey:
   url: http://localhost

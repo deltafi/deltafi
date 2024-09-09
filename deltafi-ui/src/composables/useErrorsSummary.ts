@@ -16,14 +16,14 @@
    limitations under the License.
 */
 
-import { ref } from 'vue'
-import useGraphQL from './useGraphQL'
-import { EnumType } from 'json-to-graphql-query';
+import { ref } from "vue";
+import useGraphQL from "./useGraphQL";
+import { EnumType } from "json-to-graphql-query";
 export default function useErrors() {
   const { response, queryGraphQL, loading, loaded, errors } = useGraphQL();
   const data = ref(null);
 
-  const fetchByMessage = async (showAcknowledged: boolean, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, flow: string) => {
+  const fetchByMessage = async (showAcknowledged: boolean, offSet: Number, perPage: Number, sortDirection: string, flow: string) => {
     const searchParams = {
       errorSummaryByMessage: {
         __args: {
@@ -33,10 +33,7 @@ export default function useErrors() {
             flow: flow,
             errorAcknowledged: showAcknowledged,
           },
-          orderBy: {
-            direction: new EnumType(sortDirection),
-            field: sortBy,
-          }
+          direction: new EnumType(sortDirection),
         },
         count: true,
         totalCount: true,
@@ -46,8 +43,8 @@ export default function useErrors() {
           flow: true,
           dids: true,
         },
-      }
-    }
+      },
+    };
     await queryGraphQL(searchParams, "getErrorsByMessage");
     data.value = response.value.data.errorSummaryByMessage;
   };
@@ -57,13 +54,13 @@ export default function useErrors() {
         countPerMessage: {
           message: true,
         },
-      }
-    }
+      },
+    };
     await queryGraphQL(searchParams, "getErrorsByMessage");
     data.value = response.value.data.errorSummaryByMessage.countPerMessage;
   };
 
-  const fetchByFlow = async (showAcknowledged: boolean, offSet: Number, perPage: Number, sortBy: string, sortDirection: string, flow: string) => {
+  const fetchErrorSummaryByFlow = async (showAcknowledged: boolean, offSet: Number, perPage: Number, sortDirection: string, flow: string) => {
     const searchParamsFlow = {
       errorSummaryByFlow: {
         __args: {
@@ -73,10 +70,7 @@ export default function useErrors() {
             flow: flow,
             errorAcknowledged: showAcknowledged,
           },
-          orderBy: {
-            direction: new EnumType(sortDirection),
-            field: sortBy,
-          }
+          direction: new EnumType(sortDirection),
         },
         count: true,
         totalCount: true,
@@ -85,11 +79,11 @@ export default function useErrors() {
           flow: true,
           dids: true,
         },
-      }
-    }
+      },
+    };
     await queryGraphQL(searchParamsFlow, "getErrorsByFlow");
     data.value = response.value.data.errorSummaryByFlow;
   };
 
-  return { data, loading, loaded, fetchByMessage, fetchByFlow, fetchAllMessage, errors };
+  return { data, loading, loaded, fetchByMessage, fetchErrorSummaryByFlow, fetchAllMessage, errors };
 }

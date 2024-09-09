@@ -30,7 +30,13 @@ cli_log() {
 
 _attention() {
   {
-    printf "\n%s\n\n" "${yellow}>  ${green}${*}${normal}"
+    printf "%s\n" "${yellow}>  ${white}${*}${normal}"
+  } 1>&2
+}
+
+_success() {
+  {
+    printf "%s\n" "${green}✓  ${white}${*}${normal}"
   } 1>&2
 }
 

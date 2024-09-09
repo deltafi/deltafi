@@ -17,6 +17,8 @@
  */
 package org.deltafi.core.plugin;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import jakarta.persistence.EntityManager;
 import org.deltafi.common.types.ActionDescriptor;
 import org.deltafi.common.types.Plugin;
 import org.deltafi.common.types.PluginCoordinates;
@@ -24,7 +26,7 @@ import org.deltafi.common.types.PluginRegistration;
 import org.deltafi.common.types.Variable;
 import org.deltafi.core.security.DeltaFiUserDetailsService;
 import org.deltafi.core.services.*;
-import org.deltafi.core.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.util.Util;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,6 +37,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.env.Environment;
 
 import java.util.Collection;
 import java.util.List;
@@ -70,10 +73,16 @@ class PluginRegistryServiceTest {
     TransformFlowService transformFlowService;
 
     @Mock
-    DataSourcePlanService dataSourcePlanService;
+    RestDataSourcePlanService restDataSourcePlanService;
 
     @Mock
-    DataSourceService dataSourceService;
+    TimedDataSourcePlanService timedDataSourcePlanService;
+
+    @Mock
+    RestDataSourceService restDataSourceService;
+
+    @Mock
+    TimedDataSourceService timedDataSourceService;
 
     @Mock
     PluginValidator pluginValidator;
@@ -89,29 +98,37 @@ class PluginRegistryServiceTest {
 
     PluginRegistryService pluginRegistryService;
 
+    @Mock
+    Environment environment;
+
+    @Mock
+    EntityManager entityManager;
+
     @BeforeEach
     public void setup() {
-        List<PluginCleaner> cleaners = List.of(egressFlowPlanService, transformFlowPlanService, dataSourcePlanService, pluginVariableService, coreEventQueuePluginCleaner);
-        List<PluginUninstallCheck> checkers = List.of(egressFlowService, transformFlowService, dataSourceService);
-        pluginRegistryService = new PluginRegistryService(egressFlowService,
-                transformFlowService, dataSourceService, pluginRepository, pluginValidator, pluginVariableService,
-                egressFlowPlanService, transformFlowPlanService, dataSourcePlanService, systemPluginService, flowValidationService, checkers, cleaners);
+        List<PluginCleaner> cleaners = List.of(egressFlowPlanService, transformFlowPlanService, restDataSourcePlanService,
+                timedDataSourcePlanService, pluginVariableService, coreEventQueuePluginCleaner);
+        List<PluginUninstallCheck> checkers = List.of(egressFlowService, transformFlowService, restDataSourceService);
+        pluginRegistryService = new PluginRegistryService(egressFlowService, transformFlowService, restDataSourceService,
+                timedDataSourceService, pluginRepository, pluginValidator, pluginVariableService,
+                egressFlowPlanService, transformFlowPlanService, restDataSourcePlanService, timedDataSourcePlanService,
+                systemPluginService, flowValidationService, checkers, cleaners, environment, entityManager);
     }
 
     @Test
     void addsPluginWithDependencies() {
         Mockito.when(pluginValidator.validate(Mockito.any())).thenReturn(List.of());
 
-        Plugin plugin = new Plugin();
+        PluginEntity plugin = new PluginEntity();
         plugin.setPluginCoordinates(new PluginCoordinates("group", "artifact", "1.0.0"));
         PluginRegistration pluginRegistration = PluginRegistration.builder().pluginCoordinates(plugin.getPluginCoordinates()).build();
         Result result = pluginRegistryService.register(pluginRegistration);
 
         assertTrue(result.isSuccess());
-        ArgumentCaptor<Plugin> pluginArgumentCaptor = ArgumentCaptor.forClass(Plugin.class);
-        Mockito.verify(pluginRepository).save(pluginArgumentCaptor.capture());
+        ArgumentCaptor<PluginEntity> pluginArgumentCaptor = ArgumentCaptor.forClass(PluginEntity.class);
+        Mockito.verify(entityManager).persist(pluginArgumentCaptor.capture());
         assertEquals(plugin, pluginArgumentCaptor.getValue());
-        Mockito.verify(flowValidationService).asyncRevalidateFlows();
+        Mockito.verify(flowValidationService).revalidateFlows();
     }
 
     @Test
@@ -140,7 +157,7 @@ class PluginRegistryServiceTest {
 
     @Test
     void uninstallFlowRunning() {
-        Plugin plugin1 = makePlugin();
+        PluginEntity plugin1 = makePlugin();
 
         Mockito.when(pluginRepository.findById(PLUGIN_COORDINATES_1)).thenReturn(Optional.of(plugin1));
         Mockito.when(transformFlowService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following ingress flows which are still running: mockIngress");
@@ -151,9 +168,9 @@ class PluginRegistryServiceTest {
     }
 
     @Test
-    void uninstallIsADependency() {
-        Plugin plugin1 = makePlugin();
-        Plugin plugin2 = makeDependencyPlugin();
+    void uninstallIsADependency() throws JsonProcessingException {
+        PluginEntity plugin1 = makePlugin();
+        PluginEntity plugin2 = makeDependencyPlugin();
 
         Mockito.when(pluginRepository.findById(PLUGIN_COORDINATES_1)).thenReturn(Optional.of(plugin1));
         Mockito.when(pluginRepository.findPluginsWithDependency(PLUGIN_COORDINATES_1)).thenReturn(List.of(plugin1, plugin2));
@@ -164,14 +181,14 @@ class PluginRegistryServiceTest {
     }
 
     @Test
-    void uninstallRunningAndADependency() {
-        Plugin plugin1 = makePlugin();
-        Plugin plugin2 = makeDependencyPlugin();
+    void uninstallRunningAndADependency() throws JsonProcessingException {
+        PluginEntity plugin1 = makePlugin();
+        PluginEntity plugin2 = makeDependencyPlugin();
 
         Mockito.when(pluginRepository.findById(PLUGIN_COORDINATES_1)).thenReturn(Optional.of(plugin1));
         Mockito.when(pluginRepository.findPluginsWithDependency(PLUGIN_COORDINATES_1)).thenReturn(List.of(plugin1, plugin2));
         Mockito.when(transformFlowService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following ingress flows which are still running: mockIngress");
-        Mockito.when(dataSourceService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following enrich flows which are still running: mockEnrich");
+        Mockito.when(restDataSourceService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following enrich flows which are still running: mockEnrich");
         Mockito.when(egressFlowService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following egress flows which are still running: mockEgress");
 
         List<String> errors = pluginRegistryService.canBeUninstalled(PLUGIN_COORDINATES_1);
@@ -185,7 +202,7 @@ class PluginRegistryServiceTest {
 
     @Test
     void uninstallSuccess() {
-        Plugin plugin1 = makePlugin();
+        PluginEntity plugin1 = makePlugin();
 
         Mockito.when(pluginRepository.findById(PLUGIN_COORDINATES_1)).thenReturn(Optional.of(plugin1));
 
@@ -199,8 +216,8 @@ class PluginRegistryServiceTest {
 
     @Test
     void testUpdateSnapshot() {
-        Plugin one = makePlugin();
-        Plugin two = makePlugin();
+        PluginEntity one = makePlugin();
+        PluginEntity two = makePlugin();
         two.setPluginCoordinates(PLUGIN_COORDINATES_2);
         SystemSnapshot systemSnapshot = new SystemSnapshot();
 
@@ -214,13 +231,13 @@ class PluginRegistryServiceTest {
     void testResetFromSnapshot() {
         SystemSnapshot systemSnapshot = new SystemSnapshot();
 
-        Plugin installedOnly = makePlugin();
+        PluginEntity installedOnly = makePlugin();
         installedOnly.setPluginCoordinates(new PluginCoordinates("org.installed", "installed-plugin", "1.0.0"));
-        Plugin newVersion = makePlugin();
+        PluginEntity newVersion = makePlugin();
         newVersion.setPluginCoordinates( new PluginCoordinates("org.mock", "plugin-2", "1.1.0"));
 
 
-        Plugin inBoth = makePlugin();
+        PluginEntity inBoth = makePlugin();
         PluginCoordinates inSnapshotOnly = new PluginCoordinates("org.unique", "custom-plugin", "1.0.0");
 
 
@@ -251,18 +268,18 @@ class PluginRegistryServiceTest {
     }
 
     private void testGetPluginsWithVariables(MockedStatic<DeltaFiUserDetailsService> userDetailsServiceMockedStatic, boolean isAdmin) {
-        Plugin one = makeDependencyPlugin();
-        Plugin two = makeDependencyPlugin();
+        PluginEntity one = makeDependencyPlugin();
+        PluginEntity two = makeDependencyPlugin();
         Variable variable = Util.buildNewVariable("setValue");
         one.setVariables(List.of(variable));
         Mockito.when(pluginRepository.findAll()).thenReturn(List.of(one, two));
         Mockito.when(pluginVariableService.getVariablesByPlugin(Mockito.any())).thenReturn(variableList());
 
         userDetailsServiceMockedStatic.when(DeltaFiUserDetailsService::currentUserCanViewMasked).thenReturn(isAdmin);
-        List<Plugin> plugins = pluginRegistryService.getPluginsWithVariables();
+        List<PluginEntity> plugins = pluginRegistryService.getPluginsWithVariables();
         assertThat(plugins).hasSize(2);
         Consumer<Variable> checker = isAdmin ? this::verifyNoMaskedValues : this::verifyMaskedValues;
-        plugins.stream().map(Plugin::getVariables).flatMap(Collection::stream).forEach(checker);
+        plugins.stream().map(PluginEntity::getVariables).flatMap(Collection::stream).forEach(checker);
     }
 
     private void verifyNoMaskedValues(Variable variable) {
@@ -277,8 +294,8 @@ class PluginRegistryServiceTest {
         }
     }
 
-    private Plugin makeDependencyPlugin() {
-        Plugin plugin = new Plugin();
+    private PluginEntity makeDependencyPlugin() {
+        PluginEntity plugin = new PluginEntity();
         plugin.setPluginCoordinates(PLUGIN_COORDINATES_2);
         plugin.setActions(List.of(
                 ActionDescriptor.builder().name("action-x").build(),
@@ -287,8 +304,8 @@ class PluginRegistryServiceTest {
         return plugin;
     }
 
-    private Plugin makePlugin() {
-        Plugin plugin = new Plugin();
+    private PluginEntity makePlugin() {
+        PluginEntity plugin = new PluginEntity();
         plugin.setPluginCoordinates(PLUGIN_COORDINATES_1);
         plugin.setActions(List.of(
                 ActionDescriptor.builder().name("action-1").build(),

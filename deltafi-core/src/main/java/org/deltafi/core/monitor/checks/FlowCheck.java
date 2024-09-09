@@ -19,8 +19,9 @@ package org.deltafi.core.monitor.checks;
 
 import org.deltafi.core.monitor.MonitorProfile;
 import org.deltafi.core.monitor.checks.CheckResult.ResultBuilder;
-import org.deltafi.core.services.DataSourceService;
 import org.deltafi.core.services.EgressFlowService;
+import org.deltafi.core.services.RestDataSourceService;
+import org.deltafi.core.services.TimedDataSourceService;
 import org.deltafi.core.services.TransformFlowService;
 import org.deltafi.core.types.Flow;
 
@@ -29,20 +30,24 @@ import java.util.List;
 @MonitorProfile
 public class FlowCheck extends StatusCheck {
 
-    private final DataSourceService dataSourceService;
+    private final RestDataSourceService restDataSourceService;
+    private final TimedDataSourceService timedDataSourceService;
     private final TransformFlowService transformFlowService;
     private final EgressFlowService egressFlowService;
 
-    public FlowCheck(DataSourceService dataSourceService, TransformFlowService transformFlowService, EgressFlowService egressFlowService) {
+    public FlowCheck(RestDataSourceService restDataSourceService, TimedDataSourceService timedDataSourceService,
+                     TransformFlowService transformFlowService, EgressFlowService egressFlowService) {
         super("Flow Check");
-        this.dataSourceService = dataSourceService;
+        this.restDataSourceService = restDataSourceService;
+        this.timedDataSourceService = timedDataSourceService;
         this.transformFlowService = transformFlowService;
         this.egressFlowService = egressFlowService;
     }
 
     public CheckResult check() {
         ResultBuilder resultBuilder = new ResultBuilder();
-        checkFlows(resultBuilder, "Data Sources", dataSourceService.getAllInvalidFlows());
+        checkFlows(resultBuilder, "Rest Data Sources", restDataSourceService.getAllInvalidFlows());
+        checkFlows(resultBuilder, "Timed Data Sources", timedDataSourceService.getAllInvalidFlows());
         checkFlows(resultBuilder, "Flows", transformFlowService.getAllInvalidFlows());
         checkFlows(resultBuilder, "Egress", egressFlowService.getAllInvalidFlows());
 

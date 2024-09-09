@@ -50,7 +50,6 @@ type Egress {
 
 input NameFilter {
   name: String!
-  regex: Boolean
   caseSensitive: Boolean
 }
 
@@ -100,7 +99,8 @@ enum ActionType {
 
 type Action {
   name: String!
-  id: Int!
+  id: UUID!
+  number: Int!
   type: ActionType!
   state: ActionState!
   created: DateTime!
@@ -152,8 +152,8 @@ enum FlowType {
 
 type DeltaFileFlow {
   name: String!
-  # unique uuid produced for this deltaFile instantiation, used to reconstruct the DAG
-  id: Int!
+  id: UUID!
+  number: Int!
   type: FlowType!
   state: DeltaFileFlowState!
   created: DateTime!
@@ -357,13 +357,16 @@ input ResumeMetadata {
 
 type Query {
   getEgressFlowPlan(planName: String!): EgressFlowPlan!
-  getDataSourcePlan(planName: String!): DataSourcePlan!
+  getRestDataSourcePlan(planName: String!): RestDataSourcePlan!
+  getTimedDataSourcePlan(planName: String!): TimedDataSourcePlan!
   getTransformFlowPlan(planName: String!): TransformFlowPlan!
   getEgressFlow(flowName: String!): EgressFlow!
-  getDataSource(name: String!): DataSource!
+  getRestDataSource(name: String!): RestDataSource!
+  getTimedDataSource(name: String!): TimedDataSource!
   getTransformFlow(flowName: String!): TransformFlow!
   validateEgressFlow(flowName: String!): EgressFlow!
-  validateDataSource(name: String!): DataSource!
+  validateRestDataSource(name: String!): RestDataSource!
+  validateTimedDataSource(name: String!): TimedDataSource!
   validateTransformFlow(flowName: String!): TransformFlow!
   getFlowNames(state: FlowState): FlowNames!
   getFlows: [Flows]!
@@ -382,11 +385,11 @@ type Query {
   lastErrored(last: Int) : [DeltaFile]!
   lastWithName(name: String!) : DeltaFile
 
-  errorSummaryByFlow(offset: Int, limit: Int, filter: ErrorSummaryFilter, orderBy: DeltaFileOrder): ErrorsByFlow!
-  errorSummaryByMessage(offset: Int, limit: Int, filter: ErrorSummaryFilter, orderBy: DeltaFileOrder): ErrorsByMessage!
+  errorSummaryByFlow(offset: Int, limit: Int, filter: ErrorSummaryFilter, direction: DeltaFileDirection): ErrorsByFlow!
+  errorSummaryByMessage(offset: Int, limit: Int, filter: ErrorSummaryFilter, direction: DeltaFileDirection): ErrorsByMessage!
 
-  filteredSummaryByFlow(offset: Int, limit: Int, filter: FilteredSummaryFilter, orderBy: DeltaFileOrder): FilteredByFlow!
-  filteredSummaryByMessage(offset: Int, limit: Int, filter: FilteredSummaryFilter, orderBy: DeltaFileOrder): FilteredByMessage!
+  filteredSummaryByFlow(offset: Int, limit: Int, filter: FilteredSummaryFilter, direction: DeltaFileDirection): FilteredByFlow!
+  filteredSummaryByMessage(offset: Int, limit: Int, filter: FilteredSummaryFilter, direction: DeltaFileDirection): FilteredByMessage!
 
   errorMetadataUnion(dids: [UUID!]!) : [PerActionUniqueKeyValues!]!
   sourceMetadataUnion(dids: [UUID!]!) : [UniqueKeyValues!]!
@@ -414,23 +417,29 @@ type Mutation {
   saveRestDataSourcePlan(dataSourcePlan: RestDataSourcePlanInput!) : RestDataSource!
   saveTransformFlowPlan(transformFlowPlan: TransformFlowPlanInput!) : TransformFlow!
   removeEgressFlowPlan(name: String!) : Boolean!
-  removeDataSourcePlan(name: String!) : Boolean!
+  removeRestDataSourcePlan(name: String!) : Boolean!
+  removeTimedDataSourcePlan(name: String!) : Boolean!
   removeTransformFlowPlan(name: String!) : Boolean!
 
   startEgressFlow(flowName: String!) : Boolean!
-  startDataSource(name: String!) : Boolean!
+  startRestDataSource(name: String!) : Boolean!
+  startTimedDataSource(name: String!) : Boolean!
   startTransformFlow(flowName: String!) : Boolean!
   stopEgressFlow(flowName: String!) : Boolean!
-  stopDataSource(name: String!) : Boolean!
+  stopRestDataSource(name: String!) : Boolean!
+  stopTimedDataSource(name: String!) : Boolean!
   stopTransformFlow(flowName: String!) : Boolean!
 
-  setMaxErrors(name: String!, maxErrors: Int!) : Boolean!
+  setRestDataSourceMaxErrors(name: String!, maxErrors: Int!) : Boolean!
+  setTimedDataSourceMaxErrors(name: String!, maxErrors: Int!) : Boolean!
   enableEgressTestMode(flowName: String!) : Boolean!
   disableEgressTestMode(flowName: String!) : Boolean!
   setTimedDataSourceMemo(name: String!, memo: String) : Boolean!
   setTimedDataSourceCronSchedule(name: String!, cronSchedule: String!) : Boolean!
-  enableDataSourceTestMode(name: String!) : Boolean!
-  disableDataSourceTestMode(name: String!) : Boolean!
+  enableRestDataSourceTestMode(name: String!) : Boolean!
+  enableTimedDataSourceTestMode(name: String!) : Boolean!
+  disableRestDataSourceTestMode(name: String!) : Boolean!
+  disableTimedDataSourceTestMode(name: String!) : Boolean!
   enableTransformTestMode(flowName: String!) : Boolean!
   disableTransformTestMode(flowName: String!) : Boolean!
   setEgressFlowExpectedAnnotations(flowName: String!, expectedAnnotations: [String]) : Boolean!

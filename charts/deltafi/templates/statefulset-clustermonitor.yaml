@@ -6,19 +6,16 @@ metadata:
   name: deltafi-clustermonitor
   labels:
     app: deltafi-clustermonitor
-    group: deltafi-core
 spec:
   serviceName: deltafi-clustermonitor
   revisionHistoryLimit: 0
   selector:
     matchLabels:
       app: deltafi-clustermonitor
-      group: deltafi-core
   template:
     metadata:
       labels:
         app: deltafi-clustermonitor
-        group: deltafi-core
     spec:
       {{- include "initContainersWaitForGraphite" . | nindent 6 }}
       serviceAccountName: deltafi-clustermonitor

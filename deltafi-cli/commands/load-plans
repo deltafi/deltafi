@@ -120,25 +120,25 @@ load_plan() {
 
   local VARIABLES="{\"flowPlan\": ${JSON} }"
 
-  if [[ "${JSON}" == *"\"type\": \"INGRESS\""* || "${JSON}" == *"\"type\": \"NORMALIZE\""* ]]; then
-    local LOAD_TYPE="normalize flow plan"
-    local OPERATION_NAME="saveNormalizeFlowPlan"
-    local QUERY="mutation(\$flowPlan: NormalizeFlowPlanInput!) {saveNormalizeFlowPlan(normalizeFlowPlan: \$flowPlan) { name }}"
+  if [[ "${JSON}" == *"\"type\": \"REST_DATA_SOURCE\""* ]]; then
+    local LOAD_TYPE="rest data source plan"
+    local OPERATION_NAME="saveRestDataSourcePlan"
+    local QUERY="mutation(\$flowPlan: RestDataSourcePlanInput!) {saveRestDataSourcePlan(dataSourcePlan: \$flowPlan) { name }}"
   elif [[ "${JSON}" == *"\"type\": \"EGRESS\""* ]]; then
     local LOAD_TYPE="egress flow plan"
     local OPERATION_NAME="saveEgressFlowPlan"
     local QUERY="mutation(\$flowPlan: EgressFlowPlanInput!) {saveEgressFlowPlan(egressFlowPlan: \$flowPlan) { name }}"
-  elif [[ "${JSON}" == *"\"type\": \"ENRICH\""* ]]; then
-    local LOAD_TYPE="enrich flow plan"
-    local OPERATION_NAME="saveEnrichFlowPlan"
-    local QUERY="mutation(\$flowPlan: EnrichFlowPlanInput!) {saveEnrichFlowPlan(enrichFlowPlan: \$flowPlan) { name }}"
+  elif [[ "${JSON}" == *"\"type\": \"TIMED_DATA_SOURCE\""* ]]; then
+           local LOAD_TYPE="timed data source plan"
+           local OPERATION_NAME="saveTimedDataSourcePlan"
+           local QUERY="mutation(\$flowPlan: TimedDataSourcePlanInput!) {saveTimedDataSourcePlan(dataSourcePlan: \$flowPlan) { name }}"
   elif [[ "${JSON}" == *"\"type\": \"TRANSFORM\""* ]]; then
       local LOAD_TYPE="transform flow plan"
       local OPERATION_NAME="saveTransformFlowPlan"
       local QUERY="mutation(\$flowPlan: TransformFlowPlanInput!) {saveTransformFlowPlan(transformFlowPlan: \$flowPlan) { name }}"
   else
-    cli_log "${red}${BASENAME}: Loading flow plan failed, the plan must contain a load or join action, enrich actions, or an egress action${normal}"
-    echo -e "${red}Loading flow plan failed, plan must contain a load or join action, enrich actions, or an egress action${normal}"
+    cli_log "${red}${BASENAME}: Loading flow plan failed, the plan must be of type EGRESS, REST_DATA_SOURCE, TIMED_DATA_SOURCE, or TRANSFORM${normal}"
+    echo -e "${red}Loading flow plan failed, the plan must be of type EGRESS, REST_DATA_SOURCE, TIMED_DATA_SOURCE, or TRANSFORM${normal}"
     return 0
   fi
 

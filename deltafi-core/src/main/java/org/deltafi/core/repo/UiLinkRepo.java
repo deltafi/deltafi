@@ -19,11 +19,13 @@ package org.deltafi.core.repo;
 
 import org.deltafi.core.configuration.ui.Link;
 import org.deltafi.core.configuration.ui.Link.LinkType;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.UUID;
+
 @Repository
-public interface UiLinkRepo extends MongoRepository<Link, String>, UiLinkRepoCustom {
+public interface UiLinkRepo extends JpaRepository<Link, UUID> {
 
     /**
      * Delete all links with the given names

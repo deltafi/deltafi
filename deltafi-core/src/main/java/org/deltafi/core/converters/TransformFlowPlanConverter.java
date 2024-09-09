@@ -19,22 +19,23 @@ package org.deltafi.core.converters;
 
 import org.deltafi.common.types.*;
 import org.deltafi.core.types.TransformFlow;
+import org.deltafi.core.types.TransformFlowPlanEntity;
 
 import java.util.List;
 import java.util.Objects;
 
-public class TransformFlowPlanConverter extends FlowPlanConverter<TransformFlowPlan, TransformFlow> {
+public class TransformFlowPlanConverter extends FlowPlanConverter<TransformFlowPlanEntity, TransformFlow> {
 
     @Override
-    public TransformFlow createFlow(TransformFlowPlan transformFlowPlan, FlowPlanPropertyHelper flowPlanPropertyHelper) {
+    public TransformFlow createFlow(TransformFlowPlanEntity transformFlowPlan, FlowPlanPropertyHelper flowPlanPropertyHelper) {
         TransformFlow transformFlow = new TransformFlow();
         transformFlow.setTransformActions(buildTransformActions(transformFlowPlan.getTransformActions(), flowPlanPropertyHelper));
         transformFlow.setSubscribe(transformFlowPlan.getSubscribe());
-        transformFlow.setPublish(transformFlowPlan.publishRules());
+        transformFlow.setPublish(transformFlowPlan.getPublish());
         return transformFlow;
     }
 
-    List<TransformActionConfiguration> buildTransformActions(List<TransformActionConfiguration> transformActionTemplates, FlowPlanPropertyHelper flowPlanPropertyHelper) {
+    List<ActionConfiguration> buildTransformActions(List<ActionConfiguration> transformActionTemplates, FlowPlanPropertyHelper flowPlanPropertyHelper) {
         return Objects.nonNull(transformActionTemplates) ? transformActionTemplates.stream()
                     .map(transformTemplate -> buildTransformAction(transformTemplate, flowPlanPropertyHelper))
                     .toList() : List.of();
@@ -46,9 +47,9 @@ public class TransformFlowPlanConverter extends FlowPlanConverter<TransformFlowP
      * @param transformActionTemplate template of the TransformActionConfiguration that should be created
      * @return TransformActionConfiguration with variable values substituted in
      */
-    TransformActionConfiguration buildTransformAction(TransformActionConfiguration transformActionTemplate, FlowPlanPropertyHelper flowPlanPropertyHelper) {
-        TransformActionConfiguration transformActionConfiguration = new TransformActionConfiguration(
-                flowPlanPropertyHelper.getReplacedName(transformActionTemplate), transformActionTemplate.getType());
+    ActionConfiguration buildTransformAction(ActionConfiguration transformActionTemplate, FlowPlanPropertyHelper flowPlanPropertyHelper) {
+        ActionConfiguration transformActionConfiguration = new ActionConfiguration(
+                flowPlanPropertyHelper.getReplacedName(transformActionTemplate), ActionType.TRANSFORM, transformActionTemplate.getType());
         flowPlanPropertyHelper.replaceCommonActionPlaceholders(transformActionConfiguration, transformActionTemplate);
         return transformActionConfiguration;
     }

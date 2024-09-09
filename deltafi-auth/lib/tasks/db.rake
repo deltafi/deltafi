@@ -37,7 +37,6 @@ namespace :db do
                  FlowView
                  IngressRoutingRuleRead
                  MetricsView
-                 PluginCustomizationConfigView
                  PluginImageRepoView
                  PluginsView
                  SnapshotRead

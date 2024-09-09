@@ -47,7 +47,7 @@ type EgressFlowSnapshot {
 }
 
 type SystemSnapshot {
-    id: String!
+    id: UUID!
     reason: String
     created: DateTime!
     deletePolicies: DeletePolicies!
@@ -60,7 +60,6 @@ type SystemSnapshot {
     transformFlows: [TransformFlowSnapshot]
     egressFlows: [EgressFlowSnapshot]
     pluginImageRepositories: [PluginImageRepository]!
-    pluginCustomizationConfigs: [PluginCustomizationConfig]!
     resumePolicies: [ResumePolicy]!
 }
 
@@ -111,13 +110,12 @@ input SystemSnapshotInput {
     transformFlows: [TransformFlowSnapshotInput]
     egressFlows: [EgressFlowSnapshotInput]
     pluginImageRepositories: [PluginImageRepositoryInput]!
-    pluginCustomizationConfigs: [PluginCustomizationConfigInput]!
     resumePolicies: [ResumePolicyInput]!
 }
 
 extend type Query {
   getSystemSnapshots: [SystemSnapshot]!
-  getSystemSnapshot(snapshotId: String!) : SystemSnapshot
+  getSystemSnapshot(snapshotId: UUID!) : SystemSnapshot
 }
 
 extend type Mutation {
@@ -125,11 +123,11 @@ extend type Mutation {
     snapshotSystem(reason: String): SystemSnapshot!
 
     # apply the snapshot with the given SnapshotId, hardReset (default=false) indicates all custom config should be reset before applying the snapshot
-    resetFromSnapshotWithId(snapshotId: String!, hardReset: Boolean) : Result!
+    resetFromSnapshotWithId(snapshotId: UUID!, hardReset: Boolean) : Result!
 
     # import the given SystemSnapshot
     importSnapshot(snapshot: SystemSnapshotInput!) : SystemSnapshot!
 
     # delete the snapshot with the given SnapshotId
-    deleteSnapshot(snapshotId: String!): Result
+    deleteSnapshot(snapshotId: UUID!): Result
 }

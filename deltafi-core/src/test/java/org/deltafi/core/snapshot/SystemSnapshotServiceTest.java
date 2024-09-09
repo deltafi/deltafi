@@ -18,7 +18,10 @@
 package org.deltafi.core.snapshot;
 
 import org.deltafi.common.types.Variable;
+import org.deltafi.core.repo.SystemSnapshotRepo;
+import org.deltafi.core.services.SystemSnapshotService;
 import org.deltafi.core.types.PluginVariables;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.util.Util;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +32,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -63,8 +67,9 @@ class SystemSnapshotServiceTest {
         SystemSnapshot originalSnapshot = new SystemSnapshot();
         originalSnapshot.setPluginVariables(List.of(pluginVariables, pluginVariables2));
 
-        Mockito.when(systemSnapshotRepo.findById("abc")).thenReturn(Optional.of(originalSnapshot));
-        SystemSnapshot systemSnapshot = systemSnapshotService.getWithMaskedVariables("abc");
+        UUID uuid = UUID.randomUUID();
+        Mockito.when(systemSnapshotRepo.findById(uuid)).thenReturn(Optional.of(originalSnapshot));
+        SystemSnapshot systemSnapshot = systemSnapshotService.getWithMaskedVariables(uuid);
 
         assertThat(systemSnapshot.getPluginVariables()).hasSize(2);
         assertThat(systemSnapshot.getPluginVariables().getFirst().getVariables()).hasSize(2);

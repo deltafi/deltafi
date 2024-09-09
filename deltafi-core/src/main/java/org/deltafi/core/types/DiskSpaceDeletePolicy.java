@@ -19,12 +19,10 @@ package org.deltafi.core.types;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-import java.util.UUID;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,
@@ -34,15 +32,12 @@ import java.util.UUID;
 @JsonSubTypes({
         @JsonSubTypes.Type(value = DiskSpaceDeletePolicy.class, name = "DiskSpaceDeletePolicy")
 })
+@Entity
+@DiscriminatorValue("DISK_SPACE")
 @Data
+@EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class DiskSpaceDeletePolicy implements DeletePolicy {
-    private UUID id;
-    private String name;
-    private boolean enabled;
-    private String flow;
+@SuperBuilder
+public class DiskSpaceDeletePolicy extends DeletePolicy {
     private int maxPercent;
-
 }

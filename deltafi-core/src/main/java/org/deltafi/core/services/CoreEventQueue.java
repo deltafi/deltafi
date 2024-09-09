@@ -119,7 +119,7 @@ public class CoreEventQueue {
             }
 
             if (checkUnique) {
-                String pattern = "*\"did\":\"" + actionInput.getActionContext().getDid() + "\"*";
+                String pattern = "*\"" + actionInput.getActionContext().getActionId() + "\"*";
                 if (valkeyKeyedBlockingQueue.exists(actionInput.getQueueName(), pattern)) {
                     log.warn("Skipping queueing for potential duplicate action event: {}", actionInput);
                     continue;
@@ -136,7 +136,7 @@ public class CoreEventQueue {
         valkeyKeyedBlockingQueue.put(actions);
     }
 
-     private String queueName(String returnAddress) {
+    private String queueName(String returnAddress) {
         String queueName = DGS_QUEUE;
         if (returnAddress != null) {
             queueName += "-" + returnAddress;

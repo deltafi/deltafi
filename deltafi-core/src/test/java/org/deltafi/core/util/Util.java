@@ -23,8 +23,7 @@ import org.assertj.core.api.Assertions;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.ActionFamily;
 import org.deltafi.core.services.CoreEventQueue;
-import org.deltafi.core.types.DeltaFile;
-import org.deltafi.core.types.SummaryByFlowAndMessage;
+import org.deltafi.core.types.*;
 
 import java.io.IOException;
 import java.time.Clock;
@@ -34,6 +33,7 @@ import java.util.*;
 
 import static org.deltafi.common.constant.DeltaFiConstants.INGRESS_ACTION;
 import static org.deltafi.core.util.FlowBuilders.TRANSFORM_TOPIC;
+import static org.deltafi.core.util.FullFlowExemplars.UUID_0;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -88,14 +88,15 @@ public class Util {
     public static DeltaFile buildErrorDeltaFile(UUID did, String flow, String cause, String context, OffsetDateTime created,
                                                 OffsetDateTime modified, String extraError, List<Content> content) {
 
-        DeltaFile deltaFile = Util.buildDeltaFile(did, flow, DeltaFileStage.ERROR, created, modified, content);
-        DeltaFileFlow firstFlow = deltaFile.addFlow("firstFlow", FlowType.TRANSFORM, deltaFile.getFlows().getFirst(), created);
+        DeltaFile deltaFile = Util.buildDeltaFile(did, "ingressFlow", DeltaFileStage.ERROR, created, modified, content);
+        deltaFile.getFlows().getFirst().getActions().getFirst().setState(ActionState.COMPLETE);
+        DeltaFileFlow firstFlow = deltaFile.addFlow(flow, FlowType.TRANSFORM, deltaFile.getFlows().getFirst(), created);
         Action errorAction = firstFlow.queueNewAction("ErrorAction", ActionType.TRANSFORM, false, created);
         errorAction.error(modified, modified, modified, cause, context);
         firstFlow.updateState(modified);
 
         if (extraError != null) {
-            DeltaFileFlow secondFlow = deltaFile.addFlow("firstFlow", FlowType.TRANSFORM, deltaFile.getFlows().getFirst(), created);
+            DeltaFileFlow secondFlow = deltaFile.addFlow("extraFlow", FlowType.TRANSFORM, deltaFile.getFlows().getFirst(), created);
             Action anotherErrorAction = secondFlow.queueNewAction("AnotherErrorAction", ActionType.TRANSFORM, false, created);
             anotherErrorAction.error(modified, modified, modified, extraError, context);
             secondFlow.updateState(modified);
@@ -110,7 +111,7 @@ public class Util {
         Action ingressAction = Action.builder()
                 .name(INGRESS_ACTION)
                 .type(ActionType.INGRESS)
-                .state(ActionState.COMPLETE)
+                .state(stage == DeltaFileStage.ERROR ? ActionState.ERROR : ActionState.COMPLETE)
                 .created(created)
                 .modified(modified)
                 .content(content)
@@ -137,13 +138,15 @@ public class Util {
         deltaFile.setModified(modified);
         deltaFile.getFlows().add(flow);
 
+        flow.setDeltaFile(deltaFile);
+        ingressAction.setDeltaFileFlow(flow);
+
         deltaFile.updateFlags();
         return deltaFile;
     }
 
     public static DeltaFile buildDeltaFile(UUID did, String dataSource) {
         DeltaFile deltaFile = DeltaFile.builder()
-                .schemaVersion(DeltaFile.CURRENT_SCHEMA_VERSION)
                 .did(did)
                 .parentDids(new ArrayList<>())
                 .childDids(new ArrayList<>())
@@ -152,7 +155,6 @@ public class Util {
                 .normalizedName("filename")
                 .dataSource(dataSource)
                 .flows(new ArrayList<>())
-                .egressFlows(new ArrayList<>())
                 .egressed(false)
                 .filtered(false)
                 .totalBytes(1)
@@ -172,11 +174,9 @@ public class Util {
         Assertions.assertThat(actual.getDataSource()).isEqualTo(expected.getDataSource());
         Assertions.assertThat(actual.getName()).isEqualTo(expected.getName());
         Assertions.assertThat(actual.getNormalizedName()).isEqualTo(expected.getNormalizedName());
-        Assertions.assertThat(actual.getAnnotations()).isEqualTo(expected.getAnnotations());
-        Assertions.assertThat(actual.getAnnotationKeys()).isEqualTo(expected.getAnnotationKeys());
+        Assertions.assertThat(actual.annotationMap()).isEqualTo(expected.annotationMap());
         Assertions.assertThat(actual.getEgressed()).isEqualTo(expected.getEgressed());
         Assertions.assertThat(actual.getFiltered()).isEqualTo(expected.getFiltered());
-        Assertions.assertThat(actual.getEgressFlows()).isEqualTo(expected.getEgressFlows());
         Assertions.assertThat(actual.getContentDeleted() == null).isEqualTo(expected.getContentDeleted() == null);
         Assertions.assertThat(actual.getContentDeletedReason()).isEqualTo(expected.getContentDeletedReason());
     }
@@ -198,7 +198,7 @@ public class Util {
             Assertions.assertThat(actual).isEqualTo(expected);
         } else {
             Assertions.assertThat(actual.getName()).isEqualTo(expected.getName());
-            Assertions.assertThat(actual.getId()).isEqualTo(expected.getId());
+            Assertions.assertThat(actual.getNumber()).isEqualTo(expected.getNumber());
             Assertions.assertThat(actual.getType()).isEqualTo(expected.getType());
             Assertions.assertThat(actual.getState()).isEqualTo(expected.getState());
             Assertions.assertThat(actual.getFlowPlan()).isEqualTo(expected.getFlowPlan());
@@ -232,7 +232,7 @@ public class Util {
             Assertions.assertThat(actual).isEqualTo(expected);
         } else {
             Assertions.assertThat(actual.getName()).isEqualTo(expected.getName());
-            Assertions.assertThat(actual.getId()).isEqualTo(expected.getId());
+            Assertions.assertThat(actual.getNumber()).isEqualTo(expected.getNumber());
             Assertions.assertThat(actual.getType()).isEqualTo(expected.getType());
             Assertions.assertThat(actual.getState()).isEqualTo(expected.getState());
             Assertions.assertThat(actual.getErrorCause()).isEqualTo(expected.getErrorCause());
@@ -277,7 +277,7 @@ public class Util {
         return CoreEventQueue.convertEvent(json);
     }
 
-    public static ActionEvent filterActionEvent(UUID did, String flow, int flowId, String filteredAction, int actionId) throws IOException {
+    public static ActionEvent filterActionEvent(UUID did, String flow, UUID flowId, String filteredAction, UUID actionId) throws IOException {
         String json = String.format(new String(Objects.requireNonNull(Util.class.getClassLoader().getResourceAsStream("full-flow/filter.json")).readAllBytes()), did, flow, flowId, filteredAction, actionId);
         return CoreEventQueue.convertEvent(json);
     }
@@ -323,5 +323,29 @@ public class Util {
 
     private static OffsetDateTime now() {
         return OffsetDateTime.now(clock);
+    }
+
+    public static Action autoResumeIngress(OffsetDateTime time) {
+        return Action.builder().name("ingress").modified(time).state(ActionState.COMPLETE).build();
+    }
+
+    public static Action autoResumeHit(OffsetDateTime time) {
+        Action hit = Action.builder().name("hit").modified(time).state(ActionState.ERROR).build();
+        hit.setNextAutoResume(time.minusSeconds(1000));
+        return hit;
+    }
+
+    public static Action autoResumeMiss(OffsetDateTime time) {
+        Action miss = Action.builder().name("miss").modified(time).state(ActionState.ERROR).build();
+        miss.setNextAutoResume(time.plusSeconds(1000));
+        return miss;
+    }
+
+    public static Action autoResumeNotSet(OffsetDateTime time) {
+        return Action.builder().name("notSet").modified(time).state(ActionState.ERROR).build();
+    }
+
+    public static Action autoResumeOther(OffsetDateTime time) {
+        return Action.builder().name("other").modified(time).state(ActionState.COMPLETE).build();
     }
 }

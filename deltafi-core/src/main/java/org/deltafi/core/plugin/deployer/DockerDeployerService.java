@@ -24,13 +24,11 @@ import com.github.dockerjava.api.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.plugin.PluginRegistryService;
-import org.deltafi.core.plugin.deployer.customization.PluginCustomization;
-import org.deltafi.core.plugin.deployer.customization.PluginCustomizationService;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.services.EventService;
-import org.deltafi.core.snapshot.SystemSnapshotService;
+import org.deltafi.core.services.SystemSnapshotService;
 import org.deltafi.core.types.Result;
 
 import java.util.*;
@@ -61,16 +59,16 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
     private final DeltaFiPropertiesService deltaFiPropertiesService;
 
     public DockerDeployerService(DockerClient dockerClient, PluginImageRepositoryService pluginImageRepositoryService, PluginRegistryService pluginRegistryService,
-                                 PluginCustomizationService pluginCustomizationService, SystemSnapshotService systemSnapshotService, EventService eventService,
+                                 SystemSnapshotService systemSnapshotService, EventService eventService,
                                  EnvironmentVariableHelper environmentVariableHelper, DeltaFiPropertiesService deltaFiPropertiesService) {
-        super(pluginImageRepositoryService, pluginRegistryService, pluginCustomizationService, systemSnapshotService, eventService);
+        super(pluginImageRepositoryService, pluginRegistryService, systemSnapshotService, eventService);
         this.dockerClient = dockerClient;
         this.environmentVariables = environmentVariableHelper.getEnvVars();
         this.deltaFiPropertiesService = deltaFiPropertiesService;
     }
 
     @Override
-    DeployResult deploy(PluginCoordinates pluginCoordinates, PluginImageRepository pluginImageRepository, PluginCustomization pluginCustomization, ArrayList<String> info) {
+    DeployResult deploy(PluginCoordinates pluginCoordinates, PluginImageRepository pluginImageRepository, ArrayList<String> info) {
         List<Container> existing;
         try {
             existing = findExisting(pluginCoordinates);
@@ -78,9 +76,6 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
                 return DeployResult.builder().success(false).info(info).errors(List.of("Multiple containers found for this plugin")).build();
             }
         } catch (Exception e) {
-            if (e instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
-            }
             log.error("Failed to start plugin", e);
             return DeployResult.builder().success(false).info(info).errors(List.of("Failed to list running plugins " + e.getMessage())).build();
         }

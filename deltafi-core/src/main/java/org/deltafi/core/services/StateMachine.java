@@ -20,7 +20,7 @@ package org.deltafi.core.services;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.*;
-import org.deltafi.core.join.*;
+import org.deltafi.core.exceptions.JoinException;
 import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.services.pubsub.PublisherService;
 import org.deltafi.core.types.*;
@@ -37,7 +37,8 @@ import static org.deltafi.common.constant.DeltaFiConstants.SYNTHETIC_EGRESS_ACTI
 @Slf4j
 public class StateMachine {
     private final Clock clock;
-    private final DataSourceService dataSourceService;
+    private final RestDataSourceService restDataSourceService;
+    private final TimedDataSourceService timedDataSourceService;
     private final TransformFlowService transformFlowService;
     private final EgressFlowService egressFlowService;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
@@ -99,7 +100,8 @@ public class StateMachine {
     }
 
     private List<WrappedActionInput> advanceTransform(StateMachineInput input, Map<String, Long> pendingQueued) {
-        ActionConfiguration nextTransformAction = input.flow().getNextActionConfiguration();
+        String pendingAction = input.flow().getNextPendingAction();
+        ActionConfiguration nextTransformAction = transformFlowService.findActionConfig(input.flow().getName(), pendingAction);
 
         if (nextTransformAction != null && !input.flow().hasFinalAction(nextTransformAction.getName())) {
             return addNextAction(input, nextTransformAction, pendingQueued);
@@ -110,8 +112,8 @@ public class StateMachine {
 
     private List<WrappedActionInput> advanceEgress(StateMachineInput input, Map<String, Long> pendingQueued) {
         EgressFlow egressFlow = egressFlowService.getRunningFlowByName(input.flow().getName());
+        ActionConfiguration nextEgressAction = egressFlow.getEgressAction();
 
-        ActionConfiguration nextEgressAction = input.flow().getNextActionConfiguration();
         if (nextEgressAction == null || input.flow().hasFinalAction(nextEgressAction.getName())) {
             Set<String> expectedAnnotations = egressFlow.getExpectedAnnotations();
             if (expectedAnnotations != null && !expectedAnnotations.isEmpty()) {
@@ -190,7 +192,8 @@ public class StateMachine {
 
     private Flow getFlow(DeltaFileFlow flow) {
         return switch (flow.getType()) {
-            case REST_DATA_SOURCE, TIMED_DATA_SOURCE -> dataSourceService.getRunningFlowByName(flow.getName());
+            case REST_DATA_SOURCE -> restDataSourceService.getRunningFlowByName(flow.getName());
+            case TIMED_DATA_SOURCE -> timedDataSourceService.getRunningFlowByName(flow.getName());
             case TRANSFORM -> transformFlowService.getRunningFlowByName(flow.getName());
             default -> throw new IllegalArgumentException("Unexpected value: " + flow.getType());
         };

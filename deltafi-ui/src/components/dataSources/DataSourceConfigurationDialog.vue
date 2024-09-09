@@ -86,6 +86,7 @@
 </template>
 
 <script setup>
+import useFlows from "@/composables/useFlows";
 import useDataSource from "@/composables/useDataSource";
 import useFlowActions from "@/composables/useFlowActions";
 import useTopics from "@/composables/useTopics";
@@ -129,7 +130,8 @@ const { getAllTopics } = useTopics();
 const { editDataSource, closeDialogCommand } = reactive(props);
 const emit = defineEmits(["reloadDataSources"]);
 const { getPluginActionSchema } = useFlowActions();
-const { getAllDataSources, saveTimedDataSourcePlan, saveRestDataSourcePlan } = useDataSource();
+const { saveTimedDataSourcePlan, saveRestDataSourcePlan } = useDataSource();
+const { allDataSourceFlowNames, fetchAllDataSourceFlowNames } = useFlows();
 
 const { rendererList, myStyles } = usePrimeVueJsonSchemaUIRenderers();
 provide("style", myStyles);
@@ -142,7 +144,7 @@ const errors = ref([]);
 
 const allActionsData = ref({});
 
-const timedIngressActions = ref([]);
+const dataSourceNames = ref([]);
 
 const dataSourceTypeOptions = ref(["Rest Data Source", "Timed Data Source"]);
 
@@ -216,8 +218,8 @@ onBeforeMount(async () => {
   let responseFlowAction = await getPluginActionSchema();
   allActionsData.value = responseFlowAction.data.plugins;
 
-  const response = await getAllDataSources();
-  timedIngressActions.value = response.data.getAllFlows.dataSource;
+  await fetchAllDataSourceFlowNames();
+  dataSourceNames.value = _.concat(dataSourceNames.value, allDataSourceFlowNames.value.restDataSource, allDataSourceFlowNames.value.timedDataSource);
 
   flattenedActionsTypes.value = await getTimedIngressActions();
 
@@ -367,8 +369,7 @@ const submit = async () => {
   }
 
   if (!_.isEmpty(dataSourceObject["name"])) {
-    let activeSystemIngressActionNames = _.map(timedIngressActions.value, "name");
-    let isFlowNamedUsed = _.includes(activeSystemIngressActionNames, dataSourceObject["name"]);
+    let isFlowNamedUsed = _.includes(dataSourceNames.value, dataSourceObject["name"]);
 
     if (isFlowNamedUsed && !editDataSource) {
       errors.value.push("Name already exists in the system. Choose a different Name.");

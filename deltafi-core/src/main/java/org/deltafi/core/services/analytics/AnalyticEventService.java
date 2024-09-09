@@ -21,6 +21,7 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.core.types.Annotation;
 import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,6 +36,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Generate analytic events.
@@ -97,7 +99,7 @@ public class AnalyticEventService {
                 .flow(flow)
                 .action(action)
                 .ingressBytes(deltafile.getIngressBytes())
-                .annotations(deltafile.getAnnotations())
+                .annotations(deltafile.annotationMap())
                 .build());
     }
 

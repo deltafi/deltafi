@@ -74,7 +74,7 @@ const confirmationPopup = (event, dataSource) => {
 };
 
 const confirmedRemoveDataSource = async (dataSource) => {
-  await removeDataSourcePlan(dataSource);
+  await removeDataSourcePlan(dataSource, rowData.type);
   emit("reloadDataSources");
 };
 </script>
