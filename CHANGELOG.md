@@ -5,6 +5,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.2.17] - 2024-09-03
+
+### Added
+- Nodemonitor will automatically create application metrics when docker is available.  This will
+  allow application metrics in the compose configuration when clustermonitor is not available.
+
+### Changed
+- Renamed chart header on dashboard from "Delete Policy Activity" to "Content Removed"
+
+### Fixed
+- Added DataKey to all DataTables. 
+- RecursiveDecompress action now  batches saves to MinIO
+- Lock down Python dependency version to match those found in deltafi/python:3.12.1-1
+- Fixed potential bug related to default SSL ciphers used in Kubernetes ingress.
+
 ## [1.2.16] - 2024-08-20
 
 ### Changed
@@ -3076,7 +3091,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.16...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.17...main
+[1.2.17]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.16...1.2.17
 [1.2.16]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.15...1.2.16
 [1.2.15]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.14...1.2.15
 [1.2.14]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.13...1.2.14
