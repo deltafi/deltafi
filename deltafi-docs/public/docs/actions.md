@@ -1,14 +1,14 @@
 # Actions
 
-Actions are isolated units of business logic that perform a function within TimedDataSources, Transform Flows, and Egressors.
-Actions receive required data from the DeltaFile on a queue, perform whatever logic is needed, and issue a response that
-augments the DeltaFile so that it can be handed off to the next Action in the flow.
+Actions are isolated units of business logic that perform functions within TimedDataSources, Transform Flows, and Egresses.
+Actions receive required data from the DeltaFile on a queue, perform the necessary logic, and issue a response that
+augments the DeltaFile so that it can be handed off to the next Action in the flow or published to a topic.
 
 Actions are currently implemented on two platforms. Core actions and several plugins are implemented in Spring Boot and
 utilize a Java DeltaFi development kit. A Python DeltaFi development kit has also been implemented. However, Actions can
 be developed in any language as long as certain integration interfaces are met.
 
-Actions may be configured differently in each flow that uses them. The Action itself defines the configuration knobs
+Actions may be configured differently in each flow that uses them. The Action itself defines the configuration parameters
 that can be used to specialize it.
 
 ## Common Action Interfaces
@@ -32,11 +32,11 @@ String dataSource = context.getDataSource();
 // the name of the flow in which the action is being invoked
 String flowName = context.getFlowName();
 // the id of the flow in which the action is being invoked
-String flowId = context.getFlowId();
+UUID flowId = context.getFlowId();
 // name of the Action as configured in a flow
 String actionName = context.getActionName();
 // id of the Action in the current flow
-String actionId = context.getActionId();
+UUID actionId = context.getActionId();
 // hostname where the Action is running
 String hostname = context.getHostname();
 // version of Core Actions or plugin containing the Action
@@ -47,7 +47,7 @@ OffsetDateTime startTime = context.getStartTime();
 String systemName = context.getSystemName();
 // the optional join configuration in effect for the action
 JoinConfiguration join = context.getJoin();
-// the optional join DeltaFile ids
+// the optional joined DeltaFile ids
 List<UUID> joinedDids = context.getJoinedDids();
 // the optional memo field used to pass bookmarking info to timed ingress actions
 String memo = context.getMemo();
@@ -58,28 +58,27 @@ where the action is running, the DeltaFile(s) being processed, and access to sup
 
 ```python
 class Context(NamedTuple):
-    did: str
-    delta_file_name: str
-    data_source: str
-    flow_name: str
-    flow_id: str
-    action_name: str
-    action_id: str
-    action_version: str
-    hostname: str
-    system_name: str
-    content_service: ContentService
-    join: dict = None
-    joined_dids: List[str] = None
-    memo: str = None
-    logger: Logger = None
+  did: str
+  delta_file_name: str
+  data_source: str
+  flow_name: str
+  flow_id: str
+  action_name: str
+  action_id: str
+  action_version: str
+  hostname: str
+  system_name: str
+  content_service: ContentService
+  join: dict = None
+  joined_dids: List[str] = None
+  memo: str = None
+  logger: Logger = None
 ```
 
 ### Input
 
 Each `Action` has a specific `Input` class passed to its execution method. For example, a Transform Action receives the
-`TransformInput` in the `transform()` method. Each `Input` class is unique for each Action type, with some combination of the
-fields below.
+`TransformInput` in the `transform()` method. Each `Input` class is unique for each Action type, typically containing:
 
 ```java
 List<ActionContent> contentList;

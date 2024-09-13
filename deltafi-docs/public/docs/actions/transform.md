@@ -52,7 +52,7 @@ public class HelloWorldTransformAction extends TransformAction<Parameters> {
 
     @Override
     public TransformResultType transform(@NotNull ActionContext context, @NotNull Parameters params, @NotNull TransformInput input) {
-        if (context.getDid().startsWith("2")) {
+        if (context.getDid().toString().startsWith("2")) {
             return new FilterResult(context, "We prefer dids that do not start with 2");
         }
         

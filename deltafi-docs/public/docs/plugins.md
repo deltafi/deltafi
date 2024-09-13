@@ -258,11 +258,10 @@ Update the Action name and module to match your first Action.
 ```python
 #!/usr/bin/env python3
 
-from actions.load_action import MyLoadAction
 from actions.transform_action import MyTransformAction
 from deltafi.plugin import Plugin
 
-Plugin([MyLoadAction, MyTransformAction],
+Plugin([MyTransformAction],
     "This is the description of the demo plugin").run()
 ```
 

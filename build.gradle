@@ -34,7 +34,7 @@ subprojects {
                               "**/*.txt", "**/*.xml", "**/*.html", "**/*.json", "**/test/resources/**",
                               "**/*.md", "**/*.png", "**/*.ico", "**/*.jar", "**/*.MF", "**/.gitkeep", "**/Dockerfile",
                               "**/*.drawio", "**/.dockerignore",
-                              "**/plugin-templates/**", "**/node_modules/**", "**/minio-mc-init.sh", "**/venv/**"]
+                              "**/plugin-templates/**", "**/node_modules/**", "**/minio-mc-init.sh", "**/venv/**", "**/virtualenv/**"]
     }
 
     java {

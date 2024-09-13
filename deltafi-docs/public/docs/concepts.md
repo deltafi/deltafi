@@ -2,62 +2,67 @@
 
 ## DeltaFile
 
-When data is ingested into the system, it is stored and a DeltaFile is created to track its processing.
+A DeltaFile is created when data is ingested into the DeltaFi system. It represents and tracks the processing of a
+single unit of data through the system. The DeltaFile contains metadata about the data, references to the actual
+content, and a history of the actions performed on it.
 
-The DeltaFile will be processed by Flows configured in the system starting with the ingest Flow provided in the header,
-in the FlowFile, or automatically determined.
+## Data Sources
 
-## Flows
+Data Sources are the entry points for data into the DeltaFi system. They create DeltaFiles and publish them to topics
+for further processing.
 
-Flows contain Actions that act on data from DeltaFiles.
+* REST Data Sources allow external systems to push data into DeltaFi via HTTP requests.
+* Timed Data Sources periodically generate or fetch data based on a defined schedule.
 
-If the ingest Flow is a Transform Flow, the DeltaFile will be processed by a sequential list of Transform Actions
-followed by an Egress Action.
+## Transform Flows
 
-Otherwise, the DeltaFile will be processed by the ingest Ingress Flow, followed by any number of qualifying Enrich
-Flows, and finally any number of qualifying Egress Flows.
+Transform Flows subscribe to topics, process the DeltaFiles they receive, and publish the results to other topics.
+They contain a list of Transform Actions that execute sequentially.
 
-### Normalize Flows
+## Egresses
 
-Normalize Flows transform ingressed data and add Domains to DeltaFiles. They contain a list of Transform Actions that
-execute sequentially followed by a single Load Action.
-
-### Enrich Flows
-
-Enrich Flows add Enrichments to a DeltaFile. They contain a list of Domain Actions that execute concurrently followed by
-a list of Enrich Actions that execute concurrently. Enrich Actions, however, may be chained together to act on
-Enrichments produced by prior Enrich Actions.
-
-### Egress Flows
-
-Egress Flows format and validate content before sending it to downstream recipients. They contain a single Format
-Action, followed by a list of Validate Actions that execute concurrently, and finally a single Egress Action.
-
-### Transform Flows
-
-Transform Flows transform ingressed data and egress the results. They contain a list of transform actions followed by a single egress action.
+Egresses subscribe to topics and send the processed data out of the DeltaFi system. They contain a single Egress
+Action that defines how the data is sent to external systems.
 
 ## Actions
 
-Actions are units of code that act on data from DeltaFiles. They may add or modify content. Responses they return are
-used to update the DeltaFiles.
+Actions are units of code that perform operations on DeltaFiles. They may add or modify content, update metadata, or
+perform other processing tasks. The responses they return are used to update the DeltaFiles.
 
-## Domains
+### Timed Ingress Actions
 
-Domains are text values representing the data model. They are created by Ingress Flows and are stored in the DeltaFile.
+Timed Ingress Actions are used in Timed Data Sources to periodically generate or fetch data and create DeltaFiles.
 
-Enrich and Egress Flows will use the Domains to perform their Actions.
+### Transform Actions
 
-## Enrichments
+Transform Actions modify the content or metadata of a DeltaFile. They can create new content, modify existing content,
+update metadata, or perform any other transformation on the data.
 
-Enrichments are text values representing additions to the data model. They are created by Enrich Flows and are stored in
-the DeltaFile. Enrichments may be created by correlating data between Domains or through external services.
+### Egress Actions
+
+Egress Actions define how processed data is sent out of the DeltaFi system. They handle the actual transmission of data
+to external systems or storage.
+
+## Publish-Subscribe Pattern
+
+DeltaFi uses a publish-subscribe pattern to move DeltaFiles between different components of the system. Data Sources and
+Transform Flows can publish DeltaFiles to topics, while Transform Flows and Egress Flows can subscribe to these topics
+to receive DeltaFiles for processing.
 
 ## Plugins
 
-Plugins are collections of Actions and optional Flows that incorporate those Actions.
+Plugins are collections of Actions and optional Flows that incorporate those Actions. They allow for easy extension of
+DeltaFi's capabilities.
 
-DeltaFi ships with a collection of useful Plugins.
+DeltaFi ships with a collection of useful Plugins. The DeltaFi Action Kit (provided in both Java and Python) is used to
+create Actions for plugins. Guides and starters are provided to make it easy to build your own plugins.
 
-The DeltaFi Action Kit (provided in both Java and Python) is used to create Actions for plugins. Guides and starters are
-provided to make it easy to build your own.
+## Variables
+
+Variables allow for runtime configuration of Flows and Actions. They can be defined at the plugin level and used across
+multiple Flows and Actions within that plugin.
+
+## Join Configuration
+
+Join Configuration allows Transform Actions to process multiple DeltaFiles together. It defines criteria for collecting
+a batch of DeltaFiles before executing the Transform Action.
