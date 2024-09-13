@@ -23,7 +23,7 @@ import java.util.function.Predicate;
 
 public class ActionConfigMatchers {
 
-    public static final ActionConfigMatcher DEFAULT_EGRESS_MATCHER = new ActionConfigMatcher("EgressAction", "org.deltafi.core.action.RestPostEgressAction");
+    public static final ActionConfigMatcher DEFAULT_EGRESS_MATCHER = new ActionConfigMatcher("EgressAction", "org.deltafi.core.action.egress.RestPostEgress");
 
     public record ActionConfigMatcher(String name, String fullClass) implements Predicate<ActionConfiguration> {
         @Override

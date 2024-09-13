@@ -9,7 +9,7 @@
   },
   "egressAction": {
     "name": "${missing.placeholder:defaultignored}",
-    "type": "org.deltafi.core.action.RestPostEgressAction",
+    "type": "org.deltafi.core.action.egress.RestPostEgress",
     "parameters": {
       "egressFlow": "egressFlow",
       "metadataKey": "deltafiMetadata",

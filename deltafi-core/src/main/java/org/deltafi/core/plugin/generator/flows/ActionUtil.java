@@ -34,7 +34,7 @@ public class ActionUtil {
     public static final String SAMPLE_LIST = "sampleList";
     public static final String SAMPLE_MAP = "sampleMap";
 
-    static final ActionGeneratorInput DEFAULT_EGRESS = new ActionGeneratorInput("EgressAction", "org.deltafi.core.action.RestPostEgressAction");
+    static final ActionGeneratorInput DEFAULT_EGRESS = new ActionGeneratorInput("EgressAction", "org.deltafi.core.action.egress.RestPostEgress");
     static final Map<String, Object> EGRESS_PARAMS = Map.of("url", "${" + EGRESS_VAR_NAME + "}", "metadataKey", "deltafiMetadata");
 
     static final String VAR_TEMPLATE = "${%s}";
