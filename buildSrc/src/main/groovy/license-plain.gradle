@@ -1,0 +1,13 @@
+plugins {
+    id 'license-conventions'
+}
+
+task licenseLocal(type: com.hierynomus.gradle.license.tasks.LicenseCheck) {
+    source = fileTree(dir: ".").exclude("build")
+}
+tasks.license.dependsOn licenseLocal
+
+task licenseFormatLocal(type: com.hierynomus.gradle.license.tasks.LicenseFormat) {
+    source = fileTree(dir: ".").exclude("build")
+}
+tasks.licenseFormat.dependsOn licenseFormatLocal

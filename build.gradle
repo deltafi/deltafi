@@ -1,9 +1,9 @@
-import java.util.regex.Matcher
+import java.util.concurrent.TimeUnit
 
 plugins {
-  id 'org.deltafi.test-summary' version '1.0'
-  id 'org.deltafi.git-version' version '2.0.1'
-  id 'io.github.gradle-nexus.publish-plugin' version '1.1.0'
+    id 'org.deltafi.test-summary' version '1.0'
+    id 'org.deltafi.git-version' version '2.0.1'
+    id 'io.github.gradle-nexus.publish-plugin' version '1.1.0'
 }
 
 allprojects { project ->
@@ -26,43 +26,6 @@ allprojects { project ->
 }
 
 subprojects {
-    apply plugin: 'java'
-
-    java {
-        toolchain {
-            languageVersion = JavaLanguageVersion.of(21)
-        }
-    }
-
-    compileJava {
-        options.encoding = 'UTF-8'
-        options.compilerArgs << '-parameters'
-    }
-
-    compileTestJava {
-        options.encoding = 'UTF-8'
-    }
-
-    test {
-        useJUnitPlatform()
-    }
-
-    tasks.withType(Test).configureEach {
-        maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
-        jvmArgs("-XX:+EnableDynamicAgentLoading")
-    }
-
-    apply plugin: 'jacoco'
-
-    jacocoTestReport {
-        dependsOn test
-        afterEvaluate {
-            classDirectories.setFrom(files(classDirectories.files.collect {
-                fileTree(dir: it, exclude: ['**/generated/**', '**/*Application.class'])
-            }))
-        }
-    }
-
     apply plugin: 'signing'
 
     afterEvaluate {
@@ -151,15 +114,6 @@ subprojects {
             }
         }
     }
-
-    dependencies {
-        compileOnly "org.projectlombok:lombok:${lombokVersion}"
-        annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
-        testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
-        testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
-    }
-
-    task allDeps(type: DependencyReportTask) {}
 }
 
 if (isReleaseVersion && project.hasProperty('sonatypeNexusUsername') && project.hasProperty('sonatypeNexusPassword')) {
@@ -175,7 +129,6 @@ if (isReleaseVersion && project.hasProperty('sonatypeNexusUsername') && project.
     }
 }
 
-import java.util.concurrent.TimeUnit
 // Log timings per task.
 class TimingsListener implements TaskExecutionListener, BuildListener {
     private long startTime

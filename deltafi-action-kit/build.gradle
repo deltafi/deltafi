@@ -1,6 +1,5 @@
 plugins {
-    id 'license-conventions'
-    id 'java-library'
+    id 'java-conventions'
     id 'maven-publish'
 }
 

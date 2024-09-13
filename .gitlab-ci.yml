@@ -43,6 +43,10 @@ gradle:build:
   image: docker:latest
   tags:
     - heavy
+  needs:
+    - job: "gradle:build"
+  variables:
+    CONTEXT: "${CI_PROJECT_DIR}/${PROJECT_NAME}/build/docker"
   when: manual
   rules:
     - if: $CI_COMMIT_TAG
@@ -67,8 +71,10 @@ gradle:build:
     entrypoint: [""]
   tags:
     - light
+  needs:
+    - job: "gradle:build"
   variables:
-    CONTEXT: "${CI_PROJECT_DIR}/${PROJECT_NAME}"
+    CONTEXT: "${CI_PROJECT_DIR}/${PROJECT_NAME}/build/docker"
   # except:
   #   refs:
   #     - tags

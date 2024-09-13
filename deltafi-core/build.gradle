@@ -1,212 +1,211 @@
 plugins {
-	id 'license-conventions'
-	id 'com.netflix.dgs.codegen' version "${dgsCodegenVersion}"
-	id 'org.springframework.boot' version "${springBootVersion}"
-	id "com.palantir.docker" version "${palantirDockerVersion}"
+    id 'docker-java'
+    id 'com.netflix.dgs.codegen' version "${dgsCodegenVersion}"
+    id 'org.springframework.boot' version "${springBootVersion}"
 }
 
 description = 'DeltaFi Core'
 
 dependencies {
-	implementation project(':deltafi-common')
+    implementation project(':deltafi-common')
 
-	implementation 'org.apache.commons:commons-collections4:4.4'
+    implementation 'org.apache.commons:commons-collections4:4.4'
 
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
 
-	implementation 'com.networknt:json-schema-validator:1.5.2'
+    implementation 'com.networknt:json-schema-validator:1.5.2'
 
-	implementation 'com.netflix.graphql.dgs:graphql-dgs-extended-scalars'
-	implementation 'com.netflix.graphql.dgs:graphql-dgs-spring-graphql-starter'
-	implementation 'org.apache.commons:commons-text:1.12.0'
-	implementation 'io.dropwizard.metrics:metrics-core:4.2.28'
-	implementation 'io.dropwizard.metrics:metrics-graphite:4.2.28'
-	implementation 'io.fabric8:kubernetes-client:6.13.4'
-	implementation 'com.github.docker-java:docker-java-core:3.4.0'
-	implementation 'com.github.docker-java:docker-java-transport-httpclient5:3.4.0'
-	implementation 'org.lz4:lz4-java:1.8.0'
-	implementation 'org.postgresql:postgresql:42.7.4'
-	implementation 'io.hypersistence:hypersistence-utils-hibernate-63:3.8.3'
-	implementation 'com.fasterxml.uuid:java-uuid-generator:5.1.0'
-	implementation 'org.flywaydb:flyway-core:10.20.0'
-	implementation 'org.flywaydb:flyway-database-postgresql:10.20.0'
+    implementation 'com.netflix.graphql.dgs:graphql-dgs-extended-scalars'
+    implementation 'com.netflix.graphql.dgs:graphql-dgs-spring-graphql-starter'
+    implementation 'org.apache.commons:commons-text:1.12.0'
+    implementation 'io.dropwizard.metrics:metrics-core:4.2.28'
+    implementation 'io.dropwizard.metrics:metrics-graphite:4.2.28'
+    implementation 'io.fabric8:kubernetes-client:6.13.4'
+    implementation 'com.github.docker-java:docker-java-core:3.4.0'
+    implementation 'com.github.docker-java:docker-java-transport-httpclient5:3.4.0'
+    implementation 'org.lz4:lz4-java:1.8.0'
+    implementation 'org.postgresql:postgresql:42.7.4'
+    implementation 'io.hypersistence:hypersistence-utils-hibernate-63:3.8.3'
+    implementation 'com.fasterxml.uuid:java-uuid-generator:5.1.0'
+    implementation 'org.flywaydb:flyway-core:10.20.0'
+    implementation 'org.flywaydb:flyway-database-postgresql:10.20.0'
 
-	testImplementation project(':deltafi-common-test')
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'org.springframework.security:spring-security-test'
-	testImplementation 'org.apache.nifi:nifi-flowfile-packager:1.27.0'
-	testImplementation 'org.awaitility:awaitility:4.2.2'
+    testImplementation project(':deltafi-common-test')
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'org.apache.nifi:nifi-flowfile-packager:1.27.0'
+    testImplementation 'org.awaitility:awaitility:4.2.2'
 
-	testImplementation "org.testcontainers:junit-jupiter:${testContainersVersion}"
-	testImplementation "org.testcontainers:postgresql:${testContainersVersion}"
-	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation "org.testcontainers:junit-jupiter:${testContainersVersion}"
+    testImplementation "org.testcontainers:postgresql:${testContainersVersion}"
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 generateJava {
-	packageName = 'org.deltafi.core.generated'
-	generateClient = true
-	skipEntityQueries = true
-	typeMapping = [
-			"Duration": "java.time.Duration",
-			"JSON": "java.util.Map<String, Object>",
-			"Long": "java.lang.Long",
-			"Metadata": "java.util.Map<String, String>",
-			"UUID": "java.util.UUID",
+    packageName = 'org.deltafi.core.generated'
+    generateClient = true
+    skipEntityQueries = true
+    typeMapping = [
+            "Duration": "java.time.Duration",
+            "JSON": "java.util.Map<String, Object>",
+            "Long": "java.lang.Long",
+            "Metadata": "java.util.Map<String, String>",
+            "UUID": "java.util.UUID",
 
-			"Action": "org.deltafi.core.types.Action",
-			"ActionConfiguration": "org.deltafi.common.types.ActionConfiguration",
-			"ActionDescriptor": "org.deltafi.common.types.ActionDescriptor",
-			"ActionDescriptorInput": "org.deltafi.common.types.ActionDescriptor",
-			"ActionState": "org.deltafi.common.types.ActionState",
-			"ActionType": "org.deltafi.common.types.ActionType",
-			"JoinConfiguration": "org.deltafi.common.types.JoinConfiguration",
-			"Content": "org.deltafi.common.types.Content",
-			"DataSource": "org.deltafi.core.types.DataSource",
-			"DataSourcePlan": "org.deltafi.common.types.DataSourcePlan",
-			"DataType": "org.deltafi.common.types.VariableDataType",
-			"DefaultBehavior": "org.deltafi.common.types.DefaultBehavior",
-			"DefaultRule": "org.deltafi.common.types.DefaultRule",
-			"DefaultRuleInput": "org.deltafi.common.types.DefaultRule",
-			"DeletePolicy": "org.deltafi.core.types.DeletePolicy",
-			"DeletePolicies": "org.deltafi.core.types.DeletePolicies",
-			"DeletePoliciesInput": "org.deltafi.core.types.DeletePolicies",
-			"DeltaFiConfiguration": "org.deltafi.common.types.DeltaFiConfiguration",
-			"DeltaFile": "org.deltafi.core.types.DeltaFile",
-			"DeltaFileFlow": "org.deltafi.core.types.DeltaFileFlow",
-			"DeltaFileFlowInput": "org.deltafi.core.types.DeltaFileFlowInput",
-			"DeltaFileFlowState": "org.deltafi.common.types.DeltaFileFlowState",
-			"DeltaFiles": "org.deltafi.core.types.DeltaFiles",
-			"DeltaFileStage": "org.deltafi.common.types.DeltaFileStage",
-			"DeltaFiProperties": "org.deltafi.core.configuration.DeltaFiProperties",
-			"DeltaFiPropertiesInput": "org.deltafi.core.configuration.DeltaFiProperties",
-			"DiskSpaceDeletePolicy": "org.deltafi.core.types.DiskSpaceDeletePolicy",
-			"DiskSpaceDeletePolicyInput": "org.deltafi.core.types.DiskSpaceDeletePolicy",
-			"DataSink": "org.deltafi.core.types.DataSink",
-			"DataSinkConfiguration": "org.deltafi.common.types.DataSinkConfiguration",
-			"DataSinkPlan": "org.deltafi.common.types.DataSinkPlan",
-			"DataSinkSnapshot": "org.deltafi.core.types.snapshot.DataSinkSnapshot",
-			"DataSinkSnapshotInput": "org.deltafi.core.types.snapshot.DataSinkSnapshot",
-			"ErrorsByFlow": "org.deltafi.common.types.SummaryByFlow",
-			"ErrorsByMessage": "org.deltafi.core.types.SummaryByFlowAndMessage",
-			"ErrorSummaryFilter": "org.deltafi.core.types.ErrorSummaryFilter",
-			"FilteredByFlow": "org.deltafi.core.types.SummaryByFlow",
-			"FilteredByMessage": "org.deltafi.core.types.SummaryByFlowAndMessage",
-			"FilteredSummaryFilter": "org.deltafi.core.types.FilteredSummaryFilter",
-			"FlowType": "org.deltafi.common.types.FlowType",
-			"MatchingPolicy": "org.deltafi.common.types.MatchingPolicy",
-			"KeyValue": "org.deltafi.common.types.KeyValue",
-			"KeyValueInput": "org.deltafi.common.types.KeyValue",
-			"Link": "org.deltafi.core.configuration.ui.Link",
-			"LinkInput": "org.deltafi.core.configuration.ui.Link",
-			"LinkType": "org.deltafi.core.configuration.ui.Link.LinkType",
-			"PerActionUniqueKeyValues": "org.deltafi.core.types.PerActionUniqueKeyValues",
-			"Plugin": "org.deltafi.common.types.Plugin",
-			"PluginCoordinates": "org.deltafi.common.types.PluginCoordinates",
-			"PluginCoordinatesInput": "org.deltafi.common.types.PluginCoordinates",
-			"PluginProperties": "org.deltafi.core.configuration.PluginProperties",
-			"PluginPropertiesInput": "org.deltafi.core.configuration.PluginProperties",
-			"PluginVariables": "org.deltafi.core.types.PluginVariables",
-			"PublishRules": "org.deltafi.common.types.PublishRules",
-			"PublishRulesInput": "org.deltafi.common.types.PublishRules",
-			"ProcessingType": "org.deltafi.common.types.ProcessingType",
-			"Property": "org.deltafi.common.types.Property",
-			"PropertyId": "org.deltafi.core.types.PropertyId",
-			"PropertyInput": "org.deltafi.common.types.Property",
-			"PropertySet": "org.deltafi.common.types.PropertySet",
-			"PropertySetInput": "org.deltafi.common.types.PropertySet",
-			"PropertySource": "org.deltafi.common.types.PropertySource",
-			"RestDataSource": "org.deltafi.core.types.RestDataSource",
-			"RestDataSourceConfiguration": "org.deltafi.common.types.RestDataSourceConfiguration",
-			"RestDataSourcePlan": "org.deltafi.common.types.RestDataSourcePlan",
-			"RestDataSourceSnapshot": "org.deltafi.core.types.snapshot.RestDataSourceSnapshot",
-			"RestDataSourceSnapshotInput": "org.deltafi.core.types.snapshot.RestDataSourceSnapshot",
-			"Result": "org.deltafi.core.types.Result",
-			"ResumeMetadata": "org.deltafi.common.types.ResumeMetadata",
-			"ResumePolicy": "org.deltafi.core.types.ResumePolicy",
-			"Rule": "org.deltafi.common.types.Rule",
-			"RuleInput": "org.deltafi.common.types.Rule",
-			"Segment": "org.deltafi.common.content.Segment",
-			"IntegrationTest": "org.deltafi.common.types.integration.IntegrationTest",
-			"IntegrationTestInput": "org.deltafi.common.types.integration.IntegrationTest",
-			"TestCaseIngress": "org.deltafi.common.types.integration.TestCaseIngress",
-			"TestCaseIngressInput": "org.deltafi.common.types.integration.TestCaseIngress",
-			"ExpectedDeltaFile": "org.deltafi.common.types.integration.ExpectedDeltaFile",
-			"ExpectedDeltaFile2": "org.deltafi.common.types.integration.ExpectedDeltaFile",
-			"ExpectedDeltaFile3": "org.deltafi.common.types.integration.ExpectedDeltaFile",
-			"ExpectedDeltaFile4": "org.deltafi.common.types.integration.ExpectedDeltaFile",
-			"ExpectedDeltaFile5": "org.deltafi.common.types.integration.ExpectedDeltaFile",
-			"ExpectedDeltaFileInput": "org.deltafi.common.types.integration.ExpectedDeltaFile",
-			"ExpectedContentList": "org.deltafi.common.types.integration.ExpectedContentList",
-			"ExpectedContentListInput": "org.deltafi.common.types.integration.ExpectedContentList",
-			"ExpectedFlow": "org.deltafi.common.types.integration.ExpectedFlow",
-			"ExpectedFlowInput": "org.deltafi.common.types.integration.ExpectedFlow",
-			"ExpectedContentData": "org.deltafi.common.types.integration.ExpectedContentData",
-			"ExpectedContentDataInput": "org.deltafi.common.types.integration.ExpectedContentData",
-			"TestResult": "org.deltafi.core.types.integration.integration.TestResult",
-			"TestStatus": "org.deltafi.common.types.TestStatus",
-			"TimedDataSource": "org.deltafi.core.types.TimedDataSource",
-			"TimedDataSourceConfiguration": "org.deltafi.common.types.TimedDataSourceConfiguration",
-			"TimedDataSourcePlan": "org.deltafi.common.types.TimedDataSourcePlan",
-			"TimedDataSourceSnapshot": "org.deltafi.core.types.snapshot.TimedDataSourceSnapshot",
-			"TimedDataSourceSnapshotInput": "org.deltafi.core.types.snapshot.TimedDataSourceSnapshot",
-			"TransformFlow": "org.deltafi.core.types.TransformFlow",
-			"TransformFlowConfiguration": "org.deltafi.common.types.TransformFlowConfiguration",
-			"TransformFlowPlan": "org.deltafi.common.types.TransformFlowPlan",
-			"TransformFlowSnapshot": "org.deltafi.core.types.snapshot.TransformFlowSnapshot",
-			"TransformFlowSnapshotInput": "org.deltafi.core.types.snapshot.TransformFlowSnapshot",
-			"SourceInfo": "org.deltafi.common.types.SourceInfo",
-			"TimedDeletePolicy": "org.deltafi.core.types.TimedDeletePolicy",
-			"TimedDeletePolicyInput": "org.deltafi.core.types.TimedDeletePolicy",
-			"TimedIngressActionConfiguration": "org.deltafi.common.types.TimedIngressActionConfiguration",
-			"TopBar": "org.deltafi.core.configuration.ui.TopBar",
-			"TopBarInput": "org.deltafi.core.configuration.ui.TopBar",
-			"TransformActionConfiguration": "org.deltafi.common.types.TransformActionConfiguration",
-			"UiProperties": "org.deltafi.core.configuration.ui.UiProperties",
-			"UiPropertiesInput": "org.deltafi.core.configuration.ui.UiProperties",
-			"UniqueKeyValues": "org.deltafi.core.types.UniqueKeyValues",
-			"Variable": "org.deltafi.common.types.Variable",
-			"VariableInput": "org.deltafi.common.types.Variable"
-	]
+            "Action": "org.deltafi.core.types.Action",
+            "ActionConfiguration": "org.deltafi.common.types.ActionConfiguration",
+            "ActionDescriptor": "org.deltafi.common.types.ActionDescriptor",
+            "ActionDescriptorInput": "org.deltafi.common.types.ActionDescriptor",
+            "ActionState": "org.deltafi.common.types.ActionState",
+            "ActionType": "org.deltafi.common.types.ActionType",
+            "JoinConfiguration": "org.deltafi.common.types.JoinConfiguration",
+            "Content": "org.deltafi.common.types.Content",
+            "DataSource": "org.deltafi.core.types.DataSource",
+            "DataSourcePlan": "org.deltafi.common.types.DataSourcePlan",
+            "DataType": "org.deltafi.common.types.VariableDataType",
+            "DefaultBehavior": "org.deltafi.common.types.DefaultBehavior",
+            "DefaultRule": "org.deltafi.common.types.DefaultRule",
+            "DefaultRuleInput": "org.deltafi.common.types.DefaultRule",
+            "DeletePolicy": "org.deltafi.core.types.DeletePolicy",
+            "DeletePolicies": "org.deltafi.core.types.DeletePolicies",
+            "DeletePoliciesInput": "org.deltafi.core.types.DeletePolicies",
+            "DeltaFiConfiguration": "org.deltafi.common.types.DeltaFiConfiguration",
+            "DeltaFile": "org.deltafi.core.types.DeltaFile",
+            "DeltaFileFlow": "org.deltafi.core.types.DeltaFileFlow",
+            "DeltaFileFlowInput": "org.deltafi.core.types.DeltaFileFlowInput",
+            "DeltaFileFlowState": "org.deltafi.common.types.DeltaFileFlowState",
+            "DeltaFiles": "org.deltafi.core.types.DeltaFiles",
+            "DeltaFileStage": "org.deltafi.common.types.DeltaFileStage",
+            "DeltaFiProperties": "org.deltafi.core.configuration.DeltaFiProperties",
+            "DeltaFiPropertiesInput": "org.deltafi.core.configuration.DeltaFiProperties",
+            "DiskSpaceDeletePolicy": "org.deltafi.core.types.DiskSpaceDeletePolicy",
+            "DiskSpaceDeletePolicyInput": "org.deltafi.core.types.DiskSpaceDeletePolicy",
+            "DataSink": "org.deltafi.core.types.DataSink",
+            "DataSinkConfiguration": "org.deltafi.common.types.DataSinkConfiguration",
+            "DataSinkPlan": "org.deltafi.common.types.DataSinkPlan",
+            "DataSinkSnapshot": "org.deltafi.core.types.snapshot.DataSinkSnapshot",
+            "DataSinkSnapshotInput": "org.deltafi.core.types.snapshot.DataSinkSnapshot",
+            "ErrorsByFlow": "org.deltafi.common.types.SummaryByFlow",
+            "ErrorsByMessage": "org.deltafi.core.types.SummaryByFlowAndMessage",
+            "ErrorSummaryFilter": "org.deltafi.core.types.ErrorSummaryFilter",
+            "FilteredByFlow": "org.deltafi.core.types.SummaryByFlow",
+            "FilteredByMessage": "org.deltafi.core.types.SummaryByFlowAndMessage",
+            "FilteredSummaryFilter": "org.deltafi.core.types.FilteredSummaryFilter",
+            "FlowType": "org.deltafi.common.types.FlowType",
+            "MatchingPolicy": "org.deltafi.common.types.MatchingPolicy",
+            "KeyValue": "org.deltafi.common.types.KeyValue",
+            "KeyValueInput": "org.deltafi.common.types.KeyValue",
+            "Link": "org.deltafi.core.configuration.ui.Link",
+            "LinkInput": "org.deltafi.core.configuration.ui.Link",
+            "LinkType": "org.deltafi.core.configuration.ui.Link.LinkType",
+            "PerActionUniqueKeyValues": "org.deltafi.core.types.PerActionUniqueKeyValues",
+            "Plugin": "org.deltafi.common.types.Plugin",
+            "PluginCoordinates": "org.deltafi.common.types.PluginCoordinates",
+            "PluginCoordinatesInput": "org.deltafi.common.types.PluginCoordinates",
+            "PluginProperties": "org.deltafi.core.configuration.PluginProperties",
+            "PluginPropertiesInput": "org.deltafi.core.configuration.PluginProperties",
+            "PluginVariables": "org.deltafi.core.types.PluginVariables",
+            "PublishRules": "org.deltafi.common.types.PublishRules",
+            "PublishRulesInput": "org.deltafi.common.types.PublishRules",
+            "ProcessingType": "org.deltafi.common.types.ProcessingType",
+            "Property": "org.deltafi.common.types.Property",
+            "PropertyId": "org.deltafi.core.types.PropertyId",
+            "PropertyInput": "org.deltafi.common.types.Property",
+            "PropertySet": "org.deltafi.common.types.PropertySet",
+            "PropertySetInput": "org.deltafi.common.types.PropertySet",
+            "PropertySource": "org.deltafi.common.types.PropertySource",
+            "RestDataSource": "org.deltafi.core.types.RestDataSource",
+            "RestDataSourceConfiguration": "org.deltafi.common.types.RestDataSourceConfiguration",
+            "RestDataSourcePlan": "org.deltafi.common.types.RestDataSourcePlan",
+            "RestDataSourceSnapshot": "org.deltafi.core.types.snapshot.RestDataSourceSnapshot",
+            "RestDataSourceSnapshotInput": "org.deltafi.core.types.snapshot.RestDataSourceSnapshot",
+            "Result": "org.deltafi.core.types.Result",
+            "ResumeMetadata": "org.deltafi.common.types.ResumeMetadata",
+            "ResumePolicy": "org.deltafi.core.types.ResumePolicy",
+            "Rule": "org.deltafi.common.types.Rule",
+            "RuleInput": "org.deltafi.common.types.Rule",
+            "Segment": "org.deltafi.common.content.Segment",
+            "IntegrationTest": "org.deltafi.common.types.integration.IntegrationTest",
+            "IntegrationTestInput": "org.deltafi.common.types.integration.IntegrationTest",
+            "TestCaseIngress": "org.deltafi.common.types.integration.TestCaseIngress",
+            "TestCaseIngressInput": "org.deltafi.common.types.integration.TestCaseIngress",
+            "ExpectedDeltaFile": "org.deltafi.common.types.integration.ExpectedDeltaFile",
+            "ExpectedDeltaFile2": "org.deltafi.common.types.integration.ExpectedDeltaFile",
+            "ExpectedDeltaFile3": "org.deltafi.common.types.integration.ExpectedDeltaFile",
+            "ExpectedDeltaFile4": "org.deltafi.common.types.integration.ExpectedDeltaFile",
+            "ExpectedDeltaFile5": "org.deltafi.common.types.integration.ExpectedDeltaFile",
+            "ExpectedDeltaFileInput": "org.deltafi.common.types.integration.ExpectedDeltaFile",
+            "ExpectedContentList": "org.deltafi.common.types.integration.ExpectedContentList",
+            "ExpectedContentListInput": "org.deltafi.common.types.integration.ExpectedContentList",
+            "ExpectedFlow": "org.deltafi.common.types.integration.ExpectedFlow",
+            "ExpectedFlowInput": "org.deltafi.common.types.integration.ExpectedFlow",
+            "ExpectedContentData": "org.deltafi.common.types.integration.ExpectedContentData",
+            "ExpectedContentDataInput": "org.deltafi.common.types.integration.ExpectedContentData",
+            "TestResult": "org.deltafi.core.types.integration.integration.TestResult",
+            "TestStatus": "org.deltafi.common.types.TestStatus",
+            "TimedDataSource": "org.deltafi.core.types.TimedDataSource",
+            "TimedDataSourceConfiguration": "org.deltafi.common.types.TimedDataSourceConfiguration",
+            "TimedDataSourcePlan": "org.deltafi.common.types.TimedDataSourcePlan",
+            "TimedDataSourceSnapshot": "org.deltafi.core.types.snapshot.TimedDataSourceSnapshot",
+            "TimedDataSourceSnapshotInput": "org.deltafi.core.types.snapshot.TimedDataSourceSnapshot",
+            "TransformFlow": "org.deltafi.core.types.TransformFlow",
+            "TransformFlowConfiguration": "org.deltafi.common.types.TransformFlowConfiguration",
+            "TransformFlowPlan": "org.deltafi.common.types.TransformFlowPlan",
+            "TransformFlowSnapshot": "org.deltafi.core.types.snapshot.TransformFlowSnapshot",
+            "TransformFlowSnapshotInput": "org.deltafi.core.types.snapshot.TransformFlowSnapshot",
+            "SourceInfo": "org.deltafi.common.types.SourceInfo",
+            "TimedDeletePolicy": "org.deltafi.core.types.TimedDeletePolicy",
+            "TimedDeletePolicyInput": "org.deltafi.core.types.TimedDeletePolicy",
+            "TimedIngressActionConfiguration": "org.deltafi.common.types.TimedIngressActionConfiguration",
+            "TopBar": "org.deltafi.core.configuration.ui.TopBar",
+            "TopBarInput": "org.deltafi.core.configuration.ui.TopBar",
+            "TransformActionConfiguration": "org.deltafi.common.types.TransformActionConfiguration",
+            "UiProperties": "org.deltafi.core.configuration.ui.UiProperties",
+            "UiPropertiesInput": "org.deltafi.core.configuration.ui.UiProperties",
+            "UniqueKeyValues": "org.deltafi.core.types.UniqueKeyValues",
+            "Variable": "org.deltafi.common.types.Variable",
+            "VariableInput": "org.deltafi.common.types.Variable"
+    ]
 }
 
 springBoot {
-	buildInfo()
+    buildInfo()
 }
 
 jar {
-	// do not create the -plain.jar
-	enabled = false
+    // do not create the -plain.jar
+    enabled = false
 }
 
 task copyDocs(type: Copy) {
-	from '../deltafi-docs'
-	into 'build/docker/docs'
-	include 'public/'
-	include 'src/'
-	include 'package*.json'
-	include 'vue.config.js'
+    from '../deltafi-docs'
+    into 'build/docker/docs'
+    include 'public/'
+    include 'src/'
+    include 'package*.json'
+    include 'vue.config.js'
 }
 
 task copyCoreActionsDocs(type: Copy) {
-	from '../deltafi-core-actions/src/main/resources/docs'
-	into 'build/docker/docs/public/docs/core-actions'
+    from '../deltafi-core-actions/src/main/resources/docs'
+    into 'build/docker/docs/public/docs/core-actions'
 }
 
 task copyChangelog(type: Copy) {
-	from '../CHANGELOG.md'
-	into 'build/docker/docs/public/docs'
+    from '../CHANGELOG.md'
+    into 'build/docker/docs/public/docs'
 }
 
 task copyUi(type: Copy) {
-	from '../deltafi-ui'
-	into 'build/docker/ui'
-	include 'public/'
-	include 'src/'
-	include 'package*.json'
-	include 'vue.config.js'
-	include 'tsconfig.json'
+    from '../deltafi-ui'
+    into 'build/docker/ui'
+    include 'public/'
+    include 'src/'
+    include 'package*.json'
+    include 'vue.config.js'
+    include 'tsconfig.json'
 }
 
 task copyGraphiql(type: Copy) {
@@ -215,14 +214,6 @@ task copyGraphiql(type: Copy) {
 }
 
 dockerPrepare {
-	finalizedBy copyDocs, copyCoreActionsDocs, copyChangelog, copyUi, copyGraphiql
-}
-
-docker {
-	files bootJar.archiveFile, 'probe.sh'
-	copySpec.into('.')
-
-    name "${project.name}:${project.version}"
-    tag "local", "${localDockerRegistry}/${project.name}:latest"
-    tag "deltafi", "deltafi/${project.name}:${project.version}"
+    finalizedBy copyDocs, copyCoreActionsDocs, copyChangelog, copyUi, copyGraphiql
+    from bootJar, 'probe.sh'
 }

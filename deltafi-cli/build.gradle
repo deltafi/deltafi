@@ -1,16 +1,7 @@
-import com.hierynomus.gradle.license.tasks.LicenseCheck
-import com.hierynomus.gradle.license.tasks.LicenseFormat
-
 plugins {
-    id 'idea'
-    id 'license-conventions'
+    id 'license-plain'
 }
 
-task licenseLocal(type: LicenseCheck) {
-    source = fileTree(dir: ".").include("**/*.sh").include("**/*.rb")
+license {
+    includes(["**/*.sh", "**/*.rb"])
 }
-
-task licenseFormatLocal(type: LicenseFormat) {
-    source = fileTree(dir: ".").include("**/*.sh").include("**/*.rb")
-}
-licenseFormat.dependsOn licenseFormatLocal

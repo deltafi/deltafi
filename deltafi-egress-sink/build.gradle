@@ -1,24 +1,7 @@
-import com.hierynomus.gradle.license.tasks.LicenseCheck
-import com.hierynomus.gradle.license.tasks.LicenseFormat
-
 plugins {
-    id 'idea'
-    id 'license-conventions'
-    id "com.palantir.docker" version "${palantirDockerVersion}"
+    id 'docker-plain'
 }
 
-docker {
-    name "${project.name}:${project.version}"
-    copySpec.from(".").exclude("**/build").exclude("Dockerfile").into(".")
-    tag "local", "${localDockerRegistry}/${project.name}:latest"
-    tag "deltafi", "deltafi/${project.name}:${project.version}"
+license {
+    includes(["**/*.sh", "**/*.go"])
 }
-
-task licenseLocal(type: LicenseCheck) {
-    source = fileTree(dir: ".").include("**/*.sh").include("**/*.go").exclude("build")
-}
-
-task licenseFormatLocal(type: LicenseFormat) {
-    source = fileTree(dir: ".").include("**/*.sh").include("**/*.go").exclude("build")
-}
-licenseFormat.dependsOn licenseFormatLocal

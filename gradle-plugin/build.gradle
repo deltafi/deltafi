@@ -1,6 +1,6 @@
 plugins {
     id 'groovy-gradle-plugin'
-    id 'license-conventions'
+    id 'java-conventions'
     id 'com.gradle.plugin-publish' version '1.2.1'
 }
 
@@ -10,24 +10,17 @@ license {
     exclude("OrgDeltafiPluginConventionPlugin.java")
 }
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
-}
-
 dependencies {
     implementation project(':deltafi-common')
 
     implementation "org.deltafi.git-version:git-version:2.0.1"
     implementation "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}"
-    implementation "com.palantir.gradle.docker:gradle-docker:${palantirDockerVersion}"
+    implementation "com.palantir.gradle.docker:gradle-docker:0.36.0"
 }
 
 group 'org.deltafi.gradle-plugin'
 
 gradlePlugin {
-
     website = 'https://deltafi.org'
     vcsUrl = 'https://github.com/deltafi-org/deltafi'
 

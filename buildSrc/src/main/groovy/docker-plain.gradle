@@ -1,0 +1,10 @@
+plugins {
+    id 'license-plain'
+    id 'docker-conventions'
+}
+
+dockerPrepare {
+    duplicatesStrategy DuplicatesStrategy.INCLUDE
+    from '.'
+    exclude '**/build'
+}

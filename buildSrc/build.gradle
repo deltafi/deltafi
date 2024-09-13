@@ -17,4 +17,6 @@ dependencies {
             }
         }
     }
+
+    implementation "com.palantir.docker:com.palantir.docker.gradle.plugin:0.36.0"
 }

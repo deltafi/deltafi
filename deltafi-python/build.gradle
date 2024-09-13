@@ -1,9 +1,9 @@
-import com.hierynomus.gradle.license.tasks.LicenseCheck
-import com.hierynomus.gradle.license.tasks.LicenseFormat
-
 plugins {
-    id 'idea'
-    id 'license-conventions'
+    id 'license-plain'
+}
+
+license {
+    includes(["**/*.py"])
 }
 
 task setupVirtualEnvironment(type: Exec) {
@@ -22,6 +22,7 @@ task copyTemplate(type: Copy) {
     into 'src'
     rename { 'pyproject.toml' }
 }
+licenseLocal.dependsOn copyTemplate
 
 task poetryVersion(type: Exec) {
     dependsOn copyTemplate, setupPoetry
@@ -51,7 +52,7 @@ task poetryBuild(type: Exec) {
     commandLine 'venv/bin/poetry', 'build'
 }
 
-task testPython(type: Exec) {
+task test(type: Exec) {
     dependsOn poetryBuild
     workingDir 'src'
     commandLine 'venv/bin/poetry', 'run', 'pytest', '--junit-xml=../build/test-results/test/TEST-results.xml'
@@ -67,17 +68,3 @@ clean.dependsOn cleanDist
 clean.dependsOn cleanVirtualEnvironment
 
 assemble.dependsOn poetryBuild
-
-test {
-    it.dependsOn testPython
-}
-
-task licenseLocal(type: LicenseCheck) {
-    source = fileTree(dir: ".").include("**/*.py")
-}
-licenseLocal.dependsOn copyTemplate
-
-task licenseFormatLocal(type: LicenseFormat) {
-    source = fileTree(dir: ".").include("**/*.py")
-}
-licenseFormat.dependsOn licenseFormatLocal

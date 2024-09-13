@@ -1,7 +1,5 @@
 plugins {
-    id 'license-conventions'
-    id 'jacoco'
-    id 'java-library'
+    id 'java-conventions'
     id 'maven-publish'
 }
 
@@ -10,14 +8,6 @@ description = 'DeltaFi Action Kit Test Harness - Test Action implementation SDK 
 jar {
     enabled = true
     // archiveFileName = 'deltafi-action-kit-test.jar'
-}
-
-configurations {
-    jars
-}
-
-artifacts {
-    jars jar
 }
 
 dependencies {
