@@ -1,10 +1,10 @@
 # Decompress
-Decompresses content from ar, gz, tar, tar.gz, tar.xz, tar.Z, xz, Z, or zip.
+Decompresses content from ar, gz, .7z, tar, tar.gz, tar.xz, tar.Z, xz, Z, or zip.
 
 ## Parameters
 | Name                  | Description                                    | Allowed Values                                                         |  Required  | Default                                      |
 |-----------------------|------------------------------------------------|------------------------------------------------------------------------|:----------:|----------------------------------------------|
-| format                | Format to decompress, overriding autodetection | ar<br/>gz<br/>tar<br/>tar.gz<br/>tar.xz<br/>tar.Z<br/>xz<br/>Z<br/>zip |            | none - will autodetect each content's format |
+| format                | Format to decompress, overriding autodetection | ar<br/>gz<br/>7z<br/>tar<br/>tar.gz<br/>tar.xz<br/>tar.Z<br/>xz<br/>Z<br/>zip |            | none - will autodetect each content's format |
 | retainExistingContent | Retain the existing content                    | true<br/>false                                                         |            | false                                        |
 
 ## Inputs

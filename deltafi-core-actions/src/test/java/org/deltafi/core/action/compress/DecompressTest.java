@@ -52,6 +52,11 @@ public class DecompressTest {
     }
 
     @Test
+    public void unarchiveSevenZ() {
+        runTest(Format.SEVEN_Z, false);
+    }
+
+    @Test
     public void unarchivesTar() {
         runTest(Format.TAR, false);
     }
@@ -79,6 +84,11 @@ public class DecompressTest {
     @Test
     public void unarchivesArDetected() {
         runTest(Format.AR, true);
+    }
+
+    @Test
+    public void unarchiveSevenZDetected() {
+        runTest(Format.SEVEN_Z, true);
     }
 
     @Test

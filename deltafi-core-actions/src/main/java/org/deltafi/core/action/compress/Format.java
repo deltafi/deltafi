@@ -25,6 +25,7 @@ import lombok.Getter;
 @Getter
 public enum Format {
     @JsonProperty("ar") AR("ar", "application/x-archive"),
+    @JsonProperty("7z") SEVEN_Z("7z", "application/x-7z-compressed"),
     @JsonProperty("tar") TAR("tar", "application/x-tar"),
     @JsonProperty("tar.gz") TAR_GZIP("tar.gz", "application/gzip"),
     @JsonProperty("tar.xz") TAR_XZ("tar.xz", "application/x-xz"),
