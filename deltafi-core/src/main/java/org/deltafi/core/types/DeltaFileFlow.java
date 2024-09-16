@@ -41,10 +41,7 @@ import static jakarta.persistence.ConstraintMode.NO_CONSTRAINT;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "delta_file_flows", indexes = {
-        @Index(name = "idx_flow", columnList = "delta_file_id, state, name, test_mode, pending_annotations"),
-        @Index(name = "idx_flow_state", columnList = "state, delta_file_id")
-})
+@Table(name = "delta_file_flows")
 @NamedEntityGraph(
         name = "deltaFileFlow.withActions",
         attributeNodes = {

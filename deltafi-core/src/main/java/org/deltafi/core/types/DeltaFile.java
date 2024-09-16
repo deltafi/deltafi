@@ -39,10 +39,7 @@ import java.util.stream.Stream;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "delta_files", indexes = {
-        @Index(name = "idx_created", columnList = "created, stage, data_source, normalized_name, egressed, filtered, terminal, ingress_bytes"),
-        @Index(name = "idx_modified", columnList = "modified, stage, data_source, normalized_name, egressed, filtered, terminal, ingress_bytes")
-})
+@Table(name = "delta_files")
 @NamedEntityGraph(
         name = "deltaFile.withFlowsAndActions",
         attributeNodes = {
