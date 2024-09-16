@@ -1,0 +1,20 @@
+plugins {
+    id 'groovy-gradle-plugin'
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    gradlePluginPortal()
+}
+
+dependencies {
+    implementation "com.github.hierynomus.license:com.github.hierynomus.license.gradle.plugin:0.16.1"
+    constraints {
+        implementation('org.springframework:spring-core') {
+            version {
+                require '6.1.5'
+            }
+        }
+    }
+}

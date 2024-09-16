@@ -28,15 +28,6 @@ allprojects { project ->
 subprojects {
     apply plugin: 'java'
 
-    ext {
-        excludeFromLicense = ["**/*.xml", "**/generated/**/*.java", "**/*.MockMaker", "**/*.jks", "**/*.p12",
-                              "**/*.yaml", "**/*.yml", "**/*.properties", "**/*.tar", "**/*.gz", "**/*.Z", "**/*.zip", "**/*.xz", "**/*.ar",
-                              "**/*.txt", "**/*.xml", "**/*.html", "**/*.json", "**/test/resources/**",
-                              "**/*.md", "**/*.png", "**/*.ico", "**/*.jar", "**/*.MF", "**/.gitkeep", "**/Dockerfile",
-                              "**/*.drawio", "**/.dockerignore",
-                              "**/plugin-templates/**", "**/node_modules/**", "**/minio-mc-init.sh", "**/venv/**", "**/virtualenv/**"]
-    }
-
     java {
         toolchain {
             languageVersion = JavaLanguageVersion.of(21)

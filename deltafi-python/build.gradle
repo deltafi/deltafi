@@ -3,7 +3,7 @@ import com.hierynomus.gradle.license.tasks.LicenseFormat
 
 plugins {
     id 'idea'
-    id "com.github.hierynomus.license" version "${hierynomusLicenseVersion}"
+    id 'license-conventions'
 }
 
 task setupVirtualEnvironment(type: Exec) {
@@ -70,13 +70,6 @@ assemble.dependsOn poetryBuild
 
 test {
     it.dependsOn testPython
-}
-
-license {
-    header(rootProject.file('HEADER'))
-    excludes(excludeFromLicense)
-    strictCheck true
-    mapping('java', 'SLASHSTAR_STYLE')
 }
 
 task licenseLocal(type: LicenseCheck) {

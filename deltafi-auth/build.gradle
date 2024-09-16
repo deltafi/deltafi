@@ -3,15 +3,8 @@ import com.hierynomus.gradle.license.tasks.LicenseFormat
 
 plugins {
     id 'idea'
+    id 'license-conventions'
     id "com.palantir.docker" version "${palantirDockerVersion}"
-    id "com.github.hierynomus.license" version "${hierynomusLicenseVersion}"
-}
-
-license {
-    header(rootProject.file('HEADER'))
-	  excludes(excludeFromLicense)
-    strictCheck true
-    mapping('java', 'SLASHSTAR_STYLE')
 }
 
 docker {
@@ -22,10 +15,10 @@ docker {
 }
 
 task licenseLocal(type: LicenseCheck) {
-    source = fileTree(dir: ".").include("**/*.js").include("**/*.rb")
+    source = fileTree(dir: ".").include("**/*.js").include("**/*.rb").exclude("build")
 }
 
 task licenseFormatLocal(type: LicenseFormat) {
-    source = fileTree(dir: ".").include("**/*.js").include("**/*.rb")
+    source = fileTree(dir: ".").include("**/*.js").include("**/*.rb").exclude("build")
 }
 licenseFormat.dependsOn licenseFormatLocal

@@ -1,17 +1,10 @@
 plugins {
-    id 'com.github.hierynomus.license' version "${hierynomusLicenseVersion}"
+    id 'license-conventions'
     id 'java-library'
     id 'maven-publish'
 }
 
 description = 'DeltaFi Action Kit - Action implementation SDK for DeltaFi actions'
-
-license {
-    header(rootProject.file('HEADER'))
-    excludes(excludeFromLicense)
-    strictCheck true
-    mapping('java', 'SLASHSTAR_STYLE')
-}
 
 dependencies {
     api project(':deltafi-common')

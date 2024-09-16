@@ -1,17 +1,10 @@
 plugins {
-    id "com.github.hierynomus.license" version "${hierynomusLicenseVersion}"
+    id 'license-conventions'
     id 'java-library'
     id 'maven-publish'
 }
 
 description "Common test library for DeltaFi"
-
-license {
-    header(rootProject.file('HEADER'))
-    excludes(excludeFromLicense)
-    strictCheck true
-    mapping('java', 'SLASHSTAR_STYLE')
-}
 
 dependencies {
     implementation project(':deltafi-common')

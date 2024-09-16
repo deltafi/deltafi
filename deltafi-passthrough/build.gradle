@@ -1,14 +1,7 @@
 plugins {
-    id "com.github.hierynomus.license" version "${hierynomusLicenseVersion}"
+    id 'license-conventions'
     id 'org.springframework.boot' version "${springBootVersion}"
     id "com.palantir.docker" version "${palantirDockerVersion}"
-}
-
-license {
-    header(rootProject.file('HEADER'))
-    excludes(excludeFromLicense)
-    strictCheck true
-    mapping('java', 'SLASHSTAR_STYLE')
 }
 
 dependencies {

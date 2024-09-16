@@ -1,19 +1,11 @@
 plugins {
-	id "com.github.hierynomus.license" version "${hierynomusLicenseVersion}"
+	id 'license-conventions'
 	id 'com.netflix.dgs.codegen' version "${dgsCodegenVersion}"
 	id 'org.springframework.boot' version "${springBootVersion}"
 	id "com.palantir.docker" version "${palantirDockerVersion}"
 }
 
 description = 'DeltaFi Core'
-
-license {
-	header(rootProject.file('HEADER'))
-	excludes(excludeFromLicense)
-	strictCheck true
-	mapping('java', 'SLASHSTAR_STYLE')
-	mapping("graphql", "SCRIPT_STYLE")
-}
 
 dependencies {
 	implementation project(':deltafi-common')

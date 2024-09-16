@@ -3,14 +3,7 @@ import com.hierynomus.gradle.license.tasks.LicenseFormat
 
 plugins {
     id 'idea'
-    id "com.github.hierynomus.license" version "${hierynomusLicenseVersion}"
-}
-
-license {
-    header(rootProject.file('HEADER'))
-    excludes(excludeFromLicense)
-    strictCheck true
-    mapping('java', 'SLASHSTAR_STYLE')
+    id 'license-conventions'
 }
 
 task licenseLocal(type: LicenseCheck) {

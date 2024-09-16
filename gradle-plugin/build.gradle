@@ -1,17 +1,13 @@
 plugins {
     id 'groovy-gradle-plugin'
+    id 'license-conventions'
     id 'com.gradle.plugin-publish' version '1.2.1'
-    id "com.github.hierynomus.license" version "${hierynomusLicenseVersion}"
 }
 
 description = 'DeltaFi gradle plugin'
 
 license {
-    header(rootProject.file('HEADER'))
-    excludes(excludeFromLicense)
     exclude("OrgDeltafiPluginConventionPlugin.java")
-    strictCheck true
-    mapping('java', 'SLASHSTAR_STYLE')
 }
 
 java {
