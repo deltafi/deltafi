@@ -22,7 +22,6 @@ import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.VariableDataType;
 import org.deltafi.core.types.EgressFlow;
-import org.deltafi.common.types.EgressFlowPlan;
 import org.deltafi.core.types.EgressFlowPlanEntity;
 
 import java.util.ArrayList;

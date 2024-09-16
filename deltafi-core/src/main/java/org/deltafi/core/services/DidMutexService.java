@@ -18,19 +18,33 @@
 package org.deltafi.core.services;
 
 import org.springframework.stereotype.Service;
-import org.springframework.util.ConcurrentReferenceHashMap;
-
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.UUID;
 
 @Service
 public class DidMutexService {
-    private final ConcurrentReferenceHashMap<UUID, Object> map;
+    private final ConcurrentHashMap<UUID, ReentrantLock> locks = new ConcurrentHashMap<>();
 
-    public DidMutexService() {
-        this.map = new ConcurrentReferenceHashMap<>();
+    public ReentrantLock getLock(UUID did) {
+        return locks.computeIfAbsent(did, k -> new ReentrantLock());
     }
 
-    public Object getMutex(UUID did) {
-        return this.map.compute(did, (k, v) -> v == null ? new Object() : v);
+    public void executeWithLock(UUID did, Runnable task) {
+        ReentrantLock lock = getLock(did);
+        lock.lock();
+        try {
+            task.run();
+        } finally {
+            lock.unlock();
+            cleanupLock(did);
+        }
+    }
+
+    private void cleanupLock(UUID did) {
+        ReentrantLock lock = locks.get(did);
+        if (lock != null && !lock.isLocked() && !lock.hasQueuedThreads()) {
+            locks.remove(did);
+        }
     }
 }

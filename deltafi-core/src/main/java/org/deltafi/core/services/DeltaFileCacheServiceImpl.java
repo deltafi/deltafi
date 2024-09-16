@@ -94,14 +94,14 @@ public class DeltaFileCacheServiceImpl extends DeltaFileCacheService {
                 .toList();
 
         for (DeltaFile d : filesToRemove) {
-            synchronized (didMutexService.getMutex(d.getDid())) {
+            didMutexService.executeWithLock(d.getDid(), () -> {
                 try {
                     updateRepo(d);
                 } catch (Exception ignored) {
                 } finally {
                     remove(d.getDid());
                 }
-            }
+            });
         }
     }
 

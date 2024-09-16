@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.converters;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.Variable;
 import org.deltafi.common.types.VariableDataType;
@@ -42,6 +43,8 @@ public class VariablePlaceholderHelper {
     private static final String SIMPLE_PREFIX = "{";
 
     private final List<Variable> variables;
+
+    @Getter
     private final Set<Variable> appliedVariables = new HashSet<>();
 
     /**
@@ -53,14 +56,6 @@ public class VariablePlaceholderHelper {
         this.variables = Objects.requireNonNullElse(variables, List.of());
     }
 
-
-    /**
-     * Get the set of variables that were used to resolve placeholders
-     * @return the set of variables that were used to resolve placeholders
-     */
-    public Set<Variable> getAppliedVariables() {
-        return appliedVariables;
-    }
 
     /**
      * Replaces all placeholders of format {@code ${name}} with the value returned

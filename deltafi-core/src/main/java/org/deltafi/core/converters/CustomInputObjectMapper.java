@@ -30,7 +30,6 @@ import org.springframework.stereotype.Service;
 import java.util.Map;
 import java.util.Objects;
 
-
 @Slf4j
 @Service
 public class CustomInputObjectMapper implements InputObjectMapper {

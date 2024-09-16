@@ -339,7 +339,7 @@ public class DeltaFilesService {
     }
 
     public void handleProcessingActionEvent(ActionEvent event) {
-        synchronized (didMutexService.getMutex(event.getDid())) {
+        didMutexService.executeWithLock(event.getDid(), () -> {
             DeltaFile deltaFile = getCachedDeltaFile(event.getDid());
 
             if (deltaFile == null) {
@@ -400,7 +400,7 @@ public class DeltaFilesService {
             }
 
             completeJoin(event, deltaFile, flow, action, OffsetDateTime.now());
-        }
+        });
     }
 
     void deleteUnusedContent(ActionEvent event) {
@@ -637,7 +637,7 @@ public class DeltaFilesService {
     }
 
     public void addAnnotations(UUID did, Map<String, String> annotations, boolean allowOverwrites) {
-        synchronized (didMutexService.getMutex(did)) {
+        didMutexService.executeWithLock(did, () -> {
             DeltaFile deltaFile = getTerminalDeltaFileOrCache(did);
 
             if (deltaFile == null) {
@@ -651,24 +651,23 @@ public class DeltaFilesService {
             }
 
             addAnnotations(deltaFile, annotations, allowOverwrites, OffsetDateTime.now());
-        }
+        });
     }
 
     public void processQueuedAnnotations() {
         List<QueuedAnnotation> queuedAnnotations = queuedAnnotationRepo.findAllByOrderByTimeAsc();
         for (QueuedAnnotation queuedAnnotation : queuedAnnotations) {
             UUID did = queuedAnnotation.getDid();
-            synchronized (didMutexService.getMutex(did)) {
+            didMutexService.executeWithLock(did, () -> {
                 DeltaFile deltaFile = getTerminalDeltaFileOrCache(did);
 
                 if (deltaFile == null && deltaFileRepo.existsById(did)) {
                     log.warn("Attempted to apply queued annotation to deltaFile {} that no longer exists", did);
-                    continue;
+                } else {
+                    addAnnotations(deltaFile, queuedAnnotation.getAnnotations(), queuedAnnotation.isAllowOverwrites(), queuedAnnotation.getTime());
+                    queuedAnnotationRepo.deleteById(queuedAnnotation.getId());
                 }
-
-                addAnnotations(deltaFile, queuedAnnotation.getAnnotations(), queuedAnnotation.isAllowOverwrites(), queuedAnnotation.getTime());
-                queuedAnnotationRepo.deleteById(queuedAnnotation.getId());
-            }
+            });
         }
     }
 

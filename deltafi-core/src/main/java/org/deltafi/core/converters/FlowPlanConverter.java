@@ -21,7 +21,6 @@ import org.deltafi.common.types.Variable;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.types.Flow;
-import org.deltafi.common.types.FlowPlan;
 import org.deltafi.core.types.FlowPlanEntity;
 
 import java.util.ArrayList;
