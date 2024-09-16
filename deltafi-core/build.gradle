@@ -32,6 +32,8 @@ dependencies {
 	implementation 'org.postgresql:postgresql:42.7.3'
 	implementation 'io.hypersistence:hypersistence-utils-hibernate-63:3.8.2'
 	implementation 'com.fasterxml.uuid:java-uuid-generator:5.1.0'
+	implementation 'org.flywaydb:flyway-core:10.18.0'
+	implementation 'org.flywaydb:flyway-database-postgresql:10.18.0'
 
 	testImplementation project(':deltafi-common-test')
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
