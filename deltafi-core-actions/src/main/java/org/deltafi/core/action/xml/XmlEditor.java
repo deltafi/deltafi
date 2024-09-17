@@ -284,7 +284,7 @@ public class XmlEditor extends TransformAction<XmlEditorParameters> {
 
             ActionContent content = input.getContent().get(i);
 
-            if (!params.contentMatches(content.getName(), content.getMediaType(), i)) {
+            if (!params.contentSelected(i, content)) {
                 result.addContent(content);
                 continue;
             }

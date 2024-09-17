@@ -21,49 +21,65 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
+import org.deltafi.actionkit.action.content.ActionContent;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.function.BiFunction;
 
 @Data
+@NoArgsConstructor
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 public class ContentSelectionParameters extends ActionParameters {
-    @JsonPropertyDescription("List of content indexes to consider")
+    @JsonPropertyDescription("List of content indexes to include or exclude")
     private List<Integer> contentIndexes;
 
-    // Annotated on getter so it can be overridden
+    @JsonProperty(defaultValue = "false")
+    @JsonPropertyDescription("Exclude specified content indexes")
+    private boolean excludeContentIndexes = false;
+
+    @JsonPropertyDescription("List of file patterns to include or exclude, supporting wildcards (*)")
+    private List<String> filePatterns;
+
+    @JsonProperty(defaultValue = "false")
+    @JsonPropertyDescription("Exclude specified file patterns")
+    private boolean excludeFilePatterns = false;
+
+    // Annotated on getter so annotations can be overridden
     private List<String> mediaTypes;
 
-    @JsonPropertyDescription("List of file patterns to consider, supporting wildcards (*)")
-    private List<String> filePatterns;
+    @JsonProperty(defaultValue = "false")
+    @JsonPropertyDescription("Exclude specified media types")
+    private boolean excludeMediaTypes = false;
 
     @JsonProperty(defaultValue = "false")
     @JsonPropertyDescription("Retain the existing content")
     private boolean retainExistingContent = false;
 
-    public ContentSelectionParameters() {
-        this(Collections.emptyList());
-    }
-
     public ContentSelectionParameters(List<String> mediaTypes) {
         this.mediaTypes = mediaTypes;
     }
 
-    @JsonPropertyDescription("List of media types to consider, supporting wildcards (*)")
+    @JsonPropertyDescription("List of media types to include or exclude, supporting wildcards (*)")
     public List<String> getMediaTypes() {
         return mediaTypes;
     }
 
-    public boolean contentMatches(String name, String mediaType, int index) {
-        return (contentIndexes == null || contentIndexes.isEmpty() || contentIndexes.contains(index)) &&
-                (filePatterns == null || filePatterns.isEmpty() || filePatterns.stream().anyMatch(pattern -> matchesPattern(name, pattern))) &&
-                (mediaTypes == null || mediaTypes.isEmpty() || mediaTypes.stream().anyMatch(allowedType -> matchesPattern(mediaType, allowedType)));
+    private static final BiFunction<List<?>, Object, Boolean> CONTAINS_PATTERN_FUNCTION = (list, item) ->
+            list.stream().anyMatch(pattern -> ((String) item).matches(((String) pattern).replace("*", ".*")));
+
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    public boolean contentSelected(int index, ActionContent content) {
+        return isSelected(contentIndexes, index, excludeContentIndexes, List::contains) &&
+                isSelected(filePatterns, content.getName(), excludeFilePatterns, CONTAINS_PATTERN_FUNCTION) &&
+                isSelected(mediaTypes, content.getMediaType(), excludeMediaTypes, CONTAINS_PATTERN_FUNCTION);
     }
 
-    private boolean matchesPattern(String value, String pattern) {
-        return value.matches(pattern.replace("*", ".*"));
+    private boolean isSelected(List<?> list, Object item, boolean excludeFlag,
+            BiFunction<List<?>, Object, Boolean> containsFunction) {
+        return (list == null) || list.isEmpty() || (excludeFlag != containsFunction.apply(list, item));
     }
 }

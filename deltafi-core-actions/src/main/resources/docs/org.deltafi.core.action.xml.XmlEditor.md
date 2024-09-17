@@ -2,12 +2,15 @@
 Transforms XML content.
 
 ## Parameters
-| Name                | Description                                                 | Allowed Values                                                                                    | Required | Default                                   |
-|---------------------|-------------------------------------------------------------|---------------------------------------------------------------------------------------------------|:--------:|-------------------------------------------|
-| xmlEditingCommands  | List of XML editing commands to be applied in order         | String&nbsp;-&nbsp;See [Commands](/core-actions/org.deltafi.core.action.xml.XmlEditor#commands)   |   Yes    |                                           |
-| contentIndexes      | List of content indexes to consider                         | Integer                                                                                           |          | empty&nbsp;- all content is considered    |
-| mediaTypes          | List of media types to consider, supporting wildcards (*)   | String                                                                                            |          | [*/xml]                                   |
-| filePatterns        | List of file patterns to consider, supporting wildcards (*) | String                                                                                            |          | empty&nbsp;- all filenames are considered |
+| Name                  | Description                                                           | Allowed Values                                                                                  | Required | Default                                   |
+|-----------------------|-----------------------------------------------------------------------|-------------------------------------------------------------------------------------------------|:--------:|-------------------------------------------|
+| xmlEditingCommands    | List of XML editing commands to be applied in order                   | String&nbsp;-&nbsp;See [Commands](/core-actions/org.deltafi.core.action.xml.XmlEditor#commands) |   Yes    |                                           |
+| contentIndexes        | List of content indexes to include or exclude                         | Integer                                                                                         |          | empty&nbsp;- all content is considered    |
+| excludeContentIndexes | Exclude specified content indexes                                     | true<br/>false                                                                                  |          | false                                     |
+| filePatterns          | List of file patterns to include or exclude, supporting wildcards (*) | String                                                                                          |          | empty&nbsp;- all filenames are considered |
+| excludeFilePatterns   | Exclude specified file patterns                                       | true<br/>false                                                                                  |          | false                                     |
+| mediaTypes            | List of media types to include or exclude, supporting wildcards (*)   | String                                                                                          |          | media type associated with inputFormat    |
+| excludeMediaTypes     | Exclude specified media types                                         | true<br/>false                                                                                  |          | false                                     |
 
 ### Commands
 XML editing commands consist of a command followed by a space-separated list of arguments.
@@ -52,8 +55,9 @@ One or more in XML format
 Transforms each content using the provided list of XML editing commands. The content will be passed through unchanged if
 commands don't match any of its tags.
 
-Input content to transform may be specified using contentIndexes, mediaTypes, and/or filePatterns. If any of these are
-set and the content is not matched, the content is passed through unchanged.
+Input content to transform may be selected (or inversely selected using the exclude parameters) with contentIndexes,
+mediaTypes, and/or filePatterns. If any of these are set and the content is not matched, the content is passed through
+unchanged.
 
 ## Errors
 - On malformed command provided in xmlEditingCommands

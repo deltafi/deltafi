@@ -67,7 +67,7 @@ public class ExtractXml extends TransformAction<ExtractXmlParameters> {
         for (int i = 0; i < input.getContent().size(); i++) {
             ActionContent content = input.content(i);
 
-            if (!params.contentMatches(content.getName(), content.getMediaType(), i)) {
+            if (!params.contentSelected(i, content)) {
                 continue;
             }
 

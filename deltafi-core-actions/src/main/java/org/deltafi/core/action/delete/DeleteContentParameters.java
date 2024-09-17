@@ -20,43 +20,15 @@ package org.deltafi.core.action.delete;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.*;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
-
-import java.util.List;
+import org.deltafi.core.action.ContentSelectionParameters;
 
 @Data
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
-public class DeleteContentParameters extends ActionParameters {
-
+public class DeleteContentParameters extends ContentSelectionParameters {
     @JsonProperty(defaultValue = "false")
-    @JsonPropertyDescription("Delete All Content")
-    public boolean deleteAllContent = false;
-
-    @JsonProperty(defaultValue = "[]")
-    @JsonPropertyDescription("A List of indexes in content to keep")
-    public List<Integer> allowedIndexes = List.of();
-
-    @JsonProperty(defaultValue = "[]")
-    @JsonPropertyDescription("A List of indexes in content to remove. Not checked unless allowedIndexes is empty")
-    public List<Integer> prohibitedIndexes = List.of();
-
-    @JsonProperty(defaultValue = "[]")
-    @JsonPropertyDescription("A List of filename patterns to keep")
-    public List<String> allowedFilePatterns = List.of();
-
-    @JsonProperty(defaultValue = "[]")
-    @JsonPropertyDescription("A List of filename patterns to remove. Not checked unless allowedFilePatterns is empty")
-    public List<String> prohibitedFilePatterns = List.of();
-
-    @JsonProperty(defaultValue = "[]")
-    @JsonPropertyDescription("A List of media type patterns to keep")
-    public List<String> allowedMediaTypes = List.of();
-
-    @JsonProperty(defaultValue = "[]")
-    @JsonPropertyDescription("A List of media type patterns to remove. Not checked unless allowedMediaTypes is empty")
-    public List<String> prohibitedMediaTypes = List.of();
-
+    @JsonPropertyDescription("Delete all content")
+    private boolean deleteAllContent = false;
 }

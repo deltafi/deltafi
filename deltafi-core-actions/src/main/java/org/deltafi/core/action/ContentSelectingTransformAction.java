@@ -40,7 +40,7 @@ public abstract class ContentSelectingTransformAction<P extends ContentSelection
         for (int i = 0; i < input.getContent().size(); i++) {
             ActionContent content = input.getContent().get(i);
 
-            if (!params.contentMatches(content.getName(), content.getMediaType(), i)) {
+            if (!params.contentSelected(i, content)) {
                 // Pass content through without transforming
                 result.addContent(content);
                 continue;
