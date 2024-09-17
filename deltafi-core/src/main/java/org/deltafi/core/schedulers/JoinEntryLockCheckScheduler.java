@@ -26,7 +26,7 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.stereotype.Service;
 
-@ConditionalOnProperty(value = "schedule.actionEvents", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(value = "schedule.maintenance", havingValue = "true", matchIfMissing = true)
 @Service
 @EnableScheduling
 @RequiredArgsConstructor
