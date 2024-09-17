@@ -785,9 +785,18 @@ public class DeltaFilesService {
 
     public List<RetryResult> resume(@NotNull List<UUID> dids, @NotNull List<ResumeMetadata> resumeMetadata) {
         Map<UUID, DeltaFile> deltaFiles = deltaFiles(dids);
+        return resumeDeltaFiles(dids.stream()
+                        // Collectors.toMap does not allow null values, so build a Map manually
+                        .collect(LinkedHashMap::new,
+                                (map, did) -> map.put(did, deltaFiles.getOrDefault(did, null)),
+                                HashMap::putAll),
+                resumeMetadata);
+    }
+
+    public List<RetryResult> resumeDeltaFiles(@NotNull Map<UUID, DeltaFile> deltaFiles, @NotNull List<ResumeMetadata> resumeMetadata) {
         List<StateMachineInput> advanceAndSaveInputs = new ArrayList<>();
 
-        List<RetryResult> retryResults = dids.stream()
+        List<RetryResult> retryResults = deltaFiles.keySet().stream()
                 .map(did -> {
                     RetryResult result = RetryResult.newBuilder()
                             .did(did)
@@ -1308,7 +1317,8 @@ public class DeltaFilesService {
         if (!autoResumeDeltaFiles.isEmpty()) {
             Map<UUID, String> flowByDid = autoResumeDeltaFiles.stream()
                     .collect(Collectors.toMap(DeltaFile::getDid, DeltaFile::getDataSource));
-            List<RetryResult> results = resume(flowByDid.keySet().stream().toList(), Collections.emptyList());
+            List<RetryResult> results = resumeDeltaFiles(autoResumeDeltaFiles.stream()
+                    .collect(Collectors.toMap(DeltaFile::getDid, Function.identity())), Collections.emptyList());
             Map<String, Integer> countByFlow = new HashMap<>();
             for (RetryResult result : results) {
                 if (result.getSuccess()) {

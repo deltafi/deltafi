@@ -2023,8 +2023,8 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.batchInsert(List.of(shouldResume, shouldNotResume, notResumable, cancelled, contentDeleted, shouldAlsoResume));
 
 		List<DeltaFile> hits = deltaFileRepo.findReadyForAutoResume(NOW);
-		assertEquals(3, hits.size());
-		assertEquals(Stream.of(shouldResume, contentDeleted, shouldAlsoResume).map(DeltaFile::getDid).sorted().toList(),
+		assertEquals(2, hits.size());
+		assertEquals(Stream.of(shouldResume, shouldAlsoResume).map(DeltaFile::getDid).sorted().toList(),
 				hits.stream().map(DeltaFile::getDid).sorted().toList());
 
 		assertEquals(2, deltaFilesService.autoResume(NOW));

@@ -199,6 +199,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             JOIN flow.deltaFile df
             WHERE action.nextAutoResume < :maxReadyTime
             AND df.stage = 'ERROR'
+            AND df.contentDeleted IS NULL
         """;
 
         TypedQuery<DeltaFile> query = entityManager.createQuery(queryStr, DeltaFile.class)
