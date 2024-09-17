@@ -23,8 +23,6 @@ import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.ar.ArArchiveInputStream;
-import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
-import org.apache.commons.compress.archivers.sevenz.SevenZFile;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.compressors.CompressorException;
@@ -51,11 +49,12 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Set;
 
+import static org.deltafi.core.action.compress.BatchSizes.BATCH_BYTES;
+import static org.deltafi.core.action.compress.BatchSizes.BATCH_FILES;
+
 @Component
 @Slf4j
 public class Decompress extends TransformAction<DecompressParameters> {
-    final private int BATCH_FILES = 250;
-    final private int BATCH_BYTES = 100 * 1024 * 1024;
 
     public Decompress() {
         super("Decompresses content from .ar, .gz, .7z, .tar, .tar.gz, .tar.xz, .tar.Z, .xz, .Z, or .zip.");
@@ -81,8 +80,9 @@ public class Decompress extends TransformAction<DecompressParameters> {
         for (ActionContent content : input.getContent()) {
             InputStream contentInputStream = content.loadInputStream();
             try {
-                if (isSevenZ(content, params.getFormat())) {
-                    extractSevenZ(result, contentInputStream);
+                if (SevenZUtil.isSevenZ(content.getName(), content.getMediaType(), params.getFormat())) {
+                    SevenZUtil.extractSevenZ(result, contentInputStream);
+                    result.addMetadata("compressFormat", Format.SEVEN_Z.getValue());
                 } else if (params.getFormat() == null) {
                     DetectedFormatData detectedFormatData = detectFormat(contentInputStream);
                     extract(result, content, detectedFormatData.format(), detectedFormatData.compressorInputStream(),
@@ -103,37 +103,6 @@ public class Decompress extends TransformAction<DecompressParameters> {
         }
 
         return result;
-    }
-
-    private void extractSevenZ(TransformResult result, InputStream contentInputStream) throws ArchiveException {
-        try {
-            unarchiveSevnZ(result, SevenZFile.builder()
-                    .setByteArray(contentInputStream.readAllBytes())
-                    .get());
-            result.addMetadata("compressFormat", Format.SEVEN_Z.getValue());
-        } catch (Exception e) {
-            throw new ArchiveException("Unable to extract archive type " + Format.SEVEN_Z.getValue());
-        }
-    }
-
-    private void unarchiveSevnZ(TransformResult result, SevenZFile sevenZFile) throws IOException {
-        SevenZArchiveEntry entry = sevenZFile.getNextEntry();
-        while (entry != null) {
-            if (entry.isDirectory()) {
-                entry = sevenZFile.getNextEntry();
-                continue;
-            }
-            InputStream inputStream = sevenZFile.getInputStream(entry);
-            result.saveContent(inputStream, entry.getName(), MediaType.APPLICATION_OCTET_STREAM);
-            entry = sevenZFile.getNextEntry();
-        }
-    }
-
-    private boolean isSevenZ(ActionContent content, Format format) {
-        return (format != null && format.equals(Format.SEVEN_Z)) ||
-                Format.SEVEN_Z.getMediaType().equals(content.getMediaType()) ||
-                content.getName().endsWith("." + Format.SEVEN_Z.getValue()) ||
-                content.getName().endsWith(".7zip");
     }
 
     private DetectedFormatData detectFormat(InputStream contentInputStream) throws ArchiveException, IOException {
