@@ -21,13 +21,13 @@ import org.deltafi.common.types.FlowType;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
 import org.deltafi.core.repo.TransformFlowRepo;
-import org.deltafi.core.types.snapshot.SystemSnapshot;
-import org.deltafi.core.types.snapshot.FlowSnapshot;
-import org.deltafi.core.types.snapshot.TransformFlowSnapshot;
 import org.deltafi.core.types.Flow;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.types.TransformFlow;
 import org.deltafi.core.types.TransformFlowPlanEntity;
+import org.deltafi.core.types.snapshot.FlowSnapshot;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.TransformFlowSnapshot;
 import org.deltafi.core.validation.FlowValidator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -54,7 +54,7 @@ class TransformFlowServiceTest {
     TransformFlowService transformFlowService;
 
     @Captor
-    ArgumentCaptor<List<TransformFlow>> flowCaptor;
+    ArgumentCaptor<Collection<TransformFlow>> flowCaptor;
 
     @Mock
     FlowCacheService flowCacheService;
@@ -63,8 +63,8 @@ class TransformFlowServiceTest {
     void buildFlow() {
         TransformFlow running = transformFlow("running", FlowState.RUNNING, true);
         TransformFlow stopped = transformFlow("stopped", FlowState.STOPPED, false);
-        Mockito.when(transformFlowRepo.findByNameAndType("running", TransformFlow.class)).thenReturn(Optional.of(running));
-        Mockito.when(transformFlowRepo.findByNameAndType("stopped", TransformFlow.class)).thenReturn(Optional.of(stopped));
+        Mockito.when(transformFlowRepo.findByNameAndType("running", FlowType.TRANSFORM, TransformFlow.class)).thenReturn(Optional.of(running));
+        Mockito.when(transformFlowRepo.findByNameAndType("stopped", FlowType.TRANSFORM, TransformFlow.class)).thenReturn(Optional.of(stopped));
         Mockito.when(flowValidator.validate(Mockito.any())).thenReturn(Collections.emptyList());
 
         TransformFlowPlanEntity runningFlowPlan = new TransformFlowPlanEntity("running", "yep", PLUGIN_COORDINATES);
@@ -123,24 +123,19 @@ class TransformFlowServiceTest {
                 new TransformFlowSnapshot("missing", true, true)));
 
         Mockito.when(flowCacheService.flowsOfType(FlowType.TRANSFORM)).thenReturn(List.of(running, stopped, invalid));
-        Mockito.when(flowCacheService.getFlowOrThrow(FlowType.TRANSFORM, "running")).thenReturn(running);
-        Mockito.when(transformFlowRepo.findByNameAndType("running", TransformFlow.class)).thenReturn(Optional.of(running));
-        Mockito.when(transformFlowRepo.findByNameAndType("stopped", TransformFlow.class)).thenReturn(Optional.of(stopped));
-        Mockito.when(transformFlowRepo.findByNameAndType("invalid", TransformFlow.class)).thenReturn(Optional.of(invalid));
-        Mockito.when(transformFlowRepo.findByNameAndType("missing", TransformFlow.class)).thenReturn(Optional.empty());
 
         Result result = transformFlowService.resetFromSnapshot(systemSnapshot, true);
-
-        // verify the hard reset stopped any running flows
-        Mockito.verify(transformFlowRepo).updateFlowStatusState("running", FlowState.STOPPED, FlowType.TRANSFORM);
 
         Mockito.verify(transformFlowRepo).saveAll(flowCaptor.capture());
 
         Map<String, TransformFlow> updatedFlows = flowCaptor.getValue().stream()
                 .collect(Collectors.toMap(Flow::getName, Function.identity()));
 
-        // running is already running/testMode so no updates are made
-        assertThat(updatedFlows).doesNotContainKey("running");
+        assertThat(updatedFlows).hasSize(2);
+
+        // running is set back to running after state was reset
+        assertThat(updatedFlows.get("running").isRunning()).isTrue();
+        assertThat(updatedFlows.get("running").isTestMode()).isFalse();
 
         // stopped flow should be restarted since it was marked as running in the snapshot, it should also be in test mode
         assertThat(updatedFlows.get("stopped").isRunning()).isTrue();

@@ -36,8 +36,8 @@ import static org.deltafi.core.plugin.SystemPluginService.SYSTEM_PLUGIN_GROUP_ID
 
 @Repository
 public interface FlowRepo extends JpaRepository<Flow, UUID> {
-    @Query("SELECT f FROM Flow f WHERE f.name = :name AND TYPE(f) = :type")
-    <T extends Flow> Optional<T> findByNameAndType(String name, Class<T> type);
+    @Query("SELECT f FROM Flow f WHERE f.name = ?1 AND f.type = ?2")
+    <T extends Flow> Optional<T> findByNameAndType(String name, FlowType type, Class<T> clazz);
 
     @Query(value = "SELECT f.* FROM flows f " +
             "WHERE f.flow_status ->> 'state' = :#{#state.name} " +

@@ -1322,6 +1322,34 @@ class DeltaFiCoreApplicationTests {
 	}
 
 	@Test
+	void findFlowByNameAndType() {
+		clearForFlowTests();
+		String name = "flow-name";
+		EgressFlow egressFlow = new EgressFlow();
+		egressFlow.setName(name);
+		egressFlowRepo.save(egressFlow);
+
+		TransformFlow transformFlow = new TransformFlow();
+		transformFlow.setName(name);
+		transformFlowRepo.save(transformFlow);
+		transformFlowRepo.save(transformFlow);
+
+		RestDataSource restDataSource = new RestDataSource();
+		restDataSource.setName(name);
+		restDataSourceRepo.save(restDataSource);
+
+		TimedDataSource timedDataSource = new TimedDataSource();
+		timedDataSource.setName("timed" + name);
+		timedDataSourceRepo.save(timedDataSource);
+
+		assertThat(transformFlowRepo.findByNameAndType(name, FlowType.TRANSFORM, TransformFlow.class)).isNotEmpty();
+		assertThat(egressFlowRepo.findByNameAndType(name, FlowType.EGRESS, EgressFlow.class)).isNotEmpty();
+		assertThat(restDataSourceRepo.findByNameAndType(name, FlowType.REST_DATA_SOURCE, RestDataSource.class)).isNotEmpty();
+		assertThat(timedDataSourceRepo.findByNameAndType(name, FlowType.TIMED_DATA_SOURCE, TimedDataSource.class)).isEmpty();
+		assertThat(timedDataSourceRepo.findByNameAndType(timedDataSource.getName(), FlowType.TIMED_DATA_SOURCE, TimedDataSource.class)).isNotEmpty();
+	}
+
+	@Test
 	void getActionNamesByFamily() {
 		clearForFlowTests();
 
@@ -3529,7 +3557,7 @@ class DeltaFiCoreApplicationTests {
 		egressFlowRepo.save(egressFlow);
 
 		assertThat(egressFlowRepo.updateExpectedAnnotations("egress-flow", Set.of("b", "a", "c"))).isGreaterThan(0);
-		assertThat(egressFlowRepo.findByNameAndType("egress-flow", EgressFlow.class).orElseThrow().getExpectedAnnotations()).hasSize(3).containsAll(Set.of("a", "b", "c"));
+		assertThat(egressFlowRepo.findByNameAndType("egress-flow", FlowType.EGRESS, EgressFlow.class).orElseThrow().getExpectedAnnotations()).hasSize(3).containsAll(Set.of("a", "b", "c"));
 	}
 
 	@Test

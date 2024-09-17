@@ -24,12 +24,11 @@ import org.deltafi.core.generated.types.DataSourceErrorState;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
 import org.deltafi.core.repo.TimedDataSourceRepo;
-import org.deltafi.core.types.snapshot.SystemSnapshot;
-import org.deltafi.core.types.snapshot.FlowSnapshot;
-import org.deltafi.core.types.snapshot.TimedDataSourceSnapshot;
 import org.deltafi.core.types.*;
+import org.deltafi.core.types.snapshot.FlowSnapshot;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.types.snapshot.TimedDataSourceSnapshot;
 import org.deltafi.core.validation.FlowValidator;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -65,7 +64,7 @@ class TimedDataSourceServiceTest {
     ErrorCountService errorCountService;
 
     @Captor
-    ArgumentCaptor<List<TimedDataSource>> flowCaptor;
+    ArgumentCaptor<Collection<TimedDataSource>> flowCaptor;
 
     @Mock
     FlowCacheService flowCacheService;
@@ -74,8 +73,8 @@ class TimedDataSourceServiceTest {
     void buildFlow() {
         TimedDataSource running = timedDataSource("running", FlowState.RUNNING, true,"0 */10 * * * *", 10);
         TimedDataSource stopped = timedDataSource("stopped", FlowState.STOPPED, false, "*/1 * * * * *", -1);
-        Mockito.when(timedDataSourceRepo.findByNameAndType("running", TimedDataSource.class)).thenReturn(Optional.of(running));
-        Mockito.when(timedDataSourceRepo.findByNameAndType("stopped", TimedDataSource.class)).thenReturn(Optional.of(stopped));
+        Mockito.when(timedDataSourceRepo.findByNameAndType("running", FlowType.TIMED_DATA_SOURCE, TimedDataSource.class)).thenReturn(Optional.of(running));
+        Mockito.when(timedDataSourceRepo.findByNameAndType("stopped", FlowType.TIMED_DATA_SOURCE, TimedDataSource.class)).thenReturn(Optional.of(stopped));
         Mockito.when(flowValidator.validate(Mockito.any())).thenReturn(Collections.emptyList());
 
         TimedDataSourcePlanEntity runningFlowPlan = new TimedDataSourcePlanEntity("running", "yep", PLUGIN_COORDINATES, "topic",
@@ -151,28 +150,20 @@ class TimedDataSourceServiceTest {
         snapshots.add(snapshot("missing", false, true, "*/1 * * * * *", 3));
         systemSnapshot.setTimedDataSources(snapshots);
 
-        Mockito.when(flowCacheService.flowsOfType(FlowType.TIMED_DATA_SOURCE)).thenReturn(List.of(running, stopped, invalid));
-        Mockito.when(flowCacheService.getFlowOrThrow(FlowType.TIMED_DATA_SOURCE, "running")).thenReturn(running);
-        Mockito.when(timedDataSourceRepo.findByNameAndType("running", TimedDataSource.class)).thenReturn(Optional.of(running));
-        Mockito.when(timedDataSourceRepo.findByNameAndType("stopped", TimedDataSource.class)).thenReturn(Optional.of(stopped));
-        Mockito.when(timedDataSourceRepo.findByNameAndType("invalid", TimedDataSource.class)).thenReturn(Optional.of(invalid));
-        Mockito.when(timedDataSourceRepo.findByNameAndType("missing", TimedDataSource.class)).thenReturn(Optional.empty());
-        Mockito.when(timedDataSourceRepo.findByNameAndType("changed", TimedDataSource.class)).thenReturn(Optional.of(changed));
+        Mockito.when(flowCacheService.flowsOfType(FlowType.TIMED_DATA_SOURCE)).thenReturn(List.of(running, stopped, invalid, changed));
 
         Result result = timedDataSourceService.resetFromSnapshot(systemSnapshot, true);
 
-        // verify the hard reset stopped any running flows
-        Mockito.verify(timedDataSourceRepo).updateFlowStatusState("running", FlowState.STOPPED, FlowType.TIMED_DATA_SOURCE);
         Mockito.verify(timedDataSourceRepo).saveAll(flowCaptor.capture());
-
         Map<String, DataSource> updatedFlows = flowCaptor.getValue().stream()
                 .collect(Collectors.toMap(Flow::getName, Function.identity()));
 
+        assertThat(updatedFlows).hasSize(4);
 
-        assertThat(updatedFlows).hasSize(2);
-
+        TimedDataSource updatedRunning = getAsTimedDataSource(updatedFlows, "running");
         TimedDataSource updatedStop = getAsTimedDataSource(updatedFlows, "stopped");
         TimedDataSource updatedChanged = getAsTimedDataSource(updatedFlows, "changed");
+        TimedDataSource updatedInvalid = getAsTimedDataSource(updatedFlows, "invalid");
 
         // stopped flow should be restarted since it was marked as running in the snapshot, it should also be in test mode
         assertThat(updatedStop).isNotNull();
@@ -184,6 +175,19 @@ class TimedDataSourceServiceTest {
         assertThat(updatedChanged).isNotNull();
         assertThat(updatedChanged.getCronSchedule()).isEqualTo("0 */4 * * * *");
         assertThat(updatedChanged.getMaxErrors()).isEqualTo(-1);
+
+        assertThat(updatedRunning).isNotNull();
+        assertThat(updatedRunning.isRunning()).isTrue();
+        assertThat(updatedRunning.isTestMode()).isFalse();
+        assertThat(updatedRunning.getCronSchedule()).isEqualTo("0 */1 * * * *");
+        assertThat(updatedRunning.getMaxErrors()).isEqualTo(-1);
+
+        assertThat(updatedInvalid).isNotNull();
+        assertThat(updatedInvalid.isRunning()).isFalse();
+        assertThat(updatedInvalid.isInvalid()).isTrue();
+        assertThat(updatedInvalid.isTestMode()).isFalse();
+        assertThat(updatedInvalid.getCronSchedule()).isEqualTo("0 */3 * * * *");
+        assertThat(updatedInvalid.getMaxErrors()).isEqualTo(1);
 
         assertThat(result.isSuccess()).isFalse();
         assertThat(result.getInfo()).isEmpty();

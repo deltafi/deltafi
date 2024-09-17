@@ -26,6 +26,7 @@ import org.deltafi.core.generated.types.*;
 import org.deltafi.core.plugin.PluginEntity;
 import org.deltafi.core.plugin.PluginUninstallCheck;
 import org.deltafi.core.repo.FlowRepo;
+import org.deltafi.core.types.DataSource;
 import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.types.snapshot.FlowSnapshot;
@@ -321,14 +322,32 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
     public Result resetFromSnapshot(SystemSnapshot systemSnapshot, boolean hardReset) {
         refreshCache();
 
-        if (hardReset) {
-            getRunningFlowNames().forEach(this::stopFlow);
+        List<FlowT> flows = getAll();
+        Map<String, FlowT> updatedFlows = new HashMap<>();
+        Map<String, FlowT> allFlows = new HashMap<>();
+
+        // build map of the flow name to flows. Reset the state fields on a hard reset
+        for (FlowT flow : flows) {
+            if (hardReset) {
+                if (flow.isRunning() || flow.isTestMode()) {
+                    flow.getFlowStatus().setState(FlowState.STOPPED);
+                    flow.getFlowStatus().setTestMode(false);
+                    updatedFlows.put(flow.getName(), flow);
+                }
+
+                if (flow instanceof DataSource ds && ds.getMaxErrors() != -1) {
+                    ds.setMaxErrors(-1);
+                    updatedFlows.put(flow.getName(), flow);
+                }
+            }
+
+            allFlows.put(flow.getName(), flow);
         }
 
-        return resetFromSnapshot(systemSnapshot);
+        return resetFromSnapshot(systemSnapshot, allFlows, updatedFlows);
     }
 
-    public Result resetFromSnapshot(SystemSnapshot systemSnapshot) {
+    private Result resetFromSnapshot(SystemSnapshot systemSnapshot, Map<String, FlowT> allFlows, Map<String, FlowT> updatedFlows) {
         Result result = new Result();
         List<FlowSnapshotT> flowSnapshots = getFlowSnapshots(systemSnapshot);
 
@@ -336,19 +355,18 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
             return result;
         }
 
-        List<FlowT> updatedFlows = new ArrayList<>();
         for (FlowSnapshotT snapshot : flowSnapshots) {
-            FlowT existing = flowRepo.findByNameAndType(snapshot.getName(), flowClass).orElse(null);
+            FlowT existing = allFlows.get(snapshot.getName());
 
             if (existing == null) {
                 result.getErrors().add("Flow " + snapshot.getName() + " is no longer installed");
             } else if (updateFromSnapshot(existing, snapshot, result)) {
-                updatedFlows.add(existing);
+                updatedFlows.put(existing.getName(), existing);
             }
         }
 
         if (!updatedFlows.isEmpty()) {
-            saveAll(updatedFlows);
+            saveAll(updatedFlows.values());
             refreshCache();
         }
 
@@ -395,7 +413,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
      * @param flowName name of the flow to remove
      */
     public void removeByName(String flowName, PluginCoordinates systemPlugin) {
-        FlowT flow = flowRepo.findByNameAndType(flowName, flowClass).orElse(null);
+        FlowT flow = flowRepo.findByNameAndType(flowName, flowType, flowClass).orElse(null);
         if (flow != null) {
             if (flow.isRunning()) {
                 throw new IllegalStateException("Flow " + flowName + " cannot be removed while it is running");
@@ -449,7 +467,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
     }
 
     FlowT buildFlow(FlowPlanEntity flowPlan, List<Variable> variables) {
-        Optional<FlowT> existing = flowRepo.findByNameAndType(flowPlan.getName(), flowClass);
+        Optional<FlowT> existing = flowRepo.findByNameAndType(flowPlan.getName(), flowType, flowClass);
         FlowPlanT typedFlowPlan = flowPlanClass.cast(flowPlan);
         FlowT flow = flowPlanConverter.convert(typedFlowPlan, variables);
 
@@ -474,7 +492,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
         return persistedFlow;
     }
 
-    private void saveAll(List<FlowT> flows) {
+    private void saveAll(Collection<FlowT> flows) {
         flowRepo.saveAll(flows);
     }
 

@@ -36,11 +36,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -56,7 +52,7 @@ class EgressFlowServiceTest {
     EgressFlowRepo egressFlowRepo;
 
     @Captor
-    ArgumentCaptor<List<EgressFlow>> flowCaptor;
+    ArgumentCaptor<Collection<EgressFlow>> flowCaptor;
 
     @Mock
     FlowCacheService flowCacheService;
@@ -108,24 +104,19 @@ class EgressFlowServiceTest {
                 new EgressFlowSnapshot("missing", true, true)));
 
         Mockito.when(flowCacheService.flowsOfType(FlowType.EGRESS)).thenReturn(List.of(running, stopped, invalid));
-        Mockito.when(flowCacheService.getFlowOrThrow(FlowType.EGRESS, "running")).thenReturn(running);
-        Mockito.when(egressFlowRepo.findByNameAndType("running", EgressFlow.class)).thenReturn(Optional.of(running));
-        Mockito.when(egressFlowRepo.findByNameAndType("stopped", EgressFlow.class)).thenReturn(Optional.of(stopped));
-        Mockito.when(egressFlowRepo.findByNameAndType("invalid", EgressFlow.class)).thenReturn(Optional.of(invalid));
-        Mockito.when(egressFlowRepo.findByNameAndType("missing", EgressFlow.class)).thenReturn(Optional.empty());
 
         Result result = egressFlowService.resetFromSnapshot(systemSnapshot, true);
-
-        // verify the hard reset stopped any running flows
-        Mockito.verify(egressFlowRepo).updateFlowStatusState("running", FlowState.STOPPED, FlowType.EGRESS);
 
         Mockito.verify(egressFlowRepo).saveAll(flowCaptor.capture());
 
         Map<String, EgressFlow> updatedFlows = flowCaptor.getValue().stream()
                 .collect(Collectors.toMap(Flow::getName, Function.identity()));
 
-        // running is already running/testMode so no updates are made
-        assertThat(updatedFlows).doesNotContainKey("running");
+        assertThat(updatedFlows).hasSize(2);
+
+        // running is set back to running after state was reset
+        assertThat(updatedFlows.get("running").isRunning()).isTrue();
+        assertThat(updatedFlows.get("running").isTestMode()).isFalse();
 
         // stopped flow should be restarted since it was marked as running in the snapshot, it should also be in test mode
         assertThat(updatedFlows.get("stopped").isRunning()).isTrue();
