@@ -41,6 +41,7 @@ import org.deltafi.actionkit.action.transform.TransformResult;
 import org.deltafi.actionkit.action.transform.TransformResultType;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.SaveManyContent;
+import org.deltafi.core.action.decompress.SevenZUtil;
 import org.deltafi.core.exception.DecompressionTransformException;
 import org.deltafi.core.parameters.DecompressionType;
 import org.deltafi.core.parameters.RecursiveDecompressParameters;
@@ -54,6 +55,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 
+import static org.deltafi.core.action.decompress.BatchSizes.BATCH_BYTES;
+import static org.deltafi.core.action.decompress.BatchSizes.BATCH_FILES;
+
 @Component
 @Slf4j
 public class RecursiveDecompress extends TransformAction<RecursiveDecompressParameters> {
@@ -64,8 +68,6 @@ public class RecursiveDecompress extends TransformAction<RecursiveDecompressPara
     }
 
     final int MAX_LEVELS_SAFEGUARD = 100;
-    final private int BATCH_FILES = 250;
-    final private int BATCH_BYTES = 100 * 1024 * 1024;
 
     public RecursiveDecompress() {
         super("Recursively decompresses and un-archive");
@@ -86,6 +88,7 @@ public class RecursiveDecompress extends TransformAction<RecursiveDecompressPara
                 contentList,
                 params.getDecompressionType(),
                 input.content(0).getName(),
+                input.content(0).getMediaType(),
                 input.content(0).loadBytes());
 
         if (result != null) {
@@ -121,6 +124,9 @@ public class RecursiveDecompress extends TransformAction<RecursiveDecompressPara
                 // Un-archive cases (e.g. TAR) that will the parent prefix path added
                 if (parentLC.endsWith(".zip")) {
                     tempResult = doDecompress(context, unarchivedFiles, DecompressionType.ZIP,
+                            content.name(), content.content());
+                } else if (parentLC.endsWith(".7z") || parentLC.endsWith(".7zip")) {
+                    tempResult = doDecompress(context, unarchivedFiles, DecompressionType.SEVEN_Z,
                             content.name(), content.content());
                 } else if (parentLC.endsWith(".ar")) {
                     tempResult = doDecompress(context, unarchivedFiles, DecompressionType.AR,
@@ -244,21 +250,34 @@ public class RecursiveDecompress extends TransformAction<RecursiveDecompressPara
                                              DecompressionType decompression,
                                              String name,
                                              byte[] bytes) {
+        return doDecompress(context, contentList, decompression, name, null, bytes);
+    }
+
+    private TransformResultType doDecompress(ActionContext context,
+                                             List<SaveManyContent> contentList,
+                                             DecompressionType decompression,
+                                             String name,
+                                             String mediaType,
+                                             byte[] bytes) {
         try (InputStream contentStream = new ByteArrayInputStream(bytes)) {
             try {
-                switch (decompression) {
-                    case TAR_GZIP -> decompressTarGzip(contentStream, contentList);
-                    case TAR_Z -> decompressTarZ(contentStream, contentList);
-                    case TAR_XZ -> decompressTarXZ(contentStream, contentList);
-                    case ZIP -> unarchiveZip(contentStream, contentList);
-                    case TAR -> unarchiveTar(contentStream, contentList);
-                    case AR -> unarchiveAR(contentStream, contentList);
-                    case GZIP -> decompressGzip(contentStream, contentList, name);
-                    case XZ -> decompressXZ(contentStream, contentList, name);
-                    case Z -> decompressZ(contentStream, contentList, name);
-                    case AUTO -> decompressAutomatic(contentStream, contentList, name);
-                    default -> {
-                        return new ErrorResult(context, "Invalid decompression type: " + decompression).logErrorTo(log);
+                if (SevenZUtil.isSevenZ(name, mediaType, decompression)) {
+                    unarchive7Z(contentStream, contentList);
+                } else {
+                    switch (decompression) {
+                        case TAR_GZIP -> decompressTarGzip(contentStream, contentList);
+                        case TAR_Z -> decompressTarZ(contentStream, contentList);
+                        case TAR_XZ -> decompressTarXZ(contentStream, contentList);
+                        case ZIP -> unarchiveZip(contentStream, contentList);
+                        case TAR -> unarchiveTar(contentStream, contentList);
+                        case AR -> unarchiveAR(contentStream, contentList);
+                        case GZIP -> decompressGzip(contentStream, contentList, name);
+                        case XZ -> decompressXZ(contentStream, contentList, name);
+                        case Z -> decompressZ(contentStream, contentList, name);
+                        case AUTO -> decompressAutomatic(contentStream, contentList, name);
+                        default -> {
+                            return new ErrorResult(context, "Invalid decompression type: " + decompression).logErrorTo(log);
+                        }
                     }
                 }
                 contentStream.close();
@@ -406,6 +425,10 @@ public class RecursiveDecompress extends TransformAction<RecursiveDecompressPara
         } catch (IOException e) {
             throw new DecompressionTransformException("Unable to unarchive ar", e);
         }
+    }
+
+    void unarchive7Z(@NotNull InputStream stream, @NotNull List<SaveManyContent> contentList) throws DecompressionTransformException {
+        SevenZUtil.extractSevenZ(contentList, stream);
     }
 
     void unarchiveZip(@NotNull InputStream stream, @NotNull List<SaveManyContent> contentList) throws DecompressionTransformException {

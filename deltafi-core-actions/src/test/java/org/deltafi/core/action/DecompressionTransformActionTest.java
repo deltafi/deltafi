@@ -27,7 +27,8 @@ import org.deltafi.test.asserters.ContentAssert;
 import org.deltafi.test.content.DeltaFiTestRunner;
 import org.junit.jupiter.api.Test;
 
-import static org.deltafi.test.asserters.ActionResultAssertions.*;
+import static org.deltafi.test.asserters.ActionResultAssertions.assertErrorResult;
+import static org.deltafi.test.asserters.ActionResultAssertions.assertTransformResult;
 
 class DecompressionTransformActionTest {
     private static final String CONTENT_TYPE = "application/octet-stream";
@@ -77,6 +78,11 @@ class DecompressionTransformActionTest {
     }
 
     @Test
+    void autoDecompress7Z() {
+        validateUnarchiveResult("autoDecompress7Z/things.7z", DecompressionType.AUTO, "7z");
+    }
+
+    @Test
     void autoDecompressZip() {
         validateUnarchiveResult("autoDecompressZip/things.zip", DecompressionType.AUTO, "zip");
     }
@@ -90,6 +96,11 @@ class DecompressionTransformActionTest {
     @Test
     void autoDecompressGzip() {
         validateDecompressResult("autoDecompressGzip/thing1.txt.gz", DecompressionType.AUTO, "thing1.txt.gz", "gz");
+    }
+
+    @Test
+    void decompress7Z() {
+        validateUnarchiveResult("decompress7Z/things.7z", DecompressionType.SEVEN_Z, "7z");
     }
 
     @Test

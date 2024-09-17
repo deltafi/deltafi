@@ -15,20 +15,15 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.parameters;
+package org.deltafi.core.action.decompress;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import lombok.*;
-import org.deltafi.actionkit.action.parameters.ActionParameters;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
-@Data
-@ToString(callSuper = true)
-@EqualsAndHashCode(callSuper = true)
-@AllArgsConstructor
-@NoArgsConstructor
-public class DecompressionTransformParameters extends ActionParameters {
-    @JsonProperty(required = true)
-    @JsonPropertyDescription("Decompression type: tar, zip, ar, 7z, gzip, xz, z, tar.gz, tar.xz, tar.z")
-    public DecompressionType decompressionType;
+@Component
+@Slf4j
+public class BatchSizes {
+    public static final int BATCH_FILES = 250;
+    public static final int BATCH_BYTES = 100 * 1024 * 1024;
+
 }

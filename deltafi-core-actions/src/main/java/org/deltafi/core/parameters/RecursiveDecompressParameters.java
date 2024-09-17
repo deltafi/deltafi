@@ -29,7 +29,7 @@ import org.deltafi.actionkit.action.parameters.ActionParameters;
 @NoArgsConstructor
 public class RecursiveDecompressParameters extends ActionParameters {
     @JsonProperty(required = true)
-    @JsonPropertyDescription("Decompression type: tar, zip, ar, gzip, xz, z, tar.gz, tar.xz, tar.z")
+    @JsonPropertyDescription("Decompression type: tar, zip, ar, 7z, gzip, xz, z, tar.gz, tar.xz, tar.z")
     public DecompressionType decompressionType;
 
     @JsonPropertyDescription("If set and there are nested archives, lineage will be saved for nested files as the first content, and use this name.")

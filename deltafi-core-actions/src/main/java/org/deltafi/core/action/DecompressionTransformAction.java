@@ -39,6 +39,7 @@ import org.deltafi.actionkit.action.transform.TransformResult;
 import org.deltafi.actionkit.action.transform.TransformResultType;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.SaveManyContent;
+import org.deltafi.core.action.decompress.SevenZUtil;
 import org.deltafi.core.exception.DecompressionTransformException;
 import org.deltafi.core.parameters.DecompressionTransformParameters;
 import org.deltafi.core.parameters.DecompressionType;
@@ -49,14 +50,15 @@ import javax.ws.rs.core.MediaType;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.deltafi.core.action.decompress.BatchSizes.BATCH_BYTES;
+import static org.deltafi.core.action.decompress.BatchSizes.BATCH_FILES;
 
 @Component
 @Slf4j
 public class DecompressionTransformAction extends TransformAction<DecompressionTransformParameters> {
-    final private int BATCH_FILES = 500;
-    final private int BATCH_BYTES = 100 * 1024 * 1024;
-
     public DecompressionTransformAction() {
         super("Decompresses .tgz, .tar.Z, .tar.xz, .zip, .tar, .ar, .gz, .xz, .Z");
     }
@@ -71,20 +73,25 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
 
         try (InputStream contentStream = content.loadInputStream()) {
             try {
-                switch (params.getDecompressionType()) {
-                    case TAR_GZIP -> decompressTarGzip(contentStream, result);
-                    case TAR_Z -> decompressTarZ(contentStream, result);
-                    case TAR_XZ -> decompressTarXZ(contentStream, result);
-                    case ZIP -> unarchiveZip(contentStream, result);
-                    case TAR -> inPlaceUnarchiveTar(contentStream, result, content);
-                    case AR -> unarchiveAR(contentStream, result);
-                    case GZIP -> decompressGzip(contentStream, result, content.getName());
-                    case XZ -> decompressXZ(contentStream, result, content.getName());
-                    case Z -> decompressZ(contentStream, result, content.getName());
-                    case AUTO ->
-                            decompressionType = decompressAutomatic(contentStream, result, content, content.getName());
-                    default -> {
-                        return new ErrorResult(context, "Invalid decompression type: " + params.getDecompressionType()).logErrorTo(log);
+                if (SevenZUtil.isSevenZ(content.getName(), content.getMediaType(), params.getDecompressionType())) {
+                    unarchive7Z(contentStream, result);
+                    decompressionType = DecompressionType.SEVEN_Z.getValue();
+                } else {
+                    switch (params.getDecompressionType()) {
+                        case TAR_GZIP -> decompressTarGzip(contentStream, result);
+                        case TAR_Z -> decompressTarZ(contentStream, result);
+                        case TAR_XZ -> decompressTarXZ(contentStream, result);
+                        case ZIP -> unarchiveZip(contentStream, result);
+                        case TAR -> inPlaceUnarchiveTar(contentStream, result, content);
+                        case AR -> unarchiveAR(contentStream, result);
+                        case GZIP -> decompressGzip(contentStream, result, content.getName());
+                        case XZ -> decompressXZ(contentStream, result, content.getName());
+                        case Z -> decompressZ(contentStream, result, content.getName());
+                        case AUTO ->
+                                decompressionType = decompressAutomatic(contentStream, result, content, content.getName());
+                        default -> {
+                            return new ErrorResult(context, "Invalid decompression type: " + params.getDecompressionType()).logErrorTo(log);
+                        }
                     }
                 }
                 contentStream.close();
@@ -244,6 +251,10 @@ public class DecompressionTransformAction extends TransformAction<DecompressionT
         } catch (IOException e) {
             throw new DecompressionTransformException("Unable to unarchive ar", e);
         }
+    }
+
+    void unarchive7Z(@NotNull InputStream stream, @NotNull TransformResult result) throws DecompressionTransformException {
+        SevenZUtil.extractSevenZ(result, stream);
     }
 
     void unarchiveZip(@NotNull InputStream stream, @NotNull TransformResult result) throws DecompressionTransformException {

@@ -91,6 +91,11 @@ class RecursiveDecompressTest {
     }
 
     @Test
+    void autoDecompress7Z() {
+        validateUnarchiveResult("autoDecompress7Z/things.7z", DecompressionType.AUTO, "7z");
+    }
+
+    @Test
     void autoDecompressZip() {
         validateUnarchiveResult("autoDecompressZip/things.zip", DecompressionType.AUTO, "zip");
     }
@@ -104,6 +109,11 @@ class RecursiveDecompressTest {
     @Test
     void autoDecompressGzip() {
         validateDecompressResult("autoDecompressGzip/thing1.txt.gz", DecompressionType.AUTO, "thing1.txt.gz", "gz");
+    }
+
+    @Test
+    void decompress7Z() {
+        validateUnarchiveResult("decompress7Z/things.7z", DecompressionType.SEVEN_Z, "7z");
     }
 
     @Test

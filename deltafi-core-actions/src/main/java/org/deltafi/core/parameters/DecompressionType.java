@@ -26,6 +26,7 @@ public enum DecompressionType {
     @JsonProperty("auto") AUTO("auto"),
     @JsonProperty("tar") TAR("tar"),
     @JsonProperty("zip") ZIP("zip"),
+    @JsonProperty("7z") SEVEN_Z("7z"),
     @JsonProperty("gz") GZIP("gz"),
     @JsonProperty("xz") XZ("xz"),
     @JsonProperty("z") Z("z"),
