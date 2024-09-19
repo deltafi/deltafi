@@ -450,7 +450,7 @@ public class DeltaFile {
                     .metadata(previousFlow.getMetadata())
                     .content(previousFlow.lastContent())
                     .topics(subscribedTopics)
-                    .ancestorIds(new ArrayList<>(previousFlow.getInput().getAncestorIds()))
+                    .ancestorIds(Stream.concat(Stream.of(previousFlow.getNumber()), previousFlow.getInput().getAncestorIds().stream()).collect(Collectors.toList()))
                     .build())
             .depth(previousFlow.getDepth() + 1)
             .testMode(previousFlow.isTestMode())
