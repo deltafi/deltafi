@@ -27,6 +27,7 @@ import org.deltafi.core.exceptions.EntityNotFound;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.FetchContentService;
 import org.deltafi.core.types.ContentRequest;
+import org.deltafi.core.types.ErrorResponse;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -35,7 +36,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.time.OffsetDateTime;
 import java.util.Base64;
 
 @Slf4j
@@ -95,27 +95,21 @@ public class ContentRest {
     }
 
     @ExceptionHandler(EntityNotFound.class)
-    public ResponseEntity<Error> handleNotFound(EntityNotFound ex) {
+    public ResponseEntity<ErrorResponse> handleNotFound(EntityNotFound ex) {
         return handleFailure(HttpStatus.NOT_FOUND, ex);
     }
 
     @ExceptionHandler(ObjectStorageException.class)
-    public ResponseEntity<Error> handleObjectStorageException(ObjectStorageException ex) {
+    public ResponseEntity<ErrorResponse> handleObjectStorageException(ObjectStorageException ex) {
         return handleFailure(HttpStatus.INTERNAL_SERVER_ERROR, ex);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Error> handleBadRequest(IllegalArgumentException ex) {
+    public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException ex) {
         return handleFailure(HttpStatus.BAD_REQUEST, ex);
     }
 
-    public ResponseEntity<Error> handleFailure(HttpStatus status, Exception ex) {
-        return ResponseEntity.status(status).body(new Error(ex.getMessage()));
-    }
-
-    public record Error(String error, OffsetDateTime timestamp) {
-        public Error(String error) {
-            this(error, OffsetDateTime.now());
-        }
+    public ResponseEntity<ErrorResponse> handleFailure(HttpStatus status, Exception ex) {
+        return ResponseEntity.status(status).body(new ErrorResponse(ex.getMessage()));
     }
 }

@@ -1,0 +1,73 @@
+Category,Name,Description
+Administration,Admin,One permission to rule them all
+General,UIAccess,Grants access to the UI
+General,StatusView,Grants the ability to view system status
+General,DashboardView,Grants the ability to view the UI dashboard
+General,VersionsView,Grants the ability to view running versions
+Registry,RegistryView,Grants the ability to view internal registry contents
+Registry,RegistryUpload,Grants the ability to upload to the internal registry
+Registry,RegistryDelete,Grants the ability to remove content from the internal registry
+Metrics,MetricsAdmin,Grants the Admin role in Grafana
+Metrics,MetricsView,Grants the Viewer role in Grafana
+Metrics,MetricsEdit,Grants the Editor role in Grafana
+Metrics,SurveyCreate,Grants the ability to post survey metrics into the system
+DeltaFiles,DeltaFileMetadataView,Grants the ability to query for and view DeltaFiles
+DeltaFiles,DeltaFileMetadataWrite,Grants the ability to update DeltaFile metadata
+DeltaFiles,DeltaFileContentView,Grants the ability to view DeltaFile content
+DeltaFiles,DeltaFileReplay,Grants the ability to replay DeltaFiles
+DeltaFiles,DeltaFileResume,Grants the ability to resume DeltaFiles in an ERROR stage
+DeltaFiles,DeltaFileAcknowledge,Grants the ability to acknowledge DeltaFiles in an ERROR stage
+DeltaFiles,DeltaFileCancel,Grants the ability to cancel processing a DeltaFile
+DeltaFiles,DeltaFileIngress,Grants the ability to ingress DeltaFiles
+Flows,FlowView,Grants the ability to view flows
+Flows,FlowStart,Grants the ability to start flows
+Flows,FlowStop,Grants the ability to stop flows
+Flows,FlowValidate,Grants the ability to validate flows
+Flows,FlowUpdate,Grants the ability to update flows
+Plugins,PluginsView,Grants the ability to view installed Plugins
+Plugins,PluginInstall,Grants the ability to install Plugins
+Plugins,PluginUninstall,Grants the ability to uninstall Plugins
+Plugins,PluginVariableUpdate,Grants the ability to edit plugin variables
+Plugins,PluginImageRepoView,Grants the ability to view Plugin Image Repo Configuration
+Plugins,PluginImageRepoWrite,Grants the ability to create or update Plugin Image Repo Configuration
+Plugins,PluginImageRepoDelete,Grants the ability to delete Plugin Image Repo Configuration
+System Properties,SystemPropertiesRead,Grants the ability to view System Properties
+System Properties,SystemPropertiesUpdate,Grants the ability to edit System Properties
+Delete Policies,DeletePolicyCreate,Grants the ability to create Delete Policies
+Delete Policies,DeletePolicyRead,Grants the ability to view Delete Policies
+Delete Policies,DeletePolicyUpdate,Grants the ability to edit Delete Policies
+Delete Policies,DeletePolicyDelete,Grants the ability to delete Delete Policies
+Ingress Routing,IngressRoutingRuleCreate,Grants the ability to created Ingress Routing Rules
+Ingress Routing,IngressRoutingRuleRead,Grants the ability to view Ingress Routing Rules
+Ingress Routing,IngressRoutingRuleUpdate,Grants the ability to edit Ingress Routing Rules
+Ingress Routing,IngressRoutingRuleDelete,Grants the ability to delete Ingress Routing Rules
+Snapshots,SnapshotCreate,Grants the ability to delete Snapshots
+Snapshots,SnapshotRead,Grants the ability to view Snapshots
+Snapshots,SnapshotDelete,Grants the ability to delete Snapshots
+Snapshots,SnapshotRevert,Grants the ability to revert the system to a Snapshot
+Users,UserCreate,Grants the ability to create Users
+Users,UserRead,Grants the ability to view Users
+Users,UserUpdate,Grants the ability to edit Users
+Users,UserDelete,Grants the ability to delete Users
+Roles,RoleCreate,Grants the ability to create Roles
+Roles,RoleRead,Grants the ability to view Roles
+Roles,RoleUpdate,Grants the ability to edit Roles
+Roles,RoleDelete,Grants the ability to delete Roles
+Events,EventCreate,Grants the ability to create Events
+Events,EventRead,Grants the ability to view Events
+Events,EventUpdate,Grants the ability to edit Events
+Events,EventDelete,Grants the ability to delete Events
+Events,EventAcknowledge,Grants the ability to acknowledge Events
+Stress Tests,StressTest,Grants the ability to execute Stress Tests
+Integration Tests,IntegrationTestLaunch,Grants the ability to launch an integration test
+Integration Tests,IntegrationTestView,Grants the ability to view integration test results
+Integration Tests,IntegrationTestDelete,Grants the ability to delete results of completed integration tests
+Resume Policies,ResumePolicyApply,Grants the ability to apply Resume Policies to DeltaFiles already in an ERROR state
+Resume Policies,ResumePolicyDryRun,Grants the ability to perform a dry run of what DeltaFiles a policy may affect
+Resume Policies,ResumePolicyCreate,Grants the ability to create Resume Policies
+Resume Policies,ResumePolicyRead,Grants the ability to view Resume Policies
+Resume Policies,ResumePolicyUpdate,Grants the ability to edit Resume Policies
+Resume Policies,ResumePolicyDelete,Grants the ability to delete Resume Policies
+Topics,TopicsRead,Grants the ability to read Topics
+Topics,TopicsWrite,Grants the ability to create and update Topics
+Topics,TopicsDelete,Grants the ability to delete Topics

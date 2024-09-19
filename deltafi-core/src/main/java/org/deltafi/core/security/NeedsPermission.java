@@ -393,6 +393,26 @@ public class NeedsPermission {
 
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('UserRead'" + OR_ADMIN)
+    public @interface UserRead {}
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('UserCreate'" + OR_ADMIN)
+    public @interface UserCreate {}
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('UserUpdate'" + OR_ADMIN)
+    public @interface UserUpdate {}
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @PreAuthorize(value = "hasAnyAuthority('UserDelete'" + OR_ADMIN)
+    public @interface UserDelete {}
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
     @PreAuthorize(value = "hasAnyAuthority('UIAccess'" + OR_ADMIN)
     public @interface UIAccess {}
 

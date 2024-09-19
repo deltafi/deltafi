@@ -37,7 +37,7 @@
             <span v-else-if="field == 'permissions'">
               <PermissionPill v-for="permissionName in data.permissions" :key="permissionName" class="mr-1" :permission="appPermissionsByName[permissionName]" />
             </span>
-            <span v-else-if="['created_at', 'updated_at'].includes(field)">
+            <span v-else-if="['createdAt', 'updatedAt'].includes(field)">
               <Timestamp :timestamp="data[field]" format="YYYY-MM-DD HH:mm:ss"></Timestamp>
             </span>
             <span v-else-if="['name'].includes(field)">
@@ -101,9 +101,9 @@
             <div class="deltafi-fieldset">
               <div class="px-2 pt-3">
                 <div v-for="role in roles" :key="role.id" class="field-checkbox">
-                  <Checkbox v-model="user.role_ids" :input-id="role.name" name="role" :value="role.id" :disabled="isReadOnly" />
+                  <Checkbox v-model="user.roleIds" :input-id="role.name" name="role" :value="role.id" :disabled="isReadOnly" />
                   <label :for="role.name">
-                    <RolePill :role="role" :enabled="user.role_ids.includes(role.id)" />
+                    <RolePill :role="role" :enabled="user.roleIds.includes(role.id)" />
                   </label>
                 </div>
               </div>
@@ -158,7 +158,7 @@ import TabPanel from "primevue/tabpanel";
 import TabView from "primevue/tabview";
 
 const submitted = ref(false);
-const user = ref({ role_ids: [] });
+const user = ref({ roleIds: [] });
 const userDialog = ref(false);
 const deleteUserDialog = ref(false);
 const isNew = ref(false);
@@ -175,8 +175,8 @@ const columns = ref([
   { field: "username", header: "Username", sortable: true, hideInAuthMode: "cert" },
   { field: "roles", header: "Roles", sortable: true },
   { field: "permissions", header: "Permissions", sortable: true, hidden: true },
-  { field: "created_at", header: "Added", sortable: true, class: "timestamp-col" },
-  { field: "updated_at", header: "Updated", sortable: true, class: "timestamp-col" },
+  { field: "createdAt", header: "Added", sortable: true, class: "timestamp-col" },
+  { field: "updatedAt", header: "Updated", sortable: true, class: "timestamp-col" },
 ]);
 
 const onToggle = (val) => {
@@ -184,7 +184,7 @@ const onToggle = (val) => {
 };
 
 const hideDialog = () => {
-  user.value = { role_ids: [] };
+  user.value = { roleIds: [] };
   userDialog.value = false;
   isNew.value = false;
   deleteUserDialog.value = false;
@@ -207,7 +207,7 @@ const showUser = (userInfo) => {
 
 const newUser = () => {
   errors.value.splice(0, errors.value.length);
-  user.value = { role_ids: [] };
+  user.value = { roleIds: [] };
   isNew.value = true;
   isReadOnly.value = false;
   submitted.value = false;
@@ -215,7 +215,7 @@ const newUser = () => {
 };
 
 const saveUser = async () => {
-  const { id, created_at, updated_at, roles, permissions, ...saveParams } = user.value; // eslint-disable-line @typescript-eslint/no-unused-vars
+  const { id, createdAt, updatedAt, roles, permissions, ...saveParams } = user.value; // eslint-disable-line @typescript-eslint/no-unused-vars
   try {
     isNew.value ? await create(saveParams) : await updateUser(user.value.id, saveParams);
     await fetchUsers();

@@ -85,9 +85,9 @@ export default function useRoles() {
         notify.error(error)
         errors.value.push(error)
       }
-    } else if ('validation_errors' in body) {
-      for (const field in body.validation_errors) {
-        for (const error of body.validation_errors[field]) {
+    } else if ('validationErrors' in body) {
+      for (const field in body.validationErrors) {
+        for (const error of body.validationErrors[field]) {
           const validationError = `${field} ${error}`
           errors.value.push(validationError)
         }

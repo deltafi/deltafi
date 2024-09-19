@@ -17,22 +17,66 @@
  */
 package org.deltafi.core.rest;
 
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.AllArgsConstructor;
-import org.deltafi.core.services.AuthProxyService;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import lombok.RequiredArgsConstructor;
+import org.deltafi.core.audit.CoreAuditLogger;
+import org.deltafi.core.exceptions.InvalidRequestException;
+import org.deltafi.core.security.NeedsPermission;
+import org.deltafi.core.services.RoleService;
+import org.deltafi.core.types.Role;
+import org.deltafi.core.util.UpdateMapper;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.UUID;
+
+import static org.deltafi.common.constant.DeltaFiConstants.ADMIN_ID;
 
 @RestController
 @RequestMapping("roles")
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class RolesRest {
+    private final RoleService roleService;
+    private final CoreAuditLogger auditLogger;
 
-    private final AuthProxyService authProxyService;
+    @GetMapping
+    @NeedsPermission.RoleRead
+    public List<Role> getRoles() {
+        return roleService.getRoles();
+    }
 
-    @RequestMapping("**")
-    public ResponseEntity<String> executeRequest(HttpServletRequest request) {
-        return authProxyService.proxyRequest(request);
+    @GetMapping("{id}")
+    @NeedsPermission.RoleRead
+    public Role getRole(@PathVariable("id") UUID roleId) {
+        return roleService.getRole(roleId);
+    }
+
+    @PostMapping
+    @NeedsPermission.RoleCreate
+    public Role createRole(@RequestBody Role.Input role) {
+        Role createdRole = roleService.createRole(role);
+        auditLogger.audit("created role {}", createdRole.getName());
+        return createdRole;
+    }
+
+    @PutMapping("{id}")
+    @NeedsPermission.RoleUpdate
+    public Role updateRole(@PathVariable("id") UUID roleId, @RequestBody String updates) {
+        Role.Input roleInput = UpdateMapper.readValue(updates, Role.Input.class);
+        Role updated = roleService.updateRole(roleId, roleInput);
+        auditLogger.audit("updated role {}", updated.getName());
+        return updated;
+    }
+
+    @DeleteMapping("{id}")
+    @NeedsPermission.RoleDelete
+    public Role deleteRole(@PathVariable("id") UUID roleId) {
+        if (ADMIN_ID.equals(roleId)) {
+            throw new InvalidRequestException(HttpStatus.FORBIDDEN, "Unable to delete the admin role.");
+        }
+
+        Role destroyed = roleService.deleteRole(roleId);
+        auditLogger.audit("deleted role {}", destroyed.getName());
+        return destroyed;
     }
 }

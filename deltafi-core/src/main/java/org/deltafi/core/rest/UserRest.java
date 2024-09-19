@@ -17,22 +17,69 @@
  */
 package org.deltafi.core.rest;
 
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.AllArgsConstructor;
-import org.deltafi.core.services.AuthProxyService;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import lombok.RequiredArgsConstructor;
+import org.deltafi.core.audit.CoreAuditLogger;
+import org.deltafi.core.exceptions.InvalidRequestException;
+import org.deltafi.core.security.NeedsPermission;
+import org.deltafi.core.services.DeltaFiUserService;
+import org.deltafi.core.types.DeltaFiUser;
+import org.deltafi.core.types.DeltaFiUser.Input;
+import org.deltafi.core.types.DeltaFiUserDTO;
+import org.deltafi.core.util.UpdateMapper;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.UUID;
+
+import static org.deltafi.common.constant.DeltaFiConstants.ADMIN_ID;
 
 @RestController
 @RequestMapping("users")
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class UserRest {
 
-    private final AuthProxyService authProxyService;
+    private final DeltaFiUserService userService;
+    private final CoreAuditLogger auditLogger;
 
-    @RequestMapping("**")
-    public ResponseEntity<String> executeRequest(HttpServletRequest request) {
-        return authProxyService.proxyRequest(request);
+    @GetMapping
+    @NeedsPermission.UserRead
+    public List<DeltaFiUserDTO> getAllUsers() {
+        return userService.getAllUsers();
+    }
+
+    @GetMapping("{id}")
+    @NeedsPermission.UserRead
+    public DeltaFiUserDTO getUserById(@PathVariable("id") UUID id) {
+        return userService.getUserById(id);
+    }
+
+    @PostMapping
+    @NeedsPermission.UserCreate
+    public DeltaFiUserDTO createUser(@RequestBody DeltaFiUser.Input userInput) {
+        DeltaFiUserDTO user = userService.createUser(userInput);
+        auditLogger.audit("created user {}", user.username());
+        return user;
+    }
+
+    @PutMapping(value = "{id}")
+    @NeedsPermission.UserUpdate
+    public DeltaFiUserDTO updateUser(@PathVariable("id") UUID id, @RequestBody String updates) {
+        Input userInput = UpdateMapper.readValue(updates, Input.class);
+        DeltaFiUserDTO user = userService.updateUser(id, userInput);
+        auditLogger.audit("updated user {}", user.username());
+        return user;
+    }
+
+    @DeleteMapping("{id}")
+    @NeedsPermission.UserDelete
+    public DeltaFiUserDTO deleteUserById(@PathVariable("id") UUID id) {
+        if (ADMIN_ID.equals(id)) {
+            throw new InvalidRequestException(HttpStatus.FORBIDDEN, "Unable to delete admin user.");
+        }
+
+        DeltaFiUserDTO user = userService.deleteUser(id);
+        auditLogger.audit("deleted user {}",  user.username());
+        return user;
     }
 }

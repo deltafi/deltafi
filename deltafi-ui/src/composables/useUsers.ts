@@ -31,7 +31,7 @@ export default function useUsers() {
     try {
       await get(endpoint);
       data.value = response.value.map((user: any) => {
-        user.role_ids = user.roles.map((role: any) => role.id)
+        user.roleIds = user.roles.map((role: any) => role.id)
         return user;
       });
     } catch (response: any) {
@@ -88,9 +88,9 @@ export default function useUsers() {
         notify.error(error)
         errors.value.push(error)
       }
-    } else if ('validation_errors' in body) {
-      for (const field in body.validation_errors) {
-        for (const error of body.validation_errors[field]) {
+    } else if ('validationErrors' in body) {
+      for (const field in body.validationErrors) {
+        for (const error of body.validationErrors[field]) {
           const validationError = `${field} ${error}`
           errors.value.push(validationError)
         }

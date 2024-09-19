@@ -11,14 +11,9 @@ http {
     }
 
     map $host $internal_upstream_mapping {
-      "deltafi-auth-service" "deltafi-auth";
       "deltafi-core-service" "deltafi-core";
       "deltafi-ingress-service" "deltafi-ingress";
       "ingress" "deltafi-ingress";
-    }
-
-    upstream deltafi-auth {
-        server deltafi-auth:9292;
     }
 
     upstream deltafi-core {
@@ -70,9 +65,9 @@ http {
 
         server_name ${DOMAIN};
 
-        location ~ ^/(no-auth|basic-auth|cert-auth)  {
+        location /api/v2/auth  {
             internal;
-            proxy_pass              http://deltafi-auth;
+            proxy_pass              http://deltafi-core;
             proxy_pass_request_body off;
             proxy_set_header        Content-Length "";
             proxy_set_header        X-Original-URL http://$http_host;
@@ -104,9 +99,9 @@ http {
           proxy_pass http://$upstream_mapping;
         }
 
-        location ~ ^/(no-auth|basic-auth|cert-auth)  {
+        location /api/v2/auth  {
             internal;
-            proxy_pass              http://deltafi-auth;
+            proxy_pass              http://deltafi-core;
             proxy_pass_request_body off;
             proxy_set_header        Content-Length "";
             proxy_set_header        X-Original-URL http://$http_host;

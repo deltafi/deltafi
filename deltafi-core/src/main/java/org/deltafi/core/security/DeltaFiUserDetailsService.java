@@ -17,62 +17,21 @@
  */
 package org.deltafi.core.security;
 
-import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.constant.DeltaFiConstants;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.AuthorityUtils;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
+import org.deltafi.core.services.DeltaFiUserService;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
-
-import java.util.List;
-
 
 @Slf4j
-public class DeltaFiUserDetailsService implements org.springframework.security.core.userdetails.UserDetailsService {
+@RequiredArgsConstructor
+public class DeltaFiUserDetailsService implements UserDetailsService {
+
+    private final DeltaFiUserService deltaFiUserService;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
-        String permissions = request.getHeader(DeltaFiConstants.PERMISSIONS_HEADER);
-        List<GrantedAuthority> grantedAuthorities = AuthorityUtils.commaSeparatedStringToAuthorityList(permissions);
-
-        return new User(username, "", grantedAuthorities);
-    }
-
-    public static boolean currentUserCanViewMasked() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        if (authentication == null || authentication.getAuthorities() == null) {
-            return false;
-        }
-
-        return authentication.getAuthorities().stream().anyMatch(DeltaFiUserDetailsService::hasPluginVariableUpdate);
-    }
-
-    private static boolean hasPluginVariableUpdate(GrantedAuthority grantedAuthority) {
-        String auth = grantedAuthority != null ? grantedAuthority.getAuthority() : null;
-        return DeltaFiConstants.ADMIN_PERMISSION.equals(auth) || "PluginVariableUpdate".equals(auth);
-    }
-
-    public static String currentUsername() {
-        SecurityContext securityContext = SecurityContextHolder.getContext();
-
-        if (securityContext == null || securityContext.getAuthentication() == null || securityContext.getAuthentication().getPrincipal() == null) {
-            return null;
-        }
-
-        Object principal = securityContext.getAuthentication().getPrincipal();
-
-        if (principal instanceof User user) {
-            return user.getUsername();
-        }
-        return principal.toString();
+        return deltaFiUserService.loadUserByUsername(username);
     }
 }

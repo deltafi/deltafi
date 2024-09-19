@@ -17,10 +17,13 @@
  */
 package org.deltafi.common.constant;
 
+import java.util.UUID;
+
 public class DeltaFiConstants {
 
     private DeltaFiConstants(){}
 
+    public static final UUID ADMIN_ID = new UUID(0, 0);
     public static final String ADMIN_PERMISSION = "Admin";
     public static final String INGRESS_ACTION = "IngressAction";
     public static final String INVALID_ACTION_EVENT_RECEIVED = "Invalid action event received";
@@ -29,6 +32,7 @@ public class DeltaFiConstants {
     public static final String SYNTHETIC_EGRESS_ACTION_FOR_TEST = "SyntheticEgressActionForTestEgress";
     public static final String USER_NAME_HEADER = "X-User-Name";
     public static final String USER_ID_HEADER = "X-User-Id";
+    public static final String USER_METRIC_ROLE_HEADER = "X-Metrics-Role";
 
     // Metric names
     public static final String BYTES_IN = "bytes_in";

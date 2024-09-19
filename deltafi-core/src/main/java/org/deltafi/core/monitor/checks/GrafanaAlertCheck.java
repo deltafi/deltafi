@@ -39,6 +39,9 @@ import java.net.http.HttpResponse;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.deltafi.common.constant.DeltaFiConstants.USER_METRIC_ROLE_HEADER;
+import static org.deltafi.common.constant.DeltaFiConstants.USER_NAME_HEADER;
+
 @Slf4j
 @MonitorProfile
 public class GrafanaAlertCheck extends StatusCheck {
@@ -65,8 +68,8 @@ public class GrafanaAlertCheck extends StatusCheck {
         request = HttpRequest.newBuilder().GET()
                 .uri(URI.create(grafanaUrl + ALERT_API))
                 .setHeader("content-type", MediaType.APPLICATION_JSON_VALUE)
-                .setHeader("X-Metrics-Role", "Admin")
-                .setHeader("X-User-Name", "admin").build();
+                .setHeader(USER_METRIC_ROLE_HEADER, "Admin")
+                .setHeader(USER_NAME_HEADER, "admin").build();
     }
 
     @Override

@@ -442,7 +442,6 @@ _check_local_fqdns() {
   _verify_or_replace_fqdn "minio.$domain"
   _verify_or_replace_fqdn "orchestration.$domain"
   _verify_or_replace_fqdn "deltafi-api-service"
-  _verify_or_replace_fqdn "deltafi-auth-service"
   _verify_or_replace_fqdn "deltafi-core-service"
   _verify_or_replace_fqdn "deltafi-ingress-service"
 }
@@ -466,10 +465,7 @@ deltafi:
     envVar:
       HTTP_MAX_BODY_SIZE: 5G
   auth:
-    image: ${repo}/deltafi-auth:${tag}
-    workers: 8
     mode: disabled # basic, cert, or disabled
-    secret: auth-secret
     entityResolver:
       enabled: false
       image: ${repo}/deltafi-entity-resolver:${tag}
@@ -556,13 +552,8 @@ _append_common_from_values() {
 
 _append_compose_profiles() {
   profiles=()
-  docs_enabled=$(_from_values ".deltafi.docs.enabled")
   egress_sink_enabled=$(_from_values ".deltafi.egress_sink.enabled")
   entity_resolver_enabled=$(_from_values ".deltafi.auth.entityResolver.enabled")
-
-  if [[ "${docs_enabled}" = "true" ]]; then
-    profiles+=("docs")
-  fi
 
   if [[ "${egress_sink_enabled}" = "true" ]]; then
     profiles+=("egress-sink")
@@ -572,9 +563,7 @@ _append_compose_profiles() {
     profiles+=("entity-resolver")
   fi
 
-  # TODO - nginx template needs to support disabling these services before the profiles can be used to disable services
-  # profile_str=$(local IFS=, ; echo "${profiles[*]}")
-  profile_str="docs,egress-sink"
+  profile_str=$(local IFS=, ; echo "${profiles[*]}")
   if [[ -n "${profile_str}" ]]; then
     _append_startup "COMPOSE_PROFILES" "${profile_str}"
   fi
@@ -599,8 +588,7 @@ _write_startup_file() {
     _append_startup "CLICKHOUSE_ETL_SCALE" "0"
   fi
   _append_startup_from_values "DELTAFI_API" ".deltafi.api.image"
-  _append_startup_from_values "DELTAFI_AUTH" ".deltafi.auth.image"
-  _append_startup_from_values "DELTAFI_AUTH_RESOLVER" ".deltafi.auth.entityResolver.image"
+  _append_startup_from_values "DELTAFI_ENTITY_RESOLVER" ".deltafi.auth.entityResolver.image"
   _append_startup_from_values "DELTAFI_CORE" ".deltafi.core.image"
   _append_startup_from_values "DELTAFI_CORE_ACTIONS" ".deltafi.core_actions.image"
   _append_startup_from_values "DELTAFI_DOCS" ".deltafi.docs.image"
@@ -620,9 +608,7 @@ _write_startup_file() {
   _append_startup_from_values "REDIS" ".dependencies.valkey"
   _append_startup_from_values "CLICKHOUSE" ".dependencies.clickhouse"
   _append_startup_from_values "DOCKER_WEB_GUI" ".dependencies.docker_web_gui"
-  _append_startup_from_values "API_WORKERS" ".deltafi.api.workers"
-  _append_startup_from_values "AUTH_WORKERS" ".deltafi.auth.workers"
-  _append_startup_from_values "AUTH_RESOLVER_PORT" ".deltafi.auth.entityResolver.port"
+  _append_startup_from_values "ENTITY_RESOLVER_PORT" ".deltafi.auth.entityResolver.port"
   _append_compose_profiles
 }
 
@@ -630,7 +616,6 @@ _write_startup_file() {
 _write_common_base() {
   cat <<EOF > "${COMMON_SETTINGS}"
 CORE_URL=http://deltafi-core:8080/api/v2/
-DELTAFI_AUTH_URL=http://deltafi-auth:9292
 DELTAFI_GRAFANA_URL=http://deltafi-grafana:3000
 DELTAFI_MODE=STANDALONE
 GRAPHITE_HOST=deltafi-graphite
@@ -670,7 +655,7 @@ _write_env_files() {
 
   entity_resolver_port=$(_from_values ".deltafi.auth.entityResolver.port")
   entity_resolver_enabled=$(_from_values ".deltafi.auth.entityResolver.enabled")
-  entity_resolver_url="http://deltafi-auth-resolver:${entity_resolver_port}"
+  entity_resolver_url="http://deltafi-entity-resolver:${entity_resolver_port}"
 
   _append_common "ENTITY_RESOLVER_ENABLED" "${entity_resolver_enabled}"
   _append_common "ENTITY_RESOLVER_URL" "${entity_resolver_url}"
@@ -681,22 +666,14 @@ _write_env_files() {
 
   _append_startup_from_values "CLICKHOUSE_ENABLED" ".deltafi.clickhouse.enabled"
   _append_startup_from_values "CLICKHOUSE_ETL_ENABLED" ".deltafi.clickhouse_etl.enabled"
-  case "${auth_mode}" in
-    disabled)
-      auth_request="/no-auth"
-      ;;
-    basic)
-      auth_request="/basic-auth"
-      ;;
-    cert)
-      auth_request="/cert-auth"
-      ;;
-    *)
-      echo "Invalid auth mode - ${auth_mode}"
-      exit 1
-  esac
 
-  _append "AUTH_REQUEST" "${auth_request}" "${NGINX_SETTINGS}"
+  valid_modes=("disabled" "basic" "cert")
+  if [[ ! "${valid_modes[*]}" =~ ${auth_mode} ]]; then
+      echo "Invalid auth_mode value - $auth_mode"
+      exit 1
+  fi
+
+  _append "AUTH_REQUEST" "/api/v2/auth" "${NGINX_SETTINGS}"
   _append "DOMAIN" "${domain}" "${NGINX_SETTINGS}"
 }
 

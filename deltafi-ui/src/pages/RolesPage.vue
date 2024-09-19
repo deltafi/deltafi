@@ -29,7 +29,7 @@
             <span v-if="['permissions'].includes(field)">
               <PermissionPill v-for="permissionName in data.permissions" :key="permissionName" class="mr-1" :permission="appPermissionsByName[permissionName]" />
             </span>
-            <span v-else-if="['created_at', 'updated_at'].includes(field)">
+            <span v-else-if="['createdAt', 'updatedAt'].includes(field)">
               <Timestamp :timestamp="data[field]" format="YYYY-MM-DD HH:mm:ss"></Timestamp>
             </span>
             <span v-else-if="['name'].includes(field)">
@@ -114,8 +114,8 @@ const activeTabIndex = ref(0);
 const columns = ref([
   { field: "name", header: "Name", sortable: true, class: "name-col" },
   { field: "permissions", header: "Permissions", sortable: false },
-  { field: "created_at", header: "Added", sortable: true, class: "timestamp-col" },
-  { field: "updated_at", header: "Updated", sortable: true, class: "timestamp-col" },
+  { field: "createdAt", header: "Added", sortable: true, class: "timestamp-col" },
+  { field: "updatedAt", header: "Updated", sortable: true, class: "timestamp-col" },
 ]);
 
 const hideDialog = () => {
@@ -150,7 +150,7 @@ const newRole = () => {
 };
 
 const saveRole = async () => {
-  const { id, created_at, updated_at, ...saveParams } = role.value; // eslint-disable-line @typescript-eslint/no-unused-vars
+  const { id, createdAt, updatedAt, ...saveParams } = role.value; // eslint-disable-line @typescript-eslint/no-unused-vars
   try {
     isNew.value ? await create(saveParams) : await updateRole(role.value.id, saveParams);
     await fetchRoles();

@@ -77,28 +77,11 @@ services:
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-  deltafi-auth:
-    image: ${DELTAFI_AUTH}
-    container_name: deltafi-auth
+  deltafi-entity-resolver:
+    image: ${DELTAFI_ENTITY_RESOLVER}
+    container_name: deltafi-entity-resolver
     environment:
-      DATA_DIR: /data
-      WORKERS: ${AUTH_WORKERS}
-    env_file:
-      - ${ENV_DIR}/common.env
-    expose:
-      - "9292"
-    labels:
-      deltafi-group: deltafi-core
-      <<: *logging-label
-    networks:
-      - deltafi
-    restart: unless-stopped
-    volumes:
-      - ${DATA_DIR}/auth:/data
-    user: "${USER_ID}"
-  deltafi-auth-resolver:
-    image: ${DELTAFI_AUTH_RESOLVER}
-    container_name: deltafi-auth-resolver
+      DATA_DIR: "/data"
     expose:
       - "${AUTH_RESOLVER_PORT}"
     labels:
@@ -107,7 +90,9 @@ services:
     networks:
       - deltafi
     restart: unless-stopped
-    profiles: ["auth-resolver"]
+    profiles: ["entity-resolver"]
+    volumes:
+      - ${DATA_DIR}/auth:/data
   deltafi-ui:
     image: ${DELTAFI_UI}
     container_name: deltafi-ui
@@ -189,6 +174,7 @@ services:
       deltafi:
         aliases:
           - "deltafi-egress-sink-service"
+    profiles: ["egress-sink"]
     restart: unless-stopped
     volumes:
       - ${DATA_DIR}/egress-sink:/data/deltafi/egress-sink
@@ -398,8 +384,6 @@ services:
     image: ${NGINX}
     container_name: deltafi-nginx
     depends_on:
-      deltafi-auth:
-        condition: service_started
       deltafi-ui:
         condition: service_started
       deltafi-grafana:

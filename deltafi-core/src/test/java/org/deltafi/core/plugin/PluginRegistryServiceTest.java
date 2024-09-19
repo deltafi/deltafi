@@ -24,7 +24,7 @@ import org.deltafi.common.types.Plugin;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.PluginRegistration;
 import org.deltafi.common.types.Variable;
-import org.deltafi.core.security.DeltaFiUserDetailsService;
+import org.deltafi.core.services.DeltaFiUserService;
 import org.deltafi.core.services.*;
 import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.types.Result;
@@ -255,19 +255,19 @@ class PluginRegistryServiceTest {
 
     @Test
     void testGetPluginsWithVariablesAsAdmin() {
-        try (MockedStatic<DeltaFiUserDetailsService> userDetailsServiceMockedStatic = Mockito.mockStatic(DeltaFiUserDetailsService.class)) {
+        try (MockedStatic<DeltaFiUserService> userDetailsServiceMockedStatic = Mockito.mockStatic(DeltaFiUserService.class)) {
             testGetPluginsWithVariables(userDetailsServiceMockedStatic, true);
         }
     }
 
     @Test
     void testGetPluginsWithVariablesAsNonAdmin() {
-        try (MockedStatic<DeltaFiUserDetailsService> userDetailsServiceMockedStatic = Mockito.mockStatic(DeltaFiUserDetailsService.class)) {
+        try (MockedStatic<DeltaFiUserService> userDetailsServiceMockedStatic = Mockito.mockStatic(DeltaFiUserService.class)) {
             testGetPluginsWithVariables(userDetailsServiceMockedStatic, false);
         }
     }
 
-    private void testGetPluginsWithVariables(MockedStatic<DeltaFiUserDetailsService> userDetailsServiceMockedStatic, boolean isAdmin) {
+    private void testGetPluginsWithVariables(MockedStatic<DeltaFiUserService> userDetailsServiceMockedStatic, boolean isAdmin) {
         PluginEntity one = makeDependencyPlugin();
         PluginEntity two = makeDependencyPlugin();
         Variable variable = Util.buildNewVariable("setValue");
@@ -275,7 +275,7 @@ class PluginRegistryServiceTest {
         Mockito.when(pluginRepository.findAll()).thenReturn(List.of(one, two));
         Mockito.when(pluginVariableService.getVariablesByPlugin(Mockito.any())).thenReturn(variableList());
 
-        userDetailsServiceMockedStatic.when(DeltaFiUserDetailsService::currentUserCanViewMasked).thenReturn(isAdmin);
+        userDetailsServiceMockedStatic.when(DeltaFiUserService::currentUserCanViewMasked).thenReturn(isAdmin);
         List<PluginEntity> plugins = pluginRegistryService.getPluginsWithVariables();
         assertThat(plugins).hasSize(2);
         Consumer<Variable> checker = isAdmin ? this::verifyNoMaskedValues : this::verifyMaskedValues;

@@ -30,7 +30,8 @@ import org.deltafi.common.content.Segment;
 import org.deltafi.common.queue.jackey.ValkeyKeyedBlockingQueue;
 import org.deltafi.common.resource.Resource;
 import org.deltafi.common.types.*;
-import org.deltafi.common.types.FlowType;
+import org.deltafi.core.audit.CoreAuditLogger;
+import org.deltafi.core.configuration.AuthProperties;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.configuration.ui.Link;
 import org.deltafi.core.configuration.ui.Link.LinkType;
@@ -55,15 +56,12 @@ import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryRepo;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
 import org.deltafi.core.repo.*;
+import org.deltafi.core.rest.AuthRest;
 import org.deltafi.core.services.*;
 import org.deltafi.core.services.analytics.AnalyticEventService;
-import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.snapshot.SystemSnapshotDatafetcherTestHelper;
-import org.deltafi.core.repo.SystemSnapshotRepo;
-import org.deltafi.core.types.PluginVariables;
-import org.deltafi.core.types.ResumePolicy;
 import org.deltafi.core.types.*;
-import org.deltafi.core.types.DataSource;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.util.Util;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -83,6 +81,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
@@ -117,9 +116,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static org.deltafi.common.constant.DeltaFiConstants.*;
 import static org.deltafi.common.types.ActionState.*;
-import static org.deltafi.core.datafetchers.FlowPlanDatafetcherTestHelper.PLUGIN_COORDINATES;
 import static org.deltafi.core.datafetchers.DeletePolicyDatafetcherTestHelper.*;
 import static org.deltafi.core.datafetchers.DeltaFilesDatafetcherTestHelper.*;
+import static org.deltafi.core.datafetchers.FlowPlanDatafetcherTestHelper.PLUGIN_COORDINATES;
 import static org.deltafi.core.metrics.MetricsUtil.extendTagsForAction;
 import static org.deltafi.core.metrics.MetricsUtil.tagsFor;
 import static org.deltafi.core.plugin.PluginDataFetcherTestHelper.*;
@@ -250,6 +249,18 @@ class DeltaFiCoreApplicationTests {
 	@Autowired
 	UiLinkRepo uiLinkRepo;
 
+	@Autowired
+	DeltaFiUserRepo userRepo;
+
+	@Autowired
+	RoleRepo roleRepo;
+
+	@Autowired
+	DeltaFiUserService userService;
+
+	@Autowired
+	RoleService roleService;
+
 	@MockBean
 	StorageConfigurationService storageConfigurationService;
 
@@ -304,6 +315,9 @@ class DeltaFiCoreApplicationTests {
 	@Autowired
 	List<FlowService<?, ?, ?, ?>> flowServices;
 
+	@Autowired
+	JdbcTemplate jdbcTemplate;
+
 	private final OffsetDateTime NOW = OffsetDateTime.now(Clock.tickMillis(ZoneOffset.UTC));
 
 	@TestConfiguration
@@ -316,6 +330,12 @@ class DeltaFiCoreApplicationTests {
 		@Bean
 		public Clock clock() {
 			return Clock.tickMillis(ZoneOffset.UTC);
+		}
+
+		@Bean
+		public AuthRest authRest(CoreAuditLogger coreAuditLogger) {
+			// manually create bean to mock wiring in the domain
+			return new AuthRest("local.deltafi.org", new AuthProperties("disabled"), coreAuditLogger);
 		}
 	}
 
@@ -4368,9 +4388,122 @@ class DeltaFiCoreApplicationTests {
 	void saveDeltaFileLink() {
 		uiLinkRepo.deleteAll();
 		assertThat(uiLinkService.saveLink(link())).isNotNull();
+
 		// verify duplicate link (by name/type) is rejected
 		assertThatThrownBy(() -> uiLinkService.saveLink(link()))
 				.isInstanceOf(ValidationException.class).hasMessageContaining("already exists");
+	}
+
+	@Test
+	void adminUserCreated() {
+		// admin user that should have been created on initialization
+		DeltaFiUser admin = userRepo.findById(ADMIN_ID).orElseThrow();
+
+		assertThat(admin.getRoles()).hasSize(1);
+		Role adminRole = admin.getRoles().iterator().next();
+		assertThat(adminRole.getPermissions()).contains("Admin");
+
+		// mock running create admin again, verify not changes are made
+		userRepo.createAdmin(ADMIN_ID, OffsetDateTime.now().plusYears(20));
+		DeltaFiUser afterCreate = userRepo.findById(ADMIN_ID).orElseThrow();
+		assertThat(afterCreate.getCreatedAt()).isEqualTo(admin.getCreatedAt());
+		assertThat(afterCreate.getUpdatedAt()).isEqualTo(admin.getUpdatedAt());
+
+		// note - if user removes the Admin role from the admin it will be put back on reboot
+		assertThat(afterCreate.getRoles()).hasSize(1).contains(adminRole);
+	}
+
+	@Test
+	void removeRole() {
+		Role role = Role.builder().id(UUID.randomUUID()).permission("UIAccess").build();
+		roleRepo.save(role);
+
+		DeltaFiUserDTO one = userService.createUser(DeltaFiUser.Input.builder().name("one").username("one").roleIds(Set.of(role.getId())).build());
+		DeltaFiUserDTO two = userService.createUser(DeltaFiUser.Input.builder().name("two").username("two").roleIds(Set.of(ADMIN_ID, role.getId())).build());
+
+		roleService.deleteRole(role.getId());
+
+		assertThat(userRepo.findById(one.id()).orElseThrow().getRoles()).isEmpty();
+		assertThat(userRepo.findById(two.id()).orElseThrow().getRoles()).hasSize(1).doesNotContain(role);
+		// cleanup after test
+		userRepo.deleteAllById(List.of(one.id(), two.id()));
+	}
+
+	@Test
+	void removeUser() {
+		Role role = Role.builder().id(UUID.randomUUID()).permission("UIAccess").build();
+		roleRepo.save(role);
+
+		DeltaFiUserDTO one = userService.createUser(DeltaFiUser.Input.builder().name("one").username("one").roleIds(Set.of(role.getId())).build());
+
+		assertThat(countRolesForUser(one.id())).isEqualTo(1);
+		userService.deleteUser(one.id());
+		assertThat(countRolesForUser(one.id())).isZero();
+
+		// cleanup after the test
+		userRepo.deleteById(one.id());
+		roleRepo.deleteById(role.getId());
+	}
+
+	private int countRolesForUser(UUID id) {
+		Integer count = jdbcTemplate.queryForObject("select count(*) from user_roles where user_id = ?", Integer.class, id);
+		return count != null ? count : -1;
+	}
+
+	@Test
+	void checkDuplicateUserFields() {
+		DeltaFiUser bob = DeltaFiUser.builder().id(UUID.randomUUID()).name("bob").dn("CN=bob").username("bob").build();
+		DeltaFiUser jane = DeltaFiUser.builder().id(UUID.randomUUID()).name("jane").dn("CN=jane").username("jane").build();
+		userRepo.saveAll(List.of(bob, jane));
+
+		assertThat(userRepo.existsByName("bob")).isTrue();
+		assertThat(userRepo.existsByIdNotAndName(jane.getId(), "bob")).isTrue();
+		assertThat(userRepo.existsByIdNotAndName(bob.getId(), "bob")).isFalse();
+
+		assertThat(userRepo.existsByDn("CN=bob")).isTrue();
+		assertThat(userRepo.existsByIdNotAndDn(jane.getId(), "CN=bob")).isTrue();
+		assertThat(userRepo.existsByIdNotAndDn(bob.getId(), "CN=bob")).isFalse();
+
+		assertThat(userRepo.existsByUsername("bob")).isTrue();
+		assertThat(userRepo.existsByIdNotAndUsername(jane.getId(), "bob")).isTrue();
+		assertThat(userRepo.existsByIdNotAndUsername(bob.getId(), "bob")).isFalse();
+	}
+
+	@Test
+	void rejectInvalidRole() {
+		DeltaFiUser bob = DeltaFiUser.builder().id(UUID.randomUUID()).name("name").username("uname").build();
+		userRepo.save(bob);
+
+		DeltaFiUser.Input update = DeltaFiUser.Input.builder().roleIds(Set.of(ADMIN_ID, UUID.randomUUID())).build();
+		UUID id = bob.getId();
+		assertThatThrownBy(() -> userService.updateUser(id, update))
+				.isInstanceOf(InvalidRequestException.class)
+				.hasMessage("One or more role ids were not found");
+	}
+
+	@Test
+	void checkDuplicateRoleFields() {
+		Role a = Role.builder().id(UUID.randomUUID()).name("a").permission("UIAccess").build();
+		Role b = Role.builder().id(UUID.randomUUID()).name("b").permission("UIAccess").build();
+		roleRepo.saveAll(List.of(a, b));
+
+		assertThat(roleRepo.existsByName("a")).isTrue();
+		assertThat(roleRepo.existsByIdNotAndName(b.getId(), "a")).isTrue();
+		assertThat(roleRepo.existsByIdNotAndName(a.getId(), "a")).isFalse();
+	}
+
+	private DeltaFiUser user(List<DeltaFiUser> deltaFiUsers, String name) {
+		return deltaFiUsers.stream().filter(user -> name.equals(user.getName())).findFirst().orElseThrow();
+	}
+
+	@Test
+	void rolesCreated() {
+		List<Role> roles = roleRepo.findAll();
+		assertThat(roles).hasSizeGreaterThanOrEqualTo(3);
+		assertThat(roleRepo.existsById(ADMIN_ID)).isTrue();
+		assertThat(roles.stream().anyMatch(r -> "Admin".equals(r.getName()))).isTrue();
+		assertThat(roles.stream().anyMatch(r -> "Ingress Only".equals(r.getName()))).isTrue();
+		assertThat(roles.stream().anyMatch(r -> "Read Only".equals(r.getName()))).isTrue();
 	}
 
 	Link link() {

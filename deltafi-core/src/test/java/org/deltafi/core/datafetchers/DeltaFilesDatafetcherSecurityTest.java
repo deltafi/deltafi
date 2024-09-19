@@ -21,14 +21,15 @@ import graphql.schema.DataFetchingEnvironmentImpl;
 import org.assertj.core.api.Assertions;
 import org.deltafi.common.content.ContentStorageService;
 import org.deltafi.core.audit.CoreAuditLogger;
-import org.deltafi.core.security.SecurityConfig;
 import org.deltafi.core.services.RestDataSourceService;
 import org.deltafi.core.services.DeltaFilesService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.test.context.support.WithMockUser;
 
 import java.util.ArrayList;
@@ -36,26 +37,15 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 
-@SpringBootTest(classes = {DeltaFilesDatafetcher.class, SecurityConfig.class},
-        webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@EnableMethodSecurity
+@SpringBootTest(classes = {DeltaFilesDatafetcher.class}, webEnvironment = WebEnvironment.NONE)
+@MockBean({DeltaFilesService.class, RestDataSourceService.class, ContentStorageService.class, CoreAuditLogger.class})
 class DeltaFilesDatafetcherSecurityTest {
     
     private static final UUID DID = UUID.randomUUID();
 
     @Autowired
     DeltaFilesDatafetcher deltaFilesDatafetcher;
-
-    @MockBean
-    DeltaFilesService deltaFilesService;
-
-    @MockBean
-    RestDataSourceService restDataSourceService;
-
-    @MockBean
-    ContentStorageService contentStorageService;
-
-    @MockBean
-    private CoreAuditLogger auditLogger;
 
     @Test
     @WithMockUser(username = "user", authorities = { "NO_MATCH" })

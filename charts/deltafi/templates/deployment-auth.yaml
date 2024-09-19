@@ -17,7 +17,9 @@ spec:
         app: deltafi-auth
         group: deltafi-core
     spec:
+      {{- include "initContainersWaitForDatabases" . | nindent 6 }}
       volumes:
+        {{- include "coreVolumes" . | nindent 8 }}
         - name: deltafi-auth
           persistentVolumeClaim:
             claimName: deltafi-auth
@@ -33,32 +35,35 @@ spec:
           value: /data
       {{ end }}
       - name: deltafi-auth
-        image: {{ .Values.deltafi.auth.image }}
+        image: {{ .Values.deltafi.core.image }}
         env:
-        - name: DOMAIN
-          value: {{ .Values.ingress.domain }}
-        - name: DATA_DIR
-          value: /data
-        - name: WORKERS
-          value: {{ default "8" .Values.deltafi.auth.workers | quote }}
+        - name: SERVER_PORT
+          value: "9292"
+        - name: JDK_JAVA_OPTIONS
+          value: "-Dcom.redhat.fips=false -Dschedule.actionEvents=false -Dschedule.maintenance=false -Dschedule.errorCount=false -Dschedule.flowSync=false  -Dschedule.diskSpac=false -Dschedule.pluginSync=false"
+        - name: UNIQUE_ID
+          value: auth
+        - name: SPRING_PROFILES_ACTIVE
+          value: kubernetes
+        {{- include "coreEnvVars" . | nindent 8 }}
+        {{- include "clickhouseEnvVars" . | nindent 8 }}
         {{ if .Values.deltafi.auth.entityResolver.enabled }}
         - name: ENTITY_RESOLVER_ENABLED
           value: "true"
         - name: ENTITY_RESOLVER_URL
           value: {{ .Values.deltafi.auth.entityResolver.url | default "http://127.0.0.1:8080/" }}
         {{ end }}
+        envFrom:
+        {{- include "keyStorePasswordSecret" . | nindent 8 }}
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 9292
         {{- include "defaultStartupProbe" . | nindent 8 }}
         {{- include "defaultReadinessProbe" . | nindent 8 }}
         {{- include "defaultLivenessProbe" . | nindent 8 }}
-        volumeMounts:
-          - name: deltafi-auth
-            mountPath: /data
       imagePullSecrets:
       - name: docker-secret
-      serviceAccountName: deltafi-auth
+      serviceAccountName: deltafi-core
       nodeSelector:
         node-role.deltafi.org/storage: "true"
   strategy:

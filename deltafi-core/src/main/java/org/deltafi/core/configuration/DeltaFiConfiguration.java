@@ -26,9 +26,12 @@ import org.deltafi.common.uuid.UUIDGenerator;
 import org.deltafi.core.services.CoreEventQueue;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.security.authorization.AuthorizationEventPublisher;
+import org.springframework.security.authorization.SpringAuthorizationEventPublisher;
 
 import java.net.URISyntaxException;
 
@@ -71,5 +74,10 @@ public class DeltaFiConfiguration {
     @Bean
     public RuleValidator ruleValidator(RuleEvaluator ruleEvaluator) {
         return new RuleValidator(ruleEvaluator);
+    }
+
+    @Bean
+    public AuthorizationEventPublisher authorizationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
+        return new SpringAuthorizationEventPublisher(applicationEventPublisher);
     }
 }

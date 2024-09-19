@@ -23,7 +23,7 @@ import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.plugin.PluginRegistryService;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
-import org.deltafi.core.security.DeltaFiUserDetailsService;
+import org.deltafi.core.services.DeltaFiUserService;
 import org.deltafi.core.services.EventService;
 import org.deltafi.core.services.SystemSnapshotService;
 import org.deltafi.core.types.Event;
@@ -122,6 +122,6 @@ public abstract class BaseDeployerService implements DeployerService {
     }
 
     private String getUsername() {
-        return DeltaFiUserDetailsService.currentUsername();
+        return DeltaFiUserService.currentUsername();
     }
 }

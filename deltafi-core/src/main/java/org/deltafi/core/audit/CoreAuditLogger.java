@@ -17,16 +17,17 @@
  */
 package org.deltafi.core.audit;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.aopalliance.intercept.MethodInvocation;
-import org.deltafi.core.security.DeltaFiUserDetailsService;
+import org.deltafi.core.services.DeltaFiUserService;
 import org.slf4j.MDC;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authorization.event.AuthorizationDeniedEvent;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
@@ -51,12 +52,6 @@ public class CoreAuditLogger {
         }
     }
 
-    public void logSurvey(String userName, String flow, String subflow, String direction, Long bytes, Long count) {
-        try (MDC.MDCCloseable ignored = MDC.putCloseable("user", userName)) {
-            log.info("survey flow={} subflow={} direction={} bytes={} count={}", flow, subflow, direction, bytes, count);
-        }
-    }
-
     public void logDelete(String policy, List<UUID> dids, boolean metadata) {
         try (MDC.MDCCloseable ignored = MDC.putCloseable("user", UNKNOWN_USER)) {
             for (UUID did : dids) {
@@ -66,7 +61,7 @@ public class CoreAuditLogger {
     }
 
     public void audit(String message, Object ... objects) {
-        String username = DeltaFiUserDetailsService.currentUsername();
+        String username = DeltaFiUserService.currentUsername();
         try (MDC.MDCCloseable ignored = MDC.putCloseable("user", username)) {
             log.info(message, objects);
         }
@@ -74,6 +69,9 @@ public class CoreAuditLogger {
 
     @EventListener
     public void accessDeniedLogger(AuthorizationDeniedEvent<MethodInvocation> authorizationDeniedEvent) {
+        if (isInitialLogin(authorizationDeniedEvent)) {
+            return;
+        }
         String username = extractUsername(authorizationDeniedEvent);
         String methodCalled = extractMethodName(authorizationDeniedEvent);
         String missingPermissions = extractMissingPermissions(authorizationDeniedEvent);
@@ -83,11 +81,14 @@ public class CoreAuditLogger {
         }
     }
 
+    private boolean isInitialLogin(AuthorizationDeniedEvent<MethodInvocation> authorizationDeniedEvent) {
+        return authorizationDeniedEvent.getSource() instanceof HttpServletRequest;
+    }
 
     private String extractUsername(AuthorizationDeniedEvent<MethodInvocation> authorizationDeniedEvent) {
         Authentication authentication = authorizationDeniedEvent.getAuthentication().get();
         Object rawUser = authentication.getPrincipal();
-        if (rawUser instanceof User user) {
+        if (rawUser instanceof UserDetails user) {
             return user.getUsername();
         }
         return rawUser.toString();

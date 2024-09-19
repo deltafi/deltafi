@@ -17,22 +17,24 @@
  */
 package org.deltafi.core.rest;
 
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.AllArgsConstructor;
-import org.deltafi.core.services.AuthProxyService;
-import org.springframework.http.ResponseEntity;
+import lombok.RequiredArgsConstructor;
+import org.deltafi.core.services.PermissionsService;
+import org.deltafi.core.services.PermissionsService.Permission;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("permissions")
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class PermissionsRest {
 
-    private final AuthProxyService authProxyService;
+    private final PermissionsService permissionsService;
 
-    @RequestMapping("**")
-    public ResponseEntity<String> executeRequest(HttpServletRequest request) {
-        return authProxyService.proxyRequest(request);
+    @GetMapping
+    public List<Permission> getPermissions() {
+        return permissionsService.getPermissions();
     }
 }
