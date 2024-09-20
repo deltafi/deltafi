@@ -40,7 +40,7 @@ spec:
         - name: SERVER_PORT
           value: "9292"
         - name: JDK_JAVA_OPTIONS
-          value: "-Dcom.redhat.fips=false -Dschedule.actionEvents=false -Dschedule.maintenance=false -Dschedule.errorCount=false -Dschedule.flowSync=false  -Dschedule.diskSpac=false -Dschedule.pluginSync=false"
+          value: "-Dcom.redhat.fips=false -Dschedule.actionEvents=false -Dschedule.maintenance=false -Dschedule.errorCount=false -Dschedule.flowSync=false -Dschedule.diskSpace=false -Dschedule.pluginSync=false"
         - name: UNIQUE_ID
           value: auth
         - name: SPRING_PROFILES_ACTIVE
