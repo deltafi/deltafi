@@ -80,9 +80,9 @@
       <span id="cumulativeMetadataDialog" />
     </DialogTemplate> -->
     <AnnotateDialog ref="annotateDialog" :dids="[did]" @refresh-page="loadDeltaFileData" />
-    <!-- <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="autoResumeSelected">
+    <DialogTemplate component-name="autoResume/AutoResumeConfigurationDialog" header="Add New Auto Resume Rule" required-permission="ResumePolicyCreate" dialog-width="75vw" :row-data-prop="autoResumeSelected">
       <span id="autoResumeDialog" />
-    </DialogTemplate> -->
+    </DialogTemplate>
   </div>
 </template>
 
@@ -105,6 +105,7 @@ import useErrorCount from "@/composables/useErrorCount";
 import useNotifications from "@/composables/useNotifications";
 import { computed, inject, onMounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import DialogTemplate from "@/components/DialogTemplate.vue";
 
 import Button from "primevue/button";
 import ConfirmDialog from "primevue/confirmdialog";
@@ -428,20 +429,28 @@ const onCancel = async () => {
   }
 };
 
-// TODO: Review for 2.0
-// const autoResumeSelected = computed(() => {
-//   let newResumeRule = {};
-//   if (!_.isEmpty(deltaFile) && isError.value) {
-//     let rowInfo = JSON.parse(JSON.stringify(deltaFile));
-//     let errorInfo = _.find(deltaFile["actions"], ["state", "ERROR"]);
-//     newResumeRule["flow"] = rowInfo.flows;
-//     newResumeRule["action"] = errorInfo.name;
-//     newResumeRule["errorSubstring"] = errorInfo.errorCause;
-//     return newResumeRule;
-//   } else {
-//     return {};
-//   }
-// });
+const latestError = (deltaFile) => {
+  return _.chain(deltaFile.flows)
+    .map((flow) => flow.actions)
+    .flatten()
+    .filter((action) => action.state === "ERROR")
+    .sortBy(["modified"])
+    .value()[0];
+};
+
+const autoResumeSelected = computed(() => {
+  let newResumeRule = {};
+  if (!_.isEmpty(deltaFile) && isError.value) {
+    let rowInfo = JSON.parse(JSON.stringify(deltaFile));
+    let errorInfo = latestError(rowInfo);
+    newResumeRule["dataSource"] = rowInfo.dataSource;
+    newResumeRule["action"] = errorInfo.name;
+    newResumeRule["errorSubstring"] = errorInfo.errorCause;
+    return newResumeRule;
+  } else {
+    return {};
+  }
+});
 </script>
 
 <style lang="scss">
