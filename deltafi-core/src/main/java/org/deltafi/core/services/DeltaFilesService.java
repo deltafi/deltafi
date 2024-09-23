@@ -280,6 +280,7 @@ public class DeltaFilesService {
                 .number(0)
                 .type(flowType)
                 .state(DeltaFileFlowState.COMPLETE)
+                .testMode(dataSource.isTestMode())
                 .created(ingressStartTime)
                 .modified(now)
                 .actions(new ArrayList<>(List.of(ingressAction)))

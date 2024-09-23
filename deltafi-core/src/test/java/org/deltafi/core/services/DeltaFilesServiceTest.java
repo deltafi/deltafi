@@ -139,6 +139,27 @@ class DeltaFilesServiceTest {
     }
 
     @Test
+    void dataSourceTestModeTrue() {
+        RestDataSource dataSource = FlowBuilders.buildDataSource("theFlow");
+        dataSource.setTestMode(true);
+        when(restDataSourceService.getRunningFlowByName(dataSource.getName())).thenReturn(dataSource);
+
+        UUID did = UUID.randomUUID();
+        List<Content> content = Collections.singletonList(new Content("name", "mediaType"));
+        IngressEventItem ingressInputItem = new IngressEventItem(did, "filename", dataSource.getName(),
+                Map.of(), content);
+
+        DeltaFile deltaFile = deltaFilesService.ingress(dataSource, ingressInputItem, OffsetDateTime.now(), OffsetDateTime.now());
+
+        assertNotNull(deltaFile);
+        DeltaFileFlow ingressFlow = deltaFile.getFlows().getFirst();
+        assertEquals(dataSource.getName(), ingressFlow.getName());
+        assertEquals(did, deltaFile.getDid());
+        assertTrue(ingressFlow.isTestMode());
+        assertTrue(ingressFlow.lastCompleteAction().isPresent());
+    }
+
+    @Test
     void getReturnsNullOnMissingDid() {
         assertNull(deltaFilesService.getDeltaFile(UUID.randomUUID()));
     }
