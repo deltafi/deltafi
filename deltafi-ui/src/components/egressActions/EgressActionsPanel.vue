@@ -57,6 +57,11 @@
             </template>
           </template>
         </Column>
+        <Column header="Test Mode" class="switch-column">
+          <template #body="{ data }">
+            <EgressTestModeInputSwitch :row-data-prop="data" />
+          </template>
+        </Column>
         <Column header="Active" :style="{ width: '7%' }" class="egress-action-state-column">
           <template #body="{ data }">
             <StateInputSwitch :row-data-prop="data" @change="refresh" />
@@ -72,6 +77,7 @@ import CollapsiblePanel from "@/components/CollapsiblePanel.vue";
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import EgressActionRemoveButton from "@/components/egressActions/EgressActionRemoveButton.vue";
 import StateInputSwitch from "@/components/egressActions/StateInputSwitch.vue";
+import EgressTestModeInputSwitch from "@/components/egressActions/EgressTestModeInputSwitch.vue";
 import SubscribeCell from "@/components/SubscribeCell.vue";
 import PermissionedRouterLink from "@/components/PermissionedRouterLink";
 import useEgressActions from "@/composables/useEgressActions";
@@ -152,6 +158,20 @@ defineExpose({ refresh });
 .egress-actions-panel {
   .table-panel {
     .egress-action-table {
+      td.switch-column {
+        padding: 0 !important;
+        width: 7rem;
+
+        .p-inputswitch {
+          padding: 0.25rem !important;
+          margin: 0.25rem 0 0 0.25rem !important;
+        }
+
+        .p-button {
+          padding: 0.25rem !important;
+          margin: 0 0 0 0.25rem !important;
+        }
+      }
       td.egress-action-state-column {
         padding: 0 !important;
 

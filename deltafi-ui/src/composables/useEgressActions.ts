@@ -36,6 +36,7 @@ export default function useEgressActions() {
           },
           flowStatus: {
             state: true,
+            testMode: true,
             errors: {
               configName: true,
               errorType: true,
@@ -91,6 +92,30 @@ export default function useEgressActions() {
       },
     };
     return sendGraphQLQuery(query, "stopEgressFlowByName", "mutation");
+  };
+
+  // Enable test mode for egress
+  const enableEgressTestModeByName = (flowName: string) => {
+    const query = {
+      enableEgressTestMode: {
+        __args: {
+          flowName: flowName,
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "enableEgressTestModeByName", "mutation");
+  };
+
+  // Disable test mode for egress
+  const disableEgressTestModeByName = (flowName: string) => {
+    const query = {
+      disableEgressTestMode: {
+        __args: {
+          flowName: flowName,
+        },
+      },
+    };
+    return sendGraphQLQuery(query, "disableEgressTestModeByName", "mutation");
   };
 
   const saveEgressFlowPlan = (egressFlowPlan: Object) => {
@@ -158,6 +183,8 @@ export default function useEgressActions() {
     stopEgressFlowByName,
     saveEgressFlowPlan,
     removeEgressFlowPlan,
+    enableEgressTestModeByName,
+    disableEgressTestModeByName,
     loaded,
     loading,
     errors,
