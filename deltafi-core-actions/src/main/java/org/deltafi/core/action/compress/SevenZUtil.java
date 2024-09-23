@@ -22,6 +22,7 @@ import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
 import org.apache.commons.compress.archivers.sevenz.SevenZFile;
 import org.deltafi.actionkit.action.transform.TransformResult;
+import org.deltafi.common.types.LineageMap;
 import org.deltafi.common.types.SaveManyContent;
 import org.springframework.stereotype.Component;
 
@@ -37,9 +38,15 @@ import static org.deltafi.core.action.compress.BatchSizes.BATCH_FILES;
 @Component
 @Slf4j
 public class SevenZUtil {
-    public static void extractSevenZ(TransformResult result, InputStream contentInputStream) throws ArchiveException {
+    public static void extractSevenZ(TransformResult result, LineageMap lineage, String parentName, InputStream contentInputStream) throws ArchiveException {
+        String parentDir = "";
+        int lastSlash = parentName.lastIndexOf('/');
+        if (lastSlash > 0) {
+            parentDir = parentName.substring(0, lastSlash + 1);
+        }
+
         try {
-            unarchiveSevnZ(result, SevenZFile.builder()
+            unarchiveSevnZ(result, lineage, parentDir, parentName, SevenZFile.builder()
                     .setByteArray(contentInputStream.readAllBytes())
                     .get());
         } catch (Exception e) {
@@ -47,7 +54,8 @@ public class SevenZUtil {
         }
     }
 
-    private static void unarchiveSevnZ(TransformResult result, SevenZFile sevenZFile) throws IOException {
+    private static void unarchiveSevnZ(TransformResult result, LineageMap lineage,
+                                       String parentDir, String parentName, SevenZFile sevenZFile) throws IOException {
         SevenZArchiveEntry entry;
         List<SaveManyContent> saveManyContentList = new ArrayList<>();
         int currentBatchSize = 0;
@@ -56,6 +64,8 @@ public class SevenZUtil {
             if (entry.isDirectory()) {
                 continue;
             }
+
+            String newContentName = lineage.add(entry.getName(), parentDir, parentName);
 
             InputStream inputStream = sevenZFile.getInputStream(entry);
             byte[] fileContent = inputStream.readAllBytes();
@@ -72,7 +82,7 @@ public class SevenZUtil {
                 currentBatchSize = 0;
             }
 
-            saveManyContentList.add(new SaveManyContent(entry.getName(), MediaType.APPLICATION_OCTET_STREAM, fileContent));
+            saveManyContentList.add(new SaveManyContent(newContentName, MediaType.APPLICATION_OCTET_STREAM, fileContent));
             currentBatchSize += fileSize;
         }
 

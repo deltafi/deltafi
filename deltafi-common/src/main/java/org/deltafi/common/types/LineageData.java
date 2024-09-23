@@ -15,14 +15,17 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.action.compress;
+package org.deltafi.common.types;
 
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Component
-@Slf4j
-public class BatchSizes {
-    public static final int BATCH_FILES = 250;
-    public static final int BATCH_BYTES = 100 * 1024 * 1024;
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class LineageData {
+    String fullName;
+    String parentContentName;
+    boolean modifiedContentName;
 }
