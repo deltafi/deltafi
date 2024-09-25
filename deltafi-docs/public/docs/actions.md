@@ -240,6 +240,21 @@ The join configuration that defines the criteria for collecting DeltaFiles that 
 * `maxNum` the maximum number of DeltaFiles to collect before the action is executed
 * `metadataKey` an optional metadata key used to get the value to group collections by (defaults to collecting all)
 
+## SSL Setup
+
+### Java SSLContext
+
+The `deltafi-action-kit` will autoconfigure a `SslContextProvider` bean which is available for injection.
+The provider will contain a populated `SslBundle` when the `certs` directory is fully populated (see [Plugins SSL Config](/install/plugins#ssl-config)).
+The action-kit also provides a `HttpClient` bean that is preconfigured with an `SSLContext` when the `SslContextProvider` is configured.
+
+To get a new `SSlContext` backed by the files in `/cert`, inject the `SslContextProvider` bean and call the `createSslContext` method.
+For more advanced use cases the `SslContextProvider` provides direct access the `SslBundle` (getSslBundle) and private key (getPrivateKey).
+
+### Python
+
+Python actions can access the files necessary to configure SSL in the `/certs` directory.
+
 ## Action Pages
 - [Timed Ingress Action](/actions/timed_ingress)
 - [Transform Action](/actions/transform)

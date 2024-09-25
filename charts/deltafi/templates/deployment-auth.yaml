@@ -28,11 +28,13 @@ spec:
       - name: deltafi-entity-resolver
         image: {{ .Values.deltafi.auth.entityResolver.image }}
         volumeMounts:
+        {{- include "sslVolumeMount" . | nindent 10 }}
           - name: deltafi-auth
             mountPath: /data
         env:
         - name: DATA_DIR
           value: /data
+        {{- include "sslEnvVars" . | nindent 8 }}
       {{ end }}
       - name: deltafi-auth
         image: {{ .Values.deltafi.core.image }}
@@ -53,14 +55,14 @@ spec:
         - name: ENTITY_RESOLVER_URL
           value: {{ .Values.deltafi.auth.entityResolver.url | default "http://127.0.0.1:8080/" }}
         {{ end }}
-        envFrom:
-        {{- include "keyStorePasswordSecret" . | nindent 8 }}
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 9292
         {{- include "defaultStartupProbe" . | nindent 8 }}
         {{- include "defaultReadinessProbe" . | nindent 8 }}
         {{- include "defaultLivenessProbe" . | nindent 8 }}
+        volumeMounts:
+        {{- include "coreVolumeMounts" . | nindent 8 }}
       imagePullSecrets:
       - name: docker-secret
       serviceAccountName: deltafi-core

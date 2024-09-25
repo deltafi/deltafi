@@ -163,7 +163,7 @@ if [[ "$(basename "$0")" == "deltafi" ]]; then
         cluster "$@"
         ;;
       # Commands that do not need recursive call into cluster
-      version|uninstall|did|list-actions|list-flows|list-plugins|list-plans|list-policies|valkey-watch|valkey-cli|valkey-stats|valkey-latency|serviceip)
+      version|uninstall|did|list-actions|list-flows|list-plugins|list-plans|list-policies|valkey-watch|valkey-cli|valkey-stats|valkey-latency|serviceip|configure-plugin-ssl)
         "$DELTAFI_PATH/deltafi-cli/deltafi" "$@"
         ;;
       registry)

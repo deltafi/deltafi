@@ -4,14 +4,7 @@ deltafi:
     enabled: false
     path: /data/deltafi/local
   ssl:
-    secret: keystore-secret
-    passwordSecret: keystore-password-secret
-    mountPath: /etc/pki
-    protocol: TLSv1.2
-    keyStoreName: keyStore.p12
-    keyStoreType: PKCS12
-    trustStoreName: trustStore.jks
-    trustStoreType: JKS
+    secret: ssl-secret
   core_actions:
     image: deltafi/deltafi-core-actions:2.0-rc15
   core:

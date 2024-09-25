@@ -26,7 +26,9 @@ import org.deltafi.actionkit.registration.PluginRegistrar;
 import org.deltafi.actionkit.service.HostnameService;
 import org.deltafi.actionkit.service.ActionEventQueue;
 import org.deltafi.common.action.EventQueueProperties;
+import org.deltafi.common.ssl.SslAutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -37,6 +39,7 @@ import java.util.List;
 @AllArgsConstructor
 @AutoConfiguration
 @EnableConfigurationProperties({EventQueueProperties.class, ActionsProperties.class})
+@AutoConfigureAfter(SslAutoConfiguration.class)
 @EnableScheduling
 public class ActionKitAutoConfiguration {
     private ActionsProperties actionsProperties;

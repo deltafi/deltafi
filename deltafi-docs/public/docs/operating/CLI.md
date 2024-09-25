@@ -5,6 +5,7 @@ Usage: deltafi [command]
 
 Commands:
   clickhouse-cli          launch the clickhouse CLI
+  configure-plugin-ssl    configure SSL for plugins and the entity resolver
   data-source             start, stop, show or validate a data source flow
   did                     show did for filename
   disable                 stop all DeltaFi processes

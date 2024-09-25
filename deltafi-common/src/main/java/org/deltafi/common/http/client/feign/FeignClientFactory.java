@@ -24,11 +24,8 @@ import feign.codec.Encoder;
 import feign.jackson.JacksonDecoder;
 import feign.jackson.JacksonEncoder;
 import feign.slf4j.Slf4jLogger;
-import org.deltafi.common.ssl.SslContextFactory;
-import org.deltafi.common.ssl.SslProperties;
+import org.deltafi.common.ssl.SslContextProvider;
 
-import javax.net.ssl.SSLContext;
-import java.io.File;
 import java.util.List;
 
 public class FeignClientFactory {
@@ -93,12 +90,12 @@ public class FeignClientFactory {
      * URI to access.
      *
      * @param clientClass the Feign-annotated interface class
-     * @param sslProperties the SSL properties used to build an SSL context
+     * @param sslContextProvider the SslContextProvider used to build an SSL context
      * @param <T> the interface type
      * @return a Feign-generated instance of the provided interface
      */
-    public static <T> T build(Class<T> clientClass, SslProperties sslProperties) throws SslContextFactory.SslException {
-        return build(clientClass, null, null, null, null, sslProperties);
+    public static <T> T build(Class<T> clientClass, SslContextProvider sslContextProvider) {
+        return build(clientClass, null, null, null, null, sslContextProvider);
     }
 
     /**
@@ -106,12 +103,12 @@ public class FeignClientFactory {
      *
      * @param clientClass the Feign-annotated interface class
      * @param url the URL the client will access
-     * @param sslProperties the SSL properties used to build an SSL context
+     * @param sslContextProvider the SslContextProvider used to build an SSL context
      * @param <T> the interface type
      * @return a Feign-generated instance of the provided interface for accessing the given URL
      */
-    public static <T> T build(Class<T> clientClass, String url, SslProperties sslProperties) throws SslContextFactory.SslException {
-        return build(clientClass, url, null, null, null, sslProperties);
+    public static <T> T build(Class<T> clientClass, String url, SslContextProvider sslContextProvider) {
+        return build(clientClass, url, null, null, null, sslContextProvider);
     }
 
     /**
@@ -122,13 +119,13 @@ public class FeignClientFactory {
      * @param encoder the encoder used to encode instances to strings
      * @param decoder the decoder used to decode strings to instances
      * @param retryer the retryer used on failed requests
-     * @param sslProperties the SSL properties used to build an SSL context
+     * @param sslContextProvider the SslContextProvider used to build an SSL context
      * @param <T> the interface type
      * @return a Feign-generated instance of the provided interface for accessing the given URL
      */
     public static <T> T build(Class<T> clientClass, String url, Encoder encoder, Decoder decoder, Retryer retryer,
-            SslProperties sslProperties) throws SslContextFactory.SslException {
-        return build(clientClass, url, encoder, decoder, retryer, null, sslProperties);
+            SslContextProvider sslContextProvider) {
+        return build(clientClass, url, encoder, decoder, retryer, null, sslContextProvider);
     }
 
     /**
@@ -140,17 +137,16 @@ public class FeignClientFactory {
      * @param decoder the decoder used to decode strings to instances
      * @param retryer the retryer used on failed requests
      * @param options additional options for requests
-     * @param sslProperties the SSL properties used to build an SSL context
+     * @param sslContextProvider the SslContextProvider used to build an SSL context
      * @param <T> the interface type
      * @return a Feign-generated instance of the provided interface for accessing the given URL
      */
     public static <T> T build(Class<T> clientClass, String url, Encoder encoder, Decoder decoder, Retryer retryer,
-            Request.Options options, SslProperties sslProperties) throws SslContextFactory.SslException {
+            Request.Options options, SslContextProvider sslContextProvider) {
         Feign.Builder builder = createBuilder(clientClass, encoder, decoder, retryer, options);
 
-        if ((sslProperties != null) && keystoreExists(sslProperties.getKeyStore())) {
-            SSLContext context = SslContextFactory.buildSslContext(sslProperties);
-            builder.client(new Client.Default(context.getSocketFactory(), null));
+        if (sslContextProvider != null && sslContextProvider.isConfigured()) {
+            builder.client(new Client.Default(sslContextProvider.createSslContext().getSocketFactory(), null));
         }
 
         return build(builder, clientClass, url);
@@ -169,9 +165,5 @@ public class FeignClientFactory {
 
     private static <T> T build(Feign.Builder builder, Class<T> clientClass, String url) {
         return url == null ? builder.target(Target.EmptyTarget.create(clientClass)) : builder.target(clientClass, url);
-    }
-
-    private static boolean keystoreExists(String path) {
-        return (path != null) && new File(path).exists();
     }
 }

@@ -202,16 +202,38 @@ initContainers:
 {{- end -}}
 
 {{- define "sslEnvVars" -}}
-- name: SSL_KEYSTORE
-  value: "{{ .Values.deltafi.ssl.mountPath }}/{{ .Values.deltafi.ssl.keyStoreName }}"
-- name: SSL_KEYSTORETYPE
-  value: {{ .Values.deltafi.ssl.keyStoreType }}
+- name: KEY_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name:  {{ .Values.deltafi.ssl.secret }}
+      key: keyPassword
+      optional: true
 - name: SSL_PROTOCOL
-  value: {{ .Values.deltafi.ssl.protocol }}
-- name: SSL_TRUSTSTORE
-  value: "{{ .Values.deltafi.ssl.mountPath }}/{{ .Values.deltafi.ssl.trustStoreName }}"
-- name: SSL_TRUSTSTORETYPE
-  value: {{ .Values.deltafi.ssl.trustStoreType }}
+  valueFrom:
+    secretKeyRef:
+      name:  {{ .Values.deltafi.ssl.secret }}
+      key: sslProtocol
+      optional: true
+{{- end -}}
+
+{{- define "sslVolumeMount" -}}
+- name: ssl-volume
+  mountPath: /certs
+  readOnly: true
+{{- end -}}
+
+{{- define "sslVolume" -}}
+- name: ssl-volume
+  secret:
+    secretName: {{ .Values.deltafi.ssl.secret }}
+    optional: true
+    items:
+      - key: tls.key
+        path: tls.key
+      - key: tls.crt
+        path: tls.crt
+      - key: ca.crt
+        path: ca.crt
 {{- end -}}
 
 {{- define "clickhouseEnvVars" -}}
@@ -222,30 +244,6 @@ initContainers:
     secretKeyRef:
       name: clickhouse-password
       key: clickhouse-password
-{{- end -}}
-
-{{- define "keyStorePasswordSecret"  -}}
-- secretRef:
-    name: {{ .Values.deltafi.ssl.passwordSecret }}
-    optional: true
-{{- end -}}
-
-{{- define "keyVolumeMounts" -}}
-- mountPath: "{{ .Values.deltafi.ssl.mountPath }}/{{ .Values.deltafi.ssl.keyStoreName }}"
-  name: keystore
-  readOnly: true
-  subPath: {{ .Values.deltafi.ssl.keyStoreName }}
-- mountPath: "{{ .Values.deltafi.ssl.mountPath }}/{{ .Values.deltafi.ssl.trustStoreName }}"
-  name: keystore
-  readOnly: true
-  subPath: {{ .Values.deltafi.ssl.trustStoreName }}
-{{- end -}}
-
-{{- define "keyVolumes" -}}
-- name: keystore
-  secret:
-    secretName: {{ .Values.deltafi.ssl.secret }}
-    optional: true
 {{- end -}}
 
 {{- define "actionContainerSpec" -}}
@@ -260,11 +258,9 @@ env:
 {{- include "valkeyEnvVars" . | nindent 2 }}
 {{- include "minioEnvVars" . | nindent 2 }}
 {{- include "sslEnvVars" . | nindent 2 }}
-envFrom:
-{{- include "keyStorePasswordSecret" . | nindent 2 }}
 {{ include "actionStartupProbe" . }}
 volumeMounts:
-{{- include "keyVolumeMounts" . | nindent 2 }}
+{{- include "sslVolumeMount" . | nindent 2 }}
 {{- end -}}
 
 {{- define "coreEnvVars" -}}
@@ -282,14 +278,14 @@ volumeMounts:
 {{- end }}
 
 {{- define "coreVolumeMounts" -}}
-{{- include "keyVolumeMounts" . }}
+{{- include "sslVolumeMount" . }}
 - mountPath: /template
   name: action-deployment-template
   readOnly: true
 {{- end -}}
 
 {{- define "coreVolumes" -}}
-{{- include "keyVolumes" . }}
+{{- include "sslVolume" . }}
 - name: action-deployment-template
   configMap:
     name: deltafi-action-deployment

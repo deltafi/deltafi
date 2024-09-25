@@ -401,17 +401,9 @@ CLICKHOUSE_ADMIN_PASSWORD=$clickhouse_password
 EOF
   fi
 
-  # TODO -- SSL settings need to be passed in/read
+  # make sure the file exists or compose wont start
   if [[ ! -f "${SSL_SECRET_PATH}" ]]; then
-    cat <<EOF > "${SSL_SECRET_PATH}"
-SSL_KEYSTORE=/etc/pki/keyStore.p12
-SSL_KEYSTORETYPE=PKCS12
-SSL_KEYSTORE_PASSWORD=not-set
-SSL_TRUSTSTORE=/etc/pki/trustStore.jks
-SSL_TRUSTSTORETYPE=JKS
-SSL_TRUSTSTORE_PASSWORD=not-set
-SSL_PROTOCOL=TLSv1.2
-EOF
+    touch "${SSL_SECRET_PATH}"
   fi
 }
 
@@ -652,6 +644,7 @@ _write_env_files() {
   _append_common "HOSTNAME" "${hostname_value}"
   _append_common "DELTAFI_UI_DOMAIN" "${domain}"
   _append_common "DOMAIN" "${domain}"
+  _append_common "DATA_DIR" "${DATA_DIR}"
 
   entity_resolver_port=$(_from_values ".deltafi.auth.entityResolver.port")
   entity_resolver_enabled=$(_from_values ".deltafi.auth.entityResolver.enabled")
@@ -724,7 +717,7 @@ _post_install() {
 _create_data_dirs() {
   mkdir -p "${DATA_DIR}"
   if _is_linux; then
-    mkdir -p "${DATA_DIR}"/{postgres,clickhouse,grafana,auth,loki,minio}
+    mkdir -p "${DATA_DIR}"/{postgres,clickhouse,grafana,auth,loki,minio,certs}
   fi
 }
 

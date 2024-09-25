@@ -31,7 +31,7 @@ import org.apache.sshd.sftp.server.SftpSubsystemFactory;
 import org.deltafi.actionkit.action.ingress.IngressResult;
 import org.deltafi.actionkit.action.ingress.IngressResultType;
 import org.deltafi.common.content.ActionContentStorageService;
-import org.deltafi.common.ssl.SslProperties;
+import org.deltafi.common.ssl.SslContextProvider;
 import org.deltafi.common.test.storage.s3.InMemoryObjectStorageService;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.IngressStatus;
@@ -39,6 +39,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.boot.autoconfigure.ssl.PemSslBundleProperties;
 
 import java.io.File;
 import java.io.IOException;
@@ -117,7 +118,7 @@ public class SftpIngressTest {
     }
 
     @Test
-    public void ingresses() {
+    void ingresses() {
         SftpIngress sftpIngress = new SftpIngress(new JSch(), sslProperties());
         SftpIngress.Parameters params = new SftpIngress.Parameters();
         params.setHost("localhost");
@@ -139,7 +140,7 @@ public class SftpIngressTest {
     }
 
     @Test
-    public void ingressesUsingPassword() {
+    void ingressesUsingPassword() {
         SftpIngress sftpIngress = new SftpIngress(new JSch(), sslProperties());
         SftpIngress.Parameters params = new SftpIngress.Parameters();
         params.setHost("localhost");
@@ -162,8 +163,8 @@ public class SftpIngressTest {
     }
 
     @Test
-    public void unhealthyStatusWithNoCredentials() {
-        SftpIngress sftpIngress = new SftpIngress(new JSch(), new SslProperties());
+    void unhealthyStatusWithNoCredentials() {
+        SftpIngress sftpIngress = new SftpIngress(new JSch(), new SslContextProvider(null));
         SftpIngress.Parameters params = new SftpIngress.Parameters();
         params.setHost("localhost");
         params.setPort(sshServer.getPort());
@@ -187,7 +188,7 @@ public class SftpIngressTest {
     }
 
     @Test
-    public void unhealthyStatusOnException() throws JSchException {
+    void unhealthyStatusOnException() throws JSchException {
         JSch mockJSch = Mockito.mock(JSch.class);
         Mockito.when(mockJSch.getSession(Mockito.anyString(), Mockito.anyString(), Mockito.anyInt()))
                 .thenThrow(new JSchException("Test error message"));
@@ -214,15 +215,13 @@ public class SftpIngressTest {
                 ((IngressResult) ingressResultType).getStatusMessage());
     }
 
-    private SslProperties sslProperties() {
-        SslProperties sslProperties = new SslProperties();
-        sslProperties.setKeyStore("src/test/resources/mockKeystore.p12");
-        sslProperties.setKeyStorePassword("password");
-        sslProperties.setKeyStoreType("PKCS12");
-        sslProperties.setTrustStore("src/test/resources/mockTrustStore.jks");
-        sslProperties.setTrustStorePassword("storePassword");
-        sslProperties.setTrustStoreType("JKS");
-        sslProperties.setProtocol("TLSv1.2");
-        return sslProperties;
+    private SslContextProvider sslProperties() {
+        PemSslBundleProperties properties = new PemSslBundleProperties();
+        properties.getKey().setAlias("ssl");
+        properties.setProtocol("TLSv1.2");
+        properties.getKeystore().setPrivateKey("classpath:privatekey.pem");
+        properties.getKeystore().setCertificate("classpath:cert.pem");
+        properties.getTruststore().setCertificate("classpath:ca_chain.pem");
+        return new SslContextProvider(properties);
     }
 }

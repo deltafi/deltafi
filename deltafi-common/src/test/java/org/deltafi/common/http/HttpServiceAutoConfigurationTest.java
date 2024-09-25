@@ -17,14 +17,13 @@
  */
 package org.deltafi.common.http;
 
-import org.deltafi.common.ssl.SslContextFactory;
-import org.deltafi.common.ssl.SslProperties;
+import org.deltafi.common.ssl.SslContextProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import javax.net.ssl.SSLContext;
 import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.List;
@@ -34,63 +33,29 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @ExtendWith(MockitoExtension.class)
 class HttpServiceAutoConfigurationTest {
 
-    final HttpClientCustomizer customizer = (builder) -> builder.connectTimeout(Duration.ofSeconds(10L));
+    final HttpClientCustomizer customizer = builder -> builder.connectTimeout(Duration.ofSeconds(10L));
     final HttpServiceAutoConfiguration autoConfiguration = new HttpServiceAutoConfiguration(List.of(customizer));
 
     @Test
     void httpClient_sslConfigured() {
-        try (MockedStatic<SslContextFactory> mockSslContextFactory = Mockito.mockStatic(SslContextFactory.class)) {
-            SslProperties sslProperties = sslProperties();
-
-            mockSslContextFactory.when(() -> SslContextFactory.buildSslContext(sslProperties)).thenCallRealMethod();
-
-            autoConfiguration.httpClient(sslProperties);
-
-            mockSslContextFactory.verify(() -> SslContextFactory.buildSslContext(sslProperties));
-        }
+        SslContextProvider provider = Mockito.mock(SslContextProvider.class);
+        Mockito.when(provider.isConfigured()).thenReturn(true);
+        Mockito.when(provider.createSslContext()).thenReturn(Mockito.mock(SSLContext.class));
+        autoConfiguration.httpClient(provider);
+        Mockito.verify(provider).createSslContext();
     }
 
     @Test
     void httpClient_sslNotConfigured() {
-        try (MockedStatic<SslContextFactory> mockSslContextFactory = Mockito.mockStatic(SslContextFactory.class)) {
-            SslProperties sslProperties = sslProperties();
-            sslProperties.setKeyStorePassword(SslProperties.NOT_SET);
-
-            autoConfiguration.httpClient(sslProperties);
-
-            mockSslContextFactory.verifyNoInteractions();
-        }
-    }
-
-    @Test
-    void testTryAlternativeEnvVariables() {
-        SslProperties sslProperties = new SslProperties();
-        sslProperties.setKeyStorePassword(null);
-        sslProperties.setTrustStorePassword(null);
-
-        autoConfiguration.tryAlternativeEnvVariables(sslProperties);
-
-        // null passwords are replaced with not-set by readEnvVar
-        assertEquals(SslProperties.NOT_SET, sslProperties.getKeyStorePassword());
-        assertEquals(SslProperties.NOT_SET, sslProperties.getTrustStorePassword());
+        SslContextProvider provider = Mockito.mock(SslContextProvider.class);
+        Mockito.when(provider.isConfigured()).thenReturn(false);
+        autoConfiguration.httpClient(provider);
+        Mockito.verify(provider, Mockito.never()).createSslContext();
     }
 
     @Test
     void testCustomizationApplied() {
-        HttpClient client = autoConfiguration.httpClient(new SslProperties());
+        HttpClient client = autoConfiguration.httpClient(null);
         assertEquals(Duration.ofSeconds(10L), client.connectTimeout().orElse(null));
-    }
-
-    SslProperties sslProperties() {
-        SslProperties sslProperties = new SslProperties();
-        sslProperties.setKeyStore("src/test/resources/mockKeystore.p12");
-        sslProperties.setKeyStorePassword("password");
-        sslProperties.setKeyStoreType("PKCS12");
-        sslProperties.setTrustStore("src/test/resources/mockTrustStore.jks");
-        sslProperties.setTrustStorePassword("storePassword");
-        sslProperties.setTrustStoreType("JKS");
-        sslProperties.setProtocol("TLSv1.2");
-
-        return sslProperties;
     }
 }

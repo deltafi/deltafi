@@ -1,0 +1,134 @@
+#!/usr/bin/env bash
+
+. "$DELTAFICLI_WORKDIR/common"
+
+cli_help_command() {
+  echo "
+Command: configure-plugin-ssl
+
+Usage:
+  configure-plugin-ssl --key <key> --cert <cert> --ca-chain <ca-chain> [--key-password <password>] [--ssl-protocol <protocol>] [--secret-name <secret-name>]
+
+  The key, cert, and ca-chain flags are required.
+
+  Arguments:
+    --key             path to private key associated with given certificate.
+    --cert            path to PEM encoded public key certificate.
+    --ca-chain        path to the PEM encoded the CA certificate chain
+    --key-password    optional password for the key if it is encrypted
+    --ssl-protocol    optional SSL protocol to use, defaults to TLSv1.2
+    --secret-name     optional change the name of the secret used when running in kubernetes, defaults to ssl-secret
+"
+  exit 1
+}
+
+KEY=""
+CERT=""
+CA_CHAIN=""
+KEY_PASSWORD=""
+SSL_PROTOCOL=""
+SECRET_NAME="ssl-secret"
+
+shift # move to the first flag
+while [[ "$#" -gt 0 ]]; do
+  case $1 in
+    --key)
+      KEY="$2"
+      shift 2
+      ;;
+    --cert)
+      CERT="$2"
+      shift 2
+      ;;
+    --ca-chain)
+      CA_CHAIN="$2"
+      shift 2
+      ;;
+    --key-password)
+      KEY_PASSWORD="$2"
+      shift 2
+      ;;
+    --secret-name)
+        SECRET_NAME="$2"
+        shift 2
+        ;;
+    --ssl-protocol)
+      SSL_PROTOCOL="$2"
+      shift 2
+      ;;
+    -h | --help)
+      cli_help_command
+      ;;
+    *)
+      cli_log "${red}Unknown flag ${1}${normal}"
+      exit 1
+      ;;
+  esac
+done
+
+check_file_exists() {
+  if [[ ! -f "$1" ]]; then
+    cli_log "${red}Error: File '$1' does not exist.${normal}"
+    exit 1
+  fi
+}
+
+# Check required flags
+if [[ -z "$KEY" || -z "$CERT" || -z "$CA_CHAIN" ]]; then
+  cli_log "${red}Error: --key, --cert, and --ca-chain are required.${normal}"
+  cli_help_command
+fi
+
+# Verify the files exist
+check_file_exists "$KEY"
+check_file_exists "$CERT"
+check_file_exists "$CA_CHAIN"
+
+check_existing_secret() {
+  if kubectl get secret "${SECRET_NAME}" >/dev/null 2>&1; then
+      cli_log "${red}The original secret must be removed first${normal}"
+      cli_log "To backup the old secret run '${KUBECTL_BIN} get secret ${SECRET_NAME} -o yaml > secret_bkup.yaml'"
+      cli_log "To remove the secret run '${KUBECTL_BIN} delete secret ${SECRET_NAME}'"
+      exit 1
+  fi
+}
+
+if _is_standalone; then
+  CERT_DIR="${DELTAFICLI_COMPOSE_PATH}/data/certs"
+  SSL_ENV_FILE="${DELTAFICLI_COMPOSE_PATH}/settings/secrets/ssl.env"
+
+  rm -Rf "${CERT_DIR}"
+  mkdir -p "${CERT_DIR}"
+  cp "$KEY" "${CERT_DIR}/tls.key"
+  cp "$CERT" "${CERT_DIR}/tls.crt"
+  cp "$CA_CHAIN" "${CERT_DIR}/ca.crt"
+
+  truncate -s 0 "${SSL_ENV_FILE}"
+  if [[ -n "$SSL_PROTOCOL" ]]; then
+    echo "SSL_PROTOCOL=${SSL_PROTOCOL}" > "${SSL_ENV_FILE}"
+  fi
+
+  if [[ -n "$KEY_PASSWORD" ]]; then
+    echo "KEY_PASSWORD=${KEY_PASSWORD}" >> "${SSL_ENV_FILE}"
+  fi
+else
+  check_existing_secret
+  CMD="create secret generic $SECRET_NAME --from-file=tls.key=$KEY --from-file=tls.crt=$CERT --from-file=ca.crt=$CA_CHAIN"
+
+  if [[ -n "$SSL_PROTOCOL" ]]; then
+    CMD="$CMD --from-literal=sslProtocol=$SSL_PROTOCOL"
+  fi
+
+  if [[ -n "$KEY_PASSWORD" ]]; then
+    CMD="$CMD --from-literal=keyPassword=$KEY_PASSWORD"
+  fi
+
+  ${KUBECTL_BIN} $CMD >/dev/null 2>&1
+
+  if [[ $? -eq 0 ]]; then
+    cli_log "${green}Successfully configured SSL in secret '${SECRET_NAME}'${normal}"
+  else
+    cli_log "${red}Failed to create kubernetes secret '${SECRET_NAME}'."
+  fi
+fi
+

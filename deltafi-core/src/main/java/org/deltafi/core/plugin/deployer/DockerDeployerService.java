@@ -22,6 +22,7 @@ import com.github.dockerjava.api.command.*;
 import com.github.dockerjava.api.command.InspectContainerResponse.ContainerState;
 import com.github.dockerjava.api.model.*;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
@@ -49,14 +50,11 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
                 .withStartPeriod(5_000_000_000L)
                 .withTimeout(1_000_000_000L);
 
-    private static final HostConfig PLUGIN_HOST_CONFIG = HostConfig.newHostConfig()
-            .withNetworkMode("deltafi")
-            .withRestartPolicy(RestartPolicy.unlessStoppedRestart());
-
     private final DockerClient dockerClient;
 
     private final List<String> environmentVariables;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
+    private final String dataDir;
 
     public DockerDeployerService(DockerClient dockerClient, PluginImageRepositoryService pluginImageRepositoryService, PluginService pluginService,
                                  SystemSnapshotService systemSnapshotService, EventService eventService,
@@ -65,6 +63,7 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
         this.dockerClient = dockerClient;
         this.environmentVariables = environmentVariableHelper.getEnvVars();
         this.deltaFiPropertiesService = deltaFiPropertiesService;
+        this.dataDir = environmentVariableHelper.getDataDir();
     }
 
     @Override
@@ -109,7 +108,7 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
                 .withEnv(environmentVariables)
                 .withLabels(containerLabels)
                 .withHealthcheck(PLUGIN_HEALTH_CHECK)
-                .withHostConfig(PLUGIN_HOST_CONFIG)) {
+                .withHostConfig(hostConfig())) {
 
             containerResponse = containerCmd.exec();
             dockerClient.startContainerCmd(containerResponse.getId()).exec();
@@ -147,6 +146,18 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
 
         containers.stream().map(Container::getId).forEach(this::stopAndRemoveContainer);
         return new Result();
+    }
+
+    private HostConfig hostConfig() {
+        HostConfig hostConfig = HostConfig.newHostConfig()
+                .withNetworkMode("deltafi")
+                .withRestartPolicy(RestartPolicy.unlessStoppedRestart());
+
+        if (StringUtils.isNotBlank(dataDir)) {
+            hostConfig.withBinds(new Bind(dataDir + "/certs", new Volume("/certs")));
+        }
+
+        return hostConfig;
     }
 
     private String ensureImageExists(String image) {

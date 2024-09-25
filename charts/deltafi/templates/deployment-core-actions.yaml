@@ -23,7 +23,7 @@ spec:
         image: "{{ .Values.deltafi.core_actions.image }}"
         {{- include "actionContainerSpec" . | nindent 8 }}
       volumes:
-      {{- include "keyVolumes" . | nindent 6 }}
+      {{- include "sslVolume" . | nindent 6 }}
       imagePullSecrets:
       - name: docker-secret
       nodeSelector:

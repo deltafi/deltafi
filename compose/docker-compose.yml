@@ -47,6 +47,7 @@ services:
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ${DATA_DIR}/certs:/certs
   deltafi-ingress:
     image: ${DELTAFI_INGRESS}
     container_name: deltafi-ingress
@@ -77,11 +78,14 @@ services:
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ${DATA_DIR}/certs:/certs
   deltafi-entity-resolver:
     image: ${DELTAFI_ENTITY_RESOLVER}
     container_name: deltafi-entity-resolver
     environment:
       DATA_DIR: "/data"
+    env_file:
+      - ${SECRETS_DIR}/ssl.env
     expose:
       - "${AUTH_RESOLVER_PORT}"
     labels:
@@ -93,6 +97,7 @@ services:
     profiles: ["entity-resolver"]
     volumes:
       - ${DATA_DIR}/auth:/data
+      - ${DATA_DIR}/certs:/certs
   deltafi-ui:
     image: ${DELTAFI_UI}
     container_name: deltafi-ui
@@ -117,6 +122,7 @@ services:
       - ${ENV_DIR}/common.env
       - ${SECRETS_DIR}/valkey.env
       - ${SECRETS_DIR}/minio.env
+      - ${SECRETS_DIR}/ssl.env
     healthcheck:
       test: cat /tmp/running
       interval: 30s
@@ -129,6 +135,8 @@ services:
     networks:
       - deltafi
     restart: unless-stopped
+    volumes:
+      - ${DATA_DIR}/certs:/certs
   deltafi-docs:
     image: ${DELTAFI_DOCS}
     container_name: deltafi-docs
@@ -405,6 +413,7 @@ services:
     restart: unless-stopped
     volumes:
       - ${SETTINGS_DIR}/nginx:/etc/nginx/templates
+      - ${DATA_DIR}/certs:/certs
     ports:
       - "80:80"
       - "8888:8888"

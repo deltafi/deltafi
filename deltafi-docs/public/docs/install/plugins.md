@@ -79,3 +79,13 @@ deltafi plugin-customization save deployment-config.json
 ```
 
 > **_NOTE:_**  The URL template supports ${groupId}, ${artifactId}, and ${version} placeholders that are populated from the plugin coordinates when installing the plugin.
+
+## SSL Config
+
+To provide a private key, certificate and a Certificate Authority (CA) chain to plugins run the `deltafi configure-plugin-ssl` command (see `deltafi configure-plugin-ssl --help` for more details).
+When a plugin is deployed or restarted after this command, the plugin will have a populated `/certs` directory.
+The command will also add the optional environment variables of `SSL_PROTOCOL` and `KEY_PASSWORD` when those fields are provided.
+The `/certs` directory will contain the following files:
+- `/certs/tls.key` (private key)
+- `/certs/tls.crt` (certificate)
+- `/certs/ca.crt` (CA chain)

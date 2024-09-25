@@ -17,28 +17,33 @@
  */
 package org.deltafi.core.plugin.deployer;
 
+import io.micrometer.common.util.StringUtils;
+import lombok.Getter;
 import org.deltafi.common.action.EventQueueProperties;
-import org.deltafi.common.ssl.SslProperties;
 import org.deltafi.common.storage.s3.minio.MinioProperties;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
+@Getter
 @Service
 public class EnvironmentVariableHelper {
+    private final String dataDir;
     private final List<String> envVars;
 
-    public EnvironmentVariableHelper(MinioProperties minioProperties, EventQueueProperties eventQueueProperties, SslProperties sslProperties, @Value("${CORE_URL:http://deltafi-core-service/api/v2}") String coreUrl) {
-        this.envVars = buildEnvVarList(minioProperties, eventQueueProperties, sslProperties, coreUrl);
+    public EnvironmentVariableHelper(MinioProperties minioProperties, EventQueueProperties eventQueueProperties, Environment environment) {
+        this.dataDir = environment.getProperty("DATA_DIR");
+        this.envVars = buildEnvVarList(minioProperties, eventQueueProperties, environment);
     }
 
-    public List<String> getEnvVars() {
-        return envVars;
-    }
+    private List<String> buildEnvVarList(MinioProperties minioProperties, EventQueueProperties eventQueueProperties,  Environment environment) {
+        String coreUrl = environment.getProperty("CORE_URL", "http://deltafi-core-service/api/v2");
+        String sslProtocol = environment.getProperty("SSL_PROTOCOL", "TLSv1.2");
+        String keyPassword = environment.getProperty("KEY_PASSWORD");
 
-    private List<String> buildEnvVarList(MinioProperties minioProperties, EventQueueProperties eventQueueProperties, SslProperties sslProperties, String coreUrl) {
-        return List.of(
+        List<String> properties = new ArrayList<>(List.of(
                 "CORE_URL=" + coreUrl,
                 "MINIO_ACCESSKEY=" + minioProperties.getAccessKey(),
                 "MINIO_SECRETKEY=" + minioProperties.getSecretKey(),
@@ -48,13 +53,13 @@ public class EnvironmentVariableHelper {
                 "REDIS_PASSWORD=" + (eventQueueProperties.getPassword() == null ? "" : eventQueueProperties.getPassword()),
                 "VALKEY_URL=" + eventQueueProperties.getUrl(),
                 "VALKEY_PASSWORD=" + (eventQueueProperties.getPassword() == null ? "" : eventQueueProperties.getPassword()),
-                "SSL_KEYSTORE=" + sslProperties.getKeyStore(),
-                "SSL_KEYSTORETYPE=" + sslProperties.getKeyStoreType(),
-                "SSL_KEYSTORETPASSWORD=" + sslProperties.getKeyStorePassword(),
-                "SSL_PROTOCOL=" + sslProperties.getProtocol(),
-                "SSL_TRUSTSTORE=" + sslProperties.getTrustStore(),
-                "SSL_TRUSTSTORETYPE=" + sslProperties.getTrustStoreType(),
-                "SSL_TRUSTSTOREPASSWORD=" + sslProperties.getTrustStorePassword()
-        );
+                "SSL_PROTOCOL=" + sslProtocol));
+
+        // match k8s behavior where this is not injected if it is not set
+        if (StringUtils.isNotBlank(keyPassword)) {
+            properties.add("KEY_PASSWORD=" + keyPassword);
+        }
+
+        return properties;
     }
 }

@@ -18,20 +18,20 @@
 package org.deltafi.common.http;
 
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.ssl.SslContextFactory;
-import org.deltafi.common.ssl.SslProperties;
+import org.deltafi.common.ssl.SslAutoConfiguration;
+import org.deltafi.common.ssl.SslContextProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
 import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.List;
 
-@AutoConfiguration
-@EnableConfigurationProperties(SslProperties.class)
 @Slf4j
+@AutoConfiguration
+@AutoConfigureAfter(SslAutoConfiguration.class)
 public class HttpServiceAutoConfiguration {
 
     public static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofMillis(1000L);
@@ -42,17 +42,12 @@ public class HttpServiceAutoConfiguration {
     }
 
     @Bean
-    public HttpClient httpClient(SslProperties sslProperties) {
+    public HttpClient httpClient(SslContextProvider sslContextProvider) {
         HttpClient.Builder httpClientBuilder = HttpClient.newBuilder();
         httpClientBuilder.connectTimeout(DEFAULT_CONNECT_TIMEOUT);
 
-        tryAlternativeEnvVariables(sslProperties);
-        if (isConfigured(sslProperties)) {
-            try {
-                httpClientBuilder.sslContext(SslContextFactory.buildSslContext(sslProperties));
-            } catch (SslContextFactory.SslException e) {
-                log.error("Unable to build SSL context. SSL will be disabled.", e);
-            }
+        if (sslContextProvider != null && sslContextProvider.isConfigured()) {
+            httpClientBuilder.sslContext(sslContextProvider.createSslContext());
         }
 
         if (httpClientCustomizers != null) {
@@ -68,36 +63,4 @@ public class HttpServiceAutoConfiguration {
         return new HttpService(httpClient);
     }
 
-    private boolean isConfigured(SslProperties sslProperties) {
-        if (null == sslProperties || isPasswordNotSet(sslProperties.getKeyStorePassword())) {
-            log.info("SSL Configuration is not setup, SSL will not be enabled");
-            return false;
-        }
-        log.info("Configuring SSL with keystore {} and truststore {}", sslProperties.getKeyStore(), sslProperties.getTrustStore());
-        return true;
-    }
-
-    /**
-     * SslProperties will bind to the SSL_KEYSTOREPASSWORD and SSL_TRUSTSTOREPASSWORD env variables by default,
-     * if those are not set attempt to bind to KEYSTORE_PASSWORD and TRUSTSTORE_PASSWORD to remain backwards compatible
-     * @param sslProperties that may need passwords set
-     */
-    void tryAlternativeEnvVariables(SslProperties sslProperties) {
-        if (sslProperties.getKeyStorePassword() == null || sslProperties.getKeyStorePassword().equals(SslProperties.NOT_SET)) {
-            sslProperties.setKeyStorePassword(readEnvVar("KEYSTORE_PASSWORD"));
-        }
-
-        if (sslProperties.getTrustStorePassword() == null || sslProperties.getTrustStorePassword().equals(SslProperties.NOT_SET)) {
-            sslProperties.setTrustStorePassword(readEnvVar("TRUSTSTORE_PASSWORD"));
-        }
-    }
-
-    private boolean isPasswordNotSet(String password) {
-        return SslProperties.NOT_SET.equals(password);
-    }
-
-    String readEnvVar(String key) {
-        String password = System.getenv(key);
-        return password != null ? password : SslProperties.NOT_SET;
-    }
 }

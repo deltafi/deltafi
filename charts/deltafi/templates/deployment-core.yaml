@@ -32,8 +32,6 @@ spec:
           value: kubernetes
         {{- include "coreEnvVars" . | nindent 8 }}
         {{- include "clickhouseEnvVars" . | nindent 8 }}
-        envFrom:
-        {{- include "keyStorePasswordSecret" . | nindent 8 }}
         ports:
         - containerPort: 8080
         {{- include "defaultStartupProbe" . | nindent 8 }}

@@ -29,18 +29,17 @@ import org.deltafi.actionkit.action.ingress.IngressResultItem;
 import org.deltafi.actionkit.action.ingress.IngressResultType;
 import org.deltafi.actionkit.action.ingress.TimedIngressAction;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
-import org.deltafi.common.ssl.SslProperties;
+import org.deltafi.common.ssl.SslContextProvider;
+import org.deltafi.common.ssl.SslContextProvider.SslException;
 import org.deltafi.common.types.ActionContext;
 import org.deltafi.common.types.IngressStatus;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.ws.rs.core.MediaType;
-import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.security.*;
-import java.security.cert.CertificateException;
+import java.security.Key;
 import java.util.Vector;
 
 @Component
@@ -74,12 +73,12 @@ public class SftpIngress extends TimedIngressAction<SftpIngress.Parameters> {
     }
 
     private final JSch jSch;
-    private final SslProperties sslProperties;
+    private final SslContextProvider sslContextProvider;
 
-    public SftpIngress(JSch jSch, SslProperties sslProperties) {
+    public SftpIngress(JSch jSch, SslContextProvider sslContextProvider) {
         super("Poll an SFTP server for files to ingress");
         this.jSch = jSch;
-        this.sslProperties = sslProperties;
+        this.sslContextProvider = sslContextProvider;
     }
 
     @Override
@@ -91,7 +90,7 @@ public class SftpIngress extends TimedIngressAction<SftpIngress.Parameters> {
             session.setConfig("StrictHostKeyChecking", "no");
             if (params.getPassword() != null) {
                 session.setPassword(params.getPassword());
-            } else if ((sslProperties.getKeyStore() != null) && (sslProperties.getKeyStorePassword() != null)) {
+            } else if (sslContextProvider.isConfigured()) {
                 // Use private key extracted from keystore provided in ssl properties
                 jSch.addIdentity(params.getUsername(), getPrivateKey(), null, null);
             } else {
@@ -120,8 +119,7 @@ public class SftpIngress extends TimedIngressAction<SftpIngress.Parameters> {
                 ingressResult.addItem(resultItem);
                 channel.rm(lsEntry.getFilename());
             }
-        } catch (CertificateException | IllegalArgumentException | IOException | JSchException | KeyStoreException |
-                NoSuchAlgorithmException | SftpException | UnrecoverableKeyException e) {
+        } catch (IllegalArgumentException | IOException | JSchException | SftpException | SslException e) {
             ingressResult.setStatus(IngressStatus.UNHEALTHY);
             ingressResult.setStatusMessage("Unable to get files from SFTP server: " + e.getMessage());
             log.error("Unable to get files from SFTP server", e);
@@ -130,13 +128,8 @@ public class SftpIngress extends TimedIngressAction<SftpIngress.Parameters> {
         return ingressResult;
     }
 
-    private byte[] getPrivateKey() throws IOException, KeyStoreException, UnrecoverableKeyException,
-            NoSuchAlgorithmException, CertificateException {
-        KeyStore keyStore = KeyStore.getInstance(new File(sslProperties.getKeyStore()),
-                sslProperties.getKeyStorePassword().toCharArray());
-        Key privateKey = keyStore.getKey(keyStore.aliases().nextElement(),
-                sslProperties.getKeyStorePassword().toCharArray());
-
+    private byte[] getPrivateKey() throws IOException, SslException {
+        Key privateKey = sslContextProvider.getPrivateKey();
         StringWriter stringWriter = new StringWriter();
         JcaPEMWriter pemWriter = new JcaPEMWriter(stringWriter);
         pemWriter.writeObject(privateKey);
