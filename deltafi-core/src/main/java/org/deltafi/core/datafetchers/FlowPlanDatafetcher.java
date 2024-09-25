@@ -32,13 +32,13 @@ import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.types.*;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.generated.types.*;
-import org.deltafi.core.plugin.PluginRegistryService;
-import org.deltafi.core.plugin.SystemPluginService;
-import org.deltafi.core.repo.FlowRepo;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.*;
-import org.deltafi.core.types.snapshot.FlowSnapshot;
 import org.deltafi.core.types.*;
+import org.deltafi.core.validation.EgressFlowPlanValidator;
+import org.deltafi.core.validation.RestDataSourcePlanValidator;
+import org.deltafi.core.validation.TimedDataSourcePlanValidator;
+import org.deltafi.core.validation.TransformFlowPlanValidator;
 
 import java.util.*;
 
@@ -52,20 +52,19 @@ public class FlowPlanDatafetcher {
 
     private static final ObjectMapper YAML_EXPORTER = new ObjectMapper(new YAMLFactory()).registerModule(new JavaTimeModule());
 
-    private final EgressFlowPlanService egressFlowPlanService;
     private final EgressFlowService egressFlowService;
-    private final RestDataSourcePlanService restDataSourcePlanService;
-    private final TimedDataSourcePlanService timedDataSourcePlanService;
     private final RestDataSourceService restDataSourceService;
-    private final TransformFlowPlanService transformFlowPlanService;
     private final TransformFlowService transformFlowService;
     private final AnnotationService annotationService;
     private final PluginVariableService pluginVariableService;
-    private final PluginRegistryService pluginRegistryService;
-    private final SystemPluginService systemPluginService;
     private final TimedDataSourceService timedDataSourceService;
     private final CoreAuditLogger auditLogger;
     private final FlowCacheService flowCacheService;
+    private final PluginService pluginService;
+    private final EgressFlowPlanValidator egressFlowPlanValidator;
+    private final RestDataSourcePlanValidator restDataSourcePlanValidator;
+    private final TimedDataSourcePlanValidator timedDataSourcePlanValidator;
+    private final TransformFlowPlanValidator transformFlowPlanValidator;
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
@@ -128,14 +127,18 @@ public class FlowPlanDatafetcher {
     @NeedsPermission.FlowPlanCreate
     public EgressFlow saveEgressFlowPlan(@InputArgument EgressFlowPlanInput egressFlowPlan) {
         auditLogger.audit("saved egress flow plan {}", egressFlowPlan.getName());
-        return saveFlowPlan(egressFlowPlanService, egressFlowPlan, EgressFlowPlanEntity.class);
+        EgressFlowPlan flowPlan = OBJECT_MAPPER.convertValue(egressFlowPlan, EgressFlowPlan.class);
+        flowPlan.setSourcePlugin(pluginService.getSystemPluginCoordinates());
+        egressFlowPlanValidator.validate(flowPlan);
+        pluginService.addFlowPlanToSystemPlugin(flowPlan);
+        return egressFlowService.buildAndSaveFlow(flowPlan);
     }
 
     @DgsMutation
     @NeedsPermission.FlowPlanDelete
     public boolean removeEgressFlowPlan(@InputArgument String name) {
         auditLogger.audit("removed egress flow plan {}", name);
-        return removeFlowAndFlowPlan(egressFlowPlanService,name);
+        return pluginService.removeFlowPlanFromSystemPlugin(name, FlowType.EGRESS);
     }
 
     @DgsMutation
@@ -156,28 +159,36 @@ public class FlowPlanDatafetcher {
     @NeedsPermission.FlowPlanCreate
     public DataSource saveTimedDataSourcePlan(@InputArgument TimedDataSourcePlanInput dataSourcePlan) {
         auditLogger.audit("saved timed source plan {}", dataSourcePlan.getName());
-        return saveFlowPlan(timedDataSourcePlanService, dataSourcePlan, TimedDataSourcePlanEntity.class);
+        TimedDataSourcePlan flowPlan = OBJECT_MAPPER.convertValue(dataSourcePlan, TimedDataSourcePlan.class);
+        flowPlan.setSourcePlugin(pluginService.getSystemPluginCoordinates());
+        timedDataSourcePlanValidator.validate(flowPlan);
+        pluginService.addFlowPlanToSystemPlugin(flowPlan);
+        return timedDataSourceService.buildAndSaveFlow(flowPlan);
     }
 
     @DgsMutation
     @NeedsPermission.FlowPlanCreate
     public DataSource saveRestDataSourcePlan(@InputArgument RestDataSourcePlanInput dataSourcePlan) {
         auditLogger.audit("saved rest source plan {}", dataSourcePlan.getName());
-        return saveFlowPlan(restDataSourcePlanService, dataSourcePlan, RestDataSourcePlanEntity.class);
+        RestDataSourcePlan flowPlan = OBJECT_MAPPER.convertValue(dataSourcePlan, RestDataSourcePlan.class);
+        flowPlan.setSourcePlugin(pluginService.getSystemPluginCoordinates());
+        restDataSourcePlanValidator.validate(flowPlan);
+        pluginService.addFlowPlanToSystemPlugin(flowPlan);
+        return restDataSourceService.buildAndSaveFlow(flowPlan);
     }
 
     @DgsMutation
     @NeedsPermission.FlowPlanDelete
     public boolean removeRestDataSourcePlan(@InputArgument String name) {
         auditLogger.audit("removed restDataSource plan {}", name);
-        return removeFlowAndFlowPlan(restDataSourcePlanService, name);
+        return pluginService.removeFlowPlanFromSystemPlugin(name, FlowType.REST_DATA_SOURCE);
     }
 
     @DgsMutation
     @NeedsPermission.FlowPlanDelete
     public boolean removeTimedDataSourcePlan(@InputArgument String name) {
         auditLogger.audit("removed timedDataSource plan {}", name);
-        return removeFlowAndFlowPlan(timedDataSourcePlanService, name);
+        return pluginService.removeFlowPlanFromSystemPlugin(name, FlowType.TIMED_DATA_SOURCE);
     }
 
     @DgsMutation
@@ -240,14 +251,18 @@ public class FlowPlanDatafetcher {
     @NeedsPermission.FlowPlanCreate
     public TransformFlow saveTransformFlowPlan(@InputArgument TransformFlowPlanInput transformFlowPlan) {
         auditLogger.audit("saved transform flow plan {}", transformFlowPlan.getName());
-        return saveFlowPlan(transformFlowPlanService, transformFlowPlan, TransformFlowPlanEntity.class);
+        TransformFlowPlan flowPlan = OBJECT_MAPPER.convertValue(transformFlowPlan, TransformFlowPlan.class);
+        flowPlan.setSourcePlugin(pluginService.getSystemPluginCoordinates());
+        transformFlowPlanValidator.validate(flowPlan);
+        pluginService.addFlowPlanToSystemPlugin(flowPlan);
+        return transformFlowService.buildAndSaveFlow(flowPlan);
     }
 
     @DgsMutation
     @NeedsPermission.FlowPlanDelete
     public boolean removeTransformFlowPlan(@InputArgument String name) {
         auditLogger.audit("removed transform flow plan {}", name);
-        return removeFlowAndFlowPlan(transformFlowPlanService, name);
+        return pluginService.removeFlowPlanFromSystemPlugin(name, FlowType.TRANSFORM);
     }
 
     @DgsMutation
@@ -282,7 +297,7 @@ public class FlowPlanDatafetcher {
     @NeedsPermission.PluginVariableUpdate
     public boolean savePluginVariables(@InputArgument List<Variable> variables) {
         auditLogger.audit("saved plugin variables {}", CoreAuditLogger.listToString(variables, Variable::getName));
-        pluginVariableService.validateAndSaveVariables(systemPluginService.getSystemPluginCoordinates(), variables);
+        pluginVariableService.validateAndSaveVariables(pluginService.getSystemPluginCoordinates(), variables);
         return true;
     }
 
@@ -290,7 +305,7 @@ public class FlowPlanDatafetcher {
     @NeedsPermission.PluginVariableUpdate
     public boolean removePluginVariables() {
         auditLogger.audit("removed system plugin variables");
-        pluginVariableService.removeVariables(systemPluginService.getSystemPluginCoordinates());
+        pluginVariableService.removeVariables(pluginService.getSystemPluginCoordinates());
         return true;
     }
 
@@ -298,14 +313,7 @@ public class FlowPlanDatafetcher {
     @NeedsPermission.PluginVariableUpdate
     public boolean setPluginVariableValues(@InputArgument PluginCoordinates pluginCoordinates, @InputArgument List<KeyValue> variables) {
         auditLogger.audit("updated plugin variables: {}", CoreAuditLogger.listToString(variables));
-        boolean updated = pluginVariableService.setVariableValues(pluginCoordinates, variables);
-        if (updated) {
-            egressFlowPlanService.rebuildFlowsForPlugin(pluginCoordinates);
-            transformFlowPlanService.rebuildFlowsForPlugin(pluginCoordinates);
-            restDataSourcePlanService.rebuildFlowsForPlugin(pluginCoordinates);
-            timedDataSourcePlanService.rebuildFlowsForPlugin(pluginCoordinates);
-        }
-        return updated;
+        return pluginService.setPluginVariableValues(pluginCoordinates, variables);
     }
 
     @DgsQuery
@@ -358,26 +366,26 @@ public class FlowPlanDatafetcher {
 
     @DgsQuery
     @NeedsPermission.FlowView
-    public EgressFlowPlanEntity getEgressFlowPlan(@InputArgument String planName) {
-        return egressFlowPlanService.getPlanByName(planName);
+    public EgressFlowPlan getEgressFlowPlan(@InputArgument String planName) {
+        return (EgressFlowPlan) pluginService.getPlanByName(planName, FlowType.EGRESS);
     }
 
     @DgsQuery
     @NeedsPermission.FlowView
-    public RestDataSourcePlanEntity getRestDataSourcePlan(@InputArgument String planName) {
-        return restDataSourcePlanService.getPlanByName(planName);
+    public RestDataSourcePlan getRestDataSourcePlan(@InputArgument String planName) {
+        return (RestDataSourcePlan) pluginService.getPlanByName(planName, FlowType.REST_DATA_SOURCE);
     }
 
     @DgsQuery
     @NeedsPermission.FlowView
-    public TimedDataSourcePlanEntity getTimedDataSourcePlan(@InputArgument String planName) {
-        return timedDataSourcePlanService.getPlanByName(planName);
+    public TimedDataSourcePlan getTimedDataSourcePlan(@InputArgument String planName) {
+        return (TimedDataSourcePlan) pluginService.getPlanByName(planName, FlowType.TIMED_DATA_SOURCE);
     }
 
     @DgsQuery
     @NeedsPermission.FlowView
-    public TransformFlowPlanEntity getTransformFlowPlan(@InputArgument String planName) {
-        return transformFlowPlanService.getPlanByName(planName);
+    public TransformFlowPlan getTransformFlowPlan(@InputArgument String planName) {
+        return (TransformFlowPlan) pluginService.getPlanByName(planName, FlowType.TRANSFORM);
     }
 
     @DgsQuery
@@ -426,16 +434,24 @@ public class FlowPlanDatafetcher {
     @NeedsPermission.FlowView
     public SystemFlowPlans getAllFlowPlans() {
         return SystemFlowPlans.newBuilder()
-                .egressPlans(egressFlowPlanService.getAll().stream().map(f -> (EgressFlowPlan) f.toFlowPlan()).toList())
-                .transformPlans(transformFlowPlanService.getAll().stream().map(f -> (TransformFlowPlan) f.toFlowPlan()).toList())
-                .restDataSources(restDataSourcePlanService.getAll().stream().map(f -> (RestDataSourcePlan) f.toFlowPlan()).toList())
-                .timedDataSources(timedDataSourcePlanService.getAll().stream().map(f -> (TimedDataSourcePlan) f.toFlowPlan()).toList()).build();
+                .egressPlans(getFlowPlansByType(FlowType.EGRESS, EgressFlowPlan.class))
+                .transformPlans(getFlowPlansByType(FlowType.TRANSFORM, TransformFlowPlan.class))
+                .restDataSources(getFlowPlansByType(FlowType.REST_DATA_SOURCE, RestDataSourcePlan.class))
+                .timedDataSources(getFlowPlansByType(FlowType.TIMED_DATA_SOURCE, TimedDataSourcePlan.class))
+                .build();
+    }
+
+    private <T extends FlowPlan> List<T> getFlowPlansByType(FlowType flowType, Class<T> klass) {
+        return pluginService.getFlowPlansByType(flowType).stream()
+                .filter(klass::isInstance)
+                .map(klass::cast)
+                .toList();
     }
 
     @DgsQuery
     @NeedsPermission.FlowView
     public Collection<Flows> getFlows() {
-        return pluginRegistryService.getFlowsByPlugin();
+        return pluginService.getFlowsByPlugin();
     }
 
     @DgsQuery
@@ -456,15 +472,5 @@ public class FlowPlanDatafetcher {
         List<DataSourceErrorState> errors = restDataSourceService.dataSourceErrorsExceeded();
         errors.addAll(timedDataSourceService.dataSourceErrorsExceeded());
         return errors;
-    }
-
-    private boolean removeFlowAndFlowPlan(FlowPlanService<?, ?, ?, ?> flowPlanService, String flowPlanName) {
-        return flowPlanService.removePlan(flowPlanName, systemPluginService.getSystemPluginCoordinates());
-    }
-
-    private <T extends FlowPlanEntity, R extends Flow, S extends FlowSnapshot, U extends FlowRepo> R saveFlowPlan(FlowPlanService<T, R, S, U> flowPlanService, Object input, Class<T> clazz) {
-        T flowPlan = OBJECT_MAPPER.convertValue(input, clazz);
-        flowPlan.setSourcePlugin(systemPluginService.getSystemPluginCoordinates());
-        return flowPlanService.saveFlowPlan(flowPlan);
     }
 }

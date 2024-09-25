@@ -20,6 +20,7 @@ package org.deltafi.core.services;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.common.types.Subscriber;
+import org.deltafi.common.types.TransformFlowPlan;
 import org.deltafi.core.converters.TransformFlowPlanConverter;
 import org.deltafi.core.repo.TransformFlowRepo;
 import org.deltafi.core.services.pubsub.SubscriberService;
@@ -37,14 +38,14 @@ import java.util.Set;
 
 @Service
 @Slf4j
-public class TransformFlowService extends FlowService<TransformFlowPlanEntity, TransformFlow, TransformFlowSnapshot, TransformFlowRepo> implements SubscriberService {
+public class TransformFlowService extends FlowService<TransformFlowPlan, TransformFlow, TransformFlowSnapshot, TransformFlowRepo> implements SubscriberService {
 
     private static final TransformFlowPlanConverter TRANSFORM_FLOW_PLAN_CONVERTER = new TransformFlowPlanConverter();
 
     private Map<String, Set<Subscriber>> topicSubscribers;
 
     public TransformFlowService(TransformFlowRepo transformFlowRepo, PluginVariableService pluginVariableService, FlowValidator flowValidator, BuildProperties buildProperties, FlowCacheService flowCacheService) {
-        super(FlowType.TRANSFORM, transformFlowRepo, pluginVariableService, TRANSFORM_FLOW_PLAN_CONVERTER, flowValidator, buildProperties, flowCacheService, TransformFlow.class, TransformFlowPlanEntity.class);
+        super(FlowType.TRANSFORM, transformFlowRepo, pluginVariableService, TRANSFORM_FLOW_PLAN_CONVERTER, flowValidator, buildProperties, flowCacheService, TransformFlow.class, TransformFlowPlan.class);
     }
 
     @Override

@@ -17,22 +17,17 @@
  */
 package org.deltafi.core.types;
 
-import jakarta.persistence.MappedSuperclass;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import org.deltafi.common.types.FlowType;
-import org.deltafi.common.types.PluginCoordinates;
+import org.deltafi.common.types.Variable;
 
-@MappedSuperclass
-@EqualsAndHashCode(callSuper = true)
+import java.util.List;
+
 @Data
-@NoArgsConstructor
-public abstract class DataSourcePlanEntity extends FlowPlanEntity {
-    private String topic;
+public class VariableUpdate {
+    boolean updated = false;
+    List<Variable> variables;
 
-    public DataSourcePlanEntity(String name, FlowType flowType, String description, PluginCoordinates sourcePlugin, String topic) {
-        super(name, flowType, description, sourcePlugin);
-        this.topic = topic;
+    public VariableUpdate(List<Variable> variables) {
+        this.variables = variables;
     }
 }

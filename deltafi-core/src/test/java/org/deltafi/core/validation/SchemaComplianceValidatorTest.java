@@ -18,7 +18,7 @@
 package org.deltafi.core.validation;
 
 import org.deltafi.common.types.*;
-import org.deltafi.core.plugin.PluginRegistryService;
+import org.deltafi.core.services.PluginService;
 import org.deltafi.core.util.Util;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
@@ -44,11 +44,11 @@ class SchemaComplianceValidatorTest {
     SchemaComplianceValidator schemaComplianceValidator;
 
     @Mock
-    PluginRegistryService pluginRegistryService;
+    PluginService pluginService;
 
     @Test
     void runValidate() {
-        Mockito.when(pluginRegistryService.getByActionClass(EGRESS_ACTION)).thenReturn(egressActionDescriptorOptional());
+        Mockito.when(pluginService.getByActionClass(EGRESS_ACTION)).thenReturn(egressActionDescriptorOptional());
         assertThat(schemaComplianceValidator.validate(egressConfig(getRequiredEgressParams()))).isEmpty();
     }
 
@@ -60,7 +60,7 @@ class SchemaComplianceValidatorTest {
 
         ActionConfiguration config = egressConfig("egressName", params);
 
-        Mockito.when(pluginRegistryService.getByActionClass(EGRESS_ACTION)).thenReturn(egressActionDescriptorOptional());
+        Mockito.when(pluginService.getByActionClass(EGRESS_ACTION)).thenReturn(egressActionDescriptorOptional());
         List<FlowConfigError> errors = schemaComplianceValidator.validate(config);
 
         assertThat(errors).hasSize(1);
@@ -75,7 +75,7 @@ class SchemaComplianceValidatorTest {
         ActionConfiguration config = egressConfig("egressName", "   ", getRequiredEgressParams());
 
         List<FlowConfigError> errors = schemaComplianceValidator.validate(config);
-        Mockito.verifyNoInteractions(pluginRegistryService);
+        Mockito.verifyNoInteractions(pluginService);
         FlowConfigError error = errors.getFirst();
         assertThat(error.getConfigName()).isEqualTo("egressName");
         assertThat(error.getErrorType()).isEqualTo(FlowErrorType.INVALID_CONFIG);
@@ -97,7 +97,7 @@ class SchemaComplianceValidatorTest {
 
     @Test
     void validateAgainstSchema_actionNotRegistered() {
-        Mockito.when(pluginRegistryService.getByActionClass(EGRESS_ACTION)).thenReturn(Optional.empty());
+        Mockito.when(pluginService.getByActionClass(EGRESS_ACTION)).thenReturn(Optional.empty());
 
         List<FlowConfigError> errors = schemaComplianceValidator.validate(egressConfig(null));
         FlowConfigError error = errors.getFirst();

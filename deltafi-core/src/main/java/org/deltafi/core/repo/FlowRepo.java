@@ -31,8 +31,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.deltafi.core.plugin.SystemPluginService.SYSTEM_PLUGIN_ARTIFACT_ID;
-import static org.deltafi.core.plugin.SystemPluginService.SYSTEM_PLUGIN_GROUP_ID;
+import static org.deltafi.core.services.PluginService.SYSTEM_PLUGIN_ARTIFACT_ID;
+import static org.deltafi.core.services.PluginService.SYSTEM_PLUGIN_GROUP_ID;
 
 @Repository
 public interface FlowRepo extends JpaRepository<Flow, UUID> {

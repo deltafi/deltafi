@@ -20,17 +20,13 @@ package org.deltafi.core.integration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.deltafi.common.types.Plugin;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.integration.config.Configuration;
 import org.deltafi.core.integration.config.ExpectedDeltaFile;
 import org.deltafi.core.integration.config.Input;
-import org.deltafi.core.plugin.PluginEntity;
-import org.deltafi.core.plugin.PluginRegistryService;
-import org.deltafi.core.services.RestDataSourceService;
-import org.deltafi.core.services.EgressFlowService;
-import org.deltafi.core.services.FlowService;
-import org.deltafi.core.services.TransformFlowService;
+import org.deltafi.core.types.PluginEntity;
+import org.deltafi.core.services.*;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -48,7 +44,8 @@ public class ConfigurationValidator {
     private final RestDataSourceService restDataSourceService;
     private final TransformFlowService transformFlowService;
     private final EgressFlowService egressFlowService;
-    private final PluginRegistryService pluginRegistryService;
+    @Lazy
+    private final PluginService pluginService;
 
     public List<String> validateConfig(Configuration config) {
         List<String> errors = new ArrayList<>();
@@ -131,7 +128,7 @@ public class ConfigurationValidator {
                 if (StringUtils.isEmpty(pluginCoordinates.getVersion())) {
                     // find without version
                     if (allInstalledPlugins == null) {
-                        allInstalledPlugins = pluginRegistryService.getPlugins();
+                        allInstalledPlugins = pluginService.getPlugins();
                     }
                     boolean found = false;
                     for (PluginEntity p : allInstalledPlugins) {
@@ -144,7 +141,7 @@ public class ConfigurationValidator {
                         errors.add("Plugin not found: " + pluginCoordinates.getGroupId() + ":" + pluginCoordinates.getArtifactId() + ":*");
                     }
 
-                } else if (pluginRegistryService.getPlugin(pluginCoordinates).isEmpty()) {
+                } else if (pluginService.getPlugin(pluginCoordinates).isEmpty()) {
                     errors.add("Plugin not found: " + pluginCoordinates);
                 }
             }

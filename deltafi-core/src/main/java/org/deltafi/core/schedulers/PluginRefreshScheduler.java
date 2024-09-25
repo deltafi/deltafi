@@ -17,7 +17,7 @@
  */
 package org.deltafi.core.schedulers;
 
-import org.deltafi.core.plugin.PluginRegistryService;
+import org.deltafi.core.services.PluginService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -28,14 +28,14 @@ import org.springframework.stereotype.Service;
 @EnableScheduling
 public class PluginRefreshScheduler {
 
-    private final PluginRegistryService pluginRegistryService;
+    private final PluginService pluginService;
 
-    public PluginRefreshScheduler(PluginRegistryService pluginRegistryService) {
-        this.pluginRegistryService = pluginRegistryService;
+    public PluginRefreshScheduler(PluginService pluginService) {
+        this.pluginService = pluginService;
     }
 
     @Scheduled(fixedDelay = 5000)
     public void refreshActionDescriptors() {
-        pluginRegistryService.updateActionDescriptors();
+        pluginService.updateActionDescriptors();
     }
 }

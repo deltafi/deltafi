@@ -30,4 +30,5 @@ public class Plugin {
   private List<ActionDescriptor> actions;
   private List<PluginCoordinates> dependencies;
   private List<Variable> variables;
+  private List<FlowPlan> flowPlans;
 }

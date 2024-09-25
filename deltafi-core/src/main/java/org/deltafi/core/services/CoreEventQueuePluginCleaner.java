@@ -19,9 +19,7 @@ package org.deltafi.core.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.common.types.Plugin;
-import org.deltafi.core.plugin.PluginCleaner;
-import org.deltafi.core.plugin.PluginEntity;
+import org.deltafi.core.types.PluginEntity;
 import org.springframework.stereotype.Service;
 
 @Service

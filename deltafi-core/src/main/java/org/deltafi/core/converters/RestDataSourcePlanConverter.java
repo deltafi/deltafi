@@ -17,12 +17,13 @@
  */
 package org.deltafi.core.converters;
 
+import org.deltafi.common.types.RestDataSourcePlan;
 import org.deltafi.core.types.*;
 
-public class RestDataSourcePlanConverter extends FlowPlanConverter<RestDataSourcePlanEntity, RestDataSource> {
+public class RestDataSourcePlanConverter extends FlowPlanConverter<RestDataSourcePlan, RestDataSource> {
 
     @Override
-    public RestDataSource createFlow(RestDataSourcePlanEntity dataSourcePlan, FlowPlanPropertyHelper flowPlanPropertyHelper) {
+    public RestDataSource createFlow(RestDataSourcePlan dataSourcePlan, FlowPlanPropertyHelper flowPlanPropertyHelper) {
         RestDataSource restDataSource = new RestDataSource();
         restDataSource.setTopic(dataSourcePlan.getTopic());
         return restDataSource;

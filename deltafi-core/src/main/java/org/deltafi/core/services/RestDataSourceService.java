@@ -19,6 +19,7 @@ package org.deltafi.core.services;
 
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.FlowType;
+import org.deltafi.common.types.RestDataSourcePlan;
 import org.deltafi.core.converters.RestDataSourcePlanConverter;
 import org.deltafi.core.generated.types.DataSourceErrorState;
 import org.deltafi.core.repo.RestDataSourceRepo;
@@ -37,7 +38,7 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
-public class RestDataSourceService extends FlowService<RestDataSourcePlanEntity, RestDataSource, RestDataSourceSnapshot, RestDataSourceRepo> {
+public class RestDataSourceService extends FlowService<RestDataSourcePlan, RestDataSource, RestDataSourceSnapshot, RestDataSourceRepo> {
 
     private static final RestDataSourcePlanConverter REST_DATA_SOURCE_FLOW_PLAN_CONVERTER = new RestDataSourcePlanConverter();
     private final ErrorCountService errorCountService;
@@ -46,7 +47,7 @@ public class RestDataSourceService extends FlowService<RestDataSourcePlanEntity,
                                  FlowValidator flowValidator, BuildProperties buildProperties,
                                  ErrorCountService errorCountService, FlowCacheService flowCacheService) {
         super(FlowType.REST_DATA_SOURCE, restDataSourceRepo, pluginVariableService, REST_DATA_SOURCE_FLOW_PLAN_CONVERTER,
-                flowValidator, buildProperties, flowCacheService, RestDataSource.class, RestDataSourcePlanEntity.class);
+                flowValidator, buildProperties, flowCacheService, RestDataSource.class, RestDataSourcePlan.class);
 
         this.errorCountService = errorCountService;
     }

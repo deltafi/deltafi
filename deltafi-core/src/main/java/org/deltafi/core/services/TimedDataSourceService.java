@@ -20,6 +20,7 @@ package org.deltafi.core.services;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.common.types.IngressStatus;
+import org.deltafi.common.types.TimedDataSourcePlan;
 import org.deltafi.core.converters.TimedDataSourcePlanConverter;
 import org.deltafi.core.generated.types.DataSourceErrorState;
 import org.deltafi.core.generated.types.FlowState;
@@ -39,7 +40,7 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
-public class TimedDataSourceService extends FlowService<TimedDataSourcePlanEntity, TimedDataSource, TimedDataSourceSnapshot, TimedDataSourceRepo> {
+public class TimedDataSourceService extends FlowService<TimedDataSourcePlan, TimedDataSource, TimedDataSourceSnapshot, TimedDataSourceRepo> {
 
     private static final TimedDataSourcePlanConverter TIMED_DATA_SOURCE_FLOW_PLAN_CONVERTER = new TimedDataSourcePlanConverter();
 
@@ -51,7 +52,7 @@ public class TimedDataSourceService extends FlowService<TimedDataSourcePlanEntit
                                   FlowValidator flowValidator, BuildProperties buildProperties,
                                   ErrorCountService errorCountService, Clock clock, FlowCacheService flowCacheService) {
         super(FlowType.TIMED_DATA_SOURCE, timedDataSourceRepo, pluginVariableService, TIMED_DATA_SOURCE_FLOW_PLAN_CONVERTER,
-                flowValidator, buildProperties, flowCacheService, TimedDataSource.class, TimedDataSourcePlanEntity.class);
+                flowValidator, buildProperties, flowCacheService, TimedDataSource.class, TimedDataSourcePlan.class);
 
         this.timedDataSourceRepo = timedDataSourceRepo;
         this.errorCountService = errorCountService;

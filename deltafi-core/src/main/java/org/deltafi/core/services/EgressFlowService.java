@@ -18,6 +18,7 @@
 package org.deltafi.core.services;
 
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.common.types.EgressFlowPlan;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.common.types.Subscriber;
 import org.deltafi.core.converters.EgressFlowPlanConverter;
@@ -27,7 +28,6 @@ import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.types.snapshot.EgressFlowSnapshot;
 import org.deltafi.core.types.EgressFlow;
 
-import org.deltafi.core.types.EgressFlowPlanEntity;
 import org.deltafi.core.validation.FlowValidator;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
@@ -40,14 +40,14 @@ import java.util.Set;
 @Slf4j
 @Service
 public
-class EgressFlowService extends FlowService<EgressFlowPlanEntity, EgressFlow, EgressFlowSnapshot, EgressFlowRepo> implements SubscriberService {
+class EgressFlowService extends FlowService<EgressFlowPlan, EgressFlow, EgressFlowSnapshot, EgressFlowRepo> implements SubscriberService {
 
     private static final EgressFlowPlanConverter EGRESS_FLOW_PLAN_CONVERTER = new EgressFlowPlanConverter();
 
     private Map<String, Set<Subscriber>> topicSubscribers;
 
     public EgressFlowService(EgressFlowRepo flowRepo, PluginVariableService pluginVariableService, FlowValidator flowValidator, BuildProperties buildProperties, FlowCacheService flowCacheService) {
-        super(FlowType.EGRESS, flowRepo, pluginVariableService, EGRESS_FLOW_PLAN_CONVERTER, flowValidator, buildProperties, flowCacheService, EgressFlow.class, EgressFlowPlanEntity.class);
+        super(FlowType.EGRESS, flowRepo, pluginVariableService, EGRESS_FLOW_PLAN_CONVERTER, flowValidator, buildProperties, flowCacheService, EgressFlow.class, EgressFlowPlan.class);
     }
 
     @Override

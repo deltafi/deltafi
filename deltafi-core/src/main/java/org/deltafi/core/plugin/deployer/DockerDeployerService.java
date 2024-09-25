@@ -23,11 +23,11 @@ import com.github.dockerjava.api.command.InspectContainerResponse.ContainerState
 import com.github.dockerjava.api.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.core.plugin.PluginRegistryService;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.services.EventService;
+import org.deltafi.core.services.PluginService;
 import org.deltafi.core.services.SystemSnapshotService;
 import org.deltafi.core.types.Result;
 
@@ -58,10 +58,10 @@ public class DockerDeployerService extends BaseDeployerService implements Deploy
     private final List<String> environmentVariables;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
 
-    public DockerDeployerService(DockerClient dockerClient, PluginImageRepositoryService pluginImageRepositoryService, PluginRegistryService pluginRegistryService,
+    public DockerDeployerService(DockerClient dockerClient, PluginImageRepositoryService pluginImageRepositoryService, PluginService pluginService,
                                  SystemSnapshotService systemSnapshotService, EventService eventService,
                                  EnvironmentVariableHelper environmentVariableHelper, DeltaFiPropertiesService deltaFiPropertiesService) {
-        super(pluginImageRepositoryService, pluginRegistryService, systemSnapshotService, eventService);
+        super(pluginImageRepositoryService, pluginService, systemSnapshotService, eventService);
         this.dockerClient = dockerClient;
         this.environmentVariables = environmentVariableHelper.getEnvVars();
         this.deltaFiPropertiesService = deltaFiPropertiesService;

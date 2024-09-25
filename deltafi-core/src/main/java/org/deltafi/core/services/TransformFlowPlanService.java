@@ -18,28 +18,17 @@
 package org.deltafi.core.services;
 
 import org.deltafi.common.types.FlowType;
-import org.deltafi.core.repo.FlowPlanRepo;
+import org.deltafi.common.types.TransformFlowPlan;
+import org.deltafi.core.repo.PluginRepository;
 import org.deltafi.core.repo.TransformFlowRepo;
 import org.deltafi.core.types.snapshot.TransformFlowSnapshot;
 import org.deltafi.core.types.TransformFlow;
-import org.deltafi.core.types.TransformFlowPlanEntity;
 import org.deltafi.core.validation.TransformFlowPlanValidator;
-import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
 @Service
-public class TransformFlowPlanService extends FlowPlanService<TransformFlowPlanEntity, TransformFlow, TransformFlowSnapshot, TransformFlowRepo> {
-    public TransformFlowPlanService(TransformFlowPlanValidator transformFlowPlanValidator, FlowPlanRepo flowPlanRepo, TransformFlowService flowService, BuildProperties buildProperties) {
-        super(transformFlowPlanValidator, flowPlanRepo, flowService, buildProperties);
-    }
-
-    @Override
-    protected FlowType getFlowType() {
-        return FlowType.TRANSFORM;
-    }
-
-    @Override
-    protected Class<TransformFlowPlanEntity> getFlowPlanClass() {
-        return TransformFlowPlanEntity.class;
+public class TransformFlowPlanService extends FlowPlanService<TransformFlowPlan, TransformFlow, TransformFlowSnapshot, TransformFlowRepo> {
+    public TransformFlowPlanService(TransformFlowPlanValidator transformFlowPlanValidator, PluginRepository pluginRepo, TransformFlowService flowService) {
+        super(transformFlowPlanValidator, pluginRepo, flowService, FlowType.TRANSFORM, TransformFlowPlan.class);
     }
 }

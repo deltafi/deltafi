@@ -19,12 +19,11 @@ package org.deltafi.core.services;
 
 import lombok.AllArgsConstructor;
 import org.deltafi.common.types.KeyValue;
-import org.deltafi.common.types.Plugin;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.Variable;
-import org.deltafi.core.plugin.PluginCleaner;
-import org.deltafi.core.plugin.PluginEntity;
+import org.deltafi.core.types.PluginEntity;
 import org.deltafi.core.repo.PluginVariableRepo;
+import org.deltafi.core.types.VariableUpdate;
 import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.types.PluginVariables;
@@ -164,20 +163,28 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
      * @param pluginCoordinates plugin whose variables need updated
      * @param values new values to use in the variables
      */
-    public boolean setVariableValues(PluginCoordinates pluginCoordinates, List<KeyValue> values) {
+    public VariableUpdate setVariableValues(PluginCoordinates pluginCoordinates, List<KeyValue> values) {
         if (Objects.isNull(values) || values.isEmpty()) {
-            return false;
+            return new VariableUpdate(Collections.emptyList());
         }
 
         PluginVariables pluginVariables = pluginVariableRepo.findBySourcePlugin(pluginCoordinates).orElseThrow();
 
-        values.forEach(keyValue -> setVariable(pluginVariables, keyValue));
+        VariableUpdate variableUpdate = new VariableUpdate(pluginVariables.getVariables());
+        for (KeyValue value : values) {
+            if (setVariable(pluginVariables, value)) {
+                variableUpdate.setUpdated(true);
+            }
+        }
 
-        pluginVariableRepo.save(pluginVariables);
-        return true;
+        if (variableUpdate.isUpdated()) {
+            pluginVariableRepo.save(pluginVariables);
+        }
+
+        return variableUpdate;
     }
 
-    private void setVariable(PluginVariables pluginVariables, KeyValue keyValue) {
+    private boolean setVariable(PluginVariables pluginVariables, KeyValue keyValue) {
         Variable variable = pluginVariables.getVariables().stream()
                 .filter(v1 -> nameMatches(v1, keyValue.getKey()))
                 .findFirst().orElseThrow(() -> new IllegalArgumentException("Variable name: " + keyValue.getKey() + " was not found in the variables for plugin: " + pluginVariables.getSourcePlugin()));
@@ -188,7 +195,12 @@ public class PluginVariableService implements PluginCleaner, Snapshotter {
             throw new IllegalArgumentException("Variable named: " + keyValue.getKey() + " has an invalid value for the given type: " + errorMsg);
         }
 
+        if (Objects.equals(variable.getValue(), keyValue.getValue())) {
+            return false;
+        }
+
         variable.setValue(keyValue.getValue());
+        return true;
     }
 
     private boolean nameMatches(Variable variable, String key) {

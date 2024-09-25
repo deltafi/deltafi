@@ -15,20 +15,20 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.plugin;
+package org.deltafi.core.services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import jakarta.persistence.EntityManager;
 import org.deltafi.common.types.ActionDescriptor;
 import org.deltafi.common.types.Plugin;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.PluginRegistration;
 import org.deltafi.common.types.Variable;
-import org.deltafi.core.services.DeltaFiUserService;
-import org.deltafi.core.services.*;
+import org.deltafi.core.repo.PluginRepository;
+import org.deltafi.core.types.PluginEntity;
 import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.util.Util;
+import org.deltafi.core.validation.PluginValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,6 +37,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.core.env.Environment;
 
 import java.util.Collection;
@@ -49,7 +50,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
-class PluginRegistryServiceTest {
+class PluginServiceTest {
 
     private static final PluginCoordinates PLUGIN_COORDINATES_1 = new PluginCoordinates("org.mock", "plugin-1", "1.0.0");
     private static final PluginCoordinates PLUGIN_COORDINATES_2 = new PluginCoordinates("org.mock", "plugin-2", "1.0.0");
@@ -90,29 +91,24 @@ class PluginRegistryServiceTest {
     @Mock
     CoreEventQueuePluginCleaner coreEventQueuePluginCleaner;
 
-    @Mock
-    SystemPluginService systemPluginService;
-
-    @Mock
-    FlowValidationService flowValidationService;
-
-    PluginRegistryService pluginRegistryService;
+    PluginService pluginService;
 
     @Mock
     Environment environment;
 
     @Mock
-    EntityManager entityManager;
+    BuildProperties buildProperties;
 
     @BeforeEach
     public void setup() {
-        List<PluginCleaner> cleaners = List.of(egressFlowPlanService, transformFlowPlanService, restDataSourcePlanService,
-                timedDataSourcePlanService, pluginVariableService, coreEventQueuePluginCleaner);
+        List<PluginCleaner> cleaners = List.of(egressFlowService, transformFlowService, restDataSourceService,
+                timedDataSourceService, pluginVariableService, coreEventQueuePluginCleaner);
         List<PluginUninstallCheck> checkers = List.of(egressFlowService, transformFlowService, restDataSourceService);
-        pluginRegistryService = new PluginRegistryService(egressFlowService, transformFlowService, restDataSourceService,
-                timedDataSourceService, pluginRepository, pluginValidator, pluginVariableService,
-                egressFlowPlanService, transformFlowPlanService, restDataSourcePlanService, timedDataSourcePlanService,
-                systemPluginService, flowValidationService, checkers, cleaners, environment, entityManager);
+
+        pluginService = new PluginService(pluginRepository, pluginVariableService, buildProperties,
+                egressFlowService, restDataSourceService, timedDataSourceService, transformFlowService,
+                environment, pluginValidator, egressFlowPlanService, restDataSourcePlanService,
+                timedDataSourcePlanService, transformFlowPlanService, checkers, cleaners);
     }
 
     @Test
@@ -122,13 +118,16 @@ class PluginRegistryServiceTest {
         PluginEntity plugin = new PluginEntity();
         plugin.setPluginCoordinates(new PluginCoordinates("group", "artifact", "1.0.0"));
         PluginRegistration pluginRegistration = PluginRegistration.builder().pluginCoordinates(plugin.getPluginCoordinates()).build();
-        Result result = pluginRegistryService.register(pluginRegistration);
+        Result result = pluginService.register(pluginRegistration);
 
         assertTrue(result.isSuccess());
         ArgumentCaptor<PluginEntity> pluginArgumentCaptor = ArgumentCaptor.forClass(PluginEntity.class);
-        Mockito.verify(entityManager).persist(pluginArgumentCaptor.capture());
+        Mockito.verify(pluginRepository).save(pluginArgumentCaptor.capture());
         assertEquals(plugin, pluginArgumentCaptor.getValue());
-        Mockito.verify(flowValidationService).revalidateFlows();
+        Mockito.verify(egressFlowService).validateAllFlows();
+        Mockito.verify(restDataSourceService).validateAllFlows();
+        Mockito.verify(timedDataSourceService).validateAllFlows();
+        Mockito.verify(transformFlowService).validateAllFlows();
     }
 
     @Test
@@ -138,7 +137,7 @@ class PluginRegistryServiceTest {
         Plugin plugin = new Plugin();
         plugin.setPluginCoordinates(new PluginCoordinates("group", "artifact", "1.0.0"));
         PluginRegistration pluginRegistration = PluginRegistration.builder().pluginCoordinates(plugin.getPluginCoordinates()).build();
-        Result result = pluginRegistryService.register(pluginRegistration);
+        Result result = pluginService.register(pluginRegistration);
 
         assertFalse(result.isSuccess());
         assertEquals(2, result.getErrors().size());
@@ -150,7 +149,7 @@ class PluginRegistryServiceTest {
     @Test
     void uninstallNotFound() {
         Mockito.when(pluginRepository.findById(PLUGIN_COORDINATES_1)).thenReturn(Optional.empty());
-        List<String> errors = pluginRegistryService.canBeUninstalled(PLUGIN_COORDINATES_1);
+        List<String> errors = pluginService.canBeUninstalled(PLUGIN_COORDINATES_1);
 
         assertThat(errors).hasSize(1).contains("Plugin not found");
     }
@@ -162,7 +161,7 @@ class PluginRegistryServiceTest {
         Mockito.when(pluginRepository.findById(PLUGIN_COORDINATES_1)).thenReturn(Optional.of(plugin1));
         Mockito.when(transformFlowService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following ingress flows which are still running: mockIngress");
 
-        List<String> errors = pluginRegistryService.canBeUninstalled(PLUGIN_COORDINATES_1);
+        List<String> errors = pluginService.canBeUninstalled(PLUGIN_COORDINATES_1);
 
         assertThat(errors).hasSize(1).contains("The plugin has created the following ingress flows which are still running: mockIngress");
     }
@@ -175,7 +174,7 @@ class PluginRegistryServiceTest {
         Mockito.when(pluginRepository.findById(PLUGIN_COORDINATES_1)).thenReturn(Optional.of(plugin1));
         Mockito.when(pluginRepository.findPluginsWithDependency(PLUGIN_COORDINATES_1)).thenReturn(List.of(plugin1, plugin2));
 
-        List<String> errors = pluginRegistryService.canBeUninstalled(PLUGIN_COORDINATES_1);
+        List<String> errors = pluginService.canBeUninstalled(PLUGIN_COORDINATES_1);
 
         assertThat(errors).hasSize(1).contains("The following plugins depend on this plugin: org.mock:plugin-1:1.0.0, org.mock:plugin-2:1.0.0");
     }
@@ -191,7 +190,7 @@ class PluginRegistryServiceTest {
         Mockito.when(restDataSourceService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following enrich flows which are still running: mockEnrich");
         Mockito.when(egressFlowService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following egress flows which are still running: mockEgress");
 
-        List<String> errors = pluginRegistryService.canBeUninstalled(PLUGIN_COORDINATES_1);
+        List<String> errors = pluginService.canBeUninstalled(PLUGIN_COORDINATES_1);
 
         assertThat(errors).hasSize(4)
                 .contains("The plugin has created the following ingress flows which are still running: mockIngress")
@@ -206,10 +205,10 @@ class PluginRegistryServiceTest {
 
         Mockito.when(pluginRepository.findById(PLUGIN_COORDINATES_1)).thenReturn(Optional.of(plugin1));
 
-        pluginRegistryService.uninstallPlugin(PLUGIN_COORDINATES_1);
+        pluginService.uninstallPlugin(PLUGIN_COORDINATES_1);
 
         Mockito.verify(pluginRepository).deleteById(PLUGIN_COORDINATES_1);
-        Mockito.verify(egressFlowPlanService).cleanupFor(plugin1);
+        Mockito.verify(egressFlowService).cleanupFor(plugin1);
         Mockito.verify(pluginVariableService).cleanupFor(plugin1);
         Mockito.verify(coreEventQueuePluginCleaner).cleanupFor(plugin1);
     }
@@ -222,7 +221,7 @@ class PluginRegistryServiceTest {
         SystemSnapshot systemSnapshot = new SystemSnapshot();
 
         Mockito.when(pluginRepository.findAll()).thenReturn(List.of(one, two));
-        pluginRegistryService.updateSnapshot(systemSnapshot);
+        pluginService.updateSnapshot(systemSnapshot);
 
         assertThat(systemSnapshot.getInstalledPlugins()).hasSize(2).contains(PLUGIN_COORDINATES_1, PLUGIN_COORDINATES_2);
     }
@@ -245,7 +244,7 @@ class PluginRegistryServiceTest {
 
         systemSnapshot.setInstalledPlugins(Set.of(inBoth.getPluginCoordinates(), PLUGIN_COORDINATES_2, inSnapshotOnly));
 
-        Result result = pluginRegistryService.resetFromSnapshot(systemSnapshot, true);
+        Result result = pluginService.resetFromSnapshot(systemSnapshot, true);
         assertThat(result.isSuccess()).isTrue();
         assertThat(result.getInfo()).hasSize(3)
                 .contains("Installed plugin org.mock:plugin-2:1.1.0 was a different version at the time of the snapshot: org.mock:plugin-2:1.0.0")
@@ -276,7 +275,7 @@ class PluginRegistryServiceTest {
         Mockito.when(pluginVariableService.getVariablesByPlugin(Mockito.any())).thenReturn(variableList());
 
         userDetailsServiceMockedStatic.when(DeltaFiUserService::currentUserCanViewMasked).thenReturn(isAdmin);
-        List<PluginEntity> plugins = pluginRegistryService.getPluginsWithVariables();
+        List<PluginEntity> plugins = pluginService.getPluginsWithVariables();
         assertThat(plugins).hasSize(2);
         Consumer<Variable> checker = isAdmin ? this::verifyNoMaskedValues : this::verifyMaskedValues;
         plugins.stream().map(PluginEntity::getVariables).flatMap(Collection::stream).forEach(checker);

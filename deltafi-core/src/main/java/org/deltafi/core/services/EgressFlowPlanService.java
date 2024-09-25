@@ -17,29 +17,18 @@
  */
 package org.deltafi.core.services;
 
+import org.deltafi.common.types.EgressFlowPlan;
 import org.deltafi.common.types.FlowType;
 import org.deltafi.core.repo.EgressFlowRepo;
-import org.deltafi.core.repo.FlowPlanRepo;
+import org.deltafi.core.repo.PluginRepository;
 import org.deltafi.core.types.snapshot.EgressFlowSnapshot;
 import org.deltafi.core.types.EgressFlow;
-import org.deltafi.core.types.EgressFlowPlanEntity;
 import org.deltafi.core.validation.EgressFlowPlanValidator;
-import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
 @Service
-public class EgressFlowPlanService extends FlowPlanService<EgressFlowPlanEntity, EgressFlow, EgressFlowSnapshot, EgressFlowRepo> {
-    public EgressFlowPlanService(EgressFlowPlanValidator egressFlowPlanValidator, FlowPlanRepo flowPlanRepo, EgressFlowService flowService, BuildProperties buildProperties) {
-        super(egressFlowPlanValidator, flowPlanRepo, flowService, buildProperties);
-    }
-
-    @Override
-    protected FlowType getFlowType() {
-        return FlowType.EGRESS;
-    }
-
-    @Override
-    protected Class<EgressFlowPlanEntity> getFlowPlanClass() {
-        return EgressFlowPlanEntity.class;
+public class EgressFlowPlanService extends FlowPlanService<EgressFlowPlan, EgressFlow, EgressFlowSnapshot, EgressFlowRepo> {
+    public EgressFlowPlanService(EgressFlowPlanValidator egressFlowPlanValidator, PluginRepository pluginRepo, EgressFlowService flowService) {
+        super(egressFlowPlanValidator, pluginRepo, flowService, FlowType.EGRESS, EgressFlowPlan.class);
     }
 }

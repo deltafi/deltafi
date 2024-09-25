@@ -26,7 +26,7 @@ import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.ActionDescriptor;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
-import org.deltafi.core.plugin.PluginRegistryService;
+import org.deltafi.core.services.PluginService;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
@@ -40,10 +40,10 @@ public class SchemaComplianceValidator {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final JsonSchemaFactory FACTORY = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V201909);
 
-    private final PluginRegistryService pluginService;
+    private final PluginService pluginService;
     private final SchemaValidatorsConfig validatorsConfig;
 
-    public SchemaComplianceValidator(@Lazy PluginRegistryService pluginService) {
+    public SchemaComplianceValidator(@Lazy PluginService pluginService) {
         this.pluginService = pluginService;
         validatorsConfig = new SchemaValidatorsConfig();
         validatorsConfig.setTypeLoose(true);

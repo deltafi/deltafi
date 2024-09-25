@@ -130,14 +130,4 @@ public class FlowBuilders {
         transformFlow.setSourcePlugin(pluginCoordinates);
         return transformFlow;
     }
-
-    public static TransformFlowPlanEntity buildTransformFlowPlan(String name, String groupId, String artifactId, String version) {
-        PluginCoordinates pluginCoordinates = PluginCoordinates.builder()
-                .groupId(groupId).artifactId(artifactId).version(version).build();
-        return buildTransformFlowPlan(name, pluginCoordinates);
-    }
-
-    public static TransformFlowPlanEntity buildTransformFlowPlan(String name, PluginCoordinates pluginCoordinates) {
-        return new TransformFlowPlanEntity(name, "desc", pluginCoordinates);
-    }
 }

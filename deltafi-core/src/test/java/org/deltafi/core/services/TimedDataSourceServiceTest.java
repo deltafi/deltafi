@@ -20,6 +20,7 @@ package org.deltafi.core.services;
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.FlowType;
+import org.deltafi.common.types.TimedDataSourcePlan;
 import org.deltafi.core.generated.types.DataSourceErrorState;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
@@ -41,7 +42,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.deltafi.core.datafetchers.FlowPlanDatafetcherTestHelper.PLUGIN_COORDINATES;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(MockitoExtension.class)
@@ -77,10 +77,10 @@ class TimedDataSourceServiceTest {
         Mockito.when(timedDataSourceRepo.findByNameAndType("stopped", FlowType.TIMED_DATA_SOURCE, TimedDataSource.class)).thenReturn(Optional.of(stopped));
         Mockito.when(flowValidator.validate(Mockito.any())).thenReturn(Collections.emptyList());
 
-        TimedDataSourcePlanEntity runningFlowPlan = new TimedDataSourcePlanEntity("running", "yep", PLUGIN_COORDINATES, "topic",
+        TimedDataSourcePlan runningFlowPlan = new TimedDataSourcePlan("running", FlowType.TIMED_DATA_SOURCE, "yep", "topic",
                 new ActionConfiguration("TimedIngressActionConfig", ActionType.TIMED_INGRESS, "TimedIngressActionConfigType"),
                 "0 */10 * * * *");
-        TimedDataSourcePlanEntity stoppedFlowPlan = new TimedDataSourcePlanEntity("stopped", "naw", PLUGIN_COORDINATES, "topic",
+        TimedDataSourcePlan stoppedFlowPlan = new TimedDataSourcePlan("stopped", FlowType.TIMED_DATA_SOURCE, "naw", "topic",
                 new ActionConfiguration("TimedIngressActionConfig", ActionType.TIMED_INGRESS, "TimedIngressActionConfigType"),
                 "*/1 * * * * *");
 

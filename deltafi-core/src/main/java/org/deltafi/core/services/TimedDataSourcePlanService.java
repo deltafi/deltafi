@@ -18,28 +18,17 @@
 package org.deltafi.core.services;
 
 import org.deltafi.common.types.FlowType;
-import org.deltafi.core.repo.FlowPlanRepo;
+import org.deltafi.common.types.TimedDataSourcePlan;
+import org.deltafi.core.repo.PluginRepository;
 import org.deltafi.core.repo.TimedDataSourceRepo;
 import org.deltafi.core.types.snapshot.TimedDataSourceSnapshot;
 import org.deltafi.core.types.TimedDataSource;
-import org.deltafi.core.types.TimedDataSourcePlanEntity;
 import org.deltafi.core.validation.TimedDataSourcePlanValidator;
-import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
 @Service
-public class TimedDataSourcePlanService extends FlowPlanService<TimedDataSourcePlanEntity, TimedDataSource, TimedDataSourceSnapshot, TimedDataSourceRepo> {
-    public TimedDataSourcePlanService(TimedDataSourcePlanValidator dataSourcePlanValidator, FlowPlanRepo flowPlanRepo, TimedDataSourceService flowService, BuildProperties buildProperties) {
-        super(dataSourcePlanValidator, flowPlanRepo, flowService, buildProperties);
-    }
-
-    @Override
-    protected FlowType getFlowType() {
-        return FlowType.TIMED_DATA_SOURCE;
-    }
-
-    @Override
-    protected Class<TimedDataSourcePlanEntity> getFlowPlanClass() {
-        return TimedDataSourcePlanEntity.class;
+public class TimedDataSourcePlanService extends FlowPlanService<TimedDataSourcePlan, TimedDataSource, TimedDataSourceSnapshot, TimedDataSourceRepo> {
+    public TimedDataSourcePlanService(TimedDataSourcePlanValidator dataSourcePlanValidator, PluginRepository pluginRepo, TimedDataSourceService flowService) {
+        super(dataSourcePlanValidator, pluginRepo, flowService, FlowType.TIMED_DATA_SOURCE, TimedDataSourcePlan.class);
     }
 }

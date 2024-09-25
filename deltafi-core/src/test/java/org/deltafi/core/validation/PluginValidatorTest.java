@@ -15,10 +15,12 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.plugin;
+package org.deltafi.core.validation;
 
 import org.deltafi.common.types.ActionDescriptor;
 import org.deltafi.common.types.PluginCoordinates;
+import org.deltafi.core.repo.PluginRepository;
+import org.deltafi.core.types.PluginEntity;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

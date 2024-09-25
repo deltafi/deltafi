@@ -20,6 +20,7 @@ package org.deltafi.common.types;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -32,7 +33,8 @@ public class PluginRegistration {
     private List<PluginCoordinates> dependencies;
     private List<ActionDescriptor> actions;
     private List<Variable> variables;
-    private List<FlowPlan> flowPlans;
+    @Builder.Default
+    private List<FlowPlan> flowPlans = new ArrayList<>();
 
     public Plugin toPlugin() {
         Plugin plugin = new Plugin();
@@ -42,6 +44,7 @@ public class PluginRegistration {
         plugin.setActionKitVersion(actionKitVersion);
         plugin.setActions(actions);
         plugin.setDependencies(dependencies);
+        plugin.setFlowPlans(flowPlans);
         return plugin;
     }
 }

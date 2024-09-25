@@ -15,7 +15,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.plugin;
+package org.deltafi.core.datafetchers;
 
 import com.netflix.graphql.dgs.DgsComponent;
 import com.netflix.graphql.dgs.DgsMutation;
@@ -27,10 +27,11 @@ import org.deltafi.common.types.Plugin;
 import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.plugin.deployer.DeployerService;
-import org.deltafi.core.plugin.deployer.credential.CredentialProvider;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
 import org.deltafi.core.security.NeedsPermission;
+import org.deltafi.core.services.PluginService;
+import org.deltafi.core.types.PluginEntity;
 import org.deltafi.core.types.Result;
 
 import java.util.Collection;
@@ -39,16 +40,15 @@ import java.util.List;
 @DgsComponent
 @RequiredArgsConstructor
 public class PluginDataFetcher {
-    private final PluginRegistryService pluginRegistryService;
+    private final PluginService pluginService;
     private final PluginImageRepositoryService pluginImageRepositoryService;
     private final DeployerService deployerService;
-    private final CredentialProvider credentialProvider;
     private final CoreAuditLogger auditLogger;
 
     @DgsQuery
     @NeedsPermission.PluginsView
     public Collection<Plugin> plugins() {
-        return pluginRegistryService.getPluginsWithVariables().stream().map(PluginEntity::toPlugin).toList();
+        return pluginService.getPluginsWithVariables().stream().map(PluginEntity::toPlugin).toList();
     }
 
     @DgsQuery
@@ -95,7 +95,7 @@ public class PluginDataFetcher {
     @DgsQuery
     @NeedsPermission.PluginsView
     public Collection<ActionDescriptor> actionDescriptors() {
-        return pluginRegistryService.getActionDescriptors();
+        return pluginService.getActionDescriptors();
     }
 
 }

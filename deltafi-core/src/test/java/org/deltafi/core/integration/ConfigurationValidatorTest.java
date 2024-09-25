@@ -23,7 +23,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.SneakyThrows;
 import org.deltafi.core.integration.config.Configuration;
-import org.deltafi.core.plugin.PluginRegistryService;
+import org.deltafi.core.services.PluginService;
 import org.deltafi.core.services.RestDataSourceService;
 import org.deltafi.core.services.EgressFlowService;
 import org.deltafi.core.services.TransformFlowService;
@@ -50,24 +50,24 @@ class ConfigurationValidatorTest {
     private final RestDataSourceService restDataSourceService;
     private final TransformFlowService transformFlowService;
     private final EgressFlowService egressFlowService;
-    private final PluginRegistryService pluginRegistryService;
+    private final PluginService pluginService;
 
     private final ConfigurationValidator configurationValidator;
 
     ConfigurationValidatorTest(@Mock RestDataSourceService restDataSourceService,
                                @Mock TransformFlowService transformFlowService,
                                @Mock EgressFlowService egressFlowService,
-                               @Mock PluginRegistryService pluginRegistryService) {
+                               @Mock PluginService pluginService) {
         this.restDataSourceService = restDataSourceService;
         this.transformFlowService = transformFlowService;
         this.egressFlowService = egressFlowService;
-        this.pluginRegistryService = pluginRegistryService;
+        this.pluginService = pluginService;
 
         this.configurationValidator = new ConfigurationValidator(
                 this.restDataSourceService,
                 this.transformFlowService,
                 this.egressFlowService,
-                this.pluginRegistryService);
+                this.pluginService);
     }
 
     @Test
@@ -75,7 +75,7 @@ class ConfigurationValidatorTest {
     void testConfigCheck() {
         Configuration c = readConfig("config-binary.yaml");
 
-        Mockito.when(pluginRegistryService.getPlugins()).thenReturn(new ArrayList<>());
+        Mockito.when(pluginService.getPlugins()).thenReturn(new ArrayList<>());
         Mockito.when(restDataSourceService.hasFlow("unarchive-passthrough-rest-data-source")).thenReturn(false);
         Mockito.when(transformFlowService.hasFlow("unarchive-passthrough-transform")).thenReturn(false);
         Mockito.when(transformFlowService.hasFlow("passthrough-transform")).thenReturn(false);

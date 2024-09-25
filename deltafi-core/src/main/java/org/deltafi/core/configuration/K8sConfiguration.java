@@ -20,7 +20,6 @@ package org.deltafi.core.configuration;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
-import org.deltafi.core.plugin.PluginRegistryService;
 import org.deltafi.core.plugin.deployer.DeployerService;
 import org.deltafi.core.plugin.deployer.K8sDeployerService;
 import org.deltafi.core.plugin.deployer.PodService;
@@ -29,6 +28,7 @@ import org.deltafi.core.plugin.deployer.credential.SecretCredentialProvider;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.services.EventService;
+import org.deltafi.core.services.PluginService;
 import org.deltafi.core.services.SystemSnapshotService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnCloudPlatform;
 import org.springframework.boot.cloud.CloudPlatform;
@@ -59,8 +59,8 @@ public class K8sConfiguration {
     }
 
     @Bean
-    public DeployerService deployerService(DeltaFiPropertiesService deltaFiPropertiesService, PluginImageRepositoryService pluginImageRepositoryService, KubernetesClient kubernetesClient, PodService podService, PluginRegistryService pluginRegistryService, SystemSnapshotService systemSnapshotService, EventService eventService) {
-        return new K8sDeployerService(deltaFiPropertiesService, pluginImageRepositoryService, kubernetesClient, podService, pluginRegistryService, systemSnapshotService, eventService);
+    public DeployerService deployerService(DeltaFiPropertiesService deltaFiPropertiesService, PluginImageRepositoryService pluginImageRepositoryService, KubernetesClient kubernetesClient, PodService podService, PluginService pluginService, SystemSnapshotService systemSnapshotService, EventService eventService) {
+        return new K8sDeployerService(deltaFiPropertiesService, pluginImageRepositoryService, kubernetesClient, podService, pluginService, systemSnapshotService, eventService);
     }
 
 }

@@ -15,9 +15,10 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.plugin;
+package org.deltafi.core.repo;
 
 import org.deltafi.common.types.PluginCoordinates;
+import org.deltafi.core.types.PluginEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

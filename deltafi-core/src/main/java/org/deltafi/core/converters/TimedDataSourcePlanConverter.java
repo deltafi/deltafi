@@ -19,22 +19,23 @@ package org.deltafi.core.converters;
 
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.ActionType;
+import org.deltafi.common.types.TimedDataSourcePlan;
 import org.deltafi.core.types.*;
 import org.springframework.scheduling.support.CronExpression;
 
 import java.time.OffsetDateTime;
 
-public class TimedDataSourcePlanConverter extends FlowPlanConverter<TimedDataSourcePlanEntity, TimedDataSource> {
+public class TimedDataSourcePlanConverter extends FlowPlanConverter<TimedDataSourcePlan, TimedDataSource> {
 
     @Override
-    public TimedDataSource createFlow(TimedDataSourcePlanEntity dataSourcePlan, FlowPlanPropertyHelper flowPlanPropertyHelper) {
+    public TimedDataSource createFlow(TimedDataSourcePlan dataSourcePlan, FlowPlanPropertyHelper flowPlanPropertyHelper) {
         TimedDataSource timedDataSource = new TimedDataSource();
         timedDataSource.setTopic(dataSourcePlan.getTopic());
         populateTimedDataSource(dataSourcePlan, timedDataSource, flowPlanPropertyHelper);
         return timedDataSource;
     }
 
-    void populateTimedDataSource(TimedDataSourcePlanEntity timedDataSourcePlan, TimedDataSource timedDataSource, FlowPlanPropertyHelper flowPlanPropertyHelper) {
+    void populateTimedDataSource(TimedDataSourcePlan timedDataSourcePlan, TimedDataSource timedDataSource, FlowPlanPropertyHelper flowPlanPropertyHelper) {
         timedDataSource.setTimedIngressAction(buildTimedIngressAction(timedDataSourcePlan.getTimedIngressAction(), flowPlanPropertyHelper));
         timedDataSource.setCronSchedule(timedDataSourcePlan.getCronSchedule());
         CronExpression cronExpression = CronExpression.parse(timedDataSourcePlan.getCronSchedule());

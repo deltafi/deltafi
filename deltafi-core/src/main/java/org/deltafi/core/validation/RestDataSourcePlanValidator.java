@@ -19,19 +19,16 @@ package org.deltafi.core.validation;
 
 import com.networknt.schema.utils.StringUtils;
 import org.deltafi.common.rules.RuleValidator;
+import org.deltafi.common.types.RestDataSourcePlan;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
-import org.deltafi.core.types.DataSourcePlanEntity;
-import org.deltafi.core.types.RestDataSourcePlanEntity;
-import org.deltafi.core.types.TimedDataSourcePlanEntity;
-import org.springframework.scheduling.support.CronExpression;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
-public class RestDataSourcePlanValidator extends FlowPlanValidator<RestDataSourcePlanEntity> {
+public class RestDataSourcePlanValidator extends FlowPlanValidator<RestDataSourcePlan> {
 
     public RestDataSourcePlanValidator(RuleValidator ruleValidator) {
         super(ruleValidator);
@@ -42,7 +39,7 @@ public class RestDataSourcePlanValidator extends FlowPlanValidator<RestDataSourc
      * @return list of errors
      */
     @Override
-    public List<FlowConfigError> flowPlanSpecificValidation(RestDataSourcePlanEntity flowPlan) {
+    public List<FlowConfigError> flowPlanSpecificValidation(RestDataSourcePlan flowPlan) {
         List<FlowConfigError> errors = new ArrayList<>();
         if (StringUtils.isBlank(flowPlan.getTopic())) {
             FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG)

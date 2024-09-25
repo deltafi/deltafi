@@ -15,7 +15,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.plugin;
+package org.deltafi.core.datafetchers;
 
 import org.deltafi.common.types.Plugin;
 import org.deltafi.core.generated.client.PluginsProjectionRoot;

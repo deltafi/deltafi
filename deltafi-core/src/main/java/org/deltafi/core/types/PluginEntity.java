@@ -15,7 +15,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.plugin;
+package org.deltafi.core.types;
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -24,6 +24,7 @@ import org.deltafi.common.types.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -47,6 +48,10 @@ public class PluginEntity {
     @Column(columnDefinition = "jsonb")
     private List<PluginCoordinates> dependencies;
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private List<FlowPlan> flowPlans = new ArrayList<>();
+
     @Transient
     private List<Variable> variables;
 
@@ -58,6 +63,7 @@ public class PluginEntity {
         this.actions = plugin.getActions();
         this.dependencies = plugin.getDependencies();
         this.variables = plugin.getVariables();
+        this.flowPlans = plugin.getFlowPlans();
     }
 
     public Plugin toPlugin() {
@@ -69,6 +75,7 @@ public class PluginEntity {
         plugin.setActions(this.actions);
         plugin.setDependencies(this.dependencies);
         plugin.setVariables(this.variables);
+        plugin.setFlowPlans(this.flowPlans);
         return plugin;
     }
 

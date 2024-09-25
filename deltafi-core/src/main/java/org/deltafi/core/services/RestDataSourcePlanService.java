@@ -18,28 +18,17 @@
 package org.deltafi.core.services;
 
 import org.deltafi.common.types.FlowType;
-import org.deltafi.core.repo.FlowPlanRepo;
+import org.deltafi.common.types.RestDataSourcePlan;
+import org.deltafi.core.repo.PluginRepository;
 import org.deltafi.core.repo.RestDataSourceRepo;
 import org.deltafi.core.types.snapshot.RestDataSourceSnapshot;
 import org.deltafi.core.types.RestDataSource;
-import org.deltafi.core.types.RestDataSourcePlanEntity;
 import org.deltafi.core.validation.RestDataSourcePlanValidator;
-import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 
 @Service
-public class RestDataSourcePlanService extends FlowPlanService<RestDataSourcePlanEntity, RestDataSource, RestDataSourceSnapshot, RestDataSourceRepo> {
-    public RestDataSourcePlanService(RestDataSourcePlanValidator dataSourcePlanValidator, FlowPlanRepo flowPlanRepo, RestDataSourceService flowService, BuildProperties buildProperties) {
-        super(dataSourcePlanValidator, flowPlanRepo, flowService, buildProperties);
-    }
-
-    @Override
-    protected FlowType getFlowType() {
-        return FlowType.REST_DATA_SOURCE;
-    }
-
-    @Override
-    protected Class<RestDataSourcePlanEntity> getFlowPlanClass() {
-        return RestDataSourcePlanEntity.class;
+public class RestDataSourcePlanService extends FlowPlanService<RestDataSourcePlan, RestDataSource, RestDataSourceSnapshot, RestDataSourceRepo> {
+    public RestDataSourcePlanService(RestDataSourcePlanValidator dataSourcePlanValidator, PluginRepository pluginRepo, RestDataSourceService flowService) {
+        super(dataSourcePlanValidator, pluginRepo, flowService, FlowType.REST_DATA_SOURCE, RestDataSourcePlan.class);
     }
 }

@@ -22,17 +22,17 @@ import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.VariableDataType;
 import org.deltafi.core.types.EgressFlow;
-import org.deltafi.core.types.EgressFlowPlanEntity;
+import org.deltafi.common.types.EgressFlowPlan;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class EgressFlowPlanConverter extends FlowPlanConverter<EgressFlowPlanEntity, EgressFlow> {
+public class EgressFlowPlanConverter extends FlowPlanConverter<EgressFlowPlan, EgressFlow> {
 
     @Override
-    public EgressFlow createFlow(EgressFlowPlanEntity egressFlowPlan, FlowPlanPropertyHelper flowPlanPropertyHelper) {
+    public EgressFlow createFlow(EgressFlowPlan egressFlowPlan, FlowPlanPropertyHelper flowPlanPropertyHelper) {
         EgressFlow egressFlow = new EgressFlow();
         egressFlow.setEgressAction(buildEgressAction(egressFlowPlan.getEgressAction(), flowPlanPropertyHelper));
         egressFlow.setSubscribe(egressFlowPlan.getSubscribe());

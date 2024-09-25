@@ -23,16 +23,11 @@ import org.deltafi.common.types.*;
 import org.deltafi.core.converters.FlowPlanConverter;
 import org.deltafi.core.exceptions.MissingFlowException;
 import org.deltafi.core.generated.types.*;
-import org.deltafi.core.plugin.PluginEntity;
-import org.deltafi.core.plugin.PluginUninstallCheck;
+import org.deltafi.core.types.*;
 import org.deltafi.core.repo.FlowRepo;
-import org.deltafi.core.types.DataSource;
 import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
 import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.types.snapshot.FlowSnapshot;
-import org.deltafi.core.types.Flow;
-import org.deltafi.core.types.FlowPlanEntity;
-import org.deltafi.core.types.Result;
 import org.deltafi.core.validation.FlowValidator;
 import org.springframework.boot.info.BuildProperties;
 
@@ -40,7 +35,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
-public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extends Flow, FlowSnapshotT extends FlowSnapshot, FlowRepoT extends FlowRepo> implements PluginUninstallCheck, Snapshotter {
+public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow, FlowSnapshotT extends FlowSnapshot, FlowRepoT extends FlowRepo> implements PluginCleaner, PluginUninstallCheck, Snapshotter {
 
     protected final FlowRepoT flowRepo;
     protected final PluginVariableService pluginVariableService;
@@ -147,7 +142,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
      * @param flowPlans list of flow plans that need flows rebuilt
      * @param sourcePlugin PluginCoordinates used to find the variables
      */
-    public void rebuildFlows(List<FlowPlanEntity> flowPlans, PluginCoordinates sourcePlugin) {
+    public void rebuildFlows(List<FlowPlan> flowPlans, PluginCoordinates sourcePlugin) {
         List<Variable> variables = pluginVariableService.getVariablesByPlugin(sourcePlugin);
         List<FlowT> updatedFlows = flowPlans.stream()
                 .map(flowPlan -> buildFlow(flowPlan, variables))
@@ -417,7 +412,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
         if (flow != null) {
             if (flow.isRunning()) {
                 throw new IllegalStateException("Flow " + flowName + " cannot be removed while it is running");
-            } else if(!systemPlugin.equalsIgnoreVersion(flow.getSourcePlugin())) {
+            } else if (!systemPlugin.equalsIgnoreVersion(flow.getSourcePlugin())) {
                 throw new IllegalArgumentException("Flow " + flowName + " is not a " + systemPlugin.getArtifactId() + " flow and cannot be removed");
             }
             flowRepo.deleteById(flow.getId());
@@ -466,7 +461,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
                 .collect(Collectors.groupingBy(FlowT::getSourcePlugin));
     }
 
-    FlowT buildFlow(FlowPlanEntity flowPlan, List<Variable> variables) {
+    FlowT buildFlow(FlowPlan flowPlan, List<Variable> variables) {
         Optional<FlowT> existing = flowRepo.findByNameAndType(flowPlan.getName(), flowType, flowClass);
         FlowPlanT typedFlowPlan = flowPlanClass.cast(flowPlan);
         FlowT flow = flowPlanConverter.convert(typedFlowPlan, variables);
@@ -516,5 +511,10 @@ public abstract class FlowService<FlowPlanT extends FlowPlanEntity, FlowT extend
 
     String runningFlowError(List<String> runningFlows) {
         return "The plugin has created the following " + flowType + " flows which are still running: " + String.join(", ", runningFlows);
+    }
+
+    @Override
+    public void cleanupFor(PluginEntity plugin) {
+        removeBySourcePlugin(plugin.getPluginCoordinates());
     }
 }

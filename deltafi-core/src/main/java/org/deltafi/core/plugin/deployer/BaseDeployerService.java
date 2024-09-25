@@ -20,11 +20,11 @@ package org.deltafi.core.plugin.deployer;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.core.plugin.PluginRegistryService;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
 import org.deltafi.core.services.DeltaFiUserService;
 import org.deltafi.core.services.EventService;
+import org.deltafi.core.services.PluginService;
 import org.deltafi.core.services.SystemSnapshotService;
 import org.deltafi.core.types.Event;
 import org.deltafi.core.types.Event.Severity;
@@ -39,7 +39,7 @@ import java.util.List;
 public abstract class BaseDeployerService implements DeployerService {
 
     final PluginImageRepositoryService pluginImageRepositoryService;
-    private final PluginRegistryService pluginRegistryService;
+    private final PluginService pluginService;
     private final SystemSnapshotService systemSnapshotService;
     private final EventService eventService;
 
@@ -81,12 +81,12 @@ public abstract class BaseDeployerService implements DeployerService {
 
     @Override
     public Result uninstallPlugin(PluginCoordinates pluginCoordinates) {
-        List<String> uninstallPreCheckErrors = pluginRegistryService.canBeUninstalled(pluginCoordinates);
+        List<String> uninstallPreCheckErrors = pluginService.canBeUninstalled(pluginCoordinates);
         if (!uninstallPreCheckErrors.isEmpty()) {
             return Result.builder().success(false).errors(uninstallPreCheckErrors).build();
         }
 
-        pluginRegistryService.uninstallPlugin(pluginCoordinates);
+        pluginService.uninstallPlugin(pluginCoordinates);
         Result retval = removePluginResources(pluginCoordinates);
 
         MarkdownBuilder markdownBuilder = new MarkdownBuilder(pluginCoordinates + "\n\n")

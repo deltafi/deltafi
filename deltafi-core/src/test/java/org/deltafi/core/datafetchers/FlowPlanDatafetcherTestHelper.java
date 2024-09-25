@@ -136,7 +136,7 @@ public class FlowPlanDatafetcherTestHelper {
         return executeQuery(dgsQueryExecutor, SaveEgressFlowPlanGraphQLQuery.newRequest().egressFlowPlan(input).build(), new SaveEgressFlowPlanProjectionRoot().name(), EgressFlow.class);
     }
 
-    public static TimedDataSource saveTimedIngressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
+    public static TimedDataSource saveTimedDataSourcePlan(DgsQueryExecutor dgsQueryExecutor) {
         ActionConfigurationInput timedIngress = ActionConfigurationInput.newBuilder().name("timedIngress").type("org.deltafi.actions.TimedIngress").build();
 
         TimedDataSourcePlanInput input = TimedDataSourcePlanInput.newBuilder()
@@ -158,7 +158,7 @@ public class FlowPlanDatafetcherTestHelper {
         return executeQuery(dgsQueryExecutor, RemoveEgressFlowPlanGraphQLQuery.newRequest().name("flowPlan").build());
     }
 
-    public static boolean removeTimedIngressFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
+    public static boolean removeTimedDataSourcePlan(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, RemoveTimedDataSourcePlanGraphQLQuery.newRequest().name("flowPlan").build());
     }
 

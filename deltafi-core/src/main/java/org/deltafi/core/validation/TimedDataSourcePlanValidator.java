@@ -17,12 +17,10 @@
  */
 package org.deltafi.core.validation;
 
-import com.networknt.schema.utils.StringUtils;
 import org.deltafi.common.rules.RuleValidator;
+import org.deltafi.common.types.TimedDataSourcePlan;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
-import org.deltafi.core.types.RestDataSourcePlanEntity;
-import org.deltafi.core.types.TimedDataSourcePlanEntity;
 import org.springframework.scheduling.support.CronExpression;
 import org.springframework.stereotype.Service;
 
@@ -30,7 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-public class TimedDataSourcePlanValidator extends FlowPlanValidator<TimedDataSourcePlanEntity> {
+public class TimedDataSourcePlanValidator extends FlowPlanValidator<TimedDataSourcePlan> {
 
     public TimedDataSourcePlanValidator(RuleValidator ruleValidator) {
         super(ruleValidator);
@@ -41,7 +39,7 @@ public class TimedDataSourcePlanValidator extends FlowPlanValidator<TimedDataSou
      * @return list of errors
      */
     @Override
-    public List<FlowConfigError> flowPlanSpecificValidation(TimedDataSourcePlanEntity flowPlan) {
+    public List<FlowConfigError> flowPlanSpecificValidation(TimedDataSourcePlan flowPlan) {
         List<FlowConfigError> errors = new ArrayList<>();
         if (flowPlan.getTimedIngressAction() == null) {
             errors.add(FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG)

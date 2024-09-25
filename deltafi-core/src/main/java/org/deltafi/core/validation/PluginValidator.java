@@ -15,13 +15,15 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.plugin;
+package org.deltafi.core.validation;
 
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.deltafi.common.maven.VersionMatcher;
 import org.deltafi.common.types.ActionDescriptor;
 import org.deltafi.common.types.PluginCoordinates;
+import org.deltafi.core.repo.PluginRepository;
+import org.deltafi.core.types.PluginEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -98,7 +100,7 @@ public class PluginValidator {
         return dependencyErrors;
     }
 
-    List<String> validateUniqueActions(PluginEntity newPlugin, List<PluginEntity> existingPlugins) {
+    public List<String> validateUniqueActions(PluginEntity newPlugin, List<PluginEntity> existingPlugins) {
         if (newPlugin.getActions() == null || newPlugin.getActions().isEmpty()) {
             return List.of();
         }

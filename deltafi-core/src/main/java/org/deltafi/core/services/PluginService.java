@@ -15,20 +15,21 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.plugin;
+package org.deltafi.core.services;
 
+import com.netflix.graphql.dgs.InputArgument;
+import com.netflix.graphql.dgs.exceptions.DgsEntityNotFoundException;
 import jakarta.annotation.PostConstruct;
-import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.*;
 import org.deltafi.core.generated.types.Flows;
-import org.deltafi.core.services.DeltaFiUserService;
-import org.deltafi.core.services.*;
-import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
-import org.deltafi.core.services.Snapshotter;
-import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.repo.PluginRepository;
 import org.deltafi.core.types.*;
+import org.deltafi.core.types.snapshot.SnapshotRestoreOrder;
+import org.deltafi.core.types.snapshot.SystemSnapshot;
+import org.deltafi.core.validation.PluginValidator;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,46 +39,157 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@Service
 @RequiredArgsConstructor
+@Service
 @Slf4j
-public class PluginRegistryService implements Snapshotter {
+public class PluginService implements Snapshotter {
+
+    private final PluginRepository pluginRepo;
+    private final PluginVariableService pluginVariableService;
+    private final BuildProperties buildProperties;
     private final EgressFlowService egressFlowService;
-    private final TransformFlowService transformFlowService;
     private final RestDataSourceService restDataSourceService;
     private final TimedDataSourceService timedDataSourceService;
-    private final PluginRepository pluginRepository;
+    private final TransformFlowService transformFlowService;
+    private final Environment environment;
     private final PluginValidator pluginValidator;
-    private final PluginVariableService pluginVariableService;
     private final EgressFlowPlanService egressFlowPlanService;
-    private final TransformFlowPlanService transformFlowPlanService;
     private final RestDataSourcePlanService restDataSourcePlanService;
     private final TimedDataSourcePlanService timedDataSourcePlanService;
-    private final SystemPluginService systemPluginService;
-    private final FlowValidationService flowValidationService;
+    private final TransformFlowPlanService transformFlowPlanService;
     private final List<PluginUninstallCheck> pluginUninstallChecks;
     private final List<PluginCleaner> pluginCleaners;
+
     private Map<String, ActionDescriptor> actionDescriptorMap;
-    private final Environment environment;
-    private final EntityManager entityManager;
+
+    public static final String SYSTEM_PLUGIN_GROUP_ID = "org.deltafi";
+    public static final String SYSTEM_PLUGIN_ARTIFACT_ID = "system-plugin";
+    private static final String SYSTEM_PLUGIN_DISPLAY_NAME = "System Plugin";
+    private static final String SYSTEM_PLUGIN_DESCRIPTION = "System Plugin that holds flows created within the system";
 
     @PostConstruct
-    public void initialize() {
+    public void updateSystemPlugin() {
         if (environment.getProperty("schedule.maintenance", Boolean.class, true)) {
-            PluginEntity systemPlugin = systemPluginService.getSystemPlugin();
-            pluginRepository.deleteByGroupIdAndArtifactId(systemPlugin.getPluginCoordinates().getGroupId(), systemPlugin.getPluginCoordinates().getArtifactId());
-            pluginRepository.save(systemPlugin);
+            Optional<PluginEntity> maybeSystemPlugin = pluginRepo.findByPluginCoordinatesGroupIdAndPluginCoordinatesArtifactId(SYSTEM_PLUGIN_GROUP_ID, SYSTEM_PLUGIN_ARTIFACT_ID);
+
+            if (maybeSystemPlugin.isPresent()) {
+                PluginEntity systemPlugin = maybeSystemPlugin.get();
+                if (!Objects.equals(systemPlugin.getPluginCoordinates().getVersion(), buildProperties.getVersion())) {
+                    systemPlugin.getPluginCoordinates().setVersion(buildProperties.getVersion());
+                    if (systemPlugin.getFlowPlans() != null) {
+                        systemPlugin.getFlowPlans()
+                                .forEach(fp -> fp.getSourcePlugin().setVersion(buildProperties.getVersion()));
+                    }
+
+                    pluginRepo.save(systemPlugin);
+                }
+            } else {
+                pluginRepo.save(createSystemPlugin());
+            }
             updateActionDescriptors();
         }
     }
 
     public void updateActionDescriptors() {
-        actionDescriptorMap = pluginRepository.findAll()
+        actionDescriptorMap = pluginRepo.findAll()
                 .stream()
                 .map(PluginEntity::getActions)
                 .filter(Objects::nonNull)
                 .flatMap(Collection::stream)
-                .collect(Collectors.toMap(ActionDescriptor::getName, Function.identity(), (a,b) -> a));
+                .collect(Collectors.toMap(ActionDescriptor::getName, Function.identity(), (a, b) -> a));
+    }
+
+    public PluginEntity getSystemPlugin() {
+        return pluginRepo.findById(getSystemPluginCoordinates()).orElse(null);
+    }
+
+    public PluginEntity createSystemPlugin() {
+        PluginEntity plugin = new PluginEntity();
+        plugin.setPluginCoordinates(getSystemPluginCoordinates());
+        plugin.setDisplayName(SYSTEM_PLUGIN_DISPLAY_NAME);
+        plugin.setDescription(SYSTEM_PLUGIN_DESCRIPTION);
+        plugin.setActionKitVersion(plugin.getPluginCoordinates().getVersion());
+        plugin.setActions(List.of());
+        plugin.setFlowPlans(new ArrayList<>());
+        return plugin;
+    }
+
+    public void addFlowPlanToSystemPlugin(FlowPlan flowPlan) {
+        PluginEntity systemPlugin = getSystemPlugin();
+        if (systemPlugin.getFlowPlans() == null) {
+            systemPlugin.setFlowPlans(new ArrayList<>());
+        }
+
+        systemPlugin.getFlowPlans().removeIf(fp -> fp.getName().equals(flowPlan.getName()) && fp.getType() == flowPlan.getType());
+        systemPlugin.getFlowPlans().add(flowPlan);
+
+        pluginRepo.save(systemPlugin);
+    }
+
+    public boolean removeFlowPlanFromSystemPlugin(String flowPlanName, FlowType flowPlanType) {
+        PluginEntity systemPlugin = getSystemPlugin();
+        if (systemPlugin.getFlowPlans() == null) {
+            return false;
+        }
+        FlowPlan flowPlan = systemPlugin.getFlowPlans().stream().filter(fp -> fp.getName().equals(flowPlanName) && fp.getType() == flowPlanType).findFirst().orElse(null);
+        if (flowPlan == null) {
+            return false;
+        }
+        systemPlugin.getFlowPlans().remove(flowPlan);
+
+        if (flowPlan.getType() == FlowType.EGRESS) {
+            egressFlowService.removeByName(flowPlanName, systemPlugin.getPluginCoordinates());
+        } else if (flowPlan.getType() == FlowType.REST_DATA_SOURCE) {
+            restDataSourceService.removeByName(flowPlanName, systemPlugin.getPluginCoordinates());
+        } else if (flowPlan.getType() == FlowType.TIMED_DATA_SOURCE) {
+            timedDataSourceService.removeByName(flowPlanName, systemPlugin.getPluginCoordinates());
+        } else if (flowPlan.getType() == FlowType.TRANSFORM) {
+            transformFlowService.removeByName(flowPlanName, systemPlugin.getPluginCoordinates());
+        }
+
+        pluginRepo.save(systemPlugin);
+        return true;
+    }
+
+    public PluginCoordinates getSystemPluginCoordinates() {
+        return new PluginCoordinates(SYSTEM_PLUGIN_GROUP_ID, SYSTEM_PLUGIN_ARTIFACT_ID, buildProperties.getVersion());
+    }
+
+    public List<FlowPlan> getAllFlowPlans() {
+        return pluginRepo.findAll().stream()
+                .flatMap(plugin -> plugin.getFlowPlans() == null ? Stream.of() : plugin.getFlowPlans().stream())
+                .toList();
+    }
+
+    public List<FlowPlan> getFlowPlansByType(FlowType flowType) {
+        return pluginRepo.findAll().stream()
+                .flatMap(plugin -> plugin.getFlowPlans() == null ? Stream.of() : plugin.getFlowPlans().stream())
+                .filter(fp -> fp.getType() == flowType)
+                .toList();
+    }
+
+    public Optional<FlowPlan> getFlowPlanByNameAndType(String flowPlanName, FlowType flowType) {
+        return pluginRepo.findAll().stream()
+                .flatMap(plugin -> plugin.getFlowPlans() == null ? Stream.of() : plugin.getFlowPlans().stream())
+                .filter(fp -> fp.getType() == flowType && fp.getName().equals(flowPlanName))
+                .findFirst();
+    }
+
+    public boolean setPluginVariableValues(@InputArgument PluginCoordinates pluginCoordinates, @InputArgument List<KeyValue> variables) {
+        VariableUpdate update = pluginVariableService.setVariableValues(pluginCoordinates, variables);
+        if (update.isUpdated()) {
+            List<FlowPlan> flowPlans = pluginRepo.findById(pluginCoordinates).map(PluginEntity::getFlowPlans).orElse(List.of());
+            egressFlowService.rebuildFlows(filterByType(flowPlans, FlowType.EGRESS), pluginCoordinates);
+            transformFlowService.rebuildFlows(filterByType(flowPlans, FlowType.TRANSFORM), pluginCoordinates);
+            restDataSourceService.rebuildFlows(filterByType(flowPlans, FlowType.REST_DATA_SOURCE), pluginCoordinates);
+            timedDataSourceService.rebuildFlows(filterByType(flowPlans, FlowType.TIMED_DATA_SOURCE), pluginCoordinates);
+        }
+
+        return update.isUpdated();
+    }
+
+    private List<FlowPlan> filterByType(List<FlowPlan> flowPlans, FlowType flowType) {
+        return flowPlans.stream().filter(fp -> fp.getType() == flowType).toList();
     }
 
     @Transactional
@@ -92,20 +204,22 @@ public class PluginRegistryService implements Snapshotter {
             return Result.builder().success(false).errors(validationErrors).build();
         }
 
-        pluginRepository.deleteByGroupIdAndArtifactId(plugin.getPluginCoordinates().getGroupId(), plugin.getPluginCoordinates().getArtifactId());
-        entityManager.flush();
-        entityManager.clear();
-        entityManager.persist(plugin);
+        Optional<PluginEntity> existingPlugin = pluginRepo.findById(plugin.getPluginCoordinates());
+        // if this plugin group/artifactId/version already exists, don't delete it before overwriting
+        if (existingPlugin.isEmpty()) {
+            pluginRepo.deleteByGroupIdAndArtifactId(plugin.getPluginCoordinates().getGroupId(), plugin.getPluginCoordinates().getArtifactId());
+        }
+        pluginRepo.save(plugin);
 
         updateActionDescriptors();
         pluginVariableService.saveVariables(plugin.getPluginCoordinates(), pluginRegistration.getVariables());
-        upgradeFlowPlans(plugin.getPluginCoordinates(), groupedFlowPlans);
+        upgradeFlows(plugin, groupedFlowPlans);
 
         try {
-            flowValidationService.revalidateFlows();
+            revalidateFlows();
         } catch (Exception ignored) {
             // this mimics the old behavior where this happened asynchronously
-            // presumably we don't want to error if a flow from another plugin no longer validates or we hit an exception
+            // presumably we don't want to error if a flow from another plugin no longer validates, or if we hit an exception
         }
 
         return Result.builder().success(true).build();
@@ -117,12 +231,13 @@ public class PluginRegistryService implements Snapshotter {
      * @return the list of errors
      */
     private List<String> validate(PluginEntity plugin, GroupedFlowPlans groupedFlowPlans, List<Variable> variables) {
+        List<FlowPlan> existingFlowPlans = getAllFlowPlans();
         List<String> errors = new ArrayList<>();
         errors.addAll(pluginValidator.validate(plugin));
-        errors.addAll(transformFlowPlanService.validateFlowPlans(groupedFlowPlans.transformFlowPlans));
-        errors.addAll(restDataSourcePlanService.validateFlowPlans(groupedFlowPlans.restDataSourcePlans));
-        errors.addAll(timedDataSourcePlanService.validateFlowPlans(groupedFlowPlans.timedDataSourcePlans));
-        errors.addAll(egressFlowPlanService.validateFlowPlans(groupedFlowPlans.egressFlowPlans));
+        errors.addAll(transformFlowPlanService.validateFlowPlans(groupedFlowPlans.transformFlowPlans, existingFlowPlans));
+        errors.addAll(restDataSourcePlanService.validateFlowPlans(groupedFlowPlans.restDataSourcePlans, existingFlowPlans));
+        errors.addAll(timedDataSourcePlanService.validateFlowPlans(groupedFlowPlans.timedDataSourcePlans, existingFlowPlans));
+        errors.addAll(egressFlowPlanService.validateFlowPlans(groupedFlowPlans.egressFlowPlans, existingFlowPlans));
         errors.addAll(pluginVariableService.validateVariables(variables));
 
         List<String> duplicateNames = findDuplicateDataSourceNames(groupedFlowPlans, plugin.getPluginCoordinates());
@@ -133,11 +248,11 @@ public class PluginRegistryService implements Snapshotter {
         return errors;
     }
 
-    private void upgradeFlowPlans(PluginCoordinates sourcePlugin, GroupedFlowPlans groupedFlowPlans) {
-        transformFlowPlanService.upgradeFlowPlans(sourcePlugin, groupedFlowPlans.transformFlowPlans());
-        restDataSourcePlanService.upgradeFlowPlans(sourcePlugin, groupedFlowPlans.restDataSourcePlans());
-        timedDataSourcePlanService.upgradeFlowPlans(sourcePlugin, groupedFlowPlans.timedDataSourcePlans());
-        egressFlowPlanService.upgradeFlowPlans(sourcePlugin, groupedFlowPlans.egressFlowPlans());
+    private void upgradeFlows(PluginEntity sourcePlugin, GroupedFlowPlans groupedFlowPlans) {
+        transformFlowService.upgradeFlows(sourcePlugin.getPluginCoordinates(), groupedFlowPlans.transformFlowPlans());
+        restDataSourceService.upgradeFlows(sourcePlugin.getPluginCoordinates(), groupedFlowPlans.restDataSourcePlans());
+        timedDataSourceService.upgradeFlows(sourcePlugin.getPluginCoordinates(), groupedFlowPlans.timedDataSourcePlans());
+        egressFlowService.upgradeFlows(sourcePlugin.getPluginCoordinates(), groupedFlowPlans.egressFlowPlans());
     }
 
     /**
@@ -146,19 +261,19 @@ public class PluginRegistryService implements Snapshotter {
      * @return lists of each flow by type
      */
     private GroupedFlowPlans groupPlansByFlowType(PluginRegistration pluginRegistration) {
-        List<TransformFlowPlanEntity> transformFlowPlans = new ArrayList<>();
-        List<EgressFlowPlanEntity> egressFlowPlans = new ArrayList<>();
-        List<RestDataSourcePlanEntity> restDataSourcePlans = new ArrayList<>();
-        List<TimedDataSourcePlanEntity> timedDataSourcePlans = new ArrayList<>();
+        List<TransformFlowPlan> transformFlowPlans = new ArrayList<>();
+        List<EgressFlowPlan> egressFlowPlans = new ArrayList<>();
+        List<RestDataSourcePlan> restDataSourcePlans = new ArrayList<>();
+        List<TimedDataSourcePlan> timedDataSourcePlans = new ArrayList<>();
 
         if (pluginRegistration.getFlowPlans() != null) {
             pluginRegistration.getFlowPlans().forEach(flowPlan -> {
                 flowPlan.setSourcePlugin(pluginRegistration.getPluginCoordinates());
                 switch (flowPlan) {
-                    case TransformFlowPlan plan -> transformFlowPlans.add(TransformFlowPlanEntity.fromFlowPlan(plan));
-                    case EgressFlowPlan plan -> egressFlowPlans.add(EgressFlowPlanEntity.fromFlowPlan(plan));
-                    case RestDataSourcePlan plan -> restDataSourcePlans.add(RestDataSourcePlanEntity.fromFlowPlan(plan));
-                    case TimedDataSourcePlan plan -> timedDataSourcePlans.add(TimedDataSourcePlanEntity.fromFlowPlan(plan));
+                    case TransformFlowPlan plan -> transformFlowPlans.add(plan);
+                    case EgressFlowPlan plan -> egressFlowPlans.add(plan);
+                    case RestDataSourcePlan plan -> restDataSourcePlans.add(plan);
+                    case TimedDataSourcePlan plan -> timedDataSourcePlans.add(plan);
                     default -> log.warn("Unknown flow plan type: {}", flowPlan.getClass());
                 }
             });
@@ -168,11 +283,11 @@ public class PluginRegistryService implements Snapshotter {
     }
 
     public Optional<PluginEntity> getPlugin(PluginCoordinates pluginCoordinates) {
-        return pluginRepository.findById(pluginCoordinates);
+        return pluginRepo.findById(pluginCoordinates);
     }
 
     public List<PluginEntity> getPlugins() {
-        return pluginRepository.findAll();
+        return pluginRepo.findAll();
     }
 
     public List<PluginEntity> getPluginsWithVariables() {
@@ -219,11 +334,11 @@ public class PluginRegistryService implements Snapshotter {
     }
 
     public List<PluginEntity> getPluginsWithDependency(PluginCoordinates pluginCoordinates) {
-        return pluginRepository.findPluginsWithDependency(pluginCoordinates);
+        return pluginRepo.findPluginsWithDependency(pluginCoordinates);
     }
 
     private void removePlugin(PluginEntity plugin) {
-        pluginRepository.deleteById(plugin.getPluginCoordinates());
+        pluginRepo.deleteById(plugin.getPluginCoordinates());
     }
 
     @Override
@@ -262,6 +377,7 @@ public class PluginRegistryService implements Snapshotter {
         }
 
         result.getInfo().addAll(missing.stream().map(snapshotPlugin -> "Plugin " + snapshotPlugin + " was installed at the time of the snapshot but is no longer installed").toList());
+
         return result;
     }
 
@@ -304,7 +420,7 @@ public class PluginRegistryService implements Snapshotter {
         pluginCleaners.forEach(pluginCleaner -> pluginCleaner.cleanupFor(plugin));
         removePlugin(plugin);
         updateActionDescriptors();
-        flowValidationService.revalidateFlows();
+        revalidateFlows();
     }
 
     public Optional<ActionDescriptor> getByActionClass(String type) {
@@ -316,7 +432,7 @@ public class PluginRegistryService implements Snapshotter {
         return actionDescriptorMap.values();
     }
 
-    private record GroupedFlowPlans(List<TransformFlowPlanEntity> transformFlowPlans, List<EgressFlowPlanEntity> egressFlowPlans, List<RestDataSourcePlanEntity> restDataSourcePlans, List<TimedDataSourcePlanEntity> timedDataSourcePlans){}
+    private record GroupedFlowPlans(List<TransformFlowPlan> transformFlowPlans, List<EgressFlowPlan> egressFlowPlans, List<RestDataSourcePlan> restDataSourcePlans, List<TimedDataSourcePlan> timedDataSourcePlans){}
 
     private List<String> findDuplicateDataSourceNames(GroupedFlowPlans groupedFlowPlans, PluginCoordinates incomingPluginCoordinates) {
         Set<String> incomingNames = new HashSet<>();
@@ -324,7 +440,7 @@ public class PluginRegistryService implements Snapshotter {
 
         // Check incoming plugin's data sources
         Stream.concat(groupedFlowPlans.restDataSourcePlans.stream(), groupedFlowPlans.timedDataSourcePlans.stream())
-                .map(DataSourcePlanEntity::getName)
+                .map(DataSourcePlan::getName)
                 .forEach(name -> {
                     if (!incomingNames.add(name)) {
                         conflictingNames.add(name);
@@ -339,5 +455,39 @@ public class PluginRegistryService implements Snapshotter {
                 .forEach(conflictingNames::add);
 
         return new ArrayList<>(conflictingNames);
+    }
+
+    /**
+     * Find the flow plan with the given name, or throw an exception if it does not exist
+     * @param flowPlanName name of the plan to find
+     * @return flow plan with the given name
+     */
+    public FlowPlan getPlanByName(String flowPlanName, FlowType flowType) {
+        return getFlowPlanByNameAndType(flowPlanName, flowType)
+                .orElseThrow(() -> new DgsEntityNotFoundException("Could not find a flow plan named " + flowPlanName));
+    }
+
+    public void revalidateFlows() {
+        rebuildInvalidFlows(egressFlowService, FlowType.EGRESS);
+        rebuildInvalidFlows(restDataSourceService, FlowType.REST_DATA_SOURCE);
+        rebuildInvalidFlows(timedDataSourceService, FlowType.TIMED_DATA_SOURCE);
+        rebuildInvalidFlows(transformFlowService, FlowType.TRANSFORM);
+
+        egressFlowService.validateAllFlows();
+        restDataSourceService.validateAllFlows();
+        timedDataSourceService.validateAllFlows();
+        transformFlowService.validateAllFlows();
+    }
+
+    public void rebuildInvalidFlows(FlowService<?, ?, ?, ?> flowService, FlowType flowType) {
+        List<String> invalidFlows = flowService.getNamesOfInvalidFlows();
+
+        Map<PluginCoordinates, List<FlowPlan>> flowPlans = invalidFlows.stream()
+                .map(name -> getFlowPlanByNameAndType(name, flowType))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.groupingBy(FlowPlan::getSourcePlugin));
+
+        flowPlans.forEach((pluginCoordinates, plans) -> flowService.rebuildFlows(plans, pluginCoordinates));
     }
 }

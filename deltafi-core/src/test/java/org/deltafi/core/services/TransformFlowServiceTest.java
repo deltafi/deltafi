@@ -18,13 +18,13 @@
 package org.deltafi.core.services;
 
 import org.deltafi.common.types.FlowType;
+import org.deltafi.common.types.TransformFlowPlan;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.generated.types.FlowStatus;
 import org.deltafi.core.repo.TransformFlowRepo;
 import org.deltafi.core.types.Flow;
 import org.deltafi.core.types.Result;
 import org.deltafi.core.types.TransformFlow;
-import org.deltafi.core.types.TransformFlowPlanEntity;
 import org.deltafi.core.types.snapshot.FlowSnapshot;
 import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.types.snapshot.TransformFlowSnapshot;
@@ -39,7 +39,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.deltafi.core.datafetchers.FlowPlanDatafetcherTestHelper.PLUGIN_COORDINATES;
 
 @ExtendWith(MockitoExtension.class)
 class TransformFlowServiceTest {
@@ -67,8 +66,8 @@ class TransformFlowServiceTest {
         Mockito.when(transformFlowRepo.findByNameAndType("stopped", FlowType.TRANSFORM, TransformFlow.class)).thenReturn(Optional.of(stopped));
         Mockito.when(flowValidator.validate(Mockito.any())).thenReturn(Collections.emptyList());
 
-        TransformFlowPlanEntity runningFlowPlan = new TransformFlowPlanEntity("running", "yep", PLUGIN_COORDINATES);
-        TransformFlowPlanEntity stoppedFlowPlan = new TransformFlowPlanEntity("stopped", "naw", PLUGIN_COORDINATES);
+        TransformFlowPlan runningFlowPlan = new TransformFlowPlan("running", FlowType.TRANSFORM, "yep");
+        TransformFlowPlan stoppedFlowPlan = new TransformFlowPlan("stopped", FlowType.TRANSFORM, "naw");
 
         TransformFlow runningTransformFlow = transformFlowService.buildFlow(runningFlowPlan, Collections.emptyList());
         TransformFlow stoppedTransformFlow = transformFlowService.buildFlow(stoppedFlowPlan, Collections.emptyList());

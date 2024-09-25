@@ -26,7 +26,6 @@ import org.deltafi.common.types.Subscriber;
 import org.deltafi.core.exceptions.DeltafiConfigurationException;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
-import org.deltafi.core.types.FlowPlanEntity;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,7 +38,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 /**
  * Verify that there no unrecoverable errors in the FlowPlan.
  */
-public abstract class FlowPlanValidator<T extends FlowPlanEntity> {
+public abstract class FlowPlanValidator<T extends FlowPlan> {
 
     private final RuleValidator ruleValidator;
 
@@ -108,7 +107,7 @@ public abstract class FlowPlanValidator<T extends FlowPlanEntity> {
                 .build();
     }
 
-    private List<FlowConfigError> validateRules(FlowPlanEntity flowPlan) {
+    private List<FlowConfigError> validateRules(FlowPlan flowPlan) {
         List<FlowConfigError> flowConfigErrors = new ArrayList<>();
         if (flowPlan instanceof Subscriber subscriber) {
             ruleValidator.validateSubscriber(subscriber)

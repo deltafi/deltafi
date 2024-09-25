@@ -15,11 +15,12 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.deltafi.core.plugin;
+package org.deltafi.core.rest;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.PluginRegistration;
+import org.deltafi.core.services.PluginService;
 import org.deltafi.core.types.Result;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,16 +33,20 @@ import javax.ws.rs.core.MediaType;
 @RequiredArgsConstructor
 @Slf4j
 public class PluginRestController {
-    private final PluginRegistryService pluginRegistryService;
+    private final PluginService pluginService;
 
     @PostMapping(value = "plugins", consumes = MediaType.APPLICATION_JSON)
     public ResponseEntity<String> createPlugin(@RequestBody PluginRegistration pluginRegistration) {
         log.info("Received plugin registration for {}", pluginRegistration.getPluginCoordinates());
 
-        Result result = pluginRegistryService.register(pluginRegistration);
+        try {
+            Result result = pluginService.register(pluginRegistration);
 
-        if (!result.isSuccess()) {
-            return ResponseEntity.badRequest().body(String.join("\n", result.getErrors()));
+            if (!result.isSuccess()) {
+                return ResponseEntity.badRequest().body(String.join("\n", result.getErrors()));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Plugin registration error: %s. See core logs for more details".formatted(e.getMessage()));
         }
 
         return ResponseEntity.ok(null);

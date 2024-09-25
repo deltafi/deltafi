@@ -19,11 +19,10 @@ package org.deltafi.core.validation;
 
 import org.deltafi.common.rules.RuleValidator;
 import org.deltafi.common.types.TransformFlowPlan;
-import org.deltafi.core.types.TransformFlowPlanEntity;
 import org.springframework.stereotype.Service;
 
 @Service
-public class TransformFlowPlanValidator extends FlowPlanValidator<TransformFlowPlanEntity> {
+public class TransformFlowPlanValidator extends FlowPlanValidator<TransformFlowPlan> {
     protected TransformFlowPlanValidator(RuleValidator ruleValidator) {
         super(ruleValidator);
     }

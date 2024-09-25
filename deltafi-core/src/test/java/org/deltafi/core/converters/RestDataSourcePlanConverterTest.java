@@ -24,11 +24,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.resource.Resource;
 import org.deltafi.common.types.ActionConfiguration;
 import org.deltafi.common.types.ActionType;
+import org.deltafi.common.types.TimedDataSourcePlan;
 import org.deltafi.core.generated.types.FlowConfigError;
 import org.deltafi.core.generated.types.FlowErrorType;
 import org.deltafi.core.generated.types.FlowState;
 import org.deltafi.core.types.TimedDataSource;
-import org.deltafi.core.types.TimedDataSourcePlanEntity;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -46,7 +46,7 @@ class RestDataSourcePlanConverterTest {
 
     @Test
     void testConverter() throws IOException {
-        TimedDataSourcePlanEntity flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-datasource-plan-test.json"), TimedDataSourcePlanEntity.class);
+        TimedDataSourcePlan flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-datasource-plan-test.json"), TimedDataSourcePlan.class);
         TimedDataSource timedDataSource = timedDataSourcePlanConverter.convert(flowPlan, Collections.emptyList());
 
         assertThat(timedDataSource.getName()).isEqualTo("smoke-test-ingress");
@@ -58,7 +58,7 @@ class RestDataSourcePlanConverterTest {
 
     @Test
     void testUnresolvedPlaceholder() throws IOException {
-        TimedDataSourcePlanEntity flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-datasource-plan-unresolved-test.json"), TimedDataSourcePlanEntity.class);
+        TimedDataSourcePlan flowPlan = OBJECT_MAPPER.readValue(Resource.read("/flowPlans/convert-datasource-plan-unresolved-test.json"), TimedDataSourcePlan.class);
         TimedDataSource dataSource = timedDataSourcePlanConverter.convert(flowPlan, Collections.emptyList());
 
         assertThat(dataSource.getFlowStatus().getState()).isEqualTo(FlowState.INVALID);

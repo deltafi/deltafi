@@ -27,11 +27,11 @@ import io.fabric8.kubernetes.client.utils.Serialization;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.PluginCoordinates;
-import org.deltafi.core.plugin.PluginRegistryService;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepository;
 import org.deltafi.core.plugin.deployer.image.PluginImageRepositoryService;
 import org.deltafi.core.services.DeltaFiPropertiesService;
 import org.deltafi.core.services.EventService;
+import org.deltafi.core.services.PluginService;
 import org.deltafi.core.services.SystemSnapshotService;
 import org.deltafi.core.types.Result;
 import org.springframework.beans.factory.annotation.Value;
@@ -62,8 +62,8 @@ public class K8sDeployerService extends BaseDeployerService {
     @Value("file:/template/action-deployment.yaml")
     private Resource baseDeployment;
 
-    public K8sDeployerService(DeltaFiPropertiesService deltaFiPropertiesService, PluginImageRepositoryService pluginImageRepositoryService, KubernetesClient k8sClient, PodService podService, PluginRegistryService pluginRegistryService, SystemSnapshotService systemSnapshotService, EventService eventService) {
-        super(pluginImageRepositoryService, pluginRegistryService, systemSnapshotService, eventService);
+    public K8sDeployerService(DeltaFiPropertiesService deltaFiPropertiesService, PluginImageRepositoryService pluginImageRepositoryService, KubernetesClient k8sClient, PodService podService, PluginService pluginService, SystemSnapshotService systemSnapshotService, EventService eventService) {
+        super(pluginImageRepositoryService, pluginService, systemSnapshotService, eventService);
         this.k8sClient = k8sClient;
         this.deltaFiPropertiesService = deltaFiPropertiesService;
         this.podService = podService;
