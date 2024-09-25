@@ -18,6 +18,7 @@
 package org.deltafi.common.rules;
 
 import org.apache.commons.lang3.StringUtils;
+import org.deltafi.common.types.DefaultBehavior;
 import org.deltafi.common.types.Publisher;
 import org.deltafi.common.types.Rule;
 import org.deltafi.common.types.Subscriber;
@@ -47,6 +48,12 @@ public class RuleValidator {
             return List.of("Publisher was missing publish section");
         } else if (missingRules(publisher.publishRules().getRules())) {
             return List.of("Publisher was missing publish rules");
+        } else if (publisher.publishRules().getDefaultRule() != null &&
+                publisher.publishRules().getDefaultRule().getDefaultBehavior() != null &&
+                publisher.publishRules().getDefaultRule().getDefaultBehavior() == DefaultBehavior.PUBLISH &&
+                (publisher.publishRules().getDefaultRule().getTopic() == null ||
+                        publisher.publishRules().getDefaultRule().getTopic().isEmpty())) {
+            return List.of("Default rule set to PUBLISH, but no topic provided");
         }
 
         return validateRules(publisher.publishRules().getRules());

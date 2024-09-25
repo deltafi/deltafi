@@ -67,11 +67,10 @@ public class PluginPlugin implements org.gradle.api.Plugin<Project> {
         String flowsDir;
     }
 
+    @Setter
     public static class CheckDeltafiPluginTask extends DefaultTask {
-        @Setter
         private PluginPlugin.DeltafiPluginExtension deltafiPluginExtension;
 
-        @Setter
         private RuleValidator ruleValidator = new RuleValidator(new RuleEvaluator());
 
         @TaskAction
@@ -136,7 +135,7 @@ public class PluginPlugin implements org.gradle.api.Plugin<Project> {
                 errors.addAll(ruleValidator.validatePublisher(publisher));
             }
 
-            return errors != null && !errors.isEmpty() ? "Errors in flow plan named `" + flowPlan.getName() + "` (file: " + fileName + "): " + String.join("; ", errors) : null;
+            return !errors.isEmpty() ? "Errors in flow plan named `" + flowPlan.getName() + "` (file: " + fileName + "): " + String.join("; ", errors) : null;
         }
     }
 
