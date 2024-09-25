@@ -4496,6 +4496,88 @@ class DeltaFiCoreApplicationTests {
 		assertThat(roles.stream().anyMatch(r -> "Read Only".equals(r.getName()))).isTrue();
 	}
 
+	@Test
+	void testUpdateSystemPluginFlowVersions() {
+		TransformFlow transformFlow = new TransformFlow();
+		transformFlow.setName("abc");
+		transformFlow.setSourcePlugin(pluginService.getSystemPluginCoordinates());
+		transformFlowRepo.save(transformFlow);
+		transformFlowRepo.updateSystemPluginFlowVersions("blah", FlowType.TRANSFORM);
+
+		TransformFlow after = transformFlowRepo.findByNameAndType("abc", FlowType.TRANSFORM, TransformFlow.class).orElseThrow();
+		PluginCoordinates expected = pluginService.getSystemPluginCoordinates();
+		expected.setVersion("blah");
+		assertThat(after.getSourcePlugin()).isEqualTo(expected);
+		transformFlowRepo.deleteById(after.getId());
+	}
+
+	@Test
+	void testUpdateFlowStatusState() {
+		TransformFlow transformFlow = new TransformFlow();
+		transformFlow.setName("abc");
+		transformFlow.setSourcePlugin(pluginService.getSystemPluginCoordinates());
+		transformFlow.setFlowStatus(FlowStatus.newBuilder().state(FlowState.INVALID).build());
+		transformFlowRepo.save(transformFlow);
+		transformFlowRepo.updateFlowStatusState("abc", FlowState.RUNNING, FlowType.TRANSFORM);
+
+		TransformFlow after = transformFlowRepo.findByNameAndType("abc", FlowType.TRANSFORM, TransformFlow.class).orElseThrow();
+		assertThat(after.isRunning()).isTrue();
+		transformFlowRepo.deleteById(after.getId());
+	}
+
+	@Test
+	void testUpdateFlowStatusTestMode() {
+		TransformFlow transformFlow = new TransformFlow();
+		transformFlow.setName("abc");
+		transformFlow.setSourcePlugin(pluginService.getSystemPluginCoordinates());
+		transformFlow.setFlowStatus(FlowStatus.newBuilder().state(FlowState.INVALID).testMode(false).build());
+		transformFlowRepo.save(transformFlow);
+		transformFlowRepo.updateFlowStatusTestMode("abc", true, FlowType.TRANSFORM);
+
+		TransformFlow after = transformFlowRepo.findByNameAndType("abc", FlowType.TRANSFORM, TransformFlow.class).orElseThrow();
+		assertThat(after.isTestMode()).isTrue();
+		transformFlowRepo.deleteById(after.getId());
+	}
+
+	@Test
+	void testFindRunningBySourcePlugin() {
+		PluginCoordinates plugin1 = new PluginCoordinates("group", "art-a",  "1");
+		PluginCoordinates plugin2 = new PluginCoordinates("group", "art-b",  "1");
+
+		TransformFlow plugin1Running1 = new TransformFlow();
+		plugin1Running1.setSourcePlugin(plugin1);
+		plugin1Running1.setName("p1Running1");
+		plugin1Running1.setFlowStatus(FlowStatus.newBuilder().state(FlowState.RUNNING).build());
+		plugin1Running1 = transformFlowRepo.save(plugin1Running1);
+
+		TransformFlow plugin1Running2 = new TransformFlow();
+		plugin1Running2.setSourcePlugin(plugin1);
+		plugin1Running2.setName("p1Running2");
+		plugin1Running2.setFlowStatus(FlowStatus.newBuilder().state(FlowState.RUNNING).build());
+		plugin1Running2 = transformFlowRepo.save(plugin1Running2);
+
+		TransformFlow plugin1Stopped = new TransformFlow();
+		plugin1Stopped.setName("p1Stopped");
+		plugin1Stopped.setSourcePlugin(plugin1);
+		plugin1Stopped.setFlowStatus(FlowStatus.newBuilder().state(FlowState.STOPPED).build());
+		plugin1Stopped = transformFlowRepo.save(plugin1Stopped);
+
+		TransformFlow plugin2Running = new TransformFlow();
+		plugin2Running.setSourcePlugin(plugin2);
+		plugin2Running.setName("p2Running");
+		plugin2Running.setFlowStatus(FlowStatus.newBuilder().state(FlowState.RUNNING).build());
+		plugin2Running = transformFlowRepo.save(plugin2Running);
+
+		assertThat(transformFlowRepo.findRunningBySourcePlugin("group", "art-a", "1", FlowType.TRANSFORM))
+				.isEqualTo(List.of("p1Running1", "p1Running2"));
+
+		assertThat(transformFlowRepo.findRunningBySourcePlugin("group", "art-b", "1", FlowType.TRANSFORM))
+				.isEqualTo(List.of("p2Running"));
+
+		transformFlowRepo.deleteAllById(Stream.of(plugin1Running1, plugin1Running2, plugin1Stopped, plugin2Running)
+						.map(Flow::getId).toList());
+	}
+
 	Link link() {
 		Link link = new Link();
 		link.setName("a");

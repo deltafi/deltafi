@@ -71,9 +71,9 @@ public interface FlowRepo extends JpaRepository<Flow, UUID> {
     @Query(value = "UPDATE flows SET source_plugin = jsonb_set(source_plugin, '{version}', to_jsonb(:version)) " +
             "WHERE source_plugin ->> 'groupId' = '" + SYSTEM_PLUGIN_GROUP_ID + "' " +
             "AND source_plugin ->> 'artifactId' = '" + SYSTEM_PLUGIN_ARTIFACT_ID + "' " +
-            "AND type = :type",
+            "AND type = :#{#type.name}",
             nativeQuery = true)
-    <T extends Flow> void updateSystemPluginFlowVersions(String version, Class<T> type);
+    void updateSystemPluginFlowVersions(String version, FlowType type);
 
     @Modifying
     @Transactional
@@ -94,7 +94,7 @@ public interface FlowRepo extends JpaRepository<Flow, UUID> {
             "AND f.source_plugin ->> 'groupId' = :groupId " +
             "AND f.source_plugin ->> 'artifactId' = :artifactId " +
             "AND f.source_plugin ->> 'version' = :version " +
-            "AND f.type = :type",
+            "AND f.type = :#{#type.name}",
             nativeQuery = true)
-    <T extends Flow> List<String> findRunningBySourcePlugin(String groupId, String artifactId, String version, Class<T> type);
+    List<String> findRunningBySourcePlugin(String groupId, String artifactId, String version, FlowType type);
 }

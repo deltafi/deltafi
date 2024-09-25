@@ -61,7 +61,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
 
     @PostConstruct
     public void postConstruct() {
-        flowRepo.updateSystemPluginFlowVersions(buildProperties.getVersion(), flowClass);
+        flowRepo.updateSystemPluginFlowVersions(buildProperties.getVersion(), this.flowType);
         refreshCache();
     }
 
@@ -438,7 +438,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
      */
     @Override
     public String uninstallBlockers(PluginEntity plugin) {
-        List<String> runningFlows = flowRepo.findRunningBySourcePlugin(plugin.getPluginCoordinates().getGroupId(), plugin.getPluginCoordinates().getArtifactId(), plugin.getPluginCoordinates().getVersion(), flowClass);
+        List<String> runningFlows = flowRepo.findRunningBySourcePlugin(plugin.getPluginCoordinates().getGroupId(), plugin.getPluginCoordinates().getArtifactId(), plugin.getPluginCoordinates().getVersion(), this.flowType);
         return runningFlows.isEmpty() ? null : runningFlowError(runningFlows);
     }
 
