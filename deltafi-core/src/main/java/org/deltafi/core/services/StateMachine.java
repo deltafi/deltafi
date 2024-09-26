@@ -266,6 +266,7 @@ public class StateMachine {
                 actionConfiguration.getJoin().minNum(), actionConfiguration.getJoin().maxNum(), currentFlow.getDepth(), parentDid);
 
         if (joinEntry == null) {
+            log.error("Timed out trying to lock join entry for parent did '{}'", parentDid);
             throw new JoinException("Timed out trying to lock join entry");
         }
 
