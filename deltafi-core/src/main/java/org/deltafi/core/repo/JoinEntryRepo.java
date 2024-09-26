@@ -44,7 +44,6 @@ public interface JoinEntryRepo extends JpaRepository<JoinEntry, UUID> {
      * @return the locked JoinEntry
      * @throws org.springframework.dao.DuplicateKeyException if a locked JoinEntry already exists for the provided id
      */
-    @Modifying
     @Transactional
     @Query(value = """
             INSERT INTO join_entries (id, join_definition, locked, locked_time, join_date, min_num, max_num, max_flow_depth, count)
@@ -55,13 +54,12 @@ public interface JoinEntryRepo extends JpaRepository<JoinEntry, UUID> {
                 max_flow_depth = GREATEST(join_entries.max_flow_depth, :maxFlowDepth),
                 count = join_entries.count + 1
             WHERE join_entries.locked = false
+            RETURNING *
             """, nativeQuery = true)
-    int upsertAndLock(UUID id, String joinDefinition, OffsetDateTime lockedTime,
+    @SuppressWarnings("SpringDataModifyingAnnotationMissing") // @Modifying only allows void/int return types, we need the new or updated JoinEntry
+    JoinEntry upsertAndLock(UUID id, String joinDefinition, OffsetDateTime lockedTime,
                       OffsetDateTime joinDate, Integer minNum, Integer maxNum,
                       int maxFlowDepth);
-
-    @Query(value = "SELECT * FROM join_entries WHERE join_definition = CAST(:joinDefinition AS jsonb)", nativeQuery = true)
-    Optional<JoinEntry> findByJoinDefinition(String joinDefinition);
 
     /**
      * Lock a single JoinEntry with a join date less than or equal to the provided join date.

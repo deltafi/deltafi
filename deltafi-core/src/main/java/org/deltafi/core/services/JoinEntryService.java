@@ -61,21 +61,22 @@ public class JoinEntryService {
     private JoinEntry upsertAndLock(JoinDefinition joinDefinition, OffsetDateTime joinDate, Integer minNum,
                                     Integer maxNum, int flowDepth) {
         long endTimeMs = clock.millis() + deltaFiPropertiesService.getDeltaFiProperties().getJoinAcquireLockTimeoutMs();
+        UUID id = Generators.timeBasedEpochGenerator().generate();
+        String joinDefinitionJson;
+        try {
+            joinDefinitionJson = OBJECT_MAPPER.writeValueAsString(joinDefinition);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to serialize join definition", e);
+            return null;
+        }
         while (clock.millis() < endTimeMs) {
-            try {
-                UUID id = Generators.timeBasedEpochGenerator().generate();
-                OffsetDateTime lockedTime = OffsetDateTime.now(clock);
-                String joinDefinitionJson = OBJECT_MAPPER.writeValueAsString(joinDefinition);
+            OffsetDateTime lockedTime = OffsetDateTime.now(clock);
 
-                int updatedRows = joinEntryRepo.upsertAndLock(id, joinDefinitionJson, lockedTime,
-                        joinDate, minNum, maxNum, flowDepth);
+            JoinEntry joinEntry = joinEntryRepo.upsertAndLock(id, joinDefinitionJson, lockedTime,
+                    joinDate, minNum, maxNum, flowDepth);
 
-                if (updatedRows > 0) {
-                    return joinEntryRepo.findByJoinDefinition(joinDefinitionJson).orElse(null);
-                }
-            } catch (JsonProcessingException e) {
-                log.error("Failed to serialize join definition", e);
-                return null;
+            if (joinEntry != null) {
+                return joinEntry;
             }
 
             // If we couldn't insert or update, sleep before retrying
