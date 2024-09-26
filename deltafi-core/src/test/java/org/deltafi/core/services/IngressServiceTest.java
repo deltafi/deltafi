@@ -29,7 +29,6 @@ import org.deltafi.common.test.uuid.TestUUIDGenerator;
 import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.types.DeltaFileFlow;
 import org.deltafi.common.types.IngressEventItem;
-import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.exceptions.IngressException;
 import org.deltafi.core.exceptions.IngressMetadataException;
@@ -74,7 +73,6 @@ class IngressServiceTest {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final MetricService metricService;
-    private final CoreAuditLogger coreAuditLogger;
     private final DiskSpaceService diskSpaceService;
     private final DeltaFilesService deltaFilesService;
     private final DeltaFiPropertiesService deltaFiPropertiesService;
@@ -91,20 +89,19 @@ class IngressServiceTest {
     @Captor
     ArgumentCaptor<IngressEventItem> ingressEventCaptor;
 
-    IngressServiceTest(@Mock MetricService metricService, @Mock CoreAuditLogger coreAuditLogger,
+    IngressServiceTest(@Mock MetricService metricService,
                        @Mock DiskSpaceService diskSpaceService, @Mock DeltaFilesService deltaFilesService,
                        @Mock DeltaFiPropertiesService deltaFiPropertiesService,
                        @Mock RestDataSourceService restDataSourceService,
                        @Mock ErrorCountService errorCountService) {
         this.metricService = metricService;
-        this.coreAuditLogger = coreAuditLogger;
         this.diskSpaceService = diskSpaceService;
         this.deltaFilesService = deltaFilesService;
         this.deltaFiPropertiesService = deltaFiPropertiesService;
         this.restDataSourceService = restDataSourceService;
         this.errorCountService = errorCountService;
 
-        ingressService = new IngressService(metricService, coreAuditLogger, diskSpaceService, CONTENT_STORAGE_SERVICE,
+        ingressService = new IngressService(metricService, diskSpaceService, CONTENT_STORAGE_SERVICE,
                 deltaFilesService, deltaFiPropertiesService, restDataSourceService, errorCountService, UUID_GENERATOR);
     }
 
@@ -142,8 +139,6 @@ class IngressServiceTest {
     }
 
     private void verifyNormalExecution(List<IngressResult> ingressResults) throws IOException, ObjectStorageException {
-        Mockito.verify(coreAuditLogger).logIngress("username", "filename");
-
         Map<String, String> metricTags = Map.of(DeltaFiConstants.ACTION, "ingress",
                 DeltaFiConstants.SOURCE, DeltaFiConstants.INGRESS_ACTION, DeltaFiConstants.DATA_SOURCE, "flow");
         Mockito.verify(metricService).increment(DeltaFiConstants.FILES_IN, metricTags, 1);

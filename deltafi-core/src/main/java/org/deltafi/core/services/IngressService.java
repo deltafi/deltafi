@@ -36,7 +36,6 @@ import org.deltafi.common.types.ActionType;
 import org.deltafi.common.types.Content;
 import org.deltafi.common.types.IngressEventItem;
 import org.deltafi.common.uuid.UUIDGenerator;
-import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.exceptions.*;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.metrics.MetricsUtil;
@@ -62,7 +61,6 @@ import static org.deltafi.common.nifi.ContentType.*;
 public class IngressService {
     public static final String INGRESS_ERROR_FOR_FLOW_FILENAME_CONTENT_TYPE_USERNAME = "Ingress error for flow={} filename={} contentType={} username={}: {}";
     private final MetricService metricService;
-    private final CoreAuditLogger coreAuditLogger;
     private final DiskSpaceService diskSpaceService;
     private final ContentStorageService contentStorageService;
     private final DeltaFilesService deltaFilesService;
@@ -109,8 +107,6 @@ public class IngressService {
         }
 
         ingressResults.forEach(ingressResult -> {
-            coreAuditLogger.logIngress(username, ingressResult.content().getName());
-
             Map<String, String> tags = tagsFor(ingressResult.flow());
             metricService.increment(DeltaFiConstants.FILES_IN, tags, 1);
             metricService.increment(DeltaFiConstants.BYTES_IN, tags, ingressResult.content().getSize());

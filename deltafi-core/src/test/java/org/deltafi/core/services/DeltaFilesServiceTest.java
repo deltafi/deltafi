@@ -26,7 +26,6 @@ import org.deltafi.common.test.time.TestClock;
 import org.deltafi.common.test.uuid.TestUUIDGenerator;
 import org.deltafi.common.types.*;
 import org.deltafi.core.MockDeltaFiPropertiesService;
-import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.generated.types.RetryResult;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.repo.*;
@@ -95,7 +94,7 @@ class DeltaFilesServiceTest {
                           @Mock ActionRepo actionRepo, @Mock DeltaFileFlowRepo deltaFileFlowRepo,
                           @Mock CoreEventQueue coreEventQueue, @Mock ContentStorageService contentStorageService,
                           @Mock ResumePolicyService resumePolicyService, @Mock MetricService metricService,
-                          @Mock AnalyticEventService analyticEventService, @Mock CoreAuditLogger coreAuditLogger,
+                          @Mock AnalyticEventService analyticEventService,
                           @Mock DeltaFileCacheService deltaFileCacheService, @Mock RestDataSourceService restDataSourceService,
                           @Mock TimedDataSourceService timedDataSourceService,
                           @Mock QueueManagementService queueManagementService, @Mock QueuedAnnotationRepo queuedAnnotationRepo,
@@ -115,8 +114,8 @@ class DeltaFilesServiceTest {
 
         deltaFilesService = new DeltaFilesService(testClock, transformFlowService, egressFlowService, mockDeltaFiPropertiesService,
                 stateMachine, annotationRepo, deltaFileRepo, deltaFileFlowRepo, actionRepo, coreEventQueue, contentStorageService, resumePolicyService,
-                metricService, analyticEventService, coreAuditLogger, new DidMutexService(), deltaFileCacheService,
-                timedDataSourceService, queueManagementService, queuedAnnotationRepo, environment, scheduledJoinService, new TestUUIDGenerator());
+                metricService, analyticEventService, new DidMutexService(), deltaFileCacheService, timedDataSourceService,
+                queueManagementService, queuedAnnotationRepo, environment, scheduledJoinService, new TestUUIDGenerator());
     }
 
     @Test

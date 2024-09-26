@@ -33,7 +33,6 @@ import org.springframework.stereotype.Component;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -42,23 +41,7 @@ import java.util.stream.Collectors;
 @Slf4j(topic = "AUDIT")
 public class CoreAuditLogger {
 
-    private static final String UNKNOWN_USER = "system";
-
     private final Map<String, String> permissionMap = new ConcurrentHashMap<>();
-
-    public void logIngress(String userName, String fileName) {
-        try (MDC.MDCCloseable ignored = MDC.putCloseable("user", userName)) {
-            log.info("ingress {}", fileName);
-        }
-    }
-
-    public void logDelete(String policy, List<UUID> dids, boolean metadata) {
-        try (MDC.MDCCloseable ignored = MDC.putCloseable("user", UNKNOWN_USER)) {
-            for (UUID did : dids) {
-                log.info("policy {} deleted {} content{}", policy, did, (metadata ? " and metadata" : ""));
-            }
-        }
-    }
 
     public void audit(String message, Object ... objects) {
         String username = DeltaFiUserService.currentUsername();

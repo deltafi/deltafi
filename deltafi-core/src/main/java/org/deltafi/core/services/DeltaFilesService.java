@@ -36,7 +36,6 @@ import org.deltafi.common.content.ContentUtil;
 import org.deltafi.common.converters.KeyValueConverter;
 import org.deltafi.common.types.*;
 import org.deltafi.common.uuid.UUIDGenerator;
-import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.types.JoinEntry;
 import org.deltafi.core.configuration.DeltaFiProperties;
 import org.deltafi.core.exceptions.*;
@@ -112,7 +111,6 @@ public class DeltaFilesService {
     private final ResumePolicyService resumePolicyService;
     private final MetricService metricService;
     private final AnalyticEventService analyticEventService;
-    private final CoreAuditLogger coreAuditLogger;
     private final DidMutexService didMutexService;
     private final DeltaFileCacheService deltaFileCacheService;
     private final TimedDataSourceService timedDataSourceService;
@@ -1558,8 +1556,6 @@ public class DeltaFilesService {
                     OffsetDateTime.now(clock),
                     policy);
         }
-
-        coreAuditLogger.logDelete(policy, deltaFiles.stream().map(DeltaFileDeleteDTO::getDid).toList(), deleteMetadata);
     }
 
     private void deleteMetadata(List<DeltaFileDeleteDTO> deltaFiles) {
