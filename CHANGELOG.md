@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 All [Unreleased] changes can be viewed in GitLab.
 
+## [1.2.20] - 2024-09-27
+
+### Added
+- Added 7Z support to decompress actions
+
 ## [1.2.19] - 2024-09-09
 
 - No changes for this release
@@ -3103,7 +3108,8 @@ No changes.  UI update only
 ### Security
 - Forced all projects to log4j 2.17.0 to avoid CVEs
 
-[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.19...main
+[Unreleased]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.20...main
+[1.2.20]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.19...1.2.20
 [1.2.19]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.18...1.2.19
 [1.2.18]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.17...1.2.18
 [1.2.17]: https://gitlab.com/deltafi/deltafi/-/compare/1.2.16...1.2.17
