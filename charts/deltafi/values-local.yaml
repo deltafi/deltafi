@@ -14,8 +14,6 @@ deltafi:
             imageRepositoryBase: "localhost:5000"
   docs:
     image: localhost:5000/deltafi-docs:latest
-  auth:
-    image: localhost:5000/deltafi-auth:latest
   api:
     image: localhost:5000/deltafi-api:latest
   egress_sink:

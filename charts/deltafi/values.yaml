@@ -23,7 +23,6 @@ deltafi:
     envVar:
       HTTP_MAX_BODY_SIZE: 5G
   auth:
-    image: deltafi/deltafi-auth:2.0-rc12
     mode: basic # basic, cert, or disabled
     secret: auth-secret
     entityResolver:

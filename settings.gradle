@@ -18,7 +18,6 @@ rootProject.name='deltafi'
 
 include 'deltafi-action-kit'
 include 'deltafi-action-kit-test'
-include 'deltafi-auth'
 include 'deltafi-cli'
 include 'deltafi-clustermonitor'
 include 'deltafi-common'
