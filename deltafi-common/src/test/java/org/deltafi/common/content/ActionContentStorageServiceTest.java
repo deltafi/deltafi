@@ -21,9 +21,7 @@ import org.assertj.core.api.Assertions;
 import org.deltafi.common.storage.s3.ObjectReference;
 import org.deltafi.common.storage.s3.ObjectStorageException;
 import org.deltafi.common.storage.s3.ObjectStorageService;
-import org.deltafi.common.types.ActionEvent;
-import org.deltafi.common.types.Content;
-import org.deltafi.common.types.SaveManyContent;
+import org.deltafi.common.types.*;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,18 +33,18 @@ import javax.ws.rs.core.MediaType;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
 public class ActionContentStorageServiceTest {
 
     @Captor
     ArgumentCaptor<Map<ObjectReference, InputStream>> contentMapCaptor;
+
+    @Captor
+    ArgumentCaptor<List<String>> objectNamesCaptor;
 
     @Mock
     private ObjectStorageService objectStorageService;
@@ -98,11 +96,6 @@ public class ActionContentStorageServiceTest {
     }
 
     @Test
-    public void publishSavedContent() {
-        assertSavedContentSize(0);
-    }
-
-    @Test
     public void savesContent() throws ObjectStorageException {
         byte[] bytes = "test".getBytes();
 
@@ -118,7 +111,7 @@ public class ActionContentStorageServiceTest {
         assertEquals(bytes.length, content.getSize());
         assertEquals("mediaType", content.getMediaType());
 
-        assertSavedContentSize(1);
+        assertEquals(1, actionStorageService.savedContentSize());
     }
 
     @Test
@@ -131,7 +124,7 @@ public class ActionContentStorageServiceTest {
         assertEquals(0, content.getSize());
         assertEquals("mediaType", content.getMediaType());
 
-        assertSavedContentSize(0);
+        assertEquals(0, actionStorageService.savedContentSize());
     }
 
     @Test
@@ -150,7 +143,7 @@ public class ActionContentStorageServiceTest {
         assertEquals(bytes.length, content.getSize());
         assertEquals("mediaType", content.getMediaType());
 
-        assertSavedContentSize(1);
+        assertEquals(1, actionStorageService.savedContentSize());
     }
 
     @Test
@@ -169,9 +162,9 @@ public class ActionContentStorageServiceTest {
         assertEquals(bytes.length, content.getSize());
         assertEquals("mediaType", content.getMediaType());
 
-        assertSavedContentSize(1);
+        assertEquals(1, actionStorageService.savedContentSize());
         actionStorageService.clear();
-        assertSavedContentSize(0);
+        assertEquals(0, actionStorageService.savedContentSize());
     }
 
     @Test
@@ -194,13 +187,193 @@ public class ActionContentStorageServiceTest {
 
         Assertions.assertThat(contentMap).hasSize(2);
 
-        assertSavedContentSize(3);
+        assertEquals(3, actionStorageService.savedContentSize());
     }
 
-    public void assertSavedContentSize(int size) {
-        ActionEvent event = new ActionEvent();
-        actionStorageService.publishSavedContent(event);
-        assertEquals(size, event.getSavedContent().size());
+    @Test
+    void testDeleteUnusedContent_TransformHasOrphaned() throws ObjectStorageException {
+        byte[] bytes = "test".getBytes();
+
+        Mockito.when(objectStorageService.putObject(Mockito.any(), Mockito.any()))
+                .thenReturn(new ObjectReference("storage", "did/uuid", 0, bytes.length))
+                .thenReturn(new ObjectReference("storage", "did/uuid", 0, bytes.length))
+                .thenReturn(new ObjectReference("storage", "did/uuid", 0, bytes.length));
+
+        UUID did = UUID.randomUUID();
+        UUID did2 = UUID.randomUUID();
+        Content content1 = actionStorageService.save(did, bytes, "name", "mediaType");
+        Content content2 = actionStorageService.save(did2, bytes, "name", "mediaType");
+        Content content3 = actionStorageService.save(did, bytes, "name", "mediaType");
+        assertEquals(3, actionStorageService.savedContentSize());
+
+        ActionEvent event = ActionEvent.builder()
+                .did(did)
+                .type(ActionEventType.TRANSFORM)
+                .transform(List.of(
+                        TransformEvent.builder()
+                                .content(List.of(content1, content3))
+                                .build()))
+                .build();
+
+        assertEquals(1, actionStorageService.deleteUnusedContent(event));
+
+        Mockito.verify(objectStorageService).removeObjects(Mockito.eq("storage"), objectNamesCaptor.capture());
+        List<String> objectNames = objectNamesCaptor.getValue();
+        assertEquals(content2.getSegments().getFirst().objectName(), objectNames.getFirst());
+
+        assertEquals(0, actionStorageService.savedContentSize());
     }
+
+    @Test
+    void testDeleteUnusedContent_TransformNoOrphaned() throws ObjectStorageException {
+        byte[] bytes = "test".getBytes();
+
+        Mockito.when(objectStorageService.putObject(Mockito.any(), Mockito.any()))
+                .thenReturn(new ObjectReference("storage", "did/uuid", 0, bytes.length))
+                .thenReturn(new ObjectReference("storage", "did/uuid", 0, bytes.length))
+                .thenReturn(new ObjectReference("storage", "did/uuid", 0, bytes.length));
+
+        UUID did = UUID.randomUUID();
+        UUID did2 = UUID.randomUUID();
+        Content content1 = actionStorageService.save(did, bytes, "name", "mediaType");
+        Content content2 = actionStorageService.save(did2, bytes, "name", "mediaType");
+        Content content3 = actionStorageService.save(did, bytes, "name", "mediaType");
+        assertEquals(3, actionStorageService.savedContentSize());
+
+        ActionEvent event = ActionEvent.builder()
+                .did(did)
+                .type(ActionEventType.TRANSFORM)
+                .transform(List.of(
+                        TransformEvent.builder()
+                                .content(List.of(content1, content2, content3))
+                                .build()))
+                .build();
+
+        assertEquals(0, actionStorageService.deleteUnusedContent(event));
+        assertEquals(0, actionStorageService.savedContentSize());
+    }
+
+    @Test
+    void testDeleteUnusedContent_ErrorHasOrphaned() throws ObjectStorageException {
+        byte[] bytes = "test".getBytes();
+
+        Mockito.when(objectStorageService.putObject(Mockito.any(), Mockito.any()))
+                .thenReturn(new ObjectReference("storage", "did/uuid", 0, bytes.length))
+                .thenReturn(new ObjectReference("storage", "did/uuid", 0, bytes.length))
+                .thenReturn(new ObjectReference("storage", "did/uuid", 0, bytes.length));
+
+        UUID did = UUID.randomUUID();
+        UUID did2 = UUID.randomUUID();
+        Content content1 = actionStorageService.save(did, bytes, "name", "mediaType");
+        Content content2 = actionStorageService.save(did2, bytes, "name", "mediaType");
+        Content content3 = actionStorageService.save(did, bytes, "name", "mediaType");
+        assertEquals(3, actionStorageService.savedContentSize());
+
+        ActionEvent event = ActionEvent.builder()
+                .did(did)
+                .type(ActionEventType.ERROR)
+                .error(ErrorEvent.builder()
+                        .cause("cause")
+                        .build())
+                .build();
+
+        assertEquals(3, actionStorageService.deleteUnusedContent(event));
+
+        Mockito.verify(objectStorageService).removeObjects(Mockito.eq("storage"), objectNamesCaptor.capture());
+        Set<String> objectNames = new HashSet<>(objectNamesCaptor.getValue());
+        assertEquals(3, objectNames.size());
+
+        assertTrue(objectNames.contains(content1.getSegments().getFirst().objectName()));
+        assertTrue(objectNames.contains(content2.getSegments().getFirst().objectName()));
+        assertTrue(objectNames.contains(content3.getSegments().getFirst().objectName()));
+
+        assertEquals(0, actionStorageService.savedContentSize());
+    }
+
+    @Test
+    void testDeleteUnusedContent_ErrorNoOrphaned() throws ObjectStorageException {
+        byte[] bytes = "test".getBytes();
+
+        UUID did = UUID.randomUUID();
+        assertEquals(0, actionStorageService.savedContentSize());
+
+        ActionEvent event = ActionEvent.builder()
+                .did(did)
+                .type(ActionEventType.ERROR)
+                .error(ErrorEvent.builder()
+                        .cause("cause")
+                        .build())
+                .build();
+
+        assertEquals(0, actionStorageService.deleteUnusedContent(event));
+    }
+
+    @Test
+    void testDeleteUnusedContent_IngressHasOrphaned() throws ObjectStorageException {
+        byte[] bytes = "test".getBytes();
+
+        Mockito.when(objectStorageService.putObject(Mockito.any(), Mockito.any()))
+                .thenReturn(new ObjectReference("storage", "did/uuid", 0, bytes.length))
+                .thenReturn(new ObjectReference("storage", "did/uuid", 0, bytes.length))
+                .thenReturn(new ObjectReference("storage", "did/uuid", 0, bytes.length));
+
+        UUID did = UUID.randomUUID();
+        UUID did2 = UUID.randomUUID();
+        Content content1 = actionStorageService.save(did, bytes, "name", "mediaType");
+        Content content2 = actionStorageService.save(did2, bytes, "name", "mediaType");
+        Content content3 = actionStorageService.save(did, bytes, "name", "mediaType");
+        assertEquals(3, actionStorageService.savedContentSize());
+
+        ActionEvent event = ActionEvent.builder()
+                .did(did)
+                .type(ActionEventType.INGRESS)
+                .ingress(IngressEvent
+                        .builder()
+                        .ingressItems(List.of(
+                                IngressEventItem.builder().content(List.of(content1)).build(),
+                                IngressEventItem.builder().content(List.of(content3)).build()))
+                        .build())
+                .build();
+
+        assertEquals(1, actionStorageService.deleteUnusedContent(event));
+
+        Mockito.verify(objectStorageService).removeObjects(Mockito.eq("storage"), objectNamesCaptor.capture());
+        List<String> objectNames = objectNamesCaptor.getValue();
+        assertEquals(content2.getSegments().getFirst().objectName(), objectNames.getFirst());
+
+        assertEquals(0, actionStorageService.savedContentSize());
+    }
+
+    @Test
+    void testDeleteUnusedContent_IngressNoOrphaned() throws ObjectStorageException {
+        byte[] bytes = "test".getBytes();
+
+        Mockito.when(objectStorageService.putObject(Mockito.any(), Mockito.any()))
+                .thenReturn(new ObjectReference("storage", "did/uuid", 0, bytes.length))
+                .thenReturn(new ObjectReference("storage", "did/uuid", 0, bytes.length))
+                .thenReturn(new ObjectReference("storage", "did/uuid", 0, bytes.length));
+
+        UUID did = UUID.randomUUID();
+        UUID did2 = UUID.randomUUID();
+        Content content1 = actionStorageService.save(did, bytes, "name", "mediaType");
+        Content content2 = actionStorageService.save(did2, bytes, "name", "mediaType");
+        Content content3 = actionStorageService.save(did, bytes, "name", "mediaType");
+        assertEquals(3, actionStorageService.savedContentSize());
+
+        ActionEvent event = ActionEvent.builder()
+                .did(did)
+                .type(ActionEventType.INGRESS)
+                .ingress(IngressEvent
+                        .builder()
+                        .ingressItems(List.of(
+                                IngressEventItem.builder().content(List.of(content1, content2)).build(),
+                                IngressEventItem.builder().content(List.of(content3)).build()))
+                        .build())
+                .build();
+
+        assertEquals(0, actionStorageService.deleteUnusedContent(event));
+        assertEquals(0, actionStorageService.savedContentSize());
+    }
+
 
 }

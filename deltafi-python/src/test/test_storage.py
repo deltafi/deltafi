@@ -98,3 +98,16 @@ def test_gett_str():
 
     assert content == SEG_1_DATA + SEG_2_DATA
     assert len(content) == 9
+
+
+def test_delete_all():
+    unstub()
+
+    minio_mock = mock(minio.Minio)
+    when(minio).Minio(...).thenReturn(minio_mock)
+    when(minio_mock).bucket_exists(...).thenReturn(True)
+    when(minio_mock).remove_objects(BUCKET, ANY()).thenReturn([])
+    service = faux_content_service()
+    service.delete_all(make_segments())
+
+    verifyStubbedInvocationsAreUsed(minio_mock)

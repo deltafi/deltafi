@@ -117,6 +117,16 @@ public class Content {
   }
 
   /**
+   * Return a list of all segment object names.
+   * @return A list of object names
+   */
+  public List<String> objectNames() {
+    return segments.stream()
+            .map(Segment::objectName)
+            .toList();
+  }
+
+  /**
    * Returns a list of Segments that copy portions of this Content, at the given offset and size
    * Handles piecing together the underlying segments properly
    * @param offset Number of bytes at which to offset the new segments

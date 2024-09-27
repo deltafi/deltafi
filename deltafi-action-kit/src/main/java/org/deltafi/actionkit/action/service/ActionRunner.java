@@ -142,18 +142,24 @@ public class ActionRunner {
             result = new ErrorResult(context, "Missing metadata with key " + e.getKey(), e).logErrorTo(log);
         } catch (ActionKitException e) {
             result = new ErrorResult(context, e.getMessage(), e).logErrorTo(log);
-        }
-        catch (Throwable e) {
+        } catch (Throwable e) {
             result = new ErrorResult(context, "Action execution exception", e).logErrorTo(log);
         }
+        ActionEvent event = result.toEvent();
+        orphanContentCheck(context, event);
         action.clearActionExecution();
 
         try {
-            ActionEvent event = result.toEvent();
-            context.getContentStorageService().publishSavedContent(event);
             actionEventQueue.putResult(event, returnAddress);
         } catch (Throwable e) {
             log.error("Error sending result to valkey for did " + context.getDid(), e);
+        }
+    }
+
+    private void orphanContentCheck(ActionContext context, ActionEvent event) {
+        int count = context.getContentStorageService().deleteUnusedContent(event);
+        if (count > 0) {
+            log.warn("Deleted {} unused content entries for did {} due to a {} event by {}", count, context.getDid(), event.getType(), event.getActionName());
         }
     }
 

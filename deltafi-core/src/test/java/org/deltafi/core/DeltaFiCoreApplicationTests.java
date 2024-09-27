@@ -784,29 +784,6 @@ class DeltaFiCoreApplicationTests {
 		assertEqualsIgnoringDates(postTransformInvalidDeltaFile(did), afterMutation);
 	}
 
-
-	@Test
-	void testErrorWithContent() throws IOException {
-		UUID did = UUID.randomUUID();
-		DeltaFile original = postTransformDeltaFile(did);
-		deltaFileRepo.save(original);
-
-		deltaFilesService.handleActionEvent(actionEvent("errorWithContent", did));
-
-		DeltaFile actual = deltaFilesService.getDeltaFile(did);
-		DeltaFile expected = postErrorDeltaFile(did, null, null);
-		expected.addAnnotations(Map.of("errorKey", "error metadata"));
-		assertEqualsIgnoringDates(expected, actual);
-
-		Map<String, String> tags = tagsFor(ActionEventType.ERROR, "SampleEgressAction", REST_DATA_SOURCE_NAME, EGRESS_FLOW_NAME);
-		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_IN, 1).addTags(tags));
-		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.FILES_ERRORED, 1).addTags(tags));
-
-		extendTagsForAction(tags, "type");
-		Mockito.verify(metricService).increment(new Metric(DeltaFiConstants.ACTION_EXECUTION_TIME_MS, 1).addTags(tags));
-		Mockito.verifyNoMoreInteractions(metricService);
-	}
-
 	void runErrorWithAutoResume(Integer autoResumeDelay, boolean withAnnotation) throws IOException {
 		UUID did = UUID.randomUUID();
 		String policyName = null;

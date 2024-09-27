@@ -38,6 +38,7 @@ import java.time.ZoneOffset;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(MockitoExtension.class)
 public class ActionRunnerTest {
@@ -46,6 +47,8 @@ public class ActionRunnerTest {
 
     @Captor
     ArgumentCaptor<ActionEvent> actionEventCaptor;
+    @Captor
+    ArgumentCaptor<List<String>> objectNamesCaptor;
     @Mock
     private ActionEventQueue actionEventQueue;
     @Mock
@@ -63,7 +66,7 @@ public class ActionRunnerTest {
     }
 
     @Test
-    public void testListen() throws JsonProcessingException, ObjectStorageException {
+    public void testOrphanError() throws JsonProcessingException, ObjectStorageException {
         List<ActionContent> inputs = List.of(new ActionContent(content(), actionContentStorageService));
 
         ErrorTestAction action = new ErrorTestAction();
@@ -76,9 +79,8 @@ public class ActionRunnerTest {
                         .actionContext(context())
                         .build();
 
-        byte[] bytes = "test".getBytes();
         Mockito.when(objectStorageService.putObject(Mockito.any(), Mockito.any()))
-                .thenReturn(new ObjectReference("storage", "did/uuid", 0, bytes.length));
+                .thenReturn(new ObjectReference("storage", "did/uuid", 0, 3));
 
         actionInput.getActionContext().setActionVersion("1");
         actionInput.getActionContext().setHostname("host");
@@ -86,11 +88,66 @@ public class ActionRunnerTest {
         actionInput.getActionContext().setContentStorageService(actionContentStorageService);
         actionRunner.executeAction(action, actionInput, actionInput.getReturnAddress());
 
-        Mockito.verify(actionEventQueue)
-                .putResult(actionEventCaptor.capture(), Mockito.eq(actionInput.getReturnAddress()));
-        ActionEvent actionEvent = actionEventCaptor.getValue();
+        Mockito.verify(objectStorageService)
+                .removeObjects(Mockito.eq("storage"),
+                        objectNamesCaptor.capture());
 
-        assertEquals(1, actionEvent.getSavedContent().size());
+        Mockito.verify(actionEventQueue)
+                .putResult(actionEventCaptor.capture(),
+                        Mockito.eq(actionInput.getReturnAddress()));
+
+        ActionEvent actionEvent = actionEventCaptor.getValue();
+        assertEquals(ActionEventType.ERROR, actionEvent.getType());
+
+        List<String> segments = objectNamesCaptor.getValue();
+        assertEquals(1, segments.size());
+        String prefix = DID.toString().substring(0, 3) + "/"
+                + DID + "/";
+        assertTrue(segments.getFirst().startsWith(prefix));
+    }
+
+    @Test
+    public void testOrphanTransform() throws JsonProcessingException, ObjectStorageException {
+        List<ActionContent> inputs = List.of(new ActionContent(content(), actionContentStorageService));
+
+        TransformTestAction action = new TransformTestAction();
+
+        DeltaFileMessage deltaFileMessage = deltaFileMessage(Collections.emptyMap(), inputs);
+
+        ActionInput actionInput =
+                ActionInput.builder()
+                        .deltaFileMessages(List.of(deltaFileMessage))
+                        .actionContext(context())
+                        .build();
+
+        Mockito.when(objectStorageService.putObject(Mockito.any(), Mockito.any()))
+                .thenReturn(new ObjectReference("storage", "did/uuid3", 0, 3))
+                .thenReturn(new ObjectReference("storage", "did/uuid4", 0, 4))
+                .thenReturn(new ObjectReference("storage", "did/uuid5", 0, 5));
+
+        actionInput.getActionContext().setActionVersion("1");
+        actionInput.getActionContext().setHostname("host");
+        actionInput.getActionContext().setStartTime(OffsetDateTime.now());
+        actionInput.getActionContext().setContentStorageService(actionContentStorageService);
+        actionRunner.executeAction(action, actionInput, actionInput.getReturnAddress());
+
+        Mockito.verify(objectStorageService)
+                .removeObjects(Mockito.eq("storage"),
+                        objectNamesCaptor.capture());
+
+        Mockito.verify(actionEventQueue)
+                .putResult(actionEventCaptor.capture(),
+                        Mockito.eq(actionInput.getReturnAddress()));
+
+        ActionEvent actionEvent = actionEventCaptor.getValue();
+        assertEquals(ActionEventType.TRANSFORM, actionEvent.getType());
+
+        List<String> segments = objectNamesCaptor.getValue();
+        assertEquals(2, segments.size());
+        String prefix = DID.toString().substring(0, 3) + "/"
+                + DID + "/";
+        assertTrue(segments.getFirst().startsWith(prefix));
+        assertTrue(segments.get(1).startsWith(prefix));
     }
 
     private Content content() {
@@ -98,9 +155,11 @@ public class ActionRunnerTest {
     }
 
     protected DeltaFileMessage deltaFileMessage(Map<String, String> metadata, List<ActionContent> content) {
+        List<Content> contentList = new ArrayList<>(content.stream().map(ContentConverter::convert).toList());
+
         return DeltaFileMessage.builder()
                 .metadata(metadata == null ? new HashMap<>() : metadata)
-                .contentList(content.stream().map(ContentConverter::convert).toList())
+                .contentList(contentList)
                 .build();
     }
 

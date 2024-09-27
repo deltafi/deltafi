@@ -109,6 +109,25 @@ def test_content_append():
     assert content1.get_size() == 300
 
 
+def test_segment_names():
+    content_service = mock(ContentService)
+
+    segment1 = Segment(uuid="id1", offset=0, size=100, did="123did")
+    content1 = Content(name="test1", segments=[segment1], media_type="text/plain", content_service=content_service)
+
+    segment2 = Segment(uuid="id2", offset=0, size=200, did="456did")
+    content2 = Content(name="test2", segments=[segment2], media_type="text/plain", content_service=content_service)
+
+    content1.append(content2)
+
+    segment_names = content1.get_segment_names()
+    assert len(segment_names) == 2
+    assert "123/123did/id1" in segment_names
+    assert segment_names['123/123did/id1'].size == 100
+    assert "456/456did/id2" in segment_names
+    assert segment_names['456/456did/id2'].size == 200
+
+
 def test_context_json():
     unstub()
     mock_content_service = mock(ContentService)

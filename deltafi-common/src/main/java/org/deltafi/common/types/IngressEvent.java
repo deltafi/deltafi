@@ -23,19 +23,33 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class IngressEvent {
-  private String memo;
-  @Builder.Default
-  boolean executeImmediate = false;
-  @Builder.Default
-  private List<IngressEventItem> ingressItems = new ArrayList<>();
-  @Builder.Default
-  private IngressStatus status = IngressStatus.HEALTHY;
-  private String statusMessage;
+    @Builder.Default
+    boolean executeImmediate = false;
+    private String memo;
+    @Builder.Default
+    private List<IngressEventItem> ingressItems = new ArrayList<>();
+    @Builder.Default
+    private IngressStatus status = IngressStatus.HEALTHY;
+    private String statusMessage;
+
+    public Set<String> segmentObjectNames() {
+        Set<String> objectNames = new HashSet<>();
+        for (IngressEventItem ingressEventItem : ingressItems) {
+            if (ingressEventItem.getContent() != null) {
+                for (Content c : ingressEventItem.getContent()) {
+                    objectNames.addAll(c.objectNames());
+                }
+            }
+        }
+        return objectNames;
+    }
 }

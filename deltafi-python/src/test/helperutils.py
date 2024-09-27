@@ -20,7 +20,7 @@ from deltafi.domain import Context, Event
 from deltafi.storage import Segment
 
 SEG_ID = "1"
-TEST_DID = "123"
+TEST_DID = "123did"
 
 
 def make_segment(seg_id):

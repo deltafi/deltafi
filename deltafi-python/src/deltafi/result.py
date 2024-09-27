@@ -139,6 +139,12 @@ class IngressResultItem:
         self.metadata[key] = value
         return self
 
+    def get_segment_names(self):
+        segment_names = {}
+        for c in self.content:
+            segment_names.update(c.get_segment_names())
+        return segment_names
+
     def response(self):
         return {
             'did': self._did,
@@ -166,6 +172,12 @@ class IngressResult(Result):
     def add_item(self, ingress_result_item: IngressResultItem):
         self.ingress_result_items.append(ingress_result_item)
         return self
+
+    def get_segment_names(self):
+        segment_names = {}
+        for ingress_item in self.ingress_result_items:
+            segment_names.update(ingress_item.get_segment_names())
+        return segment_names
 
     def response(self):
         return {
@@ -225,6 +237,12 @@ class TransformResult(Result):
         self.delete_metadata_keys.append(key)
         return self
 
+    def get_segment_names(self):
+        segment_names = {}
+        for c in self.content:
+            segment_names.update(c.get_segment_names())
+        return segment_names
+
     def json(self):
         return {
             'content': [content.json() for content in self.content],
@@ -241,6 +259,9 @@ class NamedTransformResult(NamedTuple):
     result: TransformResult
     name: str
 
+    def get_segment_names(self):
+        return self.result.get_segment_names()
+
     def json(self):
         j = self.result.json()
         if self.name is not None:
@@ -256,6 +277,12 @@ class TransformResults(Result):
     def add_result(self, result: TransformResult, name: str = None):
         self.named_results.append(NamedTransformResult(result, name))
         return self
+
+    def get_segment_names(self):
+        segment_names = {}
+        for named_result in self.named_results:
+            segment_names.update(named_result.get_segment_names())
+        return segment_names
 
     def response(self):
         transform_events = []

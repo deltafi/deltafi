@@ -28,7 +28,9 @@ import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 
 import java.time.OffsetDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Data
@@ -36,77 +38,87 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class ActionEvent {
-  private UUID did;
-  private String flowName;
-  private UUID flowId;
-  private String actionName;
-  private UUID actionId;
-  private OffsetDateTime start;
-  private OffsetDateTime stop;
-  private ActionEventType type;
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+            .registerModule(new JavaTimeModule())
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
-  private List<TransformEvent> transform;
-  private ErrorEvent error;
-  private FilterEvent filter;
-  private List<Metric> metrics;
-  private IngressEvent ingress;
+    private UUID did;
+    private String flowName;
+    private UUID flowId;
+    private String actionName;
+    private UUID actionId;
+    private OffsetDateTime start;
+    private OffsetDateTime stop;
+    private ActionEventType type;
 
-  private List<Content> savedContent;
+    private List<TransformEvent> transform;
+    private ErrorEvent error;
+    private FilterEvent filter;
+    private List<Metric> metrics;
+    private IngressEvent ingress;
 
-  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-          .registerModule(new JavaTimeModule())
-          .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    public String validateHeader() {
+        if (did == null) {
+            return "Missing did";
+        }
+        if (StringUtils.isEmpty(flowName)) {
+            return "Missing flowName";
+        }
+        if (flowId == null) {
+            return "Missing flowId";
+        }
+        if (StringUtils.isEmpty(actionName)) {
+            return "Missing actionName";
+        }
+        if (actionId == null) {
+            return "Missing actionId";
+        }
 
-  public String validateHeader() {
-    if (did == null) {
-      return "Missing did";
-    }
-    if (StringUtils.isEmpty(flowName)) {
-      return "Missing flowName";
-    }
-    if (flowId == null) {
-      return "Missing flowId";
-    }
-    if (StringUtils.isEmpty(actionName)) {
-      return "Missing actionName";
-    }
-    if (actionId == null) {
-      return "Missing actionId";
+        return null;
     }
 
-    return null;
-  }
+    public String validatePayload() {
+        if (start == null) {
+            return "Missing start";
+        }
+        if (stop == null) {
+            return "Missing stop";
+        }
+        if (!typeValid()) {
+            return "Action event type does not match the populated object";
+        }
+        return null;
+    }
 
-  public String validatePayload() {
-    if (start == null) {
-      return "Missing start";
+    private boolean typeValid() {
+        return switch (type) {
+            case TRANSFORM -> transform != null && !transform.isEmpty();
+            case ERROR -> error != null;
+            case FILTER -> filter != null;
+            case EGRESS -> true;
+            case INGRESS -> ingress != null && ingress.getIngressItems() != null;
+            default -> false;
+        };
     }
-    if (stop == null) {
-      return "Missing stop";
-    }
-    if (!typeValid()) {
-      return "Action event type does not match the populated object";
-    }
-    return null;
-  }
 
-  private boolean typeValid() {
-    return switch (type) {
-      case TRANSFORM -> transform != null && !transform.isEmpty();
-      case ERROR -> error != null;
-      case FILTER -> filter != null;
-      case EGRESS -> true;
-      case INGRESS -> ingress != null && ingress.getIngressItems() != null;
-      default -> false;
-    };
-  }
-
-  @Override
-  public String toString() {
-    try {
-      return OBJECT_MAPPER.writeValueAsString(this);
-    } catch (JsonProcessingException e) {
-      throw new RuntimeException(e);
+    @Override
+    public String toString() {
+        try {
+            return OBJECT_MAPPER.writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
-  }
+
+    public Set<String> usedSegmentObjectNames() {
+        Set<String> objectNames = new HashSet<>();
+        if (transform != null) {
+            for (TransformEvent transformEvent : transform) {
+                objectNames.addAll(transformEvent.segmentObjectNames());
+            }
+        } else if (ingress != null) {
+            objectNames.addAll(ingress.segmentObjectNames());
+        }
+        return objectNames;
+    }
 }

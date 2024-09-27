@@ -17,7 +17,6 @@
  */
 package org.deltafi.actionkit.action.service;
 
-import org.deltafi.actionkit.action.error.ErrorResult;
 import org.deltafi.actionkit.action.parameters.ActionParameters;
 import org.deltafi.actionkit.action.transform.TransformAction;
 import org.deltafi.actionkit.action.transform.TransformInput;
@@ -28,8 +27,8 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 @Component
-public class ErrorTestAction extends TransformAction<ActionParameters> {
-    public ErrorTestAction() {
+public class TransformTestAction extends TransformAction<ActionParameters> {
+    public TransformTestAction() {
         super("Save content but return error");
     }
 
@@ -37,9 +36,13 @@ public class ErrorTestAction extends TransformAction<ActionParameters> {
     public TransformResultType transform(@NotNull ActionContext context,
                                          @NotNull ActionParameters params,
                                          @NotNull TransformInput input) {
-        TransformResult transformResult = new TransformResult(context);
-        transformResult.saveContent("abc", "name1", "text/plain");
+        TransformResult temp = new TransformResult(context);
+        temp.saveContent("abc", "name1", "text/plain");
+        temp.saveContent("abcd", "name2", "text/plain");
 
-        return new ErrorResult(context, "message");
+        TransformResult transformResult = new TransformResult(context);
+        transformResult.saveContent("abcde", "name3", "text/plain");
+
+        return transformResult;
     }
 }

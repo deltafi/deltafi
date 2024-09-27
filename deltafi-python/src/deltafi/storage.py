@@ -22,6 +22,7 @@ from typing import List, NamedTuple
 from urllib.parse import urlparse
 
 import minio
+from minio.deleteobjects import DeleteObject
 
 BUCKET = 'storage'
 
@@ -86,3 +87,7 @@ class ContentService:
 
     def put_str(self, did, string_data):
         return self.put_bytes(did, string_data.encode('utf-8'))
+
+    def delete_all(self, segments: List[Segment]):
+        delete_objects = [DeleteObject(seg.id()) for seg in segments]
+        return self.minio_client.remove_objects(BUCKET, delete_objects)

@@ -32,13 +32,12 @@ from pathlib import Path
 from typing import List
 
 import requests
-
 from deltafi.action import Action, Join
 from deltafi.actioneventqueue import ActionEventQueue
 from deltafi.domain import Event, ActionExecution
 from deltafi.exception import ExpectedContentException, MissingMetadataException
 from deltafi.logger import get_logger
-from deltafi.result import ErrorResult
+from deltafi.result import ErrorResult, IngressResult, TransformResult, TransformResults
 from deltafi.storage import ContentService
 
 
@@ -268,8 +267,7 @@ class Plugin(object):
             'start': start_time,
             'stop': stop_time,
             'type': result.result_type,
-            'metrics': [metric.json() for metric in result.metrics],
-            'savedContent': [content.json() for content in event.context.saved_content]
+            'metrics': [metric.json() for metric in result.metrics]
         }
         if result.result_key is not None:
             response[result.result_key] = result.response()
@@ -309,6 +307,8 @@ class Plugin(object):
                 response = Plugin.to_response(
                     event, start_time, time.time(), result)
 
+                Plugin.orphaned_content_check(action_logger, event.context, result, response)
+
                 topic = 'dgs'
                 if event.return_address:
                     topic += f"-{event.return_address}"
@@ -316,3 +316,42 @@ class Plugin(object):
             except BaseException as e:
                 action_logger.error(f"Unexpected {type(e)} error: {str(e)}\n{traceback.format_exc()}")
                 time.sleep(1)
+
+    @staticmethod
+    def orphaned_content_check(logger, context, result, response):
+        if len(context.saved_content) > 0:
+            to_delete = Plugin.find_unused_content(context.saved_content, result)
+            if len(to_delete) > 0:
+                errors = context.content_service.delete_all(to_delete)
+                for e in errors:
+                    logger.error(f"Unable to delete object(s), {e}")
+                logger.warning(
+                    f"Deleted {len(to_delete)} unused content entries for did {context.did} due to a {response['type']} event by {response['actionName']}")
+
+    @staticmethod
+    def find_unused_content(saved_content, result):
+        segments_in_use = Plugin.used_segment_names(result)
+        saved_segments = Plugin.get_segment_names(saved_content)
+        to_delete = []
+        for key, value in saved_segments.items():
+            if key not in segments_in_use:
+                to_delete.append(value)
+        return to_delete
+
+    @staticmethod
+    def used_segment_names(result):
+        segment_names = {}
+        if isinstance(result, TransformResult):
+            segment_names.update(result.get_segment_names())
+        elif isinstance(result, TransformResults):
+            segment_names.update(result.get_segment_names())
+        elif isinstance(result, IngressResult):
+            segment_names.update(result.get_segment_names())
+        return segment_names
+
+    @staticmethod
+    def get_segment_names(content_list):
+        segment_names = {}
+        for content in content_list:
+            segment_names.update(content.get_segment_names())
+        return segment_names

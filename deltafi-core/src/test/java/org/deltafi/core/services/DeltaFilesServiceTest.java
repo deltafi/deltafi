@@ -50,9 +50,9 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class DeltaFilesServiceTest {
+    private static final UUID DID = UUID.randomUUID();
     private final TestClock testClock = new TestClock();
     private final MockDeltaFiPropertiesService mockDeltaFiPropertiesService = new MockDeltaFiPropertiesService();
-
     private final TransformFlowService transformFlowService;
     private final RestDataSourceService restDataSourceService;
     private final EgressFlowService egressFlowService;
@@ -65,11 +65,7 @@ class DeltaFilesServiceTest {
     private final DeltaFileCacheService deltaFileCacheService;
     private final QueueManagementService queueManagementService;
     private final QueuedAnnotationRepo queuedAnnotationRepo;
-
     private final DeltaFilesService deltaFilesService;
-
-    private static final UUID DID = UUID.randomUUID();
-
     @Captor
     ArgumentCaptor<List<Segment>> segmentCaptor;
 
@@ -410,55 +406,6 @@ class DeltaFilesServiceTest {
     }
 
     @Test
-    void testDeleteUnusedContentError() {
-        Content content = new Content();
-        content.setName("namne");
-        Content content2 = new Content();
-        content2.setName("name2");
-        ActionEvent event = new ActionEvent();
-        event.setType(ActionEventType.ERROR);
-        event.setSavedContent(List.of(content, content2));
-        deltaFilesService.deleteUnusedContent(event);
-        // Deletes the saved content of an Error result
-        Mockito.verify(contentStorageService).delete(content);
-        Mockito.verify(contentStorageService).delete(content2);
-    }
-
-    @Test
-    void testDeleteUnusedContentFilter() {
-        Content content = new Content();
-        content.setName("namne");
-        ActionEvent event = new ActionEvent();
-        event.setType(ActionEventType.FILTER);
-        event.setSavedContent(List.of(content));
-        deltaFilesService.deleteUnusedContent(event);
-        // Deletes the saved content of a Filter result
-        Mockito.verify(contentStorageService).delete(content);
-    }
-
-    @Test
-    void testDeleteUnusedContentFilterNoContent() {
-        ActionEvent event = new ActionEvent();
-        event.setType(ActionEventType.FILTER);
-        event.setSavedContent(Collections.emptyList());
-        deltaFilesService.deleteUnusedContent(event);
-        // Nothing to delete
-        Mockito.verifyNoInteractions(contentStorageService);
-    }
-
-    @Test
-    void testDeleteUnusedContentTransform() {
-        Content content = new Content();
-        content.setName("namne");
-        ActionEvent event = new ActionEvent();
-        event.setType(ActionEventType.TRANSFORM);
-        event.setSavedContent(List.of(content));
-        deltaFilesService.deleteUnusedContent(event);
-        // Do not act upon Transform results
-        Mockito.verifyNoInteractions(contentStorageService);
-    }
-
-    @Test
     void testDeleteContentAndMetadata() {
         Content content = new Content();
         UUID did = UUID.randomUUID();
@@ -490,7 +437,7 @@ class DeltaFilesServiceTest {
         DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
         DeltaFileFlow flow = DeltaFileFlow.builder().name("flow").type(FlowType.EGRESS).deltaFile(deltaFile).build();
         flow.setPendingAnnotations(Set.of("a", "b"));
-        Action action = flow.queueAction( "egress", ActionType.EGRESS, false, OffsetDateTime.now(testClock));
+        Action action = flow.queueAction("egress", ActionType.EGRESS, false, OffsetDateTime.now(testClock));
         deltaFile.getFlows().add(flow);
         deltaFilesService.egress(deltaFile, flow, action, OffsetDateTime.now(testClock), OffsetDateTime.now(testClock));
 
@@ -652,9 +599,9 @@ class DeltaFilesServiceTest {
     @Test
     void testReplayChild() {
         UUID uuid = UUID.randomUUID();
-        DeltaFile deltaFile = Util.buildDeltaFile(uuid,"myFlow");
+        DeltaFile deltaFile = Util.buildDeltaFile(uuid, "myFlow");
 
-        DeltaFileFlow flow = deltaFile.addFlow("flow",  FlowType.TRANSFORM, new DeltaFileFlow(), OffsetDateTime.now(testClock));
+        DeltaFileFlow flow = deltaFile.addFlow("flow", FlowType.TRANSFORM, new DeltaFileFlow(), OffsetDateTime.now(testClock));
 
         flow.addAction("parentAction1", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
         flow.addAction("parentAction2", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
@@ -697,9 +644,9 @@ class DeltaFilesServiceTest {
     @Test
     void testReplayChildRemovedParentAction() {
         UUID uuid = UUID.randomUUID();
-        DeltaFile deltaFile = Util.buildDeltaFile(uuid,"myFlow");
+        DeltaFile deltaFile = Util.buildDeltaFile(uuid, "myFlow");
 
-        DeltaFileFlow flow = deltaFile.addFlow("flow",  FlowType.TRANSFORM, new DeltaFileFlow(), OffsetDateTime.now(testClock));
+        DeltaFileFlow flow = deltaFile.addFlow("flow", FlowType.TRANSFORM, new DeltaFileFlow(), OffsetDateTime.now(testClock));
 
         flow.addAction("parentAction1", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
         flow.addAction("removedParentAction", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
@@ -725,9 +672,9 @@ class DeltaFilesServiceTest {
     @Test
     void testReplayChildAddedParentAction() {
         UUID uuid = UUID.randomUUID();
-        DeltaFile deltaFile = Util.buildDeltaFile(uuid,"myFlow");
+        DeltaFile deltaFile = Util.buildDeltaFile(uuid, "myFlow");
 
-        DeltaFileFlow flow = deltaFile.addFlow("flow",  FlowType.TRANSFORM, new DeltaFileFlow(), OffsetDateTime.now(testClock));
+        DeltaFileFlow flow = deltaFile.addFlow("flow", FlowType.TRANSFORM, new DeltaFileFlow(), OffsetDateTime.now(testClock));
 
         flow.addAction("parentAction1", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
         flow.addAction("parentAction2", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
@@ -755,9 +702,9 @@ class DeltaFilesServiceTest {
     @Test
     void testReplayChildRenamedParentAction() {
         UUID uuid = UUID.randomUUID();
-        DeltaFile deltaFile = Util.buildDeltaFile(uuid,"myFlow");
+        DeltaFile deltaFile = Util.buildDeltaFile(uuid, "myFlow");
 
-        DeltaFileFlow flow = deltaFile.addFlow("flow",  FlowType.TRANSFORM, new DeltaFileFlow(), OffsetDateTime.now(testClock));
+        DeltaFileFlow flow = deltaFile.addFlow("flow", FlowType.TRANSFORM, new DeltaFileFlow(), OffsetDateTime.now(testClock));
 
         flow.addAction("parentAction1", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
         flow.addAction("parentActionOldName", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
@@ -783,9 +730,9 @@ class DeltaFilesServiceTest {
     @Test
     void testReplayChildSplitActionRenamed() {
         UUID uuid = UUID.randomUUID();
-        DeltaFile deltaFile = Util.buildDeltaFile(uuid,"myFlow");
+        DeltaFile deltaFile = Util.buildDeltaFile(uuid, "myFlow");
 
-        DeltaFileFlow flow = deltaFile.addFlow("flow",  FlowType.TRANSFORM, new DeltaFileFlow(), OffsetDateTime.now(testClock));
+        DeltaFileFlow flow = deltaFile.addFlow("flow", FlowType.TRANSFORM, new DeltaFileFlow(), OffsetDateTime.now(testClock));
 
         flow.addAction("parentAction1", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
         flow.addAction("parentAction2", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
@@ -810,7 +757,7 @@ class DeltaFilesServiceTest {
         assertEquals("The flow flow no longer contains an action named splitActionOld where the replay would be begin", result.getError());
     }
 
-    private List<ActionConfiguration> mockActions(String ... names) {
+    private List<ActionConfiguration> mockActions(String... names) {
         return Stream.of(names).map(this::mockAction).toList();
     }
 

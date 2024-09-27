@@ -24,18 +24,20 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ContentTest {
     static final String NAME = "name";
     static final String MEDIA_TYPE = "text/plain";
+    static final UUID DID_A = UUID.randomUUID();
+    static final UUID DID_B = UUID.randomUUID();
+    static final UUID DID_C = UUID.randomUUID();
     static final UUID UUID_A = UUID.randomUUID();
     static final UUID UUID_B = UUID.randomUUID();
     static final UUID UUID_C = UUID.randomUUID();
-    static final Segment SEGMENT_A = new Segment(UUID_A, 0, 500, UUID_A);
-    static final Segment SEGMENT_B = new Segment(UUID_B, 1000, 1000, UUID_B);
-    static final Segment SEGMENT_C = new Segment(UUID_C, 0, 500, UUID_C);
+    static final Segment SEGMENT_A = new Segment(UUID_A, 0, 500, DID_A);
+    static final Segment SEGMENT_B = new Segment(UUID_B, 1000, 1000, DID_B);
+    static final Segment SEGMENT_C = new Segment(UUID_C, 0, 500, DID_C);
     static final List<Segment> SEGMENT_LIST = List.of(SEGMENT_A, SEGMENT_B, SEGMENT_C);
     static final Content CONTENT = new Content(NAME, MEDIA_TYPE, SEGMENT_LIST);
 
@@ -52,14 +54,34 @@ public class ContentTest {
                 CONTENT.subcontent(50, 0));
     }
 
-    @Test void testsubcontentAll() {
+    @Test
+    void testsubcontentAll() {
         assertEquals(CONTENT, CONTENT.subcontent(0, 2000));
     }
 
-    @Test void testsubcontentPartial() {
-        Segment subSegmentA = new Segment(UUID_A, 250, 250, UUID_A);
-        Segment subSegmentC = new Segment(UUID_C, 0, 100, UUID_C);
+    @Test
+    void testsubcontentPartial() {
+        Segment subSegmentA = new Segment(UUID_A, 250, 250, DID_A);
+        Segment subSegmentC = new Segment(UUID_C, 0, 100, DID_C);
         assertEquals(new Content(NAME, MEDIA_TYPE, List.of(subSegmentA, SEGMENT_B, subSegmentC)),
                 CONTENT.subcontent(250, 1350));
     }
+
+    @Test
+    void testObjectNames() {
+        Segment subSegmentA = new Segment(UUID_A, 250, 250, DID_A);
+        Segment subSegmentC = new Segment(UUID_C, 0, 100, DID_C);
+        Content c = new Content(NAME, MEDIA_TYPE, List.of(subSegmentA, SEGMENT_B, subSegmentC));
+        List<String> objectNames = c.objectNames();
+        assertEquals(3, objectNames.size());
+        assertTrue(objectNames.containsAll(List.of(
+                makeObjectName(DID_A, UUID_A),
+                makeObjectName(DID_B, UUID_B),
+                makeObjectName(DID_C, UUID_C))));
+    }
+
+    private String makeObjectName(UUID did, UUID uuid) {
+        return did.toString().substring(0, 3) + "/" + did + "/" + uuid;
+    }
+
 }

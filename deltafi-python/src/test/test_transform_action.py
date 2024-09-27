@@ -17,15 +17,17 @@
 #
 
 import pytest
-from mockito import when, mock, unstub
-from pydantic import BaseModel, Field
-
 from deltafi.action import TransformAction
 from deltafi.actiontype import ActionType
+from deltafi.domain import Context
 from deltafi.input import TransformInput
+from deltafi.logger import get_logger
 from deltafi.plugin import Plugin
 from deltafi.result import TransformResult, EgressResult, ErrorResult
 from deltafi.storage import ContentService
+from mockito import when, mock, unstub
+from pydantic import BaseModel, Field
+
 from .helperutils import *
 
 
@@ -41,8 +43,14 @@ class SampleTransformAction(TransformAction):
         return SampleTransformParameters
 
     def transform(self, context: Context, params: SampleTransformParameters, transform_input: TransformInput):
-        return TransformResult(context).add_metadata('transformKey', 'transformValue') \
-            .annotate('transformAnnotate', 'transformAnnotateValue')
+        # Creates two orphaned contents:
+        TransformResult(context).save_string_content("123", "temp1.txt", "text/plain")
+        TransformResult(context).save_string_content("abcdefg", "temp2.txt", "text/plain")
+
+        return TransformResult(context) \
+            .add_metadata('transformKey', 'transformValue') \
+            .annotate('transformAnnotate', 'transformAnnotateValue') \
+            .save_string_content("Abcde12345", "ten.txt", "text.plain")
 
 
 class InvalidResult(TransformAction):
@@ -58,8 +66,8 @@ class SampleErrorAction(TransformAction):
         super().__init__('Create content but return error')
 
     def transform(self, context: Context, params: SampleTransformParameters, transform_input: TransformInput):
-        result = (TransformResult(context)
-                  .save_string_content('saved_content', 'saved_content', 'text/plan'))
+        # Creates orphaned content:
+        TransformResult(context).save_string_content("123", "temp1.txt", "text/plain")
 
         return ErrorResult(context, 'Something bad happened', '')
 
@@ -68,7 +76,8 @@ def test_action_returns_error():
     unstub()
     mock_content_service = mock(ContentService)
 
-    when(mock_content_service).put_str(...).thenReturn(make_segment('222'))
+    when(mock_content_service).put_str(...).thenReturn(make_segment('000'))
+    when(mock_content_service).delete_all(...).thenReturn([])
 
     action = SampleErrorAction()
     event = make_event(mock_content_service)
@@ -83,12 +92,11 @@ def test_action_returns_error():
     assert result.response() == expected_response
 
     plugin_to_response = Plugin.to_response(event, '12:00', '12:01', result)
-    assert len(plugin_to_response['savedContent']) == 1
 
     expected_plugin_to_response = {
         'actionId': 'ACTION_ID',
         'actionName': 'ACTION_NAME',
-        'did': '123',
+        'did': '123did',
         'error': {
             'annotations': {},
             'cause': 'Something bad happened',
@@ -97,16 +105,6 @@ def test_action_returns_error():
         'flowId': 'FLOW_ID',
         'flowName': 'FLOW_NAME',
         'metrics': [],
-        'savedContent': [
-            {
-                'mediaType': 'text/plan',
-                'name': 'saved_content',
-                'segments': [{'did': '123',
-                              'offset': 0,
-                              'size': 100,
-                              'uuid': '222'}]
-            }
-        ],
         'start': '12:00',
         'stop': '12:01',
         'type': 'ERROR'
@@ -114,10 +112,21 @@ def test_action_returns_error():
 
     assert plugin_to_response == expected_plugin_to_response
 
+    orphaned_content = Plugin.find_unused_content(event.context.saved_content, result)
+    assert (len(orphaned_content)) == 1
+    assert orphaned_content[0].uuid == "000"
+
+    Plugin.orphaned_content_check(get_logger(), event.context, result, plugin_to_response)
+
 
 def test_action_returns_transform():
     unstub()
     mock_content_service = mock(ContentService)
+
+    when(mock_content_service).put_str(...) \
+        .thenReturn(make_segment('111')) \
+        .thenReturn(make_segment('222')) \
+        .thenReturn(make_segment('333'))
 
     action = SampleTransformAction()
     assert action.action_type.value == ActionType.TRANSFORM.value
@@ -126,7 +135,20 @@ def test_action_returns_transform():
     assert type(result) == TransformResult
 
     expected_response = [{
-        'content': [],
+        'content': [
+            {
+                'mediaType': 'text.plain',
+                'name': 'ten.txt',
+                'segments': [
+                    {
+                        'did': '123did',
+                        'offset': 0,
+                        'size': 100,
+                        'uuid': '333'
+                    }
+                ]
+            }
+        ],
         'metadata': {
             'transformKey': 'transformValue'
         },
@@ -137,8 +159,10 @@ def test_action_returns_transform():
     }]
     assert result.response() == expected_response
 
-    plugin_to_response = Plugin.to_response(event, '12:00', '12:01', result)
-    assert len(plugin_to_response['savedContent']) == 0
+    orphaned_content = Plugin.find_unused_content(event.context.saved_content, result)
+    assert (len(orphaned_content)) == 2
+    assert orphaned_content[0].uuid == "111"
+    assert orphaned_content[1].uuid == "222"
 
 
 def test_invalid_result():

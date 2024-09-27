@@ -24,9 +24,7 @@ import org.deltafi.common.types.Content;
 import org.deltafi.common.types.SaveManyContent;
 
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class ActionContentStorageService extends ContentStorageService {
 
@@ -62,8 +60,42 @@ public class ActionContentStorageService extends ContentStorageService {
         savedContent.clear();
     }
 
-    public void publishSavedContent(ActionEvent event) {
-        event.setSavedContent(savedContent);
+    public int savedContentSize() {
+        return savedContent.size();
     }
 
+    public int deleteUnusedContent(ActionEvent event) {
+        int count = 0;
+        if (!savedContent.isEmpty()) {
+            Set<String> segmentsInUse = event.usedSegmentObjectNames();
+            Map<String, Segment> savedSegments = savedSegmentObjectNames();
+
+            List<Segment> toDelete = savedSegments.entrySet()
+                    .stream()
+                    .filter(e -> !segmentsInUse.contains(e.getKey()))
+                    .map(Map.Entry::getValue)
+                    .toList();
+
+            if (!toDelete.isEmpty()) {
+                count = toDelete.size();
+                deleteAll(toDelete);
+            }
+        }
+        clear();
+        return count;
+    }
+
+    private Map<String, Segment> savedSegmentObjectNames() {
+        Map<String, Segment> objectNames = new HashMap<>();
+        if (savedContent != null) {
+            for (Content content : savedContent) {
+                if (content.getSize() > 0) {
+                    for (Segment segment : content.getSegments()) {
+                        objectNames.put(segment.objectName(), segment);
+                    }
+                }
+            }
+        }
+        return objectNames;
+    }
 }

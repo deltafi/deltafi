@@ -101,6 +101,10 @@ def test_transform_result():
     assert first.get("annotations") == {'a': 'b'}
     assert first.get('deleteMetadataKeys') == ['delete1', 'delete2']
 
+    assert len(result.get_segment_names()) == 2
+    assert "123/123did/id1" in result.get_segment_names();
+    assert "123/123did/id2" in result.get_segment_names();
+
 
 def test_transform_many_result():
     context = make_context()
@@ -149,3 +153,7 @@ def test_transform_many_result():
     assert len(third) == 5
     assert "name" in third
     assert third.get("name") == "name3"
+
+    assert len(many_result.get_segment_names()) == 2
+    assert "123/123did/id1" in many_result.get_segment_names();
+    assert "123/123did/id2" in many_result.get_segment_names();

@@ -17,13 +17,13 @@
  */
 package org.deltafi.common.types;
 
-import lombok.*;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Data
 @NoArgsConstructor
@@ -44,4 +44,12 @@ public class TransformEvent {
 
     @Builder.Default
     private List<String> deleteMetadataKeys = new ArrayList<>();
+
+    public Set<String> segmentObjectNames() {
+        Set<String> objectNames = new HashSet<>();
+        for (Content c : content) {
+            objectNames.addAll(c.objectNames());
+        }
+        return objectNames;
+    }
 }

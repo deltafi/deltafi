@@ -293,6 +293,12 @@ class Content:
         """
         self.segments.extend(other_content.segments)
 
+    def get_segment_names(self):
+        segment_names = {}
+        for seg in self.segments:
+            segment_names[seg.id()] = seg
+        return segment_names
+
     def __eq__(self, other):
         if isinstance(other, Content):
             return (self.name == other.name and
