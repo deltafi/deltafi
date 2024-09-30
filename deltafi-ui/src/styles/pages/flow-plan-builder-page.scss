@@ -16,28 +16,10 @@
    limitations under the License.
 */
 
-
 .flow-plan-builder-page {
   .p-panel .p-panel-header {
     height: 44px !important;
   }
-
-  // .deltafi-fieldset {
-  //   display: block;
-  //   margin-inline-start: 2px;
-  //   margin-inline-end: 2px;
-  //   padding-block-start: 0.35em;
-  //   padding-inline-start: 0.75em;
-  //   padding-inline-end: 0.75em;
-  //   padding-block-end: 0.625em;
-  //   min-inline-size: min-content;
-  //   border-radius: 4px;
-  //   border: 1px solid #ced4da;
-  //   border-width: 1px;
-  //   border-style: groove;
-  //   border-color: rgb(225, 225, 225);
-  //   border-image: initial;
-  // }
 
   .panel-horizontal-wrap {
     display: flex;
@@ -116,7 +98,6 @@
 }
 
 .flow-plan-builder-page-overlay {
-
   .p-overlaypanel-close.p-link {
     z-index: 2100 !important;
   }
@@ -132,12 +113,12 @@
   }
 
   // Clears the blue box shadow around tree actions
-  .p-tree .p-tree-container .p-treenode:focus>.p-treenode-content {
+  .p-tree .p-tree-container .p-treenode:focus > .p-treenode-content {
     box-shadow: none !important;
   }
 
   // Left aligns child actions within tree by adding a display none to the button class that is hidden
-  .p-treenode-leaf>.p-treenode-content .p-tree-toggler {
+  .p-treenode-leaf > .p-treenode-content .p-tree-toggler {
     visibility: hidden !important;
     display: none !important;
   }
@@ -161,6 +142,12 @@
 
   .action-item-width {
     width: 17vw !important;
+  }
+
+  .tree-panel-content-height {
+    max-height: 30rem;
+    overflow: auto;
+    display: block;
   }
 }
 

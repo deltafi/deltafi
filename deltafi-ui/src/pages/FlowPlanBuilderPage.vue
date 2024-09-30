@@ -109,8 +109,18 @@
       </div>
     </div>
     <HoverSaveButton v-if="model.active" target="window" :model="items" />
-    <OverlayPanel ref="actionsOverlayPanel" class="flow-plan-builder-page-overlay" append-to="body" dismissable show-close-icon :style="{ width: '22%' }">
-      <Tree ref="actionsTreeRef" v-model:expandedKeys="expandedKeys" :value="actionsTree" :filter="true" filter-mode="strict" filter-by="filterField">
+    <OverlayPanel ref="actionsOverlayPanel" class="flow-plan-builder-page-overlay" append-to="body" dismissable show-close-icon style="width: 25%">
+      <Tree
+        ref="actionsTreeRef"
+        v-model:expandedKeys="expandedKeys"
+        :value="actionsTree"
+        :filter="true"
+        filter-mode="strict"
+        filter-by="filterField"
+        :pt="{
+          container: { class: 'tree-panel-content-height' },
+        }"
+      >
         <template #default="slotProps">
           <b>{{ slotProps.node.label }}</b>
         </template>
