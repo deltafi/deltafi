@@ -20,9 +20,7 @@
   <div v-if="schemaData.control.visible" :class="schemaData.styles.arrayList.root" class="mt-1 align-items-center">
     <dl :class="schemaData.styles.arrayList.legend + ' mb-0'">
       <div class="btn-group pb-0 align-items-center">
-        <dt :class="schemaData.styles.arrayList.label">
-          {{ schemaData.control.path.split(".").pop() }}
-        </dt>
+        <dt :class="schemaData.styles.arrayList.label">{{ computedLabel }}</dt>
         <Button icon="pi pi-plus" small :class="schemaData.styles.arrayList.addButton + ' align-items-center text-dark'" text rounded @click="addButtonClick" />
       </div>
       <dd class="pb-0">
@@ -77,6 +75,14 @@ const checkSchemaIsObject = (value: any, path: any, schemaType: any) => {
 const addButtonClick = () => {
   schemaData.addItem(schemaData.control.path, createDefaultValue(schemaData.control.schema))();
 };
+
+const computedLabel = computed(() => {
+  if (schemaData.control.config.defaultLabels) {
+    return schemaData.control.label;
+  }
+
+  return schemaData.control.path.split(".").pop();
+});
 </script>
 <style scoped>
 .deltafi-fieldset {

@@ -52,7 +52,7 @@
               <template v-if="_.isEqual(displayActionInfo, 'schema')">
                 <div class="deltafi-fieldset">
                   <div class="px-2 pt-3">
-                    <json-forms :data="data" :renderers="renderers" :uischema="uischema" :schema="rowdata['schema']" @change="onChange($event, rowdata)" />
+                    <JsonForms :data="data" :renderers="renderers" :uischema="uischema" :schema="rowdata['schema']" @change="onChange($event, rowdata)" />
                   </div>
                 </div>
               </template>

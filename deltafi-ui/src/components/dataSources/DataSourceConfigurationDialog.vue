@@ -58,7 +58,7 @@
                 <dd>
                   <div class="deltafi-fieldset">
                     <div class="px-2 pt-3">
-                      <json-forms :data="model['timedIngressActionOption']['parameters']" :renderers="renderers" :uischema="parametersSchema" :schema="model['timedIngressActionOption']['schema']" @change="onParametersChange($event, model)" />
+                      <JsonForms :data="model['timedIngressActionOption']['parameters']" :renderers="renderers" :uischema="parametersSchema" :schema="model['timedIngressActionOption']['schema']" @change="onParametersChange($event, model)" />
                     </div>
                   </div>
                 </dd>

@@ -47,7 +47,7 @@
           <dd>
             <div class="deltafi-fieldset inputWidth pl-1 py-0">
               <div class="px-2">
-                <json-forms :data="model['subscribe']" :renderers="renderers" :uischema="subscribeUISchema" :schema="subscribeSchema" @change="onSubscribeChange" />
+                <JsonForms :data="model['subscribe']" :renderers="renderers" :uischema="subscribeUISchema" :schema="subscribeSchema" :config="subscribeConfig" @change="onSubscribeChange" />
               </div>
             </div>
           </dd>
@@ -61,7 +61,7 @@
               <dd>
                 <div class="deltafi-fieldset inputWidth">
                   <div class="px-2 pt-3">
-                    <json-forms :data="model['egressActionOption']['parameters']" :renderers="renderers" :uischema="parametersSchema" :schema="model['egressActionOption']['schema']" @change="onParametersChange($event, model)" />
+                    <JsonForms :data="model['egressActionOption']['parameters']" :renderers="renderers" :uischema="parametersSchema" :schema="model['egressActionOption']['schema']" @change="onParametersChange($event, model)" />
                   </div>
                 </div>
               </dd>
@@ -138,6 +138,8 @@ const errors = ref([]);
 const allActionsData = ref({});
 
 const egressActions = ref([]);
+
+const subscribeConfig = ref({"defaultLabels": true});
 
 const egressActionTemplate = {
   name: null,

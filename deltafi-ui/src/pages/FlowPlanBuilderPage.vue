@@ -41,7 +41,7 @@
               <dd>
                 <div class="deltafi-fieldset">
                   <div class="px-2">
-                    <json-forms :data="model['subscribe']" :renderers="renderers" :uischema="subscribeUISchema" :schema="subscribeSchema" @change="onSubscribeChange" />
+                    <JsonForms :data="model['subscribe']" :renderers="renderers" :uischema="subscribeUISchema" :schema="subscribeSchema" :config="formsConfig" @change="onSubscribeChange" />
                   </div>
                 </div>
               </dd>
@@ -99,7 +99,7 @@
               <dd>
                 <div class="deltafi-fieldset">
                   <div class="px-2">
-                    <json-forms :data="model['publish']" :renderers="renderers" :uischema="publishUISchema" :schema="publishSchema" :ajv="handleDefaultsAjv" @change="onPublishChange" />
+                    <JsonForms ref="schemaForm" :data="model['publish']" :renderers="renderers" :uischema="publishUISchema" :schema="publishSchema" :ajv="handleDefaultsAjv" :config="formsConfig" @change="onPublishChange" />
                   </div>
                 </div>
               </dd>
@@ -213,7 +213,8 @@ const { myStyles, rendererList } = usePrimeVueJsonSchemaUIRenderers();
 provide("style", myStyles);
 const renderers = ref(Object.freeze(rendererList));
 const subscribeUISchema = ref(undefined);
-const publishUISchema = ref(undefined);
+
+const schemaForm = ref(null);
 
 const allActionsData = ref({});
 
@@ -228,6 +229,8 @@ const schemaVisible = ref(false);
 const displayRawJsonDialog = ref(false);
 
 const allFlowPlanData = ref({});
+
+const formsConfig = ref({ defaultLabels: true });
 
 // The useResizeObserver determines if the sidebar has been collapsed or expanded.
 // If either has occurred we redo the connections between all actions.
@@ -396,6 +399,17 @@ const model = computed({
     );
   },
 });
+
+// This watch on publish.defaultRule.defaultBehavior if the value is not "PUBLISH"
+// will delete the publish.defaultRule.topic key from the model.publish.defaultRule
+watch(
+  () => model.value?.publish?.defaultRule,
+  () => {
+    if (!_.isEqual(model.value?.publish?.defaultRule.defaultBehavior, "PUBLISH")) {
+      delete model.value.publish.defaultRule.topic;
+    }
+  }
+);
 
 const flowActionTypeGroup = ref("");
 const actionsTree = ref([]);
@@ -693,6 +707,10 @@ const validateSubscribe = computed(() => {
 });
 
 const validatePublish = computed(() => {
+  if (_.isEqual(model.value["publish"]?.defaultRule?.defaultBehavior, "PUBLISH") && _.isEmpty(model.value["publish"]?.defaultRule?.topic)) {
+    return "Default Behavior of Publish requires a Topic.";
+  }
+
   // If the Publish Rules field is empty return "Missing publish rules."
   if (_.isEmpty(model.value["publish"].rules)) {
     return "Missing publish rules.";
@@ -1000,6 +1018,61 @@ const publishSchema = {
       },
     },
   },
+};
+
+const publishUISchema = {
+  type: "VerticalLayout",
+  elements: [
+    {
+      type: "Control",
+      scope: "#/properties/defaultRule",
+      options: {
+        detail: {
+          type: "Group",
+          elements: [
+            {
+              type: "Control",
+              scope: "#/properties/defaultBehavior",
+            },
+            {
+              type: "Control",
+              scope: "#/properties/topic",
+              rule: {
+                effect: "HIDE",
+                condition: {
+                  scope: "#/properties/defaultBehavior",
+                  schema: { enum: ["ERROR", "FILTER"] },
+                },
+              },
+            },
+          ],
+        },
+      },
+    },
+    {
+      type: "Control",
+      scope: "#/properties/matchingPolicy",
+    },
+    {
+      type: "Control",
+      scope: "#/properties/rules",
+      options: {
+        detail: {
+          type: "VerticalLayout",
+          elements: [
+            {
+              type: "Control",
+              scope: "#/properties/condition",
+            },
+            {
+              type: "Control",
+              scope: "#/properties/topic",
+            },
+          ],
+        },
+      },
+    },
+  ],
 };
 </script>
 

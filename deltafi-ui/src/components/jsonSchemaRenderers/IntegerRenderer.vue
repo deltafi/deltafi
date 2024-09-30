@@ -19,7 +19,7 @@
 <template>
   <control-wrapper v-bind="schemaData.controlWrapper" :styles="schemaData.styles" :is-focused="schemaData.isFocused" :applied-options="schemaData.appliedOptions">
     <dl>
-      <dt v-if="!_.isEmpty(schemaData.computedLabel)" :id="schemaData.control.id + '-input-label'">{{ schemaData.control.i18nKeyPrefix.split(".").pop() }}</dt>
+      <dt v-if="!_.isEmpty(schemaData.computedLabel)" :id="schemaData.control.id + '-input-label'">{{ computedLabel }}</dt>
       <dd class="align-items-center">
         <InputNumber :id="schemaData.control.id + '-input'" :model-value="integerDecider(schemaData.control.data)" :class="schemaData.styles.control.input + ' inputWidth'" :step="steps" input-id="stacked-buttons" show-buttons @input="schemaData.onChange($event.value)" @focus="schemaData.isFocused = true" @blur="schemaData.isFocused = false" />
         <div>
@@ -70,6 +70,14 @@ const integerDecider = (intVal: any) => {
 const steps = computed(() => {
   const options: any = schemaData.appliedOptions;
   return options.step ?? 1;
+});
+
+const computedLabel = computed(() => {
+  if (schemaData.control.config.defaultLabels) {
+    return schemaData.control.label;
+  }
+
+  return schemaData.control.i18nKeyPrefix.split(".").pop();
 });
 </script>
 

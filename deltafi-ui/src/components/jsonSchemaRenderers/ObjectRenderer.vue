@@ -18,7 +18,7 @@
 
 <template>
   <div v-if="schemaData.control.visible" class="pb-2">
-    <dt>{{ schemaData.control.i18nKeyPrefix.split(".").pop() }}</dt>
+    <dt>{{ computedLabel }}</dt>
     <div class="deltafi-fieldset">
       <dispatch-renderer :visible="schemaData.control.visible" :enabled="schemaData.control.enabled" :schema="schemaData.control.schema" :uischema="detailUiSchema" :path="schemaData.control.path" :renderers="schemaData.control.renderers" :cells="schemaData.control.cells" />
       <small :id="schemaData.control.id + '-input-help'">{{ schemaData.control.description }}</small>
@@ -76,6 +76,14 @@ const hasAdditionalProperties = computed(() => {
 const showAdditionalProperties = computed(() => {
   const showAdditionalProperties = schemaData.control.uischema.options?.showAdditionalProperties;
   return showAdditionalProperties === undefined || showAdditionalProperties === true;
+});
+
+const computedLabel = computed(() => {
+  if (schemaData.control.config.defaultLabels) {
+    return schemaData.control.label;
+  }
+
+  return schemaData.control.i18nKeyPrefix.split(".").pop();
 });
 </script>
 
