@@ -23,13 +23,17 @@ export const prettyPrint = async (content: string, format: string, indent: numbe
   console.debug("PrettyPrint worker started");
 
   const output = (function (format) {
-    switch (format) {
-      case "json":
-        return vkbeautify.json(content, indent);
-      case "xml":
-        return vkbeautify.xml(content, indent);
-      default:
-        return content;
+    try {
+      switch (format) {
+        case "json":
+          return vkbeautify.json(content, indent);
+        case "xml":
+          return vkbeautify.xml(content, indent);
+        default:
+          return content;
+      }
+    } catch (e: any) {
+        return "Error: " + e.message;
     }
   })(format);
 

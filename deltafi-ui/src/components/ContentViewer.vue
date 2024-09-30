@@ -109,8 +109,8 @@ const processContent = async () => {
 
   // Formatted JSON/XML
   if (prettyPrintFormats.includes(language.value)) {
-    contentAs.formatted = "Loading...";
-    contentAs.formatted = await prettyPrint(contentAs.utf8, language.value);
+    contentAs[language.value] = "Loading...";
+    contentAs[language.value] = await prettyPrint(contentAs.utf8, language.value);
   }
 };
 
@@ -177,7 +177,7 @@ const language = computed(() => {
     // Not JSON. Do nothing.
   }
 
-  return lang;
+  return "utf8";
 });
 
 const renderFormats = computed(() => {
@@ -189,7 +189,7 @@ const renderFormats = computed(() => {
   if (prettyPrintFormats.includes(language.value)) {
     formats.push({
       name: `Formatted ${language.value.toUpperCase()}`,
-      id: "formatted",
+      id: language.value,
       highlight: true,
     });
   }
@@ -197,7 +197,7 @@ const renderFormats = computed(() => {
   return _.sortBy(formats, "name");
 });
 
-const selectedRenderFormat = ref(renderFormats.value.find((f) => f.id === "utf8"));
+const selectedRenderFormat = ref(renderFormats.value.find((f) => f.id === language.value));
 
 onMounted(() => {
   loadContent();
