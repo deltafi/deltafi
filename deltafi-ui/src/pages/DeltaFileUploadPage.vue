@@ -50,10 +50,10 @@
           </div>
           <div v-for="field in metadata" :key="field" class="row mt-4 p-fluid">
             <div class="col-5">
-              <InputText v-model="field.key" type="text" placeholder="Key" />
+              <InputText v-model.trim="field.key" type="text" placeholder="Key" />
             </div>
             <div class="col-5">
-              <InputText v-model="field.value" type="text" placeholder="Value" />
+              <InputText v-model.trim="field.value" type="text" placeholder="Value" />
             </div>
             <div class="col-2">
               <Button icon="pi pi-times" @click="removeMetadataField(field)" />
