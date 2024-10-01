@@ -34,7 +34,7 @@ export default function useErrors() {
             dataSources: !_.isEmpty(flowName) ? `${flowName}` : null,
             stage: new EnumType("ERROR"),
             errorAcknowledged: showAcknowledged,
-            errorCause: !_.isEmpty(errorCause) ? `\\Q${errorCause}\\E` : null,
+            errorCause: !_.isEmpty(errorCause) ? `${errorCause}` : null,
             filteredCause: filteredCause,
           },
           orderBy: {
