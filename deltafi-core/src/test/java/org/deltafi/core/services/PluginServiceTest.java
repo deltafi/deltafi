@@ -24,6 +24,7 @@ import org.deltafi.common.types.PluginCoordinates;
 import org.deltafi.common.types.PluginRegistration;
 import org.deltafi.common.types.Variable;
 import org.deltafi.core.repo.PluginRepository;
+import org.deltafi.core.types.GroupIdArtifactId;
 import org.deltafi.core.types.PluginEntity;
 import org.deltafi.core.types.snapshot.SystemSnapshot;
 import org.deltafi.core.types.Result;
@@ -148,7 +149,7 @@ class PluginServiceTest {
 
     @Test
     void uninstallNotFound() {
-        Mockito.when(pluginRepository.findById(PLUGIN_COORDINATES_1)).thenReturn(Optional.empty());
+        Mockito.when(pluginService.getPlugin(PLUGIN_COORDINATES_1)).thenReturn(Optional.empty());
         List<String> errors = pluginService.canBeUninstalled(PLUGIN_COORDINATES_1);
 
         assertThat(errors).hasSize(1).contains("Plugin not found");
@@ -158,7 +159,7 @@ class PluginServiceTest {
     void uninstallFlowRunning() {
         PluginEntity plugin1 = makePlugin();
 
-        Mockito.when(pluginRepository.findById(PLUGIN_COORDINATES_1)).thenReturn(Optional.of(plugin1));
+        Mockito.when(pluginService.getPlugin(PLUGIN_COORDINATES_1)).thenReturn(Optional.of(plugin1));
         Mockito.when(transformFlowService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following ingress flows which are still running: mockIngress");
 
         List<String> errors = pluginService.canBeUninstalled(PLUGIN_COORDINATES_1);
@@ -171,7 +172,7 @@ class PluginServiceTest {
         PluginEntity plugin1 = makePlugin();
         PluginEntity plugin2 = makeDependencyPlugin();
 
-        Mockito.when(pluginRepository.findById(PLUGIN_COORDINATES_1)).thenReturn(Optional.of(plugin1));
+        Mockito.when(pluginService.getPlugin(PLUGIN_COORDINATES_1)).thenReturn(Optional.of(plugin1));
         Mockito.when(pluginRepository.findPluginsWithDependency(PLUGIN_COORDINATES_1)).thenReturn(List.of(plugin1, plugin2));
 
         List<String> errors = pluginService.canBeUninstalled(PLUGIN_COORDINATES_1);
@@ -184,7 +185,7 @@ class PluginServiceTest {
         PluginEntity plugin1 = makePlugin();
         PluginEntity plugin2 = makeDependencyPlugin();
 
-        Mockito.when(pluginRepository.findById(PLUGIN_COORDINATES_1)).thenReturn(Optional.of(plugin1));
+        Mockito.when(pluginService.getPlugin(PLUGIN_COORDINATES_1)).thenReturn(Optional.of(plugin1));
         Mockito.when(pluginRepository.findPluginsWithDependency(PLUGIN_COORDINATES_1)).thenReturn(List.of(plugin1, plugin2));
         Mockito.when(transformFlowService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following ingress flows which are still running: mockIngress");
         Mockito.when(restDataSourceService.uninstallBlockers(plugin1)).thenReturn("The plugin has created the following enrich flows which are still running: mockEnrich");
@@ -203,11 +204,11 @@ class PluginServiceTest {
     void uninstallSuccess() {
         PluginEntity plugin1 = makePlugin();
 
-        Mockito.when(pluginRepository.findById(PLUGIN_COORDINATES_1)).thenReturn(Optional.of(plugin1));
+        Mockito.when(pluginService.getPlugin(PLUGIN_COORDINATES_1)).thenReturn(Optional.of(plugin1));
 
         pluginService.uninstallPlugin(PLUGIN_COORDINATES_1);
 
-        Mockito.verify(pluginRepository).deleteById(PLUGIN_COORDINATES_1);
+        Mockito.verify(pluginRepository).delete(plugin1);
         Mockito.verify(egressFlowService).cleanupFor(plugin1);
         Mockito.verify(pluginVariableService).cleanupFor(plugin1);
         Mockito.verify(coreEventQueuePluginCleaner).cleanupFor(plugin1);

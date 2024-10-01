@@ -70,24 +70,28 @@ public class PluginService implements Snapshotter {
     @PostConstruct
     public void updateSystemPlugin() {
         if (environment.getProperty("schedule.maintenance", Boolean.class, true)) {
-            Optional<PluginEntity> maybeSystemPlugin = pluginRepo.findByPluginCoordinatesGroupIdAndPluginCoordinatesArtifactId(SYSTEM_PLUGIN_GROUP_ID, SYSTEM_PLUGIN_ARTIFACT_ID);
-
-            if (maybeSystemPlugin.isPresent()) {
-                PluginEntity systemPlugin = maybeSystemPlugin.get();
-                if (!Objects.equals(systemPlugin.getPluginCoordinates().getVersion(), buildProperties.getVersion())) {
-                    systemPlugin.getPluginCoordinates().setVersion(buildProperties.getVersion());
-                    if (systemPlugin.getFlowPlans() != null) {
-                        systemPlugin.getFlowPlans()
-                                .forEach(fp -> fp.getSourcePlugin().setVersion(buildProperties.getVersion()));
-                    }
-
-                    pluginRepo.save(systemPlugin);
-                }
-            } else {
-                pluginRepo.save(createSystemPlugin());
-            }
-            updateActionDescriptors();
+            doUpdateSystemPlugin();
         }
+    }
+
+    public void doUpdateSystemPlugin() {
+        Optional<PluginEntity> maybeSystemPlugin = pluginRepo.findById(new GroupIdArtifactId(SYSTEM_PLUGIN_GROUP_ID, SYSTEM_PLUGIN_ARTIFACT_ID));
+
+        if (maybeSystemPlugin.isPresent()) {
+            PluginEntity systemPlugin = maybeSystemPlugin.get();
+            if (!Objects.equals(systemPlugin.getPluginCoordinates().getVersion(), buildProperties.getVersion())) {
+                systemPlugin.setVersion(buildProperties.getVersion());
+                if (systemPlugin.getFlowPlans() != null) {
+                    systemPlugin.getFlowPlans()
+                            .forEach(fp -> fp.getSourcePlugin().setVersion(buildProperties.getVersion()));
+                }
+
+                pluginRepo.save(systemPlugin);
+            }
+        } else {
+            pluginRepo.save(createSystemPlugin());
+        }
+        updateActionDescriptors();
     }
 
     public void updateActionDescriptors() {
@@ -100,7 +104,7 @@ public class PluginService implements Snapshotter {
     }
 
     public PluginEntity getSystemPlugin() {
-        return pluginRepo.findById(getSystemPluginCoordinates()).orElse(null);
+        return pluginRepo.findById(new GroupIdArtifactId(SYSTEM_PLUGIN_GROUP_ID, SYSTEM_PLUGIN_ARTIFACT_ID)).orElse(null);
     }
 
     public PluginEntity createSystemPlugin() {
@@ -178,7 +182,7 @@ public class PluginService implements Snapshotter {
     public boolean setPluginVariableValues(@InputArgument PluginCoordinates pluginCoordinates, @InputArgument List<KeyValue> variables) {
         VariableUpdate update = pluginVariableService.setVariableValues(pluginCoordinates, variables);
         if (update.isUpdated()) {
-            List<FlowPlan> flowPlans = pluginRepo.findById(pluginCoordinates).map(PluginEntity::getFlowPlans).orElse(List.of());
+            List<FlowPlan> flowPlans = getPlugin(pluginCoordinates).map(PluginEntity::getFlowPlans).orElse(List.of());
             egressFlowService.rebuildFlows(filterByType(flowPlans, FlowType.EGRESS), pluginCoordinates);
             transformFlowService.rebuildFlows(filterByType(flowPlans, FlowType.TRANSFORM), pluginCoordinates);
             restDataSourceService.rebuildFlows(filterByType(flowPlans, FlowType.REST_DATA_SOURCE), pluginCoordinates);
@@ -204,10 +208,10 @@ public class PluginService implements Snapshotter {
             return Result.builder().success(false).errors(validationErrors).build();
         }
 
-        Optional<PluginEntity> existingPlugin = pluginRepo.findById(plugin.getPluginCoordinates());
+        Optional<PluginEntity> existingPlugin = getPlugin(plugin.getPluginCoordinates());
         // if this plugin group/artifactId/version already exists, don't delete it before overwriting
         if (existingPlugin.isEmpty()) {
-            pluginRepo.deleteByGroupIdAndArtifactId(plugin.getPluginCoordinates().getGroupId(), plugin.getPluginCoordinates().getArtifactId());
+            pluginRepo.deleteById(new GroupIdArtifactId(plugin.getPluginCoordinates().getGroupId(), plugin.getPluginCoordinates().getArtifactId()));
         }
         pluginRepo.save(plugin);
 
@@ -283,7 +287,7 @@ public class PluginService implements Snapshotter {
     }
 
     public Optional<PluginEntity> getPlugin(PluginCoordinates pluginCoordinates) {
-        return pluginRepo.findById(pluginCoordinates);
+        return pluginRepo.findByKeyGroupIdAndKeyArtifactIdAndVersion(pluginCoordinates.getGroupId(), pluginCoordinates.getArtifactId(), pluginCoordinates.getVersion());
     }
 
     public List<PluginEntity> getPlugins() {
@@ -335,10 +339,6 @@ public class PluginService implements Snapshotter {
 
     public List<PluginEntity> getPluginsWithDependency(PluginCoordinates pluginCoordinates) {
         return pluginRepo.findPluginsWithDependency(pluginCoordinates);
-    }
-
-    private void removePlugin(PluginEntity plugin) {
-        pluginRepo.deleteById(plugin.getPluginCoordinates());
     }
 
     @Override
@@ -418,7 +418,7 @@ public class PluginService implements Snapshotter {
     public void uninstallPlugin(PluginCoordinates pluginCoordinates) {
         PluginEntity plugin = getPlugin(pluginCoordinates).orElseThrow();
         pluginCleaners.forEach(pluginCleaner -> pluginCleaner.cleanupFor(plugin));
-        removePlugin(plugin);
+        pluginRepo.delete(plugin);
         updateActionDescriptors();
         revalidateFlows();
     }

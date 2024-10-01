@@ -46,7 +46,10 @@ class PluginValidatorTest {
     void testValidate_Coords() {
         PluginEntity plugin = new PluginEntity();
         List<String> errors = pluginValidator.validate(plugin);
-        assertThat(errors).hasSize(1).contains("The plugin coordinates must be provided");
+        assertThat(errors).hasSize(3)
+                .contains("The plugin groupId cannot be null or empty")
+                .contains("The plugin artifactId cannot be null or empty")
+                .contains("The plugin version cannot be null or empty");
 
         plugin.setPluginCoordinates(new PluginCoordinates("", null, "  "));
         errors = pluginValidator.validate(plugin);

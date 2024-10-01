@@ -98,7 +98,8 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
 
     // this is gross but prevents a circular dependency with the plugin service
     public List<FlowPlan> findFlowPlansBySourcePluginAndType(PluginCoordinates sourcePlugin, FlowType flowType) {
-        Optional<PluginEntity> plugin = pluginRepo.findById(sourcePlugin);
+        Optional<PluginEntity> plugin = pluginRepo.findByKeyGroupIdAndKeyArtifactIdAndVersion(sourcePlugin.getGroupId(),
+                sourcePlugin.getArtifactId(), sourcePlugin.getVersion());
         if (plugin.isPresent() && plugin.get().getFlowPlans() == null) {
             return Collections.emptyList();
         }

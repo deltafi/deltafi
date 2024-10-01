@@ -18,6 +18,7 @@
 package org.deltafi.core.repo;
 
 import org.deltafi.common.types.PluginCoordinates;
+import org.deltafi.core.types.GroupIdArtifactId;
 import org.deltafi.core.types.PluginEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -29,15 +30,8 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface PluginRepository extends JpaRepository<PluginEntity, PluginCoordinates> {
-    Optional<PluginEntity> findByPluginCoordinatesGroupIdAndPluginCoordinatesArtifactId(String groupId, String artifactId);
-
-    @Modifying
-    @Transactional
-    @Query(value = "DELETE FROM plugins p " +
-            "WHERE p.group_id = :groupId " +
-            "AND p.artifact_id = :artifactId", nativeQuery = true)
-    void deleteByGroupIdAndArtifactId(String groupId, String artifactId);
+public interface PluginRepository extends JpaRepository<PluginEntity, GroupIdArtifactId> {
+    Optional<PluginEntity> findByKeyGroupIdAndKeyArtifactIdAndVersion(String keyGroupId, String keyArtifactId, String version);
 
     @Query(value = "SELECT * FROM plugins WHERE EXISTS (" +
             "SELECT 1 FROM jsonb_array_elements(dependencies) AS dep " +

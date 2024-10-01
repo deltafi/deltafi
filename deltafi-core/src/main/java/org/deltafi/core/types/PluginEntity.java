@@ -34,7 +34,8 @@ import java.util.Objects;
 @NoArgsConstructor
 public class PluginEntity {
     @EmbeddedId
-    private PluginCoordinates pluginCoordinates;
+    private GroupIdArtifactId key;
+    private String version;
 
     private String displayName;
     private String description;
@@ -55,8 +56,24 @@ public class PluginEntity {
     @Transient
     private List<Variable> variables;
 
+    @Transient
+    public PluginCoordinates getPluginCoordinates() {
+        return PluginCoordinates.builder()
+                .groupId(key == null ? null : key.getGroupId())
+                .artifactId(key == null ? null : key.getArtifactId())
+                .version(version)
+                .build();
+    }
+
+    @Transient
+    public void setPluginCoordinates(PluginCoordinates pluginCoordinates) {
+        this.key = new GroupIdArtifactId(pluginCoordinates.getGroupId(), pluginCoordinates.getArtifactId());
+        this.version = pluginCoordinates.getVersion();
+    }
+
     public PluginEntity(Plugin plugin) {
-        this.pluginCoordinates = plugin.getPluginCoordinates();
+        this.key = new GroupIdArtifactId(plugin.getPluginCoordinates().getGroupId(), plugin.getPluginCoordinates().getArtifactId());
+        this.version = plugin.getPluginCoordinates().getVersion();
         this.displayName = plugin.getDisplayName();
         this.description = plugin.getDescription();
         this.actionKitVersion = plugin.getActionKitVersion();
@@ -68,7 +85,7 @@ public class PluginEntity {
 
     public Plugin toPlugin() {
         Plugin plugin = new Plugin();
-        plugin.setPluginCoordinates(this.pluginCoordinates);
+        plugin.setPluginCoordinates(this.getPluginCoordinates());
         plugin.setDisplayName(this.displayName);
         plugin.setDescription(this.description);
         plugin.setActionKitVersion(this.actionKitVersion);

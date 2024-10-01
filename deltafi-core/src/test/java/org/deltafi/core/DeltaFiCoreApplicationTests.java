@@ -121,6 +121,7 @@ import static org.deltafi.core.metrics.MetricsUtil.extendTagsForAction;
 import static org.deltafi.core.metrics.MetricsUtil.tagsFor;
 import static org.deltafi.core.datafetchers.PluginDataFetcherTestHelper.*;
 import static org.deltafi.core.services.DeletePolicyService.TTL_SYSTEM_POLICY;
+import static org.deltafi.core.services.PluginService.SYSTEM_PLUGIN_ARTIFACT_ID;
 import static org.deltafi.core.util.Constants.*;
 import static org.deltafi.core.util.FlowBuilders.*;
 import static org.deltafi.core.util.FullFlowExemplars.*;
@@ -1879,8 +1880,7 @@ class DeltaFiCoreApplicationTests {
 
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertEquals(3, pluginRepository.count());
-		Optional<PluginEntity> result = pluginRepository.findByPluginCoordinatesGroupIdAndPluginCoordinatesArtifactId(
-				plugin.getPluginCoordinates().getGroupId(), plugin.getPluginCoordinates().getArtifactId());
+		Optional<PluginEntity> result = pluginRepository.findById(plugin.getKey());
 		assertTrue(result.isPresent());
 		assertEquals("1.0.0", result.get().getPluginCoordinates().getVersion());
 
@@ -1889,8 +1889,7 @@ class DeltaFiCoreApplicationTests {
 
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertEquals(3, pluginRepository.count());
-		result = pluginRepository.findByPluginCoordinatesGroupIdAndPluginCoordinatesArtifactId(
-				plugin.getPluginCoordinates().getGroupId(), plugin.getPluginCoordinates().getArtifactId());
+		result = pluginRepository.findById(plugin.getKey());
 		assertTrue(result.isPresent());
 		assertEquals("2.0.0", result.get().getPluginCoordinates().getVersion());
 	}
@@ -1912,8 +1911,7 @@ class DeltaFiCoreApplicationTests {
 
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertEquals(3, pluginRepository.count());
-		Optional<PluginEntity> result = pluginRepository.findByPluginCoordinatesGroupIdAndPluginCoordinatesArtifactId(
-				plugin.getPluginCoordinates().getGroupId(), plugin.getPluginCoordinates().getArtifactId());
+		Optional<PluginEntity> result = pluginService.getPlugin(plugin.getPluginCoordinates());
 		assertTrue(result.isPresent());
 		assertEquals(0, result.get().getFlowPlans().size());
 	}
@@ -1938,7 +1936,7 @@ class DeltaFiCoreApplicationTests {
 		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-2.json"), PluginEntity.class));
 		pluginRepository.save(OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-3.json"), PluginEntity.class));
 		PluginEntity existingPlugin = OBJECT_MAPPER.readValue(Resource.read("/plugins/plugin-1.json"), PluginEntity.class);
-		existingPlugin.getPluginCoordinates().setVersion("0.0.9");
+		existingPlugin.setVersion("0.0.9");
 		existingPlugin.setDescription("changed");
 		pluginRepository.save(existingPlugin);
 
@@ -1948,8 +1946,9 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		List<PluginEntity> plugins = pluginRepository.findAll();
 		assertEquals(3, plugins.size());
-		assertThat(pluginRepository.findById(existingPlugin.getPluginCoordinates())).isEmpty();
-		assertThat(pluginRepository.findById(plugin.getPluginCoordinates())).isPresent();
+		Optional<PluginEntity> newPlugin = pluginRepository.findById(plugin.getKey());
+		assertThat(newPlugin).isPresent();
+		assertEquals(plugin.getVersion(), newPlugin.get().getVersion());
 	}
 
 	@Test
@@ -4486,6 +4485,21 @@ class DeltaFiCoreApplicationTests {
 		expected.setVersion("blah");
 		assertThat(after.getSourcePlugin()).isEqualTo(expected);
 		transformFlowRepo.deleteById(after.getId());
+	}
+
+	@Test
+	void testUpdateSystemPluginVersions() {
+		pluginService.doUpdateSystemPlugin();
+		assertEquals(1, pluginRepository.findAll().stream()
+				.filter(p -> p.getPluginCoordinates().getArtifactId().equals(SYSTEM_PLUGIN_ARTIFACT_ID))
+				.toList().size());
+		PluginEntity systemPlugin = pluginService.getSystemPlugin();
+		systemPlugin.setVersion("0.0");
+		pluginRepository.save(systemPlugin);
+		pluginService.doUpdateSystemPlugin();
+		assertEquals(1, pluginRepository.findAll().stream()
+				.filter(p -> p.getPluginCoordinates().getArtifactId().equals(SYSTEM_PLUGIN_ARTIFACT_ID))
+				.toList().size());
 	}
 
 	@Test
