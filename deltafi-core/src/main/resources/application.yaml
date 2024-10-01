@@ -21,6 +21,7 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         packagesToScan: org.deltafi.core.types
         generate_statistics: false
+        default_batch_fetch_size: 500
     show-sql: false
   main:
     banner-mode: "off"
