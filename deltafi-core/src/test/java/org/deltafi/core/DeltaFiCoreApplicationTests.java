@@ -2158,7 +2158,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.save(deltaFile4);
 
 		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForTimedDelete(OffsetDateTime.now().plusSeconds(1), null, 0, null, false, 10);
-		assertEquals(List.of(deltaFile1.getDid(), deltaFile2.getDid()), deltaFiles.stream().map(DeltaFileDeleteDTO::getDid).toList());
+		assertEquals(Stream.of(deltaFile1.getDid(), deltaFile2.getDid()).sorted().toList(), deltaFiles.stream().map(DeltaFileDeleteDTO::getDid).sorted().toList());
 	}
 
 	@Test
@@ -2208,7 +2208,7 @@ class DeltaFiCoreApplicationTests {
 		deltaFileRepo.save(deltaFile5);
 
 		List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForTimedDelete(null, OffsetDateTime.now().plusSeconds(1), 0, null, false, 10);
-		assertEquals(List.of(deltaFile1.getDid(), deltaFile4.getDid()), deltaFiles.stream().map(DeltaFileDeleteDTO::getDid).toList());
+		assertEquals(Stream.of(deltaFile1.getDid(), deltaFile4.getDid()).sorted().toList(), deltaFiles.stream().map(DeltaFileDeleteDTO::getDid).sorted().toList());
 	}
 
 	@Test

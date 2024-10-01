@@ -263,60 +263,117 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
     }
 
     @Override
-    public List<DeltaFileDeleteDTO> findForTimedDelete(OffsetDateTime createdBeforeDate, OffsetDateTime completedBeforeDate,
-                                                       long minBytes, String flow, boolean deleteMetadata, int batchSize) {
-        if (createdBeforeDate == null && completedBeforeDate == null) {
-            return Collections.emptyList();
+    @Transactional
+    public int deleteIfNoContent(OffsetDateTime createdBefore, OffsetDateTime completedBefore, long minBytes, String flow) {
+        if (createdBefore == null && completedBefore == null) {
+            return 0;
         }
 
-        StringBuilder queryBuilder = new StringBuilder(
-                "WITH eligible_files AS ( " +
-                        "    SELECT df.did, df.content_deleted, df.total_bytes, df.modified " +
-                        "    FROM delta_files df " +
-                        "    WHERE ");
+        StringBuilder queryBuilder = new StringBuilder("""
+        WITH deleted_files AS (
+            SELECT did FROM delta_files WHERE content_deleted IS NOT NULL
+    """);
 
-        List<String> conditions = new ArrayList<>();
         Map<String, Object> parameters = new HashMap<>();
 
-        if (createdBeforeDate != null) {
-            conditions.add("df.created < :createdBeforeDate");
-            parameters.put("createdBeforeDate", createdBeforeDate);
+        // Add dynamic conditions
+        if (createdBefore != null) {
+            queryBuilder.append(" AND created < :createdBefore");
+            parameters.put("createdBefore", createdBefore);
         }
 
-        if (completedBeforeDate != null) {
-            conditions.add("df.modified < :completedBeforeDate");
-            conditions.add("df.terminal = true");
-            parameters.put("completedBeforeDate", completedBeforeDate);
+        if (completedBefore != null) {
+            queryBuilder.append(" AND modified < :completedBefore AND terminal = true");
+            parameters.put("completedBefore", completedBefore);
         }
 
         if (flow != null) {
-            conditions.add("df.data_source = :flow");
+            queryBuilder.append(" AND data_source = :flow");
             parameters.put("flow", flow);
         }
 
         if (minBytes > 0L) {
-            conditions.add("df.total_bytes >= :minBytes");
+            queryBuilder.append(" AND total_bytes >= :minBytes");
+            parameters.put("minBytes", minBytes);
+        }
+
+        queryBuilder.append("""
+        ),
+        deleted_flows AS (
+            DELETE FROM delta_file_flows
+            WHERE delta_file_id IN (SELECT did FROM deleted_files)
+            RETURNING id
+        ),
+        deleted_actions AS (
+            DELETE FROM actions
+            WHERE delta_file_flow_id IN (SELECT id FROM deleted_flows)
+        ),
+        deleted_annotations AS (
+            DELETE FROM annotations
+            WHERE delta_file_id IN (SELECT did FROM deleted_files)
+        ),
+        deleted_delta_files AS (
+            DELETE FROM delta_files
+            WHERE did IN (SELECT did FROM deleted_files)
+        )
+        SELECT COUNT(*) FROM deleted_files;
+    """);
+
+        Query query = entityManager.createNativeQuery(queryBuilder.toString());
+        for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+            query.setParameter(entry.getKey(), entry.getValue());
+        }
+
+        Number result = (Number) query.getSingleResult();
+        return result.intValue();
+    }
+
+    @Override
+    public List<DeltaFileDeleteDTO> findForTimedDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore,
+                                                       long minBytes, String flow, boolean deleteMetadata, int batchSize) {
+        if (createdBefore == null && completedBefore == null) {
+            return Collections.emptyList();
+        }
+
+        StringBuilder queryBuilder = new StringBuilder("""
+                SELECT df.did, df.content_deleted, df.total_bytes, array_agg(a.content) as content_list
+                FROM delta_files df
+                LEFT JOIN delta_file_flows f ON df.did = f.delta_file_id
+                LEFT JOIN actions a ON f.id = a.delta_file_flow_id
+                WHERE
+                """);
+
+        Map<String, Object> parameters = new HashMap<>();
+
+        if (createdBefore != null) {
+            queryBuilder.append(" df.created < :createdBefore");
+            parameters.put("createdBefore", createdBefore);
+        }
+
+        if (completedBefore != null) {
+            if (createdBefore != null) {
+                queryBuilder.append(" AND");
+            }
+            queryBuilder.append(" df.modified < :completedBefore");
+            queryBuilder.append(" AND df.terminal = true");
+            parameters.put("completedBefore", completedBefore);
+        }
+
+        if (flow != null) {
+            queryBuilder.append(" AND df.data_source = :flow");
+            parameters.put("flow", flow);
+        }
+
+        if (minBytes > 0L) {
+            queryBuilder.append(" AND df.total_bytes >= :minBytes");
             parameters.put("minBytes", minBytes);
         }
 
         if (!deleteMetadata) {
-            conditions.add("df.content_deletable = true");
+            queryBuilder.append(" AND df.content_deletable = true");
         }
 
-        queryBuilder.append(String.join(" AND ", conditions));
-        queryBuilder.append(" ORDER BY ");
-        queryBuilder.append(createdBeforeDate != null ? "df.created" : "df.modified");
-        queryBuilder.append(" ASC LIMIT :batchSize ) ");
-
-        queryBuilder.append(
-                "SELECT ef.did, ef.content_deleted, ef.total_bytes, " +
-                        "       array_agg(a.content) as content_list " +
-                        "FROM eligible_files ef " +
-                        "LEFT JOIN delta_file_flows f ON ef.did = f.delta_file_id " +
-                        "LEFT JOIN actions a ON f.id = a.delta_file_flow_id " +
-                        "GROUP BY ef.did, ef.content_deleted, ef.total_bytes, ef.modified " +
-                        "ORDER BY ef.modified " +
-                        "LIMIT :batchSize");
+        queryBuilder.append(" GROUP BY df.did, df.content_deleted, df.total_bytes LIMIT :batchSize");
 
         Query query = entityManager.createNativeQuery(queryBuilder.toString());
 
@@ -395,7 +452,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             ORDER BY df.modified ASC
             LIMIT :batchSize
         )
-        SELECT ef.did, ef.content_deleted, ef.total_bytes, 
+        SELECT ef.did, ef.content_deleted, ef.total_bytes,
                array_agg(a.content) as content_list
         FROM eligible_files ef
         LEFT JOIN delta_file_flows f ON ef.did = f.delta_file_id
@@ -730,18 +787,29 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             return;
         }
 
-        for (List<UUID> batch : Lists.partition(dids, 500)) {
-            CriteriaBuilder cb = entityManager.getCriteriaBuilder();
-            CriteriaUpdate<DeltaFile> update = cb.createCriteriaUpdate(DeltaFile.class);
-            Root<DeltaFile> root = update.from(DeltaFile.class);
+        jdbcTemplate.execute("DROP TABLE IF EXISTS temp_dids");
+        jdbcTemplate.execute("CREATE TEMPORARY TABLE temp_dids (did UUID PRIMARY KEY) ON COMMIT DROP");
 
-            update.set("contentDeleted", now)
-                    .set("contentDeletedReason", reason)
-                    .set("contentDeletable", false)
-                    .where(root.get("did").in(batch));
+        jdbcTemplate.batchUpdate(
+                "INSERT INTO temp_dids (did) VALUES (?)",
+                dids,
+                1000,
+                (ps, did) -> ps.setObject(1, did)
+        );
 
-            entityManager.createQuery(update).executeUpdate();
-        }
+        String sql = """
+            UPDATE delta_files df
+            SET content_deleted = :now,
+                content_deleted_reason = :reason,
+                content_deletable = false
+            FROM temp_dids td
+            WHERE df.did = td.did
+        """;
+
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("now", now);
+        query.setParameter("reason", reason);
+        query.executeUpdate();
     }
 
     private static final String INSERT_DELTA_FILES = """
@@ -913,6 +981,7 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
         return offsetDateTime == null ? null : Timestamp.from(offsetDateTime.toInstant());
     }
 
+    @Override
     @Transactional
     public void batchedBulkDeleteByDidIn(List<UUID> dids) {
         if (dids == null || dids.isEmpty()) {
@@ -924,25 +993,24 @@ public class DeltaFileRepoImpl implements DeltaFileRepoCustom {
             DELETE FROM delta_file_flows
             WHERE delta_file_id IN (:dids)
             RETURNING id
+        ),
+        deleted_actions AS (
+            DELETE FROM actions
+            WHERE delta_file_flow_id IN (SELECT id FROM deleted_delta_file_flows)
+        ),
+        deleted_annotations AS (
+            DELETE FROM annotations
+            WHERE delta_file_id IN (:dids)
+        ),
+        deleted_delta_files AS (
+            DELETE FROM delta_files
+            WHERE did IN (:dids)
         )
-        DELETE FROM actions
-        WHERE delta_file_flow_id IN (
-            SELECT id FROM deleted_delta_file_flows
-        );
-
-        DELETE FROM annotations
-        WHERE delta_file_id IN (:dids);
-
-        DELETE FROM delta_files
-        WHERE did IN (:dids);
-
-    """;
+        SELECT 1;
+        """;
 
         Query query = entityManager.createNativeQuery(sql);
         query.setParameter("dids", dids);
-        query.executeUpdate();
-
-        entityManager.flush();
-        entityManager.clear();
+        query.getSingleResult();
     }
 }

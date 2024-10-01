@@ -79,6 +79,18 @@ public interface DeltaFileRepoCustom {
     void updateForAutoResume(List<UUID> dids, String policyName, OffsetDateTime nextAutoResume);
 
     /**
+     * Delete DeltaFiles that match the given criteria if they have no content.
+     *
+     * @param createdBefore - if non-null find DeltaFiles created before this date
+     * @param completedBefore - if non-null find DeltaFiles in the completed stage that were last modified before this date
+     * @param minBytes - only delete deltaFiles greater than or equal to this size
+     * @param flow - if non-null the DeltaFiles must have this flow set in the source info
+     *
+     * @return the number of rows deleted
+     */
+    int deleteIfNoContent(OffsetDateTime createdBefore, OffsetDateTime completedBefore, long minBytes, String flow);
+
+    /**
      * Find DeltaFiles that match the given criteria.
      * Any actions in a non-terminal state will be marked as errors stating the given policy
      * marked the DeltaFile for deletion.

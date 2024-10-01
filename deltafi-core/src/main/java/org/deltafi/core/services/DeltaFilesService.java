@@ -1182,9 +1182,16 @@ public class DeltaFilesService {
     public boolean timedDelete(OffsetDateTime createdBefore, OffsetDateTime completedBefore, Long minBytes, String flow, String policy, boolean deleteMetadata) {
         int batchSize = deltaFiPropertiesService.getDeltaFiProperties().getDeletePolicyBatchSize();
 
+        int alreadyDeleted = 0;
+        if (deleteMetadata) {
+            alreadyDeleted = deltaFileRepo.deleteIfNoContent(createdBefore, completedBefore, minBytes, flow);
+            if (alreadyDeleted > 0) {
+                log.info("Deleted {} deltaFiles with no content for policy {}", alreadyDeleted, policy);
+            }
+        }
         logBatch(batchSize, policy);
         List<DeltaFileDeleteDTO> deltaFiles = deltaFileRepo.findForTimedDelete(createdBefore, completedBefore, minBytes, flow, deleteMetadata, batchSize);
-        delete(deltaFiles, policy, deleteMetadata);
+        delete(deltaFiles, policy, deleteMetadata, alreadyDeleted);
 
         return deltaFiles.size() == batchSize;
     }
@@ -1193,16 +1200,19 @@ public class DeltaFilesService {
         int batchSize = deltaFiPropertiesService.getDeltaFiProperties().getDeletePolicyBatchSize();
 
         logBatch(batchSize, policy);
-        return delete(deltaFileRepo.findForDiskSpaceDelete(bytesToDelete, flow, batchSize), policy, false);
+        return delete(deltaFileRepo.findForDiskSpaceDelete(bytesToDelete, flow, batchSize), policy, false, 0);
     }
 
     public void logBatch(int batchSize, String policy) {
         log.info("Searching for batch of up to {} deltaFiles to delete for policy {}", batchSize, policy);
     }
 
-    public List<DeltaFileDeleteDTO> delete(List<DeltaFileDeleteDTO> deltaFiles, String policy, boolean deleteMetadata) {
+    public List<DeltaFileDeleteDTO> delete(List<DeltaFileDeleteDTO> deltaFiles, String policy, boolean deleteMetadata, int alreadyDeleted) {
         if (deltaFiles.isEmpty()) {
             log.info("No deltaFiles found to delete for policy {}", policy);
+            if (alreadyDeleted > 0) {
+                metricService.increment(new Metric(DELETED_FILES, alreadyDeleted).addTag("policy", policy));
+            }
             return deltaFiles;
         }
 
@@ -1210,7 +1220,7 @@ public class DeltaFilesService {
         long totalBytes = deltaFiles.stream().filter(d -> d.getContentDeleted() == null).mapToLong(DeltaFileDeleteDTO::getTotalBytes).sum();
 
         deleteContent(deltaFiles, policy, deleteMetadata);
-        metricService.increment(new Metric(DELETED_FILES, deltaFiles.size()).addTag("policy", policy));
+        metricService.increment(new Metric(DELETED_FILES, deltaFiles.size() + alreadyDeleted).addTag("policy", policy));
         metricService.increment(new Metric(DELETED_BYTES, totalBytes).addTag("policy", policy));
         log.info("Finished deleting {} deltaFiles for policy {}", deltaFiles.size(), policy);
 
