@@ -355,6 +355,19 @@ input ResumeMetadata {
   deleteMetadataKeys: [String!]
 }
 
+type Topic {
+  name: String!
+  publishers: [TopicParticipant!]!
+  subscribers: [TopicParticipant!]!
+}
+
+type TopicParticipant {
+  name: String!
+  type: FlowType!
+  state: FlowState!
+  condition: String
+}
+
 type Query {
   getEgressFlowPlan(planName: String!): EgressFlowPlan!
   getRestDataSourcePlan(planName: String!): RestDataSourcePlan!
@@ -372,6 +385,9 @@ type Query {
   getFlows: [Flows]!
   getRunningFlows: SystemFlows!
   getAllFlows: SystemFlows!
+  getAllTopics: [Topic!]!
+  getTopics(names: [String]): [Topic!]!
+  getTopic(name: String): Topic!
   getAllFlowPlans: SystemFlowPlans!
   getActionNamesByFamily: [ActionFamily]!
   dataSourceErrorsExceeded: [DataSourceErrorState]!

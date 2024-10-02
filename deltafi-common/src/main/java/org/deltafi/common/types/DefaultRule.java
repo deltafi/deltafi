@@ -17,10 +17,11 @@
  */
 package org.deltafi.common.types;
 
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
+@Builder
 @Data
 @NoArgsConstructor
 public class DefaultRule {

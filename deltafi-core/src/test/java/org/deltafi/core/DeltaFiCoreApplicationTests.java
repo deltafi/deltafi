@@ -1305,6 +1305,89 @@ class DeltaFiCoreApplicationTests {
 		assertThat(flows.getEgress()).hasSize(1).matches(egressFlows -> EGRESS_FLOW_NAME.equals(egressFlows.getFirst().getName()));
 	}
 
+	void setupTopicTest() {
+		clearForFlowTests();
+
+		TransformFlow transformFlow = new TransformFlow();
+		transformFlow.setName(TRANSFORM_FLOW_NAME);
+		transformFlow.setSubscribe(Set.of(new Rule("restTopic", "restCondition"), new Rule("timedTopic", null)));
+		transformFlow.setPublish(PublishRules.builder()
+				.rules(List.of(new Rule("transformPublish1", "transformPublishCondition"),
+						new Rule("transformPublish2", null)))
+				.defaultRule(DefaultRule.builder().defaultBehavior(DefaultBehavior.PUBLISH).topic("default").build())
+				.build());
+
+		TimedDataSource timedDataSource = new TimedDataSource();
+		timedDataSource.setName(TIMED_DATA_SOURCE_NAME);
+		timedDataSource.setTopic("timedTopic");
+
+		RestDataSource restDataSource = new RestDataSource();
+		restDataSource.setName(REST_DATA_SOURCE_NAME);
+		restDataSource.setTopic("restTopic");
+		restDataSource.getFlowStatus().setState(FlowState.RUNNING);
+
+		EgressFlow egressFlow = new EgressFlow();
+		egressFlow.setName(EGRESS_FLOW_NAME);
+		egressFlow.setSubscribe(Set.of(new Rule("transformPublish1", null)));
+
+		transformFlowRepo.save(transformFlow);
+		timedDataSourceRepo.save(timedDataSource);
+		restDataSourceRepo.save(restDataSource);
+		egressFlowRepo.save(egressFlow);
+	}
+
+	private static final Topic REST_TOPIC = Topic.newBuilder().name("restTopic")
+			.publishers(List.of(TopicParticipant.newBuilder().name(REST_DATA_SOURCE_NAME).type(FlowType.REST_DATA_SOURCE).state(FlowState.RUNNING).condition(null).build()))
+			.subscribers(List.of(TopicParticipant.newBuilder().name(TRANSFORM_FLOW_NAME).type(FlowType.TRANSFORM).state(FlowState.STOPPED).condition("restCondition").build()))
+			.build();
+	private static final Topic TIMED_TOPIC = Topic.newBuilder().name("timedTopic")
+			.publishers(List.of(TopicParticipant.newBuilder().name(TIMED_DATA_SOURCE_NAME).type(FlowType.TIMED_DATA_SOURCE).state(FlowState.STOPPED).condition(null).build()))
+			.subscribers(List.of(TopicParticipant.newBuilder().name(TRANSFORM_FLOW_NAME).type(FlowType.TRANSFORM).state(FlowState.STOPPED).condition(null).build()))
+			.build();
+	private static final Topic DEFAULT_TOPIC = Topic.newBuilder().name("default")
+			.publishers(List.of(TopicParticipant.newBuilder().name(TRANSFORM_FLOW_NAME).type(FlowType.TRANSFORM).state(FlowState.STOPPED).condition(null).build()))
+			.subscribers(List.of())
+			.build();
+	private static final Topic TRANSFORM_1_TOPIC = Topic.newBuilder().name("transformPublish1")
+			.publishers(List.of(TopicParticipant.newBuilder().name(TRANSFORM_FLOW_NAME).type(FlowType.TRANSFORM).state(FlowState.STOPPED).condition("transformPublishCondition").build()))
+			.subscribers(List.of(TopicParticipant.newBuilder().name(EGRESS_FLOW_NAME).type(FlowType.EGRESS).state(FlowState.STOPPED).condition(null).build()))
+			.build();
+	private static final Topic TRANSFORM_2_TOPIC = Topic.newBuilder().name("transformPublish2")
+			.publishers(List.of(TopicParticipant.newBuilder().name(TRANSFORM_FLOW_NAME).type(FlowType.TRANSFORM).state(FlowState.STOPPED).condition(null).build()))
+			.subscribers(List.of())
+			.build();
+
+	@Test
+	void getAllTopics() {
+		setupTopicTest();
+
+		List<Topic> actual = FlowPlanDatafetcherTestHelper.getAllTopics(dgsQueryExecutor);
+		assertThat(actual.size()).isEqualTo(5);
+
+		assertThat(actual).contains(REST_TOPIC, TIMED_TOPIC, DEFAULT_TOPIC, TRANSFORM_1_TOPIC, TRANSFORM_2_TOPIC);
+	}
+
+	@Test
+	void getTopics() {
+		setupTopicTest();
+
+		List<Topic> actual = FlowPlanDatafetcherTestHelper.getTopics(dgsQueryExecutor, List.of(REST_TOPIC.getName(), TIMED_TOPIC.getName()));
+		assertThat(actual.size()).isEqualTo(2);
+		assertThat(actual).contains(REST_TOPIC, TIMED_TOPIC);
+
+		assertThatThrownBy(() -> FlowPlanDatafetcherTestHelper.getTopics(dgsQueryExecutor, List.of(REST_TOPIC.getName(), TIMED_TOPIC.getName(), "x")));
+	}
+
+	@Test
+	void getTopic() {
+		setupTopicTest();
+
+		Topic actual = FlowPlanDatafetcherTestHelper.getTopic(dgsQueryExecutor, REST_TOPIC.getName());
+		assertThat(actual).isEqualTo(REST_TOPIC);
+
+		assertThatThrownBy(() -> FlowPlanDatafetcherTestHelper.getTopic(dgsQueryExecutor, "x"));
+	}
+
 	@Test
 	void getTransformFlow() {
 		clearForFlowTests();

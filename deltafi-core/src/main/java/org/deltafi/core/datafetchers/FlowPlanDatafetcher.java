@@ -41,6 +41,7 @@ import org.deltafi.core.validation.TimedDataSourcePlanValidator;
 import org.deltafi.core.validation.TransformFlowPlanValidator;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @DgsComponent
 @RequiredArgsConstructor
@@ -428,6 +429,34 @@ public class FlowPlanDatafetcher {
                 .transform(transformFlowService.getAll())
                 .restDataSource(restDataSourceService.getAll())
                 .timedDataSource(timedDataSourceService.getAll()).build();
+    }
+
+    @DgsQuery
+    @NeedsPermission.FlowView
+    public List<Topic> getAllTopics() {
+        flowCacheService.refreshCache();
+        return flowCacheService.getTopics();
+    }
+
+    @DgsQuery
+    @NeedsPermission.FlowView
+    public List<Topic> getTopics(List<String> names) {
+        flowCacheService.refreshCache();
+        List<Topic> topics = flowCacheService.getTopics().stream().filter(t -> names.contains(t.getName())).toList();
+        if (names.size() == topics.size()) {
+            return topics;
+        }
+
+        List<String> foundNames = topics.stream().map(Topic::getName).toList();
+        throw new DgsEntityNotFoundException("No Topics exist with the names: " + names.stream().filter(name -> !foundNames.contains(name)).collect(Collectors.joining(", ")));
+    }
+
+    @DgsQuery
+    @NeedsPermission.FlowView
+    public Topic getTopic(String name) {
+        flowCacheService.refreshCache();
+        Optional<Topic> topic = flowCacheService.getTopics().stream().filter(t -> name.equals(t.getName())).findFirst();
+        return topic.orElseThrow(() -> new DgsEntityNotFoundException("No Topic exists with the name " + name));
     }
 
     @DgsQuery

@@ -18,13 +18,15 @@
 package org.deltafi.core.services;
 
 import lombok.RequiredArgsConstructor;
-import org.deltafi.common.types.FlowType;
+import org.deltafi.common.types.*;
+import org.deltafi.core.generated.types.Topic;
+import org.deltafi.core.generated.types.TopicParticipant;
 import org.deltafi.core.repo.FlowRepo;
+import org.deltafi.core.types.DataSource;
 import org.deltafi.core.types.Flow;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -77,5 +79,56 @@ public class FlowCacheService {
         }
 
         return flow;
+    }
+
+    public List<Topic> getTopics() {
+        Map<String, Topic> topicMap = new HashMap<>();
+        for (Flow flow : flowCache.values()) {
+
+            if (flow instanceof DataSource dataSource) {
+                addPublisher(topicMap, dataSource.getTopic(), flow, null);
+            }
+
+            if (flow instanceof Publisher publisher) {
+                for (Rule rule : publisher.publishRules().getRules()) {
+                    addPublisher(topicMap, rule.getTopic(), flow, rule.getCondition());
+                }
+                if (publisher.publishRules().getDefaultRule().getDefaultBehavior() == DefaultBehavior.PUBLISH) {
+                    String topicName = publisher.publishRules().getDefaultRule().getTopic();
+                    addPublisher(topicMap, topicName, flow, null);
+                }
+            }
+
+            if (flow instanceof Subscriber subscriber) {
+                for (Rule rule : subscriber.subscribeRules()) {
+                    addSubscriber(topicMap, rule.getTopic(), flow, rule.getCondition());
+                }
+            }
+        }
+
+        return new ArrayList<>(topicMap.values().stream().sorted(Comparator.comparing(Topic::getName)).toList());
+    }
+
+    private TopicParticipant createParticipant(Flow flow, String condition) {
+        return TopicParticipant.newBuilder()
+                .name(flow.getName())
+                .type(flow.getType())
+                .state(flow.getFlowStatus().getState())
+                .condition(condition)
+                .build();
+    }
+
+    private void addPublisher(Map<String, Topic> topicMap, String topicName, Flow flow, String condition) {
+        Topic topic = topicMap.getOrDefault(topicName, new Topic(topicName, new ArrayList<>(), new ArrayList<>()));
+        TopicParticipant topicParticipant = createParticipant(flow, condition);
+        topic.getPublishers().add(topicParticipant);
+        topicMap.put(topicName, topic);
+    }
+
+    private void addSubscriber(Map<String, Topic> topicMap, String topicName, Flow flow, String condition) {
+        Topic topic = topicMap.getOrDefault(topicName, new Topic(topicName, new ArrayList<>(), new ArrayList<>()));
+        TopicParticipant topicParticipant = createParticipant(flow, condition);
+        topic.getSubscribers().add(topicParticipant);
+        topicMap.put(topicName, topic);
     }
 }

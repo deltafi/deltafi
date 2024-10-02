@@ -17,6 +17,7 @@
  */
 package org.deltafi.core.datafetchers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
 import com.netflix.graphql.dgs.client.codegen.BaseProjectionNode;
@@ -29,6 +30,7 @@ import org.deltafi.core.generated.types.*;
 import org.deltafi.core.types.*;
 
 import java.time.Duration;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -37,6 +39,7 @@ import static org.deltafi.core.util.Constants.TIMED_DATA_SOURCE_NAME;
 public class FlowPlanDatafetcherTestHelper {
 
     public static final PluginCoordinates PLUGIN_COORDINATES = PluginCoordinates.builder().artifactId("test-plugin").groupId("org.deltafi").version("1.0.0").build();
+    public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public static TransformFlowPlan getTransformFlowPlan(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetTransformFlowPlanGraphQLQuery.newRequest().planName("transformPlan").build(), new GetTransformFlowPlanProjectionRoot().name().type().description().type(), TransformFlowPlan.class);
@@ -91,6 +94,28 @@ public class FlowPlanDatafetcherTestHelper {
     public static SystemFlows getAllFlows(DgsQueryExecutor dgsQueryExecutor) {
         return executeQuery(dgsQueryExecutor, GetAllFlowsGraphQLQuery.newRequest().build(),
                 new GetAllFlowsProjectionRoot().timedDataSource().type().name().parent().restDataSource().type().name().parent().transform().name().parent().egress().name().root(), SystemFlows.class);
+    }
+
+    public static List<Topic> getAllTopics(DgsQueryExecutor dgsQueryExecutor) {
+        return executeQuery(dgsQueryExecutor, GetAllTopicsGraphQLQuery.newRequest().build(),
+                new GetAllTopicsProjectionRoot().name().publishers().name().type().parent().state().parent().condition().parent().subscribers().name().type().parent().state().parent().condition().root(),
+                List.class).stream()
+                .map(map -> OBJECT_MAPPER.convertValue(map, Topic.class))
+                .toList();
+    }
+
+    public static List<Topic> getTopics(DgsQueryExecutor dgsQueryExecutor, List<String> topics) {
+        return executeQuery(dgsQueryExecutor, GetTopicsGraphQLQuery.newRequest().names(topics).build(),
+                new GetTopicsProjectionRoot().name().publishers().name().type().parent().state().parent().condition().parent().subscribers().name().type().parent().state().parent().condition().root(),
+                List.class).stream()
+                .map(map -> OBJECT_MAPPER.convertValue(map, Topic.class))
+                .toList();
+    }
+
+    public static Topic getTopic(DgsQueryExecutor dgsQueryExecutor, String topic) {
+        return executeQuery(dgsQueryExecutor, GetTopicGraphQLQuery.newRequest().name(topic).build(),
+                new GetTopicProjectionRoot().name().publishers().name().type().parent().state().parent().condition().parent().subscribers().name().type().parent().state().parent().condition().root(),
+                Topic.class);
     }
 
     public static TransformFlow getTransformFlow(DgsQueryExecutor dgsQueryExecutor) {
