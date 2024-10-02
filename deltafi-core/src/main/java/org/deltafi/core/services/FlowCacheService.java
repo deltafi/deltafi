@@ -106,6 +106,11 @@ public class FlowCacheService {
             }
         }
 
+        for (Topic topic : topicMap.values()) {
+            topic.getPublishers().sort(Comparator.comparing(TopicParticipant::getName));
+            topic.getSubscribers().sort(Comparator.comparing(TopicParticipant::getName));
+        }
+
         return new ArrayList<>(topicMap.values().stream().sorted(Comparator.comparing(Topic::getName)).toList());
     }
 
