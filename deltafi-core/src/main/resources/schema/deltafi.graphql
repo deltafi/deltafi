@@ -386,8 +386,8 @@ type Query {
   getRunningFlows: SystemFlows!
   getAllFlows: SystemFlows!
   getAllTopics: [Topic!]!
-  getTopics(names: [String]): [Topic!]!
-  getTopic(name: String): Topic!
+  getTopics(names: [String!]!): [Topic!]!
+  getTopic(name: String!): Topic!
   getAllFlowPlans: SystemFlowPlans!
   getActionNamesByFamily: [ActionFamily]!
   dataSourceErrorsExceeded: [DataSourceErrorState]!
