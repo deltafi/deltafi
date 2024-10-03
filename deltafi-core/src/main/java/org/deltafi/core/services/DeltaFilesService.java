@@ -1463,7 +1463,7 @@ public class DeltaFilesService {
         List<UUID> joinedDids = actionInput.getActionContext().getJoinedDids();
         if (!joinedDids.isEmpty() && actionInput.getDeltaFileMessages() == null) {
             if (!deltaFileRepo.existsById(did)) {
-                deltaFileRepo.save(actionInput.getDeltaFile());
+                deltaFileRepo.saveAndFlush(actionInput.getDeltaFile());
             }
 
             DeltaFile deltaFile = actionInput.getDeltaFile();

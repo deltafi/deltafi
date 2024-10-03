@@ -69,7 +69,7 @@ public interface JoinEntryRepo extends JpaRepository<JoinEntry, UUID> {
      */
     @Query(value = "WITH updated AS ( " +
             "UPDATE join_entries SET locked = true, locked_time = CURRENT_TIMESTAMP " +
-            "WHERE id = (SELECT id FROM join_entries WHERE join_date <= :joinDate AND locked = false LIMIT 1) " +
+            "WHERE id = (SELECT id FROM join_entries WHERE join_date <= :joinDate AND locked = false LIMIT 1) AND locked = false " +
             "RETURNING * " +
             ") " +
             "SELECT * FROM UPDATED",
