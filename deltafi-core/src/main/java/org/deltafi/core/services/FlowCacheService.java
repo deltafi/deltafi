@@ -107,11 +107,11 @@ public class FlowCacheService {
         }
 
         for (Topic topic : topicMap.values()) {
-            topic.getPublishers().sort(Comparator.comparing(TopicParticipant::getName));
-            topic.getSubscribers().sort(Comparator.comparing(TopicParticipant::getName));
+            topic.getPublishers().sort(Comparator.comparing(f -> f.getName().toLowerCase()));
+            topic.getSubscribers().sort(Comparator.comparing(f -> f.getName().toLowerCase()));
         }
 
-        return new ArrayList<>(topicMap.values().stream().sorted(Comparator.comparing(Topic::getName)).toList());
+        return new ArrayList<>(topicMap.values().stream().sorted(Comparator.comparing(t -> t.getName().toLowerCase())).toList());
     }
 
     private TopicParticipant createParticipant(Flow flow, String condition) {
