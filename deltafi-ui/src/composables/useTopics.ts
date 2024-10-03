@@ -16,96 +16,69 @@
    limitations under the License.
 */
 
+import { ref, Ref, readonly } from 'vue';
 import useGraphQL from "./useGraphQL";
+import _ from "lodash"
 
-import _ from "lodash";
+export type Topic = {
+  name?: String,
+  publishers?: Array<{
+    name: String,
+    type: String,
+    state: String
+    condition: String
+  }>,
+  subscribers?: Array<{
+    name: String,
+    type: String,
+    state: String
+    condition: String
+  }>
+};
+
+const topics: Ref<Array<Topic>> = ref([]);
 
 export default function useTopics() {
   const { response, queryGraphQL, loading, loaded, errors } = useGraphQL();
 
-  const getRunningFlowsQuery = {
-    getRunningFlows: {
-      transform: {
-        subscribe: {
-          topic: true,
-        },
-      },
-    },
-  };
+  const hasActiveSubscribers = async (topicName: string) => {
+    if (topics.value.length === 0) await getAllTopics();
 
-  const hasActiveSubscribers = async (topic: string) => {
-    await queryGraphQL(getRunningFlowsQuery, "getRunningFlows");
-    for (const flow of response.value.data.getRunningFlows.transform) {
-      for (const sub of flow.subscribe) {
-        if (sub.topic === topic) {
-          return true;
-        }
-      }
-    }
-    return false;
-  };
+    const topic = _.find(topics.value, (topic) => topic.name === topicName);
 
-  const getAllTopicsQuery = {
-    getAllFlows: {
-      egress: {
-        subscribe: {
-          topic: true,
-        },
-      },
-      restDataSource: {
-        topic: true,
-      },
-      timedDataSource: {
-        topic: true,
-      },
-      transform: {
-        subscribe: {
-          topic: true,
-        },
-        publish: {
-          rules: {
-            topic: true,
-          },
-        },
-      },
-    },
+    return topic ? _.some(topic.subscribers, { 'state': 'RUNNING' }) : false
   };
 
   const getAllTopics = async () => {
-    await queryGraphQL(getAllTopicsQuery, "getAllTopicsQuery");
-    let topicsArray: any[] = [];
+    const query = {
+      getAllTopics: {
+        name: true,
+        publishers: {
+          name: true,
+          type: true,
+          state: true,
+          condition: true
+        },
+        subscribers: {
+          name: true,
+          type: true,
+          state: true,
+          condition: true
+        }
+      },
+    }
+    await queryGraphQL(query, "getAllTopics");
 
-    // Gets egress topics
-    const egressTopics: any[] = response.value.data.getAllFlows.egress?.flatMap((e: any) => e.subscribe?.map((s: any) => s.topic));
-    topicsArray = topicsArray.concat(egressTopics);
+    topics.value = response.value.data.getAllTopics;
 
-    // Gets restDataSource topics
-    const restDataSourceTopics: any[] = response.value.data.getAllFlows.restDataSource?.map((e: any) => e.topic);
-    topicsArray = topicsArray.concat(restDataSourceTopics);
-
-    // Gets timedDataSource topics
-    const timedDataSourceTopics: any[] = response.value.data.getAllFlows.timedDataSource?.map((e: any) => e.topic);
-    topicsArray = topicsArray.concat(timedDataSourceTopics);
-
-    // Gets transform subscribe topics
-    const transformSubscribeTopics: any[] = response.value.data.getAllFlows.transform?.flatMap((e: any) => e.subscribe?.map((s: any) => s.topic));
-    topicsArray = topicsArray.concat(transformSubscribeTopics);
-
-    // Gets transform publish topics
-    const transformPublishTopics: any[] = response.value.data.getAllFlows.transform.flatMap((e: any) => e.publish?.rules?.map((s: any) => s.topic));
-    topicsArray = topicsArray.concat(transformPublishTopics);
-
-    // Removes all falsey values from array
-    topicsArray = _.compact(topicsArray);
-
-    // Removes duplicates from array
-    topicsArray = _.uniq(topicsArray);
-
-    // Sorts array
-    topicsArray = topicsArray.sort();
-
-    return topicsArray;
+    return topics.value;
   };
 
-  return { response, hasActiveSubscribers, getAllTopics, loading, loaded, errors };
+  const getAllTopicNames = async () => {
+    if (topics.value.length === 0) await getAllTopics();
+
+    return _.map(topics.value, "name");
+  };
+
+  return { topics: readonly(topics), response, hasActiveSubscribers, getAllTopics, getAllTopicNames, loading, loaded, errors };
 }

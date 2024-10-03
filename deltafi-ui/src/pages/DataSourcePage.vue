@@ -31,14 +31,16 @@
 </template>
 
 <script setup>
+import useTopics from "@/composables/useTopics";
 import DialogTemplate from "@/components/DialogTemplate.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import RestDataSourcesPanel from "@/components/dataSources/RestDataSourcesPanel.vue";
 import TimedDataSourcesPanel from "@/components/dataSources/TimedDataSourcesPanel.vue";
-import { ref, inject, onMounted, provide, onUnmounted } from "vue";
+import { ref, inject, onMounted, provide, onUnmounted, onBeforeMount } from "vue";
 
 import Button from "primevue/button";
 
+const { getAllTopics } = useTopics();
 const refreshInterval = 5000; // 5 seconds
 const isIdle = inject("isIdle");
 const restDataSourcesPanel = ref(null);
@@ -51,6 +53,10 @@ const refresh = async () => {
   restDataSourcesPanel.value.refresh();
   timedDataSourcesPanel.value.refresh();
 };
+
+onBeforeMount(async () => {
+  await getAllTopics();
+})
 
 onMounted(() => {
   autoRefresh = setInterval(() => {

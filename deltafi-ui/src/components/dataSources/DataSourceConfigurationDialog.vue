@@ -126,7 +126,7 @@ const props = defineProps({
   },
 });
 
-const { getAllTopics } = useTopics();
+const { getAllTopicNames } = useTopics();
 const { editDataSource, closeDialogCommand } = reactive(props);
 const emit = defineEmits(["reloadDataSources"]);
 const { getPluginActionSchema } = useFlowActions();
@@ -211,7 +211,7 @@ const getTimedIngressActions = async () => {
 const isMounted = ref(useMounted());
 
 onBeforeMount(async () => {
-  let topics = await getAllTopics();
+  let topics = await getAllTopicNames();
   allTopics.value.length = 0;
   topics.forEach((topic) => allTopics.value.push(topic));
 

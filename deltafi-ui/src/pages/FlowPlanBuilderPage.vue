@@ -197,7 +197,7 @@ import { jsPlumb } from "jsplumb";
 import $ from "jquery";
 import _ from "lodash";
 
-const { getAllTopics } = useTopics();
+const { getAllTopicNames } = useTopics();
 const { getAllFlows } = useFlowQueryBuilder();
 const { getPluginActionSchema } = useFlowActions();
 const { saveTransformFlowPlan } = useFlowPlanQueryBuilder();
@@ -344,7 +344,7 @@ const flowActionTemplateObject = ref({
 const originalFlowActionTemplateObject = JSON.parse(JSON.stringify(flowActionTemplateObject.value));
 
 onBeforeMount(async () => {
-  let topics = await getAllTopics();
+  let topics = await getAllTopicNames();
   allTopics.value.length = 0;
   topics.forEach((topic) => allTopics.value.push(topic));
 

@@ -38,6 +38,7 @@ import RolesPage from "@/pages/RolesPage.vue";
 import SystemMetricsPage from "@/pages/SystemMetricsPage.vue";
 import SystemPropertiesPage from "@/pages/SystemPropertiesPage.vue";
 import SystemSnapshotsPage from "@/pages/SystemSnapshotsPage.vue";
+import TopicsPage from "@/pages/TopicsPage.vue";
 import UnauthorizedPage from "@/pages/UnauthorizedPage.vue";
 import UsersPage from "@/pages/UsersPage.vue";
 import VersionsPage from "@/pages/VersionsPage.vue";
@@ -135,6 +136,14 @@ const routes: Array<RouteRecordRaw> = [
     path: "/config/egress",
     name: "Egress",
     component: EgressActionsPage,
+    meta: {
+      permission: "FlowView",
+    },
+  },
+  {
+    path: "/config/topics",
+    name: "Topics",
+    component: TopicsPage,
     meta: {
       permission: "FlowView",
     },

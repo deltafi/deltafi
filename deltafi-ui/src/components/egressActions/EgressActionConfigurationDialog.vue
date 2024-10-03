@@ -120,7 +120,7 @@ const props = defineProps({
   },
 });
 
-const { getAllTopics } = useTopics();
+const { getAllTopicNames } = useTopics();
 const { editEgressAction, closeDialogCommand } = reactive(props);
 const emit = defineEmits(["reloadEgressActions"]);
 const { getPluginActionSchema } = useFlowActions();
@@ -199,7 +199,7 @@ const getEgressActions = async () => {
 };
 
 onBeforeMount(async () => {
-  let topics = await getAllTopics();
+  let topics = await getAllTopicNames();
   allTopics.value.length = 0;
   topics.forEach((topic) => allTopics.value.push(topic));
 

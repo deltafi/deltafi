@@ -45,11 +45,6 @@
         </Column>
         <Column header="Description" field="description" :sortable="true"></Column>
         <Column header="Publish" field="topic" :sortable="true"></Column>
-        <Column header="Test Mode" class="switch-column">
-          <template #body="{ data }">
-            <RestDataSourceTestModeInputSwitch :row-data-prop="data" />
-          </template>
-        </Column>
         <Column header="Max Errors" field="maxErrors" class="max-error-column">
           <template #body="{ data, field }">
             <span v-if="data[field] === null">-</span>
@@ -57,6 +52,11 @@
           </template>
           <template #editor="{ data, field }">
             <InputNumber v-model="data[field]" :min="0" class="p-inputtext-sm max-error-input" autofocus />
+          </template>
+        </Column>
+        <Column header="Test Mode" class="switch-column">
+          <template #body="{ data }">
+            <RestDataSourceTestModeInputSwitch :row-data-prop="data" />
           </template>
         </Column>
         <Column header="Active" :style="{ width: '7%' }" class="switch-column">

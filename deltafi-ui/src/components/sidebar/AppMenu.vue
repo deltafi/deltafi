@@ -178,6 +178,12 @@ const staticMenuItems = ref([
         visible: computed(() => hasPermission("FlowView")),
       },
       {
+        name: "Topics",
+        icon: "fas fas fa-database fa-fw",
+        path: "/config/topics",
+        visible: computed(() => hasPermission("FlowView")),
+      },
+      {
         name: "Flow Plan Builder",
         icon: "fa-solid fa-trowel-bricks fa-fw",
         path: "/config/flow-plan-builder",
