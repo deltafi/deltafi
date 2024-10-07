@@ -155,11 +155,9 @@ public class ActionRunnerTest {
     }
 
     protected DeltaFileMessage deltaFileMessage(Map<String, String> metadata, List<ActionContent> content) {
-        List<Content> contentList = new ArrayList<>(content.stream().map(ContentConverter::convert).toList());
-
         return DeltaFileMessage.builder()
                 .metadata(metadata == null ? new HashMap<>() : metadata)
-                .contentList(contentList)
+                .contentList(content.stream().map(ContentConverter::convert).toList())
                 .build();
     }
 

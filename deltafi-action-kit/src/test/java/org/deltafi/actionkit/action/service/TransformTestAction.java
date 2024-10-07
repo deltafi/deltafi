@@ -36,11 +36,12 @@ public class TransformTestAction extends TransformAction<ActionParameters> {
     public TransformResultType transform(@NotNull ActionContext context,
                                          @NotNull ActionParameters params,
                                          @NotNull TransformInput input) {
-        TransformResult temp = new TransformResult(context);
+        // These will be orphaned content
+        TransformResult temp = new TransformResult(context, input.getContent());
         temp.saveContent("abc", "name1", "text/plain");
         temp.saveContent("abcd", "name2", "text/plain");
 
-        TransformResult transformResult = new TransformResult(context);
+        TransformResult transformResult = new TransformResult(context, input.getContent());
         transformResult.saveContent("abcde", "name3", "text/plain");
 
         return transformResult;

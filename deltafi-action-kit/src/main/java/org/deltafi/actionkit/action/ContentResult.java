@@ -30,10 +30,7 @@ import org.deltafi.common.types.SaveManyContent;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * A Result that may include changes to content, annotations, or metadata
@@ -46,12 +43,12 @@ public abstract class ContentResult<T extends Result<T>> extends MetadataResult<
     protected final Map<String, String> annotations = new HashMap<>();
 
     public ContentResult(@NotNull ActionContext context, @NotNull ActionEventType actionEventType) {
-        this(context, actionEventType, new ArrayList<>());
+        this(context, actionEventType, Collections.emptyList());
     }
 
     public ContentResult(@NotNull ActionContext context, @NotNull ActionEventType actionEventType, @NotNull List<ActionContent> content) {
         super(context, actionEventType);
-        this.content = content;
+        this.content = new ArrayList<>(content);
     }
 
     /**
