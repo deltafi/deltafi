@@ -234,7 +234,8 @@ public class StateMachine {
         action.setState(ActionState.JOINING);
         currentFlow.setJoinId(joinEntry.getId());
 
-        if (joinEntry.getCount() < actionConfiguration.getJoin().maxNum()) {
+        Integer maxNum = actionConfiguration.getJoin().maxNum();
+        if (maxNum == null || joinEntry.getCount() < maxNum) {
             if (joinEntry.getCount() == 1) { // Only update join check for new join entries
                 scheduledJoinService.updateJoinCheck(joinEntry.getJoinDate());
             }

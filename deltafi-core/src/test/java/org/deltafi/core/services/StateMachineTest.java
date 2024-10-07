@@ -193,6 +193,38 @@ class StateMachineTest {
     }
 
     @Test
+    void advancesInTransformationFlowWithJoiningTransformActionNullMaxNum() {
+        DeltaFile deltaFile = Util.emptyDeltaFile(UUID.randomUUID(), TRANSFORM_FLOW);
+
+        DeltaFileFlow deltaFileFlow = deltaFile.getFlows().getFirst();
+        deltaFileFlow.setType(FlowType.TRANSFORM);
+        ActionConfiguration transformAction = new ActionConfiguration("JoiningTransformAction", ActionType.TRANSFORM,
+                "org.deltafi.action.SomeJoiningTransformAction");
+        transformAction.setJoin(new JoinConfiguration(Duration.parse("PT1S"), null, null, null));
+        when(transformFlowService.findActionConfig(TRANSFORM_FLOW, transformAction.getName())).thenReturn(transformAction);
+        // add the transform action as the next action config to use in the DeltaFileFlow
+        deltaFileFlow.setPendingActions(new ArrayList<>(List.of(transformAction.getName())));
+
+        JoinEntry joinEntry = new JoinEntry();
+        joinEntry.setCount(2);
+        Mockito.when(joinEntryService.upsertAndLock(Mockito.any(), Mockito.any(), Mockito.isNull(), Mockito.isNull(),
+                Mockito.eq(0), Mockito.eq(deltaFile.getDid()))).thenReturn(joinEntry);
+
+        when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(new DeltaFiProperties());
+
+        StateMachineInput stateMachineInput = new StateMachineInput(deltaFile, deltaFileFlow);
+        List<WrappedActionInput> actionInvocations = stateMachine.advance(List.of(stateMachineInput));
+
+        assertTrue(actionInvocations.isEmpty());
+        List<Action> joiningActions = deltaFileFlow.getActions().stream()
+                .filter(action -> action.getState().equals(ActionState.JOINING)).toList();
+        assertEquals(1, joiningActions.size());
+        Action joiningAction = joiningActions.getFirst();
+        assertEquals("JoiningTransformAction", joiningAction.getName());
+        assertEquals(ActionType.TRANSFORM, joiningAction.getType());
+    }
+
+    @Test
     void marksFlowAsCircularAtMaxDepth() {
         DeltaFiProperties deltaFiProperties = new DeltaFiProperties();
         when(deltaFiPropertiesService.getDeltaFiProperties()).thenReturn(deltaFiProperties);
