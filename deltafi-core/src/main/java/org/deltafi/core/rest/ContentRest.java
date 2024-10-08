@@ -38,10 +38,10 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.util.Base64;
 
-@Slf4j
 @RestController
-@RequestMapping("content")
+@RequestMapping("/api/v2/content")
 @AllArgsConstructor
+@Slf4j
 public class ContentRest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper()

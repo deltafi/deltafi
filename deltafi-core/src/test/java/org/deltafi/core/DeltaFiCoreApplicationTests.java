@@ -3755,7 +3755,7 @@ class DeltaFiCoreApplicationTests {
 		headers.add(DeltaFiConstants.PERMISSIONS_HEADER, DeltaFiConstants.ADMIN_PERMISSION);
 		HttpEntity<byte[]> request = new HttpEntity<>(body, headers);
 
-		return restTemplate.postForEntity("/deltafile/ingress", request, String.class);
+		return restTemplate.postForEntity("/api/v2/deltafile/ingress", request, String.class);
 	}
 
 	@Test

@@ -2,8 +2,6 @@
 deltafi:
   local_path_provisioner:
     enabled: false
-  ui:
-    title: DeltaFi (DinK)
   auth:
     mode: disabled
 postgres:

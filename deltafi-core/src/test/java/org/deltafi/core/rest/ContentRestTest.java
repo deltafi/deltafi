@@ -71,7 +71,7 @@ class ContentRestTest {
         Mockito.when(fetchContentService.streamContent(contentRequest)).thenReturn(new ByteArrayInputStream(DATA.getBytes()));
 
         String encodedJson = Base64.getEncoder().encodeToString(json(contentRequest).getBytes());
-        MvcResult mvcResult = mockMvc.perform(get("/content?content=" + encodedJson))
+        MvcResult mvcResult = mockMvc.perform(get("/api/v2/content?content=" + encodedJson))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.TEXT_PLAIN_VALUE))
                 .andReturn();
@@ -85,7 +85,7 @@ class ContentRestTest {
         ContentRequest contentRequest = contentRequestObj();
         Mockito.when(fetchContentService.streamContent(contentRequest)).thenReturn(new ByteArrayInputStream(DATA.getBytes()));
 
-        MvcResult mvcResult = mockMvc.perform(post("/content").content(json(contentRequest)).contentType(MediaType.APPLICATION_JSON))
+        MvcResult mvcResult = mockMvc.perform(post("/api/v2/content").content(json(contentRequest)).contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.TEXT_PLAIN_VALUE))
                 .andReturn();
@@ -101,7 +101,7 @@ class ContentRestTest {
         Mockito.when(fetchContentService.streamContent(contentRequest)).thenThrow(new EntityNotFound(error));
 
         String encodedJson = Base64.getEncoder().encodeToString(json(contentRequest).getBytes());
-        mockMvc.perform(get("/content?content=" + encodedJson))
+        mockMvc.perform(get("/api/v2/content?content=" + encodedJson))
                 .andExpect(status().isNotFound())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.error").value(error))
@@ -115,7 +115,7 @@ class ContentRestTest {
         Mockito.when(fetchContentService.streamContent(contentRequest)).thenThrow(new ObjectStorageException(error));
 
         String encodedJson = Base64.getEncoder().encodeToString(json(contentRequest).getBytes());
-        mockMvc.perform(get("/content?content=" + encodedJson))
+        mockMvc.perform(get("/api/v2/content?content=" + encodedJson))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.error").value(error))
@@ -127,14 +127,14 @@ class ContentRestTest {
         ContentRequest contentRequest = contentRequestObj();
 
         String encodedJson = Base64.getEncoder().encodeToString(json(contentRequest).getBytes());
-        mockMvc.perform(get("/content?content=" + encodedJson + "some junk"))
+        mockMvc.perform(get("/api/v2/content?content=" + encodedJson + "some junk"))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.error").value(BASE64_DECODE_ERROR))
                 .andExpect(jsonPath("$.timestamp").isNotEmpty());
 
         encodedJson = Base64.getEncoder().encodeToString("{badJson: }".getBytes());
-        mockMvc.perform(get("/content?content=" + encodedJson))
+        mockMvc.perform(get("/api/v2/content?content=" + encodedJson))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.error").value(JSON_PARSE_ERROR))

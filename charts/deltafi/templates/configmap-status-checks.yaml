@@ -12,14 +12,12 @@ data:
   Deployment: |
     - deltafi-core
     - deltafi-core-actions
-    - deltafi-docs
     - deltafi-egress-sink
     - deltafi-grafana
     - deltafi-ingress
     - deltafi-kubernetes-dashboard
     - deltafi-minio
     - deltafi-monitor
-    - deltafi-ui
   Ingress: |
     - deltafi-grafana
     - deltafi-graphite
@@ -40,7 +38,6 @@ data:
     - deltafi-minio
     - deltafi-valkey-headless
     - deltafi-valkey-master
-    - deltafi-ui-service
   PersistentVolumeClaim: |
     - deltafi-auth
     - deltafi-egress-sink

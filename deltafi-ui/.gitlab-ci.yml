@@ -23,24 +23,6 @@ ui:license:
   script:
     - ./deltafi-ui/licenseCheck.sh
 
-.ui:
-  variables:
-    PROJECT_NAME: deltafi-ui
-
-ui:docker:
-  stage: docker
-  needs: []
-  extends:
-    - .ui
-    - .docker
-
-ui:docker-multiarch:
-  stage: docker
-  needs: []
-  extends:
-    - .ui
-    - .docker-multiarch
-
 ui:test:
   image: deltafi/deltafi-ui-test
   stage: test

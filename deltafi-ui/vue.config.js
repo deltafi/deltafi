@@ -2,6 +2,7 @@ const DELTAFI_DOMAIN = process.env.DELTAFI_DOMAIN || "dev.deltafi.org";
 const execSync = require('child_process').execSync;
 
 module.exports = {
+  publicPath: '/',
   devServer: {
     host: "localhost",
     compress: false,

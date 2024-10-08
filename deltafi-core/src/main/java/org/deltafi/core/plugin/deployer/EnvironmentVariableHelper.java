@@ -39,7 +39,7 @@ public class EnvironmentVariableHelper {
     }
 
     private List<String> buildEnvVarList(MinioProperties minioProperties, EventQueueProperties eventQueueProperties,  Environment environment) {
-        String coreUrl = environment.getProperty("CORE_URL", "http://deltafi-core-service/api/v2");
+        String coreUrl = environment.getProperty("CORE_URL");
         String sslProtocol = environment.getProperty("SSL_PROTOCOL", "TLSv1.2");
         String keyPassword = environment.getProperty("KEY_PASSWORD");
 

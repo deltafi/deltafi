@@ -1,7 +1,0 @@
-FROM node:20-alpine3.19
-WORKDIR /app
-COPY ../package*.json ./
-COPY ../graphiql ./graphiql
-RUN npm install
-WORKDIR /app/graphiql
-RUN yarn install && yarn build

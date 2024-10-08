@@ -75,7 +75,7 @@ class SurveyRestTest {
                 }
                 """;
 
-        mockMvc.perform(post("/survey").content(json).contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(post("/api/v2/survey").content(json).contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
         Mockito.verify(analyticEventService).recordSurveys(eventsCaptor.capture());
@@ -102,7 +102,7 @@ class SurveyRestTest {
         SurveyError error = new SurveyError("bad", null);
 
         Mockito.when(analyticEventService.recordSurveys(Mockito.anyList())).thenReturn(List.of(error));
-        mockMvc.perform(post("/survey").content("{}").contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(post("/api/v2/survey").content("{}").contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").isArray())
                 .andExpect(jsonPath("$.timestamp").isNotEmpty());
@@ -112,7 +112,7 @@ class SurveyRestTest {
     void testDisabledAnalytics() throws Exception {
         Mockito.when(analyticEventService.recordSurveys(Mockito.anyList())).thenThrow(new DisabledAnalyticsException());
 
-        mockMvc.perform(post("/survey").content("{}").contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(post("/api/v2/survey").content("{}").contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotImplemented())
                 .andExpect(jsonPath("$.error").value("Survey analytics are disabled"))
                 .andExpect(jsonPath("$.timestamp").isNotEmpty());
@@ -120,7 +120,7 @@ class SurveyRestTest {
 
     @Test
     void testBadBody() throws Exception {
-        mockMvc.perform(post("/survey").content("{null : null}").contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(post("/api/v2/survey").content("{null : null}").contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Invalid request body"))
                 .andExpect(jsonPath("$.timestamp").isNotEmpty());

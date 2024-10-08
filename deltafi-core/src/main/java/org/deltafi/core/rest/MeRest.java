@@ -20,17 +20,19 @@ package org.deltafi.core.rest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 import static org.deltafi.common.constant.DeltaFiConstants.*;
 
-@Slf4j
 @RestController
+@RequestMapping("/api/v2/me")
+@Slf4j
 public class MeRest {
 
-    @GetMapping("me")
+    @GetMapping
     public Object me(@RequestHeader(value = USER_ID_HEADER, required = false, defaultValue = "-1") String userId,
                      @RequestHeader(value = USER_NAME_HEADER, required = false, defaultValue = "Unknown") String userName,
                      @RequestHeader(value = PERMISSIONS_HEADER, required = false, defaultValue = "") String permissions) {

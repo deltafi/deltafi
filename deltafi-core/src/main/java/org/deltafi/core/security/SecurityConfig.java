@@ -68,7 +68,7 @@ public class SecurityConfig {
     @Order(Ordered.HIGHEST_PRECEDENCE)
     public SecurityFilterChain authFilterChain(HttpSecurity httpSecurity, UserDetailsService userDetailsService, AuthProperties authProperties) throws Exception {
         httpSecurity
-                .securityMatcher("/auth")
+                .securityMatcher("/api/v2/auth")
                 .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .csrf(AbstractHttpConfigurer::disable);

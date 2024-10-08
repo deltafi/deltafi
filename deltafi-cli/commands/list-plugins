@@ -46,16 +46,6 @@ QUERY="{
              defaultValue
              required
            }
-           propertySets {
-             displayName
-             description
-             properties {
-               key
-               description
-               value
-               defaultValue
-             }
-           }
          }
        }"
 QUERY=$(echo $QUERY)

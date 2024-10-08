@@ -27,7 +27,7 @@ gradle:build:
   stage: build
   script:
     - git describe --tags
-    - ${GRADLE} --rerun-tasks license assemble test
+    - ${GRADLE} --rerun-tasks license assemble test dockerPrepare
   artifacts:
     when: always
     reports:
@@ -46,9 +46,6 @@ gradle:build:
   when: manual
   rules:
     - if: $CI_COMMIT_TAG
-  variables:
-    CONTEXT: "${CI_PROJECT_DIR}/${PROJECT_NAME}"
-    DOCKERFILE: ${CONTEXT}/Dockerfile
   before_script:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
     - docker buildx create --name multiarch-builder --platform "linux/arm64,linux/amd64"
@@ -56,7 +53,7 @@ gradle:build:
   script:
     - export SHA_TAG=${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_SHORT_SHA}-${CI_PIPELINE_ID}
     - export NAMED_TAG=${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_REF_NAME/\//_}
-    - cd "$PROJECT_NAME"
+    - cd "$CONTEXT"
     - echo $SHA_TAG
     - echo $NAMED_TAG
     - docker buildx use multiarch-builder
@@ -72,7 +69,6 @@ gradle:build:
     - light
   variables:
     CONTEXT: "${CI_PROJECT_DIR}/${PROJECT_NAME}"
-    DOCKERFILE: ${CONTEXT}/Dockerfile
   # except:
   #   refs:
   #     - tags
@@ -81,7 +77,7 @@ gradle:build:
     - NAMED_TAG=${CI_REGISTRY_IMAGE}/${PROJECT_NAME}:${CI_COMMIT_REF_NAME/\//_}
     - time /kaniko/executor
       --context "$CONTEXT"
-      --dockerfile "$DOCKERFILE"
+      --dockerfile "${CONTEXT}/Dockerfile"
       --destination "$SHA_TAG"
       --destination "$NAMED_TAG"
       --registry-mirror=172.17.0.1:6000
@@ -225,7 +221,6 @@ trigger:plugins:
       - deltafi-core.container-report.json
       - deltafi-core-actions.container-report.json
       - deltafi-api.container-report.json
-      - deltafi-docs.container-report.json
       - deltafi-egress-sink.container-report.json
       - deltafi-nodemonitor.container-report.json
   dependencies: []
@@ -238,8 +233,6 @@ trigger:plugins:
     - cp gl-container-scanning-report.json deltafi-core-actions.container-report.json
     - CS_DOCKERFILE_PATH=deltafi-api CS_IMAGE=${CI_REGISTRY_IMAGE}/deltafi-api:${CI_COMMIT_SHORT_SHA} gtcs scan
     - cp gl-container-scanning-report.json deltafi-api.container-report.json
-    - CS_DOCKERFILE_PATH=deltafi-docs CS_IMAGE=${CI_REGISTRY_IMAGE}/deltafi-docs:${CI_COMMIT_SHORT_SHA} gtcs scan
-    - cp gl-container-scanning-report.json deltafi-docs.container-report.json
     - CS_DOCKERFILE_PATH=deltafi-egress-sink CS_IMAGE=${CI_REGISTRY_IMAGE}/deltafi-egress-sink:${CI_COMMIT_SHORT_SHA} gtcs scan
     - cp gl-container-scanning-report.json deltafi-egress-sink.container-report.json
     - CS_DOCKERFILE_PATH=deltafi-nodemonitor CS_IMAGE=${CI_REGISTRY_IMAGE}/deltafi-nodemonitor:${CI_COMMIT_SHORT_SHA} gtcs scan

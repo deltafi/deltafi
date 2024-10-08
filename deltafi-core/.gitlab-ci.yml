@@ -8,8 +8,12 @@ core:docker:
     - .docker
   needs:
     - job: "gradle:build"
+  variables:
+    CONTEXT: "${CI_PROJECT_DIR}/${PROJECT_NAME}/build/docker"
 
 core:docker-multiarch:
   extends:
     - .core
     - .docker-multiarch
+  variables:
+    CONTEXT: "${CI_PROJECT_DIR}/${PROJECT_NAME}/build/docker"

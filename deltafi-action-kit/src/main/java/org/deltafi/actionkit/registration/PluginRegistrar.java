@@ -54,7 +54,7 @@ public class PluginRegistrar {
     @Autowired
     ApplicationContext applicationContext;
 
-    @Value("${CORE_URL:http://deltafi-core-service/api/v2/}")
+    @Value("${CORE_URL}")
     private String coreUrl;
 
     public void register() {

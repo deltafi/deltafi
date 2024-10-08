@@ -802,7 +802,6 @@ Options:
   restart     Down a cluster, restart it, and install deltafi and plugins
   bounce      Restart an application (deltafi-api, etc.).  App name must follow command
   nocore      Skips building core DeltaFi and UI (build only)
-  noui        Skips building DeltaFi UI (build only)
   noplugins   Skips building plugins
   destroy     Destroys the cluster before proceeding
   expose      Expose ports for deltafi-core, minio and valkey on localhost
@@ -860,9 +859,6 @@ loc() {
         ;;
       nocore)
         NOCORE=nocore
-        ;;
-      noui)
-        NOUI=noui
         ;;
       noplugins)
         NOPLUGINS=noplugins
@@ -987,13 +983,6 @@ _local_build() {
   if [[ -z "$NOCORE" ]]; then
     _attention "Building deltafi"
     ./gradlew "${BUILD_TARGETS[@]}" -x test publishToMavenLocal docker dockerPushLocal || _exit_1 echo "Command 'gradlew \"${BUILD_TARGETS[@]}\" -x test publishToMavenLocal docker dockerPushLocal' failed"
-
-    if [[ -z "$NOUI" ]]; then
-      _attention "Building deltafi-ui"
-      cd "$ROOT/deltafi/deltafi-ui"
-      time docker build -t localhost:5000/deltafi-ui:latest .
-      docker push localhost:5000/deltafi-ui:latest
-    fi
   fi
 
   export DELTAFI_PYTHON
@@ -1026,7 +1015,7 @@ _setup_plugin_env() {
   REDIS_PASSWORD=$(_get_secret "valkey-password" "valkey-password")
   VALKEY_PASSWORD=$(_get_secret "valkey-password" "valkey-password")
   cat <<EOF > "${PLUGIN_ENV}"
-CORE_URL=http://localhost:8888/api/v2
+CORE_URL=http://localhost:8888
 MINIO_URL=http://localhost:9000
 REDIS_URL=http://localhost:6379
 VALKEY_URL=http://localhost:6379

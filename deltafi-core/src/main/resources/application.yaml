@@ -28,6 +28,14 @@ spring:
   sql:
     init:
       mode: never
+  web:
+    resources:
+      static-locations: ["file:/deltafi/"]
+dgs:
+  graphql:
+    path: "/api/v2/graphql"
+    graphiql:
+      title: "DeltaFi GraphiQL"
 management:
   endpoint:
     health:
@@ -38,5 +46,3 @@ management:
 server:
   error:
     include-message: always
-  servlet:
-    context-path: "/api/v2"

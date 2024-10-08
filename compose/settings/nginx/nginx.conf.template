@@ -24,10 +24,6 @@ http {
         server deltafi-ingress:8080;
     }
 
-    upstream deltafi-docs {
-        server deltafi-docs:80;
-    }
-
     upstream deltafi-grafana {
         server deltafi-grafana:3000;
     }
@@ -74,15 +70,7 @@ http {
         }
 
         location / {
-          proxy_pass http://deltafi-ui;
-        }
-
-        location /api/v2/ {
           proxy_pass http://deltafi-core;
-        }
-
-        location /docs/ {
-          proxy_pass http://deltafi-docs;
         }
 
         location /visualization {

@@ -23,16 +23,14 @@ import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.security.NeedsPermission;
 import org.deltafi.core.services.DeltaFilesService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
+@RequestMapping("/api/v2/deltafile/annotate")
 @RequiredArgsConstructor
 public class DeltaFileAnnotationRest {
 
@@ -40,13 +38,13 @@ public class DeltaFileAnnotationRest {
     private final CoreAuditLogger auditLogger;
 
     @NeedsPermission.DeltaFileMetadataWrite
-    @PostMapping("/deltafile/annotate/{did}")
+    @PostMapping("/{did}")
     public ResponseEntity<String> annotateDeltaFile(@PathVariable UUID did, @RequestParam Map<String, String> requestParams) {
         return annotateDeltaFile(did, requestParams, false);
     }
 
     @NeedsPermission.DeltaFileMetadataWrite
-    @PostMapping("/deltafile/annotate/{did}/allowOverwrites")
+    @PostMapping("/{did}/allowOverwrites")
     public ResponseEntity<String> annotateDeltaFileAllowOverwrites(@PathVariable UUID did, @RequestParam Map<String, String> requestParams) {
         return annotateDeltaFile(did, requestParams, true);
     }

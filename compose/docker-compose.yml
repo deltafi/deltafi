@@ -87,7 +87,7 @@ services:
     env_file:
       - ${SECRETS_DIR}/ssl.env
     expose:
-      - "${AUTH_RESOLVER_PORT}"
+      - "${ENTITY_RESOLVER_PORT}"
     labels:
       deltafi-group: deltafi-core
       <<: *logging-label
@@ -98,20 +98,6 @@ services:
     volumes:
       - ${DATA_DIR}/auth:/data
       - ${DATA_DIR}/certs:/certs
-  deltafi-ui:
-    image: ${DELTAFI_UI}
-    container_name: deltafi-ui
-    depends_on:
-      deltafi-core:
-        condition: service_healthy
-    expose:
-      - "80"
-    labels:
-      deltafi-group: deltafi-core
-      <<: *logging-label
-    networks:
-      - deltafi
-    restart: unless-stopped
   deltafi-core-actions:
     image: ${DELTAFI_CORE_ACTIONS}
     container_name: deltafi-core-actions
@@ -137,16 +123,6 @@ services:
     restart: unless-stopped
     volumes:
       - ${DATA_DIR}/certs:/certs
-  deltafi-docs:
-    image: ${DELTAFI_DOCS}
-    container_name: deltafi-docs
-    expose:
-      - "80"
-    labels:
-      deltafi-group: deltafi-core
-    networks:
-      - deltafi
-    restart: unless-stopped
   deltafi-nodemonitor:
     image: ${DELTAFI_NODEMONITOR}
     container_name: deltafi-nodemonitor
@@ -392,13 +368,9 @@ services:
     image: ${NGINX}
     container_name: deltafi-nginx
     depends_on:
-      deltafi-ui:
-        condition: service_started
       deltafi-grafana:
         condition: service_started
       deltafi-graphite:
-        condition: service_started
-      deltafi-docs:
         condition: service_started
     environment:
       NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx/

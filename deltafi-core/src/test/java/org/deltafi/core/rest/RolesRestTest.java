@@ -85,7 +85,7 @@ class RolesRestTest {
                     "updatedAt": "2020-01-01T00:00:00Z"
                   },
                 """ + READ_ONLY_JSON + "]";
-        mockMvc.perform(get("/roles"))
+        mockMvc.perform(get("/api/v2/roles"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(json));
     }
@@ -94,7 +94,7 @@ class RolesRestTest {
     void getRole() throws Exception {
         Mockito.when(roleService.getRole(ID)).thenReturn(READ_ONLY);
 
-        mockMvc.perform(get("/roles/00000000-0000-0001-0000-000000000000"))
+        mockMvc.perform(get("/api/v2/roles/00000000-0000-0001-0000-000000000000"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(READ_ONLY_JSON));
     }
@@ -103,7 +103,7 @@ class RolesRestTest {
     void getRoleNotFound() throws Exception {
         Mockito.when(roleService.getRole(ID)).thenThrow(new EntityNotFound("Role with ID unknown not found."));
 
-        mockMvc.perform(get("/roles/00000000-0000-0001-0000-000000000000"))
+        mockMvc.perform(get("/api/v2/roles/00000000-0000-0001-0000-000000000000"))
                 .andExpect(status().isNotFound());
     }
 
@@ -119,7 +119,7 @@ class RolesRestTest {
                 }
                 """;
 
-        mockMvc.perform(post("/roles").content(body).contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(post("/api/v2/roles").content(body).contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().json(READ_ONLY_JSON));
 
@@ -149,7 +149,7 @@ class RolesRestTest {
                   }
                 }
                 """;
-        mockMvc.perform(post("/roles").content(body).contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(post("/api/v2/roles").content(body).contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json(errors));
     }
@@ -165,7 +165,7 @@ class RolesRestTest {
                 }
                 """;
 
-        mockMvc.perform(put("/roles/00000000-0000-0001-0000-000000000000").content(body).contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(put("/api/v2/roles/00000000-0000-0001-0000-000000000000").content(body).contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().json(READ_ONLY_JSON));
 
@@ -180,7 +180,7 @@ class RolesRestTest {
                 }
                 """;
 
-        mockMvc.perform(put("/roles/00000000-0000-0001-0000-000000000000").content(body).contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(put("/api/v2/roles/00000000-0000-0001-0000-000000000000").content(body).contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Unknown field 'nane'"));
     }
@@ -196,7 +196,7 @@ class RolesRestTest {
                 }
                 """;
 
-        mockMvc.perform(put("/roles/00000000-0000-0001-0000-000000000000").content(body).contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(put("/api/v2/roles/00000000-0000-0001-0000-000000000000").content(body).contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
     }
 
@@ -205,7 +205,7 @@ class RolesRestTest {
     void deleteRole() throws Exception {
         Mockito.when(roleService.deleteRole(ID)).thenReturn(READ_ONLY);
 
-        mockMvc.perform(delete("/roles/00000000-0000-0001-0000-000000000000"))
+        mockMvc.perform(delete("/api/v2/roles/00000000-0000-0001-0000-000000000000"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(READ_ONLY_JSON));
 
@@ -214,7 +214,7 @@ class RolesRestTest {
 
     @Test
     void forbidAdminRoleDelete() throws Exception {
-        mockMvc.perform(delete("/roles/00000000-0000-0000-0000-000000000000"))
+        mockMvc.perform(delete("/api/v2/roles/00000000-0000-0000-0000-000000000000"))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.error").value("Unable to delete the admin role."));
     }

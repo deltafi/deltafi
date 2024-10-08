@@ -60,7 +60,7 @@ class DeltaFileAnnotationRestTest {
 
     @Test
     void annotateDeltaFile_noOverwrites() throws Exception {
-        this.mockMvc.perform(post("/deltafile/annotate/%s?k1=v1&k2=v2".formatted(DID)))
+        this.mockMvc.perform(post("/api/v2/deltafile/annotate/%s?k1=v1&k2=v2".formatted(DID)))
                 .andExpect(status().isOk())
                 .andExpect(content().string(is("Success")));
 
@@ -69,7 +69,7 @@ class DeltaFileAnnotationRestTest {
 
     @Test
     void annotateDeltaFile_allowOverwrites() throws Exception {
-        this.mockMvc.perform(post("/deltafile/annotate/%s/allowOverwrites?k1=v1&k2=v2".formatted(DID)))
+        this.mockMvc.perform(post("/api/v2/deltafile/annotate/%s/allowOverwrites?k1=v1&k2=v2".formatted(DID)))
                 .andExpect(status().isOk())
                 .andExpect(content().string(is("Success")));
 
@@ -81,7 +81,7 @@ class DeltaFileAnnotationRestTest {
         Mockito.doThrow(new DgsEntityNotFoundException("Missing did"))
                 .when(deltaFilesService).addAnnotations(DID, METADATA, false);
 
-        this.mockMvc.perform(post("/deltafile/annotate/%s?k1=v1&k2=v2".formatted(DID)))
+        this.mockMvc.perform(post("/api/v2/deltafile/annotate/%s?k1=v1&k2=v2".formatted(DID)))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().string(is("Missing did")));
     }

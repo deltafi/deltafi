@@ -23,16 +23,14 @@ import org.deltafi.core.plugin.generator.PluginGeneratorInput;
 import org.deltafi.core.plugin.generator.PluginLanguage;
 import org.deltafi.core.security.NeedsPermission;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 
 @RestController
+@RequestMapping("/api/v2/generate/plugin")
 public class PluginGeneratorRest {
 
     private final JavaPluginGenerator javaPluginGenerator;
@@ -44,7 +42,7 @@ public class PluginGeneratorRest {
     }
 
     @NeedsPermission.PluginsView
-    @PostMapping(value = "generate/plugin", consumes = MediaType.APPLICATION_JSON, produces = MediaType.APPLICATION_OCTET_STREAM)
+    @PostMapping(consumes = MediaType.APPLICATION_JSON, produces = MediaType.APPLICATION_OCTET_STREAM)
     public @ResponseBody byte[] generatePlugin(@RequestBody PluginGeneratorInput pluginGeneratorInput) {
         try {
             auditLogger.audit("generating plugin {}:{}", pluginGeneratorInput.getGroupId(), pluginGeneratorInput.getArtifactId());

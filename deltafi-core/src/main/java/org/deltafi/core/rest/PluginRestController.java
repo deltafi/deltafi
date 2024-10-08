@@ -25,17 +25,19 @@ import org.deltafi.core.types.Result;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.ws.rs.core.MediaType;
 
 @RestController
+@RequestMapping("/plugins")
 @RequiredArgsConstructor
 @Slf4j
 public class PluginRestController {
     private final PluginService pluginService;
 
-    @PostMapping(value = "plugins", consumes = MediaType.APPLICATION_JSON)
+    @PostMapping(consumes = MediaType.APPLICATION_JSON)
     public ResponseEntity<String> createPlugin(@RequestBody PluginRegistration pluginRegistration) {
         log.info("Received plugin registration for {}", pluginRegistration.getPluginCoordinates());
 

@@ -1,8 +1,5 @@
 # DeltaFi config
 deltafi:
-  ui:
-    title: DeltaFi (DinK local)
-    image: localhost:5000/deltafi-ui:latest
   core_actions:
     image: localhost:5000/deltafi-core-actions:latest
   core:
@@ -12,8 +9,6 @@ deltafi:
         deltafi:
           plugins:
             imageRepositoryBase: "localhost:5000"
-  docs:
-    image: localhost:5000/deltafi-docs:latest
   api:
     image: localhost:5000/deltafi-api:latest
   egress_sink:

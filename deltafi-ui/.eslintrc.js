@@ -15,8 +15,7 @@ module.exports = {
     }]
   },
   ignorePatterns: [
-    "dist",
-    "graphiql"
+    "dist"
   ],
   env: {
     node: true,

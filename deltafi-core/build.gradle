@@ -159,29 +159,53 @@ generateJava {
 	]
 }
 
+springBoot {
+	buildInfo()
+}
+
 jar {
 	// do not create the -plain.jar
 	enabled = false
 }
 
-task copyProbe(type: Copy) {
-    from ('.')
-    include "probe.sh"
-    destinationDir file('build/docker')
+task copyDocs(type: Copy) {
+	from '../deltafi-docs'
+	into 'build/docker/docs'
+	include 'public/'
+	include 'src/'
+	include 'package*.json'
+	include 'vue.config.js'
+}
+
+task copyCoreActionsDocs(type: Copy) {
+	from '../deltafi-core-actions/src/main/resources/docs'
+	into 'build/docker/docs/public/docs/core-actions'
+}
+
+task copyChangelog(type: Copy) {
+	from '../CHANGELOG.md'
+	into 'build/docker/docs/public/docs'
+}
+
+task copyUi(type: Copy) {
+	from '../deltafi-ui'
+	into 'build/docker/ui'
+	include 'public/'
+	include 'src/'
+	include 'package*.json'
+	include 'vue.config.js'
+	include 'tsconfig.json'
 }
 
 dockerPrepare {
-    dependsOn assemble
-    finalizedBy copyProbe
+	finalizedBy copyDocs, copyCoreActionsDocs, copyChangelog, copyUi
 }
 
 docker {
+	files bootJar.archiveFile, 'probe.sh'
+	copySpec.into('.')
+
     name "${project.name}:${project.version}"
     tag "local", "${localDockerRegistry}/${project.name}:latest"
     tag "deltafi", "deltafi/${project.name}:${project.version}"
-  	copySpec.from(bootJar.archiveFile).into("build/libs/")
-}
-
-springBoot {
-	buildInfo()
 }

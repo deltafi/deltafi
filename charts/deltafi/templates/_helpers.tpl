@@ -142,7 +142,7 @@ initContainers:
 
 {{- define "commonEnvVars" -}}
 - name: CORE_URL
-  value: http://deltafi-core-service/api/v2
+  value: http://deltafi-core-service
 - name: MINIO_URL
   value: http://deltafi-minio:9000
 - name: MINIO_PARTSIZE

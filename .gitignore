@@ -62,3 +62,5 @@ HELP.md
 /dist/
 /nbdist/
 /.nb-gradle/
+
+pre-upgrade-to-*

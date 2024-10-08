@@ -33,7 +33,7 @@ import java.util.UUID;
 import static org.deltafi.common.constant.DeltaFiConstants.ADMIN_ID;
 
 @RestController
-@RequestMapping("roles")
+@RequestMapping("/api/v2/roles")
 @RequiredArgsConstructor
 public class RolesRest {
     private final RoleService roleService;
@@ -45,7 +45,7 @@ public class RolesRest {
         return roleService.getRoles();
     }
 
-    @GetMapping("{id}")
+    @GetMapping("/{id}")
     @NeedsPermission.RoleRead
     public Role getRole(@PathVariable("id") UUID roleId) {
         return roleService.getRole(roleId);
@@ -59,7 +59,7 @@ public class RolesRest {
         return createdRole;
     }
 
-    @PutMapping("{id}")
+    @PutMapping("/{id}")
     @NeedsPermission.RoleUpdate
     public Role updateRole(@PathVariable("id") UUID roleId, @RequestBody String updates) {
         Role.Input roleInput = UpdateMapper.readValue(updates, Role.Input.class);
@@ -68,7 +68,7 @@ public class RolesRest {
         return updated;
     }
 
-    @DeleteMapping("{id}")
+    @DeleteMapping("/{id}")
     @NeedsPermission.RoleDelete
     public Role deleteRole(@PathVariable("id") UUID roleId) {
         if (ADMIN_ID.equals(roleId)) {

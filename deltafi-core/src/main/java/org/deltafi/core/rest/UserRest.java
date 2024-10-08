@@ -35,7 +35,7 @@ import java.util.UUID;
 import static org.deltafi.common.constant.DeltaFiConstants.ADMIN_ID;
 
 @RestController
-@RequestMapping("users")
+@RequestMapping("/api/v2/users")
 @RequiredArgsConstructor
 public class UserRest {
 
@@ -48,7 +48,7 @@ public class UserRest {
         return userService.getAllUsers();
     }
 
-    @GetMapping("{id}")
+    @GetMapping("/{id}")
     @NeedsPermission.UserRead
     public DeltaFiUserDTO getUserById(@PathVariable("id") UUID id) {
         return userService.getUserById(id);
@@ -62,7 +62,7 @@ public class UserRest {
         return user;
     }
 
-    @PutMapping(value = "{id}")
+    @PutMapping(value = "/{id}")
     @NeedsPermission.UserUpdate
     public DeltaFiUserDTO updateUser(@PathVariable("id") UUID id, @RequestBody String updates) {
         Input userInput = UpdateMapper.readValue(updates, Input.class);
@@ -71,7 +71,7 @@ public class UserRest {
         return user;
     }
 
-    @DeleteMapping("{id}")
+    @DeleteMapping("/{id}")
     @NeedsPermission.UserDelete
     public DeltaFiUserDTO deleteUserById(@PathVariable("id") UUID id) {
         if (ADMIN_ID.equals(id)) {

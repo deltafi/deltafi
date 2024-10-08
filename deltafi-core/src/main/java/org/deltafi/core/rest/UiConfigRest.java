@@ -26,13 +26,12 @@ import org.deltafi.core.types.UiConfig;
 import org.springframework.core.env.Environment;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.ws.rs.Produces;
-
 @RestController
-@Produces(MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping("/api/v2/config")
 public class UiConfigRest {
 
     private final DeltaFiPropertiesService propertiesService;
@@ -50,7 +49,7 @@ public class UiConfigRest {
     }
 
     @NeedsPermission.UIAccess
-    @GetMapping("config")
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public UiConfig getConfig(@RequestParam(required = false, value = "skip_cache") Boolean skipCache) {
         DeltaFiProperties properties = propertiesService.getDeltaFiProperties(skipCache);
 

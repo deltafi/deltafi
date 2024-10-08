@@ -271,7 +271,7 @@ const staticMenuItems = ref([
     ],
   },
   { name: "Versions", icon: "fas fa-info-circle fa-fw", path: "/versions", visible: computed(() => hasPermission("VersionsView")) },
-  { name: "Documentation", icon: "fas fa-book fa-fw", url: "/docs", visible: true },
+  { name: "Documentation", icon: "fas fa-book fa-fw", url: buildURL(null, "/docs"), visible: true },
 ]);
 
 const menuItems = computed(() => {

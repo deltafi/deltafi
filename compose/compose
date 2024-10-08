@@ -449,9 +449,6 @@ deltafi:
     image: ${repo}/deltafi-core-actions:${tag}
   core:
     image: ${repo}/deltafi-core:${tag}
-  docs:
-    image: ${repo}/deltafi-docs:${tag}
-    enabled: true
   ingress:
     image: ${repo}/deltafi-core:${tag}
     envVar:
@@ -465,8 +462,6 @@ deltafi:
   api:
     image: ${repo}/deltafi-api:${tag}
     workers: 8
-  ui:
-    image: ${repo}/deltafi-ui:${tag}
   egress_sink:
     enabled: true
     image: ${repo}/deltafi-egress-sink:${tag}
@@ -583,11 +578,9 @@ _write_startup_file() {
   _append_startup_from_values "DELTAFI_ENTITY_RESOLVER" ".deltafi.auth.entityResolver.image"
   _append_startup_from_values "DELTAFI_CORE" ".deltafi.core.image"
   _append_startup_from_values "DELTAFI_CORE_ACTIONS" ".deltafi.core_actions.image"
-  _append_startup_from_values "DELTAFI_DOCS" ".deltafi.docs.image"
   _append_startup_from_values "DELTAFI_EGRESS_SINK" ".deltafi.egress_sink.image"
   _append_startup_from_values "DELTAFI_INGRESS" ".deltafi.ingress.image"
   _append_startup_from_values "DELTAFI_NODEMONITOR" ".deltafi.nodemonitor.image"
-  _append_startup_from_values "DELTAFI_UI" ".deltafi.ui.image"
   _append_startup_from_values "DELTAFI_CLICKHOUSE_ETL" ".deltafi.api.image"
   _append_startup_from_values "GRAFANA" ".dependencies.grafana"
   _append_startup_from_values "GRAPHITE" ".dependencies.graphite"
@@ -607,7 +600,7 @@ _write_startup_file() {
 # write the static common settings
 _write_common_base() {
   cat <<EOF > "${COMMON_SETTINGS}"
-CORE_URL=http://deltafi-core:8080/api/v2/
+CORE_URL=http://deltafi-core:8080
 DELTAFI_GRAFANA_URL=http://deltafi-grafana:3000
 DELTAFI_MODE=STANDALONE
 GRAPHITE_HOST=deltafi-graphite
@@ -799,9 +792,6 @@ build() {
   _attention "Building DeltaFi core"
   pushd "$DELTAFI_PATH" > /dev/null
   ./gradlew dockerTagDeltafi && _ok "DeltaFi core build successful"
-  cd deltafi-ui
-  _attention "Building DeltaFi UI"
-  docker build -t "deltafi/deltafi-ui:$VERSION" . && _ok "DeltaFi UI build successful"
   popd > /dev/null
 } 
 

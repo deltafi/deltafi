@@ -114,7 +114,7 @@ class UsersRestTest {
                       ]
                     },
                 """ + SIMPLE_USER_JSON + "]";
-        mockMvc.perform(get("/users"))
+        mockMvc.perform(get("/api/v2/users"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(json));
     }
@@ -123,7 +123,7 @@ class UsersRestTest {
     void getUser() throws Exception {
         Mockito.when(userService.getUserById(ID)).thenReturn(SIMPLE_USER);
 
-        mockMvc.perform(get("/users/00000000-0000-0001-0000-000000000000"))
+        mockMvc.perform(get("/api/v2/users/00000000-0000-0001-0000-000000000000"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(SIMPLE_USER_JSON));
     }
@@ -133,7 +133,7 @@ class UsersRestTest {
         UUID uuid = UUID.randomUUID();
         Mockito.when(userService.getUserById(uuid)).thenThrow(new EntityNotFound("User with ID unknown not found."));
 
-        mockMvc.perform(get("/users/" + uuid))
+        mockMvc.perform(get("/api/v2/users/" + uuid))
                 .andExpect(status().isNotFound());
     }
 
@@ -151,7 +151,7 @@ class UsersRestTest {
                 }
                 """;
 
-        mockMvc.perform(post("/users").content(body).contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(post("/api/v2/users").content(body).contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().json(SIMPLE_USER_JSON));
 
@@ -181,7 +181,7 @@ class UsersRestTest {
                   }
                 }
                 """;
-        mockMvc.perform(post("/users").content(body).contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(post("/api/v2/users").content(body).contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().json(errors));
     }
@@ -197,7 +197,7 @@ class UsersRestTest {
                 }
                 """;
 
-        mockMvc.perform(put("/users/00000000-0000-0001-0000-000000000000").content(body).contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(put("/api/v2/users/00000000-0000-0001-0000-000000000000").content(body).contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().json(SIMPLE_USER_JSON));
 
@@ -211,7 +211,7 @@ class UsersRestTest {
                   "nane": "ReadAndViewOnly"
                 }
                 """;
-        mockMvc.perform(put("/users/00000000-0000-0001-0000-000000000000").content(body).contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(put("/api/v2/users/00000000-0000-0001-0000-000000000000").content(body).contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Unknown field 'nane'"));
     }
@@ -227,7 +227,7 @@ class UsersRestTest {
                 }
                 """;
 
-        mockMvc.perform(put("/users/00000000-0000-0001-0000-000000000000").content(body).contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(put("/api/v2/users/00000000-0000-0001-0000-000000000000").content(body).contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
     }
 
@@ -237,7 +237,7 @@ class UsersRestTest {
         UUID uuid = UUID.randomUUID();
         Mockito.when(userService.deleteUser(uuid)).thenReturn(SIMPLE_USER);
 
-        mockMvc.perform(delete("/users/" + uuid))
+        mockMvc.perform(delete("/api/v2/users/" + uuid))
                 .andExpect(status().isOk())
                 .andExpect(content().json(SIMPLE_USER_JSON));
 
@@ -246,7 +246,7 @@ class UsersRestTest {
 
     @Test
     void forbidAdminUserDelete() throws Exception {
-        mockMvc.perform(delete("/users/00000000-0000-0000-0000-000000000000"))
+        mockMvc.perform(delete("/api/v2/users/00000000-0000-0000-0000-000000000000"))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.error").value("Unable to delete admin user."));
     }

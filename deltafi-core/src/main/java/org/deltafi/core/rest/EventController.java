@@ -39,7 +39,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/events")
+@RequestMapping("/api/v2/events")
 @Produces(MediaType.APPLICATION_JSON_VALUE)
 @AllArgsConstructor
 public class EventController {
@@ -81,7 +81,7 @@ public class EventController {
         return eventService.updateAcknowledgement(UUID.fromString(id), false);
     }
 
-    @DeleteMapping("{id}")
+    @DeleteMapping("/{id}")
     @NeedsPermission.EventDelete
     public Event deleteEvent(@PathVariable String id) {
         auditLogger.audit("deleted event {}", id);

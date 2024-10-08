@@ -23,21 +23,23 @@ import org.deltafi.core.services.SystemService;
 import org.deltafi.core.services.SystemService.Status;
 import org.deltafi.core.services.SystemService.Versions;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequestMapping("/api/v2")
 @AllArgsConstructor
 public class SystemRest {
 
     private final SystemService systemService;
 
-    @GetMapping("status")
+    @GetMapping("/status")
     @NeedsPermission.StatusView
     public Status systemStatus() {
         return systemService.systemStatus();
     }
 
-    @GetMapping("versions")
+    @GetMapping("/versions")
     @NeedsPermission.VersionsView
     public Versions getRunningVersions() {
         return systemService.getRunningVersions();

@@ -32,6 +32,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.ws.rs.core.MediaType;
@@ -40,13 +41,14 @@ import java.time.OffsetDateTime;
 import java.util.List;
 
 @RestController
+@RequestMapping("/api/v2/deltafile/ingress")
 @RequiredArgsConstructor
 @Slf4j
 public class IngressRest {
     private final IngressService ingressService;
 
     @NeedsPermission.DeltaFileIngress
-    @PostMapping(value = "deltafile/ingress", consumes = MediaType.WILDCARD, produces = MediaType.TEXT_PLAIN)
+    @PostMapping(consumes = MediaType.WILDCARD, produces = MediaType.TEXT_PLAIN)
     public ResponseEntity<String> ingressData(InputStream dataStream,
             @RequestHeader(value = "Filename", required = false) String filename,
             @RequestHeader(value = "Flow", required = false) String flow,

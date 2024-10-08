@@ -31,20 +31,20 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("metrics")
+@RequestMapping("/api/v2/metrics/system")
 @AllArgsConstructor
 public class MetricsRest {
 
     private final SystemService systemService;
 
     @NeedsPermission.MetricsView
-    @GetMapping("system/content")
+    @GetMapping("/content")
     public ContentMetric contentMetrics() throws StorageCheckException {
         return new ContentMetric(systemService.contentNodeMetrics());
     }
 
     @NeedsPermission.MetricsView
-    @GetMapping("system/nodes")
+    @GetMapping("/nodes")
     public Nodes nodeAppsAndMetrics() {
         return new Nodes(systemService.nodeAppsAndMetrics());
     }

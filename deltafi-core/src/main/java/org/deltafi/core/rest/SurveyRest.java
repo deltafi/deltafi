@@ -35,15 +35,13 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.ws.rs.Produces;
 import java.time.OffsetDateTime;
 import java.util.List;
 
-@Slf4j
 @RestController
-@Produces(MediaType.APPLICATION_JSON_VALUE)
-@RequestMapping("survey")
+@RequestMapping("/api/v2/survey")
 @AllArgsConstructor
+@Slf4j
 public class SurveyRest {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
@@ -54,7 +52,7 @@ public class SurveyRest {
     private final AnalyticEventService analyticEventService;
     private final CoreAuditLogger auditLogger;
 
-    @PostMapping
+    @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @NeedsPermission.SurveyCreate
     public ResponseEntity<SurveyErrors> addSurveys(@RequestBody String body) throws JsonProcessingException {
         // parse string body here to support single json entry as a list

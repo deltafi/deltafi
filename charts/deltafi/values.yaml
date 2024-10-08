@@ -9,9 +9,6 @@ deltafi:
     image: deltafi/deltafi-core-actions:2.0-rc15
   core:
     image: deltafi/deltafi-core:2.0-rc15
-  docs:
-    image: deltafi/deltafi-docs:2.0-rc15
-    enabled: true
   ingress:
     envVar:
       HTTP_MAX_BODY_SIZE: 5G
@@ -24,8 +21,6 @@ deltafi:
       url: http://127.0.0.1:8080/
   api:
     image: deltafi/deltafi-api:2.0-rc15
-  ui:
-    image: deltafi/deltafi-ui:2.0-rc15
   egress_sink:
     enabled: true
     image: deltafi/deltafi-egress-sink:2.0-rc15

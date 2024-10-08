@@ -16,13 +16,6 @@ spec:
   - host: {{ .Values.ingress.domain }}
     http:
       paths:
-      - path: /(.*)
-        pathType: Prefix
-        backend:
-          service:
-            name: deltafi-ui-service
-            port:
-              number: 80
       - path: /(api/v2/deltafile/ingress)
         pathType: Prefix
         backend:
@@ -30,18 +23,11 @@ spec:
             name: deltafi-ingress-service
             port:
               number: 80
-      - path: /(api/v2/.*)
+      - path: /(.*)
         pathType: Prefix
         backend:
           service:
             name: deltafi-core-service
-            port:
-              number: 80
-      - path: /(docs.*)
-        pathType: Prefix
-        backend:
-          service:
-            name: deltafi-docs-service
             port:
               number: 80
       - path: /(visualization.*)

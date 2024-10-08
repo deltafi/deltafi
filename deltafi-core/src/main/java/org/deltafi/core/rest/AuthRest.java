@@ -38,9 +38,9 @@ import java.net.URI;
 
 import static org.deltafi.common.constant.DeltaFiConstants.*;
 
-@Slf4j
 @RestController
-@RequestMapping("auth")
+@RequestMapping("/api/v2/auth")
+@Slf4j
 public class AuthRest {
 
     public static final String X_ORIGINAL_URL = "X-ORIGINAL-URL";

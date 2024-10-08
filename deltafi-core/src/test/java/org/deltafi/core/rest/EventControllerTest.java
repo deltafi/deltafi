@@ -74,13 +74,13 @@ class EventControllerTest {
         Mockito.when(eventService.getEvents(Map.of())).thenReturn(List.of(event1, event2));
         Mockito.when(eventService.getEvents(Map.of("start", start, "end", end, "acknowledged", "true"))).thenReturn(List.of(event2, event1));
 
-        mockMvc.perform(get("/events"))
+        mockMvc.perform(get("/api/v2/events"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$[0].id").value(event1.getId().toString()))
                 .andExpect(jsonPath("$[1].id").value(event2.getId().toString()));
 
-        mockMvc.perform(get("/events?start="+start+"&end="+end+"&acknowledged=true"))
+        mockMvc.perform(get("/api/v2/events?start="+start+"&end="+end+"&acknowledged=true"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$[0].id").value(event2.getId().toString()))
@@ -92,7 +92,7 @@ class EventControllerTest {
         Event event = createEvent();
         Mockito.when(eventService.getEvent(EVENT_1)).thenReturn(event);
 
-        mockMvc.perform(get("/events/" + EVENT_1))
+        mockMvc.perform(get("/api/v2/events/" + EVENT_1))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(event.getId().toString()));
@@ -103,7 +103,7 @@ class EventControllerTest {
         Event event = createEvent();
         Mockito.when(eventService.createEvent(event)).thenReturn(event);
 
-        mockMvc.perform(post("/events")
+        mockMvc.perform(post("/api/v2/events")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(MAPPER.writeValueAsString(event)))
                 .andExpect(status().isOk())
@@ -116,7 +116,7 @@ class EventControllerTest {
         Event event = createEvent();
         Mockito.when(eventService.updateAcknowledgement(EVENT_1, true)).thenReturn(event);
 
-        mockMvc.perform(put("/events/" + EVENT_1 + "/acknowledge"))
+        mockMvc.perform(put("/api/v2/events/" + EVENT_1 + "/acknowledge"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(event.getId().toString()));
@@ -127,7 +127,7 @@ class EventControllerTest {
         Event event = createEvent();
         Mockito.when(eventService.updateAcknowledgement(EVENT_1, false)).thenReturn(event);
 
-        mockMvc.perform(put("/events/" + EVENT_1 + "/unacknowledge"))
+        mockMvc.perform(put("/api/v2/events/" + EVENT_1 + "/unacknowledge"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(event.getId().toString()));
@@ -138,7 +138,7 @@ class EventControllerTest {
         Event event = createEvent();
         Mockito.when(eventService.deleteEvent(EVENT_1)).thenReturn(event);
 
-        mockMvc.perform(delete("/events/" + EVENT_1))
+        mockMvc.perform(delete("/api/v2/events/" + EVENT_1))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(event.getId().toString()));
@@ -148,7 +148,7 @@ class EventControllerTest {
     void getMissingById() throws Exception {
         Mockito.when(eventService.getEvent(EVENT_1)).thenThrow(new EntityNotFound("missing"));
 
-        mockMvc.perform(get("/events/" + EVENT_1))
+        mockMvc.perform(get("/api/v2/events/" + EVENT_1))
                 .andExpect(status().isNotFound());
     }
 
@@ -156,7 +156,7 @@ class EventControllerTest {
     void invalidEvent() throws Exception {
         Mockito.when(eventService.createEvent(Mockito.any())).thenThrow(new ValidationException("bad input"));
 
-        mockMvc.perform(post("/events")
+        mockMvc.perform(post("/api/v2/events")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest());
