@@ -120,55 +120,23 @@ data:
 {{ .Files.Get "files/grafana/dashboards/last-seen.json" | indent 4 }}
 
 
-{{- if .Values.clickhouse.enabled -}}
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: dashboard-error-analytics
+  name: dashboard-error-analysis
   labels:
     grafana_dashboard: "1"
 data:
-  error-analytics.json: |-
-{{ .Files.Get "files/grafana/dashboards/error-analytics.json" | indent 4 }}
+  error-analysis.json: |-
+{{ .Files.Get "files/grafana/dashboards/error-analysis.json" | indent 4 }}
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: clickhouse-query-analysis
+  name: data-source-by-annotation
   labels:
     grafana_dashboard: "1"
 data:
-  clickhouse-query-analysis.json: |-
-{{ .Files.Get "files/grafana/dashboards/clickhouse-query-analysis.json" | indent 4 }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: clickhouse-stats
-  labels:
-    grafana_dashboard: "1"
-data:
-  clickhouse-stats.json: |-
-{{ .Files.Get "files/grafana/dashboards/clickhouse-stats.json" | indent 4 }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: clickhouse-metrics
-  labels:
-    grafana_dashboard: "1"
-data:
-  clickhouse-metrics.json: |-
-{{ .Files.Get "files/grafana/dashboards/clickhouse-metrics.json" | indent 4 }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: clickhouse-data-source-by-annotation
-  labels:
-    grafana_dashboard: "1"
-data:
-  clickhouse-data-source-by-annotation.json: |-
-{{ .Files.Get "files/grafana/dashboards/clickhouse-data-source-by-annotation.json" | indent 4 }}
-{{- end }}
+  data-source-by-annotation.json: |-
+{{ .Files.Get "files/grafana/dashboards/data-source-by-annotation.json" | indent 4 }}

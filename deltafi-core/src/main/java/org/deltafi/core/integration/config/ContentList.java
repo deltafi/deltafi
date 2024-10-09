@@ -34,7 +34,7 @@ public class ContentList {
     public List<String> validate() {
         List<String> errors = new ArrayList<>();
         if (StringUtils.isEmpty(flow)) {
-            errors.add("ContentList missing flow");
+            errors.add("ContentList missing dataSource");
         }
 
         if (type == null) {

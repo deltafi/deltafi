@@ -30,7 +30,6 @@ spec:
         - name: SPRING_PROFILES_ACTIVE
           value: kubernetes,monitor
         {{- include "coreEnvVars" . | nindent 8 }}
-        {{- include "clickhouseEnvVars" . | nindent 8 }}
         ports:
         - containerPort: 8080
 {{/*        TODO - add monitor valkey probe */}}

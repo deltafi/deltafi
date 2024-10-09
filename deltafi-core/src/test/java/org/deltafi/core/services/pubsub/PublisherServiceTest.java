@@ -20,6 +20,7 @@ package org.deltafi.core.services.pubsub;
 import org.assertj.core.api.Assertions;
 import org.deltafi.common.rules.RuleEvaluator;
 import org.deltafi.common.test.time.TestClock;
+import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.types.Action;
 import org.deltafi.common.types.ActionState;
 import org.deltafi.common.types.DefaultBehavior;
@@ -45,6 +46,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import static org.deltafi.core.services.pubsub.PublisherService.NO_SUBSCRIBERS;
+import static org.deltafi.core.services.pubsub.PublisherService.NO_SUBSCRIBER_CAUSE;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+
 @ExtendWith(MockitoExtension.class)
 class PublisherServiceTest {
 
@@ -61,6 +67,9 @@ class PublisherServiceTest {
 
     @Mock
     RuleEvaluator ruleEvaluator;
+
+    @Mock
+    AnalyticEventService analyticEventService;
 
     @Test
     void subscribers() {
@@ -155,13 +164,15 @@ class PublisherServiceTest {
 
         Set<DeltaFileFlow> subscribers = publisherService.publisherSubscribers(publisher, deltaFile, deltaFileFlow);
 
+        Mockito.verify(analyticEventService).recordError(eq(deltaFile), eq(deltaFileFlow.getName()), eq(NO_SUBSCRIBERS), eq(NO_SUBSCRIBER_CAUSE), any());
+
         // null publish rules will result no matches
         Assertions.assertThat(subscribers).isEmpty();
 
         Assertions.assertThat(deltaFileFlow.getActions()).hasSize(1);
         Action action = deltaFileFlow.getActions().getFirst();
         Assertions.assertThat(action.getState()).isEqualTo(ActionState.ERROR);
-        Assertions.assertThat(action.getErrorCause()).isEqualTo(PublisherService.NO_SUBSCRIBER_CAUSE);
+        Assertions.assertThat(action.getErrorCause()).isEqualTo(NO_SUBSCRIBER_CAUSE);
         Assertions.assertThat(action.getErrorContext()).isNotBlank();
         Assertions.assertThat(action.getFilteredCause()).isNull();
     }
@@ -177,6 +188,8 @@ class PublisherServiceTest {
 
         Set<DeltaFileFlow> subscribers = publisherService.publisherSubscribers(publisher, deltaFile, deltaFileFlow);
 
+        Mockito.verify(analyticEventService).recordFilter(eq(deltaFile), eq(deltaFileFlow.getName()), eq(NO_SUBSCRIBERS), eq(NO_SUBSCRIBER_CAUSE), any());
+
         // null publish rules will result no matches
         Assertions.assertThat(subscribers).isEmpty();
 
@@ -186,7 +199,7 @@ class PublisherServiceTest {
         Assertions.assertThat(action.getState()).isEqualTo(ActionState.FILTERED);
         Assertions.assertThat(action.getErrorCause()).isNull();
         Assertions.assertThat(action.getErrorContext()).isNull();
-        Assertions.assertThat(action.getFilteredCause()).isEqualTo(PublisherService.NO_SUBSCRIBER_CAUSE);
+        Assertions.assertThat(action.getFilteredCause()).isEqualTo(NO_SUBSCRIBER_CAUSE);
     }
 
     @Test
@@ -224,7 +237,7 @@ class PublisherServiceTest {
         Assertions.assertThat(deltaFileFlow.getActions()).hasSize(1);
         Action action = deltaFileFlow.getActions().getFirst();
         Assertions.assertThat(action.getState()).isEqualTo(ActionState.ERROR);
-        Assertions.assertThat(action.getErrorCause()).isEqualTo(PublisherService.NO_SUBSCRIBER_CAUSE);
+        Assertions.assertThat(action.getErrorCause()).isEqualTo(NO_SUBSCRIBER_CAUSE);
         Assertions.assertThat(action.getErrorContext()).isNotBlank();
         Assertions.assertThat(action.getFilteredCause()).isNull();
     }

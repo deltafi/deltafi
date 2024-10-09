@@ -21,7 +21,6 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.types.*;
 import org.deltafi.core.exceptions.JoinException;
-import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.services.pubsub.PublisherService;
 import org.deltafi.core.types.*;
 import org.springframework.stereotype.Service;
@@ -47,7 +46,6 @@ public class StateMachine {
     private final JoinEntryService joinEntryService;
     private final ScheduledJoinService scheduledJoinService;
     private final PublisherService publisherService;
-    private final AnalyticEventService analyticEventService;
 
     /**
      * Advance a set of DeltaFiles to the next step using the state machine. Call if advancing multiple deltaFiles
@@ -55,7 +53,7 @@ public class StateMachine {
      *
      * @param inputs List of StateMachine input objects
      * @return the list of action invocations to be performed
-     * flow configured.
+     * dataSource configured.
      */
     public List<WrappedActionInput> advance(List<StateMachineInput> inputs) {
         Map<String, Long> pendingQueued = new HashMap<>();
@@ -72,12 +70,7 @@ public class StateMachine {
                 input.flow().lastActionType() == ActionType.PUBLISH)) {
             actionInputs.addAll(publishToNewFlows(input, pendingQueued));
         }
-        final DeltaFileStage startingStage = input.deltaFile().getStage();
         input.deltaFile().updateState(OffsetDateTime.now(clock));
-        final DeltaFileStage endingStage = input.deltaFile().getStage();
-        if (!startingStage.equals(endingStage) && endingStage.equals(DeltaFileStage.COMPLETE)) {
-            analyticEventService.recordCompleted(input.deltaFile());
-        }
         return actionInputs;
     }
 
@@ -85,7 +78,7 @@ public class StateMachine {
         List<WrappedActionInput> actionInputs = new ArrayList<>();
 
         Action lastAction =  input.flow().lastAction();
-        // lastAction can be null if we are entering a new flow via a subscription
+        // lastAction can be null if we are entering a new dataSource via a subscription
         if (lastAction == null || lastAction.getState() == ActionState.COMPLETE || lastAction.getState() == ActionState.RETRIED) {
             if (input.flow().getType() == FlowType.TRANSFORM) {
                 actionInputs.addAll(advanceTransform(input, pendingQueued));

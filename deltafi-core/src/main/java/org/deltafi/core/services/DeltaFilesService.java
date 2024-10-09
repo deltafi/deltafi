@@ -93,7 +93,7 @@ public class DeltaFilesService {
 
     private static final ObjectWriter PRETTY_OBJECT_WRITER = OBJECT_MAPPER.writerWithDefaultPrettyPrinter();
 
-    public static final String MISSING_FLOW_CAUSE = "The flow is no longer installed or running";
+    public static final String MISSING_FLOW_CAUSE = "The dataSource is no longer installed or running";
 
     private static final int DEFAULT_QUERY_LIMIT = 50;
 
@@ -383,6 +383,9 @@ public class DeltaFilesService {
                                     .build());
                     generateMetrics(metrics, event, deltaFile, flow, action);
                     egress(deltaFile, flow, action, event.getStart(), event.getStop());
+                    if (flow.getState() == DeltaFileFlowState.COMPLETE) {
+                        analyticEventService.recordEgress(deltaFile, flow);
+                    }
                 }
                 case ERROR -> {
                     generateMetrics(metrics, event, deltaFile, flow, action);
@@ -457,7 +460,7 @@ public class DeltaFilesService {
                 event.getDid(), ingressEvent.getMemo(), ingressEvent.isExecuteImmediate(),
                 ingressEvent.getStatus(), ingressEvent.getStatusMessage(), dataSource.getCronSchedule());
         if (!completedExecution) {
-            log.warn("Received unexpected ingress event for flow {} with did {}", event.getFlowName(), event.getDid());
+            log.warn("Received unexpected ingress event for dataSource {} with did {}", event.getFlowName(), event.getDid());
             return;
         }
 
@@ -482,6 +485,8 @@ public class DeltaFilesService {
                     counter.erroredFiles++;
                 }
             }
+            analyticEventService.recordIngress(deltaFile.getDid(), deltaFile.getCreated(), deltaFile.getDataSource(),
+                    deltaFile.getIngressBytes(), deltaFile.annotationMap());
         }
 
         String actionClass =
@@ -521,6 +526,10 @@ public class DeltaFilesService {
             action.complete(event.getStart(), event.getStop(), transformEvent.getContent(),
                     transformEvent.getMetadata(), transformEvent.getDeleteMetadataKeys(), now);
             advanceAndSave(List.of(new StateMachineInput(deltaFile, flow)), false);
+            if (!transformEvent.getAnnotations().isEmpty()) {
+                analyticEventService.recordAnnotations(deltaFile.getDid(), deltaFile.getCreated(),
+                        deltaFile.getDataSource(), deltaFile.getIngressBytes(), deltaFile.annotationMap());
+            }
         } else {
             action.changeState(ActionState.SPLIT, event.getStart(), event.getStop(), now);
             List<StateMachineInput> inputs = new ArrayList<>();
@@ -567,6 +576,7 @@ public class DeltaFilesService {
                 event.getFilter().getContext());
 
         advanceAndSave(List.of(new StateMachineInput(deltaFile, flow)), false);
+        logFilterAnalytics(deltaFile, event);
     }
 
     private void error(DeltaFile deltaFile, DeltaFileFlow flow, Action action, ActionEvent event) {
@@ -575,10 +585,11 @@ public class DeltaFilesService {
         // If the content was deleted by a delete policy mark as CANCELLED instead of ERROR
         if (deltaFile.getContentDeleted() != null) {
             final DeltaFileStage startingStage = deltaFile.getStage();
-            deltaFile.cancel(OffsetDateTime.now(clock));
+            OffsetDateTime now = OffsetDateTime.now(clock);
+            deltaFile.cancel(now);
             final DeltaFileStage endingStage = deltaFile.getStage();
             if (!startingStage.equals(endingStage) && endingStage.equals(DeltaFileStage.CANCELLED)) {
-                analyticEventService.recordCompleted(deltaFile);
+                analyticEventService.recordCancel(deltaFile, now);
             }
             deltaFileCacheService.save(deltaFile);
         } else {
@@ -604,12 +615,24 @@ public class DeltaFilesService {
         logErrorAnalytics(deltaFile, event);
     }
 
-    private void logErrorAnalytics(DeltaFile deltaFile, ActionEvent action) {
-        analyticEventService.recordError(deltaFile, action.getFlowName(), action.getActionName(), action.getError().getCause());
+    private void logFilterAnalytics(DeltaFile deltaFile, ActionEvent event) {
+        analyticEventService.recordFilter(deltaFile, event.getFlowName(), event.getActionName(), event.getFilter().getMessage(), event.getStop());
+        if (!event.getFilter().getAnnotations().isEmpty()) {
+            analyticEventService.recordAnnotations(deltaFile.getDid(), deltaFile.getCreated(),
+                    deltaFile.getDataSource(), deltaFile.getIngressBytes(), deltaFile.annotationMap());
+        }
+    }
+
+    private void logErrorAnalytics(DeltaFile deltaFile, ActionEvent event) {
+        analyticEventService.recordError(deltaFile, event.getFlowName(), event.getActionName(), event.getError().getCause(), event.getStop());
+        if (!event.getError().getAnnotations().isEmpty()) {
+            analyticEventService.recordAnnotations(deltaFile.getDid(), deltaFile.getCreated(),
+                    deltaFile.getDataSource(), deltaFile.getIngressBytes(), deltaFile.annotationMap());
+        }
     }
 
     private void logErrorAnalytics(DeltaFile deltaFile, ActionEvent action, String message) {
-        analyticEventService.recordError(deltaFile, action.getFlowName(), action.getActionName(), message);
+        analyticEventService.recordError(deltaFile, action.getFlowName(), action.getActionName(), message, action.getStop());
     }
 
     private DeltaFile getTerminalDeltaFileOrCache(UUID did) {
@@ -670,13 +693,16 @@ public class DeltaFilesService {
         }
 
         deltaFileCacheService.save(deltaFile);
+
+        analyticEventService.recordAnnotations(deltaFile.getDid(), deltaFile.getCreated(),
+                deltaFile.getDataSource(), deltaFile.getIngressBytes(), deltaFile.annotationMap());
     }
 
     /**
-     * Find the DeltaFiles that are pending annotations for the given flow and check if they satisfy
+     * Find the DeltaFiles that are pending annotations for the given dataSource and check if they satisfy
      * the new set of expectedAnnotations
-     * @param flowName name of the flow
-     * @param expectedAnnotations new set of expected annotations for the given flow
+     * @param flowName name of the dataSource
+     * @param expectedAnnotations new set of expected annotations for the given dataSource
      */
     @Transactional
     public void updatePendingAnnotationsForFlows(String flowName, Set<String> expectedAnnotations) {
@@ -688,7 +714,7 @@ public class DeltaFilesService {
     }
 
     /*
-     * Update the pending annotations in the given DeltaFile based on the latest expectedAnnotations for the flow
+     * Update the pending annotations in the given DeltaFile based on the latest expectedAnnotations for the dataSource
      * If the collector list hits the batchSize limit, save the updated DeltaFiles and flush the list.
      */
     void updatePendingAnnotationsForFlowsAndCollect(DeltaFile deltaFile, String flowName, Set<String> expectedAnnotations, List<DeltaFile> collector, int batchSize) {
@@ -955,7 +981,7 @@ public class DeltaFilesService {
                     if (indexOf >= 0) {
                         expectedInheritedActions = expectedInheritedActions.subList(0, indexOf + 1);
                     } else {
-                        throw new IllegalStateException("The flow " + flow.getName() + " no longer contains an action named " + startFromAction.getName() + " where the replay would be begin");
+                        throw new IllegalStateException("The dataSource " + flow.getName() + " no longer contains an action named " + startFromAction.getName() + " where the replay would be begin");
                     }
                     break;
                 } else {
@@ -964,7 +990,7 @@ public class DeltaFilesService {
             }
 
             if (!expectedInheritedActions.equals(inheritedActions)) {
-                throw new IllegalStateException("The actions inherited from the parent DeltaFile for flow " + flow.getName() + " do not match the latest flow");
+                throw new IllegalStateException("The actions inherited from the parent DeltaFile for dataSource " + flow.getName() + " do not match the latest dataSource");
             }
 
             nextActions.addAll(childActionConfigurations);
@@ -976,7 +1002,7 @@ public class DeltaFilesService {
         flow.setState(nextActions.isEmpty() ? DeltaFileFlowState.COMPLETE : DeltaFileFlowState.IN_FLIGHT);
 
         if (startFromAction == null) {
-            throw new IllegalStateException("No start action found to inherit for flow " + flow.getName() + " where replay should begin");
+            throw new IllegalStateException("No start action found to inherit for dataSource " + flow.getName() + " where replay should begin");
         }
         return Action.builder()
                 .name(startFromAction.getName())
@@ -1076,10 +1102,11 @@ public class DeltaFilesService {
                             result.setError("DeltaFile with did " + did + " is no longer active");
                         } else {
                             final DeltaFileStage startingStage = deltaFile.getStage();
-                            deltaFile.cancel(OffsetDateTime.now(clock));
+                            OffsetDateTime now = OffsetDateTime.now(clock);
+                            deltaFile.cancel(now);
                             final DeltaFileStage endingStage = deltaFile.getStage();
                             if (!startingStage.equals(endingStage) && endingStage.equals(DeltaFileStage.CANCELLED)) {
-                                analyticEventService.recordCompleted(deltaFile);
+                                analyticEventService.recordCancel(deltaFile, now);
                             }
 
                             changedDeltaFiles.add(deltaFile);
@@ -1174,7 +1201,7 @@ public class DeltaFilesService {
      * @param  createdBefore   the date and time before which the DeltaFiles were created
      * @param  completedBefore the date and time before which the DeltaFiles were completed
      * @param  minBytes        the minimum number of bytes for a DeltaFile to be deleted
-     * @param  flow            the flow of the DeltaFiles to be deleted
+     * @param  flow            the dataSource of the DeltaFiles to be deleted
      * @param  policy          the policy of the DeltaFiles to be deleted
      * @param  deleteMetadata  whether to delete the metadata of the DeltaFiles in addition to the content
      * @return                 true if there are more DeltaFiles to delete, false otherwise
@@ -1506,7 +1533,7 @@ public class DeltaFilesService {
             // use the stored value so the cached memo value is not overwritten
             dataSource = timedDataSourceService.getFlowOrThrow(flowName);
             if (!dataSource.isRunning()) {
-                throw new IllegalStateException("Timed ingress flow '" + flowName + "' cannot be tasked while in a state of " + dataSource.getFlowStatus().getState());
+                throw new IllegalStateException("Timed ingress dataSource '" + flowName + "' cannot be tasked while in a state of " + dataSource.getFlowStatus().getState());
             }
             dataSource.setMemo(memo);
         } else {
@@ -1634,9 +1661,9 @@ public class DeltaFilesService {
             Set<UUID> previousDids = new HashSet<>();
 
             /*
-             * If applying any resume policy that is not flow-specific,
+             * If applying any resume policy that is not dataSource-specific,
              * then query for all DeltaFiles with an ERROR, and use that
-             * result set for all policies without a flow name.
+             * result set for all policies without a dataSource name.
              */
             List<DeltaFile> allErrorDeltaFiles = new ArrayList<>();
             if (!allHaveDataSource) {
@@ -1717,7 +1744,7 @@ public class DeltaFilesService {
                 joinEntry.getJoinDefinition().getAction());
 
         if (actionConfiguration == null) {
-            log.warn("Time-based join action couldn't run because action {} in flow {} is no longer running",
+            log.warn("Time-based join action couldn't run because action {} in dataSource {} is no longer running",
                     joinEntry.getJoinDefinition().getAction(), joinEntry.getJoinDefinition().getFlow());
             return;
         }
@@ -1725,7 +1752,7 @@ public class DeltaFilesService {
         DeltaFile parent = getDeltaFile(joinDids.getLast());
         DeltaFileFlow deltaFileFlow = parent.getFlows().stream().filter(flow -> joinEntry.getId().equals(flow.getJoinId())).findFirst().orElse(null);
         if (deltaFileFlow == null) {
-            log.warn("Time-based join action couldn't run because a flow with a joinId of {} was not found in the parent with a did of {}. Failed executing action {} from flow flow {}",
+            log.warn("Time-based join action couldn't run because a dataSource with a joinId of {} was not found in the parent with a did of {}. Failed executing action {} from dataSource dataSource {}",
                     joinEntry.getId(), parent.getDid(), joinEntry.getJoinDefinition().getAction(), joinEntry.getJoinDefinition().getFlow());
             return;
         }

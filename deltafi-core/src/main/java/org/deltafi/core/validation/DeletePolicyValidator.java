@@ -41,7 +41,7 @@ public class DeletePolicyValidator {
         }
 
         if ((policy.getFlow() != null) && StringUtils.isBlank(policy.getFlow())) {
-            errors.add("flow is invalid");
+            errors.add("dataSource is invalid");
         }
 
         if (policy instanceof DiskSpaceDeletePolicy) {

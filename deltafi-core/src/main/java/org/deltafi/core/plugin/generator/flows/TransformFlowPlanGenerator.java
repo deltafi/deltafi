@@ -31,10 +31,10 @@ public class TransformFlowPlanGenerator {
     static final String FLOW_NAME_POSTFIX = "-transform";
 
     /**
-     * Create a list of transform flow plans using the given action input
-     * @param baseFlowName prefix for the flow plan name
-     * @param transformActions list of transform actions to use in the flow plans
-     * @return list of transform flow plans
+     * Create a list of transform dataSource plans using the given action input
+     * @param baseFlowName prefix for the dataSource plan name
+     * @param transformActions list of transform actions to use in the dataSource plans
+     * @return list of transform dataSource plans
      */
     public List<FlowPlan> generateTransformFlows(String baseFlowName, List<ActionGeneratorInput> transformActions) {
         List<ActionConfiguration> transformActionConfigs = ActionUtil.transformActionConfigurations(transformActions);
@@ -57,7 +57,7 @@ public class TransformFlowPlanGenerator {
 
     private FlowPlan generateTransformFlowPlan(String planName, List<ActionConfiguration> transformActions,
                                                Set<Rule> subscribeRuleSet, PublishRules publishRules) {
-        TransformFlowPlan transformFlowPlan = new TransformFlowPlan(planName, "Sample transform flow");
+        TransformFlowPlan transformFlowPlan = new TransformFlowPlan(planName, "Sample transform dataSource");
         transformFlowPlan.setTransformActions(transformActions);
         transformFlowPlan.setSubscribe(subscribeRuleSet);
         transformFlowPlan.setPublish(publishRules);

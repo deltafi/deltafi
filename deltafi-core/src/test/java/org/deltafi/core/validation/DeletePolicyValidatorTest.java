@@ -33,7 +33,7 @@ class DeletePolicyValidatorTest {
     private static final Long MIN_BYTES = 9999L;
     private static final UUID POLICY_ID = UUID.randomUUID();
     private static final String POLICY_NAME = "policyName";
-    private static final String FLOW = "flow";
+    private static final String FLOW = "dataSource";
     private static final String GOOD_DURATION = "PT10M";
     private static final String BAD_DURATION = "GARBAGE";
     private static final String ERROR_MESSAGE = "Timed delete policy " + POLICY_NAME
@@ -60,7 +60,7 @@ class DeletePolicyValidatorTest {
         assertTrue(errors.containsAll(List.of(
                 "id is missing",
                 "name is missing",
-                "flow is invalid",
+                "dataSource is invalid",
                 "maxPercent is invalid")));
     }
 
@@ -97,7 +97,7 @@ class DeletePolicyValidatorTest {
         assertTrue(errors.containsAll(List.of(
                 "id is missing",
                 "name is missing",
-                "flow is invalid",
+                "dataSource is invalid",
                 "Unable to parse duration for afterCreate")));
     }
 

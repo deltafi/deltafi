@@ -144,7 +144,6 @@ Version: $(cat $DELTAFICLI_WORKDIR/VERSION)
 Usage: $cli_name [command]
 
 Commands:
-  clickhouse-cli                launch the clickhouse CLI
   configure-plugin-ssl          configure SSL for plugins and the entity resolver
   data-source                   start, stop, show or validate a data source flow
   did                           show did for filename
@@ -205,9 +204,6 @@ Flags:
 }
 
 case "$1" in
-  clickhouse-cli)
-    "$DELTAFICLI_WORKDIR/commands/clickhouse-cli" "$@"
-    ;;
   configure-plugin-ssl)
       "$DELTAFICLI_WORKDIR/commands/configure-plugin-ssl" "$@"
       ;;

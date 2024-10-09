@@ -120,17 +120,6 @@ initContainers:
       until PGPASSWORD=$PGPASSWORD psql -h deltafi-postgres -U $PGUSER -d deltafi -c '\q' && echo PostgreSQL is up and ready;
         do sleep 1;
       done
-{{- if .Values.clickhouse.enabled }}
-- name: wait-for-clickhouse
-  image: busybox:1.36.0
-  command:
-  - 'sh'
-  - '-c'
-  - >
-    until nc -z -w 2 deltafi-clickhouse 9000 && echo clickhouse ok;
-      do sleep 1;
-    done
-{{- end -}}
 {{- end -}}
 
 {{- define "defaultEnvVars" -}}
@@ -187,6 +176,8 @@ initContainers:
 {{- define "postgresEnvVars" -}}
 - name: POSTGRES_USER
   value: deltafi
+- name: POSTGRES_DB
+  value: deltafi
 - name: POSTGRES_PASSWORD
   valueFrom:
     secretKeyRef:
@@ -234,16 +225,6 @@ initContainers:
         path: tls.crt
       - key: ca.crt
         path: ca.crt
-{{- end -}}
-
-{{- define "clickhouseEnvVars" -}}
-- name: CLICKHOUSE_ENABLED
-  value: "{{ .Values.clickhouse.enabled | toString }}"
-- name: CLICKHOUSE_PASSWORD
-  valueFrom:
-    secretKeyRef:
-      name: clickhouse-password
-      key: clickhouse-password
 {{- end -}}
 
 {{- define "actionContainerSpec" -}}

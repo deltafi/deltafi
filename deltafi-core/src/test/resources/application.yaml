@@ -15,9 +15,6 @@ spring:
       discovery:
         catalog-services-watch:
           enabled: false
-  datasource:
-    # hikari takes 60 seconds to connect to the postgres TestContainer, so disable it in test
-    type: org.springframework.jdbc.datasource.SimpleDriverDataSource
   flyway:
     enabled: true
     locations: classpath:db/migration

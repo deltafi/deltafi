@@ -35,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class AnnotationServiceTest {
 
     private static final Set<String> ANNOTATION_KEYS = Set.of("a", "b");
-    public static final String FLOW = "flow";
+    public static final String FLOW = "dataSource";
 
     @InjectMocks
     AnnotationService annotationService;

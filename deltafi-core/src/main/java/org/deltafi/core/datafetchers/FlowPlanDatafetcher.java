@@ -92,35 +92,35 @@ public class FlowPlanDatafetcher {
     @DgsMutation
     @NeedsPermission.FlowUpdate
     public boolean setEgressFlowExpectedAnnotations(@InputArgument String flowName, @InputArgument Set<String> expectedAnnotations) {
-        auditLogger.audit("set expected annotations for flow {} to {}", flowName, expectedAnnotations);
+        auditLogger.audit("set expected annotations for dataSource {} to {}", flowName, expectedAnnotations);
         return annotationService.setExpectedAnnotations(flowName, expectedAnnotations);
     }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
     public boolean enableEgressTestMode(@InputArgument String flowName) {
-        auditLogger.audit("enabled egress test mode for flow {}", flowName);
+        auditLogger.audit("enabled egress test mode for dataSource {}", flowName);
         return egressFlowService.enableTestMode(flowName);
     }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
     public boolean disableEgressTestMode(@InputArgument String flowName) {
-        auditLogger.audit("disabled egress test mode for flow {}", flowName);
+        auditLogger.audit("disabled egress test mode for dataSource {}", flowName);
         return egressFlowService.disableTestMode(flowName);
     }
 
     @DgsMutation
     @NeedsPermission.Admin
     public boolean setTimedDataSourceMemo(@InputArgument String name, String memo) {
-        auditLogger.audit("set timed source memo for flow {} to {}", name, memo);
+        auditLogger.audit("set timed source memo for dataSource {} to {}", name, memo);
         return timedDataSourceService.setMemo(name, memo);
     }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
     public boolean setTimedDataSourceCronSchedule(@InputArgument String name, String cronSchedule) {
-        auditLogger.audit("set timed source cron schedule for flow {} to {}", name, cronSchedule);
+        auditLogger.audit("set timed source cron schedule for dataSource {} to {}", name, cronSchedule);
         return timedDataSourceService.setCronSchedule(name, cronSchedule);
     }
 
@@ -145,14 +145,14 @@ public class FlowPlanDatafetcher {
     @DgsMutation
     @NeedsPermission.FlowStart
     public boolean startEgressFlow(@InputArgument String flowName) {
-        auditLogger.audit("started egress flow {}", flowName);
+        auditLogger.audit("started egress dataSource {}", flowName);
         return egressFlowService.startFlow(flowName);
     }
 
     @DgsMutation
     @NeedsPermission.FlowStop
     public boolean stopEgressFlow(@InputArgument String flowName) {
-        auditLogger.audit("stopped egress flow {}", flowName);
+        auditLogger.audit("stopped egress dataSource {}", flowName);
         return egressFlowService.stopFlow(flowName);
     }
 
@@ -269,28 +269,28 @@ public class FlowPlanDatafetcher {
     @DgsMutation
     @NeedsPermission.FlowStart
     public boolean startTransformFlow(@InputArgument String flowName) {
-        auditLogger.audit("started transform flow {}", flowName);
+        auditLogger.audit("started transform dataSource {}", flowName);
         return transformFlowService.startFlow(flowName);
     }
 
     @DgsMutation
     @NeedsPermission.FlowStop
     public boolean stopTransformFlow(@InputArgument String flowName) {
-        auditLogger.audit("stopped transform flow {}", flowName);
+        auditLogger.audit("stopped transform dataSource {}", flowName);
         return transformFlowService.stopFlow(flowName);
     }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
     public boolean enableTransformTestMode(@InputArgument String flowName) {
-        auditLogger.audit("enabled test mode for transform flow {}", flowName);
+        auditLogger.audit("enabled test mode for transform dataSource {}", flowName);
         return transformFlowService.enableTestMode(flowName);
     }
 
     @DgsMutation
     @NeedsPermission.FlowUpdate
     public boolean disableTransformTestMode(@InputArgument String flowName) {
-        auditLogger.audit("disabled test mode for transform flow {}", flowName);
+        auditLogger.audit("disabled test mode for transform dataSource {}", flowName);
         return transformFlowService.disableTestMode(flowName);
     }
 

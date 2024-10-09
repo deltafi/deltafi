@@ -15,9 +15,9 @@ shift
 PARAMS="${*@Q}"
 echo "ARGS: $ARGS PARAMS: $PARAMS"
 if _is_standalone; then
-  PG_USER_ENV='$PGUSER'
-  TABLE='$POSTGRES_DB'
-  docker exec -it deltafi-postgres sh -c "psql ${PARAMS} -U ${PG_USER_ENV} ${TABLE}"
+  POSTGRES_DB_ENV='$POSTGRES_DB'
+  POSTGRES_USER_ENV='$POSTGRES_USER'
+  docker exec -it deltafi-postgres bash -c "psql ${POSTGRES_DB_ENV} ${PARAMS}"
 else
   ${KUBECTL_BIN} exec -it "$(${KUBECTL_BIN} get pod --selector application=spilo,spilo-role=master -o name)" -c postgres -- psql ${PARAMS} -U deltafi deltafi
 fi

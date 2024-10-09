@@ -75,7 +75,7 @@ public class FlowCacheService {
     public Flow getFlowOrThrow(FlowType flowType, String flowName) {
         Flow flow = getFlow(flowType, flowName);
         if (flow == null) {
-            throw new IllegalArgumentException("No " + flowType + " flow exists with the name: " + flowName);
+            throw new IllegalArgumentException("No " + flowType + " dataSource exists with the name: " + flowName);
         }
 
         return flow;

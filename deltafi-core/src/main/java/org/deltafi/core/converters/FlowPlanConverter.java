@@ -50,7 +50,7 @@ public abstract class FlowPlanConverter<FlowPlanT extends FlowPlan, FlowT extend
     /**
      * Convert the given FlowPlan to a Flow using the given variables
      * to resolve any placeholders in the plan.
-     * @param flowPlanT template that will be used to create the flow
+     * @param flowPlanT template that will be used to create the dataSource
      * @param flowPlanPropertyHelper holds the variables used to resolve templated fields
      */
     public abstract FlowT createFlow(FlowPlanT flowPlanT, FlowPlanPropertyHelper flowPlanPropertyHelper);

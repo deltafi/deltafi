@@ -47,6 +47,8 @@ Usage:
 SUDO=$(which sudo)
 export USER_ID
 USER_ID=$(id -u)
+export GROUP_ID
+GROUP_ID=$(id -g)
 
 # _readlink()
 #
@@ -345,7 +347,6 @@ _setup_secrets() {
   POSTGRES_SECRET_PATH="${SECRETS_DIR}/postgres.env"
   VALKEY_SECRET_PATH="${SECRETS_DIR}/valkey.env"
   SSL_SECRET_PATH="${SECRETS_DIR}/ssl.env"
-  CLICKHOUSE_SECRET_PATH="${SECRETS_DIR}/clickhouse.env"
 
   if [[ ! -f "${GRAFANA_SECRET_PATH}" ]]; then
       grafana_password=$(_random_password 16)
@@ -370,7 +371,7 @@ EOF
     cat <<EOF > "${POSTGRES_SECRET_PATH}"
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=$postgres_password
-POSTGRES_DB=deltafi
+POSTGRES_DB=postgres
 PGUSER=postgres
 EOF
   fi
@@ -383,25 +384,7 @@ VALKEY_PASSWORD=$valkey_password
 EOF
   fi
 
-  if [[ ! -f "${CLICKHOUSE_SECRET_PATH}" ]]; then
-    clickhouse_password=$(_random_password 16)
-    cat <<EOF > "${CLICKHOUSE_SECRET_PATH}"
-CLICKHOUSE_PASSWORD=$clickhouse_password
-CLICKHOUSE_ADMIN_USER=default
-CLICKHOUSE_ADMIN_PASSWORD=$clickhouse_password
-EOF
-  fi
-
-  if [[ ! -f "${CLICKHOUSE_SECRET_PATH}" ]]; then
-    clickhouse_password=$(_random_password 16)
-    cat <<EOF > "${CLICKHOUSE_SECRET_PATH}"
-CLICKHOUSE_PASSWORD=$clickhouse_password
-CLICKHOUSE_ADMIN_USER=default
-CLICKHOUSE_ADMIN_PASSWORD=$clickhouse_password
-EOF
-  fi
-
-  # make sure the file exists or compose wont start
+  # TODO -- SSL settings need to be passed in/read
   if [[ ! -f "${SSL_SECRET_PATH}" ]]; then
     touch "${SSL_SECRET_PATH}"
   fi
@@ -467,15 +450,6 @@ deltafi:
     image: ${repo}/deltafi-egress-sink:${tag}
   nodemonitor:
     image: ${repo}/deltafi-nodemonitor:${tag}
-  clickhouse:
-    enabled: true
-  clickhouse_etl:
-    enabled: true
-    image: ${repo}/deltafi-clickhouse-etl:${tag}
-    interval: 120
-    lag: 120
-    batch: 2000
-    delete_ttl: "7 DAY"
 # nginx domain
 ingress:
   domain: local.deltafi.org
@@ -488,9 +462,8 @@ dependencies:
   promtail: grafana/promtail:2.9.10
   mongodb: bitnami/mongodb:5.0.17
   valkey: bitnami/valkey:7.2.6
-  clickhouse: bitnami/clickhouse:24.8.1-debian-12-r0
   docker_web_gui: deltafi/docker-web-gui:1.0.1-0
-  postgres: postgres:16.3-alpine3.20
+  postgres: timescale/timescaledb:2.16.1-pg16
 EOF
 }
 
@@ -564,16 +537,6 @@ _write_startup_file() {
   _append_startup "ENV_DIR" "${ENV_DIR}"
   _append_startup "DATA_DIR" "${DATA_DIR}"
   _append_startup "COMPOSE_PROJECT_NAME" "deltafi"
-  if [[ $(_from_values ".deltafi.clickhouse.enabled") == "true" ]]; then
-    _append_startup "CLICKHOUSE_SCALE" "1"
-  else
-    _append_startup "CLICKHOUSE_SCALE" "0"
-  fi
-  if [[ $(_from_values ".deltafi.clickhouse_etl.enabled") == "true" ]]; then
-    _append_startup "CLICKHOUSE_ETL_SCALE" "1"
-  else
-    _append_startup "CLICKHOUSE_ETL_SCALE" "0"
-  fi
   _append_startup_from_values "DELTAFI_API" ".deltafi.api.image"
   _append_startup_from_values "DELTAFI_ENTITY_RESOLVER" ".deltafi.auth.entityResolver.image"
   _append_startup_from_values "DELTAFI_CORE" ".deltafi.core.image"
@@ -581,7 +544,6 @@ _write_startup_file() {
   _append_startup_from_values "DELTAFI_EGRESS_SINK" ".deltafi.egress_sink.image"
   _append_startup_from_values "DELTAFI_INGRESS" ".deltafi.ingress.image"
   _append_startup_from_values "DELTAFI_NODEMONITOR" ".deltafi.nodemonitor.image"
-  _append_startup_from_values "DELTAFI_CLICKHOUSE_ETL" ".deltafi.api.image"
   _append_startup_from_values "GRAFANA" ".dependencies.grafana"
   _append_startup_from_values "GRAPHITE" ".dependencies.graphite"
   _append_startup_from_values "LOKI" ".dependencies.loki"
@@ -591,7 +553,6 @@ _write_startup_file() {
   _append_startup_from_values "PROMTAIL" ".dependencies.promtail"
   _append_startup_from_values "VALKEY" ".dependencies.valkey"
   _append_startup_from_values "REDIS" ".dependencies.valkey"
-  _append_startup_from_values "CLICKHOUSE" ".dependencies.clickhouse"
   _append_startup_from_values "DOCKER_WEB_GUI" ".dependencies.docker_web_gui"
   _append_startup_from_values "ENTITY_RESOLVER_PORT" ".deltafi.auth.entityResolver.port"
   _append_compose_profiles
@@ -645,13 +606,6 @@ _write_env_files() {
 
   _append_common "ENTITY_RESOLVER_ENABLED" "${entity_resolver_enabled}"
   _append_common "ENTITY_RESOLVER_URL" "${entity_resolver_url}"
-  _append_common_from_values "ETL_BATCH" ".deltafi.clickhouse_etl.batch"
-  _append_common_from_values "ETL_DELETE_TTL" ".deltafi.clickhouse_etl.delete_ttl"
-  _append_common_from_values "ETL_INTERVAL" ".deltafi.clickhouse_etl.interval"
-  _append_common_from_values "ETL_LAG" ".deltafi.clickhouse_etl.lag"
-
-  _append_startup_from_values "CLICKHOUSE_ENABLED" ".deltafi.clickhouse.enabled"
-  _append_startup_from_values "CLICKHOUSE_ETL_ENABLED" ".deltafi.clickhouse_etl.enabled"
 
   valid_modes=("disabled" "basic" "cert")
   if [[ ! "${valid_modes[*]}" =~ ${auth_mode} ]]; then
@@ -710,7 +664,7 @@ _post_install() {
 _create_data_dirs() {
   mkdir -p "${DATA_DIR}"
   if _is_linux; then
-    mkdir -p "${DATA_DIR}"/{postgres,clickhouse,grafana,auth,loki,minio,certs}
+    mkdir -p "${DATA_DIR}"/{postgres,grafana,auth,loki,minio,certs}
   fi
 }
 

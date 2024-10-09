@@ -63,7 +63,7 @@ public class ResumePolicy {
     public static final String INVALID_MAX_DELAY = "maxDelay must not be negative";
     public static final String INVALID_MULTIPLIER = "multiplier must be positive";
     public static final String MAX_DELAY_ERROR = "maxDelay must not be lower than delay";
-    public static final String MISSING_CRITERIA = "Must specify errorSubstring, flow, action, and actionType";
+    public static final String MISSING_CRITERIA = "Must specify errorSubstring, dataSource, action, and actionType";
     public static final String MISSING_ID = "missing id";
     public static final String MISSING_NAME = "missing name";
     public static final String MISSING_BACKOFF = "missing backOff";
@@ -170,8 +170,8 @@ public class ResumePolicy {
      *
      * @param attempt    the number of times the action was attempted
      * @param error      the errorCause message from the action
-     * @param flow       the DeltaFile;s sourceInfo flow
-     * @param action     the name of the action, including flow prefix
+     * @param flow       the DeltaFile;s sourceInfo dataSource
+     * @param action     the name of the action, including dataSource prefix
      * @param actionType the action type
      * @return true if a match; otherwise false
      */

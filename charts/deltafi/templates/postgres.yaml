@@ -17,7 +17,6 @@ spec:
     deltafi:
     - superuser
     - createdb
-#    foo_user: []
 #    flyway: []
 #  usersIgnoringSecretRotation:
 #  - bar_user
@@ -38,7 +37,7 @@ spec:
     deltafi: deltafi
   postgresql:
     version: "{{ .Values.postgres.version }}"
-    parameters:  # Expert section
+    parameters:
       shared_buffers: "128MB"
       max_connections: "100"
       log_statement: "info"

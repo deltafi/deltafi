@@ -20,6 +20,7 @@ package org.deltafi.core.services.pubsub;
 import lombok.extern.slf4j.Slf4j;
 import org.deltafi.common.rules.RuleEvaluator;
 import org.deltafi.common.types.*;
+import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.types.*;
 import org.springframework.stereotype.Service;
 
@@ -47,11 +48,13 @@ public class PublisherService {
     private final RuleEvaluator ruleEvaluator;
     private final List<SubscriberService> subscriberServices;
     private final Clock clock;
+    private final AnalyticEventService analyticEventService;
 
-    public PublisherService(RuleEvaluator ruleEvaluator, List<SubscriberService> subscriberServices, Clock clock) {
+    public PublisherService(RuleEvaluator ruleEvaluator, List<SubscriberService> subscriberServices, Clock clock, AnalyticEventService analyticEventService) {
         this.ruleEvaluator = ruleEvaluator;
         this.subscriberServices = subscriberServices;
         this.clock = clock;
+        this.analyticEventService = analyticEventService;
     }
 
     /**
@@ -59,13 +62,13 @@ public class PublisherService {
      * Adds synthetic errors or filter actions based publisher and subscriber rules
      * that are applied. If there are no matching subscribers and no pending actions
      * the DeltaFile will be moved to a terminal state.
-     * @param flow flow used to determine what topics to send the DeltaFile to
+     * @param flow dataSource used to determine what topics to send the DeltaFile to
      * @param deltaFile that will be sent to the matching topics
      * @param publishingFlow DeltaFileFlow that was completed and now publishing the DeltaFile
      * @return DeltaFileFlows that were added to the DeltaFile based on the matching subscribers
      */
     public Set<DeltaFileFlow> subscribers(Flow flow, DeltaFile deltaFile, DeltaFileFlow publishingFlow) {
-        Objects.requireNonNull(flow, "The flow cannot be null");
+        Objects.requireNonNull(flow, "The dataSource cannot be null");
         if (flow instanceof DataSource dataSource) {
             return dataSourceSubscribers(dataSource, deltaFile, publishingFlow);
         } else if (flow instanceof Publisher publisher) {
@@ -79,7 +82,7 @@ public class PublisherService {
     Set<DeltaFileFlow> publisherSubscribers(Publisher publisher, DeltaFile deltaFile, DeltaFileFlow publishingFlow) {
         PublishRules publishRules = publisher.publishRules();
         if (publishRules == null) {
-            errorDeltaFile(publishingFlow, "Flow " + publisher.getName() + " does not have publish rules");
+            errorDeltaFile(deltaFile, publishingFlow, "Flow " + publisher.getName() + " does not have publish rules");
         }
 
         Set<String> publishTopics = getMatchingTopics(publishRules, publishingFlow);
@@ -98,7 +101,7 @@ public class PublisherService {
         Set<DeltaFileFlow> subscribers = subscribers(Set.of(dataSource.getTopic()), deltaFile, publishingFlow);
 
         if (subscribers.isEmpty()) {
-            handleNoMatches(dataSource, publishingFlow);
+            handleNoMatches(deltaFile, dataSource, publishingFlow);
         }
 
         return subscribers;
@@ -143,7 +146,7 @@ public class PublisherService {
      * @return set of the matching topics
      */
     Set<String> getMatchingTopics(PublishRules publishRules, DeltaFileFlow deltaFileFlow) {
-        if (publishRules.getRules() == null) {
+        if (publishRules == null || publishRules.getRules() == null) {
             return Set.of();
         }
 
@@ -202,7 +205,7 @@ public class PublisherService {
             defaultBehavior = DefaultBehavior.ERROR;
         }
 
-        String context = "No subscribers found from flow '" + publisher.getName() + "' ";
+        String context = "No subscribers found from dataSource '" + publisher.getName() + "' ";
         if (publishTopics.isEmpty()) {
             context += "because no topics matched the criteria.";
         } else {
@@ -213,14 +216,14 @@ public class PublisherService {
         if (DefaultBehavior.FILTER.equals(defaultBehavior)) {
             filterDeltaFile(deltaFile, completedFlow, context);
         } else {
-            errorDeltaFile(completedFlow, context);
+            errorDeltaFile(deltaFile, completedFlow, context);
         }
 
         return Set.of();
     }
 
-    private void handleNoMatches(DataSource dataSource, DeltaFileFlow flow) {
-        errorDeltaFile(flow, "No subscribers found for data source '" + dataSource.getName() + "'" + " on topic '" + dataSource.getTopic() + "'");
+    private void handleNoMatches(DeltaFile deltaFile, DataSource dataSource, DeltaFileFlow flow) {
+        errorDeltaFile(deltaFile, flow, "No subscribers found for data source '" + dataSource.getName() + "'" + " on topic '" + dataSource.getTopic() + "'");
     }
 
     private Set<Subscriber> getSubscribers(String topic) {
@@ -234,7 +237,7 @@ public class PublisherService {
         return ruleEvaluator.evaluateCondition(rule.getCondition(), deltaFileFlow.getMetadata(), deltaFileFlow.lastContent().stream().map(c -> new Content(c.getName(), c.getMediaType(), c.getSegments())).toList());
     }
 
-    private void errorDeltaFile(DeltaFileFlow flow, String context) {
+    private void errorDeltaFile(DeltaFile deltaFile, DeltaFileFlow flow, String context) {
         // grab the last content list to copy into the synthetic error action to make it available for retry
         List<Content> toCopy =  flow.lastActionContent();
         Action action = queueSyntheticAction(flow);
@@ -243,6 +246,7 @@ public class PublisherService {
         action.setErrorContext(context);
         action.setContent(toCopy);
         flow.setState(DeltaFileFlowState.ERROR);
+        analyticEventService.recordError(deltaFile, flow.getName(), action.getName(), NO_SUBSCRIBER_CAUSE, action.getModified());
     }
 
     private void filterDeltaFile(DeltaFile deltaFile, DeltaFileFlow flow, String context) {
@@ -251,6 +255,7 @@ public class PublisherService {
         action.setFilteredCause(NO_SUBSCRIBER_CAUSE);
         action.setFilteredContext(context);
         deltaFile.setFiltered(true);
+        analyticEventService.recordFilter(deltaFile, flow.getName(), action.getName(), NO_SUBSCRIBER_CAUSE, action.getModified());
     }
 
     private Action queueSyntheticAction(DeltaFileFlow flow) {

@@ -156,7 +156,7 @@ public class ConfigurationValidator {
                 errors.add("Flow does not exist (" + type + "): " + flow);
             } else if (!flowService.hasRunningFlow(flow)) {
                 if (!flowService.startFlow(flow)) {
-                    errors.add("Could not start flow (" + type + "): " + flow);
+                    errors.add("Could not start dataSource (" + type + "): " + flow);
                 } else {
                     flowStarted = true;
                 }

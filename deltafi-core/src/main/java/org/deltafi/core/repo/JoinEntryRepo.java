@@ -36,11 +36,11 @@ public interface JoinEntryRepo extends JpaRepository<JoinEntry, UUID> {
     /**
      * Update or insert a locked JoinEntry with the provided DeltaFile id and index.
      *
-     * @param joinDefinition the id consisting of flow, action, and join group
+     * @param joinDefinition the id consisting of dataSource, action, and join group
      * @param joinDate the date to force a join (set on insert)
      * @param minNum the minimum number of DeltaFiles to join (set on insert)
      * @param maxNum the maximum number of DeltaFiles to join (set on insert)
-     * @param maxFlowDepth depth of the flow that caused the DeltaFile to join
+     * @param maxFlowDepth depth of the dataSource that caused the DeltaFile to join
      * @return the locked JoinEntry
      * @throws org.springframework.dao.DuplicateKeyException if a locked JoinEntry already exists for the provided id
      */

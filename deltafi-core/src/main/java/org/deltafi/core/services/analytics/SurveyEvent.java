@@ -35,7 +35,7 @@ public record SurveyEvent(OffsetDateTime timestamp, String dataSource, int files
     private static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
     private static final Set<String> IGNORE_KEYS = Set.of("update_timestamp", "total_bytes", "annotations");
 
-    public SurveyEvent(OffsetDateTime timestamp, @JsonAlias("flow") String dataSource, int files, @JsonAlias("ingress_bytes") long ingressBytes, Map<String, String> annotations) {
+    public SurveyEvent(OffsetDateTime timestamp, @JsonAlias("dataSource") String dataSource, int files, @JsonAlias("ingress_bytes") long ingressBytes, Map<String, String> annotations) {
         this.timestamp = timestamp;
         this.dataSource = dataSource;
         this.files = files;

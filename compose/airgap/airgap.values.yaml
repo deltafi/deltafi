@@ -8,11 +8,6 @@ deltafi:
     mode: disabled # basic, cert, or disabled
   egress_sink:
     enabled: true
-  clickhouse:
-    enabled: true
-  clickhouse_etl:
-    enabled: true
-    delete_ttl: "1 MONTH"
 # nginx domain
 ingress:
   domain: local.deltafi.org

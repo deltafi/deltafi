@@ -59,7 +59,7 @@ public class ResumePolicyService implements Snapshotter {
      *
      * @param attempt    number of times action attempted
      * @param errorCause error cause text.
-     * @param flowName       the sourceInfo flow.
+     * @param flowName       the sourceInfo dataSource.
      * @param actionName     name of action with error.
      * @param actionType type of action with error.
      * @return Optional ResumePolicy if found, else empty.

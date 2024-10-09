@@ -33,21 +33,21 @@ import java.util.Map;
 @Slf4j
 class ErrorEvent implements AnalyticEvent {
     static final String TABLE_NAME = "errors";
-    static final String INSERT = "INSERT INTO deltafi." + TABLE_NAME + " (timestamp , dataSource, cause, flow, action, ingressBytes, annotations) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    static final String INSERT = "INSERT INTO deltafi." + TABLE_NAME + " (timestamp , dataSource, cause, dataSource, action, ingressBytes, annotations) VALUES (?, ?, ?, ?, ?, ?, ?)";
     static final String CREATE = String.format("""
                 CREATE TABLE IF NOT EXISTS deltafi.%s
                 (
                     `timestamp` DateTime,
                     `dataSource` LowCardinality(String),
                     `cause` String,
-                    `flow` LowCardinality(String),
+                    `dataSource` LowCardinality(String),
                     `action` LowCardinality(String),
                     `ingressBytes` UInt64,
                     `annotations` Map(String, String)
                 )
                 ENGINE = MergeTree
                 PARTITION BY (toYYYYMMDD(timestamp), dataSource)
-                ORDER BY (dataSource, flow, timestamp)
+                ORDER BY (dataSource, dataSource, timestamp)
                 TTL timestamp + INTERVAL 30 DAY""", TABLE_NAME);
 
     OffsetDateTime timestamp;
@@ -70,7 +70,7 @@ class ErrorEvent implements AnalyticEvent {
             statement.setObject(7, annotations);
             statement.addBatch();
         } catch (SQLException e) {
-            log.error("Unable to add error to Clickhouse: ", e);
+            log.error("Unable to add error event: ", e);
         }
     }
 

@@ -49,10 +49,10 @@ public class Input {
         }
 
         if (StringUtils.isEmpty(flow)) {
-            errors.add("Input must specify the 'flow'");
+            errors.add("Input must specify the 'dataSource'");
         } else {
             if (flows == null || !flows.contains(flow)) {
-                errors.add("Input flow must exist in configuration flows");
+                errors.add("Input dataSource must exist in configuration flows");
             }
         }
 

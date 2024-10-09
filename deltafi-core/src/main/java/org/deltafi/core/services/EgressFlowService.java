@@ -56,18 +56,18 @@ class EgressFlowService extends FlowService<EgressFlowPlan, EgressFlow, EgressFl
     }
 
     /**
-     * Sets the expected set of annotations for a given flow, identified by its name. If the update is successful,
+     * Sets the expected set of annotations for a given dataSource, identified by its name. If the update is successful,
      * the method refreshes the cache and returns true.
      *
-     * @param flowName The name of the flow to update, represented as a {@code String}.
-     * @param expectedAnnotations The new set of expected annotations to be set for the specified flow, as an {@code set}
+     * @param flowName The name of the dataSource to update, represented as a {@code String}.
+     * @param expectedAnnotations The new set of expected annotations to be set for the specified dataSource, as an {@code set}
      * @return A {@code boolean} value indicating whether the update was successful (true) or not (false)
      */
     public boolean setExpectedAnnotations(String flowName, Set<String> expectedAnnotations) {
         EgressFlow flow = getFlowOrThrow(flowName);
 
         if (Objects.equals(expectedAnnotations, flow.getExpectedAnnotations())) {
-            log.warn("Tried to update the expected annotations on egress flow {} to the same set of annotations: {}", flowName, expectedAnnotations);
+            log.warn("Tried to update the expected annotations on egress dataSource {} to the same set of annotations: {}", flowName, expectedAnnotations);
             return false;
         }
 

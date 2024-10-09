@@ -155,15 +155,15 @@ public class IngressStatusCheck extends StatusCheck {
     }
 
     public void notifyFlowDisabled(DataSourceErrorState error) {
-        String summary = "Alert: Disabling ingress to flow " + error.getName() + " due to too many errors";
-        String content = "- Current errors for flow: " + error.getCurrErrors() +
+        String summary = "Alert: Disabling ingress to dataSource " + error.getName() + " due to too many errors";
+        String content = "- Current errors for dataSource: " + error.getCurrErrors() +
                 "\\n- Maximum errors allowed: " + error.getMaxErrors() + "\\n";
 
         warn(summary, content);
     }
 
     public void notifyFlowReenabled(String flow) {
-        info("Ingress is re-enabled for flow " + flow);
+        info("Ingress is re-enabled for dataSource " + flow);
     }
 
     private void info(String summary) {

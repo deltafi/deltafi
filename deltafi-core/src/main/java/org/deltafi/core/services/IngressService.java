@@ -39,6 +39,7 @@ import org.deltafi.common.uuid.UUIDGenerator;
 import org.deltafi.core.exceptions.*;
 import org.deltafi.core.metrics.MetricService;
 import org.deltafi.core.metrics.MetricsUtil;
+import org.deltafi.core.services.analytics.AnalyticEventService;
 import org.deltafi.core.types.IngressResult;
 import org.deltafi.core.types.RestDataSource;
 import org.springframework.stereotype.Service;
@@ -59,7 +60,7 @@ import static org.deltafi.common.nifi.ContentType.*;
 @RequiredArgsConstructor
 @Slf4j
 public class IngressService {
-    public static final String INGRESS_ERROR_FOR_FLOW_FILENAME_CONTENT_TYPE_USERNAME = "Ingress error for flow={} filename={} contentType={} username={}: {}";
+    public static final String INGRESS_ERROR_FOR_FLOW_FILENAME_CONTENT_TYPE_USERNAME = "Ingress error for dataSource={} filename={} contentType={} username={}: {}";
     private final MetricService metricService;
     private final DiskSpaceService diskSpaceService;
     private final ContentStorageService contentStorageService;
@@ -68,6 +69,7 @@ public class IngressService {
     private final RestDataSourceService restDataSourceService;
     private final ErrorCountService errorCountService;
     private final UUIDGenerator uuidGenerator;
+    private final AnalyticEventService analyticEventService;
 
     private final ExecutorService executorService = Executors.newCachedThreadPool();
 
@@ -87,7 +89,7 @@ public class IngressService {
             throw new IngressStorageException("Ingress temporarily disabled due to storage limits");
         }
 
-        log.debug("Ingressing: flow={} filename={} contentType={} username={}", flow, filename, contentType, username);
+        log.debug("Ingressing: dataSource={} filename={} contentType={} username={}", flow, filename, contentType, username);
 
         List<IngressResult> ingressResults;
         try {
@@ -107,9 +109,10 @@ public class IngressService {
         }
 
         ingressResults.forEach(ingressResult -> {
-            Map<String, String> tags = tagsFor(ingressResult.flow());
+            Map<String, String> tags = tagsFor(ingressResult.dataSource());
             metricService.increment(DeltaFiConstants.FILES_IN, tags, 1);
             metricService.increment(DeltaFiConstants.BYTES_IN, tags, ingressResult.content().getSize());
+            analyticEventService.recordIngress(ingressResult.did(), created, ingressResult.dataSource(), ingressResult.content().getSize(), Collections.emptyMap());
         });
 
         return ingressResults;
@@ -152,7 +155,7 @@ public class IngressService {
                         new HashMap<>(flowFileTwoStepUnpackager.unpackageAttributes(contentInputStream));
                 combinedMetadata.putAll(headerMetadata); // Metadata from header overrides attributes contained in FlowFile
                 if (flow == null) {
-                    flow = combinedMetadata.get("flow");
+                    flow = combinedMetadata.get("dataSource");
                 }
                 if (filename == null) {
                     filename = combinedMetadata.get("filename");

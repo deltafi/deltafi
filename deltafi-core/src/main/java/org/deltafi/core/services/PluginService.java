@@ -230,7 +230,7 @@ public class PluginService implements Snapshotter {
     }
 
     /**
-     * Check the plugin info, flow plans and variables for any errors that should
+     * Check the plugin info, dataSource plans and variables for any errors that should
      * prevent the plugin from successfully registering
      * @return the list of errors
      */
@@ -260,9 +260,9 @@ public class PluginService implements Snapshotter {
     }
 
     /**
-     * Group the flow plans by the flow plan type. Run validation of each flow plan.
-     * @param pluginRegistration registration object holding the flow plans to save
-     * @return lists of each flow by type
+     * Group the dataSource plans by the dataSource plan type. Run validation of each dataSource plan.
+     * @param pluginRegistration registration object holding the dataSource plans to save
+     * @return lists of each dataSource by type
      */
     private GroupedFlowPlans groupPlansByFlowType(PluginRegistration pluginRegistration) {
         List<TransformFlowPlan> transformFlowPlans = new ArrayList<>();

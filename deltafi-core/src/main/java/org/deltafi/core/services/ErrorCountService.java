@@ -49,9 +49,9 @@ public class ErrorCountService {
     }
 
     /**
-     * Return number of errors detected for flow
+     * Return number of errors detected for dataSource
      *
-     * @param flow the flow name
+     * @param flow the dataSource name
      * @return number of errors
      */
     public int errorsForFlow(String flow) {
@@ -69,9 +69,9 @@ public class ErrorCountService {
     }
 
     /**
-     * Determines if the number of errors for a given flow has exceeded the maximum allowed.
+     * Determines if the number of errors for a given dataSource has exceeded the maximum allowed.
      *
-     * @param flow The name of the flow to check, represented as a {@code String}.
+     * @param flow The name of the dataSource to check, represented as a {@code String}.
      * @return A {@code boolean} value indicating whether the max errors were exceeded.
      */
     public boolean flowErrorsExceeded(String flow) {
@@ -83,16 +83,16 @@ public class ErrorCountService {
     }
 
     /**
-     * Generates an error message if the number of errors for a given flow has exceeded the maximum allowed.
+     * Generates an error message if the number of errors for a given dataSource has exceeded the maximum allowed.
      *
-     * @param flow The name of the flow to check, represented as a {@code String}.
+     * @param flow The name of the dataSource to check, represented as a {@code String}.
      * @return A {@code String} value containing the error message if the max errors were exceeded or {@code null} if the max errors have not been exceeded.
      */
     public String generateErrorMessage(String flow) {
         if (flowErrorsExceeded(flow)) {
             int errorCount = errorsForFlow(flow);
             Integer maxErrors = maxErrorsForFlow(flow);
-            return "Maximum errors exceeded for flow " + flow + ": " + maxErrors + " error" +
+            return "Maximum errors exceeded for dataSource " + flow + ": " + maxErrors + " error" +
                     (maxErrors == null || maxErrors == 1 ? "" : "s") + " allowed, " + errorCount + " error" +
                     (errorCount == 1 ? "" : "s") + " found";
         }

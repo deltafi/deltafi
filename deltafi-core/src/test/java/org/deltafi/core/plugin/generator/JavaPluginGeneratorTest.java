@@ -80,7 +80,7 @@ class JavaPluginGeneratorTest {
         }
     }
 
-    // Includes a transform and egress action which should be used in the transform flow
+    // Includes a transform and egress action which should be used in the transform dataSource
     PluginGeneratorInput transformActions() {
         PluginGeneratorInput pluginGeneratorInput = new PluginGeneratorInput();
         pluginGeneratorInput.setGroupId("org.deltafi.sample.transform");

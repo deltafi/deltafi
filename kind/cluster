@@ -121,6 +121,14 @@ _is_linux() {
   fi
 }
 
+_is_arm() {
+  if [[ $(uname -p) == 'arm' || $(uname -m) == 'aarch64' ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
 KUBECTL="kubectl"
 BASE_PATH="$( cd "$( dirname "$(_readlink -f "${BASH_SOURCE[0]}")")" &> /dev/null && pwd )"
 export BASE_PATH
@@ -686,7 +694,6 @@ _k8s_init() {
   _k8s_add_pv loki "${PV_STORAGE}" 10001
   _k8s_add_pv egress-sink "${PV_STORAGE}" 1000
   _k8s_add_pv auth "${PV_STORAGE}" 1000
-  _k8s_add_pv clickhouse "${PV_STORAGE}" 1001
   _k8s_add_pv postgres "${PV_STORAGE}" 1001
   _k8s_add_pv docker-registry "${PV_STORAGE}" 1000
 
@@ -705,8 +712,8 @@ down() {
   fi
 }
 
-describe manifest "List all docker images in use in the cluster"
-manifest() {
+describe images "List all docker images in use in the cluster"
+images() {
   docker exec -it ${CLUSTER_NAME}-control-plane crictl images | sed '1d' | tr -s ' ' | sed 's| |:|' | sed 's| .*||'
 }
 

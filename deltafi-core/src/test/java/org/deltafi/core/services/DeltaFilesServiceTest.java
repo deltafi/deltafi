@@ -428,28 +428,28 @@ class DeltaFilesServiceTest {
 
     @Test
     void testEgress_addPendingAnnotations() {
-        // TODO: this doesn't make a lot of sense, we should make sure annotations are added when the egress flow is added in the state machine
+        // TODO: this doesn't make a lot of sense, we should make sure annotations are added when the egress dataSource is added in the state machine
         EgressFlow egressFlow = new EgressFlow();
         egressFlow.setExpectedAnnotations(Set.of("a", "b"));
-        Mockito.when(egressFlowService.hasFlow("flow")).thenReturn(true);
-        Mockito.when(egressFlowService.getRunningFlowByName("flow")).thenReturn(egressFlow);
+        Mockito.when(egressFlowService.hasFlow("dataSource")).thenReturn(true);
+        Mockito.when(egressFlowService.getRunningFlowByName("dataSource")).thenReturn(egressFlow);
 
         DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
-        DeltaFileFlow flow = DeltaFileFlow.builder().name("flow").type(FlowType.EGRESS).deltaFile(deltaFile).build();
+        DeltaFileFlow flow = DeltaFileFlow.builder().name("dataSource").type(FlowType.EGRESS).deltaFile(deltaFile).build();
         flow.setPendingAnnotations(Set.of("a", "b"));
         Action action = flow.queueAction("egress", ActionType.EGRESS, false, OffsetDateTime.now(testClock));
         deltaFile.getFlows().add(flow);
         deltaFilesService.egress(deltaFile, flow, action, OffsetDateTime.now(testClock), OffsetDateTime.now(testClock));
 
         Assertions.assertThat(deltaFile.pendingAnnotationFlows()).hasSize(1);
-        Assertions.assertThat(deltaFile.pendingAnnotationFlows().getFirst().getName()).isEqualTo("flow");
+        Assertions.assertThat(deltaFile.pendingAnnotationFlows().getFirst().getName()).isEqualTo("dataSource");
     }
 
     @Test
     void testEgress_addPendingAnnotationsIgnoreNotRunningException() {
-        // TODO: this doesn't make a lot of sense, we should make sure annotations are added when the egress flow is added in the state machine
-        Mockito.when(egressFlowService.hasFlow("flow")).thenReturn(true);
-        Mockito.when(egressFlowService.getRunningFlowByName("flow")).thenThrow(new DgsEntityNotFoundException("not running"));
+        // TODO: this doesn't make a lot of sense, we should make sure annotations are added when the egress dataSource is added in the state machine
+        Mockito.when(egressFlowService.hasFlow("dataSource")).thenReturn(true);
+        Mockito.when(egressFlowService.getRunningFlowByName("dataSource")).thenThrow(new DgsEntityNotFoundException("not running"));
 
         DeltaFile deltaFile = Util.buildDeltaFile(UUID.randomUUID());
         DeltaFileFlow flow = deltaFile.getFlows().getFirst();
@@ -601,7 +601,7 @@ class DeltaFilesServiceTest {
         UUID uuid = UUID.randomUUID();
         DeltaFile deltaFile = Util.buildDeltaFile(uuid, "myFlow");
 
-        DeltaFileFlow flow = deltaFile.addFlow("flow", FlowType.TRANSFORM, new DeltaFileFlow(), OffsetDateTime.now(testClock));
+        DeltaFileFlow flow = deltaFile.addFlow("dataSource",  FlowType.TRANSFORM, new DeltaFileFlow(), OffsetDateTime.now(testClock));
 
         flow.addAction("parentAction1", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
         flow.addAction("parentAction2", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
@@ -611,12 +611,12 @@ class DeltaFilesServiceTest {
         flow.addAction("childActionOldName", ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock)); // renamed action after the split should not cause an error
 
         TransformFlow flowConfig = new TransformFlow();
-        flowConfig.setName("flow");
+        flowConfig.setName("dataSource");
         flowConfig.setTransformActions(mockActions("parentAction1", "parentAction2", "splitAction", "childAction", "childActionNewName"));
 
         List<UUID> dids = List.of(uuid);
         Mockito.when(deltaFileRepo.findAllById(dids)).thenReturn(List.of(deltaFile));
-        Mockito.when(transformFlowService.getFlowOrThrow("flow")).thenReturn(flowConfig);
+        Mockito.when(transformFlowService.getFlowOrThrow("dataSource")).thenReturn(flowConfig);
 
         List<RetryResult> results = deltaFilesService.replay(dids, List.of(), List.of());
 
@@ -646,7 +646,7 @@ class DeltaFilesServiceTest {
         UUID uuid = UUID.randomUUID();
         DeltaFile deltaFile = Util.buildDeltaFile(uuid, "myFlow");
 
-        DeltaFileFlow flow = deltaFile.addFlow("flow", FlowType.TRANSFORM, new DeltaFileFlow(), OffsetDateTime.now(testClock));
+        DeltaFileFlow flow = deltaFile.addFlow("dataSource",  FlowType.TRANSFORM, new DeltaFileFlow(), OffsetDateTime.now(testClock));
 
         flow.addAction("parentAction1", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
         flow.addAction("removedParentAction", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
@@ -654,19 +654,19 @@ class DeltaFilesServiceTest {
         starter.setReplayStart(true);
 
         TransformFlow flowConfig = new TransformFlow();
-        flowConfig.setName("flow");
+        flowConfig.setName("dataSource");
         flowConfig.setTransformActions(mockActions("parentAction1", "splitAction", "childAction", "childAction2"));
 
         List<UUID> dids = List.of(uuid);
         Mockito.when(deltaFileRepo.findAllById(dids)).thenReturn(List.of(deltaFile));
-        Mockito.when(transformFlowService.getFlowOrThrow("flow")).thenReturn(flowConfig);
+        Mockito.when(transformFlowService.getFlowOrThrow("dataSource")).thenReturn(flowConfig);
 
         List<RetryResult> results = deltaFilesService.replay(dids, List.of(), List.of());
 
         assertEquals(1, results.size());
         RetryResult result = results.getFirst();
         assertFalse(result.getSuccess());
-        assertEquals("The actions inherited from the parent DeltaFile for flow flow do not match the latest flow", result.getError());
+        assertEquals("The actions inherited from the parent DeltaFile for dataSource dataSource do not match the latest dataSource", result.getError());
     }
 
     @Test
@@ -674,7 +674,7 @@ class DeltaFilesServiceTest {
         UUID uuid = UUID.randomUUID();
         DeltaFile deltaFile = Util.buildDeltaFile(uuid, "myFlow");
 
-        DeltaFileFlow flow = deltaFile.addFlow("flow", FlowType.TRANSFORM, new DeltaFileFlow(), OffsetDateTime.now(testClock));
+        DeltaFileFlow flow = deltaFile.addFlow("dataSource",  FlowType.TRANSFORM, new DeltaFileFlow(), OffsetDateTime.now(testClock));
 
         flow.addAction("parentAction1", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
         flow.addAction("parentAction2", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
@@ -684,19 +684,19 @@ class DeltaFilesServiceTest {
         starter.setReplayStart(true);
 
         TransformFlow flowConfig = new TransformFlow();
-        flowConfig.setName("flow");
+        flowConfig.setName("dataSource");
         flowConfig.setTransformActions(mockActions("parentAction1", "parentAction2", "extraParentAction", "splitAction", "childAction", "childAction2"));
 
         List<UUID> dids = List.of(uuid);
         Mockito.when(deltaFileRepo.findAllById(dids)).thenReturn(List.of(deltaFile));
-        Mockito.when(transformFlowService.getFlowOrThrow("flow")).thenReturn(flowConfig);
+        Mockito.when(transformFlowService.getFlowOrThrow("dataSource")).thenReturn(flowConfig);
 
         List<RetryResult> results = deltaFilesService.replay(dids, List.of(), List.of());
 
         assertEquals(1, results.size());
         RetryResult result = results.getFirst();
         assertFalse(result.getSuccess());
-        assertEquals("The actions inherited from the parent DeltaFile for flow flow do not match the latest flow", result.getError());
+        assertEquals("The actions inherited from the parent DeltaFile for dataSource dataSource do not match the latest dataSource", result.getError());
     }
 
     @Test
@@ -704,7 +704,7 @@ class DeltaFilesServiceTest {
         UUID uuid = UUID.randomUUID();
         DeltaFile deltaFile = Util.buildDeltaFile(uuid, "myFlow");
 
-        DeltaFileFlow flow = deltaFile.addFlow("flow", FlowType.TRANSFORM, new DeltaFileFlow(), OffsetDateTime.now(testClock));
+        DeltaFileFlow flow = deltaFile.addFlow("dataSource", FlowType.TRANSFORM, new DeltaFileFlow(), OffsetDateTime.now(testClock));
 
         flow.addAction("parentAction1", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
         flow.addAction("parentActionOldName", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
@@ -712,19 +712,19 @@ class DeltaFilesServiceTest {
         starter.setReplayStart(true);
 
         TransformFlow flowConfig = new TransformFlow();
-        flowConfig.setName("flow");
+        flowConfig.setName("dataSource");
         flowConfig.setTransformActions(mockActions("parentAction1", "parentActionNewName", "splitAction", "childAction", "childAction2"));
 
         List<UUID> dids = List.of(uuid);
         Mockito.when(deltaFileRepo.findAllById(dids)).thenReturn(List.of(deltaFile));
-        Mockito.when(transformFlowService.getFlowOrThrow("flow")).thenReturn(flowConfig);
+        Mockito.when(transformFlowService.getFlowOrThrow("dataSource")).thenReturn(flowConfig);
 
         List<RetryResult> results = deltaFilesService.replay(dids, List.of(), List.of());
 
         assertEquals(1, results.size());
         RetryResult result = results.getFirst();
         assertFalse(result.getSuccess());
-        assertEquals("The actions inherited from the parent DeltaFile for flow flow do not match the latest flow", result.getError());
+        assertEquals("The actions inherited from the parent DeltaFile for dataSource dataSource do not match the latest dataSource", result.getError());
     }
 
     @Test
@@ -732,7 +732,7 @@ class DeltaFilesServiceTest {
         UUID uuid = UUID.randomUUID();
         DeltaFile deltaFile = Util.buildDeltaFile(uuid, "myFlow");
 
-        DeltaFileFlow flow = deltaFile.addFlow("flow", FlowType.TRANSFORM, new DeltaFileFlow(), OffsetDateTime.now(testClock));
+        DeltaFileFlow flow = deltaFile.addFlow("dataSource", FlowType.TRANSFORM, new DeltaFileFlow(), OffsetDateTime.now(testClock));
 
         flow.addAction("parentAction1", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
         flow.addAction("parentAction2", ActionType.TRANSFORM, ActionState.INHERITED, OffsetDateTime.now(testClock));
@@ -742,19 +742,19 @@ class DeltaFilesServiceTest {
         flow.addAction("childActionOldName", ActionType.TRANSFORM, ActionState.COMPLETE, OffsetDateTime.now(testClock)); // renamed action after the split should not cause an error
 
         TransformFlow flowConfig = new TransformFlow();
-        flowConfig.setName("flow");
+        flowConfig.setName("dataSource");
         flowConfig.setTransformActions(mockActions("parentAction1", "parentAction2", "splitActionNew", "childAction", "childActionNewName"));
 
         List<UUID> dids = List.of(uuid);
         Mockito.when(deltaFileRepo.findAllById(dids)).thenReturn(List.of(deltaFile));
-        Mockito.when(transformFlowService.getFlowOrThrow("flow")).thenReturn(flowConfig);
+        Mockito.when(transformFlowService.getFlowOrThrow("dataSource")).thenReturn(flowConfig);
 
         List<RetryResult> results = deltaFilesService.replay(dids, List.of(), List.of());
 
         assertEquals(1, results.size());
         RetryResult result = results.getFirst();
         assertFalse(result.getSuccess());
-        assertEquals("The flow flow no longer contains an action named splitActionOld where the replay would be begin", result.getError());
+        assertEquals("The dataSource dataSource no longer contains an action named splitActionOld where the replay would be begin", result.getError());
     }
 
     private List<ActionConfiguration> mockActions(String... names) {

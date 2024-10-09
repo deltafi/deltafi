@@ -71,7 +71,7 @@ public abstract class FlowPlanValidator<T extends FlowPlan> {
         if (isBlank(flowPlan.getName())) {
             errors.add(FlowConfigError.newBuilder().errorType(FlowErrorType.INVALID_CONFIG)
                     .configName(flowPlan.getName())
-                    .message("The flow plan name cannot be blank").build());
+                    .message("The dataSource plan name cannot be blank").build());
         }
 
         errors.addAll(checkForDuplicateActionNames(flowPlan));

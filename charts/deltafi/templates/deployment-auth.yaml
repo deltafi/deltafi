@@ -48,7 +48,6 @@ spec:
         - name: SPRING_PROFILES_ACTIVE
           value: kubernetes
         {{- include "coreEnvVars" . | nindent 8 }}
-        {{- include "clickhouseEnvVars" . | nindent 8 }}
         {{ if .Values.deltafi.auth.entityResolver.enabled }}
         - name: ENTITY_RESOLVER_ENABLED
           value: "true"

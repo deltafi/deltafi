@@ -17,7 +17,6 @@
  */
 package org.deltafi.core;
 
-import com.clickhouse.client.http.ClickHouseHttpClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.jayway.jsonpath.TypeRef;
 import com.netflix.graphql.dgs.DgsQueryExecutor;
@@ -91,6 +90,7 @@ import org.springframework.test.context.jdbc.Sql;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
@@ -133,11 +133,14 @@ import static org.mockito.Mockito.never;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
-@Sql(statements = "TRUNCATE TABLE actions, annotations, delta_file_flows, delta_files, flows, plugins, properties, resume_policies CASCADE",
+@Sql(statements = "TRUNCATE TABLE actions, annotations, delta_file_flows, delta_files, flows, plugins, properties, resume_policies, ts_errors CASCADE",
 		executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 class DeltaFiCoreApplicationTests {
+	public static final DockerImageName TS_POSTGRES_IMAGE = DockerImageName
+			.parse("timescale/timescaledb:latest-pg16")
+			.asCompatibleSubstituteFor("postgres");
 	@Container
-	public static final PostgreSQLContainer<?> POSTGRES_CONTAINER = new PostgreSQLContainer<>("postgres:16.3");
+	public static final PostgreSQLContainer<?> POSTGRES_CONTAINER = new PostgreSQLContainer<>(TS_POSTGRES_IMAGE);
 	public static final String SAMPLE_EGRESS_ACTION = "SampleEgressAction";
 	public static final String JOINING_TRANSFORM_ACTION = "JoiningTransformAction";
 	public static final String JOIN_TOPIC = "join-topic";
@@ -351,12 +354,6 @@ class DeltaFiCoreApplicationTests {
 		SecurityContextHolder.setContext(securityContext);
 
 		Mockito.when(diskSpaceService.isContentStorageDepleted()).thenReturn(false);
-
-		// set static LOCAL_HOST to avoid blocking thread during test execution
-		ClickHouseHttpClient.HostNameAndAddress hostNameAndAddress = new ClickHouseHttpClient.HostNameAndAddress();
-		hostNameAndAddress.hostName = "localhost";
-		hostNameAndAddress.address = "127.0.0.1";
-		ClickHouseHttpClient.LOCAL_HOST = hostNameAndAddress;
 	}
 
 	void refreshFlowCaches() {
@@ -1416,7 +1413,7 @@ class DeltaFiCoreApplicationTests {
 	@Test
 	void findFlowByNameAndType() {
 		clearForFlowTests();
-		String name = "flow-name";
+		String name = "dataSource-name";
 		EgressFlow egressFlow = new EgressFlow();
 		egressFlow.setName(name);
 		egressFlowRepo.save(egressFlow);
@@ -1837,10 +1834,10 @@ class DeltaFiCoreApplicationTests {
 
 	@Test
 	void deltaFiles() {
-		DeltaFile deltaFile = buildErrorDeltaFile(UUID.randomUUID(), "flow", "errorCause", "context", NOW);
+		DeltaFile deltaFile = buildErrorDeltaFile(UUID.randomUUID(), "dataSource", "errorCause", "context", NOW);
 		deltaFile.setContentDeleted(NOW);
 		deltaFile.setContentDeletedReason("contentDeletedReason");
-		Action erroredAction = deltaFile.getFlow("flow").getActions().getLast();
+		Action erroredAction = deltaFile.getFlow("dataSource").getActions().getLast();
 		erroredAction.setNextAutoResume(NOW);
 		erroredAction.setNextAutoResumeReason("nextAutoResumeReason");
 		erroredAction.setCreated(NOW.minusSeconds(1));
@@ -3178,7 +3175,7 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(1, errorCountsByFlow.get("flow2").intValue());
 		assertEquals(1, errorCountsByFlow.get("flow3").intValue());
 
-		// Test with a non-existing flow in the set
+		// Test with a non-existing dataSource in the set
 		flowSet.add("flowNotFound");
 		errorCountsByFlow = actionRepo.errorCountsByFlow(flowSet);
 
@@ -3620,12 +3617,12 @@ class DeltaFiCoreApplicationTests {
 	void setEgressFlowExpectedAnnotations() {
 		clearForFlowTests();
 		EgressFlow egressFlow = new EgressFlow();
-		egressFlow.setName("egress-flow");
+		egressFlow.setName("egress-dataSource");
 		egressFlow.setExpectedAnnotations(Set.of("a", "b"));
 		egressFlowRepo.save(egressFlow);
 
-		assertThat(egressFlowRepo.updateExpectedAnnotations("egress-flow", Set.of("b", "a", "c"))).isGreaterThan(0);
-		assertThat(egressFlowRepo.findByNameAndType("egress-flow", FlowType.EGRESS, EgressFlow.class).orElseThrow().getExpectedAnnotations()).hasSize(3).containsAll(Set.of("a", "b", "c"));
+		assertThat(egressFlowRepo.updateExpectedAnnotations("egress-dataSource", Set.of("b", "a", "c"))).isGreaterThan(0);
+		assertThat(egressFlowRepo.findByNameAndType("egress-dataSource", FlowType.EGRESS, EgressFlow.class).orElseThrow().getExpectedAnnotations()).hasSize(3).containsAll(Set.of("a", "b", "c"));
 	}
 
 	@Test
@@ -3634,14 +3631,14 @@ class DeltaFiCoreApplicationTests {
 		Set<String> expectedAnnotations = Set.of("f");
 		DeltaFile completeAfterChange = buildDeltaFile(UUID.randomUUID());
 		completeAfterChange.getFlows().getFirst().setPendingAnnotations(expectedAnnotations);
-		completeAfterChange.addAnnotations(Map.of("a", "value")); // this already has the expected annotation, the flow state should go to complete
+		completeAfterChange.addAnnotations(Map.of("a", "value")); // this already has the expected annotation, the dataSource state should go to complete
 		setupPendingAnnotations(completeAfterChange, flow, expectedAnnotations);
 
 		DeltaFile waitingForA = buildDeltaFile(UUID.randomUUID());
-		setupPendingAnnotations(waitingForA, flow, expectedAnnotations); // this does not have the expected annotation, should have a flow state of PENDING_ANNOTATIONS
+		setupPendingAnnotations(waitingForA, flow, expectedAnnotations); // this does not have the expected annotation, should have a dataSource state of PENDING_ANNOTATIONS
 
 		DeltaFile differentFlow = buildDeltaFile(UUID.randomUUID());
-		setupPendingAnnotations(differentFlow, "otherFlow", Set.of("f2")); // should not be impacted, different flow
+		setupPendingAnnotations(differentFlow, "otherFlow", Set.of("f2")); // should not be impacted, different dataSource
 
 		deltaFileRepo.saveAll(List.of(completeAfterChange, waitingForA, differentFlow));
 		deltaFilesService.updatePendingAnnotationsForFlows(flow, Set.of("a"));
@@ -4023,18 +4020,18 @@ class DeltaFiCoreApplicationTests {
 		assertEquals(0L, none.getInFlightCount());
 		assertEquals(0L, none.getInFlightBytes());
 
-		DeltaFile deltaFile1 = Util.emptyDeltaFile(UUID.randomUUID(), "flow", List.of());
+		DeltaFile deltaFile1 = Util.emptyDeltaFile(UUID.randomUUID(), "dataSource", List.of());
 		deltaFile1.setTotalBytes(1L);
 		deltaFile1.setReferencedBytes(2L);
 		deltaFile1.setStage(DeltaFileStage.IN_FLIGHT);
 
-		DeltaFile deltaFile2 = Util.emptyDeltaFile(UUID.randomUUID(), "flow", List.of());
+		DeltaFile deltaFile2 = Util.emptyDeltaFile(UUID.randomUUID(), "dataSource", List.of());
 		deltaFile2.setTotalBytes(2L);
 		deltaFile2.setReferencedBytes(4L);
 		deltaFile2.setContentDeleted(OffsetDateTime.now());
 		deltaFile2.setStage(DeltaFileStage.IN_FLIGHT);
 
-		DeltaFile deltaFile3 = Util.emptyDeltaFile(UUID.randomUUID(), "flow", List.of());
+		DeltaFile deltaFile3 = Util.emptyDeltaFile(UUID.randomUUID(), "dataSource", List.of());
 		deltaFile3.setTotalBytes(4L);
 		deltaFile3.setReferencedBytes(8L);
 		deltaFile3.setStage(DeltaFileStage.COMPLETE);

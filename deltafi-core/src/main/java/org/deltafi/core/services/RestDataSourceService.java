@@ -83,20 +83,20 @@ public class RestDataSourceService extends FlowService<RestDataSourcePlan, RestD
     }
 
     /**
-     * Sets the maximum number of errors allowed for a given flow, identified by its name.
-     * If the maximum errors for the flow are already set to the specified value, the method
+     * Sets the maximum number of errors allowed for a given dataSource, identified by its name.
+     * If the maximum errors for the dataSource are already set to the specified value, the method
      * logs a warning and returns false. If the update is successful, the method refreshes the
      * cache and returns true.
      *
-     * @param flowName  The name of the flow to update, represented as a {@code String}.
-     * @param maxErrors The new maximum number of errors to be set for the specified flow, as an {@code int}.
+     * @param flowName  The name of the dataSource to update, represented as a {@code String}.
+     * @param maxErrors The new maximum number of errors to be set for the specified dataSource, as an {@code int}.
      * @return A {@code boolean} value indicating whether the update was successful (true) or not (false).
      */
     public boolean setMaxErrors(String flowName, int maxErrors) {
         RestDataSource flow = getFlowOrThrow(flowName);
 
         if (flow.getMaxErrors() == maxErrors) {
-            log.warn("Tried to set max errors on transform flow {} to {} when already set", flowName, maxErrors);
+            log.warn("Tried to set max errors on transform dataSource {} to {} when already set", flowName, maxErrors);
             return false;
         }
 
@@ -109,12 +109,12 @@ public class RestDataSourceService extends FlowService<RestDataSourcePlan, RestD
     }
 
     /**
-     * Retrieves a map containing the maximum number of errors allowed per flow.
+     * Retrieves a map containing the maximum number of errors allowed per dataSource.
      * This method filters out flows with a maximum error count of 0, only including
      * those with a positive maximum error count.
      *
-     * @return A {@code Map<String, Integer>} where each key represents a flow name,
-     * and the corresponding value is the maximum number of errors allowed for that flow.
+     * @return A {@code Map<String, Integer>} where each key represents a dataSource name,
+     * and the corresponding value is the maximum number of errors allowed for that dataSource.
      */
     public Map<String, Integer> maxErrorsPerFlow() {
         return getRunningFlows().stream()

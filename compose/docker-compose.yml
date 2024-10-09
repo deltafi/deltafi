@@ -36,7 +36,6 @@ services:
       - ${SECRETS_DIR}/valkey.env
       - ${SECRETS_DIR}/postgres.env
       - ${SECRETS_DIR}/minio.env
-      - ${SECRETS_DIR}/clickhouse.env
       - ${SECRETS_DIR}/ssl.env
     <<: *health-probe
     labels:
@@ -65,7 +64,6 @@ services:
       - ${SECRETS_DIR}/valkey.env
       - ${SECRETS_DIR}/postgres.env
       - ${SECRETS_DIR}/minio.env
-      - ${SECRETS_DIR}/clickhouse.env
       - ${SECRETS_DIR}/ssl.env
     expose:
       - "8080"
@@ -187,15 +185,13 @@ services:
   deltafi-postgres:
     image: ${POSTGRES}
     container_name: deltafi-postgres
-    environment:
-      POSTGRES_HOST_AUTH_METHOD: trust
     env_file:
       - ${SECRETS_DIR}/postgres.env
     healthcheck:
       test: ["CMD-SHELL", "pg_isready"]
       interval: 5s
       timeout: 15s
-      retries: 20
+      retries: 40
     labels:
       deltafi-group: deltafi-dependency
     networks:
@@ -206,7 +202,7 @@ services:
     restart: unless-stopped
     volumes:
       - ${DATA_DIR}/postgres:/var/lib/postgresql/data/
-    user: "${USER_ID}"
+    user: "${USER_ID}:${GROUP_ID}"
   deltafi-valkey:
     image: ${VALKEY}
     container_name: deltafi-valkey
@@ -241,7 +237,7 @@ services:
       GF_PATHS_PROVISIONING: /etc/grafana/provisioning
     env_file:
       - ${SECRETS_DIR}/grafana.env
-      - ${SECRETS_DIR}/clickhouse.env
+      - ${SECRETS_DIR}/postgres.env
     expose:
       - "3000"
     labels:
@@ -303,27 +299,6 @@ services:
       - ${SETTINGS_DIR}/graphite/statsd/tcp.js:/opt/statsd/config/tcp.js
       - ${SETTINGS_DIR}/graphite/statsd/udp.js:/opt/statsd/config/udp.js
       - ${DATA_DIR}/graphite:/opt/graphite/storage/
-  deltafi-clickhouse:
-    scale: ${CLICKHOUSE_SCALE}
-    image: ${CLICKHOUSE}
-    container_name: deltafi-clickhouse
-    env_file:
-      - ${SECRETS_DIR}/clickhouse.env
-    expose:
-      - "8123/tcp"
-      - "9000/tcp"
-      - "9004/tcp"
-      - "9005/tcp"
-      - "9009/tcp"
-    labels:
-      deltafi-group: deltafi-dependency
-    networks:
-      - deltafi
-    restart: unless-stopped
-    volumes:
-      - ${DATA_DIR}/clickhouse:/bitnami/clickhouse/
-      - ${SETTINGS_DIR}/clickhouse/override.xml:/bitnami/clickhouse/etc/conf.d/override.xml:ro
-    user: "${USER_ID}"
   deltafi-loki:
     image: ${LOKI}
     container_name: deltafi-loki
@@ -364,6 +339,12 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${SETTINGS_DIR}/promtail/promtail.yaml:/etc/promtail/promtail.yaml
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'printf \"GET / HTTP/1.1\n\n\" > /dev/tcp/127.0.0.1/3101; exit $?;'"]
+      interval: 20s
+      retries: 30
+      timeout: 10s
+      start_period: 10s
   deltafi-nginx:
     image: ${NGINX}
     container_name: deltafi-nginx
@@ -372,6 +353,8 @@ services:
         condition: service_started
       deltafi-graphite:
         condition: service_started
+      deltafi-postgres:
+        condition: service_healthy
     environment:
       NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx/
     env_file:
@@ -389,3 +372,8 @@ services:
     ports:
       - "80:80"
       - "8888:8888"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -so /dev/null http://localhost/ || exit 1"]
+      interval: 20s
+      retries: 30
+      timeout: 10s

@@ -82,7 +82,6 @@ type DeltaFiProperties {
     coreInternalQueueSize: Int!
     scheduledServiceThreads: Int!
     metricsEnabled: Boolean!
-    metricsErrorAnalyticsEnabled: Boolean!
     ageOffDays: Int!
     deleteFrequency: String!
     deletePolicyBatchSize: Int!
@@ -118,7 +117,6 @@ input DeltaFiPropertiesInput {
     coreInternalQueueSize: Int!
     scheduledServiceThreads: Int!
     metricsEnabled: Boolean!
-    metricsErrorAnalyticsEnabled: Boolean!
     ageOffDays: Int!
     deleteFrequency: String!
     deletePolicyBatchSize: Int!

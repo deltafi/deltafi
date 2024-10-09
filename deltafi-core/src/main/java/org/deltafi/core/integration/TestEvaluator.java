@@ -270,7 +270,7 @@ public class TestEvaluator {
         }
 
         for (Action action : deltaFileFlows.getFirst().getActions()) {
-            // Find the action in this flow we want to compare content for
+            // Find the action in this dataSource we want to compare content for
             if (action.getName().equals(expectedContent.getAction())) {
                 return allContentsForActionAreEqual(action.getContent(), expectedContent.getData());
             }

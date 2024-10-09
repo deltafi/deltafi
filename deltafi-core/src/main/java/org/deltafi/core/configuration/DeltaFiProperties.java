@@ -50,11 +50,8 @@ public class DeltaFiProperties {
     @PropertyInfo(description = "Maximum allowed number of threads", defaultValue = "8")
     private int scheduledServiceThreads = 8;
 
-    @PropertyInfo(description = "Enable reporting of metrics to statsd/graphite", defaultValue = "true", refreshable = false)
+    @PropertyInfo(description = "Enable reporting of metrics", defaultValue = "true", refreshable = false)
     private boolean metricsEnabled = true;
-
-    @PropertyInfo(description = "Enable reporting of error analytic metrics to Clickhouse", defaultValue = "true", refreshable = false)
-    private boolean metricsErrorAnalyticsEnabled = true;
 
     @PropertyInfo(description = "Number of days that a DeltaFile should live, any records older will be removed", defaultValue = "13")
     private int ageOffDays = 13;

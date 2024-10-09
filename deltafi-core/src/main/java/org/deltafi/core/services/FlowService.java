@@ -70,9 +70,9 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     }
 
     /**
-     * Find the given flow and move it to a running state if it is currently stopped.
-     * @param flowName name of the flow that should be started
-     * @return true if the flow was successfully started
+     * Find the given dataSource and move it to a running state if it is currently stopped.
+     * @param flowName name of the dataSource that should be started
+     * @return true if the dataSource was successfully started
      */
     public boolean startFlow(String flowName) {
         FlowT flow = getFlowOrThrow(flowName);
@@ -80,12 +80,12 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         FlowStatus flowStatus = flow.getFlowStatus();
 
         if (FlowState.INVALID.equals(flowStatus.getState())) {
-            log.warn("Tried to start {} flow: {} when it was in an invalid state", flowType, flowName);
+            log.warn("Tried to start {} dataSource: {} when it was in an invalid state", flowType, flowName);
             throw new IllegalStateException("Flow: " + flowName + " cannot be started until configuration errors are resolved");
         }
 
         if (FlowState.RUNNING.equals(flowStatus.getState())) {
-            log.warn("Tried to start {} flow: {} when it was already running", flowType, flowName);
+            log.warn("Tried to start {} dataSource: {} when it was already running", flowType, flowName);
             return false;
         }
 
@@ -93,15 +93,15 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     }
 
     /**
-     * Find the given flow and move it to a stopped state if it is currently running.
-     * @param flowName name of the flow that should be stopped
-     * @return true if the flow was successfully stopped
+     * Find the given dataSource and move it to a stopped state if it is currently running.
+     * @param flowName name of the dataSource that should be stopped
+     * @return true if the dataSource was successfully stopped
      */
     public boolean stopFlow(String flowName) {
         FlowT flow = getFlowOrThrow(flowName);
 
         if (!flow.isRunning()) {
-            log.warn("Tried to stop {} flow {} which was not running", flowType, flowName);
+            log.warn("Tried to stop {} dataSource {} which was not running", flowType, flowName);
             return false;
         }
 
@@ -112,7 +112,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         FlowT flow = getFlowOrThrow(flowName);
 
         if (flow.isTestMode()) {
-            log.warn("Tried to enable test mode on {} flow {} when already in test mode", flowType, flowName);
+            log.warn("Tried to enable test mode on {} dataSource {} when already in test mode", flowType, flowName);
             return false;
         }
 
@@ -123,7 +123,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         FlowT flow = getFlowOrThrow(flowName);
 
         if (!flow.isTestMode()) {
-            log.warn("Tried to disable test mode on {} flow {} when not already in test mode", flowType, flowName);
+            log.warn("Tried to disable test mode on {} dataSource {} when not already in test mode", flowType, flowName);
             return false;
         }
 
@@ -138,8 +138,8 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     }
 
     /**
-     * For each of the given flow plans, rebuild the flow from the plan and latest variables
-     * @param flowPlans list of flow plans that need flows rebuilt
+     * For each of the given dataSource plans, rebuild the dataSource from the plan and latest variables
+     * @param flowPlans list of dataSource plans that need flows rebuilt
      * @param sourcePlugin PluginCoordinates used to find the variables
      */
     public void rebuildFlows(List<FlowPlan> flowPlans, PluginCoordinates sourcePlugin) {
@@ -185,11 +185,11 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     }
 
     /**
-     * Get the variables associated with this flow plan, and create
-     * a flow from the plan and variables.
+     * Get the variables associated with this dataSource plan, and create
+     * a dataSource from the plan and variables.
      *
-     * @param flowPlan used to create a new flow
-     * @return flow that was created from the plan
+     * @param flowPlan used to create a new dataSource
+     * @return dataSource that was created from the plan
      */
     public FlowT buildAndSaveFlow(FlowPlanT flowPlan) {
         List<Variable> variables = pluginVariableService.getVariablesByPlugin(flowPlan.getSourcePlugin());
@@ -204,9 +204,9 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     }
 
     /**
-     * Find the given flow by name and rerun validation
-     * @param flowName name of the flow to validate
-     * @return updated flow after validation is run
+     * Find the given dataSource by name and rerun validation
+     * @param flowName name of the dataSource to validate
+     * @return updated dataSource after validation is run
      */
     public FlowT validateAndSaveFlow(String flowName) {
         return validateAndSaveFlow(getFlowOrThrow(flowName));
@@ -231,29 +231,29 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     }
 
     /**
-     * Check for flow with the given name.
-     * @param flowName name of the flow to find
-     * @return whether it is a flow
+     * Check for dataSource with the given name.
+     * @param flowName name of the dataSource to find
+     * @return whether it is a dataSource
      */
     public boolean hasFlow(String flowName) {
         return flowCacheService.getFlow(flowType, flowName) != null;
     }
 
     /**
-     * Check for running flow with the given name.
-     * @param flowName name of the flow to find
-     * @return whether it is a running flow
+     * Check for running dataSource with the given name.
+     * @param flowName name of the dataSource to find
+     * @return whether it is a running dataSource
      */
     public boolean hasRunningFlow(String flowName) {
         return flowCacheService.getRunningFlow(flowType, flowName) != null;
     }
 
     /**
-     * Find the running flow with the given name.
+     * Find the running dataSource with the given name.
      * <p>
-     * Throws an exception if the given flow is not running
-     * @param flowName name of the flow to find
-     * @return the flow with the given name
+     * Throws an exception if the given dataSource is not running
+     * @param flowName name of the dataSource to find
+     * @return the dataSource with the given name
      */
     public FlowT getRunningFlowByName(String flowName) {
         Flow flow = flowCacheService.getFlow(flowType, flowName);
@@ -267,11 +267,11 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     }
 
     /**
-     * Find the flow with the given name.
+     * Find the dataSource with the given name.
      * <p>
-     * Throws an exception if the given flow does not exist
-     * @param flowName name of the flow to find
-     * @return the flow with the given name
+     * Throws an exception if the given dataSource does not exist
+     * @param flowName name of the dataSource to find
+     * @return the dataSource with the given name
      */
     public FlowT getFlowOrThrow(String flowName) {
         return flowClass.cast(flowCacheService.getFlowOrThrow(flowType, flowName));
@@ -321,7 +321,7 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
         Map<String, FlowT> updatedFlows = new HashMap<>();
         Map<String, FlowT> allFlows = new HashMap<>();
 
-        // build map of the flow name to flows. Reset the state fields on a hard reset
+        // build map of the dataSource name to flows. Reset the state fields on a hard reset
         for (FlowT flow : flows) {
             if (hardReset) {
                 if (flow.isRunning() || flow.isTestMode()) {
@@ -403,9 +403,9 @@ public abstract class FlowService<FlowPlanT extends FlowPlan, FlowT extends Flow
     }
 
     /**
-     * Remove the flow with the given name if it exists
+     * Remove the dataSource with the given name if it exists
      *
-     * @param flowName name of the flow to remove
+     * @param flowName name of the dataSource to remove
      */
     public void removeByName(String flowName, PluginCoordinates systemPlugin) {
         FlowT flow = flowRepo.findByNameAndType(flowName, flowType, flowClass).orElse(null);

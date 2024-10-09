@@ -36,7 +36,7 @@ public class ExpectedFlows {
         List<String> errors = new ArrayList<>();
 
         if (StringUtils.isEmpty(flow)) {
-            errors.add("ExpectedFlows missing flow");
+            errors.add("ExpectedFlows missing dataSource");
         }
 
         if (type == null) {

@@ -165,7 +165,7 @@ class TimedDataSourceServiceTest {
         TimedDataSource updatedChanged = getAsTimedDataSource(updatedFlows, "changed");
         TimedDataSource updatedInvalid = getAsTimedDataSource(updatedFlows, "invalid");
 
-        // stopped flow should be restarted since it was marked as running in the snapshot, it should also be in test mode
+        // stopped dataSource should be restarted since it was marked as running in the snapshot, it should also be in test mode
         assertThat(updatedStop).isNotNull();
         assertThat(updatedStop.isRunning()).isTrue();
         assertThat(updatedStop.isTestMode()).isTrue();

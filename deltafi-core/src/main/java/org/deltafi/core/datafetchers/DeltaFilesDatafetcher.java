@@ -108,7 +108,7 @@ public class DeltaFilesDatafetcher {
 
     List<String> rawIncludeFields = dfe.getSelectionSet().getFields().stream().filter(f -> f.getFullyQualifiedName().contains("/")).map(this::buildName).toList();
 
-    // remove subfields -- for example if we have did, sourceInfo, and sourceInfo.flow, this should resolve to did and sourceInfo.flow
+    // remove subfields -- for example if we have did, sourceInfo, and sourceInfo.dataSource, this should resolve to did and sourceInfo.dataSource
     List<String> includeFields = rawIncludeFields.stream().filter(f -> rawIncludeFields.stream().noneMatch(p -> p.startsWith(f + ".") && !p.equals(f))).toList();
     return deltaFilesService.deltaFiles(offset, limit, filter, orderBy, includeFields);
   }
@@ -254,7 +254,7 @@ public class DeltaFilesDatafetcher {
   @DgsMutation
   @NeedsPermission.StressTest
   public int stressTest(@InputArgument String flow, @InputArgument Integer contentSize, @InputArgument Integer numFiles, @InputArgument Map<String, String> metadata, @InputArgument Integer batchSize) throws ObjectStorageException, IngressException {
-    auditLogger.audit("started stress test for flow {} using contentSize {}, numFiles {}, batchSize {}", flow, contentSize, numFiles, batchSize);
+    auditLogger.audit("started stress test for dataSource {} using contentSize {}, numFiles {}, batchSize {}", flow, contentSize, numFiles, batchSize);
     RestDataSource restDataSource;
     try {
       restDataSource = restDataSourceService.getFlowOrThrow(flow);

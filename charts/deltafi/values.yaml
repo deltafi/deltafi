@@ -119,6 +119,15 @@ grafana:
     existingClaim: deltafi-grafana
   nodeSelector:
     node-role.deltafi.org/storage: "true"
+  envValueFrom:
+    POSTGRES_PASSWORD:
+      secretKeyRef:
+        name: deltafi.deltafi-postgres
+        key: password
+    POSTGRES_USER:
+      secretKeyRef:
+        name: deltafi.deltafi-postgres
+        key: username
   grafana.ini:
     paths:
       data: /var/lib/grafana/
@@ -178,17 +187,19 @@ grafana:
         isDefault: false
         version: 2
         uid: deltafi-loki
-      - name: ClickHouse
-        uid: deltafi-clickhouse
-        type: grafana-clickhouse-datasource
-        jsonData:
-          defaultDatabase: deltafi
-          port: 9000
-          server: deltafi-clickhouse
-          username: default
-          tlsSkipVerify: true
+      - name: Postgres
+        uid: deltafi-postgres
+        type: postgres
+        url: deltafi-postgres:5432
+        user: $POSTGRES_USER
         secureJsonData:
-          password: deltafi
+          password: $POSTGRES_PASSWORD
+        jsonData:
+          database: deltafi
+          postgresVersion: 1500
+          timescaledb: true
+          sslmode: require
+
 promtail:
   image:
     tag: 2.9.10
@@ -357,33 +368,6 @@ graphite:
     node-role.deltafi.org/storage: "true"
   statsd:
     interface: TCP
-
-# Clickhouse Configuration
-clickhouse:
-  enabled: false
-  image:
-    repository: bitnami/clickhouse
-    tag: 24.8.1-debian-12-r0
-  shards: 1
-  replicaCount: 1
-  keeper:
-    enabled: false
-  externalAccess:
-    enabled: false
-    service:
-      type: ClusterIP
-  ingress:
-    enabled: false
-  persistence:
-    enabled: true
-    existingClaim: deltafi-clickhouse
-  podSecurityContext:
-    enabled: false
-  zookeeper:
-    enabled: false
-  auth:
-    existingSecret: clickhouse-password
-    existingSecretKey: clickhouse-password
 
 # Postgres Configuration
 postgres:

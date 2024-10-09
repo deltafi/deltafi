@@ -21,4 +21,4 @@ import org.deltafi.common.types.Content;
 
 import java.util.UUID;
 
-public record IngressResult(String flow, UUID did, Content content) {}
+public record IngressResult(String dataSource, UUID did, Content content) {}

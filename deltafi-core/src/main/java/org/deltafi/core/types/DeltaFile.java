@@ -247,7 +247,7 @@ public class DeltaFile {
   /**
    * Find all flows that were joining on the given JoinId and update the
    * joining actions to a state of joined. Update the state of each modified
-   * flow and then update this DeltaFiles state.
+   * dataSource and then update this DeltaFiles state.
    * @param joinId did of the child DeltaFile that joined the data
    * @param actionName name of the action to mark as Joined
    * @param start start time of the action
@@ -470,7 +470,7 @@ public class DeltaFile {
   /**
    * Create the ActionInput that should be sent to an Action
    * @param actionConfiguration Configured action
-   * @param flow the flow on which the Action is specified
+   * @param flow the dataSource on which the Action is specified
    * @param action the action
    * @param systemName system name to set in context
    * @param returnAddress the unique address of this core instance
@@ -487,7 +487,7 @@ public class DeltaFile {
   /**
    * Create the ActionInput that should be sent to an Action
    * @param actionConfiguration Configured action
-   * @param flow the flow on which the Action is specified
+   * @param flow the dataSource on which the Action is specified
    * @param joinedDids the list of dids that were combined to create the child, or an empty list
    * @param action the action
    * @param systemName system name to set in context

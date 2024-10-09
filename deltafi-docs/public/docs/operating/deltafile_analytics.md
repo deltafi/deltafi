@@ -1,51 +1,39 @@
 # DeltaFile Analytics Capability
 
 DeltaFile analytics provide the ability to extract insights on behavior, performance, and volumetrics
-of processed DeltaFiles by flow and any applied annotations. 
-The deltafile analytics capability is built on top of Clickhouse, which allows for efficient querying 
-and analysis of the data.
+of processed DeltaFiles by flow and any applied annotations.
 
-## DeltaFile Analytics with Clickhouse
+## DeltaFile Analytics
 
-When DeltaFiles are processed to completion, DeltaFi automatically creates an entry in the Clickhouse 
-analytics database for each processed file.
+The following events result in creation or updates to analytic events:
 
-The following table is maintained in clickhouse with rows for each DeltaFile processed by DeltaFi:
-
-| Column Name      | Data Type           | Description                                                                                                                     |
-|------------------|---------------------|---------------------------------------------------------------------------------------------------------------------------------|
-| did              | String              | The DID (DeltaFile ID) associated with the DeltaFile.                                                                           |
-| timestamp        | DateTime            | The creation timestamp of the DeltaFile.                                                                                        |
-| update_timestamp | DateTime            | The timestamp of the last update to the DeltaFile.                                                                              |
-| flow             | String              | The flow associated with the DeltaFile.                                                                                         |
-| files            | UInt64              | The number of files in the DeltaFile.                                                                                           |
-| ingressBytes     | UInt64              | The number of bytes ingressed with the DeltaFile.                                                                               |
-| totalBytes       | UInt64              | The total number of bytes in the DeltaFile.                                                                                     |
-| errored          | UInt64              | The number of errored files in the DeltaFile.                                                                                   |
-| filtered         | UInt64              | The number of filtered files in the DeltaFile.                                                                                  |
-| egressed         | UInt64              | The number of egressed files in the DeltaFile.                                                                                  |
-| annotations      | Map(String, String) | A map of annotations associated with the DeltaFile, where the key is the annotation name and the value is the annotation value. |
+* Creation of a DeltaFile
+* Egress of a DeltaFile
+* Annotation of a DeltaFile
+* Error events
+* Filter events
+* Cancellation of a DeltaFile
 
 ## DeltaFile Analytics Grafana Dashboards
 
-A default Grafana dashboard is maintained for DeltaFile analytics visualization.  The "Clickhouse Flow by Annotation" 
+A default Grafana dashboard is maintained for DeltaFile analytics visualization.  The "Data Source by Annotation"
 dashboard found in the Grafana DeltaFi dashboard folder can be used to visualize DeltaFile flows grouped
-by an arbitrary annotation.  This serves as an example of how to use Grafana to visualize DeltaFi data, 
+by an arbitrary annotation.  This serves as an example of how to use Grafana to visualize DeltaFi data,
 and can be used as a template for customizing your own analytic dashboards.
 
 ## Survey API for Analytics
 
-`/api/v1/survey` is the REST API for injecting "survey" data into the DeltaFi analytics database.
-The API is used to add an array of DeltaFile analytic entries directly into the Clickhouse analytics
+`/api/v2/survey` is the REST API for injecting "survey" data into the DeltaFi analytics database.
+The API is used to add an array of DeltaFile analytic entries directly into the analytics
 database without needing to actually process the data through DeltaFi flows.  This allows for hypothetical,
-observed, or orthogonally processed data to be represented alongside the analytic data for 
+observed, or orthogonally processed data to be represented alongside the analytic data for
 processed DeltaFiles that are automatically added to the database as a part of the usual DeltaFi flow
 processing.  The "survey" data can be viewed in Grafana dashboards and the survey data can be distinguished
 from the other analytic data in the DeltaFi system by the pattern of the `did` field ( `/^survey-.*/` ).
 
 <dl>
   <dt>Endpoint</dt>
-  <dd>/api/v1/survey</dd>
+  <dd>/api/v2/survey</dd>
   <dt>Method</dt>
   <dd>POST</dd>
   <dt>Request Body</dt>
@@ -100,7 +88,7 @@ from the other analytic data in the DeltaFi system by the pattern of the `did` f
 ]
 ```
 
-A survey can be posted to the `/api/v1/survey` endpoint as follows:
+A survey can be posted to the `/api/v2/survey` endpoint as follows:
 ```bash
 # Example Usage
 curl -X POST -H "Content-Type: application/json" -d '[
@@ -110,7 +98,7 @@ curl -X POST -H "Content-Type: application/json" -d '[
     "ingress_bytes": 100,
     "annotation1": "value1"
   }
-]' http://your-api-endpoint/api/v1/survey
+]' http://your-api-endpoint/api/v2/survey
 ```
 
 ### Timestamp format

@@ -22,8 +22,8 @@ import java.util.Set;
 public interface HasExpectedAnnotations {
 
     /**
-     * Get the name of the flow
-     * @return name of the flow
+     * Get the name of the dataSource
+     * @return name of the dataSource
      */
     String getName();
 

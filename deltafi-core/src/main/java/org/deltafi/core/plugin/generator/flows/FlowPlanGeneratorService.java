@@ -88,13 +88,13 @@ public class FlowPlanGeneratorService {
     }
 
     /**
-     * Create flow plans using the given plugin generator input. If no actions are provided this will
-     * create a single transform flow plan using a default egress action. If any normalization specific actions are
-     * provided an ingress and egress flow plan will be created, and optionally an enrich plan if there are
+     * Create dataSource plans using the given plugin generator input. If no actions are provided this will
+     * create a single transform dataSource plan using a default egress action. If any normalization specific actions are
+     * provided an ingress and egress dataSource plan will be created, and optionally an enrich plan if there are
      * any domain or enrich actions provided.
-     * @param baseFlowName prefix to use in the flow plan names
-     * @param pluginGeneratorInput input containing the actions that should be used in the flow plans
-     * @return a list of flow plans
+     * @param baseFlowName prefix to use in the dataSource plan names
+     * @param pluginGeneratorInput input containing the actions that should be used in the dataSource plans
+     * @return a list of dataSource plans
      */
     public List<FlowPlan> generateFlowPlans(String baseFlowName, PluginGeneratorInput pluginGeneratorInput) {
         List<FlowPlan> flowPlans = new ArrayList<>();
@@ -114,7 +114,7 @@ public class FlowPlanGeneratorService {
      * Create list of variables. If the default egress action is used, add a variable
      * to set the url. Always include the sample var that is needed when a sample
      * parameter class is generated.
-     * @param pluginGeneratorInput input that contains the list of actions used in the flow plans
+     * @param pluginGeneratorInput input that contains the list of actions used in the dataSource plans
      * @return a list of variables
      */
     public List<Variable> generateVariables(PluginGeneratorInput pluginGeneratorInput) {

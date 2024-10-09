@@ -17,100 +17,183 @@
  */
 package org.deltafi.core.services.analytics;
 
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
-import lombok.Synchronized;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.deltafi.core.types.Annotation;
+import org.deltafi.core.repo.timescale.*;
 import org.deltafi.core.types.DeltaFile;
 import org.deltafi.core.services.DeltaFiPropertiesService;
-import org.springframework.beans.factory.annotation.Value;
+import org.deltafi.core.types.DeltaFileFlow;
+import org.deltafi.core.types.timescale.*;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import javax.sql.DataSource;
-import java.sql.*;
-import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Consumer;
+import java.util.stream.IntStream;
 
 /**
  * Generate analytic events.
  */
+@AllArgsConstructor
 @Slf4j
 @Service
 public class AnalyticEventService {
-    private DataSource dataSource = null;
+    private final DeltaFiPropertiesService deltaFiPropertiesService;
+    private final TSCancelRepo tsCancelRepo;
+    private final TSEgressRepo tsEgressRepo;
+    private final TSErrorRepo tsErrorRepo;
+    private final TSIngressRepo tsIngressRepo;
+    private final TSFilterRepo tsFilterRepo;
 
-    private final boolean enabled;
-    private boolean initialized = false;
-    private static final int BATCH_SIZE = 5000;
-    private static final String DATABASE = "deltafi";
+    private final ConcurrentLinkedQueue<TSEgress> egressQueue = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<TSIngress> ingressQueue = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<TSError> errorQueue = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<TSFilter> filterQueue = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<TSCancel> cancelQueue = new ConcurrentLinkedQueue<>();
 
-    private final EventPipeline<CompletedDeltaFileEvent> completed;
-    private final EventPipeline<ErrorEvent> errors;
+    private boolean isDisabled() {
+        return !deltaFiPropertiesService.getDeltaFiProperties().isMetricsEnabled();
+    }
 
-    private final List<EventPipeline<? extends AnalyticEvent>> pipelines;
+    /**
+     * Generate an analytic event for DeltaFile egress
+     *
+     * @param  deltaFile  the DeltaFile to be recorded
+     */
+    public void recordEgress(DeltaFile deltaFile, DeltaFileFlow flow) {
+        if (isDisabled()) return;
 
-    public AnalyticEventService(@Value("${CLICKHOUSE_ENABLED:true}") boolean enabled,
-                                @Value("${CLICKHOUSE_HOST:deltafi-clickhouse}") String hostname,
-                                @Value("${CLICKHOUSE_PORT:8123}") int port,
-                                @Value("${CLICKHOUSE_USER:default}") String username,
-                                @Value("${CLICKHOUSE_PASSWORD:deltafi}") String password,
-                                DeltaFiPropertiesService deltaFiPropertiesService) {
-        this.enabled = enabled && deltaFiPropertiesService.getDeltaFiProperties().isMetricsErrorAnalyticsEnabled();
-        completed = new EventPipeline<>(CompletedDeltaFileEvent.TABLE_NAME,
-                CompletedDeltaFileEvent.INSERT,
-                CompletedDeltaFileEvent::addSchema);
-        errors = new EventPipeline<>(ErrorEvent.TABLE_NAME,
-                ErrorEvent.INSERT,
-                ErrorEvent::addSchema);
-        pipelines = List.of(completed, errors);
+        TSEgress tsEgress = TSEgress.builder()
+                        .key(new TSId(flow.getModified(), deltaFile.getDataSource()))
+                        .egressor(flow.getName())
+                        .egressBytes(flow.lastContentSize())
+                        .annotations(deltaFile.annotationMap())
+                        .build();
 
-        if (!this.enabled) return;
+        egressQueue.offer(tsEgress);
+    }
 
-        HikariConfig config = new HikariConfig();
-        config.setJdbcUrl(String.format("jdbc:clickhouse://%s:%d", hostname, port));
-        config.setUsername(username);
-        config.setPassword(password);
-        this.dataSource = new HikariDataSource(config);
+    /**
+     * Generate an analytic event for DeltaFile ingress
+     *
+     * @param did the DeltaFile id
+     * @param created creation time
+     * @param dataSource the data source
+     * @param ingressBytes bytes ingressed
+     * @param annotations map of annotations
+     */
+    public void recordIngress(UUID did, OffsetDateTime created, String dataSource, long ingressBytes, Map<String, String> annotations) {
+        if (isDisabled()) return;
 
-        log.info("AnalyticEventService enabled");
+        TSIngress tsIngress = TSIngress.builder()
+                .key(new TSId(did, created, dataSource))
+                .ingressBytes(ingressBytes)
+                .annotations(annotations)
+                .count(1)
+                .survey(false)
+                .build();
+
+        ingressQueue.offer(tsIngress);
+    }
+
+    /*
+     * Record annotations for a DeltaFile. Delegates to recordIngress to upsert the entire record if it's not present,
+     * which can happen due to timing, else only the annotations will be merged with the existing record.
+     *
+     * @param did the DeltaFile id
+     * @param created creation time
+     * @param dataSource the data source
+     * @param ingressBytes bytes ingressed
+     * @param annotations map of annotations
+     */
+    public void recordAnnotations(UUID did, OffsetDateTime created, String dataSource, long ingressBytes, Map<String, String> annotations) {
+        recordIngress(did, created, dataSource, ingressBytes, annotations);
+    }
+
+    /**
+     * Generate an analytic event for survey
+     *
+     * @param id the survey id
+     * @param created creation time
+     * @param dataSource the data source
+     * @param count the number of files ingressed
+     * @param ingressBytes bytes ingressed
+     * @param annotations map of annotations
+     */
+    public void recordSurvey(UUID id, OffsetDateTime created, String dataSource, int count, long ingressBytes, Map<String, String> annotations) {
+        if (isDisabled()) return;
+
+        TSIngress tsIngress = TSIngress.builder()
+                .key(new TSId(id, created, dataSource))
+                .ingressBytes(ingressBytes)
+                .annotations(annotations)
+                .count(count)
+                .survey(true)
+                .build();
+
+        ingressQueue.offer(tsIngress);
     }
 
     /**
      * Generate an analytic event for DeltaFile error.
-     * @param deltafile - errored DeltaFile
-     * @param flow - name of the flow
+     * @param deltaFile - errored DeltaFile
+     * @param flow - name of the dataSource
      * @param action - name of the action that errored
      * @param cause - cause of the error
+     * @param timestamp - timestamp of the error
      */
-    public void recordError(DeltaFile deltafile, String flow, String action, String cause) {
-        if (!enabled) return;
+    public void recordError(DeltaFile deltaFile, String flow, String action, String cause, OffsetDateTime timestamp) {
+        if (isDisabled()) return;
 
-        errors.add(ErrorEvent.builder()
-                .timestamp(deltafile.getModified())
-                .dataSource(deltafile.getDataSource())
+        TSError tsError = TSError.builder()
+                .key(new TSId(timestamp, deltaFile.getDataSource()))
                 .cause(cause)
                 .flow(flow)
                 .action(action)
-                .ingressBytes(deltafile.getIngressBytes())
-                .annotations(deltafile.annotationMap())
-                .build());
+                .annotations(deltaFile.annotationMap())
+                .build();
+
+        errorQueue.offer(tsError);
     }
 
     /**
-     * Generate an analytic event for DeltaFile completion or cancellation.
-     *
-     * @param  deltafile  the DeltaFile to be recorded
+     * Generate an analytic event for DeltaFile filter.
+     * @param deltaFile - filtered DeltaFile
+     * @param flow - name of the dataSource
+     * @param action - name of the action that fitlered
+     * @param message - cause of the filter
+     * @param timestamp - timestamp of the filter
      */
-    public void recordCompleted(DeltaFile deltafile) {
-        if (!enabled) return;
-        completed.add(new CompletedDeltaFileEvent(deltafile));
+    public void recordFilter(DeltaFile deltaFile, String flow, String action, String message, OffsetDateTime timestamp) {
+        if (isDisabled()) return;
+
+        TSFilter tsFilter = TSFilter.builder()
+                .key(new TSId(timestamp, deltaFile.getDataSource()))
+                .flow(flow)
+                .action(action)
+                .message(message)
+                .annotations(deltaFile.annotationMap())
+                .build();
+
+        filterQueue.offer(tsFilter);
+    }
+
+    /**
+     * Generate an analytic event for DeltaFile cancel.
+     * @param deltaFile - filtered DeltaFile
+     * @param timestamp - timestamp of the filter
+     */
+    public void recordCancel(DeltaFile deltaFile, OffsetDateTime timestamp) {
+        if (isDisabled()) return;
+
+        TSCancel tsCancel = TSCancel.builder()
+                .key(new TSId(timestamp, deltaFile.getDataSource()))
+                .annotations(deltaFile.annotationMap())
+                .build();
+
+        cancelQueue.offer(tsCancel);
     }
 
     /**
@@ -120,7 +203,7 @@ public class AnalyticEventService {
      * @return list of errors if there was invalid survey data
      */
     public List<SurveyError> recordSurveys(List<SurveyEvent> surveyEvents) {
-        if (!enabled) {
+        if (!isDisabled()) {
             log.error("Attempted to add survey metrics with analytics disabled");
             throw new DisabledAnalyticsException();
         }
@@ -129,139 +212,19 @@ public class AnalyticEventService {
             return List.of();
         }
 
-        Instant instant = OffsetDateTime.now(ZoneOffset.UTC).toInstant();
-        String formattedNow = "" + instant.getEpochSecond() + instant.getNano();
-        List<SurveyError> surveyErrors = new ArrayList<>();
-        int index = 0;
-        List<CompletedDeltaFileEvent> completedEvents = new ArrayList<>();
-        for (SurveyEvent surveyEvent : surveyEvents) {
-            if (surveyEvent.isValid()) {
-                String did = "survey-" + index + "-" + formattedNow;
-                completedEvents.add(new CompletedDeltaFileEvent(surveyEvent, did));
-            } else {
-                surveyErrors.add(new SurveyError(index, surveyEvent));
-            }
-            index++;
-        }
+        List<SurveyError> surveyErrors = IntStream.range(0, surveyEvents.size())
+                .filter(i -> !surveyEvents.get(i).isValid())
+                .mapToObj(i -> new SurveyError(i, surveyEvents.get(i)))
+                .toList();
+
 
         // if there were errors do not process any of the survey entries
         if (!surveyErrors.isEmpty()) {
             return surveyErrors;
         }
 
-        completed.addAll(completedEvents);
-        processPipelines(); // fire immediately instead of waiting for the next scheduled execution
+        surveyEvents.forEach(s -> recordSurvey(UUID.randomUUID(), s.timestamp(), s.dataSource(), s.files(), s.ingressBytes(), s.annotations()));
         return List.of();
-    }
-
-    /**
-     * Process all pending analytic events and then process the queued events
-     * in each pipeline
-     */
-    @Scheduled(initialDelay = 30, fixedRate = 30, timeUnit = TimeUnit.SECONDS)
-    @Synchronized
-    private void processPipelines() {
-        if (!enabled) return;
-        if (!initialized) initializeDatabase();
-        if (!initialized) {
-            log.warn("Unable to initialize Clickhouse");
-            return;
-        }
-
-        if (pipelines.stream().anyMatch(EventPipeline::pending)) {
-
-            boolean success = pipelines.stream().allMatch(this::writePending);
-            if (!success) {
-                log.warn("Unable to record to Clickhouse");
-                return;
-            }
-
-            log.info("Resumed recording to Clickhouse");
-        }
-        pipelines.forEach(this::drainQueue);
-    }
-
-
-    private void initializeDatabase() {
-        if (!enabled || initialized) return;
-
-        log.info ("Initializing Clickhouse Database");
-
-        try (Connection connection = dataSource.getConnection()) {
-            try (Statement statement = connection.createStatement()) {
-                statement.addBatch(String.format("CREATE DATABASE IF NOT EXISTS %s", DATABASE));
-                for (EventPipeline<? extends AnalyticEvent> pipeline : pipelines) {
-                    pipeline.addSchema(statement);
-                }
-                statement.executeBatch();
-            } catch (SQLException e) {
-                log.error("Unable to initialize Clickhouse database: ", e);
-                return;
-            }
-        } catch (SQLException e) {
-            log.error("Unable to connect to Clickhouse: {}", e.getMessage());
-            return;
-        }
-
-        initialized = true;
-        log.info("Initialized AnalyticEventService");
-    }
-
-    /**
-     * Write all pending events to the database.
-     *
-     * @param  pipeline  the event pipeline containing pending events
-     * @return           true if writing is successful, false otherwise
-     */
-    private <T extends AnalyticEvent> boolean writePending(EventPipeline<T> pipeline) {
-        if (!pipeline.pending()) return true;
-        try (Connection connection = dataSource.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement(pipeline.insertSql)) {
-                pipeline.pending.forEach(item -> item.addTo(statement));
-                statement.executeBatch();
-                pipeline.clearPending();
-                return true;
-            } catch (SQLException e) {
-                log.error("Unable to insert into Clickhouse {} table: ", pipeline.tableName, e);
-                initialized = false;
-                return false;
-            }
-        } catch (SQLException e) {
-            log.warn("Unable to connect to Clickhouse: {}", e.getMessage());
-            initialized = false;
-            return false;
-        }
-    }
-
-    /**
-     * Drains the EventPipeline queue of analytic events in batches of BATCH_SIZE.
-     *
-     * @param  pipeline  the event pipeline to drain
-     */
-    private <T extends AnalyticEvent> void drainQueue(EventPipeline<T> pipeline) {
-        T entry;
-        int count = 0;
-        while ((entry = pipeline.queue.poll()) != null) {
-            pipeline.pending.add(entry);
-            count++;
-            if (count % BATCH_SIZE == 0) {
-                if (!writePending(pipeline)) {
-                    log.warn("Interrupted batch flushing {} to Clickhouse", pipeline.tableName);
-                    break;
-                }
-            }
-        }
-
-        if (count % BATCH_SIZE > 0 && pipeline.pending() ) {
-            if (!writePending(pipeline)) {
-                log.warn("Interrupted flushing {} to Clickhouse", pipeline.tableName);
-                return;
-            }
-        }
-
-        if (count > 0) {
-            log.info("Flushed {} {} to Clickhouse", count, pipeline.tableName);
-        }
     }
 
     public record SurveyError(String error, SurveyEvent surveyEvent) {
@@ -271,4 +234,36 @@ public class AnalyticEventService {
     }
 
     public static class DisabledAnalyticsException extends RuntimeException { }
+
+    @Scheduled(fixedDelay = 5000)
+    public void processBatch() {
+        if (isDisabled()) return;
+
+        processQueue(egressQueue, tsEgressRepo::batchInsert);
+        processQueue(ingressQueue, tsIngressRepo::batchUpsert);
+        processQueue(errorQueue, tsErrorRepo::batchInsert);
+        processQueue(filterQueue, tsFilterRepo::batchInsert);
+        processQueue(cancelQueue, tsCancelRepo::batchInsert);
+    }
+
+    private <T> void processQueue(Queue<T> queue, Consumer<List<T>> saveFunction) {
+        List<T> batch = new ArrayList<>();
+        int batchSize = 1000;
+
+        T item;
+        while ((item = queue.poll()) != null && batch.size() < batchSize) {
+            batch.add(item);
+        }
+
+        if (batch.isEmpty()) {
+            return;
+        }
+
+        try {
+            saveFunction.accept(batch);
+        } catch (Exception e) {
+            log.error("Error processing batch. Re-queueing items.", e);
+            queue.addAll(batch);
+        }
+    }
 }

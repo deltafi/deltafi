@@ -136,7 +136,7 @@ class TransformFlowServiceTest {
         assertThat(updatedFlows.get("running").isRunning()).isTrue();
         assertThat(updatedFlows.get("running").isTestMode()).isFalse();
 
-        // stopped flow should be restarted since it was marked as running in the snapshot, it should also be in test mode
+        // stopped dataSource should be restarted since it was marked as running in the snapshot, it should also be in test mode
         assertThat(updatedFlows.get("stopped").isRunning()).isTrue();
         assertThat(updatedFlows.get("stopped").isTestMode()).isTrue();
 

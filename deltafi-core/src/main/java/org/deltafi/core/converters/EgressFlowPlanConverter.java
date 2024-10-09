@@ -79,7 +79,7 @@ public class EgressFlowPlanConverter extends FlowPlanConverter<EgressFlowPlan, E
         }
     }
 
-    // If there were multiple values in the incoming flow plan list then process each one and add the replacement if it is not blank
+    // If there were multiple values in the incoming dataSource plan list then process each one and add the replacement if it is not blank
     private List<String> handleValues(List<String> inputValues, FlowPlanPropertyHelper flowPlanPropertyHelper, String inEgressPlanNamed) {
         Set<String> flowList = new HashSet<>();
         for (String inputValue : inputValues) {

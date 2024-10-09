@@ -27,8 +27,8 @@ public class RestDataSourceFlowPlanGenerator {
     static final String FLOW_NAME_POSTFIX = "-rest-data-source";
 
     /**
-     * Create a RestDataSourcePlan given the base flow name 'baseFlowName'.
-     * @param baseFlowName prefix for the flow plan name
+     * Create a RestDataSourcePlan given the base dataSource name 'baseFlowName'.
+     * @param baseFlowName prefix for the dataSource plan name
      * @return a RestDataSourcePlan
      */
     public RestDataSourcePlan generateRestDataSourceFlowPlan(String baseFlowName) {

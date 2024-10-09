@@ -72,7 +72,7 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
                 .orElse(null);
 
         if (existingFlowPlan != null && !existingFlowPlan.getSourcePlugin().equalsIgnoreVersion(flowPlan.getSourcePlugin())) {
-            throw new DeltafiConfigurationException("A flow plan with the name: " + flowPlan.getName() + " already exists from another source plugin: " + existingFlowPlan);
+            throw new DeltafiConfigurationException("A dataSource plan with the name: " + flowPlan.getName() + " already exists from another source plugin: " + existingFlowPlan);
         }
 
         FlowType otherDataSourceType;
@@ -89,7 +89,7 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
                     .findFirst()
                     .orElse(null);
             if (existingFlowPlanOfOtherType != null) {
-                throw new DeltafiConfigurationException("A flow plan with the name: " + flowPlan.getName() + " of type: " + otherDataSourceType + " already exists -- two data sources of the same name cannot exist");
+                throw new DeltafiConfigurationException("A dataSource plan with the name: " + flowPlan.getName() + " of type: " + otherDataSourceType + " already exists -- two data sources of the same name cannot exist");
             }
         }
 
@@ -107,7 +107,7 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
     }
 
     /**
-     * Find all the flow plans with the given sourcePlugin and rebuild
+     * Find all the dataSource plans with the given sourcePlugin and rebuild
      * the flows for each of them.
      * @param sourcePlugin plugin whose flows should be recreated
      */
@@ -117,7 +117,7 @@ public abstract class FlowPlanService<FlowPlanT extends FlowPlan, FlowT extends 
 
     @Override
     public void updateSnapshot(SystemSnapshot systemSnapshot) {
-        // nothing to do here, flow plans should be packaged in the plugin
+        // nothing to do here, dataSource plans should be packaged in the plugin
     }
 
     @Override

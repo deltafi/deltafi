@@ -59,7 +59,7 @@ public interface DeltaFileRepo extends JpaRepository<DeltaFile, UUID>, DeltaFile
 
     /**
      * Find the DeltaFiles that include the given flowName in their pendingAnnotationsForFlows set
-     * @param flowName name of flow to search for
+     * @param flowName name of dataSource to search for
      * @return stream of matching DeltaFiles
      */
     Stream<DeltaFile> findByTerminalAndFlowsNameAndFlowsState(boolean isTerminal, String flowName, DeltaFileFlowState state);

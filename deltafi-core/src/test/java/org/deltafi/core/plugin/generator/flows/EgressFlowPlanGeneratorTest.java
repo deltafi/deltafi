@@ -75,11 +75,11 @@ class EgressFlowPlanGeneratorTest {
     void matches(FlowPlan flowPlan, String name, ActionConfigMatcher egressMatcher) {
         if (flowPlan instanceof EgressFlowPlan egressFlowPlan) {
             assertThat(egressFlowPlan.getName()).isEqualTo(name);
-            assertThat(egressFlowPlan.getDescription()).isEqualTo("Sample egress flow");
+            assertThat(egressFlowPlan.getDescription()).isEqualTo("Sample egress dataSource");
 
             assertThat(egressFlowPlan.getEgressAction()).matches(egressMatcher);
         } else {
-            Assertions.fail("invalid flow type returned");
+            Assertions.fail("invalid dataSource type returned");
         }
     }
 }

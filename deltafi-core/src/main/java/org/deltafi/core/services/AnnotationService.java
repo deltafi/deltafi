@@ -40,10 +40,10 @@ public class AnnotationService implements Snapshotter {
     }
 
     /**
-     * Find the egress flow with the given name and update the set of expected annotations.
-     * If the flow no longer has expected annotations remove the flow from all DeltaFiles
-     * that have the flow in their pendingAnnotationsForFlow set.
-     * @param flowName name of the flow to update
+     * Find the egress dataSource with the given name and update the set of expected annotations.
+     * If the dataSource no longer has expected annotations remove the dataSource from all DeltaFiles
+     * that have the dataSource in their pendingAnnotationsForFlow set.
+     * @param flowName name of the dataSource to update
      * @param expectedAnnotations new set of expected annotations
      * @return true if the set of expected annotations changed
      */

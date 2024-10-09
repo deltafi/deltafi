@@ -1,0 +1,2274 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [
+            "DeltaFi"
+          ],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      },
+      {
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "hide": false,
+        "iconColor": "orange",
+        "name": "Global events",
+        "target": {
+          "fromAnnotations": true,
+          "limit": 200,
+          "matchAny": true,
+          "queryType": "annotations",
+          "tags": [
+            "Global",
+            "DeltaFi"
+          ],
+          "type": "tags"
+        }
+      }
+    ]
+  },
+  "description": "Data Source metrics grouped by the values in an annotation applied to the data sources",
+  "editable": false,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${database}"
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 12,
+        "x": 6,
+        "y": 0
+      },
+      "id": 98,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "<h1><center>Data Sources Grouped by <span style='font-family: monospace; color: yellow'>${annotation_key}</span></center></h1>",
+        "mode": "html"
+      },
+      "pluginVersion": "11.1.4",
+      "transparent": true,
+      "type": "text"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 2
+      },
+      "id": 127,
+      "panels": [],
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Total Bytes",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 3
+      },
+      "id": 125,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "wideLayout": false
+      },
+      "pluginVersion": "11.1.4",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 119,
+          "refId": "A",
+          "withTransforms": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "reducers": [
+              "sum"
+            ]
+          }
+        }
+      ],
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${database}"
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 12,
+        "x": 6,
+        "y": 3
+      },
+      "id": 123,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "<h1><center>Ingress</center></h1>",
+        "mode": "html"
+      },
+      "pluginVersion": "11.1.4",
+      "transparent": true,
+      "type": "text"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Total Files",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 3
+      },
+      "id": 126,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "wideLayout": false
+      },
+      "pluginVersion": "11.1.4",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 124,
+          "refId": "A",
+          "withTransforms": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "reducers": [
+              "sum"
+            ]
+          }
+        }
+      ],
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${database}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMin": 1,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 25,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "linearThreshold": 2,
+              "log": 10,
+              "type": "symlog"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 6,
+        "y": 5
+      },
+      "id": 119,
+      "interval": "10s",
+      "maxDataPoints": 100,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": false,
+          "sortBy": "Total",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${database}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "WITH params AS (\n  SELECT\n    $__from::bigint AS start_time_ms,\n    $__to::bigint AS end_time_ms,\n    $__interval_ms::bigint AS interval_ms\n),\ndata AS (\n  SELECT\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      timestamp\n    ) AS time,\n    data_source || ' (' || COALESCE(annotations->>'$annotation_key', 'Not Present') || ')' AS series_name,\n    SUM(ingress_bytes) AS bytes\n  FROM ts_ingresses\n  WHERE\n    timestamp >= to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    AND timestamp < to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    AND data_source IN ($datasources)\n    AND (\n      (annotations ? '$annotation_key' AND (annotations->>'$annotation_key') IN ($annotation_value))\n      OR \n      ('Not Present' IN ($annotation_value) AND NOT annotations ? '$annotation_key')\n    )\n  GROUP BY 1, 2\n),\ntime_series AS (\n  SELECT generate_series(\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    ),\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    ),\n    (SELECT (interval_ms || ' milliseconds')::interval FROM params)\n  ) AS time\n),\nall_series AS (\n  SELECT DISTINCT series_name FROM data\n),\nall_combinations AS (\n  SELECT time, series_name\n  FROM time_series\n  CROSS JOIN all_series\n)\nSELECT\n  ac.time,\n  ac.series_name,\n  d.bytes AS bytes\nFROM all_combinations ac\nLEFT JOIN data d ON ac.time = d.time AND ac.series_name = d.series_name\nORDER BY ac.time, ac.series_name",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [
+                  {
+                    "name": "\"timestamp\"",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              },
+              {
+                "parameters": [
+                  {
+                    "name": "data_source",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "name": "data_source",
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "ts_egresses"
+        }
+      ],
+      "title": "Ingressed Bytes",
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "\\w* (.*)",
+            "renamePattern": "$1"
+          }
+        }
+      ],
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 16,
+        "w": 6,
+        "x": 0,
+        "y": 7
+      },
+      "id": 120,
+      "options": {
+        "displayLabels": [],
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "11.1.4",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 119,
+          "refId": "A",
+          "withTransforms": true
+        }
+      ],
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 16,
+        "w": 6,
+        "x": 18,
+        "y": 7
+      },
+      "id": 121,
+      "options": {
+        "displayLabels": [],
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "11.1.4",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 124,
+          "refId": "A",
+          "withTransforms": true
+        }
+      ],
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${database}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 25,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "linearThreshold": 2,
+              "log": 10,
+              "type": "symlog"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 6,
+        "y": 14
+      },
+      "id": 124,
+      "interval": "10s",
+      "maxDataPoints": 100,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": false,
+          "sortBy": "Total",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${database}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "WITH params AS (\n  SELECT\n    $__from::bigint AS start_time_ms,\n    $__to::bigint AS end_time_ms,\n    $__interval_ms::bigint AS interval_ms\n),\ndata AS (\n  SELECT\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      timestamp\n    ) AS time,\n    data_source || ' (' || COALESCE(annotations->>'$annotation_key', 'Not Present') || ')' AS series_name,\n    COUNT(*) AS files\n  FROM ts_ingresses\n  WHERE\n    timestamp >= to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    AND timestamp < to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    AND data_source IN ($datasources)\n    AND (\n      (annotations ? '$annotation_key' AND (annotations->>'$annotation_key') IN ($annotation_value))\n      OR \n      ('Not Present' IN ($annotation_value) AND NOT annotations ? '$annotation_key')\n    )\n  GROUP BY 1, 2\n),\ntime_series AS (\n  SELECT generate_series(\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    ),\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    ),\n    (SELECT (interval_ms || ' milliseconds')::interval FROM params)\n  ) AS time\n),\nall_series AS (\n  SELECT DISTINCT series_name FROM data\n),\nall_combinations AS (\n  SELECT time, series_name\n  FROM time_series\n  CROSS JOIN all_series\n)\nSELECT\n  ac.time,\n  ac.series_name,\n  d.files AS files\nFROM all_combinations ac\nLEFT JOIN data d ON ac.time = d.time AND ac.series_name = d.series_name\nORDER BY ac.time, ac.series_name",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [
+                  {
+                    "name": "\"timestamp\"",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              },
+              {
+                "parameters": [
+                  {
+                    "name": "data_source",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "name": "data_source",
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "ts_egresses"
+        }
+      ],
+      "title": "Ingressed Files",
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "\\w* (.*)",
+            "renamePattern": "$1"
+          }
+        }
+      ],
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 23
+      },
+      "id": 131,
+      "panels": [],
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Total Bytes",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 24
+      },
+      "id": 132,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "wideLayout": false
+      },
+      "pluginVersion": "11.1.4",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 135,
+          "refId": "A",
+          "withTransforms": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "reducers": [
+              "sum"
+            ]
+          }
+        }
+      ],
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${database}"
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 12,
+        "x": 6,
+        "y": 24
+      },
+      "id": 133,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "<h1><center>Egress</center></h1>",
+        "mode": "html"
+      },
+      "pluginVersion": "11.1.4",
+      "transparent": true,
+      "type": "text"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Total Files",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 24
+      },
+      "id": 134,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "wideLayout": false
+      },
+      "pluginVersion": "11.1.4",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 138,
+          "refId": "A",
+          "withTransforms": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "reducers": [
+              "sum"
+            ]
+          }
+        }
+      ],
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${database}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMin": 1,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 25,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "linearThreshold": 2,
+              "log": 10,
+              "type": "symlog"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 6,
+        "y": 26
+      },
+      "id": 135,
+      "interval": "10s",
+      "maxDataPoints": 100,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": false,
+          "sortBy": "Total",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${database}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "WITH params AS (\n  SELECT\n    $__from::bigint AS start_time_ms,\n    $__to::bigint AS end_time_ms,\n    $__interval_ms::bigint AS interval_ms\n),\ndata AS (\n  SELECT\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      timestamp\n    ) AS time,\n    data_source || ' (' || COALESCE(annotations->>'$annotation_key', 'Not Present') || ')' AS series_name,\n    SUM(egress_bytes) AS bytes\n  FROM ts_egresses\n  WHERE\n    timestamp >= to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    AND timestamp < to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    AND data_source IN ($datasources)\n    AND (\n      (annotations ? '$annotation_key' AND (annotations->>'$annotation_key') IN ($annotation_value))\n      OR \n      ('Not Present' IN ($annotation_value) AND NOT annotations ? '$annotation_key')\n    )\n  GROUP BY 1, 2\n),\ntime_series AS (\n  SELECT generate_series(\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    ),\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    ),\n    (SELECT (interval_ms || ' milliseconds')::interval FROM params)\n  ) AS time\n),\nall_series AS (\n  SELECT DISTINCT series_name FROM data\n),\nall_combinations AS (\n  SELECT time, series_name\n  FROM time_series\n  CROSS JOIN all_series\n)\nSELECT\n  ac.time,\n  ac.series_name,\n  d.bytes AS bytes\nFROM all_combinations ac\nLEFT JOIN data d ON ac.time = d.time AND ac.series_name = d.series_name\nORDER BY ac.time, ac.series_name",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [
+                  {
+                    "name": "\"timestamp\"",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              },
+              {
+                "parameters": [
+                  {
+                    "name": "data_source",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "name": "data_source",
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "ts_egresses"
+        }
+      ],
+      "title": "Egressed Bytes",
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "\\w* (.*)",
+            "renamePattern": "$1"
+          }
+        }
+      ],
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 16,
+        "w": 6,
+        "x": 0,
+        "y": 28
+      },
+      "id": 136,
+      "options": {
+        "displayLabels": [],
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "11.1.4",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 135,
+          "refId": "A",
+          "withTransforms": true
+        }
+      ],
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 16,
+        "w": 6,
+        "x": 18,
+        "y": 28
+      },
+      "id": 137,
+      "options": {
+        "displayLabels": [],
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "11.1.4",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 138,
+          "refId": "A",
+          "withTransforms": true
+        }
+      ],
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${database}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 25,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "linearThreshold": 2,
+              "log": 10,
+              "type": "symlog"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 6,
+        "y": 35
+      },
+      "id": 138,
+      "interval": "10s",
+      "maxDataPoints": 100,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": false,
+          "sortBy": "Total",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${database}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "WITH params AS (\n  SELECT\n    $__from::bigint AS start_time_ms,\n    $__to::bigint AS end_time_ms,\n    $__interval_ms::bigint AS interval_ms\n),\ndata AS (\n  SELECT\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      timestamp\n    ) AS time,\n    data_source || ' (' || COALESCE(annotations->>'$annotation_key', 'Not Present') || ')' AS series_name,\n    COUNT(*) AS files\n  FROM ts_egresses\n  WHERE\n    timestamp >= to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    AND timestamp < to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    AND data_source IN ($datasources)\n    AND (\n      (annotations ? '$annotation_key' AND (annotations->>'$annotation_key') IN ($annotation_value))\n      OR \n      ('Not Present' IN ($annotation_value) AND NOT annotations ? '$annotation_key')\n    )\n  GROUP BY 1, 2\n),\ntime_series AS (\n  SELECT generate_series(\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    ),\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    ),\n    (SELECT (interval_ms || ' milliseconds')::interval FROM params)\n  ) AS time\n),\nall_series AS (\n  SELECT DISTINCT series_name FROM data\n),\nall_combinations AS (\n  SELECT time, series_name\n  FROM time_series\n  CROSS JOIN all_series\n)\nSELECT\n  ac.time,\n  ac.series_name,\n  d.files AS files\nFROM all_combinations ac\nLEFT JOIN data d ON ac.time = d.time AND ac.series_name = d.series_name\nORDER BY ac.time, ac.series_name",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [
+                  {
+                    "name": "\"timestamp\"",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              },
+              {
+                "parameters": [
+                  {
+                    "name": "data_source",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "name": "data_source",
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "ts_egresses"
+        }
+      ],
+      "title": "Egressed Files",
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "\\w* (.*)",
+            "renamePattern": "$1"
+          }
+        }
+      ],
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 44
+      },
+      "id": 130,
+      "panels": [],
+      "title": "File Trends",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Errors",
+          "mappings": [
+            {
+              "options": {
+                "null": {
+                  "color": "green",
+                  "index": 0,
+                  "text": "0"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "orange",
+                "value": 2
+              },
+              {
+                "color": "red",
+                "value": 3
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 0,
+        "y": 45
+      },
+      "id": 145,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "wideLayout": false
+      },
+      "pluginVersion": "11.1.4",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 142,
+          "refId": "A",
+          "withTransforms": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "reducers": [
+              "sum"
+            ]
+          }
+        }
+      ],
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 9,
+        "x": 6,
+        "y": 45
+      },
+      "id": 146,
+      "options": {
+        "displayLabels": [],
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "11.1.4",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 142,
+          "refId": "A",
+          "withTransforms": true
+        }
+      ],
+      "transparent": true,
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${database}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 25,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "linearThreshold": 2,
+              "log": 10,
+              "type": "symlog"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 9,
+        "x": 15,
+        "y": 45
+      },
+      "id": 142,
+      "interval": "10s",
+      "maxDataPoints": 100,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": false,
+          "sortBy": "Total",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${database}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "WITH params AS (\n  SELECT\n    $__from::bigint AS start_time_ms,\n    $__to::bigint AS end_time_ms,\n    $__interval_ms::bigint AS interval_ms\n),\ndata AS (\n  SELECT\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      timestamp\n    ) AS time,\n    data_source || ' (' || COALESCE(annotations->>'$annotation_key', 'Not Present') || ')' AS series_name,\n    COUNT(*) AS files\n  FROM ts_errors\n  WHERE\n    timestamp >= to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    AND timestamp < to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    AND data_source IN ($datasources)\n    AND (\n      (annotations ? '$annotation_key' AND (annotations->>'$annotation_key') IN ($annotation_value))\n      OR \n      ('Not Present' IN ($annotation_value) AND NOT annotations ? '$annotation_key')\n    )\n  GROUP BY 1, 2\n),\ntime_series AS (\n  SELECT generate_series(\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    ),\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    ),\n    (SELECT (interval_ms || ' milliseconds')::interval FROM params)\n  ) AS time\n),\nall_series AS (\n  SELECT DISTINCT series_name FROM data\n),\nall_combinations AS (\n  SELECT time, series_name\n  FROM time_series\n  CROSS JOIN all_series\n)\nSELECT\n  ac.time,\n  ac.series_name,\n  COALESCE(d.files,0) AS files\nFROM all_combinations ac\nLEFT JOIN data d ON ac.time = d.time AND ac.series_name = d.series_name\nORDER BY ac.time, ac.series_name",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [
+                  {
+                    "name": "\"timestamp\"",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              },
+              {
+                "parameters": [
+                  {
+                    "name": "data_source",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "name": "data_source",
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "ts_egresses"
+        }
+      ],
+      "title": "Errored Files",
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "\\w* (.*)",
+            "renamePattern": "$1"
+          }
+        }
+      ],
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Filtered",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "light-blue",
+                "value": null
+              },
+              {
+                "color": "blue",
+                "value": 1
+              },
+              {
+                "color": "semi-dark-blue",
+                "value": 2
+              },
+              {
+                "color": "semi-dark-purple",
+                "value": 3
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 0,
+        "y": 52
+      },
+      "id": 149,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "wideLayout": false
+      },
+      "pluginVersion": "11.1.4",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 147,
+          "refId": "A",
+          "withTransforms": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "reducers": [
+              "sum"
+            ]
+          }
+        }
+      ],
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 9,
+        "x": 6,
+        "y": 52
+      },
+      "id": 148,
+      "options": {
+        "displayLabels": [],
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "11.1.4",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 147,
+          "refId": "A",
+          "withTransforms": true
+        }
+      ],
+      "transparent": true,
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${database}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 25,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "linearThreshold": 2,
+              "log": 10,
+              "type": "symlog"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 9,
+        "x": 15,
+        "y": 52
+      },
+      "id": 147,
+      "interval": "10s",
+      "maxDataPoints": 100,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": false,
+          "sortBy": "Total",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${database}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "WITH params AS (\n  SELECT\n    $__from::bigint AS start_time_ms,\n    $__to::bigint AS end_time_ms,\n    $__interval_ms::bigint AS interval_ms\n),\ndata AS (\n  SELECT\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      timestamp\n    ) AS time,\n    data_source || ' (' || COALESCE(annotations->>'$annotation_key', 'Not Present') || ')' AS series_name,\n    COUNT(*) AS files\n  FROM ts_filters\n  WHERE\n    timestamp >= to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    AND timestamp < to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    AND data_source IN ($datasources)\n    AND (\n      (annotations ? '$annotation_key' AND (annotations->>'$annotation_key') IN ($annotation_value))\n      OR \n      ('Not Present' IN ($annotation_value) AND NOT annotations ? '$annotation_key')\n    )\n  GROUP BY 1, 2\n),\ntime_series AS (\n  SELECT generate_series(\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    ),\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    ),\n    (SELECT (interval_ms || ' milliseconds')::interval FROM params)\n  ) AS time\n),\nall_series AS (\n  SELECT DISTINCT series_name FROM data\n),\nall_combinations AS (\n  SELECT time, series_name\n  FROM time_series\n  CROSS JOIN all_series\n)\nSELECT\n  ac.time,\n  ac.series_name,\n  COALESCE(d.files,0) AS files\nFROM all_combinations ac\nLEFT JOIN data d ON ac.time = d.time AND ac.series_name = d.series_name\nORDER BY ac.time, ac.series_name",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [
+                  {
+                    "name": "\"timestamp\"",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              },
+              {
+                "parameters": [
+                  {
+                    "name": "data_source",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "name": "data_source",
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "ts_egresses"
+        }
+      ],
+      "title": "Filtered Files",
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "\\w* (.*)",
+            "renamePattern": "$1"
+          }
+        }
+      ],
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 59
+      },
+      "id": 141,
+      "panels": [],
+      "title": "Summary",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${database}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Ingress Bytes"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "decbytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Egress Bytes"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "decbytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Errored"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Data Source"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 464
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Annotation Value"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 322
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 27,
+        "w": 24,
+        "x": 0,
+        "y": 60
+      },
+      "id": 144,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "Data Source"
+          }
+        ]
+      },
+      "pluginVersion": "11.1.4",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${database}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH params AS (\n  SELECT\n    $__from::bigint AS start_time_ms,\n    $__to::bigint AS end_time_ms\n),\ningress_data AS (\n  SELECT\n    data_source,\n    COALESCE(annotations->>'$annotation_key', 'Not Present') AS annotation_value,\n    SUM(ingress_bytes) AS total_ingress_bytes,\n    COUNT(*) AS ingress_files\n  FROM ts_ingresses\n  WHERE\n    timestamp >= to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    AND timestamp < to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    AND data_source IN ($datasources)\n    AND (\n      (annotations ? '$annotation_key' AND (annotations->>'$annotation_key') IN ($annotation_value))\n      OR \n      ('Not Present' IN ($annotation_value) AND NOT annotations ? '$annotation_key')\n    )\n  GROUP BY 1, 2\n),\negress_data AS (\n  SELECT\n    data_source,\n    COALESCE(annotations->>'$annotation_key', 'Not Present') AS annotation_value,\n    SUM(egress_bytes) AS total_egress_bytes,\n    COUNT(*) AS egress_files\n  FROM ts_egresses\n  WHERE\n    timestamp >= to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    AND timestamp < to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    AND data_source IN ($datasources)\n    AND (\n      (annotations ? '$annotation_key' AND (annotations->>'$annotation_key') IN ($annotation_value))\n      OR \n      ('Not Present' IN ($annotation_value) AND NOT annotations ? '$annotation_key')\n    )\n  GROUP BY 1, 2\n),\nerror_data AS (\n  SELECT\n    data_source,\n    COALESCE(annotations->>'$annotation_key', 'Not Present') AS annotation_value,\n    COUNT(*) AS error_files\n  FROM ts_errors\n  WHERE\n    timestamp >= to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    AND timestamp < to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    AND data_source IN ($datasources)\n    AND (\n      (annotations ? '$annotation_key' AND (annotations->>'$annotation_key') IN ($annotation_value))\n      OR \n      ('Not Present' IN ($annotation_value) AND NOT annotations ? '$annotation_key')\n    )\n  GROUP BY 1, 2\n),\nfilter_data AS (\n  SELECT\n    data_source,\n    COALESCE(annotations->>'$annotation_key', 'Not Present') AS annotation_value,\n    COUNT(*) AS filter_files\n  FROM ts_filters\n  WHERE\n    timestamp >= to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    AND timestamp < to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    AND data_source IN ($datasources)\n    AND (\n      (annotations ? '$annotation_key' AND (annotations->>'$annotation_key') IN ($annotation_value))\n      OR \n      ('Not Present' IN ($annotation_value) AND NOT annotations ? '$annotation_key')\n    )\n  GROUP BY 1, 2\n)\nSELECT\n  COALESCE(i.data_source, e.data_source, er.data_source, f.data_source) AS data_source,\n  COALESCE(i.annotation_value, e.annotation_value, er.annotation_value, f.annotation_value) AS annotation_value,\n  COALESCE(i.total_ingress_bytes, 0) AS total_ingress_bytes,\n  COALESCE(i.ingress_files, 0) AS ingress_files,\n  COALESCE(e.total_egress_bytes, 0) AS total_egress_bytes,\n  COALESCE(e.egress_files, 0) AS egress_files,\n  COALESCE(er.error_files, 0) AS error_files,\n  COALESCE(f.filter_files, 0) AS filter_files\nFROM ingress_data i\nFULL OUTER JOIN egress_data e\n  ON i.data_source = e.data_source AND i.annotation_value = e.annotation_value\nFULL OUTER JOIN error_data er\n  ON i.data_source = er.data_source AND i.annotation_value = er.annotation_value\nFULL OUTER JOIN filter_data f\n  ON i.data_source = f.data_source AND i.annotation_value = f.annotation_value\nORDER BY data_source, annotation_value",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "alias": "\"Data Source\"",
+                "parameters": [
+                  {
+                    "name": "data_source",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              },
+              {
+                "name": "SUM",
+                "parameters": [
+                  {
+                    "name": "ingress_bytes",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "name": "data_source",
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "ts_ingresses"
+        }
+      ],
+      "title": "Panel Title",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "includeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "annotation_value": "Annotation Value",
+              "data_source": "Data Source",
+              "egress_files": "Egress Files",
+              "error_files": "Errored",
+              "filter_files": "Filtered",
+              "ingress_files": "Ingress Files",
+              "total_egress_bytes": "Egress Bytes",
+              "total_ingress_bytes": "Ingress Bytes"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    }
+  ],
+  "refresh": "",
+  "revision": 1,
+  "schemaVersion": 39,
+  "tags": [
+    "DeltaFi",
+    "Data Flow",
+    "Analytics"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": "Postgres",
+          "value": "deltafi-postgres"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Database",
+        "multi": false,
+        "name": "database",
+        "options": [],
+        "query": "grafana-postgresql-datasource",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "${database}"
+        },
+        "definition": "WITH all_sources AS (\n  SELECT DISTINCT data_source FROM ts_ingresses WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT data_source FROM ts_egresses WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT data_source FROM ts_errors WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT data_source FROM ts_filters WHERE $__timeFilter(timestamp)\n),\ndistinct_sources AS (\n  SELECT DISTINCT data_source\n  FROM all_sources\n  WHERE data_source IS NOT NULL AND data_source != ''\n)\nSELECT data_source\nFROM (\n  SELECT data_source FROM distinct_sources\n  UNION ALL\n  SELECT 'No Datasources' WHERE NOT EXISTS (SELECT 1 FROM distinct_sources)\n) subquery\nORDER BY \n  CASE \n    WHEN data_source = 'No Datasources' THEN 0 \n    ELSE 1 \n  END,\n  data_source",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Data Sources",
+        "multi": true,
+        "name": "datasources",
+        "options": [],
+        "query": "WITH all_sources AS (\n  SELECT DISTINCT data_source FROM ts_ingresses WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT data_source FROM ts_egresses WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT data_source FROM ts_errors WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT data_source FROM ts_filters WHERE $__timeFilter(timestamp)\n),\ndistinct_sources AS (\n  SELECT DISTINCT data_source\n  FROM all_sources\n  WHERE data_source IS NOT NULL AND data_source != ''\n)\nSELECT data_source\nFROM (\n  SELECT data_source FROM distinct_sources\n  UNION ALL\n  SELECT 'No Datasources' WHERE NOT EXISTS (SELECT 1 FROM distinct_sources)\n) subquery\nORDER BY \n  CASE \n    WHEN data_source = 'No Datasources' THEN 0 \n    ELSE 1 \n  END,\n  data_source",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 5,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "No Annotations",
+          "value": "No Annotations"
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "${database}"
+        },
+        "definition": "WITH all_keys AS (\n  SELECT DISTINCT jsonb_object_keys(annotations) AS key FROM ts_ingresses WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT jsonb_object_keys(annotations) AS key FROM ts_egresses WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT jsonb_object_keys(annotations) AS key FROM ts_errors WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT jsonb_object_keys(annotations) AS key FROM ts_filters WHERE $__timeFilter(timestamp)\n),\ndistinct_keys AS (\n  SELECT DISTINCT key\n  FROM all_keys\n)\nSELECT key\nFROM (\n  SELECT key FROM distinct_keys\n  UNION ALL\n  SELECT 'No Annotations' AS key\n) subquery\nWHERE \n  key = 'No Annotations' AND NOT EXISTS (SELECT 1 FROM distinct_keys)\n  OR\n  key != 'No Annotations'\nORDER BY \n  CASE WHEN key = 'No Annotations' THEN 0 ELSE 1 END,\n  key",
+        "description": "",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Annotation Key",
+        "multi": false,
+        "name": "annotation_key",
+        "options": [],
+        "query": "WITH all_keys AS (\n  SELECT DISTINCT jsonb_object_keys(annotations) AS key FROM ts_ingresses WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT jsonb_object_keys(annotations) AS key FROM ts_egresses WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT jsonb_object_keys(annotations) AS key FROM ts_errors WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT jsonb_object_keys(annotations) AS key FROM ts_filters WHERE $__timeFilter(timestamp)\n),\ndistinct_keys AS (\n  SELECT DISTINCT key\n  FROM all_keys\n)\nSELECT key\nFROM (\n  SELECT key FROM distinct_keys\n  UNION ALL\n  SELECT 'No Annotations' AS key\n) subquery\nWHERE \n  key = 'No Annotations' AND NOT EXISTS (SELECT 1 FROM distinct_keys)\n  OR\n  key != 'No Annotations'\nORDER BY \n  CASE WHEN key = 'No Annotations' THEN 0 ELSE 1 END,\n  key",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 5,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "${database}"
+        },
+        "definition": "WITH all_values AS (\n  SELECT DISTINCT annotations->>'$annotation_key' AS value\n  FROM ts_ingresses\n  WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT annotations->>'$annotation_key' AS value\n  FROM ts_egresses\n  WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT annotations->>'$annotation_key' AS value\n  FROM ts_errors\n  WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT annotations->>'$annotation_key' AS value\n  FROM ts_filters\n  WHERE $__timeFilter(timestamp)\n),\ndistinct_values AS (\n  SELECT DISTINCT value\n  FROM all_values\n  WHERE value IS NOT NULL\n)\nSELECT value\nFROM (\n  SELECT value FROM distinct_values\n  UNION ALL\n  SELECT 'Not Present'\n) subquery\nORDER BY \n  CASE \n    WHEN value = 'Not Present' THEN 1\n    ELSE 0 \n  END,\n  value",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Annotation Value",
+        "multi": true,
+        "name": "annotation_value",
+        "options": [],
+        "query": "WITH all_values AS (\n  SELECT DISTINCT annotations->>'$annotation_key' AS value\n  FROM ts_ingresses\n  WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT annotations->>'$annotation_key' AS value\n  FROM ts_egresses\n  WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT annotations->>'$annotation_key' AS value\n  FROM ts_errors\n  WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT annotations->>'$annotation_key' AS value\n  FROM ts_filters\n  WHERE $__timeFilter(timestamp)\n),\ndistinct_values AS (\n  SELECT DISTINCT value\n  FROM all_values\n  WHERE value IS NOT NULL\n)\nSELECT value\nFROM (\n  SELECT value FROM distinct_values\n  UNION ALL\n  SELECT 'Not Present'\n) subquery\nORDER BY \n  CASE \n    WHEN value = 'Not Present' THEN 1\n    ELSE 0 \n  END,\n  value",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 5,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-1d",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ]
+  },
+  "timezone": "",
+  "title": "Data Source by Annotation",
+  "uid": "data-source-by-annotation",
+  "version": 1,
+  "weekStart": ""
+}

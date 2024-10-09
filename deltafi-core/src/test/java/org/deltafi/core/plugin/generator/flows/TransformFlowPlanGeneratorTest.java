@@ -59,7 +59,7 @@ class TransformFlowPlanGeneratorTest {
     void matches(FlowPlan flowPlan, List<ActionConfigMatcher> transformActionMatchers) {
         if (flowPlan instanceof TransformFlowPlan transformFlowPlan) {
             assertThat(transformFlowPlan.getName()).isEqualTo(MY_PLUGIN_TRANSFORM);
-            assertThat(transformFlowPlan.getDescription()).isEqualTo("Sample transform flow");
+            assertThat(transformFlowPlan.getDescription()).isEqualTo("Sample transform dataSource");
             List<ActionConfiguration> transformActions = transformFlowPlan.getTransformActions();
             if (transformActionMatchers == null) {
                 assertThat(transformActions).isNull();
@@ -68,7 +68,7 @@ class TransformFlowPlanGeneratorTest {
                 transformActionMatchers.forEach(matcher -> assertThat(transformActions).anyMatch(matcher));
             }
         } else {
-            Assertions.fail("invalid flow type returned");
+            Assertions.fail("invalid dataSource type returned");
         }
     }
 }

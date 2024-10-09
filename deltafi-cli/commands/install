@@ -139,7 +139,6 @@ _k8s_prerequisites() {
   # Keeping redis-password around for backwards chart compatibility
   _k8s_add_secret valkey-password redis-password "$VALKEY_PASSWORD" valkey-password "$VALKEY_PASSWORD"
   _k8s_add_secret config-repo-secret config-token "$(_random_password 16)"
-  _k8s_add_secret clickhouse-password clickhouse-password "deltafi"
 }
 
 _k8s_install() {

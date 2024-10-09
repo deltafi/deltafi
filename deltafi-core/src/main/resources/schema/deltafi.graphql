@@ -162,7 +162,7 @@ type DeltaFileFlow {
   input: DeltaFileFlowInput!
   actions: [Action!]!
   publishTopics: [String!]!
-  # +1 from the last flow
+  # +1 from the last dataSource
   depth: Int!
   pendingAnnotations: [String]
   testMode: Boolean!

@@ -156,7 +156,7 @@ public class DeltaFileFlow {
     }
 
     /**
-     * Get the cumulative metadata from all actions in the flow
+     * Get the cumulative metadata from all actions in the dataSource
      *
      * @return A Map containing the resulting metadata
      */
@@ -198,6 +198,10 @@ public class DeltaFileFlow {
         return latestMatchingAction(action -> action.getState() == ActionState.COMPLETE)
                 .map(Action::getContent)
                 .orElseGet(this::inputContent);
+    }
+
+    public long lastContentSize() {
+        return lastContent().stream().map(Content::getSize).reduce(0L, Long::sum);
     }
 
     private List<Content> inputContent() {

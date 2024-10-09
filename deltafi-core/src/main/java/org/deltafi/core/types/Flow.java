@@ -58,7 +58,7 @@ public abstract class Flow {
     @Column(columnDefinition = "jsonb")
     protected FlowStatus flowStatus = new FlowStatus(FlowState.STOPPED, new ArrayList<>(), false);
 
-    // list of variables that are applicable to this flow
+    // list of variables that are applicable to this dataSource
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
     protected Set<Variable> variables = new HashSet<>();
@@ -87,20 +87,20 @@ public abstract class Flow {
     }
 
     /**
-     * Find the action configuration with the given name in this flow
+     * Find the action configuration with the given name in this dataSource
      * @param actionName name of the action configuration to find
      * @return ActionConfiguration if it exists otherwise null
      */
     public abstract ActionConfiguration findActionConfigByName(String actionName);
 
     /**
-     * Get all the action configurations in this flow
-     * @return all action configurations in the flow
+     * Get all the action configurations in this dataSource
+     * @return all action configurations in the dataSource
      */
     public abstract List<ActionConfiguration> allActionConfigurations();
 
     /**
-     * Add the action names in this flow to the appropriate action family
+     * Add the action names in this dataSource to the appropriate action family
      * @param actionFamilyMap map of family type to action families
      */
     public abstract void updateActionNamesByFamily(Map<ActionType, ActionFamily> actionFamilyMap);
@@ -154,7 +154,7 @@ public abstract class Flow {
 
     /**
      * Copy the running and testMode state from the sourceFlow.
-     * Calls the flow specific copyFlowState method to copy additional state.
+     * Calls the dataSource specific copyFlowState method to copy additional state.
      * @param sourceFlow to copy state and settings from
      */
     public final void copyFlowState(Flow sourceFlow) {
@@ -164,7 +164,7 @@ public abstract class Flow {
     }
 
     /**
-     * Copy state fields from the source flow into the current flow
+     * Copy state fields from the source dataSource into the current dataSource
      * These should be fields that do not come from the FlowPlan
      * @param sourceFlow to copy state from
      */

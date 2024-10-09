@@ -16,14 +16,15 @@ datasources:
     uid: deltafi-loki
     url: http://deltafi-loki:3100
     version: 2
-  - jsonData:
-      defaultDatabase: deltafi
-      port: 9000
-      server: deltafi-clickhouse
-      tlsSkipVerify: true
-      username: default
-    name: ClickHouse
+  - name: Postgres
+    uid: deltafi-postgres
+    type: postgres
+    url: deltafi-postgres:5432
+    user: $POSTGRES_USER
     secureJsonData:
-      password: $CLICKHOUSE_PASSWORD
-    type: grafana-clickhouse-datasource
-    uid: deltafi-clickhouse
+      password: $POSTGRES_PASSWORD
+    jsonData:
+      database: $POSTGRES_DB
+      postgresVersion: 1500
+      timescaledb: true
+      sslmode: disable

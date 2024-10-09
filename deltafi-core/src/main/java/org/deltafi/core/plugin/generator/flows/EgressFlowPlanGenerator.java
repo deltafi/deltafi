@@ -34,11 +34,11 @@ public class EgressFlowPlanGenerator {
     static final String FLOW_NAME_POSTFIX = "-egress";
 
     /**
-     * Generate egress flow plans using the given actions
-     * @param baseFlowName prefix to use for the flow plan name
-     * @param egressActions egress actions to use in the flow plans, a default egress action will be used if this is
+     * Generate egress dataSource plans using the given actions
+     * @param baseFlowName prefix to use for the dataSource plan name
+     * @param egressActions egress actions to use in the dataSource plans, a default egress action will be used if this is
      *                      null or empty
-     * @return list of flow plans built using the given actions
+     * @return list of dataSource plans built using the given actions
      */
     List<FlowPlan> generateEgressFlowPlans(String baseFlowName, List<ActionGeneratorInput> egressActions) {
         List<ActionConfiguration> egressActionConfigs = ActionUtil.egressActionConfigurations(egressActions);
@@ -64,7 +64,7 @@ public class EgressFlowPlanGenerator {
 
     private FlowPlan generateEgressFlow(String planName, ActionConfiguration egressAction,
                                         Set<Rule> subscribeRuleSet) {
-        EgressFlowPlan egressFlowPlan = new EgressFlowPlan(planName, "Sample egress flow", egressAction);
+        EgressFlowPlan egressFlowPlan = new EgressFlowPlan(planName, "Sample egress dataSource", egressAction);
         egressFlowPlan.setSubscribe(subscribeRuleSet);
         return egressFlowPlan;
     }

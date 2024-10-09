@@ -1,0 +1,1445 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [
+            "DeltaFi"
+          ],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      },
+      {
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "hide": false,
+        "iconColor": "orange",
+        "name": "Global events",
+        "target": {
+          "fromAnnotations": true,
+          "limit": 200,
+          "matchAny": true,
+          "queryType": "annotations",
+          "tags": [
+            "Global",
+            "DeltaFi"
+          ],
+          "type": "tags"
+        }
+      }
+    ]
+  },
+  "description": "Error analysis by data source and annotation",
+  "editable": false,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": 30,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${database}"
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 12,
+        "x": 6,
+        "y": 0
+      },
+      "id": 98,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "<h1><center>Error Analysis by <span style='font-family: monospace; color: yellow'>${annotation_key}</span></center></h1>",
+        "mode": "html"
+      },
+      "pluginVersion": "11.1.4",
+      "transparent": true,
+      "type": "text"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 2
+      },
+      "id": 130,
+      "panels": [],
+      "title": "File Trends",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${database}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 25,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "linearThreshold": 2,
+              "log": 10,
+              "type": "symlog"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 18,
+        "x": 0,
+        "y": 3
+      },
+      "id": 147,
+      "interval": "10s",
+      "maxDataPoints": 100,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": false,
+          "sortBy": "Total",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${database}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "WITH params AS (\n  SELECT\n    $__from::bigint AS start_time_ms,\n    $__to::bigint AS end_time_ms,\n    $__interval_ms::bigint AS interval_ms\n),\ndata AS (\n  SELECT\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      timestamp\n    ) AS time,\n    data_source,\n    COUNT(*) AS files\n  FROM ts_errors\n  WHERE\n    timestamp >= to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    AND timestamp < to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    AND data_source IN ($datasources)\n    AND (\n      (annotations ? '$annotation_key' AND (annotations->>'$annotation_key') IN ($annotation_value))\n      OR \n      ('Not Present' IN ($annotation_value) AND NOT annotations ? '$annotation_key')\n    )\n  GROUP BY 1, 2\n),\ntime_series AS (\n  SELECT generate_series(\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    ),\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    ),\n    (SELECT (interval_ms || ' milliseconds')::interval FROM params)\n  ) AS time\n),\nall_series AS (\n  SELECT DISTINCT data_source FROM data\n),\nall_combinations AS (\n  SELECT time, data_source\n  FROM time_series\n  CROSS JOIN all_series\n)\nSELECT\n  ac.time,\n  COALESCE(SUM(d.files),0) AS errors\nFROM all_combinations ac\nLEFT JOIN data d ON ac.time = d.time AND ac.data_source = d.data_source\nGROUP BY 1\nORDER BY ac.time\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [
+                  {
+                    "name": "\"timestamp\"",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              },
+              {
+                "parameters": [
+                  {
+                    "name": "data_source",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "name": "data_source",
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "ts_egresses"
+        }
+      ],
+      "title": "Errored Files",
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "\\w* (.*)",
+            "renamePattern": "$1"
+          }
+        }
+      ],
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Errors",
+          "mappings": [
+            {
+              "options": {
+                "null": {
+                  "color": "green",
+                  "index": 0,
+                  "text": "0"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "orange",
+                "value": 2
+              },
+              {
+                "color": "red",
+                "value": 3
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 18,
+        "y": 3
+      },
+      "id": 145,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "wideLayout": false
+      },
+      "pluginVersion": "11.1.4",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 142,
+          "refId": "A",
+          "withTransforms": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "reducers": [
+              "sum"
+            ]
+          }
+        }
+      ],
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${database}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "left",
+            "axisSoftMin": 0,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 25,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "linearThreshold": 2,
+              "log": 10,
+              "type": "symlog"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "id": 142,
+      "interval": "10s",
+      "maxDataPoints": 100,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "sortBy": "Total",
+          "sortDesc": true,
+          "width": 500
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${database}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "WITH params AS (\n  SELECT\n    $__from::bigint AS start_time_ms,\n    $__to::bigint AS end_time_ms,\n    $__interval_ms::bigint AS interval_ms\n),\ndata AS (\n  SELECT\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      timestamp\n    ) AS time,\n    data_source || ' (' || COALESCE(annotations->>'$annotation_key', 'Not Present') || ')' AS series_name,\n    COUNT(*) AS files\n  FROM ts_errors\n  WHERE\n    timestamp >= to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    AND timestamp < to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    AND data_source IN ($datasources)\n    AND (\n      (annotations ? '$annotation_key' AND (annotations->>'$annotation_key') IN ($annotation_value))\n      OR \n      ('Not Present' IN ($annotation_value) AND NOT annotations ? '$annotation_key')\n    )\n  GROUP BY 1, 2\n),\ntime_series AS (\n  SELECT generate_series(\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    ),\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    ),\n    (SELECT (interval_ms || ' milliseconds')::interval FROM params)\n  ) AS time\n),\nall_series AS (\n  SELECT DISTINCT series_name FROM data\n),\nall_combinations AS (\n  SELECT time, series_name\n  FROM time_series\n  CROSS JOIN all_series\n)\nSELECT\n  ac.time,\n  ac.series_name,\n  COALESCE(d.files,0) AS files\nFROM all_combinations ac\nLEFT JOIN data d ON ac.time = d.time AND ac.series_name = d.series_name\nORDER BY ac.time, ac.series_name",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [
+                  {
+                    "name": "\"timestamp\"",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              },
+              {
+                "parameters": [
+                  {
+                    "name": "data_source",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "name": "data_source",
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "ts_egresses"
+        }
+      ],
+      "title": "Errored Files By $annotation_key",
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "\\w* (.*)",
+            "renamePattern": "$1"
+          }
+        }
+      ],
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${database}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 25,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "linearThreshold": 2,
+              "log": 10,
+              "type": "symlog"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 17
+      },
+      "id": 148,
+      "interval": "10s",
+      "maxDataPoints": 100,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "sortBy": "Total",
+          "sortDesc": true,
+          "width": 500
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${database}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "WITH params AS (\n  SELECT\n    $__from::bigint AS start_time_ms,\n    $__to::bigint AS end_time_ms,\n    $__interval_ms::bigint AS interval_ms\n),\ndata AS (\n  SELECT\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      timestamp\n    ) AS time,\n    data_source,\n    COUNT(*) AS files\n  FROM ts_errors\n  WHERE\n    timestamp >= to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    AND timestamp < to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    AND data_source IN ($datasources)\n    AND (\n      (annotations ? '$annotation_key' AND (annotations->>'$annotation_key') IN ($annotation_value))\n      OR \n      ('Not Present' IN ($annotation_value) AND NOT annotations ? '$annotation_key')\n    )\n  GROUP BY 1, 2\n),\ntime_series AS (\n  SELECT generate_series(\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    ),\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    ),\n    (SELECT (interval_ms || ' milliseconds')::interval FROM params)\n  ) AS time\n),\nall_series AS (\n  SELECT DISTINCT data_source FROM data\n),\nall_combinations AS (\n  SELECT time, data_source\n  FROM time_series\n  CROSS JOIN all_series\n)\nSELECT\n  ac.time,\n  ac.data_source,\n  COALESCE(d.files,0) AS files\nFROM all_combinations ac\nLEFT JOIN data d ON ac.time = d.time AND ac.data_source = d.data_source\nORDER BY ac.time, ac.data_source",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [
+                  {
+                    "name": "\"timestamp\"",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              },
+              {
+                "parameters": [
+                  {
+                    "name": "data_source",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "name": "data_source",
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "ts_egresses"
+        }
+      ],
+      "title": "Errored Files by Data Source",
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "\\w* (.*)",
+            "renamePattern": "$1"
+          }
+        }
+      ],
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${database}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 25,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "linearThreshold": 2,
+              "log": 10,
+              "type": "symlog"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 26
+      },
+      "id": 150,
+      "interval": "10s",
+      "maxDataPoints": 100,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "sortBy": "Total",
+          "sortDesc": true,
+          "width": 500
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${database}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "WITH params AS (\n  SELECT\n    $__from::bigint AS start_time_ms,\n    $__to::bigint AS end_time_ms,\n    $__interval_ms::bigint AS interval_ms\n),\ndata AS (\n  SELECT\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      timestamp\n    ) AS time,\n    COALESCE(cause, 'None Given') AS series_name,\n    COUNT(*) AS files\n  FROM ts_errors\n  WHERE\n    timestamp >= to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    AND timestamp < to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    AND data_source IN ($datasources)\n    AND (\n      (annotations ? '$annotation_key' AND (annotations->>'$annotation_key') IN ($annotation_value))\n      OR \n      ('Not Present' IN ($annotation_value) AND NOT annotations ? '$annotation_key')\n    )\n  GROUP BY 1, 2\n),\ntime_series AS (\n  SELECT generate_series(\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      to_timestamp((SELECT start_time_ms FROM params) / 1000)\n    ),\n    time_bucket(\n      (SELECT (interval_ms || ' milliseconds')::interval FROM params),\n      to_timestamp((SELECT end_time_ms FROM params) / 1000)\n    ),\n    (SELECT (interval_ms || ' milliseconds')::interval FROM params)\n  ) AS time\n),\nall_series AS (\n  SELECT DISTINCT series_name FROM data\n),\nall_combinations AS (\n  SELECT time, series_name\n  FROM time_series\n  CROSS JOIN all_series\n)\nSELECT\n  ac.time,\n  ac.series_name,\n  COALESCE(d.files,0) AS files\nFROM all_combinations ac\nLEFT JOIN data d ON ac.time = d.time AND ac.series_name = d.series_name\nORDER BY ac.time, ac.series_name",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [
+                  {
+                    "name": "\"timestamp\"",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              },
+              {
+                "parameters": [
+                  {
+                    "name": "data_source",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "name": "data_source",
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "ts_egresses"
+        }
+      ],
+      "title": "Errored Files By Cause",
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "\\w* (.*)",
+            "renamePattern": "$1"
+          }
+        }
+      ],
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 35
+      },
+      "id": 141,
+      "panels": [],
+      "title": "Summary",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${database}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": true,
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 0,
+        "y": 36
+      },
+      "id": 152,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "Data Source"
+          }
+        ]
+      },
+      "pluginVersion": "11.1.4",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${database}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\ndata_source,\nSUM(causes) AS causes\nFROM\n(SELECT\ndata_source, \nCOALESCE(annotations->>'$annotation_key', 'Not Present') AS key,\nCOUNT(DISTINCT cause) AS causes\nFROM ts_errors \nWHERE\n$__timeFilter(timestamp)\nAND\ndata_source IN ($datasources)\nAND\nCOALESCE(annotations->>'$annotation_key', 'Not Present') IN ($annotation_value) \nGROUP BY 1,2\nORDER BY 1,2)\nGROUP BY 1\nORDER BY 1",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "alias": "\"Data Source\"",
+                "parameters": [
+                  {
+                    "name": "data_source",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              },
+              {
+                "name": "SUM",
+                "parameters": [
+                  {
+                    "name": "ingress_bytes",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "name": "data_source",
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "ts_ingresses"
+        }
+      ],
+      "title": "Causes by Data Source",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "includeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "annotation_value": "Annotation Value",
+              "causes": "Causes",
+              "data_source": "Data Source",
+              "egress_files": "Egress Files",
+              "error_files": "Errored",
+              "filter_files": "Filtered",
+              "ingress_files": "Ingress Files",
+              "total_egress_bytes": "Egress Bytes",
+              "total_ingress_bytes": "Ingress Bytes"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${database}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": true,
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 12,
+        "y": 36
+      },
+      "id": 153,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "Data Source"
+          }
+        ]
+      },
+      "pluginVersion": "11.1.4",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${database}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\ndata_source,\nCOUNT(DISTINCT key) as keys\nFROM\n(SELECT\ndata_source, \nCOALESCE(annotations->>'$annotation_key', 'Not Present') AS key,\nCOUNT(DISTINCT cause) AS causes\nFROM ts_errors \nWHERE\n$__timeFilter(timestamp)\nAND\ndata_source IN ($datasources)\nAND\nCOALESCE(annotations->>'$annotation_key', 'Not Present') IN ($annotation_value) \nGROUP BY 1,2\nORDER BY 1,2)\nGROUP BY 1\nORDER BY 1",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "alias": "\"Data Source\"",
+                "parameters": [
+                  {
+                    "name": "data_source",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              },
+              {
+                "name": "SUM",
+                "parameters": [
+                  {
+                    "name": "ingress_bytes",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "name": "data_source",
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "ts_ingresses"
+        }
+      ],
+      "title": "$annotation_key  Values by Data Source",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "includeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "annotation_value": "Annotation Value",
+              "causes": "Causes",
+              "data_source": "Data Source",
+              "egress_files": "Egress Files",
+              "error_files": "Errored",
+              "filter_files": "Filtered",
+              "ingress_files": "Ingress Files",
+              "keys": "Value",
+              "total_egress_bytes": "Egress Bytes",
+              "total_ingress_bytes": "Ingress Bytes"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${database}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": true,
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 24,
+        "x": 0,
+        "y": 48
+      },
+      "id": 154,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "frequency"
+          }
+        ]
+      },
+      "pluginVersion": "11.1.4",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${database}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\ndata_source, \ncause,\ncount(*) as frequency\nFROM ts_errors \nWHERE\n$__timeFilter(timestamp)\nAND\ndata_source IN ($datasources)\nAND\nCOALESCE(annotations->>'$annotation_key', 'Not Present') IN ($annotation_value) \nGROUP BY 1,2\nORDER BY 1,2\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "alias": "\"Data Source\"",
+                "parameters": [
+                  {
+                    "name": "data_source",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              },
+              {
+                "name": "SUM",
+                "parameters": [
+                  {
+                    "name": "ingress_bytes",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "name": "data_source",
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "ts_ingresses"
+        }
+      ],
+      "title": "Cause frequency by Data Source",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "includeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "annotation_value": "Annotation Value",
+              "causes": "Causes",
+              "data_source": "Data Source",
+              "egress_files": "Egress Files",
+              "error_files": "Errored",
+              "filter_files": "Filtered",
+              "ingress_files": "Ingress Files",
+              "total_egress_bytes": "Egress Bytes",
+              "total_ingress_bytes": "Ingress Bytes"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${database}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": true,
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 24,
+        "x": 0,
+        "y": 61
+      },
+      "id": 155,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "frequency"
+          }
+        ]
+      },
+      "pluginVersion": "11.1.4",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${database}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\ndata_source, \nCOALESCE(annotations->>'$annotation_key', 'Not Present') as annotation_value,\ncount(*) as frequency\nFROM ts_errors \nWHERE\n$__timeFilter(timestamp)\nAND\ndata_source IN ($datasources)\nAND\nCOALESCE(annotations->>'$annotation_key', 'Not Present') IN ($annotation_value) \nGROUP BY 1,2\nORDER BY 1,2\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "alias": "\"Data Source\"",
+                "parameters": [
+                  {
+                    "name": "data_source",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              },
+              {
+                "name": "SUM",
+                "parameters": [
+                  {
+                    "name": "ingress_bytes",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "name": "data_source",
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "ts_ingresses"
+        }
+      ],
+      "title": "$annotation_key Value Error Frequency by Data Source",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "includeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "annotation_value": "Annotation Value",
+              "causes": "Causes",
+              "data_source": "Data Source",
+              "egress_files": "Egress Files",
+              "error_files": "Errored",
+              "filter_files": "Filtered",
+              "ingress_files": "Ingress Files",
+              "total_egress_bytes": "Egress Bytes",
+              "total_ingress_bytes": "Ingress Bytes"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    }
+  ],
+  "refresh": "",
+  "revision": 1,
+  "schemaVersion": 39,
+  "tags": [
+    "DeltaFi",
+    "Data Flow",
+    "Analytics"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": false,
+          "text": "Postgres",
+          "value": "deltafi-postgres"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Database",
+        "multi": false,
+        "name": "database",
+        "options": [],
+        "query": "grafana-postgresql-datasource",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "${database}"
+        },
+        "definition": "WITH all_sources AS (\n  SELECT DISTINCT data_source FROM ts_ingresses WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT data_source FROM ts_egresses WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT data_source FROM ts_errors WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT data_source FROM ts_filters WHERE $__timeFilter(timestamp)\n),\ndistinct_sources AS (\n  SELECT DISTINCT data_source\n  FROM all_sources\n  WHERE data_source IS NOT NULL AND data_source != ''\n)\nSELECT data_source\nFROM (\n  SELECT data_source FROM distinct_sources\n  UNION ALL\n  SELECT 'No Datasources' WHERE NOT EXISTS (SELECT 1 FROM distinct_sources)\n) subquery\nORDER BY \n  CASE \n    WHEN data_source = 'No Datasources' THEN 0 \n    ELSE 1 \n  END,\n  data_source",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Data Sources",
+        "multi": true,
+        "name": "datasources",
+        "options": [],
+        "query": "WITH all_sources AS (\n  SELECT DISTINCT data_source FROM ts_ingresses WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT data_source FROM ts_egresses WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT data_source FROM ts_errors WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT data_source FROM ts_filters WHERE $__timeFilter(timestamp)\n),\ndistinct_sources AS (\n  SELECT DISTINCT data_source\n  FROM all_sources\n  WHERE data_source IS NOT NULL AND data_source != ''\n)\nSELECT data_source\nFROM (\n  SELECT data_source FROM distinct_sources\n  UNION ALL\n  SELECT 'No Datasources' WHERE NOT EXISTS (SELECT 1 FROM distinct_sources)\n) subquery\nORDER BY \n  CASE \n    WHEN data_source = 'No Datasources' THEN 0 \n    ELSE 1 \n  END,\n  data_source",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 5,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "language",
+          "value": "language"
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "${database}"
+        },
+        "definition": "WITH all_keys AS (\n  SELECT DISTINCT jsonb_object_keys(annotations) AS key FROM ts_ingresses WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT jsonb_object_keys(annotations) AS key FROM ts_egresses WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT jsonb_object_keys(annotations) AS key FROM ts_errors WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT jsonb_object_keys(annotations) AS key FROM ts_filters WHERE $__timeFilter(timestamp)\n),\ndistinct_keys AS (\n  SELECT DISTINCT key\n  FROM all_keys\n)\nSELECT key\nFROM (\n  SELECT key FROM distinct_keys\n  UNION ALL\n  SELECT 'No Annotations' AS key\n) subquery\nWHERE \n  key = 'No Annotations' AND NOT EXISTS (SELECT 1 FROM distinct_keys)\n  OR\n  key != 'No Annotations'\nORDER BY \n  CASE WHEN key = 'No Annotations' THEN 0 ELSE 1 END,\n  key",
+        "description": "",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Annotation Key",
+        "multi": false,
+        "name": "annotation_key",
+        "options": [],
+        "query": "WITH all_keys AS (\n  SELECT DISTINCT jsonb_object_keys(annotations) AS key FROM ts_ingresses WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT jsonb_object_keys(annotations) AS key FROM ts_egresses WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT jsonb_object_keys(annotations) AS key FROM ts_errors WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT jsonb_object_keys(annotations) AS key FROM ts_filters WHERE $__timeFilter(timestamp)\n),\ndistinct_keys AS (\n  SELECT DISTINCT key\n  FROM all_keys\n)\nSELECT key\nFROM (\n  SELECT key FROM distinct_keys\n  UNION ALL\n  SELECT 'No Annotations' AS key\n) subquery\nWHERE \n  key = 'No Annotations' AND NOT EXISTS (SELECT 1 FROM distinct_keys)\n  OR\n  key != 'No Annotations'\nORDER BY \n  CASE WHEN key = 'No Annotations' THEN 0 ELSE 1 END,\n  key",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 5,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "${database}"
+        },
+        "definition": "WITH all_values AS (\n  SELECT DISTINCT annotations->>'$annotation_key' AS value\n  FROM ts_ingresses\n  WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT annotations->>'$annotation_key' AS value\n  FROM ts_egresses\n  WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT annotations->>'$annotation_key' AS value\n  FROM ts_errors\n  WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT annotations->>'$annotation_key' AS value\n  FROM ts_filters\n  WHERE $__timeFilter(timestamp)\n),\ndistinct_values AS (\n  SELECT DISTINCT value\n  FROM all_values\n  WHERE value IS NOT NULL\n)\nSELECT value\nFROM (\n  SELECT value FROM distinct_values\n  UNION ALL\n  SELECT 'Not Present'\n) subquery\nORDER BY \n  CASE \n    WHEN value = 'Not Present' THEN 1\n    ELSE 0 \n  END,\n  value",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Annotation Value",
+        "multi": true,
+        "name": "annotation_value",
+        "options": [],
+        "query": "WITH all_values AS (\n  SELECT DISTINCT annotations->>'$annotation_key' AS value\n  FROM ts_ingresses\n  WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT annotations->>'$annotation_key' AS value\n  FROM ts_egresses\n  WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT annotations->>'$annotation_key' AS value\n  FROM ts_errors\n  WHERE $__timeFilter(timestamp)\n  UNION ALL\n  SELECT DISTINCT annotations->>'$annotation_key' AS value\n  FROM ts_filters\n  WHERE $__timeFilter(timestamp)\n),\ndistinct_values AS (\n  SELECT DISTINCT value\n  FROM all_values\n  WHERE value IS NOT NULL\n)\nSELECT value\nFROM (\n  SELECT value FROM distinct_values\n  UNION ALL\n  SELECT 'Not Present'\n) subquery\nORDER BY \n  CASE \n    WHEN value = 'Not Present' THEN 1\n    ELSE 0 \n  END,\n  value",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 5,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ]
+  },
+  "timezone": "",
+  "title": "Error Analysis",
+  "uid": "error-analysis",
+  "version": 1,
+  "weekStart": ""
+}
