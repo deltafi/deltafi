@@ -203,7 +203,7 @@ public class AnalyticEventService {
      * @return list of errors if there was invalid survey data
      */
     public List<SurveyError> recordSurveys(List<SurveyEvent> surveyEvents) {
-        if (!isDisabled()) {
+        if (isDisabled()) {
             log.error("Attempted to add survey metrics with analytics disabled");
             throw new DisabledAnalyticsException();
         }
