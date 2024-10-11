@@ -27,6 +27,7 @@ import org.deltafi.common.constant.DeltaFiConstants;
 import org.deltafi.common.content.Segment;
 import org.deltafi.common.queue.jackey.ValkeyKeyedBlockingQueue;
 import org.deltafi.common.resource.Resource;
+import org.deltafi.common.test.time.TestClock;
 import org.deltafi.common.types.*;
 import org.deltafi.core.audit.CoreAuditLogger;
 import org.deltafi.core.configuration.AuthProperties;
@@ -94,16 +95,12 @@ import org.testcontainers.utility.DockerImageName;
 
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
-import java.time.Clock;
-import java.time.Duration;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -145,6 +142,10 @@ class DeltaFiCoreApplicationTests {
 	public static final String JOINING_TRANSFORM_ACTION = "JoiningTransformAction";
 	public static final String JOIN_TOPIC = "join-topic";
 	public static final String SYSTEM_NAME = "systemName";
+	public static final TestClock TEST_CLOCK = new TestClock();
+
+    @Autowired
+    private ScheduledJoinService scheduledJoinService;
 
 	@DynamicPropertySource
 	static void setProperties(DynamicPropertyRegistry registry) {
@@ -335,6 +336,11 @@ class DeltaFiCoreApplicationTests {
 		public AuthRest authRest(CoreAuditLogger coreAuditLogger) {
 			// manually create bean to mock wiring in the domain
 			return new AuthRest("local.deltafi.org", new AuthProperties("disabled"), coreAuditLogger);
+		}
+
+		@Bean
+		public ScheduledJoinService scheduledJoinService(DeltaFiPropertiesService deltaFiPropertiesService, JoinEntryService joinEntryService, DeltaFilesService deltaFilesService) {
+			return new ScheduledJoinService(TEST_CLOCK, deltaFiPropertiesService, joinEntryService, deltaFilesService);
 		}
 	}
 
@@ -4250,8 +4256,10 @@ class DeltaFiCoreApplicationTests {
 				Collections.emptyList());
 		deltaFilesService.ingress(restDataSource, ingress2, OffsetDateTime.now(), OffsetDateTime.now());
 
-		Mockito.verify(coreEventQueue, Mockito.timeout(5000))
-				.putActions(actionInputListCaptor.capture(), Mockito.anyBoolean());
+		TEST_CLOCK.setInstant(Instant.now().plusSeconds(4));
+		scheduledJoinService.handleTimedOutJoins();
+
+		Mockito.verify(coreEventQueue).putActions(actionInputListCaptor.capture(), Mockito.anyBoolean());
 
 		verifyActionInputs(actionInputListCaptor.getValue(), ingress1.getDid(), ingress2.getDid(), transformFlow.getName());
 	}
@@ -4309,8 +4317,10 @@ class DeltaFiCoreApplicationTests {
 				Collections.emptyList());
 		deltaFilesService.ingress(restDataSource, ingress2, OffsetDateTime.now(), OffsetDateTime.now());
 
-		await().atMost(5, TimeUnit.SECONDS).until(() -> hasErroredJoiningAction(ingress1.getDid(), transformFlowName));
-		await().atMost(5, TimeUnit.SECONDS).until(() -> hasErroredJoiningAction(ingress2.getDid(), transformFlowName));
+		TEST_CLOCK.setInstant(Instant.now().plusSeconds(4));
+		scheduledJoinService.handleTimedOutJoins();
+		assertThat(hasErroredJoiningAction(ingress1.getDid(), transformFlowName)).isTrue();
+		assertThat(hasErroredJoiningAction(ingress2.getDid(), transformFlowName)).isTrue();
 	}
 
 	private boolean hasErroredJoiningAction(UUID did, String actionFlow) {

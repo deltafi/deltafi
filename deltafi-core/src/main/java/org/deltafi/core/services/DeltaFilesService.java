@@ -117,7 +117,6 @@ public class DeltaFilesService {
     private final QueueManagementService queueManagementService;
     private final QueuedAnnotationRepo queuedAnnotationRepo;
     private final Environment environment;
-    private final ScheduledJoinService scheduledJoinService;
     private final UUIDGenerator uuidGenerator;
 
     private ExecutorService executor;
@@ -137,9 +136,6 @@ public class DeltaFilesService {
             semaphore = new Semaphore(internalQueueSize);
             log.info("Internal queue size: {}", internalQueueSize);
         }
-
-        scheduledJoinService.registerHandlers(this::queueTimedOutJoin, this::failTimedOutJoin);
-        scheduledJoinService.scheduleNextJoinCheck();
     }
 
     @PreDestroy

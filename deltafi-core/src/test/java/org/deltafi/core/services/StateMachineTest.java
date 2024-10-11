@@ -65,7 +65,6 @@ class StateMachineTest {
     @Mock private IdentityService identityService;
     @Mock private QueueManagementService queueManagementService;
     @Mock private JoinEntryService joinEntryService;
-    @Mock private ScheduledJoinService scheduledJoinService;
     @Mock private PublisherService publisherService;
     @Mock private AnalyticEventService analyticEventService;
 

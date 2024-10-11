@@ -23,12 +23,11 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.uuid.Generators;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.deltafi.core.repo.JoinEntryDidRepo;
+import org.deltafi.core.repo.JoinEntryRepo;
 import org.deltafi.core.types.JoinDefinition;
 import org.deltafi.core.types.JoinEntry;
 import org.deltafi.core.types.JoinEntryDid;
-import org.deltafi.core.repo.JoinEntryDidRepo;
-import org.deltafi.core.repo.JoinEntryRepo;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;

@@ -44,7 +44,6 @@ public class StateMachine {
     private final IdentityService identityService;
     private final QueueManagementService queueManagementService;
     private final JoinEntryService joinEntryService;
-    private final ScheduledJoinService scheduledJoinService;
     private final PublisherService publisherService;
 
     /**
@@ -229,9 +228,6 @@ public class StateMachine {
 
         Integer maxNum = actionConfiguration.getJoin().maxNum();
         if (maxNum == null || joinEntry.getCount() < maxNum) {
-            if (joinEntry.getCount() == 1) { // Only update join check for new join entries
-                scheduledJoinService.updateJoinCheck(joinEntry.getJoinDate());
-            }
             joinEntryService.unlock(joinEntry.getId());
             return null;
         }
@@ -242,8 +238,6 @@ public class StateMachine {
 
         // TODO - is it safe to do this here before child has been sunk to disk?
         joinEntryService.delete(joinEntry.getId());
-        scheduledJoinService.scheduleNextJoinCheck();
-
         return actionInput;
     }
 

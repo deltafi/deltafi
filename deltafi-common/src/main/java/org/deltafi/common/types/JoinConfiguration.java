@@ -36,6 +36,10 @@ public record JoinConfiguration(Duration maxAge, Integer minNum, Integer maxNum,
             }
         }
 
+        if (maxAge != null && maxAge.toSeconds() < 1) {
+            errors.add("Join: maxAge (" + maxAge + ") must be greater than or equal to 1 second");
+        }
+
         return errors;
     }
 }

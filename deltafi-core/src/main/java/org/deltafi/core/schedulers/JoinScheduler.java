@@ -19,24 +19,32 @@ package org.deltafi.core.schedulers;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
-import org.deltafi.core.services.ScheduledJoinService;
 import org.deltafi.core.schedulers.trigger.JoinEntryLockCheckTrigger;
+import org.deltafi.core.services.ScheduledJoinService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+
+import java.util.concurrent.TimeUnit;
 
 @ConditionalOnProperty(value = "schedule.maintenance", havingValue = "true", matchIfMissing = true)
 @Service
 @EnableScheduling
 @RequiredArgsConstructor
-public class JoinEntryLockCheckScheduler {
+public class JoinScheduler {
     private final TaskScheduler taskScheduler;
-    private final ScheduledJoinService scheduledJoinService;
+    private final ScheduledJoinService joinEntryService;
     private final JoinEntryLockCheckTrigger joinEntryLockCheckTrigger;
 
     @PostConstruct
     public void init() {
-        taskScheduler.schedule(scheduledJoinService::unlockTimedOutJoinEntryLocks, joinEntryLockCheckTrigger);
+        taskScheduler.schedule(joinEntryService::unlockTimedOutJoinEntryLocks, joinEntryLockCheckTrigger);
+    }
+
+    @Scheduled(fixedDelay = 1L, timeUnit = TimeUnit.SECONDS)
+    public void processOverdueJoins() {
+        joinEntryService.handleTimedOutJoins();
     }
 }
