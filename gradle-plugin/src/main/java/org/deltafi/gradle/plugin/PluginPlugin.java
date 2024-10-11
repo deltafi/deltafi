@@ -17,8 +17,6 @@
  */
 package org.deltafi.gradle.plugin;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.Setter;
 import org.deltafi.common.rules.RuleEvaluator;
 import org.deltafi.common.rules.RuleValidator;
@@ -26,13 +24,14 @@ import org.deltafi.common.types.FlowPlan;
 import org.deltafi.common.types.Publisher;
 import org.deltafi.common.types.Subscriber;
 import org.deltafi.common.types.Variable;
+import org.deltafi.common.util.ResourceMapper;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.TaskAction;
+import org.springframework.core.io.FileSystemResource;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -58,10 +57,6 @@ import java.util.List;
  * </pre>
  */
 public class PluginPlugin implements org.gradle.api.Plugin<Project> {
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
-    static {
-        OBJECT_MAPPER.registerModule(new JavaTimeModule());
-    }
 
     public static class DeltafiPluginExtension {
         String flowsDir;
@@ -85,22 +80,32 @@ public class PluginPlugin implements org.gradle.api.Plugin<Project> {
         }
 
         private void checkVariables(File flowsDirectory) {
-            File variablesFile = new File(flowsDirectory, "variables.json");
-            if (!variablesFile.exists()) {
+            File variablesFile = findVariablesFile(flowsDirectory);
+            if (variablesFile == null) {
                 getLogger().info("No flow variables have been defined");
                 return;
             }
 
-            try (FileInputStream fis = new FileInputStream(variablesFile)) {
-                OBJECT_MAPPER.readValue(fis, Variable[].class);
+            try {
+                ResourceMapper.readValues(new FileSystemResource(variablesFile), Variable.class);
             } catch (IOException e) {
                 throw new GradleException("Unable to load variables: " + e.getMessage(), e);
             }
         }
 
+        private File findVariablesFile(File flowsDirectory) {
+            for (String extension : List.of(".json", ".yaml", ".yml", ".jsonl")) {
+                File file = new File(flowsDirectory, "variables" + extension);
+                if (file.exists()) {
+                    return file;
+                }
+            }
+
+            return null;
+        }
+
         private void checkFlowPlans(File flowsDirectory) {
-            File[] flowFiles = flowsDirectory.listFiles(
-                    file -> file.getName().endsWith(".json") && !file.getName().equals("variables.json"));
+            File[] flowFiles = flowsDirectory.listFiles(this::isFlowPlan);
 
             if (flowFiles == null) {
                 throw new GradleException(flowsDirectory + " is not a directory");
@@ -112,8 +117,8 @@ public class PluginPlugin implements org.gradle.api.Plugin<Project> {
 
             List<String> errors = new ArrayList<>();
             for (File flowFile : flowFiles) {
-                try (FileInputStream fis = new FileInputStream(flowFile)) {
-                    String errorMessage = validateConditions(OBJECT_MAPPER.readValue(fis, FlowPlan.class), flowFile.getName());
+                try {
+                    String errorMessage = validateConditions(ResourceMapper.readValue(flowFile, FlowPlan.class), flowFile.getName());
                     if (errorMessage != null) {
                         errors.add(errorMessage);
                     }
@@ -124,6 +129,12 @@ public class PluginPlugin implements org.gradle.api.Plugin<Project> {
             if (!errors.isEmpty()) {
                 throw new GradleException("Invalid flow plan conditions found:\n" + String.join(";\n", errors));
             }
+        }
+
+        // consider any json or yaml file a flow plan unless it starts with variables
+        private boolean isFlowPlan(File file) {
+            String name = file.getName();
+            return (name.endsWith(".json") || name.endsWith(".yaml") || name.endsWith(".yml")) && !name.startsWith("variables.");
         }
 
         private String validateConditions(FlowPlan flowPlan, String fileName) {

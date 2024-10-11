@@ -30,6 +30,7 @@ import org.deltafi.actionkit.action.parameters.ActionParametersSchemaGenerator;
 import org.deltafi.actionkit.action.transform.Join;
 import org.deltafi.common.http.client.feign.FeignClientFactory;
 import org.deltafi.common.types.*;
+import org.deltafi.common.util.ResourceMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.info.BuildProperties;
@@ -111,19 +112,28 @@ public class PluginRegistrar {
     }
 
     private List<Variable> loadVariables() {
-        Resource variablesResource = applicationContext.getResource("classpath:flows/variables.json");
-        if (!variablesResource.exists()) {
+        Resource variablesResource = findVariables();
+        if (variablesResource == null) {
             log.info("No flow variables have been defined");
             return null;
         }
 
         try {
-            String variablesJson = new String(variablesResource.getInputStream().readAllBytes());
-            return OBJECT_MAPPER.readValue(variablesJson, new TypeReference<>() {});
+            return ResourceMapper.readValues(variablesResource, Variable.class);
         } catch (IOException e) {
             log.warn("Unable to load variables", e);
             return Collections.emptyList();
         }
+    }
+
+    private Resource findVariables() {
+        for (String extension : List.of(".json", ".yaml", ".yml", ".jsonl")) {
+            Resource variablesResource = applicationContext.getResource("classpath:flows/variables" + extension);
+            if (variablesResource.exists()) {
+                return variablesResource;
+            }
+        }
+        return null;
     }
 
     private List<FlowPlan> loadFlowPlans() {
@@ -142,12 +152,12 @@ public class PluginRegistrar {
 
         List<FlowPlan> flowPlans = new ArrayList<>();
         for (Resource flowPlanResource : flowPlanResources) {
-            if ("variables.json".equals(flowPlanResource.getFilename())) {
+            String filename = flowPlanResource.getFilename();
+            if (filename == null || filename.startsWith("variables.")) {
                 continue;
             }
             try {
-                String flowJson = new String(flowPlanResource.getInputStream().readAllBytes());
-                flowPlans.add(OBJECT_MAPPER.readValue(flowJson, FlowPlan.class));
+                flowPlans.add(ResourceMapper.readValue(flowPlanResource, FlowPlan.class));
             } catch (IOException e) {
                 log.warn("Unable to load flow plan ({})", flowPlanResource.getFilename(), e);
             }

@@ -1,0 +1,20 @@
+- name: passthroughEgressUrl
+  description: The URL to post the DeltaFile to
+  dataType: STRING
+  required: true
+  defaultValue: http://deltafi-egress-sink-service
+- name: smokeEgressUrl
+  description: The URL to post the DeltaFile to
+  dataType: STRING
+  required: true
+  defaultValue: http://deltafi-egress-sink-service/blackhole
+- name: minDelayMS
+  description: Minimum amount of time in milliseconds for the passthrough and smoke flows to sleep to simulate processing
+  dataType: NUMBER
+  required: true
+  defaultValue: "0"
+- name: maxDelayMS
+  description: Maximum amount of time in milliseconds for the passthrough and smoke flows to sleep to simulate processing
+  dataType: NUMBER
+  required: true
+  defaultValue: "0"

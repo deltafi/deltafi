@@ -1,0 +1,17 @@
+name: passthrough-transform
+type: TRANSFORM
+description: Flow that passes data through unchanged
+subscribe:
+  - topic: passthrough
+transformActions:
+  - name: Passthrough
+    type: org.deltafi.core.action.delay.Delay
+    parameters:
+      minDelayMS: "${minDelayMS}"
+      maxDelayMS: "${maxDelayMS}"
+publish:
+  matchingPolicy: FIRST_MATCHING
+  defaultRule:
+    defaultBehavior: ERROR
+  rules:
+    - topic: passthrough-egress
