@@ -186,3 +186,35 @@ Then update DeltaFi with the new configuration.
 ```
 deltafi update --values ~/site.values.yaml
 ```
+
+#### Adding SSL Certificates to an Entity Resolver
+
+You can configure DeltaFi to inject key and certificate files into the Entity Resolver using the same method used for plugins (see [Plugins SSL Config](/install/plugins#ssl-config) for details).
+
+After running the setup and restarting the Entity Resolver container, the application will have access to the following files:
+
+- /certs/tls.key: The private key
+- /certs/tls.crt: The certificate
+- /certs/ca.crt: The CA certificate chain
+
+#### Adding Config Files to an Entity Resolver
+
+To add configuration files to an Entity Resolver add a `config` section under `entityResolver` in the `site.values.yaml` file. This section should include a map of filenames to their corresponding file contents. The mapped files will be placed in the `/config` directory inside the Entity Resolver container where they can be read by the application.
+
+For example, if the Entity Resolver requires a configuration file called `identifiers.yaml`, your `site.values.yaml` would look like this:
+
+```yaml
+deltafi:
+  auth:
+    mode: cert
+    entityResolver:
+      enabled: true
+      image: your-entity-resolver-image:1.0.0
+      config:
+        identifiers.yaml:
+          bob:
+            - super
+            - admin
+```
+
+The configuration file would be available at `/config/identifiers.yaml`.

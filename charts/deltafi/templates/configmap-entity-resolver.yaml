@@ -1,0 +1,15 @@
+{{- if and .Values.deltafi.auth.entityResolver.enabled .Values.deltafi.auth.entityResolver.config }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: entity-resolver-config
+data:
+{{- range $key, $value := .Values.deltafi.auth.entityResolver.config }}
+  {{ $key }}: |
+    {{- if kindIs "string" $value -}}
+      {{ $value | nindent 4 }}
+    {{- else -}}
+      {{ $value | toYaml | nindent 4 }}
+    {{- end }}
+{{- end }}
+{{- end }}

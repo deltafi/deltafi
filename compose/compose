@@ -617,11 +617,26 @@ _write_env_files() {
   _append "DOMAIN" "${domain}" "${NGINX_SETTINGS}"
 }
 
+_entity_resolver_config() {
+  # recreate the entityResolver directory to clear out old files
+  rm -rf "${DATA_DIR}/entityResolver"
+  mkdir -p "${DATA_DIR}/entityResolver"
+
+  if yq eval '.deltafi.auth.entityResolver.config' "${VALUES_YAML}" | grep -q 'null'; then
+    return 0
+  fi
+
+  for filename in $(yq eval '.deltafi.auth.entityResolver.config | keys | .[]' "${VALUES_YAML}"); do
+    yq eval ".deltafi.auth.entityResolver.config[\"$filename\"]" "${VALUES_YAML}" > "${DATA_DIR}/entityResolver/$filename"
+  done
+}
+
 _write_config() {
   _merge_values_yaml "$@"
   _write_env_files
   _write_startup_file
   _setup_secrets
+  _entity_resolver_config
 }
 
 _install_plugins() {

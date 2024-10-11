@@ -20,20 +20,20 @@ spec:
       {{- include "initContainersWaitForDatabases" . | nindent 6 }}
       volumes:
         {{- include "coreVolumes" . | nindent 8 }}
-        - name: deltafi-auth
-          persistentVolumeClaim:
-            claimName: deltafi-auth
+        - name: entity-resolver-config
+          configMap:
+            name: entity-resolver-config
+            optional: true
       containers:
       {{ if .Values.deltafi.auth.entityResolver.enabled }}
       - name: deltafi-entity-resolver
         image: {{ .Values.deltafi.auth.entityResolver.image }}
         volumeMounts:
         {{- include "sslVolumeMount" . | nindent 10 }}
-          - name: deltafi-auth
-            mountPath: /data
+          - name: entity-resolver-config
+            mountPath: /config
+            readOnly: true
         env:
-        - name: DATA_DIR
-          value: /data
         {{- include "sslEnvVars" . | nindent 8 }}
       {{ end }}
       - name: deltafi-auth
@@ -66,6 +66,6 @@ spec:
       - name: docker-secret
       serviceAccountName: deltafi-core
       nodeSelector:
-        node-role.deltafi.org/storage: "true"
+        node-role.deltafi.org/compute: "true"
   strategy:
     type: Recreate

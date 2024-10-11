@@ -80,8 +80,6 @@ services:
   deltafi-entity-resolver:
     image: ${DELTAFI_ENTITY_RESOLVER}
     container_name: deltafi-entity-resolver
-    environment:
-      DATA_DIR: "/data"
     env_file:
       - ${SECRETS_DIR}/ssl.env
     expose:
@@ -94,7 +92,7 @@ services:
     restart: unless-stopped
     profiles: ["entity-resolver"]
     volumes:
-      - ${DATA_DIR}/auth:/data
+      - ${DATA_DIR}/entityResolver:/config
       - ${DATA_DIR}/certs:/certs
   deltafi-core-actions:
     image: ${DELTAFI_CORE_ACTIONS}
